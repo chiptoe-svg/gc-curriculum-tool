@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GC Curriculum Tool — v1 Implementation Design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Mono:wght@300;400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --rail: #141412;
+    --rail-text: #8a8780;
+    --rail-active: #E8A44A;
+    --rail-hover: #2a2925;
+    --bg: #F7F5F0;
+    --bg-card: #FFFFFF;
+    --bg-alt: #F0EDE6;
+    --text: #1C1C18;
+    --text-muted: #6B6860;
+    --text-faint: #9E9B94;
+    --accent: #C8682A;
+    --accent-light: #F5E6D8;
+    --border: #E2DDD4;
+    --border-strong: #C8C4BA;
+    --mono: 'DM Mono', monospace;
+    --serif: 'Source Serif 4', Georgia, serif;
+    --display: 'Playfair Display', Georgia, serif;
+
+    --t1: #2A5C8C;
+    --t2: #6B3A82;
+    --t3: #B87020;
+    --t4: #2E7D5E;
+    --t5: #8C2E35;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--serif);
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    min-height: 100vh;
+    font-size: 16px;
+    line-height: 1.7;
+  }
+
+  /* SIDEBAR */
+  #rail {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: 240px;
+    background: var(--rail);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    z-index: 100;
+  }
+
+  .rail-header {
+    padding: 28px 20px 20px;
+    border-bottom: 1px solid #252420;
+  }
+
+  .rail-dept {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #5a5750;
+    margin-bottom: 6px;
+  }
+
+  .rail-title {
+    font-family: var(--display);
+    font-size: 14px;
+    color: #d4d0c8;
+    line-height: 1.4;
+  }
+
+  .rail-doc-type {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--rail-active);
+    margin-top: 12px;
+  }
+
+  .rail-nav { padding: 16px 0; flex: 1; }
+
+  .nav-group-label {
+    font-family: var(--mono);
+    font-size: 8.5px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #3d3c38;
+    padding: 14px 20px 6px;
+  }
+
+  .nav-link {
+    display: block;
+    padding: 7px 20px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--rail-text);
+    text-decoration: none;
+    border-left: 2px solid transparent;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+  }
+
+  .nav-link:hover {
+    background: var(--rail-hover);
+    color: #e8e4dc;
+  }
+
+  .nav-link.active {
+    color: var(--rail-active);
+    border-left-color: var(--rail-active);
+    background: var(--rail-hover);
+  }
+
+  .rail-footer {
+    padding: 16px 20px;
+    border-top: 1px solid #252420;
+    font-family: var(--mono);
+    font-size: 9px;
+    color: #4a4843;
+    letter-spacing: 0.04em;
+  }
+
+  /* MAIN */
+  main {
+    margin-left: 240px;
+    flex: 1;
+    padding: 64px 80px 120px;
+    max-width: 980px;
+  }
+
+  .doc-head {
+    margin-bottom: 56px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .doc-eyebrow {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+
+  .doc-title {
+    font-family: var(--display);
+    font-size: 44px;
+    line-height: 1.15;
+    font-weight: 600;
+    margin-bottom: 14px;
+    letter-spacing: -0.01em;
+  }
+
+  .doc-subtitle {
+    font-family: var(--serif);
+    font-size: 19px;
+    color: var(--text-muted);
+    font-style: italic;
+    line-height: 1.5;
+  }
+
+  .doc-meta {
+    margin-top: 20px;
+    display: flex;
+    gap: 28px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--text-faint);
+    text-transform: uppercase;
+  }
+
+  .doc-meta strong { color: var(--text); font-weight: 500; }
+
+  /* SECTIONS */
+  section {
+    margin-bottom: 64px;
+    scroll-margin-top: 32px;
+  }
+
+  h2 {
+    font-family: var(--display);
+    font-size: 30px;
+    font-weight: 600;
+    margin-bottom: 24px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+  }
+
+  h2 .num {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent);
+    font-weight: 400;
+    letter-spacing: 0.06em;
+  }
+
+  h3 {
+    font-family: var(--display);
+    font-size: 21px;
+    font-weight: 600;
+    margin: 36px 0 16px;
+    color: var(--text);
+  }
+
+  h4 {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 28px 0 12px;
+  }
+
+  p { margin-bottom: 14px; }
+
+  p + p { margin-top: -2px; }
+
+  strong { font-weight: 600; color: var(--text); }
+  em { color: var(--text-muted); }
+
+  ul, ol {
+    margin: 14px 0 18px;
+    padding-left: 28px;
+  }
+  li { margin-bottom: 6px; }
+  li::marker { color: var(--text-faint); }
+
+  a {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.1s;
+  }
+  a:hover { border-bottom-color: var(--accent); }
+
+  /* CODE */
+  code {
+    font-family: var(--mono);
+    font-size: 13px;
+    background: var(--bg-alt);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: var(--text);
+  }
+
+  pre {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 20px 22px;
+    margin: 18px 0 22px;
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: var(--text);
+  }
+  pre code {
+    background: none;
+    padding: 0;
+    border-radius: 0;
+    font-size: inherit;
+    color: inherit;
+  }
+
+  /* TABLES */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 18px 0 28px;
+    font-size: 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  th, td {
+    padding: 11px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  th {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    background: var(--bg-alt);
+    border-bottom: 1px solid var(--border-strong);
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--accent-light); }
+
+  td code { font-size: 12px; }
+
+  /* CALLOUTS */
+  .callout {
+    background: var(--bg-card);
+    border-left: 3px solid var(--accent);
+    padding: 18px 22px;
+    margin: 22px 0;
+    border-radius: 0 4px 4px 0;
+  }
+
+  .callout-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  .callout p:last-child { margin-bottom: 0; }
+
+  .callout.note { border-left-color: var(--t1); }
+  .callout.note .callout-title { color: var(--t1); }
+
+  .callout.caution { border-left-color: var(--t5); }
+  .callout.caution .callout-title { color: var(--t5); }
+
+  /* MILESTONES */
+  .milestone {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 24px 28px;
+    margin: 20px 0;
+    position: relative;
+  }
+
+  .milestone-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .milestone-title {
+    font-family: var(--display);
+    font-size: 22px;
+    font-weight: 600;
+  }
+
+  .milestone-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 4px 10px;
+    background: var(--bg-alt);
+    border-radius: 12px;
+    white-space: nowrap;
+  }
+
+  .gate {
+    margin-top: 16px;
+    padding: 14px 18px;
+    background: var(--accent-light);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 4px 4px 0;
+  }
+
+  .gate-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+
+  .gate p { margin-bottom: 0; font-size: 15px; }
+
+  /* INLINE PILLS */
+  .pill {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+  }
+
+  .pill.new { background: #DCE9D8; color: #2E5E22; }
+  .pill.t1 { background: rgba(42, 92, 140, 0.15); color: var(--t1); }
+  .pill.t2 { background: rgba(107, 58, 130, 0.15); color: var(--t2); }
+  .pill.t3 { background: rgba(184, 112, 32, 0.15); color: var(--t3); }
+  .pill.t4 { background: rgba(46, 125, 94, 0.15); color: var(--t4); }
+  .pill.t5 { background: rgba(140, 46, 53, 0.15); color: var(--t5); }
+
+  /* MOBILE */
+  @media (max-width: 980px) {
+    body { display: block; }
+    #rail {
+      position: relative;
+      width: 100%;
+      height: auto;
+    }
+    main {
+      margin-left: 0;
+      padding: 40px 24px 80px;
+    }
+    .doc-title { font-size: 34px; }
+  }
+</style>
+</head>
+<body>
+
+<aside id="rail">
+  <div class="rail-header">
+    <div class="rail-dept">Clemson · Graphic Comm</div>
+    <div class="rail-title">GC Curriculum Tool</div>
+    <div class="rail-doc-type">v1 Implementation Design</div>
+  </div>
+
+  <nav class="rail-nav">
+    <div class="nav-group-label">Sections</div>
+    <a class="nav-link" href="#overview">Overview</a>
+    <a class="nav-link" href="#sec-1">1. Architecture &amp; Stack</a>
+    <a class="nav-link" href="#sec-2">2. Data Model</a>
+    <a class="nav-link" href="#sec-3">3. Pages &amp; Flows</a>
+    <a class="nav-link" href="#sec-4">4. AI Integration</a>
+    <a class="nav-link" href="#sec-5">5. Milestones</a>
+    <a class="nav-link" href="#sec-6">6. Open Questions</a>
+    <a class="nav-link" href="#sec-7">7. Out of Scope</a>
+
+    <div class="nav-group-label">Milestones</div>
+    <a class="nav-link" href="#m0">M0 · Scaffold</a>
+    <a class="nav-link" href="#m1">M1 · Foundation</a>
+    <a class="nav-link" href="#m2">M2 · Course Content</a>
+    <a class="nav-link" href="#m3">M3 · Coverage</a>
+  </nav>
+
+  <div class="rail-footer">
+    Draft · 2026-05-17<br>
+    docs/superpowers/specs/
+  </div>
+</aside>
+
+<main>
+
+<header class="doc-head">
+  <div class="doc-eyebrow">v1 Implementation Design</div>
+  <h1 class="doc-title">GC Curriculum Tool</h1>
+  <div class="doc-subtitle">
+    The implementation design for Builds 1–3 (Foundation, Course Content, Coverage Analysis)
+    from the source GC Curriculum Design Tool specification.
+  </div>
+  <div class="doc-meta">
+    <span><strong>Date</strong> 2026-05-17</span>
+    <span><strong>Status</strong> Draft for user review</span>
+    <span><strong>Scope</strong> Builds 1–3 (of 7)</span>
+  </div>
+</header>
+
+<section id="overview">
+  <p>
+    This document is the implementation design for the first three builds of the GC Curriculum
+    Tool. It resolves the architectural and scope questions the source spec leaves open and
+    produces a buildable plan.
+  </p>
+  <p>
+    Builds 4–7 (Proposals, Curriculum Map, Sankey/Sequence, Resource Summary, Presentation View)
+    and the full Assessment Framework are out of scope for this design. Each will get its own
+    design document once v1 is real with seeded data.
+  </p>
+</section>
+
+<section id="sec-1">
+  <h2><span class="num">§1</span>Architecture &amp; Stack</h2>
+
+  <table>
+    <thead>
+      <tr><th>Layer</th><th>Choice</th><th>Note</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Application</td>
+        <td>Next.js 15 App Router (React 19, TypeScript)</td>
+        <td>Single deployable serving UI + API routes.</td>
+      </tr>
+      <tr>
+        <td>Database</td>
+        <td>Postgres via Neon</td>
+        <td>Vercel-managed serverless Postgres free tier; expandable.</td>
+      </tr>
+      <tr>
+        <td>ORM &amp; migrations</td>
+        <td>Drizzle ORM</td>
+        <td>Typed schema, versioned migrations in repo.</td>
+      </tr>
+      <tr>
+        <td>UI</td>
+        <td>Tailwind CSS + shadcn/ui</td>
+        <td>Component primitives.</td>
+      </tr>
+      <tr>
+        <td>AI provider</td>
+        <td>Abstraction layer: OpenAI default, Anthropic via env var</td>
+        <td><code>AI_PROVIDER=openai</code>. Provider-agnostic prompts in <code>lib/ai/prompts/</code>.</td>
+      </tr>
+      <tr>
+        <td>O*NET integration</td>
+        <td>Public Web Services API (free, key required)</td>
+        <td>Cached 24h in <code>onet_cache</code> table.</td>
+      </tr>
+      <tr>
+        <td>Auth</td>
+        <td>Deferred to Build 4</td>
+        <td>v1 runs single-admin via hardcoded session middleware.</td>
+      </tr>
+      <tr>
+        <td>Hosting</td>
+        <td>Vercel (app) + Neon (DB)</td>
+        <td>~$0/month on free tiers during v1.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h4>Repository layout (after M0)</h4>
+  <pre><code>/app
+  /(admin)/                          Routes available to admin role
+    courses/                         Course index + detail + edit
+    targets/                         Career Target index + detail + edit
+    coverage/                        Coverage heat map
+  /api/                              API routes
+    courses/  targets/
+    ai/       draft-outcomes/ score-coverage/ unpack-competency/ rescore-all/
+    onet/     fetch-ksas/
+/components/                         shadcn/ui + project-specific UI
+/lib
+  /db/                               Drizzle schema, migrations, query helpers
+  /ai/                               Provider abstraction, prompt files
+    /prompts/                        Markdown files with YAML frontmatter
+  /onet/                             O*NET client + caching
+  /domain/                           Pure TS types + business logic
+/scripts                             Seed, import, batch operations
+/docs/superpowers/specs/             Design docs (this file lives here)</code></pre>
+
+  <div class="callout">
+    <div class="callout-title">Why not the source spec's "Claude artifact"</div>
+    <p>
+      The source spec hedges between artifact-based prototype and full app. v1 has four user
+      roles eventually, real persistence, real AI calls, and PDF export. Claude artifacts
+      are not the right home for any of these. Starting on Next.js avoids a costly migration
+      at Build 4.
+    </p>
+  </div>
+
+  <div class="callout note">
+    <div class="callout-title">Why not fork DCM or Skills-Mapping</div>
+    <p>
+      <strong>DCM (WolfgangFahl/dcm)</strong> is a research artifact (5 stars, 1 fork) in
+      Python + NiceGUI; its competency-tree paradigm conflicts with the spec's flatter
+      target → sub-competency structure; it has no AI, no auth, no Proposal concept — the
+      hard parts of this tool.
+    </p>
+    <p>
+      <strong>Skills-Mapping (Humanitariansai/Skills-Mapping)</strong> is currently an empty
+      repo (all data/code directories empty as of 2026-05-17). The genuine insight from that
+      line of research — <em>help advisors set up career targets, don't make them stare at
+      blank fields</em> — is folded in via O*NET KSA fetching and the AI competency-unpacking
+      endpoint.
+    </p>
+  </div>
+</section>
+
+<section id="sec-2">
+  <h2><span class="num">§2</span>Data Model</h2>
+
+  <p>
+    Drizzle schema. Only the entities needed for Builds 1–3 are included.
+    Proposal-related and assessment-related entities are deferred to their respective
+    design docs.
+  </p>
+
+  <h3>Entities</h3>
+
+  <pre><code>// Users — single admin row seeded; multi-user comes at Build 4
+users {
+  id: uuid (pk)
+  name, email (unique)
+  role: enum('admin', 'faculty', 'panel_member', 'viewer')   // only 'admin' used in v1
+  created_at
+}
+
+// Courses — identity record
+courses {
+  id, code (unique), title, credit_hours, level,
+  delivery_format: enum('in_person', 'hybrid', 'online'),
+  owner_id → users.id (nullable; null in v1),
+  official_record_id → course_records.id (nullable),
+  retired: boolean, retired_at, created_at
+}
+
+// Prerequisites — many-to-many self-reference
+course_prerequisites { course_id, prereq_course_id }
+
+// Course records — versioned content
+course_records {
+  id, course_id → courses.id,
+  description: text,
+  know_outcomes: jsonb,         // string[]
+  understand_outcomes: jsonb,   // string[]
+  do_outcomes: jsonb,           // string[]
+  syllabus_text: text,
+  is_official: boolean,
+  marked_accurate_by → users.id, marked_accurate_at,
+  notes: text,
+  created_at
+}
+
+// Projects — separate table, not embedded
+projects {
+  id, course_record_id → course_records.id,
+  name, description,
+  competency_tags: jsonb,       // string[] of sub_competency ids
+  display_order
+}
+
+// Career Targets
+career_targets {
+  id, name, short_definition,
+  industry_contexts: jsonb,
+  know_descriptors, understand_descriptors, do_descriptors: jsonb,
+  panel_notes, panel_members: jsonb, defensibility_note,
+  last_reviewed_at,
+  soc_code: text,               // "13-1161.00" — anchors O*NET fetch
+  soc_label: text,              // cached SOC title
+  display_order
+}
+
+// Sub-competencies — children of career targets
+sub_competencies {
+  id, career_target_id → career_targets.id,
+  name, know_descriptor, understand_descriptor, do_descriptor,
+  display_order
+}
+
+// Coverage scores — AI-generated, versioned
+coverage_scores {
+  id, course_record_id, sub_competency_id,
+  kud_level: enum('know', 'understand', 'do', 'not_addressed'),
+  confidence: enum('high', 'medium', 'low'),
+  ai_reasoning: text,           // 1–3 sentences, required
+  disputed: boolean, dispute_note: text,
+  scored_at,
+  ai_provider: text, ai_model: text   // for reproducibility
+}
+
+// O*NET response cache
+onet_cache { soc_code (pk), payload: jsonb, fetched_at }</code></pre>
+
+  <h3>Notable design calls</h3>
+
+  <ul>
+    <li>
+      <strong>Projects in a separate table, not embedded JSON.</strong> Costs nothing in
+      complexity; lets us query "all projects tagged with sub-competency X" later (useful
+      for Build 4 Impact View).
+    </li>
+    <li>
+      <strong><code>ai_provider</code> and <code>ai_model</code> recorded on every coverage
+      score.</strong> Not in the source spec. Reproducibility matters: when you switch
+      providers or models later, you'll want to know which scores came from which.
+    </li>
+    <li>
+      <strong>Disputes preserved across reruns.</strong> When a course record's coverage is
+      rescored, the new <code>coverage_scores</code> rows inherit <code>disputed=true</code>
+      and <code>dispute_note</code> from the prior row for the same
+      (course_record × sub_competency) pair. Faculty pushback should not silently vanish.
+    </li>
+    <li>
+      <strong>At most one official record per course.</strong> Enforced by a partial unique
+      index on <code>course_records(course_id) WHERE is_official = true</code>. A newly-created
+      course has zero official records until "Mark as accurate" runs the first time.
+    </li>
+  </ul>
+</section>
+
+<section id="sec-3">
+  <h2><span class="num">§3</span>Pages &amp; Flows</h2>
+
+  <h3>Routes</h3>
+
+  <table>
+    <thead>
+      <tr><th>Path</th><th>Purpose</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>/</code></td><td>Dashboard — recent activity, jump-off links</td></tr>
+      <tr><td><code>/targets</code></td><td>Career Target index</td></tr>
+      <tr><td><code>/targets/[id]</code></td><td>Career Target detail + editor. Suggest from O*NET, AI-drafted sub-competency KUD descriptors, drag-reorder.</td></tr>
+      <tr><td><code>/courses</code></td><td>Course index — sortable, filter by level</td></tr>
+      <tr><td><code>/courses/new</code></td><td>Create course (identity only)</td></tr>
+      <tr><td><code>/courses/[id]</code></td><td>Course page — Official Record view. Coverage scores grouped by target with click-to-expand reasoning + dispute UI.</td></tr>
+      <tr><td><code>/courses/[id]/edit</code></td><td>Course edit. Paste syllabus → Draft outcomes. KUD editors. Project editor with competency tag picker. "Mark as accurate".</td></tr>
+      <tr><td><code>/coverage</code></td><td>Heat map — courses (rows) × sub-competencies (cols). Click cell → side panel.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>The Build 2 → Build 3 loop</h3>
+
+  <p>Where the AI value shows up:</p>
+
+  <ol>
+    <li>Open <code>/courses/GC-3460/edit</code> (identity already seeded).</li>
+    <li>Paste syllabus text into the syllabus field.</li>
+    <li>Click <strong>"Draft outcomes from syllabus"</strong> → AI populates Know / Understand / Do bullets and a draft description.</li>
+    <li>Edit outcomes; add 2–4 projects with descriptions; tag each project with sub-competencies.</li>
+    <li>Click <strong>"Mark as accurate"</strong> → transaction flips <code>is_official</code>, creates new record, enqueues 5 background scoring calls (one per career target).</li>
+    <li>Course page updates as scores arrive. Each coverage row shows KUD pill + confidence badge + click-to-expand reasoning.</li>
+    <li>If a score is wrong, click <strong>"Dispute"</strong>, write a note. Note preserved across reruns.</li>
+    <li><code>/coverage</code> heat map reflects the new scores.</li>
+  </ol>
+
+  <h3>Key design calls</h3>
+
+  <ul>
+    <li>
+      <strong>Coverage analysis runs per-target, not per-sub-competency.</strong> One call
+      returns scores for all sub-competencies under one target. Cheaper, more coherent
+      reasoning, cleaner UI.
+    </li>
+    <li>
+      <strong>"Mark as accurate" is the analysis trigger, not "Save".</strong> Drafts
+      autosave without invoking AI; scoring runs only at accuracy mark.
+    </li>
+    <li>
+      <strong>No Proposal mode in v1.</strong> Course page shows Official Record state only.
+      "Start a Proposal" is a disabled button with a "Coming in Build 4" tooltip.
+    </li>
+    <li>
+      <strong>Heat map is the only visualization in v1.</strong> Sankey, Sequence Map, and
+      Gap Panel are Build 5–6.
+    </li>
+  </ul>
+</section>
+
+<section id="sec-4">
+  <h2><span class="num">§4</span>AI Integration &amp; Manning Skills</h2>
+
+  <h3>Endpoints</h3>
+
+  <table>
+    <thead>
+      <tr><th>Endpoint</th><th>Trigger</th><th>Input</th><th>Output</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>POST /api/ai/draft-outcomes</code></td>
+        <td>Course edit page</td>
+        <td>syllabus text + target descriptors</td>
+        <td><code>{description, know[], understand[], do[]}</code></td>
+      </tr>
+      <tr>
+        <td><code>POST /api/ai/score-coverage</code></td>
+        <td>Mark as accurate (per target)</td>
+        <td>course record + one career target</td>
+        <td><code>[{sub_competency_id, kud_level, confidence, reasoning}]</code></td>
+      </tr>
+      <tr>
+        <td><code>POST /api/ai/unpack-competency</code> <span class="pill new">new</span></td>
+        <td>Sub-competency "Help draft KUD" button</td>
+        <td>sub-competency name + target context</td>
+        <td><code>{know_descriptor, understand_descriptor, do_descriptor}</code></td>
+      </tr>
+      <tr>
+        <td><code>POST /api/ai/rescore-all</code></td>
+        <td>Target updated (admin)</td>
+        <td>batch, background</td>
+        <td>rescore every course's coverage for that target</td>
+      </tr>
+      <tr>
+        <td><code>POST /api/onet/fetch-ksas</code> <span class="pill new">new</span></td>
+        <td>Career Target "Suggest from O*NET"</td>
+        <td>SOC code</td>
+        <td>structured KSAs (cached 24h)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>The O*NET endpoint is not an AI call — it's a direct API proxy with caching.</p>
+
+  <h3>Manning skill encoding strategy</h3>
+
+  <p>
+    The source spec mandates encoding four Manning domain skill sets (Domains 7, 16, 13, 9)
+    into AI system prompts at build time. Approach:
+  </p>
+
+  <ol>
+    <li>At implementation start, fetch <code>github.com/GarethManning/education-agent-skills</code> and read the SKILL.md files.</li>
+    <li>Encode each skill's reasoning framework into the relevant prompt file. Where the spec chains two skills, the prompt walks both frameworks in sequence.</li>
+    <li>If the repo is unavailable, fall back to the source spec's own summary descriptions of each Manning skill.</li>
+  </ol>
+
+  <p>Prompt files live as version-controlled markdown with YAML frontmatter:</p>
+
+  <pre><code>/lib/ai/prompts/
+  draft-outcomes.md           uses: Backwards Design + KUD Chart Authoring +
+                                    Threshold Concept Translation
+  score-coverage.md           uses: Coverage Audit + KUD Chart Authoring +
+                                    Assessment Validity + Developmental Band Translation +
+                                    Disciplinary AI Reliability
+  unpack-competency.md        uses: Competency Unpacking
+  shared/kud-rubric.md        the KUD scoring rubric
+  shared/career-target-frame.md   how to reason about target sub-competencies</code></pre>
+
+  <div class="callout">
+    <div class="callout-title">The "AI reasons out loud" rule, mechanically enforced</div>
+    <p>
+      Every coverage score includes a <code>reasoning</code> field of 1–3 sentences citing
+      specific outcomes or projects. The JSON schema rejects empty or trivially short
+      reasoning; the call is retried with a clarifying message. This matters because the
+      source spec's stance — <em>"the tool does not present AI output as authoritative
+      fact"</em> — depends on it.
+    </p>
+  </div>
+
+  <h3>Cost ballpark</h3>
+
+  <table>
+    <thead>
+      <tr><th>Operation</th><th>Calls</th><th>Per-call</th><th>Total</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Full coverage rescore</td>
+        <td>13 × 5 = 65</td>
+        <td>~$0.02</td>
+        <td>~$1.30 per rescore</td>
+      </tr>
+      <tr>
+        <td>Expected rescore runs in v1</td>
+        <td>5–10</td>
+        <td>—</td>
+        <td><strong>~$10–15 total</strong></td>
+      </tr>
+      <tr>
+        <td>Drafting outcomes from syllabus</td>
+        <td>1 per course</td>
+        <td>~$0.05</td>
+        <td>&lt;$1 across all courses</td>
+      </tr>
+      <tr>
+        <td>Competency unpacking + O*NET</td>
+        <td>occasional</td>
+        <td>~$0.005</td>
+        <td>negligible</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section id="sec-5">
+  <h2><span class="num">§5</span>Build Sequence &amp; Milestones</h2>
+
+  <p>
+    Each milestone is independently usable and ends with a real-data gate. Don't start the
+    next milestone until the prior one is real.
+  </p>
+
+  <div class="milestone" id="m0">
+    <div class="milestone-head">
+      <div class="milestone-title">M0 — Project scaffold</div>
+      <div class="milestone-tag">~½ day</div>
+    </div>
+
+    <ul>
+      <li>Next.js 15 + TS + Tailwind + shadcn/ui initialized.</li>
+      <li>Drizzle + Neon connected. Trivial first migration runs (creates an <code>_app_meta</code> table with version + deployed_at) to prove the toolchain works before any real schema lands in M1.</li>
+      <li><code>lib/ai/provider.ts</code> abstraction + OpenAIProvider implemented and tested with a simple ping.</li>
+      <li>Hardcoded admin session middleware.</li>
+      <li>O*NET API key registered; client stub returns mock data.</li>
+      <li>Deploy to Vercel with preview URL.</li>
+    </ul>
+
+    <div class="gate">
+      <div class="gate-label">Gate</div>
+      <p><code>/</code> loads on Vercel. <code>/api/health</code> returns OK and includes DB version + AI provider name.</p>
+    </div>
+  </div>
+
+  <div class="milestone" id="m1">
+    <div class="milestone-head">
+      <div class="milestone-title">M1 — Foundation</div>
+      <div class="milestone-tag">~3–4 days · maps to Build 1</div>
+    </div>
+
+    <ul>
+      <li>Drizzle schema for: <code>users</code>, <code>courses</code>, <code>course_prerequisites</code>, <code>career_targets</code>, <code>sub_competencies</code> (no <code>course_records</code> yet — identity only).</li>
+      <li>Seed script (<code>scripts/seed.ts</code>) parses the source spec markdown to populate:
+        <ul>
+          <li>All 5 career targets with seed KUD descriptors, industry contexts, defensibility notes, SOC codes.</li>
+          <li>Seed sub-competencies (typically 5–7 per target) inferred from the spec's "Core competency areas" lists.</li>
+          <li>All 19 courses (13 with data + 6 without) as identity records.</li>
+        </ul>
+      </li>
+      <li><code>/targets</code> index + <code>/targets/[id]</code> editor: KUD descriptor editing, sub-competency CRUD with drag-reorder, panel info, defensibility note.</li>
+      <li><code>/courses</code> index + <code>/courses/[id]</code> (placeholder view) + <code>/courses/new</code> + <code>/courses/[id]/edit</code> (identity fields only).</li>
+      <li><code>POST /api/onet/fetch-ksas</code> + "Suggest from O*NET" button. KSAs presented as a checklist.</li>
+      <li><code>POST /api/ai/unpack-competency</code> + "Help draft KUD descriptors" button on sub-competency editor.</li>
+    </ul>
+
+    <div class="gate">
+      <div class="gate-label">Gate</div>
+      <p>All 5 career targets editable with full KUD descriptors and sub-competencies. The three SOC-anchored targets <span class="pill t1">Account Mgmt</span> <span class="pill t2">Brand Strategy</span> <span class="pill t3">Prod &amp; Ops</span> have at least one panel-selected KSA from O*NET. At least one sub-competency was drafted with AI assistance. All 19 courses listed and editable.</p>
+    </div>
+  </div>
+
+  <div class="milestone" id="m2">
+    <div class="milestone-head">
+      <div class="milestone-title">M2 — Course content + AI drafting</div>
+      <div class="milestone-tag">~4–5 days · maps to Build 2</div>
+    </div>
+
+    <ul>
+      <li>Drizzle schema additions: <code>course_records</code>, <code>projects</code>. Partial unique index for <code>is_official</code>.</li>
+      <li>Course page (Official Record view mode) renders the spec's full layout. Coverage section is a placeholder ("full scoring lights up in M3") until M3.</li>
+      <li>Course edit page: description, KUD outcome editors, syllabus text area, project editor with competency tag picker.</li>
+      <li><code>POST /api/ai/draft-outcomes</code> wired to "Draft outcomes from syllabus" button.</li>
+      <li>"Mark as accurate" action: transaction that flips <code>is_official</code> and timestamps. Coverage enqueue stubbed (returns OK).</li>
+      <li>Seed script extension: drafts initial outcomes for the 13 courses-with-data from the spec's prose, stored as draft records for review.</li>
+    </ul>
+
+    <div class="gate">
+      <div class="gate-label">Gate</div>
+      <p>You've marked 3 courses accurate with real outcomes and projects. AI drafting noticeably reduces the work vs. typing from scratch. The Course Page reads clearly enough that a faculty member could understand it.</p>
+    </div>
+  </div>
+
+  <div class="milestone" id="m3">
+    <div class="milestone-head">
+      <div class="milestone-title">M3 — Coverage analysis + heat map</div>
+      <div class="milestone-tag">~5–6 days · maps to Build 3</div>
+    </div>
+
+    <ul>
+      <li>Manning-skill-encoded prompt files written for <code>score-coverage.md</code> + shared rubric/frame. Reviewed against the source spec's Manning Skills Integration section.</li>
+      <li><code>POST /api/ai/score-coverage</code> with strict JSON schema. Background scoring on Mark as accurate: 5 calls per save (one per target).</li>
+      <li>Dispute preservation: rescores inherit <code>disputed</code> and <code>dispute_note</code> from the prior row for the same (course_record × sub_competency) pair.</li>
+      <li>Course Page: coverage rows grouped by target, KUD pill + confidence badge + click-to-expand reasoning, dispute flag + note UI.</li>
+      <li><code>/coverage</code> heat map: courses × sub-competencies, color-coded by KUD level. Click cell → side panel.</li>
+      <li>Admin "Rerun analysis" button per course.</li>
+      <li><code>POST /api/ai/rescore-all</code> triggered when a career target's descriptors or sub-competencies change.</li>
+    </ul>
+
+    <div class="gate">
+      <div class="gate-label">Gate</div>
+      <p>Coverage scores running on 5+ courses against all 5 targets. At least one disputed score with a note. The heat map is presentable to the industry/faculty panel without apologizing for it.</p>
+    </div>
+  </div>
+
+  <h3>v1 total estimate</h3>
+  <p>
+    <strong>~3 weeks</strong> of focused work for one developer assuming reasonable iteration
+    time. The pace depends heavily on real curriculum data entry between milestones — each
+    gate requires real data, not synthetic. Time spent on Manning-skill prompt tuning in M3
+    may stretch beyond the estimate; that's where analytical quality is won or lost.
+  </p>
+</section>
+
+<section id="sec-6">
+  <h2><span class="num">§6</span>Open Questions for User Review</h2>
+
+  <p>
+    These don't block writing the implementation plan but should be answered before M0
+    starts.
+  </p>
+
+  <ol>
+    <li><strong>Domain / hosting name.</strong> Vercel deploys to <code>*.vercel.app</code> by default. Do you want a custom domain (e.g., <code>curriculum.clemson-gc.edu</code>) and is Clemson IT involved in DNS?</li>
+    <li><strong>GitHub repo.</strong> Private repo created at <code>github.com/chiptoe-svg/gc-curriculum-tool</code>.</li>
+    <li><strong>OpenAI API key.</strong> Do you have an API key with credit, or do we need to budget for the initial $20 setup at the OpenAI console?</li>
+    <li><strong>O*NET API key.</strong> Free but requires registration. Either register one in your name with a project email, or sign up directly at <a href="https://services.onetcenter.org/developer/signup">services.onetcenter.org/developer/signup</a>.</li>
+    <li><strong>xAPI integration (future).</strong> DCM uses xAPI statements for learner achievement data. Worth keeping in mind as the wire format for future Build 4+ assessment data flowing in. Not built in v1; just noted.</li>
+  </ol>
+</section>
+
+<section id="sec-7">
+  <h2><span class="num">§7</span>Out-of-Scope Decisions Captured for Future Builds</h2>
+
+  <ul>
+    <li><strong>Auth:</strong> NextAuth at Build 4. Single admin session in v1.</li>
+    <li><strong>Spreadsheet import:</strong> <code>GC_Core_Curriculum.xlsx</code> not needed for v1 because the source spec markdown already contains structured course data. Future reconciliation script if you upload it later.</li>
+    <li><strong>Snapshots:</strong> Build 5. Schema will add a <code>snapshots</code> table that captures full state as JSON.</li>
+    <li><strong>PDF export:</strong> Build 7. Likely react-pdf or Puppeteer-rendered print CSS.</li>
+    <li><strong>Sankey + Sequence Map:</strong> Build 6. Pure React + SVG, no D3 dependency, following the <code>gc-curriculum-viz.jsx</code> approach when that file becomes available.</li>
+    <li><strong>AI-exposure context for career targets:</strong> Future enhancement. The Career Target page could surface a per-SOC AI exposure score and BLS Occupational Outlook Handbook narrative as additional context informing <code>defensibility_note</code>. Reference: <code>karpathy/jobs</code> demonstrates the LLM-scored-with-rationale pattern over BLS data. Source from BLS public data files directly; <code>karpathy/jobs</code> has no license file so the code itself is not reusable. Not v1.</li>
+  </ul>
+</section>
+
+<script>
+  const sections = Array.from(document.querySelectorAll('section[id], div.milestone[id]'));
+  const links = Array.from(document.querySelectorAll('.nav-link'));
+  const linkMap = new Map(links.map(l => [l.getAttribute('href').slice(1), l]));
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const id = entry.target.id;
+      const link = linkMap.get(id);
+      if (!link) return;
+      if (entry.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-30% 0px -65% 0px' });
+
+  sections.forEach(s => observer.observe(s));
+</script>
+
+</main>
+</body>
+</html>
