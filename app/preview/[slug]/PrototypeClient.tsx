@@ -129,6 +129,7 @@ export function PrototypeClient({ slug }: { slug: string }) {
           />
           <PrerequisiteGapPanel
             target={target}
+            courseLabel={result.course.courseLabel}
             gaps={result.course.prerequisiteGaps}
             onFlag={(t, n) => handleFlag(t, n, 'prerequisite_gap')}
           />

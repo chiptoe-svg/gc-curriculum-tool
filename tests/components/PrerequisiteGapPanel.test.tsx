@@ -21,10 +21,12 @@ const gaps: PrerequisiteGap[] = [
 
 describe('PrerequisiteGapPanel', () => {
   it('renders one row per gap with status badge', () => {
-    render(<PrerequisiteGapPanel target={target} gaps={gaps} onFlag={vi.fn()} />);
+    render(<PrerequisiteGapPanel target={target} courseLabel="GC 4060" gaps={gaps} onFlag={vi.fn()} />);
     expect(screen.getByText(/Workflow design/i)).toBeInTheDocument();
     expect(screen.getByText(/Quality control/i)).toBeInTheDocument();
-    expect(screen.getByText(/Met/i)).toBeInTheDocument();
-    expect(screen.getByText(/Missing/i)).toBeInTheDocument();
+    // Both the summary line and the Badge mention "met"/"missing"; assert
+    // that the Badge labels specifically render.
+    expect(screen.getByText(/^Met$/)).toBeInTheDocument();
+    expect(screen.getByText(/^Missing$/)).toBeInTheDocument();
   });
 });

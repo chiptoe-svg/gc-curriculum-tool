@@ -19,20 +19,31 @@ const STATUS_LABEL: Record<GapStatus, string> = {
 
 interface Props {
   target: CareerTarget;
+  courseLabel: string;
   gaps: PrerequisiteGap[];
   onFlag: (target: string, note: string) => Promise<void>;
 }
 
-export function PrerequisiteGapPanel({ target, gaps, onFlag }: Props) {
+export function PrerequisiteGapPanel({ target, courseLabel, gaps, onFlag }: Props) {
   const nameOf = (id: string) => target.subCompetencies.find(s => s.id === id)?.name ?? id;
+
+  const met = gaps.filter(g => g.status === 'met').length;
+  const under = gaps.filter(g => g.status === 'underdeveloped').length;
+  const missing = gaps.filter(g => g.status === 'missing').length;
+  const total = gaps.length;
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Prerequisite gap analysis</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          What this course expects students to walk in with, and whether the prior coursework actually develops it.
-        </p>
+        <CardTitle>How well does the prior coursework prepare students for <em>{courseLabel || 'this course'}</em>?</CardTitle>
+        {total > 0 && (
+          <p className="text-sm text-muted-foreground leading-relaxed pt-2">
+            Of the {total} competenc{total === 1 ? 'y' : 'ies'} this course expects students to walk in with:{' '}
+            <strong className="text-foreground">{met} met</strong>
+            {under > 0 && <>, <strong className="text-foreground">{under} underdeveloped</strong></>}
+            {missing > 0 && <>, <strong className="text-foreground">{missing} missing</strong></>}.
+          </p>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
         {gaps.length === 0 && <p className="text-sm text-muted-foreground italic">No prerequisite competencies were identified.</p>}

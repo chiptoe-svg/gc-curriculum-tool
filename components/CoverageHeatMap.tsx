@@ -5,20 +5,23 @@ import { ReasoningExpand } from './ReasoningExpand';
 import { ConfidenceBars } from './ConfidenceBars';
 import type { CareerTarget, CoverageScore, KUDLevel } from '@/lib/domain/types';
 
+// True heat gradient: green (strong) → yellow → orange → red (absent).
+// Curriculum context note: red cells in foundational courses (GC 1010,
+// 1020) are often *intentional* — the course isn't supposed to teach that
+// competency yet. Red surfaces "where the coverage isn't" without claiming
+// every red cell is a problem.
 const LEVEL_BG: Record<KUDLevel, string> = {
   do: 'bg-emerald-700 text-white',
-  understand: 'bg-yellow-600 text-white',
-  know: 'bg-amber-400 text-black',
-  // not_addressed cells should read as "empty" — light slate, muted text,
-  // not the dark navy that competes visually with scored cells.
-  not_addressed: 'bg-slate-100 text-slate-500 border border-dashed border-slate-300',
+  understand: 'bg-yellow-500 text-black',
+  know: 'bg-orange-500 text-white',
+  not_addressed: 'bg-red-700 text-white',
 };
 
 const LEVEL_LABEL: Record<KUDLevel, string> = {
   do: 'Do',
   understand: 'Understand',
   know: 'Know',
-  not_addressed: '—',
+  not_addressed: 'Not addressed',
 };
 
 interface Props {
@@ -29,13 +32,53 @@ interface Props {
   onFlag: (target: string, note: string) => Promise<void>;
 }
 
+// Highest level any course (analyzed + priors) reaches for each sub-competency.
+// Used to summarize cumulative coverage in plain English.
+function cumulativeSummary(
+  target: CareerTarget,
+  rows: Array<{ coverage: CoverageScore[] }>
+): { do: number; understand: number; know: number; notAddressed: number; total: number } {
+  const ORDER: KUDLevel[] = ['not_addressed', 'know', 'understand', 'do'];
+  let doCount = 0, understandCount = 0, knowCount = 0, notCount = 0;
+  for (const sc of target.subCompetencies) {
+    let best: KUDLevel = 'not_addressed';
+    for (const row of rows) {
+      const c = row.coverage.find(x => x.subCompetencyId === sc.id);
+      if (c && ORDER.indexOf(c.kudLevel) > ORDER.indexOf(best)) best = c.kudLevel;
+    }
+    if (best === 'do') doCount++;
+    else if (best === 'understand') understandCount++;
+    else if (best === 'know') knowCount++;
+    else notCount++;
+  }
+  return {
+    do: doCount,
+    understand: understandCount,
+    know: knowCount,
+    notAddressed: notCount,
+    total: target.subCompetencies.length,
+  };
+}
+
 export function CoverageHeatMap({ target, courseLabel, courseScores, priorCoursework, onFlag }: Props) {
   const cellFor = (scores: CoverageScore[], subId: string) => scores.find(s => s.subCompetencyId === subId);
+
+  const allRows = [{ coverage: courseScores }, ...priorCoursework.map(p => ({ coverage: p.coverage }))];
+  const s = cumulativeSummary(target, allRows);
+  const courseCount = 1 + priorCoursework.length;
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Coverage of <em>{target.name}</em></CardTitle>
+        <CardTitle>How well do these {courseCount} courses build toward <em>{target.name}</em>?</CardTitle>
+        <p className="text-sm text-muted-foreground leading-relaxed pt-2">
+          Across the courses below, this career target is reached at{' '}
+          <strong className="text-foreground">Do level in {s.do} of {s.total}</strong> sub-competencies
+          {s.understand > 0 && <>, <strong className="text-foreground">Understand in {s.understand}</strong></>}
+          {s.know > 0 && <>, <strong className="text-foreground">Know in {s.know}</strong></>}
+          {s.notAddressed > 0 && <>; <strong className="text-foreground">{s.notAddressed} {s.notAddressed === 1 ? 'is' : 'are'} not addressed</strong></>}.
+          Red cells in foundational courses are often intentional — they're not expected to teach that competency yet.
+        </p>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
@@ -51,7 +94,12 @@ export function CoverageHeatMap({ target, courseLabel, courseScores, priorCourse
               </tr>
             </thead>
             <tbody>
-              {/* Course being analyzed row — at the TOP, visually distinguished */}
+              {/* Row-group label for the analyzed course */}
+              <tr aria-hidden="true">
+                <td colSpan={target.subCompetencies.length + 1} className="pt-3 pb-1 text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+                  Course being analyzed
+                </td>
+              </tr>
               <tr key="course">
                 <td className="p-2 font-bold text-sm align-top border-l-4 border-slate-900/40">{courseLabel || 'Course'}</td>
                 {target.subCompetencies.map(sc => {
@@ -79,12 +127,15 @@ export function CoverageHeatMap({ target, courseLabel, courseScores, priorCourse
                 })}
               </tr>
 
-              {/* Visual divider between course and prior coursework */}
-              <tr aria-hidden="true">
-                <td colSpan={target.subCompetencies.length + 1} className="border-t-2 border-slate-300 pt-0 pb-0 h-0" />
-              </tr>
+              {/* Row-group label for prior coursework */}
+              {priorCoursework.length > 0 && (
+                <tr aria-hidden="true">
+                  <td colSpan={target.subCompetencies.length + 1} className="pt-5 pb-1 text-[11px] uppercase tracking-wider text-muted-foreground font-medium border-t border-slate-300">
+                    Prior coursework
+                  </td>
+                </tr>
+              )}
 
-              {/* Prior coursework rows — below the course */}
               {priorCoursework.map(({ courseLabel: priorLabel, coverage }, index) => (
                 <tr key={`prior-${index}`}>
                   <td className="p-2 font-medium text-sm align-top">{priorLabel || `Prior course ${index + 1}`}</td>
