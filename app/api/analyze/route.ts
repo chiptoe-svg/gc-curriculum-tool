@@ -153,7 +153,7 @@ export async function POST(req: Request): Promise<Response> {
   };
 
   // Persist run
-  await insertRun({
+  const { id: runId } = await insertRun({
     ipHash: hashIp(req),
     careerTargetId,
     upstreamCourseLabel: upstream.courseLabel ?? null,
@@ -167,5 +167,5 @@ export async function POST(req: Request): Promise<Response> {
     durationMs: result.meta.durationMs,
   });
 
-  return NextResponse.json(result);
+  return NextResponse.json({ ...result, runId });
 }
