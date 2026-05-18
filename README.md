@@ -8,9 +8,15 @@ A curriculum design tool for the Clemson University Department of Graphic Commun
 
 ## Documents
 
-- **Source specification:** [`gc-curriculum-tool-spec.md`](./gc-curriculum-tool-spec.md) — the full requirements document (data model, all 7 builds, assessment framework, career target definitions).
-- **v1 implementation design:** [`docs/superpowers/specs/2026-05-17-gc-curriculum-tool-v1-design.md`](./docs/superpowers/specs/2026-05-17-gc-curriculum-tool-v1-design.md) — design covering Builds 1–3 only (Foundation, Course Content, Coverage Analysis). HTML version alongside.
-- **Source spec HTML:** [`gc-curriculum-tool-spec.html`](./gc-curriculum-tool-spec.html) — interactive HTML rendering of the source spec.
+**📄 Live HTML previews** (rendered via GitHub Pages):
+
+- **[v1 Implementation Design](https://chiptoe-svg.github.io/gc-curriculum-tool/docs/superpowers/specs/2026-05-17-gc-curriculum-tool-v1-design.html)** — design for Builds 1–3 with sidebar navigation.
+- **[Source Specification](https://chiptoe-svg.github.io/gc-curriculum-tool/gc-curriculum-tool-spec.html)** — full curriculum tool spec.
+
+**Source files:**
+
+- **Source specification:** [`gc-curriculum-tool-spec.md`](./gc-curriculum-tool-spec.md) — full requirements (data model, all 7 builds, assessment framework, career target definitions).
+- **v1 implementation design:** [`docs/superpowers/specs/2026-05-17-gc-curriculum-tool-v1-design.md`](./docs/superpowers/specs/2026-05-17-gc-curriculum-tool-v1-design.md) — design covering Builds 1–3 only.
 
 ## v1 Scope
 
