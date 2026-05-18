@@ -34,6 +34,9 @@ Thumbs.db
 coverage/
 .nyc_output/
 
+# Drizzle generated
+drizzle/meta/
+
 # Local data
 *.local.json
 /tmp/
