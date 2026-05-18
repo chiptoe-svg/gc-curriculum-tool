@@ -454,10 +454,11 @@
     <a class="nav-link" href="#sec-7">7. Out of Scope</a>
 
     <div class="nav-group-label">Milestones</div>
+    <a class="nav-link" href="#m-trial">M-trial · Prototype</a>
     <a class="nav-link" href="#m0">M0 · Scaffold</a>
     <a class="nav-link" href="#m1">M1 · Foundation</a>
     <a class="nav-link" href="#m2">M2 · Course Content</a>
-    <a class="nav-link" href="#m3">M3 · Coverage</a>
+    <a class="nav-link" href="#m3">M3 · Coverage + Gaps</a>
   </nav>
 
   <div class="rail-footer">
@@ -678,7 +679,18 @@ coverage_scores {
 }
 
 // O*NET response cache
-onet_cache { soc_code (pk), payload: jsonb, fetched_at }</code></pre>
+onet_cache { soc_code (pk), payload: jsonb, fetched_at }
+
+// Prerequisite competencies — what students should walk INTO this course with
+// (distinct from course_prerequisites, which is registrar course-to-course)
+prerequisite_competencies {
+  id, course_record_id → course_records.id,
+  sub_competency_id → sub_competencies.id,
+  expected_kud_level: enum('know', 'understand', 'do'),
+  rationale: text,            // why this course needs it
+  source: enum('faculty', 'ai_suggested', 'ai_confirmed'),
+  display_order
+}</code></pre>
 
   <h3>Notable design calls</h3>
 
@@ -704,6 +716,16 @@ onet_cache { soc_code (pk), payload: jsonb, fetched_at }</code></pre>
       index on <code>course_records(course_id) WHERE is_official = true</code>. A newly-created
       course has zero official records until "Mark as accurate" runs the first time.
     </li>
+    <li>
+      <strong>Prerequisite competencies are the inverse of coverage.</strong> Coverage answers
+      <em>"what does this course build toward?"</em>; prerequisite competencies answer
+      <em>"what does this course expect students to walk in with?"</em> The combination lets
+      us detect scaffolding failures — when a downstream course's expectations exceed what
+      any upstream course actually develops. Distinct from the registrar's
+      <code>course_prerequisites</code> (just "must have taken X before"); this is the
+      competency-grain version. Manning's <em>Learning Progressions</em> (D7) and
+      <em>Scope and Sequence</em> (D16) skills encode the reasoning framework.
+    </li>
   </ul>
 </section>
 
@@ -722,8 +744,8 @@ onet_cache { soc_code (pk), payload: jsonb, fetched_at }</code></pre>
       <tr><td><code>/targets/[id]</code></td><td>Career Target detail + editor. Suggest from O*NET, AI-drafted sub-competency KUD descriptors, drag-reorder.</td></tr>
       <tr><td><code>/courses</code></td><td>Course index — sortable, filter by level</td></tr>
       <tr><td><code>/courses/new</code></td><td>Create course (identity only)</td></tr>
-      <tr><td><code>/courses/[id]</code></td><td>Course page — Official Record view. Coverage scores grouped by target with click-to-expand reasoning + dispute UI.</td></tr>
-      <tr><td><code>/courses/[id]/edit</code></td><td>Course edit. Paste syllabus → Draft outcomes. KUD editors. Project editor with competency tag picker. "Mark as accurate".</td></tr>
+      <tr><td><code>/courses/[id]</code></td><td>Course page — Official Record view. Coverage scores grouped by target with click-to-expand reasoning + dispute UI. <strong>Prerequisite Gaps section</strong> listing expected-but-undeveloped competencies with upstream evidence.</td></tr>
+      <tr><td><code>/courses/[id]/edit</code></td><td>Course edit. Paste syllabus → Draft outcomes. KUD editors. Project editor with competency tag picker. <strong>Prerequisite competency editor with AI-suggest button.</strong> "Mark as accurate".</td></tr>
       <tr><td><code>/coverage</code></td><td>Heat map — courses (rows) × sub-competencies (cols). Click cell → side panel.</td></tr>
     </tbody>
   </table>
@@ -763,6 +785,13 @@ onet_cache { soc_code (pk), payload: jsonb, fetched_at }</code></pre>
       <strong>Heat map is the only visualization in v1.</strong> Sankey, Sequence Map, and
       Gap Panel are Build 5–6.
     </li>
+    <li>
+      <strong>Prerequisite Gaps appear as a list, not a diagram in v1.</strong> A
+      faculty-resonant section on the Course Page: "These competencies are expected when
+      students arrive, but no upstream course develops them to the expected level." The
+      Sequence Map (Build 6) will eventually overlay this on the prerequisite network with
+      red arrows for failed scaffolding chains, but the list alone is what faculty react to.
+    </li>
   </ul>
 </section>
 
@@ -793,6 +822,18 @@ onet_cache { soc_code (pk), payload: jsonb, fetched_at }</code></pre>
         <td>Sub-competency "Help draft KUD" button</td>
         <td>sub-competency name + target context</td>
         <td><code>{know_descriptor, understand_descriptor, do_descriptor}</code></td>
+      </tr>
+      <tr>
+        <td><code>POST /api/ai/suggest-prerequisites</code> <span class="pill new">new</span></td>
+        <td>Course edit "Suggest prerequisite competencies"</td>
+        <td>course record + all sub_competencies</td>
+        <td><code>[{sub_competency_id, expected_kud_level, rationale}]</code></td>
+      </tr>
+      <tr>
+        <td><code>POST /api/ai/analyze-prerequisite-gaps</code> <span class="pill new">new</span></td>
+        <td>After Mark as accurate (background)</td>
+        <td>course record + its prereq competencies + upstream coverage</td>
+        <td><code>[{prereq_competency_id, status: 'met'|'underdeveloped'|'missing', upstream_evidence, reasoning}]</code></td>
       </tr>
       <tr>
         <td><code>POST /api/ai/rescore-all</code></td>
@@ -827,13 +868,17 @@ onet_cache { soc_code (pk), payload: jsonb, fetched_at }</code></pre>
   <p>Prompt files live as version-controlled markdown with YAML frontmatter:</p>
 
   <pre><code>/lib/ai/prompts/
-  draft-outcomes.md           uses: Backwards Design + KUD Chart Authoring +
-                                    Threshold Concept Translation
-  score-coverage.md           uses: Coverage Audit + KUD Chart Authoring +
-                                    Assessment Validity + Developmental Band Translation +
-                                    Disciplinary AI Reliability
-  unpack-competency.md        uses: Competency Unpacking
-  shared/kud-rubric.md        the KUD scoring rubric
+  draft-outcomes.md             uses: Backwards Design + KUD Chart Authoring +
+                                      Threshold Concept Translation
+  score-coverage.md             uses: Coverage Audit + KUD Chart Authoring +
+                                      Assessment Validity + Developmental Band Translation +
+                                      Disciplinary AI Reliability
+  unpack-competency.md          uses: Competency Unpacking
+  suggest-prerequisites.md      uses: Learning Progressions + Scope and Sequence +
+                                      Backwards Design
+  analyze-prerequisite-gaps.md  uses: Learning Progressions + Scope and Sequence +
+                                      Developmental Band Translation
+  shared/kud-rubric.md          the KUD scoring rubric
   shared/career-target-frame.md   how to reason about target sub-competencies</code></pre>
 
   <div class="callout">
@@ -890,6 +935,80 @@ onet_cache { soc_code (pk), payload: jsonb, fetched_at }</code></pre>
     next milestone until the prior one is real.
   </p>
 
+  <div class="milestone" id="m-trial">
+    <div class="milestone-head">
+      <div class="milestone-title">M-trial — Faculty-facing prototype</div>
+      <div class="milestone-tag">~6–7 days</div>
+    </div>
+
+    <p>
+      <strong>Purpose:</strong> A standalone demo page faculty can actually use on their own.
+      Validates AI prompts against real syllabi before architectural commitment, and gives
+      early faculty something concrete to react to.
+    </p>
+
+    <h4>Page structure (single route, <code>/</code>)</h4>
+    <ol>
+      <li><strong>Hero + bigger-picture intro.</strong> Plain-language: what the full tool will do, why it matters, what this prototype shows and doesn't. ~200–300 words.</li>
+      <li><strong>Instructions</strong> — short numbered list:
+        <ul>
+          <li>Paste an upstream course's syllabus (or "Load GC 3460 example")</li>
+          <li>Paste a downstream course's syllabus (or "Load GC 4060 example")</li>
+          <li>Pick a career target</li>
+          <li>Click "Analyze"</li>
+          <li>Click any AI reasoning to expand it; flag anything that looks wrong</li>
+        </ul>
+      </li>
+      <li><strong>Interactive form</strong> — two syllabus textareas with example-loader buttons, career target dropdown, Analyze button.</li>
+      <li><strong>Output area:</strong>
+        <ul>
+          <li>Two side-by-side KUD outcome cards (AI-drafted, clearly shown as drafts)</li>
+          <li>Heat map: 2 rows × N columns by KUD level, click cell → reasoning + Flag button</li>
+          <li>Prerequisite Gap Analysis panel: status + reasoning + Flag button per gap</li>
+        </ul>
+      </li>
+      <li><strong>Footer:</strong> "This is a prototype. The full tool ships in ~3 months. Feedback: &lt;email&gt;."</li>
+    </ol>
+
+    <h4>Technical components</h4>
+    <ul>
+      <li>Next.js page at <code>/</code> with API routes for AI calls</li>
+      <li>AI provider abstraction <span class="pill new">carries forward</span></li>
+      <li>Manning-skill-encoded prompts <span class="pill new">carries forward</span></li>
+      <li>Seed data (5 targets + sub-competencies + KUD descriptors) <span class="pill new">carries forward</span></li>
+      <li>Heat map + prerequisite gap components <span class="pill new">carries forward</span></li>
+      <li><code>prototype_runs</code> + <code>prototype_flags</code> log tables for prompt-tuning analysis</li>
+      <li>Cost protection: per-IP rate limit (10/hour), daily cap ($5), email alert if hit</li>
+      <li>Unguessable URL slug: <code>gc-curriculum-tool.vercel.app/preview/&lt;slug&gt;</code></li>
+    </ul>
+
+    <h4>Access model</h4>
+    <p>
+      Unguessable URL, no password. Faculty get the link from you directly. If you want a
+      password later (e.g., before sending to industry panel), it's a one-line change.
+    </p>
+
+    <h4>Sample syllabi</h4>
+    <p>
+      Pre-loaded from the source spec for GC 3460, GC 4060, GC 4070, GC 4400, GC 3720, GC 3400
+      via "Load example" buttons. Faculty can replace with their own.
+    </p>
+
+    <div class="gate">
+      <div class="gate-label">Gate</div>
+      <p>A faculty member you've never demoed it to can open the link, follow the instructions, paste their own syllabus, get a substantive result, and flag at least one piece of AI reasoning. You can read the flags afterward and use them to tune prompts before M0.</p>
+    </div>
+
+    <div class="callout note" style="margin-top: 20px;">
+      <div class="callout-title">~80–85% of code carries forward</div>
+      <p>
+        AI provider, prompts, seed data, heat map, gap component, JSON schemas all become
+        foundation for M1–M3. The throwaway: single-page form UI, intro copy, "Load example"
+        buttons (~15–20% of total prototype code).
+      </p>
+    </div>
+  </div>
+
   <div class="milestone" id="m0">
     <div class="milestone-head">
       <div class="milestone-title">M0 — Project scaffold</div>
@@ -941,52 +1060,61 @@ onet_cache { soc_code (pk), payload: jsonb, fetched_at }</code></pre>
   <div class="milestone" id="m2">
     <div class="milestone-head">
       <div class="milestone-title">M2 — Course content + AI drafting</div>
-      <div class="milestone-tag">~4–5 days · maps to Build 2</div>
+      <div class="milestone-tag">~5–6 days · maps to Build 2</div>
     </div>
 
     <ul>
-      <li>Drizzle schema additions: <code>course_records</code>, <code>projects</code>. Partial unique index for <code>is_official</code>.</li>
-      <li>Course page (Official Record view mode) renders the spec's full layout. Coverage section is a placeholder ("full scoring lights up in M3") until M3.</li>
-      <li>Course edit page: description, KUD outcome editors, syllabus text area, project editor with competency tag picker.</li>
+      <li>Drizzle schema additions: <code>course_records</code>, <code>projects</code>, <code>prerequisite_competencies</code>. Partial unique index for <code>is_official</code>.</li>
+      <li>Course page (Official Record view mode) renders the spec's full layout. Coverage and Prerequisite Gaps sections are placeholders ("full analysis lights up in M3") until M3.</li>
+      <li>Course edit page: description, KUD outcome editors, syllabus text area, project editor with competency tag picker, <strong>prerequisite competency editor with AI-suggest button</strong>.</li>
       <li><code>POST /api/ai/draft-outcomes</code> wired to "Draft outcomes from syllabus" button.</li>
-      <li>"Mark as accurate" action: transaction that flips <code>is_official</code> and timestamps. Coverage enqueue stubbed (returns OK).</li>
-      <li>Seed script extension: drafts initial outcomes for the 13 courses-with-data from the spec's prose, stored as draft records for review.</li>
+      <li><code>POST /api/ai/suggest-prerequisites</code> wired to "Suggest prerequisite competencies" button.</li>
+      <li>"Mark as accurate" action: transaction that flips <code>is_official</code> and timestamps. Analysis enqueues stubbed (return OK).</li>
+      <li>Seed script extension: drafts initial outcomes <em>and prerequisite competencies</em> for the 13 courses-with-data from the spec's prose, stored as draft records for review.</li>
     </ul>
 
     <div class="gate">
       <div class="gate-label">Gate</div>
-      <p>You've marked 3 courses accurate with real outcomes and projects. AI drafting noticeably reduces the work vs. typing from scratch. The Course Page reads clearly enough that a faculty member could understand it.</p>
+      <p>You've marked 3 courses accurate with real outcomes, projects, and prerequisite competencies. AI drafting and prerequisite suggestion noticeably reduce work vs. typing from scratch. The Course Page reads clearly enough that a faculty member could understand it.</p>
     </div>
   </div>
 
   <div class="milestone" id="m3">
     <div class="milestone-head">
-      <div class="milestone-title">M3 — Coverage analysis + heat map</div>
-      <div class="milestone-tag">~5–6 days · maps to Build 3</div>
+      <div class="milestone-title">M3 — Coverage + prerequisite gaps + heat map</div>
+      <div class="milestone-tag">~6–7 days · maps to Build 3</div>
     </div>
 
     <ul>
-      <li>Manning-skill-encoded prompt files written for <code>score-coverage.md</code> + shared rubric/frame. Reviewed against the source spec's Manning Skills Integration section.</li>
-      <li><code>POST /api/ai/score-coverage</code> with strict JSON schema. Background scoring on Mark as accurate: 5 calls per save (one per target).</li>
-      <li>Dispute preservation: rescores inherit <code>disputed</code> and <code>dispute_note</code> from the prior row for the same (course_record × sub_competency) pair.</li>
-      <li>Course Page: coverage rows grouped by target, KUD pill + confidence badge + click-to-expand reasoning, dispute flag + note UI.</li>
+      <li>Manning-skill-encoded prompt files written and reviewed: <code>score-coverage.md</code>, <code>analyze-prerequisite-gaps.md</code>, shared rubric and frame files.</li>
+      <li><code>POST /api/ai/score-coverage</code> with strict JSON schema.</li>
+      <li><code>POST /api/ai/analyze-prerequisite-gaps</code> — transitively walks <code>course_prerequisites</code> to assemble upstream coverage, evaluates each prerequisite competency against what's actually developed upstream.</li>
+      <li>"Mark as accurate" enqueues background work in order: (1) 5 coverage scoring calls, one per target; (2) 1 prerequisite gap analysis call once coverage is in.</li>
+      <li>Dispute preservation across reruns for both coverage and gap analysis.</li>
+      <li>Course Page: coverage rows grouped by target with click-to-expand reasoning + dispute UI. <strong>Prerequisite Gaps section</strong> lists expected-but-undeveloped competencies with upstream evidence and reasoning.</li>
       <li><code>/coverage</code> heat map: courses × sub-competencies, color-coded by KUD level. Click cell → side panel.</li>
       <li>Admin "Rerun analysis" button per course.</li>
-      <li><code>POST /api/ai/rescore-all</code> triggered when a career target's descriptors or sub-competencies change.</li>
+      <li><code>POST /api/ai/rescore-all</code> on career target update; also re-triggers downstream prerequisite gap analyses where chain coverage may have shifted.</li>
     </ul>
 
     <div class="gate">
       <div class="gate-label">Gate</div>
-      <p>Coverage scores running on 5+ courses against all 5 targets. At least one disputed score with a note. The heat map is presentable to the industry/faculty panel without apologizing for it.</p>
+      <p>Coverage scores running on 5+ courses against all 5 targets. Prerequisite gaps surfaced on at least one course where a real gap exists — the GC 4060 → GC 3460 chain is the strongest candidate from current data. At least one disputed score with a note. The heat map and gap view are presentable to the industry/faculty panel without apologizing for them.</p>
     </div>
   </div>
 
   <h3>v1 total estimate</h3>
   <p>
-    <strong>~3 weeks</strong> of focused work for one developer assuming reasonable iteration
-    time. The pace depends heavily on real curriculum data entry between milestones — each
-    gate requires real data, not synthetic. Time spent on Manning-skill prompt tuning in M3
-    may stretch beyond the estimate; that's where analytical quality is won or lost.
+    <strong>~4.5 weeks</strong> of focused work for one developer including the prototype:
+    M-trial 6–7 days + M0 ½ day + M1 3–4 days + M2 4–5 days + M3 3–4 days.
+    The M2 and M3 estimates shrink (vs. the no-prototype path) because the AI prompts,
+    seed data, heat map, and prereq-gap components are already proven by then. The
+    faculty trial during the prototype also reduces the risk of late schema or rubric
+    changes.
+  </p>
+  <p>
+    Going without the prototype would cost ~3.5 weeks of focused work, but with materially
+    higher risk on M3 quality and faculty acceptance.
   </p>
 </section>
 

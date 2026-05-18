@@ -173,6 +173,20 @@ onet_cache {
   payload: jsonb                     // raw O*NET API response
   fetched_at: timestamp
 }
+
+// Prerequisite competencies — what students should walk INTO this course with
+// (distinct from course_prerequisites, which is the registrar's course-to-course list)
+prerequisite_competencies {
+  id: uuid (pk)
+  course_record_id: uuid → course_records.id
+  sub_competency_id: uuid → sub_competencies.id
+  expected_kud_level: enum('know', 'understand', 'do')
+  rationale: text                    // why this course needs this competency
+                                     // (faculty-authored, AI-drafted)
+  source: enum('faculty', 'ai_suggested', 'ai_confirmed')
+                                     // tracks who claimed it
+  display_order: integer
+}
 ```
 
 **Notable design calls:**
@@ -181,6 +195,7 @@ onet_cache {
 - **`ai_provider` and `ai_model` recorded on every coverage_score.** Not in source spec. Reproducibility matters: when you switch providers or models later, you'll want to know which scores came from which.
 - **Disputes preserved across reruns.** When a course record's coverage is rescored, the new `coverage_scores` rows inherit `disputed=true` and `dispute_note` from the prior row for the same (course_record × sub_competency) pair. Faculty pushback should not silently vanish.
 - **At most one official record per course.** Enforced by a partial unique index on `course_records(course_id) WHERE is_official = true`. A newly-created course has zero official records until "Mark as accurate" runs the first time. After that, "Mark as accurate" runs in a transaction that flips the prior official record's flag to false and the new one's flag to true.
+- **Prerequisite competencies are the inverse of coverage.** Coverage answers "what does this course build *toward*?" Prerequisite competencies answer "what does this course expect students to walk *in* with?" The combination lets us detect scaffolding failures — when a downstream course's expectations exceed what any upstream course actually develops. This is distinct from the registrar's `course_prerequisites` (which is just "must have taken X before"); it's the competency-grain version of the same idea. Manning's "Learning Progressions" (D7) and "Scope and Sequence" (D16) skills, both cited in the source spec, encode the reasoning framework for this analysis.
 
 ---
 
@@ -201,12 +216,18 @@ onet_cache {
 /courses/[id]                    Course page — Official Record view-only mode
                                  - Identity block (read-only)
                                  - Description + KUD outcomes + projects
+                                 - Prerequisite Competencies (what this course expects)
+                                 - Prerequisite Gaps — flagged competencies no upstream
+                                   course develops to the expected level
                                  - Coverage scores grouped by target, click-to-expand reasoning
                                  - Dispute UI per coverage row
 /courses/[id]/edit               Edit course record
                                  - "Paste syllabus → Draft outcomes" workflow
                                  - Outcome editors (3 sections, 3–5 bullets each)
                                  - Project editor (add/remove/reorder, competency tag picker)
+                                 - Prerequisite competency editor with AI suggestion
+                                   ("Based on your outcomes, the AI thinks these should be
+                                   in place when students arrive — accept / edit / reject")
                                  - "Mark as accurate" action
 /coverage                        Heat map view — courses × sub-competencies
                                  - Color-coded cells by KUD level
@@ -237,6 +258,8 @@ onet_cache {
 
 - **Heat map is the only visualization in v1.** Sankey, Sequence Map, and Gap Panel are Build 5–6. The heat map alone delivers ~80% of the analytical value for the v1 gate (panel review).
 
+- **Prerequisite Gaps appear as a list, not a diagram in v1.** A faculty-resonant section on the Course Page: "These competencies are expected when students arrive, but no upstream course develops them to the expected level." Each gap shows the prerequisite competency, expected KUD level, what (if anything) upstream courses develop instead, and AI reasoning. The Sequence Map (Build 6) will eventually overlay this on the prerequisite network diagram with red arrows for failed scaffolding chains, but the list form alone is what faculty will react to.
+
 ---
 
 ## 4. AI Integration & Manning Skills
@@ -248,6 +271,8 @@ onet_cache {
 | `POST /api/ai/draft-outcomes` | Course edit page button | syllabus text + all career target descriptors | `{description, know[], understand[], do[]}` |
 | `POST /api/ai/score-coverage` | Mark as accurate (per target) | course record (KUD + projects) + one career target with sub-competencies | `[{sub_competency_id, kud_level, confidence, reasoning}]` |
 | `POST /api/ai/unpack-competency` | Sub-competency "Help draft KUD descriptors" button | sub-competency name + parent target context | `{know_descriptor, understand_descriptor, do_descriptor}` |
+| `POST /api/ai/suggest-prerequisites` | Course edit "Suggest prerequisite competencies" button | course record (KUD + projects) + all sub_competencies | `[{sub_competency_id, expected_kud_level, rationale}]` |
+| `POST /api/ai/analyze-prerequisite-gaps` | After Mark as accurate (background) | course record + its prerequisite competencies + coverage scores for all upstream courses | `[{prerequisite_competency_id, status: 'met'|'underdeveloped'|'missing', upstream_evidence, reasoning}]` |
 | `POST /api/ai/rescore-all` | Career target updated (admin only) | batch, background | rescore every course's coverage for the updated target |
 | `POST /api/onet/fetch-ksas` | Career Target "Suggest from O*NET" button | SOC code | structured KSAs (cached 24h) |
 
@@ -269,6 +294,9 @@ Prompt files live as version-controlled markdown with YAML frontmatter listing w
   score-coverage.md           uses: Coverage Audit + KUD Chart Authoring + Assessment Validity +
                                     Developmental Band Translation + Disciplinary AI Reliability
   unpack-competency.md        uses: Competency Unpacking
+  suggest-prerequisites.md    uses: Learning Progressions + Scope and Sequence + Backwards Design
+  analyze-prerequisite-gaps.md  uses: Learning Progressions + Scope and Sequence +
+                                       Developmental Band Translation
   shared/kud-rubric.md        the KUD scoring rubric, included by both scoring and unpacking
   shared/career-target-frame.md   how to reason about target sub-competencies
 ```
@@ -294,6 +322,58 @@ Every coverage score includes a `reasoning` field of 1–3 sentences citing spec
 
 Each milestone is independently usable and ends with a real-data gate. Don't start the next milestone until the prior one is real.
 
+### M-trial — Faculty-facing prototype (~6–7 days)
+
+**Purpose:** A standalone demo page faculty can actually use on their own. Validates the AI prompts against real syllabi before architectural commitment, and gives early faculty members something concrete to react to.
+
+**Page structure (single route, `/`):**
+
+1. **Hero + bigger-picture intro.** Plain-language: what the full curriculum tool will do, why it matters for the GC program, why this prototype exists and what it does and doesn't represent. Roughly 200–300 words. Authored content.
+2. **Instructions** — short numbered list:
+   - Paste an upstream course's syllabus (e.g., GC 3460), or click "Load example"
+   - Paste a downstream course's syllabus (e.g., GC 4060), or click "Load example"
+   - Pick a career target from the dropdown
+   - Click "Analyze"
+   - Review the results — click any AI reasoning to expand it; flag anything that looks wrong
+3. **The interactive form** — two syllabus textareas (each with "Load GC 3460 example" / "Load GC 4060 example" buttons pre-populating from the source spec's course descriptions), a career target dropdown, and an Analyze button.
+4. **Output area (renders after Analyze):**
+   - Two side-by-side KUD outcome cards (AI-drafted, shown clearly as drafts)
+   - A heat map: 2 rows (courses) × N columns (sub-competencies of the chosen target), color-coded by KUD level
+   - Click any cell → expand AI reasoning + a "Flag this" button (with note field)
+   - A Prerequisite Gap Analysis panel: for each expected competency in the downstream course, status (met / underdeveloped / missing) + AI reasoning + Flag button
+5. **Footer:** "This is a prototype. The full tool ships in ~3 months. Feedback: <Chip's email>."
+
+**Technical components:**
+
+- Next.js page at `/` with API routes for the AI calls
+- AI provider abstraction (`lib/ai/provider.ts`) + OpenAI implementation — **becomes the foundation of the real tool**
+- Manning-skill-encoded prompts (`lib/ai/prompts/*.md`) — **becomes the foundation of the real tool**
+- Seed data in TS: 5 career targets with sub-competencies and KUD descriptors — **becomes M1 seed data**
+- Heat map component + prerequisite gap component — **become M3 UI**
+- `prototype_runs` table (or just JSON log): records each anonymous run with the inputs and outputs for prompt tuning analysis
+- `prototype_flags` table: records faculty pushback on AI reasoning (same dispute pattern as the real tool)
+- Cost protection: per-IP rate limit (10 analyses / hour), daily total cap ($5/day), email alert if cap hit
+- Unguessable URL: deployed at a slug like `gc-curriculum-tool.vercel.app/preview/<slug>` so the page isn't randomly discoverable; share the link with faculty directly
+
+**Access model:** Unguessable URL, no password. Faculty get the link from you. If you want a password later (e.g., before sending to industry panel), it's a one-line change.
+
+**Sample syllabi:** Pre-loaded from the source spec's course descriptions for GC 3460, GC 4060, GC 4070, GC 4400, GC 3720, GC 3400. Faculty can replace with their own paste-ins. (Six options keeps the demo flexible across discussions; not all are loaded by default — the buttons let people pick what to compare.)
+
+**Gate:** A faculty member you've never demoed it to can open the link, follow the instructions, paste their own syllabus, get a result they find substantive enough to argue with, and flag at least one piece of AI reasoning. You can read the flags afterward and use them to tune prompts before M0.
+
+**What carries forward to M0–M3 (~80–85% of code):**
+- AI provider abstraction, prompt files, JSON schemas
+- Seed career target data and sub-competencies
+- Heat map and prerequisite gap components
+- O*NET client (if added in this milestone — optional; could defer to M1)
+
+**What's thrown away (~15–20% of code):**
+- Single-page form UI (replaced by Course Page editor in M2)
+- Routing scaffolding (just `/` and a few API routes)
+- The "Load example" buttons and intro copy
+
+---
+
 ### M0 — Project scaffold (~½ day)
 
 - Next.js 15 + TS + Tailwind + shadcn/ui initialized.
@@ -317,27 +397,29 @@ Each milestone is independently usable and ends with a real-data gate. Don't sta
 - `POST /api/ai/unpack-competency` endpoint + "Help draft KUD descriptors" button on the sub-competency editor.
 - **Gate:** All 5 career targets editable with full KUD descriptors and sub-competencies. The three SOC-anchored targets (Account Management, Brand Strategy, Production & Operations) have at least one panel-selected KSA from O\*NET visible in their notes. At least one sub-competency was drafted with AI assistance. All 19 courses listed and editable in the index.
 
-### M2 — Course content + AI drafting (~4–5 days)
+### M2 — Course content + AI drafting (~5–6 days)
 
-- Drizzle schema additions: `course_records`, `projects`. Partial unique index for `is_official`. Migration runs.
-- Course page (Official Record view mode) renders the spec's full course layout. The coverage scores section is rendered as an empty placeholder ("Coverage analysis runs once outcomes are marked accurate — full scoring lights up in M3") until M3 ships.
-- Course edit page: description, KUD outcome editors (3 sections), syllabus text area, project editor (add/remove/reorder, competency tag picker pulling from sub-competencies).
+- Drizzle schema additions: `course_records`, `projects`, `prerequisite_competencies`. Partial unique index for `is_official`. Migration runs.
+- Course page (Official Record view mode) renders the spec's full course layout. Coverage and Prerequisite Gaps sections are placeholders ("full analysis lights up in M3") until M3 ships.
+- Course edit page: description, KUD outcome editors (3 sections), syllabus text area, project editor (add/remove/reorder, competency tag picker), prerequisite competency editor with AI-suggest button.
 - `POST /api/ai/draft-outcomes` endpoint wired to "Draft outcomes from syllabus" button.
-- "Mark as accurate" action: transaction that flips `is_official` and timestamps. Coverage analysis enqueue is stubbed (returns OK without running) — actual scoring lands in M3.
-- Seed script extension: optionally drafts initial outcomes for the 13 courses-with-data by feeding the spec's prose into the drafting endpoint, then storing them as draft (un-marked-accurate) records for review.
-- **Gate:** You've marked 3 courses accurate with real outcomes and projects. The AI drafting noticeably reduces the work compared with typing from scratch. The Course Page reads clearly enough that a faculty member could understand it.
+- `POST /api/ai/suggest-prerequisites` endpoint wired to "Suggest prerequisite competencies" button.
+- "Mark as accurate" action: transaction that flips `is_official` and timestamps. Coverage analysis and prerequisite gap analysis enqueues are stubbed (return OK without running) — actual scoring lands in M3.
+- Seed script extension: optionally drafts initial outcomes and prerequisite competencies for the 13 courses-with-data by feeding the spec's prose into the drafting and suggestion endpoints, then storing them as draft (un-marked-accurate) records for review.
+- **Gate:** You've marked 3 courses accurate with real outcomes, projects, and prerequisite competencies. AI drafting and prerequisite suggestion noticeably reduce work vs typing from scratch. The Course Page reads clearly enough that a faculty member could understand it.
 
-### M3 — Coverage analysis + heat map (~5–6 days)
+### M3 — Coverage + prerequisite gaps + heat map (~6–7 days)
 
-- Manning-skill-encoded prompt files written for `score-coverage.md` (and the shared rubric/frame). Reviewed against the source spec's Manning Skills Integration section.
+- Manning-skill-encoded prompt files written and reviewed: `score-coverage.md`, `analyze-prerequisite-gaps.md`, and the shared rubric/frame files.
 - `POST /api/ai/score-coverage` endpoint with strict JSON schema (`response_format` for OpenAI; equivalent validation for Anthropic).
-- "Mark as accurate" enqueues 5 background scoring calls (one per target). Background runner is a simple in-process queue for v1 — no Inngest/QStash yet.
-- Dispute preservation: rescores inherit `disputed` and `dispute_note` from the prior coverage_score row for the same (course_record × sub_competency) pair.
-- Course Page: coverage rows grouped by target, KUD pill + confidence badge + click-to-expand reasoning panel, dispute flag + note UI.
+- `POST /api/ai/analyze-prerequisite-gaps` endpoint. For a course record, transitively walks `course_prerequisites` to assemble the upstream course coverage, then evaluates each prerequisite competency against what's actually developed upstream.
+- "Mark as accurate" enqueues background work in this order: (1) 5 coverage scoring calls, one per target; (2) 1 prerequisite gap analysis call once coverage is in. Background runner is a simple in-process queue for v1 — no Inngest/QStash yet.
+- Dispute preservation: rescores inherit `disputed` and `dispute_note` from the prior row for the same key. Applies to both coverage_scores and prerequisite gap results.
+- Course Page: coverage rows grouped by target, KUD pill + confidence badge + click-to-expand reasoning panel, dispute UI. **Prerequisite Gaps section** lists each expected-but-undeveloped competency with upstream evidence and AI reasoning.
 - `/coverage` heat map: courses (rows) × sub-competencies (columns), color-coded by KUD level (Do dark green, Understand olive, Know amber, not_addressed dark grey). Click cell → side panel with reasoning + dispute UI. Left-edge stripe color codes course level.
 - Admin-only "Rerun analysis" button per course (one-off retry for transient failures or prompt updates).
-- `POST /api/ai/rescore-all` endpoint triggered when a career target's KUD descriptors or sub-competencies change. Background batch reruns coverage for every course against that target.
-- **Gate:** Coverage scores running on 5+ courses against all 5 targets. At least one disputed score with a note. The heat map is presentable to the industry/faculty panel without apologizing for it. You can answer the panel's "why does this course score Understand on Brand Strategy?" by clicking the cell and reading the AI's reasoning.
+- `POST /api/ai/rescore-all` endpoint triggered when a career target's KUD descriptors or sub-competencies change. Background batch reruns coverage for every course against that target; downstream prerequisite gap analyses re-trigger for courses whose prerequisite chain coverage may have shifted.
+- **Gate:** Coverage scores running on 5+ courses against all 5 targets. Prerequisite gaps surfaced on at least one course where a real gap exists (the GC 4060 → GC 3460 chain is the strongest candidate from current data). At least one disputed score with a note. The heat map and gap view are presentable to the industry/faculty panel without apologizing for them. You can answer both "why does this course score Understand on Brand Strategy?" and "what does GC 4060 expect that nothing earlier delivers?" by clicking and reading the AI's reasoning.
 
 ### What's not in v1
 
@@ -351,7 +433,9 @@ Out of scope for this design (each gets its own design doc when ready):
 
 ### v1 total estimate
 
-**~3 weeks** of focused work for one developer assuming reasonable iteration time. The pace depends heavily on real curriculum data entry between milestones (each gate requires real data, not synthetic). Time spent on Manning-skill prompt tuning in M3 may stretch beyond the estimate; that's where the analytical quality is won or lost.
+**~4.5 weeks** of focused work for one developer including the prototype:
+M-trial 6–7 days + M0 ½ day + M1 3–4 days + M2 4–5 days + M3 3–4 days.
+The M2 and M3 estimates shrink (vs. the no-prototype path) because the AI prompts, seed data, heat map, and prereq-gap components are already proven by then. The faculty trial during the prototype phase also reduces the risk of late changes to the schema or rubric. Going without the prototype would cost ~3.5 weeks of focused work, but with materially higher risk on M3 quality and faculty acceptance.
 
 ---
 
