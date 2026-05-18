@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('@/lib/slug', () => ({ isValidSlug: (s: string) => s === 'valid-slug-12345678' }));
 
 const upsertMock = vi.fn(async (rows: unknown[]) => (rows as unknown[]).length);
-const recordMock = vi.fn(async () => undefined);
+const recordMock = vi.fn(async (_count: number, _errors: string[]) => undefined);
 vi.mock('@/lib/db/courses-queries', () => ({
   upsertCourses: (rows: unknown[]) => upsertMock(rows),
   recordSyncResult: (count: number, errors: string[]) => recordMock(count, errors),

@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CourseSelector } from './CourseSelector';
-import { CourseDetails } from './CourseDetails';
+import { CourseDetails, type CourseDetailFields } from './CourseDetails';
 import { formatCourseSyllabus } from '@/lib/courses/formatCourseSyllabus';
 
 const MAX_PRIOR_COURSES = 8;
@@ -137,17 +137,17 @@ export function PrototypeForm({ slug, onAnalyze, isAnalyzing }: Props) {
     }
   }
 
-  function handleCourseChange(next: CourseFullData) {
-    setCourse(prev => ({ ...prev, current: next }));
+  function handleCourseChange(next: CourseDetailFields) {
+    setCourse(prev => prev.current ? { ...prev, current: { ...prev.current, ...next } } : prev);
   }
 
   function handleCourseReset() {
     setCourse(prev => prev.original ? { ...prev, current: prev.original } : prev);
   }
 
-  function handlePriorChange(index: number, next: CourseFullData) {
+  function handlePriorChange(index: number, next: CourseDetailFields) {
     setPriorCoursework(prev => prev.map((slot, i) =>
-      i === index ? { ...slot, current: next } : slot
+      i === index && slot.current ? { ...slot, current: { ...slot.current, ...next } } : slot
     ));
   }
 
