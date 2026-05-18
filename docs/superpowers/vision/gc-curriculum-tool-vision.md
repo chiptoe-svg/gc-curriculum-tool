@@ -1,6 +1,8 @@
 # The GC Curriculum Tool — Vision
 
-> **Want to test drive a rough prototype?** → [Open the prototype](https://gc-curriculum-tool.vercel.app/preview/4QcseN0pvlpd35gb) (real AI analysis on real GC courses, ~30s per run)
+> **Want to test drive a rough prototype?** → [Open the prototype](https://gc-curriculum-tool.vercel.app/preview/4QcseN0pvlpd35gb)
+>
+> The analysis reads each course's learning objectives, projects, and assumed skills from the [shared course sheet](https://docs.google.com/spreadsheets/d/12aPhgrIlhDYjKD0-Gt97glf1d9fKtwKmL4FwM8iTz7Q/edit?gid=1024237655#gid=1024237655). Edit your course's tab to sharpen the analysis.
 
 ## What we're building
 

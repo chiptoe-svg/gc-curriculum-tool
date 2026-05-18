@@ -526,13 +526,23 @@
   }
   .prototype-cta-text small {
     display: block;
-    font-family: var(--mono);
-    font-size: 10.5px;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: #8a8780;
+    font-family: var(--serif);
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: #a8a59c;
     font-weight: 400;
-    margin-top: 6px;
+    margin-top: 8px;
+    font-style: italic;
+    max-width: 580px;
+  }
+  .prototype-cta-text small a {
+    color: var(--rail-active);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(232,164,74,0.4);
+    transition: border-color 120ms;
+  }
+  .prototype-cta-text small a:hover {
+    border-bottom-color: var(--rail-active);
   }
   .prototype-cta-link {
     flex-shrink: 0;
@@ -631,7 +641,7 @@
 <div class="prototype-cta">
   <div class="prototype-cta-text">
     Want to test drive a rough prototype?
-    <small>Real AI analysis on real GC courses · ~30s per run</small>
+    <small>It reads each course's learning objectives, projects, and assumed skills from the <a href="https://docs.google.com/spreadsheets/d/12aPhgrIlhDYjKD0-Gt97glf1d9fKtwKmL4FwM8iTz7Q/edit?gid=1024237655#gid=1024237655" target="_blank" rel="noopener noreferrer">shared course sheet</a>. Edit your course's tab to sharpen the analysis.</small>
   </div>
   <a class="prototype-cta-link" href="https://gc-curriculum-tool.vercel.app/preview/4QcseN0pvlpd35gb" target="_blank" rel="noopener noreferrer">
     Open the prototype &rarr;
