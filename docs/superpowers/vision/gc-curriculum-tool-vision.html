@@ -816,6 +816,7 @@
     <a class="nav-link" href="#three-act">The 3-Act program</a>
     <a class="nav-link" href="#end-state">The end state</a>
     <a class="nav-link" href="#viz-program">Program coverage map</a>
+    <a class="nav-link" href="#viz-flow">Curriculum flow</a>
     <a class="nav-link" href="#viz-scaffold">Scaffolding view</a>
     <a class="nav-link" href="#viz-advising">Advising view</a>
     <a class="nav-link" href="#viz-gap">Per-course gap report</a>
@@ -1196,6 +1197,178 @@
       <span><span class="legend-sq" style="background: var(--absent);"></span>Not addressed</span>
     </div>
   </figure>
+</section>
+
+<section id="viz-flow">
+  <h2><span class="num">§</span>Curriculum flow <span class="viz-mock-tag">Illustrative · Data Fabricated</span></h2>
+  <p>
+    Where the heat map shows depth, the flow map shows reach. Each colored
+    ribbon connects a course to a career target it contributes to. Ribbon
+    width is coverage depth (Know / Understand / Do). Colors match the five
+    career destinations on the right. The whole curriculum's coverage shape
+    becomes legible at a glance — which targets are well-served, which are
+    thin, and which courses are doing the most lifting.
+  </p>
+
+  <figure>
+    <figcaption>Curriculum flow · all 5 career targets · 15-course slice</figcaption>
+    <div class="viz-title">Where do our courses actually lead?</div>
+    <div class="viz-note">
+      In this slice: Production &amp; Ops is the densest column — 11 courses
+      contribute. AI Workflow has only 4. Brand Strategy and Creative Generalist
+      land mid-density. The full view in production would show all 28 courses.
+    </div>
+
+    <div style="margin-top: 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; padding: 18px; overflow-x: auto;">
+      <svg viewBox="0 0 780 600" style="display: block; width: 100%; max-width: 780px; height: auto; min-width: 640px;" xmlns="http://www.w3.org/2000/svg">
+        <!-- Level spines (left edge) -->
+        <rect x="2" y="16" width="5" height="143" rx="2" fill="rgba(200,104,42,0.10)"/>
+        <text x="11" y="86" font-family="DM Mono, monospace" font-size="8.5" fill="#9E9B94" letter-spacing="0.14em">ACT 1</text>
+        <rect x="2" y="164" width="5" height="69" rx="2" fill="rgba(107,58,130,0.10)"/>
+        <text x="11" y="201" font-family="DM Mono, monospace" font-size="8.5" fill="#9E9B94" letter-spacing="0.14em">ACT 2</text>
+        <rect x="2" y="238" width="5" height="180" rx="2" fill="rgba(46,125,94,0.10)"/>
+        <text x="11" y="332" font-family="DM Mono, monospace" font-size="8.5" fill="#9E9B94" letter-spacing="0.14em">CAP</text>
+        <rect x="2" y="423" width="5" height="143" rx="2" fill="rgba(184,112,32,0.10)"/>
+        <text x="11" y="495" font-family="DM Mono, monospace" font-size="8.5" fill="#9E9B94" letter-spacing="0.14em">ACT 3</text>
+
+        <!-- Spaghetti links (back layer, semi-transparent) -->
+        <g opacity="0.55" fill="none">
+          <!-- gc1010 -->
+          <path d="M 215 30 C 437 30, 437 100, 620 100" stroke="#2A5C8C" stroke-width="2.5"/>
+          <path d="M 215 30 C 437 30, 437 300, 620 300" stroke="#B87020" stroke-width="2.5"/>
+          <!-- gc1020 -->
+          <path d="M 215 67 C 437 67, 437 200, 620 200" stroke="#6B3A82" stroke-width="2.5"/>
+          <path d="M 215 67 C 437 67, 437 300, 620 300" stroke="#B87020" stroke-width="2.5"/>
+          <path d="M 215 67 C 437 67, 437 400, 620 400" stroke="#2E7D5E" stroke-width="5"/>
+          <!-- gc1040 -->
+          <path d="M 215 104 C 437 104, 437 300, 620 300" stroke="#B87020" stroke-width="7.5"/>
+          <path d="M 215 104 C 437 104, 437 400, 620 400" stroke="#2E7D5E" stroke-width="2.5"/>
+          <!-- gc1050 -->
+          <path d="M 215 141 C 437 141, 437 200, 620 200" stroke="#6B3A82" stroke-width="2.5"/>
+          <path d="M 215 141 C 437 141, 437 300, 620 300" stroke="#B87020" stroke-width="5"/>
+          <path d="M 215 141 C 437 141, 437 400, 620 400" stroke="#2E7D5E" stroke-width="5"/>
+          <path d="M 215 141 C 437 141, 437 500, 620 500" stroke="#8C2E35" stroke-width="2.5"/>
+          <!-- gc2070 -->
+          <path d="M 215 178 C 437 178, 437 100, 620 100" stroke="#2A5C8C" stroke-width="2.5"/>
+          <path d="M 215 178 C 437 178, 437 300, 620 300" stroke="#B87020" stroke-width="5"/>
+          <path d="M 215 178 C 437 178, 437 400, 620 400" stroke="#2E7D5E" stroke-width="2.5"/>
+          <!-- gc2400 -->
+          <path d="M 215 215 C 437 215, 437 100, 620 100" stroke="#2A5C8C" stroke-width="2.5"/>
+          <path d="M 215 215 C 437 215, 437 400, 620 400" stroke="#2E7D5E" stroke-width="5"/>
+          <path d="M 215 215 C 437 215, 437 500, 620 500" stroke="#8C2E35" stroke-width="2.5"/>
+          <!-- gc3400 -->
+          <path d="M 215 252 C 437 252, 437 200, 620 200" stroke="#6B3A82" stroke-width="2.5"/>
+          <path d="M 215 252 C 437 252, 437 300, 620 300" stroke="#B87020" stroke-width="2.5"/>
+          <path d="M 215 252 C 437 252, 437 400, 620 400" stroke="#2E7D5E" stroke-width="7.5"/>
+          <!-- gc3460 -->
+          <path d="M 215 289 C 437 289, 437 300, 620 300" stroke="#B87020" stroke-width="7.5"/>
+          <!-- gc3620 -->
+          <path d="M 215 326 C 437 326, 437 200, 620 200" stroke="#6B3A82" stroke-width="7.5"/>
+          <path d="M 215 326 C 437 326, 437 400, 620 400" stroke="#2E7D5E" stroke-width="5"/>
+          <!-- gc3700 -->
+          <path d="M 215 363 C 437 363, 437 100, 620 100" stroke="#2A5C8C" stroke-width="2.5"/>
+          <path d="M 215 363 C 437 363, 437 200, 620 200" stroke="#6B3A82" stroke-width="7.5"/>
+          <path d="M 215 363 C 437 363, 437 400, 620 400" stroke="#2E7D5E" stroke-width="2.5"/>
+          <!-- gc3800 -->
+          <path d="M 215 400 C 437 400, 437 100, 620 100" stroke="#2A5C8C" stroke-width="5"/>
+          <path d="M 215 400 C 437 400, 437 200, 620 200" stroke="#6B3A82" stroke-width="2.5"/>
+          <!-- gc4060 -->
+          <path d="M 215 437 C 437 437, 437 100, 620 100" stroke="#2A5C8C" stroke-width="2.5"/>
+          <path d="M 215 437 C 437 437, 437 300, 620 300" stroke="#B87020" stroke-width="7.5"/>
+          <path d="M 215 437 C 437 437, 437 400, 620 400" stroke="#2E7D5E" stroke-width="2.5"/>
+          <!-- gc4400 -->
+          <path d="M 215 474 C 437 474, 437 100, 620 100" stroke="#2A5C8C" stroke-width="5"/>
+          <path d="M 215 474 C 437 474, 437 200, 620 200" stroke="#6B3A82" stroke-width="5"/>
+          <path d="M 215 474 C 437 474, 437 300, 620 300" stroke="#B87020" stroke-width="7.5"/>
+          <path d="M 215 474 C 437 474, 437 400, 620 400" stroke="#2E7D5E" stroke-width="5"/>
+          <path d="M 215 474 C 437 474, 437 500, 620 500" stroke="#8C2E35" stroke-width="2.5"/>
+          <!-- gc4480 -->
+          <path d="M 215 511 C 437 511, 437 100, 620 100" stroke="#2A5C8C" stroke-width="2.5"/>
+          <path d="M 215 511 C 437 511, 437 300, 620 300" stroke="#B87020" stroke-width="7.5"/>
+          <path d="M 215 511 C 437 511, 437 500, 620 500" stroke="#8C2E35" stroke-width="2.5"/>
+          <!-- gc4800 -->
+          <path d="M 215 548 C 437 548, 437 100, 620 100" stroke="#2A5C8C" stroke-width="7.5"/>
+          <path d="M 215 548 C 437 548, 437 200, 620 200" stroke="#6B3A82" stroke-width="2.5"/>
+          <path d="M 215 548 C 437 548, 437 300, 620 300" stroke="#B87020" stroke-width="2.5"/>
+        </g>
+
+        <!-- Course labels (left column) -->
+        <g font-family="DM Mono, monospace" font-size="10">
+          <text x="210" y="33" text-anchor="end" fill="#5a5750"><tspan font-weight="500" fill="#1c1c18">GC 1010</tspan>  Orientation</text>
+          <circle cx="215" cy="30" r="2.5" fill="#555"/>
+          <text x="210" y="70" text-anchor="end" fill="#5a5750"><tspan font-weight="500" fill="#1c1c18">GC 1020</tspan>  Digital Graphics</text>
+          <circle cx="215" cy="67" r="2.5" fill="#555"/>
+          <text x="210" y="107" text-anchor="end" fill="#5a5750"><tspan font-weight="500" fill="#1c1c18">GC 1040</tspan>  Screen + Flexo</text>
+          <circle cx="215" cy="104" r="2.5" fill="#555"/>
+          <text x="210" y="144" text-anchor="end" fill="#5a5750"><tspan font-weight="500" fill="#1c1c18">GC 1050</tspan>  Apps of Digital</text>
+          <circle cx="215" cy="141" r="2.5" fill="#555"/>
+          <text x="210" y="181" text-anchor="end" fill="#5a5750"><tspan font-weight="500" fill="#1c1c18">GC 2070</tspan>  GC II</text>
+          <circle cx="215" cy="178" r="2.5" fill="#555"/>
+          <text x="210" y="218" text-anchor="end" fill="#5a5750"><tspan font-weight="500" fill="#1c1c18">GC 2400</tspan>  Web Development</text>
+          <circle cx="215" cy="215" r="2.5" fill="#555"/>
+          <text x="210" y="255" text-anchor="end" fill="#5a5750"><tspan font-weight="500" fill="#1c1c18">GC 3400</tspan>  Digital Imaging</text>
+          <circle cx="215" cy="252" r="2.5" fill="#555"/>
+          <text x="210" y="292" text-anchor="end" fill="#5a5750"><tspan font-weight="500" fill="#1c1c18">GC 3460</tspan>  Ink + Substrates</text>
+          <circle cx="215" cy="289" r="2.5" fill="#555"/>
+          <text x="210" y="329" text-anchor="end" fill="#5a5750"><tspan font-weight="500" fill="#1c1c18">GC 3620</tspan>  Brand Design</text>
+          <circle cx="215" cy="326" r="2.5" fill="#555"/>
+          <text x="210" y="366" text-anchor="end" fill="#5a5750"><tspan font-weight="500" fill="#1c1c18">GC 3700</tspan>  Intro Brand Comm</text>
+          <circle cx="215" cy="363" r="2.5" fill="#555"/>
+          <text x="210" y="403" text-anchor="end" fill="#5a5750"><tspan font-weight="500" fill="#1c1c18">GC 3800</tspan>  Junior Seminar</text>
+          <circle cx="215" cy="400" r="2.5" fill="#555"/>
+          <text x="210" y="440" text-anchor="end" fill="#5a5750"><tspan font-weight="500" fill="#1c1c18">GC 4060</tspan>  Package + Specialty</text>
+          <circle cx="215" cy="437" r="2.5" fill="#555"/>
+          <text x="210" y="477" text-anchor="end" fill="#5a5750"><tspan font-weight="500" fill="#1c1c18">GC 4400</tspan>  Commercial Printing</text>
+          <circle cx="215" cy="474" r="2.5" fill="#555"/>
+          <text x="210" y="514" text-anchor="end" fill="#5a5750"><tspan font-weight="500" fill="#1c1c18">GC 4480</tspan>  Production Mgmt</text>
+          <circle cx="215" cy="511" r="2.5" fill="#555"/>
+          <text x="210" y="551" text-anchor="end" fill="#5a5750"><tspan font-weight="500" fill="#1c1c18">GC 4800</tspan>  Senior Seminar</text>
+          <circle cx="215" cy="548" r="2.5" fill="#555"/>
+        </g>
+
+        <!-- Target nodes + labels (right column) -->
+        <g font-family="DM Mono, monospace">
+          <circle cx="620" cy="100" r="6" fill="#2A5C8C"/>
+          <text x="632" y="97" font-size="12" font-weight="600" fill="#2A5C8C">Account Mgmt</text>
+          <text x="632" y="111" font-size="9" fill="#777">9 courses contributing</text>
+
+          <circle cx="620" cy="200" r="6" fill="#6B3A82"/>
+          <text x="632" y="197" font-size="12" font-weight="600" fill="#6B3A82">Brand Strategy</text>
+          <text x="632" y="211" font-size="9" fill="#777">8 courses contributing</text>
+
+          <circle cx="620" cy="300" r="6" fill="#B87020"/>
+          <text x="632" y="297" font-size="12" font-weight="600" fill="#B87020">Prod &amp; Ops</text>
+          <text x="632" y="311" font-size="9" fill="#777">11 courses · densest</text>
+
+          <circle cx="620" cy="400" r="6" fill="#2E7D5E"/>
+          <text x="632" y="397" font-size="12" font-weight="600" fill="#2E7D5E">Creative Gen</text>
+          <text x="632" y="411" font-size="9" fill="#777">10 courses contributing</text>
+
+          <circle cx="620" cy="500" r="6" fill="#8C2E35"/>
+          <text x="632" y="497" font-size="12" font-weight="600" fill="#8C2E35">AI Workflow</text>
+          <text x="632" y="511" font-size="9" fill="#777">4 courses · thinnest</text>
+        </g>
+
+        <!-- Footer note -->
+        <text x="390" y="588" text-anchor="middle" font-family="DM Mono, monospace" font-size="8.5" fill="#9E9B94" letter-spacing="0.14em">
+          RIBBON WIDTH = COVERAGE DEPTH (KNOW · UNDERSTAND · DO)
+        </text>
+      </svg>
+    </div>
+  </figure>
+
+  <div class="callout note" style="margin-top: 16px;">
+    <div class="callout-title">What faculty see at a glance</div>
+    <p>
+      The thinnest ribbon arriving at <strong>AI Workflow</strong> is a
+      curriculum-shape problem — the destination exists in our framework but
+      only a handful of courses contribute. That's the kind of finding the
+      curriculum committee can use to decide whether to add a course, retool an
+      existing one, or sharpen the target's definition. Equally, the wide
+      ribbons feeding <strong>Production &amp; Ops</strong> tell us the program
+      is built around that destination — which is fine, but worth knowing.
+    </p>
+  </div>
 </section>
 
 <section id="viz-scaffold">
