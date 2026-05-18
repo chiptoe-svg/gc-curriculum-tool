@@ -28,11 +28,13 @@ export interface AIProvider {
 import { OpenAIProvider } from './openai';
 
 export function getProvider(): AIProvider {
-  const which = process.env.AI_PROVIDER ?? 'openai';
+  // Trim every env var defensively — Vercel sometimes preserves trailing
+  // newlines from pasted values, and OpenAI rejects an API key with CR/LF.
+  const which = process.env.AI_PROVIDER?.trim() || 'openai';
   if (which === 'openai') {
-    const key = process.env.OPENAI_API_KEY;
+    const key = process.env.OPENAI_API_KEY?.trim();
     if (!key) throw new Error('OPENAI_API_KEY not set');
-    return new OpenAIProvider(process.env.OPENAI_MODEL ?? 'gpt-4o', key);
+    return new OpenAIProvider(process.env.OPENAI_MODEL?.trim() || 'gpt-5.4', key);
   }
   throw new Error(`Unknown AI provider: ${which}`);
 }

@@ -1,8 +1,10 @@
-import { neon, neonConfig } from '@neondatabase/serverless';
+import { neon } from '@neondatabase/serverless';
 import { drizzle, type NeonHttpDatabase } from 'drizzle-orm/neon-http';
 import * as schema from './schema';
 
-neonConfig.fetchConnectionCache = true;
+// fetchConnectionCache is now `true` by default in @neondatabase/serverless;
+// the previous `neonConfig.fetchConnectionCache = true` is deprecated and
+// produces a warning on every cold start, so we omit it.
 
 // Lazy initialization. Throwing at module import time crashes Next.js builds
 // and any test that imports the module tree, even when those code paths don't
@@ -11,7 +13,10 @@ let cached: NeonHttpDatabase<typeof schema> | null = null;
 
 function getDb(): NeonHttpDatabase<typeof schema> {
   if (cached) return cached;
-  const url = process.env.DATABASE_URL;
+  // Trim defensively — Vercel's env var UI sometimes preserves trailing
+  // newlines from pasted values, and the neon driver puts the URL into an
+  // HTTP header where CR/LF causes "invalid header value" errors.
+  const url = process.env.DATABASE_URL?.trim();
   if (!url) {
     throw new Error('DATABASE_URL not set');
   }
