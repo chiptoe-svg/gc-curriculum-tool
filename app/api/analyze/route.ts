@@ -17,11 +17,11 @@ const requestSchema = z.object({
   careerTargetId: z.string(),
   upstream: z.object({
     courseLabel: z.string().optional(),
-    syllabusText: z.string().min(5),
+    syllabusText: z.string().min(50),
   }),
   downstream: z.object({
     courseLabel: z.string().optional(),
-    syllabusText: z.string().min(5),
+    syllabusText: z.string().min(50),
   }),
 });
 

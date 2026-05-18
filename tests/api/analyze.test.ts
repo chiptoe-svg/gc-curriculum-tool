@@ -46,8 +46,8 @@ describe('POST /api/analyze', () => {
 
     const req = makeRequest({
       careerTargetId: 'production-operations',
-      upstream: { courseLabel: 'GC 3460', syllabusText: 'Ink and substrates syllabus body here' },
-      downstream: { courseLabel: 'GC 4060', syllabusText: 'Package and specialty printing syllabus body here' },
+      upstream: { courseLabel: 'GC 3460', syllabusText: 'Ink and substrates syllabus body here for testing purposes only.' },
+      downstream: { courseLabel: 'GC 4060', syllabusText: 'Package and specialty printing syllabus body here for testing purposes only.' },
     });
     const res = await POST(req);
     expect(res.status).toBe(200);
