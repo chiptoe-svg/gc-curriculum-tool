@@ -2,19 +2,25 @@
 
 A curriculum design tool for the Clemson University Department of Graphic Communications. It serves as the living record of the GC department's curriculum — what it currently is, what it is becoming, and how well it builds toward defined career targets.
 
+> 📖 **[Read the vision →](https://chiptoe-svg.github.io/gc-curriculum-tool/docs/superpowers/vision/gc-curriculum-tool-vision.html)** — what the full tool will be, the two questions it answers, illustrative visualizations of the end state, and how today's prototype fits.
+>
+> 🧪 **[Try the prototype →](https://gc-curriculum-tool.vercel.app/preview/4QcseN0pvlpd35gb)** — runs real analysis on real GC courses pulled from the shared course sheet.
+
 ## Status
 
-**Pre-implementation.** This repository currently contains the source specification and the v1 implementation design. Code lands once M0 begins.
+**M-trial live.** The faculty-facing prototype is deployed: course picker backed by the shared Google Sheet, AI-drafted KUD outcomes, coverage scoring against career targets, scaffolding evaluation, prerequisite-gap analysis, and per-judgment "Why?" expanders + flag-with-note. Phase 1 (program-wide views) starts after trial feedback settles.
 
 ## Documents
 
 **📄 Live HTML previews** (rendered via GitHub Pages):
 
-- **[v1 Implementation Design](https://chiptoe-svg.github.io/gc-curriculum-tool/docs/superpowers/specs/2026-05-17-gc-curriculum-tool-v1-design.html)** — design for Builds 1–3 with sidebar navigation.
+- **[Vision](https://chiptoe-svg.github.io/gc-curriculum-tool/docs/superpowers/vision/gc-curriculum-tool-vision.html)** ← the high-level picture; what the tool is and isn't, the 3-Act program structure, the Problem-Solver pyramid, and the end-state visualizations.
+- **[v1 Implementation Design](https://chiptoe-svg.github.io/gc-curriculum-tool/docs/superpowers/specs/2026-05-17-gc-curriculum-tool-v1-design.html)** — technical design for Builds 1–3 with sidebar navigation.
 - **[Source Specification](https://chiptoe-svg.github.io/gc-curriculum-tool/gc-curriculum-tool-spec.html)** — full curriculum tool spec.
 
 **Source files:**
 
+- **Vision:** [`docs/superpowers/vision/gc-curriculum-tool-vision.md`](./docs/superpowers/vision/gc-curriculum-tool-vision.md)
 - **Source specification:** [`gc-curriculum-tool-spec.md`](./gc-curriculum-tool-spec.md) — full requirements (data model, all 7 builds, assessment framework, career target definitions).
 - **v1 implementation design:** [`docs/superpowers/specs/2026-05-17-gc-curriculum-tool-v1-design.md`](./docs/superpowers/specs/2026-05-17-gc-curriculum-tool-v1-design.md) — design covering Builds 1–3 only.
 
