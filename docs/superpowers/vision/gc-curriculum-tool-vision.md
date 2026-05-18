@@ -4,7 +4,7 @@
 
 ## What we're building
 
-A living view of where the curriculum is strong, where it's brittle, and where it's drifted — kept current, course by course.
+Working backwards from career destinations and upwards from foundational courses — a living view of where the two meet, where the scaffolding holds, and where the curriculum has drifted.
 
 > **Q1.** *How well does the GC curriculum build students toward the careers we claim to prepare them for?*
 
