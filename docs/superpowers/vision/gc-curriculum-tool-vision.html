@@ -491,6 +491,129 @@
   .phase-name { font-family: var(--display); font-size: 18px; font-weight: 600; margin-bottom: 6px; }
   .phase-body { font-size: 14.5px; color: var(--text-muted); line-height: 1.55; }
 
+  /* 3-ACT PROGRAM VISUALIZATION */
+  .three-act { display: flex; flex-direction: column; gap: 14px; margin: 22px 0 8px; }
+  .act {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 0;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .act-1 { background: #F4F7FB; }
+  .act-1 .act-label { border-left: 4px solid var(--t1); color: var(--t1); }
+  .act-1 .act-tag { color: var(--t1); }
+  .act-2 { background: #F7F4FA; }
+  .act-2 .act-label { border-left: 4px solid var(--t2); color: var(--t2); }
+  .act-2 .act-tag { color: var(--t2); }
+  .act-3 { background: #FAF6F0; }
+  .act-3 .act-label { border-left: 4px solid var(--t3); color: var(--t3); }
+  .act-3 .act-tag { color: var(--t3); }
+
+  .act-label {
+    padding: 22px 22px 22px 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background: var(--bg-card);
+  }
+  .act-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+  .act-name {
+    font-family: var(--display);
+    font-size: 21px;
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .act-sub {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .act-meta {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+    font-style: italic;
+    line-height: 1.4;
+  }
+  .act-items {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    padding: 14px;
+  }
+  .act-cell {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 10px 12px;
+    font-size: 13px;
+    line-height: 1.35;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .act-cell.highlight {
+    background: var(--accent-light);
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .act-cell.highlight-2 {
+    background: rgba(107,58,130,0.08);
+    border-color: var(--t2);
+    color: var(--t2);
+    font-weight: 500;
+  }
+  @media (max-width: 1024px) {
+    .act { grid-template-columns: 180px 1fr; }
+    .act-items { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 720px) {
+    .act { grid-template-columns: 1fr; }
+    .act-items { grid-template-columns: 1fr; }
+  }
+
+  /* TRIAL + FEEDBACK CALLOUTS */
+  .feedback-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px; }
+  .feedback-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 18px 22px;
+  }
+  .feedback-card-eyebrow {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .feedback-card-title {
+    font-family: var(--display);
+    font-size: 17px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .feedback-card-body { font-size: 13.5px; color: var(--text-muted); line-height: 1.55; }
+  @media (max-width: 720px) {
+    .feedback-grid { grid-template-columns: 1fr; }
+  }
+
   /* CAPABILITY GRID */
   .capabilities { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 22px 0 28px; }
   .cap {
@@ -604,13 +727,14 @@
     <div class="nav-group-label">Sections</div>
     <a class="nav-link" href="#what">What we're building</a>
     <a class="nav-link" href="#questions">The two questions</a>
+    <a class="nav-link" href="#three-act">The 3-Act program</a>
     <a class="nav-link" href="#end-state">The end state</a>
     <a class="nav-link" href="#viz-program">Program coverage map</a>
     <a class="nav-link" href="#viz-scaffold">Scaffolding view</a>
     <a class="nav-link" href="#viz-advising">Advising view</a>
     <a class="nav-link" href="#viz-gap">Per-course gap report</a>
     <a class="nav-link" href="#enables">What it enables</a>
-    <a class="nav-link" href="#prototype">The prototype</a>
+    <a class="nav-link" href="#prototype">The prototype &amp; trial</a>
     <a class="nav-link" href="#phases">How we get there</a>
     <a class="nav-link" href="#not">What it is not</a>
   </nav>
@@ -691,6 +815,76 @@
     course-level judgments; course-level prerequisite gaps surface where
     the program isn't actually scaffolding what its own upper-division
     courses expect.
+  </p>
+</section>
+
+<section id="three-act">
+  <h2><span class="num">§</span>The 3-Act program</h2>
+  <p>
+    Underneath the career-target framework sits the program's own mental
+    model: GC unfolds as a three-act progression — students learn the field,
+    integrate the field, then apply a focus. The tool reads each course in
+    light of where it sits in this progression: what foundations it depends
+    on, what role it plays in integration, what specialty it serves.
+  </p>
+
+  <div class="three-act">
+    <div class="act act-1">
+      <div class="act-label">
+        <div class="act-tag">Act 1</div>
+        <div class="act-name">Foundations &amp; Agency</div>
+        <div class="act-sub">Learn the field</div>
+      </div>
+      <div class="act-items">
+        <div class="act-cell">Design &amp; Typography</div>
+        <div class="act-cell">Production Art</div>
+        <div class="act-cell">Brand Strategy</div>
+        <div class="act-cell">AI as a Toolkit</div>
+        <div class="act-cell">Business Tools</div>
+        <div class="act-cell highlight">Narrow Design &amp; Execution</div>
+      </div>
+    </div>
+
+    <div class="act act-2">
+      <div class="act-label">
+        <div class="act-tag">Act 2</div>
+        <div class="act-name">Integration &amp; Mastery</div>
+        <div class="act-sub">Integrate the field</div>
+        <div class="act-meta">Complete by mid-Junior year</div>
+      </div>
+      <div class="act-items">
+        <div class="act-cell">Research &amp; Strategy</div>
+        <div class="act-cell">Color &amp; Imaging</div>
+        <div class="act-cell">Packaging &amp; Structural Components</div>
+        <div class="act-cell">Project Execution</div>
+        <div class="act-cell">AI &amp; Design Workflow</div>
+        <div class="act-cell highlight-2">Idea-thru-Execution<br><small style="font-size:11px;opacity:0.7;">(GC 4060 &amp; GC 4400)</small></div>
+      </div>
+    </div>
+
+    <div class="act act-3">
+      <div class="act-label">
+        <div class="act-tag">Act 3</div>
+        <div class="act-name">Specialty &amp; Application</div>
+        <div class="act-sub">Apply a focus</div>
+      </div>
+      <div class="act-items">
+        <div class="act-cell">Sales &amp; Customer Facing</div>
+        <div class="act-cell">Technical &amp; Operations</div>
+        <div class="act-cell">Brand Operations</div>
+        <div class="act-cell">Creative Technologist</div>
+        <div class="act-cell">AI-Driven Workflows</div>
+        <div class="act-cell highlight">Company-Driven Capstone</div>
+      </div>
+    </div>
+  </div>
+
+  <p style="margin-top: 22px;">
+    When the tool flags a brittle scaffold, the diagnosis often surfaces
+    <em>between acts</em> — an Act-3 course expects mastery of a competency
+    that no Act-1 or Act-2 course actually introduces. That's the kind of
+    finding faculty can act on without having to wait for the next program
+    review.
   </p>
 </section>
 
@@ -1110,10 +1304,10 @@
 </section>
 
 <section id="prototype">
-  <h2><span class="num">§</span>The prototype</h2>
+  <h2><span class="num">§</span>The prototype &amp; trial</h2>
   <p>
     The version available now is the <strong>M-trial</strong>: a faculty-facing slice
-    that demonstrates the AI's analysis quality on real GC courses against the career
+    that demonstrates the analysis quality on real GC courses against the career
     targets. It does <em>not</em> yet have the program-wide views above, the official
     course record store, rescore-on-edit, or accreditation reporting.
   </p>
@@ -1121,13 +1315,13 @@
   <ul>
     <li>Pick a course from the GC course list, add 1–8 prior courses, pick a career target.</li>
     <li>
-      The AI drafts Know / Understand / Do outcomes for each course, scores coverage
+      The tool drafts Know / Understand / Do outcomes for each course, scores coverage
       against the target's sub-competencies, judges scaffolding quality, and identifies
       prerequisite gaps.
     </li>
     <li>
-      Every judgment is expandable — click <em>Why?</em> to read the AI's reasoning.
-      Flag any judgment that looks wrong with a note. Flags persist for prompt tuning.
+      Every judgment is expandable — click <em>Why?</em> to read the reasoning.
+      Flag any judgment that looks wrong with a note. Flags persist for tuning.
     </li>
   </ul>
   <div class="callout">
@@ -1138,6 +1332,44 @@
       disputing on the merits, the rest of the tool is mostly plumbing. If they don't,
       the program-wide views in the visualizations above would be misleading at scale.
     </p>
+  </div>
+
+  <h3 style="margin-top: 36px;">Trial period</h3>
+  <p>
+    Test drive the prototype over <strong>roughly the next two weeks</strong>, focusing
+    on the courses you know best. Pay attention to whether the AI's reasoning matches
+    your lived experience of those courses, and whether the gaps it surfaces match the
+    gaps you already worry about. After the trial settles, the next phase (the
+    program-wide views shown earlier) starts based on what the feedback surfaces.
+  </p>
+
+  <h3>Where to leave feedback</h3>
+  <p>
+    Two channels — both visible to other faculty so feedback compounds instead of
+    sitting in one person's inbox:
+  </p>
+  <div class="feedback-grid">
+    <div class="feedback-card">
+      <div class="feedback-card-eyebrow">In-tool</div>
+      <div class="feedback-card-title">Flag specific judgments</div>
+      <div class="feedback-card-body">
+        Every AI score and gap analysis has a "Flag this" button with a note field.
+        Best for specific feedback — <em>"this score is wrong because…"</em> or
+        <em>"the reasoning missed X."</em> Flags persist for review.
+      </div>
+    </div>
+    <div class="feedback-card">
+      <div class="feedback-card-eyebrow">On the shared sheet</div>
+      <div class="feedback-card-title">Open feedback tab</div>
+      <div class="feedback-card-body">
+        A <em>Feedback</em> tab on the
+        <a class="inline-link" href="https://docs.google.com/spreadsheets/d/12aPhgrIlhDYjKD0-Gt97glf1d9fKtwKmL4FwM8iTz7Q/edit" target="_blank" rel="noopener noreferrer">shared course sheet</a>.
+        Add your name, the topic, and your thought. Everyone in the department
+        can see it and react. Best for cross-cutting questions
+        (<em>"should we add a career target for X?"</em>) and anything worth other
+        faculty seeing.
+      </div>
+    </div>
   </div>
 </section>
 

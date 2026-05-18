@@ -16,6 +16,18 @@ Today these questions get answered through committee discussions, gut intuition,
 
 The tool's job is to make those answers *visible* and *defensible* — for advising students, for accreditation conversations, for industry/advisory-board reviews, for the next curriculum redesign, and for hiring decisions about what kind of faculty the program needs.
 
+## The 3-Act program
+
+Underneath the career-target framework sits the program's own mental model: GC unfolds as a three-act progression — students learn the field, integrate the field, then apply a focus. The tool reads each course in light of where it sits in this progression.
+
+**Act 1 — Foundations & Agency.** *Learn the field.* Design & Typography, Production Art, Brand Strategy, AI as a Toolkit, Business Tools, Narrow Design & Execution.
+
+**Act 2 — Integration & Mastery.** *Integrate the field.* Research & Strategy, Color & Imaging, Packaging & Structural Components, Project Execution, AI & Design Workflow, Idea-thru-Execution (GC 4060 & GC 4400). *Complete by mid-Junior year.*
+
+**Act 3 — Specialty & Application.** *Apply a focus.* Sales & Customer Facing, Technical & Operations, Brand Operations, Creative Technologist, AI-Driven Workflows, Company-Driven Capstone.
+
+When the tool flags a brittle scaffold, the diagnosis often surfaces *between acts* — an Act-3 course expects mastery of a competency that no Act-1 or Act-2 course actually introduces.
+
 ## The end state
 
 When the full tool is in production, it is the canonical living view of the GC program:
@@ -55,6 +67,17 @@ The prototype available now ([`/preview/<slug>`](#)) is the **M-trial**: a facul
 - Every judgment is expandable: click "Why?" to read the AI's reasoning. Flag any judgment that looks wrong with a note.
 
 The point of the prototype is to confirm that *the analysis is good enough to be useful*. If faculty find the readings credible, defensible, and worth disputing on the merits, the rest of the tool is mostly plumbing.
+
+### Trial period
+
+Test drive the prototype over **roughly the next two weeks**, focusing on the courses you know best. Pay attention to whether the AI's reasoning matches your lived experience of those courses, and whether the gaps it surfaces match the gaps you already worry about. After the trial settles, the next phase (the program-wide views) starts based on what the feedback surfaces.
+
+### Where to leave feedback
+
+Two channels — both visible to other faculty so feedback compounds instead of sitting in one inbox:
+
+- **In the tool itself.** Every AI judgment has a "Flag this" button with a note field. Best for specific feedback (*"this score is wrong because…"*).
+- **On the shared sheet.** A *Feedback* tab on the [shared course sheet](https://docs.google.com/spreadsheets/d/12aPhgrIlhDYjKD0-Gt97glf1d9fKtwKmL4FwM8iTz7Q/edit). Best for cross-cutting questions (*"should we add a career target for X?"*) and anything worth other faculty seeing.
 
 ## How we get there
 
