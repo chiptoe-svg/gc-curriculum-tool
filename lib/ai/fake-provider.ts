@@ -1,4 +1,4 @@
-import type { AIProvider } from './provider';
+import type { AIProvider, CompletionTelemetry } from './provider';
 
 type FakeResponse = unknown;
 
@@ -18,13 +18,13 @@ export class FakeProvider implements AIProvider {
     schemaName: string;
     jsonSchema: object;
     validate: (raw: unknown) => T;
-  }): Promise<{ data: T; costUsdCents: number; durationMs: number }> {
+  }): Promise<{ data: T } & CompletionTelemetry> {
     const idx = this.callCount++;
     if (idx >= this.responses.length) {
       throw new Error(`FakeProvider exhausted at call ${idx}`);
     }
     const data = args.validate(this.responses[idx]);
-    return { data, costUsdCents: 5, durationMs: 10 };
+    return { data, costUsdCents: 5, durationMs: 10, cachedTokens: 0, uncachedPromptTokens: 0, completionTokens: 0 };
   }
 
   reset() {

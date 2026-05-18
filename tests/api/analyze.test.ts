@@ -66,6 +66,9 @@ describe('POST /api/analyze', () => {
     expect(body.upstreamChain[0].kud.description).toBe('Upstream course');
     expect(body.downstream.prerequisiteGaps[0].status).toBe('met');
     expect(body.meta.aiProvider).toBe('fake');
+    expect(body.meta.cachedTokens).toBe(0);
+    expect(typeof body.meta.uncachedTokens).toBe('number');
+    expect(typeof body.meta.completionTokens).toBe('number');
     expect(queriesModule.insertRun).toHaveBeenCalledOnce();
   });
 
@@ -114,6 +117,9 @@ describe('POST /api/analyze', () => {
     expect(body.upstreamChain[1].kud.description).toBe('Second upstream course');
     expect(body.downstream.prerequisiteGaps[0].status).toBe('met');
     expect(body.meta.aiProvider).toBe('fake');
+    expect(body.meta.cachedTokens).toBe(0);
+    expect(typeof body.meta.uncachedTokens).toBe('number');
+    expect(typeof body.meta.completionTokens).toBe('number');
     expect(queriesModule.insertRun).toHaveBeenCalledOnce();
   });
 

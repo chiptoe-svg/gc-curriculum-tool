@@ -109,7 +109,10 @@ export function PrototypeClient() {
           />
           <footer className="text-xs text-muted-foreground pt-6 border-t">
             Analysis run with {result.meta.aiProvider} ({result.meta.aiModel}) in {(result.meta.durationMs / 1000).toFixed(1)}s. Cost ≈ ${(result.meta.costUsdCents / 10000).toFixed(2)}.{' '}
-            {result.upstreamChain.length} upstream course{result.upstreamChain.length !== 1 ? 's' : ''} in chain.
+            {result.upstreamChain.length} upstream course{result.upstreamChain.length !== 1 ? 's' : ''} in chain.{' '}
+            {(result.meta.cachedTokens + result.meta.uncachedTokens) > 0 && (
+              <>Cache hit: {((result.meta.cachedTokens / (result.meta.cachedTokens + result.meta.uncachedTokens)) * 100).toFixed(0)}%.</>
+            )}
           </footer>
         </section>
       )}

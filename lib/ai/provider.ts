@@ -1,3 +1,11 @@
+export interface CompletionTelemetry {
+  costUsdCents: number;
+  durationMs: number;
+  cachedTokens: number;
+  uncachedPromptTokens: number;
+  completionTokens: number;
+}
+
 export interface AIProvider {
   readonly name: string;
   readonly model: string;
@@ -14,11 +22,7 @@ export interface AIProvider {
     schemaName: string;            // for OpenAI structured outputs naming
     jsonSchema: object;
     validate: (raw: unknown) => T; // typically the Zod schema's parse
-  }): Promise<{
-    data: T;
-    costUsdCents: number;
-    durationMs: number;
-  }>;
+  }): Promise<{ data: T } & CompletionTelemetry>;
 }
 
 import { OpenAIProvider } from './openai';

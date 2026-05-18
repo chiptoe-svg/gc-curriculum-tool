@@ -104,70 +104,99 @@ export async function POST(req: Request): Promise<Response> {
   const gapPrompt = await loadPrompt('analyze-prerequisite-gaps');
 
   let totalCost = 0;
+  let totalCached = 0;
+  let totalUncached = 0;
+  let totalCompletion = 0;
   const started = Date.now();
 
-  // Helper to score coverage for a single course
-  const scoreFor = async (courseLabel: string, kud: KUDOutcomes): Promise<CoverageScore[]> => {
-    const userMsg = `Career target:\n${targetContext}\n\nCourse: ${courseLabel}\n\nCourse description: ${kud.description}\n\nKnow outcomes:\n${kud.know.map(b => `- ${b}`).join('\n')}\n\nUnderstand outcomes:\n${kud.understand.map(b => `- ${b}`).join('\n')}\n\nDo outcomes:\n${kud.do.map(b => `- ${b}`).join('\n')}`;
-    const call = await provider.complete({
-      systemPrompt: scorePrompt,
-      userMessage: userMsg,
-      schemaName: 'coverage_scores',
-      jsonSchema: coverageScoresJsonSchema,
-      validate: (raw) => coverageScoresSchema.parse((raw as { scores: unknown }).scores),
-    });
+  // Accumulate telemetry from a completed call result
+  function accum(call: { costUsdCents: number; cachedTokens: number; uncachedPromptTokens: number; completionTokens: number }) {
     totalCost += call.costUsdCents;
-    return call.data;
-  };
+    totalCached += call.cachedTokens;
+    totalUncached += call.uncachedPromptTokens;
+    totalCompletion += call.completionTokens;
+  }
 
-  // Calls 1..N: Draft KUD for each upstream course in the chain
-  const upstreamKuds: KUDOutcomes[] = [];
-  for (const course of upstreamChain) {
-    const call = await provider.complete({
+  // ── Round 1 (parallel): N upstream KUD drafts + 1 downstream KUD draft ──────
+  // All share the same system prompt (draftPrompt) and the same career-target
+  // context prefix in the user message, enabling prefix-cache hits on calls 2+.
+  const round1 = await Promise.all([
+    ...upstreamChain.map(course =>
+      provider.complete({
+        systemPrompt: draftPrompt,
+        userMessage: `Career target context:\n${targetContext}\n\nSyllabus text:\n${course.syllabusText}`,
+        schemaName: 'kud_outcomes',
+        jsonSchema: kudOutcomesJsonSchema,
+        validate: (raw) => kudOutcomesSchema.parse(raw),
+      })
+    ),
+    provider.complete({
       systemPrompt: draftPrompt,
-      userMessage: `Career target context:\n${targetContext}\n\nSyllabus text:\n${course.syllabusText}`,
+      userMessage: `Career target context:\n${targetContext}\n\nSyllabus text:\n${downstream.syllabusText}`,
       schemaName: 'kud_outcomes',
       jsonSchema: kudOutcomesJsonSchema,
       validate: (raw) => kudOutcomesSchema.parse(raw),
-    });
-    totalCost += call.costUsdCents;
-    upstreamKuds.push(call.data);
-  }
+    }),
+  ]);
 
-  // Call N+1: Draft downstream KUD
-  const downstreamKudCall = await provider.complete({
-    systemPrompt: draftPrompt,
-    userMessage: `Career target context:\n${targetContext}\n\nSyllabus text:\n${downstream.syllabusText}`,
-    schemaName: 'kud_outcomes',
-    jsonSchema: kudOutcomesJsonSchema,
-    validate: (raw) => kudOutcomesSchema.parse(raw),
-  });
-  totalCost += downstreamKudCall.costUsdCents;
+  // N upstream KUD results, then the downstream KUD result
+  const upstreamKudCalls = round1.slice(0, upstreamChain.length);
+  const downstreamKudCall = round1[upstreamChain.length]!;
+  const upstreamKuds: KUDOutcomes[] = upstreamKudCalls.map(c => { accum(c); return c.data; });
+  accum(downstreamKudCall);
   const downstreamKud: KUDOutcomes = downstreamKudCall.data;
 
-  // Calls N+2..2N+1: Score coverage for each upstream course
-  const upstreamCoverages: CoverageScore[][] = [];
-  for (let i = 0; i < upstreamChain.length; i++) {
-    const coverage = await scoreFor(upstreamChain[i]!.courseLabel, upstreamKuds[i]!);
-    upstreamCoverages.push(coverage);
-  }
+  // ── Round 2 (parallel): N upstream coverage + 1 downstream coverage + 1 prereq suggestion ──
+  // Coverage calls all share scorePrompt and the career-target prefix.
+  // The prereq-suggestion call only depends on downstreamKud (from round 1),
+  // so it runs in parallel with the coverage calls rather than waiting for them.
+  const scoreUserMsg = (courseLabel: string, kud: KUDOutcomes) =>
+    `Career target:\n${targetContext}\n\nCourse: ${courseLabel}\n\nCourse description: ${kud.description}\n\nKnow outcomes:\n${kud.know.map(b => `- ${b}`).join('\n')}\n\nUnderstand outcomes:\n${kud.understand.map(b => `- ${b}`).join('\n')}\n\nDo outcomes:\n${kud.do.map(b => `- ${b}`).join('\n')}`;
 
-  // Call 2N+2: Score coverage for downstream
-  const downstreamCoverage = await scoreFor(downstream.courseLabel, downstreamKud);
-
-  // Call 2N+3: Suggest prerequisites for downstream
   const prereqMsg = `Career target:\n${targetContext}\n\nDownstream course outcomes:\nDescription: ${downstreamKud.description}\nKnow: ${downstreamKud.know.join('; ')}\nUnderstand: ${downstreamKud.understand.join('; ')}\nDo: ${downstreamKud.do.join('; ')}`;
-  const prereqCall = await provider.complete({
-    systemPrompt: prereqPrompt,
-    userMessage: prereqMsg,
-    schemaName: 'prerequisite_claims',
-    jsonSchema: prerequisiteClaimsJsonSchema,
-    validate: (raw) => prerequisiteClaimsSchema.parse((raw as { claims: unknown }).claims),
-  });
-  totalCost += prereqCall.costUsdCents;
+
+  // Fire all coverage calls and the prereq-suggestion call simultaneously.
+  // TypeScript can't infer mixed-tuple types from a spread + fixed item in one
+  // Promise.all, so we run them as two typed Promise.all calls that themselves
+  // run concurrently via a wrapping Promise.all.
+  const [coverageCalls, prereqCall] = await Promise.all([
+    Promise.all([
+      ...upstreamChain.map((course, i) =>
+        provider.complete({
+          systemPrompt: scorePrompt,
+          userMessage: scoreUserMsg(course.courseLabel, upstreamKuds[i]!),
+          schemaName: 'coverage_scores',
+          jsonSchema: coverageScoresJsonSchema,
+          validate: (raw) => coverageScoresSchema.parse((raw as { scores: unknown }).scores),
+        })
+      ),
+      provider.complete({
+        systemPrompt: scorePrompt,
+        userMessage: scoreUserMsg(downstream.courseLabel, downstreamKud),
+        schemaName: 'coverage_scores',
+        jsonSchema: coverageScoresJsonSchema,
+        validate: (raw) => coverageScoresSchema.parse((raw as { scores: unknown }).scores),
+      }),
+    ]),
+    provider.complete({
+      systemPrompt: prereqPrompt,
+      userMessage: prereqMsg,
+      schemaName: 'prerequisite_claims',
+      jsonSchema: prerequisiteClaimsJsonSchema,
+      validate: (raw) => prerequisiteClaimsSchema.parse((raw as { claims: unknown }).claims),
+    }),
+  ] as const);
+
+  // N upstream coverage results + 1 downstream coverage result
+  const upstreamCoverageCalls = coverageCalls.slice(0, upstreamChain.length);
+  const downstreamCoverageCall = coverageCalls[upstreamChain.length]!;
+  const upstreamCoverages: CoverageScore[][] = upstreamCoverageCalls.map(c => { accum(c); return c.data; });
+  accum(downstreamCoverageCall);
+  const downstreamCoverage: CoverageScore[] = downstreamCoverageCall.data;
+  accum(prereqCall);
   const prereqs: PrerequisiteCompetencyClaim[] = prereqCall.data;
 
-  // Call 2N+4: Analyze gaps with combined upstream chain context
+  // ── Round 3: Gap analysis (depends on all of round 2) ───────────────────────
   const chainCoverageText = upstreamChain.map((course, i) => {
     const coverageLines = (upstreamCoverages[i] ?? []).map(
       c => `  - ${c.subCompetencyId}: ${c.kudLevel} (confidence ${c.confidence}) — ${c.reasoning}`
@@ -183,7 +212,7 @@ export async function POST(req: Request): Promise<Response> {
     jsonSchema: prerequisiteGapsJsonSchema,
     validate: (raw) => prerequisiteGapsSchema.parse((raw as { gaps: unknown }).gaps),
   });
-  totalCost += gapCall.costUsdCents;
+  accum(gapCall);
   const gaps: PrerequisiteGap[] = gapCall.data;
 
   // Assemble the upstream chain result
@@ -208,6 +237,9 @@ export async function POST(req: Request): Promise<Response> {
       aiModel: provider.model,
       durationMs: Date.now() - started,
       costUsdCents: totalCost,
+      cachedTokens: totalCached,
+      uncachedTokens: totalUncached,
+      completionTokens: totalCompletion,
     },
   };
 

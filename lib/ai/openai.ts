@@ -1,11 +1,8 @@
 import OpenAI from 'openai';
-import type { AIProvider } from './provider';
+import type { AIProvider, CompletionTelemetry } from './provider';
 
 // Per-model pricing in USD per 1M tokens. Update from
 // https://developers.openai.com/api/docs/pricing when adding models.
-// Cached input (prefix caching) is billed at 10% of input price by OpenAI,
-// but we don't track cache hits separately yet — the estimate below is the
-// upper bound (no cache).
 const MODEL_PRICING: Record<string, { input: number; output: number }> = {
   'gpt-5.5': { input: 5.0, output: 30.0 },
   'gpt-5.4': { input: 2.5, output: 15.0 },
@@ -38,7 +35,7 @@ export class OpenAIProvider implements AIProvider {
     schemaName: string;
     jsonSchema: object;
     validate: (raw: unknown) => T;
-  }): Promise<{ data: T; costUsdCents: number; durationMs: number }> {
+  }): Promise<{ data: T } & CompletionTelemetry> {
     const started = Date.now();
     const response = await this.client.chat.completions.create({
       model: this.model,
@@ -69,11 +66,19 @@ export class OpenAIProvider implements AIProvider {
 
     const promptTokens = response.usage?.prompt_tokens ?? 0;
     const completionTokens = response.usage?.completion_tokens ?? 0;
+    // OpenAI reports prefix-cache hits in prompt_tokens_details.cached_tokens.
+    // The SDK types may not always include this field depending on SDK version,
+    // so we use a narrow cast to access it safely.
+    const cachedTokens =
+      (response.usage as { prompt_tokens_details?: { cached_tokens?: number } } | undefined)
+        ?.prompt_tokens_details?.cached_tokens ?? 0;
+    const uncachedPromptTokens = Math.max(0, promptTokens - cachedTokens);
     const pricing = MODEL_PRICING[this.model] ?? FALLBACK_PRICING;
     const costUsdCents =
-      toCents((promptTokens / 1_000_000) * pricing.input) +
+      toCents((uncachedPromptTokens / 1_000_000) * pricing.input) +
+      toCents((cachedTokens / 1_000_000) * pricing.input * 0.1) +
       toCents((completionTokens / 1_000_000) * pricing.output);
 
-    return { data, costUsdCents, durationMs };
+    return { data, costUsdCents, durationMs, cachedTokens, uncachedPromptTokens, completionTokens };
   }
 }

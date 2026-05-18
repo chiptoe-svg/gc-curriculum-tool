@@ -75,5 +75,8 @@ export interface AnalysisResult {
     aiModel: string;
     durationMs: number;
     costUsdCents: number;
+    cachedTokens: number;
+    uncachedTokens: number;
+    completionTokens: number;
   };
 }
