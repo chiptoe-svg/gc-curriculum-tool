@@ -7,6 +7,14 @@ import * as queriesModule from '@/lib/db/queries';
 vi.mock('@/lib/db/queries', () => ({
   insertRun: vi.fn().mockResolvedValue({ id: 'fake-run-id' }),
 }));
+vi.mock('@/lib/rate-limit/ip-rate-limit', () => ({
+  checkIpRateLimit: vi.fn().mockResolvedValue({ allowed: true, remaining: 9 }),
+  MAX_PER_HOUR: 10,
+}));
+vi.mock('@/lib/rate-limit/daily-cap', () => ({
+  checkDailyCap: vi.fn().mockResolvedValue({ ok: true, spentCents: 0 }),
+  recordSpend: vi.fn().mockResolvedValue(undefined),
+}));
 
 function makeRequest(body: unknown): Request {
   return new Request('http://localhost:3000/api/analyze', {

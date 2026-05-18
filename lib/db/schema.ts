@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, jsonb, timestamp, integer, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, jsonb, timestamp, integer, boolean, primaryKey } from 'drizzle-orm/pg-core';
 
 export const prototypeRuns = pgTable('prototype_runs', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -25,3 +25,17 @@ export const prototypeFlags = pgTable('prototype_flags', {
   note: text('note').notNull(),
   resolved: boolean('resolved').default(false).notNull(),
 });
+
+export const dailyCost = pgTable('daily_cost', {
+  day: text('day').primaryKey(),               // 'YYYY-MM-DD' UTC
+  totalCostUsdCents: integer('total_cost_usd_cents').notNull().default(0),
+  lastAlertSent: timestamp('last_alert_sent', { withTimezone: true }),
+});
+
+export const ipHourly = pgTable('ip_hourly', {
+  ipHash: text('ip_hash').notNull(),
+  hourKey: text('hour_key').notNull(),         // 'YYYY-MM-DDTHH' UTC
+  count: integer('count').notNull().default(0),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.ipHash, t.hourKey] }),
+}));

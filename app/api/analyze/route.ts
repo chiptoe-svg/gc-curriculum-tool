@@ -5,6 +5,8 @@ import { getProvider } from '@/lib/ai/provider';
 import { loadPrompt } from '@/lib/ai/prompts/load';
 import { getTargetById } from '@/lib/domain/seed-targets';
 import { insertRun } from '@/lib/db/queries';
+import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
+import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
 import {
   kudOutcomesSchema, kudOutcomesJsonSchema,
   coverageScoresSchema, coverageScoresJsonSchema,
@@ -64,6 +66,17 @@ export async function POST(req: Request): Promise<Response> {
   const target = getTargetById(careerTargetId);
   if (!target) {
     return NextResponse.json({ error: `unknown careerTargetId: ${careerTargetId}` }, { status: 400 });
+  }
+
+  // Rate limit + cost cap
+  const ipHash = hashIp(req);
+  const rl = await checkIpRateLimit(ipHash);
+  if (!rl.allowed) {
+    return NextResponse.json({ error: 'rate limit exceeded — try again in an hour' }, { status: 429 });
+  }
+  const cap = await checkDailyCap();
+  if (!cap.ok) {
+    return NextResponse.json({ error: 'daily cost cap reached — service paused for today' }, { status: 503 });
   }
 
   const provider = getProvider();
@@ -154,7 +167,7 @@ export async function POST(req: Request): Promise<Response> {
 
   // Persist run
   const { id: runId } = await insertRun({
-    ipHash: hashIp(req),
+    ipHash,
     careerTargetId,
     upstreamCourseLabel: upstream.courseLabel ?? null,
     downstreamCourseLabel: downstream.courseLabel ?? null,
@@ -166,6 +179,8 @@ export async function POST(req: Request): Promise<Response> {
     costUsdCents: totalCost,
     durationMs: result.meta.durationMs,
   });
+
+  await recordSpend(totalCost);
 
   return NextResponse.json({ ...result, runId });
 }
