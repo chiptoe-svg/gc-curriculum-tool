@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { CoverageHeatMap } from '@/components/CoverageHeatMap';
-import type { CareerTarget, CoverageScore } from '@/lib/domain/types';
+import type { CareerTarget, CoverageScore, ScaffoldingScore } from '@/lib/domain/types';
 
 const target: CareerTarget = {
   id: 'production-operations',
@@ -34,6 +34,11 @@ const courseScores: CoverageScore[] = [
   { subCompetencyId: 'quality-control', kudLevel: 'do', confidence: 'high', reasoning: 'Course quality reasoning here.' },
 ];
 
+const scaffolding: ScaffoldingScore[] = [
+  { subCompetencyId: 'workflow-design', quality: 'strong', reasoning: 'Progression visible across the courses provided.' },
+  { subCompetencyId: 'quality-control', quality: 'adequate', reasoning: 'Coverage exists but progression is shallow.' },
+];
+
 describe('CoverageHeatMap', () => {
   it('renders one column per sub-competency and one row per course', () => {
     render(
@@ -44,6 +49,7 @@ describe('CoverageHeatMap', () => {
         priorCoursework={[
           { courseLabel: 'GC 3460', coverage: prior2Scores },
         ]}
+        scaffolding={scaffolding}
         onFlag={vi.fn()}
       />
     );
@@ -63,6 +69,7 @@ describe('CoverageHeatMap', () => {
           { courseLabel: 'GC 1040', coverage: prior1Scores },
           { courseLabel: 'GC 3460', coverage: prior2Scores },
         ]}
+        scaffolding={scaffolding}
         onFlag={vi.fn()}
       />
     );
@@ -86,6 +93,7 @@ describe('CoverageHeatMap', () => {
           { courseLabel: 'GC 1040', coverage: prior1Scores },
           { courseLabel: 'GC 3460', coverage: prior2Scores },
         ]}
+        scaffolding={scaffolding}
         onFlag={vi.fn()}
       />
     );
@@ -103,11 +111,15 @@ describe('CoverageHeatMap', () => {
         priorCoursework={[
           { courseLabel: 'GC 3460', coverage: prior2Scores },
         ]}
+        scaffolding={scaffolding}
         onFlag={vi.fn()}
       />
     );
-    fireEvent.click(screen.getAllByRole('button', { name: /^why\?$/i })[0]!);
-    // The first button in DOM order is in the course row (GC 4060)
+    // Skip header "Why?" buttons (one per sub-competency column) and click the
+    // first cell-level "Why?" button, which lives in the course row.
+    const whyButtons = screen.getAllByRole('button', { name: /^why\?$/i });
+    const cellWhyButton = whyButtons[target.subCompetencies.length]!;
+    fireEvent.click(cellWhyButton);
     expect(screen.getByText(/Course workflow reasoning/i)).toBeInTheDocument();
   });
 });

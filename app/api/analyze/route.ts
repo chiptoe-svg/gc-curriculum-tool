@@ -12,8 +12,17 @@ import {
   coverageScoresSchema, coverageScoresJsonSchema,
   prerequisiteClaimsSchema, prerequisiteClaimsJsonSchema,
   prerequisiteGapsSchema, prerequisiteGapsJsonSchema,
+  scaffoldingScoresSchema, scaffoldingScoresJsonSchema,
 } from '@/lib/ai/schemas';
-import type { AnalysisResult, CareerTarget, KUDOutcomes, CoverageScore, PrerequisiteCompetencyClaim, PrerequisiteGap, PriorCourseAnalysis } from '@/lib/domain/types';
+import type { AnalysisResult, CareerTarget, KUDOutcomes, CoverageScore, PrerequisiteCompetencyClaim, PrerequisiteGap, PriorCourseAnalysis, ScaffoldingScore } from '@/lib/domain/types';
+
+// Course codes encode level: GC 1xxx = level 1 (freshman), GC 4xxx = level 4
+// (senior). Used by the scaffolding evaluation prompt to reason about
+// curriculum progression. Codes like "GC 4900ap" still match.
+function parseLevelFromLabel(label: string): number {
+  const m = label.match(/GC\s+(\d)/i);
+  return m ? parseInt(m[1]!, 10) : 0;
+}
 
 // Vercel Hobby plan caps function duration at 60s by default; with 2N+4
 // sequential AI calls (N prior courses), analyses with N=4 run ~60-90s.
@@ -102,6 +111,7 @@ export async function POST(req: Request): Promise<Response> {
   const scorePrompt = await loadPrompt('score-coverage');
   const prereqPrompt = await loadPrompt('suggest-prerequisites');
   const gapPrompt = await loadPrompt('analyze-prerequisite-gaps');
+  const scaffoldingPrompt = await loadPrompt('evaluate-scaffolding');
 
   let totalCost = 0;
   let totalCached = 0;
@@ -196,7 +206,9 @@ export async function POST(req: Request): Promise<Response> {
   accum(prereqCall);
   const prereqs: PrerequisiteCompetencyClaim[] = prereqCall.data;
 
-  // ── Round 3: Gap analysis (depends on all of round 2) ───────────────────────
+  // ── Round 3 (parallel): Gap analysis + Scaffolding evaluation ──────────────
+  // Both depend on round 2 outputs. They're independent of each other so they
+  // fire in parallel and prefix-cache the shared career-target frame.
   const priorCoverageText = priorCoursework.map((c, i) => {
     const coverageLines = (priorCoverages[i] ?? []).map(
       s => `  - ${s.subCompetencyId}: ${s.kudLevel} (confidence ${s.confidence}) — ${s.reasoning}`
@@ -205,15 +217,45 @@ export async function POST(req: Request): Promise<Response> {
   }).join('\n\n');
 
   const gapMsg = `Career target:\n${targetContext}\n\nPrerequisite competencies for the course being analyzed:\n${prereqs.map(p => `- ${p.subCompetencyId} (expects ${p.expectedKudLevel}): ${p.rationale}`).join('\n')}\n\nPrior coursework (any order):\n\n${priorCoverageText}`;
-  const gapCall = await provider.complete({
-    systemPrompt: gapPrompt,
-    userMessage: gapMsg,
-    schemaName: 'prerequisite_gaps',
-    jsonSchema: prerequisiteGapsJsonSchema,
-    validate: (raw) => prerequisiteGapsSchema.parse((raw as { gaps: unknown }).gaps),
-  });
+
+  // Scaffolding evaluation sees every course in the set (course-being-analyzed
+  // PLUS priors) with explicit level so it can judge progression.
+  const allCoursesForScaffolding = [
+    { label: course.courseLabel, level: parseLevelFromLabel(course.courseLabel), coverage: courseCoverage, isAnalyzed: true },
+    ...priorCoursework.map((c, i) => ({
+      label: c.courseLabel,
+      level: parseLevelFromLabel(c.courseLabel),
+      coverage: priorCoverages[i] ?? [],
+      isAnalyzed: false,
+    })),
+  ];
+  const scaffoldingCoursesText = allCoursesForScaffolding.map(c => {
+    const lines = c.coverage.map(s => `  - ${s.subCompetencyId}: ${s.kudLevel} (confidence ${s.confidence})`).join('\n');
+    const marker = c.isAnalyzed ? ' (course being analyzed)' : '';
+    return `[${c.label} — level ${c.level}${marker}]\n${lines}`;
+  }).join('\n\n');
+  const scaffoldingMsg = `Career target:\n${targetContext}\n\nCourses in this analysis with their coverage of each sub-competency:\n\n${scaffoldingCoursesText}`;
+
+  const [gapCall, scaffoldingCall] = await Promise.all([
+    provider.complete({
+      systemPrompt: gapPrompt,
+      userMessage: gapMsg,
+      schemaName: 'prerequisite_gaps',
+      jsonSchema: prerequisiteGapsJsonSchema,
+      validate: (raw) => prerequisiteGapsSchema.parse((raw as { gaps: unknown }).gaps),
+    }),
+    provider.complete({
+      systemPrompt: scaffoldingPrompt,
+      userMessage: scaffoldingMsg,
+      schemaName: 'scaffolding_scores',
+      jsonSchema: scaffoldingScoresJsonSchema,
+      validate: (raw) => scaffoldingScoresSchema.parse((raw as { scaffolding: unknown }).scaffolding),
+    }),
+  ]);
   accum(gapCall);
+  accum(scaffoldingCall);
   const gaps: PrerequisiteGap[] = gapCall.data;
+  const scaffolding: ScaffoldingScore[] = scaffoldingCall.data;
 
   // Assemble the prior coursework result
   const priorCourseworkResult: PriorCourseAnalysis[] = priorCoursework.map((c, i) => ({
@@ -232,6 +274,7 @@ export async function POST(req: Request): Promise<Response> {
       prerequisiteGaps: gaps,
     },
     careerTargetId,
+    scaffolding,
     meta: {
       aiProvider: provider.name,
       aiModel: provider.model,

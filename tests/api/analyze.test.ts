@@ -51,8 +51,11 @@ describe('POST /api/analyze', () => {
     const gaps = { gaps: [
       { subCompetencyId: 'workflow-design', expectedKudLevel: 'understand', status: 'met', priorCourseworkEvidence: 'GC 3460 achieves Do level.', reasoning: 'Prior coursework exceeds the expected level so the prerequisite is met.' },
     ]};
+    const scaffolding = { scaffolding: [
+      { subCompetencyId: 'workflow-design', quality: 'strong', reasoning: 'Workflow scaffolds from prior coursework Do-level through this course.' },
+    ]};
 
-    // With N=1 prior: 1 prior KUD + 1 course KUD + 1 prior coverage + 1 course coverage + 1 prereq + 1 gap = 6 calls
+    // With N=1 prior: 1 prior KUD + 1 course KUD + 1 prior coverage + 1 course coverage + 1 prereq + 1 gap + 1 scaffolding = 7 calls
     const fake = new FakeProvider([
       priorKud,             // call 1: draft outcomes for priorCoursework[0]
       courseKud,            // call 2: draft outcomes for course
@@ -60,6 +63,7 @@ describe('POST /api/analyze', () => {
       coverage,             // call 4: score course coverage
       prereqClaims,         // call 5: suggest prereqs for course
       gaps,                 // call 6: analyze gaps
+      scaffolding,          // call 7: evaluate scaffolding (parallel with gaps)
     ]);
     vi.spyOn(providerModule, 'getProvider').mockReturnValue(fake);
 
@@ -96,8 +100,11 @@ describe('POST /api/analyze', () => {
     const gaps = { gaps: [
       { subCompetencyId: 'workflow-design', expectedKudLevel: 'understand', status: 'met', priorCourseworkEvidence: 'GC 1040 develops Know level; GC 3460 develops Do level.', reasoning: 'Prior coursework exceeds the expected level.' },
     ]};
+    const scaffolding = { scaffolding: [
+      { subCompetencyId: 'workflow-design', quality: 'strong', reasoning: 'Workflow scaffolds: GC 1040 Know, GC 3460 Do, course peaks at Do — clean progression.' },
+    ]};
 
-    // With N=2 prior: 2 prior KUD + 1 course KUD + 2 prior coverage + 1 course coverage + 1 prereq + 1 gap = 8 calls
+    // With N=2 prior: 2 prior KUD + 1 course KUD + 2 prior coverage + 1 course coverage + 1 prereq + 1 gap + 1 scaffolding = 9 calls
     const fake = new FakeProvider([
       prior1Kud,            // call 1: draft outcomes for priorCoursework[0]
       prior2Kud,            // call 2: draft outcomes for priorCoursework[1]
@@ -107,6 +114,7 @@ describe('POST /api/analyze', () => {
       coverage,             // call 6: score course coverage
       prereqClaims,         // call 7: suggest prereqs for course
       gaps,                 // call 8: analyze gaps
+      scaffolding,          // call 9: evaluate scaffolding (parallel with gaps)
     ]);
     vi.spyOn(providerModule, 'getProvider').mockReturnValue(fake);
 

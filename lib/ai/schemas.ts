@@ -33,6 +33,13 @@ export const prerequisiteGapSchema = z.object({
 });
 export const prerequisiteGapsSchema = z.array(prerequisiteGapSchema);
 
+export const scaffoldingScoreSchema = z.object({
+  subCompetencyId: z.string().min(1),
+  quality: z.enum(['strong', 'adequate', 'brittle', 'weak', 'absent']),
+  reasoning: reasoningField,
+});
+export const scaffoldingScoresSchema = z.array(scaffoldingScoreSchema);
+
 // JSON Schema (Draft 2020-12) versions for OpenAI's response_format
 // These are derived from the Zod schemas above. Each is wrapped in the
 // "single root object" shape that OpenAI structured-outputs requires
@@ -108,6 +115,27 @@ export const prerequisiteGapsJsonSchema = {
           expectedKudLevel: { type: 'string', enum: ['know', 'understand', 'do'] },
           status: { type: 'string', enum: ['met', 'underdeveloped', 'missing'] },
           priorCourseworkEvidence: { type: 'string', minLength: 10 },
+          reasoning: { type: 'string', minLength: 20 },
+        },
+      },
+    },
+  },
+} as const;
+
+export const scaffoldingScoresJsonSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['scaffolding'],
+  properties: {
+    scaffolding: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['subCompetencyId', 'quality', 'reasoning'],
+        properties: {
+          subCompetencyId: { type: 'string' },
+          quality: { type: 'string', enum: ['strong', 'adequate', 'brittle', 'weak', 'absent'] },
           reasoning: { type: 'string', minLength: 20 },
         },
       },

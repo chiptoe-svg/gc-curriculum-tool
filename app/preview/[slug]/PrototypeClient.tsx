@@ -125,6 +125,7 @@ export function PrototypeClient({ slug }: { slug: string }) {
             courseLabel={result.course.courseLabel}
             courseScores={result.course.coverage}
             priorCoursework={result.priorCoursework.map(c => ({ courseLabel: c.courseLabel, coverage: c.coverage }))}
+            scaffolding={result.scaffolding}
             onFlag={(t, n) => handleFlag(t, n, 'coverage')}
           />
           <PrerequisiteGapPanel

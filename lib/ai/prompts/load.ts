@@ -7,7 +7,8 @@ type PromptName =
   | 'draft-outcomes'
   | 'score-coverage'
   | 'suggest-prerequisites'
-  | 'analyze-prerequisite-gaps';
+  | 'analyze-prerequisite-gaps'
+  | 'evaluate-scaffolding';
 
 interface ParsedPrompt {
   frontmatter: Record<string, unknown>;

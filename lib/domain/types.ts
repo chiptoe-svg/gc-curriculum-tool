@@ -2,6 +2,7 @@
 export type KUDLevel = 'know' | 'understand' | 'do' | 'not_addressed';
 export type Confidence = 'high' | 'medium' | 'low';
 export type GapStatus = 'met' | 'underdeveloped' | 'missing';
+export type ScaffoldingQuality = 'strong' | 'adequate' | 'brittle' | 'weak' | 'absent';
 
 export interface SubCompetency {
   id: string;                  // stable slug like "brand-positioning"
@@ -53,6 +54,12 @@ export interface PrerequisiteGap {
   reasoning: string;
 }
 
+export interface ScaffoldingScore {
+  subCompetencyId: string;
+  quality: ScaffoldingQuality;
+  reasoning: string;
+}
+
 // The full result returned from /api/analyze
 export interface PriorCourseAnalysis {
   courseLabel: string;
@@ -70,6 +77,7 @@ export interface AnalysisResult {
     prerequisiteGaps: PrerequisiteGap[];
   };
   careerTargetId: string;
+  scaffolding: ScaffoldingScore[];   // one entry per sub-competency in the target — judges how the set of courses scaffolds up
   meta: {
     aiProvider: string;
     aiModel: string;
