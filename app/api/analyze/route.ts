@@ -15,20 +15,36 @@ import {
 } from '@/lib/ai/schemas';
 import type { AnalysisResult, KUDOutcomes, CoverageScore, PrerequisiteCompetencyClaim, PrerequisiteGap } from '@/lib/domain/types';
 
+// Vercel Hobby plan caps function duration at 60s by default; with 6
+// sequential AI calls the analysis frequently runs 30-60s. Without this
+// the function times out before the response is sent.
+export const maxDuration = 60;
+
+// Max syllabus length caps the OpenAI cost-per-request. ~20K chars ≈ 5K tokens
+// per syllabus; with 6 AI calls per request the upper-bound cost stays well
+// under $0.50 even on the worst-case input. Without this cap a 500KB paste
+// would consume the full daily budget in a single request.
+const MAX_SYLLABUS_LEN = 20000;
+
 const requestSchema = z.object({
-  careerTargetId: z.string(),
+  careerTargetId: z.string().min(1).max(100),
   upstream: z.object({
-    courseLabel: z.string().optional(),
-    syllabusText: z.string().min(50),
+    courseLabel: z.string().max(200).optional(),
+    syllabusText: z.string().min(50).max(MAX_SYLLABUS_LEN),
   }),
   downstream: z.object({
-    courseLabel: z.string().optional(),
-    syllabusText: z.string().min(50),
+    courseLabel: z.string().max(200).optional(),
+    syllabusText: z.string().min(50).max(MAX_SYLLABUS_LEN),
   }),
 });
 
 function hashIp(req: Request): string {
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+  // On Vercel (and most reverse proxies), the trusted client IP is the LAST
+  // entry in X-Forwarded-For — the proxy appends it. Taking [0] would let a
+  // client spoof the IP via their own forwarded header and bypass rate limits.
+  const xff = req.headers.get('x-forwarded-for');
+  const parts = xff?.split(',').map(s => s.trim()).filter(Boolean) ?? [];
+  const ip = parts[parts.length - 1] ?? req.headers.get('x-real-ip') ?? 'unknown';
   return createHash('sha256').update(ip).digest('hex');
 }
 
@@ -165,22 +181,30 @@ export async function POST(req: Request): Promise<Response> {
     },
   };
 
-  // Persist run
-  const { id: runId } = await insertRun({
-    ipHash,
-    careerTargetId,
-    upstreamCourseLabel: upstream.courseLabel ?? null,
-    downstreamCourseLabel: downstream.courseLabel ?? null,
-    upstreamSyllabus: upstream.syllabusText,
-    downstreamSyllabus: downstream.syllabusText,
-    result,
-    aiProvider: provider.name,
-    aiModel: provider.model,
-    costUsdCents: totalCost,
-    durationMs: result.meta.durationMs,
-  });
-
-  await recordSpend(totalCost);
+  // Persist run + record spend. If either fails after 30-60s of completed
+  // AI work, we still return the result to the client — losing the run log
+  // is preferable to losing the user's analysis. The cost is slightly
+  // under-recorded on DB failure, which is acceptable for a prototype.
+  let runId: string | null = null;
+  try {
+    const inserted = await insertRun({
+      ipHash,
+      careerTargetId,
+      upstreamCourseLabel: upstream.courseLabel ?? null,
+      downstreamCourseLabel: downstream.courseLabel ?? null,
+      upstreamSyllabus: upstream.syllabusText,
+      downstreamSyllabus: downstream.syllabusText,
+      result,
+      aiProvider: provider.name,
+      aiModel: provider.model,
+      costUsdCents: totalCost,
+      durationMs: result.meta.durationMs,
+    });
+    runId = inserted.id;
+    await recordSpend(totalCost);
+  } catch (err) {
+    console.error('analyze: persistence failed after successful AI calls', err);
+  }
 
   return NextResponse.json({ ...result, runId });
 }
