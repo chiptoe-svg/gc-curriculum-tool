@@ -4,7 +4,7 @@
 
 ## What we're building
 
-A living, AI-backed record of the Clemson GC curriculum that answers two questions faculty actually care about — continuously, transparently, and in language faculty can argue with.
+A living view of where the curriculum is strong, where it's brittle, and where it's drifted — kept current, course by course.
 
 > **Q1.** *How well does the GC curriculum build students toward the careers we claim to prepare them for?*
 
