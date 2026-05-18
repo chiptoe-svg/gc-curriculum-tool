@@ -13,14 +13,12 @@ export function PrototypeClient() {
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [runId, setRunId] = useState<string | null>(null);
-  const [labels, setLabels] = useState<{ up: string; down: string }>({ up: 'Upstream', down: 'Downstream' });
   const [error, setError] = useState<string | null>(null);
 
   async function handleAnalyze(input: AnalyzeInput) {
     setAnalyzing(true);
     setError(null);
     setResult(null);
-    setLabels({ up: input.upstream.courseLabel || 'Upstream', down: input.downstream.courseLabel || 'Downstream' });
     try {
       const resp = await fetch('/api/analyze', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(input) });
       if (!resp.ok) {
@@ -50,7 +48,7 @@ export function PrototypeClient() {
         <p className="text-xs uppercase tracking-widest text-muted-foreground">Clemson GC — Curriculum Tool Prototype</p>
         <h1 className="text-4xl font-semibold leading-tight">A working preview of how the curriculum tool will analyze courses.</h1>
         <p className="text-lg text-muted-foreground leading-relaxed">
-          The full tool will be a living record of the GC curriculum — courses, career targets, and the AI analysis that maps how well one builds toward the other. This prototype lets you test the analysis on any two courses you choose. Paste the syllabus of an earlier course and a later course in the sequence, pick a career target, and the AI will draft course-level Know / Understand / Do outcomes, score coverage against the target&apos;s sub-competencies, and identify whether the later course&apos;s prerequisites are actually met by the earlier one.
+          The full tool will be a living record of the GC curriculum — courses, career targets, and the AI analysis that maps how well one builds toward the other. This prototype lets you test the analysis on a full course chain. Paste the syllabi of the upstream courses in sequence order, add a downstream course, pick a career target, and the AI will draft course-level Know / Understand / Do outcomes, score coverage against the target&apos;s sub-competencies, and identify whether the downstream course&apos;s prerequisites are actually met across the chain.
         </p>
         <p className="text-sm text-muted-foreground">
           Every AI score includes the reasoning behind it — click it open. If the reasoning is wrong, flag it with a note. Flags get used to tune the prompts before the full tool ships.
@@ -60,10 +58,10 @@ export function PrototypeClient() {
       <section>
         <h2 className="text-xl font-medium mb-3">How to use</h2>
         <ol className="list-decimal pl-5 space-y-2 text-sm leading-relaxed">
-          <li>Paste an <strong>upstream</strong> course&apos;s syllabus (or click a sample button to load an example).</li>
-          <li>Paste a <strong>downstream</strong> course&apos;s syllabus.</li>
+          <li>Paste each <strong>upstream</strong> course&apos;s syllabus in sequence order (earliest first). Click &ldquo;Add upstream course&rdquo; to add more rows. Up to {8}.</li>
+          <li>Paste the <strong>downstream</strong> course&apos;s syllabus.</li>
           <li>Pick the career target you want to evaluate alignment against ({CAREER_TARGETS.length} options).</li>
-          <li>Click <strong>Analyze</strong>. The analysis takes 30–60 seconds. Six AI calls run sequentially.</li>
+          <li>Click <strong>Analyze</strong>. The analysis takes 30–90 seconds depending on chain length.</li>
           <li>Review the drafted KUD outcomes, the coverage heat map, and the prerequisite gap analysis. Click any reasoning to read it and flag if wrong.</li>
         </ol>
       </section>
@@ -79,15 +77,28 @@ export function PrototypeClient() {
       {result && target && (
         <section className="space-y-8">
           <Separator />
-          <div className="grid md:grid-cols-2 gap-4">
-            <KUDCard courseLabel={labels.up} kud={result.upstream.kud} />
-            <KUDCard courseLabel={labels.down} kud={result.downstream.kud} />
+
+          {/* KUD cards: upstream chain first, then downstream */}
+          <div className="space-y-4">
+            <h3 className="text-base font-medium text-muted-foreground">Upstream courses — Know / Understand / Do outcomes</h3>
+            <div className="grid md:grid-cols-2 gap-4">
+              {result.upstreamChain.map((course, i) => (
+                <KUDCard key={i} courseLabel={course.courseLabel} kud={course.kud} />
+              ))}
+            </div>
           </div>
+
+          <div className="space-y-4">
+            <h3 className="text-base font-medium">Downstream course — Know / Understand / Do outcomes</h3>
+            <div className="grid md:grid-cols-2 gap-4">
+              <KUDCard courseLabel={result.downstream.courseLabel} kud={result.downstream.kud} />
+            </div>
+          </div>
+
           <CoverageHeatMap
             target={target}
-            upstreamLabel={labels.up}
-            upstreamScores={result.upstream.coverage}
-            downstreamLabel={labels.down}
+            upstreamChain={result.upstreamChain.map(c => ({ courseLabel: c.courseLabel, coverage: c.coverage }))}
+            downstreamLabel={result.downstream.courseLabel}
             downstreamScores={result.downstream.coverage}
             onFlag={(t, n) => handleFlag(t, n, 'coverage')}
           />
@@ -97,7 +108,8 @@ export function PrototypeClient() {
             onFlag={(t, n) => handleFlag(t, n, 'prerequisite_gap')}
           />
           <footer className="text-xs text-muted-foreground pt-6 border-t">
-            Analysis run with {result.meta.aiProvider} ({result.meta.aiModel}) in {(result.meta.durationMs / 1000).toFixed(1)}s. Cost ≈ ${(result.meta.costUsdCents / 10000).toFixed(2)}.
+            Analysis run with {result.meta.aiProvider} ({result.meta.aiModel}) in {(result.meta.durationMs / 1000).toFixed(1)}s. Cost ≈ ${(result.meta.costUsdCents / 10000).toFixed(2)}.{' '}
+            {result.upstreamChain.length} upstream course{result.upstreamChain.length !== 1 ? 's' : ''} in chain.
           </footer>
         </section>
       )}

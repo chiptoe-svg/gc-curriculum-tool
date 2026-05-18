@@ -13,29 +13,29 @@ import {
   prerequisiteClaimsSchema, prerequisiteClaimsJsonSchema,
   prerequisiteGapsSchema, prerequisiteGapsJsonSchema,
 } from '@/lib/ai/schemas';
-import type { AnalysisResult, KUDOutcomes, CoverageScore, PrerequisiteCompetencyClaim, PrerequisiteGap } from '@/lib/domain/types';
+import type { AnalysisResult, KUDOutcomes, CoverageScore, PrerequisiteCompetencyClaim, PrerequisiteGap, UpstreamCourseAnalysis } from '@/lib/domain/types';
 
-// Vercel Hobby plan caps function duration at 60s by default; with 6
-// sequential AI calls the analysis frequently runs 30-60s. Without this
-// the function times out before the response is sent.
-export const maxDuration = 60;
+// Vercel Hobby plan caps function duration at 60s by default; with 2N+4
+// sequential AI calls (N upstream courses), analyses with N=4 run ~60-90s.
+// Without this the function times out before the response is sent.
+export const maxDuration = 120;
 
 // Max syllabus length caps the OpenAI cost-per-request. ~20K chars ≈ 5K tokens
-// per syllabus; with 6 AI calls per request the upper-bound cost stays well
+// per syllabus; with 2N+4 AI calls per request the upper-bound cost stays well
 // under $0.50 even on the worst-case input. Without this cap a 500KB paste
 // would consume the full daily budget in a single request.
 const MAX_SYLLABUS_LEN = 20000;
+const MAX_UPSTREAM_COURSES = 8; // cap chain length to keep cost bounded
+
+const courseInputSchema = z.object({
+  courseLabel: z.string().min(1).max(200),
+  syllabusText: z.string().min(50).max(MAX_SYLLABUS_LEN),
+});
 
 const requestSchema = z.object({
   careerTargetId: z.string().min(1).max(100),
-  upstream: z.object({
-    courseLabel: z.string().max(200).optional(),
-    syllabusText: z.string().min(50).max(MAX_SYLLABUS_LEN),
-  }),
-  downstream: z.object({
-    courseLabel: z.string().max(200).optional(),
-    syllabusText: z.string().min(50).max(MAX_SYLLABUS_LEN),
-  }),
+  upstreamChain: z.array(courseInputSchema).min(1).max(MAX_UPSTREAM_COURSES),
+  downstream: courseInputSchema,
 });
 
 function hashIp(req: Request): string {
@@ -77,7 +77,7 @@ export async function POST(req: Request): Promise<Response> {
   if (!parsed.success) {
     return NextResponse.json({ error: 'invalid request', details: parsed.error.flatten() }, { status: 400 });
   }
-  const { careerTargetId, upstream, downstream } = parsed.data;
+  const { careerTargetId, upstreamChain, downstream } = parsed.data;
 
   const target = getTargetById(careerTargetId);
   if (!target) {
@@ -106,29 +106,7 @@ export async function POST(req: Request): Promise<Response> {
   let totalCost = 0;
   const started = Date.now();
 
-  // Call 1: Draft upstream KUD
-  const upstreamKudCall = await provider.complete({
-    systemPrompt: draftPrompt,
-    userMessage: `Career target context:\n${targetContext}\n\nSyllabus text:\n${upstream.syllabusText}`,
-    schemaName: 'kud_outcomes',
-    jsonSchema: kudOutcomesJsonSchema,
-    validate: (raw) => kudOutcomesSchema.parse(raw),
-  });
-  totalCost += upstreamKudCall.costUsdCents;
-  const upstreamKud: KUDOutcomes = upstreamKudCall.data;
-
-  // Call 2: Draft downstream KUD
-  const downstreamKudCall = await provider.complete({
-    systemPrompt: draftPrompt,
-    userMessage: `Career target context:\n${targetContext}\n\nSyllabus text:\n${downstream.syllabusText}`,
-    schemaName: 'kud_outcomes',
-    jsonSchema: kudOutcomesJsonSchema,
-    validate: (raw) => kudOutcomesSchema.parse(raw),
-  });
-  totalCost += downstreamKudCall.costUsdCents;
-  const downstreamKud: KUDOutcomes = downstreamKudCall.data;
-
-  // Calls 3 & 4: Score coverage for both courses
+  // Helper to score coverage for a single course
   const scoreFor = async (courseLabel: string, kud: KUDOutcomes): Promise<CoverageScore[]> => {
     const userMsg = `Career target:\n${targetContext}\n\nCourse: ${courseLabel}\n\nCourse description: ${kud.description}\n\nKnow outcomes:\n${kud.know.map(b => `- ${b}`).join('\n')}\n\nUnderstand outcomes:\n${kud.understand.map(b => `- ${b}`).join('\n')}\n\nDo outcomes:\n${kud.do.map(b => `- ${b}`).join('\n')}`;
     const call = await provider.complete({
@@ -142,10 +120,42 @@ export async function POST(req: Request): Promise<Response> {
     return call.data;
   };
 
-  const upstreamCoverage = await scoreFor(upstream.courseLabel ?? 'Upstream course', upstreamKud);
-  const downstreamCoverage = await scoreFor(downstream.courseLabel ?? 'Downstream course', downstreamKud);
+  // Calls 1..N: Draft KUD for each upstream course in the chain
+  const upstreamKuds: KUDOutcomes[] = [];
+  for (const course of upstreamChain) {
+    const call = await provider.complete({
+      systemPrompt: draftPrompt,
+      userMessage: `Career target context:\n${targetContext}\n\nSyllabus text:\n${course.syllabusText}`,
+      schemaName: 'kud_outcomes',
+      jsonSchema: kudOutcomesJsonSchema,
+      validate: (raw) => kudOutcomesSchema.parse(raw),
+    });
+    totalCost += call.costUsdCents;
+    upstreamKuds.push(call.data);
+  }
 
-  // Call 5: Suggest prerequisites for downstream
+  // Call N+1: Draft downstream KUD
+  const downstreamKudCall = await provider.complete({
+    systemPrompt: draftPrompt,
+    userMessage: `Career target context:\n${targetContext}\n\nSyllabus text:\n${downstream.syllabusText}`,
+    schemaName: 'kud_outcomes',
+    jsonSchema: kudOutcomesJsonSchema,
+    validate: (raw) => kudOutcomesSchema.parse(raw),
+  });
+  totalCost += downstreamKudCall.costUsdCents;
+  const downstreamKud: KUDOutcomes = downstreamKudCall.data;
+
+  // Calls N+2..2N+1: Score coverage for each upstream course
+  const upstreamCoverages: CoverageScore[][] = [];
+  for (let i = 0; i < upstreamChain.length; i++) {
+    const coverage = await scoreFor(upstreamChain[i]!.courseLabel, upstreamKuds[i]!);
+    upstreamCoverages.push(coverage);
+  }
+
+  // Call 2N+2: Score coverage for downstream
+  const downstreamCoverage = await scoreFor(downstream.courseLabel, downstreamKud);
+
+  // Call 2N+3: Suggest prerequisites for downstream
   const prereqMsg = `Career target:\n${targetContext}\n\nDownstream course outcomes:\nDescription: ${downstreamKud.description}\nKnow: ${downstreamKud.know.join('; ')}\nUnderstand: ${downstreamKud.understand.join('; ')}\nDo: ${downstreamKud.do.join('; ')}`;
   const prereqCall = await provider.complete({
     systemPrompt: prereqPrompt,
@@ -157,8 +167,15 @@ export async function POST(req: Request): Promise<Response> {
   totalCost += prereqCall.costUsdCents;
   const prereqs: PrerequisiteCompetencyClaim[] = prereqCall.data;
 
-  // Call 6: Analyze gaps
-  const gapMsg = `Career target:\n${targetContext}\n\nDownstream prerequisite competencies:\n${prereqs.map(p => `- ${p.subCompetencyId} (expects ${p.expectedKudLevel}): ${p.rationale}`).join('\n')}\n\nUpstream course coverage (KUD level per sub-competency):\n${upstreamCoverage.map(c => `- ${c.subCompetencyId}: ${c.kudLevel} (confidence ${c.confidence}) — ${c.reasoning}`).join('\n')}`;
+  // Call 2N+4: Analyze gaps with combined upstream chain context
+  const chainCoverageText = upstreamChain.map((course, i) => {
+    const coverageLines = (upstreamCoverages[i] ?? []).map(
+      c => `  - ${c.subCompetencyId}: ${c.kudLevel} (confidence ${c.confidence}) — ${c.reasoning}`
+    ).join('\n');
+    return `[Upstream course ${i + 1}: ${course.courseLabel}]\n${coverageLines}`;
+  }).join('\n\n');
+
+  const gapMsg = `Career target:\n${targetContext}\n\nDownstream prerequisite competencies:\n${prereqs.map(p => `- ${p.subCompetencyId} (expects ${p.expectedKudLevel}): ${p.rationale}`).join('\n')}\n\nUpstream chain (in sequence order, earliest first):\n\n${chainCoverageText}`;
   const gapCall = await provider.complete({
     systemPrompt: gapPrompt,
     userMessage: gapMsg,
@@ -169,9 +186,22 @@ export async function POST(req: Request): Promise<Response> {
   totalCost += gapCall.costUsdCents;
   const gaps: PrerequisiteGap[] = gapCall.data;
 
+  // Assemble the upstream chain result
+  const upstreamChainResult: UpstreamCourseAnalysis[] = upstreamChain.map((course, i) => ({
+    courseLabel: course.courseLabel,
+    kud: upstreamKuds[i]!,
+    coverage: upstreamCoverages[i]!,
+  }));
+
   const result: AnalysisResult = {
-    upstream: { kud: upstreamKud, coverage: upstreamCoverage },
-    downstream: { kud: downstreamKud, coverage: downstreamCoverage, prerequisiteCompetencies: prereqs, prerequisiteGaps: gaps },
+    upstreamChain: upstreamChainResult,
+    downstream: {
+      courseLabel: downstream.courseLabel,
+      kud: downstreamKud,
+      coverage: downstreamCoverage,
+      prerequisiteCompetencies: prereqs,
+      prerequisiteGaps: gaps,
+    },
     careerTargetId,
     meta: {
       aiProvider: provider.name,
@@ -181,18 +211,18 @@ export async function POST(req: Request): Promise<Response> {
     },
   };
 
-  // Persist run + record spend. If either fails after 30-60s of completed
-  // AI work, we still return the result to the client — losing the run log
-  // is preferable to losing the user's analysis. The cost is slightly
-  // under-recorded on DB failure, which is acceptable for a prototype.
+  // Persist run + record spend. If either fails after completed AI work, we
+  // still return the result to the client — losing the run log is preferable
+  // to losing the user's analysis. The cost is slightly under-recorded on DB
+  // failure, which is acceptable for a prototype.
   let runId: string | null = null;
   try {
     const inserted = await insertRun({
       ipHash,
       careerTargetId,
-      upstreamCourseLabel: upstream.courseLabel ?? null,
-      downstreamCourseLabel: downstream.courseLabel ?? null,
-      upstreamSyllabus: upstream.syllabusText,
+      upstreamCourseLabel: upstreamChain.map(c => c.courseLabel).join(', '),
+      downstreamCourseLabel: downstream.courseLabel,
+      upstreamSyllabus: upstreamChain.map(c => `[${c.courseLabel}]\n${c.syllabusText}`).join('\n\n---\n\n'),
       downstreamSyllabus: downstream.syllabusText,
       result,
       aiProvider: provider.name,

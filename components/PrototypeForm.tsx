@@ -4,15 +4,23 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SampleSyllabusButton } from './SampleSyllabusButton';
 import { CAREER_TARGETS } from '@/lib/domain/seed-targets';
 
+const MAX_UPSTREAM_COURSES = 8;
+
+export interface CourseInput {
+  courseLabel: string;
+  syllabusText: string;
+}
+
 export interface AnalyzeInput {
   careerTargetId: string;
-  upstream: { courseLabel: string; syllabusText: string };
-  downstream: { courseLabel: string; syllabusText: string };
+  upstreamChain: CourseInput[];
+  downstream: CourseInput;
 }
 
 interface Props {
@@ -20,73 +28,162 @@ interface Props {
   isAnalyzing: boolean;
 }
 
+function isValidCourse(c: CourseInput): boolean {
+  return c.courseLabel.trim().length > 0 && c.syllabusText.length >= 50;
+}
+
 export function PrototypeForm({ onAnalyze, isAnalyzing }: Props) {
   const [careerTargetId, setCareerTargetId] = useState(CAREER_TARGETS[0]?.id ?? '');
-  const [upstreamLabel, setUpstreamLabel] = useState('');
-  const [upstreamText, setUpstreamText] = useState('');
-  const [downstreamLabel, setDownstreamLabel] = useState('');
-  const [downstreamText, setDownstreamText] = useState('');
+  const [upstreamChain, setUpstreamChain] = useState<CourseInput[]>([{ courseLabel: '', syllabusText: '' }]);
+  const [downstream, setDownstream] = useState<CourseInput>({ courseLabel: '', syllabusText: '' });
 
-  const canSubmit = upstreamText.length >= 50 && downstreamText.length >= 50 && !isAnalyzing;
+  const canSubmit =
+    !isAnalyzing &&
+    upstreamChain.length >= 1 &&
+    upstreamChain.every(isValidCourse) &&
+    isValidCourse(downstream);
+
+  function addUpstreamCourse() {
+    if (upstreamChain.length < MAX_UPSTREAM_COURSES) {
+      setUpstreamChain(prev => [...prev, { courseLabel: '', syllabusText: '' }]);
+    }
+  }
+
+  function removeUpstreamCourse(index: number) {
+    if (upstreamChain.length <= 1) return;
+    setUpstreamChain(prev => prev.filter((_, i) => i !== index));
+  }
+
+  function updateUpstreamCourse(index: number, field: keyof CourseInput, value: string) {
+    setUpstreamChain(prev => prev.map((c, i) => i === index ? { ...c, [field]: value } : c));
+  }
 
   function handleSubmit() {
-    onAnalyze({
-      careerTargetId,
-      upstream: { courseLabel: upstreamLabel, syllabusText: upstreamText },
-      downstream: { courseLabel: downstreamLabel, syllabusText: downstreamText },
-    });
+    onAnalyze({ careerTargetId, upstreamChain, downstream });
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Analyze two courses</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="space-y-2">
-          <Label htmlFor="upstream-syllabus">Upstream course syllabus</Label>
-          <SampleSyllabusButton onLoad={(code, text) => { setUpstreamLabel(code); setUpstreamText(text); }} />
-          <Textarea
-            id="upstream-syllabus"
-            aria-label="Upstream course syllabus"
-            placeholder="Paste the syllabus of the earlier course in the sequence..."
-            rows={10}
-            value={upstreamText}
-            onChange={(e) => setUpstreamText(e.target.value)}
-          />
-        </div>
+    <div className="space-y-6">
+      {/* Upstream courses card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Upstream courses <span className="text-sm font-normal text-muted-foreground">(in sequence order, earliest first)</span></CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {upstreamChain.map((course, index) => (
+            <div key={index} className="space-y-3 rounded-lg border p-4">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-sm font-medium text-muted-foreground">Upstream course {index + 1}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  type="button"
+                  onClick={() => removeUpstreamCourse(index)}
+                  disabled={upstreamChain.length <= 1}
+                  aria-label={`Remove upstream course ${index + 1}`}
+                >
+                  Remove
+                </Button>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor={`upstream-label-${index}`}>Course label</Label>
+                <Input
+                  id={`upstream-label-${index}`}
+                  aria-label={`Upstream course ${index + 1} label`}
+                  placeholder="e.g. GC 3460"
+                  value={course.courseLabel}
+                  onChange={(e) => updateUpstreamCourse(index, 'courseLabel', e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor={`upstream-syllabus-${index}`}>Syllabus</Label>
+                <SampleSyllabusButton
+                  onLoad={(code, text) => {
+                    setUpstreamChain(prev => prev.map((c, i) =>
+                      i === index ? { courseLabel: code, syllabusText: text } : c
+                    ));
+                  }}
+                />
+                <Textarea
+                  id={`upstream-syllabus-${index}`}
+                  aria-label={`Upstream course ${index + 1} syllabus`}
+                  placeholder="Paste the syllabus of this upstream course..."
+                  rows={8}
+                  value={course.syllabusText}
+                  onChange={(e) => updateUpstreamCourse(index, 'syllabusText', e.target.value)}
+                />
+              </div>
+            </div>
+          ))}
 
-        <div className="space-y-2">
-          <Label htmlFor="downstream-syllabus">Downstream course syllabus</Label>
-          <SampleSyllabusButton onLoad={(code, text) => { setDownstreamLabel(code); setDownstreamText(text); }} />
-          <Textarea
-            id="downstream-syllabus"
-            aria-label="Downstream course syllabus"
-            placeholder="Paste the syllabus of the later course in the sequence..."
-            rows={10}
-            value={downstreamText}
-            onChange={(e) => setDownstreamText(e.target.value)}
-          />
-        </div>
+          <Button
+            variant="outline"
+            type="button"
+            onClick={addUpstreamCourse}
+            disabled={upstreamChain.length >= MAX_UPSTREAM_COURSES}
+          >
+            {upstreamChain.length >= MAX_UPSTREAM_COURSES
+              ? `Maximum ${MAX_UPSTREAM_COURSES} upstream courses`
+              : 'Add upstream course'}
+          </Button>
+        </CardContent>
+      </Card>
 
-        <div className="space-y-2">
-          <Label htmlFor="career-target">Career target</Label>
-          <Select value={careerTargetId} onValueChange={(v) => { if (v !== null) setCareerTargetId(v); }}>
-            <SelectTrigger id="career-target" aria-label="Career target">
-              <SelectValue placeholder="Choose a target" />
-            </SelectTrigger>
-            <SelectContent>
-              {CAREER_TARGETS.map(t => (
-                <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      {/* Downstream course card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Downstream course</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="downstream-label">Course label</Label>
+            <Input
+              id="downstream-label"
+              aria-label="Downstream course label"
+              placeholder="e.g. GC 4060"
+              value={downstream.courseLabel}
+              onChange={(e) => setDownstream(prev => ({ ...prev, courseLabel: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="downstream-syllabus">Syllabus</Label>
+            <SampleSyllabusButton
+              onLoad={(code, text) => setDownstream({ courseLabel: code, syllabusText: text })}
+            />
+            <Textarea
+              id="downstream-syllabus"
+              aria-label="Downstream course syllabus"
+              placeholder="Paste the syllabus of the later course in the sequence..."
+              rows={8}
+              value={downstream.syllabusText}
+              onChange={(e) => setDownstream(prev => ({ ...prev, syllabusText: e.target.value }))}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
-        <Button size="lg" onClick={handleSubmit} disabled={!canSubmit}>
-          {isAnalyzing ? 'Analyzing…' : 'Analyze'}
-        </Button>
-      </CardContent>
-    </Card>
+      {/* Career target + submit */}
+      <Card>
+        <CardContent className="pt-6 space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="career-target">Career target</Label>
+            <Select value={careerTargetId} onValueChange={(v) => { if (v !== null) setCareerTargetId(v); }}>
+              <SelectTrigger id="career-target" aria-label="Career target">
+                <SelectValue placeholder="Choose a target" />
+              </SelectTrigger>
+              <SelectContent>
+                {CAREER_TARGETS.map(t => (
+                  <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <Button size="lg" onClick={handleSubmit} disabled={!canSubmit}>
+            {isAnalyzing ? 'Analyzing…' : 'Analyze'}
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

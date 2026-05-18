@@ -3,10 +3,11 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { PrototypeForm } from '@/components/PrototypeForm';
 
 describe('PrototypeForm', () => {
-  it('renders the three inputs and the Analyze button', () => {
+  it('renders the upstream syllabus, downstream syllabus, career target and Analyze button', () => {
     render(<PrototypeForm onAnalyze={vi.fn()} isAnalyzing={false} />);
-    expect(screen.getByLabelText(/upstream course/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/downstream course/i)).toBeInTheDocument();
+    // There should be at least one upstream syllabus textarea
+    expect(screen.getByLabelText(/upstream course 1 syllabus/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/downstream course syllabus/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/career target/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /analyze/i })).toBeInTheDocument();
   });
@@ -17,16 +18,30 @@ describe('PrototypeForm', () => {
     expect(btn).toBeDisabled();
   });
 
-  it('calls onAnalyze with the values when submitted', async () => {
+  it('calls onAnalyze with upstreamChain when submitted', async () => {
     const onAnalyze = vi.fn();
     render(<PrototypeForm onAnalyze={onAnalyze} isAnalyzing={false} />);
-    fireEvent.change(screen.getByLabelText(/upstream course syllabus/i), { target: { value: 'A'.repeat(100) } });
+    // Fill in the upstream label and syllabus
+    fireEvent.change(screen.getByLabelText(/upstream course 1 label/i), { target: { value: 'GC 3460' } });
+    fireEvent.change(screen.getByLabelText(/upstream course 1 syllabus/i), { target: { value: 'A'.repeat(100) } });
+    // Fill in the downstream label and syllabus
+    fireEvent.change(screen.getByLabelText(/downstream course label/i), { target: { value: 'GC 4060' } });
     fireEvent.change(screen.getByLabelText(/downstream course syllabus/i), { target: { value: 'B'.repeat(100) } });
     fireEvent.click(screen.getByRole('button', { name: /analyze/i }));
     expect(onAnalyze).toHaveBeenCalledWith({
       careerTargetId: expect.any(String),
-      upstream: { courseLabel: '', syllabusText: 'A'.repeat(100) },
-      downstream: { courseLabel: '', syllabusText: 'B'.repeat(100) },
+      upstreamChain: [{ courseLabel: 'GC 3460', syllabusText: 'A'.repeat(100) }],
+      downstream: { courseLabel: 'GC 4060', syllabusText: 'B'.repeat(100) },
     });
+  });
+
+  it('Add upstream course button adds a second row', () => {
+    render(<PrototypeForm onAnalyze={vi.fn()} isAnalyzing={false} />);
+    // Initially only 1 upstream syllabus textarea
+    expect(screen.queryByLabelText(/upstream course 2 syllabus/i)).not.toBeInTheDocument();
+    // Click "Add upstream course"
+    fireEvent.click(screen.getByRole('button', { name: /add upstream course/i }));
+    // Now there should be a second upstream syllabus textarea
+    expect(screen.getByLabelText(/upstream course 2 syllabus/i)).toBeInTheDocument();
   });
 });

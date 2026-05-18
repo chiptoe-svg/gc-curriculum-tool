@@ -20,14 +20,13 @@ const LEVEL_LABEL: Record<KUDLevel, string> = {
 
 interface Props {
   target: CareerTarget;
-  upstreamLabel: string;
-  upstreamScores: CoverageScore[];
+  upstreamChain: Array<{ courseLabel: string; coverage: CoverageScore[] }>;
   downstreamLabel: string;
   downstreamScores: CoverageScore[];
   onFlag: (target: string, note: string) => Promise<void>;
 }
 
-export function CoverageHeatMap({ target, upstreamLabel, upstreamScores, downstreamLabel, downstreamScores, onFlag }: Props) {
+export function CoverageHeatMap({ target, upstreamChain, downstreamLabel, downstreamScores, onFlag }: Props) {
   const cellFor = (scores: CoverageScore[], subId: string) => scores.find(s => s.subCompetencyId === subId);
 
   return (
@@ -49,14 +48,12 @@ export function CoverageHeatMap({ target, upstreamLabel, upstreamScores, downstr
               </tr>
             </thead>
             <tbody>
-              {([
-                { label: upstreamLabel || 'Upstream', scores: upstreamScores, side: 'upstream' as const },
-                { label: downstreamLabel || 'Downstream', scores: downstreamScores, side: 'downstream' as const },
-              ]).map(({ label, scores, side }) => (
-                <tr key={side}>
-                  <td className="p-2 font-medium text-sm align-top">{label}</td>
+              {/* Upstream chain rows */}
+              {upstreamChain.map(({ courseLabel, coverage }, index) => (
+                <tr key={`upstream-${index}`}>
+                  <td className="p-2 font-medium text-sm align-top">{courseLabel || `Upstream ${index + 1}`}</td>
                   {target.subCompetencies.map(sc => {
-                    const c = cellFor(scores, sc.id);
+                    const c = cellFor(coverage, sc.id);
                     if (!c) {
                       return <td key={sc.id} className="p-2 align-top"><div className="rounded p-2 bg-slate-200 text-slate-700 text-xs">No data</div></td>;
                     }
@@ -70,8 +67,8 @@ export function CoverageHeatMap({ target, upstreamLabel, upstreamScores, downstr
                           <div className="mt-2">
                             <ReasoningExpand
                               reasoning={c.reasoning}
-                              flagContext={`${label} • ${sc.name} • ${LEVEL_LABEL[c.kudLevel]}`}
-                              onFlag={(note) => onFlag(`${side}.${sc.id}`, note)}
+                              flagContext={`${courseLabel} • ${sc.name} • ${LEVEL_LABEL[c.kudLevel]}`}
+                              onFlag={(note) => onFlag(`upstream-${index}.${sc.id}`, note)}
                             />
                           </div>
                         </div>
@@ -80,6 +77,39 @@ export function CoverageHeatMap({ target, upstreamLabel, upstreamScores, downstr
                   })}
                 </tr>
               ))}
+
+              {/* Visual divider between upstream chain and downstream */}
+              <tr aria-hidden="true">
+                <td colSpan={target.subCompetencies.length + 1} className="border-t-2 border-slate-300 pt-0 pb-0 h-0" />
+              </tr>
+
+              {/* Downstream row */}
+              <tr key="downstream">
+                <td className="p-2 font-bold text-sm align-top">{downstreamLabel || 'Downstream'}</td>
+                {target.subCompetencies.map(sc => {
+                  const c = cellFor(downstreamScores, sc.id);
+                  if (!c) {
+                    return <td key={sc.id} className="p-2 align-top"><div className="rounded p-2 bg-slate-200 text-slate-700 text-xs">No data</div></td>;
+                  }
+                  return (
+                    <td key={sc.id} className="p-2 align-top">
+                      <div className={`rounded p-2 ring-2 ring-slate-900/30 ${LEVEL_BG[c.kudLevel]}`}>
+                        <div className="flex justify-between items-baseline gap-2">
+                          <span className="font-semibold text-xs">{LEVEL_LABEL[c.kudLevel]}</span>
+                          <span className="text-[10px] uppercase tracking-wider opacity-80">{c.confidence}</span>
+                        </div>
+                        <div className="mt-2">
+                          <ReasoningExpand
+                            reasoning={c.reasoning}
+                            flagContext={`${downstreamLabel} • ${sc.name} • ${LEVEL_LABEL[c.kudLevel]}`}
+                            onFlag={(note) => onFlag(`downstream.${sc.id}`, note)}
+                          />
+                        </div>
+                      </div>
+                    </td>
+                  );
+                })}
+              </tr>
             </tbody>
           </table>
         </div>

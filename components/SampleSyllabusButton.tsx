@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { SAMPLE_SYLLABI } from '@/lib/domain/sample-syllabi';
 
 interface Props {
-  onLoad: (courseLabel: string, text: string) => void;
+  onLoad: (courseLabel: string, text: string, title?: string) => void;
 }
 
 export function SampleSyllabusButton({ onLoad }: Props) {
@@ -17,7 +17,7 @@ export function SampleSyllabusButton({ onLoad }: Props) {
           variant="outline"
           size="sm"
           type="button"
-          onClick={() => onLoad(s.courseCode, s.syllabusText)}
+          onClick={() => onLoad(s.courseCode, s.syllabusText, s.title)}
         >
           {s.courseCode}
         </Button>
