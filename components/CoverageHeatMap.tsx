@@ -2,13 +2,16 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ReasoningExpand } from './ReasoningExpand';
+import { ConfidenceBars } from './ConfidenceBars';
 import type { CareerTarget, CoverageScore, KUDLevel } from '@/lib/domain/types';
 
 const LEVEL_BG: Record<KUDLevel, string> = {
   do: 'bg-emerald-700 text-white',
   understand: 'bg-yellow-600 text-white',
   know: 'bg-amber-400 text-black',
-  not_addressed: 'bg-slate-700 text-slate-200',
+  // not_addressed cells should read as "empty" — light slate, muted text,
+  // not the dark navy that competes visually with scored cells.
+  not_addressed: 'bg-slate-100 text-slate-500 border border-dashed border-slate-300',
 };
 
 const LEVEL_LABEL: Record<KUDLevel, string> = {
@@ -59,9 +62,9 @@ export function CoverageHeatMap({ target, courseLabel, courseScores, priorCourse
                   return (
                     <td key={sc.id} className="p-2 align-top">
                       <div className={`rounded p-2 ring-2 ring-slate-900/30 ${LEVEL_BG[c.kudLevel]}`}>
-                        <div className="flex justify-between items-baseline gap-2">
+                        <div className="flex justify-between items-center gap-2">
                           <span className="font-semibold text-xs">{LEVEL_LABEL[c.kudLevel]}</span>
-                          <span className="text-[10px] uppercase tracking-wider opacity-80">{c.confidence}</span>
+                          <ConfidenceBars level={c.confidence} />
                         </div>
                         <div className="mt-2">
                           <ReasoningExpand
@@ -93,9 +96,9 @@ export function CoverageHeatMap({ target, courseLabel, courseScores, priorCourse
                     return (
                       <td key={sc.id} className="p-2 align-top">
                         <div className={`rounded p-2 ${LEVEL_BG[c.kudLevel]}`}>
-                          <div className="flex justify-between items-baseline gap-2">
+                          <div className="flex justify-between items-center gap-2">
                             <span className="font-semibold text-xs">{LEVEL_LABEL[c.kudLevel]}</span>
-                            <span className="text-[10px] uppercase tracking-wider opacity-80">{c.confidence}</span>
+                            <ConfidenceBars level={c.confidence} />
                           </div>
                           <div className="mt-2">
                             <ReasoningExpand

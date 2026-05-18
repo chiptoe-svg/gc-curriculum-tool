@@ -17,14 +17,14 @@ export function ReasoningExpand({ reasoning, flagContext, onFlag }: Props) {
   return (
     <div className="space-y-2">
       <Button variant="ghost" size="sm" onClick={() => setExpanded(v => !v)}>
-        {expanded ? 'Hide reasoning' : 'Show AI reasoning'}
+        {expanded ? 'Hide why' : 'Why?'}
       </Button>
       {expanded && (
         <div className="rounded border border-border bg-muted/40 p-3 text-sm leading-relaxed">
           {reasoning}
           <div className="mt-2 flex justify-end">
             <Button variant="outline" size="sm" onClick={() => setDialogOpen(true)}>
-              Flag this reasoning
+              Flag this
             </Button>
           </div>
         </div>

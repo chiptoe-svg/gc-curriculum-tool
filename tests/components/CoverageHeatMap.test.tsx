@@ -106,7 +106,7 @@ describe('CoverageHeatMap', () => {
         onFlag={vi.fn()}
       />
     );
-    fireEvent.click(screen.getAllByRole('button', { name: /show ai reasoning/i })[0]!);
+    fireEvent.click(screen.getAllByRole('button', { name: /^why\?$/i })[0]!);
     // The first button in DOM order is in the course row (GC 4060)
     expect(screen.getByText(/Course workflow reasoning/i)).toBeInTheDocument();
   });
