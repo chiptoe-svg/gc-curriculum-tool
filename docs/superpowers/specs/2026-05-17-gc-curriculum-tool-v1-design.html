@@ -720,8 +720,8 @@ prerequisite_competencies {
       <strong>Prerequisite competencies are the inverse of coverage.</strong> Coverage answers
       <em>"what does this course build toward?"</em>; prerequisite competencies answer
       <em>"what does this course expect students to walk in with?"</em> The combination lets
-      us detect scaffolding failures — when a downstream course's expectations exceed what
-      any upstream course actually develops. Distinct from the registrar's
+      us detect scaffolding failures — when a the course's expectations exceed what
+      any prior course actually develops. Distinct from the registrar's
       <code>course_prerequisites</code> (just "must have taken X before"); this is the
       competency-grain version. Manning's <em>Learning Progressions</em> (D7) and
       <em>Scope and Sequence</em> (D16) skills encode the reasoning framework.
@@ -744,7 +744,7 @@ prerequisite_competencies {
       <tr><td><code>/targets/[id]</code></td><td>Career Target detail + editor. Suggest from O*NET, AI-drafted sub-competency KUD descriptors, drag-reorder.</td></tr>
       <tr><td><code>/courses</code></td><td>Course index — sortable, filter by level</td></tr>
       <tr><td><code>/courses/new</code></td><td>Create course (identity only)</td></tr>
-      <tr><td><code>/courses/[id]</code></td><td>Course page — Official Record view. Coverage scores grouped by target with click-to-expand reasoning + dispute UI. <strong>Prerequisite Gaps section</strong> listing expected-but-undeveloped competencies with upstream evidence.</td></tr>
+      <tr><td><code>/courses/[id]</code></td><td>Course page — Official Record view. Coverage scores grouped by target with click-to-expand reasoning + dispute UI. <strong>Prerequisite Gaps section</strong> listing expected-but-undeveloped competencies with prior coursework evidence.</td></tr>
       <tr><td><code>/courses/[id]/edit</code></td><td>Course edit. Paste syllabus → Draft outcomes. KUD editors. Project editor with competency tag picker. <strong>Prerequisite competency editor with AI-suggest button.</strong> "Mark as accurate".</td></tr>
       <tr><td><code>/coverage</code></td><td>Heat map — courses (rows) × sub-competencies (cols). Click cell → side panel.</td></tr>
     </tbody>
@@ -788,7 +788,7 @@ prerequisite_competencies {
     <li>
       <strong>Prerequisite Gaps appear as a list, not a diagram in v1.</strong> A
       faculty-resonant section on the Course Page: "These competencies are expected when
-      students arrive, but no upstream course develops them to the expected level." The
+      students arrive, but no prior course develops them to the expected level." The
       Sequence Map (Build 6) will eventually overlay this on the prerequisite network with
       red arrows for failed scaffolding chains, but the list alone is what faculty react to.
     </li>
@@ -832,8 +832,8 @@ prerequisite_competencies {
       <tr>
         <td><code>POST /api/ai/analyze-prerequisite-gaps</code> <span class="pill new">new</span></td>
         <td>After Mark as accurate (background)</td>
-        <td>course record + its prereq competencies + upstream coverage</td>
-        <td><code>[{prereq_competency_id, status: 'met'|'underdeveloped'|'missing', upstream_evidence, reasoning}]</code></td>
+        <td>course record + its prereq competencies + prior coursework coverage</td>
+        <td><code>[{prereq_competency_id, status: 'met'|'underdeveloped'|'missing', prior_coursework_evidence, reasoning}]</code></td>
       </tr>
       <tr>
         <td><code>POST /api/ai/rescore-all</code></td>
@@ -952,8 +952,8 @@ prerequisite_competencies {
       <li><strong>Hero + bigger-picture intro.</strong> Plain-language: what the full tool will do, why it matters, what this prototype shows and doesn't. ~200–300 words.</li>
       <li><strong>Instructions</strong> — short numbered list:
         <ul>
-          <li>Paste an upstream course's syllabus (or "Load GC 3460 example")</li>
-          <li>Paste a downstream course's syllabus (or "Load GC 4060 example")</li>
+          <li>Paste a prior course's syllabus (or "Load GC 3460 example")</li>
+          <li>Paste the syllabus of the course being analyzed (or "Load GC 4060 example")</li>
           <li>Pick a career target</li>
           <li>Click "Analyze"</li>
           <li>Click any AI reasoning to expand it; flag anything that looks wrong</li>
@@ -1088,13 +1088,13 @@ prerequisite_competencies {
     <ul>
       <li>Manning-skill-encoded prompt files written and reviewed: <code>score-coverage.md</code>, <code>analyze-prerequisite-gaps.md</code>, shared rubric and frame files.</li>
       <li><code>POST /api/ai/score-coverage</code> with strict JSON schema.</li>
-      <li><code>POST /api/ai/analyze-prerequisite-gaps</code> — transitively walks <code>course_prerequisites</code> to assemble upstream coverage, evaluates each prerequisite competency against what's actually developed upstream.</li>
+      <li><code>POST /api/ai/analyze-prerequisite-gaps</code> — transitively walks <code>course_prerequisites</code> to assemble prior coursework coverage, evaluates each prerequisite competency against what's actually developed across the prior coursework.</li>
       <li>"Mark as accurate" enqueues background work in order: (1) 5 coverage scoring calls, one per target; (2) 1 prerequisite gap analysis call once coverage is in.</li>
       <li>Dispute preservation across reruns for both coverage and gap analysis.</li>
-      <li>Course Page: coverage rows grouped by target with click-to-expand reasoning + dispute UI. <strong>Prerequisite Gaps section</strong> lists expected-but-undeveloped competencies with upstream evidence and reasoning.</li>
+      <li>Course Page: coverage rows grouped by target with click-to-expand reasoning + dispute UI. <strong>Prerequisite Gaps section</strong> lists expected-but-undeveloped competencies with prior coursework evidence and reasoning.</li>
       <li><code>/coverage</code> heat map: courses × sub-competencies, color-coded by KUD level. Click cell → side panel.</li>
       <li>Admin "Rerun analysis" button per course.</li>
-      <li><code>POST /api/ai/rescore-all</code> on career target update; also re-triggers downstream prerequisite gap analyses where chain coverage may have shifted.</li>
+      <li><code>POST /api/ai/rescore-all</code> on career target update; also re-triggers prerequisite gap analyses where chain coverage may have shifted.</li>
     </ul>
 
     <div class="gate">

@@ -22,7 +22,7 @@ describe('POST /api/flag', () => {
     const req = makeRequest({
       runId: '11111111-2222-3333-8444-555555555555',
       flagType: 'coverage',
-      target: 'upstream.brand-positioning',
+      target: 'course.brand-positioning',
       note: 'The AI thinks this course addresses positioning but the only project is a logo.',
     });
     const res = await POST(req);
@@ -32,7 +32,7 @@ describe('POST /api/flag', () => {
     expect(queries.insertFlag).toHaveBeenCalledWith({
       runId: '11111111-2222-3333-8444-555555555555',
       flagType: 'coverage',
-      target: 'upstream.brand-positioning',
+      target: 'course.brand-positioning',
       note: expect.stringContaining('logo'),
     });
   });

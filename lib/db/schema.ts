@@ -57,7 +57,7 @@ export const prototypeFlags = pgTable('prototype_flags', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   runId: uuid('run_id').notNull().references(() => prototypeRuns.id, { onDelete: 'cascade' }),
   flagType: text('flag_type').notNull(),             // 'coverage' | 'prerequisite_gap' | 'kud_draft'
-  target: text('target').notNull(),                  // e.g., "upstream.sub_comp_id" or "gap.id"
+  target: text('target').notNull(),                  // e.g., "course.sub_comp_id", "prior-0.sub_comp_id", or "gap.id"
   note: text('note').notNull(),
   resolved: boolean('resolved').default(false).notNull(),
 });

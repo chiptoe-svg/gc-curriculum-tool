@@ -28,7 +28,7 @@ export const prerequisiteGapSchema = z.object({
   subCompetencyId: z.string().min(1),
   expectedKudLevel: z.enum(['know', 'understand', 'do']),
   status: z.enum(['met', 'underdeveloped', 'missing']),
-  upstreamEvidence: z.string().min(10),
+  priorCourseworkEvidence: z.string().min(10),
   reasoning: reasoningField,
 });
 export const prerequisiteGapsSchema = z.array(prerequisiteGapSchema);
@@ -102,12 +102,12 @@ export const prerequisiteGapsJsonSchema = {
       items: {
         type: 'object',
         additionalProperties: false,
-        required: ['subCompetencyId', 'expectedKudLevel', 'status', 'upstreamEvidence', 'reasoning'],
+        required: ['subCompetencyId', 'expectedKudLevel', 'status', 'priorCourseworkEvidence', 'reasoning'],
         properties: {
           subCompetencyId: { type: 'string' },
           expectedKudLevel: { type: 'string', enum: ['know', 'understand', 'do'] },
           status: { type: 'string', enum: ['met', 'underdeveloped', 'missing'] },
-          upstreamEvidence: { type: 'string', minLength: 10 },
+          priorCourseworkEvidence: { type: 'string', minLength: 10 },
           reasoning: { type: 'string', minLength: 20 },
         },
       },

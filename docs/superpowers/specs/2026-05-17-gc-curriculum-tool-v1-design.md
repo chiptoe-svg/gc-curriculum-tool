@@ -195,7 +195,7 @@ prerequisite_competencies {
 - **`ai_provider` and `ai_model` recorded on every coverage_score.** Not in source spec. Reproducibility matters: when you switch providers or models later, you'll want to know which scores came from which.
 - **Disputes preserved across reruns.** When a course record's coverage is rescored, the new `coverage_scores` rows inherit `disputed=true` and `dispute_note` from the prior row for the same (course_record × sub_competency) pair. Faculty pushback should not silently vanish.
 - **At most one official record per course.** Enforced by a partial unique index on `course_records(course_id) WHERE is_official = true`. A newly-created course has zero official records until "Mark as accurate" runs the first time. After that, "Mark as accurate" runs in a transaction that flips the prior official record's flag to false and the new one's flag to true.
-- **Prerequisite competencies are the inverse of coverage.** Coverage answers "what does this course build *toward*?" Prerequisite competencies answer "what does this course expect students to walk *in* with?" The combination lets us detect scaffolding failures — when a downstream course's expectations exceed what any upstream course actually develops. This is distinct from the registrar's `course_prerequisites` (which is just "must have taken X before"); it's the competency-grain version of the same idea. Manning's "Learning Progressions" (D7) and "Scope and Sequence" (D16) skills, both cited in the source spec, encode the reasoning framework for this analysis.
+- **Prerequisite competencies are the inverse of coverage.** Coverage answers "what does this course build *toward*?" Prerequisite competencies answer "what does this course expect students to walk *in* with?" The combination lets us detect scaffolding failures — when a the course's expectations exceed what any prior course actually develops. This is distinct from the registrar's `course_prerequisites` (which is just "must have taken X before"); it's the competency-grain version of the same idea. Manning's "Learning Progressions" (D7) and "Scope and Sequence" (D16) skills, both cited in the source spec, encode the reasoning framework for this analysis.
 
 ---
 
@@ -217,7 +217,7 @@ prerequisite_competencies {
                                  - Identity block (read-only)
                                  - Description + KUD outcomes + projects
                                  - Prerequisite Competencies (what this course expects)
-                                 - Prerequisite Gaps — flagged competencies no upstream
+                                 - Prerequisite Gaps — flagged competencies no prior coursework
                                    course develops to the expected level
                                  - Coverage scores grouped by target, click-to-expand reasoning
                                  - Dispute UI per coverage row
@@ -258,7 +258,7 @@ prerequisite_competencies {
 
 - **Heat map is the only visualization in v1.** Sankey, Sequence Map, and Gap Panel are Build 5–6. The heat map alone delivers ~80% of the analytical value for the v1 gate (panel review).
 
-- **Prerequisite Gaps appear as a list, not a diagram in v1.** A faculty-resonant section on the Course Page: "These competencies are expected when students arrive, but no upstream course develops them to the expected level." Each gap shows the prerequisite competency, expected KUD level, what (if anything) upstream courses develop instead, and AI reasoning. The Sequence Map (Build 6) will eventually overlay this on the prerequisite network diagram with red arrows for failed scaffolding chains, but the list form alone is what faculty will react to.
+- **Prerequisite Gaps appear as a list, not a diagram in v1.** A faculty-resonant section on the Course Page: "These competencies are expected when students arrive, but no prior course develops them to the expected level." Each gap shows the prerequisite competency, expected KUD level, what (if anything) prior courses develop instead, and AI reasoning. The Sequence Map (Build 6) will eventually overlay this on the prerequisite network diagram with red arrows for failed scaffolding chains, but the list form alone is what faculty will react to.
 
 ---
 
@@ -272,7 +272,7 @@ prerequisite_competencies {
 | `POST /api/ai/score-coverage` | Mark as accurate (per target) | course record (KUD + projects) + one career target with sub-competencies | `[{sub_competency_id, kud_level, confidence, reasoning}]` |
 | `POST /api/ai/unpack-competency` | Sub-competency "Help draft KUD descriptors" button | sub-competency name + parent target context | `{know_descriptor, understand_descriptor, do_descriptor}` |
 | `POST /api/ai/suggest-prerequisites` | Course edit "Suggest prerequisite competencies" button | course record (KUD + projects) + all sub_competencies | `[{sub_competency_id, expected_kud_level, rationale}]` |
-| `POST /api/ai/analyze-prerequisite-gaps` | After Mark as accurate (background) | course record + its prerequisite competencies + coverage scores for all upstream courses | `[{prerequisite_competency_id, status: 'met'|'underdeveloped'|'missing', upstream_evidence, reasoning}]` |
+| `POST /api/ai/analyze-prerequisite-gaps` | After Mark as accurate (background) | course record + its prerequisite competencies + coverage scores for all prior courses | `[{prerequisite_competency_id, status: 'met'|'underdeveloped'|'missing', prior_coursework_evidence, reasoning}]` |
 | `POST /api/ai/rescore-all` | Career target updated (admin only) | batch, background | rescore every course's coverage for the updated target |
 | `POST /api/onet/fetch-ksas` | Career Target "Suggest from O*NET" button | SOC code | structured KSAs (cached 24h) |
 
@@ -330,8 +330,8 @@ Each milestone is independently usable and ends with a real-data gate. Don't sta
 
 1. **Hero + bigger-picture intro.** Plain-language: what the full curriculum tool will do, why it matters for the GC program, why this prototype exists and what it does and doesn't represent. Roughly 200–300 words. Authored content.
 2. **Instructions** — short numbered list:
-   - Paste an upstream course's syllabus (e.g., GC 3460), or click "Load example"
-   - Paste a downstream course's syllabus (e.g., GC 4060), or click "Load example"
+   - Paste a prior course's syllabus (e.g., GC 3460), or click "Load example"
+   - Paste the syllabus of the course being analyzed (e.g., GC 4060), or click "Load example"
    - Pick a career target from the dropdown
    - Click "Analyze"
    - Review the results — click any AI reasoning to expand it; flag anything that looks wrong
@@ -340,7 +340,7 @@ Each milestone is independently usable and ends with a real-data gate. Don't sta
    - Two side-by-side KUD outcome cards (AI-drafted, shown clearly as drafts)
    - A heat map: 2 rows (courses) × N columns (sub-competencies of the chosen target), color-coded by KUD level
    - Click any cell → expand AI reasoning + a "Flag this" button (with note field)
-   - A Prerequisite Gap Analysis panel: for each expected competency in the downstream course, status (met / underdeveloped / missing) + AI reasoning + Flag button
+   - A Prerequisite Gap Analysis panel: for each expected competency in the course being analyzed, status (met / underdeveloped / missing) + AI reasoning + Flag button
 5. **Footer:** "This is a prototype. The full tool ships in ~3 months. Feedback: <Chip's email>."
 
 **Technical components:**
@@ -412,13 +412,13 @@ Each milestone is independently usable and ends with a real-data gate. Don't sta
 
 - Manning-skill-encoded prompt files written and reviewed: `score-coverage.md`, `analyze-prerequisite-gaps.md`, and the shared rubric/frame files.
 - `POST /api/ai/score-coverage` endpoint with strict JSON schema (`response_format` for OpenAI; equivalent validation for Anthropic).
-- `POST /api/ai/analyze-prerequisite-gaps` endpoint. For a course record, transitively walks `course_prerequisites` to assemble the upstream course coverage, then evaluates each prerequisite competency against what's actually developed upstream.
+- `POST /api/ai/analyze-prerequisite-gaps` endpoint. For a course record, transitively walks `course_prerequisites` to assemble the prior coursework coverage, then evaluates each prerequisite competency against what's actually developed across the prior coursework.
 - "Mark as accurate" enqueues background work in this order: (1) 5 coverage scoring calls, one per target; (2) 1 prerequisite gap analysis call once coverage is in. Background runner is a simple in-process queue for v1 — no Inngest/QStash yet.
 - Dispute preservation: rescores inherit `disputed` and `dispute_note` from the prior row for the same key. Applies to both coverage_scores and prerequisite gap results.
-- Course Page: coverage rows grouped by target, KUD pill + confidence badge + click-to-expand reasoning panel, dispute UI. **Prerequisite Gaps section** lists each expected-but-undeveloped competency with upstream evidence and AI reasoning.
+- Course Page: coverage rows grouped by target, KUD pill + confidence badge + click-to-expand reasoning panel, dispute UI. **Prerequisite Gaps section** lists each expected-but-undeveloped competency with prior coursework evidence and AI reasoning.
 - `/coverage` heat map: courses (rows) × sub-competencies (columns), color-coded by KUD level (Do dark green, Understand olive, Know amber, not_addressed dark grey). Click cell → side panel with reasoning + dispute UI. Left-edge stripe color codes course level.
 - Admin-only "Rerun analysis" button per course (one-off retry for transient failures or prompt updates).
-- `POST /api/ai/rescore-all` endpoint triggered when a career target's KUD descriptors or sub-competencies change. Background batch reruns coverage for every course against that target; downstream prerequisite gap analyses re-trigger for courses whose prerequisite chain coverage may have shifted.
+- `POST /api/ai/rescore-all` endpoint triggered when a career target's KUD descriptors or sub-competencies change. Background batch reruns coverage for every course against that target; prerequisite gap analyses re-trigger for courses whose prerequisite chain coverage may have shifted.
 - **Gate:** Coverage scores running on 5+ courses against all 5 targets. Prerequisite gaps surfaced on at least one course where a real gap exists (the GC 4060 → GC 3460 chain is the strongest candidate from current data). At least one disputed score with a note. The heat map and gap view are presentable to the industry/faculty panel without apologizing for them. You can answer both "why does this course score Understand on Brand Strategy?" and "what does GC 4060 expect that nothing earlier delivers?" by clicking and reading the AI's reasoning.
 
 ### What's not in v1

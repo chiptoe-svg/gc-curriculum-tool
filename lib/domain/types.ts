@@ -49,7 +49,7 @@ export interface PrerequisiteGap {
   subCompetencyId: string;
   expectedKudLevel: Exclude<KUDLevel, 'not_addressed'>;
   status: GapStatus;
-  upstreamEvidence: string;    // human-readable description of what upstream actually develops
+  priorCourseworkEvidence: string;    // human-readable description of what the prior coursework actually develops
   reasoning: string;
 }
 

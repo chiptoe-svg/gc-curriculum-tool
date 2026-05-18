@@ -23,7 +23,7 @@ For each prerequisite competency:
    - If any prior course meets or exceeds the expected level: status is `met`.
    - If at least one prior course addresses the sub-competency but the highest level is below expected: status is `underdeveloped`.
    - If no prior course addresses the sub-competency at all: status is `missing`.
-4. Write `upstreamEvidence` citing the specific prior course(s) and what they actually develop — name them by their `courseLabel` (e.g., "GC 1040 develops Know level via screen printing labs; GC 3460 develops Do level via ink formulation"). This is the faculty's "what is actually happening across the prior coursework" picture.
+4. Write `priorCourseworkEvidence` citing the specific prior course(s) and what they actually develop — name them by their `courseLabel` (e.g., "GC 1040 develops Know level via screen printing labs; GC 3460 develops Do level via ink formulation"). This is the faculty's "what is actually happening across the prior coursework" picture.
 5. Write `reasoning` explaining the gap's significance: why this matters for the course being analyzed given its specific outcomes and projects.
 
 # Constraints

@@ -31,7 +31,7 @@ export function PrerequisiteGapPanel({ target, gaps, onFlag }: Props) {
       <CardHeader>
         <CardTitle>Prerequisite gap analysis</CardTitle>
         <p className="text-sm text-muted-foreground">
-          What the downstream course expects students to walk in with, and whether the upstream course actually develops it.
+          What this course expects students to walk in with, and whether the prior coursework actually develops it.
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -45,7 +45,7 @@ export function PrerequisiteGapPanel({ target, gaps, onFlag }: Props) {
               </div>
               <Badge className={STATUS_COLOR[g.status]}>{STATUS_LABEL[g.status]}</Badge>
             </div>
-            <p className="text-sm"><strong>What upstream actually does:</strong> {g.upstreamEvidence}</p>
+            <p className="text-sm"><strong>What prior coursework actually does:</strong> {g.priorCourseworkEvidence}</p>
             <ReasoningExpand
               reasoning={g.reasoning}
               flagContext={`Prereq gap • ${nameOf(g.subCompetencyId)} • ${STATUS_LABEL[g.status]}`}

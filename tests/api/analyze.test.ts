@@ -49,7 +49,7 @@ describe('POST /api/analyze', () => {
       { subCompetencyId: 'workflow-design', expectedKudLevel: 'understand', rationale: 'Course needs incoming workflow understanding.' },
     ]};
     const gaps = { gaps: [
-      { subCompetencyId: 'workflow-design', expectedKudLevel: 'understand', status: 'met', upstreamEvidence: 'GC 3460 achieves Do level.', reasoning: 'Prior coursework exceeds the expected level so the prerequisite is met.' },
+      { subCompetencyId: 'workflow-design', expectedKudLevel: 'understand', status: 'met', priorCourseworkEvidence: 'GC 3460 achieves Do level.', reasoning: 'Prior coursework exceeds the expected level so the prerequisite is met.' },
     ]};
 
     // With N=1 prior: 1 prior KUD + 1 course KUD + 1 prior coverage + 1 course coverage + 1 prereq + 1 gap = 6 calls
@@ -94,7 +94,7 @@ describe('POST /api/analyze', () => {
       { subCompetencyId: 'workflow-design', expectedKudLevel: 'understand', rationale: 'Course needs incoming workflow understanding.' },
     ]};
     const gaps = { gaps: [
-      { subCompetencyId: 'workflow-design', expectedKudLevel: 'understand', status: 'met', upstreamEvidence: 'GC 1040 develops Know level; GC 3460 develops Do level.', reasoning: 'Prior coursework exceeds the expected level.' },
+      { subCompetencyId: 'workflow-design', expectedKudLevel: 'understand', status: 'met', priorCourseworkEvidence: 'GC 1040 develops Know level; GC 3460 develops Do level.', reasoning: 'Prior coursework exceeds the expected level.' },
     ]};
 
     // With N=2 prior: 2 prior KUD + 1 course KUD + 2 prior coverage + 1 course coverage + 1 prereq + 1 gap = 8 calls

@@ -63,8 +63,8 @@ describe('AI output schemas', () => {
         subCompetencyId: 'color-foundations',
         expectedKudLevel: 'understand',
         status: 'underdeveloped',
-        upstreamEvidence: 'GC 3460 develops color at Do level for ink chemistry but does not generalize to packaging color decisions.',
-        reasoning: 'The upstream course covers the mechanics but not the application context downstream needs.',
+        priorCourseworkEvidence: 'GC 3460 develops color at Do level for ink chemistry but does not generalize to packaging color decisions.',
+        reasoning: 'The prior coursework covers the mechanics but not the application context this course needs.',
       },
     ]);
     expect(parsed[0]?.status).toBe('underdeveloped');

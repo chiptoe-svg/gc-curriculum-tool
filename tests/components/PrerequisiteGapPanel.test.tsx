@@ -15,8 +15,8 @@ const target: CareerTarget = {
 };
 
 const gaps: PrerequisiteGap[] = [
-  { subCompetencyId: 'workflow-design', expectedKudLevel: 'understand', status: 'met', upstreamEvidence: 'Upstream develops it at Do level.', reasoning: 'Prereq is met because upstream exceeds the expected level.' },
-  { subCompetencyId: 'quality-control', expectedKudLevel: 'understand', status: 'missing', upstreamEvidence: 'Nothing upstream addresses this.', reasoning: 'No upstream course covers quality control; downstream will be teaching it from zero.' },
+  { subCompetencyId: 'workflow-design', expectedKudLevel: 'understand', status: 'met', priorCourseworkEvidence: 'Prior coursework develops it at Do level.', reasoning: 'Prereq is met because the prior coursework exceeds the expected level.' },
+  { subCompetencyId: 'quality-control', expectedKudLevel: 'understand', status: 'missing', priorCourseworkEvidence: 'Nothing in the prior coursework addresses this.', reasoning: 'No prior course covers quality control; this course will be teaching it from zero.' },
 ];
 
 describe('PrerequisiteGapPanel', () => {
