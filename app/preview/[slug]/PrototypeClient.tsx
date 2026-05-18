@@ -57,14 +57,14 @@ export function PrototypeClient({ slug }: { slug: string }) {
 
   return (
     <main className="mx-auto max-w-5xl p-6 md:p-12 space-y-10">
-      {/* Career target editor banner */}
+      {/* Admin tools banner */}
       <div className="rounded-md border border-border bg-muted/40 px-4 py-2 text-sm text-muted-foreground flex items-center justify-between gap-4">
-        <span>Career target definitions are editable.</span>
+        <span>Re-sync courses from the Google Sheet &middot; Edit career target definitions.</span>
         <a
           href={`/preview/${slug}/targets`}
           className="text-foreground underline underline-offset-2 font-medium whitespace-nowrap"
         >
-          View / edit targets &rarr;
+          Open admin &rarr;
         </a>
       </div>
 
@@ -145,7 +145,7 @@ export function PrototypeClient({ slug }: { slug: string }) {
       )}
 
       <footer className="pt-12 border-t text-sm text-muted-foreground">
-        This is a prototype — the expected full tool is described in <a className="underline" href="https://chiptoe-svg.github.io/gc-curriculum-tool/docs/superpowers/specs/2026-05-17-gc-curriculum-tool-v1-design.html" target="_blank" rel="noopener noreferrer">the design spec</a>.
+        This is a prototype — see the <a className="underline" href="https://chiptoe-svg.github.io/gc-curriculum-tool/docs/superpowers/vision/gc-curriculum-tool-vision.html" target="_blank" rel="noopener noreferrer">vision for the full tool</a>.
       </footer>
     </main>
   );

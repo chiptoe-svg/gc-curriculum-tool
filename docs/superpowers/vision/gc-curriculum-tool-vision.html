@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GC Curriculum Tool — Vision</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Mono:wght@300;400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --rail: #141412;
+    --rail-text: #8a8780;
+    --rail-active: #E8A44A;
+    --rail-hover: #2a2925;
+    --bg: #F7F5F0;
+    --bg-card: #FFFFFF;
+    --bg-alt: #F0EDE6;
+    --text: #1C1C18;
+    --text-muted: #6B6860;
+    --text-faint: #9E9B94;
+    --accent: #C8682A;
+    --accent-light: #F5E6D8;
+    --border: #E2DDD4;
+    --border-strong: #C8C4BA;
+    --mono: 'DM Mono', monospace;
+    --serif: 'Source Serif 4', Georgia, serif;
+    --display: 'Playfair Display', Georgia, serif;
+
+    /* Career target accents */
+    --t1: #2A5C8C;
+    --t2: #6B3A82;
+    --t3: #B87020;
+    --t4: #2E7D5E;
+    --t5: #8C2E35;
+
+    /* Heat-map / scaffold colors — match the live tool */
+    --do: #047857;
+    --understand: #ca8a04;
+    --know: #c2410c;
+    --absent: #9f1239;
+    --scaffold-strong: #15803d;
+    --scaffold-adequate: #84cc16;
+    --scaffold-brittle: #d97706;
+    --scaffold-weak: #ea580c;
+    --scaffold-absent: #991b1b;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--serif);
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    min-height: 100vh;
+    font-size: 16px;
+    line-height: 1.7;
+  }
+
+  /* SIDEBAR */
+  #rail {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: 240px;
+    background: var(--rail);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    z-index: 100;
+  }
+
+  .rail-header {
+    padding: 28px 20px 20px;
+    border-bottom: 1px solid #252420;
+  }
+
+  .rail-dept {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #5a5750;
+    margin-bottom: 6px;
+  }
+
+  .rail-title {
+    font-family: var(--display);
+    font-size: 14px;
+    color: #d4d0c8;
+    line-height: 1.4;
+  }
+
+  .rail-doc-type {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--rail-active);
+    margin-top: 10px;
+  }
+
+  .rail-nav { padding: 20px 0; flex: 1; }
+
+  .nav-group-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #4d4a44;
+    padding: 14px 20px 8px;
+  }
+
+  .nav-link {
+    display: block;
+    padding: 7px 20px 7px 22px;
+    color: var(--rail-text);
+    text-decoration: none;
+    font-family: var(--serif);
+    font-size: 13.5px;
+    border-left: 2px solid transparent;
+    transition: all 120ms;
+  }
+
+  .nav-link:hover { color: #c8c4ba; background: var(--rail-hover); }
+  .nav-link.active { color: var(--rail-active); border-left-color: var(--rail-active); background: var(--rail-hover); }
+
+  .rail-footer {
+    padding: 16px 20px;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.08em;
+    color: #5a5750;
+    border-top: 1px solid #252420;
+    line-height: 1.7;
+  }
+
+  /* MAIN */
+  main {
+    margin-left: 240px;
+    flex: 1;
+    padding: 64px 80px 96px;
+    max-width: 1080px;
+  }
+
+  .doc-head {
+    margin-bottom: 56px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--border-strong);
+  }
+
+  .doc-eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+
+  .doc-title {
+    font-family: var(--display);
+    font-size: 52px;
+    font-weight: 700;
+    line-height: 1.05;
+    color: var(--text);
+    margin-bottom: 20px;
+    letter-spacing: -0.01em;
+  }
+
+  .doc-subtitle {
+    font-family: var(--serif);
+    font-size: 19px;
+    color: var(--text-muted);
+    line-height: 1.55;
+    max-width: 740px;
+    font-style: italic;
+    font-weight: 300;
+  }
+
+  .doc-meta {
+    margin-top: 22px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--text-faint);
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .doc-meta strong { color: var(--text-muted); font-weight: 500; margin-right: 6px; }
+
+  /* SECTIONS */
+  section { margin-bottom: 56px; scroll-margin-top: 32px; }
+
+  h2 {
+    font-family: var(--display);
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 1.2;
+    margin-bottom: 22px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+  }
+
+  h2 .num {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    background: var(--accent-light);
+    padding: 3px 10px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  h3 {
+    font-family: var(--display);
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1.3;
+    margin: 32px 0 14px;
+    color: var(--text);
+  }
+
+  h4 {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 24px 0 10px;
+    font-weight: 500;
+  }
+
+  p { margin-bottom: 14px; max-width: 760px; }
+  p.wide { max-width: none; }
+
+  strong { color: var(--text); font-weight: 600; }
+  em { color: var(--text); font-style: italic; }
+
+  ul { margin: 14px 0 22px 22px; }
+  li { margin-bottom: 8px; max-width: 720px; }
+  li strong { color: var(--text); }
+
+  /* CALLOUTS */
+  .callout {
+    background: var(--bg-card);
+    border-left: 3px solid var(--accent);
+    padding: 18px 22px;
+    margin: 22px 0;
+    border-radius: 0 4px 4px 0;
+    max-width: 820px;
+  }
+  .callout-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout.note { border-left-color: var(--t1); }
+  .callout.note .callout-title { color: var(--t1); }
+  .callout.caution { border-left-color: var(--t5); }
+  .callout.caution .callout-title { color: var(--t5); }
+
+  /* THE TWO QUESTIONS */
+  .questions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+    margin: 30px 0;
+  }
+  .question-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 26px;
+  }
+  .question-q {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+  .question-text {
+    font-family: var(--display);
+    font-size: 19px;
+    font-style: italic;
+    line-height: 1.45;
+    color: var(--text);
+  }
+
+  /* VIZ FIGURE */
+  figure {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 26px 28px;
+    margin: 28px 0 30px;
+  }
+
+  figcaption {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+
+  .viz-title {
+    font-family: var(--display);
+    font-size: 19px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .viz-note {
+    font-size: 13.5px;
+    color: var(--text-muted);
+    line-height: 1.55;
+    margin: 6px 0 22px;
+    font-style: italic;
+  }
+
+  .viz-mock-tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #6B6860;
+    background: var(--bg-alt);
+    padding: 2px 8px;
+    border-radius: 3px;
+    margin-left: 10px;
+    vertical-align: middle;
+  }
+
+  /* VIZ 1: PROGRAM HEAT MAP */
+  .heatmap {
+    display: grid;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    font-family: var(--mono);
+    font-size: 10px;
+  }
+  .heat-row { display: grid; grid-template-columns: 120px repeat(6, 1fr); }
+  .heat-row:not(:last-child) { border-bottom: 1px solid var(--border); }
+  .heat-h { background: var(--bg-alt); padding: 10px 10px; font-weight: 500; letter-spacing: 0.06em; color: var(--text-muted); border-right: 1px solid var(--border); }
+  .heat-h.corner { background: var(--bg-alt); }
+  .heat-col { padding: 9px 8px; text-align: center; font-size: 9px; line-height: 1.3; letter-spacing: 0.04em; color: var(--text-muted); border-right: 1px solid var(--border); }
+  .heat-col:last-child { border-right: 0; }
+  .heat-c { padding: 12px 8px; text-align: center; color: white; font-weight: 500; border-right: 1px solid rgba(255,255,255,0.2); }
+  .heat-c:last-child { border-right: 0; }
+  .heat-rowlabel { background: var(--bg-card); padding: 12px 10px; font-weight: 500; color: var(--text); border-right: 1px solid var(--border); font-size: 11px; letter-spacing: 0.04em; }
+  .heat-rowlabel small { color: var(--text-faint); display: block; font-weight: 400; margin-top: 1px; font-size: 9.5px; }
+  .cell-do { background: var(--do); }
+  .cell-understand { background: var(--understand); color: #2a1a00; }
+  .cell-know { background: var(--know); }
+  .cell-absent { background: var(--absent); }
+
+  .heat-legend { margin-top: 16px; display: flex; gap: 20px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em; color: var(--text-muted); }
+  .heat-legend span { display: flex; align-items: center; gap: 6px; }
+  .legend-sq { width: 11px; height: 11px; border-radius: 2px; display: inline-block; }
+
+  /* VIZ 2: SCAFFOLD PROGRESSION */
+  .scaffold {
+    background: var(--bg-alt);
+    padding: 16px;
+    border-radius: 4px;
+  }
+  .scaffold-row { display: grid; grid-template-columns: 240px repeat(4, 1fr) 90px; gap: 4px; align-items: center; margin-bottom: 5px; }
+  .scaffold-h { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); padding: 4px 6px; text-align: center; }
+  .scaffold-h.left { text-align: left; padding-left: 0; }
+  .scaffold-cell {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 8px 6px;
+    font-family: var(--mono);
+    font-size: 10px;
+    text-align: center;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+  .scaffold-cell.empty { background: transparent; border: 1px dashed #cfc9bd; color: var(--text-faint); }
+  .scaffold-cell.know { background: var(--know); color: white; border-color: transparent; }
+  .scaffold-cell.understand { background: var(--understand); color: #2a1a00; border-color: transparent; }
+  .scaffold-cell.do { background: var(--do); color: white; border-color: transparent; }
+  .scaffold-cell strong { font-size: 11px; letter-spacing: 0.02em; }
+  .scaffold-cell small { font-size: 8.5px; opacity: 0.85; }
+  .scaffold-label { font-size: 13px; color: var(--text); padding-right: 8px; line-height: 1.35; font-family: var(--serif); }
+  .scaffold-judgment { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.08em; padding: 6px 9px; border-radius: 3px; text-transform: uppercase; text-align: center; font-weight: 500; }
+  .judgment-strong { background: var(--scaffold-strong); color: white; }
+  .judgment-adequate { background: var(--scaffold-adequate); color: #1a2400; }
+  .judgment-brittle { background: var(--scaffold-brittle); color: white; }
+  .judgment-weak { background: var(--scaffold-weak); color: white; }
+  .judgment-absent { background: var(--scaffold-absent); color: white; }
+
+  /* VIZ 3: ADVISING SEQUENCE */
+  .advising {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .advising-row {
+    display: grid;
+    grid-template-columns: 60px 130px 1fr 110px;
+    align-items: center;
+    padding: 14px 18px;
+    border: 1px solid var(--border);
+    border-bottom: 0;
+    background: var(--bg-card);
+    gap: 18px;
+  }
+  .advising-row:last-child { border-bottom: 1px solid var(--border); }
+  .advising-row:first-child { border-top-left-radius: 4px; border-top-right-radius: 4px; }
+  .advising-row:last-child { border-bottom-left-radius: 4px; border-bottom-right-radius: 4px; }
+  .adv-step { font-family: var(--mono); font-size: 13px; color: var(--accent); font-weight: 500; letter-spacing: 0.06em; }
+  .adv-code { font-family: var(--mono); font-size: 13px; color: var(--text); font-weight: 500; }
+  .adv-name { font-size: 14px; color: var(--text); line-height: 1.4; }
+  .adv-name small { display: block; color: var(--text-faint); font-size: 12px; font-style: italic; margin-top: 2px; }
+  .adv-tag { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; padding: 4px 9px; border-radius: 3px; text-align: center; font-weight: 500; }
+  .tag-foundation { background: var(--accent-light); color: var(--accent); }
+  .tag-build { background: rgba(46,125,94,0.15); color: var(--t4); }
+  .tag-apply { background: rgba(42,92,140,0.15); color: var(--t1); }
+  .tag-gap { background: rgba(140,46,53,0.15); color: var(--t5); }
+
+  /* VIZ 4: PREREQ GAP REPORT */
+  .gap-report {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .gap-row {
+    display: grid;
+    grid-template-columns: 220px 100px 1fr;
+    padding: 14px 18px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    gap: 16px;
+    align-items: center;
+  }
+  .gap-name { font-size: 14px; color: var(--text); font-weight: 500; }
+  .gap-name small { display: block; color: var(--text-faint); font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 2px; font-weight: 400; }
+  .gap-status { font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; padding: 5px 10px; border-radius: 3px; text-align: center; font-weight: 500; }
+  .status-met { background: var(--scaffold-strong); color: white; }
+  .status-under { background: var(--scaffold-brittle); color: white; }
+  .status-missing { background: var(--scaffold-absent); color: white; }
+  .gap-reasoning { font-size: 13px; color: var(--text-muted); line-height: 1.5; font-style: italic; }
+
+  /* PHASE TIMELINE */
+  .phases { display: flex; flex-direction: column; gap: 14px; margin-top: 20px; }
+  .phase {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 4px 4px 0;
+    padding: 18px 22px;
+    max-width: 820px;
+  }
+  .phase.current { border-left-color: var(--t4); background: rgba(46,125,94,0.04); }
+  .phase-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .phase.current .phase-tag { color: var(--t4); }
+  .phase-name { font-family: var(--display); font-size: 18px; font-weight: 600; margin-bottom: 6px; }
+  .phase-body { font-size: 14.5px; color: var(--text-muted); line-height: 1.55; }
+
+  /* CAPABILITY GRID */
+  .capabilities { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 22px 0 28px; }
+  .cap {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 16px 20px;
+  }
+  .cap-title { font-family: var(--display); font-size: 16px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+  .cap-body { font-size: 13.5px; color: var(--text-muted); line-height: 1.55; }
+
+  a.inline-link { color: var(--accent); text-decoration: none; border-bottom: 1px solid rgba(200,104,42,0.4); transition: border-color 120ms; }
+  a.inline-link:hover { border-bottom-color: var(--accent); }
+
+  .doc-foot {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+  }
+
+  /* Responsive */
+  @media (max-width: 1024px) {
+    #rail { width: 200px; }
+    main { margin-left: 200px; padding: 48px 48px 80px; }
+    .doc-title { font-size: 42px; }
+    .questions { grid-template-columns: 1fr; }
+    .capabilities { grid-template-columns: 1fr; }
+    .heat-row { grid-template-columns: 90px repeat(6, 1fr); }
+    .scaffold-row { grid-template-columns: 180px repeat(4, 1fr) 80px; }
+  }
+  @media (max-width: 720px) {
+    #rail { display: none; }
+    main { margin-left: 0; padding: 32px 24px 64px; }
+    .doc-title { font-size: 36px; }
+  }
+</style>
+</head>
+<body>
+
+<aside id="rail">
+  <div class="rail-header">
+    <div class="rail-dept">Clemson · Graphic Comm</div>
+    <div class="rail-title">GC Curriculum Tool</div>
+    <div class="rail-doc-type">Vision</div>
+  </div>
+
+  <nav class="rail-nav">
+    <div class="nav-group-label">Sections</div>
+    <a class="nav-link" href="#what">What we're building</a>
+    <a class="nav-link" href="#questions">The two questions</a>
+    <a class="nav-link" href="#end-state">The end state</a>
+    <a class="nav-link" href="#viz-program">Program coverage map</a>
+    <a class="nav-link" href="#viz-scaffold">Scaffolding view</a>
+    <a class="nav-link" href="#viz-advising">Advising view</a>
+    <a class="nav-link" href="#viz-gap">Per-course gap report</a>
+    <a class="nav-link" href="#enables">What it enables</a>
+    <a class="nav-link" href="#prototype">The prototype</a>
+    <a class="nav-link" href="#phases">How we get there</a>
+    <a class="nav-link" href="#not">What it is not</a>
+  </nav>
+
+  <div class="rail-footer">
+    Draft · 2026-05-18<br>
+    docs/superpowers/vision/
+  </div>
+</aside>
+
+<main>
+
+<header class="doc-head">
+  <div class="doc-eyebrow">Vision Document</div>
+  <h1 class="doc-title">The GC Curriculum Tool</h1>
+  <div class="doc-subtitle">
+    A living, AI-backed record of the Clemson GC curriculum that answers two questions
+    faculty actually care about — continuously, transparently, and in language faculty
+    can argue with.
+  </div>
+  <div class="doc-meta">
+    <span><strong>Date</strong> 2026-05-18</span>
+    <span><strong>Status</strong> Draft for review</span>
+    <span><strong>Implementation</strong> <a class="inline-link" href="../specs/2026-05-17-gc-curriculum-tool-v1-design.html">v1 design</a></span>
+  </div>
+</header>
+
+<section id="what">
+  <h2><span class="num">§</span>What we're building</h2>
+  <p>
+    Today, the questions of <em>"how well does this curriculum prepare students for the
+    careers we claim?"</em> and <em>"do the prerequisites students walk in with actually
+    support what this course expects?"</em> get answered through committee discussions,
+    gut intuition, and the occasional seven-year program review. Faculty know parts of
+    the answer for the courses they teach. Nobody has the whole picture, and nobody has
+    a way to update it as courses evolve.
+  </p>
+  <p>
+    The tool makes those answers <strong>visible</strong> and <strong>defensible</strong> —
+    for advising students, for accreditation conversations, for industry advisory-board
+    reviews, for the next curriculum redesign, and for hiring decisions about what
+    kind of faculty the program needs.
+  </p>
+</section>
+
+<section id="questions">
+  <h2><span class="num">§</span>The two questions</h2>
+  <div class="questions">
+    <div class="question-card">
+      <div class="question-q">Q1 · Program → Careers</div>
+      <div class="question-text">
+        How well does the GC curriculum, as a whole, prepare students for the
+        career destinations we claim to lead them toward?
+      </div>
+    </div>
+    <div class="question-card">
+      <div class="question-q">Q2 · Prereqs → Course</div>
+      <div class="question-text">
+        For any individual course, do the prerequisites students walk in with
+        actually support what the course expects?
+      </div>
+    </div>
+  </div>
+  <p>
+    Both questions get answered against the same competency framework — career
+    destinations defined as sub-competencies at Know / Understand / Do levels.
+    The two answers feed each other: program coverage rolls up from
+    course-level judgments; course-level prerequisite gaps surface where
+    the program isn't actually scaffolding what its own upper-division
+    courses expect.
+  </p>
+</section>
+
+<section id="end-state">
+  <h2><span class="num">§</span>The end state</h2>
+  <p>
+    When the full tool is in production, it is the canonical living view of the
+    GC program. These are the capabilities it provides:
+  </p>
+
+  <div class="capabilities">
+    <div class="cap">
+      <div class="cap-title">A career-target framework</div>
+      <div class="cap-body">
+        A faculty-defined set of named career destinations, each with sub-competencies
+        described at Know / Understand / Do levels. Editable by track leaders;
+        changes propagate through the rest of the system.
+      </div>
+    </div>
+    <div class="cap">
+      <div class="cap-title">A complete course inventory</div>
+      <div class="cap-body">
+        Every active GC course has a structured record: description, learning
+        objectives, projects, assumed prior skills. Editable by the course owner
+        and synced from each semester's syllabus.
+      </div>
+    </div>
+    <div class="cap">
+      <div class="cap-title">A coverage matrix</div>
+      <div class="cap-body">
+        For every course × every career target, an AI-maintained judgment of
+        how well the course covers each sub-competency, with confidence and
+        reasoning faculty can read, dispute, and flag.
+      </div>
+    </div>
+    <div class="cap">
+      <div class="cap-title">Scaffolding analysis</div>
+      <div class="cap-body">
+        Across the program, the AI judges how well each competency is scaffolded
+        — introduced in earlier courses, developed in middle courses, applied in
+        capstones. Flags cases that look fine cell-by-cell but fail program-wide.
+      </div>
+    </div>
+    <div class="cap">
+      <div class="cap-title">Prerequisite-gap analysis</div>
+      <div class="cap-body">
+        For any course, the tool reports whether the prior coursework students
+        actually take supports what this course expects. Not what the registrar
+        says is required — what the <em>competencies</em> require.
+      </div>
+    </div>
+    <div class="cap">
+      <div class="cap-title">A flag &amp; dispute trail</div>
+      <div class="cap-body">
+        Every AI judgment can be flagged with a faculty note. Flags get reviewed;
+        prompts and rubrics improve over time; the curriculum's understanding of
+        itself sharpens.
+      </div>
+    </div>
+    <div class="cap">
+      <div class="cap-title">Advising views</div>
+      <div class="cap-body">
+        For a student who wants to graduate ready for Brand Strategy roles (or
+        any other target), a recommended sequence and the gaps to watch — backed
+        by the same AI judgments faculty have reviewed.
+      </div>
+    </div>
+    <div class="cap">
+      <div class="cap-title">Accreditation &amp; advisory views</div>
+      <div class="cap-body">
+        Industry partners see what the program actually delivers. Accreditors see
+        defensible competency mappings. The program sees what industry says is
+        missing, made persistent.
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="viz-program">
+  <h2><span class="num">§</span>Program coverage map <span class="viz-mock-tag">Illustrative · Data Fabricated</span></h2>
+  <p>
+    The faculty-facing top-level view of <strong>Q1</strong>. Each row is a course,
+    each column is a sub-competency of a chosen career target. Color shows the level
+    each course reaches. The view scrolls across all 5 (or more) career targets
+    and supports filtering by track, level, and instructor.
+  </p>
+
+  <figure>
+    <figcaption>Program coverage · Career target: Production &amp; Operations · 12 of 28 courses shown</figcaption>
+    <div class="viz-title">Where does our curriculum actually develop Production &amp; Ops competencies?</div>
+    <div class="viz-note">
+      At a glance: Workflow Design scaffolds well (1040 → 3460 → 4060). Cost Estimation
+      lands at Do only in GC 4480 with thin preparation — flagged for committee review.
+      Quality Control has solid Know/Understand coverage but never reaches Do anywhere.
+    </div>
+
+    <div class="heatmap" style="margin-top: 14px;">
+      <div class="heat-row">
+        <div class="heat-h corner">Course</div>
+        <div class="heat-col">Workflow<br>design</div>
+        <div class="heat-col">Quality<br>control</div>
+        <div class="heat-col">Vendor<br>management</div>
+        <div class="heat-col">Cost<br>estimation</div>
+        <div class="heat-col">Timeline<br>management</div>
+        <div class="heat-col">Team<br>coordination</div>
+      </div>
+      <div class="heat-row">
+        <div class="heat-rowlabel">GC 1040 <small>Level 1 · Core</small></div>
+        <div class="heat-c cell-know">Know</div>
+        <div class="heat-c cell-know">Know</div>
+        <div class="heat-c cell-absent">—</div>
+        <div class="heat-c cell-absent">—</div>
+        <div class="heat-c cell-absent">—</div>
+        <div class="heat-c cell-absent">—</div>
+      </div>
+      <div class="heat-row">
+        <div class="heat-rowlabel">GC 2070 <small>Level 2 · Core</small></div>
+        <div class="heat-c cell-understand">Understand</div>
+        <div class="heat-c cell-know">Know</div>
+        <div class="heat-c cell-absent">—</div>
+        <div class="heat-c cell-absent">—</div>
+        <div class="heat-c cell-know">Know</div>
+        <div class="heat-c cell-know">Know</div>
+      </div>
+      <div class="heat-row">
+        <div class="heat-rowlabel">GC 3400 <small>Level 3 · Core</small></div>
+        <div class="heat-c cell-understand">Understand</div>
+        <div class="heat-c cell-understand">Understand</div>
+        <div class="heat-c cell-absent">—</div>
+        <div class="heat-c cell-absent">—</div>
+        <div class="heat-c cell-understand">Understand</div>
+        <div class="heat-c cell-know">Know</div>
+      </div>
+      <div class="heat-row">
+        <div class="heat-rowlabel">GC 3460 <small>Level 3 · Core</small></div>
+        <div class="heat-c cell-do">Do</div>
+        <div class="heat-c cell-understand">Understand</div>
+        <div class="heat-c cell-know">Know</div>
+        <div class="heat-c cell-know">Know</div>
+        <div class="heat-c cell-understand">Understand</div>
+        <div class="heat-c cell-absent">—</div>
+      </div>
+      <div class="heat-row">
+        <div class="heat-rowlabel">GC 4060 <small>Level 4 · Core</small></div>
+        <div class="heat-c cell-do">Do</div>
+        <div class="heat-c cell-understand">Understand</div>
+        <div class="heat-c cell-understand">Understand</div>
+        <div class="heat-c cell-understand">Understand</div>
+        <div class="heat-c cell-do">Do</div>
+        <div class="heat-c cell-understand">Understand</div>
+      </div>
+      <div class="heat-row">
+        <div class="heat-rowlabel">GC 4480 <small>Level 4 · Core</small></div>
+        <div class="heat-c cell-do">Do</div>
+        <div class="heat-c cell-understand">Understand</div>
+        <div class="heat-c cell-do">Do</div>
+        <div class="heat-c cell-do">Do</div>
+        <div class="heat-c cell-do">Do</div>
+        <div class="heat-c cell-do">Do</div>
+      </div>
+    </div>
+
+    <div class="heat-legend">
+      <span><span class="legend-sq" style="background: var(--do);"></span>Do</span>
+      <span><span class="legend-sq" style="background: var(--understand);"></span>Understand</span>
+      <span><span class="legend-sq" style="background: var(--know);"></span>Know</span>
+      <span><span class="legend-sq" style="background: var(--absent);"></span>Not addressed</span>
+    </div>
+  </figure>
+</section>
+
+<section id="viz-scaffold">
+  <h2><span class="num">§</span>Scaffolding analysis <span class="viz-mock-tag">Illustrative · Data Fabricated</span></h2>
+  <p>
+    For each sub-competency of a career target, the AI judges whether the curriculum
+    scaffolds it well — introducing it in early courses, building through middle
+    courses, applying in capstones. This view surfaces <strong>brittle</strong>
+    scaffolds: places where an upper-division course expects mastery of something
+    nothing earlier teaches.
+  </p>
+
+  <figure>
+    <figcaption>Scaffolding · Career target: Production &amp; Operations</figcaption>
+    <div class="viz-title">Does each competency scaffold up across course levels?</div>
+    <div class="viz-note">
+      Each row is one sub-competency, traced left-to-right across course levels 1 → 4.
+      The right-most column is the AI's overall judgment on the scaffold quality.
+    </div>
+
+    <div class="scaffold" style="margin-top: 14px;">
+      <div class="scaffold-row">
+        <div class="scaffold-h left">Sub-competency</div>
+        <div class="scaffold-h">Level 1</div>
+        <div class="scaffold-h">Level 2</div>
+        <div class="scaffold-h">Level 3</div>
+        <div class="scaffold-h">Level 4</div>
+        <div class="scaffold-h">Scaffold</div>
+      </div>
+
+      <div class="scaffold-row">
+        <div class="scaffold-label">Workflow design &amp; optimization</div>
+        <div class="scaffold-cell know"><strong>Know</strong><small>GC 1040</small></div>
+        <div class="scaffold-cell understand"><strong>Understand</strong><small>GC 2070</small></div>
+        <div class="scaffold-cell do"><strong>Do</strong><small>GC 3460</small></div>
+        <div class="scaffold-cell do"><strong>Do</strong><small>GC 4060 · 4480</small></div>
+        <div class="scaffold-judgment judgment-strong">Strong</div>
+      </div>
+
+      <div class="scaffold-row">
+        <div class="scaffold-label">Quality control systems</div>
+        <div class="scaffold-cell know"><strong>Know</strong><small>GC 1040</small></div>
+        <div class="scaffold-cell know"><strong>Know</strong><small>GC 2070</small></div>
+        <div class="scaffold-cell understand"><strong>Understand</strong><small>GC 3400 · 3460</small></div>
+        <div class="scaffold-cell understand"><strong>Understand</strong><small>GC 4060 · 4480</small></div>
+        <div class="scaffold-judgment judgment-weak">Weak</div>
+      </div>
+
+      <div class="scaffold-row">
+        <div class="scaffold-label">Vendor selection &amp; management</div>
+        <div class="scaffold-cell empty">—</div>
+        <div class="scaffold-cell empty">—</div>
+        <div class="scaffold-cell know"><strong>Know</strong><small>GC 3460</small></div>
+        <div class="scaffold-cell do"><strong>Do</strong><small>GC 4480</small></div>
+        <div class="scaffold-judgment judgment-brittle">Brittle</div>
+      </div>
+
+      <div class="scaffold-row">
+        <div class="scaffold-label">Cost estimation &amp; budgeting</div>
+        <div class="scaffold-cell empty">—</div>
+        <div class="scaffold-cell empty">—</div>
+        <div class="scaffold-cell know"><strong>Know</strong><small>GC 3460</small></div>
+        <div class="scaffold-cell do"><strong>Do</strong><small>GC 4480</small></div>
+        <div class="scaffold-judgment judgment-brittle">Brittle</div>
+      </div>
+
+      <div class="scaffold-row">
+        <div class="scaffold-label">Timeline management under pressure</div>
+        <div class="scaffold-cell empty">—</div>
+        <div class="scaffold-cell know"><strong>Know</strong><small>GC 2070</small></div>
+        <div class="scaffold-cell understand"><strong>Understand</strong><small>GC 3400 · 3460</small></div>
+        <div class="scaffold-cell do"><strong>Do</strong><small>GC 4060 · 4480</small></div>
+        <div class="scaffold-judgment judgment-strong">Strong</div>
+      </div>
+
+      <div class="scaffold-row">
+        <div class="scaffold-label">Team coordination &amp; communication</div>
+        <div class="scaffold-cell empty">—</div>
+        <div class="scaffold-cell know"><strong>Know</strong><small>GC 2070</small></div>
+        <div class="scaffold-cell know"><strong>Know</strong><small>GC 3400</small></div>
+        <div class="scaffold-cell understand"><strong>Understand</strong><small>GC 4060</small></div>
+        <div class="scaffold-judgment judgment-adequate">Adequate</div>
+      </div>
+    </div>
+
+    <div class="callout caution" style="margin-top: 18px;">
+      <div class="callout-title">⚠ Two brittle scaffolds flagged</div>
+      <p>
+        <strong>Vendor selection</strong> and <strong>cost estimation</strong> both
+        appear only in two level-3+ courses with no introduction in foundation. Students
+        arriving in GC 4480 are expected to operate at Do level on competencies they
+        first encountered one semester earlier in GC 3460. Recommend either softening
+        4480's expectations or adding earlier coverage (e.g. a 2-credit add to GC 2070).
+      </p>
+    </div>
+  </figure>
+</section>
+
+<section id="viz-advising">
+  <h2><span class="num">§</span>Advising view <span class="viz-mock-tag">Illustrative · Data Fabricated</span></h2>
+  <p>
+    A student walks in and says <em>"I want to work in Production Management when I
+    graduate"</em>. The advisor pulls up this view: a recommended sequence backed
+    by the actual competency mapping, plus the gaps to watch given that student's
+    record.
+  </p>
+
+  <figure>
+    <figcaption>Path · Career target: Production &amp; Operations · Student: junior, 18 credits remaining</figcaption>
+    <div class="viz-title">A recommended path with the gaps surfaced</div>
+    <div class="viz-note">
+      Each row is a recommended course in suggested sequence, tagged by its role in
+      the competency progression. The advisor can override any recommendation and
+      see how coverage shifts.
+    </div>
+
+    <div class="advising" style="margin-top: 14px;">
+      <div class="advising-row">
+        <div class="adv-step">1</div>
+        <div class="adv-code">GC 3460</div>
+        <div class="adv-name">
+          Ink and Substrates
+          <small>Required prerequisite for GC 4060 / 4480 · Develops Workflow Design to Do</small>
+        </div>
+        <div class="adv-tag tag-build">Build</div>
+      </div>
+      <div class="advising-row">
+        <div class="adv-step">2</div>
+        <div class="adv-code">GC 4060</div>
+        <div class="adv-name">
+          Package &amp; Specialty Printing
+          <small>Capstone for the Production &amp; Ops competency set</small>
+        </div>
+        <div class="adv-tag tag-apply">Apply</div>
+      </div>
+      <div class="advising-row">
+        <div class="adv-step">3</div>
+        <div class="adv-code">GC 4480</div>
+        <div class="adv-name">
+          Production Management
+          <small>Brings Cost Estimation and Vendor Management to Do — but see gap below</small>
+        </div>
+        <div class="adv-tag tag-apply">Apply</div>
+      </div>
+      <div class="advising-row">
+        <div class="adv-step">⚠</div>
+        <div class="adv-code">Add-on</div>
+        <div class="adv-name">
+          Self-directed prep: cost estimation fundamentals
+          <small>GC 4480 expects Do-level Cost Estimation; the curriculum has no earlier scaffold. Recommend a 0-credit Cadency project or industry shadowing before 4480.</small>
+        </div>
+        <div class="adv-tag tag-gap">Gap to watch</div>
+      </div>
+      <div class="advising-row">
+        <div class="adv-step">4</div>
+        <div class="adv-code">GC 4900or</div>
+        <div class="adv-name">
+          Special Topics: Outreach &amp; Recruitment
+          <small>Builds Team Coordination from Understand → Do; closes a known program-wide weak scaffold</small>
+        </div>
+        <div class="adv-tag tag-build">Build</div>
+      </div>
+    </div>
+  </figure>
+</section>
+
+<section id="viz-gap">
+  <h2><span class="num">§</span>Per-course gap report <span class="viz-mock-tag">Illustrative · Data Fabricated</span></h2>
+  <p>
+    The view a course owner sees on their own course's page. For GC 4060:
+    of the competencies this course expects students to walk in with, how are
+    they actually being delivered by what students have taken? Click any reasoning
+    to see the AI's read; flag anything that doesn't match the course's lived reality.
+  </p>
+
+  <figure>
+    <figcaption>Course owner view · GC 4060 — Package &amp; Specialty Printing</figcaption>
+    <div class="viz-title">Are students arriving ready for what this course expects?</div>
+    <div class="viz-note">
+      4 of 6 prerequisite competencies are met by typical prior coursework. One is
+      underdeveloped; one is missing entirely. Each judgment links to the AI's
+      reasoning and the courses that delivered (or failed to deliver) the competency.
+    </div>
+
+    <div class="gap-report" style="margin-top: 14px;">
+      <div class="gap-row">
+        <div class="gap-name">Workflow design <small>Expected: Understand</small></div>
+        <div class="gap-status status-met">Met</div>
+        <div class="gap-reasoning">GC 3460 develops Do level via ink-formulation labs; GC 2070 introduces it at Understand. Students arrive prepared.</div>
+      </div>
+      <div class="gap-row">
+        <div class="gap-name">Quality control <small>Expected: Understand</small></div>
+        <div class="gap-status status-met">Met</div>
+        <div class="gap-reasoning">GC 3400 and GC 3460 both develop Understand-level QC via instrumentation and substrate-testing exercises.</div>
+      </div>
+      <div class="gap-row">
+        <div class="gap-name">Vendor selection &amp; management <small>Expected: Know</small></div>
+        <div class="gap-status status-met">Met</div>
+        <div class="gap-reasoning">GC 3460 introduces vendor relationships at Know level via supplier-selection exercises. Sufficient.</div>
+      </div>
+      <div class="gap-row">
+        <div class="gap-name">Cost estimation <small>Expected: Understand</small></div>
+        <div class="gap-status status-under">Underdeveloped</div>
+        <div class="gap-reasoning">GC 3460 reaches Know level only — students arrive familiar with the concept but not able to estimate. Course assumes Understand; faculty self-correct in week 2.</div>
+      </div>
+      <div class="gap-row">
+        <div class="gap-name">Timeline management <small>Expected: Understand</small></div>
+        <div class="gap-status status-met">Met</div>
+        <div class="gap-reasoning">GC 3400 develops Understand-level timeline management via the multi-stage project. Solid foundation.</div>
+      </div>
+      <div class="gap-row">
+        <div class="gap-name">Color management theory <small>Expected: Understand</small></div>
+        <div class="gap-status status-missing">Missing</div>
+        <div class="gap-reasoning">No prior course addresses color management at Understand level. GC 3400 introduces digital color but not the print-specific theory GC 4060 assumes. Curriculum gap.</div>
+      </div>
+    </div>
+  </figure>
+</section>
+
+<section id="enables">
+  <h2><span class="num">§</span>What it enables</h2>
+  <ul>
+    <li>
+      <strong>Faculty conversations grounded in evidence.</strong> When two faculty
+      disagree about whether a course teaches workflow design at Do level, they have
+      an AI-drafted reading to argue against — and a way to make their disagreement
+      persistent for the next reviewer.
+    </li>
+    <li>
+      <strong>Curriculum changes with feedback before they ship.</strong> A faculty
+      member redesigning a course can see how their proposed syllabus would change
+      coverage and scaffolding before the redesign goes through Curriculum Committee.
+    </li>
+    <li>
+      <strong>Honest career-readiness claims.</strong> "Graduates of this program
+      are ready for X" becomes a verifiable statement, not a marketing assertion.
+    </li>
+    <li>
+      <strong>A starting point for accreditation and advisory-board conversations.</strong>
+      Industry partners can see what the program actually delivers; the program can
+      see what industry says is missing, made persistent.
+    </li>
+    <li>
+      <strong>Defense against drift.</strong> Curricula erode over decades. The tool
+      surfaces erosion as it happens, instead of every seven-year program review.
+    </li>
+  </ul>
+</section>
+
+<section id="prototype">
+  <h2><span class="num">§</span>The prototype</h2>
+  <p>
+    The version available now is the <strong>M-trial</strong>: a faculty-facing slice
+    that demonstrates the AI's analysis quality on real GC courses against the career
+    targets. It does <em>not</em> yet have the program-wide views above, the official
+    course record store, rescore-on-edit, or accreditation reporting.
+  </p>
+  <p>What it has:</p>
+  <ul>
+    <li>Pick a course from the GC course list, add 1–8 prior courses, pick a career target.</li>
+    <li>
+      The AI drafts Know / Understand / Do outcomes for each course, scores coverage
+      against the target's sub-competencies, judges scaffolding quality, and identifies
+      prerequisite gaps.
+    </li>
+    <li>
+      Every judgment is expandable — click <em>Why?</em> to read the AI's reasoning.
+      Flag any judgment that looks wrong with a note. Flags persist for prompt tuning.
+    </li>
+  </ul>
+  <div class="callout">
+    <div class="callout-title">Why this slice first</div>
+    <p>
+      The point of the prototype is to confirm <strong>the analysis is good enough to
+      be useful</strong>. If faculty find the readings credible, defensible, and worth
+      disputing on the merits, the rest of the tool is mostly plumbing. If they don't,
+      the program-wide views in the visualizations above would be misleading at scale.
+    </p>
+  </div>
+</section>
+
+<section id="phases">
+  <h2><span class="num">§</span>How we get there</h2>
+  <p>
+    Each phase ships as something faculty can use before the next phase arrives.
+    Sequencing reflects what's load-bearing for the next phase, not what's "biggest."
+  </p>
+
+  <div class="phases">
+    <div class="phase current">
+      <div class="phase-tag">Now · M-trial</div>
+      <div class="phase-name">Faculty-facing analysis prototype</div>
+      <div class="phase-body">
+        Demonstrates analysis quality on real GC courses + career targets.
+        Includes the standardized course-record sheet (28 courses) synced into the
+        tool, the editable career-target framework, and per-analysis flagging. Goal:
+        confirm AI readings are credible and worth disputing on the merits.
+      </div>
+    </div>
+    <div class="phase">
+      <div class="phase-tag">Phase 1 · Coverage Matrix</div>
+      <div class="phase-name">Every course × every target, in production</div>
+      <div class="phase-body">
+        The full coverage matrix kept current: every course × every career target,
+        with the dispute/flag pipeline live, the program-wide heat-map view, and the
+        per-course coverage view. Admin tooling for career-target evolution. Faculty
+        can flag and discuss without an engineer in the loop.
+      </div>
+    </div>
+    <div class="phase">
+      <div class="phase-tag">Phase 2 · Scaffolding &amp; Advising</div>
+      <div class="phase-name">Program-wide scaffolding and advising views</div>
+      <div class="phase-body">
+        Scaffolding-quality view across courses (shown in the visualizations above).
+        Advising view: "to be ready for X, take this sequence and watch these gaps."
+        Rescore-on-edit so curriculum changes propagate. The first views useful for
+        accreditation and advisory-board conversations.
+      </div>
+    </div>
+    <div class="phase">
+      <div class="phase-tag">Phase 3 · External-facing</div>
+      <div class="phase-name">Public, employer, and alumni views</div>
+      <div class="phase-body">
+        Public/employer-facing views of what the program delivers.
+        Alumni and industry feedback integration. The analytics needed to drive
+        program-level decisions (faculty hiring, curriculum redesign, new tracks).
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="not">
+  <h2><span class="num">§</span>What it is not</h2>
+  <ul>
+    <li>
+      <strong>Not</strong> a replacement for faculty judgment. The tool drafts;
+      faculty decide. Every AI reading is disputable, and disputes persist as part
+      of the record.
+    </li>
+    <li>
+      <strong>Not</strong> a grading or evaluation tool for individual students or
+      instructors. Coverage scores describe what the <em>course</em> delivers — not
+      how well any one student learned it or how any one instructor taught it.
+    </li>
+    <li>
+      <strong>Not</strong> an automated curriculum redesigner. It surfaces what is,
+      makes scaffolding visible, and supports faculty conversations. The redesigning
+      is still humans-in-a-room work.
+    </li>
+    <li>
+      <strong>Not</strong> a substitute for the Curriculum Committee process. It
+      gives the committee a richer working surface; the committee still decides.
+    </li>
+    <li>
+      <strong>Not</strong> an external marketing claim. The public-facing view in
+      Phase 3 will report what the program actually delivers — backed by the same
+      analysis faculty have already reviewed and flagged.
+    </li>
+  </ul>
+</section>
+
+<div class="doc-foot">
+  GC Curriculum Tool · Vision · Draft 2026-05-18 ·
+  See <a class="inline-link" href="../specs/2026-05-17-gc-curriculum-tool-v1-design.html">v1 implementation design</a>
+  for technical detail.
+</div>
+
+</main>
+
+</body>
+</html>
