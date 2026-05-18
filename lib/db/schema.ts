@@ -75,3 +75,26 @@ export const ipHourly = pgTable('ip_hourly', {
 }, (t) => ({
   pk: primaryKey({ columns: [t.ipHash, t.hourKey] }),
 }));
+
+export const courses = pgTable('courses', {
+  code: text('code').primaryKey(),                                // 'GC 3460', 'GC 4900ap'
+  title: text('title').notNull(),
+  level: integer('level').notNull(),                              // 1-4
+  track: text('track').notNull(),
+  description: text('description').notNull().default(''),
+  prerequisites: text('prerequisites').notNull().default(''),
+  syllabusUrl: text('syllabus_url'),                              // nullable
+  learningObjectives: jsonb('learning_objectives').$type<string[]>().notNull().default([]),
+  majorProjects: jsonb('major_projects').$type<string[]>().notNull().default([]),
+  skillsRequired: jsonb('skills_required').$type<string[]>().notNull().default([]),
+  lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const sheetSyncState = pgTable('sheet_sync_state', {
+  // Singleton row keyed by 'courses' — tracks the most recent successful resync.
+  // Lets the admin UI render "Last synced: 3h ago" without scanning courses.
+  key: text('key').primaryKey(),                                  // always 'courses' for now
+  lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }).notNull(),
+  lastSyncedCount: integer('last_synced_count').notNull(),
+  lastErrors: jsonb('last_errors').$type<string[]>().notNull().default([]),
+});
