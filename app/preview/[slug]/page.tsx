@@ -9,5 +9,5 @@ export default async function PreviewPage({ params }: { params: Promise<{ slug: 
   if (!isValidSlug(slug)) {
     notFound();
   }
-  return <PrototypeClient />;
+  return <PrototypeClient slug={slug} />;
 }

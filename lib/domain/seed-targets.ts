@@ -369,7 +369,3 @@ export const CAREER_TARGETS: CareerTarget[] = [
     ],
   },
 ];
-
-export function getTargetById(id: string): CareerTarget | undefined {
-  return CAREER_TARGETS.find(t => t.id === id);
-}

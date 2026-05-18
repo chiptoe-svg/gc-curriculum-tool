@@ -1,5 +1,42 @@
 import { pgTable, uuid, text, jsonb, timestamp, integer, boolean, primaryKey } from 'drizzle-orm/pg-core';
 
+export const careerTargets = pgTable('career_targets', {
+  id: text('id').primaryKey(),               // stable slug like 'production-operations'
+  name: text('name').notNull(),
+  shortDefinition: text('short_definition').notNull(),
+  industryContexts: jsonb('industry_contexts').$type<string[]>().notNull(),
+  knowDescriptors: jsonb('know_descriptors').$type<string[]>().notNull(),
+  understandDescriptors: jsonb('understand_descriptors').$type<string[]>().notNull(),
+  doDescriptors: jsonb('do_descriptors').$type<string[]>().notNull(),
+  defensibilityNote: text('defensibility_note').notNull(),
+  socCode: text('soc_code'),                 // nullable
+  displayOrder: integer('display_order').notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const subCompetencies = pgTable('sub_competencies', {
+  id: text('id').primaryKey(),               // stable slug; never changes once created
+  careerTargetId: text('career_target_id').notNull().references(() => careerTargets.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  knowDescriptor: text('know_descriptor').notNull(),
+  understandDescriptor: text('understand_descriptor').notNull(),
+  doDescriptor: text('do_descriptor').notNull(),
+  displayOrder: integer('display_order').notNull(),
+  retired: boolean('retired').default(false).notNull(),  // soft delete so old coverage_scores don't orphan
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const prototypeTargetEdits = pgTable('prototype_target_edits', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  ipHash: text('ip_hash').notNull(),
+  entityType: text('entity_type').notNull(),     // 'career_target' | 'sub_competency'
+  entityId: text('entity_id').notNull(),
+  changeType: text('change_type').notNull(),     // 'create' | 'update' | 'retire' | 'reorder'
+  before: jsonb('before'),                       // null on create
+  after: jsonb('after'),                         // null on retire/delete
+});
+
 export const prototypeRuns = pgTable('prototype_runs', {
   id: uuid('id').primaryKey().defaultRandom(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),

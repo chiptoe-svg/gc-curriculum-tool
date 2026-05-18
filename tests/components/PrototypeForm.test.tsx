@@ -1,14 +1,24 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeAll } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { PrototypeForm } from '@/components/PrototypeForm';
+import { CAREER_TARGETS } from '@/lib/domain/seed-targets';
+
+// Mock fetch so the dropdown loads immediately from the seed-targets fixture
+beforeAll(() => {
+  global.fetch = vi.fn().mockResolvedValue({
+    ok: true,
+    json: async () => CAREER_TARGETS.map((t) => ({ id: t.id, name: t.name })),
+  } as Response);
+});
 
 describe('PrototypeForm', () => {
-  it('renders the upstream syllabus, downstream syllabus, career target and Analyze button', () => {
+  it('renders the upstream syllabus, downstream syllabus, career target and Analyze button', async () => {
     render(<PrototypeForm onAnalyze={vi.fn()} isAnalyzing={false} />);
     // There should be at least one upstream syllabus textarea
     expect(screen.getByLabelText(/upstream course 1 syllabus/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/downstream course syllabus/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/career target/i)).toBeInTheDocument();
+    // Wait for the async fetch to resolve so the Select renders instead of the loading text
+    await waitFor(() => expect(screen.getByLabelText(/career target/i)).toBeInTheDocument());
     expect(screen.getByRole('button', { name: /analyze/i })).toBeInTheDocument();
   });
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { CAREER_TARGETS, getTargetById } from '@/lib/domain/seed-targets';
+import { CAREER_TARGETS } from '@/lib/domain/seed-targets';
 
 describe('seed-targets', () => {
   it('exposes all 5 career targets', () => {
@@ -20,8 +20,9 @@ describe('seed-targets', () => {
     }
   });
 
-  it('getTargetById returns the target', () => {
-    expect(getTargetById('brand-strategy')?.name).toBe('Brand Strategy');
+  it('CAREER_TARGETS can be used to find a target by id', () => {
+    const target = CAREER_TARGETS.find(t => t.id === 'brand-strategy');
+    expect(target?.name).toBe('Brand Strategy');
   });
 
   it('every sub-competency has unique id within its target', () => {

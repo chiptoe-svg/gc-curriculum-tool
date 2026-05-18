@@ -1,19 +1,30 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PrototypeForm, type AnalyzeInput } from '@/components/PrototypeForm';
 import { KUDCard } from '@/components/KUDCard';
 import { CoverageHeatMap } from '@/components/CoverageHeatMap';
 import { PrerequisiteGapPanel } from '@/components/PrerequisiteGapPanel';
 import { Separator } from '@/components/ui/separator';
-import { CAREER_TARGETS, getTargetById } from '@/lib/domain/seed-targets';
-import type { AnalysisResult } from '@/lib/domain/types';
+import type { AnalysisResult, CareerTarget } from '@/lib/domain/types';
 
-export function PrototypeClient() {
+export function PrototypeClient({ slug }: { slug: string }) {
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [runId, setRunId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [targetsMap, setTargetsMap] = useState<Map<string, CareerTarget>>(new Map());
+
+  useEffect(() => {
+    fetch('/api/targets')
+      .then((r) => r.json())
+      .then((data: CareerTarget[]) => {
+        setTargetsMap(new Map(data.map((t) => [t.id, t])));
+      })
+      .catch(() => {
+        // Silently fail — UI degrades gracefully (no target name shown)
+      });
+  }, []);
 
   async function handleAnalyze(input: AnalyzeInput) {
     setAnalyzing(true);
@@ -40,10 +51,23 @@ export function PrototypeClient() {
     await fetch('/api/flag', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ runId, flagType, target, note }) });
   }
 
-  const target = result ? getTargetById(result.careerTargetId) : null;
+  const target = result ? (targetsMap.get(result.careerTargetId) ?? null) : null;
+
+  const targetCount = targetsMap.size || 5; // fallback to 5 while loading
 
   return (
     <main className="mx-auto max-w-5xl p-6 md:p-12 space-y-10">
+      {/* Career target editor banner */}
+      <div className="rounded-md border border-border bg-muted/40 px-4 py-2 text-sm text-muted-foreground flex items-center justify-between gap-4">
+        <span>Career target definitions are editable.</span>
+        <a
+          href={`/preview/${slug}/targets`}
+          className="text-foreground underline underline-offset-2 font-medium whitespace-nowrap"
+        >
+          View / edit targets &rarr;
+        </a>
+      </div>
+
       <header className="space-y-4">
         <p className="text-xs uppercase tracking-widest text-muted-foreground">Clemson GC — Curriculum Tool Prototype</p>
         <h1 className="text-4xl font-semibold leading-tight">A working preview of how the curriculum tool will analyze courses.</h1>
@@ -60,7 +84,7 @@ export function PrototypeClient() {
         <ol className="list-decimal pl-5 space-y-2 text-sm leading-relaxed">
           <li>Paste each <strong>upstream</strong> course&apos;s syllabus in sequence order (earliest first). Click &ldquo;Add upstream course&rdquo; to add more rows. Up to {8}.</li>
           <li>Paste the <strong>downstream</strong> course&apos;s syllabus.</li>
-          <li>Pick the career target you want to evaluate alignment against ({CAREER_TARGETS.length} options).</li>
+          <li>Pick the career target you want to evaluate alignment against ({targetCount} options).</li>
           <li>Click <strong>Analyze</strong>. The analysis takes 30–90 seconds depending on chain length.</li>
           <li>Review the drafted KUD outcomes, the coverage heat map, and the prerequisite gap analysis. Click any reasoning to read it and flag if wrong.</li>
         </ol>

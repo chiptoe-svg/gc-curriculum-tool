@@ -3,9 +3,19 @@ import { POST } from '@/app/api/analyze/route';
 import { FakeProvider } from '@/lib/ai/fake-provider';
 import * as providerModule from '@/lib/ai/provider';
 import * as queriesModule from '@/lib/db/queries';
+import { CAREER_TARGETS } from '@/lib/domain/seed-targets';
 
 vi.mock('@/lib/db/queries', () => ({
   insertRun: vi.fn().mockResolvedValue({ id: 'fake-run-id' }),
+}));
+
+// Mock the DB-backed career targets queries so the analyze test doesn't need a real DB
+vi.mock('@/lib/db/career-targets-queries', () => ({
+  getTargetById: vi.fn(async (id: string) => {
+    return CAREER_TARGETS.find((t) => t.id === id) ?? null;
+  }),
+  clearTargetCache: vi.fn(),
+  listTargets: vi.fn(async () => CAREER_TARGETS),
 }));
 vi.mock('@/lib/rate-limit/ip-rate-limit', () => ({
   checkIpRateLimit: vi.fn().mockResolvedValue({ allowed: true, remaining: 9 }),

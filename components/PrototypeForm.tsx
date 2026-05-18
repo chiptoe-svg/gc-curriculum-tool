@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -8,9 +8,13 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SampleSyllabusButton } from './SampleSyllabusButton';
-import { CAREER_TARGETS } from '@/lib/domain/seed-targets';
 
 const MAX_UPSTREAM_COURSES = 8;
+
+interface TargetOption {
+  id: string;
+  name: string;
+}
 
 export interface CourseInput {
   courseLabel: string;
@@ -33,9 +37,27 @@ function isValidCourse(c: CourseInput): boolean {
 }
 
 export function PrototypeForm({ onAnalyze, isAnalyzing }: Props) {
-  const [careerTargetId, setCareerTargetId] = useState(CAREER_TARGETS[0]?.id ?? '');
+  const [targets, setTargets] = useState<TargetOption[]>([]);
+  const [targetsLoading, setTargetsLoading] = useState(true);
+  const [careerTargetId, setCareerTargetId] = useState('');
   const [upstreamChain, setUpstreamChain] = useState<CourseInput[]>([{ courseLabel: '', syllabusText: '' }]);
   const [downstream, setDownstream] = useState<CourseInput>({ courseLabel: '', syllabusText: '' });
+
+  useEffect(() => {
+    fetch('/api/targets')
+      .then((r) => r.json())
+      .then((data: TargetOption[]) => {
+        setTargets(data);
+        if (data.length > 0 && !careerTargetId) {
+          setCareerTargetId(data[0]!.id);
+        }
+      })
+      .catch(() => {
+        // If fetch fails, leave targets empty — user sees empty dropdown
+      })
+      .finally(() => setTargetsLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const canSubmit =
     !isAnalyzing &&
@@ -167,16 +189,20 @@ export function PrototypeForm({ onAnalyze, isAnalyzing }: Props) {
         <CardContent className="pt-6 space-y-4">
           <div className="space-y-2">
             <Label htmlFor="career-target">Career target</Label>
-            <Select value={careerTargetId} onValueChange={(v) => { if (v !== null) setCareerTargetId(v); }}>
-              <SelectTrigger id="career-target" aria-label="Career target">
-                <SelectValue placeholder="Choose a target" />
-              </SelectTrigger>
-              <SelectContent>
-                {CAREER_TARGETS.map(t => (
-                  <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {targetsLoading ? (
+              <p className="text-sm text-muted-foreground">Loading career targets...</p>
+            ) : (
+              <Select value={careerTargetId} onValueChange={(v) => { if (v !== null) setCareerTargetId(v); }}>
+                <SelectTrigger id="career-target" aria-label="Career target">
+                  <SelectValue placeholder="Choose a target" />
+                </SelectTrigger>
+                <SelectContent>
+                  {targets.map(t => (
+                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           <Button size="lg" onClick={handleSubmit} disabled={!canSubmit}>

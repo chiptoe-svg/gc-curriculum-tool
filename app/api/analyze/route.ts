@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { createHash } from 'node:crypto';
 import { getProvider } from '@/lib/ai/provider';
 import { loadPrompt } from '@/lib/ai/prompts/load';
-import { getTargetById } from '@/lib/domain/seed-targets';
+import { getTargetById } from '@/lib/db/career-targets-queries';
 import { insertRun } from '@/lib/db/queries';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
@@ -13,7 +13,7 @@ import {
   prerequisiteClaimsSchema, prerequisiteClaimsJsonSchema,
   prerequisiteGapsSchema, prerequisiteGapsJsonSchema,
 } from '@/lib/ai/schemas';
-import type { AnalysisResult, KUDOutcomes, CoverageScore, PrerequisiteCompetencyClaim, PrerequisiteGap, UpstreamCourseAnalysis } from '@/lib/domain/types';
+import type { AnalysisResult, CareerTarget, KUDOutcomes, CoverageScore, PrerequisiteCompetencyClaim, PrerequisiteGap, UpstreamCourseAnalysis } from '@/lib/domain/types';
 
 // Vercel Hobby plan caps function duration at 60s by default; with 2N+4
 // sequential AI calls (N upstream courses), analyses with N=4 run ~60-90s.
@@ -48,7 +48,7 @@ function hashIp(req: Request): string {
   return createHash('sha256').update(ip).digest('hex');
 }
 
-function buildTargetContext(target: ReturnType<typeof getTargetById>): string {
+function buildTargetContext(target: CareerTarget | null): string {
   if (!target) return '';
   const lines: string[] = [
     `Career Target: ${target.name}`,
@@ -79,7 +79,7 @@ export async function POST(req: Request): Promise<Response> {
   }
   const { careerTargetId, upstreamChain, downstream } = parsed.data;
 
-  const target = getTargetById(careerTargetId);
+  const target = await getTargetById(careerTargetId);
   if (!target) {
     return NextResponse.json({ error: `unknown careerTargetId: ${careerTargetId}` }, { status: 400 });
   }
