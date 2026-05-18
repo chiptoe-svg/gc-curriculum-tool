@@ -87,7 +87,7 @@ Test drive the prototype over **roughly the next two weeks**, focusing on the co
 Two channels — both visible to other faculty so feedback compounds instead of sitting in one inbox:
 
 - **In the tool itself.** Every AI judgment has a "Flag this" button with a note field. Best for specific feedback (*"this score is wrong because…"*).
-- **On the shared sheet.** A *Feedback* tab on the [shared course sheet](https://docs.google.com/spreadsheets/d/12aPhgrIlhDYjKD0-Gt97glf1d9fKtwKmL4FwM8iTz7Q/edit). Best for cross-cutting questions (*"should we add a career target for X?"*) and anything worth other faculty seeing.
+- **On the shared sheet.** Open the [Feedback tab on the shared sheet](https://docs.google.com/spreadsheets/d/12aPhgrIlhDYjKD0-Gt97glf1d9fKtwKmL4FwM8iTz7Q/edit?gid=1820124586#gid=1820124586) — visible to the whole department. Best for cross-cutting questions (*"should we add a career target for X?"*) and anything worth other faculty seeing.
 
 ## How we get there
 
