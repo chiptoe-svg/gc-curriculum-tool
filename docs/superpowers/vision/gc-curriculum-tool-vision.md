@@ -56,6 +56,12 @@ When the full tool is in production, it is the canonical living view of the GC p
 
 - **A handful of high-leverage views.** A heat map of program-wide coverage. A per-course "is it scaffolded?" view. A per-career-target "is the program preparing students for this destination?" view. An advising view that says "if a student wants to graduate ready for Brand Strategy roles, here is the recommended sequence and the gaps to watch."
 
+## Curriculum flow
+
+Where the heat map shows depth, the flow map shows reach. Each colored ribbon connects a course to a career target it contributes to. Ribbon width is coverage depth (Know / Understand / Do); colors match the five career destinations. The whole curriculum's coverage shape becomes legible at a glance — which targets are well-served, which are thin, and which courses are doing the most lifting. *(See the [HTML version](./gc-curriculum-tool-vision.html#viz-flow) for the full Sankey-style diagram.)*
+
+In an illustrative 15-course slice: Production & Ops is the densest column (11 courses contribute), AI Workflow has only 4. The thinnest ribbon is a curriculum-shape signal — the destination exists in our framework but few courses contribute. That's the kind of finding the curriculum committee can use to decide whether to add a course, retool an existing one, or sharpen the target's definition.
+
 ## What this enables
 
 - **Faculty conversations grounded in evidence.** When two faculty disagree about whether a course teaches workflow design at Do level, they have an AI-drafted reading to argue against — and a way to make their disagreement persistent.
