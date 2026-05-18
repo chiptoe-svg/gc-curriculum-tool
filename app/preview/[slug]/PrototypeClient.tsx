@@ -143,7 +143,7 @@ export function PrototypeClient({ slug }: { slug: string }) {
       )}
 
       <footer className="pt-12 border-t text-sm text-muted-foreground">
-        This is a prototype. The full tool ships in ~3 months. Feedback: <a className="underline" href="mailto:chiptoe@mac.com">chiptoe@mac.com</a>.
+        This is a prototype — the expected full tool is described in <a className="underline" href="https://chiptoe-svg.github.io/gc-curriculum-tool/docs/superpowers/specs/2026-05-17-gc-curriculum-tool-v1-design.html" target="_blank" rel="noopener noreferrer">the design spec</a>.
       </footer>
     </main>
   );
