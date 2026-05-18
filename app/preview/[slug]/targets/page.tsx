@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation';
 import { isValidSlug } from '@/lib/slug';
 import { listTargets } from '@/lib/db/career-targets-queries';
+import { getSyncState } from '@/lib/db/courses-queries';
+import { CourseSyncCard } from '@/components/CourseSyncCard';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
@@ -13,7 +15,12 @@ export default async function TargetsListPage({
   const { slug } = await params;
   if (!isValidSlug(slug)) notFound();
 
-  const targets = await listTargets();
+  const [targets, syncState] = await Promise.all([listTargets(), getSyncState()]);
+  const initialState = {
+    lastSyncedAt: syncState?.lastSyncedAt?.toISOString() ?? null,
+    lastSyncedCount: syncState?.lastSyncedCount ?? 0,
+    lastErrors: syncState?.lastErrors ?? [],
+  };
 
   return (
     <main className="mx-auto max-w-4xl p-6 md:p-12 space-y-8">
@@ -22,6 +29,8 @@ export default async function TargetsListPage({
           &larr; Back to prototype
         </Link>
       </div>
+
+      <CourseSyncCard slug={slug} initialState={initialState} />
 
       <header className="space-y-3">
         <h1 className="text-3xl font-semibold">Career Targets</h1>
