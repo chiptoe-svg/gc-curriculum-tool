@@ -1,5 +1,7 @@
 # The GC Curriculum Tool — Vision
 
+> **Want to test drive a rough prototype?** → [Open the prototype](https://gc-curriculum-tool.vercel.app/preview/4QcseN0pvlpd35gb) (real AI analysis on real GC courses, ~30s per run)
+
 ## What we're building
 
 A living, AI-backed record of the Clemson GC curriculum that answers two questions faculty actually care about — continuously, transparently, and in language faculty can argue with.
