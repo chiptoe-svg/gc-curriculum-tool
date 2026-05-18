@@ -90,7 +90,7 @@ export function PrototypeClient({ slug }: { slug: string }) {
         </ol>
       </section>
 
-      <PrototypeForm onAnalyze={handleAnalyze} isAnalyzing={analyzing} />
+      <PrototypeForm slug={slug} onAnalyze={handleAnalyze} isAnalyzing={analyzing} />
 
       {error && (
         <div className="rounded border border-destructive bg-destructive/5 text-destructive p-4 text-sm">
