@@ -491,6 +491,91 @@
   .phase-name { font-family: var(--display); font-size: 18px; font-weight: 600; margin-bottom: 6px; }
   .phase-body { font-size: 14.5px; color: var(--text-muted); line-height: 1.55; }
 
+  /* PROBLEM-SOLVER PYRAMID */
+  .pyramid {
+    margin: 20px 0 12px;
+    max-width: 760px;
+  }
+  .pyramid-apex {
+    background: linear-gradient(135deg, #E08628, #C26818);
+    color: white;
+    text-align: center;
+    padding: 18px 24px;
+    border-radius: 6px 6px 0 0;
+    width: 56%;
+    margin: 0 auto;
+    border: 1px solid rgba(0,0,0,0.06);
+  }
+  .pyramid-apex strong {
+    display: block;
+    font-family: var(--display);
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+  .pyramid-apex small {
+    display: block;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    margin-top: 4px;
+    opacity: 0.88;
+    font-weight: 400;
+  }
+  .pyramid-clusters {
+    background: #4A8B95;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    border-left: 1px solid rgba(0,0,0,0.06);
+    border-right: 1px solid rgba(0,0,0,0.06);
+  }
+  .cluster {
+    color: white;
+    text-align: center;
+    padding: 16px 10px;
+    font-size: 13px;
+    font-weight: 500;
+    border-right: 1px solid rgba(255,255,255,0.18);
+    line-height: 1.25;
+  }
+  .cluster:last-child { border-right: 0; }
+  .pyramid-base {
+    background: #EAE0CC;
+    padding: 16px 18px 18px;
+    border-radius: 0 0 6px 6px;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-top: 0;
+  }
+  .base-label {
+    font-family: var(--display);
+    font-size: 14px;
+    font-weight: 600;
+    color: #5C4A28;
+    text-align: center;
+    margin-bottom: 12px;
+    letter-spacing: 0.02em;
+  }
+  .base-items {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+  }
+  .base-item {
+    text-align: center;
+    font-size: 12.5px;
+    color: #4A3A1E;
+    padding: 6px 4px;
+    line-height: 1.3;
+  }
+  @media (max-width: 720px) {
+    .pyramid-apex { width: 80%; }
+    .pyramid-clusters { grid-template-columns: repeat(5, 1fr); font-size: 11px; }
+    .cluster { font-size: 11.5px; padding: 12px 4px; }
+    .base-items { grid-template-columns: repeat(5, 1fr); }
+    .base-item { font-size: 11px; }
+  }
+
   /* 3-ACT PROGRAM VISUALIZATION */
   .three-act { display: flex; flex-direction: column; gap: 14px; margin: 22px 0 8px; }
   .act {
@@ -727,6 +812,7 @@
     <div class="nav-group-label">Sections</div>
     <a class="nav-link" href="#what">What we're building</a>
     <a class="nav-link" href="#questions">The two questions</a>
+    <a class="nav-link" href="#producing">What we're producing</a>
     <a class="nav-link" href="#three-act">The 3-Act program</a>
     <a class="nav-link" href="#end-state">The end state</a>
     <a class="nav-link" href="#viz-program">Program coverage map</a>
@@ -815,6 +901,62 @@
     course-level judgments; course-level prerequisite gaps surface where
     the program isn't actually scaffolding what its own upper-division
     courses expect.
+  </p>
+</section>
+
+<section id="producing">
+  <h2><span class="num">§</span>What we're producing</h2>
+  <p>
+    Beneath the curriculum sits a clear picture of what every GC graduate should
+    be: a <strong>tenacious, fearless problem-solver</strong>, equipped with both
+    program-wide foundational habits and a set of domain-specific cluster
+    competencies. Career destinations are <em>where</em> a graduate is heading;
+    this is <em>what they are</em> when they get there.
+  </p>
+
+  <div class="pyramid">
+    <div class="pyramid-apex">
+      <strong>Tenacious &middot; Fearless &middot; Problem-Solver</strong>
+      <small>The graduating outcome</small>
+    </div>
+    <div class="pyramid-clusters">
+      <div class="cluster">Structural<br>Design</div>
+      <div class="cluster">Color<br>Management</div>
+      <div class="cluster">Print<br>Processes</div>
+      <div class="cluster">Graphic<br>Workflow</div>
+      <div class="cluster">Brand<br>Strategy</div>
+    </div>
+    <div class="pyramid-base">
+      <div class="base-label">Foundational Competencies</div>
+      <div class="base-items">
+        <div class="base-item">Agency</div>
+        <div class="base-item">Attention to Detail</div>
+        <div class="base-item">Resilience</div>
+        <div class="base-item">Curiosity</div>
+        <div class="base-item">Communication</div>
+      </div>
+    </div>
+  </div>
+
+  <p style="margin-top: 28px;">
+    The <strong>foundational competencies</strong> — Agency, Attention to Detail,
+    Resilience, Curiosity, Communication — should show up across every course in
+    the program, regardless of act or specialty. They're program-wide threads, not
+    something any single course delivers in isolation.
+  </p>
+  <p>
+    The <strong>cluster competencies</strong> — Structural Design, Color Management,
+    Print Processes, Graphic Workflow, Brand Strategy — are the domain-specific
+    tracks where deep expertise builds across multiple courses. These are what
+    the coverage matrix and scaffolding analysis read at the course level.
+  </p>
+  <p>
+    The tool maps both layers. The clusters get explicit coverage analysis;
+    the foundational competencies show up implicitly inside every reasoned
+    judgment (a course developing "Quality Control" at Do level is also building
+    Attention to Detail by definition). Over time the tool can surface which
+    courses are doing the most for each foundational competency — and which
+    aren't pulling their weight.
   </p>
 </section>
 

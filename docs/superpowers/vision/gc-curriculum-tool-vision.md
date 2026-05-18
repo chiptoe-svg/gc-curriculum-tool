@@ -16,6 +16,16 @@ Today these questions get answered through committee discussions, gut intuition,
 
 The tool's job is to make those answers *visible* and *defensible* — for advising students, for accreditation conversations, for industry/advisory-board reviews, for the next curriculum redesign, and for hiring decisions about what kind of faculty the program needs.
 
+## What we're producing
+
+Beneath the curriculum sits a clear picture of what every GC graduate should be: a **tenacious, fearless problem-solver**, equipped with both program-wide foundational habits and a set of domain-specific cluster competencies. Career destinations are *where* a graduate is heading; this is *what they are* when they get there.
+
+**Foundational competencies** — Agency, Attention to Detail, Resilience, Curiosity, Communication — should show up across every course in the program. They're program-wide threads, not something any single course delivers in isolation.
+
+**Cluster competencies** — Structural Design, Color Management, Print Processes, Graphic Workflow, Brand Strategy — are the domain-specific tracks where deep expertise builds across multiple courses. The coverage matrix and scaffolding analysis read at this level.
+
+The tool maps both layers. Clusters get explicit coverage analysis; foundational competencies show up implicitly inside every reasoned judgment.
+
 ## The 3-Act program
 
 Underneath the career-target framework sits the program's own mental model: GC unfolds as a three-act progression — students learn the field, integrate the field, then apply a focus. The tool reads each course in light of where it sits in this progression.
