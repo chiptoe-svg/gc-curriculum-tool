@@ -19,19 +19,19 @@ const target: CareerTarget = {
   ],
 };
 
-const upstream1Scores: CoverageScore[] = [
-  { subCompetencyId: 'workflow-design', kudLevel: 'know', confidence: 'medium', reasoning: 'Upstream1 workflow reasoning here that is long enough.' },
-  { subCompetencyId: 'quality-control', kudLevel: 'know', confidence: 'low', reasoning: 'Upstream1 quality reasoning here.' },
+const prior1Scores: CoverageScore[] = [
+  { subCompetencyId: 'workflow-design', kudLevel: 'know', confidence: 'medium', reasoning: 'Prior1 workflow reasoning here that is long enough.' },
+  { subCompetencyId: 'quality-control', kudLevel: 'know', confidence: 'low', reasoning: 'Prior1 quality reasoning here.' },
 ];
 
-const upstream2Scores: CoverageScore[] = [
-  { subCompetencyId: 'workflow-design', kudLevel: 'do', confidence: 'high', reasoning: 'Upstream2 workflow reasoning here that is long enough.' },
-  { subCompetencyId: 'quality-control', kudLevel: 'understand', confidence: 'medium', reasoning: 'Upstream2 quality reasoning here.' },
+const prior2Scores: CoverageScore[] = [
+  { subCompetencyId: 'workflow-design', kudLevel: 'do', confidence: 'high', reasoning: 'Prior2 workflow reasoning here that is long enough.' },
+  { subCompetencyId: 'quality-control', kudLevel: 'understand', confidence: 'medium', reasoning: 'Prior2 quality reasoning here.' },
 ];
 
-const downstreamScores: CoverageScore[] = [
-  { subCompetencyId: 'workflow-design', kudLevel: 'do', confidence: 'high', reasoning: 'Downstream workflow reasoning here.' },
-  { subCompetencyId: 'quality-control', kudLevel: 'do', confidence: 'high', reasoning: 'Downstream quality reasoning here.' },
+const courseScores: CoverageScore[] = [
+  { subCompetencyId: 'workflow-design', kudLevel: 'do', confidence: 'high', reasoning: 'Course workflow reasoning here.' },
+  { subCompetencyId: 'quality-control', kudLevel: 'do', confidence: 'high', reasoning: 'Course quality reasoning here.' },
 ];
 
 describe('CoverageHeatMap', () => {
@@ -39,30 +39,53 @@ describe('CoverageHeatMap', () => {
     render(
       <CoverageHeatMap
         target={target}
-        upstreamChain={[
-          { courseLabel: 'GC 3460', coverage: upstream2Scores },
+        courseLabel="GC 4060"
+        courseScores={courseScores}
+        priorCoursework={[
+          { courseLabel: 'GC 3460', coverage: prior2Scores },
         ]}
-        downstreamLabel="GC 4060"
-        downstreamScores={downstreamScores}
         onFlag={vi.fn()}
       />
     );
-    expect(screen.getByText('GC 3460')).toBeInTheDocument();
     expect(screen.getByText('GC 4060')).toBeInTheDocument();
+    expect(screen.getByText('GC 3460')).toBeInTheDocument();
     expect(screen.getByText('Workflow design')).toBeInTheDocument();
     expect(screen.getByText('Quality control')).toBeInTheDocument();
   });
 
-  it('renders N+1 rows for a 2-upstream chain', () => {
+  it('renders the course row at the top, prior coursework rows below', () => {
     render(
       <CoverageHeatMap
         target={target}
-        upstreamChain={[
-          { courseLabel: 'GC 1040', coverage: upstream1Scores },
-          { courseLabel: 'GC 3460', coverage: upstream2Scores },
+        courseLabel="GC 4060"
+        courseScores={courseScores}
+        priorCoursework={[
+          { courseLabel: 'GC 1040', coverage: prior1Scores },
+          { courseLabel: 'GC 3460', coverage: prior2Scores },
         ]}
-        downstreamLabel="GC 4060"
-        downstreamScores={downstreamScores}
+        onFlag={vi.fn()}
+      />
+    );
+    // aria-hidden divider row is excluded from role='row' results
+    // rows[0] = thead row, rows[1] = course row, rows[2] = prior1, rows[3] = prior2
+    const rows = screen.getAllByRole('row');
+    const courseRow = rows[1]!;
+    const prior1Row = rows[2]!;
+    expect(courseRow.textContent).toContain('GC 4060');
+    expect(prior1Row.textContent).toContain('GC 1040');
+    expect(screen.getByText('GC 3460')).toBeInTheDocument();
+  });
+
+  it('renders N+1 rows for a 2-prior-course set', () => {
+    render(
+      <CoverageHeatMap
+        target={target}
+        courseLabel="GC 4060"
+        courseScores={courseScores}
+        priorCoursework={[
+          { courseLabel: 'GC 1040', coverage: prior1Scores },
+          { courseLabel: 'GC 3460', coverage: prior2Scores },
+        ]}
         onFlag={vi.fn()}
       />
     );
@@ -75,15 +98,16 @@ describe('CoverageHeatMap', () => {
     render(
       <CoverageHeatMap
         target={target}
-        upstreamChain={[
-          { courseLabel: 'GC 3460', coverage: upstream2Scores },
+        courseLabel="GC 4060"
+        courseScores={courseScores}
+        priorCoursework={[
+          { courseLabel: 'GC 3460', coverage: prior2Scores },
         ]}
-        downstreamLabel="GC 4060"
-        downstreamScores={downstreamScores}
         onFlag={vi.fn()}
       />
     );
     fireEvent.click(screen.getAllByRole('button', { name: /show ai reasoning/i })[0]!);
-    expect(screen.getByText(/Upstream2 workflow reasoning/i)).toBeInTheDocument();
+    // The first button in DOM order is in the course row (GC 4060)
+    expect(screen.getByText(/Course workflow reasoning/i)).toBeInTheDocument();
   });
 });

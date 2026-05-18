@@ -12,11 +12,12 @@ beforeAll(() => {
 });
 
 describe('PrototypeForm', () => {
-  it('renders the upstream syllabus, downstream syllabus, career target and Analyze button', async () => {
+  it('renders the course syllabus, prior coursework syllabus, career target and Analyze button', async () => {
     render(<PrototypeForm onAnalyze={vi.fn()} isAnalyzing={false} />);
-    // There should be at least one upstream syllabus textarea
-    expect(screen.getByLabelText(/upstream course 1 syllabus/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/downstream course syllabus/i)).toBeInTheDocument();
+    // Course (being analyzed) appears first — identified by its aria-label
+    expect(screen.getByLabelText(/^course syllabus$/i)).toBeInTheDocument();
+    // Prior coursework section follows
+    expect(screen.getByLabelText(/^prior course 1 syllabus$/i)).toBeInTheDocument();
     // Wait for the async fetch to resolve so the Select renders instead of the loading text
     await waitFor(() => expect(screen.getByLabelText(/career target/i)).toBeInTheDocument());
     expect(screen.getByRole('button', { name: /analyze/i })).toBeInTheDocument();
@@ -28,30 +29,30 @@ describe('PrototypeForm', () => {
     expect(btn).toBeDisabled();
   });
 
-  it('calls onAnalyze with upstreamChain when submitted', async () => {
+  it('calls onAnalyze with course and priorCoursework when submitted', async () => {
     const onAnalyze = vi.fn();
     render(<PrototypeForm onAnalyze={onAnalyze} isAnalyzing={false} />);
-    // Fill in the upstream label and syllabus
-    fireEvent.change(screen.getByLabelText(/upstream course 1 label/i), { target: { value: 'GC 3460' } });
-    fireEvent.change(screen.getByLabelText(/upstream course 1 syllabus/i), { target: { value: 'A'.repeat(100) } });
-    // Fill in the downstream label and syllabus
-    fireEvent.change(screen.getByLabelText(/downstream course label/i), { target: { value: 'GC 4060' } });
-    fireEvent.change(screen.getByLabelText(/downstream course syllabus/i), { target: { value: 'B'.repeat(100) } });
+    // Fill in the course (being analyzed) — aria-label "Course label" is unique to the course input
+    fireEvent.change(screen.getByLabelText(/^course label$/i), { target: { value: 'GC 4060' } });
+    fireEvent.change(screen.getByLabelText(/^course syllabus$/i), { target: { value: 'B'.repeat(100) } });
+    // Fill in prior course 1 label and syllabus — specific "Prior course 1" aria-labels
+    fireEvent.change(screen.getByLabelText(/^prior course 1 label$/i), { target: { value: 'GC 3460' } });
+    fireEvent.change(screen.getByLabelText(/^prior course 1 syllabus$/i), { target: { value: 'A'.repeat(100) } });
     fireEvent.click(screen.getByRole('button', { name: /analyze/i }));
     expect(onAnalyze).toHaveBeenCalledWith({
       careerTargetId: expect.any(String),
-      upstreamChain: [{ courseLabel: 'GC 3460', syllabusText: 'A'.repeat(100) }],
-      downstream: { courseLabel: 'GC 4060', syllabusText: 'B'.repeat(100) },
+      course: { courseLabel: 'GC 4060', syllabusText: 'B'.repeat(100) },
+      priorCoursework: [{ courseLabel: 'GC 3460', syllabusText: 'A'.repeat(100) }],
     });
   });
 
-  it('Add upstream course button adds a second row', () => {
+  it('Add prior course button adds a second prior course row', () => {
     render(<PrototypeForm onAnalyze={vi.fn()} isAnalyzing={false} />);
-    // Initially only 1 upstream syllabus textarea
-    expect(screen.queryByLabelText(/upstream course 2 syllabus/i)).not.toBeInTheDocument();
-    // Click "Add upstream course"
-    fireEvent.click(screen.getByRole('button', { name: /add upstream course/i }));
-    // Now there should be a second upstream syllabus textarea
-    expect(screen.getByLabelText(/upstream course 2 syllabus/i)).toBeInTheDocument();
+    // Initially only 1 prior course syllabus textarea
+    expect(screen.queryByLabelText(/prior course 2 syllabus/i)).not.toBeInTheDocument();
+    // Click "Add prior course"
+    fireEvent.click(screen.getByRole('button', { name: /add prior course/i }));
+    // Now there should be a second prior course syllabus textarea
+    expect(screen.getByLabelText(/prior course 2 syllabus/i)).toBeInTheDocument();
   });
 });

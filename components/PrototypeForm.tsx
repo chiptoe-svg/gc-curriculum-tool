@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SampleSyllabusButton } from './SampleSyllabusButton';
 
-const MAX_UPSTREAM_COURSES = 8;
+const MAX_PRIOR_COURSES = 8;
 
 interface TargetOption {
   id: string;
@@ -23,8 +23,8 @@ export interface CourseInput {
 
 export interface AnalyzeInput {
   careerTargetId: string;
-  upstreamChain: CourseInput[];
-  downstream: CourseInput;
+  course: CourseInput;
+  priorCoursework: CourseInput[];
 }
 
 interface Props {
@@ -40,8 +40,8 @@ export function PrototypeForm({ onAnalyze, isAnalyzing }: Props) {
   const [targets, setTargets] = useState<TargetOption[]>([]);
   const [targetsLoading, setTargetsLoading] = useState(true);
   const [careerTargetId, setCareerTargetId] = useState('');
-  const [upstreamChain, setUpstreamChain] = useState<CourseInput[]>([{ courseLabel: '', syllabusText: '' }]);
-  const [downstream, setDownstream] = useState<CourseInput>({ courseLabel: '', syllabusText: '' });
+  const [course, setCourse] = useState<CourseInput>({ courseLabel: '', syllabusText: '' });
+  const [priorCoursework, setPriorCoursework] = useState<CourseInput[]>([{ courseLabel: '', syllabusText: '' }]);
 
   useEffect(() => {
     fetch('/api/targets')
@@ -61,78 +61,112 @@ export function PrototypeForm({ onAnalyze, isAnalyzing }: Props) {
 
   const canSubmit =
     !isAnalyzing &&
-    upstreamChain.length >= 1 &&
-    upstreamChain.every(isValidCourse) &&
-    isValidCourse(downstream);
+    isValidCourse(course) &&
+    priorCoursework.length >= 1 &&
+    priorCoursework.every(isValidCourse);
 
-  function addUpstreamCourse() {
-    if (upstreamChain.length < MAX_UPSTREAM_COURSES) {
-      setUpstreamChain(prev => [...prev, { courseLabel: '', syllabusText: '' }]);
+  function addPriorCourse() {
+    if (priorCoursework.length < MAX_PRIOR_COURSES) {
+      setPriorCoursework(prev => [...prev, { courseLabel: '', syllabusText: '' }]);
     }
   }
 
-  function removeUpstreamCourse(index: number) {
-    if (upstreamChain.length <= 1) return;
-    setUpstreamChain(prev => prev.filter((_, i) => i !== index));
+  function removePriorCourse(index: number) {
+    if (priorCoursework.length <= 1) return;
+    setPriorCoursework(prev => prev.filter((_, i) => i !== index));
   }
 
-  function updateUpstreamCourse(index: number, field: keyof CourseInput, value: string) {
-    setUpstreamChain(prev => prev.map((c, i) => i === index ? { ...c, [field]: value } : c));
+  function updatePriorCourse(index: number, field: keyof CourseInput, value: string) {
+    setPriorCoursework(prev => prev.map((c, i) => i === index ? { ...c, [field]: value } : c));
   }
 
   function handleSubmit() {
-    onAnalyze({ careerTargetId, upstreamChain, downstream });
+    onAnalyze({ careerTargetId, course, priorCoursework });
   }
 
   return (
     <div className="space-y-6">
-      {/* Upstream courses card */}
+      {/* Course being analyzed card — appears FIRST */}
       <Card>
         <CardHeader>
-          <CardTitle>Upstream courses <span className="text-sm font-normal text-muted-foreground">(in sequence order, earliest first)</span></CardTitle>
+          <CardTitle>Course being analyzed</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="course-label">Course label</Label>
+            <Input
+              id="course-label"
+              aria-label="Course label"
+              placeholder="e.g. GC 4060"
+              value={course.courseLabel}
+              onChange={(e) => setCourse(prev => ({ ...prev, courseLabel: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="course-syllabus">Syllabus</Label>
+            <SampleSyllabusButton
+              onLoad={(code, text) => setCourse({ courseLabel: code, syllabusText: text })}
+            />
+            <Textarea
+              id="course-syllabus"
+              aria-label="Course syllabus"
+              placeholder="Paste the syllabus of the course you want to analyze..."
+              rows={8}
+              value={course.syllabusText}
+              onChange={(e) => setCourse(prev => ({ ...prev, syllabusText: e.target.value }))}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Prior coursework card — appears SECOND */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Prior coursework</CardTitle>
+          <p className="text-sm text-muted-foreground">Any prerequisite or expected prior coursework. Order doesn&apos;t matter.</p>
         </CardHeader>
         <CardContent className="space-y-6">
-          {upstreamChain.map((course, index) => (
+          {priorCoursework.map((c, index) => (
             <div key={index} className="space-y-3 rounded-lg border p-4">
               <div className="flex items-center justify-between gap-2">
-                <span className="text-sm font-medium text-muted-foreground">Upstream course {index + 1}</span>
+                <span className="text-sm font-medium text-muted-foreground">Prior course {index + 1}</span>
                 <Button
                   variant="outline"
                   size="sm"
                   type="button"
-                  onClick={() => removeUpstreamCourse(index)}
-                  disabled={upstreamChain.length <= 1}
-                  aria-label={`Remove upstream course ${index + 1}`}
+                  onClick={() => removePriorCourse(index)}
+                  disabled={priorCoursework.length <= 1}
+                  aria-label={`Remove prior course ${index + 1}`}
                 >
                   Remove
                 </Button>
               </div>
               <div className="space-y-2">
-                <Label htmlFor={`upstream-label-${index}`}>Course label</Label>
+                <Label htmlFor={`prior-label-${index}`}>Prior course label</Label>
                 <Input
-                  id={`upstream-label-${index}`}
-                  aria-label={`Upstream course ${index + 1} label`}
+                  id={`prior-label-${index}`}
+                  aria-label={`Prior course ${index + 1} label`}
                   placeholder="e.g. GC 3460"
-                  value={course.courseLabel}
-                  onChange={(e) => updateUpstreamCourse(index, 'courseLabel', e.target.value)}
+                  value={c.courseLabel}
+                  onChange={(e) => updatePriorCourse(index, 'courseLabel', e.target.value)}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor={`upstream-syllabus-${index}`}>Syllabus</Label>
+                <Label htmlFor={`prior-syllabus-${index}`}>Syllabus</Label>
                 <SampleSyllabusButton
                   onLoad={(code, text) => {
-                    setUpstreamChain(prev => prev.map((c, i) =>
-                      i === index ? { courseLabel: code, syllabusText: text } : c
+                    setPriorCoursework(prev => prev.map((entry, i) =>
+                      i === index ? { courseLabel: code, syllabusText: text } : entry
                     ));
                   }}
                 />
                 <Textarea
-                  id={`upstream-syllabus-${index}`}
-                  aria-label={`Upstream course ${index + 1} syllabus`}
-                  placeholder="Paste the syllabus of this upstream course..."
+                  id={`prior-syllabus-${index}`}
+                  aria-label={`Prior course ${index + 1} syllabus`}
+                  placeholder="Paste the syllabus of this prior course..."
                   rows={8}
-                  value={course.syllabusText}
-                  onChange={(e) => updateUpstreamCourse(index, 'syllabusText', e.target.value)}
+                  value={c.syllabusText}
+                  onChange={(e) => updatePriorCourse(index, 'syllabusText', e.target.value)}
                 />
               </div>
             </div>
@@ -141,46 +175,13 @@ export function PrototypeForm({ onAnalyze, isAnalyzing }: Props) {
           <Button
             variant="outline"
             type="button"
-            onClick={addUpstreamCourse}
-            disabled={upstreamChain.length >= MAX_UPSTREAM_COURSES}
+            onClick={addPriorCourse}
+            disabled={priorCoursework.length >= MAX_PRIOR_COURSES}
           >
-            {upstreamChain.length >= MAX_UPSTREAM_COURSES
-              ? `Maximum ${MAX_UPSTREAM_COURSES} upstream courses`
-              : 'Add upstream course'}
+            {priorCoursework.length >= MAX_PRIOR_COURSES
+              ? `Maximum ${MAX_PRIOR_COURSES} prior courses`
+              : 'Add prior course'}
           </Button>
-        </CardContent>
-      </Card>
-
-      {/* Downstream course card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Downstream course</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="downstream-label">Course label</Label>
-            <Input
-              id="downstream-label"
-              aria-label="Downstream course label"
-              placeholder="e.g. GC 4060"
-              value={downstream.courseLabel}
-              onChange={(e) => setDownstream(prev => ({ ...prev, courseLabel: e.target.value }))}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="downstream-syllabus">Syllabus</Label>
-            <SampleSyllabusButton
-              onLoad={(code, text) => setDownstream({ courseLabel: code, syllabusText: text })}
-            />
-            <Textarea
-              id="downstream-syllabus"
-              aria-label="Downstream course syllabus"
-              placeholder="Paste the syllabus of the later course in the sequence..."
-              rows={8}
-              value={downstream.syllabusText}
-              onChange={(e) => setDownstream(prev => ({ ...prev, syllabusText: e.target.value }))}
-            />
-          </div>
         </CardContent>
       </Card>
 

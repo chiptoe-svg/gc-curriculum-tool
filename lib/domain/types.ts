@@ -54,15 +54,15 @@ export interface PrerequisiteGap {
 }
 
 // The full result returned from /api/analyze
-export interface UpstreamCourseAnalysis {
+export interface PriorCourseAnalysis {
   courseLabel: string;
   kud: KUDOutcomes;
   coverage: CoverageScore[];
 }
 
 export interface AnalysisResult {
-  upstreamChain: UpstreamCourseAnalysis[];  // ordered earliest → latest
-  downstream: {
+  priorCoursework: PriorCourseAnalysis[];  // all prior/prerequisite courses
+  course: {
     courseLabel: string;
     kud: KUDOutcomes;
     coverage: CoverageScore[];

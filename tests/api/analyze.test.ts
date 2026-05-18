@@ -39,42 +39,43 @@ describe('POST /api/analyze', () => {
     vi.clearAllMocks();
   });
 
-  it('returns an AnalysisResult on valid input with 1 upstream course', async () => {
-    const upstreamKud = { description: 'Upstream course', know: ['k'], understand: ['u'], do: ['d'] };
-    const downstreamKud = { description: 'Downstream course', know: ['k'], understand: ['u'], do: ['d'] };
+  it('returns an AnalysisResult on valid input with 1 prior course', async () => {
+    const priorKud = { description: 'Prior course', know: ['k'], understand: ['u'], do: ['d'] };
+    const courseKud = { description: 'Course being analyzed', know: ['k'], understand: ['u'], do: ['d'] };
     const coverage = { scores: [
       { subCompetencyId: 'workflow-design', kudLevel: 'do', confidence: 'high', reasoning: 'The capstone project demonstrates Do-level workflow design as documented in the syllabus.' },
     ]};
     const prereqClaims = { claims: [
-      { subCompetencyId: 'workflow-design', expectedKudLevel: 'understand', rationale: 'Downstream needs incoming workflow understanding.' },
+      { subCompetencyId: 'workflow-design', expectedKudLevel: 'understand', rationale: 'Course needs incoming workflow understanding.' },
     ]};
     const gaps = { gaps: [
-      { subCompetencyId: 'workflow-design', expectedKudLevel: 'understand', status: 'met', upstreamEvidence: 'GC 3460 achieves Do level.', reasoning: 'Upstream exceeds the expected level so the prerequisite is met.' },
+      { subCompetencyId: 'workflow-design', expectedKudLevel: 'understand', status: 'met', upstreamEvidence: 'GC 3460 achieves Do level.', reasoning: 'Prior coursework exceeds the expected level so the prerequisite is met.' },
     ]};
 
-    // With N=1 upstream: 1 upstream KUD + 1 downstream KUD + 1 upstream coverage + 1 downstream coverage + 1 prereq + 1 gap = 6 calls
+    // With N=1 prior: 1 prior KUD + 1 course KUD + 1 prior coverage + 1 course coverage + 1 prereq + 1 gap = 6 calls
     const fake = new FakeProvider([
-      upstreamKud,           // call 1: draft outcomes for upstream[0]
-      downstreamKud,         // call 2: draft outcomes for downstream
-      coverage,              // call 3: score upstream[0] coverage
-      coverage,              // call 4: score downstream coverage
-      prereqClaims,          // call 5: suggest prereqs for downstream
-      gaps,                  // call 6: analyze gaps
+      priorKud,             // call 1: draft outcomes for priorCoursework[0]
+      courseKud,            // call 2: draft outcomes for course
+      coverage,             // call 3: score priorCoursework[0] coverage
+      coverage,             // call 4: score course coverage
+      prereqClaims,         // call 5: suggest prereqs for course
+      gaps,                 // call 6: analyze gaps
     ]);
     vi.spyOn(providerModule, 'getProvider').mockReturnValue(fake);
 
     const req = makeRequest({
       careerTargetId: 'production-operations',
-      upstreamChain: [{ courseLabel: 'GC 3460', syllabusText: 'Ink and substrates syllabus body here for testing purposes only.' }],
-      downstream: { courseLabel: 'GC 4060', syllabusText: 'Package and specialty printing syllabus body here for testing purposes only.' },
+      course: { courseLabel: 'GC 4060', syllabusText: 'Package and specialty printing syllabus body here for testing purposes only.' },
+      priorCoursework: [{ courseLabel: 'GC 3460', syllabusText: 'Ink and substrates syllabus body here for testing purposes only.' }],
     });
     const res = await POST(req);
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.upstreamChain).toHaveLength(1);
-    expect(body.upstreamChain[0].courseLabel).toBe('GC 3460');
-    expect(body.upstreamChain[0].kud.description).toBe('Upstream course');
-    expect(body.downstream.prerequisiteGaps[0].status).toBe('met');
+    expect(body.priorCoursework).toHaveLength(1);
+    expect(body.priorCoursework[0].courseLabel).toBe('GC 3460');
+    expect(body.priorCoursework[0].kud.description).toBe('Prior course');
+    expect(body.course.courseLabel).toBe('GC 4060');
+    expect(body.course.prerequisiteGaps[0].status).toBe('met');
     expect(body.meta.aiProvider).toBe('fake');
     expect(body.meta.cachedTokens).toBe(0);
     expect(typeof body.meta.uncachedTokens).toBe('number');
@@ -82,50 +83,51 @@ describe('POST /api/analyze', () => {
     expect(queriesModule.insertRun).toHaveBeenCalledOnce();
   });
 
-  it('returns an AnalysisResult with 2 upstream courses in the chain', async () => {
-    const upstream1Kud = { description: 'First upstream course', know: ['k1'], understand: ['u1'], do: ['d1'] };
-    const upstream2Kud = { description: 'Second upstream course', know: ['k2'], understand: ['u2'], do: ['d2'] };
-    const downstreamKud = { description: 'Downstream course', know: ['k'], understand: ['u'], do: ['d'] };
+  it('returns an AnalysisResult with 2 prior courses', async () => {
+    const prior1Kud = { description: 'First prior course', know: ['k1'], understand: ['u1'], do: ['d1'] };
+    const prior2Kud = { description: 'Second prior course', know: ['k2'], understand: ['u2'], do: ['d2'] };
+    const courseKud = { description: 'Course being analyzed', know: ['k'], understand: ['u'], do: ['d'] };
     const coverage = { scores: [
       { subCompetencyId: 'workflow-design', kudLevel: 'do', confidence: 'high', reasoning: 'Demonstrates Do-level workflow design.' },
     ]};
     const prereqClaims = { claims: [
-      { subCompetencyId: 'workflow-design', expectedKudLevel: 'understand', rationale: 'Downstream needs incoming workflow understanding.' },
+      { subCompetencyId: 'workflow-design', expectedKudLevel: 'understand', rationale: 'Course needs incoming workflow understanding.' },
     ]};
     const gaps = { gaps: [
-      { subCompetencyId: 'workflow-design', expectedKudLevel: 'understand', status: 'met', upstreamEvidence: 'GC 1040 develops Know level; GC 3460 develops Do level.', reasoning: 'Chain exceeds the expected level.' },
+      { subCompetencyId: 'workflow-design', expectedKudLevel: 'understand', status: 'met', upstreamEvidence: 'GC 1040 develops Know level; GC 3460 develops Do level.', reasoning: 'Prior coursework exceeds the expected level.' },
     ]};
 
-    // With N=2 upstream: 2 upstream KUD + 1 downstream KUD + 2 upstream coverage + 1 downstream coverage + 1 prereq + 1 gap = 8 calls
+    // With N=2 prior: 2 prior KUD + 1 course KUD + 2 prior coverage + 1 course coverage + 1 prereq + 1 gap = 8 calls
     const fake = new FakeProvider([
-      upstream1Kud,          // call 1: draft outcomes for upstream[0]
-      upstream2Kud,          // call 2: draft outcomes for upstream[1]
-      downstreamKud,         // call 3: draft outcomes for downstream
-      coverage,              // call 4: score upstream[0] coverage
-      coverage,              // call 5: score upstream[1] coverage
-      coverage,              // call 6: score downstream coverage
-      prereqClaims,          // call 7: suggest prereqs for downstream
-      gaps,                  // call 8: analyze gaps
+      prior1Kud,            // call 1: draft outcomes for priorCoursework[0]
+      prior2Kud,            // call 2: draft outcomes for priorCoursework[1]
+      courseKud,            // call 3: draft outcomes for course
+      coverage,             // call 4: score priorCoursework[0] coverage
+      coverage,             // call 5: score priorCoursework[1] coverage
+      coverage,             // call 6: score course coverage
+      prereqClaims,         // call 7: suggest prereqs for course
+      gaps,                 // call 8: analyze gaps
     ]);
     vi.spyOn(providerModule, 'getProvider').mockReturnValue(fake);
 
     const req = makeRequest({
       careerTargetId: 'production-operations',
-      upstreamChain: [
+      course: { courseLabel: 'GC 4060', syllabusText: 'Package and specialty printing syllabus body here for testing purposes only.' },
+      priorCoursework: [
         { courseLabel: 'GC 1040', syllabusText: 'Introduction to printing syllabus body here for testing purposes only.' },
         { courseLabel: 'GC 3460', syllabusText: 'Ink and substrates syllabus body here for testing purposes only.' },
       ],
-      downstream: { courseLabel: 'GC 4060', syllabusText: 'Package and specialty printing syllabus body here for testing purposes only.' },
     });
     const res = await POST(req);
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.upstreamChain).toHaveLength(2);
-    expect(body.upstreamChain[0].courseLabel).toBe('GC 1040');
-    expect(body.upstreamChain[0].kud.description).toBe('First upstream course');
-    expect(body.upstreamChain[1].courseLabel).toBe('GC 3460');
-    expect(body.upstreamChain[1].kud.description).toBe('Second upstream course');
-    expect(body.downstream.prerequisiteGaps[0].status).toBe('met');
+    expect(body.priorCoursework).toHaveLength(2);
+    expect(body.priorCoursework[0].courseLabel).toBe('GC 1040');
+    expect(body.priorCoursework[0].kud.description).toBe('First prior course');
+    expect(body.priorCoursework[1].courseLabel).toBe('GC 3460');
+    expect(body.priorCoursework[1].kud.description).toBe('Second prior course');
+    expect(body.course.courseLabel).toBe('GC 4060');
+    expect(body.course.prerequisiteGaps[0].status).toBe('met');
     expect(body.meta.aiProvider).toBe('fake');
     expect(body.meta.cachedTokens).toBe(0);
     expect(typeof body.meta.uncachedTokens).toBe('number');
@@ -136,27 +138,27 @@ describe('POST /api/analyze', () => {
   it('rejects with 400 when career target id is unknown', async () => {
     const req = makeRequest({
       careerTargetId: 'unknown-target',
-      upstreamChain: [{ courseLabel: 'GC 1040', syllabusText: 'x'.repeat(50) }],
-      downstream: { courseLabel: 'GC 4060', syllabusText: 'y'.repeat(50) },
+      course: { courseLabel: 'GC 4060', syllabusText: 'y'.repeat(50) },
+      priorCoursework: [{ courseLabel: 'GC 1040', syllabusText: 'x'.repeat(50) }],
     });
     const res = await POST(req);
     expect(res.status).toBe(400);
   });
 
-  it('rejects with 400 when upstreamChain is empty', async () => {
+  it('rejects with 400 when priorCoursework is empty', async () => {
     const req = makeRequest({
       careerTargetId: 'production-operations',
-      upstreamChain: [],
-      downstream: { courseLabel: 'GC 4060', syllabusText: 'y'.repeat(50) },
+      course: { courseLabel: 'GC 4060', syllabusText: 'y'.repeat(50) },
+      priorCoursework: [],
     });
     const res = await POST(req);
     expect(res.status).toBe(400);
   });
 
-  it('rejects with 400 when upstreamChain is missing', async () => {
+  it('rejects with 400 when priorCoursework is missing', async () => {
     const req = makeRequest({
       careerTargetId: 'production-operations',
-      downstream: { courseLabel: 'GC 4060', syllabusText: 'y'.repeat(50) },
+      course: { courseLabel: 'GC 4060', syllabusText: 'y'.repeat(50) },
     });
     const res = await POST(req);
     expect(res.status).toBe(400);
@@ -165,8 +167,8 @@ describe('POST /api/analyze', () => {
   it('rejects with 400 when a syllabus is too short', async () => {
     const req = makeRequest({
       careerTargetId: 'production-operations',
-      upstreamChain: [{ courseLabel: 'GC 1040', syllabusText: 'too short' }],
-      downstream: { courseLabel: 'GC 4060', syllabusText: 'y'.repeat(50) },
+      course: { courseLabel: 'GC 4060', syllabusText: 'y'.repeat(50) },
+      priorCoursework: [{ courseLabel: 'GC 1040', syllabusText: 'too short' }],
     });
     const res = await POST(req);
     expect(res.status).toBe(400);
@@ -175,8 +177,8 @@ describe('POST /api/analyze', () => {
   it('rejects with 400 when courseLabel is missing', async () => {
     const req = makeRequest({
       careerTargetId: 'production-operations',
-      upstreamChain: [{ courseLabel: '', syllabusText: 'x'.repeat(50) }],
-      downstream: { courseLabel: 'GC 4060', syllabusText: 'y'.repeat(50) },
+      course: { courseLabel: 'GC 4060', syllabusText: 'y'.repeat(50) },
+      priorCoursework: [{ courseLabel: '', syllabusText: 'x'.repeat(50) }],
     });
     const res = await POST(req);
     expect(res.status).toBe(400);

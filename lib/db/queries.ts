@@ -6,10 +6,9 @@ import type { AnalysisResult } from '@/lib/domain/types';
 export interface InsertRunInput {
   ipHash: string;
   careerTargetId: string;
-  upstreamCourseLabel: string | null;
-  downstreamCourseLabel: string | null;
-  upstreamSyllabus: string;
-  downstreamSyllabus: string;
+  courseLabel: string | null;
+  courseSyllabus: string;
+  priorCoursework: Array<{ courseLabel: string; syllabus: string }>;
   result: AnalysisResult;
   aiProvider: string;
   aiModel: string;
@@ -21,10 +20,9 @@ export async function insertRun(input: InsertRunInput): Promise<{ id: string }> 
   const [row] = await db.insert(prototypeRuns).values({
     ipHash: input.ipHash,
     careerTargetId: input.careerTargetId,
-    upstreamCourseLabel: input.upstreamCourseLabel,
-    downstreamCourseLabel: input.downstreamCourseLabel,
-    upstreamSyllabus: input.upstreamSyllabus,
-    downstreamSyllabus: input.downstreamSyllabus,
+    courseLabel: input.courseLabel,
+    courseSyllabus: input.courseSyllabus,
+    priorCoursework: input.priorCoursework,
     result: input.result,
     aiProvider: input.aiProvider,
     aiModel: input.aiModel,

@@ -42,10 +42,9 @@ export const prototypeRuns = pgTable('prototype_runs', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   ipHash: text('ip_hash').notNull(),                 // SHA-256(ip) — never store raw IP
   careerTargetId: text('career_target_id').notNull(),
-  upstreamCourseLabel: text('upstream_course_label'),     // optional faculty-supplied
-  downstreamCourseLabel: text('downstream_course_label'),
-  upstreamSyllabus: text('upstream_syllabus').notNull(),
-  downstreamSyllabus: text('downstream_syllabus').notNull(),
+  courseLabel: text('course_label'),                 // label of the course being analyzed
+  courseSyllabus: text('course_syllabus').notNull(), // syllabus of the course being analyzed
+  priorCoursework: jsonb('prior_coursework').$type<Array<{ courseLabel: string; syllabus: string }>>().notNull(), // all prior courses
   result: jsonb('result').notNull(),                 // the full AnalysisResult object
   aiProvider: text('ai_provider').notNull(),
   aiModel: text('ai_model').notNull(),
