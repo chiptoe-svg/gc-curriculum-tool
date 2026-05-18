@@ -59,10 +59,18 @@ export function CourseSyncCard({ slug, initialState }: Props) {
         <CardTitle>Course Sync</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        <p className="text-sm text-muted-foreground">
-          Pulls the latest course data from the shared Google Sheet into the tool.
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          Course data — descriptions, learning objectives, projects, assumed skills —
+          lives in a <a
+            href="https://docs.google.com/spreadsheets/d/12aPhgrIlhDYjKD0-Gt97glf1d9fKtwKmL4FwM8iTz7Q/edit"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline underline-offset-2 text-foreground font-medium hover:text-primary"
+          >shared Google Sheet</a>, one tab per course. Faculty edit their own tab directly;
+          this page pulls the latest into the tool. Edits in the sheet aren&apos;t reflected
+          in the prototype until you click <span className="font-medium">Resync</span>.
           {state.lastSyncedAt
-            ? <> Last synced: <span className="font-medium">{relativeTime(state.lastSyncedAt)}</span> ({state.lastSyncedCount} courses).</>
+            ? <> Last synced: <span className="font-medium text-foreground">{relativeTime(state.lastSyncedAt)}</span> ({state.lastSyncedCount} courses).</>
             : <> Never synced.</>}
         </p>
         <Button onClick={resync} disabled={busy}>
