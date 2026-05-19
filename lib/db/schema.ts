@@ -152,3 +152,13 @@ export const partnerSubmissions = pgTable('partner_submissions', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   submittedAt: timestamp('submitted_at', { withTimezone: true }),
 });
+
+export const synthesisRuns = pgTable('synthesis_runs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  careerTargetId: text('career_target_id').notNull().references(() => careerTargets.id, { onDelete: 'cascade' }),
+  submissionCount: integer('submission_count').notNull(),
+  result: jsonb('result').notNull(),
+  model: text('model').notNull(),
+  costUsdCents: integer('cost_usd_cents').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
