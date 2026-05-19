@@ -59,3 +59,13 @@ export async function logPartnerEvent(
 ) {
   await db.insert(partnerEvents).values({ partnerId, eventType, metadata });
 }
+
+export async function markFirstOpenedIfNull(partnerId: string) {
+  await db.update(partners)
+    .set({ firstOpenedAt: sql`now()`, lastActiveAt: sql`now()` })
+    .where(sql`${partners.id} = ${partnerId} AND ${partners.firstOpenedAt} IS NULL`);
+}
+
+export async function bumpLastActive(partnerId: string) {
+  await db.update(partners).set({ lastActiveAt: sql`now()` }).where(eq(partners.id, partnerId));
+}
