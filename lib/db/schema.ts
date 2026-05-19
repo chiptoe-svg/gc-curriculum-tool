@@ -98,3 +98,37 @@ export const sheetSyncState = pgTable('sheet_sync_state', {
   lastSyncedCount: integer('last_synced_count').notNull(),
   lastErrors: jsonb('last_errors').$type<string[]>().notNull().default([]),
 });
+
+export const partners = pgTable('partners', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  email: text('email').notNull().unique(),
+  firstName: text('first_name').notNull(),
+  lastName: text('last_name').notNull(),
+  company: text('company').notNull(),
+  roleTitle: text('role_title'),
+  weight: integer('weight').notNull().default(1),
+  careerTargetHints: jsonb('career_target_hints').$type<string[]>().notNull().default([]),
+  magicToken: text('magic_token').notNull().unique(),
+  tokenExpiresAt: timestamp('token_expires_at', { withTimezone: true }),
+  notes: text('notes'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  invitedAt: timestamp('invited_at', { withTimezone: true }),
+  firstOpenedAt: timestamp('first_opened_at', { withTimezone: true }),
+  lastActiveAt: timestamp('last_active_at', { withTimezone: true }),
+  active: boolean('active').notNull().default(true),
+});
+
+export const partnerSessions = pgTable('partner_sessions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  partnerId: uuid('partner_id').notNull().references(() => partners.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+});
+
+export const partnerEvents = pgTable('partner_events', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  partnerId: uuid('partner_id').references(() => partners.id, { onDelete: 'cascade' }),
+  eventType: text('event_type').notNull(),
+  metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
