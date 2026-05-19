@@ -1,0 +1,58 @@
+import Link from 'next/link';
+import { SubmissionsList } from './submit/SubmissionsList';
+
+interface Props {
+  partner: { firstName: string; company: string };
+  stats: { drafts: number; submitted: number; ratingsCount: number };
+}
+
+export function PartnerDashboard({ partner, stats }: Props) {
+  return (
+    <div className="space-y-8">
+      <div>
+        <p className="text-sm text-slate-500">Welcome back, {partner.firstName} ({partner.company}).</p>
+        <h1 className="mt-1 text-2xl font-semibold">Your survey</h1>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Card
+          title="Positions"
+          metric={`${stats.submitted} submitted${stats.drafts ? ` · ${stats.drafts} draft` : ''}`}
+          cta="Add another position"
+          href="./submit"
+        />
+        <Card
+          title="Project ratings"
+          metric={`${stats.ratingsCount} rated`}
+          cta="Rate more projects"
+          href="#"
+          disabled
+        />
+        <Card title="" metric="" cta="I'm done for now" href="./done" subtle />
+      </div>
+
+      <section>
+        <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-slate-500">Your submissions</h2>
+        <SubmissionsList />
+      </section>
+    </div>
+  );
+}
+
+function Card({ title, metric, cta, href, disabled, subtle }: {
+  title: string; metric: string; cta: string; href: string; disabled?: boolean; subtle?: boolean;
+}) {
+  const base = 'block rounded-lg border p-5';
+  const tone = subtle
+    ? 'border-dashed border-slate-300 bg-slate-50 text-slate-600'
+    : 'border-slate-200 bg-white hover:border-slate-400';
+  const inner = (
+    <>
+      {title && <div className="text-xs uppercase tracking-wide text-slate-500">{title}</div>}
+      {metric && <div className="mt-1 text-lg font-medium">{metric}</div>}
+      <div className={`mt-3 text-sm ${subtle ? '' : 'text-blue-700'}`}>{cta} →</div>
+    </>
+  );
+  if (disabled) return <div className={`${base} ${tone} opacity-60`}>{inner}</div>;
+  return <Link href={href} className={`${base} ${tone}`}>{inner}</Link>;
+}
