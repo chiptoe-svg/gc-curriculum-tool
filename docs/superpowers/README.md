@@ -29,6 +29,12 @@ Implementation plans — TDD-style, one plan per increment.
 | 2026-05-18 | [`plans/2026-05-18-sheet-integration.md`](./plans/2026-05-18-sheet-integration.md) | ✅ Done. 11 tasks completed; courses table mirrors the shared Google Sheet via admin Resync. |
 | 2026-05-19 | [`plans/2026-05-19-industry-partner-input-plan-1-foundation.md`](./plans/2026-05-19-industry-partner-input-plan-1-foundation.md) | ✅ Done. Plan 1 of 3 for the industry partner input tool — partners table + CSV import + invite email, magic-link auth, position-submission wizard (20 tasks). |
 
+## Pilot announcements
+
+Public-facing milestone writeups that summarize what shipped and what the pilot looks like.
+
+- [`pilot/2026-05-19-industry-partner-input-pilot.html`](./pilot/2026-05-19-industry-partner-input-pilot.html) — Industry Partner Input v1 pilot writeup (live at [chiptoe-svg.github.io/gc-curriculum-tool/docs/superpowers/pilot/2026-05-19-industry-partner-input-pilot.html](https://chiptoe-svg.github.io/gc-curriculum-tool/docs/superpowers/pilot/2026-05-19-industry-partner-input-pilot.html))
+
 ## Increments shipped after the named plans
 
 Smaller follow-ons that didn't get their own plan — captured here for traceability.

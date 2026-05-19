@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Industry Partner Input — Pilot Ready</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Mono:wght@300;400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --rail: #141412;
+    --rail-text: #8a8780;
+    --rail-active: #E8A44A;
+    --rail-hover: #2a2925;
+    --bg: #F7F5F0;
+    --bg-card: #FFFFFF;
+    --bg-alt: #F0EDE6;
+    --text: #1C1C18;
+    --text-muted: #6B6860;
+    --text-faint: #9E9B94;
+    --accent: #C8682A;
+    --accent-light: #F5E6D8;
+    --border: #E2DDD4;
+    --border-strong: #C8C4BA;
+    --mono: 'DM Mono', monospace;
+    --serif: 'Source Serif 4', Georgia, serif;
+    --display: 'Playfair Display', Georgia, serif;
+    --t1: #2A5C8C;
+    --t2: #6B3A82;
+    --t3: #B87020;
+    --t4: #2E7D5E;
+    --t5: #8C2E35;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--serif);
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    min-height: 100vh;
+    font-size: 16px;
+    line-height: 1.7;
+  }
+
+  /* SIDEBAR */
+  #rail {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: 240px;
+    background: var(--rail);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    z-index: 100;
+  }
+  .rail-header {
+    padding: 28px 20px 20px;
+    border-bottom: 1px solid #252420;
+  }
+  .rail-dept {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #5a5750;
+    margin-bottom: 6px;
+  }
+  .rail-title {
+    font-family: var(--display);
+    font-size: 14px;
+    color: #d4d0c8;
+    line-height: 1.4;
+  }
+  .rail-doc-type {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--rail-active);
+    margin-top: 10px;
+  }
+  .rail-nav { padding: 20px 0; flex: 1; }
+  .nav-group-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #4d4a44;
+    padding: 14px 20px 8px;
+  }
+  .nav-link {
+    display: block;
+    padding: 7px 20px 7px 22px;
+    color: var(--rail-text);
+    text-decoration: none;
+    font-family: var(--serif);
+    font-size: 13.5px;
+    border-left: 2px solid transparent;
+    transition: all 120ms;
+  }
+  .nav-link:hover { color: #c8c4ba; background: var(--rail-hover); }
+  .nav-link.active { color: var(--rail-active); border-left-color: var(--rail-active); background: var(--rail-hover); }
+  .rail-footer {
+    padding: 16px 20px;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.08em;
+    color: #5a5750;
+    border-top: 1px solid #252420;
+    line-height: 1.7;
+  }
+  .rail-footer a { color: var(--rail-active); text-decoration: none; }
+
+  /* MAIN */
+  main {
+    margin-left: 240px;
+    flex: 1;
+    padding: 64px 80px 96px;
+    max-width: 1080px;
+  }
+
+  .doc-head {
+    margin-bottom: 56px;
+    padding-bottom: 32px;
+    border-bottom: 1px solid var(--border-strong);
+  }
+  .doc-eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+  .doc-title {
+    font-family: var(--display);
+    font-size: 52px;
+    font-weight: 700;
+    line-height: 1.05;
+    color: var(--text);
+    margin-bottom: 20px;
+    letter-spacing: -0.01em;
+  }
+  .doc-subtitle {
+    font-family: var(--serif);
+    font-size: 19px;
+    color: var(--text-muted);
+    line-height: 1.55;
+    max-width: 740px;
+    font-style: italic;
+    font-weight: 300;
+  }
+  .doc-meta {
+    margin-top: 22px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--text-faint);
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .doc-meta strong { color: var(--text-muted); font-weight: 500; margin-right: 6px; }
+
+  section { margin-bottom: 56px; scroll-margin-top: 32px; }
+
+  h2 {
+    font-family: var(--display);
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 1.2;
+    margin-bottom: 22px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+  }
+  h2 .num {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    background: var(--accent-light);
+    padding: 3px 10px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  h3 {
+    font-family: var(--display);
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1.3;
+    margin: 32px 0 14px;
+    color: var(--text);
+  }
+  h4 {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin: 24px 0 10px;
+    font-weight: 500;
+  }
+
+  p { margin-bottom: 14px; max-width: 760px; }
+  strong { color: var(--text); font-weight: 600; }
+  em { color: var(--text); font-style: italic; }
+  ul { margin: 14px 0 22px 22px; }
+  li { margin-bottom: 8px; max-width: 720px; }
+  li strong { color: var(--text); }
+
+  code {
+    font-family: var(--mono);
+    font-size: 13px;
+    background: var(--bg-alt);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: var(--text);
+  }
+
+  a.body-link { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a.body-link:hover { color: var(--t5); }
+
+  /* CALLOUTS */
+  .callout {
+    background: var(--bg-card);
+    border-left: 3px solid var(--accent);
+    padding: 18px 22px;
+    margin: 22px 0;
+    border-radius: 0 4px 4px 0;
+    max-width: 820px;
+  }
+  .callout-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout.note { border-left-color: var(--t1); }
+  .callout.note .callout-title { color: var(--t1); }
+  .callout.success { border-left-color: var(--t4); }
+  .callout.success .callout-title { color: var(--t4); }
+
+  /* FEATURE CARDS */
+  .cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 18px;
+    margin: 30px 0 20px;
+  }
+  @media (max-width: 880px) { .cards { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 24px;
+  }
+  .card-eyebrow {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+  .card-title {
+    font-family: var(--display);
+    font-size: 19px;
+    font-weight: 600;
+    line-height: 1.3;
+    margin-bottom: 10px;
+  }
+  .card p { font-size: 14.5px; line-height: 1.6; color: var(--text-muted); margin-bottom: 0; }
+
+  /* TIMELINE */
+  .timeline { margin: 24px 0; max-width: 820px; }
+  .step {
+    display: grid;
+    grid-template-columns: 60px 1fr;
+    gap: 18px;
+    padding: 16px 0;
+    border-bottom: 1px dashed var(--border);
+  }
+  .step:last-child { border-bottom: 0; }
+  .step-num {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent);
+    padding-top: 2px;
+    letter-spacing: 0.1em;
+  }
+  .step h4 {
+    margin: 0 0 6px;
+    font-family: var(--display);
+    font-size: 17px;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--text);
+  }
+  .step p { font-size: 14.5px; color: var(--text-muted); margin-bottom: 0; }
+
+  /* SCOREBOARD */
+  .scoreboard {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin: 22px 0 8px;
+  }
+  @media (max-width: 720px) { .scoreboard { grid-template-columns: 1fr 1fr; } }
+  .score {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 18px 20px;
+  }
+  .score-num {
+    font-family: var(--display);
+    font-size: 34px;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .score-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  /* DEFERRED LIST */
+  .deferred-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+    margin: 24px 0;
+  }
+  @media (max-width: 720px) { .deferred-grid { grid-template-columns: 1fr; } }
+  .deferred {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 22px;
+  }
+  .deferred h4 {
+    font-family: var(--display);
+    font-size: 17px;
+    font-weight: 600;
+    text-transform: none;
+    letter-spacing: 0;
+    margin: 0 0 12px;
+    color: var(--text);
+  }
+  .deferred ul { margin: 0 0 0 20px; }
+  .deferred li { font-size: 14px; color: var(--text-muted); margin-bottom: 6px; }
+  .deferred .tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 3px;
+    margin-bottom: 12px;
+  }
+  .tag.p2 { background: rgba(42, 92, 140, 0.1); color: var(--t1); }
+  .tag.p3 { background: rgba(107, 58, 130, 0.1); color: var(--t2); }
+
+  /* PULL QUOTE */
+  .pullquote {
+    font-family: var(--display);
+    font-style: italic;
+    font-size: 22px;
+    line-height: 1.4;
+    color: var(--text);
+    padding: 22px 28px;
+    border-left: 3px solid var(--accent);
+    background: var(--bg-card);
+    margin: 30px 0;
+    max-width: 820px;
+  }
+  .pullquote-cite {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-top: 12px;
+    font-style: normal;
+  }
+</style>
+</head>
+<body>
+
+<aside id="rail">
+  <div class="rail-header">
+    <div class="rail-dept">Clemson · Graphic Communications</div>
+    <div class="rail-title">GC Curriculum Tool</div>
+    <div class="rail-doc-type">Pilot Announcement</div>
+  </div>
+  <nav class="rail-nav">
+    <div class="nav-group-label">Contents</div>
+    <a class="nav-link" href="#what">What this is</a>
+    <a class="nav-link" href="#live">What's live</a>
+    <a class="nav-link" href="#flow">How the pilot runs</a>
+    <a class="nav-link" href="#scope">What's intentionally not in v1</a>
+    <a class="nav-link" href="#learned">What we learned building it</a>
+    <a class="nav-link" href="#next">What's next</a>
+
+    <div class="nav-group-label" style="margin-top:20px">Related</div>
+    <a class="nav-link" href="../vision/gc-curriculum-tool-vision.html">Vision</a>
+    <a class="nav-link" href="../specs/2026-05-18-industry-partner-input-design.md">Spec</a>
+    <a class="nav-link" href="../plans/2026-05-19-industry-partner-input-plan-1-foundation.md">Plan 1</a>
+  </nav>
+  <div class="rail-footer">
+    2026-05-19 · v1<br>
+    <a href="https://github.com/chiptoe-svg/gc-curriculum-tool">GitHub</a>
+  </div>
+</aside>
+
+<main>
+
+<header class="doc-head">
+  <div class="doc-eyebrow">Milestone · Pilot Ready</div>
+  <h1 class="doc-title">Industry Partner Input — pilot ready.</h1>
+  <p class="doc-subtitle">
+    A magic-link survey app that asks the people who hire our graduates what those graduates actually need to know.
+    The data flows back into the career targets the GC curriculum builds toward.
+  </p>
+  <div class="doc-meta">
+    <span><strong>Shipped</strong> 2026-05-19</span>
+    <span><strong>Plan</strong> 1 of 3</span>
+    <span><strong>Tests</strong> 122 passing</span>
+    <span><strong>Stack</strong> Next.js 15 · Neon Postgres · Resend</span>
+  </div>
+</header>
+
+<section id="what">
+  <h2><span class="num">01</span> What this is</h2>
+  <p>
+    The GC Curriculum Tool builds curriculum <em>backward from career targets</em> — the roles our graduates land in.
+    Those targets are the load-bearing definition the whole tool sits on. Until now, the targets were seeded from
+    O*NET and faculty judgment alone. They needed industry voice.
+  </p>
+  <p>
+    The Industry Partner Input Tool is the upstream feeder. Industry partners receive a personal magic link, land on
+    a short welcome screen, and describe — in their own words — the positions they hire GC graduates into. Job titles,
+    responsibilities, salary ranges, the skills they actually look for, the questions they actually ask in interviews.
+    Faculty sees the raw partner voice. Later in the build, AI will help synthesize themes and propose concrete edits
+    to the curriculum's Know/Understand/Do descriptors — but never auto-write them. Faculty stays in control.
+  </p>
+  <div class="callout">
+    <div class="callout-title">Pilot scope</div>
+    <p>
+      5–10 trusted industry partners. We watch how they actually use the form — completion rates, where they drop off,
+      what they write into the "none of these fit" escape hatch. The synthesis layer doesn't ship until we have raw
+      input to synthesize from.
+    </p>
+  </div>
+</section>
+
+<section id="live">
+  <h2><span class="num">02</span> What's live</h2>
+  <p>Three workflows ship in this pilot.</p>
+
+  <div class="cards">
+    <div class="card">
+      <div class="card-eyebrow">Faculty</div>
+      <h3 class="card-title">CSV import + invite</h3>
+      <p>
+        Faculty upload a list of partners as a CSV (name, company, email, optional weight and target hints).
+        The tool validates per-row, creates partner records, generates unique magic tokens, and sends invite emails
+        via Resend. Duplicates are skipped. Send failures are surfaced individually.
+      </p>
+    </div>
+    <div class="card">
+      <div class="card-eyebrow">Partner</div>
+      <h3 class="card-title">Magic-link survey</h3>
+      <p>
+        Partners click their unique link, get a session cookie, land on a welcome screen (first visit) or a personal
+        dashboard (returning visit). They can come back through the same link as often as they want. Inactive partners
+        are revoked with one click.
+      </p>
+    </div>
+    <div class="card">
+      <div class="card-eyebrow">Partner</div>
+      <h3 class="card-title">Position submission</h3>
+      <p>
+        Three steps: pick the closest career-target match (or write in a label if none fit), describe the position
+        (title, responsibilities, salary, required skills, interview questions, notes), confirm. Drafts auto-create
+        and persist, so partners can step away mid-form and return without losing work.
+      </p>
+    </div>
+  </div>
+
+  <div class="scoreboard">
+    <div class="score">
+      <div class="score-num">20</div>
+      <div class="score-label">Plan-1 tasks</div>
+    </div>
+    <div class="score">
+      <div class="score-num">122</div>
+      <div class="score-label">Tests passing</div>
+    </div>
+    <div class="score">
+      <div class="score-num">7</div>
+      <div class="score-label">New DB tables</div>
+    </div>
+    <div class="score">
+      <div class="score-num">~2,400</div>
+      <div class="score-label">Lines of code</div>
+    </div>
+  </div>
+</section>
+
+<section id="flow">
+  <h2><span class="num">03</span> How the pilot runs</h2>
+  <p>End-to-end, from faculty's first action to partner submissions landing in the database.</p>
+
+  <div class="timeline">
+    <div class="step">
+      <div class="step-num">→ 01</div>
+      <div>
+        <h4>Faculty imports a partner list</h4>
+        <p>
+          A CSV with <code>email, firstName, lastName, company, roleTitle, weight, careerTargetHints</code>. Optional fields
+          can be blank. Faculty hits "Import + send invites." The tool validates each row, creates the partner records,
+          and sends an invite from Resend.
+        </p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">→ 02</div>
+      <div>
+        <h4>Partner receives the invite</h4>
+        <p>
+          Personal greeting, one-sentence ask, single CTA. The link is unique to them — sharing it would let someone else
+          impersonate. Tokens are 192-bit cryptographic randoms; cookies are httpOnly and scoped to the partner route.
+        </p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">→ 03</div>
+      <div>
+        <h4>Welcome → wizard → submission</h4>
+        <p>
+          First visit shows a welcome screen with two cards (describe a position, rate projects — the second is greyed
+          out, deferred to Plan 2). Click into the wizard: pick the closest career target, describe the position, submit.
+          Save-draft is available throughout. Returning visits show the dashboard instead of welcome.
+        </p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">→ 04</div>
+      <div>
+        <h4>Submission lands in <code>partner_submissions</code></h4>
+        <p>
+          Status flips from <code>draft</code> to <code>submitted</code>, an event is logged. Faculty can read raw
+          submissions immediately via the database; the admin synthesis surface ships in Plan 3.
+        </p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">→ 05</div>
+      <div>
+        <h4>Partner can return any time</h4>
+        <p>
+          Add another position. Resume a draft. Delete a submitted entry if they want to redo it. The same link works
+          for months. <em>I'm done</em> is just a polite "thanks" page — they can still come back.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout note">
+    <div class="callout-title">Faculty UI access</div>
+    <p>
+      The admin partners page lives at <code>/admin/partners?slug=&lt;PROTOTYPE_SLUG&gt;</code> — same auth pattern as the
+      existing curriculum tool. The slug is the unguessable URL value already in production.
+    </p>
+  </div>
+</section>
+
+<section id="scope">
+  <h2><span class="num">04</span> What's intentionally not in v1</h2>
+  <p>
+    The pilot is deliberately small. Everything below is on the roadmap — split across two more plans — and was excluded
+    from Plan 1 so we could ship and learn from real partner input first.
+  </p>
+
+  <div class="deferred-grid">
+    <div class="deferred">
+      <span class="tag p2">Plan 2 · Admin & ratings</span>
+      <h4>Admin operations + project ratings</h4>
+      <ul>
+        <li>Per-partner edit (name, company, weight, notes)</li>
+        <li>Deactivate / reactivate partners</li>
+        <li>Submissions firehose (all partners, filterable, exportable)</li>
+        <li>Project-relevance ratings (1–5 stars on student projects)</li>
+        <li>Token expiry enforcement</li>
+        <li>Per-partner submission rate limits</li>
+      </ul>
+    </div>
+    <div class="deferred">
+      <span class="tag p3">Plan 3 · Synthesis</span>
+      <h4>AI synthesis surface</h4>
+      <ul>
+        <li>Per-target synthesis dashboard for faculty</li>
+        <li>Proposed K/U/D descriptor diffs with rationale</li>
+        <li>Aggregated job titles, responsibility themes, salary distribution</li>
+        <li>Sample partner quotes with attribution</li>
+        <li>Project-rating heat map (courses × projects × weighted avg)</li>
+        <li>Future: cross-target "Karpathy-wiki" synthesis</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="learned">
+  <h2><span class="num">05</span> What we learned building it</h2>
+
+  <h3>The form length question is real</h3>
+  <p>
+    A 10-minute form has a non-trivial drop-off rate. We answered this with the "save draft" pattern — partners can
+    leave mid-form and resume cleanly. Drafts auto-create on first edit; the wizard's <code>ensureDraft</code> idempotency
+    pattern prevents double-creates from concurrent clicks. Whether 10 minutes is even the right ceiling will only
+    surface in the pilot.
+  </p>
+
+  <h3>Anchor on existing taxonomy, but escape-hatch it</h3>
+  <p>
+    The career-target picker asks partners to find the <em>closest match</em>, not <em>their category</em>. The framing
+    matters. If none fit, an explicit "let me describe it" path captures the gap as an <code>unmappedTargetLabel</code>.
+    Those labels are the early-warning signal for career targets we haven't named yet.
+  </p>
+
+  <h3>Tokens are bearer credentials — treat them as such</h3>
+  <p>
+    The final review caught one real security issue: I'd been writing the magic token into <code>partner_events.opened</code>
+    metadata for debugging. Tokens are bearer credentials — anyone with database read access could have impersonated any
+    partner. Fixed before the pilot opens. The partner is already identified by the <code>partnerId</code> FK; the token
+    adds nothing to the event log.
+  </p>
+
+  <div class="pullquote">
+    The auth model is correct, data isolation between partners is airtight, all plan deliverables are present.
+    <div class="pullquote-cite">— Final code review, 2026-05-19</div>
+  </div>
+
+  <h3>De-identification vs. weighting in synthesis</h3>
+  <p>
+    The bigger product-design call in the spec wasn't a code question — it was about how the AI synthesis layer
+    should treat partners. Chip pushed back on de-identifying inputs: <em>"Coca-Cola doing something vs. some tiny
+    printer is a signal worth amplifying."</em> The compromise that landed in the design: real identity passed to the
+    LLM alongside an explicit, faculty-set <code>weight</code> column. Weight is the dial; the LLM doesn't get to
+    invent importance from brand recognition alone. That's still ahead in Plan 3.
+  </p>
+</section>
+
+<section id="next">
+  <h2><span class="num">06</span> What's next</h2>
+
+  <h3>Immediate (this week)</h3>
+  <ul>
+    <li>Add Chip + 5–10 trusted partners via CSV import.</li>
+    <li>Send invites. Watch open rates, completion rates, and what shows up in <code>unmappedTargetLabel</code>.</li>
+    <li>Read the raw <code>partner_submissions</code> table directly — no admin synthesis UI yet, but the data is queryable.</li>
+  </ul>
+
+  <h3>Plan 2 — Admin views + project ratings</h3>
+  <p>
+    Bring the admin surface up to operational standard: edit partner records, deactivate, view submissions firehose,
+    export CSV. Add the second contribution surface — project ratings on student work. Wire per-partner rate limits
+    and token expiry. The pilot's lessons inform what UX polish actually matters here.
+  </p>
+
+  <h3>Plan 3 — Synthesis</h3>
+  <p>
+    The AI synthesis pipeline and per-target dashboard. Faculty reads aggregated insights and proposed K/U/D edits
+    per career target, with the option to scale up to hundreds of partners once the synthesis layer makes that
+    volume legible. This is the surface that closes the loop back into curriculum.
+  </p>
+
+  <div class="callout success">
+    <div class="callout-title">Ready when you are</div>
+    <p>
+      The tool is live behind the existing GC Curriculum Tool deploy. Open <code>/admin/partners?slug=&lt;slug&gt;</code>,
+      paste a CSV, and the first invites go out. Partner submissions land in the database immediately. The synthesis
+      layer arrives when there's something to synthesize.
+    </p>
+  </div>
+</section>
+
+</main>
+
+<script>
+  // Highlight the section in the rail as the user scrolls.
+  const sections = document.querySelectorAll('section[id]');
+  const links = document.querySelectorAll('.nav-link[href^="#"]');
+  function onScroll() {
+    let active = '';
+    const scrollY = window.scrollY + 120;
+    for (const s of sections) {
+      if (s.offsetTop <= scrollY) active = s.id;
+    }
+    for (const l of links) {
+      const id = l.getAttribute('href').slice(1);
+      l.classList.toggle('active', id === active);
+    }
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+</script>
+
+</body>
+</html>
