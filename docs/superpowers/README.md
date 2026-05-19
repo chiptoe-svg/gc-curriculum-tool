@@ -17,6 +17,7 @@ Design documents — the architectural rationale and decisions before implementa
 | ---- | --- | ----- |
 | 2026-05-17 | [`specs/2026-05-17-gc-curriculum-tool-v1-design.{md,html}`](./specs/2026-05-17-gc-curriculum-tool-v1-design.md) | Full v1 implementation design (Builds 1–3); the technical anchor. |
 | 2026-05-18 | [`specs/2026-05-18-sheet-integration-design.md`](./specs/2026-05-18-sheet-integration-design.md) | Sheet-integration design (snapshot + resync + editable course fields). |
+| 2026-05-18 | [`specs/2026-05-18-industry-partner-input-design.md`](./specs/2026-05-18-industry-partner-input-design.md) | Industry Partner Input Tool — magic-link survey + AI synthesis layer feeding career targets. Next build alongside faculty M-trial. |
 
 ## Plans
 
@@ -47,9 +48,10 @@ If picking this up fresh:
 
 1. Read the vision doc first — it's the orientation.
 2. Then this index + the most recent plan that's still relevant.
-3. The pending work the trial will surface lives in two places:
+3. The pending work the trial will surface lives in three places:
    - **Faculty rollout** (Plan Task 17 in [`plans/2026-05-17-m-trial-prototype.md`](./plans/2026-05-17-m-trial-prototype.md)) is still pending and is the natural M-trial closeout.
-   - **Phase 1** (program-wide coverage matrix, per-course views, admin tooling for career-target evolution) is the next increment. No spec/plan yet — write one after the trial feedback settles.
+   - **Industry Partner Input Tool** — spec written 2026-05-18; the highest-priority parallel build while faculty are in trial. Feeds career targets from the demand side, complementing the supply-side curriculum work. Implementation plan still to write.
+   - **Phase 1** (program-wide coverage matrix, per-course views, admin tooling for career-target evolution) is the next curriculum-tool increment. No spec/plan yet — write one after the trial feedback settles.
 4. Outstanding small polish items captured in conversation but not in any plan:
    - 4 reconstructed Simple Syllabus URLs (GC 4900ap/bl/or, GC 4990ta) in the sheet need the real URLs pasted in by Chip.
    - "AI Workflow / Orchestrator" career target needs a short description sentence somewhere (vision doc names it but doesn't explain its distinctness from the other four).
