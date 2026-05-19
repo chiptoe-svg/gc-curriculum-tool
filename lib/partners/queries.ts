@@ -25,6 +25,7 @@ export async function createPartner(input: CreatePartnerInput) {
     careerTargetHints: input.careerTargetHints,
     magicToken: token,
   }).returning();
+  if (!row) throw new Error('createPartner: insert returned no row');
   return row;
 }
 

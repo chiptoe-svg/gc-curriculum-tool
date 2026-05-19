@@ -40,7 +40,7 @@ export function parsePartnersCsv(input: string): PartnerCsvResult {
     return { rows: [], errors: [{ row: 0, message: 'CSV is empty' }] };
   }
 
-  const headers = allRows[0].map(h => h.trim());
+  const headers = allRows[0]!.map(h => h.trim());
   // Missing required headers
   for (const required of REQUIRED_HEADERS) {
     if (!headers.includes(required)) {
@@ -61,7 +61,7 @@ export function parsePartnersCsv(input: string): PartnerCsvResult {
   const rows: PartnerCsvRow[] = [];
 
   for (let i = 1; i < allRows.length; i++) {
-    const raw = allRows[i].map(c => (c ?? '').trim());
+    const raw = allRows[i]!.map(c => (c ?? '').trim());
     const rowNum = i + 1;
     const email = raw[index('email')];
     if (!email) {

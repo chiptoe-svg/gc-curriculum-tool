@@ -19,7 +19,7 @@ describe('sendPartnerInvite', () => {
   it('sends with rendered HTML containing the magic URL', async () => {
     await sendPartnerInvite({ firstName: 'Alex', email: 'alex@acme.test', token: 'TOKEN123' });
     expect(send).toHaveBeenCalledTimes(1);
-    const arg = send.mock.calls[0][0];
+    const arg = send.mock.calls[0]![0];
     expect(arg.to).toBe('alex@acme.test');
     expect(arg.from).toBe('GC Curriculum <no-reply@example.com>');
     expect(arg.subject).toMatch(/Clemson/i);
