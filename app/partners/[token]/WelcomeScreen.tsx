@@ -11,9 +11,9 @@ export function WelcomeScreen({ partner }: Props) {
         <p className="text-sm text-slate-500">Hi {partner.firstName} — thanks for being here.</p>
         <h1 className="mt-1 text-3xl font-semibold">Help us shape what GC graduates can do.</h1>
         <p className="mt-3 max-w-2xl text-slate-700">
-          We're updating the career targets the Clemson Graphic Communications curriculum builds toward.
+          We&apos;re updating the career targets the Clemson Graphic Communications curriculum builds toward.
           Your input shapes what we teach. About 10 minutes per position you describe, plus an optional 5 minutes
-          rating the kinds of projects you'd want grads to have done. You can come back anytime through the same link.
+          rating the kinds of projects you&apos;d want grads to have done. You can come back anytime through the same link.
         </p>
       </div>
 

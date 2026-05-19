@@ -17,7 +17,7 @@ export function PartnerInvite({ firstName, magicUrl }: PartnerInviteProps) {
           <Text>Hi {firstName},</Text>
           <Text>
             Clemson Graphic Communications is updating the career targets our curriculum builds toward, and
-            we'd like your input. Tell us about the roles you hire GC grads into — job title, responsibilities,
+            we&apos;d like your input. Tell us about the roles you hire GC grads into — job title, responsibilities,
             salary range, the skills you actually look for. You can describe as many positions as you want, and
             you can stop and come back anytime through the same link.
           </Text>
@@ -30,12 +30,12 @@ export function PartnerInvite({ firstName, magicUrl }: PartnerInviteProps) {
             </Button>
           </Section>
           <Text style={{ fontSize: 13, color: '#475569' }}>
-            About 10 minutes per position you describe. Optional 5 minutes to rate the student projects you'd
+            About 10 minutes per position you describe. Optional 5 minutes to rate the student projects you&apos;d
             want grads to have done.
           </Text>
           <Hr />
           <Text style={{ fontSize: 12, color: '#64748b' }}>
-            This link is unique to you. Please don't share it. If you weren't expecting this email, reply and
+            This link is unique to you. Please don&apos;t share it. If you weren&apos;t expecting this email, reply and
             let us know.
           </Text>
         </Container>
