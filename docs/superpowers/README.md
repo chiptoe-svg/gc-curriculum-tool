@@ -30,6 +30,7 @@ Implementation plans — TDD-style, one plan per increment.
 | 2026-05-18 | [`plans/2026-05-18-sheet-integration.md`](./plans/2026-05-18-sheet-integration.md) | ✅ Done. 11 tasks completed; courses table mirrors the shared Google Sheet via admin Resync. |
 | 2026-05-19 | [`plans/2026-05-19-industry-partner-input-plan-1-foundation.md`](./plans/2026-05-19-industry-partner-input-plan-1-foundation.md) | ✅ Done. Plan 1 of 3 for the industry partner input tool — partners table + CSV import + invite email, magic-link auth, position-submission wizard (20 tasks). |
 | 2026-05-19 | [`plans/2026-05-19-industry-partner-input-plan-3-synthesis.md`](./plans/2026-05-19-industry-partner-input-plan-3-synthesis.md) | ✅ Done. Plan 3 of 3 — AI synthesis layer + per-target faculty dashboard (14 tasks). Project-rating heat map deferred until Plan 2 ships the ratings table. |
+| 2026-05-19 | [`plans/2026-05-19-m-trial-dual-analysis-modes.md`](./plans/2026-05-19-m-trial-dual-analysis-modes.md) | 🔲 Pending. M-trial: split the single Analyze button into Career-target alignment + Prereqs feeding a course tabs, with inline K/U/D preview of the selected target on both tabs (15 tasks). |
 
 ## Pilot announcements
 
