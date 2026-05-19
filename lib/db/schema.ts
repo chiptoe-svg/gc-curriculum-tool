@@ -132,3 +132,23 @@ export const partnerEvents = pgTable('partner_events', {
   metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
+
+export const partnerSubmissions = pgTable('partner_submissions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  partnerId: uuid('partner_id').notNull().references(() => partners.id, { onDelete: 'cascade' }),
+  careerTargetId: text('career_target_id').references(() => careerTargets.id),
+  unmappedTargetLabel: text('unmapped_target_label'),
+  positionTitle: text('position_title').notNull(),
+  responsibilities: text('responsibilities').notNull().default(''),
+  salaryRangeLow: integer('salary_range_low'),
+  salaryRangeHigh: integer('salary_range_high'),
+  salaryCurrency: text('salary_currency').notNull().default('USD'),
+  interviewQuestions: jsonb('interview_questions').$type<string[]>().notNull().default([]),
+  requiredSkills: jsonb('required_skills').$type<string[]>().notNull().default([]),
+  niceToHaveSkills: jsonb('nice_to_have_skills').$type<string[]>().notNull().default([]),
+  additionalNotes: text('additional_notes').notNull().default(''),
+  status: text('status').notNull().default('draft'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  submittedAt: timestamp('submitted_at', { withTimezone: true }),
+});
