@@ -10,6 +10,8 @@ A curriculum design tool for the Clemson University Department of Graphic Commun
 
 **M-trial live.** The faculty-facing prototype is deployed: course picker backed by the shared Google Sheet, AI-drafted KUD outcomes, coverage scoring against career targets, scaffolding evaluation, prerequisite-gap analysis, and per-judgment "Why?" expanders + flag-with-note. Phase 1 (program-wide views) starts after trial feedback settles.
 
+**Industry Partner Input — Plan 1 shipped.** Magic-link survey is live behind the scenes: admin can CSV-import partners and send invites; partners land on a welcome screen, pick the closest career-target match, and submit a position description (draft + submit + delete). Plans 2 (admin views + project ratings) and 3 (AI synthesis layer) still ahead.
+
 ## Documents
 
 **📄 Live HTML previews** (rendered via GitHub Pages):
