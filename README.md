@@ -10,7 +10,9 @@ A curriculum design tool for the Clemson University Department of Graphic Commun
 
 **M-trial live.** The faculty-facing prototype is deployed: course picker backed by the shared Google Sheet, AI-drafted KUD outcomes, coverage scoring against career targets, scaffolding evaluation, prerequisite-gap analysis, and per-judgment "Why?" expanders + flag-with-note. Phase 1 (program-wide views) starts after trial feedback settles.
 
-**Industry Partner Input — Plan 1 shipped.** Magic-link survey is live behind the scenes: admin can CSV-import partners and send invites; partners land on a welcome screen, pick the closest career-target match, and submit a position description (draft + submit + delete). Plans 2 (admin views + project ratings) and 3 (AI synthesis layer) still ahead. **[Read the pilot writeup →](https://chiptoe-svg.github.io/gc-curriculum-tool/docs/superpowers/pilot/2026-05-19-industry-partner-input-pilot.html)**
+**Industry Partner Input — Plan 1 shipped.** Magic-link survey is live behind the scenes: admin can CSV-import partners and send invites; partners land on a welcome screen, pick the closest career-target match, and submit a position description (draft + submit + delete). Plan 2 (admin views + project ratings) still ahead. **[Read the pilot writeup →](https://chiptoe-svg.github.io/gc-curriculum-tool/docs/superpowers/pilot/2026-05-19-industry-partner-input-pilot.html)**
+
+**Industry Partner Input — Plan 3 shipped.** AI synthesis layer is live: faculty visit `/admin/synthesis?slug=<slug>` to see per-career-target aggregated themes, salary distributions, sample partner quotes, and proposed Know/Understand/Do edits with rationale. Each proposed edit has a "Copy text" button — faculty curate edits into the curriculum tool manually. Cost guard piggybacks on the existing `DAILY_COST_CAP_USD`. Re-run threshold tunable via `SYNTHESIS_STALENESS_THRESHOLD` (default 5).
 
 ## Documents
 
