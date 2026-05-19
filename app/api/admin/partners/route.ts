@@ -10,6 +10,7 @@ export async function GET(req: Request) {
   }
   const rows = await listPartners();
   // Strip magicToken — never expose tokens in the list view.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const safe = rows.map(({ magicToken, ...rest }) => rest);
   return NextResponse.json({ partners: safe });
 }

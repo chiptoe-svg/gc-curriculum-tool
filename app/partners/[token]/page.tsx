@@ -37,7 +37,9 @@ export default async function PartnerLandingPage({ params }: Props) {
   // First-time arrival side effects.
   if (!partner.firstOpenedAt) {
     await markFirstOpenedIfNull(partner.id);
-    await logPartnerEvent(partner.id, 'opened', { token });
+    // Do NOT include the magic token in event metadata — it's a bearer credential.
+    // The partner is already identified via the partnerId FK.
+    await logPartnerEvent(partner.id, 'opened', { firstOpen: true });
   } else {
     await bumpLastActive(partner.id);
   }

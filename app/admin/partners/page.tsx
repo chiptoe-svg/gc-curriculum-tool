@@ -16,6 +16,7 @@ export default async function AdminPartnersPage({ searchParams }: Props) {
   const raw = await listPartners();
   // Strip magicToken; convert Date columns to ISO strings so they cross the
   // server→client component boundary cleanly and match PartnersTable's prop type.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const partners = raw.map(({ magicToken, ...rest }) => ({
     ...rest,
     invitedAt: rest.invitedAt ? rest.invitedAt.toISOString() : null,
