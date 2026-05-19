@@ -15,7 +15,8 @@ import {
   type SynthesisResult,
 } from './schema';
 import { buildSynthesisUserMessage, type SubmissionInput } from './prompt-builder';
-import { salaryDistributionForTarget, countSubmittedForTarget } from './queries';
+import { salaryDistributionForTarget } from './queries';
+import { logPartnerEvent } from '@/lib/partners/queries';
 
 export interface PersistedRun {
   id: string;
@@ -110,8 +111,10 @@ export async function synthesizeTarget(targetId: string): Promise<PersistedRun> 
     salaryDistribution,
   };
 
-  // 8. Persist + record spend
-  const submissionCount = await countSubmittedForTarget(targetId);
+  // 8. Persist + record spend. submissionCount reflects what was actually synthesized
+  //    (post-weight-filter), so the staleness check compares apples-to-apples when
+  //    more weight>0 submissions arrive.
+  const submissionCount = submissions.length;
   const [inserted] = await db.insert(synthesisRuns).values({
     careerTargetId: targetId,
     submissionCount,
@@ -122,6 +125,12 @@ export async function synthesizeTarget(targetId: string): Promise<PersistedRun> 
   if (!inserted) throw new Error('synthesizeTarget: synthesis_runs insert returned no row');
 
   await recordSpend(completion.costUsdCents);
+  await logPartnerEvent(null, 'synthesis_run_completed', {
+    targetId,
+    costUsdCents: completion.costUsdCents,
+    submissionCount,
+    model: provider.model,
+  });
 
   return {
     id: inserted.id,

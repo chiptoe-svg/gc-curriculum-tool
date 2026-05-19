@@ -7,7 +7,7 @@ const {
   loadPrompt,
   buildSynthesisUserMessage,
   salaryDistributionForTarget,
-  countSubmittedForTarget,
+  logPartnerEvent,
   targetSelectLimit,
   submissionsSelect,
   synthesisInsertReturning,
@@ -18,7 +18,7 @@ const {
   loadPrompt: vi.fn(),
   buildSynthesisUserMessage: vi.fn(),
   salaryDistributionForTarget: vi.fn(),
-  countSubmittedForTarget: vi.fn(),
+  logPartnerEvent: vi.fn(),
   targetSelectLimit: vi.fn(),
   submissionsSelect: vi.fn(),
   synthesisInsertReturning: vi.fn(),
@@ -34,12 +34,14 @@ vi.mock('@/lib/ai/synthesis/prompt-builder', () => ({ buildSynthesisUserMessage 
 
 vi.mock('@/lib/ai/synthesis/queries', () => ({
   salaryDistributionForTarget,
-  countSubmittedForTarget,
   // unused in orchestrator but mocked to satisfy module shape:
+  countSubmittedForTarget: vi.fn(),
   countUniquePartnersForTarget: vi.fn(),
   sumPartnerWeightsForTarget: vi.fn(),
   nearbyUnmappedLabelsForTarget: vi.fn(),
 }));
+
+vi.mock('@/lib/partners/queries', () => ({ logPartnerEvent }));
 
 // DB-layer mocks. The orchestrator does: load target, load submissions+partners,
 // insert into synthesis_runs.
@@ -80,7 +82,7 @@ beforeEach(() => {
   loadPrompt.mockResolvedValue('SYSTEM PROMPT');
   buildSynthesisUserMessage.mockReturnValue('USER MESSAGE');
   salaryDistributionForTarget.mockResolvedValue({ p25: 50000, p50: 60000, p75: 70000, n: 3 });
-  countSubmittedForTarget.mockResolvedValue(3);
+  logPartnerEvent.mockResolvedValue(undefined);
   synthesisInsertReturning.mockResolvedValue([{ id: 'run-1' }]);
 });
 
@@ -133,6 +135,15 @@ describe('synthesizeTarget', () => {
     const out = await synthesizeTarget('production-operations');
     expect(out.id).toBe('run-1');
     expect(recordSpend).toHaveBeenCalledWith(42);
+    expect(logPartnerEvent).toHaveBeenCalledWith(
+      null,
+      'synthesis_run_completed',
+      expect.objectContaining({
+        targetId: 'production-operations',
+        costUsdCents: 42,
+        submissionCount: 1,
+      }),
+    );
   });
 
   it('excludes partners with weight=0 from the prompt input', async () => {
