@@ -123,3 +123,23 @@ describe('CoverageHeatMap', () => {
     expect(screen.getByText(/Course workflow reasoning/i)).toBeInTheDocument();
   });
 });
+
+describe('mode prop', () => {
+  it('renders without focal-course grouping when mode="chain"', () => {
+    const { queryByText } = render(
+      <CoverageHeatMap
+        target={target}
+        courseLabel="GC 4060"
+        courseScores={courseScores}
+        priorCoursework={[
+          { courseLabel: 'GC 3460', coverage: prior2Scores },
+        ]}
+        scaffolding={scaffolding}
+        onFlag={async () => {}}
+        mode="chain"
+      />
+    );
+    // The focal-course group header used in default mode should not appear.
+    expect(queryByText(/Course being analyzed/i)).toBeNull();
+  });
+});

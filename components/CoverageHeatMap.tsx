@@ -50,6 +50,9 @@ interface Props {
   priorCoursework: Array<{ courseLabel: string; coverage: CoverageScore[] }>;
   scaffolding: ScaffoldingScore[];
   onFlag: (target: string, note: string) => Promise<void>;
+  /** 'focal-plus-priors' (default): renders course-being-analyzed as a distinct group above prior coursework.
+   *  'chain': all rows render uniformly as peers; no focal/prior labeling. */
+  mode?: 'focal-plus-priors' | 'chain';
 }
 
 function cumulativeSummary(
@@ -113,13 +116,31 @@ function ScaffoldingHeaderCell({
   );
 }
 
-export function CoverageHeatMap({ target, courseLabel, courseScores, priorCoursework, scaffolding, onFlag }: Props) {
+function parseLevel(label: string): number {
+  const m = label.match(/GC\s+(\d)/i);
+  return m ? parseInt(m[1]!, 10) : 0;
+}
+
+export function CoverageHeatMap({ target, courseLabel, courseScores, priorCoursework, scaffolding, onFlag, mode }: Props) {
   const cellFor = (scores: CoverageScore[], subId: string) => scores.find(s => s.subCompetencyId === subId);
   const scaffoldFor = (subId: string) => scaffolding.find(s => s.subCompetencyId === subId);
 
   const allRows = [{ coverage: courseScores }, ...priorCoursework.map(p => ({ coverage: p.coverage }))];
   const s = cumulativeSummary(target, allRows);
   const courseCount = 1 + priorCoursework.length;
+
+  // In chain mode, build a single sorted list of all courses as uniform peers.
+  const chainRows: Array<{ label: string; coverage: CoverageScore[]; key: string }> =
+    mode === 'chain'
+      ? [
+          { label: courseLabel || 'Course', coverage: courseScores, key: 'focal' },
+          ...priorCoursework.map((p, i) => ({
+            label: p.courseLabel || `Prior course ${i + 1}`,
+            coverage: p.coverage,
+            key: `prior-${i}`,
+          })),
+        ].sort((a, b) => parseLevel(a.label) - parseLevel(b.label))
+      : [];
 
   // Scaffolding roll-up — how many sub-competencies land at each quality
   const sc = { strong: 0, adequate: 0, brittle: 0, weak: 0, absent: 0 };
@@ -160,74 +181,109 @@ export function CoverageHeatMap({ target, courseLabel, courseScores, priorCourse
               </tr>
             </thead>
             <tbody>
-              <tr aria-hidden="true">
-                <td colSpan={target.subCompetencies.length + 1} className="pt-3 pb-1 text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
-                  Course being analyzed
-                </td>
-              </tr>
-              <tr key="course">
-                <td className="p-2 font-bold text-sm align-top border-l-4 border-slate-900/40">{courseLabel || 'Course'}</td>
-                {target.subCompetencies.map(sc => {
-                  const c = cellFor(courseScores, sc.id);
-                  if (!c) {
-                    return <td key={sc.id} className="p-2 align-top"><div className="rounded p-2 bg-slate-200 text-slate-700 text-xs">No data</div></td>;
-                  }
-                  return (
-                    <td key={sc.id} className="p-2 align-top">
-                      <div className={`rounded p-2 ring-2 ring-slate-900/30 ${LEVEL_BG[c.kudLevel]}`}>
-                        <div className="flex justify-between items-center gap-2">
-                          <span className="font-semibold text-xs">{LEVEL_LABEL[c.kudLevel]}</span>
-                          <ConfidenceBars level={c.confidence} />
-                        </div>
-                        <div className="mt-2">
-                          <ReasoningExpand
-                            reasoning={c.reasoning}
-                            flagContext={`${courseLabel} • ${sc.name} • ${LEVEL_LABEL[c.kudLevel]}`}
-                            onFlag={(note) => onFlag(`course.${sc.id}`, note)}
-                          />
-                        </div>
-                      </div>
+              {mode === 'chain' ? (
+                // Chain mode: all courses as uniform peers, ordered by level, no group headers.
+                chainRows.map(({ label, coverage, key }) => (
+                  <tr key={key}>
+                    <td className="p-2 font-medium text-sm align-top">{label}</td>
+                    {target.subCompetencies.map(sc => {
+                      const c = cellFor(coverage, sc.id);
+                      if (!c) {
+                        return <td key={sc.id} className="p-2 align-top"><div className="rounded p-2 bg-slate-200 text-slate-700 text-xs">No data</div></td>;
+                      }
+                      return (
+                        <td key={sc.id} className="p-2 align-top">
+                          <div className={`rounded p-2 ${LEVEL_BG[c.kudLevel]}`}>
+                            <div className="flex justify-between items-center gap-2">
+                              <span className="font-semibold text-xs">{LEVEL_LABEL[c.kudLevel]}</span>
+                              <ConfidenceBars level={c.confidence} />
+                            </div>
+                            <div className="mt-2">
+                              <ReasoningExpand
+                                reasoning={c.reasoning}
+                                flagContext={`${label} • ${sc.name} • ${LEVEL_LABEL[c.kudLevel]}`}
+                                onFlag={(note) => onFlag(`${key}.${sc.id}`, note)}
+                              />
+                            </div>
+                          </div>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))
+              ) : (
+                // Default (focal-plus-priors) mode: focal course group above prior coursework group.
+                <>
+                  <tr aria-hidden="true">
+                    <td colSpan={target.subCompetencies.length + 1} className="pt-3 pb-1 text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+                      Course being analyzed
                     </td>
-                  );
-                })}
-              </tr>
-
-              {priorCoursework.length > 0 && (
-                <tr aria-hidden="true">
-                  <td colSpan={target.subCompetencies.length + 1} className="pt-5 pb-1 text-[11px] uppercase tracking-wider text-muted-foreground font-medium border-t border-slate-300">
-                    Prior coursework
-                  </td>
-                </tr>
-              )}
-
-              {priorCoursework.map(({ courseLabel: priorLabel, coverage }, index) => (
-                <tr key={`prior-${index}`}>
-                  <td className="p-2 font-medium text-sm align-top">{priorLabel || `Prior course ${index + 1}`}</td>
-                  {target.subCompetencies.map(sc => {
-                    const c = cellFor(coverage, sc.id);
-                    if (!c) {
-                      return <td key={sc.id} className="p-2 align-top"><div className="rounded p-2 bg-slate-200 text-slate-700 text-xs">No data</div></td>;
-                    }
-                    return (
-                      <td key={sc.id} className="p-2 align-top">
-                        <div className={`rounded p-2 ${LEVEL_BG[c.kudLevel]}`}>
-                          <div className="flex justify-between items-center gap-2">
-                            <span className="font-semibold text-xs">{LEVEL_LABEL[c.kudLevel]}</span>
-                            <ConfidenceBars level={c.confidence} />
+                  </tr>
+                  <tr key="course">
+                    <td className="p-2 font-bold text-sm align-top border-l-4 border-slate-900/40">{courseLabel || 'Course'}</td>
+                    {target.subCompetencies.map(sc => {
+                      const c = cellFor(courseScores, sc.id);
+                      if (!c) {
+                        return <td key={sc.id} className="p-2 align-top"><div className="rounded p-2 bg-slate-200 text-slate-700 text-xs">No data</div></td>;
+                      }
+                      return (
+                        <td key={sc.id} className="p-2 align-top">
+                          <div className={`rounded p-2 ring-2 ring-slate-900/30 ${LEVEL_BG[c.kudLevel]}`}>
+                            <div className="flex justify-between items-center gap-2">
+                              <span className="font-semibold text-xs">{LEVEL_LABEL[c.kudLevel]}</span>
+                              <ConfidenceBars level={c.confidence} />
+                            </div>
+                            <div className="mt-2">
+                              <ReasoningExpand
+                                reasoning={c.reasoning}
+                                flagContext={`${courseLabel} • ${sc.name} • ${LEVEL_LABEL[c.kudLevel]}`}
+                                onFlag={(note) => onFlag(`course.${sc.id}`, note)}
+                              />
+                            </div>
                           </div>
-                          <div className="mt-2">
-                            <ReasoningExpand
-                              reasoning={c.reasoning}
-                              flagContext={`${priorLabel} • ${sc.name} • ${LEVEL_LABEL[c.kudLevel]}`}
-                              onFlag={(note) => onFlag(`prior-${index}.${sc.id}`, note)}
-                            />
-                          </div>
-                        </div>
+                        </td>
+                      );
+                    })}
+                  </tr>
+
+                  {priorCoursework.length > 0 && (
+                    <tr aria-hidden="true">
+                      <td colSpan={target.subCompetencies.length + 1} className="pt-5 pb-1 text-[11px] uppercase tracking-wider text-muted-foreground font-medium border-t border-slate-300">
+                        Prior coursework
                       </td>
-                    );
-                  })}
-                </tr>
-              ))}
+                    </tr>
+                  )}
+
+                  {priorCoursework.map(({ courseLabel: priorLabel, coverage }, index) => (
+                    <tr key={`prior-${index}`}>
+                      <td className="p-2 font-medium text-sm align-top">{priorLabel || `Prior course ${index + 1}`}</td>
+                      {target.subCompetencies.map(sc => {
+                        const c = cellFor(coverage, sc.id);
+                        if (!c) {
+                          return <td key={sc.id} className="p-2 align-top"><div className="rounded p-2 bg-slate-200 text-slate-700 text-xs">No data</div></td>;
+                        }
+                        return (
+                          <td key={sc.id} className="p-2 align-top">
+                            <div className={`rounded p-2 ${LEVEL_BG[c.kudLevel]}`}>
+                              <div className="flex justify-between items-center gap-2">
+                                <span className="font-semibold text-xs">{LEVEL_LABEL[c.kudLevel]}</span>
+                                <ConfidenceBars level={c.confidence} />
+                              </div>
+                              <div className="mt-2">
+                                <ReasoningExpand
+                                  reasoning={c.reasoning}
+                                  flagContext={`${priorLabel} • ${sc.name} • ${LEVEL_LABEL[c.kudLevel]}`}
+                                  onFlag={(note) => onFlag(`prior-${index}.${sc.id}`, note)}
+                                />
+                              </div>
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </>
+              )}
             </tbody>
           </table>
         </div>
