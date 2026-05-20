@@ -163,3 +163,68 @@ export const synthesisRuns = pgTable('synthesis_runs', {
   costUsdCents: integer('cost_usd_cents').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
+
+export const courseMaterials = pgTable('course_materials', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  courseCode: text('course_code').notNull().references(() => courses.code, { onDelete: 'cascade' }),
+  fileName: text('file_name').notNull(),
+  blobUrl: text('blob_url').notNull(),
+  mimeType: text('mime_type').notNull(),
+  sizeBytes: integer('size_bytes').notNull(),
+  pageCount: integer('page_count'),
+  extractionMethod: text('extraction_method'),      // 'text' | 'vision' | null
+  extractionStatus: text('extraction_status').notNull().default('pending'), // 'pending' | 'ok' | 'low_text' | 'failed'
+  extractedText: text('extracted_text'),
+  analysisFinding: jsonb('analysis_finding').$type<{
+    materialType: string;
+    competencies: Array<{ name: string; description: string; evidenceQuotes: string[] }>;
+    skills: string[];
+    notes: string;
+  }>(),
+  analysisModel: text('analysis_model'),
+  analysisCostUsdCents: integer('analysis_cost_usd_cents'),
+  uploadedAt: timestamp('uploaded_at', { withTimezone: true }).defaultNow().notNull(),
+  ipHash: text('ip_hash').notNull(),
+});
+
+export const courseProfiles = pgTable('course_profiles', {
+  courseCode: text('course_code').primaryKey().references(() => courses.code, { onDelete: 'cascade' }),
+  summary: text('summary').notNull(),
+  learningObjectives: jsonb('learning_objectives').$type<string[]>().notNull().default([]),
+  skills: jsonb('skills').$type<string[]>().notNull().default([]),
+  competencies: jsonb('competencies').$type<Array<{
+    name: string;
+    description: string;
+    level: string;
+    evidence: Array<{ fileName: string; quote: string }>;
+  }>>().notNull().default([]),
+  catalogDivergence: jsonb('catalog_divergence').$type<{
+    reinforced: string[];
+    additions: string[];
+    gaps: string[];
+  }>().notNull().default({ reinforced: [], additions: [], gaps: [] }),
+  sourceRunId: uuid('source_run_id'),
+  manuallyEdited: boolean('manually_edited').notNull().default(false),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const courseProfileRuns = pgTable('course_profile_runs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  courseCode: text('course_code').notNull().references(() => courses.code, { onDelete: 'cascade' }),
+  result: jsonb('result').$type<{
+    summary: string;
+    learningObjectives: string[];
+    skills: string[];
+    competencies: Array<{
+      name: string;
+      description: string;
+      level: string;
+      evidence: Array<{ fileName: string; quote: string }>;
+    }>;
+    catalogDivergence: { reinforced: string[]; additions: string[]; gaps: string[] };
+  }>().notNull(),
+  materialCount: integer('material_count').notNull(),
+  model: text('model').notNull(),
+  costUsdCents: integer('cost_usd_cents').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
