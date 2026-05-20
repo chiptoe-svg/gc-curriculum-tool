@@ -19,7 +19,10 @@ export function PrototypeClient({ slug }: { slug: string }) {
   const [analyzing, setAnalyzing] = useState(false);
   const [prereqResult, setPrereqResult] = useState<AnalysisResult | null>(null);
   const [chainResult, setChainResult] = useState<TargetChainAnalysisResult | null>(null);
-  const [runId, setRunId] = useState<string | null>(null);
+  // Separate run IDs per tab — both results stay mounted when switching tabs,
+  // so a shared runId would let a flag from one tab attach to the other's run.
+  const [prereqRunId, setPrereqRunId] = useState<string | null>(null);
+  const [chainRunId, setChainRunId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [targetsList, setTargetsList] = useState<CareerTarget[]>([]);
   const [courses, setCourses] = useState<CourseChoice[]>([]);
@@ -58,7 +61,7 @@ export function PrototypeClient({ slug }: { slug: string }) {
       if (!resp.ok) throw new Error(`Analysis failed: ${resp.status} ${(await resp.text()).slice(0, 200)}`);
       const body = (await resp.json()) as AnalysisResult & { runId?: string };
       setPrereqResult(body);
-      if (body.runId) setRunId(body.runId);
+      if (body.runId) setPrereqRunId(body.runId);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Unknown error');
     } finally {
@@ -73,7 +76,7 @@ export function PrototypeClient({ slug }: { slug: string }) {
       if (!resp.ok) throw new Error(`Analysis failed: ${resp.status} ${(await resp.text()).slice(0, 200)}`);
       const body = (await resp.json()) as TargetChainAnalysisResult & { runId?: string };
       setChainResult(body);
-      if (body.runId) setRunId(body.runId);
+      if (body.runId) setChainRunId(body.runId);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Unknown error');
     } finally {
@@ -82,6 +85,7 @@ export function PrototypeClient({ slug }: { slug: string }) {
   }
 
   async function handleFlag(target: string, note: string, flagType: string) {
+    const runId = flagType.startsWith('target_chain_') ? chainRunId : prereqRunId;
     if (!runId) return;
     await fetch('/api/flag', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ runId, flagType, target, note }) });
   }
