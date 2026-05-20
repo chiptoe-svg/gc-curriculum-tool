@@ -40,7 +40,7 @@ async function readPrompt(relPath: string): Promise<string> {
   return readFile(join(PROMPT_DIR, relPath), 'utf-8');
 }
 
-export async function loadPrompt(name: PromptName): Promise<string> {
+async function buildPrompt(name: PromptName): Promise<string> {
   const main = await readPrompt(`${name}.md`);
   const parsed = parseFrontmatter(main);
   const includes = await Promise.all(parsed.includes.map(p => readPrompt(p)));
@@ -50,4 +50,24 @@ export async function loadPrompt(name: PromptName): Promise<string> {
   }
   parts.push(parsed.body.trim());
   return parts.join('\n\n---\n\n');
+}
+
+// Prompt files are static for a process lifetime, so the assembled text is
+// memoized. Beyond saving redundant disk reads, this is what lets the analyze
+// routes warm the cache up front: once cached, a helper's internal
+// `await loadPrompt(...)` resolves in a single uniform microtask hop, so a
+// batch of helpers run via Promise.all still invoke the AI provider in stable
+// array order.
+const promptCache = new Map<PromptName, Promise<string>>();
+
+export function loadPrompt(name: PromptName): Promise<string> {
+  let cached = promptCache.get(name);
+  if (!cached) {
+    cached = buildPrompt(name).catch((err: unknown) => {
+      promptCache.delete(name);
+      throw err;
+    });
+    promptCache.set(name, cached);
+  }
+  return cached;
 }
