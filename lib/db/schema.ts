@@ -203,7 +203,7 @@ export const courseProfiles = pgTable('course_profiles', {
     additions: string[];
     gaps: string[];
   }>().notNull().default({ reinforced: [], additions: [], gaps: [] }),
-  sourceRunId: uuid('source_run_id'),
+  sourceRunId: uuid('source_run_id').references(() => courseProfileRuns.id, { onDelete: 'set null' }),
   manuallyEdited: boolean('manually_edited').notNull().default(false),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });

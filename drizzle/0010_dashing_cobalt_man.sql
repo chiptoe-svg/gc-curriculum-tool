@@ -1,0 +1,1 @@
+ALTER TABLE "course_profiles" ADD CONSTRAINT "course_profiles_source_run_id_course_profile_runs_id_fk" FOREIGN KEY ("source_run_id") REFERENCES "public"."course_profile_runs"("id") ON DELETE set null ON UPDATE no action;
