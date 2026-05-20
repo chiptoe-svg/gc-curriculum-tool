@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Industry Partner Interface — Preview</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50">
+
+<!-- Preview bar (not part of the real app) -->
+<div id="preview-bar"
+     class="fixed inset-x-0 top-0 z-50 flex items-center gap-3 bg-slate-900 px-6 py-3">
+  <a href="2026-05-19-industry-partner-input-pilot.html"
+     class="text-xs text-slate-300 hover:text-white">&#8592; Back to pilot announcement</a>
+  <div class="flex-1"></div>
+  <span class="text-xs italic text-slate-400">Sample data &#8212; nothing here is saved.</span>
+  <div class="flex overflow-hidden rounded border border-slate-600">
+    <button id="btn-first"  onclick="setViewMode('first')"
+            class="px-3 py-1 text-xs">First visit</button>
+    <button id="btn-return" onclick="setViewMode('returning')"
+            class="px-3 py-1 text-xs">Returning visit</button>
+  </div>
+  <button onclick="restart()"
+          class="rounded border border-slate-600 px-3 py-1 text-xs text-slate-400 hover:text-white">
+    Restart
+  </button>
+</div>
+
+<!-- Survey shell (faithful recreation of app/partners/[token]/layout.tsx) -->
+<div class="min-h-screen bg-slate-50 pt-12">
+  <header class="border-b border-slate-200 bg-white">
+    <div class="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
+      <div>
+        <div class="text-xs uppercase tracking-wide text-slate-500">Clemson Graphic Communications</div>
+        <div class="text-sm font-medium">Industry Partner Survey</div>
+      </div>
+      <div class="text-xs text-slate-500">Thanks for your time.</div>
+    </div>
+  </header>
+  <main class="mx-auto max-w-4xl px-6 py-8">
+    <div id="screen"></div>
+  </main>
+  <footer class="mx-auto max-w-4xl px-6 py-12 text-xs text-slate-500">
+    Your responses go directly to the GC faculty curriculum committee.
+  </footer>
+</div>
+
+<script>
+// ── Data ──────────────────────────────────────────────────────────────────────
+
+const PARTNER = { firstName: 'Dana', company: 'Meridian Brand Co.' };
+
+const TARGETS = [
+  {
+    id: 'account-management',
+    name: 'Account Management',
+    shortDefinition: "The consultative client-facing role that bridges a brand’s marketing intent and the production or creative execution required to realize it.",
+    industryContexts: [
+      'Agency account team serving brand clients across print and digital deliverables',
+      'In-house brand marketing coordinator translating creative briefs to vendors',
+      'Print/packaging sales representative consulting on production specifications',
+    ],
+  },
+  {
+    id: 'brand-strategy',
+    name: 'Brand Strategy',
+    shortDefinition: 'The analytical and strategic layer of marketing — understanding consumers, competitors, and market conditions well enough to define where a brand should position itself and how.',
+    industryContexts: [
+      'Brand strategist at an agency producing positioning recommendations',
+      'In-house brand manager defining campaign objectives and measurement frameworks',
+      'Insights analyst translating research into strategic direction',
+    ],
+  },
+  {
+    id: 'production-operations',
+    name: 'Production & Operations',
+    shortDefinition: 'The role that makes creative and brand work actually happen — on time, on spec, and within budget.',
+    industryContexts: [
+      'Production manager at a printer overseeing offset and digital press workflows',
+      'In-house operations lead at a brand managing vendor selection and quality',
+      'Packaging production specialist on a multi-vendor brand launch',
+    ],
+  },
+  {
+    id: 'creative-generalist',
+    name: 'Creative Generalist / AI-Native',
+    shortDefinition: 'A practitioner with broad creative capability across copy, design, photography, video, and print — who uses AI as a force multiplier that makes generalism viable at a professional level.',
+    industryContexts: [
+      'In-house creative at a small or mid-sized brand producing across all channels',
+      'Independent creative producing brand-scale work with AI-augmented workflow',
+      'Agency creative bridging copy, design, and motion under one role',
+    ],
+  },
+  {
+    id: 'ai-workflow',
+    name: 'AI Workflow / Orchestrator',
+    shortDefinition: 'The person who designs, builds, and manages the AI-augmented workflows that allow creative and production organizations to scale output without proportionally scaling headcount.',
+    industryContexts: [
+      'Workflow designer at an agency rolling out AI-assisted production',
+      'Operations lead at a brand integrating AI tools into existing creative workflows',
+      'Independent consultant building AI workflows for small creative shops',
+    ],
+  },
+];
+
+const EMPTY_VALUES = () => ({
+  positionTitle: '', responsibilities: '',
+  salaryLow: '', salaryHigh: '', currency: 'USD',
+  requiredSkills: [], niceToHaveSkills: [],
+  interviewQuestions: [], additionalNotes: '',
+});
+
+const SEED_SUBS = [
+  { id: 'seed-1', positionTitle: 'Junior Account Coordinator', status: 'submitted',
+    updatedAt: new Date(Date.now() - 2 * 86400000).toISOString() },
+  { id: 'seed-2', positionTitle: 'Print Production Assistant', status: 'draft',
+    updatedAt: new Date(Date.now() - 86400000).toISOString() },
+];
+
+// ── State ─────────────────────────────────────────────────────────────────────
+
+let _uid = 200;
+function uid() { return String(_uid++); }
+
+function firstVisitState() {
+  return {
+    screen: 1, viewMode: 'first',
+    targetId: null, unmappedLabel: '', unmappedOpen: false,
+    reqDraft: '', niceDraft: '',
+    values: EMPTY_VALUES(),
+    draftId: null, lastTitle: '',
+    submissions: [],
+  };
+}
+function returningState() {
+  return {
+    ...firstVisitState(), screen: 5, viewMode: 'returning',
+    submissions: SEED_SUBS.map(s => ({ ...s })),
+  };
+}
+
+let S = firstVisitState();
+
+// ── Utilities ─────────────────────────────────────────────────────────────────
+
+function esc(v) {
+  return String(v == null ? '' : v)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function fmtDate(iso) {
+  return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+// ── Render helpers ────────────────────────────────────────────────────────────
+
+function progressBar(active) {
+  const steps = ['Choose closest match', 'Describe the position', 'Done'];
+  return '<ol class="flex gap-2 text-xs mb-6">' +
+    steps.map((l, i) => {
+      const n = i + 1;
+      const cls = n === active
+        ? 'bg-slate-800 text-white'
+        : n < active ? 'bg-slate-200 text-slate-600' : 'bg-slate-50 text-slate-400';
+      return '<li class="flex-1 rounded px-3 py-2 text-center ' + cls + '">' + n + '. ' + l + '</li>';
+    }).join('') + '</ol>';
+}
+
+function tagChips(arr, field) {
+  return arr.map((t, i) =>
+    '<span class="flex items-center gap-1 rounded bg-slate-100 px-2 py-0.5 text-xs">' +
+    esc(t) +
+    '<button type="button" data-rm-tag="' + field + '" data-i="' + i + '"' +
+    ' class="text-slate-400 hover:text-slate-800 ml-0.5">×</button></span>'
+  ).join('');
+}
+
+// ── Screen renderers ──────────────────────────────────────────────────────────
+
+function renderWelcome() {
+  return '<div class="space-y-8">' +
+    '<div>' +
+    '<p class="text-sm text-slate-500">Hi ' + esc(PARTNER.firstName) + ' — thanks for being here.</p>' +
+    '<h1 class="mt-1 text-3xl font-semibold">Help us shape what GC graduates can do.</h1>' +
+    '<p class="mt-3 max-w-2xl text-slate-700">We’re updating the career targets the Clemson Graphic Communications curriculum builds toward. Your input shapes what we teach. About 10 minutes per position you describe, plus an optional 5 minutes rating the kinds of projects you’d want grads to have done. You can come back anytime through the same link.</p>' +
+    '</div>' +
+    '<div class="grid gap-4 sm:grid-cols-2">' +
+    '<button type="button" onclick="go(2)" class="block rounded-lg border border-slate-200 bg-white p-6 text-left hover:border-slate-400">' +
+    '<div class="text-lg font-medium">Describe a position you hire for</div>' +
+    '<p class="mt-2 text-sm text-slate-600">Pick the closest match from our career targets, then tell us about the actual role.</p>' +
+    '</button>' +
+    '<div class="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-6 text-slate-500">' +
+    '<div class="text-lg font-medium">Rate student projects</div>' +
+    '<p class="mt-2 text-sm">Coming soon — second part of the survey.</p>' +
+    '</div>' +
+    '</div></div>';
+}
+
+function renderPicker() {
+  const canContinue = Boolean(S.targetId) || (S.unmappedOpen && Boolean(S.unmappedLabel.trim()));
+  const cards = TARGETS.map(t => {
+    const sel = S.targetId === t.id;
+    const cls = sel ? 'border-slate-800 bg-slate-50' : 'border-slate-200 bg-white hover:border-slate-400';
+    const ctxChips = t.industryContexts.map(c =>
+      '<span class="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-600">' + esc(c) + '</span>'
+    ).join('');
+    return '<button type="button" data-pick="' + esc(t.id) + '"' +
+      ' class="block rounded-lg border p-4 text-left transition ' + cls + '">' +
+      '<div class="font-medium">' + esc(t.name) + '</div>' +
+      '<p class="mt-1 text-sm text-slate-600">' + esc(t.shortDefinition) + '</p>' +
+      '<div class="mt-2 flex flex-wrap gap-1">' + ctxChips + '</div>' +
+      '</button>';
+  }).join('');
+  const unmSection = !S.unmappedOpen
+    ? '<button type="button" id="btn-unmapped-open" class="text-sm text-blue-700 hover:underline">None of these quite fit — let me describe it</button>'
+    : '<div class="space-y-2">' +
+      '<label class="text-sm font-medium text-slate-700">Tell us what to call this role</label>' +
+      '<input type="text" id="unmapped-input" value="' + esc(S.unmappedLabel) + '"' +
+      ' placeholder="e.g., Packaging design lead"' +
+      ' class="w-full rounded border border-slate-300 px-3 py-2 text-sm" /></div>';
+  return '<div class="space-y-6">' +
+    progressBar(1) +
+    '<div><h1 class="text-2xl font-semibold">Pick the closest match</h1>' +
+    '<p class="mt-1 text-slate-600">Which of these is closest to a role you hire GC graduates into?</p></div>' +
+    '<div class="grid gap-3 sm:grid-cols-2">' + cards + '</div>' +
+    '<div class="border-t border-dashed border-slate-300 pt-4">' + unmSection + '</div>' +
+    '<div class="flex justify-end">' +
+    '<button type="button" id="btn-continue"' + (canContinue ? '' : ' disabled') +
+    ' class="rounded bg-slate-800 px-5 py-2 text-sm text-white disabled:opacity-50">Continue →</button>' +
+    '</div></div>';
+}
+
+function renderForm() {
+  const v = S.values;
+  const canSubmit = v.positionTitle.trim().length > 0;
+  const iqRows = v.interviewQuestions.map((q, i) =>
+    '<div class="flex gap-2">' +
+    '<input type="text" data-iq="' + i + '" value="' + esc(q) + '" placeholder="What’s the question?"' +
+    ' class="flex-1 rounded border border-slate-300 px-3 py-2 text-sm" />' +
+    '<button type="button" data-rm-iq="' + i + '" class="text-sm text-slate-500 hover:text-slate-800">remove</button>' +
+    '</div>'
+  ).join('');
+  const currOpts = ['USD','CAD','EUR','GBP'].map(c =>
+    '<option value="' + c + '"' + (v.currency === c ? ' selected' : '') + '>' + c + '</option>'
+  ).join('');
+  return '<div class="space-y-6">' +
+    progressBar(2) +
+    '<div class="space-y-8">' +
+    '<div class="flex items-start justify-between">' +
+    '<div><h1 class="text-2xl font-semibold">Describe the position</h1>' +
+    '<p class="mt-1 text-slate-600">Skip anything you don’t want to answer. Only job title is required.</p></div>' +
+    '<button type="button" id="btn-draft-top" class="rounded border border-slate-300 px-3 py-1.5 text-sm hover:bg-slate-50">Save draft</button>' +
+    '</div>' +
+
+    '<div class="space-y-3 rounded-lg border border-slate-200 bg-white p-5">' +
+    '<h2 class="text-sm font-medium uppercase tracking-wide text-slate-500">Position basics</h2>' +
+    '<div class="space-y-4">' +
+    '<label class="block"><span class="mb-1 block text-sm font-medium text-slate-700">Job title *</span>' +
+    '<input type="text" id="f-title" value="' + esc(v.positionTitle) + '" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" /></label>' +
+    '<label class="block"><span class="mb-1 block text-sm font-medium text-slate-700">Responsibilities</span>' +
+    '<textarea id="f-resp" rows="4" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">' + esc(v.responsibilities) + '</textarea></label>' +
+    '</div></div>' +
+
+    '<div class="space-y-3 rounded-lg border border-slate-200 bg-white p-5">' +
+    '<h2 class="text-sm font-medium uppercase tracking-wide text-slate-500">Compensation (optional)</h2>' +
+    '<div class="space-y-4"><div class="grid grid-cols-3 gap-3">' +
+    '<label class="block"><span class="mb-1 block text-sm font-medium text-slate-700">Low</span>' +
+    '<input type="number" id="f-sal-lo" value="' + esc(v.salaryLow) + '" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" /></label>' +
+    '<label class="block"><span class="mb-1 block text-sm font-medium text-slate-700">High</span>' +
+    '<input type="number" id="f-sal-hi" value="' + esc(v.salaryHigh) + '" class="w-full rounded border border-slate-300 px-3 py-2 text-sm" /></label>' +
+    '<label class="block"><span class="mb-1 block text-sm font-medium text-slate-700">Currency</span>' +
+    '<select id="f-currency" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">' + currOpts + '</select></label>' +
+    '</div></div></div>' +
+
+    '<div class="space-y-3 rounded-lg border border-slate-200 bg-white p-5">' +
+    '<h2 class="text-sm font-medium uppercase tracking-wide text-slate-500">What you look for</h2>' +
+    '<div class="space-y-4">' +
+    '<label class="block"><span class="mb-1 block text-sm font-medium text-slate-700">Required skills</span>' +
+    '<div class="space-y-2"><div class="flex flex-wrap gap-1">' + tagChips(v.requiredSkills, 'req') + '</div>' +
+    '<input type="text" id="req-input" value="' + esc(S.reqDraft) + '"' +
+    ' placeholder="press Enter to add — e.g., Color management"' +
+    ' class="w-full rounded border border-slate-300 px-3 py-2 text-sm" /></div></label>' +
+    '<label class="block"><span class="mb-1 block text-sm font-medium text-slate-700">Nice-to-have skills</span>' +
+    '<div class="space-y-2"><div class="flex flex-wrap gap-1">' + tagChips(v.niceToHaveSkills, 'nice') + '</div>' +
+    '<input type="text" id="nice-input" value="' + esc(S.niceDraft) + '"' +
+    ' placeholder="press Enter to add"' +
+    ' class="w-full rounded border border-slate-300 px-3 py-2 text-sm" /></div></label>' +
+    '</div></div>' +
+
+    '<div class="space-y-3 rounded-lg border border-slate-200 bg-white p-5">' +
+    '<h2 class="text-sm font-medium uppercase tracking-wide text-slate-500">How you screen</h2>' +
+    '<div class="space-y-4">' +
+    '<label class="block"><span class="mb-1 block text-sm font-medium text-slate-700">Interview questions you’d actually ask</span>' +
+    '<div class="space-y-2">' + iqRows +
+    '<button type="button" id="btn-add-iq" class="text-sm text-blue-700 hover:underline">+ add another</button>' +
+    '</div></label>' +
+    '<label class="block"><span class="mb-1 block text-sm font-medium text-slate-700">Anything else worth knowing</span>' +
+    '<textarea id="f-notes" rows="3" class="w-full rounded border border-slate-300 px-3 py-2 text-sm">' + esc(v.additionalNotes) + '</textarea></label>' +
+    '</div></div>' +
+
+    '<div class="flex items-center justify-between">' +
+    '<button type="button" id="btn-back" class="text-sm text-slate-600 hover:underline">← Back</button>' +
+    '<div class="flex gap-2">' +
+    '<button type="button" id="btn-draft-bot" class="rounded border border-slate-300 px-4 py-2 text-sm">Save draft</button>' +
+    '<button type="button" id="btn-submit"' + (canSubmit ? '' : ' disabled') +
+    ' class="rounded bg-slate-800 px-5 py-2 text-sm text-white disabled:opacity-50">Submit</button>' +
+    '</div></div>' +
+    '</div></div>';
+}
+
+function renderConfirmation() {
+  return '<div class="space-y-6">' +
+    progressBar(3) +
+    '<div><h1 class="text-2xl font-semibold">Got it — thank you.</h1>' +
+    '<p class="mt-2 text-slate-700">We’ve recorded <strong>' + esc(S.lastTitle) + '</strong>. You can describe another position, rate student projects, or finish up.</p></div>' +
+    '<div class="flex flex-wrap gap-3">' +
+    '<button type="button" id="btn-add-another" class="rounded bg-slate-800 px-5 py-2 text-sm text-white">Add another position</button>' +
+    '<button type="button" onclick="go(5)" class="rounded border border-slate-300 px-5 py-2 text-sm">See my submissions</button>' +
+    '<button type="button" onclick="go(6)" class="rounded border border-slate-300 px-5 py-2 text-sm">I’m done</button>' +
+    '</div></div>';
+}
+
+function renderDashboard() {
+  const submitted = S.submissions.filter(function(s) { return s.status === 'submitted'; }).length;
+  const drafts    = S.submissions.filter(function(s) { return s.status === 'draft'; }).length;
+  const subsList = S.submissions.length === 0
+    ? '<p class="text-sm text-slate-500">Nothing yet.</p>'
+    : '<ul class="divide-y divide-slate-200 rounded border border-slate-200 bg-white">' +
+      S.submissions.map(function(s) {
+        const badge = s.status === 'draft'
+          ? '<span class="rounded bg-amber-100 px-1.5 py-0.5 text-amber-800">Draft</span>'
+          : '<span class="rounded bg-green-100 px-1.5 py-0.5 text-green-800">Submitted</span>';
+        const resumeBtn = s.status === 'draft'
+          ? '<button type="button" data-resume="' + esc(s.id) + '" class="text-blue-700 hover:underline">Resume</button>'
+          : '';
+        return '<li class="flex items-center justify-between px-4 py-3">' +
+          '<div><div class="font-medium">' + esc(s.positionTitle) + '</div>' +
+          '<div class="text-xs text-slate-500">' + badge + ' · updated ' + fmtDate(s.updatedAt) + '</div></div>' +
+          '<div class="flex gap-3 text-sm">' + resumeBtn +
+          '<button type="button" data-del="' + esc(s.id) + '" class="text-red-700 hover:underline">Delete</button>' +
+          '</div></li>';
+      }).join('') + '</ul>';
+  return '<div class="space-y-8">' +
+    '<div><p class="text-sm text-slate-500">Welcome back, ' + esc(PARTNER.firstName) + ' (' + esc(PARTNER.company) + ').</p>' +
+    '<h1 class="mt-1 text-2xl font-semibold">Your survey</h1></div>' +
+    '<div class="grid gap-4 sm:grid-cols-3">' +
+    '<button type="button" onclick="go(2)" class="block rounded-lg border border-slate-200 bg-white p-5 text-left hover:border-slate-400">' +
+    '<div class="text-xs uppercase tracking-wide text-slate-500">Positions</div>' +
+    '<div class="mt-1 text-lg font-medium">' + submitted + ' submitted' + (drafts ? ' · ' + drafts + ' draft' : '') + '</div>' +
+    '<div class="mt-3 text-sm text-blue-700">Add another position →</div></button>' +
+    '<div class="block rounded-lg border border-slate-200 bg-white p-5 opacity-60">' +
+    '<div class="text-xs uppercase tracking-wide text-slate-500">Project ratings</div>' +
+    '<div class="mt-1 text-lg font-medium">0 rated</div>' +
+    '<div class="mt-3 text-sm text-blue-700">Rate more projects →</div></div>' +
+    '<button type="button" onclick="go(6)" class="block rounded-lg border border-dashed border-slate-300 bg-slate-50 p-5 text-left text-slate-600">' +
+    '<div class="mt-3 text-sm">I’m done for now →</div></button>' +
+    '</div>' +
+    '<section><h2 class="mb-3 text-sm font-medium uppercase tracking-wide text-slate-500">Your submissions</h2>' +
+    subsList + '</section></div>';
+}
+
+function renderDone() {
+  return '<div class="space-y-4">' +
+    '<h1 class="text-2xl font-semibold">Thank you.</h1>' +
+    '<p class="text-slate-700">Your input will help shape what we teach. You can return any time through the same link if you want to add more.</p>' +
+    '</div>';
+}
+
+// ── Main render ───────────────────────────────────────────────────────────────
+
+function render() {
+  var el = document.getElementById('screen');
+  switch (S.screen) {
+    case 1: el.innerHTML = renderWelcome();      break;
+    case 2: el.innerHTML = renderPicker();       break;
+    case 3: el.innerHTML = renderForm();         break;
+    case 4: el.innerHTML = renderConfirmation(); break;
+    case 5: el.innerHTML = renderDashboard();    break;
+    case 6: el.innerHTML = renderDone();         break;
+  }
+  syncBar();
+  bind();
+}
+
+function syncBar() {
+  var on  = 'px-3 py-1 text-xs bg-slate-700 text-white';
+  var off = 'px-3 py-1 text-xs text-slate-400 hover:text-white';
+  document.getElementById('btn-first').className  = S.viewMode === 'first'      ? on : off;
+  document.getElementById('btn-return').className = S.viewMode === 'returning'  ? on : off;
+}
+
+function bind() {
+  var el = document.getElementById('screen');
+
+  // Screen 2 — Picker
+  if (S.screen === 2) {
+    el.querySelectorAll('[data-pick]').forEach(function(b) {
+      b.addEventListener('click', function() {
+        S.targetId = b.dataset.pick;
+        S.unmappedOpen = false;
+        S.unmappedLabel = '';
+        render();
+      });
+    });
+    var openBtn = el.querySelector('#btn-unmapped-open');
+    if (openBtn) {
+      openBtn.addEventListener('click', function() {
+        S.unmappedOpen = true;
+        S.targetId = null;
+        render();
+      });
+    }
+    var unmIn = el.querySelector('#unmapped-input');
+    if (unmIn) {
+      unmIn.addEventListener('input', function(e) {
+        S.unmappedLabel = e.target.value;
+        var cont = el.querySelector('#btn-continue');
+        if (cont) cont.disabled = !(S.targetId || S.unmappedLabel.trim());
+      });
+    }
+    var cont = el.querySelector('#btn-continue');
+    if (cont) {
+      cont.addEventListener('click', function() {
+        var inp = el.querySelector('#unmapped-input');
+        if (inp) S.unmappedLabel = inp.value;
+        go(3);
+      });
+    }
+  }
+
+  // Screen 3 — Form
+  if (S.screen === 3) {
+    function syncField(id, key) {
+      var inp = el.querySelector('#' + id);
+      if (inp) inp.addEventListener('input', function(e) { S.values[key] = e.target.value; });
+    }
+    syncField('f-title',  'positionTitle');
+    syncField('f-resp',   'responsibilities');
+    syncField('f-sal-lo', 'salaryLow');
+    syncField('f-sal-hi', 'salaryHigh');
+    syncField('f-notes',  'additionalNotes');
+    var curr = el.querySelector('#f-currency');
+    if (curr) curr.addEventListener('change', function(e) { S.values.currency = e.target.value; });
+
+    var titleInp = el.querySelector('#f-title');
+    if (titleInp) {
+      titleInp.addEventListener('input', function(e) {
+        var b = el.querySelector('#btn-submit');
+        if (b) b.disabled = !e.target.value.trim();
+      });
+    }
+
+    function commitTag(field) {
+      var d = field === 'req' ? S.reqDraft : S.niceDraft;
+      var t = d.trim();
+      if (!t) return;
+      if (field === 'req') {
+        S.values.requiredSkills = S.values.requiredSkills.concat([t]);
+        S.reqDraft = '';
+      } else {
+        S.values.niceToHaveSkills = S.values.niceToHaveSkills.concat([t]);
+        S.niceDraft = '';
+      }
+      render();
+    }
+
+    function wireTag(inputId, field) {
+      var inp = el.querySelector('#' + inputId);
+      if (!inp) return;
+      inp.addEventListener('input', function(e) {
+        if (field === 'req') S.reqDraft = e.target.value;
+        else S.niceDraft = e.target.value;
+      });
+      inp.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); commitTag(field); }
+      });
+      inp.addEventListener('blur', function() { commitTag(field); });
+    }
+    wireTag('req-input', 'req');
+    wireTag('nice-input', 'nice');
+
+    el.querySelectorAll('[data-rm-tag]').forEach(function(b) {
+      b.addEventListener('click', function() {
+        var f = b.dataset.rmTag;
+        var i = parseInt(b.dataset.i);
+        if (f === 'req') S.values.requiredSkills   = S.values.requiredSkills.filter(function(_, j) { return j !== i; });
+        else             S.values.niceToHaveSkills  = S.values.niceToHaveSkills.filter(function(_, j) { return j !== i; });
+        render();
+      });
+    });
+
+    el.querySelectorAll('[data-iq]').forEach(function(inp) {
+      inp.addEventListener('input', function(e) {
+        var i = parseInt(inp.dataset.iq);
+        S.values.interviewQuestions = S.values.interviewQuestions.map(function(q, j) {
+          return j === i ? e.target.value : q;
+        });
+      });
+    });
+    el.querySelectorAll('[data-rm-iq]').forEach(function(b) {
+      b.addEventListener('click', function() {
+        var i = parseInt(b.dataset.rmIq);
+        S.values.interviewQuestions = S.values.interviewQuestions.filter(function(_, j) { return j !== i; });
+        render();
+      });
+    });
+    var addIq = el.querySelector('#btn-add-iq');
+    if (addIq) {
+      addIq.addEventListener('click', function() {
+        S.values.interviewQuestions = S.values.interviewQuestions.concat(['']);
+        render();
+      });
+    }
+
+    function saveDraft() {
+      var title = S.values.positionTitle.trim() || 'Untitled position';
+      if (S.draftId) {
+        var s = S.submissions.find(function(x) { return x.id === S.draftId; });
+        if (s) { s.positionTitle = title; s.updatedAt = new Date().toISOString(); }
+      } else {
+        S.draftId = uid();
+        S.submissions = S.submissions.concat([{
+          id: S.draftId, positionTitle: title,
+          status: 'draft', updatedAt: new Date().toISOString(),
+        }]);
+      }
+      ['#btn-draft-top', '#btn-draft-bot'].forEach(function(sel) {
+        var b = el.querySelector(sel);
+        if (b) {
+          b.textContent = 'Saved!';
+          setTimeout(function() { if (b.isConnected) b.textContent = 'Save draft'; }, 1200);
+        }
+      });
+    }
+    var dtop = el.querySelector('#btn-draft-top');
+    if (dtop) dtop.addEventListener('click', saveDraft);
+    var dbot = el.querySelector('#btn-draft-bot');
+    if (dbot) dbot.addEventListener('click', saveDraft);
+
+    var subBtn = el.querySelector('#btn-submit');
+    if (subBtn) {
+      subBtn.addEventListener('click', function() {
+        var title = S.values.positionTitle.trim();
+        if (!title) return;
+        if (S.draftId) {
+          var s = S.submissions.find(function(x) { return x.id === S.draftId; });
+          if (s) { s.positionTitle = title; s.status = 'submitted'; s.updatedAt = new Date().toISOString(); }
+        } else {
+          S.submissions = S.submissions.concat([{
+            id: uid(), positionTitle: title,
+            status: 'submitted', updatedAt: new Date().toISOString(),
+          }]);
+        }
+        S.lastTitle = title;
+        S.draftId = null;
+        go(4);
+      });
+    }
+
+    var back = el.querySelector('#btn-back');
+    if (back) back.addEventListener('click', function() { go(2); });
+  }
+
+  // Screen 4 — Confirmation
+  if (S.screen === 4) {
+    var another = el.querySelector('#btn-add-another');
+    if (another) another.addEventListener('click', function() { resetWizard(); go(2); });
+  }
+
+  // Screen 5 — Dashboard
+  if (S.screen === 5) {
+    el.querySelectorAll('[data-resume]').forEach(function(b) {
+      b.addEventListener('click', function() {
+        var sub = S.submissions.find(function(x) { return x.id === b.dataset.resume; });
+        if (!sub) return;
+        resetWizard();
+        S.draftId = sub.id;
+        S.values.positionTitle = sub.positionTitle;
+        go(3);
+      });
+    });
+    el.querySelectorAll('[data-del]').forEach(function(b) {
+      b.addEventListener('click', function() {
+        S.submissions = S.submissions.filter(function(x) { return x.id !== b.dataset.del; });
+        render();
+      });
+    });
+  }
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+
+function go(n) { S.screen = n; render(); }
+
+function resetWizard() {
+  S.targetId = null; S.unmappedLabel = ''; S.unmappedOpen = false;
+  S.reqDraft = ''; S.niceDraft = '';
+  S.values = EMPTY_VALUES();
+  S.draftId = null;
+}
+
+function setViewMode(m) {
+  S = m === 'returning' ? returningState() : firstVisitState();
+  render();
+}
+
+function restart() {
+  S = S.viewMode === 'returning' ? returningState() : firstVisitState();
+  render();
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
