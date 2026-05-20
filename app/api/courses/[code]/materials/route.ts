@@ -1,0 +1,121 @@
+import { NextResponse } from 'next/server';
+import { put } from '@vercel/blob';
+import { isValidSlug } from '@/lib/slug';
+import { getCourseByCode } from '@/lib/db/courses-queries';
+import { hashIp } from '@/lib/ip-hash';
+import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
+import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
+import { insertMaterial, updateExtractionResult } from '@/lib/db/course-materials-queries';
+import { extractText } from '@/lib/courses/extract-text';
+import type { ExtractedMimeType } from '@/lib/courses/extract-text';
+
+export const maxDuration = 120;
+
+const MAX_SIZE_BYTES = 15 * 1024 * 1024; // 15 MB
+const ALLOWED_MIME_TYPES = new Set<string>([
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+]);
+
+interface RouteContext {
+  params: Promise<{ code: string }>;
+}
+
+export async function POST(req: Request, { params }: RouteContext): Promise<Response> {
+  const { code } = await params;
+
+  // Parse multipart form data.
+  let form: FormData;
+  try {
+    form = await req.formData();
+  } catch {
+    return NextResponse.json({ error: 'invalid multipart body' }, { status: 400 });
+  }
+
+  const slug = typeof form.get('slug') === 'string' ? (form.get('slug') as string) : '';
+  if (!isValidSlug(slug)) {
+    return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
+  }
+
+  // Verify the course exists.
+  const course = await getCourseByCode(code);
+  if (!course) {
+    return NextResponse.json({ error: `course not found: ${code}` }, { status: 404 });
+  }
+
+  // IP rate limit.
+  const ipHash = hashIp(req);
+  const rl = await checkIpRateLimit(ipHash);
+  if (!rl.allowed) {
+    return NextResponse.json({ error: 'rate limit exceeded — try again in an hour' }, { status: 429 });
+  }
+
+  // Validate the uploaded file.
+  // Use duck-type check rather than `instanceof File` — jsdom and undici expose
+  // different File constructors, so instanceof can fail in test environments
+  // even though the object is a valid File-like blob.
+  const file = form.get('file') as File | null;
+  if (!file || typeof file !== 'object' || typeof (file as File).arrayBuffer !== 'function') {
+    return NextResponse.json({ error: 'file field is required' }, { status: 400 });
+  }
+  if (!ALLOWED_MIME_TYPES.has(file.type)) {
+    return NextResponse.json(
+      { error: `unsupported MIME type: ${file.type}. Allowed: application/pdf, application/vnd.openxmlformats-officedocument.wordprocessingml.document` },
+      { status: 400 },
+    );
+  }
+  if (file.size > MAX_SIZE_BYTES) {
+    return NextResponse.json(
+      { error: `file too large: ${file.size} bytes (max ${MAX_SIZE_BYTES})` },
+      { status: 400 },
+    );
+  }
+
+  // Store in Vercel Blob.
+  const blobKey = `course-materials/${code}/${Date.now()}-${file.name}`;
+  const blob = await put(blobKey, file, { access: 'public' });
+
+  // Insert the row with extractionStatus='pending'.
+  const material = await insertMaterial({
+    courseCode: code,
+    fileName: file.name,
+    blobUrl: blob.url,
+    mimeType: file.type,
+    sizeBytes: file.size,
+    ipHash,
+  });
+
+  // Run extraction synchronously.
+  const fileBytes = Buffer.from(await file.arrayBuffer());
+  const extracted = await extractText({
+    fileBytes,
+    mimeType: file.type as ExtractedMimeType,
+    fileName: file.name,
+  });
+
+  // Gate vision transcription cost.
+  if (extracted.visionCostUsdCents !== undefined && extracted.visionCostUsdCents > 0) {
+    const cap = await checkDailyCap();
+    if (cap.ok) {
+      await recordSpend(extracted.visionCostUsdCents);
+    }
+  }
+
+  // Persist extraction result.
+  await updateExtractionResult({
+    id: material.id,
+    extractionStatus: extracted.status,
+    extractionMethod: extracted.method,
+    extractedText: extracted.text,
+    pageCount: extracted.pageCount,
+  });
+
+  return NextResponse.json({
+    id: material.id,
+    fileName: material.fileName,
+    blobUrl: material.blobUrl,
+    extractionStatus: extracted.status,
+    extractionMethod: extracted.method,
+    pageCount: extracted.pageCount,
+  });
+}
