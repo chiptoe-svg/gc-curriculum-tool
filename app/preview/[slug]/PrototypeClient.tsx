@@ -1,43 +1,63 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { PrototypeForm, type AnalyzeInput } from '@/components/PrototypeForm';
+import { TargetChainForm, type TargetChainAnalyzeInput, type CourseChoice, type TargetOption as TargetChainTargetOption } from '@/components/TargetChainForm';
+import { TargetChainResults } from '@/components/TargetChainResults';
+import { TabSwitcher, type AnalysisTab } from '@/components/TabSwitcher';
 import { KUDCard } from '@/components/KUDCard';
 import { CoverageHeatMap } from '@/components/CoverageHeatMap';
 import { PrerequisiteGapPanel } from '@/components/PrerequisiteGapPanel';
 import { Separator } from '@/components/ui/separator';
-import type { AnalysisResult, CareerTarget } from '@/lib/domain/types';
+import type { AnalysisResult, TargetChainAnalysisResult, CareerTarget } from '@/lib/domain/types';
 
 export function PrototypeClient({ slug }: { slug: string }) {
+  const search = useSearchParams();
+  const tab: AnalysisTab = search?.get('tab') === 'target' ? 'target' : 'prereqs';
+
   const [analyzing, setAnalyzing] = useState(false);
-  const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [prereqResult, setPrereqResult] = useState<AnalysisResult | null>(null);
+  const [chainResult, setChainResult] = useState<TargetChainAnalysisResult | null>(null);
   const [runId, setRunId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [targetsMap, setTargetsMap] = useState<Map<string, CareerTarget>>(new Map());
+  const [targetsList, setTargetsList] = useState<CareerTarget[]>([]);
+  const [courses, setCourses] = useState<CourseChoice[]>([]);
 
   useEffect(() => {
-    fetch('/api/targets')
-      .then((r) => r.json())
-      .then((data: CareerTarget[]) => {
-        setTargetsMap(new Map(data.map((t) => [t.id, t])));
-      })
-      .catch(() => {
-        // Silently fail — UI degrades gracefully (no target name shown)
-      });
+    fetch('/api/targets').then(r => r.json()).then((data: CareerTarget[]) => setTargetsList(data)).catch(() => {});
   }, []);
 
-  async function handleAnalyze(input: AnalyzeInput) {
-    setAnalyzing(true);
-    setError(null);
-    setResult(null);
+  useEffect(() => {
+    if (tab !== 'target') return;
+    // Load all courses for the checkbox list. The /api/courses endpoint returns the list.
+    fetch('/api/courses').then(r => r.json()).then(async (codes: Array<{ code: string; title: string; level: number; track: string }>) => {
+      // For checkbox list we need the syllabus text too — fetch each course's record. To avoid 28 sequential fetches at page-load, we batch in parallel:
+      const detailed = await Promise.all(codes.map(async (c) => {
+        const r = await fetch(`/api/courses/${encodeURIComponent(c.code)}`);
+        if (!r.ok) return null;
+        const j = await r.json();
+        return {
+          code: c.code,
+          title: c.title,
+          level: c.level,
+          track: c.track,
+          syllabusText: formatSyllabusFromApi(j),
+        } as CourseChoice;
+      }));
+      setCourses(detailed.filter((c): c is CourseChoice => c !== null));
+    }).catch(() => {});
+  }, [tab]);
+
+  const targetsMap = new Map(targetsList.map(t => [t.id, t]));
+
+  async function handlePrereqAnalyze(input: AnalyzeInput) {
+    setAnalyzing(true); setError(null); setPrereqResult(null);
     try {
       const resp = await fetch('/api/analyze', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(input) });
-      if (!resp.ok) {
-        const text = await resp.text();
-        throw new Error(`Analysis failed: ${resp.status} ${text.slice(0, 200)}`);
-      }
+      if (!resp.ok) throw new Error(`Analysis failed: ${resp.status} ${(await resp.text()).slice(0, 200)}`);
       const body = (await resp.json()) as AnalysisResult & { runId?: string };
-      setResult(body);
+      setPrereqResult(body);
       if (body.runId) setRunId(body.runId);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Unknown error');
@@ -46,99 +66,119 @@ export function PrototypeClient({ slug }: { slug: string }) {
     }
   }
 
-  async function handleFlag(target: string, note: string, flagType: 'coverage' | 'prerequisite_gap' | 'kud_draft') {
+  async function handleChainAnalyze(input: TargetChainAnalyzeInput) {
+    setAnalyzing(true); setError(null); setChainResult(null);
+    try {
+      const resp = await fetch('/api/analyze/target-chain', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(input) });
+      if (!resp.ok) throw new Error(`Analysis failed: ${resp.status} ${(await resp.text()).slice(0, 200)}`);
+      const body = (await resp.json()) as TargetChainAnalysisResult & { runId?: string };
+      setChainResult(body);
+      if (body.runId) setRunId(body.runId);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Unknown error');
+    } finally {
+      setAnalyzing(false);
+    }
+  }
+
+  async function handleFlag(target: string, note: string, flagType: string) {
     if (!runId) return;
     await fetch('/api/flag', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ runId, flagType, target, note }) });
   }
 
-  const target = result ? (targetsMap.get(result.careerTargetId) ?? null) : null;
+  const prereqTarget = prereqResult ? targetsMap.get(prereqResult.careerTargetId) ?? null : null;
+  const chainTarget = chainResult ? targetsMap.get(chainResult.careerTargetId) ?? null : null;
 
-  const targetCount = targetsMap.size || 5; // fallback to 5 while loading
+  const targetCount = targetsList.length || 5;
+  const simpleTargetOptions: TargetChainTargetOption[] = targetsList.map(t => ({ id: t.id, name: t.name }));
+  const targetForPreview: CareerTarget | null = (() => {
+    if (tab !== 'target') return null;
+    const id = chainResult?.careerTargetId ?? simpleTargetOptions[0]?.id;
+    return id ? targetsMap.get(id) ?? null : null;
+  })();
 
   return (
     <main className="mx-auto max-w-5xl p-6 md:p-12 space-y-10">
-      {/* Admin tools banner */}
       <div className="rounded-md border border-border bg-muted/40 px-4 py-2 text-sm text-muted-foreground flex items-center justify-between gap-4">
         <span>Re-sync courses from the Google Sheet &middot; Edit career target definitions.</span>
-        <a
-          href={`/preview/${slug}/targets`}
-          className="text-foreground underline underline-offset-2 font-medium whitespace-nowrap"
-        >
-          Open admin &rarr;
+        <a href={`/preview/${slug}/targets`} className="text-foreground underline underline-offset-2 font-medium whitespace-nowrap">
+          Open admin →
         </a>
       </div>
 
       <header className="space-y-4">
         <p className="text-xs uppercase tracking-widest text-muted-foreground">Clemson GC — Curriculum Tool Prototype</p>
         <h1 className="text-4xl font-semibold leading-tight">A working preview of how the curriculum tool will analyze courses.</h1>
-        <p className="text-lg text-muted-foreground leading-relaxed">
-          The full tool will be a living record of the GC curriculum — courses, career targets, and the AI analysis that maps how well one builds toward the other. This prototype lets you test the analysis on a course and its prior coursework. Paste the syllabus of the course you want to analyze, add the syllabi of any prerequisite or prior courses students are expected to have taken, pick a career target, and the AI will draft course-level Know / Understand / Do outcomes, score coverage against the target&apos;s sub-competencies, and identify whether the course&apos;s prerequisites are actually met by the prior coursework.
-        </p>
-        <p className="text-sm text-muted-foreground">
-          Every AI score includes the reasoning behind it — click it open. If the reasoning is wrong, flag it with a note. Flags get used to tune the prompts before the full tool ships.
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          Two analyses, two questions. <em>Career-target alignment</em> evaluates how a set of courses build toward a career target ({targetCount} targets). <em>Prereqs feeding a course</em> evaluates whether a focal course&apos;s prior coursework actually prepares students for it. Pick the tab matching the question you&apos;re asking.
         </p>
       </header>
 
-      <section>
-        <h2 className="text-xl font-medium mb-3">How to use</h2>
-        <ol className="list-decimal pl-5 space-y-2 text-sm leading-relaxed">
-          <li>Paste the syllabus of the <strong>course you want to analyze</strong> at the top, with a label like &ldquo;GC 4060.&rdquo;</li>
-          <li>In <strong>Prior coursework</strong>, paste each prior or expected prior course&apos;s syllabus — formal prerequisites or courses students are expected to have taken before this one. Add as many as needed. Order doesn&apos;t matter.</li>
-          <li>Pick the career target you want to evaluate alignment against ({targetCount} options).</li>
-          <li>Click <strong>Analyze</strong>. The analysis takes ~30 seconds.</li>
-          <li>Review the drafted KUD outcomes, the coverage heat map, and the prerequisite gap analysis. Click any reasoning to read it and flag if wrong.</li>
-        </ol>
-      </section>
+      <TabSwitcher active={tab} />
 
-      <PrototypeForm slug={slug} onAnalyze={handleAnalyze} isAnalyzing={analyzing} />
-
-      {error && (
-        <div className="rounded border border-destructive bg-destructive/5 text-destructive p-4 text-sm">
-          {error}
-        </div>
+      {tab === 'target' && (
+        <TargetChainForm
+          slug={slug}
+          targets={simpleTargetOptions}
+          courses={courses}
+          fullTarget={targetForPreview}
+          onAnalyze={handleChainAnalyze}
+          isAnalyzing={analyzing}
+        />
       )}
 
-      {result && target && (
+      {tab === 'prereqs' && (
+        <PrototypeForm slug={slug} onAnalyze={handlePrereqAnalyze} isAnalyzing={analyzing} />
+      )}
+
+      {error && (
+        <div className="rounded border border-destructive bg-destructive/5 text-destructive p-4 text-sm">{error}</div>
+      )}
+
+      {tab === 'target' && chainResult && chainTarget && (
+        <TargetChainResults
+          target={chainTarget}
+          result={chainResult}
+          onFlag={(t, n, ft) => handleFlag(t, n, ft)}
+        />
+      )}
+
+      {tab === 'prereqs' && prereqResult && prereqTarget && (
         <section className="space-y-8">
           <Separator />
-
-          {/* Course KUD card FIRST — visually distinguished */}
           <div className="space-y-4">
             <h3 className="text-base font-medium">Course being analyzed — Know / Understand / Do outcomes</h3>
             <div className="grid md:grid-cols-2 gap-4">
-              <KUDCard courseLabel={result.course.courseLabel} kud={result.course.kud} />
+              <KUDCard courseLabel={prereqResult.course.courseLabel} kud={prereqResult.course.kud} />
             </div>
           </div>
-
-          {/* Prior coursework KUD cards BELOW — peers, no hierarchy among them */}
           <div className="space-y-4">
             <h3 className="text-base font-medium text-muted-foreground">Prior coursework — Know / Understand / Do outcomes</h3>
             <div className="grid md:grid-cols-2 gap-4">
-              {result.priorCoursework.map((c, i) => (
+              {prereqResult.priorCoursework.map((c, i) => (
                 <KUDCard key={i} courseLabel={c.courseLabel} kud={c.kud} />
               ))}
             </div>
           </div>
-
           <CoverageHeatMap
-            target={target}
-            courseLabel={result.course.courseLabel}
-            courseScores={result.course.coverage}
-            priorCoursework={result.priorCoursework.map(c => ({ courseLabel: c.courseLabel, coverage: c.coverage }))}
-            scaffolding={result.scaffolding}
+            target={prereqTarget}
+            courseLabel={prereqResult.course.courseLabel}
+            courseScores={prereqResult.course.coverage}
+            priorCoursework={prereqResult.priorCoursework.map(c => ({ courseLabel: c.courseLabel, coverage: c.coverage }))}
+            scaffolding={prereqResult.scaffolding}
             onFlag={(t, n) => handleFlag(t, n, 'coverage')}
           />
           <PrerequisiteGapPanel
-            target={target}
-            courseLabel={result.course.courseLabel}
-            gaps={result.course.prerequisiteGaps}
+            target={prereqTarget}
+            courseLabel={prereqResult.course.courseLabel}
+            gaps={prereqResult.course.prerequisiteGaps}
             onFlag={(t, n) => handleFlag(t, n, 'prerequisite_gap')}
           />
           <footer className="text-xs text-muted-foreground pt-6 border-t">
-            Analysis run with {result.meta.aiProvider} ({result.meta.aiModel}) in {(result.meta.durationMs / 1000).toFixed(1)}s. Cost ≈ ${(result.meta.costUsdCents / 10000).toFixed(2)}.{' '}
-            {result.priorCoursework.length} prior course{result.priorCoursework.length !== 1 ? 's' : ''}.{' '}
-            {(result.meta.cachedTokens + result.meta.uncachedTokens) > 0 && (
-              <>Cache hit: {((result.meta.cachedTokens / (result.meta.cachedTokens + result.meta.uncachedTokens)) * 100).toFixed(0)}%.</>
+            Analysis run with {prereqResult.meta.aiProvider} ({prereqResult.meta.aiModel}) in {(prereqResult.meta.durationMs / 1000).toFixed(1)}s. Cost ≈ ${(prereqResult.meta.costUsdCents / 10000).toFixed(2)}.{' '}
+            {prereqResult.priorCoursework.length} prior course{prereqResult.priorCoursework.length !== 1 ? 's' : ''}.{' '}
+            {(prereqResult.meta.cachedTokens + prereqResult.meta.uncachedTokens) > 0 && (
+              <>Cache hit: {((prereqResult.meta.cachedTokens / (prereqResult.meta.cachedTokens + prereqResult.meta.uncachedTokens)) * 100).toFixed(0)}%.</>
             )}
           </footer>
         </section>
@@ -149,4 +189,23 @@ export function PrototypeClient({ slug }: { slug: string }) {
       </footer>
     </main>
   );
+}
+
+// Format a course-record API response into the labeled-markdown syllabus the
+// /api/analyze endpoints accept. Mirrors what lib/courses/formatCourseSyllabus
+// already does for prereq form usage.
+function formatSyllabusFromApi(r: {
+  description: string | null;
+  prerequisites: string | null;
+  learningObjectives: string[] | null;
+  majorProjects: string[] | null;
+  skillsRequired: string[] | null;
+}): string {
+  const parts: string[] = [];
+  if (r.description) parts.push(`Description:\n${r.description}`);
+  if (r.prerequisites) parts.push(`Prerequisites:\n${r.prerequisites}`);
+  if (r.learningObjectives && r.learningObjectives.length > 0) parts.push(`Learning objectives:\n${r.learningObjectives.map(o => `- ${o}`).join('\n')}`);
+  if (r.majorProjects && r.majorProjects.length > 0) parts.push(`Major projects:\n${r.majorProjects.map(p => `- ${p}`).join('\n')}`);
+  if (r.skillsRequired && r.skillsRequired.length > 0) parts.push(`Skills:\n${r.skillsRequired.map(s => `- ${s}`).join('\n')}`);
+  return parts.join('\n\n');
 }

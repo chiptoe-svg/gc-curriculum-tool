@@ -37,7 +37,7 @@ export async function insertRun(input: InsertRunInput): Promise<{ id: string }> 
 
 export interface InsertFlagInput {
   runId: string;
-  flagType: 'coverage' | 'prerequisite_gap' | 'kud_draft';
+  flagType: 'coverage' | 'prerequisite_gap' | 'kud_draft' | 'target_chain_coverage' | 'target_chain_scaffolding';
   target: string;
   note: string;
 }

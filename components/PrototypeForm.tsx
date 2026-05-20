@@ -7,7 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CourseSelector } from './CourseSelector';
 import { CourseDetails, type CourseDetailFields } from './CourseDetails';
+import { TargetKUDPreview } from './TargetKUDPreview';
 import { formatCourseSyllabus } from '@/lib/courses/formatCourseSyllabus';
+import type { CareerTarget } from '@/lib/domain/types';
 
 const MAX_PRIOR_COURSES = 8;
 
@@ -105,6 +107,14 @@ export function PrototypeForm({ slug, onAnalyze, isAnalyzing }: Props) {
       .finally(() => setTargetsLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const [fullTarget, setFullTarget] = useState<CareerTarget | null>(null);
+  useEffect(() => {
+    if (!careerTargetId) { setFullTarget(null); return; }
+    fetch('/api/targets').then(r => r.json()).then((data: CareerTarget[]) => {
+      setFullTarget(data.find(t => t.id === careerTargetId) ?? null);
+    }).catch(() => setFullTarget(null));
+  }, [careerTargetId]);
 
   async function fetchCourse(code: string): Promise<CourseFullData | null> {
     try {
@@ -295,6 +305,8 @@ export function PrototypeForm({ slug, onAnalyze, isAnalyzing }: Props) {
               </Select>
             )}
           </div>
+
+          <TargetKUDPreview slug={slug} target={fullTarget} />
 
           <Button size="lg" onClick={handleSubmit} disabled={!canSubmit}>
             {isAnalyzing ? 'Analyzing…' : 'Analyze'}

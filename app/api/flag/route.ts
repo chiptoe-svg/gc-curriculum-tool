@@ -4,7 +4,7 @@ import { insertFlag } from '@/lib/db/queries';
 
 const flagSchema = z.object({
   runId: z.string().uuid(),
-  flagType: z.enum(['coverage', 'prerequisite_gap', 'kud_draft']),
+  flagType: z.enum(['coverage', 'prerequisite_gap', 'kud_draft', 'target_chain_coverage', 'target_chain_scaffolding']),
   target: z.string().min(1),
   note: z.string().min(1).max(2000),
 });
