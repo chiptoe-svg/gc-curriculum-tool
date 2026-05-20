@@ -1,7 +1,27 @@
 # Industry Partner Interface Preview — Design
 
 **Date:** 2026-05-20
-**Status:** Approved for planning
+**Status:** Built, deployed, and extended past the original scope — see Addendum.
+
+## Addendum (2026-05-20) — post-approval changes
+
+After the preview was built, three additions took it beyond the original
+"static, no-backend demo" scope:
+
+1. **Deployed.** Published via GitHub Pages at
+   <https://chiptoe-svg.github.io/gc-curriculum-tool> so it can be shared as a
+   link, not just opened as a local file.
+2. **Feedback widget.** A "Send feedback" button in the preview frame opens a
+   modal capturing name, company, a free-text message, and the current screen.
+3. **Real data capture.** Submitted positions *and* feedback now POST to a
+   Google Apps Script Web App (the `SHEET_ENDPOINT` constant in the HTML),
+   which appends rows to a Google Sheet — a "Submissions" tab and a "Feedback"
+   tab. An optional name/company identity is collected on the position form and
+   the feedback modal, shared between them.
+
+The sections below describe the **original approved design**. Where they say
+"no persistence / no network calls / nothing is saved," treat that as
+superseded by this addendum.
 
 ## Purpose
 
@@ -27,7 +47,7 @@ announcement.
 
 ## Non-Goals
 
-- No real persistence, network calls, email, or magic-link auth.
+- No email or magic-link auth. *(Persistence and network calls — POSTing to a Google Sheet — were added after approval; see the Addendum.)*
 - No server-error simulation (e.g. the real app's `alert('Save failed')`).
 - No automated test suite — this is a docs artifact, not application code.
 - No changes to the live `/partners/[token]` app.
