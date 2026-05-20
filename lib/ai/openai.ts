@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import type { AIProvider, CompletionTelemetry } from './provider';
+import type { AIProvider, CompletionTelemetry, TranscribeDocumentArgs, TranscribeDocumentResult } from './provider';
 
 // Per-model pricing in USD per 1M tokens. Update from
 // https://developers.openai.com/api/docs/pricing when adding models.
@@ -80,5 +80,53 @@ export class OpenAIProvider implements AIProvider {
       toCents((completionTokens / 1_000_000) * pricing.output);
 
     return { data, costUsdCents, durationMs, cachedTokens, uncachedPromptTokens, completionTokens };
+  }
+
+  async transcribeDocument(args: TranscribeDocumentArgs): Promise<TranscribeDocumentResult> {
+    const { fileBytes, maxPages = 40 } = args;
+    const base64 = fileBytes.toString('base64');
+    const dataUrl = `data:${args.mimeType};base64,${base64}`;
+
+    const response = await this.client.chat.completions.create({
+      model: this.model,
+      messages: [
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text: `Please transcribe every piece of text visible in this document. Return plain text only, preserving the reading order. Do not add commentary. If pages are cut off, transcribe what is visible.`,
+            },
+            {
+              type: 'file',
+              file: {
+                filename: 'document.pdf',
+                file_data: dataUrl,
+              },
+            },
+          ],
+        },
+      ],
+      max_tokens: 4096,
+      temperature: 0,
+    });
+
+    const text = response.choices[0]?.message?.content ?? '';
+    const promptTokens = response.usage?.prompt_tokens ?? 0;
+    const completionTokens = response.usage?.completion_tokens ?? 0;
+    const cachedTokens =
+      (response.usage as { prompt_tokens_details?: { cached_tokens?: number } } | undefined)
+        ?.prompt_tokens_details?.cached_tokens ?? 0;
+    const uncachedPromptTokens = Math.max(0, promptTokens - cachedTokens);
+    const pricing = MODEL_PRICING[this.model] ?? FALLBACK_PRICING;
+    const costUsdCents =
+      toCents((uncachedPromptTokens / 1_000_000) * pricing.input) +
+      toCents((cachedTokens / 1_000_000) * pricing.input * 0.1) +
+      toCents((completionTokens / 1_000_000) * pricing.output);
+
+    const estimatedPages = Math.ceil(fileBytes.length / 75_000);
+    const truncated = estimatedPages > maxPages;
+
+    return { text, costUsdCents, truncated };
   }
 }

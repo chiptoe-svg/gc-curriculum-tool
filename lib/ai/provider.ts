@@ -6,6 +6,20 @@ export interface CompletionTelemetry {
   completionTokens: number;
 }
 
+export interface TranscribeDocumentArgs {
+  fileBytes: Buffer;
+  mimeType: 'application/pdf' | 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  /** Max pages to transcribe. Default: 40. */
+  maxPages?: number;
+}
+
+export interface TranscribeDocumentResult {
+  text: string;
+  costUsdCents: number;
+  /** True when the file exceeded maxPages and was truncated. */
+  truncated: boolean;
+}
+
 export interface AIProvider {
   readonly name: string;
   readonly model: string;
@@ -23,6 +37,13 @@ export interface AIProvider {
     jsonSchema: object;
     validate: (raw: unknown) => T; // typically the Zod schema's parse
   }): Promise<{ data: T } & CompletionTelemetry>;
+
+  /**
+   * Send raw file bytes to a vision-capable model and return transcribed text.
+   * Used only for image-based PDFs that yield too little text from pdf-parse.
+   * Cost is NOT recorded here — caller is responsible for checkDailyCap + recordSpend.
+   */
+  transcribeDocument(args: TranscribeDocumentArgs): Promise<TranscribeDocumentResult>;
 }
 
 import { OpenAIProvider } from './openai';
