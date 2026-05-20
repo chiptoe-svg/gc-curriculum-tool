@@ -1,7 +1,7 @@
 import { db } from './client';
 import { prototypeRuns, prototypeFlags } from './schema';
 import { eq, desc } from 'drizzle-orm';
-import type { AnalysisResult } from '@/lib/domain/types';
+import type { AnalysisResult, TargetChainAnalysisResult } from '@/lib/domain/types';
 
 export interface InsertRunInput {
   ipHash: string;
@@ -9,11 +9,12 @@ export interface InsertRunInput {
   courseLabel: string | null;
   courseSyllabus: string;
   priorCoursework: Array<{ courseLabel: string; syllabus: string }>;
-  result: AnalysisResult;
+  result: AnalysisResult | TargetChainAnalysisResult;
   aiProvider: string;
   aiModel: string;
   costUsdCents: number;
   durationMs: number;
+  analysisKind: 'course_prereqs' | 'target_chain';
 }
 
 export async function insertRun(input: InsertRunInput): Promise<{ id: string }> {
@@ -28,6 +29,7 @@ export async function insertRun(input: InsertRunInput): Promise<{ id: string }> 
     aiModel: input.aiModel,
     costUsdCents: input.costUsdCents,
     durationMs: input.durationMs,
+    analysisKind: input.analysisKind,
   }).returning({ id: prototypeRuns.id });
   if (!row) throw new Error('insertRun: no row returned');
   return row;

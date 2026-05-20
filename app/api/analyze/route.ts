@@ -303,6 +303,7 @@ export async function POST(req: Request): Promise<Response> {
       aiModel: provider.model,
       costUsdCents: totalCost,
       durationMs: result.meta.durationMs,
+      analysisKind: 'course_prereqs',
     });
     runId = inserted.id;
     await recordSpend(totalCost);

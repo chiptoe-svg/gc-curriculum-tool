@@ -88,3 +88,24 @@ export interface AnalysisResult {
     completionTokens: number;
   };
 }
+
+export interface TargetChainCourseAnalysis {
+  courseLabel: string;
+  kud: KUDOutcomes;
+  coverage: CoverageScore[];
+}
+
+export interface TargetChainAnalysisResult {
+  careerTargetId: string;
+  courses: TargetChainCourseAnalysis[];   // sorted by level ascending, then by label
+  scaffolding: ScaffoldingScore[];
+  meta: {
+    aiProvider: string;
+    aiModel: string;
+    durationMs: number;
+    costUsdCents: number;
+    cachedTokens: number;
+    uncachedTokens: number;
+    completionTokens: number;
+  };
+}

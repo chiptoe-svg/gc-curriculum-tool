@@ -1,0 +1,1 @@
+ALTER TABLE "prototype_runs" ADD COLUMN "analysis_kind" text DEFAULT 'course_prereqs' NOT NULL;

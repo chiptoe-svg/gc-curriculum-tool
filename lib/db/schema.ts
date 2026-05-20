@@ -50,6 +50,7 @@ export const prototypeRuns = pgTable('prototype_runs', {
   aiModel: text('ai_model').notNull(),
   costUsdCents: integer('cost_usd_cents').notNull(), // estimated cost in 1/100 of a cent
   durationMs: integer('duration_ms').notNull(),
+  analysisKind: text('analysis_kind').notNull().default('course_prereqs'),
 });
 
 export const prototypeFlags = pgTable('prototype_flags', {
