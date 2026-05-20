@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -40,6 +40,13 @@ const MIN_TO_ANALYZE = 2;
 export function TargetChainForm({ slug, targets, courses, fullTarget, onAnalyze, isAnalyzing }: Props) {
   const [careerTargetId, setCareerTargetId] = useState(targets[0]?.id ?? '');
   const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  // `targets` arrives via an async fetch, so it is often empty on first render
+  // and the useState initializer above misses it. Default to the first target
+  // once the list loads (unless the user has already picked one).
+  useEffect(() => {
+    if (!careerTargetId && targets[0]) setCareerTargetId(targets[0].id);
+  }, [targets, careerTargetId]);
 
   const groupedByLevel = useMemo(() => {
     const groups = new Map<number, CourseChoice[]>();

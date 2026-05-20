@@ -33,11 +33,13 @@ export function PrototypeClient({ slug }: { slug: string }) {
 
   useEffect(() => {
     if (tab !== 'target') return;
-    // Load all courses for the checkbox list. The /api/courses endpoint returns the list.
-    fetch('/api/courses').then(r => r.json()).then(async (codes: Array<{ code: string; title: string; level: number; track: string }>) => {
+    // Load all courses for the checkbox list. The /api/courses endpoints are
+    // slug-gated, so the preview slug must ride along on every request.
+    const slugQuery = `slug=${encodeURIComponent(slug)}`;
+    fetch(`/api/courses?${slugQuery}`).then(r => r.json()).then(async (codes: Array<{ code: string; title: string; level: number; track: string }>) => {
       // For checkbox list we need the syllabus text too — fetch each course's record. To avoid 28 sequential fetches at page-load, we batch in parallel:
       const detailed = await Promise.all(codes.map(async (c) => {
-        const r = await fetch(`/api/courses/${encodeURIComponent(c.code)}`);
+        const r = await fetch(`/api/courses/${encodeURIComponent(c.code)}?${slugQuery}`);
         if (!r.ok) return null;
         const j = await r.json();
         return {
