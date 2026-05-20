@@ -25,6 +25,10 @@
           class="rounded border border-slate-600 px-3 py-1 text-xs text-slate-400 hover:text-white">
     Restart
   </button>
+  <button id="fb-open" onclick="openFeedback()" hidden
+          class="rounded bg-amber-400 px-3 py-1 text-xs font-medium text-slate-900 hover:bg-amber-300">
+    Send feedback
+  </button>
 </div>
 
 <!-- Survey shell (faithful recreation of app/partners/[token]/layout.tsx) -->
@@ -44,6 +48,44 @@
   <footer class="mx-auto max-w-4xl px-6 py-12 text-xs text-slate-500">
     Your responses go directly to the GC faculty curriculum committee.
   </footer>
+</div>
+
+<!-- Feedback modal (preview chrome — not part of the real app) -->
+<div id="fb-modal"
+     class="fixed inset-0 z-[60] hidden items-center justify-center bg-slate-900/60 px-4">
+  <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+    <div id="fb-form">
+      <h2 class="text-lg font-semibold">Share your feedback</h2>
+      <p class="mt-1 text-sm text-slate-600">
+        On this partner-interface preview &#8212; what works, what&#8217;s confusing, what&#8217;s missing?
+      </p>
+      <p class="mt-3 text-xs text-slate-500">About this screen:
+        <span id="fb-screen" class="font-medium text-slate-700"></span></p>
+      <label class="mt-4 block">
+        <span class="mb-1 block text-sm font-medium text-slate-700">Your name (optional)</span>
+        <input type="text" id="fb-name"
+               class="w-full rounded border border-slate-300 px-3 py-2 text-sm" />
+      </label>
+      <label class="mt-3 block">
+        <span class="mb-1 block text-sm font-medium text-slate-700">Your feedback</span>
+        <textarea id="fb-message" rows="4"
+                  class="w-full rounded border border-slate-300 px-3 py-2 text-sm"></textarea>
+      </label>
+      <p id="fb-error" class="mt-2 hidden text-sm text-red-600"></p>
+      <div class="mt-4 flex justify-end gap-2">
+        <button type="button" onclick="closeFeedback()"
+                class="rounded border border-slate-300 px-4 py-2 text-sm">Cancel</button>
+        <button type="button" id="fb-send" onclick="submitFeedback()"
+                class="rounded bg-slate-800 px-5 py-2 text-sm text-white disabled:opacity-50">Send</button>
+      </div>
+    </div>
+    <div id="fb-thanks" class="hidden text-center">
+      <h2 class="text-lg font-semibold">Thank you.</h2>
+      <p class="mt-2 text-sm text-slate-600">Your feedback has been recorded.</p>
+      <button type="button" onclick="closeFeedback()"
+              class="mt-4 rounded bg-slate-800 px-5 py-2 text-sm text-white">Close</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -609,6 +651,70 @@ function restart() {
   S = S.viewMode === 'returning' ? returningState() : firstVisitState();
   render();
 }
+
+// ── Feedback (preview chrome — posts to a Google Sheet via Apps Script) ───────
+// ▼ PASTE your Apps Script Web App URL between the quotes (it ends in /exec).
+//   While this is empty, the "Send feedback" button stays hidden.
+const FEEDBACK_ENDPOINT = '';
+
+const SCREEN_NAMES = {
+  1: 'Welcome', 2: 'Career-target picker', 3: 'Position form',
+  4: 'Confirmation', 5: 'Dashboard', 6: 'Done',
+};
+function screenName() { return SCREEN_NAMES[S.screen] || ('Screen ' + S.screen); }
+
+function openFeedback() {
+  document.getElementById('fb-screen').textContent = screenName();
+  document.getElementById('fb-form').classList.remove('hidden');
+  document.getElementById('fb-thanks').classList.add('hidden');
+  document.getElementById('fb-error').classList.add('hidden');
+  var m = document.getElementById('fb-modal');
+  m.classList.remove('hidden');
+  m.classList.add('flex');
+}
+
+function closeFeedback() {
+  var m = document.getElementById('fb-modal');
+  m.classList.add('hidden');
+  m.classList.remove('flex');
+  document.getElementById('fb-name').value = '';
+  document.getElementById('fb-message').value = '';
+}
+
+function submitFeedback() {
+  var err = document.getElementById('fb-error');
+  var msg = document.getElementById('fb-message').value.trim();
+  if (!msg) {
+    err.textContent = 'Please write a little feedback first.';
+    err.classList.remove('hidden');
+    return;
+  }
+  var btn = document.getElementById('fb-send');
+  btn.disabled = true;
+  btn.textContent = 'Sending…';
+  fetch(FEEDBACK_ENDPOINT, {
+    method: 'POST',
+    mode: 'no-cors',
+    body: JSON.stringify({
+      screen: screenName(),
+      name: document.getElementById('fb-name').value.trim(),
+      message: msg,
+      page: location.href,
+    }),
+  }).then(function() {
+    document.getElementById('fb-form').classList.add('hidden');
+    document.getElementById('fb-thanks').classList.remove('hidden');
+  }).catch(function() {
+    err.textContent = 'Could not send — check your connection and try again.';
+    err.classList.remove('hidden');
+  }).finally(function() {
+    btn.disabled = false;
+    btn.textContent = 'Send';
+  });
+}
+
+// Reveal the feedback button only once an endpoint is configured.
+if (FEEDBACK_ENDPOINT) document.getElementById('fb-open').hidden = false;
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 render();
