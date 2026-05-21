@@ -9,6 +9,7 @@ export interface CourseListItem {
   title: string;
   level: number;
   track: string;
+  builderStatus?: string;
 }
 
 interface Props {
@@ -16,11 +17,12 @@ interface Props {
   selectedCode: string;
   onSelect: (code: string) => void;
   label: string;
-  excludeCode?: string;       // hide the course being analyzed from prior-coursework lists
-  inputId: string;            // for label association
+  excludeCode?: string;
+  inputId: string;
+  requireApproved?: boolean;
 }
 
-export function CourseSelector({ slug, selectedCode, onSelect, label, excludeCode, inputId }: Props) {
+export function CourseSelector({ slug, selectedCode, onSelect, label, excludeCode, inputId, requireApproved }: Props) {
   const [courses, setCourses] = useState<CourseListItem[]>([]);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
@@ -56,19 +58,32 @@ export function CourseSelector({ slug, selectedCode, onSelect, label, excludeCod
         {filtered.length === 0 && !loading && (
           <p className="text-sm text-muted-foreground p-3">No courses match.</p>
         )}
-        {filtered.map(c => (
-          <button
-            key={c.code}
-            type="button"
-            onClick={() => onSelect(c.code)}
-            className={`block w-full text-left px-3 py-2 hover:bg-muted text-sm ${
-              c.code === selectedCode ? 'bg-muted font-medium' : ''
-            }`}
-          >
-            <span className="font-mono text-xs text-muted-foreground mr-2">{c.code}</span>
-            {c.title}
-          </button>
-        ))}
+        {filtered.map(c => {
+          const isApproved = !requireApproved || c.builderStatus === 'approved';
+          const statusLabel = c.builderStatus && c.builderStatus !== 'approved' ? c.builderStatus.replace('_', ' ') : null;
+          return (
+            <button
+              key={c.code}
+              type="button"
+              onClick={() => isApproved ? onSelect(c.code) : undefined}
+              disabled={!isApproved}
+              title={!isApproved ? `KUD profile not yet approved (${statusLabel ?? 'draft'})` : undefined}
+              className={`block w-full text-left px-3 py-2 text-sm ${
+                !isApproved
+                  ? 'opacity-40 cursor-not-allowed text-muted-foreground'
+                  : c.code === selectedCode
+                  ? 'bg-muted font-medium hover:bg-muted'
+                  : 'hover:bg-muted'
+              }`}
+            >
+              <span className="font-mono text-xs text-muted-foreground mr-2">{c.code}</span>
+              {c.title}
+              {!isApproved && statusLabel && (
+                <span className="ml-2 text-xs opacity-60">({statusLabel})</span>
+              )}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
