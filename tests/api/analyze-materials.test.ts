@@ -82,6 +82,8 @@ const fakeMaterialOk = {
 const fakeMaterialCached = {
   id: 'mat-2',
   fileName: 'worksheet.pdf',
+  blobUrl: 'https://blob.vercel-storage.com/worksheet.pdf',
+  mimeType: 'application/pdf',
   extractedText: 'some text',
   extractionStatus: 'ok',
   analysisFinding: { materialType: 'worksheet', competencies: [], skills: [], notes: '' },
@@ -184,6 +186,8 @@ describe('POST /api/courses/[code]/analyze-materials', () => {
     expect(insertProfileRun).toHaveBeenCalledTimes(1);
     expect(upsertCourseProfile).toHaveBeenCalledTimes(1);
     expect(recordSpend).toHaveBeenCalledWith(22); // 7 + 15
+    const callArg = analyzeMaterial.mock.calls[0]?.[0];
+    expect(callArg?.documentBytes).toBeUndefined();
   });
 
   it('returns runId and totalCostUsdCents in the 200 body', async () => {
@@ -233,7 +237,7 @@ describe('POST /api/courses/[code]/analyze-materials', () => {
     expect(res.status).toBe(200);
 
     const callArg = analyzeMaterial.mock.calls[0]?.[0];
-    expect(callArg?.documentBytes).toBeDefined();
+    expect(Buffer.from(callArg.documentBytes).includes('%PDF-1.4')).toBe(true);
     expect(callArg?.documentMimeType).toBe('application/pdf');
   });
 

@@ -21,7 +21,7 @@ export interface TranscribeDocumentResult {
 }
 
 export interface AIProvider {
-  readonly name: string;
+  readonly name: 'openai' | 'anthropic' | 'fake';
   readonly model: string;
 
   /**

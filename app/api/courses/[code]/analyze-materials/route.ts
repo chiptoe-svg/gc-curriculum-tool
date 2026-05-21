@@ -73,11 +73,14 @@ export async function POST(req: Request, { params }: Ctx): Promise<Response> {
       pdfMaterials.map(async (m) => {
         try {
           const resp = await fetch(m.blobUrl);
-          if (!resp.ok) return;
+          if (!resp.ok) {
+            console.error('[analyze-materials] blob fetch non-ok for material', m.id, resp.status);
+            return;
+          }
           const buf = Buffer.from(await resp.arrayBuffer());
           nativeBytes.set(m.id, { bytes: buf, mimeType: m.mimeType });
-        } catch {
-          // Fall back to text extraction if blob fetch fails
+        } catch (err) {
+          console.error('[analyze-materials] blob fetch failed for material', m.id, err);
         }
       })
     );
