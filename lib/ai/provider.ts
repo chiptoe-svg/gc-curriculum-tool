@@ -70,10 +70,11 @@ export function getProvider(): AIProvider {
     );
   }
   if (which === 'local') {
-    const model = process.env.LOCAL_MODEL?.trim();
-    if (!model) throw new Error('LOCAL_MODEL not set (e.g. qwen3-35b-instruct)');
+    const model = process.env.LOCAL_MODEL?.trim() || 'gemma-4-31B-it-MLX-4bit';
     const baseURL = process.env.LOCAL_BASE_URL?.trim() || 'http://localhost:8000/v1';
-    return new LocalProvider(model, baseURL);
+    const apiKey = process.env.LOCAL_API_KEY?.trim();
+    if (!apiKey) throw new Error('LOCAL_API_KEY not set');
+    return new LocalProvider(model, baseURL, apiKey);
   }
   throw new Error(`Unknown AI provider: ${which}`);
 }

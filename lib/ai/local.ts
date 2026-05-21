@@ -6,10 +6,9 @@ export class LocalProvider implements AIProvider {
   readonly model: string;
   private client: OpenAI;
 
-  constructor(model: string, baseURL: string) {
+  constructor(model: string, baseURL: string, apiKey: string) {
     this.model = model;
-    // OpenAI SDK requires a non-empty apiKey, but local servers don't validate it.
-    this.client = new OpenAI({ apiKey: 'local', baseURL });
+    this.client = new OpenAI({ apiKey, baseURL });
   }
 
   async complete<T>(args: {

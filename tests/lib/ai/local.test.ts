@@ -25,14 +25,14 @@ beforeEach(() => {
 
 describe('LocalProvider', () => {
   it('reports name and model', () => {
-    const p = new LocalProvider('qwen3-35b', 'http://localhost:8000/v1');
+    const p = new LocalProvider('qwen3-35b', 'http://localhost:8000/v1', 'test-key');
     expect(p.name).toBe('local');
     expect(p.model).toBe('qwen3-35b');
   });
 
   it('returns parsed data and zero cost telemetry', async () => {
     mockCreate.mockResolvedValueOnce(makeResponse(JSON.stringify(validKud)));
-    const p = new LocalProvider('qwen3-35b', 'http://localhost:8000/v1');
+    const p = new LocalProvider('qwen3-35b', 'http://localhost:8000/v1', 'test-key');
     const result = await p.complete({
       systemPrompt: 'You are a helpful assistant.',
       userMessage: 'Generate KUDs.',
@@ -50,7 +50,7 @@ describe('LocalProvider', () => {
 
   it('appends schema to system prompt', async () => {
     mockCreate.mockResolvedValueOnce(makeResponse(JSON.stringify(validKud)));
-    const p = new LocalProvider('qwen3-35b', 'http://localhost:8000/v1');
+    const p = new LocalProvider('qwen3-35b', 'http://localhost:8000/v1', 'test-key');
     await p.complete({
       systemPrompt: 'Base prompt.',
       userMessage: 'Go.',
@@ -67,7 +67,7 @@ describe('LocalProvider', () => {
 
   it('uses json_object response format', async () => {
     mockCreate.mockResolvedValueOnce(makeResponse(JSON.stringify(validKud)));
-    const p = new LocalProvider('qwen3-35b', 'http://localhost:8000/v1');
+    const p = new LocalProvider('qwen3-35b', 'http://localhost:8000/v1', 'test-key');
     await p.complete({
       systemPrompt: 'S',
       userMessage: 'U',
@@ -81,7 +81,7 @@ describe('LocalProvider', () => {
 
   it('throws on non-JSON response', async () => {
     mockCreate.mockResolvedValueOnce(makeResponse('Sorry, I cannot do that.'));
-    const p = new LocalProvider('qwen3-35b', 'http://localhost:8000/v1');
+    const p = new LocalProvider('qwen3-35b', 'http://localhost:8000/v1', 'test-key');
     await expect(
       p.complete({
         systemPrompt: 'S',
@@ -94,7 +94,7 @@ describe('LocalProvider', () => {
   });
 
   it('throws from transcribeDocument (handled by caller)', async () => {
-    const p = new LocalProvider('qwen3-35b', 'http://localhost:8000/v1');
+    const p = new LocalProvider('qwen3-35b', 'http://localhost:8000/v1', 'test-key');
     await expect(
       p.transcribeDocument({ fileBytes: Buffer.from('pdf'), mimeType: 'application/pdf' }),
     ).rejects.toThrow('Local provider does not support document vision transcription');
