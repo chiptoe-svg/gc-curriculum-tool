@@ -35,6 +35,7 @@ Implementation plans — TDD-style, one plan per increment.
 | 2026-05-20 | [`plans/2026-05-20-faculty-assignment-intake-plan-1-upload-extraction.md`](./plans/2026-05-20-faculty-assignment-intake-plan-1-upload-extraction.md) | ✅ Done. Schema (`course_materials`, `course_profiles`, `course_profile_runs`), Vercel Blob upload, DOCX/PDF extraction, per-course page Materials zone. |
 | 2026-05-20 | [`plans/2026-05-20-faculty-assignment-intake-plan-2-analysis-profile.md`](./plans/2026-05-20-faculty-assignment-intake-plan-2-analysis-profile.md) | ✅ Done. Per-file AI analysis, synthesis, profile persistence, read-only profile display + run history. |
 | 2026-05-20 | [`plans/2026-05-20-faculty-assignment-intake-plan-3-editor-integration.md`](./plans/2026-05-20-faculty-assignment-intake-plan-3-editor-integration.md) | ✅ Done (checkboxes not marked, but all deliverables shipped). `CourseProfileEditor`, `resolveCourseContext`, `listCoursesWithStatus`, courses index page, profile PATCH route all exist. |
+| 2026-05-21 | [`plans/2026-05-21-course-builder.md`](./plans/2026-05-21-course-builder.md) | ✅ Done. 5-stage Course Builder workflow live: `builder_status` on courses, `course_kuds`/`course_kud_runs` tables, KUD generation pipeline, 4-tab UI (Info/Materials/Profile/KUDs), approval gate in CourseSelector. |
 
 ## Pilot docs
 
@@ -55,9 +56,12 @@ Public-facing milestone writeups and interactive previews.
 
 The prototype exposes three tools via three cards at the top of the page:
 
-**Tool 1 — Course Builder** (spec + interactive preview only, not yet the real app)
-- Per-course page exists at `/preview/<slug>/courses/<code>`: upload materials, run AI analysis, edit profile, view run history.
-- The full Course Builder UI (5-stage workflow, KUD authoring, approval gate) is designed but **not yet built**.
+**Tool 1 — Course Builder** (fully functional)
+- Per-course page at `/preview/<slug>/courses/<code>` now has a 4-tab layout: Info / Materials / Profile / KUDs.
+- Profile tab: faculty edit learning objectives, major projects, required incoming skills.
+- KUDs tab: Generate AI-drafted KUDs from the profile, edit bullets inline, accept — which marks the course `approved`.
+- Approval gate: `CourseSelector` with `requireApproved` grays out unapproved courses; only approved courses appear in the prereq/coverage analysis tools.
+- State machine: `draft → profile_complete → kuds_generated → approved`. Editing profile or KUDs after approval resets approval.
 
 **Tool 2 — Prereq Analyzer** (fully functional)
 - Course-centric pipeline: KUDs derived from course content, then AI extracts entry requirements for the focal course, then prior courses are scored against those requirements.
@@ -69,44 +73,14 @@ The prototype exposes three tools via three cards at the top of the page:
 - Heat map shows KUD coverage across the chain; scaffolding quality in column headers.
 
 ### Schema (Neon Postgres via Drizzle)
-Core tables: `courses`, `career_targets`, `sub_competencies`, `course_materials`, `course_profiles`, `course_profile_runs`, `coverage_scores`, `prototype_runs`, `prototype_flags`, `partners`, `partner_positions`.
+Core tables: `courses`, `career_targets`, `sub_competencies`, `course_materials`, `course_profiles`, `course_profile_runs`, `coverage_scores`, `prototype_runs`, `prototype_flags`, `partners`, `partner_positions`, `course_kuds`, `course_kud_runs`.
 
-**Not yet in schema:** `builder_status` column on `courses`, `course_kuds` table, `course_kud_runs` table (all needed for the Course Builder build).
+`courses.builder_status` enum: `draft | profile_complete | kuds_generated | approved`.
 
 ### Other current-state notes
 - Google Sheets resync retired; course data seeded via `pnpm db:seed-courses` (catalog script, 120 courses).
 - `resolveCourseContext` prefers course profile data over raw syllabus text when an AI-generated profile exists for a course.
 - PDF ingestion uses `pdf-parse` (flat text, loses structure). Anthropic native PDF API (document blocks) would preserve tables/headers but requires an `AnthropicProvider` implementation — not yet built.
-
----
-
-## Next build: Course Builder
-
-**Goal:** A real UI at `/courses/<code>` (or within the preview context) that lets faculty work through a 5-stage workflow: Course Info → Materials → Profile → KUD Review → Approved. The approval gate is the key outcome — only approved courses appear in the prereq/coverage analysis tools.
-
-**Spec:** [`pilot/2026-05-21-course-builder-spec.html`](./pilot/2026-05-21-course-builder-spec.html) — read this first. It covers:
-- The 5-stage workflow and status model (`draft` → `profile_ready` → `kud_draft` → `approved`)
-- The KUD iteration loop (3-panel: Profile evidence | AI-drafted KUDs | Threshold concept)
-- The stale-profile detection gate (prevents accepting KUDs built from stale profile)
-- The approval gate concept (approved courses unlock the analysis tools)
-- Data model additions needed: `builder_status` on `courses`, `course_kuds` table, `course_kud_runs` table
-- API shape: `POST /api/courses/<code>/kuds/generate`, `PUT /api/courses/<code>/kuds`, `POST /api/courses/<code>/kuds/accept`
-- New prompt needed: `extract-course-kud.md` (course-centric KUD generation, no career target frame)
-
-**What already exists that the Course Builder can build on:**
-- Per-course page at `/preview/<slug>/courses/<code>` with Materials, Analyze, and Profile zones — the Course Builder extends this page
-- `CourseProfileEditor` component (editable profile)
-- `course_profiles` table with `learningObjectives`, `skills`, `competencies` — the Course Builder's KUD generation reads from here
-- `lib/ai/analyze/kud-draft-course.ts` + `draft-course-outcomes.md` prompt — already does course-centric KUD generation from syllabus text; Course Builder reuses this
-- `CourseSelector` gates on no status currently — will need to gate on `builder_status = 'approved'` once the column exists
-
-**Key design decisions made:**
-- KUDs are course-level (not career-target-scoped). The prereq analyzer already uses course-centric KUDs.
-- Instructors must accept KUDs before a course is "approved" and unlocks analysis. The accept action is explicit, not automatic.
-- Profile fields (learning objectives, projects, skills) are the source of truth for KUD generation; editing profile → KUDs become stale → must regenerate before accepting.
-- 1-10 numeric coverage scoring is the target (current pipeline uses know/understand/do levels, not 1-10 — this is a future enhancement, not a Course Builder blocker).
-
-**Outstanding design question:** Whether the Course Builder lives inside the existing `/preview/<slug>` gated context or at a top-level `/courses` route. The preview context adds slug auth; a top-level route would need its own auth. Recommendation: stay inside `/preview/<slug>` for now and move to a real auth system in Phase 1.
 
 ---
 
