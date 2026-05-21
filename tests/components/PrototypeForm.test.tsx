@@ -57,11 +57,10 @@ beforeEach(() => {
 });
 
 describe('PrototypeForm', () => {
-  it('renders course selector, prior coursework selector, career target and Analyze button', async () => {
+  it('renders course selector, prior coursework selector, and Analyze button', async () => {
     render(<PrototypeForm slug="test-slug" onAnalyze={vi.fn()} isAnalyzing={false} />);
     expect(screen.getByLabelText(/course being analyzed \(by code\)/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^prior course 1$/i)).toBeInTheDocument();
-    await waitFor(() => expect(screen.getByLabelText(/career target/i)).toBeInTheDocument());
     expect(screen.getByRole('button', { name: /analyze/i })).toBeInTheDocument();
   });
 
@@ -94,7 +93,6 @@ describe('PrototypeForm', () => {
 
     expect(onAnalyze).toHaveBeenCalledTimes(1);
     const arg = onAnalyze.mock.calls[0]![0];
-    expect(arg.careerTargetId).toEqual(expect.any(String));
     expect(arg.course.courseLabel).toBe('GC 4060');
     expect(arg.course.syllabusText).toContain('# GC 4060 — Package & Specialty Printing');
     expect(arg.course.syllabusText).toContain('## Learning Objectives');

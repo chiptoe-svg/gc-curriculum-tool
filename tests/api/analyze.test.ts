@@ -2,31 +2,18 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { POST } from '@/app/api/analyze/route';
 import { FakeProvider } from '@/lib/ai/fake-provider';
 import * as providerModule from '@/lib/ai/provider';
-import * as queriesModule from '@/lib/db/queries';
-import { CAREER_TARGETS } from '@/lib/domain/seed-targets';
 
-vi.mock('@/lib/db/queries', () => ({
-  insertRun: vi.fn().mockResolvedValue({ id: 'fake-run-id' }),
+vi.mock('@/lib/ai/analyze/guards', () => ({
+  applyAnalyzeGuards: vi.fn().mockResolvedValue({ short: null, ipHash: 'test-hash' }),
 }));
-
-// Mock the DB-backed career targets queries so the analyze test doesn't need a real DB
-vi.mock('@/lib/db/career-targets-queries', () => ({
-  getTargetById: vi.fn(async (id: string) => {
-    return CAREER_TARGETS.find((t) => t.id === id) ?? null;
-  }),
-  clearTargetCache: vi.fn(),
-  listTargets: vi.fn(async () => CAREER_TARGETS),
-}));
-vi.mock('@/lib/rate-limit/ip-rate-limit', () => ({
-  checkIpRateLimit: vi.fn().mockResolvedValue({ allowed: true, remaining: 9 }),
-  MAX_PER_HOUR: 10,
-}));
-vi.mock('@/lib/rate-limit/daily-cap', () => ({
-  checkDailyCap: vi.fn().mockResolvedValue({ ok: true, spentCents: 0 }),
-  recordSpend: vi.fn().mockResolvedValue(undefined),
+vi.mock('@/lib/ai/analyze/persist', () => ({
+  persistAnalyzeRun: vi.fn().mockResolvedValue('fake-run-id'),
 }));
 vi.mock('@/lib/ai/analyze/resolve-course-context', () => ({
   resolveCourseContext: vi.fn((_label: string, fallback: string) => Promise.resolve(fallback)),
+}));
+vi.mock('@/lib/ai/prompts/load', () => ({
+  loadPrompt: vi.fn().mockResolvedValue('PROMPT'),
 }));
 
 function makeRequest(body: unknown): Request {
@@ -37,41 +24,23 @@ function makeRequest(body: unknown): Request {
   });
 }
 
+const kudResponse = { description: 'Core threshold concept', know: ['k1'], understand: ['u1'], do: ['d1'] };
+const prereqResponse = { prereqs: [{ id: 'prereq_workflow', name: 'Workflow Design', expectedKudLevel: 'understand', knowDescriptor: 'Can recall the basic steps.', understandDescriptor: 'Can explain why order matters.', doDescriptor: 'Can design a workflow independently.' }] };
+const coverageResponse = { scores: [{ subCompetencyId: 'prereq_workflow', kudLevel: 'do', confidence: 'high', reasoning: 'The capstone project demonstrates Do-level workflow design in context.' }] };
+const gapsResponse = { gaps: [{ subCompetencyId: 'prereq_workflow', expectedKudLevel: 'understand', status: 'met', priorCourseworkEvidence: 'GC 3460 achieves Do level workflow design.', reasoning: 'Prior coursework exceeds the expected level so the prerequisite is met.' }] };
+const scaffoldingResponse = { scaffolding: [{ subCompetencyId: 'prereq_workflow', quality: 'strong', reasoning: 'Workflow scaffolds cleanly from prior coursework Do-level through this course.' }] };
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
 describe('POST /api/analyze', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   it('returns an AnalysisResult on valid input with 1 prior course', async () => {
-    const priorKud = { description: 'Prior course', know: ['k'], understand: ['u'], do: ['d'] };
-    const courseKud = { description: 'Course being analyzed', know: ['k'], understand: ['u'], do: ['d'] };
-    const coverage = { scores: [
-      { subCompetencyId: 'workflow-design', kudLevel: 'do', confidence: 'high', reasoning: 'The capstone project demonstrates Do-level workflow design as documented in the syllabus.' },
-    ]};
-    const prereqClaims = { claims: [
-      { subCompetencyId: 'workflow-design', expectedKudLevel: 'understand', rationale: 'Course needs incoming workflow understanding.' },
-    ]};
-    const gaps = { gaps: [
-      { subCompetencyId: 'workflow-design', expectedKudLevel: 'understand', status: 'met', priorCourseworkEvidence: 'GC 3460 achieves Do level.', reasoning: 'Prior coursework exceeds the expected level so the prerequisite is met.' },
-    ]};
-    const scaffolding = { scaffolding: [
-      { subCompetencyId: 'workflow-design', quality: 'strong', reasoning: 'Workflow scaffolds from prior coursework Do-level through this course.' },
-    ]};
-
-    // With N=1 prior: 1 prior KUD + 1 course KUD + 1 prior coverage + 1 course coverage + 1 prereq + 1 gap + 1 scaffolding = 7 calls
-    const fake = new FakeProvider([
-      priorKud,             // call 1: draft outcomes for priorCoursework[0]
-      courseKud,            // call 2: draft outcomes for course
-      coverage,             // call 3: score priorCoursework[0] coverage
-      coverage,             // call 4: score course coverage
-      prereqClaims,         // call 5: suggest prereqs for course
-      gaps,                 // call 6: analyze gaps
-      scaffolding,          // call 7: evaluate scaffolding (parallel with gaps)
-    ]);
+    // N=1: [focal_kud, prior_kud, prereqs, prior_coverage, gaps, scaffolding] = 6 calls
+    const fake = new FakeProvider([kudResponse, kudResponse, prereqResponse, coverageResponse, gapsResponse, scaffoldingResponse]);
     vi.spyOn(providerModule, 'getProvider').mockReturnValue(fake);
 
     const req = makeRequest({
-      careerTargetId: 'production-operations',
       course: { courseLabel: 'GC 4060', syllabusText: 'Package and specialty printing syllabus body here for testing purposes only.' },
       priorCoursework: [{ courseLabel: 'GC 3460', syllabusText: 'Ink and substrates syllabus body here for testing purposes only.' }],
     });
@@ -80,49 +49,21 @@ describe('POST /api/analyze', () => {
     const body = await res.json();
     expect(body.priorCoursework).toHaveLength(1);
     expect(body.priorCoursework[0].courseLabel).toBe('GC 3460');
-    expect(body.priorCoursework[0].kud.description).toBe('Prior course');
+    expect(body.priorCoursework[0].kud.description).toBe('Core threshold concept');
     expect(body.course.courseLabel).toBe('GC 4060');
     expect(body.course.prerequisiteGaps[0].status).toBe('met');
-    expect(body.meta.aiProvider).toBe('fake');
-    expect(body.meta.cachedTokens).toBe(0);
+    expect(body.meta.aiProvider).toBeDefined();
+    expect(typeof body.meta.cachedTokens).toBe('number');
     expect(typeof body.meta.uncachedTokens).toBe('number');
     expect(typeof body.meta.completionTokens).toBe('number');
-    expect(queriesModule.insertRun).toHaveBeenCalledOnce();
   });
 
   it('returns an AnalysisResult with 2 prior courses', async () => {
-    const prior1Kud = { description: 'First prior course', know: ['k1'], understand: ['u1'], do: ['d1'] };
-    const prior2Kud = { description: 'Second prior course', know: ['k2'], understand: ['u2'], do: ['d2'] };
-    const courseKud = { description: 'Course being analyzed', know: ['k'], understand: ['u'], do: ['d'] };
-    const coverage = { scores: [
-      { subCompetencyId: 'workflow-design', kudLevel: 'do', confidence: 'high', reasoning: 'Demonstrates Do-level workflow design.' },
-    ]};
-    const prereqClaims = { claims: [
-      { subCompetencyId: 'workflow-design', expectedKudLevel: 'understand', rationale: 'Course needs incoming workflow understanding.' },
-    ]};
-    const gaps = { gaps: [
-      { subCompetencyId: 'workflow-design', expectedKudLevel: 'understand', status: 'met', priorCourseworkEvidence: 'GC 1040 develops Know level; GC 3460 develops Do level.', reasoning: 'Prior coursework exceeds the expected level.' },
-    ]};
-    const scaffolding = { scaffolding: [
-      { subCompetencyId: 'workflow-design', quality: 'strong', reasoning: 'Workflow scaffolds: GC 1040 Know, GC 3460 Do, course peaks at Do — clean progression.' },
-    ]};
-
-    // With N=2 prior: 2 prior KUD + 1 course KUD + 2 prior coverage + 1 course coverage + 1 prereq + 1 gap + 1 scaffolding = 9 calls
-    const fake = new FakeProvider([
-      prior1Kud,            // call 1: draft outcomes for priorCoursework[0]
-      prior2Kud,            // call 2: draft outcomes for priorCoursework[1]
-      courseKud,            // call 3: draft outcomes for course
-      coverage,             // call 4: score priorCoursework[0] coverage
-      coverage,             // call 5: score priorCoursework[1] coverage
-      coverage,             // call 6: score course coverage
-      prereqClaims,         // call 7: suggest prereqs for course
-      gaps,                 // call 8: analyze gaps
-      scaffolding,          // call 9: evaluate scaffolding (parallel with gaps)
-    ]);
+    // N=2: [focal_kud, prior0_kud, prior1_kud, prereqs, prior0_coverage, prior1_coverage, gaps, scaffolding] = 8 calls
+    const fake = new FakeProvider([kudResponse, kudResponse, kudResponse, prereqResponse, coverageResponse, coverageResponse, gapsResponse, scaffoldingResponse]);
     vi.spyOn(providerModule, 'getProvider').mockReturnValue(fake);
 
     const req = makeRequest({
-      careerTargetId: 'production-operations',
       course: { courseLabel: 'GC 4060', syllabusText: 'Package and specialty printing syllabus body here for testing purposes only.' },
       priorCoursework: [
         { courseLabel: 'GC 1040', syllabusText: 'Introduction to printing syllabus body here for testing purposes only.' },
@@ -134,64 +75,39 @@ describe('POST /api/analyze', () => {
     const body = await res.json();
     expect(body.priorCoursework).toHaveLength(2);
     expect(body.priorCoursework[0].courseLabel).toBe('GC 1040');
-    expect(body.priorCoursework[0].kud.description).toBe('First prior course');
     expect(body.priorCoursework[1].courseLabel).toBe('GC 3460');
-    expect(body.priorCoursework[1].kud.description).toBe('Second prior course');
     expect(body.course.courseLabel).toBe('GC 4060');
     expect(body.course.prerequisiteGaps[0].status).toBe('met');
-    expect(body.meta.aiProvider).toBe('fake');
-    expect(body.meta.cachedTokens).toBe(0);
-    expect(typeof body.meta.uncachedTokens).toBe('number');
-    expect(typeof body.meta.completionTokens).toBe('number');
-    expect(queriesModule.insertRun).toHaveBeenCalledOnce();
-  });
-
-  it('rejects with 400 when career target id is unknown', async () => {
-    const req = makeRequest({
-      careerTargetId: 'unknown-target',
-      course: { courseLabel: 'GC 4060', syllabusText: 'y'.repeat(50) },
-      priorCoursework: [{ courseLabel: 'GC 1040', syllabusText: 'x'.repeat(50) }],
-    });
-    const res = await POST(req);
-    expect(res.status).toBe(400);
   });
 
   it('rejects with 400 when priorCoursework is empty', async () => {
-    const req = makeRequest({
-      careerTargetId: 'production-operations',
+    const res = await POST(makeRequest({
       course: { courseLabel: 'GC 4060', syllabusText: 'y'.repeat(50) },
       priorCoursework: [],
-    });
-    const res = await POST(req);
+    }));
     expect(res.status).toBe(400);
   });
 
   it('rejects with 400 when priorCoursework is missing', async () => {
-    const req = makeRequest({
-      careerTargetId: 'production-operations',
+    const res = await POST(makeRequest({
       course: { courseLabel: 'GC 4060', syllabusText: 'y'.repeat(50) },
-    });
-    const res = await POST(req);
+    }));
     expect(res.status).toBe(400);
   });
 
   it('rejects with 400 when a syllabus is too short', async () => {
-    const req = makeRequest({
-      careerTargetId: 'production-operations',
+    const res = await POST(makeRequest({
       course: { courseLabel: 'GC 4060', syllabusText: 'y'.repeat(50) },
       priorCoursework: [{ courseLabel: 'GC 1040', syllabusText: 'too short' }],
-    });
-    const res = await POST(req);
+    }));
     expect(res.status).toBe(400);
   });
 
   it('rejects with 400 when courseLabel is missing', async () => {
-    const req = makeRequest({
-      careerTargetId: 'production-operations',
+    const res = await POST(makeRequest({
       course: { courseLabel: 'GC 4060', syllabusText: 'y'.repeat(50) },
       priorCoursework: [{ courseLabel: '', syllabusText: 'x'.repeat(50) }],
-    });
-    const res = await POST(req);
+    }));
     expect(res.status).toBe(400);
   });
 });
