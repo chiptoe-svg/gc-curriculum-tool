@@ -51,6 +51,14 @@ export interface KUDOutcomes {
   do: string[];
 }
 
+export interface CourseKudResult {
+  thresholdConcept: string;
+  know: string[];
+  understand: string[];
+  do: string[];
+  confidenceNotes: string;
+}
+
 export interface CoverageScore {
   subCompetencyId: string;
   kudLevel: KUDLevel;

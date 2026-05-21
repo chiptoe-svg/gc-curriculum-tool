@@ -180,3 +180,26 @@ export const scaffoldingScoresJsonSchema = {
     },
   },
 } as const;
+
+// ── Course Builder KUD result schema ────────────────────────────────────────
+
+export const courseKudResultSchema = z.object({
+  thresholdConcept: z.string().min(1),
+  know: z.array(z.string().min(1)).min(3).max(5),
+  understand: z.array(z.string().min(1)).min(3).max(5),
+  do: z.array(z.string().min(1)).min(3).max(5),
+  confidenceNotes: z.string().min(1),
+});
+
+export const courseKudResultJsonSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['thresholdConcept', 'know', 'understand', 'do', 'confidenceNotes'],
+  properties: {
+    thresholdConcept: { type: 'string', minLength: 1 },
+    know: { type: 'array', minItems: 3, maxItems: 5, items: { type: 'string', minLength: 1 } },
+    understand: { type: 'array', minItems: 3, maxItems: 5, items: { type: 'string', minLength: 1 } },
+    do: { type: 'array', minItems: 3, maxItems: 5, items: { type: 'string', minLength: 1 } },
+    confidenceNotes: { type: 'string', minLength: 1 },
+  },
+} as const;
