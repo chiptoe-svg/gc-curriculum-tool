@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { PrototypeForm, type AnalyzeInput } from '@/components/PrototypeForm';
 import { TargetChainForm, type TargetChainAnalyzeInput, type CourseChoice, type TargetOption as TargetChainTargetOption } from '@/components/TargetChainForm';
 import { TargetChainResults } from '@/components/TargetChainResults';
-import { TabSwitcher, type AnalysisTab } from '@/components/TabSwitcher';
+import type { AnalysisTab } from '@/components/TabSwitcher';
 import { KUDCard } from '@/components/KUDCard';
 import { CoverageHeatMap } from '@/components/CoverageHeatMap';
 import { PrerequisiteGapPanel } from '@/components/PrerequisiteGapPanel';
@@ -156,8 +156,6 @@ export function PrototypeClient({ slug }: { slug: string }) {
           </div>
         </div>
       </header>
-
-      <TabSwitcher active={tab} />
 
       {tab === 'target' && (
         <TargetChainForm
