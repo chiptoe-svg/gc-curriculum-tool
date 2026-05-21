@@ -1614,6 +1614,7 @@
     <a class="nav-link nav-sub" href="#loop">Loop Closure</a>
 
     <div class="nav-group-label">System Design</div>
+    <a class="nav-link" href="#datasources">Data Sources</a>
     <a class="nav-link" href="#datamodel">Data Model</a>
     <a class="nav-link" href="#views">Views & Pages</a>
     <a class="nav-link nav-sub" href="#view-constraint">Constraint Board</a>
@@ -2167,6 +2168,30 @@
       </tbody>
     </table>
     <p style="font-size:12px;color:var(--text-faint);margin-top:12px;font-family:var(--mono)">Source: U.S. Bureau of Labor Statistics O*NET, 2024 wage data, 2024–2034 projections. Two emerging roles require panel-developed definitions; adjacent SOC codes (Data Scientists 15-2051, Management Analysts 13-1111) all carry Bright Outlook status.</p>
+  </div>
+
+  <!-- DATA SOURCES -->
+  <div class="section" id="datasources">
+    <div class="section-label">System Design</div>
+    <div class="section-title">Data Sources</div>
+    <div class="section-desc">Two streams power the analysis. Industry data flows in at the target layer; course data at the course profile layer. Coverage analysis is the join between them.</div>
+
+    <h3 style="font-size:1.05rem;font-weight:600;margin:24px 0 10px;color:var(--text);">Industry Partner Advisory Survey</h3>
+    <p>Structured, periodic input from employer partners, organized by career target. Partners rate competency importance, flag emerging or declining skills, and describe what they see in recent hires. The survey is the empirical basis for career target definitions — without it, targets are standing faculty hypotheses; with it, they are grounded in hiring signal and updatable as the field moves.</p>
+    <p>The survey runs continuously. New employer submissions trigger an optional re-score of affected targets' coverage analysis. The partner-facing interface is already live in lightweight form; the <strong>Industry Partner Advisory Survey</strong> is the formalized version that routes employer signal directly into the career target framework rather than a spreadsheet.</p>
+    <p><strong>What it provides:</strong> competency importance weights per target, emerging skill flags, and employer evidence language that surfaces in the constraint-aware slot optimizer's recommendations and the student career path advisor's rationale.</p>
+
+    <h3 style="font-size:1.05rem;font-weight:600;margin:28px 0 10px;color:var(--text);">Course Content Ingestion</h3>
+    <p>Three sub-sources at each course, layered by reliability and depth:</p>
+    <table class="term-table" style="margin-top:12px;">
+      <thead><tr><th>Source</th><th>What it provides</th><th>Role in profile</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Syllabi</strong></td><td>Stated objectives, assessment structure, skills claimed</td><td>Primary — triggers first AI draft of course profile</td></tr>
+        <tr><td><strong>Coursework</strong></td><td>Assignment sheets, rubrics, project briefs</td><td>Secondary — reveals actual Do-level demands vs. stated objectives</td></tr>
+        <tr><td><strong>Faculty annotation</strong></td><td>Structured confirmation, correction, or extension of AI-generated profile</td><td>Tertiary — disputes and corrections persist as permanent record</td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:14px;">All three sub-sources converge in the <strong>Course Profile</strong> — a single, timestamped, AI-drafted and faculty-reviewed record of what a course teaches at Know, Understand, and Do level. The profile is the unit the coverage analysis scores against career targets.</p>
   </div>
 
   <!-- DATA MODEL -->
