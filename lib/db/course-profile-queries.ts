@@ -184,3 +184,22 @@ export async function listCoursesWithStatus(): Promise<CourseWithStatus[]> {
     materialCount: Number(r.materialCount),
   }));
 }
+
+// ── Run history queries ──────────────────────────────────────────────────────
+
+export async function listRunsForCourse(courseCode: string) {
+  const rows = await db
+    .select()
+    .from(courseProfileRuns)
+    .where(eq(courseProfileRuns.courseCode, courseCode))
+    .orderBy(desc(courseProfileRuns.createdAt));
+  return rows;
+}
+
+export async function getRunById(id: string) {
+  const rows = await db
+    .select()
+    .from(courseProfileRuns)
+    .where(eq(courseProfileRuns.id, id));
+  return rows[0] ?? null;
+}

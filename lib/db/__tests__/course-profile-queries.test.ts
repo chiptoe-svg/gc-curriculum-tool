@@ -29,6 +29,8 @@ import {
   getLatestRunForCourse,
   getCourseProfile,
   updateProfileFromEdit,
+  listRunsForCourse,
+  getRunById,
 } from '@/lib/db/course-profile-queries';
 import type { CourseProfileResult } from '@/lib/ai/course-profile/schema';
 
@@ -197,5 +199,44 @@ describe('updateProfileFromEdit', () => {
     });
     expect(dbUpdateWhere).toHaveBeenCalledTimes(1);
     expect(dbInsertReturning).not.toHaveBeenCalled();
+  });
+});
+
+describe('listRunsForCourse', () => {
+  it('returns empty array when no runs exist', async () => {
+    dbSelectFromWhere.mockReturnValue({
+      orderBy: () => Promise.resolve([]),
+    });
+    const result = await listRunsForCourse('GC 4060');
+    expect(result).toEqual([]);
+  });
+
+  it('returns all runs ordered newest-first via mock', async () => {
+    const rows = [
+      { id: 'run-2', courseCode: 'GC 4060', result: {}, materialCount: 3, model: 'gpt', costUsdCents: 30, createdAt: new Date('2026-05-21') },
+      { id: 'run-1', courseCode: 'GC 4060', result: {}, materialCount: 2, model: 'gpt', costUsdCents: 20, createdAt: new Date('2026-05-20') },
+    ];
+    dbSelectFromWhere.mockReturnValue({
+      orderBy: () => Promise.resolve(rows),
+    });
+    const result = await listRunsForCourse('GC 4060');
+    expect(result).toHaveLength(2);
+    expect(result[0]?.id).toBe('run-2');
+  });
+});
+
+describe('getRunById', () => {
+  it('returns null when run not found', async () => {
+    dbSelectFromWhere.mockResolvedValue([]);
+    const result = await getRunById('nonexistent-id');
+    expect(result).toBeNull();
+  });
+
+  it('returns the run row when found', async () => {
+    const row = { id: 'run-1', courseCode: 'GC 4060', result: {}, materialCount: 2, model: 'gpt', costUsdCents: 20, createdAt: new Date() };
+    dbSelectFromWhere.mockResolvedValue([row]);
+    const result = await getRunById('run-1');
+    expect(result?.id).toBe('run-1');
+    expect(result?.courseCode).toBe('GC 4060');
   });
 });
