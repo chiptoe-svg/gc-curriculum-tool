@@ -69,8 +69,8 @@ export default async function CourseDetailPage({ params }: Props) {
   return (
     <main className="mx-auto max-w-4xl p-6 md:p-12 space-y-8">
       <div className="flex items-center gap-3 text-sm text-muted-foreground">
-        <Link href={`/preview/${slug}`} className="underline underline-offset-2 hover:text-foreground">
-          &larr; Back to prototype
+        <Link href={`/preview/${slug}/courses`} className="underline underline-offset-2 hover:text-foreground">
+          &larr; All courses
         </Link>
       </div>
 

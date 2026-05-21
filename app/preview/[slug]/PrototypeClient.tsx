@@ -128,12 +128,10 @@ export function PrototypeClient({ slug }: { slug: string }) {
             <p className="text-sm font-semibold">Course Builder</p>
             <p className="text-xs text-muted-foreground leading-relaxed">Upload materials, edit learning objectives and projects, generate and accept Know / Understand / Do outcomes for a course. Approved courses unlock the analysis tools.</p>
             <a
-              href="https://chiptoe-svg.github.io/gc-curriculum-tool/docs/superpowers/pilot/2026-05-21-course-builder-preview.html"
-              target="_blank"
-              rel="noopener noreferrer"
+              href={`/preview/${slug}/courses`}
               className="inline-block text-xs underline underline-offset-2 text-foreground hover:text-muted-foreground pt-1"
             >
-              See interactive preview →
+              Open Course Builder →
             </a>
           </div>
 
