@@ -12,6 +12,7 @@ import { evaluateScaffolding } from '@/lib/ai/analyze/scaffolding-eval';
 import { persistAnalyzeRun } from '@/lib/ai/analyze/persist';
 import { getProvider } from '@/lib/ai/provider';
 import { loadPrompt } from '@/lib/ai/prompts/load';
+import { resolveCourseContext } from '@/lib/ai/analyze/resolve-course-context';
 import type { AnalysisResult, PriorCourseAnalysis } from '@/lib/domain/types';
 
 export const maxDuration = 120;
@@ -72,10 +73,16 @@ export async function POST(req: Request): Promise<Response> {
     loadPrompt('evaluate-scaffolding'),
   ]);
 
+  // Resolve course contexts: prefer course_profiles when available.
+  const [resolvedCourseSyllabus, ...resolvedPriorSyllabi] = await Promise.all([
+    resolveCourseContext(course.courseLabel, course.syllabusText),
+    ...priorCoursework.map(c => resolveCourseContext(c.courseLabel, c.syllabusText)),
+  ]);
+
   // Round 1 (parallel): N prior KUD drafts + 1 course KUD draft.
   const round1 = await Promise.all([
-    ...priorCoursework.map(c => draftKUD({ targetContext, syllabusText: c.syllabusText })),
-    draftKUD({ targetContext, syllabusText: course.syllabusText }),
+    ...priorCoursework.map((c, i) => draftKUD({ targetContext, syllabusText: resolvedPriorSyllabi[i]! })),
+    draftKUD({ targetContext, syllabusText: resolvedCourseSyllabus! }),
   ]);
   const priorKudResults = round1.slice(0, priorCoursework.length);
   const courseKudResult = round1[priorCoursework.length]!;

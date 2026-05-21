@@ -22,6 +22,9 @@ vi.mock('@/lib/ai/analyze/scaffolding-eval', () => ({ evaluateScaffolding }));
 vi.mock('@/lib/ai/analyze/persist', () => ({ persistAnalyzeRun }));
 vi.mock('@/lib/db/career-targets-queries', () => ({ getTargetById }));
 vi.mock('@/lib/ai/provider', () => ({ getProvider }));
+vi.mock('@/lib/ai/analyze/resolve-course-context', () => ({
+  resolveCourseContext: vi.fn((_label: string, fallback: string) => Promise.resolve(fallback)),
+}));
 
 import { POST } from '@/app/api/analyze/target-chain/route';
 

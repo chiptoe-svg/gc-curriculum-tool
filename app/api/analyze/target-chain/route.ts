@@ -9,6 +9,7 @@ import { scoreCoverage } from '@/lib/ai/analyze/coverage-score';
 import { evaluateScaffolding } from '@/lib/ai/analyze/scaffolding-eval';
 import { persistAnalyzeRun } from '@/lib/ai/analyze/persist';
 import { getProvider } from '@/lib/ai/provider';
+import { resolveCourseContext } from '@/lib/ai/analyze/resolve-course-context';
 import type { TargetChainAnalysisResult, TargetChainCourseAnalysis } from '@/lib/domain/types';
 
 export const maxDuration = 120;
@@ -65,9 +66,14 @@ export async function POST(req: Request): Promise<Response> {
   const accum = new TelemetryAccumulator();
   const started = Date.now();
 
+  // Resolve course contexts: prefer course_profiles when available.
+  const resolvedSyllabi = await Promise.all(
+    sortedCourses.map(c => resolveCourseContext(c.courseLabel, c.syllabusText))
+  );
+
   // Round 1 (parallel): N KUD drafts
   const kudCalls = await Promise.all(
-    sortedCourses.map(c => draftKUD({ targetContext, syllabusText: c.syllabusText }))
+    sortedCourses.map((c, i) => draftKUD({ targetContext, syllabusText: resolvedSyllabi[i]! }))
   );
   for (const k of kudCalls) accum.add(k.telemetry);
   const kuds = kudCalls.map(c => c.data);

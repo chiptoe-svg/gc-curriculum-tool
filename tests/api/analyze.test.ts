@@ -25,6 +25,9 @@ vi.mock('@/lib/rate-limit/daily-cap', () => ({
   checkDailyCap: vi.fn().mockResolvedValue({ ok: true, spentCents: 0 }),
   recordSpend: vi.fn().mockResolvedValue(undefined),
 }));
+vi.mock('@/lib/ai/analyze/resolve-course-context', () => ({
+  resolveCourseContext: vi.fn((_label: string, fallback: string) => Promise.resolve(fallback)),
+}));
 
 function makeRequest(body: unknown): Request {
   return new Request('http://localhost:3000/api/analyze', {
