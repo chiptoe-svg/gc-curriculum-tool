@@ -6,8 +6,7 @@ import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
 import { getLatestRunForCourse, getCourseProfile } from '@/lib/db/course-profile-queries';
 import { MaterialsZone } from './MaterialsZone';
 import { CourseAnalyzeZone } from '@/components/CourseAnalyzeZone';
-import { CourseProfileDisplay } from '@/components/CourseProfileDisplay';
-import type { CourseProfileResult } from '@/lib/ai/course-profile/schema';
+import { CourseProfileEditor } from '@/components/CourseProfileEditor';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,9 +44,6 @@ export default async function CourseDetailPage({ params }: Props) {
         materialCount: latestRun.materialCount,
         costUsdCents: latestRun.costUsdCents,
       }
-    : null;
-  const profileResult = currentProfile
-    ? (currentProfile as unknown as CourseProfileResult)
     : null;
 
   return (
@@ -87,7 +83,36 @@ export default async function CourseDetailPage({ params }: Props) {
         onAnalyzed={() => {}}
       />
 
-      <CourseProfileDisplay profile={profileResult} />
+      {/* Zone 3 — Profile (editable, Plan 3) */}
+      <section className="space-y-4">
+        <h2 className="text-xl font-semibold">Profile</h2>
+        {currentProfile ? (
+          <CourseProfileEditor
+            courseCode={code}
+            slug={slug}
+            profile={{
+              summary: currentProfile.summary,
+              learningObjectives: currentProfile.learningObjectives as string[],
+              skills: currentProfile.skills as string[],
+              competencies: currentProfile.competencies as Array<{
+                name: string;
+                description: string;
+                level: string;
+                evidence: Array<{ fileName: string; quote: string }>;
+              }>,
+              catalogDivergence: currentProfile.catalogDivergence as {
+                reinforced: string[];
+                additions: string[];
+                gaps: string[];
+              } | null,
+            }}
+          />
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            No profile yet. Upload materials and click &ldquo;Analyze materials&rdquo; to generate one.
+          </p>
+        )}
+      </section>
     </main>
   );
 }
