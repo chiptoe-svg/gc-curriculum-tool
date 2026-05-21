@@ -30,3 +30,4 @@ The user message contains:
 - If the document is too sparse to identify any competencies, return empty arrays and explain in `notes`.
 - Quotes must be verbatim (light cleanup for OCR artifacts only). Never fabricate a quote.
 - Competency names should be reusable across materials in the same course — if two rubrics both test "Color management," name it identically so synthesis can merge them.
+- In the `notes` field, explicitly flag any images, diagrams, charts, figures, or tables you can see in the document but cannot fully describe in text. For example: "This rubric includes a grading matrix as an image table; exact point values may not be fully captured." If no such elements are present, `notes` may be empty.

@@ -83,4 +83,55 @@ describe('analyzeMaterial', () => {
     await analyzeMaterial({ courseContext, fileName: 'f.pdf', extractedText: 'text' });
     expect(loadPrompt).toHaveBeenCalledWith('analyze-material');
   });
+
+  it('passes document bytes to provider.complete() when documentBytes is provided', async () => {
+    const completeMock = vi.fn().mockResolvedValue({
+      data: fakeFinding,
+      costUsdCents: 5,
+      durationMs: 10,
+      cachedTokens: 0,
+      uncachedPromptTokens: 0,
+      completionTokens: 0,
+    });
+    getProvider.mockReturnValue({ name: 'anthropic', model: 'claude-sonnet-4-6', complete: completeMock });
+
+    const pdfBytes = Buffer.from('%PDF-1.4 fake pdf content');
+    await analyzeMaterial({
+      courseContext,
+      fileName: 'rubric.pdf',
+      extractedText: 'some fallback text',
+      documentBytes: pdfBytes,
+      documentMimeType: 'application/pdf',
+    });
+
+    const arg = completeMock.mock.calls[0]?.[0];
+    expect(arg.documents).toHaveLength(1);
+    expect(arg.documents[0].bytes).toEqual(pdfBytes);
+    expect(arg.documents[0].mimeType).toBe('application/pdf');
+  });
+
+  it('omits extracted text from user message when documentBytes is provided', async () => {
+    const completeMock = vi.fn().mockResolvedValue({
+      data: fakeFinding,
+      costUsdCents: 5,
+      durationMs: 10,
+      cachedTokens: 0,
+      uncachedPromptTokens: 0,
+      completionTokens: 0,
+    });
+    getProvider.mockReturnValue({ name: 'anthropic', model: 'claude-sonnet-4-6', complete: completeMock });
+
+    await analyzeMaterial({
+      courseContext,
+      fileName: 'rubric.pdf',
+      extractedText: 'DO NOT INCLUDE THIS TEXT',
+      documentBytes: Buffer.from('%PDF'),
+      documentMimeType: 'application/pdf',
+    });
+
+    const arg = completeMock.mock.calls[0]?.[0];
+    expect(arg.userMessage).not.toContain('DO NOT INCLUDE THIS TEXT');
+    expect(arg.userMessage).toContain('GC 4060');
+    expect(arg.userMessage).toContain('rubric.pdf');
+  });
 });

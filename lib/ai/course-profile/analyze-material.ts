@@ -15,17 +15,25 @@ export interface AnalyzeMaterialArgs {
   courseContext: CourseContext;
   fileName: string;
   extractedText: string;
+  /** Raw file bytes. When present (Anthropic provider), sent as a native document block
+   *  instead of pasting extractedText into the user message. */
+  documentBytes?: Buffer;
+  documentMimeType?: string;
 }
 
 export async function analyzeMaterial({
   courseContext,
   fileName,
   extractedText,
+  documentBytes,
+  documentMimeType,
 }: AnalyzeMaterialArgs): Promise<{ data: AnalysisFinding; telemetry: CallTelemetry }> {
   const systemPrompt = await loadPrompt('analyze-material');
   const provider = getProvider();
 
-  const userMessage = [
+  const useNativeDoc = documentBytes !== undefined && documentBytes.length > 0 && !!documentMimeType;
+
+  const contextLines = [
     `# Course context`,
     `Code: ${courseContext.code}`,
     `Title: ${courseContext.title}`,
@@ -36,9 +44,11 @@ export async function analyzeMaterial({
     `# File name`,
     fileName,
     ``,
-    `# Extracted text`,
-    extractedText,
-  ].join('\n');
+  ];
+
+  const userMessage = useNativeDoc
+    ? [...contextLines, `# Document`, `The full document is attached. Please analyze its content directly.`].join('\n')
+    : [...contextLines, `# Extracted text`, extractedText].join('\n');
 
   const result = await provider.complete({
     systemPrompt,
@@ -46,6 +56,9 @@ export async function analyzeMaterial({
     schemaName: 'analysis_finding',
     jsonSchema: analysisFindingJsonSchema,
     validate: (raw) => analysisFindingSchema.parse(raw),
+    ...(useNativeDoc
+      ? { documents: [{ bytes: documentBytes as Buffer, mimeType: documentMimeType as string }] }
+      : {}),
   });
 
   return {
