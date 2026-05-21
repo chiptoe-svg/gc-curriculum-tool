@@ -24,6 +24,26 @@ function StatusBadge({ status }: { status: UploadedMaterial['extractionStatus'] 
   return <Badge variant="secondary" className="text-slate-600">Pending</Badge>;
 }
 
+function ImageWarningChip() {
+  return (
+    <Badge
+      variant="secondary"
+      className="text-amber-700 bg-amber-50 border-amber-200"
+      title="This PDF was text-extracted. Embedded images, charts, and figures may not have been captured."
+    >
+      May contain images not captured in text
+    </Badge>
+  );
+}
+
+function hasPdfImageRisk(m: UploadedMaterial): boolean {
+  return (
+    (m.extractionStatus === 'ok' || m.extractionStatus === 'low_text') &&
+    m.extractionMethod === 'text' &&
+    m.fileName.toLowerCase().endsWith('.pdf')
+  );
+}
+
 export function MaterialsList({ materials, onDelete, deleting }: Props) {
   if (materials.length === 0) {
     return (
@@ -39,7 +59,7 @@ export function MaterialsList({ materials, onDelete, deleting }: Props) {
         <li key={m.id} className="flex items-center gap-3 px-4 py-3">
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium">{m.fileName}</p>
-            <div className="mt-0.5 flex items-center gap-2">
+            <div className="mt-0.5 flex flex-wrap items-center gap-2">
               <StatusBadge status={m.extractionStatus} />
               {m.extractionMethod && (
                 <span className="text-xs text-muted-foreground">via {m.extractionMethod}</span>
@@ -47,6 +67,7 @@ export function MaterialsList({ materials, onDelete, deleting }: Props) {
               {m.pageCount !== undefined && (
                 <span className="text-xs text-muted-foreground">{m.pageCount}p</span>
               )}
+              {hasPdfImageRisk(m) && <ImageWarningChip />}
             </div>
           </div>
           <button
