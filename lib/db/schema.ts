@@ -89,6 +89,7 @@ export const courses = pgTable('courses', {
   majorProjects: jsonb('major_projects').$type<string[]>().notNull().default([]),
   skillsRequired: jsonb('skills_required').$type<string[]>().notNull().default([]),
   lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }).defaultNow().notNull(),
+  builderStatus: text('builder_status').notNull().default('draft'),
 });
 
 export const sheetSyncState = pgTable('sheet_sync_state', {
@@ -227,6 +228,39 @@ export const courseProfileRuns = pgTable('course_profile_runs', {
   model: text('model').notNull(),
   costUsdCents: integer('cost_usd_cents').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const courseKudRuns = pgTable('course_kud_runs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  courseCode: text('course_code').notNull().references(() => courses.code, { onDelete: 'cascade' }),
+  result: jsonb('result').$type<{
+    thresholdConcept: string;
+    know: string[];
+    understand: string[];
+    do: string[];
+    confidenceNotes: string;
+  }>().notNull(),
+  profileSnapshot: jsonb('profile_snapshot').$type<{
+    learningObjectives: string[];
+    majorProjects: string[];
+    skillsRequired: string[];
+  }>().notNull(),
+  model: text('model').notNull(),
+  costUsdCents: integer('cost_usd_cents').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const courseKuds = pgTable('course_kuds', {
+  courseCode: text('course_code').primaryKey().references(() => courses.code, { onDelete: 'cascade' }),
+  thresholdConcept: text('threshold_concept').notNull(),
+  know: jsonb('know').$type<string[]>().notNull().default([]),
+  understand: jsonb('understand').$type<string[]>().notNull().default([]),
+  do: jsonb('do').$type<string[]>().notNull().default([]),
+  manuallyEdited: boolean('manually_edited').notNull().default(false),
+  sourceRunId: uuid('source_run_id').references(() => courseKudRuns.id, { onDelete: 'set null' }),
+  approvedAt: timestamp('approved_at', { withTimezone: true }),
+  approvedByIpHash: text('approved_by_ip_hash'),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
 export const coverageScores = pgTable('coverage_scores', {
