@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { isValidSlug } from '@/lib/slug';
 import { getCourseKud, acceptCourseKud } from '@/lib/db/course-kud-queries';
-import { updateBuilderStatus } from '@/lib/db/courses-queries';
+import { getCourseByCode, updateBuilderStatus } from '@/lib/db/courses-queries';
 import { hashIp } from '@/lib/ip-hash';
 
 interface RouteContext { params: Promise<{ code: string }> }
@@ -16,6 +16,12 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
 
   const existing = await getCourseKud(courseCode);
   if (!existing) return NextResponse.json({ error: 'no KUD record — generate KUDs first' }, { status: 404 });
+
+  // Enforce state machine server-side
+  const course = await getCourseByCode(courseCode);
+  if (!course || course.builderStatus !== 'kuds_generated') {
+    return NextResponse.json({ error: 'course must be in kuds_generated state to accept' }, { status: 409 });
+  }
 
   const ipHash = hashIp(req);
   const now = new Date();

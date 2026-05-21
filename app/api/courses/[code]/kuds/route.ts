@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { isValidSlug } from '@/lib/slug';
-import { getCourseKud, saveKudDraft } from '@/lib/db/course-kud-queries';
+import { getCourseKud, saveKudDraft, resetKudApproval } from '@/lib/db/course-kud-queries';
+import { getCourseByCode, updateBuilderStatus } from '@/lib/db/courses-queries';
 
 const kudDraftSchema = z.object({
   thresholdConcept: z.string().min(1),
@@ -29,9 +30,12 @@ export async function PUT(req: Request, { params }: RouteContext): Promise<Respo
   const courseCode = decodeURIComponent(rawCode);
 
   const existing = await getCourseKud(courseCode);
+  const course = await getCourseByCode(courseCode);
+  if (!course) return NextResponse.json({ error: 'not found' }, { status: 404 });
 
   const manuallyEdited = existing
-    ? JSON.stringify(existing.know) !== JSON.stringify(parsed.data.know) ||
+    ? existing.thresholdConcept !== parsed.data.thresholdConcept ||
+      JSON.stringify(existing.know) !== JSON.stringify(parsed.data.know) ||
       JSON.stringify(existing.understand) !== JSON.stringify(parsed.data.understand) ||
       JSON.stringify(existing.do) !== JSON.stringify(parsed.data.do)
     : false;
@@ -45,6 +49,13 @@ export async function PUT(req: Request, { params }: RouteContext): Promise<Respo
       do: parsed.data.do,
       manuallyEdited,
     });
+
+    // If course was approved, reset approval since KUDs changed
+    if (course.builderStatus === 'approved') {
+      await resetKudApproval(courseCode);
+      await updateBuilderStatus(courseCode, 'kuds_generated');
+    }
+
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error(`PUT /api/courses/${courseCode}/kuds failed`, err);

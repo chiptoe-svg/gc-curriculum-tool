@@ -123,6 +123,7 @@ export function KudReviewTab({ courseCode, slug, builderStatus, currentKud, prof
       );
       if (!res.ok) throw new Error('Save failed');
       setDirty(false);
+      onStatusChange(builderStatus, draft);
     } catch {
       setError('Failed to save draft. Try again.');
     } finally {

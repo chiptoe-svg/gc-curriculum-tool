@@ -101,16 +101,16 @@ export async function PUT(req: Request, { params }: RouteContext): Promise<Respo
     }).where(eq(courses.code, courseCode));
 
     const wasApprovedOrGenerated = course.builderStatus === 'approved' || course.builderStatus === 'kuds_generated';
-    if (wasApprovedOrGenerated) {
-      await resetKudApproval(courseCode);
-    }
 
     const hasContent =
       parsed.data.learningObjectives.length > 0 &&
       parsed.data.majorProjects.length > 0 &&
       parsed.data.skillsRequired.length > 0;
 
-    if (hasContent) {
+    if (wasApprovedOrGenerated) {
+      await resetKudApproval(courseCode);
+      await updateBuilderStatus(courseCode, 'profile_complete');
+    } else if (hasContent) {
       await updateBuilderStatus(courseCode, 'profile_complete');
     }
 

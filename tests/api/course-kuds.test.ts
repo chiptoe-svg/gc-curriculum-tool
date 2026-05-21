@@ -5,19 +5,20 @@ const { getCourseByCode, updateBuilderStatus } = vi.hoisted(() => ({
   updateBuilderStatus: vi.fn(),
 }));
 const { generateCourseKud } = vi.hoisted(() => ({ generateCourseKud: vi.fn() }));
-const { insertKudRun, upsertCourseKud, saveKudDraft, acceptCourseKud, getCourseKud } = vi.hoisted(() => ({
+const { insertKudRun, upsertCourseKud, saveKudDraft, acceptCourseKud, getCourseKud, resetKudApproval } = vi.hoisted(() => ({
   insertKudRun: vi.fn(),
   upsertCourseKud: vi.fn(),
   saveKudDraft: vi.fn(),
   acceptCourseKud: vi.fn(),
   getCourseKud: vi.fn(),
+  resetKudApproval: vi.fn(),
 }));
 const { checkIpRateLimit } = vi.hoisted(() => ({ checkIpRateLimit: vi.fn() }));
 const { hashIp } = vi.hoisted(() => ({ hashIp: vi.fn().mockReturnValue('hashed-ip') }));
 
 vi.mock('@/lib/db/courses-queries', () => ({ getCourseByCode, updateBuilderStatus }));
 vi.mock('@/lib/ai/analyze/kud-generate', () => ({ generateCourseKud }));
-vi.mock('@/lib/db/course-kud-queries', () => ({ insertKudRun, upsertCourseKud, saveKudDraft, acceptCourseKud, getCourseKud }));
+vi.mock('@/lib/db/course-kud-queries', () => ({ insertKudRun, upsertCourseKud, saveKudDraft, acceptCourseKud, getCourseKud, resetKudApproval }));
 vi.mock('@/lib/rate-limit/ip-rate-limit', () => ({ checkIpRateLimit }));
 vi.mock('@/lib/ip-hash', () => ({ hashIp }));
 vi.mock('@/lib/slug', () => ({ isValidSlug: (s: string) => s === 'valid-slug' }));
@@ -46,6 +47,7 @@ const fakeKudResult = {
 beforeEach(() => {
   vi.clearAllMocks();
   updateBuilderStatus.mockResolvedValue(undefined);
+  resetKudApproval.mockResolvedValue(undefined);
   insertKudRun.mockResolvedValue('run-uuid-1');
   upsertCourseKud.mockResolvedValue(undefined);
   saveKudDraft.mockResolvedValue(undefined);
@@ -110,6 +112,7 @@ describe('PUT /api/courses/[code]/kuds', () => {
 
   it('saves the draft and returns 200', async () => {
     getCourseKud.mockResolvedValue({ thresholdConcept: 'original', know: ['orig1', 'orig2', 'orig3'], understand: ['orig1', 'orig2', 'orig3'], do: ['orig1', 'orig2', 'orig3'] });
+    getCourseByCode.mockResolvedValue(fakeCourse);
     const res = await kudsPut(makeReq({
       thresholdConcept: 'Color is physical.',
       know: ['CMYK model', 'Halftone mechanics', 'Substrate types'],
@@ -137,6 +140,7 @@ describe('POST /api/courses/[code]/kuds/accept', () => {
 
   it('accepts KUDs and returns 200', async () => {
     getCourseKud.mockResolvedValue({ courseCode: 'GC 3460', thresholdConcept: 'Color is physical.', know: [], understand: [], do: [] });
+    getCourseByCode.mockResolvedValue({ ...fakeCourse, builderStatus: 'kuds_generated' });
     const req = new Request('http://test/api/courses/GC%203460/kuds/accept?slug=valid-slug', { method: 'POST' });
     const res = await acceptPost(req, ctx);
     expect(res.status).toBe(200);
