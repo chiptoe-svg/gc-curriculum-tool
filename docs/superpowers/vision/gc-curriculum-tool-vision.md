@@ -38,6 +38,26 @@ Underneath the career-target framework sits the program's own mental model: GC u
 
 When the tool flags a brittle scaffold, the diagnosis often surfaces *between acts* — an Act-3 course expects mastery of a competency that no Act-1 or Act-2 course actually introduces.
 
+## Why Know / Understand / Do
+
+The tool classifies every competency at three levels. **Know** is facts and discrete information — terms, conventions, the names of things. **Understand** is the big ideas, principles, and transferable concepts that hold the facts together and explain why they matter. **Do** is skill, process, and applied performance — what a student can actually execute.
+
+This is the **KUD framework**, and it has a clear lineage. It enters curriculum practice through Carol Ann Tomlinson's work on differentiated instruction (Tomlinson, 1999/2014; Tomlinson & Imbeau, 2010), where teachers separate what students should *know*, *understand*, and *be able to do* before deciding how to teach it. It pairs naturally with Wiggins and McTighe's *Understanding by Design* (2005), which puts durable understanding — not coverage — at the center of planning. Both build on Bloom's cognitive taxonomy (Bloom, 1956; Anderson & Krathwohl, 2001), but they reorganize it for a different job.
+
+That difference is the point. Bloom's six levels are optimized for **writing and sorting assessment items** — they discriminate finely between cognitive demands on a test. KUD is optimized for **curriculum design**: it asks what a course is *for*, not how to grade it. For planning and analysis, three levels is the right granularity. AI-powered analysis needs categories that discriminate without hairsplitting; "Does this prior course cover the *Understand*-level concept the focal course expects?" is a clean, answerable question. Bloom's "Analyze vs. Evaluate" is not.
+
+KUD also fits a professional field like GC unusually well. The distinction is already how practitioners think: *knowing* color theory, *understanding* why it drives brand perception, being able to *color-grade* a project to brand spec are three real, separable things — not an academic abstraction.
+
+**Further reading:** ASCD's *Understanding by Design* white paper — https://files.ascd.org/staticfiles/ascd/pdf/siteASCD/publications/UbD_WhitePaper0312.pdf
+
+### References
+
+- Anderson, L. W., & Krathwohl, D. R. (Eds.). (2001). *A Taxonomy for Learning, Teaching, and Assessing: A Revision of Bloom's Taxonomy*. Longman.
+- Bloom, B. S. (Ed.). (1956). *Taxonomy of Educational Objectives: The Classification of Educational Goals. Handbook I: Cognitive Domain*. David McKay.
+- Tomlinson, C. A. (1999). *The Differentiated Classroom: Responding to the Needs of All Learners*. ASCD. (2nd ed., 2014).
+- Tomlinson, C. A., & Imbeau, M. B. (2010). *Leading and Managing a Differentiated Classroom*. ASCD.
+- Wiggins, G., & McTighe, J. (2005). *Understanding by Design* (2nd ed.). ASCD.
+
 ## The end state
 
 When the full tool is in production, it is the canonical living view of the GC program:
