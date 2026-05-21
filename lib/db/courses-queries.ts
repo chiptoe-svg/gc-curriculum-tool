@@ -1,18 +1,36 @@
 import { db } from './client';
-import { courses, sheetSyncState } from './schema';
+import { courses, sheetSyncState, courseProfiles, courseMaterials } from './schema';
 import type { ParsedCourse } from '@/lib/sheets/parseCourseTab';
-import { eq, asc, sql } from 'drizzle-orm';
+import { eq, asc, sql, count } from 'drizzle-orm';
 
 export interface CourseListItem {
   code: string;
   title: string;
   level: number;
   track: string;
+  builderStatus: string;
+}
+
+export interface CourseWithStatus {
+  code: string;
+  title: string;
+  level: number;
+  track: string;
+  builderStatus: string;
+  profileExists: boolean;
+  manuallyEdited: boolean;
+  materialCount: number;
 }
 
 export async function listCourses(): Promise<CourseListItem[]> {
   const rows = await db
-    .select({ code: courses.code, title: courses.title, level: courses.level, track: courses.track })
+    .select({
+      code: courses.code,
+      title: courses.title,
+      level: courses.level,
+      track: courses.track,
+      builderStatus: courses.builderStatus,
+    })
     .from(courses)
     .orderBy(asc(courses.code));
   return rows;
@@ -76,4 +94,55 @@ export async function recordSyncResult(count: number, errors: string[]): Promise
 export async function getSyncState() {
   const rows = await db.select().from(sheetSyncState).where(eq(sheetSyncState.key, 'courses')).limit(1);
   return rows[0] ?? null;
+}
+
+export async function updateBuilderStatus(
+  courseCode: string,
+  status: 'draft' | 'materials_uploaded' | 'profile_complete' | 'kuds_generated' | 'approved',
+): Promise<void> {
+  await db.update(courses).set({ builderStatus: status }).where(eq(courses.code, courseCode));
+}
+
+export async function listApprovedCourses(): Promise<CourseListItem[]> {
+  const rows = await db
+    .select({
+      code: courses.code,
+      title: courses.title,
+      level: courses.level,
+      track: courses.track,
+      builderStatus: courses.builderStatus,
+    })
+    .from(courses)
+    .where(eq(courses.builderStatus, 'approved'))
+    .orderBy(asc(courses.code));
+  return rows;
+}
+
+export async function listCoursesWithStatus(): Promise<CourseWithStatus[]> {
+  const rows = await db
+    .select({
+      code: courses.code,
+      title: courses.title,
+      level: courses.level,
+      track: courses.track,
+      builderStatus: courses.builderStatus,
+      manuallyEdited: courseProfiles.manuallyEdited,
+      materialCount: count(courseMaterials.id),
+    })
+    .from(courses)
+    .leftJoin(courseProfiles, eq(courses.code, courseProfiles.courseCode))
+    .leftJoin(courseMaterials, eq(courses.code, courseMaterials.courseCode))
+    .groupBy(courses.code, courses.title, courses.level, courses.track, courses.builderStatus, courseProfiles.manuallyEdited)
+    .orderBy(sql`${courses.level} asc, ${courses.code} asc`);
+
+  return rows.map((r) => ({
+    code: r.code,
+    title: r.title,
+    level: r.level,
+    track: r.track,
+    builderStatus: r.builderStatus,
+    profileExists: r.manuallyEdited !== null,
+    manuallyEdited: r.manuallyEdited ?? false,
+    materialCount: Number(r.materialCount),
+  }));
 }

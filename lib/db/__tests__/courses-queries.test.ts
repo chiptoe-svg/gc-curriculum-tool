@@ -7,7 +7,7 @@ vi.mock('@/lib/db/client', () => ({
   },
 }));
 
-import { listCourses, getCourseByCode, upsertCourses, recordSyncResult, getSyncState } from '@/lib/db/courses-queries';
+import { listCourses, getCourseByCode, upsertCourses, recordSyncResult, getSyncState, updateBuilderStatus, listApprovedCourses } from '@/lib/db/courses-queries';
 
 describe('courses-queries module', () => {
   it('exports the expected functions', () => {
@@ -20,5 +20,17 @@ describe('courses-queries module', () => {
 
   it('upsertCourses with empty array returns 0 without calling db', async () => {
     expect(await upsertCourses([])).toBe(0);
+  });
+});
+
+describe('updateBuilderStatus', () => {
+  it('exports the function', () => {
+    expect(typeof updateBuilderStatus).toBe('function');
+  });
+});
+
+describe('listApprovedCourses', () => {
+  it('exports the function', () => {
+    expect(typeof listApprovedCourses).toBe('function');
   });
 });
