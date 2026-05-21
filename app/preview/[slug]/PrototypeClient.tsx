@@ -10,7 +10,7 @@ import { KUDCard } from '@/components/KUDCard';
 import { CoverageHeatMap } from '@/components/CoverageHeatMap';
 import { PrerequisiteGapPanel } from '@/components/PrerequisiteGapPanel';
 import { Separator } from '@/components/ui/separator';
-import type { AnalysisResult, TargetChainAnalysisResult, CareerTarget } from '@/lib/domain/types';
+import type { AnalysisResult, TargetChainAnalysisResult, CareerTarget, AnalysisFrame } from '@/lib/domain/types';
 
 export function PrototypeClient({ slug }: { slug: string }) {
   const search = useSearchParams();
@@ -92,7 +92,12 @@ export function PrototypeClient({ slug }: { slug: string }) {
     await fetch('/api/flag', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ runId, flagType, target, note }) });
   }
 
-  const prereqTarget = prereqResult ? targetsMap.get(prereqResult.careerTargetId) ?? null : null;
+  const prereqFrame: AnalysisFrame | null = prereqResult
+    ? {
+        name: `Entry requirements for ${prereqResult.course.courseLabel}`,
+        subCompetencies: prereqResult.prereqCompetencies.map(p => ({ id: p.id, name: p.name })),
+      }
+    : null;
   const chainTarget = chainResult ? targetsMap.get(chainResult.careerTargetId) ?? null : null;
 
   const targetCount = targetsList.length || 5;
@@ -183,7 +188,7 @@ export function PrototypeClient({ slug }: { slug: string }) {
         />
       )}
 
-      {tab === 'prereqs' && prereqResult && prereqTarget && (
+      {tab === 'prereqs' && prereqResult && prereqFrame && (
         <section className="space-y-8">
           <Separator />
           <div className="space-y-4">
@@ -201,15 +206,14 @@ export function PrototypeClient({ slug }: { slug: string }) {
             </div>
           </div>
           <CoverageHeatMap
-            target={prereqTarget}
+            target={prereqFrame}
             courseLabel={prereqResult.course.courseLabel}
-            courseScores={prereqResult.course.coverage}
             priorCoursework={prereqResult.priorCoursework.map(c => ({ courseLabel: c.courseLabel, coverage: c.coverage }))}
             scaffolding={prereqResult.scaffolding}
             onFlag={(t, n) => handleFlag(t, n, 'coverage')}
           />
           <PrerequisiteGapPanel
-            target={prereqTarget}
+            target={prereqFrame}
             courseLabel={prereqResult.course.courseLabel}
             gaps={prereqResult.course.prerequisiteGaps}
             onFlag={(t, n) => handleFlag(t, n, 'prerequisite_gap')}

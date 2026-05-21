@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CourseSelector } from './CourseSelector';
@@ -15,7 +15,6 @@ export interface CourseInput {
 }
 
 export interface AnalyzeInput {
-  careerTargetId: string;
   course: CourseInput;
   priorCoursework: CourseInput[];
 }
@@ -77,19 +76,8 @@ function toCourseFullData(r: CourseApiResponse): CourseFullData {
 }
 
 export function PrototypeForm({ slug, onAnalyze, isAnalyzing }: Props) {
-  const [careerTargetId, setCareerTargetId] = useState('');
   const [course, setCourse] = useState<CourseSlot>(emptySlot());
   const [priorCoursework, setPriorCoursework] = useState<CourseSlot[]>([emptySlot()]);
-
-  useEffect(() => {
-    fetch('/api/targets')
-      .then((r) => r.json())
-      .then((data: Array<{ id: string }>) => {
-        if (data.length > 0 && !careerTargetId) setCareerTargetId(data[0]!.id);
-      })
-      .catch(() => {});
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   async function fetchCourse(code: string): Promise<CourseFullData | null> {
     try {
@@ -155,7 +143,6 @@ export function PrototypeForm({ slug, onAnalyze, isAnalyzing }: Props) {
 
   const canSubmit =
     !isAnalyzing &&
-    careerTargetId.length > 0 &&
     course.current !== null &&
     priorCoursework.length >= 1 &&
     priorCoursework.every(p => p.current !== null);
@@ -171,7 +158,6 @@ export function PrototypeForm({ slug, onAnalyze, isAnalyzing }: Props) {
       });
     }
     onAnalyze({
-      careerTargetId,
       course: {
         courseLabel: course.current.code,
         syllabusText: formatCourseSyllabus(course.current),

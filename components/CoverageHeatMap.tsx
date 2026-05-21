@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ReasoningExpand } from './ReasoningExpand';
 import { ConfidenceBars } from './ConfidenceBars';
-import type { CareerTarget, CoverageScore, KUDLevel, ScaffoldingScore, ScaffoldingQuality } from '@/lib/domain/types';
+import type { AnalysisFrame, CoverageScore, KUDLevel, ScaffoldingScore, ScaffoldingQuality } from '@/lib/domain/types';
 
 // Cell-level heat gradient: green (strong) → yellow → orange → red (absent).
 // Red cells in foundational courses are often intentional — the course isn't
@@ -44,9 +44,9 @@ const SCAFFOLDING_LABEL: Record<ScaffoldingQuality, string> = {
 };
 
 interface Props {
-  target: CareerTarget;
+  target: AnalysisFrame;
   courseLabel: string;
-  courseScores: CoverageScore[];
+  courseScores?: CoverageScore[];
   priorCoursework: Array<{ courseLabel: string; coverage: CoverageScore[] }>;
   scaffolding: ScaffoldingScore[];
   onFlag: (target: string, note: string) => Promise<void>;
@@ -56,7 +56,7 @@ interface Props {
 }
 
 function cumulativeSummary(
-  target: CareerTarget,
+  target: AnalysisFrame,
   rows: Array<{ coverage: CoverageScore[] }>
 ): { do: number; understand: number; know: number; notAddressed: number; total: number } {
   const ORDER: KUDLevel[] = ['not_addressed', 'know', 'understand', 'do'];
@@ -125,7 +125,10 @@ export function CoverageHeatMap({ target, courseLabel, courseScores, priorCourse
   const cellFor = (scores: CoverageScore[], subId: string) => scores.find(s => s.subCompetencyId === subId);
   const scaffoldFor = (subId: string) => scaffolding.find(s => s.subCompetencyId === subId);
 
-  const allRows = [{ coverage: courseScores }, ...priorCoursework.map(p => ({ coverage: p.coverage }))];
+  const allRows = [
+    ...(courseScores ? [{ coverage: courseScores }] : []),
+    ...priorCoursework.map(p => ({ coverage: p.coverage })),
+  ];
   const s = cumulativeSummary(target, allRows);
   const courseCount = 1 + priorCoursework.length;
 
@@ -133,7 +136,7 @@ export function CoverageHeatMap({ target, courseLabel, courseScores, priorCourse
   const chainRows: Array<{ label: string; coverage: CoverageScore[]; key: string }> =
     mode === 'chain'
       ? [
-          { label: courseLabel || 'Course', coverage: courseScores, key: 'focal' },
+          ...(courseScores ? [{ label: courseLabel || 'Course', coverage: courseScores, key: 'focal' }] : []),
           ...priorCoursework.map((p, i) => ({
             label: p.courseLabel || `Prior course ${i + 1}`,
             coverage: p.coverage,
@@ -149,9 +152,9 @@ export function CoverageHeatMap({ target, courseLabel, courseScores, priorCourse
   return (
     <Card>
       <CardHeader>
-        <CardTitle>How well do these {courseCount} courses build toward <em>{target.name}</em>?</CardTitle>
+        <CardTitle>{target.name}</CardTitle>
         <p className="text-sm text-muted-foreground leading-relaxed pt-2">
-          Across the courses below, this career target is reached at{' '}
+          Across the courses below, each entry requirement is reached at{' '}
           <strong className="text-foreground">Do level in {s.do} of {s.total}</strong> sub-competencies
           {s.understand > 0 && <>, <strong className="text-foreground">Understand in {s.understand}</strong></>}
           {s.know > 0 && <>, <strong className="text-foreground">Know in {s.know}</strong></>}
@@ -213,38 +216,43 @@ export function CoverageHeatMap({ target, courseLabel, courseScores, priorCourse
                 ))
               ) : (
                 // Default (focal-plus-priors) mode: focal course group above prior coursework group.
+                // The focal course row is omitted when courseScores is not provided (course-centric prereq mode).
                 <>
-                  <tr aria-hidden="true">
-                    <td colSpan={target.subCompetencies.length + 1} className="pt-3 pb-1 text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
-                      Course being analyzed
-                    </td>
-                  </tr>
-                  <tr key="course">
-                    <td className="p-2 font-bold text-sm align-top border-l-4 border-slate-900/40">{courseLabel || 'Course'}</td>
-                    {target.subCompetencies.map(sc => {
-                      const c = cellFor(courseScores, sc.id);
-                      if (!c) {
-                        return <td key={sc.id} className="p-2 align-top"><div className="rounded p-2 bg-slate-200 text-slate-700 text-xs">No data</div></td>;
-                      }
-                      return (
-                        <td key={sc.id} className="p-2 align-top">
-                          <div className={`rounded p-2 ring-2 ring-slate-900/30 ${LEVEL_BG[c.kudLevel]}`}>
-                            <div className="flex justify-between items-center gap-2">
-                              <span className="font-semibold text-xs">{LEVEL_LABEL[c.kudLevel]}</span>
-                              <ConfidenceBars level={c.confidence} />
-                            </div>
-                            <div className="mt-2">
-                              <ReasoningExpand
-                                reasoning={c.reasoning}
-                                flagContext={`${courseLabel} • ${sc.name} • ${LEVEL_LABEL[c.kudLevel]}`}
-                                onFlag={(note) => onFlag(`course.${sc.id}`, note)}
-                              />
-                            </div>
-                          </div>
+                  {courseScores && (
+                    <>
+                      <tr aria-hidden="true">
+                        <td colSpan={target.subCompetencies.length + 1} className="pt-3 pb-1 text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+                          Course being analyzed
                         </td>
-                      );
-                    })}
-                  </tr>
+                      </tr>
+                      <tr key="course">
+                        <td className="p-2 font-bold text-sm align-top border-l-4 border-slate-900/40">{courseLabel || 'Course'}</td>
+                        {target.subCompetencies.map(sc => {
+                          const c = cellFor(courseScores, sc.id);
+                          if (!c) {
+                            return <td key={sc.id} className="p-2 align-top"><div className="rounded p-2 bg-slate-200 text-slate-700 text-xs">No data</div></td>;
+                          }
+                          return (
+                            <td key={sc.id} className="p-2 align-top">
+                              <div className={`rounded p-2 ring-2 ring-slate-900/30 ${LEVEL_BG[c.kudLevel]}`}>
+                                <div className="flex justify-between items-center gap-2">
+                                  <span className="font-semibold text-xs">{LEVEL_LABEL[c.kudLevel]}</span>
+                                  <ConfidenceBars level={c.confidence} />
+                                </div>
+                                <div className="mt-2">
+                                  <ReasoningExpand
+                                    reasoning={c.reasoning}
+                                    flagContext={`${courseLabel} • ${sc.name} • ${LEVEL_LABEL[c.kudLevel]}`}
+                                    onFlag={(note) => onFlag(`course.${sc.id}`, note)}
+                                  />
+                                </div>
+                              </div>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    </>
+                  )}
 
                   {priorCoursework.length > 0 && (
                     <tr aria-hidden="true">

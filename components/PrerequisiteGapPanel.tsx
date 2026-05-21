@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ReasoningExpand } from './ReasoningExpand';
-import type { CareerTarget, PrerequisiteGap, GapStatus } from '@/lib/domain/types';
+import type { AnalysisFrame, PrerequisiteGap, GapStatus } from '@/lib/domain/types';
 
 const STATUS_COLOR: Record<GapStatus, string> = {
   met: 'bg-emerald-700 text-white',
@@ -18,7 +18,7 @@ const STATUS_LABEL: Record<GapStatus, string> = {
 };
 
 interface Props {
-  target: CareerTarget;
+  target: AnalysisFrame;
   courseLabel: string;
   gaps: PrerequisiteGap[];
   onFlag: (target: string, note: string) => Promise<void>;

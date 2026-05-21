@@ -11,7 +11,13 @@ type PromptName =
   | 'evaluate-scaffolding'
   | 'synthesize-target'
   | 'analyze-material'
-  | 'synthesize-course-profile';
+  | 'synthesize-course-profile'
+  // Course-centric prereq pipeline
+  | 'draft-course-outcomes'
+  | 'extract-course-prereqs'
+  | 'score-prior-coverage'
+  | 'analyze-course-gaps'
+  | 'evaluate-course-scaffolding';
 
 interface ParsedPrompt {
   frontmatter: Record<string, unknown>;

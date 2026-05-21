@@ -1,5 +1,23 @@
 // Career target definition (hardcoded for M-trial; becomes DB row in M1)
 export type KUDLevel = 'know' | 'understand' | 'do' | 'not_addressed';
+
+// Minimal display frame used by CoverageHeatMap and PrerequisiteGapPanel.
+// CareerTarget satisfies this shape; so does a course-derived prereq frame.
+export interface AnalysisFrame {
+  name: string;
+  subCompetencies: Array<{ id: string; name: string }>;
+}
+
+// Course-level entry requirement, AI-derived from the focal course's KUDs.
+// Replaces career-target sub-competencies in the prereq analyzer pipeline.
+export interface CoursePrereqCompetency {
+  id: string;                                          // AI-generated slug, e.g. "prereq_color_science"
+  name: string;
+  expectedKudLevel: Exclude<KUDLevel, 'not_addressed'>;
+  knowDescriptor: string;
+  understandDescriptor: string;
+  doDescriptor: string;
+}
 export type Confidence = 'high' | 'medium' | 'low';
 export type GapStatus = 'met' | 'underdeveloped' | 'missing';
 export type ScaffoldingQuality = 'strong' | 'adequate' | 'brittle' | 'weak' | 'absent';
@@ -72,12 +90,10 @@ export interface AnalysisResult {
   course: {
     courseLabel: string;
     kud: KUDOutcomes;
-    coverage: CoverageScore[];
-    prerequisiteCompetencies: PrerequisiteCompetencyClaim[];
     prerequisiteGaps: PrerequisiteGap[];
   };
-  careerTargetId: string;
-  scaffolding: ScaffoldingScore[];   // one entry per sub-competency in the target — judges how the set of courses scaffolds up
+  prereqCompetencies: CoursePrereqCompetency[];  // AI-derived entry requirements for the focal course
+  scaffolding: ScaffoldingScore[];   // one entry per prereq competency — judges how the prior courses collectively scaffold it
   meta: {
     aiProvider: string;
     aiModel: string;

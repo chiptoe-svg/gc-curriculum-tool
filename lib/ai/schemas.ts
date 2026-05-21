@@ -122,6 +122,44 @@ export const prerequisiteGapsJsonSchema = {
   },
 } as const;
 
+// ── Course-centric prereq pipeline schemas ─────────────────────────────────
+
+export const coursePrereqCompetencySchema = z.object({
+  id: z.string().regex(/^prereq_[a-z0-9_]+$/, 'id must be snake_case prefixed with prereq_'),
+  name: z.string().min(1).max(80),
+  expectedKudLevel: z.enum(['know', 'understand', 'do']),
+  knowDescriptor: z.string().min(10),
+  understandDescriptor: z.string().min(10),
+  doDescriptor: z.string().min(10),
+});
+export const coursePrereqsSchema = z.array(coursePrereqCompetencySchema).min(1).max(8);
+
+export const coursePrereqsJsonSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['prereqs'],
+  properties: {
+    prereqs: {
+      type: 'array',
+      minItems: 1,
+      maxItems: 8,
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['id', 'name', 'expectedKudLevel', 'knowDescriptor', 'understandDescriptor', 'doDescriptor'],
+        properties: {
+          id: { type: 'string', pattern: '^prereq_[a-z0-9_]+$' },
+          name: { type: 'string', minLength: 1, maxLength: 80 },
+          expectedKudLevel: { type: 'string', enum: ['know', 'understand', 'do'] },
+          knowDescriptor: { type: 'string', minLength: 10 },
+          understandDescriptor: { type: 'string', minLength: 10 },
+          doDescriptor: { type: 'string', minLength: 10 },
+        },
+      },
+    },
+  },
+} as const;
+
 export const scaffoldingScoresJsonSchema = {
   type: 'object',
   additionalProperties: false,

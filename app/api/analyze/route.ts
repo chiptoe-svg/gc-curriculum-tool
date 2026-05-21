@@ -1,14 +1,12 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getTargetById } from '@/lib/db/career-targets-queries';
 import { applyAnalyzeGuards } from '@/lib/ai/analyze/guards';
-import { buildTargetContext } from '@/lib/ai/analyze/target-context';
 import { TelemetryAccumulator } from '@/lib/ai/analyze/accum';
-import { draftKUD } from '@/lib/ai/analyze/kud-draft';
-import { scoreCoverage } from '@/lib/ai/analyze/coverage-score';
-import { suggestPrereqs } from '@/lib/ai/analyze/prereq-suggest';
-import { analyzeGaps } from '@/lib/ai/analyze/gap-analyze';
-import { evaluateScaffolding } from '@/lib/ai/analyze/scaffolding-eval';
+import { draftCourseKUD } from '@/lib/ai/analyze/kud-draft-course';
+import { extractCoursePrereqs } from '@/lib/ai/analyze/extract-prereqs';
+import { scorePriorCoverage } from '@/lib/ai/analyze/score-prior-coverage';
+import { analyzeCourseGaps } from '@/lib/ai/analyze/analyze-course-gaps';
+import { evaluateCourseScaffolding } from '@/lib/ai/analyze/evaluate-course-scaffolding';
 import { persistAnalyzeRun } from '@/lib/ai/analyze/persist';
 import { getProvider } from '@/lib/ai/provider';
 import { loadPrompt } from '@/lib/ai/prompts/load';
@@ -26,7 +24,6 @@ const courseInputSchema = z.object({
 });
 
 const requestSchema = z.object({
-  careerTargetId: z.string().min(1).max(100),
   course: courseInputSchema,
   priorCoursework: z.array(courseInputSchema).min(1).max(MAX_PRIOR_COURSES),
 });
@@ -47,30 +44,21 @@ export async function POST(req: Request): Promise<Response> {
   if (!parsed.success) {
     return NextResponse.json({ error: 'invalid request', details: parsed.error.flatten() }, { status: 400 });
   }
-  const { careerTargetId, course, priorCoursework } = parsed.data;
-
-  const target = await getTargetById(careerTargetId);
-  if (!target) {
-    return NextResponse.json({ error: `unknown careerTargetId: ${careerTargetId}` }, { status: 400 });
-  }
+  const { course, priorCoursework } = parsed.data;
 
   const guard = await applyAnalyzeGuards(req);
   if (guard.short) return guard.short;
 
-  const targetContext = buildTargetContext(target);
   const accum = new TelemetryAccumulator();
   const started = Date.now();
 
-  // Warm the prompt cache before the parallel rounds. Each helper awaits
-  // loadPrompt internally; pre-warming makes those awaits resolve from cache
-  // in one uniform microtask hop, so the Promise.all batches below invoke the
-  // AI provider in stable array order while still running concurrently.
+  // Warm the prompt cache before the parallel rounds.
   await Promise.all([
-    loadPrompt('draft-outcomes'),
-    loadPrompt('score-coverage'),
-    loadPrompt('suggest-prerequisites'),
-    loadPrompt('analyze-prerequisite-gaps'),
-    loadPrompt('evaluate-scaffolding'),
+    loadPrompt('draft-course-outcomes'),
+    loadPrompt('extract-course-prereqs'),
+    loadPrompt('score-prior-coverage'),
+    loadPrompt('analyze-course-gaps'),
+    loadPrompt('evaluate-course-scaffolding'),
   ]);
 
   // Resolve course contexts: prefer course_profiles when available.
@@ -79,53 +67,51 @@ export async function POST(req: Request): Promise<Response> {
     ...priorCoursework.map(c => resolveCourseContext(c.courseLabel, c.syllabusText)),
   ]);
 
-  // Round 1 (parallel): N prior KUD drafts + 1 course KUD draft.
+  // Round 1 (parallel): Draft KUDs for the focal course + all prior courses.
   const round1 = await Promise.all([
-    ...priorCoursework.map((c, i) => draftKUD({ targetContext, syllabusText: resolvedPriorSyllabi[i]! })),
-    draftKUD({ targetContext, syllabusText: resolvedCourseSyllabus! }),
+    draftCourseKUD({ syllabusText: resolvedCourseSyllabus! }),
+    ...priorCoursework.map((_, i) => draftCourseKUD({ syllabusText: resolvedPriorSyllabi[i]! })),
   ]);
-  const priorKudResults = round1.slice(0, priorCoursework.length);
-  const courseKudResult = round1[priorCoursework.length]!;
-  for (const c of round1) accum.add(c.telemetry);
-  const priorKuds = priorKudResults.map(c => c.data);
+  const courseKudResult = round1[0]!;
+  const priorKudResults = round1.slice(1);
+  for (const r of round1) accum.add(r.telemetry);
   const courseKud = courseKudResult.data;
+  const priorKuds = priorKudResults.map(r => r.data);
 
-  // Round 2 (parallel): N prior coverage + 1 course coverage + 1 prereq suggestion.
-  const [coverageResults, prereqResult] = await Promise.all([
-    Promise.all([
-      ...priorCoursework.map((c, i) => scoreCoverage({ targetContext, courseLabel: c.courseLabel, kud: priorKuds[i]! })),
-      scoreCoverage({ targetContext, courseLabel: course.courseLabel, kud: courseKud }),
-    ]),
-    suggestPrereqs({ targetContext, courseKud }),
-  ] as const);
-  const priorCoverageResults = coverageResults.slice(0, priorCoursework.length);
-  const courseCoverageResult = coverageResults[priorCoursework.length]!;
-  for (const c of coverageResults) accum.add(c.telemetry);
+  // Round 2: Extract the focal course's prerequisite competencies from its KUDs.
+  const prereqResult = await extractCoursePrereqs({
+    syllabusText: resolvedCourseSyllabus!,
+    courseKud,
+  });
   accum.add(prereqResult.telemetry);
-  const priorCoverages = priorCoverageResults.map(c => c.data);
-  const courseCoverage = courseCoverageResult.data;
-  const prereqs = prereqResult.data;
+  const prereqCompetencies = prereqResult.data;
 
-  // Round 3 (parallel): gap analysis + scaffolding evaluation.
-  const scaffoldingCourses = [
-    { label: course.courseLabel, level: parseLevelFromLabel(course.courseLabel), coverage: courseCoverage },
-    ...priorCoursework.map((c, i) => ({
-      label: c.courseLabel,
-      level: parseLevelFromLabel(c.courseLabel),
-      coverage: priorCoverages[i]!,
-    })),
-  ];
+  // Round 3 (parallel): Score each prior course against the prereq competencies.
+  const priorCoverageResults = await Promise.all(
+    priorCoursework.map((c, i) => scorePriorCoverage({
+      prereqCompetencies,
+      priorCourseLabel: c.courseLabel,
+      priorCourseKud: priorKuds[i]!,
+    }))
+  );
+  for (const r of priorCoverageResults) accum.add(r.telemetry);
+  const priorCoverages = priorCoverageResults.map(r => r.data);
+
+  // Round 4 (parallel): Gap analysis + scaffolding evaluation.
+  const priorWithLevels = priorCoursework.map((c, i) => ({
+    label: c.courseLabel,
+    level: parseLevelFromLabel(c.courseLabel),
+    coverage: priorCoverages[i]!,
+  }));
 
   const [gapCall, scaffoldingCall] = await Promise.all([
-    analyzeGaps({
-      targetContext,
-      prereqs,
+    analyzeCourseGaps({
+      prereqCompetencies,
       priorCoursework: priorCoursework.map((c, i) => ({ courseLabel: c.courseLabel, coverage: priorCoverages[i]! })),
     }),
-    evaluateScaffolding({
-      targetContext,
-      courses: scaffoldingCourses,
-      focalCourseLabel: course.courseLabel,
+    evaluateCourseScaffolding({
+      prereqCompetencies,
+      priorCourses: priorWithLevels,
     }),
   ]);
   accum.add(gapCall.telemetry);
@@ -144,11 +130,9 @@ export async function POST(req: Request): Promise<Response> {
     course: {
       courseLabel: course.courseLabel,
       kud: courseKud,
-      coverage: courseCoverage,
-      prerequisiteCompetencies: prereqs,
       prerequisiteGaps: gapCall.data,
     },
-    careerTargetId,
+    prereqCompetencies,
     scaffolding: scaffoldingCall.data,
     meta: {
       aiProvider: provider.name,
@@ -163,7 +147,7 @@ export async function POST(req: Request): Promise<Response> {
 
   const runId = await persistAnalyzeRun({
     ipHash: guard.ipHash,
-    careerTargetId,
+    careerTargetId: 'course-centric',
     courseLabel: course.courseLabel,
     courseSyllabus: course.syllabusText,
     priorCoursework: priorCoursework.map(c => ({ courseLabel: c.courseLabel, syllabus: c.syllabusText })),
