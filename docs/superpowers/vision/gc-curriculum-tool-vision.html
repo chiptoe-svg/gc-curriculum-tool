@@ -821,6 +821,8 @@
     <a class="nav-link" href="#viz-scaffold">Scaffolding view</a>
     <a class="nav-link" href="#viz-advising">Advising view</a>
     <a class="nav-link" href="#viz-gap">Per-course gap report</a>
+    <a class="nav-link" href="#viz-degree-flow">Full degree map</a>
+    <a class="nav-link" href="#viz-constraint">Constraint board</a>
     <a class="nav-link" href="#enables">What it enables</a>
     <a class="nav-link" href="#data-sources">Where the data comes from</a>
     <a class="nav-link" href="#prototype">The prototype &amp; trial</a>
@@ -1724,6 +1726,272 @@
       </div>
     </div>
   </figure>
+</section>
+
+<section id="viz-degree-flow">
+  <h2><span class="num">§</span>Full degree map — all 120 credits <span class="viz-mock-tag">Illustrative · Data Fabricated</span></h2>
+  <p>
+    The GC major accounts for roughly half the degree. This view shows all
+    120 credits in their degree-plan categories — and which career targets each
+    category serves. Non-GC required courses and constrained-choice slots do real
+    curriculum work; this map makes that visible at a glance.
+  </p>
+
+  <figure>
+    <figcaption>Full BS in GC · career target coverage by credit category · 120 total hours</figcaption>
+    <div class="viz-title">Which credits are doing the career prep work?</div>
+    <div class="viz-note">
+      Each row is one requirement category; the rightmost column is total credit hours.
+      Coverage strength reflects how well that category typically serves each target.
+      "Varies" means the answer depends on which approved option the student (or advisor) chooses.
+    </div>
+
+    <div style="border:1px solid var(--border);border-radius:4px;overflow:hidden;font-family:var(--mono);font-size:10.5px;margin-top:14px;">
+
+      <div style="display:grid;grid-template-columns:176px 44px repeat(5,1fr);background:var(--bg-alt);border-bottom:1px solid var(--border);">
+        <div style="padding:10px 12px;font-weight:500;letter-spacing:0.06em;color:var(--text-muted);border-right:1px solid var(--border);">Credit Category</div>
+        <div style="padding:10px 6px;text-align:center;font-weight:500;color:var(--text-muted);border-right:1px solid var(--border);">Cr</div>
+        <div style="padding:10px 8px;text-align:center;background:var(--t1);color:white;line-height:1.3;letter-spacing:0.04em;">Account<br>Mgmt</div>
+        <div style="padding:10px 8px;text-align:center;background:var(--t2);color:white;line-height:1.3;letter-spacing:0.04em;">Brand<br>Strat</div>
+        <div style="padding:10px 8px;text-align:center;background:var(--t3);color:white;line-height:1.3;letter-spacing:0.04em;">Prod<br>&amp; Ops</div>
+        <div style="padding:10px 8px;text-align:center;background:var(--t4);color:white;line-height:1.3;letter-spacing:0.04em;">Creative<br>Gen.</div>
+        <div style="padding:10px 8px;text-align:center;background:var(--t5);color:white;line-height:1.3;letter-spacing:0.04em;">AI<br>Wkflow</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:176px 44px repeat(5,1fr);border-bottom:1px solid var(--border);">
+        <div style="padding:13px 12px;border-right:1px solid var(--border);">
+          <div style="font-weight:500;color:var(--text);font-size:11.5px;">Gen Ed</div>
+          <div style="font-size:9.5px;color:var(--text-faint);margin-top:3px;">ENGL · COMM · HIST · Sciences</div>
+        </div>
+        <div style="padding:13px 6px;text-align:center;color:var(--text-muted);border-right:1px solid var(--border);font-size:13px;font-weight:500;">30</div>
+        <div style="padding:13px 8px;text-align:center;background:rgba(42,92,140,0.18);color:var(--t1);font-weight:500;">Mod</div>
+        <div style="padding:13px 8px;text-align:center;background:rgba(107,58,130,0.18);color:var(--t2);font-weight:500;">Mod</div>
+        <div style="padding:13px 8px;text-align:center;background:rgba(200,196,186,0.35);color:var(--text-faint);">Thin</div>
+        <div style="padding:13px 8px;text-align:center;background:rgba(46,125,94,0.18);color:var(--t4);font-weight:500;">Mod</div>
+        <div style="padding:13px 8px;text-align:center;background:rgba(200,196,186,0.35);color:var(--text-faint);">Thin</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:176px 44px repeat(5,1fr);border-bottom:1px solid var(--border);">
+        <div style="padding:13px 12px;border-right:1px solid var(--border);">
+          <div style="font-weight:500;color:var(--text);font-size:11.5px;">Non-GC Required</div>
+          <div style="font-size:9.5px;color:var(--text-faint);margin-top:3px;">ACCT · MKT 3010 · PKSC 1020</div>
+        </div>
+        <div style="padding:13px 6px;text-align:center;color:var(--text-muted);border-right:1px solid var(--border);font-size:13px;font-weight:500;">18</div>
+        <div style="padding:13px 8px;text-align:center;background:rgba(42,92,140,0.50);color:white;font-weight:500;">Strong</div>
+        <div style="padding:13px 8px;text-align:center;background:rgba(107,58,130,0.50);color:white;font-weight:500;">Strong</div>
+        <div style="padding:13px 8px;text-align:center;background:rgba(184,112,32,0.28);color:var(--t3);font-weight:500;">Mod</div>
+        <div style="padding:13px 8px;text-align:center;background:rgba(200,196,186,0.35);color:var(--text-faint);">Thin</div>
+        <div style="padding:13px 8px;text-align:center;background:rgba(200,196,186,0.35);color:var(--text-faint);">Thin</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:176px 44px repeat(5,1fr);border-bottom:1px solid var(--border);background:rgba(0,0,0,0.012);">
+        <div style="padding:13px 12px;border-right:1px solid var(--border);">
+          <div style="font-weight:500;color:var(--text);font-size:11.5px;">GC Core Required</div>
+          <div style="font-size:9.5px;color:var(--text-faint);margin-top:3px;">GC 1010 → 4800 · 16 courses</div>
+        </div>
+        <div style="padding:13px 6px;text-align:center;color:var(--text-muted);border-right:1px solid var(--border);font-size:13px;font-weight:500;">45</div>
+        <div style="padding:13px 8px;text-align:center;background:rgba(42,92,140,0.28);color:var(--t1);font-weight:500;">Mod</div>
+        <div style="padding:13px 8px;text-align:center;background:rgba(107,58,130,0.28);color:var(--t2);font-weight:500;">Mod</div>
+        <div style="padding:13px 8px;text-align:center;background:rgba(184,112,32,0.58);color:white;font-weight:500;">Strong</div>
+        <div style="padding:13px 8px;text-align:center;background:rgba(46,125,94,0.58);color:white;font-weight:500;">Strong</div>
+        <div style="padding:13px 8px;text-align:center;background:rgba(140,46,53,0.20);color:var(--t5);">Thin</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:176px 44px repeat(5,1fr);border-bottom:1px solid var(--border);">
+        <div style="padding:13px 12px;border-right:1px solid var(--border);">
+          <div style="font-weight:500;color:var(--text);font-size:11.5px;">Constrained Choices</div>
+          <div style="font-size:9.5px;color:var(--text-faint);margin-top:3px;">STAT · ECON · PCID · Lab Sci</div>
+        </div>
+        <div style="padding:13px 6px;text-align:center;color:var(--text-muted);border-right:1px solid var(--border);font-size:13px;font-weight:500;">12</div>
+        <div style="padding:13px 8px;text-align:center;background:rgba(232,164,74,0.22);color:#9A6B00;font-weight:500;">Varies</div>
+        <div style="padding:13px 8px;text-align:center;background:rgba(232,164,74,0.22);color:#9A6B00;font-weight:500;">Varies</div>
+        <div style="padding:13px 8px;text-align:center;background:rgba(232,164,74,0.22);color:#9A6B00;font-weight:500;">Varies</div>
+        <div style="padding:13px 8px;text-align:center;background:rgba(200,196,186,0.35);color:var(--text-faint);">Thin</div>
+        <div style="padding:13px 8px;text-align:center;background:rgba(232,164,74,0.22);color:#9A6B00;font-weight:500;">Varies</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:176px 44px repeat(5,1fr);">
+        <div style="padding:13px 12px;border-right:1px solid var(--border);">
+          <div style="font-weight:600;color:var(--t4);font-size:11.5px;">Specialty Area</div>
+          <div style="font-size:9.5px;color:var(--text-faint);margin-top:3px;">15cr from approved list</div>
+        </div>
+        <div style="padding:13px 6px;text-align:center;color:var(--text-muted);border-right:1px solid var(--border);font-size:13px;font-weight:500;">15</div>
+        <div style="padding:13px 8px;text-align:center;background:rgba(46,125,94,0.22);color:var(--t4);font-size:9.5px;line-height:1.4;font-style:italic;">Gap-<br>filler</div>
+        <div style="padding:13px 8px;text-align:center;background:rgba(46,125,94,0.22);color:var(--t4);font-size:9.5px;line-height:1.4;font-style:italic;">Gap-<br>filler</div>
+        <div style="padding:13px 8px;text-align:center;background:rgba(46,125,94,0.22);color:var(--t4);font-size:9.5px;line-height:1.4;font-style:italic;">Gap-<br>filler</div>
+        <div style="padding:13px 8px;text-align:center;background:rgba(46,125,94,0.22);color:var(--t4);font-size:9.5px;line-height:1.4;font-style:italic;">Gap-<br>filler</div>
+        <div style="padding:13px 8px;text-align:center;background:rgba(46,125,94,0.58);color:white;font-size:9.5px;line-height:1.4;font-weight:600;">Best<br>Lever</div>
+      </div>
+
+    </div>
+
+    <div style="margin-top:12px;font-family:var(--mono);font-size:9.5px;color:var(--text-faint);letter-spacing:0.1em;text-align:center;">
+      STRONG = DIRECT CONTRIBUTION AT DO LEVEL · MOD = UNDERSTAND LEVEL · THIN = KNOW ONLY OR INDIRECT · VARIES = DEPENDS ON WHICH OPTION IS CHOSEN
+    </div>
+  </figure>
+
+  <div class="callout note" style="margin-top:16px;">
+    <div class="callout-title">What this reveals</div>
+    <p>
+      Non-GC required courses score as strong contributors for Account Management and Brand
+      Strategy — they aren't just boxes. The Specialty Area column is the only row where
+      AI Workflow shows a meaningful lever: the 15cr of flexible electives can close the
+      gap that no required course addresses. Every "Varies" cell in the Constrained Choices
+      row is a curriculum decision the department has probably never consciously made.
+    </p>
+  </div>
+</section>
+
+<section id="viz-constraint">
+  <h2><span class="num">§</span>Constraint board — the choices hidden in the degree plan <span class="viz-mock-tag">Illustrative · Data Fabricated</span></h2>
+  <p>
+    Four slots in the BS GC degree plan require one course from a short approved list.
+    Nobody explicitly chose the current defaults — they're just what students typically
+    register for. The constraint board surfaces each of these slots with the coverage
+    impact of each option across the five career targets.
+  </p>
+
+  <figure>
+    <figcaption>Constrained-choice slots · coverage impact per target · current default shown first</figcaption>
+    <div class="viz-title">Which constrained choices are costing us coverage — and on which targets?</div>
+    <div class="viz-note">
+      Each card is one constrained slot. Coverage dots show Know (●), Understand (◉), Do (⬤).
+      The highlighted option is what analysis recommends for the target distribution of the current cohort.
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:16px;">
+
+      <!-- STAT slot -->
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:4px;overflow:hidden;">
+        <div style="display:grid;grid-template-columns:160px 1fr 1fr;border-bottom:1px solid var(--border);">
+          <div style="padding:12px 14px;background:var(--bg-alt);border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:center;">
+            <div style="font-family:var(--mono);font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);margin-bottom:4px;">Statistics slot</div>
+            <div style="font-family:var(--display);font-size:16px;font-weight:600;">3 credits</div>
+            <div style="font-family:var(--mono);font-size:9.5px;color:var(--text-faint);margin-top:4px;">Satisfies quant. req.</div>
+          </div>
+          <div style="padding:12px 16px;border-right:1px solid var(--border);">
+            <div style="font-family:var(--mono);font-size:9.5px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-faint);margin-bottom:6px;">Typical default</div>
+            <div style="font-weight:600;color:var(--text);font-size:14px;">STAT 2220</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Elementary Statistics</div>
+            <div style="margin-top:10px;display:flex;gap:8px;font-family:var(--mono);font-size:9px;">
+              <span style="color:var(--t1);">Acct ●</span>
+              <span style="color:var(--t2);">Brand ●</span>
+              <span style="color:var(--t3);">Ops ●</span>
+              <span style="color:var(--text-faint);">Creat —</span>
+              <span style="color:var(--t5);">AI ●</span>
+            </div>
+          </div>
+          <div style="padding:12px 16px;background:rgba(46,125,94,0.04);border-left:3px solid var(--t4);">
+            <div style="font-family:var(--mono);font-size:9.5px;letter-spacing:0.1em;text-transform:uppercase;color:var(--t4);margin-bottom:6px;">Recommended ↑</div>
+            <div style="font-weight:600;color:var(--text);font-size:14px;">STAT 3090</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Statistical Methods</div>
+            <div style="margin-top:10px;display:flex;gap:8px;font-family:var(--mono);font-size:9px;">
+              <span style="color:var(--t1);">Acct ◉</span>
+              <span style="color:var(--t2);">Brand ⬤</span>
+              <span style="color:var(--t3);">Ops ◉</span>
+              <span style="color:var(--text-faint);">Creat —</span>
+              <span style="color:var(--t5);">AI ◉</span>
+            </div>
+          </div>
+        </div>
+        <div style="padding:10px 16px;font-size:12.5px;color:var(--text-muted);font-style:italic;">
+          STAT 3090 develops quantitative analysis at Understand/Do level — a gap Brand Strategy employers name explicitly. STAT 2220 reaches Know only. The difference is detectable by the advising tool.
+        </div>
+      </div>
+
+      <!-- ECON slot -->
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:4px;overflow:hidden;">
+        <div style="display:grid;grid-template-columns:160px 1fr 1fr;border-bottom:1px solid var(--border);">
+          <div style="padding:12px 14px;background:var(--bg-alt);border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:center;">
+            <div style="font-family:var(--mono);font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);margin-bottom:4px;">Economics slot</div>
+            <div style="font-family:var(--display);font-size:16px;font-weight:600;">3 credits</div>
+            <div style="font-family:var(--mono);font-size:9.5px;color:var(--text-faint);margin-top:4px;">Satisfies econ. req.</div>
+          </div>
+          <div style="padding:12px 16px;border-right:1px solid var(--border);">
+            <div style="font-family:var(--mono);font-size:9.5px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-faint);margin-bottom:6px;">Typical default</div>
+            <div style="font-weight:600;color:var(--text);font-size:14px;">ECON 2000</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Microeconomics Principles</div>
+            <div style="margin-top:10px;display:flex;gap:8px;font-family:var(--mono);font-size:9px;">
+              <span style="color:var(--t1);">Acct ◉</span>
+              <span style="color:var(--t2);">Brand ●</span>
+              <span style="color:var(--t3);">Ops ●</span>
+              <span style="color:var(--text-faint);">Creat —</span>
+              <span style="color:var(--text-faint);">AI —</span>
+            </div>
+          </div>
+          <div style="padding:12px 16px;background:rgba(42,92,140,0.04);border-left:3px solid var(--t1);">
+            <div style="font-family:var(--mono);font-size:9.5px;letter-spacing:0.1em;text-transform:uppercase;color:var(--t1);margin-bottom:6px;">Stronger for Account ↑</div>
+            <div style="font-weight:600;color:var(--text);font-size:14px;">ECON 2110</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Macroeconomics Principles</div>
+            <div style="margin-top:10px;display:flex;gap:8px;font-family:var(--mono);font-size:9px;">
+              <span style="color:var(--t1);">Acct ⬤</span>
+              <span style="color:var(--t2);">Brand ◉</span>
+              <span style="color:var(--t3);">Ops ◉</span>
+              <span style="color:var(--text-faint);">Creat —</span>
+              <span style="color:var(--text-faint);">AI —</span>
+            </div>
+          </div>
+        </div>
+        <div style="padding:10px 16px;font-size:12.5px;color:var(--text-muted);font-style:italic;">
+          Account Management tracks require business-context fluency at Do level. ECON 2110 builds the macro-environment framing that account managers need for client strategy work.
+        </div>
+      </div>
+
+      <!-- PCID slot -->
+      <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:4px;overflow:hidden;">
+        <div style="display:grid;grid-template-columns:160px 1fr 1fr;border-bottom:1px solid var(--border);">
+          <div style="padding:12px 14px;background:var(--bg-alt);border-right:1px solid var(--border);display:flex;flex-direction:column;justify-content:center;">
+            <div style="font-family:var(--mono);font-size:9.5px;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);margin-bottom:4px;">Bus. Comm. slot</div>
+            <div style="font-family:var(--display);font-size:16px;font-weight:600;">3 credits</div>
+            <div style="font-family:var(--mono);font-size:9.5px;color:var(--text-faint);margin-top:4px;">Professional comm. req.</div>
+          </div>
+          <div style="padding:12px 16px;border-right:1px solid var(--border);">
+            <div style="font-family:var(--mono);font-size:9.5px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-faint);margin-bottom:6px;">Typical default</div>
+            <div style="font-weight:600;color:var(--text);font-size:14px;">PCID 3040</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Business Communication</div>
+            <div style="margin-top:10px;display:flex;gap:8px;font-family:var(--mono);font-size:9px;">
+              <span style="color:var(--t1);">Acct ◉</span>
+              <span style="color:var(--t2);">Brand ●</span>
+              <span style="color:var(--text-faint);">Ops —</span>
+              <span style="color:var(--text-faint);">Creat —</span>
+              <span style="color:var(--text-faint);">AI —</span>
+            </div>
+          </div>
+          <div style="padding:12px 16px;background:rgba(107,58,130,0.04);border-left:3px solid var(--t2);">
+            <div style="font-family:var(--mono);font-size:9.5px;letter-spacing:0.1em;text-transform:uppercase;color:var(--t2);margin-bottom:6px;">Stronger for Brand ↑</div>
+            <div style="font-weight:600;color:var(--text);font-size:14px;">PCID 3140</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">Professional Presentations</div>
+            <div style="margin-top:10px;display:flex;gap:8px;font-family:var(--mono);font-size:9px;">
+              <span style="color:var(--t1);">Acct ◉</span>
+              <span style="color:var(--t2);">Brand ◉</span>
+              <span style="color:var(--text-faint);">Ops —</span>
+              <span style="color:var(--t4);">Creat ●</span>
+              <span style="color:var(--text-faint);">AI —</span>
+            </div>
+          </div>
+        </div>
+        <div style="padding:10px 16px;font-size:12.5px;color:var(--text-muted);font-style:italic;">
+          Brand Strategy employers flag client presentation capability as a gap. PCID 3140 builds it at Understand level; PCID 3040 stays at written-communication fundamentals.
+        </div>
+      </div>
+
+    </div>
+
+    <div style="margin-top:14px;font-family:var(--mono);font-size:9px;color:var(--text-faint);letter-spacing:0.1em;text-align:center;">
+      ● KNOW · ◉ UNDERSTAND · ⬤ DO · — NOT ADDRESSED &nbsp;|&nbsp; COVERAGE RATINGS ARE AI-GENERATED AND FACULTY-REVIEWED
+    </div>
+  </figure>
+
+  <div class="callout caution" style="margin-top:16px;">
+    <div class="callout-title">The key insight</div>
+    <p>
+      None of these constrained-choice decisions require a Curriculum Committee proposal
+      to change. The department can recommend STAT 3090 instead of STAT 2220 through
+      advising and degree-plan guidance. These aren't abstract curriculum questions —
+      they're specific, actionable decisions the coverage analysis can rank and support
+      with employer evidence from the Advisory Survey.
+    </p>
+  </div>
 </section>
 
 <section id="enables">
