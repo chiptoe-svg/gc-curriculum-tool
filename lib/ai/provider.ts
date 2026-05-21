@@ -21,7 +21,7 @@ export interface TranscribeDocumentResult {
 }
 
 export interface AIProvider {
-  readonly name: 'openai' | 'anthropic' | 'fake';
+  readonly name: 'openai' | 'anthropic' | 'fake' | 'local';
   readonly model: string;
 
   /**
@@ -50,6 +50,7 @@ export interface AIProvider {
 
 import { OpenAIProvider } from './openai';
 import { AnthropicProvider } from './anthropic';
+import { LocalProvider } from './local';
 
 export function getProvider(): AIProvider {
   // Trim every env var defensively — Vercel sometimes preserves trailing
@@ -67,6 +68,12 @@ export function getProvider(): AIProvider {
       process.env.ANTHROPIC_MODEL?.trim() || 'claude-sonnet-4-6',
       key,
     );
+  }
+  if (which === 'local') {
+    const model = process.env.LOCAL_MODEL?.trim();
+    if (!model) throw new Error('LOCAL_MODEL not set (e.g. qwen3-35b-instruct)');
+    const baseURL = process.env.LOCAL_BASE_URL?.trim() || 'http://localhost:8000/v1';
+    return new LocalProvider(model, baseURL);
   }
   throw new Error(`Unknown AI provider: ${which}`);
 }
