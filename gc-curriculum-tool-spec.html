@@ -1616,6 +1616,8 @@
     <div class="nav-group-label">System Design</div>
     <a class="nav-link" href="#datamodel">Data Model</a>
     <a class="nav-link" href="#views">Views & Pages</a>
+    <a class="nav-link nav-sub" href="#view-constraint">Constraint Board</a>
+    <a class="nav-link nav-sub" href="#view-advisor">Student Career Advisor</a>
     <a class="nav-link" href="#ai">AI Integration</a>
     <a class="nav-link" href="#stack">Tech Stack</a>
 
@@ -1630,6 +1632,7 @@
     <a class="nav-link" href="#visualization">Live Visualization</a>
 
     <div class="nav-group-label">Build Plan</div>
+    <a class="nav-link nav-sub" href="#build0">Build 0 — Catalog Import</a>
     <a class="nav-link" href="#buildseq">Build Sequence</a>
     <a class="nav-link" href="#principles">Design Principles</a>
   </div>
@@ -1649,7 +1652,7 @@
     <div class="doc-meta">
       <div class="doc-meta-item"><strong>Department</strong>Graphic Communications</div>
       <div class="doc-meta-item"><strong>College</strong>Powers College of Business</div>
-      <div class="doc-meta-item"><strong>Status</strong>Handoff to Claude Code</div>
+      <div class="doc-meta-item"><strong>Status</strong>Handoff to Claude Code — updated May 2026</div>
       <div class="doc-meta-item"><strong>Date</strong>May 2026</div>
     </div>
   </div>
@@ -1662,6 +1665,7 @@
     <p>A web-based curriculum design tool that serves as the living record of the GC department's curriculum — what it currently is, what it is becoming, and how well it builds toward five defined career targets. It is simultaneously a working design environment for faculty, an analytical engine that evaluates curriculum coverage, and a presentation-ready artifact for leadership.</p>
     <p>Faculty own course pages. An industry and faculty panel co-owns career target pages. The coverage analysis runs continuously — it evaluates the curriculum against the targets whenever either changes. The map is always current. The resource document writes itself from proposal data. Leadership sees the tool, not a report about the tool.</p>
     <p>The tool operates under a version-control-inspired model, using faculty-friendly language: every course has an <strong>Official Record</strong>, proposed changes live as <strong>Proposals</strong> alongside the original without replacing it, and curriculum-level changes (retiring or adding a course) happen through <strong>Curriculum Proposals</strong> on the map view.</p>
+    <p>A fourth dimension governs all design decisions: the <strong>program constraint model</strong>. The BS in GC has fixed required courses, constrained-choice slots (where one of several approved courses must be chosen to satisfy a requirement), and elective pools (a credit block from an approved list). The tool imports and models these constraints from the official catalog. Faculty working on coverage analysis or proposals are always working within the actual rule structure of the degree — not a hypothetical open curriculum. This constraint layer also powers the tool's student-facing capability: a career path advisor that tells a student, for any declared target, which constrained choices to make and which electives move the needle.</p>
   </div>
 
   <!-- TERMINOLOGY -->
@@ -1686,6 +1690,9 @@
         <tr><td><span class="term-name">Change Summary</span></td><td>Plain-language description of what differs between a Proposal and the current Official Record — AI generated</td><td><span class="term-replaces">Diff</span></td></tr>
         <tr><td><span class="term-name">Impact View</span></td><td>How overall coverage scores change across the career targets if a Proposal is accepted</td><td><span class="term-replaces">Branch comparison / delta</span></td></tr>
         <tr><td><span class="term-name">Coverage Score</span></td><td>How well a course builds toward a career target sub-competency, rated at Know / Understand / Do level</td><td><span class="term-replaces">Analysis output</span></td></tr>
+        <tr><td><span class="term-name">Program Requirement</span></td><td>A slot in the degree plan: a fixed required course, a constrained-choice set (one of several options), or an elective pool (N credits from an approved list). Imported from the official catalog.</td><td><span class="term-replaces">Degree requirement</span></td></tr>
+        <tr><td><span class="term-name">Slot Option</span></td><td>A course that satisfies a constrained Program Requirement, with coverage ratings showing how it serves each career target relative to the other options for that slot</td><td><span class="term-replaces">Elective choice</span></td></tr>
+        <tr><td><span class="term-name">Constraint Board</span></td><td>The view that displays the full degree plan as a slot-by-slot board — fixed courses with their coverage, constrained slots with rated options, and the aggregate coverage gap per target</td><td><span class="term-replaces">Degree audit / map</span></td></tr>
       </tbody>
     </table>
   </div>
@@ -1694,7 +1701,7 @@
   <div class="section" id="roles">
     <div class="section-label">Access</div>
     <div class="section-title">User Roles</div>
-    <div class="section-desc">Four roles with distinct permissions and editing access.</div>
+    <div class="section-desc">Five roles with distinct permissions and editing access.</div>
     <div class="roles-grid">
       <div class="role-card">
         <div class="role-name">Admin</div>
@@ -1715,6 +1722,11 @@
         <div class="role-name">Viewer</div>
         <div class="role-who">Leadership, guests</div>
         <div class="role-can">Read-only access to all pages and the curriculum map in Presentation View. No editing capability of any kind.</div>
+      </div>
+      <div class="role-card">
+        <div class="role-name">Student / Prospective Student</div>
+        <div class="role-who">Current students, prospective students, public</div>
+        <div class="role-can">Read-only access to the Career Path Advisor view and program overview. No account required for the public-facing version. No editing rights anywhere in the system. Initially internal-only; designed for public access in Phase 3.</div>
       </div>
     </div>
   </div>
@@ -2376,6 +2388,43 @@
         </div>
       </div>
 
+      <div class="data-obj" onclick="toggleObj(this)">
+        <div class="data-obj-header">
+          <div class="data-obj-name">ProgramRequirement</div>
+          <div class="data-obj-count">A slot in the degree plan — imported from the official catalog</div>
+          <div class="data-obj-chevron">▼</div>
+        </div>
+        <div class="data-obj-body">
+          <div class="field-list">
+            <div class="field"><div class="field-name">type</div><div class="field-desc">fixed / constrained_choice / elective_pool</div></div>
+            <div class="field"><div class="field-name">slot_name</div><div class="field-desc">e.g. "STAT Requirement", "Lab Science (4cr)", "Specialty Area"</div></div>
+            <div class="field"><div class="field-name">credit_hours</div><div class="field-desc">Credit hours this slot requires</div></div>
+            <div class="field"><div class="field-name">semester</div><div class="field-desc">Canonical semester position: FR-1, FR-2, SO-1, SO-2, JR-1, JR-2, SR-1, SR-2</div></div>
+            <div class="field"><div class="field-name">required_course_id <span class="field-arrow">→</span></div><div class="field-desc">Course — for type=fixed only; null for choice/pool slots</div></div>
+            <div class="field"><div class="field-name">options[] <span class="field-arrow">→</span></div><div class="field-desc">SlotOption — for constrained_choice and elective_pool types</div></div>
+            <div class="field"><div class="field-name">min_credits</div><div class="field-desc">For elective_pool: minimum credits required from the pool</div></div>
+            <div class="field"><div class="field-name">catalog_source_url</div><div class="field-desc">The catalog URL this was imported from</div></div>
+            <div class="field"><div class="field-name">last_imported_at</div><div class="field-desc">Timestamp of most recent catalog sync</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="data-obj" onclick="toggleObj(this)">
+        <div class="data-obj-header">
+          <div class="data-obj-name">SlotOption</div>
+          <div class="data-obj-count">A course that satisfies a constrained Program Requirement, rated by coverage impact</div>
+          <div class="data-obj-chevron">▼</div>
+        </div>
+        <div class="data-obj-body">
+          <div class="field-list">
+            <div class="field"><div class="field-name">requirement_id <span class="field-arrow">→</span></div><div class="field-desc">ProgramRequirement</div></div>
+            <div class="field"><div class="field-name">course_id <span class="field-arrow">→</span></div><div class="field-desc">Course</div></div>
+            <div class="field"><div class="field-name">is_current_choice</div><div class="field-desc">Boolean — this is the course currently in the active degree plan</div></div>
+            <div class="field"><div class="field-name">coverage_ratings[] <span class="field-arrow">→</span></div><div class="field-desc">CoverageScore — one per career target, AI-generated. Used to compare options for the same slot.</div></div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -2383,7 +2432,7 @@
   <div class="section" id="views">
     <div class="section-label">Interface</div>
     <div class="section-title">Views &amp; Pages</div>
-    <div class="section-desc">Six named views — each with a distinct purpose and access model.</div>
+    <div class="section-desc">Nine named views — each with a distinct purpose and access model.</div>
     <div class="views-list">
 
       <div class="view-item" onclick="toggleView(this)">
@@ -2601,6 +2650,65 @@
               <li>Time to placement by track and cohort year — trend over time</li>
               <li>Track mismatch signal — students who declared one track and landed in another, aggregated as advising feedback</li>
               <li>No alumni surveys required — all data comes from placement records already collected at graduation</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="view-item" onclick="toggleView(this)">
+        <div class="view-header">
+          <div class="view-num">9</div>
+          <div class="view-name">Curriculum Constraint Board</div>
+          <div class="view-url">/curriculum</div>
+          <div class="view-chevron">▼</div>
+        </div>
+        <div class="view-body">
+          <div class="view-meta">
+            <div class="view-meta-item"><strong>Owner</strong>Admin</div>
+            <div class="view-meta-item"><strong>Editable by</strong>Admin (slot choice commits)</div>
+            <div class="view-meta-item"><strong>Visible to</strong>All internal users</div>
+            <div class="view-meta-item"><strong>Modes</strong>Current plan / Explore alternatives</div>
+          </div>
+          <div class="view-section">
+            <div class="view-section-title">Key Features</div>
+            <ul class="feature-list">
+              <li>Full degree plan displayed as a semester-by-semester board — every required slot visible</li>
+              <li>Fixed required courses show their coverage contribution as read-only cells (same color coding as the heat map)</li>
+              <li>Constrained-choice slots show the current selection with an expand drawer listing all options — each option rated by coverage impact per career target, with delta vs. current choice</li>
+              <li>Elective pool slots show the approved course list ranked by coverage rating for the selected target filter</li>
+              <li>Aggregate coverage gap panel (per career target) updates live as the user explores alternative slot choices</li>
+              <li>Admin can commit a slot choice to make it the active plan; Faculty can explore without committing</li>
+              <li>Catalog sync button re-imports the degree structure from the source URL</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="view-item" onclick="toggleView(this)">
+        <div class="view-header">
+          <div class="view-num">10</div>
+          <div class="view-name">Student Career Path Advisor</div>
+          <div class="view-url">/advise/:targetId</div>
+          <div class="view-chevron">▼</div>
+        </div>
+        <div class="view-body">
+          <div class="view-meta">
+            <div class="view-meta-item"><strong>Owner</strong>Admin</div>
+            <div class="view-meta-item"><strong>Editable by</strong>Read-only for all users</div>
+            <div class="view-meta-item"><strong>Visible to</strong>All users; public in Phase 3</div>
+            <div class="view-meta-item"><strong>Modes</strong>Per-target path view</div>
+          </div>
+          <div class="view-section">
+            <div class="view-section-title">Key Features</div>
+            <ul class="feature-list">
+              <li>Career target selector — pick a destination, see a full recommended path</li>
+              <li>Required courses section: each fixed course shown with its coverage contribution to this target</li>
+              <li>Constrained-choice slots: recommended option for this target highlighted; other options visible with coverage comparison</li>
+              <li>Elective pool recommendations: top-ranked courses from each pool for this target, with brief rationale</li>
+              <li>"Why this?" expander shows the AI coverage reasoning for each recommendation</li>
+              <li>"What employers say" panel pulls the partner synthesis for this target — the actual competencies industry partners described, grounding the recommendations in real hiring signal</li>
+              <li>Minor recommendation: which available minor best complements this career target based on coverage scores</li>
+              <li>Designed for eventual public access without auth — Phase 3 makes this embeddable on program pages</li>
             </ul>
           </div>
         </div>
@@ -3204,8 +3312,17 @@
   <div class="section" id="buildseq">
     <div class="section-label">Development Plan</div>
     <div class="section-title">Build Sequence</div>
-    <div class="section-desc">Seven sequential builds. Each is independently usable before the next begins. Do not start a build until the previous has been tested with real GC data.</div>
+    <div class="section-desc">Nine sequential builds (Build 0 through Build 8). Each is independently usable before the next begins. Do not start a build until the previous has been tested with real GC data.</div>
     <div class="build-timeline">
+
+      <div class="build-step">
+        <div class="build-left"><div class="build-circle">0</div><div class="build-line"></div></div>
+        <div class="build-content">
+          <div class="build-header"><div class="build-name">Catalog Import</div><div class="build-week">Pre-work</div></div>
+          <div class="build-desc">Parse the official Clemson catalog program page for the BS in Graphic Communications. Extract all course codes, titles, credit hours, and semester positions. Classify each slot as fixed (required specific course), constrained_choice (one of several approved options), or elective_pool (N credits from an approved list). Upsert into the courses table and a new program_requirements table. Non-GC required courses (ACCT, MKT, PSYC, ENGL, etc.) are included — they contribute to coverage analysis just as GC courses do.</div>
+          <div class="build-gate"><div class="gate-label">Gate</div><div class="gate-text">All courses in the BS in GC are visible in the system with correct type (fixed/constrained/pool) and semester placement. The STAT choice set, Econ choice, Business Comm choice, Lab Science slot, and Specialty Area pool are all modeled correctly.</div></div>
+        </div>
+      </div>
 
       <div class="build-step">
         <div class="build-left"><div class="build-circle">1</div><div class="build-line"></div></div>
@@ -3267,6 +3384,15 @@
           <div class="build-header"><div class="build-name">Resource Summary + Presentation View</div><div class="build-week">Week 6–7</div></div>
           <div class="build-desc">Resource Summary auto-generated from proposals, PDF export, Presentation View (clean, read-only), narrative text blocks (Admin-editable, AI drafts), snapshot selector, PDF export of presentation.</div>
           <div class="build-gate"><div class="gate-label">Gate</div><div class="gate-text">A complete presentation can be assembled and exported without leaving the tool — leadership can be walked through it as a live demonstration rather than a slide deck.</div></div>
+        </div>
+      </div>
+
+      <div class="build-step">
+        <div class="build-left"><div class="build-circle">8</div><div class="build-line"></div></div>
+        <div class="build-content">
+          <div class="build-header"><div class="build-name">Constraint Board + Student Advisor</div><div class="build-week">Week 7–8</div></div>
+          <div class="build-desc">The Curriculum Constraint Board (/curriculum): full degree plan as a semester board, fixed courses with coverage cells, constrained slots with rated option drawers, aggregate coverage gap per target updating live. AI scoring for SlotOption × career target (one coverage rating per option per target). The Student Career Path Advisor (/advise/:targetId): per-target recommended path through fixed, constrained, and elective decisions, with industry partner synthesis panel. Internal-only initially; URL-shareable and embeddable for Phase 3 public access.</div>
+          <div class="build-gate"><div class="gate-label">Gate</div><div class="gate-text">Chip can use the constraint board to evaluate whether the current STAT, Econ, and Specialty Area choices are optimal for each career target. A prospective student (or advisor) can open /advise/ai-workflow and see a specific, actionable recommended path through the curriculum — including which Specialty Area courses matter most and what industry partners said they look for.</div></div>
         </div>
       </div>
 

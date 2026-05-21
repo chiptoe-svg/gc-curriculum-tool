@@ -811,7 +811,7 @@
   <nav class="rail-nav">
     <div class="nav-group-label">Sections</div>
     <a class="nav-link" href="#what">What we're building</a>
-    <a class="nav-link" href="#questions">The two questions</a>
+    <a class="nav-link" href="#questions">The core questions</a>
     <a class="nav-link" href="#producing">What we're producing</a>
     <a class="nav-link" href="#three-act">The 3-Act program</a>
     <a class="nav-link" href="#end-state">The end state</a>
@@ -827,7 +827,7 @@
   </nav>
 
   <div class="rail-footer">
-    Draft · 2026-05-18<br>
+    Draft · 2026-05-20<br>
     docs/superpowers/vision/
   </div>
 </aside>
@@ -843,7 +843,7 @@
     holds, and where the curriculum has drifted.
   </div>
   <div class="doc-meta">
-    <span><strong>Date</strong> 2026-05-18</span>
+    <span><strong>Date</strong> 2026-05-20</span>
     <span><strong>Status</strong> Draft for review</span>
     <span><strong>Implementation</strong> <a class="inline-link" href="../specs/2026-05-17-gc-curriculum-tool-v1-design.html">v1 design</a></span>
   </div>
@@ -878,7 +878,7 @@
 </section>
 
 <section id="questions">
-  <h2><span class="num">§</span>The two questions</h2>
+  <h2><span class="num">§</span>The core questions</h2>
   <div class="questions">
     <div class="question-card">
       <div class="question-q">Q1 · Program → Careers</div>
@@ -894,6 +894,22 @@
         actually support what the course expects?
       </div>
     </div>
+    <div class="question-card">
+      <div class="question-q">Q3 · Constraints → Best Choice</div>
+      <div class="question-text">
+        Within the fixed rules of our degree plan, which constrained-choice
+        options most directly build toward each career destination — and where
+        are our open slots a wasted opportunity?
+      </div>
+    </div>
+    <div class="question-card">
+      <div class="question-q">Q4 · Student → Target</div>
+      <div class="question-text">
+        For a student declaring a career target, which path through required
+        courses, constrained choices, and elective pools gives them the strongest
+        preparation — and what do employers in that role actually look for?
+      </div>
+    </div>
   </div>
   <p>
     Both questions get answered against the same competency framework — career
@@ -901,7 +917,7 @@
     The two answers feed each other: program coverage rolls up from
     course-level judgments; course-level prerequisite gaps surface where
     the program isn't actually scaffolding what its own upper-division
-    courses expect.
+    courses expect. Questions Three and Four introduce the constraint dimension: not every building block is freely chosen. The degree plan's fixed requirements, constrained-choice slots, and elective pools define the real design space — and within that space, some choices prepare students for their declared targets far better than others.
   </p>
 </section>
 
@@ -1101,6 +1117,33 @@
         Industry partners see what the program actually delivers. Accreditors see
         defensible competency mappings. The program sees what industry says is
         missing, made persistent.
+      </div>
+    </div>
+    <div class="cap">
+      <div class="cap-title">A program constraint model</div>
+      <div class="cap-body">
+        Every slot in the BS in GC degree plan — fixed required courses,
+        constrained-choice sets, and elective pools — imported from the official
+        catalog. The constraint layer that keeps all curriculum design work
+        grounded in the actual rules of the degree.
+      </div>
+    </div>
+    <div class="cap">
+      <div class="cap-title">A constraint-aware slot optimizer</div>
+      <div class="cap-body">
+        For every open or constrained slot in the degree plan, an AI-rated
+        comparison of available options: which choice best serves each career
+        target, which maximizes coverage across multiple targets, and where the
+        current selection is leaving opportunity on the table.
+      </div>
+    </div>
+    <div class="cap">
+      <div class="cap-title">A student career path advisor</div>
+      <div class="cap-body">
+        For any declared career target, a recommended path through the full
+        curriculum — which constrained choices to make, which electives matter
+        most, which minor complements the target. Grounded in actual industry
+        partner signal: what employers in this space told us they look for.
       </div>
     </div>
   </div>
@@ -1615,6 +1658,14 @@
       <strong>Defense against drift.</strong> Curricula erode over decades. The tool
       surfaces erosion as it happens, instead of every seven-year program review.
     </li>
+    <li>
+      <strong>Student self-advising with honest tradeoffs.</strong> A student
+      who says "I want to work in AI Workflow" gets a specific recommended path
+      through constrained choices and electives — not a generic advising sheet,
+      but a recommendation backed by the same AI analysis faculty have reviewed.
+      When a new industry partner submits an AI Workflow position, the
+      recommendation sharpens.
+    </li>
   </ul>
 </section>
 
@@ -1720,19 +1771,14 @@
       <div class="phase-tag">Phase 2 · Scaffolding &amp; Advising</div>
       <div class="phase-name">Program-wide scaffolding and advising views</div>
       <div class="phase-body">
-        Scaffolding-quality view across courses (shown in the visualizations above).
-        Advising view: "to be ready for X, take this sequence and watch these gaps."
-        Rescore-on-edit so curriculum changes propagate. The first views useful for
-        accreditation and advisory-board conversations.
+        Scaffolding-quality view across courses. Advising view: "to be ready for X, take this sequence and watch these gaps." Rescore-on-edit so curriculum changes propagate. The constraint-aware slot optimizer: for every open slot in the degree plan, AI-rated options showing coverage impact per target. The first views useful for accreditation and advisory-board conversations.
       </div>
     </div>
     <div class="phase">
       <div class="phase-tag">Phase 3 · External-facing</div>
       <div class="phase-name">Public, employer, and alumni views</div>
       <div class="phase-body">
-        Public/employer-facing views of what the program delivers.
-        Alumni and industry feedback integration. The analytics needed to drive
-        program-level decisions (faculty hiring, curriculum redesign, new tracks).
+        Public/employer-facing views of what the program delivers. A public student career path advisor — connecting industry partner signal to actionable advising recommendations, usable as a recruiting tool and an external signal of program rigor. Alumni and industry feedback integration. The analytics needed to drive program-level decisions (faculty hiring, curriculum redesign, new tracks).
       </div>
     </div>
   </div>
@@ -1769,7 +1815,7 @@
 </section>
 
 <div class="doc-foot">
-  GC Curriculum Tool · Vision · Draft 2026-05-18 ·
+  GC Curriculum Tool · Vision · Draft 2026-05-20 ·
   See <a class="inline-link" href="../specs/2026-05-17-gc-curriculum-tool-v1-design.html">v1 implementation design</a>
   for technical detail.
 </div>
