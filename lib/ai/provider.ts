@@ -36,6 +36,8 @@ export interface AIProvider {
     schemaName: string;            // for OpenAI structured outputs naming
     jsonSchema: object;
     validate: (raw: unknown) => T; // typically the Zod schema's parse
+    /** Optional raw file bytes to send as native document blocks (Anthropic only; ignored by OpenAI). */
+    documents?: Array<{ bytes: Buffer; mimeType: string }>;
   }): Promise<{ data: T } & CompletionTelemetry>;
 
   /**
@@ -47,6 +49,7 @@ export interface AIProvider {
 }
 
 import { OpenAIProvider } from './openai';
+import { AnthropicProvider } from './anthropic';
 
 export function getProvider(): AIProvider {
   // Trim every env var defensively — Vercel sometimes preserves trailing
@@ -56,6 +59,14 @@ export function getProvider(): AIProvider {
     const key = process.env.OPENAI_API_KEY?.trim();
     if (!key) throw new Error('OPENAI_API_KEY not set');
     return new OpenAIProvider(process.env.OPENAI_MODEL?.trim() || 'gpt-5.4', key);
+  }
+  if (which === 'anthropic') {
+    const key = process.env.ANTHROPIC_API_KEY?.trim();
+    if (!key) throw new Error('ANTHROPIC_API_KEY not set');
+    return new AnthropicProvider(
+      process.env.ANTHROPIC_MODEL?.trim() || 'claude-sonnet-4-6',
+      key,
+    );
   }
   throw new Error(`Unknown AI provider: ${which}`);
 }

@@ -35,6 +35,7 @@ export class OpenAIProvider implements AIProvider {
     schemaName: string;
     jsonSchema: object;
     validate: (raw: unknown) => T;
+    documents?: Array<{ bytes: Buffer; mimeType: string }>;
   }): Promise<{ data: T } & CompletionTelemetry> {
     const started = Date.now();
     const response = await this.client.chat.completions.create({

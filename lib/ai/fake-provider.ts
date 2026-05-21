@@ -21,6 +21,7 @@ export class FakeProvider implements AIProvider {
     schemaName: string;
     jsonSchema: object;
     validate: (raw: unknown) => T;
+    documents?: Array<{ bytes: Buffer; mimeType: string }>;
   }): Promise<{ data: T } & CompletionTelemetry> {
     const idx = this.callCount++;
     if (idx >= this.responses.length) {
