@@ -1,30 +1,28 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { isValidSlug } from '@/lib/slug';
-import { listCoursesWithStatus } from '@/lib/db/course-profile-queries';
+import { listCoursesWithStatus } from '@/lib/db/courses-queries';
 import { Badge } from '@/components/ui/badge';
 
 export const dynamic = 'force-dynamic';
 
-function StatusBadge({ profileExists, manuallyEdited, materialCount }: {
-  profileExists: boolean;
-  manuallyEdited: boolean;
+function StatusBadge({ builderStatus, materialCount }: {
+  builderStatus: string;
   materialCount: number;
 }) {
-  if (profileExists && manuallyEdited) {
-    return <Badge variant="default">Profile (edited)</Badge>;
+  if (builderStatus === 'approved') {
+    return <Badge variant="default" className="bg-green-600">Approved</Badge>;
   }
-  if (profileExists) {
-    return <Badge variant="secondary">Profile ready</Badge>;
+  if (builderStatus === 'kuds_generated') {
+    return <Badge variant="secondary">KUDs generated</Badge>;
   }
-  if (materialCount > 0) {
-    return (
-      <Badge variant="outline">
-        {materialCount} file{materialCount === 1 ? '' : 's'}, not analyzed
-      </Badge>
-    );
+  if (builderStatus === 'profile_complete') {
+    return <Badge variant="secondary">Profile complete</Badge>;
   }
-  return <Badge variant="outline" className="text-muted-foreground">No materials</Badge>;
+  if (builderStatus === 'materials_uploaded' || materialCount > 0) {
+    return <Badge variant="outline">{materialCount} file{materialCount !== 1 ? 's' : ''}</Badge>;
+  }
+  return <Badge variant="outline" className="text-muted-foreground">Draft</Badge>;
 }
 
 export default async function CoursesIndexPage({
@@ -67,11 +65,7 @@ export default async function CoursesIndexPage({
               <p className="text-sm text-muted-foreground truncate">{c.title}</p>
             </div>
             <div className="flex items-center gap-3 shrink-0">
-              <StatusBadge
-                profileExists={c.profileExists}
-                manuallyEdited={c.manuallyEdited}
-                materialCount={c.materialCount}
-              />
+              <StatusBadge builderStatus={c.builderStatus} materialCount={c.materialCount} />
               <Link
                 href={`/preview/${slug}/courses/${encodeURIComponent(c.code)}`}
                 className="inline-flex items-center rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium shadow-sm hover:bg-accent hover:text-accent-foreground transition-colors"

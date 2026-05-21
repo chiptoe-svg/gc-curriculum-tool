@@ -27,6 +27,7 @@ export interface BuilderCourse {
 export interface BuilderMaterial {
   id: string;
   fileName: string;
+  blobUrl: string;
   extractionStatus: 'pending' | 'ok' | 'low_text' | 'failed';
   extractionMethod?: string;
   pageCount?: number;

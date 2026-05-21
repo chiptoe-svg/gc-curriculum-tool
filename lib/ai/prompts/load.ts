@@ -17,7 +17,8 @@ type PromptName =
   | 'extract-course-prereqs'
   | 'score-prior-coverage'
   | 'analyze-course-gaps'
-  | 'evaluate-course-scaffolding';
+  | 'evaluate-course-scaffolding'
+  | 'extract-course-kud';
 
 interface ParsedPrompt {
   frontmatter: Record<string, unknown>;

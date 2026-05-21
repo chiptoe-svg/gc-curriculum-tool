@@ -4,10 +4,8 @@ import { isValidSlug } from '@/lib/slug';
 import { getCourseByCode } from '@/lib/db/courses-queries';
 import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
 import { getLatestRunForCourse, getCourseProfile, listRunsForCourse } from '@/lib/db/course-profile-queries';
-import { MaterialsZone } from './MaterialsZone';
-import { CourseAnalyzeZone } from '@/components/CourseAnalyzeZone';
-import { CourseProfileEditor } from '@/components/CourseProfileEditor';
-import { ProfileRunHistory } from '@/components/ProfileRunHistory';
+import { getCourseKud, listKudRunsForCourse } from '@/lib/db/course-kud-queries';
+import { CourseBuilderClient } from './CourseBuilderClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,12 +20,15 @@ export default async function CourseDetailPage({ params }: Props) {
   const course = await getCourseByCode(code);
   if (!course) notFound();
 
-  const [rawMaterials, latestRun, currentProfile, allRuns] = await Promise.all([
+  const [rawMaterials, latestProfileRun, currentProfile, allProfileRuns, currentKud, kudRuns] = await Promise.all([
     listMaterialsByCourse(code),
     getLatestRunForCourse(code),
     getCourseProfile(code),
     listRunsForCourse(code),
+    getCourseKud(code),
+    listKudRunsForCourse(code),
   ]);
+
   const materials = rawMaterials.map((m) => ({
     id: m.id,
     fileName: m.fileName,
@@ -38,13 +39,30 @@ export default async function CourseDetailPage({ params }: Props) {
   }));
 
   const okCount = rawMaterials.filter((m) => m.extractionStatus === 'ok').length;
-  const manuallyEdited = currentProfile?.manuallyEdited ?? false;
-  const lastRunMeta = latestRun
+
+  const lastProfileRunMeta = latestProfileRun
+    ? { id: latestProfileRun.id, createdAt: latestProfileRun.createdAt.toISOString(), materialCount: latestProfileRun.materialCount, costUsdCents: latestProfileRun.costUsdCents }
+    : null;
+
+  const aiProfile = currentProfile
     ? {
-        id: latestRun.id,
-        createdAt: latestRun.createdAt.toISOString(),
-        materialCount: latestRun.materialCount,
-        costUsdCents: latestRun.costUsdCents,
+        summary: currentProfile.summary,
+        learningObjectives: currentProfile.learningObjectives as string[],
+        skills: currentProfile.skills as string[],
+        competencies: currentProfile.competencies as Array<{ name: string; description: string; level: string; evidence: Array<{ fileName: string; quote: string }> }>,
+        catalogDivergence: currentProfile.catalogDivergence as { reinforced: string[]; additions: string[]; gaps: string[] } | null,
+      }
+    : null;
+
+  const kudRecord = currentKud
+    ? {
+        thresholdConcept: currentKud.thresholdConcept,
+        know: currentKud.know as string[],
+        understand: currentKud.understand as string[],
+        do: currentKud.do as string[],
+        manuallyEdited: currentKud.manuallyEdited,
+        sourceRunId: currentKud.sourceRunId,
+        approvedAt: currentKud.approvedAt?.toISOString() ?? null,
       }
     : null;
 
@@ -62,72 +80,29 @@ export default async function CourseDetailPage({ params }: Props) {
         <p className="text-sm text-muted-foreground">Level {course.level} · {course.track}</p>
       </header>
 
-      {/* Zone 1 — Materials (Plan 1). Zones 2 + 3 added by Plans 2 and 3. */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Assignment Materials</h2>
-          <span className="text-xs text-muted-foreground">{materials.length} file{materials.length !== 1 ? 's' : ''}</span>
-        </div>
-
-        <MaterialsZone
-          courseCode={code}
-          slug={slug}
-          initialMaterials={materials}
-        />
-      </section>
-
-      <CourseAnalyzeZone
+      <CourseBuilderClient
         slug={slug}
-        courseCode={code}
-        okCount={okCount}
-        lastRun={lastRunMeta}
-        manuallyEdited={manuallyEdited}
-        onAnalyzed={() => {}}
-      />
-
-      {/* Zone 3 — Profile (editable, Plan 3) */}
-      <section className="space-y-4">
-        <h2 className="text-xl font-semibold">Profile</h2>
-        {currentProfile ? (
-          <CourseProfileEditor
-            courseCode={code}
-            slug={slug}
-            profile={{
-              summary: currentProfile.summary,
-              learningObjectives: currentProfile.learningObjectives as string[],
-              skills: currentProfile.skills as string[],
-              competencies: currentProfile.competencies as Array<{
-                name: string;
-                description: string;
-                level: string;
-                evidence: Array<{ fileName: string; quote: string }>;
-              }>,
-              catalogDivergence: currentProfile.catalogDivergence as {
-                reinforced: string[];
-                additions: string[];
-                gaps: string[];
-              } | null,
-            }}
-          />
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            No profile yet. Upload materials and click &ldquo;Analyze materials&rdquo; to generate one.
-          </p>
-        )}
-      </section>
-
-      <ProfileRunHistory
-        runs={allRuns.map((r) => ({
-          id: r.id,
-          courseCode: r.courseCode,
-          materialCount: r.materialCount,
-          model: r.model,
-          costUsdCents: r.costUsdCents,
-          createdAt: r.createdAt.toISOString(),
-        }))}
-        slug={slug}
-        courseCode={code}
-        currentRunId={currentProfile?.sourceRunId ?? null}
+        course={{
+          code: course.code,
+          title: course.title,
+          level: course.level,
+          track: course.track,
+          description: course.description,
+          prerequisites: course.prerequisites,
+          learningObjectives: course.learningObjectives as string[],
+          majorProjects: course.majorProjects as string[],
+          skillsRequired: course.skillsRequired as string[],
+          builderStatus: course.builderStatus,
+        }}
+        materials={materials}
+        currentKud={kudRecord}
+        kudRuns={kudRuns.map((r) => ({ id: r.id, createdAt: r.createdAt.toISOString(), model: r.model, costUsdCents: r.costUsdCents }))}
+        aiProfile={aiProfile}
+        profileRuns={allProfileRuns.map((r) => ({ id: r.id, courseCode: r.courseCode, materialCount: r.materialCount, model: r.model, costUsdCents: r.costUsdCents, createdAt: r.createdAt.toISOString() }))}
+        okMaterialCount={okCount}
+        lastProfileRun={lastProfileRunMeta}
+        aiProfileManuallyEdited={currentProfile?.manuallyEdited ?? false}
+        currentProfileRunId={currentProfile?.sourceRunId ?? null}
       />
     </main>
   );
