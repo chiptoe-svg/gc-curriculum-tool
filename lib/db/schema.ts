@@ -228,3 +228,15 @@ export const courseProfileRuns = pgTable('course_profile_runs', {
   costUsdCents: integer('cost_usd_cents').notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
+
+export const coverageScores = pgTable('coverage_scores', {
+  courseCode: text('course_code').notNull().references(() => courses.code, { onDelete: 'cascade' }),
+  subCompetencyId: text('sub_competency_id').notNull().references(() => subCompetencies.id, { onDelete: 'cascade' }),
+  kudLevel: text('kud_level').notNull(),           // 'know' | 'understand' | 'do' | 'none'
+  confidence: integer('confidence').notNull(),     // 0–100
+  reasoning: text('reasoning').notNull().default(''),
+  sourceProfileRunId: uuid('source_profile_run_id').references(() => courseProfileRuns.id, { onDelete: 'set null' }),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.courseCode, t.subCompetencyId] }),
+}));
