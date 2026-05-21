@@ -821,7 +821,7 @@
     <a class="nav-link" href="#viz-flow">Curriculum flow</a>
     <a class="nav-link" href="#viz-scaffold">Scaffolding view</a>
     <a class="nav-link" href="#viz-advising">Advising view</a>
-    <a class="nav-link" href="#viz-gap">Per-course gap report</a>
+    <a class="nav-link" href="#viz-gap">Prereq Analyzer view</a>
     <a class="nav-link" href="#viz-degree-flow">Full degree map</a>
     <a class="nav-link" href="#viz-constraint">Constraint board</a>
     <a class="nav-link" href="#enables">What it enables</a>
@@ -1738,53 +1738,146 @@
 </section>
 
 <section id="viz-gap">
-  <h2><span class="num">§</span>Per-course gap report <span class="viz-mock-tag">Illustrative · Data Fabricated</span></h2>
+  <style>
+    /* PREREQ ANALYZER — 5-column entry-requirement heat map */
+    .heat-row-5col { display: grid; grid-template-columns: 150px repeat(5, 1fr); }
+    .heat-row-5col:not(:last-child) { border-bottom: 1px solid var(--border); }
+    .heat-col-stack { padding: 8px 6px 9px; text-align: center; line-height: 1.3; letter-spacing: 0.04em; color: var(--text-muted); border-right: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; gap: 6px; }
+    .heat-col-stack:last-child { border-right: 0; }
+    .heat-col-name { font-size: 9px; }
+    .heat-col-name em { display: block; font-style: normal; color: var(--text-faint); font-size: 8px; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 2px; }
+    .heat-col-chip { font-family: var(--mono); font-size: 7.5px; letter-spacing: 0.08em; padding: 3px 6px; border-radius: 3px; text-transform: uppercase; font-weight: 500; }
+    .heat-rowlabel.anchor { background: #f8fafc; border-left: 3px solid #334155; }
+    .heat-rowlabel .anchor-tag { display: block; font-family: var(--mono); font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase; color: #334155; font-weight: 500; margin-top: 3px; }
+    .heat-row-5col.anchor-row { background: #f8fafc; }
+  </style>
+
+  <h2><span class="num">§</span>Prereq Analyzer — per-course entry-requirement check <span class="viz-mock-tag">Illustrative · Data Fabricated</span></h2>
   <p>
-    The view a course owner sees on their own course's page. For GC 4060:
-    of the competencies this course expects students to walk in with, how are
-    they actually being delivered by what students have taken? Click any reasoning
-    to see the AI's read; flag anything that doesn't match the course's lived reality.
+    The view a course owner opens on their own course. The Prereq Analyzer takes one
+    focal course — here GC 4060 — and asks: of the competencies this course expects
+    students to <em>arrive</em> with, does the prior coursework actually build them, and
+    to what level? Columns are entry requirements; rows are the courses students take
+    before GC 4060. The focal course sits on top as the anchor row, so you can read its
+    expectations against the scaffolding beneath it.
   </p>
 
   <figure>
-    <figcaption>Course owner view · GC 4060 — Package &amp; Specialty Printing</figcaption>
-    <div class="viz-title">Are students arriving ready for what this course expects?</div>
+    <figcaption>Prereq Analyzer · Focal course: GC 4060 — Package &amp; Specialty Printing · 4 prior courses analyzed</figcaption>
+    <div class="viz-title">Are students arriving ready for what GC 4060 expects?</div>
     <div class="viz-note">
-      4 of 6 prerequisite competencies are met by typical prior coursework. One is
-      underdeveloped; one is missing entirely. Each judgment links to the AI's
-      reasoning and the courses that delivered (or failed to deliver) the competency.
+      Each column header carries a scaffolding-quality verdict for that entry requirement.
+      Workflow design scaffolds cleanly; cost estimation is brittle (one Know-level touch
+      before an Understand expectation); color management theory is never built at all.
+      The gap panel below turns each column into a Met / Underdeveloped / Missing call.
     </div>
 
-    <div class="gap-report" style="margin-top: 14px;">
+    <div style="margin-top: 14px; padding: 10px 14px; background: var(--bg-alt); border: 1px solid var(--border); border-radius: 4px; font-size: 12.5px; color: var(--text-muted);">
+      Try the real thing:
+      <a href="https://gc-curriculum-tool.vercel.app/preview/4QcseN0pvlpd35gb">open the live Prereq Analyzer prototype</a>
+      — the actual working tool, running on GC course data.
+    </div>
+
+    <div class="heatmap" style="margin-top: 14px;">
+      <div class="heat-row-5col">
+        <div class="heat-h corner">Course</div>
+        <div class="heat-col-stack">
+          <div class="heat-col-name">Workflow design<em>Expects: Understand</em></div>
+          <div class="heat-col-chip judgment-strong">Strong</div>
+        </div>
+        <div class="heat-col-stack">
+          <div class="heat-col-name">Quality control<em>Expects: Understand</em></div>
+          <div class="heat-col-chip judgment-adequate">Adequate</div>
+        </div>
+        <div class="heat-col-stack">
+          <div class="heat-col-name">Cost estimation<em>Expects: Understand</em></div>
+          <div class="heat-col-chip judgment-brittle">Brittle</div>
+        </div>
+        <div class="heat-col-stack">
+          <div class="heat-col-name">Color mgmt theory<em>Expects: Understand</em></div>
+          <div class="heat-col-chip judgment-absent">Absent</div>
+        </div>
+        <div class="heat-col-stack">
+          <div class="heat-col-name">Vendor management<em>Expects: Know</em></div>
+          <div class="heat-col-chip judgment-adequate">Adequate</div>
+        </div>
+      </div>
+
+      <div class="heat-row-5col anchor-row">
+        <div class="heat-rowlabel anchor">GC 4060 <small>Level 4 · Core</small><span class="anchor-tag">Focal course</span></div>
+        <div class="heat-c cell-do">Do</div>
+        <div class="heat-c cell-do">Do</div>
+        <div class="heat-c cell-understand">Understand</div>
+        <div class="heat-c cell-understand">Understand</div>
+        <div class="heat-c cell-understand">Understand</div>
+      </div>
+      <div class="heat-row-5col">
+        <div class="heat-rowlabel">GC 3460 <small>Level 3 · Core · Prior</small></div>
+        <div class="heat-c cell-do">Do</div>
+        <div class="heat-c cell-understand">Understand</div>
+        <div class="heat-c cell-know">Know</div>
+        <div class="heat-c cell-know">Know</div>
+        <div class="heat-c cell-know">Know</div>
+      </div>
+      <div class="heat-row-5col">
+        <div class="heat-rowlabel">GC 3400 <small>Level 3 · Core · Prior</small></div>
+        <div class="heat-c cell-understand">Understand</div>
+        <div class="heat-c cell-understand">Understand</div>
+        <div class="heat-c cell-absent">—</div>
+        <div class="heat-c cell-absent">—</div>
+        <div class="heat-c cell-absent">—</div>
+      </div>
+      <div class="heat-row-5col">
+        <div class="heat-rowlabel">GC 2070 <small>Level 2 · Core · Prior</small></div>
+        <div class="heat-c cell-understand">Understand</div>
+        <div class="heat-c cell-know">Know</div>
+        <div class="heat-c cell-absent">—</div>
+        <div class="heat-c cell-absent">—</div>
+        <div class="heat-c cell-absent">—</div>
+      </div>
+      <div class="heat-row-5col">
+        <div class="heat-rowlabel">GC 1040 <small>Level 1 · Core · Prior</small></div>
+        <div class="heat-c cell-know">Know</div>
+        <div class="heat-c cell-know">Know</div>
+        <div class="heat-c cell-absent">—</div>
+        <div class="heat-c cell-absent">—</div>
+        <div class="heat-c cell-absent">—</div>
+      </div>
+    </div>
+
+    <div class="heat-legend">
+      <span><span class="legend-sq" style="background: var(--do);"></span>Do</span>
+      <span><span class="legend-sq" style="background: var(--understand);"></span>Understand</span>
+      <span><span class="legend-sq" style="background: var(--know);"></span>Know</span>
+      <span><span class="legend-sq" style="background: var(--absent);"></span>Not addressed</span>
+      <span><span class="legend-sq" style="background: #334155;"></span>Focal course</span>
+    </div>
+
+    <div class="gap-report" style="margin-top: 20px;">
       <div class="gap-row">
         <div class="gap-name">Workflow design <small>Expected: Understand</small></div>
         <div class="gap-status status-met">Met</div>
-        <div class="gap-reasoning">GC 3460 develops Do level via ink-formulation labs; GC 2070 introduces it at Understand. Students arrive prepared.</div>
+        <div class="gap-reasoning">GC 3460 develops Do-level workflow via production labs; GC 2070 builds Understand. Arrives prepared.</div>
       </div>
       <div class="gap-row">
         <div class="gap-name">Quality control <small>Expected: Understand</small></div>
         <div class="gap-status status-met">Met</div>
-        <div class="gap-reasoning">GC 3400 and GC 3460 both develop Understand-level QC via instrumentation and substrate-testing exercises.</div>
-      </div>
-      <div class="gap-row">
-        <div class="gap-name">Vendor selection &amp; management <small>Expected: Know</small></div>
-        <div class="gap-status status-met">Met</div>
-        <div class="gap-reasoning">GC 3460 introduces vendor relationships at Know level via supplier-selection exercises. Sufficient.</div>
+        <div class="gap-reasoning">GC 3400 and GC 3460 both develop Understand-level QC through instrumentation and substrate-testing.</div>
       </div>
       <div class="gap-row">
         <div class="gap-name">Cost estimation <small>Expected: Understand</small></div>
         <div class="gap-status status-under">Underdeveloped</div>
-        <div class="gap-reasoning">GC 3460 reaches Know level only — students arrive familiar with the concept but not able to estimate. Course assumes Understand; faculty self-correct in week 2.</div>
-      </div>
-      <div class="gap-row">
-        <div class="gap-name">Timeline management <small>Expected: Understand</small></div>
-        <div class="gap-status status-met">Met</div>
-        <div class="gap-reasoning">GC 3400 develops Understand-level timeline management via the multi-stage project. Solid foundation.</div>
+        <div class="gap-reasoning">GC 3460 reaches Know only. Course expects Understand; faculty report self-correcting in week 2.</div>
       </div>
       <div class="gap-row">
         <div class="gap-name">Color management theory <small>Expected: Understand</small></div>
         <div class="gap-status status-missing">Missing</div>
-        <div class="gap-reasoning">No prior course addresses color management at Understand level. GC 3400 introduces digital color but not the print-specific theory GC 4060 assumes. Curriculum gap.</div>
+        <div class="gap-reasoning">No prior course addresses print-specific color management theory. GC 3400 covers digital color, not the substrate-based theory GC 4060 assumes.</div>
+      </div>
+      <div class="gap-row">
+        <div class="gap-name">Vendor management <small>Expected: Know</small></div>
+        <div class="gap-status status-met">Met</div>
+        <div class="gap-reasoning">GC 3460 introduces vendor relationships at Know level via supplier-selection exercises. Sufficient for expected level.</div>
       </div>
     </div>
   </figure>
