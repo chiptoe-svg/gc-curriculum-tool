@@ -9,7 +9,9 @@ type PromptName =
   | 'suggest-prerequisites'
   | 'analyze-prerequisite-gaps'
   | 'evaluate-scaffolding'
-  | 'synthesize-target';
+  | 'synthesize-target'
+  | 'analyze-material'
+  | 'synthesize-course-profile';
 
 interface ParsedPrompt {
   frontmatter: Record<string, unknown>;
