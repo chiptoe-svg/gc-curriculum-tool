@@ -124,9 +124,7 @@ export function PrototypeClient({ slug }: { slug: string }) {
         {/* Three-tool overview */}
         <div className="grid sm:grid-cols-3 gap-4 pt-2">
           <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-1.5">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Tool 1</span>
-            </div>
+            <span className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Tool 1</span>
             <p className="text-sm font-semibold">Course Builder</p>
             <p className="text-xs text-muted-foreground leading-relaxed">Upload materials, edit learning objectives and projects, generate and accept Know / Understand / Do outcomes for a course. Approved courses unlock the analysis tools.</p>
             <a
@@ -139,22 +137,22 @@ export function PrototypeClient({ slug }: { slug: string }) {
             </a>
           </div>
 
-          <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-1.5">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Tool 2</span>
-            </div>
+          <div className={`rounded-lg border p-4 space-y-1.5 ${tab === 'prereqs' ? 'border-foreground bg-muted/60' : 'border-border bg-muted/30'}`}>
+            <span className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Tool 2</span>
             <p className="text-sm font-semibold">Prereq Analyzer</p>
-            <p className="text-xs text-muted-foreground leading-relaxed">Given a focal course and its prior coursework, score how well the prereqs collectively cover each entry requirement the focal course expects — 1–10 per competency with cited reasoning.</p>
-            <span className="inline-block text-xs text-muted-foreground pt-1 italic">Active below (prereqs tab)</span>
+            <p className="text-xs text-muted-foreground leading-relaxed">Given a focal course and its prior coursework, score how well the prereqs collectively cover each entry requirement the focal course expects — with cited reasoning.</p>
+            <a href="?tab=prereqs" className="inline-block text-xs underline underline-offset-2 text-foreground hover:text-muted-foreground pt-1">
+              {tab === 'prereqs' ? 'Active below ↓' : 'Open this tool ↓'}
+            </a>
           </div>
 
-          <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-1.5">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Tool 3</span>
-            </div>
+          <div className={`rounded-lg border p-4 space-y-1.5 ${tab === 'target' ? 'border-foreground bg-muted/60' : 'border-border bg-muted/30'}`}>
+            <span className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Tool 3</span>
             <p className="text-sm font-semibold">Career Target Alignment</p>
             <p className="text-xs text-muted-foreground leading-relaxed">Evaluate how a chain of courses builds toward one of five career targets — Account Management, Brand Strategy, Production &amp; Ops, Creative Generalist, or AI Workflow — using KUD coverage scoring.</p>
-            <span className="inline-block text-xs text-muted-foreground pt-1 italic">Active below (career-target tab)</span>
+            <a href="?tab=target" className="inline-block text-xs underline underline-offset-2 text-foreground hover:text-muted-foreground pt-1">
+              {tab === 'target' ? 'Active below ↓' : 'Open this tool ↓'}
+            </a>
           </div>
         </div>
       </header>
