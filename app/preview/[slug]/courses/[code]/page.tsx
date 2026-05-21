@@ -3,7 +3,11 @@ import Link from 'next/link';
 import { isValidSlug } from '@/lib/slug';
 import { getCourseByCode } from '@/lib/db/courses-queries';
 import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
+import { getLatestRunForCourse, getCourseProfile } from '@/lib/db/course-profile-queries';
 import { MaterialsZone } from './MaterialsZone';
+import { CourseAnalyzeZone } from '@/components/CourseAnalyzeZone';
+import { CourseProfileDisplay } from '@/components/CourseProfileDisplay';
+import type { CourseProfileResult } from '@/lib/ai/course-profile/schema';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +22,11 @@ export default async function CourseDetailPage({ params }: Props) {
   const course = await getCourseByCode(code);
   if (!course) notFound();
 
-  const rawMaterials = await listMaterialsByCourse(code);
+  const [rawMaterials, latestRun, currentProfile] = await Promise.all([
+    listMaterialsByCourse(code),
+    getLatestRunForCourse(code),
+    getCourseProfile(code),
+  ]);
   const materials = rawMaterials.map((m) => ({
     id: m.id,
     fileName: m.fileName,
@@ -27,6 +35,20 @@ export default async function CourseDetailPage({ params }: Props) {
     extractionMethod: m.extractionMethod ?? undefined,
     pageCount: m.pageCount ?? undefined,
   }));
+
+  const okCount = rawMaterials.filter((m) => m.extractionStatus === 'ok').length;
+  const manuallyEdited = currentProfile?.manuallyEdited ?? false;
+  const lastRunMeta = latestRun
+    ? {
+        id: latestRun.id,
+        createdAt: latestRun.createdAt.toISOString(),
+        materialCount: latestRun.materialCount,
+        costUsdCents: latestRun.costUsdCents,
+      }
+    : null;
+  const profileResult = currentProfile
+    ? (currentProfile as unknown as CourseProfileResult)
+    : null;
 
   return (
     <main className="mx-auto max-w-4xl p-6 md:p-12 space-y-8">
@@ -55,6 +77,17 @@ export default async function CourseDetailPage({ params }: Props) {
           initialMaterials={materials}
         />
       </section>
+
+      <CourseAnalyzeZone
+        slug={slug}
+        courseCode={code}
+        okCount={okCount}
+        lastRun={lastRunMeta}
+        manuallyEdited={manuallyEdited}
+        onAnalyzed={() => {}}
+      />
+
+      <CourseProfileDisplay profile={profileResult} />
     </main>
   );
 }
