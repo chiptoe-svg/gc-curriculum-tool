@@ -28,6 +28,7 @@ import {
   upsertCourseProfile,
   getLatestRunForCourse,
   getCourseProfile,
+  updateProfileFromEdit,
 } from '@/lib/db/course-profile-queries';
 import type { CourseProfileResult } from '@/lib/ai/course-profile/schema';
 
@@ -162,5 +163,39 @@ describe('getCourseProfile', () => {
     const result = await getCourseProfile('GC 4060');
     expect(result?.courseCode).toBe('GC 4060');
     expect(result?.manuallyEdited).toBe(false);
+  });
+});
+
+describe('updateProfileFromEdit', () => {
+  it('updates summary, learningObjectives, skills, competencies and sets manuallyEdited=true', async () => {
+    dbUpdateWhere.mockResolvedValue(undefined);
+    await updateProfileFromEdit({
+      courseCode: 'GC 1010',
+      summary: 'Revised summary.',
+      learningObjectives: ['New objective'],
+      skills: ['New skill'],
+      competencies: [
+        {
+          name: 'Color Management',
+          description: 'Revised.',
+          level: 'developed',
+          evidence: [{ fileName: 'rubric.pdf', quote: 'quote text' }],
+        },
+      ],
+    });
+    expect(dbUpdateWhere).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not touch sourceRunId or catalogDivergence', async () => {
+    dbUpdateWhere.mockResolvedValue(undefined);
+    await updateProfileFromEdit({
+      courseCode: 'GC 4060',
+      summary: 'Test',
+      learningObjectives: [],
+      skills: [],
+      competencies: [],
+    });
+    expect(dbUpdateWhere).toHaveBeenCalledTimes(1);
+    expect(dbInsertReturning).not.toHaveBeenCalled();
   });
 });

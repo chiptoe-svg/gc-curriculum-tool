@@ -110,3 +110,38 @@ export async function getCourseProfile(courseCode: string) {
     .where(eq(courseProfiles.courseCode, courseCode));
   return rows[0] ?? null;
 }
+
+// ── Faculty-edit write path ──────────────────────────────────────────────────
+
+export interface UpdateProfileFromEditInput {
+  courseCode: string;
+  summary: string;
+  learningObjectives: string[];
+  skills: string[];
+  competencies: Array<{
+    name: string;
+    description: string;
+    level: string;
+    evidence: Array<{ fileName: string; quote: string }>;
+  }>;
+}
+
+export async function updateProfileFromEdit({
+  courseCode,
+  summary,
+  learningObjectives,
+  skills,
+  competencies,
+}: UpdateProfileFromEditInput): Promise<void> {
+  await db
+    .update(courseProfiles)
+    .set({
+      summary,
+      learningObjectives,
+      skills,
+      competencies,
+      manuallyEdited: true,
+      updatedAt: new Date(),
+    })
+    .where(eq(courseProfiles.courseCode, courseCode));
+}
