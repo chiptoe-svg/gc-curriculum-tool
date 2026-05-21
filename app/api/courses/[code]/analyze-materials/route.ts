@@ -42,8 +42,6 @@ export async function POST(req: Request, { params }: Ctx): Promise<Response> {
 
   // 4. Fetch all materials for the course
   const allMaterials = await listMaterialsByCourse(decoded);
-
-  // Only analyze materials with extractionStatus = 'ok'
   const readableMaterials = (allMaterials ?? []).filter((m) => m.extractionStatus === 'ok');
   if (readableMaterials.length === 0) {
     return NextResponse.json(
@@ -52,7 +50,6 @@ export async function POST(req: Request, { params }: Ctx): Promise<Response> {
     );
   }
 
-  // 5. Per-file analysis in parallel, skipping cached findings
   const courseContext = {
     code: course.code,
     title: course.title,
@@ -61,19 +58,44 @@ export async function POST(req: Request, { params }: Ctx): Promise<Response> {
     description: course.description,
   };
 
-  let totalCostUsdCents = 0;
-
   const uncachedMaterials = readableMaterials.filter((m) => m.analysisFinding === null);
   const cachedMaterials = readableMaterials.filter((m) => m.analysisFinding !== null);
 
+  // 5. Resolve native document bytes for Anthropic provider (PDF only)
+  const provider = getProvider();
+  const useNativePdf = provider.name === 'anthropic';
+
+  const nativeBytes = new Map<string, { bytes: Buffer; mimeType: string }>();
+
+  if (useNativePdf) {
+    const pdfMaterials = uncachedMaterials.filter((m) => m.mimeType === 'application/pdf');
+    await Promise.all(
+      pdfMaterials.map(async (m) => {
+        try {
+          const resp = await fetch(m.blobUrl);
+          if (!resp.ok) return;
+          const buf = Buffer.from(await resp.arrayBuffer());
+          nativeBytes.set(m.id, { bytes: buf, mimeType: m.mimeType });
+        } catch {
+          // Fall back to text extraction if blob fetch fails
+        }
+      })
+    );
+  }
+
+  // 6. Per-file analysis in parallel, skipping cached findings
+  let totalCostUsdCents = 0;
+
   const newFindingResults = await Promise.all(
-    uncachedMaterials.map((m) =>
-      analyzeMaterial({
+    uncachedMaterials.map((m) => {
+      const native = nativeBytes.get(m.id);
+      return analyzeMaterial({
         courseContext,
         fileName: m.fileName,
         extractedText: m.extractedText ?? '',
-      })
-    )
+        ...(native ? { documentBytes: native.bytes, documentMimeType: native.mimeType } : {}),
+      });
+    })
   );
 
   await Promise.all(
@@ -84,7 +106,7 @@ export async function POST(req: Request, { params }: Ctx): Promise<Response> {
       await cacheAnalysisFinding({
         materialId: m.id,
         finding: result.data,
-        model: getProvider().model,
+        model: provider.model,
         costUsdCents: result.telemetry.costUsdCents,
       });
     })
@@ -102,7 +124,7 @@ export async function POST(req: Request, { params }: Ctx): Promise<Response> {
     })),
   ];
 
-  // 6. Synthesis call — if this throws, cached per-file findings are kept
+  // 7. Synthesis call — if this throws, cached per-file findings are kept
   let synthesisResult: Awaited<ReturnType<typeof synthesizeCourseProfile>>;
   try {
     synthesisResult = await synthesizeCourseProfile({
@@ -123,12 +145,12 @@ export async function POST(req: Request, { params }: Ctx): Promise<Response> {
 
   totalCostUsdCents += synthesisResult.telemetry.costUsdCents;
 
-  // 7. Persist
+  // 8. Persist
   const runId = await insertProfileRun({
     courseCode: decoded,
     result: synthesisResult.data,
     materialCount: readableMaterials.length,
-    model: getProvider().model,
+    model: provider.model,
     costUsdCents: totalCostUsdCents,
   });
 
@@ -138,7 +160,7 @@ export async function POST(req: Request, { params }: Ctx): Promise<Response> {
     runId,
   });
 
-  // 8. Record spend
+  // 9. Record spend
   await recordSpend(totalCostUsdCents);
 
   return NextResponse.json({

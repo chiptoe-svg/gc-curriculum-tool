@@ -70,6 +70,8 @@ const fakeCourse = {
 const fakeMaterialOk = {
   id: 'mat-1',
   fileName: 'rubric.pdf',
+  blobUrl: 'https://blob.vercel-storage.com/rubric.pdf',
+  mimeType: 'application/pdf',
   extractedText: 'delta-E ≤ 2.0',
   extractionStatus: 'ok',
   analysisFinding: null,
@@ -200,6 +202,39 @@ describe('POST /api/courses/[code]/analyze-materials', () => {
     const json = await res.json();
     expect(json.runId).toBe('run-uuid-1');
     expect(json.totalCostUsdCents).toBe(30);
+  });
+
+  it('fetches blob bytes and passes documentBytes when provider is anthropic and material is PDF', async () => {
+    getProvider.mockReturnValue({ name: 'anthropic', model: 'claude-sonnet-4-6' });
+
+    const pdfMaterial = {
+      ...fakeMaterialOk,
+      mimeType: 'application/pdf',
+      blobUrl: 'https://blob.vercel-storage.com/rubric.pdf',
+    };
+    listMaterialsByCourse.mockResolvedValue([pdfMaterial]);
+
+    const fakePdfBytes = Buffer.from('%PDF-1.4');
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      arrayBuffer: async () => fakePdfBytes.buffer,
+    } as unknown as Response);
+
+    analyzeMaterial.mockResolvedValue({
+      data: { materialType: 'rubric', competencies: [], skills: [], notes: '' },
+      telemetry: { costUsdCents: 7, cachedTokens: 0, uncachedPromptTokens: 100, completionTokens: 50 },
+    });
+    synthesizeCourseProfile.mockResolvedValue({
+      data: fakeProfile,
+      telemetry: { costUsdCents: 15, cachedTokens: 0, uncachedPromptTokens: 200, completionTokens: 100 },
+    });
+
+    const res = await POST(makeReq(), ctx);
+    expect(res.status).toBe(200);
+
+    const callArg = analyzeMaterial.mock.calls[0]?.[0];
+    expect(callArg?.documentBytes).toBeDefined();
+    expect(callArg?.documentMimeType).toBe('application/pdf');
   });
 
   it('500s when synthesis throws, keeping cached per-file findings intact', async () => {
