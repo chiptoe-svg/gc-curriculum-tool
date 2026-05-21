@@ -1,6 +1,6 @@
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, count, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
-import { courseMaterials, courseProfiles, courseProfileRuns } from '@/lib/db/schema';
+import { courseMaterials, courseProfiles, courseProfileRuns, courses } from '@/lib/db/schema';
 import type { AnalysisFinding, CourseProfileResult } from '@/lib/ai/course-profile/schema';
 
 export interface CacheAnalysisFindingInput {
@@ -144,4 +144,43 @@ export async function updateProfileFromEdit({
       updatedAt: new Date(),
     })
     .where(eq(courseProfiles.courseCode, courseCode));
+}
+
+// ── Courses index ────────────────────────────────────────────────────────────
+
+export interface CourseWithStatus {
+  code: string;
+  title: string;
+  level: number;
+  track: string;
+  profileExists: boolean;
+  manuallyEdited: boolean;
+  materialCount: number;
+}
+
+export async function listCoursesWithStatus(): Promise<CourseWithStatus[]> {
+  const rows = await db
+    .select({
+      code: courses.code,
+      title: courses.title,
+      level: courses.level,
+      track: courses.track,
+      manuallyEdited: courseProfiles.manuallyEdited,
+      materialCount: count(courseMaterials.id),
+    })
+    .from(courses)
+    .leftJoin(courseProfiles, eq(courses.code, courseProfiles.courseCode))
+    .leftJoin(courseMaterials, eq(courses.code, courseMaterials.courseCode))
+    .groupBy(courses.code, courses.title, courses.level, courses.track, courseProfiles.manuallyEdited)
+    .orderBy(sql`${courses.level} asc, ${courses.code} asc`);
+
+  return rows.map((r) => ({
+    code: r.code,
+    title: r.title,
+    level: r.level,
+    track: r.track,
+    profileExists: r.manuallyEdited !== null,
+    manuallyEdited: r.manuallyEdited ?? false,
+    materialCount: Number(r.materialCount),
+  }));
 }
