@@ -37,7 +37,7 @@ neonConfig.fetchFunction = async (
     try {
       return await fetch(input as RequestInfo, {
         ...init,
-        signal: AbortSignal.timeout(ATTEMPT_TIMEOUTS_MS[attempt]),
+        signal: AbortSignal.timeout(ATTEMPT_TIMEOUTS_MS[attempt]!),
       });
     } catch (err) {
       lastErr = err;
