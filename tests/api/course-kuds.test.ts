@@ -103,6 +103,11 @@ describe('PUT /api/courses/[code]/kuds', () => {
     expect(res.status).toBe(401);
   });
 
+  it('400s on invalid body', async () => {
+    const res = await kudsPut(makeReq({ invalid: true }), ctx);
+    expect(res.status).toBe(400);
+  });
+
   it('saves the draft and returns 200', async () => {
     getCourseKud.mockResolvedValue({ thresholdConcept: 'original', know: ['orig1', 'orig2', 'orig3'], understand: ['orig1', 'orig2', 'orig3'], do: ['orig1', 'orig2', 'orig3'] });
     const res = await kudsPut(makeReq({
@@ -135,6 +140,7 @@ describe('POST /api/courses/[code]/kuds/accept', () => {
     const req = new Request('http://test/api/courses/GC%203460/kuds/accept?slug=valid-slug', { method: 'POST' });
     const res = await acceptPost(req, ctx);
     expect(res.status).toBe(200);
+    const body = await res.json(); expect(body.approvedAt).toBeDefined();
     expect(acceptCourseKud).toHaveBeenCalledWith('GC 3460', expect.any(Date), 'hashed-ip');
     expect(updateBuilderStatus).toHaveBeenCalledWith('GC 3460', 'approved');
   });
