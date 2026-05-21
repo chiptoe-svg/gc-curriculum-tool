@@ -3,10 +3,11 @@ import Link from 'next/link';
 import { isValidSlug } from '@/lib/slug';
 import { getCourseByCode } from '@/lib/db/courses-queries';
 import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
-import { getLatestRunForCourse, getCourseProfile } from '@/lib/db/course-profile-queries';
+import { getLatestRunForCourse, getCourseProfile, listRunsForCourse } from '@/lib/db/course-profile-queries';
 import { MaterialsZone } from './MaterialsZone';
 import { CourseAnalyzeZone } from '@/components/CourseAnalyzeZone';
 import { CourseProfileEditor } from '@/components/CourseProfileEditor';
+import { ProfileRunHistory } from '@/components/ProfileRunHistory';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,10 +22,11 @@ export default async function CourseDetailPage({ params }: Props) {
   const course = await getCourseByCode(code);
   if (!course) notFound();
 
-  const [rawMaterials, latestRun, currentProfile] = await Promise.all([
+  const [rawMaterials, latestRun, currentProfile, allRuns] = await Promise.all([
     listMaterialsByCourse(code),
     getLatestRunForCourse(code),
     getCourseProfile(code),
+    listRunsForCourse(code),
   ]);
   const materials = rawMaterials.map((m) => ({
     id: m.id,
@@ -113,6 +115,20 @@ export default async function CourseDetailPage({ params }: Props) {
           </p>
         )}
       </section>
+
+      <ProfileRunHistory
+        runs={allRuns.map((r) => ({
+          id: r.id,
+          courseCode: r.courseCode,
+          materialCount: r.materialCount,
+          model: r.model,
+          costUsdCents: r.costUsdCents,
+          createdAt: r.createdAt.toISOString(),
+        }))}
+        slug={slug}
+        courseCode={code}
+        currentRunId={currentProfile?.sourceRunId ?? null}
+      />
     </main>
   );
 }
