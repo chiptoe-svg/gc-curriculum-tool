@@ -1,0 +1,1431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Course Builder — Specification</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Mono:wght@300;400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --rail: #141412;
+    --rail-text: #8a8780;
+    --rail-active: #E8A44A;
+    --rail-hover: #2a2925;
+    --bg: #F7F5F0;
+    --bg-card: #FFFFFF;
+    --bg-alt: #F0EDE6;
+    --text: #1C1C18;
+    --text-muted: #6B6860;
+    --text-faint: #9E9B94;
+    --accent: #C8682A;
+    --accent-light: #F5E6D8;
+    --border: #E2DDD4;
+    --border-strong: #C8C4BA;
+    --mono: 'DM Mono', monospace;
+    --serif: 'Source Serif 4', Georgia, serif;
+    --display: 'Playfair Display', Georgia, serif;
+    --green: #2E7D5E;
+    --green-light: #E6F4EE;
+    --amber: #B87020;
+    --amber-light: #FBF0E0;
+    --blue: #2A5C8C;
+    --blue-light: #E8EFF6;
+    --red: #8C2E35;
+    --red-light: #F5E8E9;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--serif);
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    min-height: 100vh;
+    font-size: 16px;
+    line-height: 1.7;
+  }
+
+  /* ── SIDEBAR ── */
+  #rail {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: 240px;
+    background: var(--rail);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    z-index: 100;
+  }
+
+  .rail-header {
+    padding: 28px 20px 20px;
+    border-bottom: 1px solid #252420;
+  }
+
+  .rail-dept {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #5a5750;
+    margin-bottom: 6px;
+  }
+
+  .rail-title {
+    font-family: var(--display);
+    font-size: 14px;
+    color: #d4d0c8;
+    line-height: 1.4;
+  }
+
+  .rail-nav { padding: 16px 0; flex: 1; }
+
+  .nav-group-label {
+    font-family: var(--mono);
+    font-size: 8.5px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #3d3c38;
+    padding: 12px 20px 6px;
+  }
+
+  .nav-link {
+    display: block;
+    padding: 7px 20px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--rail-text);
+    text-decoration: none;
+    border-left: 2px solid transparent;
+    transition: all 0.15s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .nav-link:hover { color: #c8c4bc; background: var(--rail-hover); }
+
+  .nav-link.active {
+    color: var(--rail-active);
+    border-left-color: var(--rail-active);
+    background: rgba(232, 164, 74, 0.07);
+  }
+
+  .nav-sub { padding-left: 30px; font-size: 10px; }
+
+  .rail-footer {
+    padding: 16px 20px;
+    border-top: 1px solid #252420;
+    font-family: var(--mono);
+    font-size: 9px;
+    color: #3d3c38;
+    line-height: 1.6;
+  }
+
+  /* ── MAIN ── */
+  #main {
+    margin-left: 240px;
+    flex: 1;
+    max-width: 900px;
+    padding: 60px 56px 100px;
+  }
+
+  /* ── DOC HEADER ── */
+  .doc-header {
+    margin-bottom: 64px;
+    padding-bottom: 40px;
+    border-bottom: 2px solid var(--text);
+  }
+
+  .doc-eyebrow {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+
+  .doc-title {
+    font-family: var(--display);
+    font-size: 42px;
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--text);
+    margin-bottom: 10px;
+  }
+
+  .doc-subtitle {
+    font-family: var(--display);
+    font-style: italic;
+    font-size: 20px;
+    color: var(--text-muted);
+    margin-bottom: 28px;
+  }
+
+  .doc-meta {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+
+  .doc-meta-item {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    color: var(--text-faint);
+  }
+
+  .doc-meta-item strong {
+    display: block;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  /* ── SECTIONS ── */
+  .section {
+    margin-bottom: 72px;
+    scroll-margin-top: 32px;
+  }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .section-title {
+    font-family: var(--display);
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+    line-height: 1.25;
+  }
+
+  .section-desc {
+    color: var(--text-muted);
+    font-size: 15px;
+    margin-bottom: 28px;
+    max-width: 600px;
+  }
+
+  /* ── PROSE ── */
+  p { margin-bottom: 14px; font-size: 15px; }
+  p:last-child { margin-bottom: 0; }
+
+  h3 {
+    font-family: var(--display);
+    font-size: 19px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 32px 0 10px;
+  }
+
+  h3:first-child { margin-top: 0; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 24px 28px;
+    margin-bottom: 16px;
+  }
+
+  .card-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+
+  /* ── WORKFLOW STAGES ── */
+  .stage-grid {
+    display: grid;
+    gap: 12px;
+    margin-top: 24px;
+  }
+
+  .stage {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    display: grid;
+    grid-template-columns: 48px 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+
+  .stage-num {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--text);
+    color: var(--bg);
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .stage-num.done { background: var(--green); }
+  .stage-num.gate { background: var(--accent); }
+
+  .stage-name {
+    font-family: var(--display);
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .stage-url {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-faint);
+    margin-bottom: 10px;
+  }
+
+  .stage-body { font-size: 14px; color: var(--text-muted); line-height: 1.65; }
+
+  .stage-note {
+    margin-top: 10px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--accent);
+    background: var(--accent-light);
+    padding: 6px 10px;
+    border-radius: 4px;
+    display: inline-block;
+  }
+
+  /* ── STATUS BADGES ── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    padding: 3px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+
+  .badge-draft    { background: #EEECE6; color: var(--text-muted); }
+  .badge-progress { background: var(--amber-light); color: var(--amber); }
+  .badge-approved { background: var(--green-light); color: var(--green); }
+  .badge-locked   { background: var(--red-light); color: var(--red); }
+
+  .badge::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+  }
+
+  /* ── STATUS FLOW ── */
+  .status-flow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 20px 0;
+    padding: 20px 24px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+
+  .status-arrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-faint);
+  }
+
+  /* ── KUD LOOP ── */
+  .kud-loop {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 20px;
+  }
+
+  .kud-loop-header {
+    background: var(--text);
+    color: var(--bg);
+    padding: 14px 24px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .kud-panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0;
+  }
+
+  .kud-panel {
+    padding: 20px 22px;
+    border-right: 1px solid var(--border);
+    font-size: 14px;
+  }
+
+  .kud-panel:last-child { border-right: none; }
+
+  .kud-panel-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 12px;
+  }
+
+  .kud-bullet {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text-muted);
+  }
+
+  .kud-bullet::before {
+    content: '—';
+    font-family: var(--mono);
+    color: var(--text-faint);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .kud-bullet.editable {
+    background: #F7F5F0;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 5px 8px;
+    cursor: text;
+    color: var(--text);
+  }
+
+  .kud-bullet.editable::before { display: none; }
+
+  .kud-action-row {
+    display: flex;
+    gap: 8px;
+    padding: 14px 22px;
+    border-top: 1px solid var(--border);
+    background: var(--bg-alt);
+  }
+
+  .btn {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    padding: 7px 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    border: 1px solid var(--border-strong);
+    background: var(--bg-card);
+    color: var(--text-muted);
+  }
+
+  .btn-primary {
+    background: var(--text);
+    color: var(--bg);
+    border-color: var(--text);
+  }
+
+  .btn-accept {
+    background: var(--green);
+    color: white;
+    border-color: var(--green);
+  }
+
+  .btn-disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* ── DATA MODEL TABLE ── */
+  .db-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-top: 16px;
+  }
+
+  .db-table th {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    padding: 8px 14px;
+    text-align: left;
+    border-bottom: 2px solid var(--border-strong);
+    background: var(--bg-alt);
+  }
+
+  .db-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    line-height: 1.5;
+  }
+
+  .db-table tr:hover td { background: var(--bg-alt); }
+
+  .col-name {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    white-space: nowrap;
+  }
+
+  .col-type {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--blue);
+    white-space: nowrap;
+  }
+
+  .col-note { color: var(--text-muted); font-size: 13px; }
+
+  .col-pk {
+    font-family: var(--mono);
+    font-size: 9px;
+    background: var(--amber-light);
+    color: var(--amber);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  .col-fk {
+    font-family: var(--mono);
+    font-size: 9px;
+    background: var(--blue-light);
+    color: var(--blue);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+
+  /* ── API ENDPOINTS ── */
+  .endpoint {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 10px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 12px 16px;
+    align-items: start;
+  }
+
+  .method {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 3px;
+    white-space: nowrap;
+  }
+
+  .method-get  { background: var(--green-light); color: var(--green); }
+  .method-post { background: var(--blue-light); color: var(--blue); }
+  .method-put  { background: var(--amber-light); color: var(--amber); }
+
+  .endpoint-path {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--text);
+    align-self: center;
+  }
+
+  .endpoint-desc {
+    grid-column: 2;
+    font-size: 13.5px;
+    color: var(--text-muted);
+    line-height: 1.55;
+  }
+
+  /* ── CALLOUT ── */
+  .callout {
+    border-left: 3px solid var(--accent);
+    background: var(--accent-light);
+    padding: 14px 18px;
+    border-radius: 0 6px 6px 0;
+    margin: 20px 0;
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+
+  .callout.green {
+    border-left-color: var(--green);
+    background: var(--green-light);
+  }
+
+  .callout.blue {
+    border-left-color: var(--blue);
+    background: var(--blue-light);
+  }
+
+  .callout strong { color: var(--text); }
+
+  /* ── INTEGRATION MAP ── */
+  .integration-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  .integration-box {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 18px;
+    background: var(--bg-card);
+  }
+
+  .integration-box.active {
+    border-color: var(--green);
+    background: var(--green-light);
+  }
+
+  .integration-box-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 6px;
+  }
+
+  .integration-box.active .integration-box-label { color: var(--green); }
+
+  .integration-box-name {
+    font-family: var(--display);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .integration-box-note {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  .integration-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: var(--text-faint);
+    align-self: center;
+  }
+
+  /* ── SCORE EXAMPLE ── */
+  .score-row {
+    display: grid;
+    grid-template-columns: 1fr 80px 1fr;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+    align-items: start;
+    font-size: 14px;
+  }
+
+  .score-row:last-child { border-bottom: none; }
+
+  .score-competency { color: var(--text); font-weight: 500; }
+
+  .score-bar-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .score-bar {
+    width: 60px;
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .score-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: var(--green);
+  }
+
+  .score-fill.mid  { background: var(--amber); }
+  .score-fill.low  { background: var(--red); }
+
+  .score-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  .score-reasoning { font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+
+  ul {
+    list-style: none;
+    margin: 10px 0 14px;
+    padding: 0;
+  }
+
+  ul li {
+    font-size: 14px;
+    color: var(--text-muted);
+    padding: 4px 0 4px 18px;
+    position: relative;
+    line-height: 1.6;
+  }
+
+  ul li::before {
+    content: '–';
+    position: absolute;
+    left: 0;
+    color: var(--text-faint);
+    font-family: var(--mono);
+  }
+</style>
+</head>
+<body>
+
+<nav id="rail">
+  <div class="rail-header">
+    <div class="rail-dept">Clemson GC · Curriculum Tool</div>
+    <div class="rail-title">Course Builder<br>Specification</div>
+  </div>
+  <div class="rail-nav">
+    <div class="nav-group-label">Overview</div>
+    <a class="nav-link active" href="#problem">Problem</a>
+    <a class="nav-link" href="#ecosystem">Tool Ecosystem</a>
+    <a class="nav-link" href="#users">Users</a>
+
+    <div class="nav-group-label">Workflow</div>
+    <a class="nav-link" href="#stages">Five Stages</a>
+    <a class="nav-link nav-sub" href="#stage-info">1 · Course Info</a>
+    <a class="nav-link nav-sub" href="#stage-materials">2 · Materials</a>
+    <a class="nav-link nav-sub" href="#stage-profile">3 · Profile</a>
+    <a class="nav-link nav-sub" href="#stage-kud">4 · KUD Review</a>
+    <a class="nav-link nav-sub" href="#stage-approve">5 · Approval</a>
+
+    <div class="nav-group-label">Design Detail</div>
+    <a class="nav-link" href="#kud-loop">The KUD Iteration Loop</a>
+    <a class="nav-link" href="#scoring">Prereq Score Model</a>
+    <a class="nav-link" href="#status-model">Status Model</a>
+    <a class="nav-link" href="#gate">Approval Gate</a>
+
+    <div class="nav-group-label">Implementation</div>
+    <a class="nav-link" href="#datamodel">Data Model</a>
+    <a class="nav-link" href="#api">API Endpoints</a>
+    <a class="nav-link" href="#integration">Integration Map</a>
+    <a class="nav-link" href="#scope">Build Scope</a>
+  </div>
+  <div class="rail-footer">
+    Draft spec · May 2026<br>
+    GC Curriculum Tool
+  </div>
+</nav>
+
+<main id="main">
+
+  <header class="doc-header">
+    <div class="doc-eyebrow">GC Curriculum Tool · Build 4</div>
+    <h1 class="doc-title">Course Builder</h1>
+    <p class="doc-subtitle">Ingestion, profile editing, KUD authoring, and approval — one tool per course.</p>
+    <div class="doc-meta">
+      <div class="doc-meta-item"><strong>Status</strong>Specification draft</div>
+      <div class="doc-meta-item"><strong>Date</strong>May 2026</div>
+      <div class="doc-meta-item"><strong>Depends on</strong>Builds 0–3</div>
+      <div class="doc-meta-item"><strong>Gates</strong>Prereq Analysis redesign</div>
+    </div>
+  </header>
+
+
+  <!-- ── PROBLEM ── -->
+  <section class="section" id="problem">
+    <div class="section-label">The Problem</div>
+    <h2 class="section-title">Analysis is only as good as the course data underneath it.</h2>
+    <p class="section-desc">Right now the system generates KUD outcomes on-the-fly inside every analysis call — invisible, uneditable, and different every run.</p>
+
+    <p>The current prototype produces results like "2 met, 2 missing" for a prereq chain — but the four competencies it evaluates against are the career target's sub-competencies, not the focal course's actual entry requirements. GC 3460 doesn't need "client needs diagnosis" as a prereq; it needs color theory, halftone fluency, and print process literacy. The career target is the wrong frame.</p>
+
+    <p>More fundamentally: every faculty member who sees the tool will ask <em>"where did those competency descriptions come from?"</em> If the answer is "the AI generated them inside the analysis call and you can't see or change them," buy-in stops there. The results look like a black box.</p>
+
+    <p>The fix is to separate authoring from analysis. A course must have an accepted KUD profile — built with faculty input, editable, versioned — before it can participate in any analysis. The Course Builder is that authoring step.</p>
+
+    <div class="callout">
+      <strong>Design principle:</strong> Faculty own what their course claims to develop. The AI drafts; the instructor accepts. Nothing enters the analysis pipeline without a human sign-off.
+    </div>
+  </section>
+
+
+  <!-- ── ECOSYSTEM ── -->
+  <section class="section" id="ecosystem">
+    <div class="section-label">Tool Ecosystem</div>
+    <h2 class="section-title">Three tools, one pipeline.</h2>
+    <p class="section-desc">The Course Builder is the middle layer — it takes raw course data in and produces approved course profiles that downstream analysis tools consume.</p>
+
+    <div class="integration-grid">
+      <div class="integration-box">
+        <div class="integration-box-label">Upstream</div>
+        <div class="integration-box-name">Catalog Seed</div>
+        <div class="integration-box-note">Catalog import populates courses table with code, title, level, track. Provides the baseline that Course Builder starts from.</div>
+      </div>
+
+      <div class="integration-box active">
+        <div class="integration-box-label">This tool</div>
+        <div class="integration-box-name">Course Builder</div>
+        <div class="integration-box-note">Ingestion → profile editing → KUD authoring → faculty approval. Output: a trusted course KUD profile locked in the database.</div>
+      </div>
+
+      <div class="integration-box">
+        <div class="integration-box-label">Downstream</div>
+        <div class="integration-box-name">Prereq Analysis &amp; Coverage Matrix</div>
+        <div class="integration-box-note">Only operates on approved courses. Uses accepted KUDs as the authoritative frame. No on-the-fly generation.</div>
+      </div>
+    </div>
+
+    <div class="callout blue" style="margin-top: 24px;">
+      <strong>What this unlocks:</strong> Once enough courses have approved KUD profiles, the prereq analysis tab becomes purely a scaffolding question — "do the prior courses' accepted KUDs collectively cover what the focal course's accepted KUDs require as entry knowledge?" No career target needed for that question. The career target alignment tool remains separate and uses its own frame.
+    </div>
+  </section>
+
+
+  <!-- ── USERS ── -->
+  <section class="section" id="users">
+    <div class="section-label">Users</div>
+    <h2 class="section-title">Who uses the Course Builder.</h2>
+
+    <div class="card">
+      <div class="card-title">Faculty — primary</div>
+      <p>The instructor who teaches a course owns its KUD profile. They upload the syllabus and supporting materials, edit the structured profile until it accurately represents what the course does, iterate on the AI-drafted KUD bullets until they feel right, and then accept. Their acceptance is the gate.</p>
+      <p>The tool should feel like a structured conversation about what their course produces — not a form to fill out or an AI output to rubber-stamp.</p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Curriculum Coordinator — secondary</div>
+      <p>Can see all courses and their builder status. Can flag courses as needing attention. Can view but not accept another instructor's KUD profile — acceptance belongs to the course owner. Uses the aggregate view to understand which courses are ready for analysis and which are holding up the coverage matrix.</p>
+    </div>
+  </section>
+
+
+  <!-- ── FIVE STAGES ── -->
+  <section class="section" id="stages">
+    <div class="section-label">Workflow</div>
+    <h2 class="section-title">Five stages, one URL per course.</h2>
+    <p class="section-desc">Each stage is a tab on the course builder page at <code style="font-family: var(--mono); font-size: 13px; background: var(--bg-alt); padding: 2px 6px; border-radius: 3px;">/courses/[code]</code>. Stages are sequential but re-enterable — an instructor can always go back to Stage 3 and regenerate KUDs after editing a project description.</p>
+
+    <div class="stage-grid">
+
+      <div class="stage" id="stage-info">
+        <div class="stage-num done">1</div>
+        <div>
+          <div class="stage-name">Course Info</div>
+          <div class="stage-url">/courses/[code] → Info tab</div>
+          <div class="stage-body">
+            The catalog baseline: code, title, credit hours, level (1–4), track, description, prerequisites. Pre-populated from the catalog seed. Each field is editable; fields that differ from the catalog value show a subtle <em>"Edited from catalog"</em> indicator.
+            <br><br>
+            This stage is always complete for any course in the database. It does not block progress.
+          </div>
+        </div>
+      </div>
+
+      <div class="stage" id="stage-materials">
+        <div class="stage-num">2</div>
+        <div>
+          <div class="stage-name">Materials</div>
+          <div class="stage-url">/courses/[code] → Materials tab</div>
+          <div class="stage-body">
+            File upload for syllabus, assignment sheets, rubrics, past project examples. Each uploaded file is extracted (text or vision for low-text PDFs) and the extracted text is shown in an expandable preview. Instructor can flag a bad extraction ("this scanned poorly — use the typed version instead").
+            <br><br>
+            Materials are optional — a course can proceed to the Profile stage with only catalog data — but a course without materials will produce weaker KUD drafts. The Stage 3 prompt shows a notice: <em>"No materials uploaded — KUD draft will rely on catalog description only."</em>
+          </div>
+          <div class="stage-note">Reuses existing course_materials infrastructure</div>
+        </div>
+      </div>
+
+      <div class="stage" id="stage-profile">
+        <div class="stage-num">3</div>
+        <div>
+          <div class="stage-name">Profile</div>
+          <div class="stage-url">/courses/[code] → Profile tab</div>
+          <div class="stage-body">
+            Structured fields that form the evidence base for KUD generation. Three sections:
+            <br><br>
+            <strong>Learning Objectives</strong> — editable list. Pre-populated from catalog if available, or extracted from uploaded syllabus. Each objective is a single sentence in student-can-do form.
+            <br><br>
+            <strong>Major Projects</strong> — editable list. These are the highest-stakes assignments — the ones the AI will treat as the primary evidence for Do-level claims. Order matters: the first project carries the most weight in KUD generation.
+            <br><br>
+            <strong>Required Incoming Skills</strong> — what students need to arrive knowing. This is the course's own statement of its prereq expectations, distinct from the catalog's prerequisites field (which lists course codes, not competencies). The AI uses this field in the gap analysis.
+            <br><br>
+            Each section supports free-text editing and item reorder. Changes here do not automatically regenerate KUDs — the instructor decides when to move to Stage 4.
+          </div>
+          <div class="stage-note">Profile completeness: at least 1 objective + 1 project required to unlock Stage 4</div>
+        </div>
+      </div>
+
+      <div class="stage" id="stage-kud">
+        <div class="stage-num gate">4</div>
+        <div>
+          <div class="stage-name">KUD Review</div>
+          <div class="stage-url">/courses/[code] → KUD tab</div>
+          <div class="stage-body">
+            The core authoring step. See <a href="#kud-loop" style="color: var(--accent);">The KUD Iteration Loop</a> for full detail.
+            <br><br>
+            The instructor generates a KUD draft from the profile, reviews it, edits as needed (directly or by going back to Stage 3), and iterates until the bullets accurately represent what the course produces. When satisfied, they accept.
+          </div>
+          <div class="stage-note">Acceptance here is the only gate to Stage 5 and to downstream analysis</div>
+        </div>
+      </div>
+
+      <div class="stage" id="stage-approve">
+        <div class="stage-num">5</div>
+        <div>
+          <div class="stage-name">Approved</div>
+          <div class="stage-url">/courses/[code] → Status</div>
+          <div class="stage-body">
+            The accepted KUD profile is visible in a read-only summary. Shows: threshold concept, Know / Understand / Do bullets, acceptance timestamp, and which generation run it came from. A <em>"Revise KUDs"</em> button re-opens Stage 4 (resets to in-progress until re-accepted).
+            <br><br>
+            The course now appears as selectable in the Prereq Analysis tool and in the Coverage Matrix. Unapproved courses appear grayed out in those tools with a tooltip: <em>"KUD profile not yet approved — complete the Course Builder to enable this course."</em>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- ── KUD ITERATION LOOP ── -->
+  <section class="section" id="kud-loop">
+    <div class="section-label">Design Detail</div>
+    <h2 class="section-title">The KUD Iteration Loop</h2>
+    <p class="section-desc">The most important UX design in this tool. The loop is a structured conversation between the instructor and the AI about what the course actually produces.</p>
+
+    <h3>Three-panel layout</h3>
+
+    <div class="kud-loop">
+      <div class="kud-loop-header">KUD Review — GC 3460 · Ink and Substrates</div>
+      <div class="kud-panels">
+
+        <div class="kud-panel">
+          <div class="kud-panel-label">Profile evidence</div>
+          <p style="font-size: 12px; color: var(--text-faint); margin-bottom: 10px;">Major projects · click to edit</p>
+          <div class="kud-bullet editable">Brand Color Report: select Pantone, establish standard, explore reproduction across substrates, write lab report</div>
+          <div class="kud-bullet editable">Ink Formulation lab</div>
+          <div class="kud-bullet editable">Substrate Properties Testing</div>
+          <div class="kud-bullet editable">Ink Properties Testing and Lab Report</div>
+          <p style="font-size: 12px; color: var(--text-faint); margin: 14px 0 8px;">Required incoming skills</p>
+          <div class="kud-bullet editable">Color theory and CMYK fundamentals</div>
+          <div class="kud-bullet editable">Basic print process literacy</div>
+          <div class="kud-bullet editable">Software file management</div>
+        </div>
+
+        <div class="kud-panel">
+          <div class="kud-panel-label">AI-drafted KUD outcomes</div>
+          <p style="font-size: 12px; color: var(--text-faint); margin-bottom: 8px;"><strong style="color: var(--text);">Know</strong></p>
+          <div class="kud-bullet">The CMYK color model and how ink-on-substrate interactions determine final color appearance</div>
+          <div class="kud-bullet">Halftone mechanics: screen frequency, dot gain, tone value increase</div>
+          <div class="kud-bullet">Primary print processes and their substrate compatibility constraints</div>
+          <p style="font-size: 12px; color: var(--text-faint); margin: 12px 0 8px;"><strong style="color: var(--text);">Understand</strong></p>
+          <div class="kud-bullet">Why ink formulation choices propagate through reproduction quality and cost</div>
+          <div class="kud-bullet">How substrate surface energy affects ink adhesion and trapping</div>
+          <p style="font-size: 12px; color: var(--text-faint); margin: 12px 0 8px;"><strong style="color: var(--text);">Do</strong></p>
+          <div class="kud-bullet">Select and justify a Pantone standard, establish reproduction targets, and report results in professional lab format</div>
+          <div class="kud-bullet">Conduct controlled ink and substrate testing and interpret results against industry tolerance</div>
+        </div>
+
+        <div class="kud-panel">
+          <div class="kud-panel-label">Threshold concept</div>
+          <p style="font-size: 13.5px; color: var(--text); font-style: italic; line-height: 1.65; margin-bottom: 16px;">"Color is not a property of the file — it is a property of the ink-substrate interaction. Every reproduction decision is a prediction about a physical process."</p>
+          <p style="font-size: 12px; color: var(--text-faint); margin-bottom: 8px;">Confidence notes</p>
+          <p style="font-size: 12.5px; color: var(--text-muted); line-height: 1.55;">Do bullets grounded in Brand Color Report and Ink Properties Lab — strong evidence. Understand bullets inferred from lab report requirements; medium confidence. No explicit outcomes statement for halftone screening — flagged.</p>
+        </div>
+
+      </div>
+      <div class="kud-action-row">
+        <button class="btn btn-primary">↻ Regenerate KUDs</button>
+        <button class="btn">Edit profile to refine</button>
+        <button class="btn btn-accept" style="margin-left: auto;">Accept these KUDs →</button>
+      </div>
+    </div>
+
+    <h3>Editing rules</h3>
+
+    <p>The instructor can edit any KUD bullet directly in the center panel. Direct edits are allowed but the tool nudges them toward making the profile the source of truth: when a bullet is edited directly, a small note appears — <em>"Consider updating the project description in the profile to reflect this — it will make future regenerations more accurate."</em></p>
+
+    <p>Editing anything in the left (profile) panel marks the current KUD draft as stale. The <em>Accept</em> button grays out and a banner appears: <em>"Profile updated — regenerate KUDs before accepting."</em> This prevents accepting a KUD draft that doesn't reflect the current profile.</p>
+
+    <div class="callout">
+      <strong>Why the regenerate nudge, not auto-regenerate:</strong> Auto-regeneration on every keystroke is disruptive. An instructor editing a project description mid-thought doesn't want the KUD panel reshuffling. The nudge lets them finish editing the profile, then deliberately trigger a fresh generation when ready.
+    </div>
+
+    <h3>Iteration flow</h3>
+    <ul>
+      <li>Instructor reviews the draft and finds a Do bullet is overstated — it reads as a transferable performance but the project is just a procedure-following lab</li>
+      <li>They go back to the left panel and clarify the project description: <em>"follows a set procedure to test ink tack — interpret results but does not design the test"</em></li>
+      <li>They hit Regenerate. The new draft downgrades that Do bullet to Understand, which is accurate</li>
+      <li>They accept the revised draft</li>
+    </ul>
+
+    <p>The number of iterations is not bounded. The goal is that the instructor accepts KUDs they stand behind — not a speed run.</p>
+  </section>
+
+
+  <!-- ── PREREQ SCORE MODEL ── -->
+  <section class="section" id="scoring">
+    <div class="section-label">Design Detail</div>
+    <h2 class="section-title">Prereq coverage scoring: 1–10, not pass/fail.</h2>
+    <p class="section-desc">Once courses have accepted KUDs, the prereq analysis scores each entry-requirement of the focal course against the prior coursework's accepted KUD bullets. The score is 1–10, not binary.</p>
+
+    <p>The focal course's <em>Required Incoming Skills</em> (Stage 3 profile field) becomes the list of competencies to evaluate. For each one, the AI looks at the prior coursework's accepted KUD bullets and asks: how well does this prior work collectively cover this entry requirement?</p>
+
+    <div class="card" style="margin-top: 20px;">
+      <div class="card-title">Example — GC 3460 requires: GC 2070 as prior course</div>
+
+      <div class="score-row">
+        <div>
+          <div class="score-competency">CMYK color theory and halftone mechanics</div>
+          <div style="font-size: 12px; color: var(--text-faint); margin-top: 2px;">Entry req from GC 3460 profile</div>
+        </div>
+        <div class="score-bar-wrap">
+          <div class="score-bar"><div class="score-fill" style="width: 75%;"></div></div>
+          <div class="score-num">7.5 / 10</div>
+        </div>
+        <div class="score-reasoning">GC 2070's accepted KUDs include Know-level halftone exposure via screen printing labs and press measurement work. Covers Know confidently; Understand level is partial — tone value increase is addressed but not formalized. Strong foundation, small gap at the analytical level.</div>
+      </div>
+
+      <div class="score-row">
+        <div>
+          <div class="score-competency">Print process literacy across substrate types</div>
+          <div style="font-size: 12px; color: var(--text-faint); margin-top: 2px;">Entry req from GC 3460 profile</div>
+        </div>
+        <div class="score-bar-wrap">
+          <div class="score-bar"><div class="score-fill mid" style="width: 55%;"></div></div>
+          <div class="score-num">5.5 / 10</div>
+        </div>
+        <div class="score-reasoning">GC 2070 covers offset and screen printing processes at Know/Understand level. Substrate interaction — the specific frame GC 3460 uses — is not directly addressed. Process literacy is present; substrate compatibility framing is not.</div>
+      </div>
+
+      <div class="score-row">
+        <div>
+          <div class="score-competency">Software file management for production</div>
+          <div style="font-size: 12px; color: var(--text-faint); margin-top: 2px;">Entry req from GC 3460 profile</div>
+        </div>
+        <div class="score-bar-wrap">
+          <div class="score-bar"><div class="score-fill" style="width: 85%;"></div></div>
+          <div class="score-num">8.5 / 10</div>
+        </div>
+        <div class="score-reasoning">GC 2070's accepted KUDs explicitly include Do-level file production workflows and layout documentation. Strong match — this entry requirement is well-covered.</div>
+      </div>
+
+    </div>
+
+    <h3>Score interpretation guidance</h3>
+    <ul>
+      <li><strong>8–10:</strong> Well-covered. The prior coursework develops this entry requirement at the right level with clear evidence. No action needed.</li>
+      <li><strong>5–7:</strong> Partially covered. The prior work addresses the area but not at the depth or in the specific frame the focal course expects. Consider flagging for faculty review or supplemental materials.</li>
+      <li><strong>2–4:</strong> Thin coverage. The prior work touches this area only incidentally. A structural scaffolding gap — may warrant curriculum revision.</li>
+      <li><strong>1:</strong> Not addressed. No prior course in the set develops this entry requirement. A missing scaffold — either the prereq chain is wrong, or the focal course's entry requirement needs revisiting.</li>
+    </ul>
+
+    <div class="callout green">
+      <strong>Why 1–10 matters:</strong> A 5 is actionable in a way "Missing" is not. It says "we're halfway there — one more assignment in GC 2070 covering substrate interaction would close this." A binary result can only say "fix it or don't." The numeric score opens up targeted curriculum adjustment.
+    </div>
+  </section>
+
+
+  <!-- ── STATUS MODEL ── -->
+  <section class="section" id="status-model">
+    <div class="section-label">Design Detail</div>
+    <h2 class="section-title">Course status model.</h2>
+    <p class="section-desc">Five states, each reflecting how far through the builder a course has progressed.</p>
+
+    <div class="status-flow">
+      <span class="badge badge-draft">draft</span>
+      <span class="status-arrow">→</span>
+      <span class="badge badge-progress">materials uploaded</span>
+      <span class="status-arrow">→</span>
+      <span class="badge badge-progress">profile complete</span>
+      <span class="status-arrow">→</span>
+      <span class="badge badge-progress">kuds generated</span>
+      <span class="status-arrow">→</span>
+      <span class="badge badge-approved">approved</span>
+    </div>
+
+    <div class="card">
+      <table class="db-table">
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Meaning</th>
+            <th>Downstream eligibility</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="badge badge-draft">draft</span></td>
+            <td class="col-note">Catalog entry only. No instructor interaction yet.</td>
+            <td class="col-note">Not selectable in analysis tools. Grayed out with tooltip.</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-progress">materials uploaded</span></td>
+            <td class="col-note">Files uploaded; profile not yet reviewed.</td>
+            <td class="col-note">Not selectable.</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-progress">profile complete</span></td>
+            <td class="col-note">Objectives, projects, and required skills filled in. KUD generation not yet run.</td>
+            <td class="col-note">Not selectable.</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-progress">kuds generated</span></td>
+            <td class="col-note">At least one KUD generation run completed. Not yet accepted.</td>
+            <td class="col-note">Not selectable.</td>
+          </tr>
+          <tr>
+            <td><span class="badge badge-approved">approved</span></td>
+            <td class="col-note">Instructor accepted the current KUD draft. Timestamp and IP hash recorded.</td>
+            <td class="col-note"><strong>Selectable</strong> in Prereq Analysis and Coverage Matrix.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Editing the profile after approval resets status to <span class="badge badge-progress" style="font-size: 9px;">kuds generated</span> until the instructor re-accepts. The previous accepted KUD record is retained in history — no data is destroyed.</p>
+  </section>
+
+
+  <!-- ── GATE ── -->
+  <section class="section" id="gate">
+    <div class="section-label">Design Detail</div>
+    <h2 class="section-title">The approval gate.</h2>
+    <p class="section-desc">How approval status flows into downstream tools.</p>
+
+    <p>The course selector component used in the Prereq Analysis tool (and eventually the Coverage Matrix) fetches courses from <code style="font-family: var(--mono); font-size: 13px; background: var(--bg-alt); padding: 2px 6px; border-radius: 3px;">GET /api/courses</code>. That endpoint will gain an <code style="font-family: var(--mono); font-size: 13px; background: var(--bg-alt); padding: 2px 6px; border-radius: 3px;">?approved=true</code> param — when set, it only returns courses with <code style="font-family: var(--mono); font-size: 13px; background: var(--bg-alt); padding: 2px 6px; border-radius: 3px;">builder_status = 'approved'</code>.</p>
+
+    <p>The course selector UI will show all courses but render unapproved ones as grayed-out non-clickable items, each labeled with their current status. This preserves visibility into what's in the catalog while making the gate clear.</p>
+
+    <div class="callout">
+      <strong>Rollout consideration:</strong> During the pilot period, before any courses have completed the builder, the prereq analysis tool may need to fall back to showing all courses (including unapproved ones, marked visually). This prevents the tool from being completely empty while the first batch of KUD profiles are authored. This fallback should be removed once a critical mass of core GC courses are approved.
+    </div>
+  </section>
+
+
+  <!-- ── DATA MODEL ── -->
+  <section class="section" id="datamodel">
+    <div class="section-label">Implementation</div>
+    <h2 class="section-title">Data model additions.</h2>
+    <p class="section-desc">Two changes to the schema: a new <code style="font-family: var(--mono); font-size: 13px; background: var(--bg-alt); padding: 2px 6px; border-radius: 3px;">course_kuds</code> table and a new status column on <code style="font-family: var(--mono); font-size: 13px; background: var(--bg-alt); padding: 2px 6px; border-radius: 3px;">courses</code>.</p>
+
+    <h3>New table: course_kuds</h3>
+    <div class="card">
+      <table class="db-table">
+        <thead>
+          <tr><th>Column</th><th>Type</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="col-name">course_code</span> <span class="col-pk">PK</span> <span class="col-fk">FK → courses</span></td>
+            <td class="col-type">text</td>
+            <td class="col-note">One active KUD record per course. History kept in course_kud_runs.</td>
+          </tr>
+          <tr>
+            <td><span class="col-name">threshold_concept</span></td>
+            <td class="col-type">text</td>
+            <td class="col-note">The one idea that, once learned, reorganizes how students see the discipline.</td>
+          </tr>
+          <tr>
+            <td><span class="col-name">know</span></td>
+            <td class="col-type">jsonb string[]</td>
+            <td class="col-note">3–5 accepted Know bullets.</td>
+          </tr>
+          <tr>
+            <td><span class="col-name">understand</span></td>
+            <td class="col-type">jsonb string[]</td>
+            <td class="col-note">3–5 accepted Understand bullets.</td>
+          </tr>
+          <tr>
+            <td><span class="col-name">do</span></td>
+            <td class="col-type">jsonb string[]</td>
+            <td class="col-note">3–5 accepted Do bullets.</td>
+          </tr>
+          <tr>
+            <td><span class="col-name">manually_edited</span></td>
+            <td class="col-type">boolean</td>
+            <td class="col-note">True if any bullet was edited directly (not just via regeneration). Surfaced to coordinator as a quality note.</td>
+          </tr>
+          <tr>
+            <td><span class="col-name">source_run_id</span> <span class="col-fk">FK → course_kud_runs</span></td>
+            <td class="col-type">uuid</td>
+            <td class="col-note">Which generation run this accepted version came from.</td>
+          </tr>
+          <tr>
+            <td><span class="col-name">approved_at</span></td>
+            <td class="col-type">timestamptz</td>
+            <td class="col-note">When the instructor accepted. Null if not yet approved.</td>
+          </tr>
+          <tr>
+            <td><span class="col-name">approved_by_ip_hash</span></td>
+            <td class="col-type">text</td>
+            <td class="col-note">SHA-256 of instructor IP at acceptance time.</td>
+          </tr>
+          <tr>
+            <td><span class="col-name">updated_at</span></td>
+            <td class="col-type">timestamptz</td>
+            <td class="col-note">Last modified.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>New table: course_kud_runs</h3>
+    <div class="card">
+      <p style="font-size: 14px; color: var(--text-muted); margin-bottom: 12px;">Each time the instructor hits "Generate KUDs" or "Regenerate KUDs", a run is recorded. This gives a full history of how the KUD profile evolved.</p>
+      <table class="db-table">
+        <thead>
+          <tr><th>Column</th><th>Type</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="col-name">id</span> <span class="col-pk">PK</span></td>
+            <td class="col-type">uuid</td>
+            <td class="col-note">Auto-generated.</td>
+          </tr>
+          <tr>
+            <td><span class="col-name">course_code</span> <span class="col-fk">FK → courses</span></td>
+            <td class="col-type">text</td>
+            <td class="col-note"></td>
+          </tr>
+          <tr>
+            <td><span class="col-name">result</span></td>
+            <td class="col-type">jsonb</td>
+            <td class="col-note">Full AI output: threshold concept, know[], understand[], do[], confidence_notes.</td>
+          </tr>
+          <tr>
+            <td><span class="col-name">profile_snapshot</span></td>
+            <td class="col-type">jsonb</td>
+            <td class="col-note">The profile as it was when this run was triggered — objectives, projects, required skills. Allows showing "what changed between run 2 and run 3."</td>
+          </tr>
+          <tr>
+            <td><span class="col-name">model</span></td>
+            <td class="col-type">text</td>
+            <td class="col-note">AI model used.</td>
+          </tr>
+          <tr>
+            <td><span class="col-name">cost_usd_cents</span></td>
+            <td class="col-type">integer</td>
+            <td class="col-note"></td>
+          </tr>
+          <tr>
+            <td><span class="col-name">created_at</span></td>
+            <td class="col-type">timestamptz</td>
+            <td class="col-note"></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Extension: courses table</h3>
+    <div class="card">
+      <table class="db-table">
+        <thead>
+          <tr><th>New column</th><th>Type</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="col-name">builder_status</span></td>
+            <td class="col-type">text</td>
+            <td class="col-note">'draft' | 'materials_uploaded' | 'profile_complete' | 'kuds_generated' | 'approved'. Default: 'draft'. Drives course selector gating.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+
+  <!-- ── API ── -->
+  <section class="section" id="api">
+    <div class="section-label">Implementation</div>
+    <h2 class="section-title">API endpoints.</h2>
+
+    <div class="endpoint">
+      <span class="method method-get">GET</span>
+      <span class="endpoint-path">/api/courses/[code]/builder</span>
+      <div class="endpoint-desc">Returns the full builder state for a course: catalog fields, materials list (with extraction status), profile fields, current KUD draft (if any), approval status, and run history summary. Single fetch to hydrate the entire builder page.</div>
+    </div>
+
+    <div class="endpoint">
+      <span class="method method-put">PUT</span>
+      <span class="endpoint-path">/api/courses/[code]/profile</span>
+      <div class="endpoint-desc">Updates the profile fields: learning objectives, major projects, required incoming skills. Also updates builder_status to 'profile_complete' when all three fields have content. If course was previously 'approved' or 'kuds_generated', resets to 'profile_complete' and clears approved_at on the course_kuds record.</div>
+    </div>
+
+    <div class="endpoint">
+      <span class="method method-post">POST</span>
+      <span class="endpoint-path">/api/courses/[code]/kuds/generate</span>
+      <div class="endpoint-desc">Triggers a KUD generation run. Takes no body — reads current profile from DB. Runs the draft-outcomes prompt (course-centric, no career target). Writes result to course_kud_runs. Updates builder_status to 'kuds_generated'. Returns the generated KUD draft plus run ID.</div>
+    </div>
+
+    <div class="endpoint">
+      <span class="method method-put">PUT</span>
+      <span class="endpoint-path">/api/courses/[code]/kuds</span>
+      <div class="endpoint-desc">Saves the current KUD draft (possibly with instructor edits). Updates the course_kuds record with new bullet values. Sets manually_edited = true if any bullet differs from the source run's output. Does not set approved_at — that requires a separate accept call.</div>
+    </div>
+
+    <div class="endpoint">
+      <span class="method method-post">POST</span>
+      <span class="endpoint-path">/api/courses/[code]/kuds/accept</span>
+      <div class="endpoint-desc">Marks the current KUD draft as accepted. Sets approved_at = now(), approved_by_ip_hash, and builder_status = 'approved' on the courses record. Returns the updated course_kuds record. Rate-limited per IP to prevent automated approvals.</div>
+    </div>
+
+    <div class="endpoint">
+      <span class="method method-get">GET</span>
+      <span class="endpoint-path">/api/courses?approved=true</span>
+      <div class="endpoint-desc">Existing courses list endpoint gains an approved param. When true, filters to builder_status = 'approved' only. Used by the course selector in the Prereq Analysis tool. When false or absent, returns all courses (existing behavior preserved).</div>
+    </div>
+  </section>
+
+
+  <!-- ── INTEGRATION ── -->
+  <section class="section" id="integration">
+    <div class="section-label">Implementation</div>
+    <h2 class="section-title">Integration with existing tools.</h2>
+
+    <h3>Course Ingestion (existing)</h3>
+    <p>The existing <code style="font-family: var(--mono); font-size: 13px; background: var(--bg-alt); padding: 2px 6px; border-radius: 3px;">course_materials</code> table, upload endpoint, and extraction pipeline become the Materials tab (Stage 2). No changes needed to the existing ingestion logic — the Course Builder simply surfaces it within the unified workflow. The builder_status advances to 'materials_uploaded' when the first file extraction completes successfully.</p>
+
+    <h3>Course Profiles (existing)</h3>
+    <p>The <code style="font-family: var(--mono); font-size: 13px; background: var(--bg-alt); padding: 2px 6px; border-radius: 3px;">course_profiles</code> table currently stores an AI-synthesized narrative profile (summary, competencies). This continues to exist for the course profile synthesis workflow. The new <code style="font-family: var(--mono); font-size: 13px; background: var(--bg-alt); padding: 2px 6px; border-radius: 3px;">course_kuds</code> table is separate — KUD authoring is a distinct step from profile synthesis, though both draw from the same materials and profile fields.</p>
+
+    <h3>Prereq Analysis (prototype)</h3>
+    <p>The prototype analysis tab currently generates KUDs on-the-fly inside the analysis call with a career target as the frame. Once the Course Builder is live, the prereq analysis is redesigned to:</p>
+    <ul>
+      <li>Only show approved courses in the selector</li>
+      <li>Read accepted KUDs from <code style="font-family: var(--mono); font-size: 13px; background: var(--bg-alt); padding: 2px 6px; border-radius: 3px;">course_kuds</code> rather than generating them</li>
+      <li>Score using the focal course's <em>Required Incoming Skills</em> as the evaluation frame (not career target sub-competencies)</li>
+      <li>Output 1–10 scores per entry requirement with cited reasoning</li>
+      <li>Remove the career target selector from the prereq tab entirely</li>
+    </ul>
+
+    <h3>Coverage Matrix (future)</h3>
+    <p>The coverage matrix — which shows how the full 120-credit program covers each career target's sub-competencies — will be able to use approved course KUDs as an additional input alongside coverage scores. A course with strong "Do-level" KUD outcomes on print production contributes to the Production &amp; Ops coverage in a way that can be quantified and compared across the program.</p>
+  </section>
+
+
+  <!-- ── SCOPE ── -->
+  <section class="section" id="scope">
+    <div class="section-label">Implementation</div>
+    <h2 class="section-title">Build scope and sequencing.</h2>
+
+    <div class="card">
+      <div class="card-title">What is new vs. reused</div>
+      <table class="db-table">
+        <thead>
+          <tr><th>Component</th><th>Status</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="col-note">course_materials upload + extraction</td>
+            <td><span class="badge badge-approved">exists</span></td>
+            <td class="col-note">Wire into Stage 2 UI as-is.</td>
+          </tr>
+          <tr>
+            <td class="col-note">courses table (catalog fields)</td>
+            <td><span class="badge badge-approved">exists</span></td>
+            <td class="col-note">Extend with builder_status column.</td>
+          </tr>
+          <tr>
+            <td class="col-note">course_profiles (narrative profile)</td>
+            <td><span class="badge badge-approved">exists</span></td>
+            <td class="col-note">Learning objectives / projects fields are already there — Stage 3 edits these.</td>
+          </tr>
+          <tr>
+            <td class="col-note">draft-outcomes prompt</td>
+            <td><span class="badge badge-progress">modify</span></td>
+            <td class="col-note">Strip career-target-frame include. Replace with course-centric framing. New variant: extract-course-kud.md.</td>
+          </tr>
+          <tr>
+            <td class="col-note">course_kuds table</td>
+            <td><span class="badge badge-draft">new</span></td>
+            <td class="col-note">New table + migration.</td>
+          </tr>
+          <tr>
+            <td class="col-note">course_kud_runs table</td>
+            <td><span class="badge badge-draft">new</span></td>
+            <td class="col-note">New table + migration.</td>
+          </tr>
+          <tr>
+            <td class="col-note">Course Builder UI (/courses/[code])</td>
+            <td><span class="badge badge-draft">new</span></td>
+            <td class="col-note">5-tab page. Largest new surface area.</td>
+          </tr>
+          <tr>
+            <td class="col-note">KUD iteration loop UI</td>
+            <td><span class="badge badge-draft">new</span></td>
+            <td class="col-note">Three-panel layout within Stage 4. Most complex UI component.</td>
+          </tr>
+          <tr>
+            <td class="col-note">Course index (/courses)</td>
+            <td><span class="badge badge-draft">new</span></td>
+            <td class="col-note">List of all courses with builder status badges, sortable by level/track/status.</td>
+          </tr>
+          <tr>
+            <td class="col-note">Prereq analysis redesign</td>
+            <td><span class="badge badge-progress">modify</span></td>
+            <td class="col-note">New prompt, gate on approved status, 1–10 scoring, remove career target from prereq tab.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout">
+      <strong>Recommended sequencing:</strong> Schema first (builder_status + course_kuds + course_kud_runs) → new KUD prompt → Course Builder UI stages 1–3 → KUD iteration loop (Stage 4) → approval gate → prereq analysis redesign. The prereq redesign is a clean swap once the KUD authoring pipeline is working.
+    </div>
+  </section>
+
+</main>
+</body>
+</html>

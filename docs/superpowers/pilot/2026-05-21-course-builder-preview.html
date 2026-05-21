@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Course Builder — Interactive Preview</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .fade-in { animation: fadeIn 0.25s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+    .spin { animation: spin 0.9s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .pulse { animation: pulse 1.8s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.45; } }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+<!-- ── Preview bar ─────────────────────────────────────────────────────────── -->
+<div class="fixed inset-x-0 top-0 z-50 flex items-center gap-3 bg-slate-900 px-5 py-2.5 text-xs text-slate-400">
+  <a href="2026-05-21-course-builder-spec.html" class="hover:text-white transition-colors">&#8592; Back to spec</a>
+  <div class="flex-1"></div>
+  <span class="italic">Sample data &#8212; nothing here is saved</span>
+  <span class="text-slate-600">|</span>
+  <span class="text-slate-300 font-medium">Course Builder &#xb7; Interactive Preview</span>
+</div>
+
+<!-- ── App shell ───────────────────────────────────────────────────────────── -->
+<div class="min-h-screen pt-10">
+
+  <!-- App header -->
+  <header class="border-b border-slate-200 bg-white">
+    <div class="mx-auto max-w-5xl px-6 py-4 flex items-center justify-between">
+      <div>
+        <div class="text-xs uppercase tracking-widest text-slate-400">Clemson GC &#xb7; Curriculum Tool</div>
+        <div class="text-base font-semibold text-slate-800">Course Builder</div>
+      </div>
+      <a href="#" class="text-xs text-slate-500 hover:text-slate-800 underline underline-offset-2">&#8592; All courses</a>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-5xl px-6 py-8" id="app">
+
+    <!-- Course identity row -->
+    <div class="flex items-start justify-between gap-4 mb-6">
+      <div>
+        <div class="flex items-center gap-2.5 mb-1">
+          <span class="font-mono text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded">GC 3460</span>
+          <span class="text-xs text-slate-400">Level 3 &#xb7; GC Core</span>
+        </div>
+        <h1 class="text-2xl font-semibold text-slate-900">Ink and Substrates</h1>
+      </div>
+      <div class="flex-shrink-0 mt-1">
+        <span id="badge-inprogress" class="inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 border border-amber-200 text-xs font-medium px-3 py-1.5 rounded-full">
+          <span class="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block"></span>
+          In Progress
+        </span>
+        <span id="badge-approved" class="hidden inline-flex items-center gap-1.5 bg-green-50 text-green-700 border border-green-200 text-xs font-medium px-3 py-1.5 rounded-full">
+          <span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span>
+          Approved
+        </span>
+      </div>
+    </div>
+
+    <!-- Stage tabs -->
+    <div class="flex border-b border-slate-200 mb-8 overflow-x-auto">
+      <button onclick="setStage(1)" id="tab-1" class="stage-tab flex items-center gap-2 px-5 py-3 text-sm font-medium whitespace-nowrap border-b-2 -mb-px transition-colors">
+        <span class="w-5 h-5 rounded-full bg-green-500 text-white flex items-center justify-center text-xs flex-shrink-0">&#10003;</span>
+        Course Info
+      </button>
+      <button onclick="setStage(2)" id="tab-2" class="stage-tab flex items-center gap-2 px-5 py-3 text-sm font-medium whitespace-nowrap border-b-2 -mb-px transition-colors">
+        <span class="w-5 h-5 rounded-full bg-green-500 text-white flex items-center justify-center text-xs flex-shrink-0">&#10003;</span>
+        Materials
+      </button>
+      <button onclick="setStage(3)" id="tab-3" class="stage-tab flex items-center gap-2 px-5 py-3 text-sm font-medium whitespace-nowrap border-b-2 -mb-px transition-colors">
+        <span class="w-5 h-5 rounded-full bg-green-500 text-white flex items-center justify-center text-xs flex-shrink-0">&#10003;</span>
+        Profile
+      </button>
+      <button onclick="setStage(4)" id="tab-4" class="stage-tab flex items-center gap-2 px-5 py-3 text-sm font-medium whitespace-nowrap border-b-2 -mb-px transition-colors">
+        <span id="tab4-icon" class="w-5 h-5 rounded-full bg-amber-400 text-white flex items-center justify-center text-xs flex-shrink-0">4</span>
+        KUD Review
+      </button>
+      <button onclick="setStage(5)" id="tab-5" class="stage-tab flex items-center gap-2 px-5 py-3 text-sm font-medium whitespace-nowrap border-b-2 -mb-px transition-colors opacity-40 cursor-not-allowed">
+        <span id="tab5-icon" class="w-5 h-5 rounded-full bg-slate-300 text-white flex items-center justify-center text-xs flex-shrink-0">5</span>
+        Approved
+      </button>
+    </div>
+
+    <!-- ── Stage 1: Course Info ──────────────────────────────────────────────── -->
+    <div id="stage-1" class="stage-panel hidden fade-in">
+      <div class="mb-6">
+        <h2 class="text-lg font-semibold text-slate-900 mb-1">Course Info</h2>
+        <p class="text-sm text-slate-500">Catalog baseline. Fields are editable &#8212; changes show an &#8220;Edited from catalog&#8221; indicator.</p>
+      </div>
+      <div class="grid grid-cols-2 gap-6">
+        <div class="col-span-2 grid grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Course code</label>
+            <input class="w-full border border-slate-200 rounded px-3 py-2 text-sm bg-white" value="GC 3460" readonly />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Level</label>
+            <input class="w-full border border-slate-200 rounded px-3 py-2 text-sm bg-white" value="3" readonly />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Credit hours</label>
+            <input class="w-full border border-slate-200 rounded px-3 py-2 text-sm bg-white" value="3" readonly />
+          </div>
+        </div>
+        <div class="col-span-2">
+          <label class="block text-xs font-medium text-slate-600 mb-1">Title</label>
+          <input class="w-full border border-slate-200 rounded px-3 py-2 text-sm bg-white" value="Ink and Substrates" />
+        </div>
+        <div class="col-span-2">
+          <label class="block text-xs font-medium text-slate-600 mb-1">Track</label>
+          <input class="w-full border border-slate-200 rounded px-3 py-2 text-sm bg-white" value="GC Core" readonly />
+        </div>
+        <div class="col-span-2">
+          <label class="block text-xs font-medium text-slate-600 mb-1">Catalog description</label>
+          <textarea rows="3" class="w-full border border-slate-200 rounded px-3 py-2 text-sm bg-white resize-none">Study of ink formulation, ink and substrate properties, and color management in graphic production environments.</textarea>
+        </div>
+        <div class="col-span-2">
+          <label class="block text-xs font-medium text-slate-600 mb-1">Catalog prerequisites</label>
+          <input class="w-full border border-slate-200 rounded px-3 py-2 text-sm bg-white" value="GC 2070" />
+        </div>
+      </div>
+      <div class="mt-6 flex justify-end">
+        <button onclick="setStage(2)" class="bg-slate-800 text-white text-sm px-5 py-2 rounded hover:bg-slate-700 transition-colors">Continue to Materials &#8594;</button>
+      </div>
+    </div>
+
+    <!-- ── Stage 2: Materials ────────────────────────────────────────────────── -->
+    <div id="stage-2" class="stage-panel hidden fade-in">
+      <div class="mb-6">
+        <h2 class="text-lg font-semibold text-slate-900 mb-1">Materials</h2>
+        <p class="text-sm text-slate-500">Upload syllabus, assignment sheets, rubrics, past project examples. Extracted text feeds the KUD generation.</p>
+      </div>
+      <div class="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center mb-6 bg-white hover:border-slate-400 transition-colors cursor-pointer">
+        <div class="text-3xl mb-2">&#128196;</div>
+        <div class="text-sm font-medium text-slate-700 mb-1">Drop files here or click to upload</div>
+        <div class="text-xs text-slate-400">PDF, DOCX, TXT &#xb7; Max 20 MB per file</div>
+      </div>
+      <div class="space-y-3">
+        <div class="bg-white border border-slate-200 rounded-lg px-4 py-3 flex items-center gap-4">
+          <span class="text-lg">&#128196;</span>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-medium text-slate-800 truncate">GC3460_Syllabus_Spring2026.pdf</div>
+            <div class="text-xs text-slate-400">Extracted &#xb7; 4,280 chars &#xb7; 8 pages</div>
+          </div>
+          <span class="inline-flex items-center gap-1 text-xs text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
+            <span class="w-1.5 h-1.5 rounded-full bg-green-400 inline-block"></span>ok
+          </span>
+          <button class="text-xs text-slate-400 hover:text-slate-600 ml-2">Preview</button>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-lg px-4 py-3 flex items-center gap-4">
+          <span class="text-lg">&#128196;</span>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-medium text-slate-800 truncate">BrandColorReport_Assignment.pdf</div>
+            <div class="text-xs text-slate-400">Extracted &#xb7; 1,840 chars &#xb7; 2 pages</div>
+          </div>
+          <span class="inline-flex items-center gap-1 text-xs text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
+            <span class="w-1.5 h-1.5 rounded-full bg-green-400 inline-block"></span>ok
+          </span>
+          <button class="text-xs text-slate-400 hover:text-slate-600 ml-2">Preview</button>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-lg px-4 py-3 flex items-center gap-4">
+          <span class="text-lg">&#128196;</span>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm font-medium text-slate-800 truncate">InkProperties_LabSheet_Scanned.pdf</div>
+            <div class="text-xs text-slate-400">3 pages &#xb7; scanned image</div>
+          </div>
+          <span class="inline-flex items-center gap-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block"></span>low text
+          </span>
+          <button class="text-xs text-amber-600 hover:text-amber-800 ml-2 font-medium">Use typed version</button>
+        </div>
+      </div>
+      <div class="mt-6 flex justify-end">
+        <button onclick="setStage(3)" class="bg-slate-800 text-white text-sm px-5 py-2 rounded hover:bg-slate-700 transition-colors">Continue to Profile &#8594;</button>
+      </div>
+    </div>
+
+    <!-- ── Stage 3: Profile ──────────────────────────────────────────────────── -->
+    <div id="stage-3" class="stage-panel hidden fade-in">
+      <div class="mb-6">
+        <h2 class="text-lg font-semibold text-slate-900 mb-1">Profile</h2>
+        <p class="text-sm text-slate-500">The evidence base for KUD generation. Edit until these accurately represent what the course does, then move to KUD Review.</p>
+      </div>
+      <div class="space-y-8">
+        <div class="bg-white border border-slate-200 rounded-lg p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="text-sm font-semibold text-slate-800">Learning Objectives</h3>
+              <p class="text-xs text-slate-400 mt-0.5">What students will be able to do</p>
+            </div>
+            <button class="text-xs text-slate-500 border border-slate-200 px-3 py-1.5 rounded hover:bg-slate-50">+ Add</button>
+          </div>
+          <div class="space-y-2">
+            <div class="flex items-start gap-2"><span class="text-slate-300 mt-2.5 text-xs font-mono">&#8212;</span><input class="flex-1 border border-transparent hover:border-slate-200 focus:border-slate-300 rounded px-2 py-1.5 text-sm outline-none" value="Match color samples using Pantone standards and document to lab report specifications" /><button class="text-slate-200 hover:text-red-400 mt-1.5 text-base transition-colors">&#215;</button></div>
+            <div class="flex items-start gap-2"><span class="text-slate-300 mt-2.5 text-xs font-mono">&#8212;</span><input class="flex-1 border border-transparent hover:border-slate-200 focus:border-slate-300 rounded px-2 py-1.5 text-sm outline-none" value="Select and use appropriate test/measurement devices to set standards for output material" /><button class="text-slate-200 hover:text-red-400 mt-1.5 text-base transition-colors">&#215;</button></div>
+            <div class="flex items-start gap-2"><span class="text-slate-300 mt-2.5 text-xs font-mono">&#8212;</span><input class="flex-1 border border-transparent hover:border-slate-200 focus:border-slate-300 rounded px-2 py-1.5 text-sm outline-none" value="Identify ink and substrate properties that affect reproduction quality and cost" /><button class="text-slate-200 hover:text-red-400 mt-1.5 text-base transition-colors">&#215;</button></div>
+            <div class="flex items-start gap-2"><span class="text-slate-300 mt-2.5 text-xs font-mono">&#8212;</span><input class="flex-1 border border-transparent hover:border-slate-200 focus:border-slate-300 rounded px-2 py-1.5 text-sm outline-none" value="Conduct controlled ink and substrate testing and interpret results against industry tolerance" /><button class="text-slate-200 hover:text-red-400 mt-1.5 text-base transition-colors">&#215;</button></div>
+          </div>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-lg p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="text-sm font-semibold text-slate-800">Major Projects</h3>
+              <p class="text-xs text-slate-400 mt-0.5">Highest-stakes assignments. The first project carries the most weight in KUD generation.</p>
+            </div>
+            <button class="text-xs text-slate-500 border border-slate-200 px-3 py-1.5 rounded hover:bg-slate-50">+ Add</button>
+          </div>
+          <div class="space-y-3">
+            <div class="flex items-start gap-2"><span class="text-slate-300 mt-3 text-xs cursor-grab select-none">&#10783;</span><div class="flex-1 border border-slate-200 rounded-lg p-3 focus-within:border-slate-400 transition-colors"><textarea rows="2" class="w-full text-sm outline-none resize-none">Brand Color Report: select a Pantone color, establish a reproduction standard, explore reproduction across four substrates, write findings into a formal lab report</textarea></div><button class="text-slate-200 hover:text-red-400 mt-3 text-base transition-colors">&#215;</button></div>
+            <div class="flex items-start gap-2"><span class="text-slate-300 mt-3 text-xs cursor-grab select-none">&#10783;</span><div class="flex-1 border border-slate-200 rounded-lg p-3 focus-within:border-slate-400 transition-colors"><textarea rows="2" class="w-full text-sm outline-none resize-none">Ink Formulation lab: mix to a given color target using pigment concentrates, document process and results</textarea></div><button class="text-slate-200 hover:text-red-400 mt-3 text-base transition-colors">&#215;</button></div>
+            <div class="flex items-start gap-2"><span class="text-slate-300 mt-3 text-xs cursor-grab select-none">&#10783;</span><div class="flex-1 border border-slate-200 rounded-lg p-3 focus-within:border-slate-400 transition-colors"><textarea rows="2" class="w-full text-sm outline-none resize-none">Substrate Properties Testing: systematically test four substrate types for surface energy, absorbency, and print compatibility</textarea></div><button class="text-slate-200 hover:text-red-400 mt-3 text-base transition-colors">&#215;</button></div>
+            <div class="flex items-start gap-2"><span class="text-slate-300 mt-3 text-xs cursor-grab select-none">&#10783;</span><div class="flex-1 border border-slate-200 rounded-lg p-3 focus-within:border-slate-400 transition-colors"><textarea rows="2" class="w-full text-sm outline-none resize-none">Ink Properties Testing and Lab Report: measure tack, viscosity, and tinting strength; report against specifications</textarea></div><button class="text-slate-200 hover:text-red-400 mt-3 text-base transition-colors">&#215;</button></div>
+          </div>
+        </div>
+        <div class="bg-white border border-slate-200 rounded-lg p-5">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="text-sm font-semibold text-slate-800">Required Incoming Skills</h3>
+              <p class="text-xs text-slate-400 mt-0.5">What students need to walk in knowing. This becomes the evaluation frame for prereq analysis.</p>
+            </div>
+            <button class="text-xs text-slate-500 border border-slate-200 px-3 py-1.5 rounded hover:bg-slate-50">+ Add</button>
+          </div>
+          <div class="space-y-2">
+            <div class="flex items-start gap-2"><span class="text-slate-300 mt-2.5 text-xs font-mono">&#8212;</span><input class="flex-1 border border-transparent hover:border-slate-200 focus:border-slate-300 rounded px-2 py-1.5 text-sm outline-none" value="CMYK color theory and how ink-on-paper interactions produce final color" /><button class="text-slate-200 hover:text-red-400 mt-1.5 text-base transition-colors">&#215;</button></div>
+            <div class="flex items-start gap-2"><span class="text-slate-300 mt-2.5 text-xs font-mono">&#8212;</span><input class="flex-1 border border-transparent hover:border-slate-200 focus:border-slate-300 rounded px-2 py-1.5 text-sm outline-none" value="Basic halftone mechanics: screen frequency, dot gain, tone value" /><button class="text-slate-200 hover:text-red-400 mt-1.5 text-base transition-colors">&#215;</button></div>
+            <div class="flex items-start gap-2"><span class="text-slate-300 mt-2.5 text-xs font-mono">&#8212;</span><input class="flex-1 border border-transparent hover:border-slate-200 focus:border-slate-300 rounded px-2 py-1.5 text-sm outline-none" value="Familiarity with offset, screen, and flexographic print processes" /><button class="text-slate-200 hover:text-red-400 mt-1.5 text-base transition-colors">&#215;</button></div>
+            <div class="flex items-start gap-2"><span class="text-slate-300 mt-2.5 text-xs font-mono">&#8212;</span><input class="flex-1 border border-transparent hover:border-slate-200 focus:border-slate-300 rounded px-2 py-1.5 text-sm outline-none" value="Software file management for production environments" /><button class="text-slate-200 hover:text-red-400 mt-1.5 text-base transition-colors">&#215;</button></div>
+          </div>
+        </div>
+      </div>
+      <div class="mt-6 flex justify-end">
+        <button onclick="setStage(4)" class="bg-slate-800 text-white text-sm px-5 py-2 rounded hover:bg-slate-700 transition-colors">Continue to KUD Review &#8594;</button>
+      </div>
+    </div>
+
+    <!-- ── Stage 4: KUD Review ────────────────────────────────────────────────── -->
+    <div id="stage-4" class="stage-panel fade-in">
+      <div class="mb-6">
+        <h2 class="text-lg font-semibold text-slate-900 mb-1">KUD Review</h2>
+        <p class="text-sm text-slate-500">Generate Know / Understand / Do outcomes from the profile. Iterate until the bullets accurately represent what this course produces, then accept.</p>
+      </div>
+
+      <!-- State: not yet generated -->
+      <div id="kud-empty" class="bg-white border border-dashed border-slate-300 rounded-xl p-12 text-center hidden">
+        <div class="text-4xl mb-3">&#10022;</div>
+        <h3 class="text-base font-semibold text-slate-800 mb-2">Ready to generate KUD outcomes</h3>
+        <p class="text-sm text-slate-500 max-w-md mx-auto mb-6">The AI will draft Know, Understand, and Do bullets from the profile you built in Stage 3 &#8212; learning objectives, projects, and required incoming skills.</p>
+        <button onclick="startGenerate()" class="bg-slate-800 text-white text-sm px-6 py-2.5 rounded hover:bg-slate-700 transition-colors">Generate KUDs</button>
+      </div>
+
+      <!-- State: generating -->
+      <div id="kud-generating" class="hidden bg-white border border-slate-200 rounded-xl p-12 text-center">
+        <div class="w-8 h-8 border-2 border-slate-300 border-t-slate-700 rounded-full spin mx-auto mb-4"></div>
+        <p class="text-sm text-slate-500 pulse">Reading profile and drafting outcomes&#8230;</p>
+        <p class="text-xs text-slate-400 mt-1">&#126;10 seconds</p>
+      </div>
+
+      <!-- State: draft shown -->
+      <div id="kud-draft" class="fade-in">
+        <!-- Stale banner -->
+        <div id="stale-banner" class="hidden mb-4 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 flex items-center gap-3">
+          <span class="text-amber-500 text-lg">&#9888;</span>
+          <span class="text-sm text-amber-800">Profile updated &#8212; regenerate KUDs before accepting.</span>
+          <button onclick="startGenerate()" class="ml-auto text-xs bg-amber-100 hover:bg-amber-200 text-amber-800 border border-amber-300 px-3 py-1.5 rounded transition-colors">&#8635; Regenerate now</button>
+        </div>
+
+        <!-- Three-panel layout -->
+        <div class="grid grid-cols-3 gap-0 border border-slate-200 rounded-xl overflow-hidden bg-white">
+
+          <!-- Panel 1: Profile evidence -->
+          <div class="border-r border-slate-200 p-5">
+            <div class="text-xs font-mono uppercase tracking-widest text-slate-400 mb-4">Profile evidence</div>
+            <p class="text-xs text-slate-400 mb-2">Major projects <span class="text-slate-300">&#xb7; click to edit</span></p>
+            <div class="space-y-2 mb-4">
+              <div class="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded p-2 cursor-pointer hover:border-slate-300 transition-colors" onclick="markStale()">Brand Color Report: select Pantone, establish standard, explore reproduction across four substrates, write lab report</div>
+              <div class="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded p-2 cursor-pointer hover:border-slate-300 transition-colors" onclick="markStale()">Ink Formulation lab</div>
+              <div class="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded p-2 cursor-pointer hover:border-slate-300 transition-colors" onclick="markStale()">Substrate Properties Testing</div>
+              <div class="text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded p-2 cursor-pointer hover:border-slate-300 transition-colors" onclick="markStale()">Ink Properties Testing and Lab Report</div>
+            </div>
+            <p class="text-xs text-slate-400 mb-2">Required incoming skills</p>
+            <div class="space-y-1.5">
+              <div class="text-xs text-slate-600 flex gap-1.5"><span class="text-slate-300">&#8212;</span>CMYK color theory and ink-on-paper interactions</div>
+              <div class="text-xs text-slate-600 flex gap-1.5"><span class="text-slate-300">&#8212;</span>Basic halftone mechanics: screen frequency, dot gain</div>
+              <div class="text-xs text-slate-600 flex gap-1.5"><span class="text-slate-300">&#8212;</span>Familiarity with offset, screen, flexographic processes</div>
+              <div class="text-xs text-slate-600 flex gap-1.5"><span class="text-slate-300">&#8212;</span>Software file management for production</div>
+            </div>
+          </div>
+
+          <!-- Panel 2: KUD draft (editable) -->
+          <div class="border-r border-slate-200 p-5">
+            <div class="text-xs font-mono uppercase tracking-widest text-slate-400 mb-4">AI-drafted KUD outcomes</div>
+            <p class="text-xs font-semibold text-slate-700 mb-2">Know</p>
+            <div class="space-y-2 mb-4">
+              <div contenteditable="true" class="text-xs text-slate-600 border border-transparent hover:border-slate-200 focus:border-slate-300 rounded p-1.5 outline-none leading-relaxed">The CMYK color model and how ink-on-substrate interactions determine final color appearance</div>
+              <div contenteditable="true" class="text-xs text-slate-600 border border-transparent hover:border-slate-200 focus:border-slate-300 rounded p-1.5 outline-none leading-relaxed">Halftone mechanics: screen frequency, dot gain, tone value increase across substrates</div>
+              <div contenteditable="true" class="text-xs text-slate-600 border border-transparent hover:border-slate-200 focus:border-slate-300 rounded p-1.5 outline-none leading-relaxed">Primary print processes and their substrate compatibility constraints</div>
+            </div>
+            <p class="text-xs font-semibold text-slate-700 mb-2">Understand</p>
+            <div class="space-y-2 mb-4">
+              <div contenteditable="true" class="text-xs text-slate-600 border border-transparent hover:border-slate-200 focus:border-slate-300 rounded p-1.5 outline-none leading-relaxed">Why ink formulation choices (tack, viscosity, tinting strength) propagate through reproduction quality and cost</div>
+              <div contenteditable="true" class="text-xs text-slate-600 border border-transparent hover:border-slate-200 focus:border-slate-300 rounded p-1.5 outline-none leading-relaxed">How substrate surface energy affects ink adhesion, dot gain, and trapping</div>
+            </div>
+            <p class="text-xs font-semibold text-slate-700 mb-2">Do</p>
+            <div class="space-y-2">
+              <div contenteditable="true" class="text-xs text-slate-600 border border-transparent hover:border-slate-200 focus:border-slate-300 rounded p-1.5 outline-none leading-relaxed">Select and justify a Pantone reproduction standard, establish targets across substrates, and document findings in professional lab report format</div>
+              <div contenteditable="true" class="text-xs text-slate-600 border border-transparent hover:border-slate-200 focus:border-slate-300 rounded p-1.5 outline-none leading-relaxed">Conduct controlled ink and substrate testing, interpret results against industry tolerance, and communicate findings with precision</div>
+            </div>
+          </div>
+
+          <!-- Panel 3: Threshold concept + notes -->
+          <div class="p-5">
+            <div class="text-xs font-mono uppercase tracking-widest text-slate-400 mb-4">Threshold concept</div>
+            <p class="text-sm text-slate-700 italic leading-relaxed mb-5">&#8220;Color is not a property of the file &#8212; it is a property of the ink-substrate interaction. Every reproduction decision is a prediction about a physical process.&#8221;</p>
+            <div class="text-xs font-mono uppercase tracking-widest text-slate-400 mb-3">Confidence notes</div>
+            <div class="space-y-2">
+              <div class="flex gap-2 text-xs text-slate-500"><span class="text-green-500 flex-shrink-0 mt-0.5">&#9679;</span><span>Do bullets grounded in Brand Color Report and Ink Properties Lab &#8212; strong evidence.</span></div>
+              <div class="flex gap-2 text-xs text-slate-500"><span class="text-amber-400 flex-shrink-0 mt-0.5">&#9679;</span><span>Understand bullets inferred from lab report requirements; medium confidence.</span></div>
+              <div class="flex gap-2 text-xs text-slate-500"><span class="text-amber-400 flex-shrink-0 mt-0.5">&#9679;</span><span>Halftone screening addressed at Know level but not formally assessed &#8212; flagged.</span></div>
+            </div>
+            <div class="mt-6 pt-5 border-t border-slate-100">
+              <div class="text-xs text-slate-400 mb-1">Generation run</div>
+              <div class="text-xs text-slate-500 font-mono">Run #2 &#xb7; May 21 2026, 11:42 am</div>
+              <div class="text-xs text-slate-400 mt-1">Based on 3 materials + profile</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action row -->
+        <div class="flex items-center gap-3 mt-4 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+          <button onclick="startGenerate()" class="text-sm border border-slate-300 bg-white text-slate-700 px-4 py-2 rounded hover:bg-slate-50 transition-colors">&#8635; Regenerate KUDs</button>
+          <button onclick="setStage(3)" class="text-sm border border-slate-300 bg-white text-slate-600 px-4 py-2 rounded hover:bg-slate-50 transition-colors">&#8592; Edit profile to refine</button>
+          <div class="flex-1"></div>
+          <div class="text-xs text-slate-400 mr-2">Ready to accept?</div>
+          <button onclick="acceptKuds()" id="accept-btn" class="text-sm bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded font-medium transition-colors">Accept these KUDs &#8594;</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Stage 5: Approved ──────────────────────────────────────────────────── -->
+    <div id="stage-5" class="stage-panel hidden fade-in">
+      <div class="flex items-start justify-between mb-6">
+        <div>
+          <h2 class="text-lg font-semibold text-slate-900 mb-1">KUD Profile &#8212; Approved</h2>
+          <p class="text-sm text-slate-500">Accepted May 21 2026, 11:44 am &#xb7; Run #2 &#xb7; Based on 3 materials</p>
+        </div>
+        <span class="inline-flex items-center gap-1.5 bg-green-50 text-green-700 border border-green-200 text-xs font-semibold px-3 py-1.5 rounded-full flex-shrink-0">
+          <span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span>
+          Approved
+        </span>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-xl p-6 mb-6">
+        <div class="text-xs font-mono uppercase tracking-widest text-slate-400 mb-4">Threshold concept</div>
+        <p class="text-sm text-slate-700 italic leading-relaxed mb-6">&#8220;Color is not a property of the file &#8212; it is a property of the ink-substrate interaction. Every reproduction decision is a prediction about a physical process.&#8221;</p>
+        <div class="grid grid-cols-3 gap-6">
+          <div>
+            <div class="text-xs font-semibold text-slate-700 mb-3 flex items-center gap-2"><span class="w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center">K</span>Know</div>
+            <ul class="space-y-2">
+              <li class="text-xs text-slate-600 flex gap-2"><span class="text-slate-300 mt-0.5">&#8212;</span>The CMYK color model and how ink-on-substrate interactions determine final color appearance</li>
+              <li class="text-xs text-slate-600 flex gap-2"><span class="text-slate-300 mt-0.5">&#8212;</span>Halftone mechanics: screen frequency, dot gain, tone value increase</li>
+              <li class="text-xs text-slate-600 flex gap-2"><span class="text-slate-300 mt-0.5">&#8212;</span>Primary print processes and their substrate compatibility constraints</li>
+            </ul>
+          </div>
+          <div>
+            <div class="text-xs font-semibold text-slate-700 mb-3 flex items-center gap-2"><span class="w-5 h-5 rounded-full bg-purple-100 text-purple-700 text-xs font-bold flex items-center justify-center">U</span>Understand</div>
+            <ul class="space-y-2">
+              <li class="text-xs text-slate-600 flex gap-2"><span class="text-slate-300 mt-0.5">&#8212;</span>Why ink formulation choices propagate through reproduction quality and cost</li>
+              <li class="text-xs text-slate-600 flex gap-2"><span class="text-slate-300 mt-0.5">&#8212;</span>How substrate surface energy affects ink adhesion, dot gain, and trapping</li>
+            </ul>
+          </div>
+          <div>
+            <div class="text-xs font-semibold text-slate-700 mb-3 flex items-center gap-2"><span class="w-5 h-5 rounded-full bg-green-100 text-green-700 text-xs font-bold flex items-center justify-center">D</span>Do</div>
+            <ul class="space-y-2">
+              <li class="text-xs text-slate-600 flex gap-2"><span class="text-slate-300 mt-0.5">&#8212;</span>Select and justify a Pantone reproduction standard and document findings in professional lab report format</li>
+              <li class="text-xs text-slate-600 flex gap-2"><span class="text-slate-300 mt-0.5">&#8212;</span>Conduct controlled ink and substrate testing and interpret results against industry tolerance</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="bg-green-50 border border-green-200 rounded-xl p-5 mb-6">
+        <h3 class="text-sm font-semibold text-green-800 mb-2">This course is now available in analysis tools</h3>
+        <div class="flex gap-4 flex-wrap">
+          <a href="#" class="text-xs text-green-700 underline underline-offset-2 hover:text-green-900">Open in Prereq Analysis &#8594;</a>
+          <a href="#" class="text-xs text-green-700 underline underline-offset-2 hover:text-green-900">View in Coverage Matrix &#8594;</a>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <button onclick="reviseKuds()" class="text-sm border border-slate-300 bg-white text-slate-600 px-4 py-2 rounded hover:bg-slate-50 transition-colors">Revise KUDs</button>
+        <span class="text-xs text-slate-400">Re-opening KUD Review resets approval until re-accepted.</span>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  var kudState = 'draft';
+  var isApproved = false;
+
+  function setStage(n) {
+    if (n === 5 && !isApproved) return;
+    document.querySelectorAll('.stage-panel').forEach(function(p) { p.classList.add('hidden'); });
+    var panel = document.getElementById('stage-' + n);
+    if (panel) { panel.classList.remove('hidden'); }
+
+    document.querySelectorAll('.stage-tab').forEach(function(t, i) {
+      var active = (i + 1) === n;
+      t.style.borderColor = active ? '#1e293b' : 'transparent';
+      t.style.color = active ? '#0f172a' : '';
+    });
+  }
+
+  function startGenerate() {
+    document.getElementById('kud-empty').classList.add('hidden');
+    document.getElementById('kud-generating').classList.remove('hidden');
+    document.getElementById('kud-draft').classList.add('hidden');
+    document.getElementById('stale-banner').classList.add('hidden');
+    kudState = 'generating';
+
+    setTimeout(function() {
+      document.getElementById('kud-generating').classList.add('hidden');
+      document.getElementById('kud-draft').classList.remove('hidden');
+      var btn = document.getElementById('accept-btn');
+      btn.disabled = false;
+      btn.classList.remove('opacity-40', 'cursor-not-allowed');
+      kudState = 'draft';
+    }, 2200);
+  }
+
+  function markStale() {
+    if (kudState !== 'draft') return;
+    document.getElementById('stale-banner').classList.remove('hidden');
+    var btn = document.getElementById('accept-btn');
+    btn.disabled = true;
+    btn.classList.add('opacity-40', 'cursor-not-allowed');
+    kudState = 'stale';
+  }
+
+  function acceptKuds() {
+    isApproved = true;
+    var tab5 = document.getElementById('tab-5');
+    tab5.classList.remove('opacity-40', 'cursor-not-allowed');
+    var icon5 = document.getElementById('tab5-icon');
+    icon5.className = 'w-5 h-5 rounded-full bg-green-500 text-white flex items-center justify-center text-xs flex-shrink-0';
+    icon5.textContent = '✓';
+    var icon4 = document.getElementById('tab4-icon');
+    icon4.className = 'w-5 h-5 rounded-full bg-green-500 text-white flex items-center justify-center text-xs flex-shrink-0';
+    icon4.textContent = '✓';
+    document.getElementById('badge-inprogress').classList.add('hidden');
+    document.getElementById('badge-approved').classList.remove('hidden');
+    setStage(5);
+  }
+
+  function reviseKuds() {
+    isApproved = false;
+    var tab5 = document.getElementById('tab-5');
+    tab5.classList.add('opacity-40', 'cursor-not-allowed');
+    var icon5 = document.getElementById('tab5-icon');
+    icon5.className = 'w-5 h-5 rounded-full bg-slate-300 text-white flex items-center justify-center text-xs flex-shrink-0';
+    icon5.textContent = '5';
+    document.getElementById('badge-inprogress').classList.remove('hidden');
+    document.getElementById('badge-approved').classList.add('hidden');
+    setStage(4);
+  }
+
+  // Init: start on KUD Review tab with draft visible
+  setStage(4);
+</script>
+
+</body>
+</html>
