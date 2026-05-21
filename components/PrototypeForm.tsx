@@ -2,21 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CourseSelector } from './CourseSelector';
 import { CourseDetails, type CourseDetailFields } from './CourseDetails';
-import { TargetKUDPreview } from './TargetKUDPreview';
 import { formatCourseSyllabus } from '@/lib/courses/formatCourseSyllabus';
-import type { CareerTarget } from '@/lib/domain/types';
 
 const MAX_PRIOR_COURSES = 8;
-
-interface TargetOption {
-  id: string;
-  name: string;
-}
 
 export interface CourseInput {
   courseLabel: string;
@@ -86,8 +77,6 @@ function toCourseFullData(r: CourseApiResponse): CourseFullData {
 }
 
 export function PrototypeForm({ slug, onAnalyze, isAnalyzing }: Props) {
-  const [targets, setTargets] = useState<TargetOption[]>([]);
-  const [targetsLoading, setTargetsLoading] = useState(true);
   const [careerTargetId, setCareerTargetId] = useState('');
   const [course, setCourse] = useState<CourseSlot>(emptySlot());
   const [priorCoursework, setPriorCoursework] = useState<CourseSlot[]>([emptySlot()]);
@@ -95,26 +84,12 @@ export function PrototypeForm({ slug, onAnalyze, isAnalyzing }: Props) {
   useEffect(() => {
     fetch('/api/targets')
       .then((r) => r.json())
-      .then((data: TargetOption[]) => {
-        setTargets(data);
-        if (data.length > 0 && !careerTargetId) {
-          setCareerTargetId(data[0]!.id);
-        }
+      .then((data: Array<{ id: string }>) => {
+        if (data.length > 0 && !careerTargetId) setCareerTargetId(data[0]!.id);
       })
-      .catch(() => {
-        // If fetch fails, leave targets empty — user sees empty dropdown
-      })
-      .finally(() => setTargetsLoading(false));
+      .catch(() => {});
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const [fullTarget, setFullTarget] = useState<CareerTarget | null>(null);
-  useEffect(() => {
-    if (!careerTargetId) { setFullTarget(null); return; }
-    fetch('/api/targets').then(r => r.json()).then((data: CareerTarget[]) => {
-      setFullTarget(data.find(t => t.id === careerTargetId) ?? null);
-    }).catch(() => setFullTarget(null));
-  }, [careerTargetId]);
 
   async function fetchCourse(code: string): Promise<CourseFullData | null> {
     try {
@@ -285,34 +260,12 @@ export function PrototypeForm({ slug, onAnalyze, isAnalyzing }: Props) {
         </CardContent>
       </Card>
 
-      {/* Career target + submit */}
-      <Card>
-        <CardContent className="pt-6 space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="career-target">Career target</Label>
-            {targetsLoading ? (
-              <p className="text-sm text-muted-foreground">Loading career targets...</p>
-            ) : (
-              <Select value={careerTargetId} onValueChange={(v) => { if (v !== null) setCareerTargetId(v); }}>
-                <SelectTrigger id="career-target" aria-label="Career target">
-                  <SelectValue placeholder="Choose a target" />
-                </SelectTrigger>
-                <SelectContent>
-                  {targets.map(t => (
-                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-
-          <TargetKUDPreview slug={slug} target={fullTarget} />
-
-          <Button size="lg" onClick={handleSubmit} disabled={!canSubmit}>
-            {isAnalyzing ? 'Analyzing…' : 'Analyze'}
-          </Button>
-        </CardContent>
-      </Card>
+      {/* Submit */}
+      <div>
+        <Button size="lg" onClick={handleSubmit} disabled={!canSubmit}>
+          {isAnalyzing ? 'Analyzing…' : 'Analyze'}
+        </Button>
+      </div>
     </div>
   );
 }
