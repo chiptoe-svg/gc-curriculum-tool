@@ -63,7 +63,7 @@ export async function kudChatTurn(
 
   const response = await client.chat.completions.create({
     model,
-    max_tokens: 1024,
+    max_completion_tokens: 1024,
     messages: openaiMessages,
   });
 
