@@ -82,6 +82,7 @@ export function CourseBuilderClient(props: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('info');
   const [builderStatus, setBuilderStatus] = useState(course.builderStatus);
   const [kudDraft, setKudDraft] = useState<BuilderKud | null>(currentKud);
+  const [liveOkCount, setLiveOkCount] = useState(okMaterialCount);
 
   return (
     <div className="space-y-6">
@@ -113,11 +114,11 @@ export function CourseBuilderClient(props: Props) {
 
       {activeTab === 'materials' && (
         <div className="space-y-6">
-          <MaterialsZone courseCode={course.code} slug={slug} initialMaterials={materials} />
+          <MaterialsZone courseCode={course.code} slug={slug} initialMaterials={materials} onOkCountChange={setLiveOkCount} />
           <CourseAnalyzeZone
             slug={slug}
             courseCode={course.code}
-            okCount={okMaterialCount}
+            okCount={liveOkCount}
             lastRun={lastProfileRun}
             manuallyEdited={aiProfileManuallyEdited}
             onAnalyzed={() => {}}
