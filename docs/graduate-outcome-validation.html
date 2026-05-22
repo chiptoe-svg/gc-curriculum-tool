@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Graduate Outcome Validation — Clemson GC Curriculum Initiative</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Georgia', serif;
+      font-size: 15px;
+      line-height: 1.65;
+      color: #1a1a2e;
+      background: #f8f8f6;
+    }
+
+    .page {
+      max-width: 900px;
+      margin: 0 auto;
+      background: #fff;
+      box-shadow: 0 2px 24px rgba(0,0,0,0.08);
+    }
+
+    /* Header */
+    .header {
+      background: #1a2744;
+      color: #fff;
+      padding: 48px 56px 40px;
+    }
+    .header-eyebrow {
+      font-family: 'Arial', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #f4a83a;
+      margin-bottom: 16px;
+    }
+    .header h1 {
+      font-size: 28px;
+      font-weight: 400;
+      line-height: 1.3;
+      margin-bottom: 12px;
+    }
+    .header h1 strong { font-weight: 700; }
+    .header-sub {
+      font-family: 'Arial', sans-serif;
+      font-size: 14px;
+      color: #b8c4d8;
+      line-height: 1.5;
+      max-width: 620px;
+    }
+
+    /* Stats bar */
+    .stats-bar {
+      background: #f4a83a;
+      padding: 0;
+      display: flex;
+    }
+    .stat {
+      flex: 1;
+      padding: 24px 28px;
+      border-right: 1px solid rgba(255,255,255,0.3);
+      text-align: center;
+    }
+    .stat:last-child { border-right: none; }
+    .stat-number {
+      font-family: 'Arial', sans-serif;
+      font-size: 32px;
+      font-weight: 900;
+      color: #1a2744;
+      display: block;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .stat-label {
+      font-family: 'Arial', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      color: #3a4a6e;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      display: block;
+      line-height: 1.3;
+    }
+
+    /* Body */
+    .body { padding: 0 56px 56px; }
+
+    /* Section */
+    .section { padding-top: 44px; }
+    .section-label {
+      font-family: 'Arial', sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #f4a83a;
+      border-bottom: 2px solid #f4a83a;
+      padding-bottom: 6px;
+      margin-bottom: 20px;
+    }
+    h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1a2744;
+      margin-bottom: 14px;
+      font-family: 'Arial', sans-serif;
+    }
+    h3 {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1a2744;
+      margin: 24px 0 10px;
+      font-family: 'Arial', sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    p {
+      margin-bottom: 14px;
+      color: #333;
+      max-width: 740px;
+    }
+
+    /* Callout */
+    .callout {
+      background: #eef2f8;
+      border-left: 4px solid #1a2744;
+      padding: 18px 22px;
+      margin: 20px 0;
+      border-radius: 0 4px 4px 0;
+    }
+    .callout p { margin: 0; font-style: italic; color: #1a2744; max-width: none; }
+    .callout-amber {
+      background: #fff8ed;
+      border-left-color: #f4a83a;
+    }
+    .callout-amber p { color: #7a4a00; font-style: normal; }
+
+    /* Two column */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin: 20px 0;
+    }
+
+    /* Card */
+    .card {
+      border: 1px solid #dde3ef;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .card-header {
+      background: #1a2744;
+      color: #fff;
+      padding: 14px 18px;
+      font-family: 'Arial', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .card-header.amber { background: #f4a83a; color: #1a2744; }
+    .card-body { padding: 18px; }
+    .card-body p { font-size: 13.5px; margin-bottom: 10px; max-width: none; }
+    .card-body p:last-child { margin-bottom: 0; }
+
+    /* SOC table */
+    .soc-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'Arial', sans-serif;
+      font-size: 12.5px;
+      margin: 16px 0;
+    }
+    .soc-table thead tr {
+      background: #1a2744;
+      color: #fff;
+    }
+    .soc-table thead th {
+      padding: 10px 12px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .soc-table tbody tr { border-bottom: 1px solid #e8ecf3; }
+    .soc-table tbody tr:hover { background: #f5f7fb; }
+    .soc-table tbody td { padding: 9px 12px; color: #333; }
+    .soc-table tbody td:first-child { font-family: monospace; font-size: 12px; color: #666; }
+    .bar-cell { width: 120px; }
+    .bar-wrap { background: #e8ecf3; border-radius: 3px; height: 8px; }
+    .bar-fill { background: #f4a83a; height: 8px; border-radius: 3px; }
+    .bar-fill.blue { background: #1a2744; }
+    .trend-grow { color: #2a7a4e; font-weight: 600; }
+    .trend-stable { color: #555; }
+    .trend-decline { color: #b03030; font-weight: 600; }
+
+    /* Employer grid */
+    .employer-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 16px 0;
+    }
+    .employer-tag {
+      background: #eef2f8;
+      border: 1px solid #c8d3e8;
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-family: 'Arial', sans-serif;
+      font-size: 12px;
+      color: #1a2744;
+    }
+
+    /* Job examples */
+    .job-examples {
+      background: #1a2744;
+      border-radius: 6px;
+      padding: 20px 24px;
+      margin: 16px 0;
+    }
+    .job-example {
+      font-family: 'Arial', sans-serif;
+      font-size: 12.5px;
+      color: #c8d3e8;
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+    }
+    .job-example:last-child { border-bottom: none; }
+    .job-title-co { color: #fff; font-weight: 600; }
+    .job-soc { font-size: 11px; color: #f4a83a; white-space: nowrap; }
+
+    /* Function cards */
+    .function-card {
+      border: 1px solid #dde3ef;
+      border-radius: 8px;
+      overflow: hidden;
+      margin: 20px 0;
+    }
+    .function-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 18px 24px;
+      background: #f5f7fb;
+      border-bottom: 1px solid #dde3ef;
+    }
+    .function-number {
+      background: #1a2744;
+      color: #fff;
+      font-family: 'Arial', sans-serif;
+      font-size: 18px;
+      font-weight: 900;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .function-title { font-family: 'Arial', sans-serif; font-weight: 700; font-size: 15px; color: #1a2744; }
+    .function-subtitle { font-family: 'Arial', sans-serif; font-size: 12px; color: #666; margin-top: 2px; }
+    .function-body { padding: 20px 24px; }
+    .function-body p { font-size: 14px; margin-bottom: 12px; max-width: none; }
+
+    .tag {
+      display: inline-block;
+      background: #eef2f8;
+      border: 1px solid #c8d3e8;
+      border-radius: 3px;
+      padding: 2px 8px;
+      font-family: 'Arial', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      color: #1a2744;
+      margin: 2px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .tag.amber { background: #fff4e0; border-color: #f4a83a; color: #7a4a00; }
+
+    /* Coverage comparison */
+    .coverage-compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2px;
+      margin: 20px 0;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .coverage-box {
+      padding: 20px 24px;
+      text-align: center;
+    }
+    .coverage-box.current { background: #f0e8e8; }
+    .coverage-box.proposed { background: #e8f0e8; }
+    .coverage-pct {
+      font-family: 'Arial', sans-serif;
+      font-size: 42px;
+      font-weight: 900;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+    .coverage-box.current .coverage-pct { color: #b03030; }
+    .coverage-box.proposed .coverage-pct { color: #2a7a4e; }
+    .coverage-desc {
+      font-family: 'Arial', sans-serif;
+      font-size: 12px;
+      color: #555;
+      line-height: 1.4;
+    }
+    .coverage-desc strong { color: #1a2744; }
+
+    /* Footer */
+    .footer {
+      background: #1a2744;
+      padding: 28px 56px;
+      font-family: 'Arial', sans-serif;
+      font-size: 11px;
+      color: #7a8aaa;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .footer a { color: #f4a83a; text-decoration: none; }
+
+    @media (max-width: 700px) {
+      .header, .body, .footer { padding-left: 24px; padding-right: 24px; }
+      .stats-bar { flex-direction: column; }
+      .stat { border-right: none; border-bottom: 1px solid rgba(255,255,255,0.3); }
+      .two-col, .coverage-compare { grid-template-columns: 1fr; }
+    }
+    @media print {
+      body { background: #fff; }
+      .page { box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-eyebrow">Clemson University · Graphic Communications · May 2026</div>
+    <h1><strong>Graduate Outcome Validation</strong><br>Connecting Curriculum to Careers</h1>
+    <p class="header-sub">A methodology for validating and tuning AI-generated course learning outcomes against empirically documented graduate career destinations — using real employment data from Clemson GC graduates, 2018–2026.</p>
+  </div>
+
+  <!-- Stats bar -->
+  <div class="stats-bar">
+    <div class="stat">
+      <span class="stat-number">268</span>
+      <span class="stat-label">Clemson GC<br>graduate records</span>
+    </div>
+    <div class="stat">
+      <span class="stat-number">43</span>
+      <span class="stat-label">Distinct occupations<br>entered</span>
+    </div>
+    <div class="stat">
+      <span class="stat-number">58</span>
+      <span class="stat-label">Industries<br>represented</span>
+    </div>
+    <div class="stat">
+      <span class="stat-number">88%</span>
+      <span class="stat-label">Captured by<br>updated crosswalk</span>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <!-- Section 1: The Opportunity -->
+    <div class="section">
+      <div class="section-label">Section 1 — The Opportunity</div>
+      <h2>A decade of real outcomes — now connectable to curriculum</h2>
+
+      <p>Clemson GC graduates have been landing at major employers across design, marketing, technology, and production for over a decade. The program produced those outcomes. What we have not had is a systematic way to connect specific curriculum choices — individual courses and their learning outcomes — to the careers graduates actually enter.</p>
+
+      <p>That connection is now possible. A new AI-assisted curriculum development tool generates structured learning outcome statements (KUDs — Know, Understand, Do) from course materials. The graduate employment dataset provides ground-truth evidence of where those outcomes lead. Linking the two creates a validation loop: does what we teach match what our graduates do?</p>
+
+      <div class="callout">
+        <p>"We have been producing graduates who land at PwC, JP Morgan, BBDO, PGA Tour, Bank of America, and 400+ other employers. This initiative makes that connection explicit — and uses the evidence to confirm we are teaching the right things, or to identify where we need to adjust."</p>
+      </div>
+    </div>
+
+    <!-- Section 2: The evidence -->
+    <div class="section">
+      <div class="section-label">Section 2 — The Evidence</div>
+      <h2>Where Clemson GC graduates actually go</h2>
+
+      <p>The following occupations represent where 268 Clemson GC graduates were employed between 2018 and 2026. All are grounded in real job records — real titles, real companies, real SOC codes.</p>
+
+      <table class="soc-table">
+        <thead>
+          <tr>
+            <th>SOC Code</th>
+            <th>Occupation</th>
+            <th>Clemson Grads</th>
+            <th>Share</th>
+            <th style="width:100px;">Distribution</th>
+            <th>BLS Trend</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>27-1024</td>
+            <td>Graphic Designers</td>
+            <td>64</td>
+            <td>23.9%</td>
+            <td class="bar-cell"><div class="bar-wrap"><div class="bar-fill" style="width:100%"></div></div></td>
+            <td class="trend-grow">Growing +2%</td>
+          </tr>
+          <tr>
+            <td>13-1161</td>
+            <td>Market Research Analysts &amp; Marketing Specialists</td>
+            <td>40</td>
+            <td>14.9%</td>
+            <td class="bar-cell"><div class="bar-wrap"><div class="bar-fill" style="width:63%"></div></div></td>
+            <td class="trend-grow">Growing +8.8%</td>
+          </tr>
+          <tr>
+            <td>41-3091</td>
+            <td>Sales Representatives of Services</td>
+            <td>19</td>
+            <td>7.1%</td>
+            <td class="bar-cell"><div class="bar-wrap"><div class="bar-fill" style="width:30%"></div></div></td>
+            <td class="trend-stable">Stable</td>
+          </tr>
+          <tr>
+            <td>11-2021</td>
+            <td>Marketing Managers</td>
+            <td>17</td>
+            <td>6.3%</td>
+            <td class="bar-cell"><div class="bar-wrap"><div class="bar-fill" style="width:27%"></div></div></td>
+            <td class="trend-grow">Growing +6%</td>
+          </tr>
+          <tr>
+            <td>41-4011</td>
+            <td>Sales Representatives, Wholesale &amp; Manufacturing</td>
+            <td>16</td>
+            <td>6.0%</td>
+            <td class="bar-cell"><div class="bar-wrap"><div class="bar-fill" style="width:25%"></div></div></td>
+            <td class="trend-stable">Stable</td>
+          </tr>
+          <tr>
+            <td>27-3031</td>
+            <td>Public Relations Specialists</td>
+            <td>16</td>
+            <td>6.0%</td>
+            <td class="bar-cell"><div class="bar-wrap"><div class="bar-fill" style="width:25%"></div></div></td>
+            <td class="trend-grow">Growing +6%</td>
+          </tr>
+          <tr>
+            <td>43-4051</td>
+            <td>Customer Service Representatives</td>
+            <td>11</td>
+            <td>4.1%</td>
+            <td class="bar-cell"><div class="bar-wrap"><div class="bar-fill" style="width:17%"></div></div></td>
+            <td class="trend-stable">Stable</td>
+          </tr>
+          <tr>
+            <td>13-1082</td>
+            <td>Project Management Specialists</td>
+            <td>10</td>
+            <td>3.7%</td>
+            <td class="bar-cell"><div class="bar-wrap"><div class="bar-fill" style="width:16%"></div></div></td>
+            <td class="trend-grow">Growing +6%</td>
+          </tr>
+          <tr>
+            <td>15-1255</td>
+            <td>Web and Digital Interface Designers</td>
+            <td>8</td>
+            <td>3.0%</td>
+            <td class="bar-cell"><div class="bar-wrap"><div class="bar-fill" style="width:13%"></div></div></td>
+            <td class="trend-grow">Growing +7%</td>
+          </tr>
+          <tr>
+            <td>51-9061</td>
+            <td>Quality Control Specialists</td>
+            <td>6</td>
+            <td>2.2%</td>
+            <td class="bar-cell"><div class="bar-wrap"><div class="bar-fill" style="width:9%"></div></div></td>
+            <td class="trend-stable">Stable</td>
+          </tr>
+          <tr style="background:#f9f0e8;">
+            <td>51-5111</td>
+            <td>Prepress Technicians and Workers <em style="font-size:11px;color:#999;">(current crosswalk)</em></td>
+            <td>5</td>
+            <td>1.9%</td>
+            <td class="bar-cell"><div class="bar-wrap"><div class="bar-fill blue" style="width:8%"></div></div></td>
+            <td class="trend-decline">Declining</td>
+          </tr>
+          <tr style="background:#f9f0e8;">
+            <td>51-5112</td>
+            <td>Printing Press Operators <em style="font-size:11px;color:#999;">(current crosswalk)</em></td>
+            <td>3</td>
+            <td>1.1%</td>
+            <td class="bar-cell"><div class="bar-wrap"><div class="bar-fill blue" style="width:5%"></div></div></td>
+            <td class="trend-decline">Declining</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Real jobs at real employers</h3>
+
+      <div class="job-examples">
+        <div class="job-example">
+          <span class="job-title-co">UX/UI Designer · PwC</span>
+          <span class="job-soc">15-1255 Web &amp; Digital Interface Designers</span>
+        </div>
+        <div class="job-example">
+          <span class="job-title-co">Software Engineer (Front-end) · JP Morgan</span>
+          <span class="job-soc">15-1255 Web &amp; Digital Interface Designers</span>
+        </div>
+        <div class="job-example">
+          <span class="job-title-co">AVP Experience Designer · Bank of America</span>
+          <span class="job-soc">27-1024 Graphic Designers</span>
+        </div>
+        <div class="job-example">
+          <span class="job-title-co">Art Director · Wieden + Kennedy</span>
+          <span class="job-soc">27-1011 Art Directors</span>
+        </div>
+        <div class="job-example">
+          <span class="job-title-co">Account Executive · BBDO Worldwide</span>
+          <span class="job-soc">41-3091 Sales Representatives of Services</span>
+        </div>
+        <div class="job-example">
+          <span class="job-title-co">Videographer · PGA Tour</span>
+          <span class="job-soc">27-4032 Video Editors</span>
+        </div>
+        <div class="job-example">
+          <span class="job-title-co">Jr. Graphic Designer · Philadelphia 76ers</span>
+          <span class="job-soc">27-1024 Graphic Designers</span>
+        </div>
+        <div class="job-example">
+          <span class="job-title-co">Print Production Specialist · Amazon</span>
+          <span class="job-soc">51-9199 Production Workers</span>
+        </div>
+        <div class="job-example">
+          <span class="job-title-co">Account Executive · Sandy Alexander</span>
+          <span class="job-soc">41-4011 Sales Representatives, Wholesale &amp; Mfg.</span>
+        </div>
+        <div class="job-example">
+          <span class="job-title-co">Color Manager · ProAmpac</span>
+          <span class="job-soc">51-9061 Quality Control Specialists</span>
+        </div>
+      </div>
+
+      <div class="employer-grid">
+        <span class="employer-tag">PGA Tour</span>
+        <span class="employer-tag">Carolina Panthers</span>
+        <span class="employer-tag">Philadelphia 76ers</span>
+        <span class="employer-tag">Bank of America</span>
+        <span class="employer-tag">JP Morgan</span>
+        <span class="employer-tag">PwC</span>
+        <span class="employer-tag">BBDO Worldwide</span>
+        <span class="employer-tag">Wieden + Kennedy</span>
+        <span class="employer-tag">Amazon</span>
+        <span class="employer-tag">Cisco</span>
+        <span class="employer-tag">Sandy Alexander</span>
+        <span class="employer-tag">ProAmpac</span>
+        <span class="employer-tag">Quad</span>
+        <span class="employer-tag">American Express</span>
+        <span class="employer-tag">General Mills</span>
+        <span class="employer-tag">Cardinal Health</span>
+        <span class="employer-tag">SAS</span>
+        <span class="employer-tag">Washington Nationals</span>
+        <span class="employer-tag">Mississippi State Athletics</span>
+        <span class="employer-tag">Nasdaq</span>
+        <span class="employer-tag">+ 400 more</span>
+      </div>
+    </div>
+
+    <!-- Section 3: The gap -->
+    <div class="section">
+      <div class="section-label">Section 3 — The Classification Gap</div>
+      <h2>What the federal data system says vs. what actually happens</h2>
+
+      <p>The federal CIP–SOC crosswalk for graphic communications programs (CIP 10.03) was written in the late 1990s and has not been updated. Career databases used by millions of students, counselors, and administrators draw from this crosswalk — and return results that bear almost no relation to where GC graduates actually work.</p>
+
+      <div class="coverage-compare">
+        <div class="coverage-box current">
+          <div class="coverage-pct">3.4%</div>
+          <div class="coverage-desc"><strong>Current crosswalk (2020)</strong><br>6 SOC codes, 5 of 6 declining<br>9 of 268 Clemson graduates captured</div>
+        </div>
+        <div class="coverage-box proposed">
+          <div class="coverage-pct">88.4%</div>
+          <div class="coverage-desc"><strong>Proposed crosswalk (2030)</strong><br>21 SOC codes grounded in graduate data<br>237 of 268 Clemson graduates captured</div>
+        </div>
+      </div>
+
+      <div class="callout callout-amber">
+        <p><strong>The implication:</strong> Any curriculum analysis tool that draws from standard federal career data is making decisions from a dataset that misses 96.6% of actual Clemson GC outcomes. The 21-code proposed crosswalk — grounded in 603 graduate records across 9 programs — is the correct reference set for curriculum alignment work.</p>
+      </div>
+    </div>
+
+    <!-- Section 4: The validation functions -->
+    <div class="section">
+      <div class="section-label">Section 4 — The Validation Methodology</div>
+      <h2>Two functions, one closed loop</h2>
+
+      <p>The Graduate Outcome Validation module links AI-generated course learning outcomes (KUDs) to real career destinations via O*NET — the federal occupational competency database — as an intermediary. The result is an empirical test of whether the curriculum's stated outcomes match what the careers graduates enter actually require.</p>
+
+      <div class="function-card">
+        <div class="function-header">
+          <div class="function-number">1</div>
+          <div>
+            <div class="function-title">First-Job Alignment</div>
+            <div class="function-subtitle">Does what we teach match where graduates start?</div>
+          </div>
+        </div>
+        <div class="function-body">
+          <p>For each SOC code in the graduate dataset, the system pulls O*NET competency profiles — knowledge areas, skills, and work activities — and maps them to KUD structure. Each course's AI-generated KUDs are then compared against the competency requirements of the career destinations graduates actually enter.</p>
+          <p><strong>What it produces:</strong> Course-level alignment scores against each of the 21 career destinations. Program-level coverage report: does the full curriculum collectively prepare students for the careers 88% of graduates reach? Gap report: which destinations have weak curriculum coverage?</p>
+          <p>
+            <span class="tag">Data available now</span>
+            <span class="tag">268 Clemson records</span>
+            <span class="tag">O*NET API</span>
+          </p>
+        </div>
+      </div>
+
+      <div class="function-card">
+        <div class="function-header">
+          <div class="function-number">2</div>
+          <div>
+            <div class="function-title">Career Trajectory Alignment</div>
+            <div class="function-subtitle">Does what we teach enable where graduates go over time?</div>
+          </div>
+        </div>
+        <div class="function-body">
+          <p>Point-in-time employment data shows where graduates are when observed. Career trajectory data shows the arc — where they start, where they are five years later, and what that progression reveals about what the program actually enables over time.</p>
+          <p>A graduate who enters as a Graphic Designer and advances to Creative Director at a national agency, or who starts in print production and moves into brand management at a consumer goods company — those trajectories are evidence of curriculum impact that first-job data cannot capture.</p>
+          <p><strong>What it produces:</strong> Trajectory pattern map — which starting roles lead where across the graduate population. Curriculum-to-trajectory alignment: does the KUD profile explain career advancement patterns, not just entry placement?</p>
+          <p>
+            <span class="tag amber">Data collection underway</span>
+            <span class="tag">LinkedIn source</span>
+            <span class="tag">2010–present</span>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 5: Methodology validation -->
+    <div class="section">
+      <div class="section-label">Section 5 — Methodological Significance</div>
+      <h2>Ground truth validation of the KUD approach</h2>
+
+      <p>Most curriculum frameworks are validated theoretically — "this aligns with Bloom's taxonomy, therefore it accurately describes learning outcomes." This initiative enables something rarer: empirical validation against real outcomes.</p>
+
+      <p>If the KUDs generated from GC course materials align well with the O*NET competency profiles of jobs that 88% of Clemson GC graduates actually hold, that is evidence the methodology captures something real — not just plausible-sounding academic language.</p>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header">The validation chain</div>
+          <div class="card-body">
+            <p>Course materials → AI-generated KUDs → O*NET competency alignment → Graduate career destinations</p>
+            <p>Each link is independently verifiable. The graduate data is fixed — it preceded the tool. That independence is what makes this a genuine validation rather than a circular argument.</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header amber">The tuning opportunity</div>
+          <div class="card-body">
+            <p>Where the KUDs and career data don't align, the methodology can be adjusted. If the AI consistently over-weights certain Bloom's levels relative to what the jobs actually require, that is a calibration signal.</p>
+            <p>The historical data is the benchmark. The tool is what we tune against it.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="callout">
+        <p>If validated, this becomes a field-wide contribution — evidence that analyzing course materials to generate KUD outcomes produces descriptions that predict career alignment in a real program. Publishable. Generalizable. Grounded in 268 real job records from a real program over eight years.</p>
+      </div>
+    </div>
+
+    <!-- Section 6: Data collection -->
+    <div class="section">
+      <div class="section-label">Section 6 — Data Collection Initiative</div>
+      <h2>Extending the dataset for trajectory analysis</h2>
+
+      <p>The 268 Clemson records currently capture point-in-time employment. The trajectory analysis requires longitudinal data — multiple positions per graduate in chronological sequence. Collection is underway via LinkedIn.</p>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header">What we are collecting</div>
+          <div class="card-body">
+            <p>For each graduate: full employment history from graduation to present — job title, company, dates, industry. Each position coded to SOC and NAICS.</p>
+            <p>Going back to 2010 (or program inception). Priority: 2018–2026 cohorts for full history; pre-2018 for current-job baseline extension.</p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">What it enables</div>
+          <div class="card-body">
+            <p>Graduates 8–16 years out have mature career trajectories — the most informative for understanding what the program enables over time, not just at graduation.</p>
+            <p>Combined with the first-job alignment analysis, this creates a complete picture: entry alignment and trajectory alignment.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /body -->
+
+  <div class="footer">
+    <span>Clemson University · Graphic Communications · Graduate Outcome Validation Initiative · May 2026</span>
+    <span>Data source: ACCGC Graduate Employment Dataset 2018–2026 · n=603 across 9 programs</span>
+  </div>
+
+</div>
+</body>
+</html>
