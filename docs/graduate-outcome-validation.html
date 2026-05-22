@@ -636,12 +636,58 @@
           </div>
         </div>
         <div class="function-body">
-          <p>For each SOC code in the graduate dataset, the module would pull O*NET competency profiles — knowledge areas, skills, and work activities — and map them to KUD structure. Each course's AI-generated KUDs would then be compared against the competency requirements of the career destinations graduates actually enter.</p>
-          <p><strong>What it would produce:</strong> Course-level alignment scores against each of the 21 career destinations. Program-level coverage report: does the full curriculum collectively prepare students for the careers 88% of graduates reach? Gap report: which destinations have weak curriculum coverage?</p>
+          <p>O*NET is the bridge. The Department of Labor maintains a public database that, for every SOC code, describes knowledge areas, skills, abilities, and work activities — a competency profile for each occupation. Those profiles map naturally to KUD structure:</p>
+
+          <div style="background:#f5f7fb; border-radius:6px; padding:16px 20px; margin:14px 0; font-family:'Arial',sans-serif; font-size:13px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; text-align:center;">
+              <div>
+                <div style="color:#888; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; margin-bottom:4px;">O*NET</div>
+                <div style="font-weight:700; color:#1a2744;">Knowledge Areas</div>
+                <div style="color:#f4a83a; font-size:18px; margin:4px 0;">↓</div>
+                <div style="color:#888; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; margin-bottom:4px;">KUD</div>
+                <div style="font-weight:700; color:#1a2744;">Know</div>
+              </div>
+              <div>
+                <div style="color:#888; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; margin-bottom:4px;">O*NET</div>
+                <div style="font-weight:700; color:#1a2744;">Skills</div>
+                <div style="color:#f4a83a; font-size:18px; margin:4px 0;">↓</div>
+                <div style="color:#888; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; margin-bottom:4px;">KUD</div>
+                <div style="font-weight:700; color:#1a2744;">Understand</div>
+              </div>
+              <div>
+                <div style="color:#888; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; margin-bottom:4px;">O*NET</div>
+                <div style="font-weight:700; color:#1a2744;">Work Activities</div>
+                <div style="color:#f4a83a; font-size:18px; margin:4px 0;">↓</div>
+                <div style="color:#888; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; margin-bottom:4px;">KUD</div>
+                <div style="font-weight:700; color:#1a2744;">Do</div>
+              </div>
+            </div>
+          </div>
+
+          <p>For each of the 21 SOC codes, the module would construct a KUD-structured career profile — not invented, but derived directly from the federal occupational database. Those profiles become the benchmark. Each course's AI-generated KUDs are then compared against the competency requirements of the career destinations graduates actually enter.</p>
+
+          <h3 style="margin-top:20px;">What the analysis would surface</h3>
+
+          <div class="job-examples" style="margin-bottom:16px;">
+            <div class="job-example" style="flex-direction:column; align-items:flex-start; gap:6px; padding:12px 0;">
+              <span style="color:#f4a83a; font-family:'Arial',sans-serif; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.08em;">Course-level finding</span>
+              <span style="color:#e8edf5; font-size:13.5px; line-height:1.5;">"GC 3460's KUDs align strongly with Graphic Designer (27-1024) and Marketing Specialist (13-1161) requirements. They have weak coverage of Project Management Specialist (13-1082) requirements — which 3.7% of graduates become."</span>
+            </div>
+            <div class="job-example" style="flex-direction:column; align-items:flex-start; gap:6px; padding:12px 0;">
+              <span style="color:#f4a83a; font-family:'Arial',sans-serif; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.08em;">Program-level finding</span>
+              <span style="color:#e8edf5; font-size:13.5px; line-height:1.5;">"Aggregating KUDs across all courses, the curriculum has strong coverage of the Design, Media &amp; Technology cluster and partial coverage of the Management &amp; Business cluster. The 11 graduates who became Chief Executives are drawing on entrepreneurship and business fundamentals that don't appear explicitly in any course's KUDs."</span>
+            </div>
+          </div>
+
+          <p>That last finding — outcomes the curriculum produces implicitly, without claiming to — is probably the most significant thing this analysis would surface. Not just gaps, but invisible strengths the program has no formal language for yet.</p>
+
+          <h3 style="margin-top:20px;">What individual records add that O*NET can't</h3>
+          <p>O*NET tells you what "Graphic Designers" generically need. The 268 individual records tell you that Clemson GC graphic designers specifically work at sports franchises, packaging companies, ad agencies, and financial firms. "Graphic Designer at Carolina Panthers" has a very different day-to-day than "Graphic Designer at Brook + Whittle." The individual records would allow the analysis to cluster by industry and surface whether competency requirements shift across those clusters — which they do.</p>
+
           <p>
             <span class="tag">Data available now</span>
             <span class="tag">268 Clemson records</span>
-            <span class="tag">O*NET API</span>
+            <span class="tag">O*NET public API</span>
           </p>
         </div>
       </div>
