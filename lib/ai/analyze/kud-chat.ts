@@ -7,6 +7,7 @@ export interface KudChatProfile {
   learningObjectives: string[];
   majorProjects: string[];
   skillsRequired: string[];
+  assignmentsText?: string;
 }
 
 export interface ChatMessage {
@@ -38,6 +39,10 @@ export function buildKudChatUserMessage(profile: KudChatProfile): string {
     '**Required incoming skills:**',
     ...skillLines,
   ];
+
+  if (profile.assignmentsText) {
+    parts.push('', '**Canvas assignments (with point values):**', profile.assignmentsText);
+  }
 
   return parts.join('\n');
 }

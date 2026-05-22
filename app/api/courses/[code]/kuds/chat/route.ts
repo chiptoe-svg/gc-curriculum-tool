@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { isValidSlug } from '@/lib/slug';
 import { getCourseByCode } from '@/lib/db/courses-queries';
+import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
 import { kudChatTurn, ChatMessage } from '@/lib/ai/analyze/kud-chat';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { hashIp } from '@/lib/ip-hash';
@@ -37,12 +38,16 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     )
     .map((m) => ({ role: m.role, content: m.content }));
 
+  const materials = await listMaterialsByCourse(courseCode);
+  const assignmentsMaterial = materials.find(m => m.fileName === 'Canvas: Assignments');
+
   const profile = {
     title: course.title,
     description: course.description ?? '',
     learningObjectives: course.learningObjectives as string[],
     majorProjects: course.majorProjects as string[],
     skillsRequired: course.skillsRequired as string[],
+    assignmentsText: assignmentsMaterial?.extractedText ?? undefined,
   };
 
   try {
