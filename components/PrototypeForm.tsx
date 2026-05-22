@@ -172,6 +172,7 @@ export function PrototypeForm({ slug, onAnalyze, isAnalyzing }: Props) {
       <Card>
         <CardHeader>
           <CardTitle>Course being analyzed</CardTitle>
+          <p className="text-sm text-muted-foreground">Only courses approved in the Course Builder are available for selection.</p>
         </CardHeader>
         <CardContent className="space-y-4">
           <CourseSelector
@@ -197,7 +198,7 @@ export function PrototypeForm({ slug, onAnalyze, isAnalyzing }: Props) {
       <Card>
         <CardHeader>
           <CardTitle>Prior coursework</CardTitle>
-          <p className="text-sm text-muted-foreground">Any prerequisite or expected prior coursework. Order doesn&apos;t matter.</p>
+          <p className="text-sm text-muted-foreground">Any prerequisite or expected prior coursework. Order doesn&apos;t matter. Only courses approved in the Course Builder are available for selection.</p>
         </CardHeader>
         <CardContent className="space-y-6">
           {priorCoursework.map((slot, index) => (
