@@ -47,14 +47,16 @@ export async function kudChatTurn(
   history: ChatMessage[],
 ): Promise<string> {
   const systemPrompt = await loadPrompt('kud-chat');
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? '' });
+  const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
+  if (!apiKey) throw new Error('ANTHROPIC_API_KEY not set');
+  const client = new Anthropic({ apiKey });
 
   const messages: Anthropic.MessageParam[] = history.length === 0
     ? [{ role: 'user', content: buildKudChatUserMessage(profile) }]
     : history.map((msg) => ({ role: msg.role, content: msg.content }));
 
   const response = await client.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: process.env.ANTHROPIC_MODEL?.trim() || 'claude-sonnet-4-6',
     max_tokens: 1024,
     system: systemPrompt,
     messages,
