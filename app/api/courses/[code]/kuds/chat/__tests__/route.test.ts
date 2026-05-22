@@ -82,4 +82,18 @@ describe('POST /api/courses/[code]/kuds/chat', () => {
     const json = await res.json();
     expect(json).toEqual({ reply: 'Here are my questions...' });
   });
+
+  it('returns 429 when rate limited', async () => {
+    mockCheckIpRateLimit.mockResolvedValueOnce({ allowed: false });
+    const [req, ctx] = makeReq('valid-slug', { messages: [] });
+    const res = await POST(req, ctx);
+    expect(res.status).toBe(429);
+  });
+
+  it('returns 500 when kudChatTurn throws', async () => {
+    mockKudChatTurn.mockRejectedValueOnce(new Error('AI down'));
+    const [req, ctx] = makeReq('valid-slug', { messages: [] });
+    const res = await POST(req, ctx);
+    expect(res.status).toBe(500);
+  });
 });
