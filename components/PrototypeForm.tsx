@@ -180,6 +180,7 @@ export function PrototypeForm({ slug, onAnalyze, isAnalyzing }: Props) {
             onSelect={handleSelectCourse}
             label="Course being analyzed (by code)"
             inputId="course-selector"
+            requireApproved
           />
           {course.original && course.current && (
             <CourseDetails
@@ -221,6 +222,7 @@ export function PrototypeForm({ slug, onAnalyze, isAnalyzing }: Props) {
                 label={`Prior course ${index + 1}`}
                 excludeCode={course.selectedCode || undefined}
                 inputId={`prior-selector-${index}`}
+                requireApproved
               />
               {slot.original && slot.current && (
                 <CourseDetails
