@@ -22,7 +22,7 @@ const baseRuns = [
     courseCode: 'GC 1010',
     materialCount: 3,
     model: 'gpt-5.4-mini',
-    costUsdCents: 42,
+    costUsdCents: 13000,
     createdAt: '2026-05-21T10:00:00Z',
   },
   {
@@ -30,7 +30,7 @@ const baseRuns = [
     courseCode: 'GC 1010',
     materialCount: 2,
     model: 'gpt-5.4-mini',
-    costUsdCents: 28,
+    costUsdCents: 5000,
     createdAt: '2026-05-20T09:00:00Z',
   },
 ];
@@ -49,10 +49,10 @@ describe('ProfileRunHistory', () => {
     expect(screen.getByText(/2 files/i)).toBeTruthy();
   });
 
-  it('shows cost in cents for each run', () => {
+  it('shows cost in dollars for each run', () => {
     render(<ProfileRunHistory runs={baseRuns} slug="test-slug" courseCode="GC 1010" currentRunId={null} />);
-    expect(screen.getByText(/42/)).toBeTruthy();
-    expect(screen.getByText(/28/)).toBeTruthy();
+    expect(screen.getByText(/\$1\.30/)).toBeTruthy();
+    expect(screen.getByText(/\$0\.50/)).toBeTruthy();
   });
 
   it('marks the current run with a "Current" badge', () => {

@@ -42,11 +42,11 @@ describe('CourseAnalyzeZone', () => {
     render(
       <CourseAnalyzeZone
         {...baseProps}
-        lastRun={{ id: 'run-1', createdAt: '2026-05-20T10:00:00Z', materialCount: 3, costUsdCents: 42 }}
+        lastRun={{ id: 'run-1', createdAt: '2026-05-20T10:00:00Z', materialCount: 3, costUsdCents: 42000 }}
       />
     );
     expect(screen.getByText(/3 files/i)).toBeTruthy();
-    expect(screen.getByText(/42/)).toBeTruthy();
+    expect(screen.getByText(/\$4\.20/)).toBeTruthy();
   });
 
   it('shows the overwrite warning when manuallyEdited is true', () => {
