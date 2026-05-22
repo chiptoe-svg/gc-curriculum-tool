@@ -15,6 +15,23 @@ export interface ChatMessage {
   content: string;
 }
 
+function buildAssignmentSummary(assignmentsText: string): string {
+  const rows: Array<{ name: string; pts: number }> = [];
+  for (const line of assignmentsText.split('\n')) {
+    const m = line.match(/^##\s+(.+?)\s+\((\d+(?:\.\d+)?)\s+pts?\)/i);
+    if (m) rows.push({ name: m[1], pts: parseFloat(m[2]) });
+  }
+  if (rows.length === 0) return assignmentsText;
+
+  const total = rows.reduce((s, r) => s + r.pts, 0);
+  const lines = rows.map(r => {
+    const pct = total > 0 ? Math.round((r.pts / total) * 100) : 0;
+    return `- ${r.name}: ${r.pts} pts (${pct}%)`;
+  });
+  lines.push(`- **Total: ${total} pts**`);
+  return lines.join('\n');
+}
+
 export function buildKudChatUserMessage(profile: KudChatProfile): string {
   const objLines = profile.learningObjectives.length > 0
     ? profile.learningObjectives.map((o, i) => `${i + 1}. ${o}`)
@@ -41,7 +58,8 @@ export function buildKudChatUserMessage(profile: KudChatProfile): string {
   ];
 
   if (profile.assignmentsText) {
-    parts.push('', '**Canvas assignments (with point values):**', profile.assignmentsText);
+    const summary = buildAssignmentSummary(profile.assignmentsText);
+    parts.push('', '**Canvas assignments:**', summary, '', '**Full assignment details:**', profile.assignmentsText);
   }
 
   return parts.join('\n');
