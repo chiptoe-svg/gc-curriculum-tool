@@ -14,7 +14,8 @@ interface Props {
 }
 
 export default async function CourseDetailPage({ params }: Props) {
-  const { slug, code } = await params;
+  const { slug, code: rawCode } = await params;
+  const code = decodeURIComponent(rawCode);
   if (!isValidSlug(slug)) notFound();
 
   const course = await getCourseByCode(code);
