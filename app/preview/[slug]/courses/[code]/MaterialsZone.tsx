@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { UploadZone, type UploadedMaterial } from './UploadZone';
 import { MaterialsList } from './MaterialsList';
+import { CanvasImportZone } from '@/components/CanvasImportZone';
 
 interface Props {
   courseCode: string;
@@ -36,6 +37,7 @@ export function MaterialsZone({ courseCode, slug, initialMaterials }: Props) {
   return (
     <>
       <UploadZone courseCode={courseCode} slug={slug} onUploaded={handleUploaded} />
+      <CanvasImportZone courseCode={courseCode} slug={slug} onImported={handleUploaded} />
       <MaterialsList
         courseCode={courseCode}
         slug={slug}
