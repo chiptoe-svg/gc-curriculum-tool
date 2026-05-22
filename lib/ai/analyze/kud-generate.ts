@@ -10,6 +10,8 @@ export interface GenerateCourseKudArgs {
   learningObjectives: string[];
   majorProjects: string[];
   skillsRequired: string[];
+  notes?: string;
+  conversationContext?: string;
 }
 
 function formatInput(args: GenerateCourseKudArgs): string {
@@ -23,7 +25,7 @@ function formatInput(args: GenerateCourseKudArgs): string {
     ? args.skillsRequired.map((s, i) => `${i + 1}. ${s}`)
     : ['(none)'];
 
-  return [
+  const parts = [
     `**Course:** ${args.title}`,
     `**Description:** ${args.description || '(none)'}`,
     '',
@@ -35,7 +37,17 @@ function formatInput(args: GenerateCourseKudArgs): string {
     '',
     '**Required incoming skills:**',
     ...skillLines,
-  ].join('\n');
+  ];
+
+  if (args.notes?.trim()) {
+    parts.push('', '**Instructor guidance for this run:**', args.notes.trim());
+  }
+
+  if (args.conversationContext?.trim()) {
+    parts.push('', '**Conversation with instructor (use this to inform KUD generation):**', args.conversationContext.trim());
+  }
+
+  return parts.join('\n');
 }
 
 export async function generateCourseKud(args: GenerateCourseKudArgs): Promise<{
