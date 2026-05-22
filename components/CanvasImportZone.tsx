@@ -9,12 +9,54 @@ interface Props {
   onImported: (material: UploadedMaterial) => void;
 }
 
+interface ImportDetails {
+  syllabusFound: boolean;
+  assignments: string[];
+  modules: string[];
+}
+
+function ToggleList({ label, items }: { label: string; items: string[] }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={() => setExpanded(e => !e)}
+        className="flex items-center gap-1 hover:text-foreground"
+      >
+        <span>{expanded ? '▾' : '▸'}</span>
+        <span>{label}</span>
+      </button>
+      {expanded && (
+        <ul className="pl-4 mt-0.5 space-y-0.5 text-muted-foreground/70">
+          {items.map(name => <li key={name}>{name}</li>)}
+        </ul>
+      )}
+    </li>
+  );
+}
+
+function ImportSummary({ details }: { details: ImportDetails }) {
+  return (
+    <ul className="text-xs text-muted-foreground space-y-1 border-l-2 border-green-200 pl-3 ml-1">
+      {details.syllabusFound && <li>✓ Syllabus</li>}
+      {details.assignments.length > 0 && (
+        <ToggleList label={`✓ Assignments (${details.assignments.length})`} items={details.assignments} />
+      )}
+      {details.modules.length > 0 && (
+        <ToggleList label={`✓ Module list (${details.modules.length} modules)`} items={details.modules} />
+      )}
+    </ul>
+  );
+}
+
 export function CanvasImportZone({ courseCode, slug, onImported }: Props) {
   const [open, setOpen] = useState(false);
   const [canvasUrl, setCanvasUrl] = useState('');
   const [canvasToken, setCanvasToken] = useState('');
   const [status, setStatus] = useState<'idle' | 'importing' | 'done' | 'error'>('idle');
   const [message, setMessage] = useState('');
+  const [importDetails, setImportDetails] = useState<{ syllabusFound: boolean; assignments: string[]; modules: string[] } | null>(null);
 
   async function handleImport() {
     setStatus('importing');
@@ -31,7 +73,7 @@ export function CanvasImportZone({ courseCode, slug, onImported }: Props) {
         setMessage((json as { error?: string }).error ?? `Import failed (${res.status})`);
         return;
       }
-      const data = json as { imported: number; materials: Array<{ id: string; fileName: string }> };
+      const data = json as { imported: number; materials: Array<{ id: string; fileName: string }>; details: { syllabusFound: boolean; assignments: string[]; modules: string[] } };
       for (const m of data.materials) {
         onImported({
           id: m.id,
@@ -43,6 +85,7 @@ export function CanvasImportZone({ courseCode, slug, onImported }: Props) {
       }
       setStatus('done');
       setMessage(`Imported ${data.imported} item${data.imported !== 1 ? 's' : ''} from Canvas.`);
+      setImportDetails(data.details);
       setCanvasToken('');
     } catch (e) {
       setStatus('error');
@@ -99,7 +142,10 @@ export function CanvasImportZone({ courseCode, slug, onImported }: Props) {
             {status === 'importing' ? 'Importing…' : 'Import from Canvas'}
           </button>
           {status === 'done' && (
-            <p className="text-sm text-green-700">{message}</p>
+            <div className="space-y-1">
+              <p className="text-sm text-green-700">{message}</p>
+              {importDetails && <ImportSummary details={importDetails} />}
+            </div>
           )}
           {status === 'error' && (
             <p className="text-sm text-destructive">{message}</p>

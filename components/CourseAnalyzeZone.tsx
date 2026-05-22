@@ -71,7 +71,7 @@ export function CourseAnalyzeZone({
               {new Date(lastRun.createdAt).toLocaleString()}
             </time>
           </p>
-          <p>{lastRun.materialCount} files &middot; {lastRun.costUsdCents}¢</p>
+          <p>{lastRun.materialCount} files &middot; ${(lastRun.costUsdCents / 10000).toFixed(2)}</p>
         </div>
       )}
 

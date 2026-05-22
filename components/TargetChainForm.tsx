@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -37,9 +37,103 @@ interface Props {
 const CAP = 16;
 const MIN_TO_ANALYZE = 2;
 
+interface ExternalCourse {
+  id: string;
+  label: string;
+  syllabusText: string | null;
+  fileName: string | null;
+  extracting: boolean;
+  extractError: string | null;
+}
+
+function isExternalReady(ec: ExternalCourse): boolean {
+  return ec.label.trim().length > 0 && ec.syllabusText !== null;
+}
+
+function ExternalCourseRow({
+  entry,
+  slug,
+  onUpdate,
+  onRemove,
+}: {
+  entry: ExternalCourse;
+  slug: string;
+  onUpdate: (next: ExternalCourse) => void;
+  onRemove: () => void;
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (!file) return;
+    onUpdate({ ...entry, extracting: true, extractError: null, syllabusText: null, fileName: null });
+    const form = new FormData();
+    form.set('slug', slug);
+    form.set('file', file);
+    try {
+      const res = await fetch('/api/extract-syllabus', { method: 'POST', body: form });
+      const json = await res.json();
+      if (!res.ok) {
+        onUpdate({ ...entry, extracting: false, extractError: (json as { error?: string }).error ?? `Failed (${res.status})` });
+        return;
+      }
+      onUpdate({ ...entry, extracting: false, syllabusText: (json as { text: string }).text, fileName: file.name, extractError: null });
+    } catch {
+      onUpdate({ ...entry, extracting: false, extractError: 'Failed to extract text. Try a different file.' });
+    }
+  }
+
+  return (
+    <div className="flex items-start gap-2 rounded-md border border-dashed p-3">
+      <div className="flex-1 space-y-2">
+        <input
+          type="text"
+          value={entry.label}
+          onChange={(e) => onUpdate({ ...entry, label: e.target.value })}
+          placeholder="Course name or code (e.g. ENGL 101 — Composition)"
+          className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+        />
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            disabled={entry.extracting}
+            onClick={() => fileInputRef.current?.click()}
+            className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted disabled:opacity-50"
+          >
+            {entry.extracting ? 'Extracting…' : entry.fileName ? 'Replace syllabus' : 'Attach syllabus (PDF or DOCX)'}
+          </button>
+          {entry.fileName && !entry.extracting && (
+            <span className="text-xs text-green-700">{entry.fileName} — ready</span>
+          )}
+          {entry.extractError && (
+            <span className="text-xs text-destructive">{entry.extractError}</span>
+          )}
+        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/pdf,.pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx"
+          className="sr-only"
+          onChange={handleFile}
+        />
+      </div>
+      <button
+        type="button"
+        onClick={onRemove}
+        className="mt-1 text-muted-foreground hover:text-destructive text-sm leading-none"
+        aria-label="Remove external course"
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
+
 export function TargetChainForm({ slug, targets, courses, fullTarget, onAnalyze, isAnalyzing }: Props) {
   const [careerTargetId, setCareerTargetId] = useState(targets[0]?.id ?? '');
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [externalCourses, setExternalCourses] = useState<ExternalCourse[]>([]);
 
   // `targets` arrives via an async fetch, so it is often empty on first render
   // and the useState initializer above misses it. Default to the first target
@@ -70,15 +164,39 @@ export function TargetChainForm({ slug, targets, courses, fullTarget, onAnalyze,
     setSelected(new Set());
   }
 
+  function addExternalCourse() {
+    setExternalCourses(prev => [...prev, {
+      id: crypto.randomUUID(),
+      label: '',
+      syllabusText: null,
+      fileName: null,
+      extracting: false,
+      extractError: null,
+    }]);
+  }
+
+  function updateExternalCourse(id: string, next: ExternalCourse) {
+    setExternalCourses(prev => prev.map(ec => ec.id === id ? next : ec));
+  }
+
+  function removeExternalCourse(id: string) {
+    setExternalCourses(prev => prev.filter(ec => ec.id !== id));
+  }
+
   function handleAnalyze() {
     const orderedSelected = courses.filter(c => selected.has(c.code));
+    const readyExternal = externalCourses.filter(isExternalReady);
     onAnalyze({
       careerTargetId,
-      courses: orderedSelected.map(c => ({ courseLabel: c.code, syllabusText: c.syllabusText })),
+      courses: [
+        ...orderedSelected.map(c => ({ courseLabel: c.code, syllabusText: c.syllabusText })),
+        ...readyExternal.map(ec => ({ courseLabel: ec.label, syllabusText: ec.syllabusText! })),
+      ],
     });
   }
 
-  const count = selected.size;
+  const readyExternalCount = externalCourses.filter(isExternalReady).length;
+  const count = selected.size + readyExternalCount;
   const canAnalyze = count >= MIN_TO_ANALYZE && count <= CAP && Boolean(careerTargetId);
   const atCap = count >= CAP;
 
@@ -144,6 +262,38 @@ export function TargetChainForm({ slug, targets, courses, fullTarget, onAnalyze,
                   })}
                 </ul>
               </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* External courses */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium">External courses</p>
+            <p className="text-xs text-muted-foreground">Add courses from outside GC by attaching a syllabus.</p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            type="button"
+            onClick={addExternalCourse}
+            disabled={atCap}
+          >
+            + Add course
+          </Button>
+        </div>
+        {externalCourses.length > 0 && (
+          <div className="space-y-2">
+            {externalCourses.map(ec => (
+              <ExternalCourseRow
+                key={ec.id}
+                entry={ec}
+                slug={slug}
+                onUpdate={(next) => updateExternalCourse(ec.id, next)}
+                onRemove={() => removeExternalCourse(ec.id)}
+              />
             ))}
           </div>
         )}

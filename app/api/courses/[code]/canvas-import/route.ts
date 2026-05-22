@@ -89,5 +89,11 @@ export async function POST(req: Request, { params }: Ctx) {
     imported.push({ id: mat.id, fileName });
   }
 
-  return NextResponse.json({ imported: imported.length, materials: imported });
+  const details = {
+    syllabusFound: !!syllabusText,
+    assignments: data.assignments.map(a => a.name),
+    modules: data.modules.map(m => m.name),
+  };
+
+  return NextResponse.json({ imported: imported.length, materials: imported, details });
 }

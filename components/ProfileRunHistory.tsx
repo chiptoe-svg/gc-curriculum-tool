@@ -76,7 +76,7 @@ export function ProfileRunHistory({ runs, slug, courseCode, currentRunId }: Prop
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {run.materialCount} files &middot; {run.costUsdCents}¢ &middot; {run.model}
+                  {run.materialCount} files &middot; ${(run.costUsdCents / 10000).toFixed(2)} &middot; {run.model}
                 </p>
               </div>
               {!isCurrent && (
