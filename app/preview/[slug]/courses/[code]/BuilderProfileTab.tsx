@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 interface Props {
   courseCode: string;
@@ -86,8 +86,48 @@ export function BuilderProfileTab({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [parsing, setParsing] = useState(false);
+  const [parseError, setParseError] = useState<string | null>(null);
+  const [parsedNote, setParsedNote] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const wasApproved = builderStatus === 'approved' || builderStatus === 'kuds_generated';
+
+  async function handleParseSyllabus(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!fileInputRef.current) return;
+    fileInputRef.current.value = '';
+    if (!file) return;
+
+    setParsing(true);
+    setParseError(null);
+    setParsedNote(false);
+
+    const form = new FormData();
+    form.set('slug', slug);
+    form.set('file', file);
+
+    try {
+      const res = await fetch(`/api/courses/${encodeURIComponent(courseCode)}/parse-profile`, {
+        method: 'POST',
+        body: form,
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setParseError((json as { error?: string }).error ?? `Parse failed (${res.status})`);
+        return;
+      }
+      const fields = json as { learningObjectives: string[]; majorProjects: string[]; skillsRequired: string[] };
+      if (fields.learningObjectives.length > 0) setObjectives(fields.learningObjectives);
+      if (fields.majorProjects.length > 0) setProjects(fields.majorProjects);
+      if (fields.skillsRequired.length > 0) setSkills(fields.skillsRequired);
+      setParsedNote(true);
+    } catch {
+      setParseError('Parse failed. Please try again.');
+    } finally {
+      setParsing(false);
+    }
+  }
 
   async function handleSave() {
     setSaving(true);
@@ -126,9 +166,40 @@ export function BuilderProfileTab({
         </div>
       )}
 
+      {/* Syllabus parse */}
+      <div className="rounded-md border border-dashed border-muted-foreground/30 px-4 py-3 space-y-2">
+        <p className="text-sm font-medium">Parse from syllabus</p>
+        <p className="text-xs text-muted-foreground">
+          Upload a PDF or DOCX syllabus and AI will pre-fill the fields below. Review and adjust before saving.
+        </p>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            disabled={parsing}
+            onClick={() => fileInputRef.current?.click()}
+            className="rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-muted disabled:opacity-50"
+          >
+            {parsing ? 'Parsing…' : 'Attach syllabus'}
+          </button>
+          {parsedNote && (
+            <span className="text-sm text-green-700">Fields pre-filled — review before saving.</span>
+          )}
+          {parseError && (
+            <span className="text-sm text-destructive">{parseError}</span>
+          )}
+        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/pdf,.pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx"
+          className="sr-only"
+          onChange={handleParseSyllabus}
+        />
+      </div>
+
       <EditableList
         label="Learning objectives"
-        description="What students will achieve — pre-populated from catalog, edit to match reality."
+        description="What students will achieve — pre-populated from catalog or syllabus, edit to match reality."
         items={objectives}
         onChange={setObjectives}
       />
