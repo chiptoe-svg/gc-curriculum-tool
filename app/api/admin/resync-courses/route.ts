@@ -1,13 +1,36 @@
 import { NextResponse } from 'next/server';
+import { isValidSlug } from '@/lib/slug';
+import { fetchIndexCourseCodes, fetchCourseTabCsv } from '@/lib/sheets/fetchSheet';
+import { parseCourseTab } from '@/lib/sheets/parseCourseTab';
+import { upsertCourses, recordSyncResult } from '@/lib/db/courses-queries';
 
-// Course data is now sourced from the Clemson catalog seed script
-// (pnpm db:seed-courses). Google Sheets sync was retired after Build 0.
-// This route is preserved for reference but no longer functional.
-export async function POST() {
-  return NextResponse.json(
-    {
-      error: 'This endpoint has been retired. Course data is now managed via the catalog seed script (pnpm db:seed-courses) and the course intake UI.',
-    },
-    { status: 410 },
-  );
+export async function POST(req: Request) {
+  const body = await req.json().catch(() => ({}));
+  const slug = typeof body.slug === 'string' ? body.slug : '';
+  if (!isValidSlug(slug)) {
+    return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
+  }
+
+  const sheetId = process.env.GOOGLE_SHEET_ID;
+  if (!sheetId) {
+    return NextResponse.json({ error: 'GOOGLE_SHEET_ID not configured' }, { status: 500 });
+  }
+
+  const codes = await fetchIndexCourseCodes(sheetId);
+  const parsed = [];
+  const errors: string[] = [];
+
+  for (const code of codes) {
+    try {
+      const csv = await fetchCourseTabCsv(sheetId, code);
+      parsed.push(parseCourseTab(csv));
+    } catch (e) {
+      errors.push(`${code}: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  const count = await upsertCourses(parsed);
+  await recordSyncResult(count, errors);
+
+  return NextResponse.json({ synced: count, errors, lastSyncedAt: new Date().toISOString() });
 }
