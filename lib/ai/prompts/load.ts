@@ -18,7 +18,8 @@ type PromptName =
   | 'score-prior-coverage'
   | 'analyze-course-gaps'
   | 'evaluate-course-scaffolding'
-  | 'extract-course-kud';
+  | 'extract-course-kud'
+  | 'parse-profile-fields';
 
 interface ParsedPrompt {
   frontmatter: Record<string, unknown>;

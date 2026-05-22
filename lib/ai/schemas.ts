@@ -203,3 +203,22 @@ export const courseKudResultJsonSchema = {
     confidenceNotes: { type: 'string', minLength: 1 },
   },
 } as const;
+
+export const profileFieldsSchema = z.object({
+  learningObjectives: z.array(z.string().min(1)).max(20),
+  majorProjects: z.array(z.string().min(1)).max(20),
+  skillsRequired: z.array(z.string().min(1)).max(20),
+});
+
+export type ProfileFields = z.infer<typeof profileFieldsSchema>;
+
+export const profileFieldsJsonSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['learningObjectives', 'majorProjects', 'skillsRequired'],
+  properties: {
+    learningObjectives: { type: 'array', maxItems: 20, items: { type: 'string', minLength: 1 } },
+    majorProjects: { type: 'array', maxItems: 20, items: { type: 'string', minLength: 1 } },
+    skillsRequired: { type: 'array', maxItems: 20, items: { type: 'string', minLength: 1 } },
+  },
+} as const;

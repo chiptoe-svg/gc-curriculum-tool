@@ -1,0 +1,17 @@
+import { getProvider } from '@/lib/ai/provider';
+import { loadPrompt } from '@/lib/ai/prompts/load';
+import { profileFieldsSchema, profileFieldsJsonSchema } from '@/lib/ai/schemas';
+import type { ProfileFields } from '@/lib/ai/schemas';
+
+export async function parseProfileFields(syllabusText: string): Promise<ProfileFields> {
+  const systemPrompt = await loadPrompt('parse-profile-fields');
+  const provider = getProvider();
+  const result = await provider.complete({
+    systemPrompt,
+    userMessage: `Syllabus text:\n${syllabusText}`,
+    schemaName: 'profile_fields',
+    jsonSchema: profileFieldsJsonSchema,
+    validate: (raw) => profileFieldsSchema.parse(raw),
+  });
+  return result.data;
+}
