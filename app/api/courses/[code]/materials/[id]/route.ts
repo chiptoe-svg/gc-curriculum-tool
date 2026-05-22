@@ -23,8 +23,10 @@ export async function DELETE(req: Request, { params }: RouteContext): Promise<Re
     return NextResponse.json({ error: 'material does not belong to this course' }, { status: 403 });
   }
 
-  // Remove from Vercel Blob first, then the DB row.
-  await del(material.blobUrl);
+  // Only call del() for real Vercel Blob URLs; Canvas imports use the Canvas URL as blobUrl.
+  if (material.blobUrl.includes('blob.vercel-storage.com')) {
+    await del(material.blobUrl);
+  }
   await deleteMaterial(id);
 
   return NextResponse.json({ ok: true });
