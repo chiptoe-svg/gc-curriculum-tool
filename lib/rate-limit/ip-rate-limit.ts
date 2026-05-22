@@ -2,7 +2,7 @@ import { db } from '@/lib/db/client';
 import { ipHourly } from '@/lib/db/schema';
 import { sql } from 'drizzle-orm';
 
-export const MAX_PER_HOUR = 10;
+export const MAX_PER_HOUR = 60;
 
 function currentHourKey(): string {
   const d = new Date();

@@ -116,14 +116,12 @@ export function CanvasImportZone({ courseCode, slug, onImported }: Props) {
               placeholder="https://clemson.instructure.com/courses/12345"
               className="w-full rounded border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
             />
+            <p className="text-xs text-muted-foreground/70 leading-relaxed">
+              Open your course in Canvas and copy the URL from your browser&apos;s address bar. It ends with <span className="font-mono">/courses/</span> followed by a number.
+            </p>
           </div>
           <div className="space-y-1">
-            <label className="text-xs text-muted-foreground" htmlFor="canvas-token">
-              API token{' '}
-              <span className="text-muted-foreground/70 font-normal">
-                — Canvas → Profile → Settings → Approved Integrations → New Access Token
-              </span>
-            </label>
+            <label className="text-xs text-muted-foreground" htmlFor="canvas-token">API token</label>
             <input
               id="canvas-token"
               type="password"
@@ -132,6 +130,9 @@ export function CanvasImportZone({ courseCode, slug, onImported }: Props) {
               placeholder="Your Canvas access token"
               className="w-full rounded border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
             />
+            <p className="text-xs text-muted-foreground/70 leading-relaxed">
+              In Canvas: click your name (top-right) → <strong className="font-medium text-muted-foreground">Settings</strong> → scroll to <strong className="font-medium text-muted-foreground">Approved Integrations</strong> → <strong className="font-medium text-muted-foreground">+ New Access Token</strong>. Give it any name, leave expiry blank, then copy the token — Canvas only shows it once.
+            </p>
           </div>
           <button
             type="button"
