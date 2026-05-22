@@ -17,11 +17,11 @@ const FAKE_FIELDS = {
   skillsRequired: ['Basic color theory'],
 };
 
-function makeReq(slug: string, hasFile: boolean, code = 'GC 3460') {
+function makeReq(slug: string, hasFile: boolean, mimeType = 'application/pdf', code = 'GC 3460') {
   const form = new FormData();
   form.set('slug', slug);
   if (hasFile) {
-    form.set('file', new Blob(['%PDF-content'], { type: 'application/pdf' }), 'syllabus.pdf');
+    form.set('file', new Blob(['%PDF-content'], { type: mimeType }), 'syllabus.pdf');
   }
   return [
     new Request('http://x/api/courses/GC%203460/parse-profile', { method: 'POST', body: form }),
@@ -40,6 +40,12 @@ describe('POST /api/courses/[code]/parse-profile', () => {
 
   it('returns 400 when no file provided', async () => {
     const [req, ctx] = makeReq('valid-slug', false);
+    const res = await POST(req, ctx);
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 400 for unsupported mime type', async () => {
+    const [req, ctx] = makeReq('valid-slug', true, 'text/plain');
     const res = await POST(req, ctx);
     expect(res.status).toBe(400);
   });
