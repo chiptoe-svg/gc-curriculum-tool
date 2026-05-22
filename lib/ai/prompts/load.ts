@@ -19,6 +19,7 @@ type PromptName =
   | 'analyze-course-gaps'
   | 'evaluate-course-scaffolding'
   | 'extract-course-kud'
+  | 'kud-chat'
   | 'parse-profile-fields';
 
 interface ParsedPrompt {
