@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 import { loadPrompt } from '@/lib/ai/prompts/load';
 
 export interface KudChatProfile {
@@ -46,26 +46,28 @@ export async function kudChatTurn(
   profile: KudChatProfile,
   history: ChatMessage[],
 ): Promise<string> {
+  const apiKey = process.env.OPENAI_API_KEY?.trim();
+  if (!apiKey) throw new Error('OPENAI_API_KEY not set');
+  const client = new OpenAI({ apiKey });
+
+  const model = process.env.OPENAI_MODEL?.trim() || 'gpt-4o';
+
   const systemPrompt = await loadPrompt('kud-chat');
-  const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
-  if (!apiKey) throw new Error('ANTHROPIC_API_KEY not set');
-  const client = new Anthropic({ apiKey });
 
-  const messages: Anthropic.MessageParam[] = history.length === 0
-    ? [{ role: 'user', content: buildKudChatUserMessage(profile) }]
-    : history.map((msg) => ({ role: msg.role, content: msg.content }));
+  const openaiMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+    { role: 'system', content: systemPrompt },
+    ...(history.length === 0
+      ? [{ role: 'user' as const, content: buildKudChatUserMessage(profile) }]
+      : history.map(m => ({ role: m.role, content: m.content }))),
+  ];
 
-  const response = await client.messages.create({
-    model: process.env.ANTHROPIC_MODEL?.trim() || 'claude-sonnet-4-6',
+  const response = await client.chat.completions.create({
+    model,
     max_tokens: 1024,
-    system: systemPrompt,
-    messages,
+    messages: openaiMessages,
   });
 
-  const textBlock = response.content.find((b) => b.type === 'text');
-  if (!textBlock || textBlock.type !== 'text') {
-    throw new Error('No text block in Anthropic response');
-  }
-
-  return textBlock.text;
+  const content = response.choices[0]?.message?.content;
+  if (!content) throw new Error('No content in OpenAI chat response');
+  return content;
 }

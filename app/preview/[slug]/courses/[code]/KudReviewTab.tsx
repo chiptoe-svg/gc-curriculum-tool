@@ -260,6 +260,7 @@ export function KudReviewTab({ courseCode, slug, builderStatus, currentKud, prof
             >
               {chatting ? 'Starting…' : 'Start conversation'}
             </button>
+            {error && <p className="text-sm text-destructive">{error}</p>}
           </div>
         ) : (
           <>
