@@ -4,8 +4,8 @@ import { PrototypeForm } from '@/components/PrototypeForm';
 import { CAREER_TARGETS } from '@/lib/domain/seed-targets';
 
 const COURSE_LIST = [
-  { code: 'GC 4060', title: 'Package & Specialty Printing', level: 4, track: 'Production' },
-  { code: 'GC 3460', title: 'Ink and Substrates', level: 3, track: 'Production' },
+  { code: 'GC 4060', title: 'Package & Specialty Printing', level: 4, track: 'Production', builderStatus: 'approved' },
+  { code: 'GC 3460', title: 'Ink and Substrates', level: 3, track: 'Production', builderStatus: 'approved' },
 ];
 
 const COURSE_4060 = {
