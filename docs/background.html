@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KUD+ Framework — Background and Justification</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Mono:wght@300;400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --rail: #141412;
+    --rail-text: #8a8780;
+    --rail-active: #E8A44A;
+    --rail-hover: #2a2925;
+    --bg: #F7F5F0;
+    --bg-card: #FFFFFF;
+    --bg-alt: #F0EDE6;
+    --text: #1C1C18;
+    --text-muted: #6B6860;
+    --text-faint: #9E9B94;
+    --accent: #C8682A;
+    --accent-light: #F5E6D8;
+    --border: #E2DDD4;
+    --border-strong: #C8C4BA;
+    --mono: 'DM Mono', monospace;
+    --serif: 'Source Serif 4', Georgia, serif;
+    --display: 'Playfair Display', Georgia, serif;
+    --t1: #2A5C8C;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--serif);
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    min-height: 100vh;
+    font-size: 16px;
+    line-height: 1.7;
+  }
+
+  #rail {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: 240px;
+    background: var(--rail);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    z-index: 100;
+  }
+  .rail-header { padding: 28px 20px 20px; border-bottom: 1px solid #252420; }
+  .rail-dept { font-family: var(--mono); font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: #5a5750; margin-bottom: 6px; }
+  .rail-title { font-family: var(--display); font-size: 14px; color: #d4d0c8; line-height: 1.4; }
+  .rail-doc-type { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--rail-active); margin-top: 10px; }
+  .rail-nav { padding: 20px 0; flex: 1; }
+  .nav-group-label { font-family: var(--mono); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: #4d4a44; padding: 14px 20px 8px; }
+  .nav-link { display: block; padding: 7px 20px 7px 22px; color: var(--rail-text); text-decoration: none; font-family: var(--serif); font-size: 13.5px; border-left: 2px solid transparent; transition: all 120ms; }
+  .nav-link:hover { color: #c8c4ba; background: var(--rail-hover); }
+  .rail-footer { padding: 16px 20px; font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.08em; color: #5a5750; border-top: 1px solid #252420; line-height: 1.7; }
+  .rail-footer a { color: var(--rail-text); text-decoration: none; }
+  .rail-footer a:hover { color: var(--rail-active); }
+
+  main { margin-left: 240px; flex: 1; padding: 64px 80px 96px; max-width: 1080px; }
+
+  .doc-head { margin-bottom: 56px; padding-bottom: 32px; border-bottom: 1px solid var(--border-strong); }
+  .doc-eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; }
+  .doc-title { font-family: var(--display); font-size: 44px; font-weight: 700; line-height: 1.1; color: var(--text); margin-bottom: 20px; letter-spacing: -0.005em; }
+  .doc-subtitle { font-family: var(--serif); font-size: 18px; color: var(--text-muted); line-height: 1.55; max-width: 740px; font-style: italic; font-weight: 300; }
+  .doc-meta { margin-top: 22px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; color: var(--text-faint); display: flex; gap: 20px; flex-wrap: wrap; }
+  .doc-meta strong { color: var(--text-muted); font-weight: 500; margin-right: 6px; }
+
+  section { margin-bottom: 56px; scroll-margin-top: 32px; }
+
+  h2 { font-family: var(--display); font-size: 30px; font-weight: 600; line-height: 1.2; margin-bottom: 22px; padding-bottom: 12px; border-bottom: 1px solid var(--border); display: flex; align-items: baseline; gap: 14px; }
+  h2 .num { font-family: var(--mono); font-size: 13px; font-weight: 500; letter-spacing: 0.1em; color: var(--accent); background: var(--accent-light); padding: 3px 10px; border-radius: 3px; flex-shrink: 0; }
+  h3 { font-family: var(--display); font-size: 21px; font-weight: 600; line-height: 1.3; margin: 32px 0 14px; color: var(--text); }
+  h4 { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-muted); margin: 24px 0 10px; font-weight: 500; }
+
+  p { margin-bottom: 14px; max-width: 760px; }
+  p.wide { max-width: none; }
+  strong { color: var(--text); font-weight: 600; }
+  em { color: var(--text); font-style: italic; }
+  a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:hover { color: #a85020; }
+
+  ul, ol { margin: 14px 0 22px 22px; max-width: 760px; }
+  li { margin-bottom: 8px; }
+  li strong { color: var(--text); }
+
+  blockquote {
+    border-left: 3px solid var(--border-strong);
+    padding: 4px 0 4px 18px;
+    margin: 18px 0;
+    color: var(--text-muted);
+    font-style: italic;
+    max-width: 740px;
+  }
+
+  .callout { background: var(--bg-card); border-left: 3px solid var(--accent); padding: 18px 22px; margin: 22px 0; border-radius: 0 4px 4px 0; max-width: 820px; }
+  .callout-title { font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout.note { border-left-color: var(--t1); }
+  .callout.note .callout-title { color: var(--t1); }
+
+  .scale {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 18px 22px;
+    margin: 18px 0;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.7;
+    max-width: 820px;
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  .scale-row { display: grid; grid-template-columns: 24px 1fr; gap: 14px; }
+  .scale-row .num { color: var(--accent); font-weight: 500; }
+
+  table.compact { border-collapse: collapse; margin: 18px 0 22px; max-width: 820px; font-size: 14px; }
+  table.compact th, table.compact td { padding: 8px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border); }
+  table.compact thead th { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--border-strong); }
+  table.compact td.kud { font-family: var(--mono); font-size: 12.5px; color: var(--text); }
+
+  .refs { font-size: 14px; line-height: 1.55; max-width: 820px; }
+  .refs li { margin-bottom: 10px; padding-left: 4px; }
+
+  .doc-foot { margin-top: 96px; padding-top: 24px; border-top: 1px solid var(--border-strong); font-family: var(--mono); font-size: 11px; color: var(--text-faint); letter-spacing: 0.05em; }
+</style>
+</head>
+<body>
+
+<aside id="rail">
+  <div class="rail-header">
+    <div class="rail-dept">Clemson · Graphic Communications</div>
+    <div class="rail-title">GC Curriculum Tool</div>
+    <div class="rail-doc-type">Background</div>
+  </div>
+  <nav class="rail-nav">
+    <div class="nav-group-label">Background</div>
+    <a class="nav-link" href="#problem">The problem this addresses</a>
+    <a class="nav-link" href="#kud">The KUD model</a>
+    <a class="nav-link" href="#depth">The depth extension (KUD+)</a>
+    <a class="nav-link" href="#anchors">Student-side anchors</a>
+    <a class="nav-link" href="#grounding">Theoretical grounding</a>
+    <a class="nav-link" href="#alternatives">Why not other frameworks</a>
+    <a class="nav-link" href="#foundational">Foundational competencies</a>
+    <a class="nav-link" href="#course-impl">Course-by-course implementation</a>
+    <a class="nav-link" href="#career-impl">Career-path alignment</a>
+    <a class="nav-link" href="#not">What this is not</a>
+    <a class="nav-link" href="#references">References</a>
+    <div class="nav-group-label" style="margin-top: 18px;">See also</div>
+    <a class="nav-link" href="./superpowers/vision/gc-curriculum-tool-vision.html">Vision document</a>
+    <a class="nav-link" href="./graduate-outcome-validation.html">Validation proposal</a>
+  </nav>
+  <div class="rail-footer">
+    <a href="./superpowers/vision/gc-curriculum-tool-vision.html">← Vision</a>
+  </div>
+</aside>
+
+<main>
+
+<header class="doc-head">
+  <div class="doc-eyebrow">Background &amp; Justification</div>
+  <h1 class="doc-title">The KUD+ Framework</h1>
+  <p class="doc-subtitle">A theoretical and practical account of how the GC Curriculum Tool measures what a course actually develops, scored on Know, Understand, and Do depth scales, and how those measurements feed program-level analysis and career-path alignment.</p>
+  <div class="doc-meta">
+    <span><strong>Companion to:</strong> Vision document</span>
+    <span><strong>Audience:</strong> Faculty, curriculum committee, advisory board</span>
+    <span><strong>Status:</strong> Working v1</span>
+  </div>
+</header>
+
+<section id="problem">
+  <h2><span class="num">§ 1</span>The problem this addresses</h2>
+
+  <p>Curriculum review at most programs operates on long cycles — seven years for accreditation, longer for systemic redesign — and on coarse evidence: catalog descriptions, faculty self-report, and the occasional advisory-board conversation. Between reviews, a program's understanding of itself drifts. Courses evolve, faculty change, employer expectations shift, and the gap between what the curriculum claims to deliver and what its assignments actually produce widens without anyone tracking it.</p>
+
+  <p>The GC Curriculum Tool proposes a continuous, evidence-backed alternative: each course described in commensurable terms, derived from its actual materials and confirmed by its instructor, available year-round to inform advising, accreditation, and revision. The unit of analysis is not what the syllabus claims a course will teach, but what the assignments and rubrics actually demand of students.</p>
+
+  <p>For that analysis to be useful, it must produce results that:</p>
+
+  <ul>
+    <li>distinguish meaningfully between courses that touch a topic and courses that develop it,</li>
+    <li>survive review by other faculty without collapsing into subjective interpretation,</li>
+    <li>aggregate cleanly into program-level views (coverage matrices, scaffolding analysis, prerequisite checks), and</li>
+    <li>remain comprehensible to instructors who do not have time to learn a new technical vocabulary.</li>
+  </ul>
+
+  <p>The framework described here, designated <em>KUD+</em>, is the working answer to those constraints. It begins with a well-established three-category outcome model (Know, Understand, Do) and extends each category with a 0–5 depth scale anchored to observable student attainment. The remainder of this document explains the theoretical basis for those choices, their practical implementation, and the limitations the approach acknowledges.</p>
+</section>
+
+<section id="kud">
+  <h2><span class="num">§ 2</span>The KUD model</h2>
+
+  <p>The Know / Understand / Do distinction is drawn from Tomlinson's work on differentiated instruction <a href="#ref-tomlinson-1999">(Tomlinson, 1999/2014)</a> and is compatible with the planning sequence in <em>Understanding by Design</em> <a href="#ref-wiggins-2005">(Wiggins &amp; McTighe, 2005)</a>. The three categories are intended to separate what is often conflated in outcome statements:</p>
+
+  <ul>
+    <li><strong>Know.</strong> Facts, terms, conventions, vocabulary, procedural steps — content the student can recall, recognize, or reproduce. The cognitive operation is retrieval.</li>
+    <li><strong>Understand.</strong> Principles, relationships, consequences, transferable ideas — the <em>why</em> behind the content. The cognitive operation is reasoning.</li>
+    <li><strong>Do.</strong> Skills, procedures, performances, produced artifacts — what the student can execute or demonstrate. The cognitive operation is behavioral output.</li>
+  </ul>
+
+  <p>The framework is widely deployed in outcome-writing guidance at the K–12 and undergraduate levels, where its three categories are valued for being faculty-readable without sacrificing the discrimination needed to distinguish a course that teaches definitions from one that teaches reasoning from one that teaches performance.</p>
+
+  <h3>Why three categories rather than Bloom's six</h3>
+
+  <p>Bloom's revised taxonomy (<a href="#ref-bloom-1956">Bloom, 1956</a>; <a href="#ref-anderson-2001">Anderson &amp; Krathwohl, 2001</a>) provides six cognitive levels — Remember, Understand, Apply, Analyze, Evaluate, Create — and is the established tool for analyzing the cognitive demand of an <em>assessment task</em>. For that purpose its granularity is appropriate.</p>
+
+  <p>The job of curriculum mapping at the program level is different. The tool must score hundreds of (course × competency × dimension) cells, each of which faculty may review and dispute. The finer the rubric, the more disputes resolve on the interpretation of category boundaries (Apply vs. Analyze, Evaluate vs. Create) rather than on the substantive question of whether the course covers the competency at all. <a href="#ref-brennan">Brennan and colleagues</a> note that program-level outcome statements should specify the <em>level</em> to which a competence is achieved without overloading reviewers; the EU Tuning project's degree profiles use a similarly compact set of competency descriptors for the same reason.</p>
+
+  <p>The three KUD categories give faculty enough resolution to express the dissociations that matter for curriculum work (a course can teach vocabulary without conceptual grasp, conceptual grasp without performance, or performance without articulation) while keeping inter-rater agreement tractable across a 28-course program. Bloom remains the right lens for assessment design at the course level; the verbs from Bloom's taxonomy continue to inform the prompts the auditor uses to probe each cell.</p>
+
+  <h3>Dissociation cases the model surfaces</h3>
+
+  <p>Measuring K, U, and D independently is worthwhile because well-taught courses develop them together but failure modes are dimension-specific. The framework is designed to make the following patterns visible:</p>
+
+  <table class="compact">
+    <thead>
+      <tr><th>Pattern</th><th>What it means</th><th>Where it shows up</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="kud">K-high, U-low</td><td>Vocabulary mastered without rationale</td><td>Term-heavy courses with quiz-based assessment</td></tr>
+      <tr><td class="kud">K-low, U-high</td><td>Conceptual grasp without professional language</td><td>Discussion-heavy seminars without vocabulary expectations</td></tr>
+      <tr><td class="kud">U-high, D-low</td><td>Theory without craft</td><td>Critique-heavy courses without studio production</td></tr>
+      <tr><td class="kud">D-high, U-low</td><td>Craft without articulation</td><td>Studio-heavy courses without written rationale</td></tr>
+      <tr><td class="kud">K1 only</td><td>Topic mentioned but never engaged</td><td>Items listed on syllabus but absent from assessment</td></tr>
+    </tbody>
+  </table>
+
+  <p>Each pattern is actionable. A K-high/U-low result for a foundational vocabulary course is a question to ask the instructor; a U-high/D-low result for a capstone is a curriculum-committee concern.</p>
+</section>
+
+<section id="depth">
+  <h2><span class="num">§ 3</span>The depth extension (KUD+)</h2>
+
+  <p>KUD as written treats coverage as essentially binary. A course either addresses a competency at the Know level or it does not; either at the Understand level or not; either at Do or not. Early piloting on the GC curriculum confirmed the limitation predicted by this design: when nearly every relevant course "covers" a competency, the binary cells collapse and the matrix loses its ability to discriminate. The prerequisite analyzer cannot distinguish a course that briefly mentions a skill from one that requires students to perform it independently; career-path alignment becomes a recitation of intersections rather than a depth-aware judgment.</p>
+
+  <p>KUD+ extends each of Know, Understand, and Do with a <strong>0–5 depth scale</strong> anchored to observable student attainment. The scale's structure is intentionally uniform across dimensions; the anchors at each level differ because the underlying cognitive operations differ.</p>
+
+  <div class="scale">
+KNOW — recall and identification of content
+  0  Not present in this course
+  1  Exposure — student encountered it (heard about, read about), not tested
+  2  Recognize — student can identify the term/fact when shown options
+  3  Recall — student can produce the term/fact on cue, without prompt
+  4  Use correct terminology when discussing the domain
+  5  Fluent across the full vocabulary, including conventions and edge cases
+
+UNDERSTAND — reasoning about the why
+  0  Not present
+  1  Restates the explanation as given
+  2  Explains the rationale in own words
+  3  Predicts consequences (if X then Y, because…)
+  4  Reasons through novel cases not previously seen
+  5  Critiques the principle, identifies limits, extends to new domains
+
+DO — behavioral output
+  0  Not present
+  1  Performs with per-step direction or supervision
+  2  Performs using a reference or checklist
+  3  Performs independently in familiar conditions
+  4  Adapts performance to new conditions or constraints
+  5  Performs creatively with critical judgment; can guide others
+  </div>
+
+  <p>Three properties of this scale are deliberate and worth naming explicitly.</p>
+
+  <h3>Zero means absence, not weakness</h3>
+
+  <p>A score of 0 indicates the dimension is not present in the course at all — a structurally different claim from a low non-zero score. Rendered in the coverage matrix, 0 produces an empty cell; 1 produces a faintly filled cell. This distinction matters for prerequisite analysis: a downstream course that needs students to <em>use</em> a term cannot rely on a prior course that scored only K1 (exposure).</p>
+
+  <h3>Exposure (K1) is exclusively a Know event</h3>
+
+  <p>Hearing a principle stated, watching a demonstration, reading about a technique — these are encounters with content the student has not yet engaged. They score K=1 with U=0 and D=0, because awareness is the definition of a Know event and the other dimensions require engagement. The scale enforces this asymmetry: the Understand and Do scales begin at active engagement (restating, performing with direction); they do not include a passive-exposure step. This prevents the inflation common in coverage rubrics where lecture-only content acquires a misleading depth score.</p>
+
+  <h3>The scale is uniform in shape but distinct in anchor</h3>
+
+  <p>Each dimension's level descriptors are specific to that dimension. "Mastery" of a fact (K5: fluent vocabulary command) is not the same achievement as mastery of a principle (U5: critique and extension) or mastery of a skill (D5: creative independence). Using the same numerical range across the three permits a clean coverage-matrix rendering; anchoring the levels differently keeps the model honest about what each dimension is measuring.</p>
+</section>
+
+<section id="anchors">
+  <h2><span class="num">§ 4</span>Student-side anchors and the evidence rule</h2>
+
+  <p>Each level on each scale describes <em>what the student does or grasps</em>, not what the syllabus claims the course will teach. This is the most important practical commitment in the framework: <strong>aspirational syllabus language alone is not sufficient evidence for any score above the lowest meaningful level on its dimension.</strong> A syllabus statement that "students will understand X" does not by itself justify a score above U=1; the evidence above U=1 must come from student-produced reasoning (a graded written rationale, an oral defense, a journal entry, a memo that requires explaining the principle).</p>
+
+  <p>The evidence requirement is formalized in the scoring rule. Above-zero depth values must be backed by an excerpt from the course materials (a rubric criterion, an assignment prompt, a graded artifact, or a recorded instructor confirmation). Specifically:</p>
+
+  <ul>
+    <li><code>k_depth &gt; 1</code> requires an evidence excerpt naming where the student is tested or measured on the content.</li>
+    <li><code>u_depth &gt; 0</code> requires an evidence excerpt showing student-produced reasoning.</li>
+    <li><code>d_depth &gt; 0</code> requires an evidence excerpt showing student-produced behavioral output.</li>
+  </ul>
+
+  <p>This anchoring directly implements the second stage of Wiggins and McTighe's backward design <a href="#ref-wiggins-2005">(Wiggins &amp; McTighe, 2005)</a>: outcomes are paired with the evidence that would demonstrate them. It is also the practical mechanism by which the binary collapse described in §3 is avoided. When the AI is required to cite evidence before assigning a level, lecture-only content cannot acquire above-K1 scores by accident, and the depth distribution across the program becomes informative.</p>
+</section>
+
+<section id="grounding">
+  <h2><span class="num">§ 5</span>Theoretical grounding</h2>
+
+  <p>The framework is consistent with several established traditions in curriculum design. None of them prescribe the specific depth scales used here, but each supports a structural commitment the framework makes.</p>
+
+  <h3>Backward Design (Wiggins &amp; McTighe)</h3>
+
+  <p><em>Understanding by Design</em> <a href="#ref-wiggins-2005">(Wiggins &amp; McTighe, 2005)</a> defines a three-stage planning sequence: identify desired results, determine acceptable evidence, plan learning experiences. The KUD categories serve Stage 1 by giving outcomes a typed structure; the depth scales and evidence rule together serve Stage 2 by requiring that any non-trivial outcome claim be backed by an artifact a reviewer could examine. The framework's commitment to student-side anchors flows directly from Stage 2: evidence describes what a student produced, not what an instructor intended.</p>
+
+  <h3>Constructive Alignment (Biggs)</h3>
+
+  <p>Biggs's principle of constructive alignment <a href="#ref-biggs-1996">(Biggs, 1996)</a> requires that intended outcomes, teaching and learning activities, and assessment all support one another. The framework's per-course audit conversation operationalizes this by treating mismatches between stated objectives and material evidence as first-class findings: an objective that has no graded artifact behind it, or an assessment that probes a depth the objective does not claim, becomes part of the structured audit-notes output rather than a silent inconsistency.</p>
+
+  <h3>Bloom's Taxonomy (in support, not in place)</h3>
+
+  <p>The revised Bloom's taxonomy <a href="#ref-anderson-2001">(Anderson &amp; Krathwohl, 2001)</a> remains the right vocabulary for analyzing the cognitive demand of an assignment. The framework does not replace Bloom's verbs; it employs them inside the audit conversation, where the auditor asks an instructor which Bloom level a high-stakes assignment most closely matches (remembering vs. applying vs. creating). This use is consistent with how Bloom is typically deployed at the assessment-design level. The discriminator between Bloom and KUD is one of <em>scope</em>: Bloom is granular enough for designing a single assessment; KUD is compact enough for mapping an entire program.</p>
+
+  <h3>Competency-Based Education</h3>
+
+  <p>Competency-based frameworks define learning as the demonstrated mastery of specified competencies and often tie those competencies to external (employer) expectations <a href="#ref-neche">(NECHE, 2015)</a>. KUD+ shares the mastery orientation in its depth scales — the top step on Do (creative judgment, ability to guide others) describes a near-professional standard — and shares the external-alignment orientation through the planned career-path layer described in §9. The framework departs from strict CBE in two ways: it does not propose self-paced credit (it maps the existing time-based curriculum), and it treats program-level mapping as the primary deliverable rather than individual transcripts of demonstrated competencies.</p>
+
+  <h3>Integrative Learning</h3>
+
+  <p>AAC&amp;U's Integrative Learning VALUE Rubric <a href="#ref-aacu">(AAC&amp;U)</a> describes a progression from connecting prior knowledge across contexts to synthesizing learning in complex, real-world performances. The KUD+ Do scale incorporates this progression at its upper levels (D=4 adapts to new constraints; D=5 performs creatively with critical judgment and guides others), and the framework treats integration as the top-of-scale outcome rather than a separate dimension. This choice is discussed further in §6.</p>
+</section>
+
+<section id="alternatives">
+  <h2><span class="num">§ 6</span>Why not other frameworks</h2>
+
+  <p>Several alternative frameworks deserve specific mention, both for completeness and because the choice not to use them clarifies what KUD+ is trying to accomplish.</p>
+
+  <table class="compact">
+    <thead><tr><th>Framework</th><th>Strength</th><th>Why not used as the primary lens</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Bloom's six-level taxonomy</strong></td>
+        <td>Finest-grained discrimination of cognitive demand; standard for assessment writing.</td>
+        <td>Too granular for program-wide mapping; faculty reviews collapse into Apply-vs-Analyze disputes. Used in support inside the audit (see §5).</td>
+      </tr>
+      <tr>
+        <td><strong>AAC&amp;U VALUE Rubrics</strong></td>
+        <td>Faculty-developed performance descriptors for cross-cutting outcomes; widely adopted.</td>
+        <td>Designed for assessing student work, not for describing what a course delivers. Used informally to inform depth-scale anchors (especially at the top of Do).</td>
+      </tr>
+      <tr>
+        <td><strong>EU Tuning Project</strong></td>
+        <td>Competency profiles tied to degree programs; cross-institutional comparability.</td>
+        <td>Bureaucratically heavy; presumes a level of inter-institutional coordination not present at single-department scale. Influences the framework's treatment of program-level competency descriptors.</td>
+      </tr>
+      <tr>
+        <td><strong>Outcomes-Based Education (general)</strong></td>
+        <td>Emphasizes designing curriculum around demonstrable outcomes.</td>
+        <td>Defines the philosophy but not the measurement granularity; KUD+ is one specific instantiation of outcomes-based curriculum work.</td>
+      </tr>
+      <tr>
+        <td><strong>Competency-Based Education (strict)</strong></td>
+        <td>Mastery focus; flexible pacing; external-standard alignment.</td>
+        <td>Implementation requires non-time-based credit structures the program is not adopting. The mastery orientation is preserved without the structural changes.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>The framework's design choice — three outcome categories with depth scales — is therefore not a rejection of these traditions but a selection among them, with explicit attention to which one is well-suited for the program-mapping task and which one is well-suited for the assessment-design task.</p>
+</section>
+
+<section id="foundational">
+  <h2><span class="num">§ 7</span>Foundational competencies</h2>
+
+  <p>The KUD model fits cognitive and procedural outcomes cleanly. It fits affective and dispositional outcomes — agency, attention to detail, resilience, curiosity, communication — less cleanly, because there is no meaningful "Know resilience" or "Understand attention to detail" event in undergraduate practice. Students do not recall facts about resilience or reason their way through it in the moment; they exhibit it.</p>
+
+  <p>The framework treats five baseline foundational competencies as program-wide threads and scores each one on Do only:</p>
+
+  <ul>
+    <li><strong>Agency</strong> — initiative, ownership of decisions, drive.</li>
+    <li><strong>Attention to Detail</strong> — care, accuracy, error-catching, follow-through.</li>
+    <li><strong>Resilience</strong> — persistence through failure, adaptive recovery.</li>
+    <li><strong>Curiosity</strong> — substantive questioning, inquiry beyond requirements.</li>
+    <li><strong>Communication</strong> — written, oral, and visual articulation.</li>
+  </ul>
+
+  <p>Their Know and Understand cells are recorded as null rather than zero; zero would imply the course tried to develop them at the K or U level and failed, which is not the right reading. A foundational with <code>d_depth = 0</code> is a valid and informative finding: it means the course does not create the conditions (open-ended challenges, revision cycles, productive failure, peer-facing communication) that develop the disposition.</p>
+
+  <p>The framework adopts a hybrid approach: the five baseline foundationals are fixed and scored in every course, and the auditor may add additional foundational competencies (e.g., Collaboration, Professionalism, Ethical Judgment) when the course materials evidence them. This permits institutional stability in the baseline while allowing the data to surface dispositions the original list did not anticipate.</p>
+</section>
+
+<section id="course-impl">
+  <h2><span class="num">§ 8</span>Course-by-course implementation</h2>
+
+  <p>The mechanism that produces a Course Outcome Profile from the framework is the <strong>CourseCapture</strong> workflow. A single course is captured in one instructor-facing session and confirmed before its data feeds program-level views.</p>
+
+  <h3>Inputs consumed</h3>
+
+  <p>The capture session pulls everything the system already holds about the course: the catalog row (description, prerequisites, stated objectives, listed major projects, required incoming skills); any uploaded materials (rubrics, project briefs, lab handouts, syllabus PDFs) with their extracted text; the Canvas-imported syllabus body, assignment list with point values and descriptions, and module item list. No re-ingestion is required at capture time. Where prerequisite courses have themselves been captured previously, their confirmed profiles are included as authoritative evidence of what students arrive with.</p>
+
+  <h3>The audit conversation</h3>
+
+  <p>An AI auditor opens the session with a brief summary of what the materials show and the single most consequential gap or contradiction it noticed, then asks one targeted question at a time. The audit covers six areas, worked through across the conversation:</p>
+
+  <ol>
+    <li><strong>Prerequisite sufficiency.</strong> The auditor walks the catalog's required incoming skills one at a time, asking whether each is genuinely arrived with or re-taught in this course. Where a prerequisite course has a captured profile, the auditor reads it directly and cites its depths rather than asking the instructor to recall.</li>
+    <li><strong>Stated objectives vs. evidenced outcomes.</strong> The auditor performs the comparison in both directions: objectives without material evidence (aspirational), and material outcomes not captured in the stated objectives (taught but unstated).</li>
+    <li><strong>Cross-source overlaps and contradictions.</strong> Differences in point values, assignment lists, or outcomes language between the syllabus, Canvas, and uploaded materials are surfaced as findings, with one source designated authoritative by the instructor.</li>
+    <li><strong>Bloom's-level probe per major assignment.</strong> For the highest-stakes assignments, the auditor asks which Bloom verb most accurately describes what students are doing, and what evidence supports that classification.</li>
+    <li><strong>Threshold concept.</strong> The conceptual shift that separates students who genuinely understand the course from students who memorized its content.</li>
+    <li><strong>Foundational competency conditions.</strong> For each of the five baseline dispositions, the auditor probes whether the course creates the behavioral conditions that develop the disposition, rather than asking whether the course "teaches" it.</li>
+  </ol>
+
+  <p>The instructor sees a readiness signal on every turn: a 0–100 score reflecting the auditor's honest self-assessment of how defensibly the profile could be generated right now, with short labels for what is covered and what is still being probed. The instructor may stop the session at any point; the score is advisory, not gating.</p>
+
+  <h3>Inaccessible content</h3>
+
+  <p>The Canvas import extracts plain text only from three Canvas surfaces (syllabus body, assignment descriptions, module item titles). It does not retrieve video content from any platform, Canvas Pages, file attachments named in descriptions, quiz or discussion content, or external LTI items. The auditor is explicitly required to detect references to these and surface them with their specifics — the exact title or URL, where in the materials they appeared, the auditor's best guess at likely content, and the scoring implication. Above-zero scores that depend on inaccessible content are flagged in the rationale as conservative pending instructor confirmation.</p>
+
+  <h3>Output: the Course Outcome Profile</h3>
+
+  <p>On instructor command, the system produces a structured profile:</p>
+
+  <ul>
+    <li>5–15 technical competencies discovered from the materials, each scored on K/U/D depth with evidence excerpts and a short rationale per competency.</li>
+    <li>All five baseline foundational competencies scored on Do only (with <code>d_depth = 0</code> when the course does not develop the disposition), plus any additional foundationals the materials evidenced.</li>
+    <li>Audit notes covering prerequisite gaps, objective misalignments, cross-source conflicts, and suggested objective revisions.</li>
+    <li>If requested, a draft revision of the learning objectives grounded in the materials evidence; this is informational only and does not modify the catalog automatically.</li>
+  </ul>
+
+  <p>The profile is reviewed by the instructor in a structured editor — sliders per dimension, evidence visible per cell, audit notes in a sidebar — and confirmed before downstream views consume it.</p>
+</section>
+
+<section id="career-impl">
+  <h2><span class="num">§ 9</span>Career-path alignment</h2>
+
+  <p>The career-path side of the framework is implemented through a parallel <strong>CareerCapture</strong> workflow that produces a Role Outcome Profile for each named career destination. The current scope identifies five destinations specific to the GC program — Account Management, Brand Strategy, Production &amp; Operations, Creative Generalist, and AI Workflow Orchestrator — with the understanding that the set is subject to revision as evidence accumulates.</p>
+
+  <h3>From employer input to Role Outcome Profile</h3>
+
+  <p>The CareerCapture workflow follows the same capture-and-confirm pattern as CourseCapture, with employer-side inputs in place of course materials: a job description, plain-language descriptions of typical work and first-six-month expectations, common graduate gaps, evidence of readiness, and (optionally) interview questions or portfolio prompts. The system drafts a Role Outcome Profile scoped to the same KUD+ structure used on the course side, with depth values describing entry-level expectation rather than course delivery. The profile is reviewed and amended by the employer respondent before being used for alignment.</p>
+
+  <p>At scale, the framework intends for each career destination to be informed by multiple employer inputs (a working triangulation target of N ≥ 3 per role before the synthesized profile is treated as anything but a draft), and for the synthesis layer to surface consensus views and minority dissent rather than averaging into a single number.</p>
+
+  <h3>Alignment to the curriculum</h3>
+
+  <p>With Course Outcome Profiles on one side and Role Outcome Profiles on the other, alignment becomes a depth-aware comparison: for each sub-competency the role requires at a given level, the program reports the chain of courses that develop the sub-competency and at what depth. Three views are planned at the program level:</p>
+
+  <ul>
+    <li><strong>Coverage matrix.</strong> Courses × career-target sub-competencies, with depth rendered as fill intensity. Surfaces the heat-map shape: which targets are densely served, which are thin, which sub-competencies are not addressed anywhere.</li>
+    <li><strong>Scaffolding analysis.</strong> Across the full degree plan, whether a competency is introduced (K1–2), practiced (K3–4 / U2–3 / D2–3), and brought to integration (U4–5 / D4–5) in the right course-level sequence. Surfaces brittle scaffolds: an Act-3 course that expects mastery of a competency not introduced in Act 1 or Act 2.</li>
+    <li><strong>Prerequisite-gap analysis.</strong> For any focal course, the prior coursework students actually take is checked against what the focal course's assignments require, dimension by dimension.</li>
+  </ul>
+
+  <p>These views are not produced by the framework itself but by program-level analyses that consume the confirmed Course Outcome Profiles and Role Outcome Profiles. The framework's contribution is to make the underlying data commensurable across courses and across the course-employer boundary.</p>
+</section>
+
+<section id="not">
+  <h2><span class="num">§ 10</span>What this framework is not</h2>
+
+  <p>Several limitations and scope decisions are worth naming explicitly.</p>
+
+  <ul>
+    <li><strong>Not an evaluation of faculty or students.</strong> Depth scores describe what the course's materials and assignments require, not how well any instructor delivers the course or how well any student performs in it.</li>
+    <li><strong>Not an automated curriculum designer.</strong> The framework surfaces what is and supports faculty deliberation; redesign decisions remain committee work informed by the evidence, not generated by it.</li>
+    <li><strong>Not a replacement for faculty judgment.</strong> The auditor drafts, the instructor confirms. Every depth value is editable in the review step; reviewer status is recorded on each profile.</li>
+    <li><strong>Not empirically validated.</strong> The framework's specific scales are working hypotheses based on the theoretical traditions described in §5 and on the pragmatic constraints of program mapping. Validation work — comparison of generated profiles against external occupational data — is described in the <a href="./graduate-outcome-validation.html">graduate-outcome validation proposal</a>.</li>
+    <li><strong>Not extensible to fully automated assessment scoring.</strong> Bloom's taxonomy and AAC&amp;U VALUE rubrics remain the appropriate lenses for evaluating student work; this framework is designed for describing what a course develops, not for grading what a student produced.</li>
+    <li><strong>Not insensitive to material limitations.</strong> The Canvas import does not currently retrieve video content, Canvas Pages, file attachments, or quiz/discussion content. The auditor is required to flag references to such content; profiles produced from incomplete materials carry that uncertainty in their rationale fields.</li>
+  </ul>
+</section>
+
+<section id="references">
+  <h2><span class="num">§ 11</span>References</h2>
+
+  <ol class="refs">
+    <li id="ref-anderson-2001">Anderson, L. W., &amp; Krathwohl, D. R. (Eds.). (2001). <em>A Taxonomy for Learning, Teaching, and Assessing: A Revision of Bloom's Taxonomy of Educational Objectives</em>. Longman.</li>
+    <li id="ref-aacu">Association of American Colleges &amp; Universities. <em>VALUE Rubrics</em>. Includes the Integrative Learning rubric used to inform the upper-range anchors of the Do scale. <a href="https://www.aacu.org/initiatives/value-initiative/value-rubrics" target="_blank" rel="noopener noreferrer">aacu.org/initiatives/value-initiative/value-rubrics</a>.</li>
+    <li id="ref-biggs-1996">Biggs, J. (1996). Enhancing teaching through constructive alignment. <em>Higher Education</em>, 32(3), 347–364.</li>
+    <li>Biggs, J., &amp; Tang, C. (2011). <em>Teaching for Quality Learning at University</em> (4th ed.). Open University Press.</li>
+    <li id="ref-bloom-1956">Bloom, B. S. (Ed.). (1956). <em>Taxonomy of Educational Objectives: The Classification of Educational Goals. Handbook I: Cognitive Domain</em>. David McKay.</li>
+    <li id="ref-brennan">Brennan, J., et al. <em>Tuning Educational Structures in Europe — Reference Points and Guidance</em>. González &amp; Wagenaar (Eds.). Distinguishes <em>competence</em> (the holistic ability) from <em>learning outcome</em> (the level of competence achieved), and motivates the framework's depth-scale extension.</li>
+    <li id="ref-neche">New England Commission of Higher Education. (2015). <em>Policy Statement on Competency-Based Education</em>.</li>
+    <li id="ref-tomlinson-1999">Tomlinson, C. A. (1999). <em>The Differentiated Classroom: Responding to the Needs of All Learners</em>. ASCD. (2nd ed., 2014.) Origin of the KUD model as used here.</li>
+    <li>Tomlinson, C. A., &amp; Imbeau, M. B. (2010). <em>Leading and Managing a Differentiated Classroom</em>. ASCD.</li>
+    <li id="ref-wiggins-2005">Wiggins, G., &amp; McTighe, J. (2005). <em>Understanding by Design</em> (Expanded 2nd ed.). ASCD. Foundational reference for backward design and the structural commitment to evidence-as-stage-2.</li>
+  </ol>
+</section>
+
+<footer class="doc-foot">
+  GC Curriculum Tool · Background v1 · Companion to the
+  <a href="./superpowers/vision/gc-curriculum-tool-vision.html" style="color: var(--accent);">Vision</a> document
+  and the
+  <a href="./graduate-outcome-validation.html" style="color: var(--accent);">Validation</a> proposal.
+</footer>
+
+</main>
+
+</body>
+</html>

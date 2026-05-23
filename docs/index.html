@@ -1,13 +1,179 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="refresh" content="0; url=superpowers/pilot/2026-05-20-industry-partner-interface-preview.html" />
-  <title>GC Industry Partner Interface — Preview</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GC Curriculum Tool — Documents</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Mono:wght@300;400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F7F5F0;
+    --bg-card: #FFFFFF;
+    --text: #1C1C18;
+    --text-muted: #6B6860;
+    --text-faint: #9E9B94;
+    --accent: #C8682A;
+    --accent-light: #F5E6D8;
+    --border: #E2DDD4;
+    --border-strong: #C8C4BA;
+    --mono: 'DM Mono', monospace;
+    --serif: 'Source Serif 4', Georgia, serif;
+    --display: 'Playfair Display', Georgia, serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--serif);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 64px 32px;
+    font-size: 16px;
+    line-height: 1.7;
+  }
+  main { max-width: 720px; margin: 0 auto; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+  h1 {
+    font-family: var(--display);
+    font-size: 40px;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--text);
+    margin-bottom: 16px;
+    letter-spacing: -0.005em;
+  }
+  .lede {
+    font-size: 18px;
+    color: var(--text-muted);
+    font-style: italic;
+    font-weight: 300;
+    margin-bottom: 48px;
+    max-width: 600px;
+  }
+  .doc-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .doc-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 22px 26px;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    transition: border-color 120ms, transform 120ms;
+  }
+  .doc-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+  }
+  .doc-card-eyebrow {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .doc-card-title {
+    font-family: var(--display);
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1.25;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+  .doc-card-desc {
+    font-size: 14.5px;
+    color: var(--text-muted);
+    line-height: 1.55;
+    margin: 0;
+  }
+  .group-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin: 32px 0 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  .group-label:first-of-type { margin-top: 0; }
+  footer {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-strong);
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-faint);
+    letter-spacing: 0.05em;
+  }
+  footer a { color: var(--text-muted); text-decoration: none; }
+  footer a:hover { color: var(--accent); }
+</style>
 </head>
-<body style="font-family: system-ui, sans-serif; padding: 2rem; color: #334155;">
-  <p>Redirecting to the
-    <a href="superpowers/pilot/2026-05-20-industry-partner-interface-preview.html">Industry Partner Interface Preview</a>…</p>
+<body>
+
+<main>
+
+<div class="eyebrow">Clemson · Graphic Communications</div>
+<h1>GC Curriculum Tool</h1>
+<p class="lede">Working documents for the curriculum-mapping and career-alignment project. The vision describes the tool; the background justifies the framework it implements.</p>
+
+<div class="doc-grid">
+
+  <div class="group-label">Reading order</div>
+
+  <a class="doc-card" href="./superpowers/vision/gc-curriculum-tool-vision.html">
+    <div class="doc-card-eyebrow">Vision</div>
+    <div class="doc-card-title">The GC Curriculum Tool — Vision</div>
+    <p class="doc-card-desc">The high-level picture: the two questions the tool answers, what it produces, the 3-Act program structure, the planned end state, and illustrative visualizations.</p>
+  </a>
+
+  <a class="doc-card" href="./background.html">
+    <div class="doc-card-eyebrow">Background</div>
+    <div class="doc-card-title">The KUD+ Framework — Background and Justification</div>
+    <p class="doc-card-desc">The academic companion to the Vision: what KUD+ measures, the theoretical traditions it draws on (Backward Design, Constructive Alignment, Bloom's, Competency-Based Education), the depth-scale extension and its evidence rule, foundational competency treatment, and course- and career-path implementation.</p>
+  </a>
+
+  <a class="doc-card" href="./graduate-outcome-validation.html">
+    <div class="doc-card-eyebrow">Validation</div>
+    <div class="doc-card-title">Graduate Outcome Validation</div>
+    <p class="doc-card-desc">Proposal for empirical validation of the framework's output against external occupational data using a dataset of 268 Clemson GC graduates across 43 occupational categories.</p>
+  </a>
+
+  <div class="group-label">Previews</div>
+
+  <a class="doc-card" href="./superpowers/pilot/2026-05-20-industry-partner-interface-preview.html">
+    <div class="doc-card-eyebrow">Pilot · Interface preview</div>
+    <div class="doc-card-title">Industry Partner Interface</div>
+    <p class="doc-card-desc">Clickable mockup of the employer-side input flow that feeds Role Outcome Profiles (the career-path side of the framework).</p>
+  </a>
+
+  <a class="doc-card" href="./superpowers/pilot/2026-05-21-course-builder-preview.html">
+    <div class="doc-card-eyebrow">Pilot · Interface preview</div>
+    <div class="doc-card-title">Course Builder Preview</div>
+    <p class="doc-card-desc">Interactive mockup of the per-course workflow that produces a Course Outcome Profile.</p>
+  </a>
+
+</div>
+
+<footer>
+  Source: <a href="https://github.com/chiptoe-svg/gc-curriculum-tool" target="_blank" rel="noopener noreferrer">github.com/chiptoe-svg/gc-curriculum-tool</a>
+</footer>
+
+</main>
+
 </body>
 </html>

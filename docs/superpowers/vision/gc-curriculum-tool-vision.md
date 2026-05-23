@@ -3,6 +3,8 @@
 > **Want to test drive a rough prototype?** → [Open the prototype](https://gc-curriculum-tool.vercel.app/preview/4QcseN0pvlpd35gb)
 >
 > The analysis reads each course's learning objectives, projects, and assumed skills from the [shared course sheet](https://docs.google.com/spreadsheets/d/12aPhgrIlhDYjKD0-Gt97glf1d9fKtwKmL4FwM8iTz7Q/edit?gid=1024237655#gid=1024237655). Edit your course's tab to sharpen the analysis.
+>
+> For the academic background and theoretical justification behind the KUD+ framework — what it measures, why it's structured as it is, and how it's implemented at the course and career-path levels — see the [Background document](../../../background.html).
 
 ## What we're building
 
@@ -38,17 +40,19 @@ Underneath the career-target framework sits the program's own mental model: GC u
 
 When the tool flags a brittle scaffold, the diagnosis often surfaces *between acts* — an Act-3 course expects mastery of a competency that no Act-1 or Act-2 course actually introduces.
 
-## Why Know / Understand / Do
+## Why Know / Understand / Do — with depth
 
 The tool classifies every competency at three levels. **Know** is facts and discrete information — terms, conventions, the names of things. **Understand** is the big ideas, principles, and transferable concepts that hold the facts together and explain why they matter. **Do** is skill, process, and applied performance — what a student can actually execute.
 
 This is the **KUD framework**, drawn from Carol Ann Tomlinson's work on differentiated instruction (Tomlinson, 1999/2014; Tomlinson & Imbeau, 2010) and compatible with Wiggins and McTighe's *Understanding by Design* (2005), which centers curriculum planning on durable understanding and transfer rather than coverage.
 
-**Why not Bloom's Taxonomy?** Bloom's six-level cognitive taxonomy (Bloom, 1956; Anderson & Krathwohl, 2001) is the right tool for analyzing cognitive demand — it discriminates finely between types of thinking and is well-suited to writing and evaluating assessment tasks. That is a different job than the one this tool has to do. The GC Curriculum Tool needs a small set of faculty-readable categories that can drive coverage analysis, scaffolding analysis, prerequisite checks, and advising decisions *across an entire program*. For that purpose, three levels outperforms six: the question "Does this prior course cover the *Understand*-level concept the focal course expects?" is clean and answerable. The finer distinctions Bloom provides — Analyze vs. Evaluate, Apply vs. Create — would introduce judgment calls that compound across hundreds of course × competency cells and make faculty review harder, not easier. KUD is better suited to curriculum mapping and program design; Bloom remains the right lens for assessment design.
+**Each of K, U, and D is scored on a 0–5 depth scale.** Binary coverage ("covered/not covered") collapses in practice — most courses touch most relevant competencies at some level, and the matrix loses its ability to discriminate between a brief mention and an assessed performance. The depth scales restore that resolution. The anchors at each level describe **what the student does or grasps** rather than what the syllabus claims; above-zero scores require an evidence excerpt from the course materials. The full scale definitions, the evidence rule, and the theoretical grounding behind the extension are documented in the [Background document](../../../background.html).
 
-The framework fits a professional field like Graphic Communications naturally. *Knowing* color theory, *understanding* why it drives brand perception, being able to *color-grade* a project to brand spec are three real, separable things — and exactly the kind of distinction the program needs to track across courses and career destinations.
+**Why not Bloom's Taxonomy?** Bloom's six-level cognitive taxonomy (Bloom, 1956; Anderson & Krathwohl, 2001) is the right tool for analyzing the cognitive demand of an *assessment task* — it discriminates finely between types of thinking and is well-suited to writing and evaluating assessments. That is a different job than the one this tool has to do. The GC Curriculum Tool needs a small set of faculty-readable categories that can drive coverage analysis, scaffolding analysis, prerequisite checks, and advising decisions *across an entire program*. For that purpose, three categories with internal depth outperforms six categories without: the question "does this prior course develop the *Understand*-level concept the focal course expects, and at what depth?" is clean and answerable. The finer distinctions Bloom provides — Analyze vs. Evaluate, Apply vs. Create — compound across hundreds of (course × competency × dimension) cells into judgment calls that make faculty review harder, not easier. KUD with depth is better suited to curriculum mapping; Bloom remains the right lens for assessment design and continues to inform the audit-conversation probes used inside each cell.
 
-**Further reading:** ASCD's *Understanding by Design* white paper — https://files.ascd.org/staticfiles/ascd/pdf/siteASCD/publications/UbD_WhitePaper0312.pdf
+The framework fits a professional field like Graphic Communications naturally. *Knowing* color theory, *understanding* why it drives brand perception, being able to *color-grade* a project to brand spec are three real, separable things — and exactly the kind of distinction the program needs to track across courses and career destinations. The depth dimension then captures the difference between a course that briefly mentions color theory in a lecture and a course that assesses students on color-managed production files against a rubric.
+
+**Further reading:** the [KUD+ Background document](../../../background.html) is the academic companion to this vision; ASCD's *Understanding by Design* white paper at https://files.ascd.org/staticfiles/ascd/pdf/siteASCD/publications/UbD_WhitePaper0312.pdf remains the standard reference for the backward-design tradition the framework builds on.
 
 ### References
 

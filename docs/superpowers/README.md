@@ -2,12 +2,18 @@
 
 All design / plan / vision artifacts for the GC Curriculum Tool.
 
-## Vision
+## Top-level documents
 
-The high-level picture — what the full tool will be, the two questions it answers, illustrative visualizations, and what the prototype shows today vs. the end state.
+These four are linked from the GH Pages root at [chiptoe-svg.github.io/gc-curriculum-tool/docs/](https://chiptoe-svg.github.io/gc-curriculum-tool/docs/):
 
-- [`vision/gc-curriculum-tool-vision.html`](./vision/gc-curriculum-tool-vision.html) — styled web view (live at [chiptoe-svg.github.io/gc-curriculum-tool/docs/superpowers/vision/gc-curriculum-tool-vision.html](https://chiptoe-svg.github.io/gc-curriculum-tool/docs/superpowers/vision/gc-curriculum-tool-vision.html))
-- [`vision/gc-curriculum-tool-vision.md`](./vision/gc-curriculum-tool-vision.md) — source markdown
+- **Documents hub** — [`../index.html`](../index.html). Reading-order index for everything below.
+- **Vision** — the high-level picture: the two questions, what it produces, the 3-Act program structure, end state, illustrative visualizations.
+  - [`vision/gc-curriculum-tool-vision.html`](./vision/gc-curriculum-tool-vision.html) — styled web view
+  - [`vision/gc-curriculum-tool-vision.md`](./vision/gc-curriculum-tool-vision.md) — source markdown
+- **Background** — academic companion to the Vision. Theoretical justification for KUD+ (Backward Design, Constructive Alignment, Bloom's relationship), the depth-scale extension and evidence rule, foundational competency treatment, course- and career-path implementation.
+  - [`../background.html`](../background.html)
+- **Validation** — proposal for empirical validation against external occupational data using a dataset of 268 Clemson GC graduates.
+  - [`../graduate-outcome-validation.html`](../graduate-outcome-validation.html)
 
 ## Specs
 
