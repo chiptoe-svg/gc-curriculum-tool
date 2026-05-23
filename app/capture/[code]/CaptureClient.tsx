@@ -25,7 +25,8 @@ interface Telemetry {
   model: string;
 }
 
-export function CaptureClient({ course, initialMaterials, slug, existingProfile, existingReviewerStatus }: Props) {
+export function CaptureClient({ course: initialCourse, initialMaterials, slug, existingProfile, existingReviewerStatus }: Props) {
+  const [course, setCourse] = useState<CourseCatalogView>(initialCourse);
   const courseCode = course.code;
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [stage, setStage] = useState<Stage>(existingProfile ? 'review' : 'chat');
@@ -92,6 +93,7 @@ export function CaptureClient({ course, initialMaterials, slug, existingProfile,
         initialMaterials={materials}
         slug={slug}
         onMaterialsChange={setMaterials}
+        onCourseChange={setCourse}
       />
 
       {stage === 'chat' && (

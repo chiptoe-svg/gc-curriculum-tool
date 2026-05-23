@@ -29,6 +29,7 @@ interface Props {
   initialMaterials: CaptureMaterial[];
   slug: string;
   onMaterialsChange?: (next: CaptureMaterial[]) => void;
+  onCourseChange?: (next: CourseCatalogView) => void;
 }
 
 const ALLOWED_UPLOAD_TYPES = new Set([
@@ -225,13 +226,47 @@ function MaterialRow({
   );
 }
 
-export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChange }: Props) {
+export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChange, onCourseChange }: Props) {
   const [materials, setMaterials] = useState<CaptureMaterial[]>(initialMaterials);
   const [busy, setBusy] = useState<string | null>(null);
   const [collapsed, setCollapsed] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploading, setUploading] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [syncMessage, setSyncMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  async function handleSyncFromSheet() {
+    setSyncing(true);
+    setSyncMessage(null);
+    try {
+      const res = await fetch(
+        `/api/courses/${encodeURIComponent(course.code)}/sync-from-sheet?slug=${encodeURIComponent(slug)}`,
+        { method: 'POST' },
+      );
+      const json = await res.json();
+      if (!res.ok) {
+        setSyncMessage({ kind: 'error', text: (json as { error?: string }).error ?? `Sync failed (${res.status})` });
+        return;
+      }
+      const updated = (json as { course: CourseCatalogView }).course;
+      const merged: CourseCatalogView = {
+        code: updated.code,
+        title: updated.title,
+        description: updated.description ?? '',
+        prerequisites: updated.prerequisites ?? '',
+        learningObjectives: updated.learningObjectives ?? [],
+        majorProjects: updated.majorProjects ?? [],
+        skillsRequired: updated.skillsRequired ?? [],
+      };
+      onCourseChange?.(merged);
+      setSyncMessage({ kind: 'ok', text: 'Catalog synced from Google Sheet.' });
+    } catch (e) {
+      setSyncMessage({ kind: 'error', text: e instanceof Error ? e.message : 'Sync failed' });
+    } finally {
+      setSyncing(false);
+    }
+  }
 
   function pushMaterials(next: CaptureMaterial[]) {
     setMaterials(next);
@@ -337,14 +372,30 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
             {course.learningObjectives.length} objectives · {course.majorProjects.length} projects ·{' '}
             {course.skillsRequired.length} required skills
           </p>
+          {syncMessage && (
+            <p className={'mt-1 text-[11px] ' + (syncMessage.kind === 'ok' ? 'text-green-700' : 'text-destructive')}>
+              {syncMessage.text}
+            </p>
+          )}
         </div>
-        <button
-          type="button"
-          onClick={() => setCollapsed(c => !c)}
-          className="text-xs text-muted-foreground hover:text-foreground"
-        >
-          {collapsed ? 'Show' : 'Hide'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleSyncFromSheet}
+            disabled={syncing}
+            title="Pull the latest values from this course's Google Sheet tab"
+            className="rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
+          >
+            {syncing ? 'Syncing…' : 'Sync from sheet'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setCollapsed(c => !c)}
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            {collapsed ? 'Show' : 'Hide'}
+          </button>
+        </div>
       </header>
 
       {!collapsed && (
