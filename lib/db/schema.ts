@@ -1,4 +1,5 @@
 import { pgTable, uuid, text, jsonb, timestamp, integer, boolean, primaryKey } from 'drizzle-orm/pg-core';
+import type { CaptureProfile, CaptureReviewerStatus } from '@/lib/ai/capture/schema';
 
 export const careerTargets = pgTable('career_targets', {
   id: text('id').primaryKey(),               // stable slug like 'production-operations'
@@ -274,3 +275,20 @@ export const coverageScores = pgTable('coverage_scores', {
 }, (t) => ({
   pk: primaryKey({ columns: [t.courseCode, t.subCompetencyId] }),
 }));
+
+// CourseCapture — self-contained Course Outcome Profile per course.
+// One row per course (PK is course_code). The full profile is stored as
+// JSONB so the alpha shape can evolve without per-field migrations; if a
+// field becomes a hot query target it can be lifted into a column later.
+//
+// scale_version is metadata that lets future depth-scale changes (v2, v3) be
+// applied without silently rewriting historical scores. For now only 'v1'.
+export const courseCaptureProfiles = pgTable('course_capture_profiles', {
+  courseCode: text('course_code').primaryKey().references(() => courses.code, { onDelete: 'cascade' }),
+  profile: jsonb('profile').$type<CaptureProfile>().notNull(),
+  reviewerStatus: text('reviewer_status').$type<CaptureReviewerStatus>().notNull().default('ai_drafted'),
+  reviewerNote: text('reviewer_note'),
+  scaleVersion: text('scale_version').notNull().default('v1'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
