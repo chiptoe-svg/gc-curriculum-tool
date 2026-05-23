@@ -55,7 +55,31 @@ export async function POST(req: Request, { params }: Ctx) {
   if (data.assignments.length > 0) {
     const parts = data.assignments.map(a => {
       const desc = htmlToText(a.descriptionHtml);
-      return `## ${a.name}${a.pointsPossible != null ? ` (${a.pointsPossible} pts)` : ''}\n${desc}`;
+      const header = `## ${a.name}${a.pointsPossible != null ? ` (${a.pointsPossible} pts)` : ''}`;
+      // Rubric criteria are what faculty actually grade against. Including
+      // them inline gives the auditor the "what we grade for" picture that
+      // the assignment description alone often doesn't carry.
+      let rubricBlock = '';
+      if (a.rubric.length > 0) {
+        const lines: string[] = [];
+        const rubricHeader = a.rubricTitle ? `Rubric — ${a.rubricTitle}:` : 'Rubric:';
+        lines.push('', rubricHeader);
+        for (const c of a.rubric) {
+          const ptsLabel = c.points != null ? ` (${c.points} pts)` : '';
+          const detail = c.longDescription && c.longDescription !== c.description
+            ? ` — ${c.longDescription}`
+            : '';
+          lines.push(`- ${c.description}${ptsLabel}${detail}`);
+          if (c.ratings.length > 0) {
+            const ratingLine = c.ratings
+              .map(r => `${r.points != null ? `${r.points} pts: ` : ''}${r.description}`)
+              .join(' / ');
+            lines.push(`  ratings: ${ratingLine}`);
+          }
+        }
+        rubricBlock = lines.join('\n');
+      }
+      return [header, desc, rubricBlock].filter(Boolean).join('\n');
     });
     const assignmentsText = parts.join('\n\n');
     if (assignmentsText.trim()) toInsert.push({ fileName: 'Canvas: Assignments', text: assignmentsText });

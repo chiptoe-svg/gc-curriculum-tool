@@ -60,6 +60,10 @@ interface Props {
   messages: ChatMessage[];
   onMessagesChange: (next: ChatMessage[]) => void;
   onGenerate: () => void;
+  /** When restoring a saved conversation, the last readiness captured. */
+  initialReadiness?: CaptureReadiness | null;
+  /** Called after each successful turn so the parent can persist progress. */
+  onConversationChange?: (messages: ChatMessage[], readiness: CaptureReadiness | null) => void;
 }
 
 // The chat panel renders the full transcript, the input row with text +
@@ -72,11 +76,13 @@ export function CaptureChatPanel({
   messages,
   onMessagesChange,
   onGenerate,
+  initialReadiness,
+  onConversationChange,
 }: Props) {
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [readiness, setReadiness] = useState<CaptureReadiness | null>(null);
+  const [readiness, setReadiness] = useState<CaptureReadiness | null>(initialReadiness ?? null);
   const transcriptRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -101,8 +107,12 @@ export function CaptureChatPanel({
         return;
       }
       const { reply, readiness: nextReadiness } = json as { reply: string; readiness?: CaptureReadiness };
-      onMessagesChange([...next, { role: 'assistant', content: reply }]);
+      const newMessages = [...next, { role: 'assistant' as const, content: reply }];
+      onMessagesChange(newMessages);
       if (nextReadiness) setReadiness(nextReadiness);
+      // Autosave after every successful turn so a closed tab / failed
+      // Generate / next-day return doesn't lose the conversation.
+      onConversationChange?.(newMessages, nextReadiness ?? readiness ?? null);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Chat failed');
     } finally {

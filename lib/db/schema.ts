@@ -1,5 +1,5 @@
 import { pgTable, uuid, text, jsonb, timestamp, integer, boolean, primaryKey } from 'drizzle-orm/pg-core';
-import type { CaptureProfile, CaptureReviewerStatus } from '@/lib/ai/capture/schema';
+import type { CaptureProfile, CaptureReadiness, CaptureReviewerStatus } from '@/lib/ai/capture/schema';
 
 export const careerTargets = pgTable('career_targets', {
   id: text('id').primaryKey(),               // stable slug like 'production-operations'
@@ -294,5 +294,16 @@ export const courseCaptureProfiles = pgTable('course_capture_profiles', {
   reviewerNote: text('reviewer_note'),
   scaleVersion: text('scale_version').notNull().default('v1'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+// In-flight CourseCapture audit conversation, persisted so faculty can
+// resume after a closed tab, a failed Generate, or a next-day return.
+// One row per course (PK course_code). Cleared on profile confirmation
+// or by an explicit "Clear conversation" action.
+export const captureConversations = pgTable('capture_conversations', {
+  courseCode: text('course_code').primaryKey().references(() => courses.code, { onDelete: 'cascade' }),
+  messages: jsonb('messages').$type<Array<{ role: 'user' | 'assistant'; content: string }>>().notNull().default([]),
+  readiness: jsonb('readiness').$type<CaptureReadiness | null>(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });

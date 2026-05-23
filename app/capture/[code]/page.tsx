@@ -5,6 +5,7 @@ import { getCourseByCode } from '@/lib/db/courses-queries';
 import { getCourseProfile } from '@/lib/db/course-profile-queries';
 import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
 import { getCaptureProfileByCourse } from '@/lib/db/course-capture-profiles-queries';
+import { getCaptureConversation } from '@/lib/db/capture-conversations-queries';
 import { CaptureClient } from './CaptureClient';
 
 export const dynamic = 'force-dynamic';
@@ -38,10 +39,11 @@ export default async function CapturePage({ params, searchParams }: Props) {
   const course = await getCourseByCode(code);
   if (!course) notFound();
 
-  const [builderProfile, materials, priorCapture] = await Promise.all([
+  const [builderProfile, materials, priorCapture, savedConversation] = await Promise.all([
     getCourseProfile(code),
     listMaterialsByCourse(code),
     getCaptureProfileByCourse(code),
+    getCaptureConversation(code),
   ]);
 
   const materialCounts = {
@@ -113,6 +115,9 @@ export default async function CapturePage({ params, searchParams }: Props) {
           slug={slug}
           existingProfile={priorCapture?.profile ?? null}
           existingReviewerStatus={priorCapture?.reviewerStatus ?? null}
+          initialMessages={savedConversation?.messages ?? []}
+          initialReadiness={savedConversation?.readiness ?? null}
+          savedConversationAt={savedConversation?.updatedAt ?? null}
         />
       </main>
     </div>
