@@ -1,6 +1,11 @@
 import OpenAI from 'openai';
 import { loadPrompt } from '@/lib/ai/prompts/load';
-import { baselineFoundationalCompetencies, type CaptureProfile } from '@/lib/ai/capture/schema';
+import {
+  baselineFoundationalCompetencies,
+  captureChatReplySchema,
+  type CaptureProfile,
+  type CaptureReadiness,
+} from '@/lib/ai/capture/schema';
 
 /**
  * Multi-turn chat helper for the CourseCapture audit conversation.
@@ -181,10 +186,39 @@ export function buildCaptureChatUserMessage(context: CaptureChatContext): string
   return parts.join('\n');
 }
 
+// JSON Schema for OpenAI strict structured-output. Mirrors
+// captureChatReplySchema in lib/ai/capture/schema.ts. Every property is in
+// `required` and `additionalProperties: false` everywhere, per OpenAI strict
+// mode requirements.
+const chatReplyJsonSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['reply', 'readiness'],
+  properties: {
+    reply: { type: 'string', minLength: 1 },
+    readiness: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['score', 'covered', 'remaining', 'good_enough_to_generate'],
+      properties: {
+        score: { type: 'integer', minimum: 0, maximum: 100 },
+        covered: { type: 'array', items: { type: 'string' } },
+        remaining: { type: 'array', items: { type: 'string' } },
+        good_enough_to_generate: { type: 'boolean' },
+      },
+    },
+  },
+} as const;
+
+export interface CaptureTurnResult {
+  reply: string;
+  readiness: CaptureReadiness;
+}
+
 export async function captureChatTurn(
   context: CaptureChatContext,
   history: ChatMessage[],
-): Promise<string> {
+): Promise<CaptureTurnResult> {
   const apiKey = process.env.OPENAI_API_KEY?.trim();
   if (!apiKey) throw new Error('OPENAI_API_KEY not set');
   const client = new OpenAI({ apiKey });
@@ -213,9 +247,26 @@ export async function captureChatTurn(
     temperature: 0.3,
     frequency_penalty: 0.3,
     messages: openaiMessages,
+    // Structured output: every reply also carries a readiness signal so the
+    // UI can show a progress strip and the instructor can decide when to stop.
+    response_format: {
+      type: 'json_schema',
+      json_schema: {
+        name: 'capture_chat_reply_v1',
+        schema: chatReplyJsonSchema as unknown as Record<string, unknown>,
+        strict: true,
+      },
+    },
   });
 
   const content = response.choices[0]?.message?.content;
   if (!content) throw new Error('No content in OpenAI chat response');
-  return content;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(content);
+  } catch {
+    throw new Error(`OpenAI chat returned non-JSON: ${content.slice(0, 200)}`);
+  }
+  const validated = captureChatReplySchema.parse(parsed);
+  return { reply: validated.reply, readiness: validated.readiness };
 }

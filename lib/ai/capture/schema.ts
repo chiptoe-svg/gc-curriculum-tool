@@ -85,3 +85,24 @@ export const captureProfileSchema = z.object({
 export type CaptureProfile = z.infer<typeof captureProfileSchema>;
 
 export type CaptureReviewerStatus = 'ai_drafted' | 'confirmed' | 'edited';
+
+/**
+ * The auditor returns this alongside its prose reply on every chat turn so
+ * the instructor can decide when to stop the conversation. `score` is a
+ * 0–100 self-assessment of how defensibly the profile could be generated
+ * right now. `covered` and `remaining` are short labels (3–8 words each)
+ * for what's locked in vs. still being probed.
+ */
+export const captureReadinessSchema = z.object({
+  score: z.number().int().min(0).max(100),
+  covered: z.array(z.string()),
+  remaining: z.array(z.string()),
+  good_enough_to_generate: z.boolean(),
+});
+export type CaptureReadiness = z.infer<typeof captureReadinessSchema>;
+
+export const captureChatReplySchema = z.object({
+  reply: z.string().min(1),
+  readiness: captureReadinessSchema,
+});
+export type CaptureChatReply = z.infer<typeof captureChatReplySchema>;

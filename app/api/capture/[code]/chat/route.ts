@@ -107,8 +107,8 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   };
 
   try {
-    const reply = await captureChatTurn(context, history);
-    return NextResponse.json({ reply });
+    const { reply, readiness } = await captureChatTurn(context, history);
+    return NextResponse.json({ reply, readiness });
   } catch (err) {
     console.error(`POST /api/capture/${courseCode}/chat failed`, err);
     return NextResponse.json({ error: 'internal server error' }, { status: 500 });

@@ -2,10 +2,56 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { VoiceRecorder } from '@/components/VoiceRecorder';
+import type { CaptureReadiness } from '@/lib/ai/capture/schema';
 
 export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
+}
+
+function ReadinessStrip({ readiness }: { readiness: CaptureReadiness }) {
+  const tone =
+    readiness.score >= 75 ? 'bg-green-500'
+      : readiness.score >= 50 ? 'bg-amber-500'
+      : 'bg-slate-400';
+  return (
+    <div className="border-t bg-muted/20 px-4 py-2 space-y-1.5">
+      <div className="flex items-center gap-2">
+        <span className="text-[11px] font-medium text-muted-foreground">
+          Auditor readiness
+        </span>
+        <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all ${tone}`}
+            style={{ width: `${readiness.score}%` }}
+          />
+        </div>
+        <span className="text-[11px] font-mono tabular-nums text-muted-foreground">
+          {readiness.score}%
+        </span>
+        {readiness.good_enough_to_generate && (
+          <span
+            className="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-800"
+            title="The auditor reports it has enough evidence to generate a defensible profile."
+          >
+            ready
+          </span>
+        )}
+      </div>
+      {readiness.covered.length > 0 && (
+        <p className="text-[11px] leading-snug text-muted-foreground">
+          <span className="font-medium text-foreground">Covered:</span>{' '}
+          {readiness.covered.join(' · ')}
+        </p>
+      )}
+      {readiness.remaining.length > 0 && (
+        <p className="text-[11px] leading-snug text-muted-foreground">
+          <span className="font-medium text-foreground">Still probing:</span>{' '}
+          {readiness.remaining.join(' · ')}
+        </p>
+      )}
+    </div>
+  );
 }
 
 interface Props {
@@ -30,6 +76,7 @@ export function CaptureChatPanel({
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [readiness, setReadiness] = useState<CaptureReadiness | null>(null);
   const transcriptRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -53,8 +100,9 @@ export function CaptureChatPanel({
         setError((json as { error?: string }).error ?? `Chat failed (${res.status})`);
         return;
       }
-      const { reply } = json as { reply: string };
+      const { reply, readiness: nextReadiness } = json as { reply: string; readiness?: CaptureReadiness };
       onMessagesChange([...next, { role: 'assistant', content: reply }]);
+      if (nextReadiness) setReadiness(nextReadiness);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Chat failed');
     } finally {
@@ -134,6 +182,8 @@ export function CaptureChatPanel({
         )}
       </div>
 
+      {readiness && <ReadinessStrip readiness={readiness} />}
+
       {messages.length > 0 && (
         <div className="border-t px-4 py-3 space-y-2">
           <textarea
@@ -156,8 +206,23 @@ export function CaptureChatPanel({
                 type="button"
                 onClick={onGenerate}
                 disabled={!canGenerate || busy}
-                className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
-                title={canGenerate ? 'Generate ratings from the current conversation' : 'Send at least one reply first'}
+                className={
+                  'rounded-md border px-3 py-1.5 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed '
+                  + (readiness?.good_enough_to_generate
+                    ? 'border-green-300 bg-green-50 text-green-800 hover:bg-green-100'
+                    : (readiness?.score ?? 0) >= 50
+                    ? 'border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100'
+                    : 'border-input bg-background hover:bg-muted')
+                }
+                title={
+                  !canGenerate
+                    ? 'Send at least one reply first'
+                    : readiness?.good_enough_to_generate
+                    ? `Auditor reports ${readiness.score}% readiness — ready to generate.`
+                    : readiness
+                    ? `Auditor reports ${readiness.score}% readiness — you can still generate, but more questions would tighten the profile.`
+                    : 'Generate ratings from the current conversation'
+                }
               >
                 Generate ratings
               </button>
