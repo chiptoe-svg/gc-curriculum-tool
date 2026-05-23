@@ -20,6 +20,8 @@ type PromptName =
   | 'evaluate-course-scaffolding'
   | 'extract-course-kud'
   | 'kud-chat'
+  | 'capture-chat'
+  | 'capture-scores'
   | 'parse-profile-fields';
 
 interface ParsedPrompt {
