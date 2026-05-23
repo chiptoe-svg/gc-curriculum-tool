@@ -108,6 +108,16 @@ Conversely, do not under-score:
 - If the transcript captures the instructor's explanation of why a foundational
   is or isn't developed, treat that as authoritative evidence for the score.
 
+**Inaccessible content (videos, Canvas Pages, file attachments, quizzes,
+discussions, external links):** stay conservative. The materials show
+references to these but not their contents, so they are not evidence of
+attainment on their own. Do not raise scores above what the *readable*
+evidence supports. If a reference is significant enough that ignoring it
+materially understates the score, name the uncertainty explicitly in
+the `rationale` ("Score may be one step lower than reality because
+the Module 3 dot-gain video was not accessible — the instructor's reply
+about quizzing on it would shift this to K=3 if confirmed").
+
 # Audit notes
 
 Carry forward findings from the conversation that don't fit cleanly into a
@@ -119,6 +129,16 @@ competency cell. The four lists:
   or material outcomes that aren't captured in the objectives.
 - **`cross_source_conflicts`**: contradictions between syllabus, Canvas, and
   uploaded materials (point values, assignment lists, outcomes language).
+  **Also list here every reference to content you can see but could not
+  read** — videos (YouTube, Vimeo, Panopto, Canvas Studio, etc.), Canvas
+  Pages, file attachments named in assignment descriptions, quizzes whose
+  question text wasn't extracted, discussion topics, and external LTI
+  items. Each entry should include the exact title or URL, where in the
+  materials it appeared, and your best guess at what it likely covers.
+  Example: "Module 3 references a YouTube link 'Color Theory Intro'
+  (youtu.be/abc123) which I could not watch — likely a lecture
+  supplement on color reproduction fundamentals; if graded, K/U for
+  color-theory recall may be understated."
 - **`suggested_objective_revisions`**: specific rewrites or additions to the
   learning objectives the audit surfaced, even if no draft was produced.
 
