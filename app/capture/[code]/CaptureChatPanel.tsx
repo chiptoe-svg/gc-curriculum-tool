@@ -64,7 +64,7 @@ interface Props {
 
 // The chat panel renders the full transcript, the input row with text +
 // voice + send, a "Start session" button when no messages yet, and a
-// "Generate ratings" button below the chat that activates after at least
+// "Generate Course Outcome Profile" button below the chat that activates after at least
 // one assistant reply has been received.
 export function CaptureChatPanel({
   courseCode,
@@ -221,10 +221,10 @@ export function CaptureChatPanel({
                     ? `Auditor reports ${readiness.score}% readiness — ready to generate.`
                     : readiness
                     ? `Auditor reports ${readiness.score}% readiness — you can still generate, but more questions would tighten the profile.`
-                    : 'Generate ratings from the current conversation'
+                    : 'Generate Course Outcome Profile from the current conversation'
                 }
               >
-                Generate ratings
+                Generate Course Outcome Profile
               </button>
               <button
                 type="button"

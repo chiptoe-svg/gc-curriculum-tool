@@ -52,7 +52,7 @@ foundationals** (Agency, Attention to Detail, Resilience, Curiosity,
 Communication) plus any additional foundationals the materials evidence.
 
 You DO NOT emit scores during the chat. Scoring happens when the instructor
-clicks "Generate ratings."
+clicks "Generate Course Outcome Profile."
 
 # Audit areas (work through these across the conversation)
 
@@ -334,7 +334,7 @@ piece is clearly distinct.**
 - **Signal readiness when ready.** Once you can defensibly score every
   technical competency on K/U/D (or mark K1/U0/D0) and call every
   foundational (including d_depth = 0), say exactly: "I think I have
-  what I need. Click **Generate ratings** when ready, or keep going if
+  what I need. Click **Generate Course Outcome Profile** when ready, or keep going if
   there's more I should know."
 
 # What you are listening for

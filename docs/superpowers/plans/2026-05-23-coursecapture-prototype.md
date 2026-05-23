@@ -4,7 +4,7 @@
 
 **Goal:** Stand up a self-contained CourseCapture page at `/capture/[code]` that loads everything the system already has for a course (catalog row, syllabus, Canvas import, uploaded materials, current profile) and lets the instructor talk through the AI's audit findings to produce a **Course Outcome Profile** — a self-contained, evidence-backed picture of what the course actually does, with K/U/D depth on discovered competencies per the [2026-05-23 KUD Depth Scales spec](../specs/2026-05-23-kud-depth-scales-design.md). No career-target scoring in this flow; targets are a downstream alignment problem and are still being refined. First validation target is GC 3460.
 
-**Architecture (Phase 1, this plan):** Self-standing top-level page `/capture/[code]?slug=…` outside the existing `/preview/[slug]/courses/[code]` shell. Client owns the message history; each turn POSTs the full history plus the loaded course context to a stateless chat endpoint that calls OpenAI with a rich system prompt. The AI **discovers** technical competencies from the materials and **always scores** five baseline foundational competencies (Agency, Attention to Detail, Resilience, Curiosity, Communication) — and may add more foundationals if the materials evidence them. When the instructor clicks **Generate ratings**, a second endpoint takes the transcript and emits a single structured profile JSON. Voice input is captured in the browser and transcribed via OpenAI Whisper before being inserted into the chat input. Conversation is ephemeral (no DB persistence).
+**Architecture (Phase 1, this plan):** Self-standing top-level page `/capture/[code]?slug=…` outside the existing `/preview/[slug]/courses/[code]` shell. Client owns the message history; each turn POSTs the full history plus the loaded course context to a stateless chat endpoint that calls OpenAI with a rich system prompt. The AI **discovers** technical competencies from the materials and **always scores** five baseline foundational competencies (Agency, Attention to Detail, Resilience, Curiosity, Communication) — and may add more foundationals if the materials evidence them. When the instructor clicks **Generate Course Outcome Profile**, a second endpoint takes the transcript and emits a single structured profile JSON. Voice input is captured in the browser and transcribed via OpenAI Whisper before being inserted into the chat input. Conversation is ephemeral (no DB persistence).
 
 **Architecture (Phase 2, out of scope):** Chat endpoint swapped to a nanoclaw agent with tools (search materials, look up other courses' profiles, retrieve prereq courses). Conversation persistence. Cross-course rollups.
 
@@ -193,7 +193,7 @@ For each competency you identify (technical and foundational):
 foundationals plus any additional foundational competencies the materials evidence.
 
 You DO NOT emit scores during the chat. Scoring happens when the instructor
-clicks "Generate ratings."
+clicks "Generate Course Outcome Profile."
 
 # Audit areas (work through these across the conversation)
 
@@ -241,7 +241,7 @@ materials actually evidence. Use Bloom's verbs. Limit to 4–7 objectives.
 - When you have enough evidence to score every technical competency and to
   make a defensible call on every foundational (including d_depth = 0 for
   foundationals the course doesn't develop), say: "I think I have what I
-  need. Click **Generate ratings** when ready, or keep going if there's
+  need. Click **Generate Course Outcome Profile** when ready, or keep going if there's
   more I should know."
 ```
 
@@ -379,9 +379,9 @@ The `VoiceRecorder` component is reusable — same pattern can later be added to
 **Files:** `app/capture/[code]/page.tsx`, `app/capture/[code]/CaptureChatPanel.tsx`, `app/capture/[code]/ProfileReviewPanel.tsx`.
 
 - [ ] `page.tsx` reads `?slug=…`, validates, fetches `/api/capture/[code]/context`, and renders the layout.
-- [ ] Layout: header with course code + title, an opening prompt summarizing what was loaded, a chat panel below, and a "Generate ratings" button activated once the AI signals readiness (or unconditionally after N exchanges — pick at implementation time).
+- [ ] Layout: header with course code + title, an opening prompt summarizing what was loaded, a chat panel below, and a "Generate Course Outcome Profile" button activated once the AI signals readiness (or unconditionally after N exchanges — pick at implementation time).
 - [ ] `CaptureChatPanel` mirrors the existing KUD chat panel: scrolling message list, input textarea, send button, loading state. Adds the `VoiceRecorder` button alongside the text input. On transcribe success, append the transcript to the textarea (don't auto-send).
-- [ ] On "Generate ratings": POST conversation history to `/scores`. Render `ProfileReviewPanel`:
+- [ ] On "Generate Course Outcome Profile": POST conversation history to `/scores`. Render `ProfileReviewPanel`:
   - One row per technical competency with K, U, D sliders, evidence excerpts under each slider, statement editable inline.
   - One row per foundational with the D slider only (K/U columns visually omitted, not blanked).
   - Audit notes sidebar with the four lists, plus the revised-objectives draft if present.
@@ -396,7 +396,7 @@ The `VoiceRecorder` component is reusable — same pattern can later be added to
 
 - [ ] Open `/capture/GC%203460?slug=…` in the browser.
 - [ ] Run a full conversation, exercising voice input at least once.
-- [ ] Click "Generate ratings". Review the profile and the audit notes. Optionally request a revised-objectives draft and capture what the AI produces.
+- [ ] Click "Generate Course Outcome Profile". Review the profile and the audit notes. Optionally request a revised-objectives draft and capture what the AI produces.
 - [ ] Write up findings against the four open questions from the spec:
   1. Does Know plausibly reach 5? Or does it cap at 4?
   2. Does Understand reach 5 in an undergrad course?
@@ -414,7 +414,7 @@ The `VoiceRecorder` component is reusable — same pattern can later be added to
 - The AI opens the conversation with audit findings (prereq, objective, contradiction) and specific evidence-grounded questions, not a generic greeting.
 - The chat ranges as long as it needs to — no artificial question cap.
 - Voice input works: clicking record captures audio, stopping transcribes via Whisper, transcript drops into the input field.
-- "Generate ratings" produces a complete Course Outcome Profile: 5–15 technical competencies (each above-zero score backed by an evidence excerpt) plus all five baseline foundationals scored on D (with d_depth = 0 valid).
+- "Generate Course Outcome Profile" produces a complete Course Outcome Profile: 5–15 technical competencies (each above-zero score backed by an evidence excerpt) plus all five baseline foundationals scored on D (with d_depth = 0 valid).
 - Foundational competencies have K and U null, never zero.
 - Audit notes (prereq gaps, objective misalignments, cross-source conflicts, suggested objective revisions) are visible alongside the scores.
 - If the instructor requested a revised-objectives draft, it appears in the chat and is captured in the profile JSON.

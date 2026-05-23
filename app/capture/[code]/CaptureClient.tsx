@@ -52,7 +52,7 @@ export function CaptureClient({ course: initialCourse, initialMaterials, slug, e
       if (!res.ok) {
         setStage('chat');
         setGenerationError((json as { error?: string; detail?: string }).error
-          ?? 'Failed to generate ratings');
+          ?? 'Failed to generate Course Outcome Profile');
         return;
       }
       const { profile: newProfile, reviewerStatus: newStatus, telemetry: t } =
@@ -63,7 +63,7 @@ export function CaptureClient({ course: initialCourse, initialMaterials, slug, e
       setStage('review');
     } catch (e) {
       setStage('chat');
-      setGenerationError(e instanceof Error ? e.message : 'Failed to generate ratings');
+      setGenerationError(e instanceof Error ? e.message : 'Failed to generate Course Outcome Profile');
     }
   }
 
