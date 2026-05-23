@@ -177,14 +177,6 @@ export function buildCaptureChatUserMessage(context: CaptureChatContext): string
     '',
     '**Baseline foundational competencies to score in every session:**',
     ...baselineFoundationalCompetencies.map((c, i) => `${i + 1}. ${c}`),
-    '',
-    '---',
-    '',
-    'Begin the audit. Open with a brief summary of what you found in the',
-    "materials, the most important gap or contradiction you noticed, and",
-    'your first questions. Cite specific evidence (assignment names, rubric',
-    'criteria, point values). Do not ask generic questions when you can ask',
-    'a specific evidence-grounded one.',
   ];
   return parts.join('\n');
 }
@@ -215,6 +207,11 @@ export async function captureChatTurn(
   const response = await client.chat.completions.create({
     model,
     max_completion_tokens: 2048,
+    // Lower temperature + frequency penalty to suppress the self-duplication
+    // we saw in early sessions where the model would emit the same 3-sentence
+    // turn twice back-to-back. Audit work doesn't need creative randomness.
+    temperature: 0.3,
+    frequency_penalty: 0.3,
     messages: openaiMessages,
   });
 
