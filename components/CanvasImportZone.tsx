@@ -7,6 +7,14 @@ interface Props {
   courseCode: string;
   slug: string;
   onImported: (material: UploadedMaterial) => void;
+  /**
+   * Optional controlled open state. When provided, the parent owns the
+   * collapse/expand state and the internal toggle becomes a callback.
+   * Useful when a sibling component (e.g. another section's header)
+   * needs to drive the zone open.
+   */
+  open?: boolean;
+  onOpenChange?: (next: boolean) => void;
 }
 
 interface ImportDetails {
@@ -50,8 +58,14 @@ function ImportSummary({ details }: { details: ImportDetails }) {
   );
 }
 
-export function CanvasImportZone({ courseCode, slug, onImported }: Props) {
-  const [open, setOpen] = useState(false);
+export function CanvasImportZone({ courseCode, slug, onImported, open: controlledOpen, onOpenChange }: Props) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = (next: boolean | ((prev: boolean) => boolean)) => {
+    const resolved = typeof next === 'function' ? next(open) : next;
+    if (onOpenChange) onOpenChange(resolved);
+    else setInternalOpen(resolved);
+  };
   const [canvasUrl, setCanvasUrl] = useState('');
   const [canvasToken, setCanvasToken] = useState('');
   const [status, setStatus] = useState<'idle' | 'importing' | 'done' | 'error'>('idle');

@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { CanvasImportZone } from '@/components/CanvasImportZone';
 
 export interface CaptureMaterial {
   id: string;
@@ -234,7 +235,40 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
   const [uploading, setUploading] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
+  const [canvasImportOpen, setCanvasImportOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  async function refetchMaterialsFromContext(): Promise<void> {
+    try {
+      const res = await fetch(
+        `/api/capture/${encodeURIComponent(course.code)}/context?slug=${encodeURIComponent(slug)}`,
+      );
+      if (!res.ok) return;
+      const json = await res.json() as {
+        materials: Array<{
+          id: string;
+          fileName: string;
+          mimeType: string;
+          sizeBytes: number;
+          pageCount: number | null;
+          extractionStatus: string;
+          extractionMethod: string | null;
+          extractedText: string | null;
+          ignored: boolean;
+        }>;
+      };
+      pushMaterials(json.materials);
+    } catch {
+      // best-effort refresh; user can always reload the page
+    }
+  }
+
+  function handleCanvasImported() {
+    // The CanvasImportZone calls onImported once per imported item with a
+    // partial UploadedMaterial shape. Rather than reconcile partial shapes,
+    // refetch the full materials list once after Canvas reports done.
+    void refetchMaterialsFromContext();
+  }
 
   async function handleSyncFromSheet() {
     setSyncing(true);
@@ -404,10 +438,20 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
 
           <div className="rounded-md border bg-card">
             <header className="flex items-center justify-between gap-3 border-b px-3 py-2">
-              <h3 className="text-sm font-semibold">Materials ({materials.length})</h3>
-              <p className="text-[11px] text-muted-foreground">
-                Ignored items stay in the database but don&apos;t feed the audit.
-              </p>
+              <div>
+                <h3 className="text-sm font-semibold">Materials ({materials.length})</h3>
+                <p className="text-[11px] text-muted-foreground">
+                  Ignored items stay in the database but don&apos;t feed the audit.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCanvasImportOpen(o => !o)}
+                title="Pull syllabus, assignments, and module list from a Canvas course"
+                className="rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                {canvasImportOpen ? 'Hide Canvas import' : 'Import from Canvas'}
+              </button>
             </header>
             {materials.length === 0 ? (
               <p className="px-3 py-6 text-center text-xs italic text-muted-foreground">
@@ -427,6 +471,14 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
               </ul>
             )}
           </div>
+
+          <CanvasImportZone
+            courseCode={course.code}
+            slug={slug}
+            onImported={handleCanvasImported}
+            open={canvasImportOpen}
+            onOpenChange={setCanvasImportOpen}
+          />
 
           <div className="rounded-md border border-dashed bg-muted/20 px-4 py-3">
             <div className="flex items-center justify-between gap-3">
