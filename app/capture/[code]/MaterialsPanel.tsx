@@ -42,6 +42,10 @@ function isCanvasMaterial(m: CaptureMaterial): boolean {
   return m.fileName.startsWith('Canvas:');
 }
 
+function isGoogleDocMaterial(m: CaptureMaterial): boolean {
+  return m.fileName.startsWith('Google Doc:');
+}
+
 function classifyCanvas(m: CaptureMaterial): string {
   if (!isCanvasMaterial(m)) return '';
   const name = m.fileName.replace(/^Canvas:\s*/, '').trim().toLowerCase();
@@ -159,6 +163,7 @@ function MaterialRow({
 }) {
   const [expanded, setExpanded] = useState(false);
   const canvas = isCanvasMaterial(material);
+  const gdoc = isGoogleDocMaterial(material);
   const summary = canvas ? summarizeCanvas(material) : '';
   const wordCount = material.extractedText ? material.extractedText.split(/\s+/).filter(Boolean).length : 0;
 
@@ -170,6 +175,8 @@ function MaterialRow({
             <span className="text-sm font-medium truncate">{material.fileName}</span>
             {canvas ? (
               <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-800">Canvas</span>
+            ) : gdoc ? (
+              <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800">Google Doc</span>
             ) : (
               <span className="rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-medium text-purple-800">uploaded</span>
             )}
@@ -236,7 +243,43 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
   const [canvasImportOpen, setCanvasImportOpen] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const [scanMessage, setScanMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  async function handleScanLinkedDocs() {
+    setScanning(true);
+    setScanMessage(null);
+    try {
+      const res = await fetch(
+        `/api/courses/${encodeURIComponent(course.code)}/scan-linked-docs?slug=${encodeURIComponent(slug)}`,
+        { method: 'POST' },
+      );
+      const json = await res.json();
+      if (!res.ok) {
+        setScanMessage({ kind: 'error', text: (json as { error?: string }).error ?? `Scan failed (${res.status})` });
+        return;
+      }
+      const { referenced, skipped, fetched, inaccessible } = json as {
+        referenced: string[]; skipped: number; fetched: number; inaccessible: number;
+      };
+      if (referenced.length === 0) {
+        setScanMessage({ kind: 'ok', text: 'No Google Docs URLs found in current materials.' });
+      } else {
+        const parts: string[] = [];
+        if (fetched > 0) parts.push(`fetched ${fetched}`);
+        if (inaccessible > 0) parts.push(`${inaccessible} not shared publicly`);
+        if (skipped > 0) parts.push(`${skipped} already stored`);
+        setScanMessage({ kind: 'ok', text: `Found ${referenced.length} Google Doc${referenced.length === 1 ? '' : 's'}: ${parts.join(', ')}.` });
+      }
+      // Pick up the newly inserted material rows.
+      await refetchMaterialsFromContext();
+    } catch (e) {
+      setScanMessage({ kind: 'error', text: e instanceof Error ? e.message : 'Scan failed' });
+    } finally {
+      setScanning(false);
+    }
+  }
 
   async function refetchMaterialsFromContext(): Promise<void> {
     try {
@@ -444,15 +487,31 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
                   Ignored items stay in the database but don&apos;t feed the audit.
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => setCanvasImportOpen(o => !o)}
-                title="Pull syllabus, assignments, and module list from a Canvas course"
-                className="rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
-              >
-                {canvasImportOpen ? 'Hide Canvas import' : 'Import from Canvas'}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleScanLinkedDocs}
+                  disabled={scanning}
+                  title="Find Google Docs URLs in existing materials and pull in their text (requires 'Anyone with the link can view' sharing)"
+                  className="rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
+                >
+                  {scanning ? 'Scanning…' : 'Scan linked Google Docs'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCanvasImportOpen(o => !o)}
+                  title="Pull syllabus, assignments, and module list from a Canvas course"
+                  className="rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  {canvasImportOpen ? 'Hide Canvas import' : 'Import from Canvas'}
+                </button>
+              </div>
             </header>
+            {scanMessage && (
+              <p className={'border-b px-3 py-1.5 text-[11px] ' + (scanMessage.kind === 'ok' ? 'text-green-700 bg-green-50' : 'text-destructive bg-red-50')}>
+                {scanMessage.text}
+              </p>
+            )}
             {materials.length === 0 ? (
               <p className="px-3 py-6 text-center text-xs italic text-muted-foreground">
                 No materials yet. Upload a PDF or DOCX below.

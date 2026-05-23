@@ -63,7 +63,12 @@ export async function POST(req: Request, { params }: Ctx) {
 
   if (data.modules.length > 0) {
     const parts = data.modules.map(m => {
-      const items = m.items.map(i => `  - ${i.title} (${i.type})`).join('\n');
+      const items = m.items.map(i => {
+        // Surface the URL for ExternalUrl items so downstream consumers
+        // (audit, Google Docs scan) can follow the link.
+        const linkSuffix = i.externalUrl ? ` → ${i.externalUrl}` : '';
+        return `  - ${i.title} (${i.type})${linkSuffix}`;
+      }).join('\n');
       return `## ${m.name}\n${items}`;
     });
     const modulesText = parts.join('\n\n');

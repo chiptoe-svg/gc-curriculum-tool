@@ -11,10 +11,19 @@ export interface CanvasAssignment {
   pointsPossible: number | null;
 }
 
+export interface CanvasModuleItem {
+  title: string;
+  type: string;
+  /** For ExternalUrl items, the linked URL. Null otherwise. */
+  externalUrl: string | null;
+  /** Canvas's own internal URL for the item (page, file, etc.). Useful for File/Page items. */
+  htmlUrl: string | null;
+}
+
 export interface CanvasModule {
   id: string;
   name: string;
-  items: Array<{ title: string; type: string }>;
+  items: CanvasModuleItem[];
 }
 
 export interface CanvasCourseData {
@@ -59,6 +68,8 @@ export async function fetchCanvasCourse(canvasBaseUrl: string, courseId: string,
     items: ((Array.isArray(m['items']) ? m['items'] : []) as Record<string, unknown>[]).map((i) => ({
       title: String(i['title'] ?? ''),
       type: String(i['type'] ?? ''),
+      externalUrl: typeof i['external_url'] === 'string' ? (i['external_url'] as string) : null,
+      htmlUrl: typeof i['html_url'] === 'string' ? (i['html_url'] as string) : null,
     })),
   }));
 

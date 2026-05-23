@@ -3,6 +3,21 @@ export function htmlToText(html: string): string {
   let text = html
     .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
     .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+
+  // Preserve URLs from anchor tags: <a href="URL">Label</a> → "Label (URL)".
+  // Without this, downstream consumers (CourseCapture audit, Google Docs scan)
+  // lose every linked-doc reference. Skip non-http(s) hrefs and skip when the
+  // label IS the URL to avoid duplication like "https://x (https://x)".
+  text = text.replace(
+    /<a\s+[^>]*href=["'](https?:\/\/[^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi,
+    (_, href: string, inner: string) => {
+      const label = inner.replace(/<[^>]+>/g, '').trim();
+      if (!label) return href;
+      if (label === href) return href;
+      return `${label} (${href})`;
+    },
+  );
+
   text = text.replace(/<\/?(p|div|br|li|h[1-6]|tr|td|th|blockquote|pre|ul|ol)[^>]*>/gi, '\n');
   text = text.replace(/<[^>]+>/g, '');
   text = text
