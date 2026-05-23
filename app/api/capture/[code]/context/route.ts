@@ -68,6 +68,7 @@ export async function GET(req: Request, { params }: RouteContext): Promise<Respo
       extractionStatus: m.extractionStatus,
       extractionMethod: m.extractionMethod,
       extractedText: m.extractedText,
+      ignored: m.ignored,
       uploadedAt: m.uploadedAt,
     })),
     existingCaptureProfile: existingCaptureProfile

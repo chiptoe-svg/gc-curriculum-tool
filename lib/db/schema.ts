@@ -187,6 +187,10 @@ export const courseMaterials = pgTable('course_materials', {
   analysisCostUsdCents: integer('analysis_cost_usd_cents'),
   uploadedAt: timestamp('uploaded_at', { withTimezone: true }).defaultNow().notNull(),
   ipHash: text('ip_hash').notNull(),
+  // Set true to keep the material in the system but exclude it from AI context
+  // (CourseCapture chat + scoring) — useful for Canvas imports that turn out
+  // to be duplicate, outdated, or irrelevant.
+  ignored: boolean('ignored').notNull().default(false),
 });
 
 export const courseProfiles = pgTable('course_profiles', {

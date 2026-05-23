@@ -1,0 +1,412 @@
+'use client';
+
+import { useRef, useState } from 'react';
+
+export interface CaptureMaterial {
+  id: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  pageCount: number | null;
+  extractionStatus: string;
+  extractionMethod: string | null;
+  extractedText: string | null;
+  ignored: boolean;
+}
+
+export interface CourseCatalogView {
+  code: string;
+  title: string;
+  description: string;
+  prerequisites: string;
+  learningObjectives: string[];
+  majorProjects: string[];
+  skillsRequired: string[];
+}
+
+interface Props {
+  course: CourseCatalogView;
+  initialMaterials: CaptureMaterial[];
+  slug: string;
+  onMaterialsChange?: (next: CaptureMaterial[]) => void;
+}
+
+const ALLOWED_UPLOAD_TYPES = new Set([
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+]);
+
+function isCanvasMaterial(m: CaptureMaterial): boolean {
+  return m.fileName.startsWith('Canvas:');
+}
+
+function classifyCanvas(m: CaptureMaterial): string {
+  if (!isCanvasMaterial(m)) return '';
+  const name = m.fileName.replace(/^Canvas:\s*/, '').trim().toLowerCase();
+  if (name.startsWith('syllabus')) return 'syllabus';
+  if (name.startsWith('assignment')) return 'assignments';
+  if (name.startsWith('module')) return 'modules';
+  return name;
+}
+
+function summarizeCanvas(m: CaptureMaterial): string {
+  const text = m.extractedText ?? '';
+  const kind = classifyCanvas(m);
+  if (kind === 'assignments') {
+    const lines = text.split('\n');
+    let count = 0;
+    let totalPts = 0;
+    for (const line of lines) {
+      const match = line.match(/^##\s+(.+?)\s+\((\d+(?:\.\d+)?)\s+pts?\)/i);
+      if (match && match[2]) {
+        count += 1;
+        totalPts += parseFloat(match[2]);
+      }
+    }
+    if (count > 0) return `${count} assignments · ${totalPts} total pts`;
+  }
+  if (kind === 'modules') {
+    const moduleHeadings = (text.match(/^##\s+/gm) ?? []).length;
+    if (moduleHeadings > 0) return `${moduleHeadings} modules`;
+  }
+  if (kind === 'syllabus') {
+    const words = text.split(/\s+/).filter(Boolean).length;
+    if (words > 0) return `${words.toLocaleString()} words`;
+  }
+  return '';
+}
+
+function humanSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+function StatusChip({ status }: { status: string }) {
+  if (status === 'ok') {
+    return <span className="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-800">extracted</span>;
+  }
+  if (status === 'low_text') {
+    return <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">low text</span>;
+  }
+  if (status === 'failed') {
+    return <span className="rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-800">failed</span>;
+  }
+  return <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-600">pending</span>;
+}
+
+function CatalogSummary({ course }: { course: CourseCatalogView }) {
+  function listOrNone(items: string[]) {
+    if (items.length === 0) return <p className="text-xs italic text-muted-foreground">(none)</p>;
+    return (
+      <ol className="list-decimal space-y-0.5 pl-4 text-xs leading-snug">
+        {items.map((it, i) => <li key={i}>{it}</li>)}
+      </ol>
+    );
+  }
+  return (
+    <div className="space-y-3 rounded-md border bg-card px-4 py-3">
+      <header>
+        <h3 className="text-sm font-semibold">Catalog (from the course sheet)</h3>
+        <p className="text-xs text-muted-foreground">
+          Read-only here. Edit objectives/projects/skills in the Course Builder if you want them changed.
+        </p>
+      </header>
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Description</p>
+        <p className="mt-1 text-xs leading-snug">{course.description || <span className="italic text-muted-foreground">(none)</span>}</p>
+      </div>
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Prerequisites</p>
+        <p className="mt-1 text-xs leading-snug">{course.prerequisites || <span className="italic text-muted-foreground">(none listed)</span>}</p>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Learning objectives ({course.learningObjectives.length})
+          </p>
+          <div className="mt-1">{listOrNone(course.learningObjectives)}</div>
+        </div>
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Major projects ({course.majorProjects.length})
+          </p>
+          <div className="mt-1">{listOrNone(course.majorProjects)}</div>
+        </div>
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Required incoming skills ({course.skillsRequired.length})
+          </p>
+          <div className="mt-1">{listOrNone(course.skillsRequired)}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MaterialRow({
+  material,
+  onToggleIgnored,
+  onDelete,
+  busy,
+}: {
+  material: CaptureMaterial;
+  onToggleIgnored: (next: boolean) => void;
+  onDelete: () => void;
+  busy: boolean;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const canvas = isCanvasMaterial(material);
+  const summary = canvas ? summarizeCanvas(material) : '';
+  const wordCount = material.extractedText ? material.extractedText.split(/\s+/).filter(Boolean).length : 0;
+
+  return (
+    <li className={'flex flex-col gap-1 px-3 py-2 ' + (material.ignored ? 'opacity-60' : '')}>
+      <div className="flex items-start gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-sm font-medium truncate">{material.fileName}</span>
+            {canvas ? (
+              <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-800">Canvas</span>
+            ) : (
+              <span className="rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-medium text-purple-800">uploaded</span>
+            )}
+            <StatusChip status={material.extractionStatus} />
+            {material.ignored && (
+              <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 border border-amber-200">
+                ignored
+              </span>
+            )}
+          </div>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            {summary && <span>{summary} · </span>}
+            {material.pageCount !== null && <span>{material.pageCount} pages · </span>}
+            {wordCount > 0 && <span>{wordCount.toLocaleString()} words · </span>}
+            <span>{humanSize(material.sizeBytes)}</span>
+            {material.extractionMethod && <span> · via {material.extractionMethod}</span>}
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5">
+          <label className="flex cursor-pointer items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground">
+            <input
+              type="checkbox"
+              checked={material.ignored}
+              onChange={e => onToggleIgnored(e.target.checked)}
+              disabled={busy}
+              className="h-3 w-3"
+            />
+            ignore
+          </label>
+          <button
+            type="button"
+            onClick={() => setExpanded(e => !e)}
+            disabled={!material.extractedText}
+            className="text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-30"
+          >
+            {expanded ? 'hide' : 'preview'}
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            disabled={busy}
+            className="text-[11px] text-muted-foreground hover:text-destructive disabled:opacity-30"
+          >
+            delete
+          </button>
+        </div>
+      </div>
+      {expanded && material.extractedText && (
+        <pre className="max-h-72 overflow-auto rounded border bg-muted/40 p-2 text-[11px] leading-snug whitespace-pre-wrap">
+          {material.extractedText.slice(0, 8000)}
+          {material.extractedText.length > 8000 && '\n\n…(truncated)'}
+        </pre>
+      )}
+    </li>
+  );
+}
+
+export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChange }: Props) {
+  const [materials, setMaterials] = useState<CaptureMaterial[]>(initialMaterials);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  function pushMaterials(next: CaptureMaterial[]) {
+    setMaterials(next);
+    onMaterialsChange?.(next);
+  }
+
+  async function toggleIgnored(id: string, ignored: boolean) {
+    setBusy(id);
+    try {
+      const res = await fetch(
+        `/api/courses/${encodeURIComponent(course.code)}/materials/${encodeURIComponent(id)}?slug=${encodeURIComponent(slug)}`,
+        {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ ignored }),
+        },
+      );
+      if (res.ok) {
+        pushMaterials(materials.map(m => (m.id === id ? { ...m, ignored } : m)));
+      }
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function deleteMaterial(id: string) {
+    setBusy(id);
+    try {
+      const res = await fetch(
+        `/api/courses/${encodeURIComponent(course.code)}/materials/${encodeURIComponent(id)}?slug=${encodeURIComponent(slug)}`,
+        { method: 'DELETE' },
+      );
+      if (res.ok) {
+        pushMaterials(materials.filter(m => m.id !== id));
+      }
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function handleFiles(files: FileList | null) {
+    setUploadError(null);
+    if (!files || files.length === 0) return;
+    const file = files[0]!;
+    if (!ALLOWED_UPLOAD_TYPES.has(file.type)) {
+      setUploadError('Only PDF or DOCX files are accepted.');
+      return;
+    }
+    setUploading(file.name);
+    try {
+      const form = new FormData();
+      form.set('slug', slug);
+      form.set('file', file);
+      const res = await fetch(`/api/courses/${encodeURIComponent(course.code)}/materials`, {
+        method: 'POST',
+        body: form,
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setUploadError((json as { error?: string }).error ?? `Upload failed (${res.status})`);
+        return;
+      }
+      const data = json as {
+        id: string;
+        fileName: string;
+        mimeType: string;
+        sizeBytes: number;
+        pageCount: number | null;
+        extractionStatus: string;
+        extractionMethod: string | null;
+      };
+      const newMaterial: CaptureMaterial = {
+        id: data.id,
+        fileName: data.fileName,
+        mimeType: data.mimeType,
+        sizeBytes: data.sizeBytes,
+        pageCount: data.pageCount,
+        extractionStatus: data.extractionStatus,
+        extractionMethod: data.extractionMethod,
+        extractedText: null,  // server returns full row, but the upload response trims it — capture page will reload from /context if needed
+        ignored: false,
+      };
+      pushMaterials([...materials, newMaterial]);
+    } catch (e) {
+      setUploadError(e instanceof Error ? e.message : 'Upload failed');
+    } finally {
+      setUploading(null);
+      if (inputRef.current) inputRef.current.value = '';
+    }
+  }
+
+  const ignoredCount = materials.filter(m => m.ignored).length;
+  const activeCount = materials.length - ignoredCount;
+
+  return (
+    <section className="rounded-md border bg-card shadow-sm">
+      <header className="flex items-center justify-between gap-3 border-b px-4 py-2">
+        <div>
+          <h2 className="text-sm font-semibold">Materials &amp; catalog context</h2>
+          <p className="text-[11px] text-muted-foreground">
+            {activeCount} active material{activeCount === 1 ? '' : 's'}
+            {ignoredCount > 0 && ` · ${ignoredCount} ignored`} ·{' '}
+            {course.learningObjectives.length} objectives · {course.majorProjects.length} projects ·{' '}
+            {course.skillsRequired.length} required skills
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setCollapsed(c => !c)}
+          className="text-xs text-muted-foreground hover:text-foreground"
+        >
+          {collapsed ? 'Show' : 'Hide'}
+        </button>
+      </header>
+
+      {!collapsed && (
+        <div className="space-y-4 p-4">
+          <CatalogSummary course={course} />
+
+          <div className="rounded-md border bg-card">
+            <header className="flex items-center justify-between gap-3 border-b px-3 py-2">
+              <h3 className="text-sm font-semibold">Materials ({materials.length})</h3>
+              <p className="text-[11px] text-muted-foreground">
+                Ignored items stay in the database but don&apos;t feed the audit.
+              </p>
+            </header>
+            {materials.length === 0 ? (
+              <p className="px-3 py-6 text-center text-xs italic text-muted-foreground">
+                No materials yet. Upload a PDF or DOCX below.
+              </p>
+            ) : (
+              <ul className="divide-y">
+                {materials.map(m => (
+                  <MaterialRow
+                    key={m.id}
+                    material={m}
+                    onToggleIgnored={next => toggleIgnored(m.id, next)}
+                    onDelete={() => deleteMaterial(m.id)}
+                    busy={busy === m.id}
+                  />
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="rounded-md border border-dashed bg-muted/20 px-4 py-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium">Add a material</p>
+                <p className="text-xs text-muted-foreground">PDF or DOCX, up to 15 MB.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => inputRef.current?.click()}
+                disabled={uploading !== null}
+                className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted disabled:opacity-50"
+              >
+                {uploading ? `Uploading ${uploading}…` : 'Choose file'}
+              </button>
+              <input
+                ref={inputRef}
+                type="file"
+                accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                onChange={e => handleFiles(e.target.files)}
+                className="hidden"
+              />
+            </div>
+            {uploadError && <p className="mt-2 text-xs text-destructive">{uploadError}</p>}
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              To pull from Canvas (syllabus, assignments, modules), use the Course Builder Materials tab.
+              Imports land here automatically.
+            </p>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}

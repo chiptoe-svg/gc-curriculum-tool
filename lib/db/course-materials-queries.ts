@@ -64,3 +64,17 @@ export async function getMaterialById(id: string): Promise<CourseMaterialRow | n
 export async function deleteMaterial(id: string): Promise<void> {
   await db.delete(courseMaterials).where(eq(courseMaterials.id, id));
 }
+
+/**
+ * Toggle the ignored flag for a material. When true, AI-facing context
+ * loaders should exclude this material's extractedText. The row itself
+ * stays in the database (set to false again to re-include).
+ */
+export async function setMaterialIgnored(id: string, ignored: boolean): Promise<boolean> {
+  const rows = await db
+    .update(courseMaterials)
+    .set({ ignored })
+    .where(eq(courseMaterials.id, id))
+    .returning({ id: courseMaterials.id });
+  return rows.length > 0;
+}

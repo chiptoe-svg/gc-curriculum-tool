@@ -107,12 +107,14 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
           competencies: builderProfile.competencies,
         }
       : null,
-    materials: materials.map(m => ({
-      id: m.id,
-      fileName: m.fileName,
-      extractionStatus: m.extractionStatus,
-      extractedText: m.extractedText,
-    })),
+    materials: materials
+      .filter(m => !m.ignored)
+      .map(m => ({
+        id: m.id,
+        fileName: m.fileName,
+        extractionStatus: m.extractionStatus,
+        extractedText: m.extractedText,
+      })),
     priorCaptureProfile: priorCapture?.profile ?? null,
   };
 

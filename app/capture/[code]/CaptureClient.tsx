@@ -4,9 +4,11 @@ import { useState } from 'react';
 import type { CaptureProfile, CaptureReviewerStatus } from '@/lib/ai/capture/schema';
 import { CaptureChatPanel, type ChatMessage } from './CaptureChatPanel';
 import { ProfileReviewPanel } from './ProfileReviewPanel';
+import { MaterialsPanel, type CaptureMaterial, type CourseCatalogView } from './MaterialsPanel';
 
 interface Props {
-  courseCode: string;
+  course: CourseCatalogView;
+  initialMaterials: CaptureMaterial[];
   slug: string;
   existingProfile: CaptureProfile | null;
   existingReviewerStatus: CaptureReviewerStatus | null;
@@ -23,13 +25,15 @@ interface Telemetry {
   model: string;
 }
 
-export function CaptureClient({ courseCode, slug, existingProfile, existingReviewerStatus }: Props) {
+export function CaptureClient({ course, initialMaterials, slug, existingProfile, existingReviewerStatus }: Props) {
+  const courseCode = course.code;
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [stage, setStage] = useState<Stage>(existingProfile ? 'review' : 'chat');
   const [profile, setProfile] = useState<CaptureProfile | null>(existingProfile);
   const [reviewerStatus, setReviewerStatus] = useState<CaptureReviewerStatus | null>(existingReviewerStatus);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [telemetry, setTelemetry] = useState<Telemetry | null>(null);
+  const [materials, setMaterials] = useState<CaptureMaterial[]>(initialMaterials);
 
   async function handleGenerate() {
     setStage('generating');
@@ -83,6 +87,13 @@ export function CaptureClient({ courseCode, slug, existingProfile, existingRevie
 
   return (
     <div className="space-y-6">
+      <MaterialsPanel
+        course={course}
+        initialMaterials={materials}
+        slug={slug}
+        onMaterialsChange={setMaterials}
+      />
+
       {stage === 'chat' && (
         <>
           <CaptureChatPanel

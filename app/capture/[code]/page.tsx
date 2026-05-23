@@ -49,7 +49,30 @@ export default async function CapturePage({ params, searchParams }: Props) {
     canvas: materials.filter(m => m.fileName.startsWith('Canvas:')).length,
     uploaded: materials.filter(m => !m.fileName.startsWith('Canvas:')).length,
     extractedOk: materials.filter(m => m.extractionStatus === 'ok').length,
+    ignored: materials.filter(m => m.ignored).length,
   };
+
+  const courseView = {
+    code: course.code,
+    title: course.title,
+    description: course.description,
+    prerequisites: course.prerequisites,
+    learningObjectives: course.learningObjectives as string[],
+    majorProjects: course.majorProjects as string[],
+    skillsRequired: course.skillsRequired as string[],
+  };
+
+  const materialsView = materials.map(m => ({
+    id: m.id,
+    fileName: m.fileName,
+    mimeType: m.mimeType,
+    sizeBytes: m.sizeBytes,
+    pageCount: m.pageCount,
+    extractionStatus: m.extractionStatus,
+    extractionMethod: m.extractionMethod,
+    extractedText: m.extractedText,
+    ignored: m.ignored,
+  }));
 
   return (
     <div className="min-h-screen bg-background">
@@ -77,14 +100,16 @@ export default async function CapturePage({ params, searchParams }: Props) {
             catalog entry · {course.learningObjectives.length} stated objectives ·{' '}
             {course.majorProjects.length} major projects ·{' '}
             {materialCounts.total} materials ({materialCounts.canvas} Canvas-imported,{' '}
-            {materialCounts.uploaded} uploaded; {materialCounts.extractedOk} with extracted text) ·{' '}
+            {materialCounts.uploaded} uploaded; {materialCounts.extractedOk} with extracted text
+            {materialCounts.ignored > 0 && `; ${materialCounts.ignored} ignored`}) ·{' '}
             builder profile {builderProfile ? '✓' : '—'} ·{' '}
             prior capture {priorCapture ? '✓' : '—'}
           </p>
         </section>
 
         <CaptureClient
-          courseCode={course.code}
+          course={courseView}
+          initialMaterials={materialsView}
           slug={slug}
           existingProfile={priorCapture?.profile ?? null}
           existingReviewerStatus={priorCapture?.reviewerStatus ?? null}
