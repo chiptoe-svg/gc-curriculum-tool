@@ -25,6 +25,13 @@ export interface CaptureChatMaterial {
   extractedText: string | null;
 }
 
+export interface PrerequisiteCaptureProfile {
+  code: string;
+  title: string;
+  profile: CaptureProfile;
+  reviewerStatus: string;
+}
+
 export interface CaptureChatContext {
   course: {
     code: string;
@@ -52,6 +59,13 @@ export interface CaptureChatContext {
   } | null;
   materials: CaptureChatMaterial[];
   priorCaptureProfile: CaptureProfile | null;
+  /**
+   * Course Outcome Profiles for any prerequisite courses that have already
+   * been captured. The auditor treats these as authoritative evidence of
+   * what students arrive with, so prereq sufficiency can be evaluated
+   * concretely instead of asking the instructor to recall.
+   */
+  prerequisiteCaptureProfiles: PrerequisiteCaptureProfile[];
 }
 
 function formatList(label: string, items: string[]): string {
@@ -73,9 +87,9 @@ function formatMaterials(materials: CaptureChatMaterial[]): string {
 }
 
 function formatPriorCaptureProfile(prior: CaptureProfile | null): string {
-  if (!prior) return '**Prior capture profile:** (none)';
+  if (!prior) return '**Prior capture profile for this course:** (none)';
   return [
-    '**Prior capture profile:**',
+    '**Prior capture profile for this course:**',
     `Scale version: ${prior.scale_version}`,
     `Generated at: ${prior.generated_at}`,
     '',
@@ -84,6 +98,40 @@ function formatPriorCaptureProfile(prior: CaptureProfile | null): string {
       `- [${c.type}] ${c.statement} (K=${c.k_depth ?? '—'}, U=${c.u_depth ?? '—'}, D=${c.d_depth})`,
     ),
   ].join('\n');
+}
+
+function formatPrereqCaptureProfiles(profiles: PrerequisiteCaptureProfile[]): string {
+  if (profiles.length === 0) {
+    return [
+      '**Prerequisite courses with confirmed Course Outcome Profiles:** (none)',
+      '',
+      'No prerequisite course has been captured yet, so what students arrive',
+      'with must be inferred from the instructor\'s replies and the catalog',
+      'prereq language. Be explicit about this uncertainty in the conversation.',
+    ].join('\n');
+  }
+  const sections: string[] = [
+    '**Prerequisite courses with confirmed Course Outcome Profiles:**',
+    '',
+    'These profiles describe what students who took the prereq actually',
+    'developed, scored on the K/U/D depth scale. Use them as authoritative',
+    'evidence of what students arrive with — you do not need to ask the',
+    'instructor to recall what each prereq produces when it is documented here.',
+    '',
+  ];
+  for (const p of profiles) {
+    sections.push(`### ${p.code} — ${p.title} (reviewer status: ${p.reviewerStatus})`);
+    for (const c of p.profile.competencies) {
+      const k = c.k_depth ?? '—';
+      const u = c.u_depth ?? '—';
+      sections.push(
+        `- [${c.type}] ${c.statement} (K=${k}, U=${u}, D=${c.d_depth})`
+        + (c.rationale ? `\n  · ${c.rationale}` : ''),
+      );
+    }
+    sections.push('');
+  }
+  return sections.join('\n');
 }
 
 function formatBuilderProfile(profile: CaptureChatContext['builderProfile']): string {
@@ -122,6 +170,8 @@ export function buildCaptureChatUserMessage(context: CaptureChatContext): string
     formatMaterials(context.materials),
     '',
     formatPriorCaptureProfile(context.priorCaptureProfile),
+    '',
+    formatPrereqCaptureProfiles(context.prerequisiteCaptureProfiles),
     '',
     '---',
     '',

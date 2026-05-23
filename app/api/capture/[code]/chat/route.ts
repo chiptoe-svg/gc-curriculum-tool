@@ -8,6 +8,17 @@ import { captureChatTurn, ChatMessage, CaptureChatContext } from '@/lib/ai/analy
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { hashIp } from '@/lib/ip-hash';
 
+// Parse "GC 1040, GC 1020" / "GC 1040 or GC 1020" / etc. into a list of
+// course codes. Matches the catalog convention from lib/sheets/fetchSheet.ts.
+const COURSE_CODE_RE = /GC\s+\d{4}[a-z]{0,2}/gi;
+
+function extractPrereqCodes(prerequisites: string, selfCode: string): string[] {
+  const codes = (prerequisites.match(COURSE_CODE_RE) ?? [])
+    .map(c => c.replace(/\s+/, ' ').toUpperCase().replace(/GC (\d)/, 'GC $1'));
+  // Dedupe and exclude self.
+  return Array.from(new Set(codes)).filter(c => c !== selfCode);
+}
+
 interface RouteContext { params: Promise<{ code: string }> }
 
 // POST /api/capture/[code]/chat?slug=...
@@ -53,6 +64,18 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     getCaptureProfileByCourse(courseCode),
   ]);
 
+  // Pull any prerequisite courses' confirmed CourseCapture profiles so the
+  // auditor can use them as authoritative evidence of what students arrive
+  // with — the cleanest fix for the chicken-and-egg prereq problem.
+  const prereqCodes = extractPrereqCodes(course.prerequisites ?? '', courseCode);
+  const prereqProfilesRaw = await Promise.all(
+    prereqCodes.map(async code => {
+      const [c, p] = await Promise.all([getCourseByCode(code), getCaptureProfileByCourse(code)]);
+      return c && p ? { code: c.code, title: c.title, profile: p.profile, reviewerStatus: p.reviewerStatus } : null;
+    }),
+  );
+  const prerequisiteCaptureProfiles = prereqProfilesRaw.flatMap(p => p ? [p] : []);
+
   const context: CaptureChatContext = {
     course: {
       code: course.code,
@@ -80,6 +103,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         extractedText: m.extractedText,
       })),
     priorCaptureProfile: priorCapture?.profile ?? null,
+    prerequisiteCaptureProfiles,
   };
 
   try {

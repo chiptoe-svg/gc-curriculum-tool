@@ -10,6 +10,14 @@ import {
 } from '@/lib/db/course-capture-profiles-queries';
 import { generateCaptureProfile } from '@/lib/ai/analyze/capture-scores';
 import type { ChatMessage, CaptureChatContext } from '@/lib/ai/analyze/capture-chat';
+
+const COURSE_CODE_RE = /GC\s+\d{4}[a-z]{0,2}/gi;
+
+function extractPrereqCodes(prerequisites: string, selfCode: string): string[] {
+  const codes = (prerequisites.match(COURSE_CODE_RE) ?? [])
+    .map(c => c.replace(/\s+/, ' ').toUpperCase().replace(/GC (\d)/, 'GC $1'));
+  return Array.from(new Set(codes)).filter(c => c !== selfCode);
+}
 import {
   captureProfileSchema,
   type CaptureProfile,
@@ -89,6 +97,15 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     getCaptureProfileByCourse(courseCode),
   ]);
 
+  const prereqCodes = extractPrereqCodes(course.prerequisites ?? '', courseCode);
+  const prereqProfilesRaw = await Promise.all(
+    prereqCodes.map(async code => {
+      const [c, p] = await Promise.all([getCourseByCode(code), getCaptureProfileByCourse(code)]);
+      return c && p ? { code: c.code, title: c.title, profile: p.profile, reviewerStatus: p.reviewerStatus } : null;
+    }),
+  );
+  const prerequisiteCaptureProfiles = prereqProfilesRaw.flatMap(p => p ? [p] : []);
+
   const context: CaptureChatContext = {
     course: {
       code: course.code,
@@ -116,6 +133,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         extractedText: m.extractedText,
       })),
     priorCaptureProfile: priorCapture?.profile ?? null,
+    prerequisiteCaptureProfiles,
   };
 
   try {
