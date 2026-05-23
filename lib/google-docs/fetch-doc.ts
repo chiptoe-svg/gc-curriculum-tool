@@ -1,75 +1,88 @@
 /**
- * Fetch the plain-text content of a Google Doc via its public-export endpoint.
+ * Fetch plain-text content from a Google Workspace file (Docs or Slides) via
+ * its public-export endpoint.
  *
- * This works when the doc has link-sharing enabled ("Anyone with the link can
- * view"). When the doc is restricted, Google returns a sign-in HTML page; we
- * detect that and report inaccessible so faculty knows the content is gated.
+ * Works when the file has link-sharing enabled ("Anyone with the link can
+ * view"). When the file is restricted, Google returns a sign-in HTML page;
+ * we detect that and report inaccessible so faculty know the content is
+ * gated.
  *
  * No Google OAuth flow involved — this is the same export URL anyone with
  * the link can hit in a browser.
  */
 
-export interface FetchedGoogleDoc {
-  docId: string;
+import type { GoogleWorkspaceKind, GoogleWorkspaceReference } from './extract-urls';
+
+export interface FetchedGoogleFile {
+  kind: GoogleWorkspaceKind;
+  fileId: string;
   text: string;
   title: string;
   status: 'ok' | 'inaccessible';
   errorReason?: string;
 }
 
-function deriveTitle(text: string, docId: string): string {
-  // The plain-text export starts with the doc's content, which usually leads
-  // with the title (the first heading or first paragraph). Take the first
-  // non-empty line, trimmed and capped.
+function exportUrlFor(kind: GoogleWorkspaceKind, fileId: string): string {
+  // Docs supports `export?format=txt`. Slides uses `/export/txt` (different
+  // path shape). Both work without auth for link-shared files.
+  return kind === 'document'
+    ? `https://docs.google.com/document/d/${fileId}/export?format=txt`
+    : `https://docs.google.com/presentation/d/${fileId}/export/txt`;
+}
+
+function deriveTitle(text: string, kind: GoogleWorkspaceKind, fileId: string): string {
   for (const line of text.split('\n')) {
     const t = line.trim();
     if (t.length > 0) return t.slice(0, 100);
   }
-  return `Google Doc (${docId.slice(0, 12)})`;
+  return `${kind === 'document' ? 'Google Doc' : 'Google Slides'} (${fileId.slice(0, 12)})`;
 }
 
-export async function fetchGoogleDocText(docId: string): Promise<FetchedGoogleDoc> {
-  if (!docId || !/^[a-zA-Z0-9_-]{10,}$/.test(docId)) {
-    return { docId, text: '', title: '', status: 'inaccessible', errorReason: 'invalid doc id' };
+export async function fetchGoogleFileText(ref: GoogleWorkspaceReference): Promise<FetchedGoogleFile> {
+  const { kind, fileId } = ref;
+  if (!fileId || !/^[a-zA-Z0-9_-]{10,}$/.test(fileId)) {
+    return { kind, fileId, text: '', title: '', status: 'inaccessible', errorReason: 'invalid file id' };
   }
-  const url = `https://docs.google.com/document/d/${docId}/export?format=txt`;
+  const url = exportUrlFor(kind, fileId);
   let res: Response;
   try {
     res = await fetch(url, { redirect: 'follow' });
   } catch (e) {
-    return { docId, text: '', title: '', status: 'inaccessible', errorReason: e instanceof Error ? e.message : 'fetch failed' };
+    return { kind, fileId, text: '', title: '', status: 'inaccessible', errorReason: e instanceof Error ? e.message : 'fetch failed' };
   }
   if (!res.ok) {
-    return { docId, text: '', title: '', status: 'inaccessible', errorReason: `HTTP ${res.status}` };
+    return { kind, fileId, text: '', title: '', status: 'inaccessible', errorReason: `HTTP ${res.status}` };
   }
 
   const contentType = res.headers.get('content-type') ?? '';
   const body = await res.text();
 
-  // Google returns an HTML sign-in page when the doc isn't publicly accessible.
-  // The plain-text export always has content-type starting with text/plain.
+  // Google returns an HTML sign-in page when the file isn't publicly accessible.
+  // Plain-text export always has content-type starting with text/plain.
   const looksLikeHtml = body.trim().startsWith('<') || contentType.startsWith('text/html');
   if (looksLikeHtml) {
     return {
-      docId,
+      kind,
+      fileId,
       text: '',
       title: '',
       status: 'inaccessible',
-      errorReason: "Doc isn't shared as link-viewable. Enable 'Anyone with the link can view' in Google Docs sharing.",
+      errorReason: kind === 'document'
+        ? "Doc isn't shared as link-viewable. Enable 'Anyone with the link can view' in Google Docs sharing."
+        : "Slides deck isn't shared as link-viewable. Enable 'Anyone with the link can view' in Google Slides sharing.",
     };
   }
 
-  // Google Docs export strips the BOM but sometimes leaves a leading
-  // form-feed or null character. Trim aggressively.
   const text = body.replace(/^﻿/, '').trimStart();
   if (text.length === 0) {
-    return { docId, text: '', title: '', status: 'inaccessible', errorReason: 'empty doc' };
+    return { kind, fileId, text: '', title: '', status: 'inaccessible', errorReason: 'empty file' };
   }
 
   return {
-    docId,
+    kind,
+    fileId,
     text,
-    title: deriveTitle(text, docId),
+    title: deriveTitle(text, kind, fileId),
     status: 'ok',
   };
 }

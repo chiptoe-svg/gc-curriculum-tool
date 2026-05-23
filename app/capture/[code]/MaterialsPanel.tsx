@@ -46,6 +46,10 @@ function isGoogleDocMaterial(m: CaptureMaterial): boolean {
   return m.fileName.startsWith('Google Doc:');
 }
 
+function isGoogleSlidesMaterial(m: CaptureMaterial): boolean {
+  return m.fileName.startsWith('Google Slides:');
+}
+
 function classifyCanvas(m: CaptureMaterial): string {
   if (!isCanvasMaterial(m)) return '';
   const name = m.fileName.replace(/^Canvas:\s*/, '').trim().toLowerCase();
@@ -164,6 +168,7 @@ function MaterialRow({
   const [expanded, setExpanded] = useState(false);
   const canvas = isCanvasMaterial(material);
   const gdoc = isGoogleDocMaterial(material);
+  const gslides = isGoogleSlidesMaterial(material);
   const summary = canvas ? summarizeCanvas(material) : '';
   const wordCount = material.extractedText ? material.extractedText.split(/\s+/).filter(Boolean).length : 0;
 
@@ -177,6 +182,8 @@ function MaterialRow({
               <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-800">Canvas</span>
             ) : gdoc ? (
               <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800">Google Doc</span>
+            ) : gslides ? (
+              <span className="rounded bg-yellow-100 px-1.5 py-0.5 text-[10px] font-medium text-yellow-800">Google Slides</span>
             ) : (
               <span className="rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-medium text-purple-800">uploaded</span>
             )}
@@ -260,17 +267,27 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
         setScanMessage({ kind: 'error', text: (json as { error?: string }).error ?? `Scan failed (${res.status})` });
         return;
       }
-      const { referenced, skipped, fetched, inaccessible } = json as {
-        referenced: string[]; skipped: number; fetched: number; inaccessible: number;
+      const { referenced, skipped, fetched, inaccessible, byKind } = json as {
+        referenced: Array<{ kind: string; fileId: string }>;
+        skipped: number; fetched: number; inaccessible: number;
+        byKind?: { documents: number; presentations: number };
       };
       if (referenced.length === 0) {
-        setScanMessage({ kind: 'ok', text: 'No Google Docs URLs found in current materials.' });
+        setScanMessage({ kind: 'ok', text: 'No Google Docs or Slides URLs found in current materials.' });
       } else {
         const parts: string[] = [];
-        if (fetched > 0) parts.push(`fetched ${fetched}`);
+        if (fetched > 0) {
+          const bk = byKind
+            ? ` (${[
+                byKind.documents > 0 ? `${byKind.documents} doc${byKind.documents === 1 ? '' : 's'}` : null,
+                byKind.presentations > 0 ? `${byKind.presentations} deck${byKind.presentations === 1 ? '' : 's'}` : null,
+              ].filter(Boolean).join(', ')})`
+            : '';
+          parts.push(`fetched ${fetched}${bk}`);
+        }
         if (inaccessible > 0) parts.push(`${inaccessible} not shared publicly`);
         if (skipped > 0) parts.push(`${skipped} already stored`);
-        setScanMessage({ kind: 'ok', text: `Found ${referenced.length} Google Doc${referenced.length === 1 ? '' : 's'}: ${parts.join(', ')}.` });
+        setScanMessage({ kind: 'ok', text: `Found ${referenced.length} Google Workspace file${referenced.length === 1 ? '' : 's'}: ${parts.join(', ')}.` });
       }
       // Pick up the newly inserted material rows.
       await refetchMaterialsFromContext();
@@ -492,10 +509,10 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
                   type="button"
                   onClick={handleScanLinkedDocs}
                   disabled={scanning}
-                  title="Find Google Docs URLs in existing materials and pull in their text (requires 'Anyone with the link can view' sharing)"
+                  title="Find Google Docs and Slides URLs in existing materials and pull in their text (requires 'Anyone with the link can view' sharing)"
                   className="rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
                 >
-                  {scanning ? 'Scanning…' : 'Scan linked Google Docs'}
+                  {scanning ? 'Scanning…' : 'Scan Google Docs & Slides'}
                 </button>
                 <button
                   type="button"

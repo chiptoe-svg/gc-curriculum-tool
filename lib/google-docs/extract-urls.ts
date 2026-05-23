@@ -1,32 +1,56 @@
 /**
- * Detect Google Docs URLs in arbitrary text and extract their document IDs.
+ * Detect Google Workspace URLs in arbitrary text and extract their file IDs.
  *
- * We deliberately scope to `docs.google.com/document/d/{ID}` only — Sheets
- * and Slides have different export endpoints and Drive files (PDFs, videos,
- * images) need different handling. Those can be added later.
+ * Currently handles:
+ *   - Google Docs:     docs.google.com/document/d/{ID}
+ *   - Google Slides:   docs.google.com/presentation/d/{ID}
+ *
+ * Sheets and Drive files (PDFs, videos, images) have different export
+ * flows and aren't covered yet.
  */
 
-const GOOGLE_DOC_URL_RE = /https?:\/\/docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]+)/gi;
+const DOC_RE = /https?:\/\/docs\.google\.com\/document\/d\/([a-zA-Z0-9_-]+)/gi;
+const SLIDE_RE = /https?:\/\/docs\.google\.com\/presentation\/d\/([a-zA-Z0-9_-]+)/gi;
 
-export interface GoogleDocReference {
-  /** A canonical /edit URL for the doc, suitable for storing as blobUrl. */
+export type GoogleWorkspaceKind = 'document' | 'presentation';
+
+export interface GoogleWorkspaceReference {
+  kind: GoogleWorkspaceKind;
+  /** A canonical /edit URL for the file, suitable for storing as blobUrl. */
   canonicalUrl: string;
-  /** The Google Docs document ID. */
-  docId: string;
+  /** The Google Workspace file ID. */
+  fileId: string;
 }
 
-export function extractGoogleDocReferences(text: string): GoogleDocReference[] {
+function canonicalUrlFor(kind: GoogleWorkspaceKind, fileId: string): string {
+  return kind === 'document'
+    ? `https://docs.google.com/document/d/${fileId}/edit`
+    : `https://docs.google.com/presentation/d/${fileId}/edit`;
+}
+
+export function extractGoogleWorkspaceReferences(text: string): GoogleWorkspaceReference[] {
   if (!text) return [];
-  const seen = new Set<string>();
-  const refs: GoogleDocReference[] = [];
-  for (const m of text.matchAll(GOOGLE_DOC_URL_RE)) {
-    const docId = m[1];
-    if (docId && !seen.has(docId)) {
-      seen.add(docId);
-      refs.push({
-        canonicalUrl: `https://docs.google.com/document/d/${docId}/edit`,
-        docId,
-      });
+  const seen = new Set<string>(); // dedupe across kinds by `${kind}:${id}`
+  const refs: GoogleWorkspaceReference[] = [];
+
+  for (const m of text.matchAll(DOC_RE)) {
+    const fileId = m[1];
+    if (fileId) {
+      const key = `document:${fileId}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        refs.push({ kind: 'document', fileId, canonicalUrl: canonicalUrlFor('document', fileId) });
+      }
+    }
+  }
+  for (const m of text.matchAll(SLIDE_RE)) {
+    const fileId = m[1];
+    if (fileId) {
+      const key = `presentation:${fileId}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        refs.push({ kind: 'presentation', fileId, canonicalUrl: canonicalUrlFor('presentation', fileId) });
+      }
     }
   }
   return refs;
