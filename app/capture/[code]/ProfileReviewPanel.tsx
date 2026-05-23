@@ -265,7 +265,7 @@ export function ProfileReviewPanel({ profile, reviewerStatus, telemetry, onSave,
           <div>
             <h3 className="text-sm font-semibold">Audit notes</h3>
             <p className="text-xs text-muted-foreground">
-              Findings from the audit that don't fit into a competency cell.
+              Findings from the audit that don&apos;t fit into a competency cell.
             </p>
           </div>
           <AuditNotesList title="Prereq gaps" items={working.audit_notes.prereq_gaps} />

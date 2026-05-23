@@ -98,7 +98,7 @@ export function CaptureChatPanel({
       >
         {messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center py-12 text-center">
-            <p className="text-sm font-medium">Start the audit when you're ready.</p>
+            <p className="text-sm font-medium">Start the audit when you&apos;re ready.</p>
             <p className="mt-1 max-w-md text-xs text-muted-foreground">
               The auditor opens with what it found in the materials and its first questions.
               The conversation runs as long as it needs to ground every rating in evidence.

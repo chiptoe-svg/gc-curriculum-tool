@@ -19,7 +19,7 @@ function buildAssignmentSummary(assignmentsText: string): string {
   const rows: Array<{ name: string; pts: number }> = [];
   for (const line of assignmentsText.split('\n')) {
     const m = line.match(/^##\s+(.+?)\s+\((\d+(?:\.\d+)?)\s+pts?\)/i);
-    if (m) rows.push({ name: m[1], pts: parseFloat(m[2]) });
+    if (m && m[1] && m[2]) rows.push({ name: m[1], pts: parseFloat(m[2]) });
   }
   if (rows.length === 0) return assignmentsText;
 
