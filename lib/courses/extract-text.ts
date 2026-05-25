@@ -1,10 +1,8 @@
 import mammoth from 'mammoth';
-// unpdf wraps pdfjs-dist with the browser-DOM globals (DOMMatrix,
-// ImageBitmap, etc.) polyfilled for Node serverless runtimes. Direct use
-// of pdf-parse v2 / pdfjs-dist v5 crashes on Vercel with
-// `ReferenceError: DOMMatrix is not defined` at module load; unpdf is
-// the maintained alternative built for that environment.
-import { extractText as extractPdfText } from 'unpdf';
+// PDF extraction is pluggable via the PDF_PARSER env var — unpdf
+// (default, in-process) on Vercel, Docling (HTTP to a local
+// docling-serve) on the local Mac deployment. See lib/courses/pdf-extractor.ts.
+import { getPdfExtractor } from '@/lib/courses/pdf-extractor';
 import { getProvider } from '@/lib/ai/provider';
 
 export type ExtractedMimeType =
@@ -72,11 +70,9 @@ async function extractPdf(
   let pdfText = '';
 
   try {
-    // unpdf wants a Uint8Array view, not the raw Buffer, to avoid pdfjs-dist
-    // misinterpreting the underlying ArrayBuffer when offsets differ.
-    const parsed = await extractPdfText(new Uint8Array(fileBytes), { mergePages: true });
-    pdfText = (parsed.text ?? '').trim();
-    pageCount = parsed.totalPages;
+    const parsed = await getPdfExtractor().extract(fileBytes);
+    pdfText = parsed.text;
+    pageCount = parsed.pageCount;
   } catch {
     return { status: 'failed' };
   }
