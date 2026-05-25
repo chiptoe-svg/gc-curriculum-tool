@@ -297,6 +297,7 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
   const [canvasImportOpen, setCanvasImportOpen] = useState(false);
+  const [materialsCollapsed, setMaterialsCollapsed] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [scanMessage, setScanMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -552,12 +553,28 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
 
           <div className="rounded-md border bg-card">
             <header className="flex items-center justify-between gap-3 border-b px-3 py-2">
-              <div>
-                <h3 className="text-sm font-semibold">Materials ({materials.length})</h3>
-                <p className="text-[11px] text-muted-foreground">
-                  Ignored items stay in the database but don&apos;t feed the audit.
-                </p>
-              </div>
+              <button
+                type="button"
+                onClick={() => setMaterialsCollapsed(c => !c)}
+                aria-expanded={!materialsCollapsed}
+                aria-controls="materials-list"
+                title={materialsCollapsed ? 'Show materials list' : 'Hide materials list'}
+                className="flex items-center gap-2 text-left -ml-1 px-1 rounded hover:bg-muted"
+              >
+                <span
+                  aria-hidden="true"
+                  className={'inline-block text-muted-foreground transition-transform ' + (materialsCollapsed ? '-rotate-90' : '')}
+                  style={{ fontSize: '10px', lineHeight: 1 }}
+                >▼</span>
+                <span>
+                  <h3 className="text-sm font-semibold">Materials ({materials.length})</h3>
+                  {!materialsCollapsed && (
+                    <p className="text-[11px] text-muted-foreground">
+                      Ignored items stay in the database but don&apos;t feed the audit.
+                    </p>
+                  )}
+                </span>
+              </button>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -578,27 +595,31 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
                 </button>
               </div>
             </header>
-            {scanMessage && (
-              <p className={'border-b px-3 py-1.5 text-[11px] ' + (scanMessage.kind === 'ok' ? 'text-green-700 bg-green-50' : 'text-destructive bg-red-50')}>
-                {scanMessage.text}
-              </p>
-            )}
-            {materials.length === 0 ? (
-              <p className="px-3 py-6 text-center text-xs italic text-muted-foreground">
-                No materials yet. Upload a PDF or DOCX below.
-              </p>
-            ) : (
-              <ul className="divide-y">
-                {materials.map(m => (
-                  <MaterialRow
-                    key={m.id}
-                    material={m}
-                    onToggleIgnored={next => toggleIgnored(m.id, next)}
-                    onDelete={() => deleteMaterial(m.id)}
-                    busy={busy === m.id}
-                  />
-                ))}
-              </ul>
+            {!materialsCollapsed && (
+              <>
+                {scanMessage && (
+                  <p className={'border-b px-3 py-1.5 text-[11px] ' + (scanMessage.kind === 'ok' ? 'text-green-700 bg-green-50' : 'text-destructive bg-red-50')}>
+                    {scanMessage.text}
+                  </p>
+                )}
+                {materials.length === 0 ? (
+                  <p className="px-3 py-6 text-center text-xs italic text-muted-foreground">
+                    No materials yet. Upload a PDF or DOCX below.
+                  </p>
+                ) : (
+                  <ul id="materials-list" className="divide-y">
+                    {materials.map(m => (
+                      <MaterialRow
+                        key={m.id}
+                        material={m}
+                        onToggleIgnored={next => toggleIgnored(m.id, next)}
+                        onDelete={() => deleteMaterial(m.id)}
+                        busy={busy === m.id}
+                      />
+                    ))}
+                  </ul>
+                )}
+              </>
             )}
           </div>
 
