@@ -50,8 +50,16 @@ function isGoogleSlidesMaterial(m: CaptureMaterial): boolean {
   return m.fileName.startsWith('Google Slides:');
 }
 
+function isGoogleSheetMaterial(m: CaptureMaterial): boolean {
+  return m.fileName.startsWith('Google Sheet:');
+}
+
 function isCanvasFileMaterial(m: CaptureMaterial): boolean {
   return m.fileName.startsWith('Canvas File:');
+}
+
+function isDrivePdfMaterial(m: CaptureMaterial): boolean {
+  return m.fileName.startsWith('Drive PDF:');
 }
 
 function isYouTubeMaterial(m: CaptureMaterial): boolean {
@@ -196,7 +204,9 @@ function MaterialRow({
   const canvas = isCanvasMaterial(material);
   const gdoc = isGoogleDocMaterial(material);
   const gslides = isGoogleSlidesMaterial(material);
+  const gsheet = isGoogleSheetMaterial(material);
   const canvasFile = isCanvasFileMaterial(material);
+  const drivePdf = isDrivePdfMaterial(material);
   const youtube = isYouTubeMaterial(material);
   const summary = canvas ? summarizeCanvas(material) : '';
   const wordCount = material.extractedText ? material.extractedText.split(/\s+/).filter(Boolean).length : 0;
@@ -215,6 +225,10 @@ function MaterialRow({
               <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800">Google Doc</span>
             ) : gslides ? (
               <span className="rounded bg-yellow-100 px-1.5 py-0.5 text-[10px] font-medium text-yellow-800">Google Slides</span>
+            ) : gsheet ? (
+              <span className="rounded bg-lime-100 px-1.5 py-0.5 text-[10px] font-medium text-lime-800">Google Sheet</span>
+            ) : drivePdf ? (
+              <span className="rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-medium text-sky-800">Drive PDF</span>
             ) : youtube ? (
               <span className="rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-800">YouTube</span>
             ) : (
@@ -300,31 +314,32 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
         setScanMessage({ kind: 'error', text: (json as { error?: string }).error ?? `Scan failed (${res.status})` });
         return;
       }
-      const { referenced, skipped, fetched, inaccessible, byKind, youtube_referenced, youtube_fetched, youtube_inaccessible, youtube_skipped } = json as {
+      const { referenced, skipped, fetched, inaccessible, byKind, youtube_referenced, youtube_fetched, youtube_inaccessible, youtube_skipped, drive_referenced, drive_fetched, drive_inaccessible, drive_skipped } = json as {
         referenced: Array<{ kind: string; fileId: string }>;
         skipped: number; fetched: number; inaccessible: number;
-        byKind?: { documents: number; presentations: number; youtube_videos: number };
-        youtube_referenced?: string[];
-        youtube_fetched?: number;
-        youtube_inaccessible?: number;
-        youtube_skipped?: number;
+        byKind?: { documents: number; presentations: number; spreadsheets?: number; youtube_videos: number; drive_pdfs?: number };
+        youtube_referenced?: string[]; youtube_fetched?: number; youtube_inaccessible?: number; youtube_skipped?: number;
+        drive_referenced?: string[]; drive_fetched?: number; drive_inaccessible?: number; drive_skipped?: number;
       };
-      const totalReferenced = referenced.length + (youtube_referenced?.length ?? 0);
+      const totalReferenced = referenced.length + (youtube_referenced?.length ?? 0) + (drive_referenced?.length ?? 0);
       if (totalReferenced === 0) {
-        setScanMessage({ kind: 'ok', text: 'No Google Workspace or YouTube links found in current materials.' });
+        setScanMessage({ kind: 'ok', text: 'No Google Workspace, Drive, or YouTube links found in current materials.' });
       } else {
         const parts: string[] = [];
-        if (fetched > 0 || (youtube_fetched ?? 0) > 0) {
+        const totalFetched = fetched + (youtube_fetched ?? 0) + (drive_fetched ?? 0);
+        if (totalFetched > 0) {
           const breakdown = [
             (byKind?.documents ?? 0) > 0 ? `${byKind?.documents} doc${byKind?.documents === 1 ? '' : 's'}` : null,
             (byKind?.presentations ?? 0) > 0 ? `${byKind?.presentations} deck${byKind?.presentations === 1 ? '' : 's'}` : null,
+            (byKind?.spreadsheets ?? 0) > 0 ? `${byKind?.spreadsheets} sheet${byKind?.spreadsheets === 1 ? '' : 's'}` : null,
+            (drive_fetched ?? 0) > 0 ? `${drive_fetched} Drive PDF${drive_fetched === 1 ? '' : 's'}` : null,
             (youtube_fetched ?? 0) > 0 ? `${youtube_fetched} YouTube transcript${youtube_fetched === 1 ? '' : 's'}` : null,
           ].filter(Boolean).join(', ');
-          parts.push(`fetched ${fetched + (youtube_fetched ?? 0)}${breakdown ? ` (${breakdown})` : ''}`);
+          parts.push(`fetched ${totalFetched}${breakdown ? ` (${breakdown})` : ''}`);
         }
-        const totalInaccessible = inaccessible + (youtube_inaccessible ?? 0);
+        const totalInaccessible = inaccessible + (youtube_inaccessible ?? 0) + (drive_inaccessible ?? 0);
         if (totalInaccessible > 0) parts.push(`${totalInaccessible} not accessible`);
-        const totalSkipped = skipped + (youtube_skipped ?? 0);
+        const totalSkipped = skipped + (youtube_skipped ?? 0) + (drive_skipped ?? 0);
         if (totalSkipped > 0) parts.push(`${totalSkipped} already stored`);
         setScanMessage({ kind: 'ok', text: `Found ${totalReferenced} linked item${totalReferenced === 1 ? '' : 's'}: ${parts.join(', ')}.` });
       }
@@ -548,10 +563,10 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
                   type="button"
                   onClick={handleScanLinkedDocs}
                   disabled={scanning}
-                  title="Find Google Docs and Slides URLs in existing materials and pull in their text (requires 'Anyone with the link can view' sharing)"
+                  title="Find Google Docs, Slides, Sheets, Drive PDFs, and YouTube URLs in existing materials and pull in their content. Requires 'Anyone with the link can view' sharing on Google files; YouTube videos need captions."
                   className="rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
                 >
-                  {scanning ? 'Scanning…' : 'Scan Google Docs & Slides'}
+                  {scanning ? 'Scanning…' : 'Scan linked files'}
                 </button>
                 <button
                   type="button"

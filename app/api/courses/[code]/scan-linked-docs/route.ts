@@ -14,6 +14,8 @@ import {
 import { fetchGoogleFileText } from '@/lib/google-docs/fetch-doc';
 import { extractYouTubeReferences } from '@/lib/youtube/extract-urls';
 import { fetchYouTubeTranscript } from '@/lib/youtube/fetch-transcript';
+import { extractDriveFileReferences } from '@/lib/google-drive/extract-urls';
+import { fetchDrivePdf } from '@/lib/google-drive/fetch-pdf';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { hashIp } from '@/lib/ip-hash';
 
@@ -22,7 +24,9 @@ interface RouteContext { params: Promise<{ code: string }> }
 export const maxDuration = 60;
 
 function fileNamePrefix(kind: GoogleWorkspaceKind): string {
-  return kind === 'document' ? 'Google Doc' : 'Google Slides';
+  if (kind === 'document') return 'Google Doc';
+  if (kind === 'presentation') return 'Google Slides';
+  return 'Google Sheet';
 }
 
 // POST /api/courses/[code]/scan-linked-docs?slug=...
@@ -188,27 +192,108 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     }
   }
 
+  // Drive PDFs — same scan-then-fetch pattern as Workspace files and
+  // YouTube. PDFs are downloaded, extracted, and stored as new materials.
+  // Other Drive file types (DOCX, MP4, JPG, etc.) are recorded as
+  // "unsupported" so the auditor knows a reference exists.
+  const referencedDrive = new Map<string, string>(); // fileId -> canonicalUrl
+  for (const m of materials) {
+    if (!m.extractedText) continue;
+    for (const ref of extractDriveFileReferences(m.extractedText)) {
+      if (!referencedDrive.has(ref.fileId)) referencedDrive.set(ref.fileId, ref.canonicalUrl);
+    }
+  }
+  const alreadyStoredDrive = new Set<string>();
+  for (const m of materials) {
+    if (!m.blobUrl) continue;
+    for (const ref of extractDriveFileReferences(m.blobUrl)) {
+      alreadyStoredDrive.add(ref.fileId);
+    }
+  }
+  const driveToFetch = [...referencedDrive.entries()].filter(([id]) => !alreadyStoredDrive.has(id));
+
+  const driveResults: Array<{
+    fileId: string;
+    status: 'ok' | 'unsupported' | 'inaccessible' | 'too_large';
+    fileName?: string;
+    errorReason?: string;
+  }> = [];
+
+  for (const [fileId, canonicalUrl] of driveToFetch) {
+    const fetched = await fetchDrivePdf(fileId);
+    if (fetched.status === 'ok' && fetched.text) {
+      const fileName = `Drive PDF: ${fetched.title}`;
+      const row = await insertMaterial({
+        courseCode,
+        fileName,
+        blobUrl: canonicalUrl,
+        mimeType: 'application/pdf',
+        sizeBytes: Buffer.byteLength(fetched.text, 'utf8'),
+        ipHash,
+      });
+      await updateExtractionResult({
+        id: row.id,
+        extractionStatus: 'ok',
+        extractionMethod: 'text',
+        extractedText: fetched.text,
+      });
+      driveResults.push({ fileId, status: 'ok', fileName });
+    } else {
+      // Record the failed attempt so the materials panel surfaces what was
+      // tried. Use a status-specific suffix so faculty can tell at a glance
+      // whether it was a sharing issue, a type mismatch, or a size cap.
+      const suffix =
+        fetched.status === 'unsupported' ? '(unsupported type)'
+        : fetched.status === 'too_large' ? '(too large)'
+        : '(not accessible)';
+      const fileName = `Drive PDF: ${fileId.slice(0, 12)}… ${suffix}`;
+      const row = await insertMaterial({
+        courseCode,
+        fileName,
+        blobUrl: canonicalUrl,
+        mimeType: 'application/pdf',
+        sizeBytes: 0,
+        ipHash,
+      });
+      await updateExtractionResult({
+        id: row.id,
+        extractionStatus: 'failed',
+        extractionMethod: 'text',
+      });
+      driveResults.push({ fileId, status: fetched.status, fileName, errorReason: fetched.errorReason });
+    }
+  }
+
   const okCount = results.filter(r => r.status === 'ok').length;
   const failedCount = results.filter(r => r.status === 'inaccessible').length;
   const youtubeOk = youtubeResults.filter(r => r.status === 'ok').length;
   const youtubeInaccessible = youtubeResults.filter(r => r.status === 'inaccessible').length;
+  const driveOk = driveResults.filter(r => r.status === 'ok').length;
+  const driveInaccessible = driveResults.filter(r => r.status !== 'ok').length;
   const byKind = {
     documents: results.filter(r => r.kind === 'document').length,
     presentations: results.filter(r => r.kind === 'presentation').length,
+    spreadsheets: results.filter(r => r.kind === 'spreadsheet').length,
     youtube_videos: youtubeOk,
+    drive_pdfs: driveOk,
   };
 
   return NextResponse.json({
     referenced: [...referenced.values()].map(r => ({ kind: r.kind, fileId: r.fileId })),
     youtube_referenced: [...referencedYouTube.keys()],
+    drive_referenced: [...referencedDrive.keys()],
     skipped: referenced.size - toFetch.length,
     youtube_skipped: referencedYouTube.size - youtubeToFetch.length,
+    drive_skipped: referencedDrive.size - driveToFetch.length,
     fetched: okCount,
     inaccessible: failedCount,
     youtube_fetched: youtubeOk,
     youtube_inaccessible: youtubeInaccessible,
+    drive_fetched: driveOk,
+    drive_inaccessible: driveInaccessible,
     byKind,
     results,
     youtube_results: youtubeResults,
+    drive_results: driveResults,
   });
 }

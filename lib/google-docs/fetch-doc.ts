@@ -24,10 +24,17 @@ export interface FetchedGoogleFile {
 
 function exportUrlFor(kind: GoogleWorkspaceKind, fileId: string): string {
   // Docs supports `export?format=txt`. Slides uses `/export/txt` (different
-  // path shape). Both work without auth for link-shared files.
-  return kind === 'document'
-    ? `https://docs.google.com/document/d/${fileId}/export?format=txt`
-    : `https://docs.google.com/presentation/d/${fileId}/export/txt`;
+  // path shape). Sheets uses `export?format=csv` and dumps the first tab.
+  // All three work without auth for link-shared files.
+  if (kind === 'document') return `https://docs.google.com/document/d/${fileId}/export?format=txt`;
+  if (kind === 'presentation') return `https://docs.google.com/presentation/d/${fileId}/export/txt`;
+  return `https://docs.google.com/spreadsheets/d/${fileId}/export?format=csv`;
+}
+
+function kindLabel(kind: GoogleWorkspaceKind): string {
+  if (kind === 'document') return 'Google Doc';
+  if (kind === 'presentation') return 'Google Slides';
+  return 'Google Sheet';
 }
 
 function deriveTitle(text: string, kind: GoogleWorkspaceKind, fileId: string): string {
@@ -35,7 +42,7 @@ function deriveTitle(text: string, kind: GoogleWorkspaceKind, fileId: string): s
     const t = line.trim();
     if (t.length > 0) return t.slice(0, 100);
   }
-  return `${kind === 'document' ? 'Google Doc' : 'Google Slides'} (${fileId.slice(0, 12)})`;
+  return `${kindLabel(kind)} (${fileId.slice(0, 12)})`;
 }
 
 export async function fetchGoogleFileText(ref: GoogleWorkspaceReference): Promise<FetchedGoogleFile> {
@@ -69,7 +76,9 @@ export async function fetchGoogleFileText(ref: GoogleWorkspaceReference): Promis
       status: 'inaccessible',
       errorReason: kind === 'document'
         ? "Doc isn't shared as link-viewable. Enable 'Anyone with the link can view' in Google Docs sharing."
-        : "Slides deck isn't shared as link-viewable. Enable 'Anyone with the link can view' in Google Slides sharing.",
+        : kind === 'presentation'
+        ? "Slides deck isn't shared as link-viewable. Enable 'Anyone with the link can view' in Google Slides sharing."
+        : "Sheet isn't shared as link-viewable. Enable 'Anyone with the link can view' in Google Sheets sharing.",
     };
   }
 
