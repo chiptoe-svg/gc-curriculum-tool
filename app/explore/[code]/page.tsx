@@ -48,6 +48,14 @@ export default async function ExplorePage({ params, searchParams }: Props) {
             className="underline hover:text-foreground"
           >Capture and snapshot this course first</Link>, then come back.
         </p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          New to the tool? Read the <a
+            href="https://chiptoe-svg.github.io/gc-curriculum-tool/docs/using-coursecapture-and-explore.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-foreground"
+          >CourseCapture &amp; Explore guide</a> first.
+        </p>
       </div>
     );
   }
@@ -66,12 +74,23 @@ export default async function ExplorePage({ params, searchParams }: Props) {
               {course.code} <span className="text-muted-foreground">— {course.title}</span>
             </h1>
           </div>
-          <Link
-            href={`/capture/${encodeURIComponent(code)}?slug=${encodeURIComponent(slug)}`}
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
-            ← CourseCapture
-          </Link>
+          <div className="flex items-center gap-4">
+            <a
+              href="https://chiptoe-svg.github.io/gc-curriculum-tool/docs/using-coursecapture-and-explore.html#ex-modes"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-muted-foreground hover:text-foreground"
+              title="How-to guide — jumps to the Explore section (opens in new tab)"
+            >
+              Guide ↗
+            </a>
+            <Link
+              href={`/capture/${encodeURIComponent(code)}?slug=${encodeURIComponent(slug)}`}
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
+              ← CourseCapture
+            </Link>
+          </div>
         </div>
       </header>
 

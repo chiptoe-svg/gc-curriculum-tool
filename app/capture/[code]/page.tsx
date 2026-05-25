@@ -87,6 +87,15 @@ export default async function CapturePage({ params, searchParams }: Props) {
             </h1>
           </div>
           <div className="flex items-center gap-4">
+            <a
+              href="https://chiptoe-svg.github.io/gc-curriculum-tool/docs/using-coursecapture-and-explore.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-muted-foreground hover:text-foreground"
+              title="How-to guide for CourseCapture & Explore (opens in new tab)"
+            >
+              Guide ↗
+            </a>
             <Link
               href={`/program?slug=${encodeURIComponent(slug)}`}
               className="text-sm text-muted-foreground hover:text-foreground"

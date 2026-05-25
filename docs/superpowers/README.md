@@ -14,6 +14,8 @@ These four are linked from the GH Pages root at [chiptoe-svg.github.io/gc-curric
   - [`../background.html`](../background.html)
 - **Validation** — proposal for empirical validation against external occupational data using a dataset of 268 Clemson GC graduates.
   - [`../graduate-outcome-validation.html`](../graduate-outcome-validation.html)
+- **Faculty guide** — practical walkthrough of CourseCapture and Explore, written for the faculty member using the tool. Linked from the headers of `/capture/<code>` and `/explore/<code>` so users can jump from the app to the instructions.
+  - [`../using-coursecapture-and-explore.html`](../using-coursecapture-and-explore.html)
 
 ## Specs
 
