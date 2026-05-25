@@ -7,6 +7,7 @@ import type {
   CaptureReviewerStatus,
 } from '@/lib/ai/capture/schema';
 import { VerificationSummary } from './VerificationSummary';
+import { describeDepth, type Dimension } from '@/lib/ai/capture/depth-anchors';
 
 interface Telemetry {
   costUsdCents: number;
@@ -30,11 +31,13 @@ interface Props {
 
 function DepthSlider({
   label,
+  dimension,
   value,
   onChange,
   disabled,
 }: {
   label: string;
+  dimension: Dimension;
   value: number | null;
   onChange: (v: number) => void;
   disabled?: boolean;
@@ -67,6 +70,9 @@ function DepthSlider({
         onChange={e => onChange(parseInt(e.target.value, 10))}
         className="w-full"
       />
+      <p className="text-[10px] leading-snug text-muted-foreground">
+        {describeDepth(dimension, value)}
+      </p>
     </div>
   );
 }
@@ -108,18 +114,21 @@ function CompetencyCard({
       <div className="grid grid-cols-3 gap-4">
         <DepthSlider
           label="Know"
+          dimension="k"
           value={competency.k_depth}
           onChange={v => onChange({ ...competency, k_depth: v })}
           disabled={!isTechnical}
         />
         <DepthSlider
           label="Understand"
+          dimension="u"
           value={competency.u_depth}
           onChange={v => onChange({ ...competency, u_depth: v })}
           disabled={!isTechnical}
         />
         <DepthSlider
           label="Do"
+          dimension="d"
           value={competency.d_depth}
           onChange={v => onChange({ ...competency, d_depth: v })}
         />

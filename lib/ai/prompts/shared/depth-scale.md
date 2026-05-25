@@ -1,5 +1,9 @@
 # KUD Depth Scales (v1)
 
+> **UI mirror:** the same anchors are hand-mirrored as a TypeScript
+> constant in `lib/ai/capture/depth-anchors.ts` for client-side rendering
+> in the review panel. Keep them in sync if you edit the scale here.
+
 Coverage is measured along three dimensions — Know, Understand, Do — each on a
 0–5 scale anchored to **what the student does or grasps**, not what the
 syllabus says.
