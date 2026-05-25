@@ -426,6 +426,10 @@ DO — behavioral output
   </ul>
 
   <p>The profile is reviewed by the instructor in a structured editor — sliders per dimension, evidence visible per cell, audit notes in a sidebar — and confirmed before downstream views consume it.</p>
+
+  <h3>Methodological note: build-time pedagogical encoding</h3>
+
+  <p>The auditor's reasoning is not free-form. Each AI integration point in the system is governed by a version-controlled system prompt that encodes one or more named pedagogical skills from an external library — Manning's <em>Education Agent Skills Library</em>, a published collection of evidence-based curriculum-design frameworks <a href="#ref-manning-skills">(Manning, 2025)</a>. The encoding is build-time, not runtime: the skill definitions (Backwards Design, KUD Chart Authoring, Coverage Audit, Developmental Band Translator, Assessment Validity Checker, Disciplinary AI Literacy, KUD Knowledge Type Mapper) are read at design time and their reasoning frameworks are embodied directly in the prompt bodies. Each prompt names the skills it encodes in its frontmatter as the contract that the encoding happened. The intent is to make the AI's analytical disposition inspectable and citable rather than opaque, and to ground the conservative, evidence-demanding stance the framework requires in named pedagogical traditions rather than ad hoc instructions. Where Manning frameworks describe the analytical scaffold (how to read evidence, how to type knowledge correctly, how to weigh validity threats), the depth scales described in §3 remain the operational rubric — Manning frames the question; KUD+ supplies the answer space.</p>
 </section>
 
 <section id="career-impl">
@@ -449,7 +453,7 @@ DO — behavioral output
     <li><strong>Prerequisite-gap analysis.</strong> For any focal course, the prior coursework students actually take is checked against what the focal course's assignments require, dimension by dimension.</li>
   </ul>
 
-  <p>These views are not produced by the framework itself but by program-level analyses that consume the confirmed Course Outcome Profiles and Role Outcome Profiles. The framework's contribution is to make the underlying data commensurable across courses and across the course-employer boundary.</p>
+  <p>These views are not produced by the framework itself but by program-level analyses that consume the confirmed Course Outcome Profiles and Role Outcome Profiles. The framework's contribution is to make the underlying data commensurable across courses and across the course-employer boundary. At the time of writing, the coverage matrix is implemented and reading confirmed snapshots; the scaffolding and prerequisite-gap views are specified but not yet built.</p>
 </section>
 
 <section id="not">
@@ -476,6 +480,7 @@ DO — behavioral output
     <li id="ref-biggs-1996">Biggs, J. (1996). Enhancing teaching through constructive alignment. <em>Higher Education</em>, 32(3), 347–364.</li>
     <li>Biggs, J., &amp; Tang, C. (2011). <em>Teaching for Quality Learning at University</em> (4th ed.). Open University Press.</li>
     <li id="ref-bloom-1956">Bloom, B. S. (Ed.). (1956). <em>Taxonomy of Educational Objectives: The Classification of Educational Goals. Handbook I: Cognitive Domain</em>. David McKay.</li>
+    <li id="ref-manning-skills">Manning, G. (2025). <em>Education Agent Skills Library</em> — an open collection of evidence-based pedagogical skill definitions for curriculum-design and assessment AI agents, organized into domains (curriculum-alignment, curriculum-assessment, AI literacy, etc.) with each skill providing a structured SKILL.md describing inputs, outputs, evidence base, and procedural steps. <a href="https://github.com/GarethManning/education-agent-skills" target="_blank" rel="noopener noreferrer">github.com/GarethManning/education-agent-skills</a>.</li>
     <li id="ref-brennan">Brennan, J., et al. <em>Tuning Educational Structures in Europe — Reference Points and Guidance</em>. González &amp; Wagenaar (Eds.). Distinguishes <em>competence</em> (the holistic ability) from <em>learning outcome</em> (the level of competence achieved), and motivates the framework's depth-scale extension.</li>
     <li id="ref-neche">New England Commission of Higher Education. (2015). <em>Policy Statement on Competency-Based Education</em>.</li>
     <li id="ref-tomlinson-1999">Tomlinson, C. A. (1999). <em>The Differentiated Classroom: Responding to the Needs of All Learners</em>. ASCD. (2nd ed., 2014.) Origin of the KUD model as used here.</li>
