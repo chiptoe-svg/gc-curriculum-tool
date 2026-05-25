@@ -17,9 +17,18 @@ interface Props {
   onUploaded: (material: UploadedMaterial) => void;
 }
 
+// Mirrors lib/courses/material-extractor's SUPPORTED_MIME_TYPES. PDF and
+// DOCX work on the Vercel deploy via unpdf/mammoth; PPTX/XLSX/CSV/HTML/
+// image require the local Docling pipeline (Phase 2 hybrid deploy).
 const ALLOWED_TYPES = new Set([
   'application/pdf',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'text/csv',
+  'text/html',
+  'image/png',
+  'image/jpeg',
 ]);
 
 interface UploadState {
@@ -40,7 +49,11 @@ export function UploadZone({ courseCode, slug, onUploaded }: Props) {
     const file = files[0]!;
 
     if (!ALLOWED_TYPES.has(file.type)) {
-      setTypeError('Unsupported file type. Only PDF and DOCX files are accepted.');
+      setTypeError(
+        `Unsupported file type (${file.type || 'unknown'}). ` +
+        `Accepted: PDF, DOCX, PPTX, XLSX, CSV, HTML, PNG, JPG. ` +
+        `Legacy .doc/.ppt/.xls aren't supported — re-save as the modern format.`,
+      );
       return;
     }
 
@@ -91,14 +104,23 @@ export function UploadZone({ courseCode, slug, onUploaded }: Props) {
         >
           browse
         </button>{' '}
-        to upload assignment materials (DOCX or PDF, max 15 MB per file)
+        to upload assignment materials (PDF, DOCX, PPTX, XLSX, CSV, HTML, PNG, JPG · max 15 MB per file)
       </p>
 
       <input
         ref={inputRef}
         data-testid="file-input"
         type="file"
-        accept="application/pdf,.pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx"
+        accept={[
+          'application/pdf', '.pdf',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document', '.docx',
+          'application/vnd.openxmlformats-officedocument.presentationml.presentation', '.pptx',
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', '.xlsx',
+          'text/csv', '.csv',
+          'text/html', '.html', '.htm',
+          'image/png', '.png',
+          'image/jpeg', '.jpg', '.jpeg',
+        ].join(',')}
         className="sr-only"
         onChange={(e) => handleFiles(e.target.files)}
       />

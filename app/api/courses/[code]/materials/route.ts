@@ -8,14 +8,15 @@ import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
 import { insertMaterial, updateExtractionResult } from '@/lib/db/course-materials-queries';
 import { extractText } from '@/lib/courses/extract-text';
 import type { ExtractedMimeType } from '@/lib/courses/extract-text';
+import { SUPPORTED_MIME_TYPES, LEGACY_OFFICE_MIME_TYPES } from '@/lib/courses/material-extractor';
 
 export const maxDuration = 120;
 
 const MAX_SIZE_BYTES = 15 * 1024 * 1024; // 15 MB
-const ALLOWED_MIME_TYPES = new Set<string>([
-  'application/pdf',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-]);
+// Allowlist is the source of truth for what the upload route accepts.
+// Mirror of lib/courses/material-extractor's SUPPORTED_MIME_TYPES so a
+// rejection here can never disagree with what the extractor would accept.
+const ALLOWED_MIME_TYPES = new Set<string>(SUPPORTED_MIME_TYPES);
 
 interface RouteContext {
   params: Promise<{ code: string }>;
@@ -59,8 +60,25 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     return NextResponse.json({ error: 'file field is required' }, { status: 400 });
   }
   if (!ALLOWED_MIME_TYPES.has(file.type)) {
+    // Give legacy Office formats a specific, helpful error instead of
+    // the generic "unsupported" message — most affected users just need
+    // to re-save in the modern format.
+    if (LEGACY_OFFICE_MIME_TYPES.has(file.type)) {
+      return NextResponse.json(
+        {
+          error:
+            `Legacy Office format (${file.type}) is not supported. ` +
+            `Please re-save as .docx, .pptx, or .xlsx and upload again.`,
+        },
+        { status: 400 },
+      );
+    }
     return NextResponse.json(
-      { error: `unsupported MIME type: ${file.type}. Allowed: application/pdf, application/vnd.openxmlformats-officedocument.wordprocessingml.document` },
+      {
+        error:
+          `Unsupported MIME type: ${file.type}. Allowed: PDF, DOCX, PPTX, XLSX, CSV, HTML, PNG, JPG. ` +
+          `Note: PPTX/XLSX/CSV/HTML/image uploads require the local Docling pipeline (Phase 2 hybrid deploy).`,
+      },
       { status: 400 },
     );
   }

@@ -1,13 +1,23 @@
-import mammoth from 'mammoth';
-// PDF extraction is pluggable via the PDF_PARSER env var — unpdf
-// (default, in-process) on Vercel, Docling (HTTP to a local
-// docling-serve) on the local Mac deployment. See lib/courses/pdf-extractor.ts.
-import { getPdfExtractor } from '@/lib/courses/pdf-extractor';
+/**
+ * Material text extraction orchestrator.
+ *
+ * Delegates the actual byte→text work to lib/courses/material-extractor.ts
+ * (which picks unpdf/mammoth/Docling per PDF_PARSER + MIME type), then
+ * applies the PDF-specific vision-fallback heuristic for image-based
+ * PDFs that yield too little text from textual extraction alone.
+ *
+ * The vision fallback only fires for application/pdf. Other formats
+ * either have meaningful text or don't — they return as `text` or
+ * `low_text` directly, never as `vision`.
+ */
+
+import { getExtractorFor, SUPPORTED_MIME_TYPES } from '@/lib/courses/material-extractor';
 import { getProvider } from '@/lib/ai/provider';
 
-export type ExtractedMimeType =
-  | 'application/pdf'
-  | 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+// Re-export the supported-types list and type name so callers (upload
+// route, schemas) read the same source of truth as the extractor itself.
+export { SUPPORTED_MIME_TYPES } from '@/lib/courses/material-extractor';
+export type ExtractedMimeType = (typeof SUPPORTED_MIME_TYPES)[number];
 
 export interface ExtractTextArgs {
   fileBytes: Buffer;
@@ -37,74 +47,61 @@ const MIN_MEANINGFUL_CHARS = 10;
 const VISION_PAGE_CAP = 40;
 
 export async function extractText(args: ExtractTextArgs): Promise<ExtractTextResult> {
-  const { fileBytes, mimeType, fileName: _fileName } = args;
+  const { fileBytes, mimeType, fileName } = args;
 
-  if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-    return extractDocx(fileBytes);
-  }
-  if (mimeType === 'application/pdf') {
-    return extractPdf(fileBytes, mimeType);
-  }
-  // Should never reach here given MIME allowlist on the route.
-  return { status: 'failed' };
-}
-
-async function extractDocx(fileBytes: Buffer): Promise<ExtractTextResult> {
+  // Pick the backend up front. If the configuration doesn't support this
+  // type (e.g., PPTX requested without PDF_PARSER=docling), the factory
+  // throws — surface as status=failed so the upload row stays visible
+  // but flagged.
+  let extractor;
   try {
-    const result = await mammoth.extractRawText({ buffer: fileBytes });
-    const text = result.value.trim();
-    if (text.length < MIN_MEANINGFUL_CHARS) {
-      return { method: 'text', status: 'low_text', text };
-    }
-    return { method: 'text', status: 'ok', text };
+    extractor = getExtractorFor(mimeType);
   } catch {
     return { status: 'failed' };
   }
-}
 
-async function extractPdf(
-  fileBytes: Buffer,
-  mimeType: 'application/pdf',
-): Promise<ExtractTextResult> {
   let pageCount: number | undefined;
-  let pdfText = '';
-
+  let text = '';
   try {
-    const parsed = await getPdfExtractor().extract(fileBytes);
-    pdfText = parsed.text;
-    pageCount = parsed.pageCount;
+    const r = await extractor.extract({ fileBytes, mimeType, fileName });
+    text = r.text;
+    pageCount = r.pageCount ?? undefined;
   } catch {
     return { status: 'failed' };
   }
 
-  const charsPerPage = pageCount && pageCount > 0 ? pdfText.length / pageCount : pdfText.length;
-  const isImageBased = charsPerPage < MIN_CHARS_PER_PAGE;
-
-  if (!isImageBased) {
-    if (pdfText.length < MIN_MEANINGFUL_CHARS) {
-      return { method: 'text', status: 'low_text', text: pdfText, pageCount };
+  // Vision fallback applies only to PDFs — image-based PDFs (scanned
+  // documents, all-image slides) yield near-zero text from any textual
+  // extractor and need a vision pass to recover content. Other formats
+  // don't have an analog (a near-empty PPTX is just near-empty).
+  if (mimeType === 'application/pdf') {
+    const charsPerPage = pageCount && pageCount > 0 ? text.length / pageCount : text.length;
+    const isImageBased = charsPerPage < MIN_CHARS_PER_PAGE;
+    if (isImageBased) {
+      try {
+        const provider = getProvider();
+        const transcribed = await provider.transcribeDocument({
+          fileBytes,
+          mimeType,
+          maxPages: VISION_PAGE_CAP,
+        });
+        const vText = transcribed.text.trim();
+        const status = vText.length < MIN_MEANINGFUL_CHARS ? 'low_text' : 'ok';
+        return {
+          method: 'vision',
+          status,
+          text: vText,
+          pageCount,
+          visionCostUsdCents: transcribed.costUsdCents,
+        };
+      } catch {
+        return { method: 'vision', status: 'failed', pageCount };
+      }
     }
-    return { method: 'text', status: 'ok', text: pdfText, pageCount };
   }
 
-  // Image-based PDF — use vision transcription.
-  try {
-    const provider = getProvider();
-    const transcribed = await provider.transcribeDocument({
-      fileBytes,
-      mimeType,
-      maxPages: VISION_PAGE_CAP,
-    });
-    const text = transcribed.text.trim();
-    const status = text.length < MIN_MEANINGFUL_CHARS ? 'low_text' : 'ok';
-    return {
-      method: 'vision',
-      status,
-      text,
-      pageCount,
-      visionCostUsdCents: transcribed.costUsdCents,
-    };
-  } catch {
-    return { method: 'vision', status: 'failed', pageCount };
+  if (text.length < MIN_MEANINGFUL_CHARS) {
+    return { method: 'text', status: 'low_text', text, pageCount };
   }
+  return { method: 'text', status: 'ok', text, pageCount };
 }
