@@ -222,3 +222,44 @@ export const profileFieldsJsonSchema = {
     skillsRequired: { type: 'array', maxItems: 20, items: { type: 'string', minLength: 1 } },
   },
 } as const;
+
+// ─── Merge prereq gap into Skills/Competencies Required ───────────────────────
+// Merges a free-form audit "prereq gap" finding with the course's existing
+// skillsRequired list, producing a unified replacement list in KUD+
+// format that faculty can paste back into the catalog. Each merged item
+// carries a `from` marker (existing/gap/merged) so the UI can highlight
+// what's new vs preserved. See lib/ai/prompts/decompose-prereq-gap.md.
+
+export const mergedSkillSchema = z.object({
+  text: z.string().min(1).max(160),
+  from: z.enum(['existing', 'gap', 'merged']),
+  rationale: z.string().min(1).max(280),
+});
+export type MergedSkill = z.infer<typeof mergedSkillSchema>;
+
+export const skillsMergeSchema = z.object({
+  merged_skills: z.array(mergedSkillSchema).max(40),
+});
+export type SkillsMerge = z.infer<typeof skillsMergeSchema>;
+
+export const skillsMergeJsonSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['merged_skills'],
+  properties: {
+    merged_skills: {
+      type: 'array',
+      maxItems: 40,
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['text', 'from', 'rationale'],
+        properties: {
+          text: { type: 'string', minLength: 1, maxLength: 160 },
+          from: { type: 'string', enum: ['existing', 'gap', 'merged'] },
+          rationale: { type: 'string', minLength: 1, maxLength: 280 },
+        },
+      },
+    },
+  },
+} as const;

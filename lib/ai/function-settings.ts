@@ -23,6 +23,7 @@ export const AI_FUNCTION_IDS = [
   'explore-compare',
   'explore-what-if',
   'program-score-coverage',
+  'decompose-prereq-gap',
 ] as const;
 export type AIFunctionId = (typeof AI_FUNCTION_IDS)[number];
 
@@ -68,6 +69,10 @@ export const DEFAULT_TIERS: Record<AIFunctionId, Exclude<ModelTier, 'custom'>> =
   'explore-compare': 'default',
   'explore-what-if': 'heavy',
   'program-score-coverage': 'light',
+  // Small per-click transformation — one short gap → up to ~12 short
+  // competency rows. Light tier handles this well; promote to default
+  // if the decomposition quality is poor on long/aggregated gaps.
+  'decompose-prereq-gap': 'light',
 };
 
 export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
@@ -78,6 +83,7 @@ export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
   'explore-compare': 'Explore — compare snapshot to target',
   'explore-what-if': 'Explore — what-if simulation',
   'program-score-coverage': 'Program coverage scoring',
+  'decompose-prereq-gap': 'Decompose prereq gap into competencies (copy-as-KUD)',
 };
 
 export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
@@ -88,6 +94,7 @@ export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
   'explore-compare': "Running the comparator against a snapshot + target to produce alignment + recommendations.",
   'explore-what-if': 'Predicting the effect of a hypothetical change on the snapshot\'s competencies.',
   'program-score-coverage': 'Scoring each captured snapshot against each career target\'s sub-competencies for the program coverage matrix.',
+  'decompose-prereq-gap': 'Decomposing one free-form prereq-gap finding into a structured list of competencies with K/U/D depths, for the copy-as-KUD button in the review panel.',
 };
 
 interface CachedSetting {

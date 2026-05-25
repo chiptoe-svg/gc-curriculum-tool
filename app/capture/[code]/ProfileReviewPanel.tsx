@@ -170,21 +170,19 @@ function CompetencyCard({
 }
 
 /**
- * Renders an audit-notes section. When `copyFormatter` is provided, each
- * item gets a small "Copy" button that puts a formatted version on the
- * clipboard — used for prereq gaps, where the faculty workflow is to
- * carry the gap into the prerequisite course's audit chat. Other audit
- * categories don't have an obvious "send elsewhere" workflow yet so they
- * skip the button.
+ * Renders an audit-notes section. When `rowAction` is provided, each
+ * item gets a custom action component to its right (used for prereq
+ * gaps, which carry a "Merge into Skills/Competencies Required"
+ * button that calls the AI and shows a merged list inline).
  */
 function AuditNotesList({
   title,
   items,
-  copyFormatter,
+  rowAction,
 }: {
   title: string;
   items: string[];
-  copyFormatter?: (item: string) => string;
+  rowAction?: (item: string, index: number) => React.ReactNode;
 }) {
   if (items.length === 0) {
     return (
@@ -197,13 +195,11 @@ function AuditNotesList({
   return (
     <div>
       <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{title}</h4>
-      <ul className="mt-1 space-y-1 text-xs leading-snug">
+      <ul className="mt-1 space-y-2 text-xs leading-snug">
         {items.map((it, i) => (
-          <li key={i} className="border-l-2 border-muted pl-2">
-            <div className="flex items-start justify-between gap-2">
-              <span className="flex-1">{it}</span>
-              {copyFormatter && <CopyAsKudButton text={copyFormatter(it)} />}
-            </div>
+          <li key={i} className="border-l-2 border-muted pl-2 space-y-1">
+            <p>{it}</p>
+            {rowAction?.(it, i)}
           </li>
         ))}
       </ul>
@@ -211,17 +207,78 @@ function AuditNotesList({
   );
 }
 
-function CopyAsKudButton({ text }: { text: string }) {
+interface MergedSkill {
+  text: string;
+  from: 'existing' | 'gap' | 'merged';
+  rationale: string;
+}
+
+/**
+ * Per-gap action: calls the merge-prereq-gap API which decomposes the
+ * gap into KUD+-tagged competencies and merges them with the course's
+ * existing skillsRequired list. The result is shown inline as a
+ * preview list (existing items grey, new gap-derived items highlighted)
+ * with a copy button to put the unified list on the clipboard for
+ * pasting back into the Sheet's Skills/Competencies Required cell.
+ *
+ * Re-clicking the button re-runs the merge (faculty can fix a vague
+ * gap mid-review or just regenerate if the first pass is off).
+ */
+function MergeGapIntoSkillsButton({
+  gapText,
+  courseCode,
+  slug,
+}: {
+  gapText: string;
+  courseCode: string;
+  slug: string;
+}) {
+  const [state, setState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+  const [merged, setMerged] = useState<MergedSkill[]>([]);
+  const [error, setError] = useState<string>('');
   const [copied, setCopied] = useState(false);
-  async function handle() {
+
+  async function handleMerge() {
+    setState('loading');
+    setError('');
+    setCopied(false);
+    try {
+      const res = await fetch(
+        `/api/capture/${encodeURIComponent(courseCode)}/merge-prereq-gap`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ slug, gapText }),
+        },
+      );
+      const ct = res.headers.get('content-type') ?? '';
+      if (!ct.includes('application/json')) {
+        const t = await res.text();
+        setError(`Server returned ${res.status} non-JSON. ${t.slice(0, 120)}`);
+        setState('error');
+        return;
+      }
+      const json = await res.json() as { merged_skills?: MergedSkill[]; error?: string };
+      if (!res.ok) {
+        setError(json.error ?? `failed (${res.status})`);
+        setState('error');
+        return;
+      }
+      setMerged(json.merged_skills ?? []);
+      setState('done');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'failed');
+      setState('error');
+    }
+  }
+
+  async function handleCopy() {
+    const text = merged.map(m => m.text).join('\n');
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      // Clipboard API unavailable (rare — http context or denied permission).
-      // Fall back to selecting the text in a hidden textarea so the user can
-      // copy manually with ⌘C.
       const ta = document.createElement('textarea');
       ta.value = text;
       ta.style.position = 'fixed';
@@ -232,33 +289,58 @@ function CopyAsKudButton({ text }: { text: string }) {
       finally { document.body.removeChild(ta); }
     }
   }
-  return (
-    <button
-      type="button"
-      onClick={handle}
-      title="Copy gap as a KUD-tagged line — paste into the prerequisite course's row in the Google Sheet"
-      className="shrink-0 rounded border border-muted bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
-    >
-      {copied ? '✓ copied' : 'copy as KUD'}
-    </button>
-  );
-}
 
-/**
- * Formats a free-form prereq-gap string for pasting into the
- * `prerequisites` cell of the prerequisite course's row in the
- * shared Google Sheet. Two lines, KUD-shaped depth fields left
- * blank for the faculty member to fill, source course + date
- * tag carries provenance.
- *
- * Why compact: the sheet's prerequisites column is a textarea
- * (lib/db/schema.ts → courses.prerequisites: text). Faculty
- * accumulate multiple entries per cell over time; verbose
- * multi-line blocks turn into walls of text quickly.
- */
-function formatPrereqGapAsKud(gapText: string, courseCode: string): string {
-  const today = new Date().toISOString().slice(0, 10);  // YYYY-MM-DD
-  return `[${courseCode} needs · ${today}] ${gapText}\n  K=__ U=__ D=__`;
+  return (
+    <div className="w-full">
+      <div className="flex items-start justify-end">
+        <button
+          type="button"
+          onClick={handleMerge}
+          disabled={state === 'loading'}
+          title="Decompose this gap into KUD+ competencies and merge with the course's existing Skills/Competencies Required list — output is the unified replacement list to paste back into the Sheet."
+          className="shrink-0 rounded border border-muted bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
+        >
+          {state === 'loading' ? 'merging…' : state === 'done' ? 'regenerate' : 'merge into skills'}
+        </button>
+      </div>
+      {state === 'error' && (
+        <p className="mt-1 text-[10px] text-destructive">{error}</p>
+      )}
+      {state === 'done' && merged.length > 0 && (
+        <div className="mt-2 rounded border border-muted bg-muted/20 p-2 space-y-1.5">
+          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+            Replace your Skills/Competencies Required cell with:
+          </p>
+          <ul className="space-y-0.5 font-mono text-[11px]">
+            {merged.map((m, i) => (
+              <li
+                key={i}
+                className={
+                  m.from === 'gap' ? 'text-foreground'
+                  : m.from === 'merged' ? 'text-blue-700'
+                  : 'text-muted-foreground'
+                }
+                title={m.rationale}
+              >
+                {m.text}
+                {m.from === 'gap' && <span className="ml-2 text-[9px] text-green-700 font-sans">+new</span>}
+                {m.from === 'merged' && <span className="ml-2 text-[9px] text-blue-700 font-sans">~clarified</span>}
+              </li>
+            ))}
+          </ul>
+          <div className="flex items-center justify-end pt-1">
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="rounded bg-primary px-2 py-0.5 text-[10px] font-medium text-primary-foreground hover:bg-primary/90"
+            >
+              {copied ? '✓ copied' : 'copy merged list'}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export function ProfileReviewPanel({
@@ -465,7 +547,9 @@ export function ProfileReviewPanel({
           <AuditNotesList
             title="Prereq gaps"
             items={working.audit_notes.prereq_gaps}
-            copyFormatter={(item) => formatPrereqGapAsKud(item, courseCode)}
+            rowAction={(item) => (
+              <MergeGapIntoSkillsButton gapText={item} courseCode={courseCode} slug={slug} />
+            )}
           />
           <AuditNotesList title="Objective misalignments" items={working.audit_notes.objective_misalignments} />
           <AuditNotesList title="Cross-source conflicts" items={working.audit_notes.cross_source_conflicts} />
