@@ -114,12 +114,39 @@ const captureProfileJsonSchema = {
         'objective_misalignments',
         'cross_source_conflicts',
         'suggested_objective_revisions',
+        'productive_failure_conditions',
       ],
       properties: {
         prereq_gaps: { type: 'array', items: { type: 'string' } },
         objective_misalignments: { type: 'array', items: { type: 'string' } },
         cross_source_conflicts: { type: 'array', items: { type: 'string' } },
         suggested_objective_revisions: { type: 'array', items: { type: 'string' } },
+        // Productive-failure conditions surfaced in Audit Area 7. The capture
+        // chat probes whether the course has each condition; the scorer
+        // commits to one of three states per condition plus a max-supporting-
+        // depth signal that grades the contribution. Treated as required by
+        // the schema for new captures; the Zod schema treats it optional so
+        // pre-existing snapshots remain valid.
+        productive_failure_conditions: {
+          type: 'object',
+          additionalProperties: false,
+          required: [
+            'generate_then_consolidate',
+            'open_ended_problems',
+            'revision_cycles',
+            'structured_post_mortem',
+            'max_supporting_depth',
+            'notes',
+          ],
+          properties: {
+            generate_then_consolidate: { type: 'string', enum: ['present', 'partial', 'absent'] },
+            open_ended_problems: { type: 'string', enum: ['present', 'partial', 'absent'] },
+            revision_cycles: { type: 'string', enum: ['present', 'partial', 'absent'] },
+            structured_post_mortem: { type: 'string', enum: ['present', 'partial', 'absent'] },
+            max_supporting_depth: { type: 'integer', minimum: 0, maximum: 5 },
+            notes: { type: 'array', items: { type: 'string' } },
+          },
+        },
       },
     },
     revised_objectives_draft: {

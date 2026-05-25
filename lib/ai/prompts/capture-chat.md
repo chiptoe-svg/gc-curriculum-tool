@@ -157,7 +157,72 @@ If the materials evidence a foundational competency outside the baseline
 five (e.g., Collaboration, Professionalism, Ethical Judgment), note it and
 plan to add it to the output.
 
-## 7. References to content you can see but cannot read
+## 7. Productive failure and reflection conditions
+
+Problem-solving competence is a program-level emergent property — it
+develops through repeated cycles of (a) attempting before being told the
+method, (b) experiencing failure with real consequences, and (c) structured
+post-mortem that converts the failure into transferable understanding. No
+single course produces a problem-solver, but every course either creates
+these conditions or doesn't. This audit area surfaces what conditions
+*this* course creates so the program-level view can aggregate.
+
+Probe each of these five conditions, asking one targeted question per turn.
+The goal is not a single yes/no — it is to characterize the course's
+contribution to program-wide problem-solving development. Each condition
+is a degree, not a binary: a course may have weak open-endedness but strong
+revision cycles, or vice versa, and both count.
+
+a. **Generate-then-consolidate structure.** Does any assignment require
+   students to *attempt* a solution before being taught the canonical
+   method? This is Manu Kapur's productive-failure structure — students
+   work on an ill-structured problem with their current knowledge, fail in
+   various ways, and the consolidation phase uses those failure modes as
+   scaffolding for the right approach. The discriminator: did students try
+   *before* the lecture, or only after.
+
+b. **Open-ended ill-structured problems.** Does the course assign problems
+   where the canonical answer isn't pre-given, multiple defensible
+   solutions exist, and judgment matters? Distinct from "show your work"
+   problems with a known right answer.
+
+c. **Revision cycles with consequential failure.** Are there graded
+   artifacts students must revise after a critical assessment — not just
+   "resubmit for partial credit", but a required revision that responds to
+   specific identified failures? Real consequences (failed deliverable,
+   missed deadline, client rejection in a simulated brief) matter more
+   than point deductions alone.
+
+d. **Structured post-mortem or debrief.** After a major project, does the
+   course require students to articulate *what happened, why, and what
+   they would do differently* — specifically tied to the concrete failure
+   modes they experienced? Generic "reflect on your learning" prompts
+   don't count; the meta-analysis on after-action reviews (Tannenbaum &
+   Cerasoli, 2013) is clear that the structure that works is specific,
+   timely, and outcome-oriented.
+
+e. **Domain depth that supports productive struggle.** What's the highest
+   K/U/D depth reached in this course's strongest technical competencies?
+   Productive failure works in degrees — a student attempting an
+   ill-structured problem with K=4 / U=3 base in that area produces more
+   learning per failure than a student attempting one at K=1 / U=0.
+   Productive failure at low base depths still contributes (every cycle
+   builds dispositional habit), just less per cycle.
+
+How to weave this into the conversation: ask one specific probe per turn,
+citing the assignment the question is about. Example: *"Your capstone
+brief gives students a real client deliverable with one revision cycle —
+is the revision a response to specific critique on the first submission,
+or is it more of a polish pass? The first is consequential failure; the
+second is iteration without the productive struggle."*
+
+If the course has none of these conditions, that's the finding — not a
+defect of the instructor, but a program-level signal that this course
+contributes domain depth but not problem-solving development. If the
+course has all of them, that's also the finding — this course is doing
+disproportionate work in the program's problem-solving formation.
+
+## 8. References to content you can see but cannot read
 
 The Canvas import extracts **plain text only** from three Canvas surfaces:
 the syllabus body, assignment descriptions, and the module item list. A

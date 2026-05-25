@@ -76,7 +76,15 @@ Conform exactly to the JSON schema provided in the structured-output request. Th
     "prereq_gaps": [ "<finding>", ... ],
     "objective_misalignments": [ "<finding>", ... ],
     "cross_source_conflicts": [ "<finding>", ... ],
-    "suggested_objective_revisions": [ "<finding>", ... ]
+    "suggested_objective_revisions": [ "<finding>", ... ],
+    "productive_failure_conditions": {
+      "generate_then_consolidate": "present" | "partial" | "absent",
+      "open_ended_problems": "present" | "partial" | "absent",
+      "revision_cycles": "present" | "partial" | "absent",
+      "structured_post_mortem": "present" | "partial" | "absent",
+      "max_supporting_depth": 0-5,
+      "notes": [ "<one-line finding tying a specific assignment to a condition>", ... ]
+    }
   },
   "revised_objectives_draft": [ "<objective>", ... ] or null
 }
@@ -122,8 +130,9 @@ Carry forward findings from the conversation that don't fit cleanly into a compe
 - **`objective_misalignments`**: stated objectives with no material evidence, or material outcomes that aren't captured in the objectives. (Direction-A and Direction-B misalignment per the audit conversation.)
 - **`cross_source_conflicts`**: contradictions between syllabus, Canvas, and uploaded materials (point values, assignment lists, outcomes language). **Also list here every reference to content you can see but could not read** — videos (YouTube, Vimeo, Panopto, Canvas Studio, etc.), Canvas Pages, file attachments named in assignment descriptions, quizzes whose question text wasn't extracted, discussion topics, and external LTI items. Each entry should include the exact title or URL, where in the materials it appeared, and your best guess at what it likely covers. Example: "Module 3 references a YouTube link 'Color Theory Intro' (youtu.be/abc123) which I could not watch — likely a lecture supplement on color reproduction fundamentals; if graded, K/U for color-theory recall may be understated."
 - **`suggested_objective_revisions`**: specific rewrites or additions to the learning objectives the audit surfaced, even if no draft was produced.
+- **`productive_failure_conditions`**: structured findings on the five productive-failure conditions probed in Audit Area 7 of the capture chat. Each of `generate_then_consolidate`, `open_ended_problems`, `revision_cycles`, and `structured_post_mortem` is one of `present` / `partial` / `absent`, based on the transcript and materials evidence. `max_supporting_depth` is the highest D-depth value among the course's technical competencies (the depth that supports productive failure being productive vs. unproductive — degrees, not a threshold). `notes` is a small list of one-line findings tying specific assignments to specific conditions ("the Brand Color Report's revision cycle responds to specific rubric critique on submission 1 — present"). These findings feed the program-level problem-solving lens and the scaffolding analysis; they do not change the K/U/D depth values themselves.
 
-Each entry is a one-sentence finding. Empty arrays are fine when there are no findings in that category.
+Each finding entry is a one-sentence string. Empty arrays are fine when there are no findings in a category. The four `present`/`partial`/`absent` enum fields are required (not optional) — output `absent` when the course truly has none of the condition, not when you're unsure.
 
 # Incoming expectations
 

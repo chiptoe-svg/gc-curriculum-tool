@@ -53,9 +53,49 @@ function maxOf(c: MatrixCoverageCell | null): number | null {
   return Math.max(...vals);
 }
 
+// Problem-solving lens: U and D dimensions are where problem-solving lives.
+// The U-4/5 anchors ("reasons through novel cases / critiques the principle")
+// and D-4/5 anchors ("adapts to new conditions / performs creatively with
+// critical judgment") are the depth surface that defines problem-solving
+// competence within a domain. K is excluded because K alone is recall —
+// necessary but insufficient.
+//
+// The lens is graded, not binary: it doesn't hide lower-depth cells, it
+// re-weights the visual emphasis so the D=4 and D=5 territory stands out
+// and the D≤2 territory recedes. Per docs/background.html §8, problem-
+// solving capacity contributes in degrees across the depth range; the
+// lens visualizes that distribution.
+function psDepthOf(c: MatrixCoverageCell | null): number | null {
+  if (!c) return null;
+  const vals = [c.uDepth, c.dDepth].filter((v): v is number => v !== null);
+  if (vals.length === 0) return c.dDepth;
+  return Math.max(...vals);
+}
+
+function psColor(d: number | null): string {
+  if (d === null) return 'bg-slate-100';
+  if (d === 0) return 'bg-slate-50';
+  if (d === 1) return 'bg-slate-100';        // de-emphasized: low PF contribution
+  if (d === 2) return 'bg-slate-200';        // de-emphasized
+  if (d === 3) return 'bg-amber-200';         // emerging
+  if (d === 4) return 'bg-lime-400';          // problem-solving territory
+  if (d === 5) return 'bg-emerald-600';       // mastery / creative judgment
+  return 'bg-slate-100';
+}
+
+function psText(d: number | null): string {
+  if (d === null) return 'text-slate-400';
+  if (d <= 2) return 'text-slate-500';
+  if (d === 3) return 'text-amber-900';
+  if (d === 4) return 'text-slate-900';
+  return 'text-white';
+}
+
 function fmtDate(d: string | Date): string {
   return new Date(d).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
+
+type Lens = 'coverage' | 'problem-solving';
 
 export function ProgramCoverageClient({ slug, initialData }: Props) {
   const [data, setData] = useState<MatrixData>(initialData);
@@ -67,6 +107,7 @@ export function ProgramCoverageClient({ slug, initialData }: Props) {
   const [selected, setSelected] = useState<SelectedCell | null>(null);
   const [scoringCell, setScoringCell] = useState<string | null>(null);
   const [scoringError, setScoringError] = useState<string | null>(null);
+  const [lens, setLens] = useState<Lens>('coverage');
 
   // For each (snapshot, target) pair, fast-lookup of cells indexed by
   // sub-competency. The matrix view drives off this.
@@ -163,6 +204,34 @@ export function ProgramCoverageClient({ slug, initialData }: Props) {
   const totalPairs = data.courses.length * data.targets.length;
   const scoredCount = scoredPairs.size;
 
+  // Problem-solving lens rollup: for the active target, aggregate across all
+  // snapshots to find the program's cumulative reach per sub-competency on
+  // the U/D dimensions. The user-visible signal is graded, not binary —
+  // per the degrees-not-thresholds principle from background.html §8.
+  const psRollup = useMemo(() => {
+    if (!activeTarget) return null;
+    const subs = data.subCompetencies.filter(s => s.careerTargetId === activeTargetId);
+    let reachedDeep = 0;     // max(U,D) ≥ 4 across any snapshot
+    let reachedPracticed = 0; // max(U,D) === 3
+    let reachedShallow = 0;   // max(U,D) === 1 or 2
+    let absent = 0;           // max(U,D) === 0 or no scored cell
+    for (const s of subs) {
+      let best = 0;
+      let anyCell = false;
+      for (const c of data.cells) {
+        if (c.careerTargetId !== activeTargetId || c.subCompetencyId !== s.id) continue;
+        anyCell = true;
+        const d = psDepthOf(c) ?? 0;
+        if (d > best) best = d;
+      }
+      if (!anyCell || best === 0) absent++;
+      else if (best >= 4) reachedDeep++;
+      else if (best === 3) reachedPracticed++;
+      else reachedShallow++;
+    }
+    return { total: subs.length, reachedDeep, reachedPracticed, reachedShallow, absent };
+  }, [activeTarget, activeTargetId, data.subCompetencies, data.cells]);
+
   return (
     <div className="space-y-5">
       {/* Status & refresh */}
@@ -185,6 +254,43 @@ export function ProgramCoverageClient({ slug, initialData }: Props) {
         >
           {refreshing ? 'Scoring…' : scoredCount === totalPairs ? 'Up to date' : `Score ${totalPairs - scoredCount} stale pair${totalPairs - scoredCount === 1 ? '' : 's'}`}
         </button>
+      </section>
+
+      {/* Lens toggle */}
+      <section className="rounded-md border bg-card px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Lens:</span>
+          <div className="flex rounded-md border overflow-hidden text-xs">
+            <button
+              type="button"
+              onClick={() => setLens('coverage')}
+              className={'px-3 py-1.5 ' + (lens === 'coverage' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted/50 text-foreground')}
+              title="Show K/U/D coverage colored by max depth across all three dimensions"
+            >
+              Coverage
+            </button>
+            <button
+              type="button"
+              onClick={() => setLens('problem-solving')}
+              className={'px-3 py-1.5 border-l ' + (lens === 'problem-solving' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted/50 text-foreground')}
+              title="Emphasize the U/D upper-range depths where problem-solving competence lives. Per docs/background.html §8."
+            >
+              Problem-solving
+            </button>
+          </div>
+        </div>
+        {lens === 'problem-solving' && psRollup && (
+          <div className="text-[11px] text-muted-foreground">
+            <span className="font-medium text-foreground">{psRollup.reachedDeep}</span>
+            <span> of {psRollup.total} sub-competencies reach the upper-range U/D depth (≥4) across the program. </span>
+            <span className="text-amber-700">{psRollup.reachedPracticed}</span>
+            <span> practiced (=3), </span>
+            <span className="text-slate-500">{psRollup.reachedShallow}</span>
+            <span> shallow (1–2), </span>
+            <span className="text-slate-400">{psRollup.absent}</span>
+            <span> absent.</span>
+          </div>
+        )}
       </section>
 
       {/* Target tabs */}
@@ -241,15 +347,20 @@ export function ProgramCoverageClient({ slug, initialData }: Props) {
                     {visibleSubs.map(s => {
                       const key = `${course.snapshotId}:${activeTargetId}:${s.id}`;
                       const cell = cellsByKey.get(key) ?? null;
-                      const max = maxOf(cell);
                       const isSelected = selected?.cell?.snapshotId === course.snapshotId && selected?.subCompetency.id === s.id;
+                      // Lens dispatch: 'coverage' colors by max(K,U,D); 'problem-solving'
+                      // colors by max(U,D) with the lower-depth bands faded so the
+                      // upper-depth territory stands out as the problem-solving surface.
+                      const colorClass = lens === 'problem-solving'
+                        ? psColor(psDepthOf(cell)) + ' ' + psText(psDepthOf(cell))
+                        : depthColor(maxOf(cell)) + ' ' + depthText(maxOf(cell));
                       return (
                         <td
                           key={s.id}
                           onClick={() => setSelected({ course, subCompetency: s, cell })}
                           className={
                             'px-2 py-2 text-center border-l cursor-pointer transition '
-                            + depthColor(max) + ' ' + depthText(max) + ' '
+                            + colorClass + ' '
                             + (isSelected ? 'ring-2 ring-primary ring-inset' : 'hover:opacity-80')
                           }
                           title={cell?.rationale || (cell === null ? 'Not scored yet — click to score' : '')}
@@ -274,29 +385,58 @@ export function ProgramCoverageClient({ slug, initialData }: Props) {
 
       {/* Legend */}
       <section className="rounded-md border bg-muted/20 px-4 py-3">
-        <div className="flex items-center gap-4 flex-wrap text-[11px]">
-          <span className="text-muted-foreground">Cell color = max(K, U, D):</span>
-          {[0, 1, 2, 3, 4, 5].map(n => (
-            <span key={n} className="flex items-center gap-1">
-              <span className={`inline-block h-4 w-6 rounded ${depthColor(n)} ${depthText(n)} text-center font-mono leading-4`}>{n}</span>
-              <span className="text-muted-foreground">{
-                n === 0 ? 'not present' :
-                n === 1 ? 'mentioned' :
-                n === 2 ? 'introduced' :
-                n === 3 ? 'practiced' :
-                n === 4 ? 'demonstrated' :
-                'mastered'
-              }</span>
-            </span>
-          ))}
-          <span className="flex items-center gap-1 ml-auto">
-            <span className={`inline-block h-4 w-6 rounded ${depthColor(null)}`}></span>
-            <span className="text-muted-foreground">not scored</span>
-          </span>
-        </div>
-        <p className="mt-2 text-[10px] text-muted-foreground">
-          Each cell shows K/U/D scores. Click a cell for details and evidence. Click &ldquo;Score&rdquo; to run the AI scorer on missing pairs.
-        </p>
+        {lens === 'coverage' ? (
+          <>
+            <div className="flex items-center gap-4 flex-wrap text-[11px]">
+              <span className="text-muted-foreground">Cell color = max(K, U, D):</span>
+              {[0, 1, 2, 3, 4, 5].map(n => (
+                <span key={n} className="flex items-center gap-1">
+                  <span className={`inline-block h-4 w-6 rounded ${depthColor(n)} ${depthText(n)} text-center font-mono leading-4`}>{n}</span>
+                  <span className="text-muted-foreground">{
+                    n === 0 ? 'not present' :
+                    n === 1 ? 'mentioned' :
+                    n === 2 ? 'introduced' :
+                    n === 3 ? 'practiced' :
+                    n === 4 ? 'demonstrated' :
+                    'mastered'
+                  }</span>
+                </span>
+              ))}
+              <span className="flex items-center gap-1 ml-auto">
+                <span className={`inline-block h-4 w-6 rounded ${depthColor(null)}`}></span>
+                <span className="text-muted-foreground">not scored</span>
+              </span>
+            </div>
+            <p className="mt-2 text-[10px] text-muted-foreground">
+              Each cell shows K/U/D scores. Click a cell for details and evidence. Click &ldquo;Score&rdquo; to run the AI scorer on missing pairs.
+            </p>
+          </>
+        ) : (
+          <>
+            <div className="flex items-center gap-4 flex-wrap text-[11px]">
+              <span className="text-muted-foreground">Cell color = max(U, D), graded:</span>
+              {[0, 1, 2, 3, 4, 5].map(n => (
+                <span key={n} className="flex items-center gap-1">
+                  <span className={`inline-block h-4 w-6 rounded ${psColor(n)} ${psText(n)} text-center font-mono leading-4`}>{n}</span>
+                  <span className="text-muted-foreground">{
+                    n === 0 ? 'absent' :
+                    n === 1 ? 'shallow' :
+                    n === 2 ? 'shallow' :
+                    n === 3 ? 'practiced' :
+                    n === 4 ? 'novel cases' :
+                    'creative judgment'
+                  }</span>
+                </span>
+              ))}
+            </div>
+            <p className="mt-2 text-[10px] text-muted-foreground">
+              The problem-solving lens emphasizes the U/D upper-range depths where problem-solving competence lives. U-4/5 = reasons through and critiques principles in novel cases; D-4/5 = adapts to new conditions, performs with creative judgment. Lower depths are de-emphasized but not hidden — they contribute to problem-solving development in degrees, per <a href="https://chiptoe-svg.github.io/gc-curriculum-tool/docs/background.html#problem-solving" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">background.html §8</a>. K is excluded from this view (recall alone doesn&rsquo;t indicate problem-solving).
+            </p>
+            <p className="mt-1 text-[10px] text-muted-foreground italic">
+              v2 (planned): weight the contribution of each contributing snapshot by its productive-failure conditions (Audit Area 7 of CourseCapture) so this view also reflects whether the courses that reach upper depths do so through the kind of pedagogy that produces transferable problem-solving rather than memorization at depth.
+            </p>
+          </>
+        )}
       </section>
 
       {/* Cell detail drawer */}

@@ -66,11 +66,32 @@ export const captureCompetencySchema = z
   );
 export type CaptureCompetency = z.infer<typeof captureCompetencySchema>;
 
+const productiveFailureConditionEnum = z.enum(['present', 'partial', 'absent']);
+
+// Productive-failure conditions probed in Audit Area 7 of the capture chat.
+// Surfaces the course's pedagogical structure (not the K/U/D depths) so the
+// program-level problem-solving lens and scaffolding analysis can aggregate
+// across snapshots. Conditions are graded, not binary — see capture-scores.md
+// and docs/background.html §8 for the reasoning.
+export const productiveFailureConditionsSchema = z.object({
+  generate_then_consolidate: productiveFailureConditionEnum,
+  open_ended_problems: productiveFailureConditionEnum,
+  revision_cycles: productiveFailureConditionEnum,
+  structured_post_mortem: productiveFailureConditionEnum,
+  max_supporting_depth: z.number().int().min(0).max(5),
+  notes: z.array(z.string()),
+});
+export type ProductiveFailureConditions = z.infer<typeof productiveFailureConditionsSchema>;
+
 export const captureAuditNotesSchema = z.object({
   prereq_gaps: z.array(z.string()),
   objective_misalignments: z.array(z.string()),
   cross_source_conflicts: z.array(z.string()),
   suggested_objective_revisions: z.array(z.string()),
+  // Optional: snapshots taken before the productive-failure audit area was
+  // added (pre-2026-05-25) will not have this field. Downstream views must
+  // tolerate its absence and treat it as "no data yet" rather than "absent".
+  productive_failure_conditions: productiveFailureConditionsSchema.optional(),
 });
 export type CaptureAuditNotes = z.infer<typeof captureAuditNotesSchema>;
 
