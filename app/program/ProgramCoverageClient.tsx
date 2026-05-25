@@ -174,6 +174,38 @@ export function ProgramCoverageClient({ slug, initialData }: Props) {
     }
   }, [slug]);
 
+  // Problem-solving lens rollup: for the active target, aggregate across all
+  // snapshots to find the program's cumulative reach per sub-competency on
+  // the U/D dimensions. The user-visible signal is graded, not binary —
+  // per the degrees-not-thresholds principle from background.html §8.
+  // Note: this hook must be declared BEFORE any conditional early returns
+  // (the no-snapshots and no-targets guards below) to satisfy the rules of
+  // hooks. The body handles the empty cases internally.
+  const psRollup = useMemo(() => {
+    const activeTargetRow = data.targets.find(t => t.id === activeTargetId);
+    if (!activeTargetRow) return null;
+    const subs = data.subCompetencies.filter(s => s.careerTargetId === activeTargetId);
+    let reachedDeep = 0;     // max(U,D) ≥ 4 across any snapshot
+    let reachedPracticed = 0; // max(U,D) === 3
+    let reachedShallow = 0;   // max(U,D) === 1 or 2
+    let absent = 0;           // max(U,D) === 0 or no scored cell
+    for (const s of subs) {
+      let best = 0;
+      let anyCell = false;
+      for (const c of data.cells) {
+        if (c.careerTargetId !== activeTargetId || c.subCompetencyId !== s.id) continue;
+        anyCell = true;
+        const d = psDepthOf(c) ?? 0;
+        if (d > best) best = d;
+      }
+      if (!anyCell || best === 0) absent++;
+      else if (best >= 4) reachedDeep++;
+      else if (best === 3) reachedPracticed++;
+      else reachedShallow++;
+    }
+    return { total: subs.length, reachedDeep, reachedPracticed, reachedShallow, absent };
+  }, [activeTargetId, data.targets, data.subCompetencies, data.cells]);
+
   if (data.courses.length === 0) {
     return (
       <div className="rounded-md border bg-card px-6 py-12 text-center">
@@ -203,34 +235,6 @@ export function ProgramCoverageClient({ slug, initialData }: Props) {
   const scoredPairs = new Set(data.cells.map(c => `${c.snapshotId}:${c.careerTargetId}`));
   const totalPairs = data.courses.length * data.targets.length;
   const scoredCount = scoredPairs.size;
-
-  // Problem-solving lens rollup: for the active target, aggregate across all
-  // snapshots to find the program's cumulative reach per sub-competency on
-  // the U/D dimensions. The user-visible signal is graded, not binary —
-  // per the degrees-not-thresholds principle from background.html §8.
-  const psRollup = useMemo(() => {
-    if (!activeTarget) return null;
-    const subs = data.subCompetencies.filter(s => s.careerTargetId === activeTargetId);
-    let reachedDeep = 0;     // max(U,D) ≥ 4 across any snapshot
-    let reachedPracticed = 0; // max(U,D) === 3
-    let reachedShallow = 0;   // max(U,D) === 1 or 2
-    let absent = 0;           // max(U,D) === 0 or no scored cell
-    for (const s of subs) {
-      let best = 0;
-      let anyCell = false;
-      for (const c of data.cells) {
-        if (c.careerTargetId !== activeTargetId || c.subCompetencyId !== s.id) continue;
-        anyCell = true;
-        const d = psDepthOf(c) ?? 0;
-        if (d > best) best = d;
-      }
-      if (!anyCell || best === 0) absent++;
-      else if (best >= 4) reachedDeep++;
-      else if (best === 3) reachedPracticed++;
-      else reachedShallow++;
-    }
-    return { total: subs.length, reachedDeep, reachedPracticed, reachedShallow, absent };
-  }, [activeTarget, activeTargetId, data.subCompetencies, data.cells]);
 
   return (
     <div className="space-y-5">
