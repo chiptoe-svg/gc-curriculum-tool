@@ -297,6 +297,53 @@ export const courseCaptureProfiles = pgTable('course_capture_profiles', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
+// Immutable versioned snapshots of confirmed Course Outcome Profiles.
+// Many rows per course; never hard-deleted (retired_at is the soft-delete).
+// Each snapshot freezes the full profile + the context that produced it
+// (inputs_meta) + the audit conversation transcript at that moment.
+//
+// The working draft lives in course_capture_profiles and stays mutable.
+// course_capture_snapshots is the historical record that downstream
+// consumers (Explore, accreditation, longitudinal analysis) read from.
+export const courseCaptureSnapshots = pgTable('course_capture_snapshots', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  courseCode: text('course_code').notNull().references(() => courses.code, { onDelete: 'cascade' }),
+  profile: jsonb('profile').$type<CaptureProfile>().notNull(),
+  inputsMeta: jsonb('inputs_meta').$type<{
+    catalog: {
+      description: string;
+      prerequisites: string;
+      learningObjectives: string[];
+      majorProjects: string[];
+      skillsRequired: string[];
+    };
+    builderProfilePresent: boolean;
+    materials: Array<{
+      id: string;
+      fileName: string;
+      extractionStatus: string;
+      sizeBytes: number;
+      ignored: boolean;
+    }>;
+    prereqSnapshotsUsed: Array<{
+      courseCode: string;
+      snapshotId: string;
+      caption: string | null;
+    }>;
+    scanPasses: {
+      canvasImportedAt: string | null;
+      googleDocsScannedAt: string | null;
+    };
+  }>().notNull(),
+  transcript: jsonb('transcript').$type<Array<{ role: 'user' | 'assistant'; content: string }>>().notNull().default([]),
+  caption: text('caption'),
+  captionNote: text('caption_note'),
+  scaleVersion: text('scale_version').notNull(),
+  model: text('model').notNull(),
+  retiredAt: timestamp('retired_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
 // In-flight CourseCapture audit conversation, persisted so faculty can
 // resume after a closed tab, a failed Generate, or a next-day return.
 // One row per course (PK course_code). Cleared on profile confirmation

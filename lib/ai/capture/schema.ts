@@ -74,11 +74,36 @@ export const captureAuditNotesSchema = z.object({
 });
 export type CaptureAuditNotes = z.infer<typeof captureAuditNotesSchema>;
 
+const depthOrNullSchema = z.number().int().min(0).max(5).nullable();
+
+export const incomingExpectationSchema = z.object({
+  statement: z.string().min(1),
+  expected_depth: z.object({
+    k: depthOrNullSchema,
+    u: depthOrNullSchema,
+    d: depthSchema,
+  }),
+  evidenced_by: z.array(z.string()).min(1),
+  confidence: z.enum(['high', 'medium', 'low']),
+});
+export type CaptureIncomingExpectation = z.infer<typeof incomingExpectationSchema>;
+
+export const verificationSummarySchema = z.object({
+  course_shape: z.string().min(1),
+  strongest_evidence: z.array(z.string()).min(1).max(5),
+  dimensional_patterns: z.array(z.string()).max(4),
+  catalog_vs_evidence: z.array(z.string()).max(4),
+  foundationals_glance: z.string().min(1),
+});
+export type CaptureVerificationSummary = z.infer<typeof verificationSummarySchema>;
+
 export const captureProfileSchema = z.object({
   course_code: z.string().min(1),
   scale_version: z.literal(captureScaleVersion),
   generated_at: z.string(),
   competencies: z.array(captureCompetencySchema).min(1),
+  incoming_expectations: z.array(incomingExpectationSchema).max(10),
+  verification_summary: verificationSummarySchema,
   audit_notes: captureAuditNotesSchema,
   revised_objectives_draft: z.array(z.string()).nullable(),
 });

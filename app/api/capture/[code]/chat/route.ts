@@ -4,6 +4,7 @@ import { getCourseByCode } from '@/lib/db/courses-queries';
 import { getCourseProfile } from '@/lib/db/course-profile-queries';
 import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
 import { getCaptureProfileByCourse } from '@/lib/db/course-capture-profiles-queries';
+import { getLatestSnapshotByCourse } from '@/lib/db/capture-snapshots-queries';
 import { captureChatTurn, ChatMessage, CaptureChatContext } from '@/lib/ai/analyze/capture-chat';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { hashIp } from '@/lib/ip-hash';
@@ -67,11 +68,23 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   // Pull any prerequisite courses' confirmed CourseCapture profiles so the
   // auditor can use them as authoritative evidence of what students arrive
   // with — the cleanest fix for the chicken-and-egg prereq problem.
+  // Prefer the latest confirmed snapshot of each prereq course; fall back to
+  // working draft only if no snapshot exists. Audit reasoning about upstream
+  // state should be grounded in confirmed history, not in-flight edits.
   const prereqCodes = extractPrereqCodes(course.prerequisites ?? '', courseCode);
   const prereqProfilesRaw = await Promise.all(
     prereqCodes.map(async code => {
-      const [c, p] = await Promise.all([getCourseByCode(code), getCaptureProfileByCourse(code)]);
-      return c && p ? { code: c.code, title: c.title, profile: p.profile, reviewerStatus: p.reviewerStatus } : null;
+      const c = await getCourseByCode(code);
+      if (!c) return null;
+      const snapshot = await getLatestSnapshotByCourse(code);
+      if (snapshot) {
+        return { code: c.code, title: c.title, profile: snapshot.profile, reviewerStatus: `snapshot ${snapshot.caption ?? snapshot.createdAt.toISOString().slice(0, 10)}` };
+      }
+      const draft = await getCaptureProfileByCourse(code);
+      if (draft) {
+        return { code: c.code, title: c.title, profile: draft.profile, reviewerStatus: `draft (${draft.reviewerStatus})` };
+      }
+      return null;
     }),
   );
   const prerequisiteCaptureProfiles = prereqProfilesRaw.flatMap(p => p ? [p] : []);

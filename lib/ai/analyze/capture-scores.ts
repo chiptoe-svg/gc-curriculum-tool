@@ -25,6 +25,8 @@ const captureProfileJsonSchema = {
     'scale_version',
     'generated_at',
     'competencies',
+    'incoming_expectations',
+    'verification_summary',
     'audit_notes',
     'revised_objectives_draft',
   ],
@@ -60,6 +62,48 @@ const captureProfileJsonSchema = {
           evidence_d: { type: ['string', 'null'] },
           rationale: { type: 'string', minLength: 1 },
         },
+      },
+    },
+    incoming_expectations: {
+      type: 'array',
+      maxItems: 10,
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['statement', 'expected_depth', 'evidenced_by', 'confidence'],
+        properties: {
+          statement: { type: 'string', minLength: 1 },
+          expected_depth: {
+            type: 'object',
+            additionalProperties: false,
+            required: ['k', 'u', 'd'],
+            properties: {
+              k: { type: ['integer', 'null'], minimum: 0, maximum: 5 },
+              u: { type: ['integer', 'null'], minimum: 0, maximum: 5 },
+              d: { type: 'integer', minimum: 0, maximum: 5 },
+            },
+          },
+          evidenced_by: { type: 'array', minItems: 1, items: { type: 'string' } },
+          confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
+        },
+      },
+    },
+    verification_summary: {
+      type: 'object',
+      additionalProperties: false,
+      required: [
+        'course_shape',
+        'strongest_evidence',
+        'dimensional_patterns',
+        'catalog_vs_evidence',
+        'foundationals_glance',
+      ],
+      properties: {
+        course_shape: { type: 'string', minLength: 1 },
+        strongest_evidence: { type: 'array', minItems: 1, maxItems: 5, items: { type: 'string' } },
+        dimensional_patterns: { type: 'array', maxItems: 4, items: { type: 'string' } },
+        catalog_vs_evidence: { type: 'array', maxItems: 4, items: { type: 'string' } },
+        foundationals_glance: { type: 'string', minLength: 1 },
       },
     },
     audit_notes: {

@@ -5,6 +5,7 @@ import type { CaptureProfile, CaptureReadiness, CaptureReviewerStatus } from '@/
 import { CaptureChatPanel, type ChatMessage } from './CaptureChatPanel';
 import { ProfileReviewPanel } from './ProfileReviewPanel';
 import { MaterialsPanel, type CaptureMaterial, type CourseCatalogView } from './MaterialsPanel';
+import { SnapshotHistoryPanel } from './SnapshotHistoryPanel';
 
 interface Props {
   course: CourseCatalogView;
@@ -52,6 +53,30 @@ export function CaptureClient({
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [telemetry, setTelemetry] = useState<Telemetry | null>(null);
   const [materials, setMaterials] = useState<CaptureMaterial[]>(initialMaterials);
+  // Bumped each time a new snapshot is created so the history panel reloads.
+  const [snapshotsRefreshKey, setSnapshotsRefreshKey] = useState(0);
+
+  const handleSnapshotCreated = useCallback(() => {
+    setSnapshotsRefreshKey(k => k + 1);
+  }, []);
+
+  const handleUseSnapshotAsDraft = useCallback(async (snapshotId: string) => {
+    const res = await fetch(
+      `/api/capture/${encodeURIComponent(courseCode)}/snapshots/${snapshotId}/use-as-draft?slug=${encodeURIComponent(slug)}`,
+      { method: 'POST' },
+    );
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error((body as { error?: string }).error ?? 'Failed to load snapshot as draft');
+    }
+    // Clear the in-flight conversation — the new draft is the starting state.
+    await fetch(
+      `/api/capture/${encodeURIComponent(courseCode)}/conversation?slug=${encodeURIComponent(slug)}`,
+      { method: 'DELETE' },
+    ).catch(() => { /* best-effort */ });
+    // Reload the page so the draft + cleared conversation are picked up.
+    window.location.reload();
+  }, [courseCode, slug]);
 
   // Autosave the running conversation server-side so a closed tab, refresh,
   // or failed Generate doesn't lose progress. Called by the chat panel after
@@ -155,6 +180,13 @@ export function CaptureClient({
         onCourseChange={setCourse}
       />
 
+      <SnapshotHistoryPanel
+        courseCode={courseCode}
+        slug={slug}
+        onUseAsDraft={handleUseSnapshotAsDraft}
+        refreshKey={snapshotsRefreshKey}
+      />
+
       {stage === 'chat' && (
         <>
           {savedConversationAt && initialMessages.length > 0 && (
@@ -225,6 +257,9 @@ export function CaptureClient({
           telemetry={telemetry}
           onSave={handleSaveReview}
           onResumeChat={() => setStage('chat')}
+          courseCode={courseCode}
+          slug={slug}
+          onSnapshotCreated={handleSnapshotCreated}
         />
       )}
     </div>

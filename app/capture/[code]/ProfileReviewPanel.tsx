@@ -6,6 +6,7 @@ import type {
   CaptureCompetency,
   CaptureReviewerStatus,
 } from '@/lib/ai/capture/schema';
+import { VerificationSummary } from './VerificationSummary';
 
 interface Telemetry {
   costUsdCents: number;
@@ -22,6 +23,9 @@ interface Props {
   telemetry: Telemetry | null;
   onSave: (edited: CaptureProfile, status: 'confirmed' | 'edited') => Promise<void>;
   onResumeChat: () => void;
+  courseCode: string;
+  slug: string;
+  onSnapshotCreated: () => void;
 }
 
 function DepthSlider({
@@ -177,11 +181,63 @@ function AuditNotesList({ title, items }: { title: string; items: string[] }) {
   );
 }
 
-export function ProfileReviewPanel({ profile, reviewerStatus, telemetry, onSave, onResumeChat }: Props) {
+export function ProfileReviewPanel({
+  profile,
+  reviewerStatus,
+  telemetry,
+  onSave,
+  onResumeChat,
+  courseCode,
+  slug,
+  onSnapshotCreated,
+}: Props) {
   const [working, setWorking] = useState<CaptureProfile>(profile);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [lastSavedStatus, setLastSavedStatus] = useState<CaptureReviewerStatus>(reviewerStatus);
+  const [snapshotOpen, setSnapshotOpen] = useState(false);
+  const [snapshotCaption, setSnapshotCaption] = useState('');
+  const [snapshotNote, setSnapshotNote] = useState('');
+  const [snapshotting, setSnapshotting] = useState(false);
+  const [snapshotMessage, setSnapshotMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
+
+  async function handleConfirmAndSnapshot() {
+    setSnapshotting(true);
+    setSnapshotMessage(null);
+    setSaveError(null);
+    try {
+      // Save any pending edits first so the snapshot reflects current state.
+      if (dirty) {
+        await onSave(working, 'edited');
+      }
+      const res = await fetch(
+        `/api/capture/${encodeURIComponent(courseCode)}/snapshots?slug=${encodeURIComponent(slug)}`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            caption: snapshotCaption.trim() || null,
+            captionNote: snapshotNote.trim() || null,
+          }),
+        },
+      );
+      const json = await res.json();
+      if (!res.ok) {
+        setSnapshotMessage({ kind: 'error', text: (json as { error?: string }).error ?? `Snapshot failed (${res.status})` });
+        return;
+      }
+      setSnapshotMessage({ kind: 'ok', text: 'Snapshot recorded.' });
+      setSnapshotOpen(false);
+      setSnapshotCaption('');
+      setSnapshotNote('');
+      setLastSavedStatus('confirmed');
+      onSnapshotCreated();
+    } catch (e) {
+      setSnapshotMessage({ kind: 'error', text: e instanceof Error ? e.message : 'Snapshot failed' });
+    } finally {
+      setSnapshotting(false);
+    }
+  }
 
   const dirty = useMemo(() => JSON.stringify(working) !== JSON.stringify(profile), [working, profile]);
 
@@ -243,16 +299,74 @@ export function ProfileReviewPanel({ profile, reviewerStatus, telemetry, onSave,
           </button>
           <button
             type="button"
-            onClick={() => persist('confirmed')}
-            disabled={saving}
+            onClick={() => setSnapshotOpen(o => !o)}
+            disabled={saving || snapshotting}
             className="rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50"
           >
-            Confirm
+            {snapshotOpen ? 'Cancel snapshot' : 'Confirm and snapshot'}
           </button>
         </div>
       </header>
 
+      {snapshotOpen && (
+        <div className="rounded-md border bg-card px-4 py-4 space-y-3 shadow-sm">
+          <header>
+            <h3 className="text-sm font-semibold">Confirm and snapshot</h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Records the current draft as a permanent, dated, immutable snapshot. The working draft stays editable; new edits will live in a new snapshot when you confirm again.
+            </p>
+          </header>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground" htmlFor="snapshot-caption">Caption (optional)</label>
+            <input
+              id="snapshot-caption"
+              type="text"
+              value={snapshotCaption}
+              onChange={e => setSnapshotCaption(e.target.value)}
+              placeholder="Spring 2026 baseline"
+              className="w-full rounded border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground" htmlFor="snapshot-note">What changed since the last snapshot? (optional)</label>
+            <textarea
+              id="snapshot-note"
+              value={snapshotNote}
+              onChange={e => setSnapshotNote(e.target.value)}
+              rows={2}
+              placeholder="Adjusted the production-file-prep depth based on instructor reply"
+              className="w-full resize-y rounded border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+          </div>
+          <div className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={handleConfirmAndSnapshot}
+              disabled={snapshotting}
+              className="rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50"
+            >
+              {snapshotting ? 'Snapshotting…' : 'Snapshot'}
+            </button>
+          </div>
+          {snapshotMessage && (
+            <p className={'text-xs ' + (snapshotMessage.kind === 'ok' ? 'text-green-700' : 'text-destructive')}>
+              {snapshotMessage.text}
+            </p>
+          )}
+        </div>
+      )}
+
+      {snapshotMessage && !snapshotOpen && (
+        <p className={'text-xs ' + (snapshotMessage.kind === 'ok' ? 'text-green-700' : 'text-destructive')}>
+          {snapshotMessage.text}
+        </p>
+      )}
+
       {saveError && <p className="text-sm text-destructive">{saveError}</p>}
+
+      {working.verification_summary && (
+        <VerificationSummary summary={working.verification_summary} />
+      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
         <div className="space-y-3">

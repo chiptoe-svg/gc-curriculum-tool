@@ -38,6 +38,22 @@ The shape is:
     },
     ...
   ],
+  "incoming_expectations": [
+    {
+      "statement": "<one-sentence statement of what students arrive ABLE TO DO>",
+      "expected_depth": { "k": 0-5 or null, "u": 0-5 or null, "d": 0-5 },
+      "evidenced_by": [ "<assignment name + how it demands the skill>", ... ],
+      "confidence": "high" | "medium" | "low"
+    },
+    ...
+  ],
+  "verification_summary": {
+    "course_shape": "<1-2 sentences>",
+    "strongest_evidence": [ "<one-line bullet>", ... ],
+    "dimensional_patterns": [ "<one-line bullet>", ... ],
+    "catalog_vs_evidence": [ "<one-line bullet>", ... ],
+    "foundationals_glance": "<one sentence>"
+  },
   "audit_notes": {
     "prereq_gaps": [ "<finding>", ... ],
     "objective_misalignments": [ "<finding>", ... ],
@@ -144,6 +160,88 @@ competency cell. The four lists:
 
 Each entry is a one-sentence finding. Empty arrays are fine when there are
 no findings in that category.
+
+# Incoming expectations
+
+After scoring the competencies the course develops, identify what the course
+assumes students arrive ALREADY ABLE TO DO — the incoming skills its
+assignments demand without teaching. For each, produce a structured
+incoming-expectation entry.
+
+The `expected_depth` values express what depth the course assumes incoming
+students bring. A course that requires students to interpret CMYK separations
+on day-one assumes Know-4 / Understand-3 / Do-2 even though the course does
+not develop those depths itself. Use the same K/U/D depth anchors as the
+competencies (see depth-scale partial). Dispositions (Communication,
+Resilience, etc.) score on `d` only and have `k: null, u: null`.
+
+Constraints:
+
+- 0–10 entries. Most courses produce 3–6 if they have honest prereqs.
+- Each entry must cite at least one specific assignment in `evidenced_by`
+  that demands the skill. Without an assignment that depends on the skill,
+  do not include it as an expectation.
+- `confidence` reflects how clearly the assignments evidence the assumption.
+  - `high`: explicit dependence in graded work (rubric criterion, assignment
+    prompt requires the skill on day one).
+  - `medium`: strong inference from assignment language and sequence.
+  - `low`: soft signal in instructor language only, with little graded
+    evidence behind it.
+
+Do NOT include in `incoming_expectations`:
+
+- Skills the course itself teaches (those are competencies, not expectations).
+- Skills the catalog lists as prereqs but no assignment requires.
+- Skills the instructor mentioned aspirationally but the assignments don't
+  demand on day one.
+
+This list is consumed by downstream curriculum analysis ("does the prereq
+course produce what this course assumes?"). Keep it honest and grounded.
+
+# Verification summary
+
+After producing competencies, audit_notes, and incoming_expectations, produce
+a `verification_summary` block. This summary is NOT a TL;DR — it is a
+fidelity check that helps the instructor decide whether the captured profile
+accurately describes the course. The instructor reads each section and asks
+"yes, that's my course" or "no, the system missed something."
+
+Hard length cap: 300 words across the whole block.
+
+Sections:
+
+**`course_shape`** — 1–2 sentences. What kind of work the course develops,
+based on where the K/U/D scores cluster. Name the one or two assignments
+that anchor the deepest development. Example: "Strongly hands-on color
+measurement course; the Brand Color Report and Spectrophotometer SOP
+anchor the deepest D4–5 evidence."
+
+**`strongest_evidence`** — 3–5 single-line bullets. Competencies that
+reached D=4 or D=5. Format each bullet as:
+`{Competency statement, ≤15 words} — D{N} via {Assignment name}`.
+
+**`dimensional_patterns`** — 0–4 single-line bullets. Where K/U/D diverge
+meaningfully for a competency:
+- K-high with U-low = vocabulary without rationale
+- D-high with U-low = craft without articulation
+- U-high with D-low = theory without craft
+- K1-only = mentioned, never engaged
+
+Cite the specific competency. Omit the array entirely if no patterns stand
+out.
+
+**`catalog_vs_evidence`** — 0–4 single-line bullets. The most concrete items
+from `audit_notes` (prereq_gaps, objective_misalignments,
+cross_source_conflicts). Name the specific objective number, prereq skill,
+or source pair. Omit if `audit_notes` is essentially empty.
+
+**`foundationals_glance`** — one sentence. Which of Agency, Attention to
+Detail, Resilience, Curiosity, Communication scored D=0 (course does not
+develop) and which scored D=4 or D=5 (strongly developed). Skip the middle.
+
+Do NOT include recommendations, proposed changes, or speculation in any
+section. Strict description only — recommendations belong in the Explore
+module, not in this summary.
 
 # Tone of rationale fields
 

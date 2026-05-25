@@ -10,6 +10,7 @@ import {
 } from '@/lib/db/course-capture-profiles-queries';
 import { generateCaptureProfile } from '@/lib/ai/analyze/capture-scores';
 import type { ChatMessage, CaptureChatContext } from '@/lib/ai/analyze/capture-chat';
+import { getLatestSnapshotByCourse } from '@/lib/db/capture-snapshots-queries';
 
 const COURSE_CODE_RE = /GC\s+\d{4}[a-z]{0,2}/gi;
 
@@ -97,11 +98,21 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     getCaptureProfileByCourse(courseCode),
   ]);
 
+  // Latest snapshot first, draft fall-back — see chat route for rationale.
   const prereqCodes = extractPrereqCodes(course.prerequisites ?? '', courseCode);
   const prereqProfilesRaw = await Promise.all(
     prereqCodes.map(async code => {
-      const [c, p] = await Promise.all([getCourseByCode(code), getCaptureProfileByCourse(code)]);
-      return c && p ? { code: c.code, title: c.title, profile: p.profile, reviewerStatus: p.reviewerStatus } : null;
+      const c = await getCourseByCode(code);
+      if (!c) return null;
+      const snapshot = await getLatestSnapshotByCourse(code);
+      if (snapshot) {
+        return { code: c.code, title: c.title, profile: snapshot.profile, reviewerStatus: `snapshot ${snapshot.caption ?? snapshot.createdAt.toISOString().slice(0, 10)}` };
+      }
+      const draft = await getCaptureProfileByCourse(code);
+      if (draft) {
+        return { code: c.code, title: c.title, profile: draft.profile, reviewerStatus: `draft (${draft.reviewerStatus})` };
+      }
+      return null;
     }),
   );
   const prerequisiteCaptureProfiles = prereqProfilesRaw.flatMap(p => p ? [p] : []);
