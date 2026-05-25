@@ -248,7 +248,7 @@
   <div class="step">
     <div class="step-num">3</div>
     <div class="step-body">
-      <strong>Upload anything else.</strong> Drag-and-drop rubrics, project briefs, lab handouts, exam keys, syllabus PDFs. Supported: PDF, DOCX, TXT, MD. The auditor reads the extracted text and uses it as direct evidence.
+      <strong>Upload anything else.</strong> Drag-and-drop rubrics, project briefs, lab handouts, exam keys, syllabus PDFs. Supported: PDF, DOCX, PPTX, XLSX, CSV, HTML, images (PNG/JPG, OCR'd), TXT, MD. Legacy Office formats (<code>.doc</code>, <code>.ppt</code>, <code>.xls</code>) are auto-converted via LibreOffice headless on upload. The auditor reads the extracted text and uses it as direct evidence.
     </div>
   </div>
 
@@ -259,9 +259,21 @@
     </div>
   </div>
 
+  <div class="step">
+    <div class="step-num">5</div>
+    <div class="step-body">
+      <strong>Re-extract Canvas files (optional).</strong> If the extraction pipeline has been upgraded since your last import — for example, after the LAN deploy turned on figure descriptions, or after legacy Office support was added — click <strong>Re-extract Canvas files</strong> on the Materials panel. Paste your Canvas token when prompted; every Canvas file attachment for this course is re-run through the current extractor in place, so existing rows pick up the better text without you having to re-import.
+    </div>
+  </div>
+
   <div class="callout warn">
     <div class="callout-title">Heads up — content the system can't read</div>
-    <p>The Canvas import is <strong>plain text only</strong> from syllabus, assignment descriptions, and module item titles. It does <em>not</em> read: any video content (YouTube, Vimeo, Panopto, Canvas Studio, Loom, Kaltura), Canvas Pages content (only their titles), the contents of Canvas file attachments (only filenames), quiz question text, discussion replies, or external LTI tool content. The auditor will notice references to these in the materials it <em>can</em> read and surface each one with its title or URL — but the scoring will stay conservative until you tell it what's in the inaccessible content.</p>
+    <p>The Canvas import pulls the syllabus body, assignment descriptions and rubrics, module item titles, Canvas Pages content, and Canvas file attachments (PDF/DOCX/PPTX/XLSX/CSV/HTML/image are extracted server-side; legacy Office formats are auto-converted first). It does <em>not</em> read: any video content (YouTube, Vimeo, Panopto, Canvas Studio, Loom, Kaltura), quiz question text, discussion replies, or external LTI tool content. The auditor will notice references to these in the materials it <em>can</em> read and surface each one with its title or URL — but the scoring will stay conservative until you tell it what's in the inaccessible content.</p>
+  </div>
+
+  <div class="callout note">
+    <div class="callout-title">Figure descriptions on the LAN deploy</div>
+    <p>On the faculty Mac deploy, the PDF extractor (Docling) is paired with a local vision-language model that writes a one- or two-sentence description for each chart, diagram, or figure into the extracted markdown. This closes a real evidence gap on lecture slides and research papers, where meaning often lives in the figure rather than the prose. The Vercel deploy uses a text-only extractor and won't include figure descriptions.</p>
   </div>
 
   <h3>What "good enough" looks like at this stage</h3>
@@ -341,6 +353,9 @@
   <h3>Review the editor</h3>
   <p>Every depth value is editable: sliders adjust K, U, or D per competency, with evidence excerpts visible next to each cell. If a depth value looks wrong, edit it directly and note why in the rationale field. The audit notes section accepts edits too — keep what's useful, discard what isn't.</p>
 
+  <h3>Closing prerequisite gaps back into the catalog</h3>
+  <p>Each surfaced prerequisite gap in the audit notes carries a <strong>merge into skills</strong> button. Click it and the AI decomposes the gap into KUD+-tagged competencies, merges them with the course's existing Skills/Competencies Required list, and shows the unified replacement list inline (with new and clarified items color-coded). Hit <strong>copy merged list</strong> and paste it back into your course's Skills/Competencies Required cell on the shared sheet — that closes the loop between what the audit found missing and what the catalog says students need to arrive with. Re-clicking the button re-runs the merge if you've reworded the gap in the meantime.</p>
+
   <h3>Save Snapshot</h3>
   <p>Click <strong>Save Snapshot</strong> when the profile is faithful enough to publish. This writes an immutable, versioned record to the database, timestamped and tagged with the AI model that produced it. Snapshots are the historical record; the draft profile remains mutable for further edits. You can save multiple snapshots over time — each snapshot represents a confirmed view of the course at that point.</p>
 
@@ -361,6 +376,8 @@
 
   <h3>When to re-capture</h3>
   <p>Re-capture when something material has changed: a new project added, a major rubric overhauled, the prerequisites revised, the syllabus restructured. Cosmetic changes (a tightened sentence in the description) don't warrant a new snapshot. The Program Coverage Matrix automatically rescores against the newest snapshot per course, so a re-capture propagates into program-level views without further action.</p>
+
+  <p>Re-importing from Canvas before a re-capture is safe — file attachments upsert by <code>(course, fileName)</code>, so existing rows are updated in place rather than duplicated. You don't need to clear old materials before clicking <strong>Import from Canvas</strong> again.</p>
 </section>
 
 <section id="ex-modes">
@@ -546,7 +563,7 @@
     <li><strong>Not a replacement for faculty judgment.</strong> The auditor drafts, the instructor confirms. Every depth value is editable; every recommendation is a starting point.</li>
     <li><strong>Not career-path alignment in Explore.</strong> Career destinations are addressed in the Program Coverage Matrix (live at <code>/program</code>) — Explore's career-path mode is deferred until graduate-outcome data is wired in.</li>
     <li><strong>Not a snapshot diff.</strong> You can read multiple snapshots side by side from the Snapshots panel, but the system doesn't yet produce a structured diff highlighting what changed between captures. That's a planned Phase 2 view.</li>
-    <li><strong>Not extensible to video / Canvas Pages / file-attachment content automatically.</strong> Those are flagged as inaccessible references; the auditor will ask you what's in them, but the system can't read them itself in the current build.</li>
+    <li><strong>Not extensible to video, quiz-question text, or external-tool content automatically.</strong> Those are flagged as inaccessible references; the auditor will ask you what's in them, but the system can't read them itself in the current build. (Canvas Pages and file attachments <em>are</em> read in the current build — those used to be inaccessible and are no longer.)</li>
   </ul>
 
   <p>For the underlying framework — what K/U/D depth means, why the scoring is structured this way, what counts as evidence — see the <a href="./background.html">KUD+ Background document</a>. For the program's overall direction and what's coming next, see the <a href="./superpowers/vision/gc-curriculum-tool-vision.html">Vision document</a>.</p>
