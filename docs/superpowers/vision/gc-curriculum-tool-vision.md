@@ -8,7 +8,7 @@
 
 ## What we're building
 
-Working backwards from career destinations and upwards from foundational courses — a living view of where the two meet, where the scaffolding holds, and where the curriculum has drifted.
+Working backwards from career destinations and upwards from foundational courses — a periodically-refreshed view of where the two meet, where the scaffolding holds, and where the curriculum has drifted. The end state below is genuinely living (changes propagate automatically as courses are re-captured); the current build is closer to a manually-refreshed snapshot grid, with the self-updating machinery scheduled for Phase 2. The framing throughout the document is honest about which version is being described in each section.
 
 > **Q1.** *How well does the GC curriculum build students toward the careers we claim to prepare them for?*
 
@@ -30,7 +30,7 @@ The tool maps both layers. Clusters get explicit coverage analysis; foundational
 
 ## The 3-Act program
 
-Underneath the career-target framework sits the program's own mental model: GC unfolds as a three-act progression — students learn the field, integrate the field, then apply a focus. The tool reads each course in light of where it sits in this progression.
+Underneath the career-target framework sits the program's own mental model: GC unfolds as a three-act progression — students learn the field, integrate the field, then apply a focus. The tool reads each course in light of where it sits in this progression. The 3-Act structure is a working organizing model adopted by the program coordinator and faculty leadership; it is not formally enshrined in catalog language, but it is the structure used to organize course planning and accreditation narrative. The scaffolding analysis treats act boundaries as analytical waypoints; if the structure is refined or replaced, the scaffolding-diagnosis logic is revised accordingly.
 
 **Act 1 — Foundations & Agency.** *Learn the field.* Design & Typography, Production Art, Brand Strategy, AI as a Toolkit, Business Tools, Narrow Design & Execution.
 
@@ -96,7 +96,7 @@ In an illustrative 15-course slice: Production & Ops is the densest column (11 c
 
 - **A starting point for accreditation and advisory-board conversations.** Industry partners can see what the program actually delivers; the program can see what industry says is missing.
 
-- **Defense against drift.** Curricula erode over decades. The tool surfaces erosion as it happens, instead of every seven-year program review.
+- **Defense against drift.** Curricula erode over decades. Each captured snapshot is a dated record of what a course developed at a moment in time, and the snapshot system is designed so that cross-snapshot comparison surfaces erosion at the pace of re-captures rather than at the pace of every seven-year program review. The cross-snapshot diff that operationalizes this comparison is Phase 2 work; what the system can do today is hold the snapshots that will, over time, accumulate into the comparison.
 
 ## What's live now
 
@@ -104,11 +104,29 @@ Five surfaces are in production. The M-trial slice that originally demonstrated 
 
 - **`/preview/<slug>` — M-trial.** The original three-tool prototype (Course Builder, Prereq Analyzer, Career Target Alignment) remains live. Pick a course, add prior courses, pick a target; the AI drafts KUD outcomes, scores coverage, judges scaffolding, identifies gaps. Every judgment is expandable; flags persist.
 - **`/capture/<code>` — CourseCapture.** The instructor-facing audit conversation that produces a Course Outcome Profile. Pulls catalog + uploads + Canvas (assignments, pages, discussions, quizzes — Classic and New Quizzes APIs — file attachments) + linked Google Docs/Slides/Sheets + Drive PDFs + YouTube captions. Voice input via Whisper. Snapshots are immutable and versioned; the draft remains mutable.
-- **`/program` — Program Coverage Matrix.** Confirmed snapshots × career-target sub-competencies, rendered as a depth-aware heat map. On-demand AI scoring per cell; full rationale and evidence excerpt visible in a drawer. This is the realization of the coverage-matrix view described in the end state above.
+- **`/program` — Program Coverage Matrix.** Confirmed snapshots × career-target sub-competencies, rendered as a depth-aware heat map. On-demand AI scoring per cell; full rationale and evidence excerpt visible in a drawer. This is the coverage-matrix view from the end state, in a snapshot-grid form — the self-updating machinery and the cross-snapshot diff that would make it a true "living" view are Phase 2 work.
 - **`/explore` — Explore module.** Alignment analyses (custom target / downstream target) and what-if scenarios run against any saved snapshot.
 - **`/settings` — Per-function AI model tuning.** Tier-based selection (Light / Default / Heavy) plus per-function model dropdowns sourced from the OpenAI provider's available models.
 
 The point of the trial period is unchanged: confirm that *the analysis is good enough to be useful*. If faculty find the readings credible, defensible, and worth disputing on the merits, the remaining Phase 1 views (scaffolding, prerequisite gaps, advising) become the next implementation work.
+
+## Operational realities
+
+A research tool that runs on real institutional data sits inside an institutional context, and the Vision should be honest about the parts of that context that determine whether the tool will actually be useful.
+
+**Career-target governance.** The five named destinations — Account Management, Brand Strategy, Production & Operations, Creative Generalist / AI-Native, AI Workflow / Orchestrator — were established through faculty judgment informed by advisory-board conversations and a scan of typical entry-level job postings in the field. They are a working set, not the result of a formal labor-market study; the framework treats them as research input rather than ground truth. Authority to revise the set sits with the faculty leading each track plus the program coordinator; advisory-board feedback over time is expected to refine the descriptors and possibly add or retire targets. When a sub-competency descriptor changes, the existing coverage scores against that target become stale — the system marks them for re-scoring rather than silently invalidating them. Cross-target stability is not guaranteed; it is a working hypothesis that we'll know more about after the first year of use.
+
+**Faculty engagement model.** The coverage matrix is only as complete as the set of confirmed snapshots. CourseCapture sessions are voluntary in the trial period, with department-level coordination by the program coordinator and the curriculum committee chair. The trial is being run with a cohort of faculty who have agreed to capture their courses; if participation across the full 28-course program remains incomplete, the matrix renders the missing courses as unscored rather than imputing values — partial participation produces a partial matrix, not a misleadingly complete one. The plan for low participation is incremental: the tool's usefulness has to be demonstrable on the courses that *are* captured before broader adoption is requested.
+
+**Relationship to the curriculum committee.** The curriculum committee retains all authority over curriculum changes. This tool is designed to inform that body's deliberations — by surfacing patterns, gaps, and conflicts that gut-intuition curriculum review tends to miss — not to replace its judgment or sidestep its process. A proposed curriculum change still goes through the committee; what the tool adds is the ability to bring evidence-grounded readings into the conversation and to model the proposed change's coverage impact before the committee votes.
+
+**When the AI is wrong.** Faculty will sometimes disagree with the AI's reading of their own course. The framework's commitment is that disagreements persist (as flags) rather than vanishing into a button click — and that flagged cells are not silently overwritten in future re-scores. The full dispute-resolution workflow (who reviews flags, how they affect downstream views, how systematic patterns of disagreement update the AI's prompts) is Phase 2 work; in the trial period, flags are reviewed by the project maintainer and surfaced to the curriculum committee as patterns rather than per-cell rulings.
+
+**Snapshot governance.** Each captured snapshot is owned by the faculty member who confirmed it, visible to the program coordinator and the curriculum committee, and retained as part of the program's longitudinal record. A faculty member who wants a snapshot retired can request retirement; retired snapshots are soft-deleted (removed from downstream views) but not purged, so the historical trail remains. Department leadership and individual faculty share ownership of the data; this is a working policy the framework expects to refine.
+
+**Cost.** AI scoring has a quantifiable per-pair cost (roughly $0.04 per snapshot-target cell at current model defaults; ~$5 for a full program-wide refresh against five targets and ~30 courses). Recurring re-scoring at end-of-semester cadence is well within typical departmental software budgets. The tool optimizes for prompt-cache reuse to keep this number low; the function-tier settings page (`/settings`) lets the program tune cost-per-call against analytical depth on a per-function basis.
+
+**Failure modes.** The most consequential failure mode is systematic over-scoring (the coverage matrix shows healthier coverage than the program actually delivers, and the program adopts the misleading reading for accreditation or advising purposes). The framework's mitigations are the evidence rule (every above-zero score requires a citable excerpt), the dispute trail (faculty can flag and contest cells), and the deliberately conservative scoring discipline built into the AI prompts. Even with those, the tool is not infallible; a recurring audit of the most consequential cells against actual student work and graduate-outcome data is the long-term validation path described in the Validation proposal.
 
 ### Trial period
 
