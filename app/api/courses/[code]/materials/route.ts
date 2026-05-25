@@ -13,10 +13,17 @@ import { SUPPORTED_MIME_TYPES, LEGACY_OFFICE_MIME_TYPES } from '@/lib/courses/ma
 export const maxDuration = 120;
 
 const MAX_SIZE_BYTES = 15 * 1024 * 1024; // 15 MB
-// Allowlist is the source of truth for what the upload route accepts.
-// Mirror of lib/courses/material-extractor's SUPPORTED_MIME_TYPES so a
-// rejection here can never disagree with what the extractor would accept.
-const ALLOWED_MIME_TYPES = new Set<string>(SUPPORTED_MIME_TYPES);
+// Allowlist combines modern formats (handled directly by the extractor)
+// with legacy Office formats (transparently converted via LibreOffice in
+// extract-text.ts when soffice is on PATH — local Mac only). Vercel can
+// accept the legacy uploads too, but extraction will fail with a clear
+// error message; rejecting at the upload layer would surface the same
+// error earlier but with less context. Letting it through and failing in
+// extraction is fine.
+const ALLOWED_MIME_TYPES = new Set<string>([
+  ...SUPPORTED_MIME_TYPES,
+  ...LEGACY_OFFICE_MIME_TYPES,
+]);
 
 interface RouteContext {
   params: Promise<{ code: string }>;
@@ -60,24 +67,11 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     return NextResponse.json({ error: 'file field is required' }, { status: 400 });
   }
   if (!ALLOWED_MIME_TYPES.has(file.type)) {
-    // Give legacy Office formats a specific, helpful error instead of
-    // the generic "unsupported" message — most affected users just need
-    // to re-save in the modern format.
-    if (LEGACY_OFFICE_MIME_TYPES.has(file.type)) {
-      return NextResponse.json(
-        {
-          error:
-            `Legacy Office format (${file.type}) is not supported. ` +
-            `Please re-save as .docx, .pptx, or .xlsx and upload again.`,
-        },
-        { status: 400 },
-      );
-    }
     return NextResponse.json(
       {
         error:
-          `Unsupported MIME type: ${file.type}. Allowed: PDF, DOCX, PPTX, XLSX, CSV, HTML, PNG, JPG. ` +
-          `Note: PPTX/XLSX/CSV/HTML/image uploads require the local Docling pipeline (Phase 2 hybrid deploy).`,
+          `Unsupported MIME type: ${file.type}. Allowed: PDF, DOCX/DOC, PPTX/PPT, XLSX/XLS, CSV, HTML, PNG, JPG. ` +
+          `PPTX/XLSX/CSV/HTML/image and legacy .doc/.ppt/.xls require the local Docling + LibreOffice pipeline (Phase 2 hybrid deploy).`,
       },
       { status: 400 },
     );

@@ -6,7 +6,26 @@ import { insertMaterial, updateExtractionResult, findMaterialByFileName, updateM
 import { parseCanvasUrl } from '@/lib/canvas/parseCanvasUrl';
 import { fetchCanvasCourse, fetchCanvasFileMeta } from '@/lib/canvas/fetchCanvasCourse';
 import { htmlToText } from '@/lib/canvas/htmlToText';
-import { extractText } from '@/lib/courses/extract-text';
+import { extractText, SUPPORTED_MIME_TYPES, type ExtractedMimeType } from '@/lib/courses/extract-text';
+import { isLegacyOfficeMime } from '@/lib/courses/legacy-converter';
+
+// Extension-to-MIME map used as a fallback when Canvas reports an empty or
+// generic content-type. Mirrors the one in scripts/backfill-canvas-file-mime-types.ts.
+const EXT_TO_MIME: Record<string, string> = {
+  pdf: 'application/pdf',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  doc: 'application/msword',
+  pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  ppt: 'application/vnd.ms-powerpoint',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  xls: 'application/vnd.ms-excel',
+  csv: 'text/csv',
+  html: 'text/html',
+  htm: 'text/html',
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+};
 
 export const maxDuration = 120;
 
@@ -212,12 +231,20 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
       fileResults.push({ id: fileId, status: 'failed', reason: 'metadata not accessible' });
       continue;
     }
-    const mime = meta.mimeType.toLowerCase();
+    // Resolve the file's MIME — prefer Canvas's reported type, fall back to
+    // extension-derived. Then accept anything our extractor or the
+    // LibreOffice legacy converter handles.
+    const reportedMime = meta.mimeType?.toLowerCase() || '';
     const ext = (meta.displayName.split('.').pop() ?? '').toLowerCase();
-    const isPdf = mime.includes('pdf') || ext === 'pdf';
-    const isDocx = mime.includes('officedocument') || ext === 'docx';
-    if (!isPdf && !isDocx) {
-      fileResults.push({ id: fileId, status: 'skipped', fileName: meta.displayName, reason: `unsupported type: ${meta.mimeType || ext}` });
+    const resolvedMime =
+      (reportedMime && reportedMime !== 'application/octet-stream' ? reportedMime : null)
+      ?? EXT_TO_MIME[ext]
+      ?? reportedMime;
+
+    const isSupported = (SUPPORTED_MIME_TYPES as readonly string[]).includes(resolvedMime);
+    const isLegacy = isLegacyOfficeMime(resolvedMime);
+    if (!isSupported && !isLegacy) {
+      fileResults.push({ id: fileId, status: 'skipped', fileName: meta.displayName, reason: `unsupported type: ${resolvedMime || ext}` });
       continue;
     }
     if (meta.sizeBytes > MAX_FILE_BYTES) {
@@ -231,19 +258,19 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
         continue;
       }
       const buffer = Buffer.from(await dl.arrayBuffer());
-      const mimeForExtract = isPdf
-        ? 'application/pdf' as const
-        : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' as const;
-      const result = await extractText({ fileBytes: buffer, mimeType: mimeForExtract, fileName: meta.displayName });
+      // extractText handles legacy → modern conversion internally via
+      // LibreOffice. We pass the real MIME (legacy or modern) and let it
+      // dispatch.
+      const result = await extractText({
+        fileBytes: buffer,
+        mimeType: resolvedMime as ExtractedMimeType,
+        fileName: meta.displayName,
+      });
       if (result.status !== 'ok' || !result.text) {
         fileResults.push({ id: fileId, status: 'failed', fileName: meta.displayName, reason: `extraction ${result.status}` });
         continue;
       }
-      // meta.mimeType is the file's real type from the Canvas /files API
-      // (e.g., application/pdf). When Canvas reports an empty/odd value we
-      // fall back to the extension-derived mime we used for extraction.
-      const fileMimeType = meta.mimeType || mimeForExtract;
-      toInsert.push({ fileName: `Canvas File: ${meta.displayName}`, text: result.text, mimeType: fileMimeType });
+      toInsert.push({ fileName: `Canvas File: ${meta.displayName}`, text: result.text, mimeType: resolvedMime });
       fileResults.push({ id: fileId, status: 'ok', fileName: meta.displayName });
     } catch (e) {
       fileResults.push({ id: fileId, status: 'failed', fileName: meta.displayName, reason: e instanceof Error ? e.message : 'fetch error' });

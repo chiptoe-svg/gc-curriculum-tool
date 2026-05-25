@@ -17,9 +17,10 @@ interface Props {
   onUploaded: (material: UploadedMaterial) => void;
 }
 
-// Mirrors lib/courses/material-extractor's SUPPORTED_MIME_TYPES. PDF and
-// DOCX work on the Vercel deploy via unpdf/mammoth; PPTX/XLSX/CSV/HTML/
-// image require the local Docling pipeline (Phase 2 hybrid deploy).
+// Mirrors lib/courses/material-extractor's SUPPORTED_MIME_TYPES plus the
+// LEGACY_OFFICE_MIME_TYPES that the local extract-text pipeline converts
+// via LibreOffice. PDF + DOCX work on the Vercel deploy; everything else
+// requires the local Docling + LibreOffice pipeline (Phase 2 hybrid deploy).
 const ALLOWED_TYPES = new Set([
   'application/pdf',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -29,6 +30,10 @@ const ALLOWED_TYPES = new Set([
   'text/html',
   'image/png',
   'image/jpeg',
+  // Legacy Office — converted in extract-text via LibreOffice headless.
+  'application/msword',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.ms-excel',
 ]);
 
 interface UploadState {
@@ -51,8 +56,7 @@ export function UploadZone({ courseCode, slug, onUploaded }: Props) {
     if (!ALLOWED_TYPES.has(file.type)) {
       setTypeError(
         `Unsupported file type (${file.type || 'unknown'}). ` +
-        `Accepted: PDF, DOCX, PPTX, XLSX, CSV, HTML, PNG, JPG. ` +
-        `Legacy .doc/.ppt/.xls aren't supported — re-save as the modern format.`,
+        `Accepted: PDF, DOCX/DOC, PPTX/PPT, XLSX/XLS, CSV, HTML, PNG, JPG.`,
       );
       return;
     }
@@ -104,7 +108,7 @@ export function UploadZone({ courseCode, slug, onUploaded }: Props) {
         >
           browse
         </button>{' '}
-        to upload assignment materials (PDF, DOCX, PPTX, XLSX, CSV, HTML, PNG, JPG · max 15 MB per file)
+        to upload assignment materials (PDF, DOCX/DOC, PPTX/PPT, XLSX/XLS, CSV, HTML, PNG, JPG · max 15 MB per file)
       </p>
 
       <input
@@ -116,6 +120,9 @@ export function UploadZone({ courseCode, slug, onUploaded }: Props) {
           'application/vnd.openxmlformats-officedocument.wordprocessingml.document', '.docx',
           'application/vnd.openxmlformats-officedocument.presentationml.presentation', '.pptx',
           'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', '.xlsx',
+          'application/msword', '.doc',
+          'application/vnd.ms-powerpoint', '.ppt',
+          'application/vnd.ms-excel', '.xls',
           'text/csv', '.csv',
           'text/html', '.html', '.htm',
           'image/png', '.png',

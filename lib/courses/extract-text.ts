@@ -12,6 +12,7 @@
  */
 
 import { getExtractorFor, SUPPORTED_MIME_TYPES } from '@/lib/courses/material-extractor';
+import { isLegacyOfficeMime, convertLegacyToModern } from '@/lib/courses/legacy-converter';
 import { getProvider } from '@/lib/ai/provider';
 
 // Re-export the supported-types list and type name so callers (upload
@@ -47,7 +48,23 @@ const MIN_MEANINGFUL_CHARS = 10;
 const VISION_PAGE_CAP = 40;
 
 export async function extractText(args: ExtractTextArgs): Promise<ExtractTextResult> {
-  const { fileBytes, mimeType, fileName } = args;
+  let { fileBytes, mimeType, fileName } = args;
+
+  // Legacy Office files (.doc / .ppt / .xls): convert to modern equivalent
+  // via LibreOffice headless, then continue as if the upload had been
+  // modern. Only works when soffice is on PATH (local Mac deploy).
+  // Failure here returns status=failed; the upload row stays visible
+  // with a 'failed' badge so faculty know to re-save manually.
+  if (isLegacyOfficeMime(mimeType)) {
+    try {
+      const converted = await convertLegacyToModern(fileBytes, mimeType, fileName);
+      fileBytes = converted.fileBytes;
+      mimeType = converted.mimeType as ExtractedMimeType;
+      fileName = converted.fileName;
+    } catch {
+      return { status: 'failed' };
+    }
+  }
 
   // Pick the backend up front. If the configuration doesn't support this
   // type (e.g., PPTX requested without PDF_PARSER=docling), the factory
