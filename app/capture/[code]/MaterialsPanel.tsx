@@ -300,7 +300,64 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
   const [materialsCollapsed, setMaterialsCollapsed] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [scanMessage, setScanMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
+  // Re-extract Canvas files: shows an inline token prompt when opened,
+  // posts to /canvas-reextract, refreshes materials on success. Token
+  // never persists — re-prompted each time.
+  const [reextractOpen, setReextractOpen] = useState(false);
+  const [reextractToken, setReextractToken] = useState('');
+  const [reextracting, setReextracting] = useState(false);
+  const [reextractMessage, setReextractMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  async function handleReextractCanvasFiles() {
+    if (!reextractToken.trim()) {
+      setReextractMessage({ kind: 'error', text: 'Canvas API token is required.' });
+      return;
+    }
+    setReextracting(true);
+    setReextractMessage(null);
+    try {
+      const res = await fetch(
+        `/api/courses/${encodeURIComponent(course.code)}/canvas-reextract`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ slug, canvasToken: reextractToken.trim() }),
+        },
+      );
+      const contentType = res.headers.get('content-type') ?? '';
+      if (!contentType.includes('application/json')) {
+        const text = await res.text();
+        setReextractMessage({
+          kind: 'error',
+          text: `Server returned ${res.status} with non-JSON response. ${text.length < 200 ? text : 'Check server logs.'}`,
+        });
+        return;
+      }
+      const json = await res.json() as {
+        updated?: number;
+        skipped?: number;
+        results?: Array<{ fileName: string; status: string; reason?: string }>;
+        error?: string;
+      };
+      if (!res.ok) {
+        setReextractMessage({ kind: 'error', text: json.error ?? `Re-extract failed (${res.status})` });
+        return;
+      }
+      const upd = json.updated ?? 0;
+      const skp = json.skipped ?? 0;
+      const parts = [`re-extracted ${upd} file${upd === 1 ? '' : 's'}`];
+      if (skp > 0) parts.push(`${skp} skipped`);
+      setReextractMessage({ kind: 'ok', text: parts.join(', ') + '.' });
+      setReextractToken('');
+      setReextractOpen(false);
+      await refetchMaterialsFromContext();
+    } catch (e) {
+      setReextractMessage({ kind: 'error', text: e instanceof Error ? e.message : 'Re-extract failed' });
+    } finally {
+      setReextracting(false);
+    }
+  }
 
   async function handleScanLinkedDocs() {
     setScanning(true);
@@ -576,6 +633,17 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
                 </span>
               </button>
               <div className="flex items-center gap-2">
+                {materials.some(isCanvasFileMaterial) && (
+                  <button
+                    type="button"
+                    onClick={() => setReextractOpen(o => !o)}
+                    disabled={reextracting}
+                    title="Re-extract every Canvas file attachment in this course through the current extraction pipeline. Useful after upgrading the extractor (e.g., switching to Docling) so existing rows pick up the better output."
+                    className="rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
+                  >
+                    {reextracting ? 'Re-extracting…' : (reextractOpen ? 'Cancel re-extract' : 'Re-extract Canvas files')}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={handleScanLinkedDocs}
@@ -601,6 +669,36 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
                   <p className={'border-b px-3 py-1.5 text-[11px] ' + (scanMessage.kind === 'ok' ? 'text-green-700 bg-green-50' : 'text-destructive bg-red-50')}>
                     {scanMessage.text}
                   </p>
+                )}
+                {reextractMessage && (
+                  <p className={'border-b px-3 py-1.5 text-[11px] ' + (reextractMessage.kind === 'ok' ? 'text-green-700 bg-green-50' : 'text-destructive bg-red-50')}>
+                    {reextractMessage.text}
+                  </p>
+                )}
+                {reextractOpen && (
+                  <div className="border-b bg-muted/30 px-3 py-2 space-y-2">
+                    <label className="block text-[11px] text-muted-foreground" htmlFor="reextract-token">
+                      Canvas API token (used once, not stored). Same token as for &quot;Import from Canvas&quot;.
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        id="reextract-token"
+                        type="password"
+                        value={reextractToken}
+                        onChange={e => setReextractToken(e.target.value)}
+                        placeholder="Your Canvas access token"
+                        className="flex-1 rounded border border-input bg-background px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleReextractCanvasFiles}
+                        disabled={reextracting || !reextractToken.trim()}
+                        className="rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {reextracting ? 'Re-extracting…' : 'Start'}
+                      </button>
+                    </div>
+                  </div>
                 )}
                 {materials.length === 0 ? (
                   <p className="px-3 py-6 text-center text-xs italic text-muted-foreground">
