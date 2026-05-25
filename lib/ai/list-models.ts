@@ -21,6 +21,7 @@ const EXCLUDE_PATTERNS: RegExp[] = [
   /whisper/i,
   /tts/i,
   /dall-?e/i,
+  /-image|^gpt-image/i,    // image-generation models (gpt-image-2 etc.)
   /-instruct$/i,
   /-audio/i,
   /-search/i,
