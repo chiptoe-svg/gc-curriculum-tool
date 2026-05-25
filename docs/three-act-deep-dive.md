@@ -177,24 +177,6 @@ Three questions the framework's data collection over time will eventually be abl
 
 3. **Are act boundaries the right diagnostic waypoints?** The brittle-scaffold diagnostic uses the 3-Act boundaries. An alternative analysis might use Bloom-level transitions, Dreyfus-stage transitions, or course-prerequisite-graph cut-points. The framework's data shape is compatible with running these alternative diagnostics in parallel; doing so as the snapshot corpus accumulates would test whether the act-boundary framing is doing analytical work the alternatives don't.
 
-## Part VII — What this document changes about the framework
-
-Six commitments that this research synthesis (with the adversarial review applied) updates or makes explicit.
-
-1. **Stop claiming the 3-Act structure is "grounded in" curriculum theory.** It is *consistent with* established traditions, and *one principled instance* of multi-phase professional curriculum design. The honest framing strengthens the framework's credibility rather than weakening it.
-
-2. **Acknowledge that the "brittle scaffold" diagnostic is an application of prerequisite-network analysis, not a research-original concept.** The contribution is pairing it with depth-aware K/U/D scoring in a design curriculum.
-
-3. **Cite cognitive apprenticeship (Collins, Brown & Newman, 1989) as the structural response to the Lave & Wenger critique.** The framework's bet is that Act 1 instruction can approximate community-of-practice learning through deliberate apprenticeship-shaped pedagogy, with the productive-failure audit area as the evaluation surface.
-
-4. **Replace the SDT citation with self-regulated-learning citations where agency-as-developmental-outcome is the claim.** Zimmerman and Baxter Magolda treat agency as learnable and developmentally trajectoried in a way SDT does not. SDT remains a valid citation for the *motivational environment* logic of Act 1 design.
-
-5. **Treat the mid-Junior year timing as a working hypothesis, not as a derived claim.** The Vision's 3-Act paragraph already softens this; the framework's longitudinal data will eventually validate or revise.
-
-6. **Add act-boundary readiness criteria to the Phase 1B Scaffolding Analysis spec.** The prerequisite-transfer literature is clear that course completion is not a sufficient readiness signal. Phase 1B's diagnostic value depends on having readiness criteria that evaluate internalization, not just completion.
-
-These commitments do not change the 3-Act structure itself. They change how the framework defends, deploys, and refines it — making the defense more honest, the deployment more cognizant of its critiques, and the refinement more answerable to the framework's own data over time.
-
 ---
 
 ## References
