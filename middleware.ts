@@ -31,7 +31,9 @@ export async function middleware(req: NextRequest) {
       return new NextResponse('Authentication required.', {
         status: 401,
         headers: {
-          'WWW-Authenticate': 'Basic realm="GC Curriculum Tool — Faculty"',
+          // Realm string must be ASCII (HTTP header = ByteString).
+          // Hyphen, not em-dash; verified after a 500 on first launchd boot.
+          'WWW-Authenticate': 'Basic realm="GC Curriculum Tool - Faculty"',
         },
       });
     }
