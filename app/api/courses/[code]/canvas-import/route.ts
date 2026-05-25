@@ -72,10 +72,18 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
   }
 
   const ipHash = hashIp(req);
-  const toInsert: Array<{ fileName: string; text: string }> = [];
+  // Every item we insert carries its actual source MIME type. HTML-sourced
+  // content (Syllabus, Assignments, Pages, Discussions, Quizzes, Module
+  // List) stays text/html — that's literally where the text came from.
+  // Canvas File attachments record their real type (application/pdf,
+  // application/vnd.openxmlformats-officedocument.wordprocessingml.document,
+  // etc.) so we can filter, badge, and re-extract them later. Prior to
+  // 2026-05-25 every row was hard-coded text/html which made PDF
+  // attachments invisible to mimeType filters.
+  const toInsert: Array<{ fileName: string; text: string; mimeType: string }> = [];
 
   const syllabusText = htmlToText(data.course.syllabusHtml);
-  if (syllabusText) toInsert.push({ fileName: 'Canvas: Syllabus', text: syllabusText });
+  if (syllabusText) toInsert.push({ fileName: 'Canvas: Syllabus', text: syllabusText, mimeType: 'text/html' });
 
   if (data.assignments.length > 0) {
     const parts = data.assignments.map(a => {
@@ -107,7 +115,7 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
       return [header, desc, rubricBlock].filter(Boolean).join('\n');
     });
     const assignmentsText = parts.join('\n\n');
-    if (assignmentsText.trim()) toInsert.push({ fileName: 'Canvas: Assignments', text: assignmentsText });
+    if (assignmentsText.trim()) toInsert.push({ fileName: 'Canvas: Assignments', text: assignmentsText, mimeType: 'text/html' });
   }
 
   if (data.modules.length > 0) {
@@ -121,7 +129,7 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
       return `## ${m.name}\n${items}`;
     });
     const modulesText = parts.join('\n\n');
-    if (modulesText.trim()) toInsert.push({ fileName: 'Canvas: Module List', text: modulesText });
+    if (modulesText.trim()) toInsert.push({ fileName: 'Canvas: Module List', text: modulesText, mimeType: 'text/html' });
   }
 
   if (data.pages.length > 0) {
@@ -138,7 +146,7 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
       })
       .filter(Boolean);
     const pagesText = parts.join('\n\n---\n\n');
-    if (pagesText.trim()) toInsert.push({ fileName: 'Canvas: Pages', text: pagesText });
+    if (pagesText.trim()) toInsert.push({ fileName: 'Canvas: Pages', text: pagesText, mimeType: 'text/html' });
   }
 
   if (data.discussions.length > 0) {
@@ -155,7 +163,7 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
       })
       .filter(Boolean);
     const discussionsText = parts.join('\n\n---\n\n');
-    if (discussionsText.trim()) toInsert.push({ fileName: 'Canvas: Discussions', text: discussionsText });
+    if (discussionsText.trim()) toInsert.push({ fileName: 'Canvas: Discussions', text: discussionsText, mimeType: 'text/html' });
   }
 
   if (data.quizzes.length > 0) {
@@ -184,7 +192,7 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
       return lines.join('\n');
     });
     const quizzesText = parts.join('\n\n---\n\n');
-    if (quizzesText.trim()) toInsert.push({ fileName: 'Canvas: Quizzes', text: quizzesText });
+    if (quizzesText.trim()) toInsert.push({ fileName: 'Canvas: Quizzes', text: quizzesText, mimeType: 'text/html' });
   }
 
   // Reference-driven Canvas File attachments: scan everything we've extracted
@@ -231,7 +239,11 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
         fileResults.push({ id: fileId, status: 'failed', fileName: meta.displayName, reason: `extraction ${result.status}` });
         continue;
       }
-      toInsert.push({ fileName: `Canvas File: ${meta.displayName}`, text: result.text });
+      // meta.mimeType is the file's real type from the Canvas /files API
+      // (e.g., application/pdf). When Canvas reports an empty/odd value we
+      // fall back to the extension-derived mime we used for extraction.
+      const fileMimeType = meta.mimeType || mimeForExtract;
+      toInsert.push({ fileName: `Canvas File: ${meta.displayName}`, text: result.text, mimeType: fileMimeType });
       fileResults.push({ id: fileId, status: 'ok', fileName: meta.displayName });
     } catch (e) {
       fileResults.push({ id: fileId, status: 'failed', fileName: meta.displayName, reason: e instanceof Error ? e.message : 'fetch error' });
@@ -239,12 +251,12 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
   }
 
   const imported: Array<{ id: string; fileName: string }> = [];
-  for (const { fileName, text } of toInsert) {
+  for (const { fileName, text, mimeType } of toInsert) {
     const mat = await insertMaterial({
       courseCode: code,
       fileName,
       blobUrl: canvasUrl,
-      mimeType: 'text/html',
+      mimeType,
       sizeBytes: text.length,
       ipHash,
     });
