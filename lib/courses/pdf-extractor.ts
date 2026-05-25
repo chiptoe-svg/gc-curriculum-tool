@@ -51,38 +51,48 @@ class DoclingExtractor implements PdfExtractor {
   constructor(private readonly baseUrl: string) {}
 
   async extract(fileBytes: Buffer): Promise<PdfExtractorResult> {
-    // docling-serve v1alpha API: multipart upload, returns markdown by
+    // docling-serve v1 API: multipart upload, returns markdown by
     // default. We ask for markdown explicitly so the table reconstruction
-    // (which is docling's main draw over text-stream extractors) lands
-    // in the output as proper markdown tables.
+    // (docling's main draw over text-stream extractors) lands in the
+    // output as proper markdown tables.
+    //
+    // The response also reports status='failure' with errors[] inside a
+    // 200 envelope (e.g., MPS device errors on Apple Silicon when
+    // DOCLING_DEVICE=cpu isn't set), so we must check status alongside
+    // res.ok.
     const form = new FormData();
     const blob = new Blob([new Uint8Array(fileBytes)], { type: 'application/pdf' });
     form.append('files', blob, 'document.pdf');
     form.append('to_formats', 'md');
 
-    const url = `${this.baseUrl.replace(/\/$/, '')}/v1alpha/convert/file`;
+    const url = `${this.baseUrl.replace(/\/$/, '')}/v1/convert/file`;
     const res = await fetch(url, { method: 'POST', body: form });
     if (!res.ok) {
       const body = await res.text().catch(() => '');
       throw new Error(`docling-serve ${res.status}: ${body.slice(0, 200)}`);
     }
     const data = (await res.json()) as DoclingResponse;
+    if (data.status && data.status !== 'success') {
+      const reason = data.errors?.[0]?.error_message ?? 'unknown failure';
+      throw new Error(`docling-serve conversion failed: ${reason}`);
+    }
     const doc = data.document ?? {};
     const text = (doc.md_content ?? doc.text_content ?? '').trim();
-    // docling-serve reports page count via document metadata when
-    // present; fall back to counting page breaks in the markdown if not.
-    const pageCount =
-      doc.num_pages ??
-      (text ? Math.max(1, (text.match(/^---$/gm) ?? []).length + 1) : 0);
+    // docling-serve's ExportDocumentResponse doesn't surface page count
+    // directly when only markdown is requested. Best-effort count from
+    // common page-break separators ('---' on its own line); falls back
+    // to 1 for non-empty text, 0 for empty.
+    const pageCount = text ? Math.max(1, (text.match(/^---$/gm) ?? []).length + 1) : 0;
     return { text, pageCount };
   }
 }
 
 interface DoclingResponse {
+  status?: 'success' | 'failure' | string;
+  errors?: Array<{ error_message?: string; module_name?: string }>;
   document?: {
-    md_content?: string;
-    text_content?: string;
-    num_pages?: number;
+    md_content?: string | null;
+    text_content?: string | null;
   };
 }
 

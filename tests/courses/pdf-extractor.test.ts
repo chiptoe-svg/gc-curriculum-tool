@@ -72,39 +72,59 @@ describe('DoclingExtractor', () => {
     global.fetch = originalFetch;
   });
 
-  it('POSTs to /v1alpha/convert/file and returns md_content + num_pages', async () => {
+  it('POSTs to /v1/convert/file and returns md_content + heuristic page count', async () => {
     (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       status: 200,
-      json: async () => ({ document: { md_content: '  # Title\n\nBody', num_pages: 3 } }),
+      json: async () => ({
+        status: 'success',
+        document: { md_content: '  # Title\n\nBody' },
+      }),
     });
     const ext = new DoclingExtractor('http://localhost:5001');
     const result = await ext.extract(Buffer.from('%PDF-1.4 fake'));
     expect(result.text).toBe('# Title\n\nBody');
-    expect(result.pageCount).toBe(3);
+    expect(result.pageCount).toBe(1);
     const callArg = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0]?.[0];
-    expect(callArg).toBe('http://localhost:5001/v1alpha/convert/file');
+    expect(callArg).toBe('http://localhost:5001/v1/convert/file');
   });
 
   it('strips a trailing slash on baseUrl so we never double-slash', async () => {
     (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
-      json: async () => ({ document: { md_content: 'x', num_pages: 1 } }),
+      json: async () => ({ status: 'success', document: { md_content: 'x' } }),
     });
     const ext = new DoclingExtractor('http://localhost:5001/');
     await ext.extract(Buffer.from('fake'));
     const callArg = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0]?.[0];
-    expect(callArg).toBe('http://localhost:5001/v1alpha/convert/file');
+    expect(callArg).toBe('http://localhost:5001/v1/convert/file');
   });
 
-  it('falls back to text_content when md_content is absent', async () => {
+  it('falls back to text_content when md_content is null', async () => {
     (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
-      json: async () => ({ document: { text_content: 'plain text only', num_pages: 2 } }),
+      json: async () => ({
+        status: 'success',
+        document: { md_content: null, text_content: 'plain text only' },
+      }),
     });
     const result = await new DoclingExtractor('http://localhost:5001').extract(Buffer.from('fake'));
     expect(result.text).toBe('plain text only');
-    expect(result.pageCount).toBe(2);
+    expect(result.pageCount).toBe(1);
+  });
+
+  it('throws when docling returns status=failure inside a 200 envelope', async () => {
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        status: 'failure',
+        document: { md_content: null },
+        errors: [{ module_name: 'StandardPdfPipeline', error_message: 'MPS float64' }],
+      }),
+    });
+    await expect(
+      new DoclingExtractor('http://localhost:5001').extract(Buffer.from('fake')),
+    ).rejects.toThrow(/conversion failed.*MPS float64/);
   });
 
   it('throws on non-2xx response with a truncated error body', async () => {
@@ -125,10 +145,11 @@ describe('DoclingExtractor', () => {
     ).rejects.toThrow('ECONNREFUSED');
   });
 
-  it('counts pages from --- separators when num_pages is absent', async () => {
+  it('counts pages from --- separators in the markdown content', async () => {
     (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
       json: async () => ({
+        status: 'success',
         document: { md_content: 'page 1 text\n\n---\n\npage 2 text\n\n---\n\npage 3 text' },
       }),
     });
@@ -139,7 +160,7 @@ describe('DoclingExtractor', () => {
   it('returns pageCount=0 when the document is empty', async () => {
     (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
-      json: async () => ({ document: { md_content: '' } }),
+      json: async () => ({ status: 'success', document: { md_content: '' } }),
     });
     const result = await new DoclingExtractor('http://localhost:5001').extract(Buffer.from('fake'));
     expect(result.text).toBe('');
