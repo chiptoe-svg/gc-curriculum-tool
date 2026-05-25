@@ -21,6 +21,7 @@ interface ImportDetails {
   syllabusFound: boolean;
   assignments: string[];
   modules: string[];
+  pages: string[];
 }
 
 function ToggleList({ label, items }: { label: string; items: string[] }) {
@@ -54,6 +55,9 @@ function ImportSummary({ details }: { details: ImportDetails }) {
       {details.modules.length > 0 && (
         <ToggleList label={`✓ Module list (${details.modules.length} modules)`} items={details.modules} />
       )}
+      {details.pages.length > 0 && (
+        <ToggleList label={`✓ Pages (${details.pages.length})`} items={details.pages} />
+      )}
     </ul>
   );
 }
@@ -70,7 +74,7 @@ export function CanvasImportZone({ courseCode, slug, onImported, open: controlle
   const [canvasToken, setCanvasToken] = useState('');
   const [status, setStatus] = useState<'idle' | 'importing' | 'done' | 'error'>('idle');
   const [message, setMessage] = useState('');
-  const [importDetails, setImportDetails] = useState<{ syllabusFound: boolean; assignments: string[]; modules: string[] } | null>(null);
+  const [importDetails, setImportDetails] = useState<{ syllabusFound: boolean; assignments: string[]; modules: string[]; pages: string[] } | null>(null);
 
   async function handleImport() {
     setStatus('importing');
@@ -87,7 +91,7 @@ export function CanvasImportZone({ courseCode, slug, onImported, open: controlle
         setMessage((json as { error?: string }).error ?? `Import failed (${res.status})`);
         return;
       }
-      const data = json as { imported: number; materials: Array<{ id: string; fileName: string }>; details: { syllabusFound: boolean; assignments: string[]; modules: string[] } };
+      const data = json as { imported: number; materials: Array<{ id: string; fileName: string }>; details: { syllabusFound: boolean; assignments: string[]; modules: string[]; pages: string[] } };
       for (const m of data.materials) {
         onImported({
           id: m.id,

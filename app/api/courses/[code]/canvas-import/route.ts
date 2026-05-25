@@ -99,6 +99,23 @@ export async function POST(req: Request, { params }: Ctx) {
     if (modulesText.trim()) toInsert.push({ fileName: 'Canvas: Module List', text: modulesText });
   }
 
+  if (data.pages.length > 0) {
+    // Canvas Pages are wiki-style content embedded in the course. Many
+    // courses house substantive lecture material here that's otherwise
+    // invisible to the auditor. Render each page's body as plain text
+    // beneath its title, separated by section breaks.
+    const parts = data.pages
+      .map(p => {
+        const body = htmlToText(p.bodyHtml);
+        if (!body.trim()) return '';
+        const status = p.published ? '' : ' [unpublished]';
+        return `## ${p.title}${status}\n${body}`;
+      })
+      .filter(Boolean);
+    const pagesText = parts.join('\n\n---\n\n');
+    if (pagesText.trim()) toInsert.push({ fileName: 'Canvas: Pages', text: pagesText });
+  }
+
   const imported: Array<{ id: string; fileName: string }> = [];
   for (const { fileName, text } of toInsert) {
     const mat = await insertMaterial({
@@ -122,6 +139,7 @@ export async function POST(req: Request, { params }: Ctx) {
     syllabusFound: !!syllabusText,
     assignments: data.assignments.map(a => a.name),
     modules: data.modules.map(m => m.name),
+    pages: data.pages.map(p => p.title),
   };
 
   return NextResponse.json({ imported: imported.length, materials: imported, details });

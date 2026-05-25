@@ -43,10 +43,19 @@ export interface CanvasModule {
   items: CanvasModuleItem[];
 }
 
+export interface CanvasPage {
+  /** Canvas's url-slug for the page; stable per course. */
+  url: string;
+  title: string;
+  bodyHtml: string;
+  published: boolean;
+}
+
 export interface CanvasCourseData {
   course: CanvasCourse;
   assignments: CanvasAssignment[];
   modules: CanvasModule[];
+  pages: CanvasPage[];
 }
 
 async function canvasFetch(baseUrl: string, path: string, token: string): Promise<unknown> {
@@ -58,13 +67,53 @@ async function canvasFetch(baseUrl: string, path: string, token: string): Promis
   return res.json();
 }
 
+// Canvas Pages: paginated, must fetch each page's body separately. This cap
+// prevents us from sitting forever on courses with hundreds of historical
+// pages — in practice most active courses have ≤30.
+const MAX_PAGES_PER_COURSE = 100;
+
+async function fetchCanvasPages(canvasBaseUrl: string, courseId: string, token: string): Promise<CanvasPage[]> {
+  let listRaw: unknown;
+  try {
+    listRaw = await canvasFetch(canvasBaseUrl, `/api/v1/courses/${courseId}/pages?per_page=${MAX_PAGES_PER_COURSE}`, token);
+  } catch {
+    // Courses with Pages disabled return 404; treat as empty rather than failing the whole import.
+    return [];
+  }
+  const list = Array.isArray(listRaw) ? listRaw as Record<string, unknown>[] : [];
+  if (list.length === 0) return [];
+
+  // Each page-list entry omits the body. Fetch each page individually in
+  // parallel. Skip pages whose url is missing.
+  const details = await Promise.all(
+    list.slice(0, MAX_PAGES_PER_COURSE).map(async (p) => {
+      const url = typeof p['url'] === 'string' ? (p['url'] as string) : null;
+      if (!url) return null;
+      try {
+        const pageRaw = await canvasFetch(canvasBaseUrl, `/api/v1/courses/${courseId}/pages/${encodeURIComponent(url)}`, token);
+        const pd = pageRaw as Record<string, unknown>;
+        return {
+          url,
+          title: String(pd['title'] ?? p['title'] ?? ''),
+          bodyHtml: String(pd['body'] ?? ''),
+          published: typeof pd['published'] === 'boolean' ? (pd['published'] as boolean) : true,
+        } as CanvasPage;
+      } catch {
+        return null;
+      }
+    }),
+  );
+  return details.flatMap(p => p ? [p] : []);
+}
+
 export async function fetchCanvasCourse(canvasBaseUrl: string, courseId: string, token: string): Promise<CanvasCourseData> {
-  const [courseRaw, assignmentsRaw, modulesRaw] = await Promise.all([
+  const [courseRaw, assignmentsRaw, modulesRaw, pages] = await Promise.all([
     canvasFetch(canvasBaseUrl, `/api/v1/courses/${courseId}?include[]=syllabus_body`, token),
     // include[]=rubric returns the inline rubric criteria + ratings;
     // include[]=rubric_settings adds the rubric's title and total points.
     canvasFetch(canvasBaseUrl, `/api/v1/courses/${courseId}/assignments?per_page=50&include[]=rubric&include[]=rubric_settings`, token),
     canvasFetch(canvasBaseUrl, `/api/v1/courses/${courseId}/modules?include[]=items&per_page=50`, token),
+    fetchCanvasPages(canvasBaseUrl, courseId, token),
   ]);
 
   const c = courseRaw as Record<string, unknown>;
@@ -111,5 +160,5 @@ export async function fetchCanvasCourse(canvasBaseUrl: string, courseId: string,
     })),
   }));
 
-  return { course, assignments, modules };
+  return { course, assignments, modules, pages };
 }

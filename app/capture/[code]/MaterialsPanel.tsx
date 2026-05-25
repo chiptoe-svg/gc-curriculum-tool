@@ -56,6 +56,7 @@ function classifyCanvas(m: CaptureMaterial): string {
   if (name.startsWith('syllabus')) return 'syllabus';
   if (name.startsWith('assignment')) return 'assignments';
   if (name.startsWith('module')) return 'modules';
+  if (name.startsWith('page')) return 'pages';
   return name;
 }
 
@@ -78,6 +79,13 @@ function summarizeCanvas(m: CaptureMaterial): string {
   if (kind === 'modules') {
     const moduleHeadings = (text.match(/^##\s+/gm) ?? []).length;
     if (moduleHeadings > 0) return `${moduleHeadings} modules`;
+  }
+  if (kind === 'pages') {
+    const pageHeadings = (text.match(/^##\s+/gm) ?? []).length;
+    const words = text.split(/\s+/).filter(Boolean).length;
+    if (pageHeadings > 0) {
+      return `${pageHeadings} page${pageHeadings === 1 ? '' : 's'} · ${words.toLocaleString()} words`;
+    }
   }
   if (kind === 'syllabus') {
     const words = text.split(/\s+/).filter(Boolean).length;
