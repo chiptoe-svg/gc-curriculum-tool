@@ -192,6 +192,94 @@ async function fetchCanvasQuizzes(canvasBaseUrl: string, courseId: string, token
   return withQuestions.flatMap(q => q ? [q] : []);
 }
 
+/**
+ * New Quizzes API — Canvas's newer quiz product, served under /api/quiz/v1/
+ * instead of /api/v1/. The shape of an "item" is more structured than the
+ * classic question (everything nested under `entry`), and correctness lives
+ * in a scoring_data block that varies by question type.
+ *
+ * We map back to the same CanvasQuizQuestion shape the renderer already
+ * knows about, so downstream rendering doesn't need to discriminate.
+ */
+async function fetchNewQuizItems(
+  canvasBaseUrl: string,
+  courseId: string,
+  quizId: string,
+  token: string,
+): Promise<CanvasQuizQuestion[]> {
+  let raw: unknown;
+  try {
+    raw = await canvasFetch(canvasBaseUrl, `/api/quiz/v1/courses/${courseId}/quizzes/${quizId}/items?per_page=${MAX_QUESTIONS_PER_QUIZ}`, token);
+  } catch {
+    return [];
+  }
+  const list = Array.isArray(raw) ? raw as Record<string, unknown>[] : [];
+  return list.slice(0, MAX_QUESTIONS_PER_QUIZ).map(item => {
+    const entry = (item['entry'] ?? {}) as Record<string, unknown>;
+    const interactionData = (entry['interaction_data'] ?? {}) as Record<string, unknown>;
+    const scoringData = (entry['scoring_data'] ?? {}) as Record<string, unknown>;
+    const choices = Array.isArray(interactionData['choices'])
+      ? (interactionData['choices'] as Record<string, unknown>[])
+      : [];
+    // scoring_data.value is the correct-answer array for choice-based items.
+    // For true_false the value is a single boolean string ("true"/"false").
+    // For other types (essay, fill-in-blank, matching, etc.) we don't try
+    // to expose correctness; the audit still gets the question text.
+    const correctIds = new Set<string>();
+    const scoringValue = scoringData['value'];
+    if (Array.isArray(scoringValue)) {
+      for (const v of scoringValue) correctIds.add(String(v));
+    } else if (scoringValue !== undefined && scoringValue !== null) {
+      correctIds.add(String(scoringValue));
+    }
+    const answers: Array<{ text: string; correct: boolean }> = choices.map(c => ({
+      text: String(c['item_body'] ?? ''),
+      correct: correctIds.has(String(c['id'] ?? '')),
+    }));
+    return {
+      id: String(item['id'] ?? ''),
+      name: String(entry['title'] ?? ''),
+      textHtml: String(entry['item_body'] ?? ''),
+      questionType: String(item['entry_editor_id'] ?? item['entry_type'] ?? ''),
+      pointsPossible: typeof item['points_possible'] === 'number' ? item['points_possible'] : null,
+      answers,
+    };
+  });
+}
+
+async function fetchNewQuizzes(canvasBaseUrl: string, courseId: string, token: string): Promise<CanvasQuiz[]> {
+  let raw: unknown;
+  try {
+    raw = await canvasFetch(canvasBaseUrl, `/api/quiz/v1/courses/${courseId}/quizzes?per_page=${MAX_QUIZZES_PER_COURSE}`, token);
+  } catch {
+    // The New Quizzes API 401s when the user's token lacks the scope, and
+    // 404s when New Quizzes isn't enabled for the course. Either way, fall
+    // back silently — Classic Quizzes will still be picked up if present.
+    return [];
+  }
+  const list = Array.isArray(raw) ? raw as Record<string, unknown>[] : [];
+  const quizMeta = list.slice(0, MAX_QUIZZES_PER_COURSE).map(q => ({
+    id: String(q['id'] ?? ''),
+    title: String(q['title'] ?? ''),
+    descriptionHtml: String(q['instructions'] ?? ''),
+    pointsPossible: typeof q['points_possible'] === 'number' ? q['points_possible'] : null,
+    questionCount: null,  // not exposed on the list endpoint; will reflect actual count after items fetch
+  }));
+  const withQuestions = await Promise.all(
+    quizMeta.map(async meta => {
+      if (!meta.id) return null;
+      const questions = await fetchNewQuizItems(canvasBaseUrl, courseId, meta.id, token);
+      return {
+        ...meta,
+        questionCount: questions.length,
+        questions,
+        source: 'new' as const,
+      };
+    }),
+  );
+  return withQuestions.flatMap(q => q ? [q] : []);
+}
+
 async function fetchCanvasPages(canvasBaseUrl: string, courseId: string, token: string): Promise<CanvasPage[]> {
   let listRaw: unknown;
   try {
@@ -227,7 +315,15 @@ async function fetchCanvasPages(canvasBaseUrl: string, courseId: string, token: 
 }
 
 export async function fetchCanvasCourse(canvasBaseUrl: string, courseId: string, token: string): Promise<CanvasCourseData> {
-  const [courseRaw, assignmentsRaw, modulesRaw, pages, discussions, quizzes] = await Promise.all([
+  const [
+    courseRaw,
+    assignmentsRaw,
+    modulesRaw,
+    pages,
+    discussions,
+    classicQuizzes,
+    newQuizzes,
+  ] = await Promise.all([
     canvasFetch(canvasBaseUrl, `/api/v1/courses/${courseId}?include[]=syllabus_body`, token),
     // include[]=rubric returns the inline rubric criteria + ratings;
     // include[]=rubric_settings adds the rubric's title and total points.
@@ -236,7 +332,12 @@ export async function fetchCanvasCourse(canvasBaseUrl: string, courseId: string,
     fetchCanvasPages(canvasBaseUrl, courseId, token),
     fetchCanvasDiscussions(canvasBaseUrl, courseId, token),
     fetchCanvasQuizzes(canvasBaseUrl, courseId, token),
+    fetchNewQuizzes(canvasBaseUrl, courseId, token),
   ]);
+  // Merge classic and new quizzes into a single list — downstream rendering
+  // discriminates by q.source, so the consumer doesn't need to care which
+  // API they came from.
+  const quizzes = [...classicQuizzes, ...newQuizzes];
 
   const c = courseRaw as Record<string, unknown>;
   const course: CanvasCourse = {
