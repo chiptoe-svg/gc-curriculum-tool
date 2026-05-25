@@ -45,6 +45,7 @@ drizzle/meta/
 # Tooling sidecars (not project artifacts)
 /.codegraph/
 /.playwright-mcp/
+/.worktrees/
 
 # Local one-off scripts (provider smoke tests, scratch validation, etc.)
 /scripts/_one-off/
