@@ -1,8 +1,10 @@
 # The GC Curriculum Tool — Vision
 
-> **Want to test drive the tool?** → [Open the prototype](https://gc-curriculum-tool.vercel.app/preview/4QcseN0pvlpd35gb) for the original three M-trial tools; the per-course audit workflow lives at `/capture/<course-code>` and the program coverage matrix at `/program` from the same session.
+> **Want to test drive the tool?** → [Open the tool](https://gc-curriculum-tool.vercel.app/capture/GC%203460?slug=4QcseN0pvlpd35gb). The intended day-to-day workflow runs across three surfaces: per-course audit at `/capture/<course-code>` (CourseCapture), prescriptive alignment + what-if scenarios at `/explore/<course-code>`, and the program-level coverage matrix at `/program`. All available from the same session.
 >
 > Catalog values come from a [shared course sheet](https://docs.google.com/spreadsheets/d/12aPhgrIlhDYjKD0-Gt97glf1d9fKtwKmL4FwM8iTz7Q/edit?gid=1024237655#gid=1024237655), one tab per course — edit your tab and click **Sync from Sheet** in CourseCapture to pull the latest values for that course. The audit session then combines those catalog values with Canvas-imported assignments and rubrics, uploaded materials, linked Google Docs / Sheets / Slides and Drive PDFs, and voice/chat audit; the confirmed snapshot feeds program-level analyses.
+>
+> *(The original three-tool M-trial prototype — Course Builder · Prereq Analyzer · Career Target Alignment — remains accessible at `/preview/<slug>` if you want to see the earlier flow. It's superseded by the CourseCapture + Explore + Program pipeline for new work.)*
 >
 > For the academic background and theoretical justification behind the KUD+ framework — what it measures, why it's structured as it is, and how it's implemented at the course and career-path levels — see the [Background document](../../../background.html).
 
@@ -104,13 +106,18 @@ In an illustrative 15-course slice: Production & Ops is the densest column (11 c
 
 ## What's live now
 
-Five surfaces are in production. The M-trial slice that originally demonstrated the AI's analysis quality is now joined by the live capture + matrix pipeline that constitutes the framework's intended day-to-day workflow.
+The framework's intended day-to-day workflow runs across four surfaces. A fifth — the original M-trial prototype — is still accessible but superseded for new work.
 
-- **`/preview/<slug>` — M-trial.** The original three-tool prototype (Course Builder, Prereq Analyzer, Career Target Alignment) remains live. Pick a course, add prior courses, pick a target; the AI drafts KUD outcomes, scores coverage, judges scaffolding, identifies gaps. Every judgment is expandable; flags persist.
-- **`/capture/<code>` — CourseCapture.** The instructor-facing audit conversation that produces a Course Outcome Profile. Pulls catalog + uploads + Canvas (assignments, pages, discussions, quizzes — Classic and New Quizzes APIs — file attachments) + linked Google Docs/Slides/Sheets + Drive PDFs + YouTube captions. Voice input via Whisper. Snapshots are immutable and versioned; the draft remains mutable.
-- **`/program` — Program Coverage Matrix.** Confirmed snapshots × career-target sub-competencies, rendered as a depth-aware heat map. On-demand AI scoring per cell; full rationale and evidence excerpt visible in a drawer. This is the coverage-matrix view from the end state, in a snapshot-grid form — the self-updating machinery and the cross-snapshot diff that would make it a true "living" view are Phase 2 work.
-- **`/explore` — Explore module.** Alignment analyses (custom target / downstream target) and what-if scenarios run against any saved snapshot.
+**The current workflow:**
+
+- **`/capture/<code>` — CourseCapture.** The instructor-facing audit conversation that produces a Course Outcome Profile. Pulls catalog + uploads + Canvas (assignments, rubrics, pages, discussions, quizzes — Classic and New Quizzes APIs — file attachments) + linked Google Docs/Slides/Sheets + Drive PDFs + YouTube captions. Voice input via Whisper. Snapshots are immutable and versioned; the draft remains mutable.
+- **`/explore/<code>` — Explore module.** Alignment analyses (custom target / downstream target) and what-if scenarios run against any saved snapshot. Custom-target authoring; downstream-target auto-detection from captured prereq courses.
+- **`/program` — Program Coverage Matrix.** Confirmed snapshots × career-target sub-competencies, rendered as a depth-aware heat map with a problem-solving lens. On-demand AI scoring per cell; full rationale and evidence excerpt visible in a drawer. The coverage-matrix view from the end state, in a snapshot-grid form — the self-updating machinery and the cross-snapshot diff that would make it a true "living" view are Phase 2 work.
 - **`/settings` — Per-function AI model tuning.** Tier-based selection (Light / Default / Heavy) plus per-function model dropdowns sourced from the OpenAI provider's available models.
+
+**Legacy (still accessible, no new work):**
+
+- **`/preview/<slug>` — M-trial prototype.** The original three-tool slice (Course Builder · Prereq Analyzer · Career Target Alignment) that demonstrated the AI's analysis quality on real GC courses. Superseded by CourseCapture + Explore + Program for new captures; kept accessible because the existing M-trial flags and runs remain useful institutional memory.
 
 The point of the trial period is unchanged: confirm that *the analysis is good enough to be useful*. If faculty find the readings credible, defensible, and worth disputing on the merits, the remaining Phase 1 views (scaffolding, prerequisite gaps, advising) become the next implementation work.
 

@@ -155,6 +155,7 @@
     <a class="nav-link" href="#program-structure">Program-level structure: the 3-Act model</a>
     <a class="nav-link" href="#course-impl">Course-by-course implementation</a>
     <a class="nav-link" href="#career-impl">Career-path alignment</a>
+    <a class="nav-link" href="#validation">Validation</a>
     <a class="nav-link" href="#not">What this is not</a>
     <a class="nav-link" href="#references">References</a>
     <div class="nav-group-label" style="margin-top: 18px;">See also</div>
@@ -571,8 +572,41 @@ DO — behavioral output
   <p>These views are not produced by the framework itself but by program-level analyses that consume the confirmed Course Outcome Profiles and Role Outcome Profiles. The framework's contribution is to make the underlying data commensurable across courses and across the course-employer boundary. At the time of writing, the coverage matrix is implemented and reading confirmed snapshots; the scaffolding and prerequisite-gap views are specified but not yet built.</p>
 </section>
 
+<section id="validation">
+  <h2><span class="num">§ 12</span>Validation: how we'd know if this works</h2>
+
+  <p>The framework makes substantive commitments that established research does not directly validate. The depth scales are working-hypothesis instruments. The 3-Act program structure is a proposed organizing model. The claim that cumulative depth + productive-failure scaffolding + reflection produces transferable problem-solving competence four years out is theoretically coherent but empirically untested at the program scale this tool operates at. The framework's stance is not that these commitments are settled — it's that the tool is itself the research instrument that generates the evidence to test them.</p>
+
+  <p>Three layers of validation are designed into the framework's data shape.</p>
+
+  <h3>Internal validation: the data the tool generates about itself</h3>
+
+  <p>Every captured snapshot is a dated, evidence-backed record of what one course developed at one moment in time. Snapshots accumulate. Each program-level analysis (the coverage matrix today; the scaffolding and prerequisite-gap views planned) reads against the snapshot corpus and produces diagnostic outputs that are themselves measurable: does the matrix surface gaps that faculty review confirms as real gaps, or does it surface patterns that faculty review dismisses as noise? Does the scaffolding analysis flag brittle scaffolds that hold up under interrogation, or does it produce false positives at a rate that erodes trust? The flag-and-dispute pipeline is the framework's internal validation surface — every AI judgment can be disputed, disputes persist, and patterns of disagreement update the AI's prompts over time. The framework's bet is that this internal validation loop, run continuously across the program for years, produces a more durably calibrated tool than a one-time external study would.</p>
+
+  <h3>External validation: graduate-outcome data against career-target competencies</h3>
+
+  <p>The empirical question the framework most needs answered is whether graduates who pass through a 3-Act-structured curriculum, with the coverage and scaffolding patterns the matrix surfaces, actually achieve the career-target competencies the framework predicts. The companion <a href="./graduate-outcome-validation.html">Graduate Outcome Validation</a> proposal describes the planned external-data validation: a dataset of 268 Clemson GC graduates spanning 2018–2026 across 43 occupational categories, used to test whether the framework's career-target classifications and competency predictions match actual graduate employment trajectories. This is the closest the framework can come to a randomized comparison — the alternative-program comparison-group data the literature would ideally call for does not exist for graphic communications at the scale needed. The graduate-outcome dataset is the framework's path to evidence-against-an-external-standard.</p>
+
+  <h3>Process validation: faculty and advisory-board review</h3>
+
+  <p>Curriculum-design decisions are not the kind of empirical claim that can be settled purely by data. Career-target descriptors, sub-competency definitions, act boundaries, foundational-competency lists — these are choices made by faculty leadership and refined by advisory-board input. The framework's validation surface at this layer is whether the categories the tool uses match the categories faculty and advisory partners actually think with. When the matrix surfaces a finding that contradicts faculty intuition, the resolution may be that the matrix is wrong; it may be that the intuition is wrong; it may be that both are pointing at a real ambiguity in how the program defines what it's trying to develop. The framework treats all three resolutions as productive — each one teaches something — provided the disagreement is named and acted on rather than dismissed.</p>
+
+  <h3>What "wrong" would look like</h3>
+
+  <p>The framework should be able to fail informatively. Concrete signals that would warrant revising or replacing it:</p>
+
+  <ul>
+    <li>The coverage matrix consistently surfaces gaps that faculty review uniformly dismisses as artifacts — across multiple snapshots, multiple targets, multiple semesters. (Matrix scoring would need recalibration or the underlying KUD+ depth scales would need revision.)</li>
+    <li>Graduates whose curricular history matches the framework's "well-scaffolded" pattern do not, on the graduate-outcome dataset, actually perform better in their target career destinations than graduates whose history doesn't. (The framework's central scaffolding claim would be falsified.)</li>
+    <li>The brittle-scaffold diagnostic flags Act 3 courses as expecting unsupported mastery, faculty redesign those courses to address the diagnostic, and student performance in those courses does not improve. (The diagnostic isn't tracking what it claims to track.)</li>
+    <li>Inter-rater reliability on the AI's K/U/D scoring proves unacceptably low — two captures of the same course by the same instructor with the same materials produce systematically divergent profiles. (The instrument isn't measuring stably.)</li>
+  </ul>
+
+  <p>None of these would invalidate the underlying ambition of evidence-backed program-level curriculum mapping. They would tell the framework which of its specific design choices need to change. That is what it means for a tool to be a research instrument in good faith: the framework commits to revising its own design when the data tells it to.</p>
+</section>
+
 <section id="not">
-  <h2><span class="num">§ 12</span>What this framework is not</h2>
+  <h2><span class="num">§ 13</span>What this framework is not</h2>
 
   <p>Several limitations and scope decisions are worth naming explicitly.</p>
 
@@ -580,14 +614,14 @@ DO — behavioral output
     <li><strong>Not an evaluation of faculty or students.</strong> Depth scores describe what the course's materials and assignments require, not how well any instructor delivers the course or how well any student performs in it.</li>
     <li><strong>Not an automated curriculum designer.</strong> The framework surfaces what is and supports faculty deliberation; redesign decisions remain committee work informed by the evidence, not generated by it.</li>
     <li><strong>Not a replacement for faculty judgment.</strong> The auditor drafts, the instructor confirms. Every depth value is editable in the review step; reviewer status is recorded on each profile.</li>
-    <li><strong>Not empirically validated.</strong> The framework's specific scales are working hypotheses based on the theoretical traditions described in §5 and on the pragmatic constraints of program mapping. Validation work — comparison of generated profiles against external occupational data — is described in the <a href="./graduate-outcome-validation.html">graduate-outcome validation proposal</a>.</li>
+    <li><strong>Not empirically validated yet.</strong> The framework's specific scales, the 3-Act structure, and the cumulative-scaffolding claim are working hypotheses. The framework's response to the absence of validation is structural rather than evasive: the tool generates the longitudinal evidence its own commitments would need from external research. The full three-layer validation approach — internal flag-and-dispute pipeline, external graduate-outcome comparison, faculty/advisory-board review — is described in <a href="#validation">§12 above</a>, with the graduate-outcome dataset path detailed separately in the <a href="./graduate-outcome-validation.html">Graduate Outcome Validation</a> proposal.</li>
     <li><strong>Not extensible to fully automated assessment scoring.</strong> Bloom's taxonomy and AAC&amp;U VALUE rubrics remain the appropriate lenses for evaluating student work; this framework is designed for describing what a course develops, not for grading what a student produced.</li>
     <li><strong>Not insensitive to material limitations.</strong> The Canvas import retrieves substantially more than plain syllabus text — assignments and rubrics with point values, modules, Canvas Pages (body content), discussions, quizzes (both Classic and New Quizzes APIs with question text), file attachments (PDF and DOCX downloaded and text-extracted), and YouTube captions for linked videos. It also follows referenced Google Docs / Sheets / Slides and Drive PDFs that are shared "Anyone with the link." What remains inaccessible: video transcripts from platforms other than YouTube (Vimeo, Panopto, Canvas Studio, Loom, Kaltura, MediaSpace), external LTI tool content, and any material behind authentication outside the Canvas API. The auditor is required to detect references to such content, flag them with their specifics, and keep scoring conservative pending instructor confirmation; profiles produced from incomplete materials carry that uncertainty in their rationale fields.</li>
   </ul>
 </section>
 
 <section id="references">
-  <h2><span class="num">§ 13</span>References</h2>
+  <h2><span class="num">§ 14</span>References</h2>
 
   <ol class="refs">
     <li id="ref-anderson-2001">Anderson, L. W., &amp; Krathwohl, D. R. (Eds.). (2001). <em>A Taxonomy for Learning, Teaching, and Assessing: A Revision of Bloom's Taxonomy of Educational Objectives</em>. Longman.</li>
