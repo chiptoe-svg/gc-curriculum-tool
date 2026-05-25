@@ -24,6 +24,7 @@ type PromptName =
   | 'capture-scores'
   | 'explore-draft-target'
   | 'explore-compare'
+  | 'explore-what-if'
   | 'parse-profile-fields';
 
 interface ParsedPrompt {

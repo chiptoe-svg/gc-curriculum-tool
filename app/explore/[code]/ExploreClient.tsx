@@ -7,6 +7,7 @@ import type {
   ExploreAnalysis,
   AlignmentRow,
   Recommendation,
+  WhatIfResult,
 } from '@/lib/ai/explore/schema';
 
 interface SnapshotListItem {
@@ -476,8 +477,17 @@ export function ExploreClient({
         <p className="rounded border border-destructive/30 bg-red-50 px-3 py-2 text-xs text-destructive">{analysisError}</p>
       )}
 
-      {analysisView && (
-        <AnalysisResult analysis={analysisView} />
+      {analysisView && selectedTargetId && (
+        <>
+          <AnalysisResult analysis={analysisView} />
+          <WhatIfPanel
+            courseCode={courseCode}
+            slug={slug}
+            snapshotId={snapshotId}
+            targetId={selectedTargetId}
+            analysisId={analyses.find(a => a.targetId === selectedTargetId && a.snapshotId === snapshotId)?.id ?? null}
+          />
+        </>
       )}
 
       {/* Past analyses */}
@@ -653,6 +663,177 @@ function AuditList({ title, items }: { title: string; items: string[] }) {
             <li key={i} className="border-l-2 border-muted pl-2">{it}</li>
           ))}
         </ul>
+      )}
+    </div>
+  );
+}
+
+function WhatIfPanel({
+  courseCode,
+  slug,
+  snapshotId,
+  targetId,
+  analysisId,
+}: {
+  courseCode: string;
+  slug: string;
+  snapshotId: string;
+  targetId: string;
+  analysisId: string | null;
+}) {
+  const [prose, setProse] = useState('');
+  const [running, setRunning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<WhatIfResult | null>(null);
+  const [history, setHistory] = useState<Array<{ id: string; changeProse: string; result: WhatIfResult; createdAt: string }>>([]);
+
+  const loadHistory = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/explore/${encodeURIComponent(courseCode)}/what-if?slug=${encodeURIComponent(slug)}&targetId=${encodeURIComponent(targetId)}`);
+      if (!res.ok) return;
+      const json = await res.json() as { whatIfs: Array<{ id: string; changeProse: string; result: WhatIfResult; createdAt: string }> };
+      setHistory(json.whatIfs);
+    } catch {}
+  }, [courseCode, slug, targetId]);
+
+  useEffect(() => { void loadHistory(); }, [loadHistory]);
+
+  async function handleSimulate() {
+    if (!prose.trim()) return;
+    setRunning(true);
+    setError(null);
+    setResult(null);
+    try {
+      const res = await fetch(`/api/explore/${encodeURIComponent(courseCode)}/what-if?slug=${encodeURIComponent(slug)}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ snapshotId, targetId, changeProse: prose, analysisId }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setError((json as { error?: string; detail?: string }).error ?? 'simulation failed');
+        return;
+      }
+      const { whatIf } = json as { whatIf: { id: string; changeProse: string; result: WhatIfResult; createdAt: string } };
+      setResult(whatIf.result);
+      setHistory(prev => [whatIf, ...prev]);
+      setProse('');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'simulation failed');
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  return (
+    <section className="rounded-md border bg-amber-50/40 px-4 py-4 space-y-3 shadow-sm">
+      <header>
+        <h3 className="text-sm font-semibold">What-if scenarios</h3>
+        <p className="text-xs text-muted-foreground">
+          Propose a change in plain language. The system predicts which competencies would shift and whether the alignment improves. Doesn&apos;t modify the snapshot — pure simulation.
+        </p>
+      </header>
+      <textarea
+        value={prose}
+        onChange={e => setProse(e.target.value)}
+        rows={3}
+        placeholder='e.g., "Add a 25-point oral defense to the Brand Color Report rubric scored on rationale articulation."'
+        className="w-full resize-y rounded border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+      />
+      <div className="flex items-center justify-end">
+        <button
+          type="button"
+          onClick={handleSimulate}
+          disabled={!prose.trim() || running}
+          className="rounded-md bg-amber-600 px-4 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-amber-700 disabled:opacity-50"
+        >
+          {running ? 'Simulating…' : 'Simulate change'}
+        </button>
+      </div>
+      {error && <p className="text-xs text-destructive">{error}</p>}
+
+      {result && <WhatIfResultView result={result} />}
+
+      {history.length > 0 && (
+        <details className="text-xs">
+          <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+            Past what-ifs for this target ({history.length})
+          </summary>
+          <ul className="mt-2 space-y-2">
+            {history.map(h => (
+              <li key={h.id} className="rounded border bg-card px-2 py-1.5">
+                <p className="font-medium leading-snug">{h.changeProse}</p>
+                <p className="mt-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
+                  {h.result.worth_doing.replace('_', ' ')} · {new Date(h.createdAt).toLocaleDateString()}
+                </p>
+                <p className="mt-1 text-[11px] text-muted-foreground italic">{h.result.verdict}</p>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+    </section>
+  );
+}
+
+function WhatIfResultView({ result }: { result: WhatIfResult }) {
+  const worthCfg = {
+    high_value: { color: 'bg-green-100 text-green-800', label: 'high value' },
+    modest_value: { color: 'bg-amber-100 text-amber-800', label: 'modest value' },
+    low_value: { color: 'bg-slate-100 text-slate-700', label: 'low value' },
+    counterproductive: { color: 'bg-red-100 text-red-800', label: 'counterproductive' },
+  } as const;
+  const w = worthCfg[result.worth_doing];
+  return (
+    <div className="rounded-md border bg-card px-3 py-3 space-y-3">
+      <div className="flex items-center gap-2">
+        <span className={`rounded px-2 py-0.5 text-[10px] font-medium ${w.color}`}>{w.label}</span>
+        <p className="text-sm font-medium flex-1">{result.verdict}</p>
+      </div>
+
+      {result.competency_changes.length > 0 && (
+        <div>
+          <h4 className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Competency depths</h4>
+          <ul className="mt-1 space-y-1 text-xs">
+            {result.competency_changes.map((c, i) => (
+              <li key={i} className="border-l-2 border-muted pl-2">
+                <span className="font-medium">{c.competency}</span>
+                <span className="ml-2 font-mono text-[10px]">
+                  {c.from_depth.k ?? '—'}/{c.from_depth.u ?? '—'}/{c.from_depth.d} → {c.to_depth.k ?? '—'}/{c.to_depth.u ?? '—'}/{c.to_depth.d}
+                </span>
+                <p className="text-muted-foreground">{c.rationale}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {result.alignment_deltas.length > 0 && (
+        <div>
+          <h4 className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Alignment shifts</h4>
+          <ul className="mt-1 space-y-1 text-xs">
+            {result.alignment_deltas.map((d, i) => (
+              <li key={i} className="border-l-2 border-muted pl-2">
+                <span className="font-medium">{d.target_statement}</span>
+                <span className="ml-2 text-[10px] font-mono">
+                  {d.before_status} → {d.after_status}
+                </span>
+                <p className="text-muted-foreground">{d.note}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {result.caveats.length > 0 && (
+        <div>
+          <h4 className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Caveats</h4>
+          <ul className="mt-1 space-y-1 text-xs">
+            {result.caveats.map((c, i) => (
+              <li key={i} className="border-l-2 border-amber-300 pl-2 text-muted-foreground">{c}</li>
+            ))}
+          </ul>
+        </div>
       )}
     </div>
   );

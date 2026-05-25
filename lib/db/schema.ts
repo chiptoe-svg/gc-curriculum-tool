@@ -371,6 +371,21 @@ export const courseExploreAnalyses = pgTable('course_explore_analyses', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
+// What-if scenarios — given a (snapshot, target, optional analysis) and a
+// proposed change in prose, predict which competencies move and how the
+// alignment shifts. Doesn't modify any capture-side data; pure playground.
+export const courseExploreWhatIfs = pgTable('course_explore_what_ifs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  courseCode: text('course_code').notNull().references(() => courses.code, { onDelete: 'cascade' }),
+  snapshotId: uuid('snapshot_id').notNull().references(() => courseCaptureSnapshots.id, { onDelete: 'cascade' }),
+  targetId: uuid('target_id').notNull().references(() => courseExploreTargets.id, { onDelete: 'cascade' }),
+  analysisId: uuid('analysis_id').references(() => courseExploreAnalyses.id, { onDelete: 'set null' }),
+  changeProse: text('change_prose').notNull(),
+  result: jsonb('result').notNull(),
+  model: text('model').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
 // In-flight CourseCapture audit conversation, persisted so faculty can
 // resume after a closed tab, a failed Generate, or a next-day return.
 // One row per course (PK course_code). Cleared on profile confirmation

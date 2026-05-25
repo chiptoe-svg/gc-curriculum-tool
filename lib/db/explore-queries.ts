@@ -1,7 +1,7 @@
 import { and, desc, eq, isNull } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
-import { courseExploreTargets, courseExploreAnalyses } from '@/lib/db/schema';
-import type { TargetSpec, ExploreAnalysis } from '@/lib/ai/explore/schema';
+import { courseExploreTargets, courseExploreAnalyses, courseExploreWhatIfs } from '@/lib/db/schema';
+import type { TargetSpec, ExploreAnalysis, WhatIfResult } from '@/lib/ai/explore/schema';
 
 export interface ExploreTargetRow {
   id: string;
@@ -148,4 +148,57 @@ export async function getAnalysisById(id: string): Promise<ExploreAnalysisRow | 
     .where(eq(courseExploreAnalyses.id, id))
     .limit(1);
   return rows[0] ? rowToAnalysis(rows[0]) : null;
+}
+
+// ----- What-ifs -----
+
+export interface ExploreWhatIfRow {
+  id: string;
+  courseCode: string;
+  snapshotId: string;
+  targetId: string;
+  analysisId: string | null;
+  changeProse: string;
+  result: WhatIfResult;
+  model: string;
+  createdAt: Date;
+}
+
+function rowToWhatIf(row: typeof courseExploreWhatIfs.$inferSelect): ExploreWhatIfRow {
+  return {
+    id: row.id,
+    courseCode: row.courseCode,
+    snapshotId: row.snapshotId,
+    targetId: row.targetId,
+    analysisId: row.analysisId,
+    changeProse: row.changeProse,
+    result: row.result as WhatIfResult,
+    model: row.model,
+    createdAt: row.createdAt,
+  };
+}
+
+export interface CreateWhatIfInput {
+  courseCode: string;
+  snapshotId: string;
+  targetId: string;
+  analysisId: string | null;
+  changeProse: string;
+  result: WhatIfResult;
+  model: string;
+}
+
+export async function createWhatIf(input: CreateWhatIfInput): Promise<ExploreWhatIfRow> {
+  const [row] = await db.insert(courseExploreWhatIfs).values(input).returning();
+  if (!row) throw new Error('createWhatIf: no row returned');
+  return rowToWhatIf(row);
+}
+
+export async function listWhatIfsByTarget(targetId: string): Promise<ExploreWhatIfRow[]> {
+  const rows = await db
+    .select()
+    .from(courseExploreWhatIfs)
+    .where(eq(courseExploreWhatIfs.targetId, targetId))
+    .orderBy(desc(courseExploreWhatIfs.createdAt));
+  return rows.map(rowToWhatIf);
 }

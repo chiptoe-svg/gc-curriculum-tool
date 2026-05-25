@@ -102,3 +102,39 @@ export const exploreAnalysisSchema = z.object({
   }),
 });
 export type ExploreAnalysis = z.infer<typeof exploreAnalysisSchema>;
+
+// ----- What-if scenarios -----
+
+export const whatIfCompetencyChangeSchema = z.object({
+  competency: z.string(),
+  from_depth: targetDepthSchema,
+  to_depth: targetDepthSchema,
+  rationale: z.string(),
+});
+export type WhatIfCompetencyChange = z.infer<typeof whatIfCompetencyChangeSchema>;
+
+export const whatIfAlignmentDeltaSchema = z.object({
+  target_statement: z.string(),
+  before_status: z.enum(['covered', 'partial', 'underdeveloped', 'missing']),
+  after_status: z.enum(['covered', 'partial', 'underdeveloped', 'missing']),
+  note: z.string(),
+});
+export type WhatIfAlignmentDelta = z.infer<typeof whatIfAlignmentDeltaSchema>;
+
+export const whatIfResultSchema = z.object({
+  snapshot_id: z.string(),
+  target_id: z.string(),
+  change_prose: z.string().min(1),
+  generated_at: z.string(),
+  /** Verdict summary: 1-2 sentences on the net effect of the proposed change. */
+  verdict: z.string().min(1),
+  /** Whether the change moves the dial enough to bother. */
+  worth_doing: z.enum(['high_value', 'modest_value', 'low_value', 'counterproductive']),
+  /** Competencies whose depths would shift if the change were made. */
+  competency_changes: z.array(whatIfCompetencyChangeSchema),
+  /** Per-target-row alignment shifts (covered → partial, missing → partial, etc.) */
+  alignment_deltas: z.array(whatIfAlignmentDeltaSchema),
+  /** Caveats, side-effects, or things the instructor should be careful about. */
+  caveats: z.array(z.string()),
+});
+export type WhatIfResult = z.infer<typeof whatIfResultSchema>;
