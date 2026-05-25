@@ -50,6 +50,14 @@ function isGoogleSlidesMaterial(m: CaptureMaterial): boolean {
   return m.fileName.startsWith('Google Slides:');
 }
 
+function isCanvasFileMaterial(m: CaptureMaterial): boolean {
+  return m.fileName.startsWith('Canvas File:');
+}
+
+function isYouTubeMaterial(m: CaptureMaterial): boolean {
+  return m.fileName.startsWith('YouTube:');
+}
+
 function classifyCanvas(m: CaptureMaterial): string {
   if (!isCanvasMaterial(m)) return '';
   const name = m.fileName.replace(/^Canvas:\s*/, '').trim().toLowerCase();
@@ -57,6 +65,8 @@ function classifyCanvas(m: CaptureMaterial): string {
   if (name.startsWith('assignment')) return 'assignments';
   if (name.startsWith('module')) return 'modules';
   if (name.startsWith('page')) return 'pages';
+  if (name.startsWith('discussion')) return 'discussions';
+  if (name.startsWith('quiz')) return 'quizzes';
   return name;
 }
 
@@ -86,6 +96,15 @@ function summarizeCanvas(m: CaptureMaterial): string {
     if (pageHeadings > 0) {
       return `${pageHeadings} page${pageHeadings === 1 ? '' : 's'} · ${words.toLocaleString()} words`;
     }
+  }
+  if (kind === 'discussions') {
+    const count = (text.match(/^##\s+/gm) ?? []).length;
+    if (count > 0) return `${count} discussion${count === 1 ? '' : 's'}`;
+  }
+  if (kind === 'quizzes') {
+    const count = (text.match(/^##\s+/gm) ?? []).length;
+    const questions = (text.match(/^Q\d+\s+\[/gm) ?? []).length;
+    if (count > 0) return `${count} quiz${count === 1 ? '' : 'zes'} · ${questions} questions`;
   }
   if (kind === 'syllabus') {
     const words = text.split(/\s+/).filter(Boolean).length;
@@ -177,6 +196,8 @@ function MaterialRow({
   const canvas = isCanvasMaterial(material);
   const gdoc = isGoogleDocMaterial(material);
   const gslides = isGoogleSlidesMaterial(material);
+  const canvasFile = isCanvasFileMaterial(material);
+  const youtube = isYouTubeMaterial(material);
   const summary = canvas ? summarizeCanvas(material) : '';
   const wordCount = material.extractedText ? material.extractedText.split(/\s+/).filter(Boolean).length : 0;
 
@@ -188,10 +209,14 @@ function MaterialRow({
             <span className="text-sm font-medium truncate">{material.fileName}</span>
             {canvas ? (
               <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-800">Canvas</span>
+            ) : canvasFile ? (
+              <span className="rounded bg-cyan-100 px-1.5 py-0.5 text-[10px] font-medium text-cyan-800">Canvas File</span>
             ) : gdoc ? (
               <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800">Google Doc</span>
             ) : gslides ? (
               <span className="rounded bg-yellow-100 px-1.5 py-0.5 text-[10px] font-medium text-yellow-800">Google Slides</span>
+            ) : youtube ? (
+              <span className="rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-800">YouTube</span>
             ) : (
               <span className="rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-medium text-purple-800">uploaded</span>
             )}
@@ -275,27 +300,33 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
         setScanMessage({ kind: 'error', text: (json as { error?: string }).error ?? `Scan failed (${res.status})` });
         return;
       }
-      const { referenced, skipped, fetched, inaccessible, byKind } = json as {
+      const { referenced, skipped, fetched, inaccessible, byKind, youtube_referenced, youtube_fetched, youtube_inaccessible, youtube_skipped } = json as {
         referenced: Array<{ kind: string; fileId: string }>;
         skipped: number; fetched: number; inaccessible: number;
-        byKind?: { documents: number; presentations: number };
+        byKind?: { documents: number; presentations: number; youtube_videos: number };
+        youtube_referenced?: string[];
+        youtube_fetched?: number;
+        youtube_inaccessible?: number;
+        youtube_skipped?: number;
       };
-      if (referenced.length === 0) {
-        setScanMessage({ kind: 'ok', text: 'No Google Docs or Slides URLs found in current materials.' });
+      const totalReferenced = referenced.length + (youtube_referenced?.length ?? 0);
+      if (totalReferenced === 0) {
+        setScanMessage({ kind: 'ok', text: 'No Google Workspace or YouTube links found in current materials.' });
       } else {
         const parts: string[] = [];
-        if (fetched > 0) {
-          const bk = byKind
-            ? ` (${[
-                byKind.documents > 0 ? `${byKind.documents} doc${byKind.documents === 1 ? '' : 's'}` : null,
-                byKind.presentations > 0 ? `${byKind.presentations} deck${byKind.presentations === 1 ? '' : 's'}` : null,
-              ].filter(Boolean).join(', ')})`
-            : '';
-          parts.push(`fetched ${fetched}${bk}`);
+        if (fetched > 0 || (youtube_fetched ?? 0) > 0) {
+          const breakdown = [
+            (byKind?.documents ?? 0) > 0 ? `${byKind?.documents} doc${byKind?.documents === 1 ? '' : 's'}` : null,
+            (byKind?.presentations ?? 0) > 0 ? `${byKind?.presentations} deck${byKind?.presentations === 1 ? '' : 's'}` : null,
+            (youtube_fetched ?? 0) > 0 ? `${youtube_fetched} YouTube transcript${youtube_fetched === 1 ? '' : 's'}` : null,
+          ].filter(Boolean).join(', ');
+          parts.push(`fetched ${fetched + (youtube_fetched ?? 0)}${breakdown ? ` (${breakdown})` : ''}`);
         }
-        if (inaccessible > 0) parts.push(`${inaccessible} not shared publicly`);
-        if (skipped > 0) parts.push(`${skipped} already stored`);
-        setScanMessage({ kind: 'ok', text: `Found ${referenced.length} Google Workspace file${referenced.length === 1 ? '' : 's'}: ${parts.join(', ')}.` });
+        const totalInaccessible = inaccessible + (youtube_inaccessible ?? 0);
+        if (totalInaccessible > 0) parts.push(`${totalInaccessible} not accessible`);
+        const totalSkipped = skipped + (youtube_skipped ?? 0);
+        if (totalSkipped > 0) parts.push(`${totalSkipped} already stored`);
+        setScanMessage({ kind: 'ok', text: `Found ${totalReferenced} linked item${totalReferenced === 1 ? '' : 's'}: ${parts.join(', ')}.` });
       }
       // Pick up the newly inserted material rows.
       await refetchMaterialsFromContext();

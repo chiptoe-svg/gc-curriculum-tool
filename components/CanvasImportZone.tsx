@@ -22,6 +22,10 @@ interface ImportDetails {
   assignments: string[];
   modules: string[];
   pages: string[];
+  discussions: string[];
+  quizzes: string[];
+  files: string[];
+  filesSkipped: number;
 }
 
 function ToggleList({ label, items }: { label: string; items: string[] }) {
@@ -58,6 +62,18 @@ function ImportSummary({ details }: { details: ImportDetails }) {
       {details.pages.length > 0 && (
         <ToggleList label={`✓ Pages (${details.pages.length})`} items={details.pages} />
       )}
+      {details.discussions.length > 0 && (
+        <ToggleList label={`✓ Discussions (${details.discussions.length})`} items={details.discussions} />
+      )}
+      {details.quizzes.length > 0 && (
+        <ToggleList label={`✓ Quizzes (${details.quizzes.length})`} items={details.quizzes} />
+      )}
+      {details.files.length > 0 && (
+        <ToggleList
+          label={`✓ Files extracted (${details.files.length}${details.filesSkipped > 0 ? `; ${details.filesSkipped} skipped` : ''})`}
+          items={details.files}
+        />
+      )}
     </ul>
   );
 }
@@ -74,7 +90,7 @@ export function CanvasImportZone({ courseCode, slug, onImported, open: controlle
   const [canvasToken, setCanvasToken] = useState('');
   const [status, setStatus] = useState<'idle' | 'importing' | 'done' | 'error'>('idle');
   const [message, setMessage] = useState('');
-  const [importDetails, setImportDetails] = useState<{ syllabusFound: boolean; assignments: string[]; modules: string[]; pages: string[] } | null>(null);
+  const [importDetails, setImportDetails] = useState<ImportDetails | null>(null);
 
   async function handleImport() {
     setStatus('importing');
@@ -91,7 +107,7 @@ export function CanvasImportZone({ courseCode, slug, onImported, open: controlle
         setMessage((json as { error?: string }).error ?? `Import failed (${res.status})`);
         return;
       }
-      const data = json as { imported: number; materials: Array<{ id: string; fileName: string }>; details: { syllabusFound: boolean; assignments: string[]; modules: string[]; pages: string[] } };
+      const data = json as { imported: number; materials: Array<{ id: string; fileName: string }>; details: ImportDetails };
       for (const m of data.materials) {
         onImported({
           id: m.id,

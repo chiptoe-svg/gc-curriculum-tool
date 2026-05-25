@@ -4,10 +4,18 @@ import { hashIp } from '@/lib/ip-hash';
 import { getCourseByCode } from '@/lib/db/courses-queries';
 import { insertMaterial, updateExtractionResult } from '@/lib/db/course-materials-queries';
 import { parseCanvasUrl } from '@/lib/canvas/parseCanvasUrl';
-import { fetchCanvasCourse } from '@/lib/canvas/fetchCanvasCourse';
+import { fetchCanvasCourse, fetchCanvasFileMeta } from '@/lib/canvas/fetchCanvasCourse';
 import { htmlToText } from '@/lib/canvas/htmlToText';
+import { extractText } from '@/lib/courses/extract-text';
 
-export const maxDuration = 60;
+export const maxDuration = 120;
+
+// Canvas file URLs embedded in materials follow this shape regardless of which
+// course they belong to: /files/{ID}/{download|preview|edit|...}?...
+// We pull the ID anywhere the API or HTML surfaces this pattern.
+const CANVAS_FILE_ID_RE = /\/files\/(\d+)(?:\/|\?|"|$)/g;
+const MAX_FILES_PER_IMPORT = 20;
+const MAX_FILE_BYTES = 5 * 1024 * 1024;  // 5 MB cap per file
 
 interface Ctx { params: Promise<{ code: string }> }
 
@@ -116,6 +124,103 @@ export async function POST(req: Request, { params }: Ctx) {
     if (pagesText.trim()) toInsert.push({ fileName: 'Canvas: Pages', text: pagesText });
   }
 
+  if (data.discussions.length > 0) {
+    const parts = data.discussions
+      .map(d => {
+        const body = htmlToText(d.messageHtml);
+        if (!body.trim() && !d.isAssignment) return '';
+        const tags = [
+          d.isAssignment ? 'graded' : null,
+          !d.published ? 'unpublished' : null,
+        ].filter(Boolean).join(', ');
+        const suffix = tags ? ` [${tags}]` : '';
+        return `## ${d.title}${suffix}\n${body || '(prompt text empty)'}`;
+      })
+      .filter(Boolean);
+    const discussionsText = parts.join('\n\n---\n\n');
+    if (discussionsText.trim()) toInsert.push({ fileName: 'Canvas: Discussions', text: discussionsText });
+  }
+
+  if (data.quizzes.length > 0) {
+    const parts = data.quizzes.map(q => {
+      const pts = q.pointsPossible != null ? ` (${q.pointsPossible} pts)` : '';
+      const desc = htmlToText(q.descriptionHtml);
+      const lines: string[] = [`## ${q.title}${pts} [${q.source} quiz]`];
+      if (desc.trim()) lines.push(desc);
+      if (q.questions.length > 0) {
+        lines.push('', 'Questions:');
+        q.questions.forEach((question, i) => {
+          const qPts = question.pointsPossible != null ? ` (${question.pointsPossible} pts)` : '';
+          const qText = htmlToText(question.textHtml).trim() || question.name;
+          lines.push(`Q${i + 1} [${question.questionType}]${qPts}: ${qText}`);
+          if (question.answers.length > 0) {
+            question.answers.forEach((a, j) => {
+              const label = String.fromCharCode(97 + j);  // a, b, c, ...
+              const mark = a.correct ? ' ✓' : '';
+              lines.push(`  ${label}. ${a.text}${mark}`);
+            });
+          }
+        });
+      } else if (q.questionCount && q.questionCount > 0) {
+        lines.push(`(${q.questionCount} questions — text not exposed via API)`);
+      }
+      return lines.join('\n');
+    });
+    const quizzesText = parts.join('\n\n---\n\n');
+    if (quizzesText.trim()) toInsert.push({ fileName: 'Canvas: Quizzes', text: quizzesText });
+  }
+
+  // Reference-driven Canvas File attachments: scan everything we've extracted
+  // so far for Canvas file URLs, fetch each unique file, extract PDF/DOCX text,
+  // and add as a new material. Images / videos / audio / binary types are
+  // recorded as 'failed' so the auditor knows they exist but couldn't be read.
+  const allExtractedText = toInsert.map(t => t.text).join('\n\n');
+  const referencedFileIds = new Set<string>();
+  for (const m of allExtractedText.matchAll(CANVAS_FILE_ID_RE)) {
+    if (m[1]) referencedFileIds.add(m[1]);
+  }
+  const fileResults: Array<{ id: string; status: 'ok' | 'skipped' | 'failed'; fileName?: string; reason?: string }> = [];
+  const fileIdList = Array.from(referencedFileIds).slice(0, MAX_FILES_PER_IMPORT);
+  for (const fileId of fileIdList) {
+    const meta = await fetchCanvasFileMeta(canvasBaseUrl, fileId, canvasToken);
+    if (!meta) {
+      fileResults.push({ id: fileId, status: 'failed', reason: 'metadata not accessible' });
+      continue;
+    }
+    const mime = meta.mimeType.toLowerCase();
+    const ext = (meta.displayName.split('.').pop() ?? '').toLowerCase();
+    const isPdf = mime.includes('pdf') || ext === 'pdf';
+    const isDocx = mime.includes('officedocument') || ext === 'docx';
+    if (!isPdf && !isDocx) {
+      fileResults.push({ id: fileId, status: 'skipped', fileName: meta.displayName, reason: `unsupported type: ${meta.mimeType || ext}` });
+      continue;
+    }
+    if (meta.sizeBytes > MAX_FILE_BYTES) {
+      fileResults.push({ id: fileId, status: 'skipped', fileName: meta.displayName, reason: `file too large (${meta.sizeBytes} > ${MAX_FILE_BYTES})` });
+      continue;
+    }
+    try {
+      const dl = await fetch(meta.url, { redirect: 'follow' });
+      if (!dl.ok) {
+        fileResults.push({ id: fileId, status: 'failed', fileName: meta.displayName, reason: `download ${dl.status}` });
+        continue;
+      }
+      const buffer = Buffer.from(await dl.arrayBuffer());
+      const mimeForExtract = isPdf
+        ? 'application/pdf' as const
+        : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' as const;
+      const result = await extractText({ fileBytes: buffer, mimeType: mimeForExtract, fileName: meta.displayName });
+      if (result.status !== 'ok' || !result.text) {
+        fileResults.push({ id: fileId, status: 'failed', fileName: meta.displayName, reason: `extraction ${result.status}` });
+        continue;
+      }
+      toInsert.push({ fileName: `Canvas File: ${meta.displayName}`, text: result.text });
+      fileResults.push({ id: fileId, status: 'ok', fileName: meta.displayName });
+    } catch (e) {
+      fileResults.push({ id: fileId, status: 'failed', fileName: meta.displayName, reason: e instanceof Error ? e.message : 'fetch error' });
+    }
+  }
+
   const imported: Array<{ id: string; fileName: string }> = [];
   for (const { fileName, text } of toInsert) {
     const mat = await insertMaterial({
@@ -140,6 +245,12 @@ export async function POST(req: Request, { params }: Ctx) {
     assignments: data.assignments.map(a => a.name),
     modules: data.modules.map(m => m.name),
     pages: data.pages.map(p => p.title),
+    discussions: data.discussions.map(d => d.title),
+    quizzes: data.quizzes.map(q => q.title),
+    files: fileResults
+      .filter(f => f.status === 'ok' && f.fileName)
+      .map(f => f.fileName as string),
+    filesSkipped: fileResults.filter(f => f.status !== 'ok').length,
   };
 
   return NextResponse.json({ imported: imported.length, materials: imported, details });

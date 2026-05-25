@@ -12,6 +12,8 @@ import {
   type GoogleWorkspaceReference,
 } from '@/lib/google-docs/extract-urls';
 import { fetchGoogleFileText } from '@/lib/google-docs/fetch-doc';
+import { extractYouTubeReferences } from '@/lib/youtube/extract-urls';
+import { fetchYouTubeTranscript } from '@/lib/youtube/fetch-transcript';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { hashIp } from '@/lib/ip-hash';
 
@@ -121,19 +123,92 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     }
   }
 
+  // YouTube transcripts — same auto-fetch pattern as the Google Workspace
+  // files above. The audit gains visibility into linked lecture videos
+  // wherever captions are available.
+  const referencedYouTube = new Map<string, string>(); // videoId -> canonicalUrl
+  for (const m of materials) {
+    if (!m.extractedText) continue;
+    for (const ref of extractYouTubeReferences(m.extractedText)) {
+      if (!referencedYouTube.has(ref.videoId)) referencedYouTube.set(ref.videoId, ref.canonicalUrl);
+    }
+  }
+  const alreadyStoredYouTube = new Set<string>();
+  for (const m of materials) {
+    if (!m.blobUrl) continue;
+    for (const ref of extractYouTubeReferences(m.blobUrl)) {
+      alreadyStoredYouTube.add(ref.videoId);
+    }
+  }
+  const youtubeToFetch = [...referencedYouTube.entries()].filter(([id]) => !alreadyStoredYouTube.has(id));
+
+  const youtubeResults: Array<{
+    videoId: string;
+    status: 'ok' | 'inaccessible';
+    fileName?: string;
+    errorReason?: string;
+  }> = [];
+
+  for (const [videoId, canonicalUrl] of youtubeToFetch) {
+    const fetched = await fetchYouTubeTranscript(videoId);
+    if (fetched.status === 'ok') {
+      const titleGuess = fetched.text.slice(0, 80).trim() || videoId;
+      const fileName = `YouTube: ${titleGuess.slice(0, 60)}${titleGuess.length > 60 ? '…' : ''}`;
+      const row = await insertMaterial({
+        courseCode,
+        fileName,
+        blobUrl: canonicalUrl,
+        mimeType: 'text/plain',
+        sizeBytes: Buffer.byteLength(fetched.text, 'utf8'),
+        ipHash,
+      });
+      await updateExtractionResult({
+        id: row.id,
+        extractionStatus: 'ok',
+        extractionMethod: 'text',
+        extractedText: fetched.text,
+      });
+      youtubeResults.push({ videoId, status: 'ok', fileName });
+    } else {
+      const fileName = `YouTube: ${videoId} (no captions)`;
+      const row = await insertMaterial({
+        courseCode,
+        fileName,
+        blobUrl: canonicalUrl,
+        mimeType: 'text/plain',
+        sizeBytes: 0,
+        ipHash,
+      });
+      await updateExtractionResult({
+        id: row.id,
+        extractionStatus: 'failed',
+        extractionMethod: 'text',
+      });
+      youtubeResults.push({ videoId, status: 'inaccessible', fileName, errorReason: fetched.errorReason });
+    }
+  }
+
   const okCount = results.filter(r => r.status === 'ok').length;
   const failedCount = results.filter(r => r.status === 'inaccessible').length;
+  const youtubeOk = youtubeResults.filter(r => r.status === 'ok').length;
+  const youtubeInaccessible = youtubeResults.filter(r => r.status === 'inaccessible').length;
   const byKind = {
     documents: results.filter(r => r.kind === 'document').length,
     presentations: results.filter(r => r.kind === 'presentation').length,
+    youtube_videos: youtubeOk,
   };
 
   return NextResponse.json({
     referenced: [...referenced.values()].map(r => ({ kind: r.kind, fileId: r.fileId })),
+    youtube_referenced: [...referencedYouTube.keys()],
     skipped: referenced.size - toFetch.length,
+    youtube_skipped: referencedYouTube.size - youtubeToFetch.length,
     fetched: okCount,
     inaccessible: failedCount,
+    youtube_fetched: youtubeOk,
+    youtube_inaccessible: youtubeInaccessible,
     byKind,
     results,
+    youtube_results: youtubeResults,
   });
 }
