@@ -160,7 +160,23 @@ function CompetencyCard({
   );
 }
 
-function AuditNotesList({ title, items }: { title: string; items: string[] }) {
+/**
+ * Renders an audit-notes section. When `copyFormatter` is provided, each
+ * item gets a small "Copy" button that puts a formatted version on the
+ * clipboard — used for prereq gaps, where the faculty workflow is to
+ * carry the gap into the prerequisite course's audit chat. Other audit
+ * categories don't have an obvious "send elsewhere" workflow yet so they
+ * skip the button.
+ */
+function AuditNotesList({
+  title,
+  items,
+  copyFormatter,
+}: {
+  title: string;
+  items: string[];
+  copyFormatter?: (item: string) => string;
+}) {
   if (items.length === 0) {
     return (
       <div>
@@ -174,11 +190,66 @@ function AuditNotesList({ title, items }: { title: string; items: string[] }) {
       <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{title}</h4>
       <ul className="mt-1 space-y-1 text-xs leading-snug">
         {items.map((it, i) => (
-          <li key={i} className="border-l-2 border-muted pl-2">{it}</li>
+          <li key={i} className="border-l-2 border-muted pl-2">
+            <div className="flex items-start justify-between gap-2">
+              <span className="flex-1">{it}</span>
+              {copyFormatter && <CopyAsKudButton text={copyFormatter(it)} />}
+            </div>
+          </li>
         ))}
       </ul>
     </div>
   );
+}
+
+function CopyAsKudButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  async function handle() {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Clipboard API unavailable (rare — http context or denied permission).
+      // Fall back to selecting the text in a hidden textarea so the user can
+      // copy manually with ⌘C.
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); setCopied(true); setTimeout(() => setCopied(false), 1500); }
+      finally { document.body.removeChild(ta); }
+    }
+  }
+  return (
+    <button
+      type="button"
+      onClick={handle}
+      title="Copy gap as a KUD-tagged line — paste into the prerequisite course's row in the Google Sheet"
+      className="shrink-0 rounded border border-muted bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+    >
+      {copied ? '✓ copied' : 'copy as KUD'}
+    </button>
+  );
+}
+
+/**
+ * Formats a free-form prereq-gap string for pasting into the
+ * `prerequisites` cell of the prerequisite course's row in the
+ * shared Google Sheet. Two lines, KUD-shaped depth fields left
+ * blank for the faculty member to fill, source course + date
+ * tag carries provenance.
+ *
+ * Why compact: the sheet's prerequisites column is a textarea
+ * (lib/db/schema.ts → courses.prerequisites: text). Faculty
+ * accumulate multiple entries per cell over time; verbose
+ * multi-line blocks turn into walls of text quickly.
+ */
+function formatPrereqGapAsKud(gapText: string, courseCode: string): string {
+  const today = new Date().toISOString().slice(0, 10);  // YYYY-MM-DD
+  return `[${courseCode} needs · ${today}] ${gapText}\n  K=__ U=__ D=__`;
 }
 
 export function ProfileReviewPanel({
@@ -382,7 +453,11 @@ export function ProfileReviewPanel({
               Findings from the audit that don&apos;t fit into a competency cell.
             </p>
           </div>
-          <AuditNotesList title="Prereq gaps" items={working.audit_notes.prereq_gaps} />
+          <AuditNotesList
+            title="Prereq gaps"
+            items={working.audit_notes.prereq_gaps}
+            copyFormatter={(item) => formatPrereqGapAsKud(item, courseCode)}
+          />
           <AuditNotesList title="Objective misalignments" items={working.audit_notes.objective_misalignments} />
           <AuditNotesList title="Cross-source conflicts" items={working.audit_notes.cross_source_conflicts} />
           <AuditNotesList title="Suggested objective revisions" items={working.audit_notes.suggested_objective_revisions} />
