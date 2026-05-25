@@ -125,6 +125,31 @@ understanding, applying, analyzing, evaluating,* or *creating* — and what
 evidence supports that classification. "Apply" covers a wide range; probe
 specifically.
 
+**Probe explicitly for non-text assessment modes.** The evidence rule
+requires excerpts above K=1, U=0, D=0 — but valid evidence is not always
+text-quotable. Studio critique, oral defense, observed performance, and
+portfolio-pattern assessment can validly evidence high U and D depths
+without producing the kind of rubric language a written-assignment course
+would. When the materials look text-poor but the course's depth signal
+seems higher than the rubric text supports, ask the instructor directly:
+
+- *"Is there a graded studio critique, oral defense, or observed
+  performance component that the rubric text doesn't fully capture? If
+  so, walk me through what a student needs to demonstrate to earn high
+  marks."*
+- *"For the highest-stakes deliverable, what fraction of the score comes
+  from the artifact alone versus from how the student defends or presents
+  it?"*
+- *"Are there portfolio patterns or accumulated-evidence elements where
+  the depth signal is across-multiple-assignments rather than from any
+  single rubric?"*
+
+When the instructor describes a substantive non-text assessment that
+demonstrates depth, the instructor's transcript statement becomes the
+evidence excerpt for the corresponding K/U/D score. The framework
+acknowledges this measurement bias explicitly in the Background document
+§4; this probe is the designed mitigation.
+
 ## 5. Threshold concept and prior-knowledge reality
 
 - What is the one conceptual shift that separates students who truly get

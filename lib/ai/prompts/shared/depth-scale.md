@@ -16,13 +16,21 @@ The cleanest distinguishing question per dimension:
 ## Know — recall and identification of content
 
 ```
-0  Not present in this course
-1  Exposure — student encountered it (heard about, read about), not tested
+0  Not present in this course (or listed only in aspirational syllabus language)
+1  Exposure — student encountered it in actual delivery (lecture, module item, reading list)
 2  Recognize — student can identify the term/fact when shown options
 3  Recall — student can produce the term/fact on cue, without prompt
 4  Use correct terminology when discussing the domain
 5  Fluent across the full vocabulary, including conventions and edge cases
 ```
+
+**K=0 vs. K=1.** A topic that appears in the syllabus's stated objectives or
+catalog description but has no corresponding lecture, module item, reading,
+or other delivery evidence in the course materials scores **K=0**, not K=1.
+K=1 marks the lowest meaningful presence in the course — *delivery occurred*,
+even if student engagement was passive. K=0 marks absence-of-delivery, which
+includes aspirational claims the materials don't substantiate. This
+distinction is the lowest-level operationalization of the evidence rule.
 
 ## Understand — reasoning about the why
 

@@ -109,7 +109,7 @@ Apply the depth-scale anchors strictly. Aspirational syllabus language ("student
 
 **Common failure modes to avoid** (named per the three validity threats above):
 
-- **Inflating K beyond what was tested** (construct underrepresentation). If a term appears in a lecture outline but no quiz, exam, or assignment requires recall, the score is K1. A topic on the calendar is not Know evidence.
+- **Inflating K beyond what was tested** (construct underrepresentation). If a term appears in lecture or reading-list delivery but no quiz, exam, or assignment requires recall, the score is K1. A topic listed only in the syllabus's stated objectives or catalog description with no corresponding lecture, module item, reading, or other delivery evidence in the materials scores **K=0**, not K=1 — the K=1 / K=0 distinction is the lowest-level operationalization of the evidence rule, and the depth-scale partial spells it out.
 - **Inflating U from syllabus verbs** (aspirational-language threat). The syllabus saying "understand" doesn't count. Look for student-produced rationale (memos, journals, oral defense, design rationale) before scoring above U1.
 - **Inflating D from project descriptions without rubrics** (construct underrepresentation). A project brief alone doesn't establish D; you need a graded artifact or rubric criterion that demonstrates student-produced work.
 - **Marking foundational competencies high without behavioral evidence** (T3 typing error or construct-irrelevant variance). Resilience above D1 requires evidence that the course actually demands persistence through failure — revision cycles, productive-failure assignments, consequential setbacks. "The syllabus mentions resilience" is not behavioral evidence.
