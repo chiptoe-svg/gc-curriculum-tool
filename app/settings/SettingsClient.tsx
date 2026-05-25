@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type {
   AIFunctionId,
   ModelTier,
@@ -29,6 +29,27 @@ export function SettingsClient({
   const [settings, setSettings] = useState<FunctionSettingRow[]>(initialSettings);
   const [busy, setBusy] = useState<AIFunctionId | null>(null);
   const [message, setMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [modelsStale, setModelsStale] = useState(false);
+  const [modelsError, setModelsError] = useState<string | null>(null);
+
+  const loadAvailableModels = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/settings/available-models?slug=${encodeURIComponent(slug)}`);
+      const json = await res.json();
+      if (!res.ok) {
+        setModelsError((json as { error?: string }).error ?? 'Failed to load available models');
+        return;
+      }
+      const { models, stale } = json as { models: string[]; stale: boolean };
+      setAvailableModels(models);
+      setModelsStale(stale);
+    } catch (e) {
+      setModelsError(e instanceof Error ? e.message : 'Failed to load available models');
+    }
+  }, [slug]);
+
+  useEffect(() => { void loadAvailableModels(); }, [loadAvailableModels]);
 
   function resolveModel(tier: ModelTier, customModel: string | null): string {
     if (tier === 'custom' && customModel && customModel.trim()) return customModel.trim();
@@ -89,18 +110,35 @@ export function SettingsClient({
     }
   }
 
+  const modelAvailable = (id: string) => availableModels.length === 0 || availableModels.includes(id);
+
   return (
     <div className="space-y-6">
       <section className="rounded-md border bg-card px-4 py-3 text-xs leading-snug text-muted-foreground">
         <p className="font-medium text-foreground">How tiers work</p>
         <p className="mt-1">
-          Each AI function in the system can use a different model. Tiers are an indirection: when a new generation of models ships, swapping the tier-to-model map updates every function using that tier. You can also set a function to a custom model name if you want to pin it to something specific.
+          Each AI function in the system can use a different model. Tiers are an indirection: when a new generation of models ships, swapping the tier-to-model map updates every function using that tier. You can also pick a specific model from the dropdown for a function that needs a different one.
         </p>
         <ul className="mt-2 space-y-0.5 font-mono text-[11px]">
-          <li>Light  → <span className="text-foreground">{tierToModel.light}</span> (cheap, fast)</li>
-          <li>Default → <span className="text-foreground">{tierToModel.default}</span> (balanced)</li>
-          <li>Heavy  → <span className="text-foreground">{tierToModel.heavy}</span> (more reasoning, higher cost)</li>
+          <li>Light  → <span className="text-foreground">{tierToModel.light}</span>
+            {!modelAvailable(tierToModel.light) && <span className="ml-2 text-destructive">(not in available list)</span>}
+            <span className="ml-2 text-muted-foreground">(cheap, fast)</span>
+          </li>
+          <li>Default → <span className="text-foreground">{tierToModel.default}</span>
+            {!modelAvailable(tierToModel.default) && <span className="ml-2 text-destructive">(not in available list)</span>}
+            <span className="ml-2 text-muted-foreground">(balanced)</span>
+          </li>
+          <li>Heavy  → <span className="text-foreground">{tierToModel.heavy}</span>
+            {!modelAvailable(tierToModel.heavy) && <span className="ml-2 text-destructive">(not in available list)</span>}
+            <span className="ml-2 text-muted-foreground">(more reasoning, higher cost)</span>
+          </li>
         </ul>
+        {availableModels.length > 0 && (
+          <p className="mt-2 text-[10px]">
+            {availableModels.length} chat-capable model{availableModels.length === 1 ? '' : 's'} available from this API key{modelsStale && ' (cached — could not refresh)'}.
+          </p>
+        )}
+        {modelsError && <p className="mt-2 text-destructive">{modelsError}</p>}
       </section>
 
       {message && (
@@ -131,10 +169,10 @@ export function SettingsClient({
                 <TierButton tier="default" current={s.tier} disabled={isBusy} onClick={() => setTier(functionId, 'default')} />
                 <TierButton tier="heavy" current={s.tier} disabled={isBusy} onClick={() => setTier(functionId, 'heavy')} />
 
-                <CustomTierControl
-                  functionId={functionId}
+                <ModelDropdown
                   isCustom={s.tier === 'custom'}
                   currentValue={s.customModel ?? ''}
+                  availableModels={availableModels}
                   disabled={isBusy}
                   onSet={(value) => setTier(functionId, 'custom', value)}
                 />
@@ -187,62 +225,52 @@ function TierButton({
   );
 }
 
-function CustomTierControl({
-  functionId,
+function ModelDropdown({
   isCustom,
   currentValue,
+  availableModels,
   disabled,
   onSet,
 }: {
-  functionId: AIFunctionId;
   isCustom: boolean;
   currentValue: string;
+  availableModels: string[];
   disabled: boolean;
   onSet: (model: string) => void;
 }) {
-  const [editing, setEditing] = useState(false);
-  const [value, setValue] = useState(currentValue);
-
-  if (!isCustom && !editing) {
+  // When the list hasn't loaded yet (or failed), fall back to a disabled
+  // placeholder so the UI doesn't render an empty unusable dropdown.
+  if (availableModels.length === 0) {
     return (
-      <button
-        type="button"
-        onClick={() => { setValue(currentValue); setEditing(true); }}
-        disabled={disabled}
-        className="rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
-      >
-        custom…
-      </button>
+      <span className="text-[11px] italic text-muted-foreground">
+        (loading models…)
+      </span>
     );
   }
 
+  // Show the current custom model in the dropdown even if it's somehow no
+  // longer in the available list — so users can see what they picked.
+  const optionList = isCustom && currentValue && !availableModels.includes(currentValue)
+    ? [currentValue, ...availableModels]
+    : availableModels;
+
   return (
-    <div className="flex items-center gap-1">
-      <input
-        type="text"
-        value={value}
-        onChange={e => setValue(e.target.value)}
-        placeholder={isCustom ? currentValue : 'e.g. gpt-5.4-nano'}
-        className="rounded border border-input bg-background px-2 py-1 text-xs font-mono w-44 focus:outline-none focus:ring-1 focus:ring-ring"
-      />
-      <button
-        type="button"
-        onClick={() => { onSet(value.trim()); setEditing(false); }}
-        disabled={disabled || !value.trim()}
-        className="rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground disabled:opacity-50"
-      >
-        set
-      </button>
-      {!isCustom && (
-        <button
-          type="button"
-          onClick={() => setEditing(false)}
-          disabled={disabled}
-          className="text-[11px] text-muted-foreground hover:text-foreground"
-        >
-          cancel
-        </button>
-      )}
-    </div>
+    <select
+      value={isCustom ? currentValue : ''}
+      onChange={e => {
+        const v = e.target.value;
+        if (v) onSet(v);
+      }}
+      disabled={disabled}
+      className={
+        'rounded border border-input bg-background px-2 py-1 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50 '
+        + (isCustom ? 'border-primary' : '')
+      }
+    >
+      <option value="">pick specific model…</option>
+      {optionList.map(m => (
+        <option key={m} value={m}>{m}</option>
+      ))}
+    </select>
   );
 }
