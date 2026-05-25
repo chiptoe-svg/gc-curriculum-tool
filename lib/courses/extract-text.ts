@@ -1,9 +1,10 @@
 import mammoth from 'mammoth';
-// pdf-parse v2 ships ESM types with no default export; the runtime CJS bundle
-// still exposes the v1-compatible default function used below and in tests.
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error — pdf-parse v2 types lack a default export declaration
-import pdfParse from 'pdf-parse';
+// unpdf wraps pdfjs-dist with the browser-DOM globals (DOMMatrix,
+// ImageBitmap, etc.) polyfilled for Node serverless runtimes. Direct use
+// of pdf-parse v2 / pdfjs-dist v5 crashes on Vercel with
+// `ReferenceError: DOMMatrix is not defined` at module load; unpdf is
+// the maintained alternative built for that environment.
+import { extractText as extractPdfText } from 'unpdf';
 import { getProvider } from '@/lib/ai/provider';
 
 export type ExtractedMimeType =
@@ -71,9 +72,11 @@ async function extractPdf(
   let pdfText = '';
 
   try {
-    const parsed = await pdfParse(fileBytes);
+    // unpdf wants a Uint8Array view, not the raw Buffer, to avoid pdfjs-dist
+    // misinterpreting the underlying ArrayBuffer when offsets differ.
+    const parsed = await extractPdfText(new Uint8Array(fileBytes), { mergePages: true });
     pdfText = (parsed.text ?? '').trim();
-    pageCount = parsed.numpages;
+    pageCount = parsed.totalPages;
   } catch {
     return { status: 'failed' };
   }

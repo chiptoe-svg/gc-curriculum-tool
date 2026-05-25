@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Hoist mocks so they're available before imports are resolved.
-const { mammoth, pdfParse, getProvider } = vi.hoisted(() => ({
+const { mammoth, extractPdfText, getProvider } = vi.hoisted(() => ({
   mammoth: { extractRawText: vi.fn() },
-  pdfParse: vi.fn(),
+  extractPdfText: vi.fn(),
   getProvider: vi.fn(),
 }));
 
 vi.mock('mammoth', () => ({ default: mammoth }));
-vi.mock('pdf-parse', () => ({ default: pdfParse }));
+vi.mock('unpdf', () => ({ extractText: extractPdfText }));
 vi.mock('@/lib/ai/provider', () => ({ getProvider }));
 
 import { extractText } from '@/lib/courses/extract-text';
@@ -64,7 +64,7 @@ describe('extractText — DOCX', () => {
 
 describe('extractText — digital PDF', () => {
   it('returns method=text, status=ok for a PDF with good text density', async () => {
-    pdfParse.mockResolvedValue({ text: 'A'.repeat(500), numpages: 2 });
+    extractPdfText.mockResolvedValue({ text: 'A'.repeat(500), totalPages: 2 });
     const result = await extractText({
       fileBytes: Buffer.from('fake'),
       mimeType: 'application/pdf',
@@ -77,7 +77,7 @@ describe('extractText — digital PDF', () => {
 
   it('routes to vision when text density is below threshold (< 100 chars/page)', async () => {
     // 1 page, only 50 chars — well below the 100 chars/page heuristic.
-    pdfParse.mockResolvedValue({ text: 'B'.repeat(50), numpages: 1 });
+    extractPdfText.mockResolvedValue({ text: 'B'.repeat(50), totalPages: 1 });
     fakeTranscribe.mockResolvedValue({ text: 'Transcribed text from vision.', costUsdCents: 20, truncated: false });
     const result = await extractText({
       fileBytes: Buffer.from('fake'),
@@ -91,7 +91,7 @@ describe('extractText — digital PDF', () => {
   });
 
   it('returns status=low_text when vision also returns very little text', async () => {
-    pdfParse.mockResolvedValue({ text: '', numpages: 3 });
+    extractPdfText.mockResolvedValue({ text: '', totalPages: 3 });
     fakeTranscribe.mockResolvedValue({ text: 'hi', costUsdCents: 10, truncated: false });
     const result = await extractText({
       fileBytes: Buffer.from('fake'),
@@ -102,8 +102,8 @@ describe('extractText — digital PDF', () => {
     expect(result.status).toBe('low_text');
   });
 
-  it('returns status=failed when pdf-parse throws', async () => {
-    pdfParse.mockRejectedValue(new Error('bad pdf'));
+  it('returns status=failed when the PDF parser throws', async () => {
+    extractPdfText.mockRejectedValue(new Error('bad pdf'));
     const result = await extractText({
       fileBytes: Buffer.from('fake'),
       mimeType: 'application/pdf',
@@ -114,7 +114,7 @@ describe('extractText — digital PDF', () => {
   });
 
   it('caps vision at 40 pages and sets status=ok with truncated text', async () => {
-    pdfParse.mockResolvedValue({ text: '', numpages: 60 });
+    extractPdfText.mockResolvedValue({ text: '', totalPages: 60 });
     fakeTranscribe.mockResolvedValue({ text: 'Partial transcription.', costUsdCents: 30, truncated: true });
     const result = await extractText({
       fileBytes: Buffer.from('fake'),

@@ -41,3 +41,7 @@ drizzle/meta/
 *.local.json
 /tmp/
 /scratch/
+
+# Tooling sidecars (not project artifacts)
+/.codegraph/
+/.playwright-mcp/
