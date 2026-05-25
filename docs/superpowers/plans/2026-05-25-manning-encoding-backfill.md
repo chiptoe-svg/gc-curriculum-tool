@@ -1,7 +1,7 @@
 # Manning Skill Encoding Backfill
 
 **Date:** 2026-05-25
-**Status:** in progress — Phase A starting
+**Status:** Phase A done (program-score-coverage). Phase B partially done — 4 non-conversational prompts encoded; `capture-chat` deliberately deferred (see "capture-chat deferral" below)
 **Owner:** Curriculum tool maintainer
 
 ## Context
@@ -48,13 +48,33 @@ Two principles to keep this clean:
 
 These produce the snapshots the scorer reads. Quality here multiplies into every downstream score.
 
-| Prompt | Skills to encode |
-| --- | --- |
-| `analyze-material.md` | KUD Chart Authoring (K/U/D type discipline), Assessment Validity Checker (avoid construct-irrelevant variance when inferring competencies from materials) |
-| `capture-chat.md` | Backwards Design (D7), KUD Chart Authoring, Disciplinary AI Literacy (be conservative; ask, don't infer) |
-| `capture-scores.md` | KUD Chart Authoring (K/U/D distinctions), Developmental Band Translator (confidence calibration) |
-| `synthesize-course-profile.md` | KUD Chart Authoring, Coverage Audit (cross-material aggregation) |
-| `parse-profile-fields.md` | Lightweight — KUD Chart Authoring only, for K/U/D field semantics |
+| Prompt | Skills encoded | Status |
+| --- | --- | --- |
+| `analyze-material.md` | KUD Chart Authoring, Assessment Validity Checker | ✅ done |
+| `synthesize-course-profile.md` | Coverage Audit, KUD Chart Authoring, Backwards Design Unit Planner | ✅ done |
+| `capture-scores.md` | KUD Chart Authoring, KUD Knowledge Type Mapper, Developmental Band Translator, Assessment Validity Checker | ✅ done |
+| `parse-profile-fields.md` | KUD Chart Authoring, Assessment Validity Checker (lightweight) | ✅ done |
+| `capture-chat.md` | Backwards Design, KUD Chart Authoring, Disciplinary AI Literacy | **DEFERRED** — see below |
+
+#### capture-chat deferral
+
+`capture-chat.md` is the conversational layer the instructor actively talks to during an audit. The current prompt is heavily user-tuned (one-question-per-turn discipline, same-topic finding+question coherence, three-paragraph format with blank lines, no preemptive pushback). It is 357 lines today.
+
+Risks of encoding:
+
+- **Manning vocabulary leakage** into instructor-facing speech. "Let me check whether this is a T2 horizontal knowledge target" is unacceptable UX. The auditor speaks to faculty, not curriculum theorists.
+- **Erosion of one-question-per-turn discipline** if "systematic audit" framing is added.
+- **More academic, less conversational tone** as the model reaches for Manning-adjacent vocabulary.
+
+The value of encoding `capture-chat` is also lower than for the other Phase B prompts — the conversation rules are already carefully tuned through real usage, so there's less room for Manning frameworks to add discipline that isn't already there in your prompt edits.
+
+**Decision:** hold `capture-chat` until the next real CourseCapture session(s) demonstrate whether the 4 edited Phase B prompts produce better snapshots. If snapshot quality is materially better, optionally encode `capture-chat` with very tight constraints:
+
+- Backwards Design (alignment verification logic) only.
+- Explicit prohibition: "Never use the words T1/T2/T3, hierarchical/horizontal/dispositional, construct-irrelevant variance, or other Manning vocabulary in conversation with the instructor. Translate to plain pedagogical language always."
+- A side-by-side conversation comparison against the unencoded version on one sample audit before committing.
+
+If snapshot quality is unchanged or worse after Phase B, the deferral becomes permanent and Phase B's 4 commits are candidates for revert.
 
 ### Phase C — Explore pipeline
 
