@@ -122,7 +122,13 @@ export function CanvasImportZone({ courseCode, slug, onImported, open: controlle
         setMessage((json as { error?: string }).error ?? `Import failed (${res.status})`);
         return;
       }
-      const data = json as { imported: number; materials: Array<{ id: string; fileName: string }>; details: ImportDetails };
+      const data = json as {
+        imported: number;
+        inserted?: number;
+        updated?: number;
+        materials: Array<{ id: string; fileName: string }>;
+        details: ImportDetails;
+      };
       for (const m of data.materials) {
         onImported({
           id: m.id,
@@ -133,7 +139,17 @@ export function CanvasImportZone({ courseCode, slug, onImported, open: controlle
         });
       }
       setStatus('done');
-      setMessage(`Imported ${data.imported} item${data.imported !== 1 ? 's' : ''} from Canvas.`);
+      // Canvas import is upsert by (course, fileName). When re-importing, most
+      // items will be `updated` (refreshed in place); first import they'll all
+      // be `inserted`. Surface both so faculty can see whether their action
+      // pulled in new content vs refreshed existing.
+      const ins = data.inserted ?? data.imported;
+      const upd = data.updated ?? 0;
+      const parts: string[] = [];
+      if (ins > 0) parts.push(`${ins} new`);
+      if (upd > 0) parts.push(`${upd} refreshed`);
+      const summary = parts.length > 0 ? parts.join(' + ') : '0 items';
+      setMessage(`Synced from Canvas: ${summary}.`);
       setImportDetails(data.details);
       setCanvasToken('');
     } catch (e) {

@@ -1,4 +1,4 @@
-import { eq, asc } from 'drizzle-orm';
+import { eq, and, asc } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { courseMaterials } from '@/lib/db/schema';
 
@@ -59,6 +59,46 @@ export async function getMaterialById(id: string): Promise<CourseMaterialRow | n
     .where(eq(courseMaterials.id, id))
     .limit(1);
   return rows[0] ?? null;
+}
+
+/**
+ * Returns the existing row for a (courseCode, fileName) pair, or null.
+ * Used by canvas-import's upsert path: Canvas content has stable
+ * filenames per course (Canvas: Syllabus, Canvas File: X.pdf, etc.),
+ * so re-imports refresh in place instead of creating duplicates.
+ */
+export async function findMaterialByFileName(
+  courseCode: string,
+  fileName: string,
+): Promise<CourseMaterialRow | null> {
+  const rows = await db
+    .select()
+    .from(courseMaterials)
+    .where(and(eq(courseMaterials.courseCode, courseCode), eq(courseMaterials.fileName, fileName)))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+/**
+ * Updates the metadata fields a canvas-import refresh might change.
+ * Distinct from updateExtractionResult which only writes extraction
+ * outcomes — this covers blobUrl + mimeType + sizeBytes too because a
+ * Canvas re-import can change those (token rotated, file replaced
+ * upstream, mimeType inferred correctly the second time).
+ */
+export interface UpdateMaterialMetadataInput {
+  id: string;
+  blobUrl?: string;
+  mimeType?: string;
+  sizeBytes?: number;
+}
+export async function updateMaterialMetadata(input: UpdateMaterialMetadataInput): Promise<void> {
+  const patch: Partial<typeof courseMaterials.$inferInsert> = {};
+  if (input.blobUrl !== undefined) patch.blobUrl = input.blobUrl;
+  if (input.mimeType !== undefined) patch.mimeType = input.mimeType;
+  if (input.sizeBytes !== undefined) patch.sizeBytes = input.sizeBytes;
+  if (Object.keys(patch).length === 0) return;
+  await db.update(courseMaterials).set(patch).where(eq(courseMaterials.id, input.id));
 }
 
 export async function deleteMaterial(id: string): Promise<void> {

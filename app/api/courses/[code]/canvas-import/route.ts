@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { isValidSlug } from '@/lib/slug';
 import { hashIp } from '@/lib/ip-hash';
 import { getCourseByCode } from '@/lib/db/courses-queries';
-import { insertMaterial, updateExtractionResult } from '@/lib/db/course-materials-queries';
+import { insertMaterial, updateExtractionResult, findMaterialByFileName, updateMaterialMetadata } from '@/lib/db/course-materials-queries';
 import { parseCanvasUrl } from '@/lib/canvas/parseCanvasUrl';
 import { fetchCanvasCourse, fetchCanvasFileMeta } from '@/lib/canvas/fetchCanvasCourse';
 import { htmlToText } from '@/lib/canvas/htmlToText';
@@ -250,23 +250,49 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
     }
   }
 
+  // Upsert by (courseCode, fileName). Re-imports refresh existing rows in
+  // place — no duplicates. Canvas content has stable per-course names
+  // (Canvas: Syllabus, Canvas File: X.pdf), so fileName is the natural key.
+  // Returned `imported` includes both inserted and updated rows; callers
+  // can tell them apart via `inserted`/`updated` counts.
   const imported: Array<{ id: string; fileName: string }> = [];
+  let insertedCount = 0;
+  let updatedCount = 0;
   for (const { fileName, text, mimeType } of toInsert) {
-    const mat = await insertMaterial({
-      courseCode: code,
-      fileName,
-      blobUrl: canvasUrl,
-      mimeType,
-      sizeBytes: text.length,
-      ipHash,
-    });
-    await updateExtractionResult({
-      id: mat.id,
-      extractionStatus: 'ok',
-      extractionMethod: 'text',
-      extractedText: text,
-    });
-    imported.push({ id: mat.id, fileName });
+    const existing = await findMaterialByFileName(code, fileName);
+    if (existing) {
+      await updateMaterialMetadata({
+        id: existing.id,
+        blobUrl: canvasUrl,
+        mimeType,
+        sizeBytes: text.length,
+      });
+      await updateExtractionResult({
+        id: existing.id,
+        extractionStatus: 'ok',
+        extractionMethod: 'text',
+        extractedText: text,
+      });
+      imported.push({ id: existing.id, fileName });
+      updatedCount++;
+    } else {
+      const mat = await insertMaterial({
+        courseCode: code,
+        fileName,
+        blobUrl: canvasUrl,
+        mimeType,
+        sizeBytes: text.length,
+        ipHash,
+      });
+      await updateExtractionResult({
+        id: mat.id,
+        extractionStatus: 'ok',
+        extractionMethod: 'text',
+        extractedText: text,
+      });
+      imported.push({ id: mat.id, fileName });
+      insertedCount++;
+    }
   }
 
   const details = {
@@ -282,5 +308,11 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
     filesSkipped: fileResults.filter(f => f.status !== 'ok').length,
   };
 
-  return NextResponse.json({ imported: imported.length, materials: imported, details });
+  return NextResponse.json({
+    imported: imported.length,
+    inserted: insertedCount,
+    updated: updatedCount,
+    materials: imported,
+    details,
+  });
 }
