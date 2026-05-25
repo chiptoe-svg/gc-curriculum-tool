@@ -337,11 +337,21 @@ Total: ~7 working days. Ships across 4 commits, each independently useful.
 
 ---
 
-## Open questions
+## Locked-in decisions
 
-1. **AI scoring cost.** A full refresh of 28 courses × 5 targets ≈ 140 calls. At gpt-5.4 pricing, roughly $7 for a complete pass. Acceptable; worth confirming the budget if program scale grows beyond ~50 courses.
-2. **Foundational competency view.** Whether to fold the five baseline foundationals into the same matrix (as a sixth "target-target" column group) or render them as a separate matrix. Lean: separate matrix for now, because the scoring model differs (D-only).
-3. **Career-target descriptor refresh.** When a faculty member edits a `sub_competency`'s descriptors, do we automatically invalidate the relevant `snapshot_target_coverage` cells? Lean: yes, with a banner indicating "data may be stale, refresh recommended."
-4. **Prereq parsing.** The `courses.prerequisites` field is freeform text ("GC 1040 or GC 1020"). Current regex handles "GC \d{4}" but doesn't handle the "or"/"and" logic. For prereq-gap analysis, do we treat all listed prereqs as required (the strict reading) or as alternatives (the permissive reading)? Lean: strict for v1, with future support for parsed logic.
-5. **Auth + write access.** Today the slug-gated model treats everyone as the same user. The "Refresh program views" action is destructive (overwrites stale rows); is that something every slug holder should be able to do? Lean: yes for v1, since the framework hasn't introduced role-based access yet.
-6. **What happens for non-GC required courses?** PSYC 2010 / ACCT 2010 / etc. — these contribute to coverage but won't be capturable in the GC tool. Lean: include them in the matrix as "out of program — not captured", treat them as evidence-gaps for now, and address with separate import flows later.
+These were open questions in the first draft of this spec; the answers are now decided.
+
+1. **AI scoring cost.** Locked to **gpt-5.4** for v1 (default). Token-budget worked math with prompt caching gives **~$4–5 per full refresh** at GC scale (28 courses × 5 targets ≈ 140 calls). The scoring helper must batch calls by target so the ~2,000-token target description caches across 28 calls per target (system prompt caches across all 140). Steady-state cost is much lower — typically ~$0.20 per new snapshot (5 targets × ~$0.04) since most days run incrementally rather than full-refresh. Switching to gpt-5.4-mini is on the table for a future pilot if quality holds up; see Phase 2.
+2. **Foundational competency view.** Render as a **separate matrix** rather than folding into the per-target matrix. Different scoring model (D-only), different conceptual frame (program-wide threads, not target-specific). Could share the table schema by treating "Foundational" as a pseudo-target with the five baselines as its sub-competencies — implementation detail to decide at build time.
+3. **Career-target descriptor refresh.** When a `sub_competency`'s descriptors are edited, automatically **invalidate** the relevant `snapshot_target_coverage` cells. UI shows a "this row may be stale — refresh recommended" banner per affected course.
+4. **Prereq parsing.** Treat all listed prereqs in `courses.prerequisites` as **required (strict reading)** for v1. The freeform "or"/"and" logic isn't parsed; a course listing "GC 1040 or GC 1020" is treated as expecting both. Refining to alternatives is a Phase 2 enhancement once we have evidence it matters.
+5. **Auth + write access.** Every slug holder can trigger refreshes for v1, since the framework hasn't introduced role-based access yet. The refresh operation is idempotent (only scores missing/stale cells), so it's not destructive in practice.
+6. **Non-GC required courses (v1 treatment).** PSYC 2010 / ACCT 2010 / MKT 3010 / PKSC 1020 etc. are not capturable in this tool and won't appear in the coverage matrix. They're shown in the prereq-gap and advising views as "out of program — not captured" with a placeholder badge. See Phase 2 note below for the longer-term plan to bring them into the system.
+
+## Phase 2 follow-ups (not in v1, captured for sequencing)
+
+- **Non-GC course capture flow.** Long-term, every required course in the degree plan should be capturable — PSYC, ACCT, MKT, PKSC, plus the gen-ed pool. Likely a separate import path (faculty in those departments don't use this tool) — e.g., a public-syllabus-fetch + AI extraction pass that produces a lightweight snapshot without requiring those instructors to run the audit conversation. Until this exists, those courses show as gaps in the matrix and a footnote acknowledges that gap is artificial (not a curriculum problem; an instrumentation problem).
+- **gpt-5.4-mini pilot for scoring.** Two-or-three (snapshot, target) cells scored on both models, compare outputs; if mini is defensible, swap the default and save ~70% on scoring cost.
+- **Hybrid scoring with confidence routing.** If mini holds up for high-confidence cells but degrades on edge cases, route low-confidence cells to gpt-5.4 for a second pass. Complexity / value trade-off to revisit after the pilot.
+- **Prereq "or" / "and" parsing.** A real expression parser over `courses.prerequisites` text so the matrix correctly handles "GC 1040 or GC 1020" as alternatives rather than both required.
+- **Role-based access.** When the framework adds users-and-roles, scope the destructive operations (refresh, edit) to specific roles. Today it's all-or-nothing via slug.
