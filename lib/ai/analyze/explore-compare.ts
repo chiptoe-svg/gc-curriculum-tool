@@ -1,5 +1,5 @@
 import { loadPrompt } from '@/lib/ai/prompts/load';
-import { getProvider } from '@/lib/ai/provider';
+import { getProviderForFunction } from '@/lib/ai/provider';
 import {
   exploreAnalysisSchema,
   type ExploreAnalysis,
@@ -105,7 +105,7 @@ export interface CompareResult {
 }
 
 export async function compareSnapshotToTarget(input: CompareInput): Promise<CompareResult> {
-  const provider = getProvider();
+  const provider = await getProviderForFunction('explore-compare');
   const systemPrompt = await loadPrompt('explore-compare');
 
   const userMessage = [

@@ -1,4 +1,4 @@
-import { getProvider } from '@/lib/ai/provider';
+import { getProviderForFunction } from '@/lib/ai/provider';
 import { loadPrompt } from '@/lib/ai/prompts/load';
 import {
   courseProfileResultSchema,
@@ -55,7 +55,7 @@ export async function synthesizeCourseProfile({
   findings,
 }: SynthesizeCourseProfileArgs): Promise<{ data: CourseProfileResult; telemetry: CallTelemetry }> {
   const systemPrompt = await loadPrompt('synthesize-course-profile');
-  const provider = getProvider();
+  const provider = await getProviderForFunction('materials-analysis');
 
   const userMessage = [
     `# Course context`,

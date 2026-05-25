@@ -371,6 +371,19 @@ export const courseExploreAnalyses = pgTable('course_explore_analyses', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
+// Per-function AI model settings. One row per function ID. Each row carries
+// either a tier name ('light' | 'default' | 'heavy') that resolves to a
+// model via the tier-mapping in lib/ai/function-settings.ts, or a custom
+// model override that bypasses the tier mapping.
+// When no row exists for a function ID, the system falls back to the
+// function's compiled-in default tier.
+export const aiFunctionSettings = pgTable('ai_function_settings', {
+  functionId: text('function_id').primaryKey(),
+  tier: text('tier').notNull(),              // 'light' | 'default' | 'heavy' | 'custom'
+  customModel: text('custom_model'),          // populated when tier === 'custom'
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
 // What-if scenarios — given a (snapshot, target, optional analysis) and a
 // proposed change in prose, predict which competencies move and how the
 // alignment shifts. Doesn't modify any capture-side data; pure playground.

@@ -1,5 +1,5 @@
 import { loadPrompt } from '@/lib/ai/prompts/load';
-import { getProvider } from '@/lib/ai/provider';
+import { getProviderForFunction } from '@/lib/ai/provider';
 import {
   whatIfResultSchema,
   type WhatIfResult,
@@ -79,7 +79,7 @@ export interface SimulateWhatIfResult {
 
 export async function simulateWhatIf(input: SimulateWhatIfInput): Promise<SimulateWhatIfResult> {
   if (!input.changeProse.trim()) throw new Error('changeProse is required');
-  const provider = getProvider();
+  const provider = await getProviderForFunction('explore-what-if');
   const systemPrompt = await loadPrompt('explore-what-if');
 
   const userMessage = [

@@ -1,4 +1,4 @@
-import { getProvider } from '@/lib/ai/provider';
+import { getProviderForFunction } from '@/lib/ai/provider';
 import { loadPrompt } from '@/lib/ai/prompts/load';
 import { analysisFindingSchema, analysisFindingJsonSchema, type AnalysisFinding } from './schema';
 import type { CallTelemetry } from '@/lib/ai/analyze/accum';
@@ -29,7 +29,7 @@ export async function analyzeMaterial({
   documentMimeType,
 }: AnalyzeMaterialArgs): Promise<{ data: AnalysisFinding; telemetry: CallTelemetry }> {
   const systemPrompt = await loadPrompt('analyze-material');
-  const provider = getProvider();
+  const provider = await getProviderForFunction('materials-analysis');
 
   const useNativeDoc = documentBytes !== undefined && documentBytes.length > 0 && !!documentMimeType;
 

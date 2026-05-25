@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { loadPrompt } from '@/lib/ai/prompts/load';
+import { resolveModelForFunction } from '@/lib/ai/function-settings';
 import {
   baselineFoundationalCompetencies,
   captureChatReplySchema,
@@ -223,7 +224,7 @@ export async function captureChatTurn(
   if (!apiKey) throw new Error('OPENAI_API_KEY not set');
   const client = new OpenAI({ apiKey });
 
-  const model = process.env.OPENAI_MODEL?.trim() || 'gpt-4o';
+  const model = await resolveModelForFunction('capture-chat');
   const systemPrompt = await loadPrompt('capture-chat');
 
   const openaiMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [

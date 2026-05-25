@@ -88,6 +88,13 @@ export default async function CapturePage({ params, searchParams }: Props) {
           </div>
           <div className="flex items-center gap-4">
             <Link
+              href={`/settings?slug=${encodeURIComponent(slug)}`}
+              className="text-sm text-muted-foreground hover:text-foreground"
+              title="AI model selection per function"
+            >
+              Settings
+            </Link>
+            <Link
               href={`/explore/${encodeURIComponent(code)}?slug=${encodeURIComponent(slug)}`}
               className="text-sm text-muted-foreground hover:text-foreground"
             >

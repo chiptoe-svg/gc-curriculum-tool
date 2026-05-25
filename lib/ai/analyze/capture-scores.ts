@@ -1,5 +1,5 @@
 import { loadPrompt } from '@/lib/ai/prompts/load';
-import { getProvider } from '@/lib/ai/provider';
+import { getProviderForFunction } from '@/lib/ai/provider';
 import type { CompletionTelemetry } from '@/lib/ai/provider';
 import {
   captureProfileSchema,
@@ -157,7 +157,7 @@ export async function generateCaptureProfile(
   context: CaptureChatContext,
   history: ChatMessage[],
 ): Promise<GenerateCaptureProfileResult> {
-  const provider = getProvider();
+  const provider = await getProviderForFunction('capture-scores');
   const systemPrompt = await loadPrompt('capture-scores');
 
   const userMessage = [

@@ -51,26 +51,60 @@ export interface AIProvider {
 import { OpenAIProvider } from './openai';
 import { AnthropicProvider } from './anthropic';
 import { LocalProvider } from './local';
+import { resolveModelForFunction, type AIFunctionId } from './function-settings';
 
+export interface GetProviderOptions {
+  /** When set, the provider uses the model assigned to this function via
+   *  the AI settings table (with the function's compiled-in default tier
+   *  as fallback). Without this, the env-default model is used. */
+  functionId?: AIFunctionId;
+  /** Explicit override; takes precedence over functionId. */
+  model?: string;
+}
+
+/**
+ * Synchronous variant: builds a provider using only env defaults. Used by
+ * legacy call sites that haven't been migrated to functionId-aware calls.
+ * New code should prefer `getProviderForFunction` (async).
+ */
 export function getProvider(): AIProvider {
+  return buildProvider(undefined);
+}
+
+/**
+ * Async variant: looks up the per-function model from the settings table
+ * (with TTL-cached resolution) before constructing the provider. Each AI
+ * helper should call this with its functionId.
+ */
+export async function getProviderForFunction(
+  functionId: AIFunctionId,
+  override?: { model?: string },
+): Promise<AIProvider> {
+  if (override?.model) return buildProvider(override.model);
+  const resolved = await resolveModelForFunction(functionId);
+  return buildProvider(resolved);
+}
+
+function buildProvider(modelOverride: string | undefined): AIProvider {
   // Trim every env var defensively — Vercel sometimes preserves trailing
   // newlines from pasted values, and OpenAI rejects an API key with CR/LF.
   const which = process.env.AI_PROVIDER?.trim() || 'openai';
   if (which === 'openai') {
     const key = process.env.OPENAI_API_KEY?.trim();
     if (!key) throw new Error('OPENAI_API_KEY not set');
-    return new OpenAIProvider(process.env.OPENAI_MODEL?.trim() || 'gpt-5.4', key);
+    const model = modelOverride ?? process.env.OPENAI_MODEL?.trim() ?? 'gpt-5.4';
+    return new OpenAIProvider(model, key);
   }
   if (which === 'anthropic') {
     const key = process.env.ANTHROPIC_API_KEY?.trim();
     if (!key) throw new Error('ANTHROPIC_API_KEY not set');
     return new AnthropicProvider(
-      process.env.ANTHROPIC_MODEL?.trim() || 'claude-sonnet-4-6',
+      modelOverride ?? process.env.ANTHROPIC_MODEL?.trim() ?? 'claude-sonnet-4-6',
       key,
     );
   }
   if (which === 'local') {
-    const model = process.env.LOCAL_MODEL?.trim() || 'gemma-4-31B-it-MLX-4bit';
+    const model = modelOverride ?? process.env.LOCAL_MODEL?.trim() ?? 'gemma-4-31B-it-MLX-4bit';
     const baseURL = process.env.LOCAL_BASE_URL?.trim() || 'http://localhost:8000/v1';
     const apiKey = process.env.LOCAL_API_KEY?.trim();
     if (!apiKey) throw new Error('LOCAL_API_KEY not set');

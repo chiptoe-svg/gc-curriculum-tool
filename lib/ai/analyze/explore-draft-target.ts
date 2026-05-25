@@ -1,5 +1,5 @@
 import { loadPrompt } from '@/lib/ai/prompts/load';
-import { getProvider } from '@/lib/ai/provider';
+import { getProviderForFunction } from '@/lib/ai/provider';
 import { customTargetSpecSchema, type CustomTargetSpec } from '@/lib/ai/explore/schema';
 import type { CaptureProfile } from '@/lib/ai/capture/schema';
 
@@ -52,7 +52,7 @@ export interface DraftCustomTargetResult {
 
 export async function draftCustomTarget(input: DraftCustomTargetInput): Promise<DraftCustomTargetResult> {
   if (!input.prose.trim()) throw new Error('prose is required');
-  const provider = getProvider();
+  const provider = await getProviderForFunction('explore-draft-target');
   const systemPrompt = await loadPrompt('explore-draft-target');
 
   const userMessage = [
