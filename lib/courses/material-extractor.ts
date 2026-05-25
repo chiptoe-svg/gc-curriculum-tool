@@ -119,6 +119,38 @@ class DoclingExtractor implements MaterialExtractor {
     form.append('files', blob, fileName);
     form.append('to_formats', 'md');
 
+    // Optional VLM picture-description pass. Enabled when DOCLING_VLM_ENABLED
+    // is truthy AND docling-serve was started with
+    // DOCLING_SERVE_ALLOW_CUSTOM_PICTURE_DESCRIPTION_CONFIG=true and
+    // DOCLING_SERVE_ENABLE_REMOTE_SERVICES=true. The VLM is an OpenAI-compatible
+    // backend pointed at by DOCLING_VLM_URL (defaults to local omlx).
+    // image_export_mode=placeholder keeps the markdown lean — we want the
+    // VLM's description, not the base64 image bytes.
+    if (process.env.DOCLING_VLM_ENABLED && process.env.DOCLING_VLM_ENABLED !== 'false') {
+      form.append('do_picture_description', 'true');
+      form.append('image_export_mode', 'placeholder');
+      const vlmConfig = {
+        model_spec: {
+          name: process.env.DOCLING_VLM_MODEL ?? 'Qwen3.6-35B-A3B-UD-MLX-4bit',
+          default_repo_id: 'Qwen/Qwen3-VL',
+          prompt: process.env.DOCLING_VLM_PROMPT
+            ?? 'Describe this image in 1-2 sentences. Focus on content and concepts (chart type, axes, key values, diagram structure, etc.). Reply with only the description — no preamble.',
+          response_format: 'plaintext',
+          max_new_tokens: 200,
+        },
+        engine_options: {
+          engine_type: 'api',
+          url: process.env.DOCLING_VLM_URL ?? 'http://localhost:8000/v1/chat/completions',
+          headers: process.env.DOCLING_VLM_API_KEY
+            ? { Authorization: `Bearer ${process.env.DOCLING_VLM_API_KEY}` }
+            : {},
+          params: { model: process.env.DOCLING_VLM_MODEL ?? 'Qwen3.6-35B-A3B-UD-MLX-4bit' },
+          timeout: 120,
+        },
+      };
+      form.append('picture_description_custom_config', JSON.stringify(vlmConfig));
+    }
+
     const url = `${this.baseUrl.replace(/\/$/, '')}/v1/convert/file`;
     const res = await fetch(url, { method: 'POST', body: form });
     if (!res.ok) {

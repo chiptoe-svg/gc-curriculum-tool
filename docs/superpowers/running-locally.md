@@ -64,16 +64,41 @@ manual start for now.
 ### Start docling-serve
 
 ```bash
-DOCLING_DEVICE=cpu nohup docling-serve run --host 127.0.0.1 --port 5001 \
+DOCLING_DEVICE=cpu \
+DOCLING_SERVE_ALLOW_CUSTOM_PICTURE_DESCRIPTION_CONFIG=true \
+DOCLING_SERVE_ENABLE_REMOTE_SERVICES=true \
+nohup docling-serve run --host 127.0.0.1 --port 5001 \
   > /tmp/docling-serve.log 2>&1 &
 disown
 ```
+
+The two `DOCLING_SERVE_*` env vars enable the optional VLM
+picture-description pass: docling-serve will accept a per-request
+custom config pointing at any OpenAI-compatible chat-completions
+endpoint (i.e., your local omlx). Without them, picture description
+is disabled and only text + tables come through.
 
 **Important: `DOCLING_DEVICE=cpu` is required on Apple Silicon.**
 Docling's layout model trips on a float64 MPS type conversion that
 PyTorch's MPS backend doesn't support. CPU adds ~1-3 seconds per page
 but works reliably. Track upstream Docling for MPS fixes; revisit
 when fixed.
+
+### Optional: enable VLM figure descriptions
+
+In `.env.local` (Next.js side), set:
+
+```
+DOCLING_VLM_ENABLED=true
+DOCLING_VLM_URL=http://localhost:8000/v1/chat/completions
+DOCLING_VLM_API_KEY=<your omlx key>
+DOCLING_VLM_MODEL=Qwen3.6-35B-A3B-UD-MLX-4bit
+```
+
+When set, every PDF/PPTX/image with embedded figures will get a
+1-2 sentence description appended per figure (chart type, axes,
+key values, etc.). Adds ~3s per figure (CPU). Leave unset on
+Vercel — the env vars are absent there and the feature no-ops.
 
 Verify it's up:
 
