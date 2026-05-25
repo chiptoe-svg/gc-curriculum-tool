@@ -20,6 +20,23 @@ const MAX_FILE_BYTES = 5 * 1024 * 1024;  // 5 MB cap per file
 interface Ctx { params: Promise<{ code: string }> }
 
 export async function POST(req: Request, { params }: Ctx) {
+  // Wrap everything in a top-level try/catch so any unhandled exception
+  // is returned as a JSON error rather than Next.js's HTML 500 page —
+  // the client parses the response as JSON and breaks on HTML.
+  try {
+    return await runImport(req, params);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    const stack = e instanceof Error ? e.stack : undefined;
+    console.error('[canvas-import] unhandled exception:', msg, stack);
+    return NextResponse.json(
+      { error: `Unexpected server error during Canvas import: ${msg}` },
+      { status: 500 },
+    );
+  }
+}
+
+async function runImport(req: Request, params: Ctx['params']): Promise<Response> {
   const { code } = await params;
   const body = await req.json().catch(() => ({}));
   const slug = typeof body.slug === 'string' ? body.slug : '';

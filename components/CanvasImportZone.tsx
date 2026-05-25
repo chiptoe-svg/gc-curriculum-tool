@@ -101,6 +101,21 @@ export function CanvasImportZone({ courseCode, slug, onImported, open: controlle
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ slug, canvasUrl: canvasUrl.trim(), canvasToken: canvasToken.trim() }),
       });
+      // The route hands back JSON for every defined error path. If the response
+      // isn't JSON (typically Next.js's HTML 500 page from an unhandled
+      // exception), surface that as a clear "server error" message instead of
+      // letting JSON.parse throw a cryptic "expected pattern" error.
+      const contentType = res.headers.get('content-type') ?? '';
+      if (!contentType.includes('application/json')) {
+        const text = await res.text();
+        setStatus('error');
+        setMessage(
+          `Server returned ${res.status} ${res.statusText || ''} with a non-JSON response. ` +
+          `This usually means an unhandled error on the server. ` +
+          (text.length < 200 ? `Body: ${text}` : 'Check the server logs for details.'),
+        );
+        return;
+      }
       const json = await res.json();
       if (!res.ok) {
         setStatus('error');
