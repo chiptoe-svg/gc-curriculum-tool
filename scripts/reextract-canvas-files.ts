@@ -39,8 +39,31 @@ import { db } from '@/lib/db/client';
 import { courseMaterials } from '@/lib/db/schema';
 import { eq, and, like } from 'drizzle-orm';
 import { fetchCanvasFileMeta } from '@/lib/canvas/fetchCanvasCourse';
-import { extractText } from '@/lib/courses/extract-text';
+import { extractText, SUPPORTED_MIME_TYPES, type ExtractedMimeType } from '@/lib/courses/extract-text';
+import { LEGACY_OFFICE_MIME_TYPES } from '@/lib/courses/material-extractor';
 import { parseCanvasUrl } from '@/lib/canvas/parseCanvasUrl';
+
+// Map filename extension → modern MIME type for cases where Canvas reports
+// an empty or missing content-type. Mirrors the EXT_TO_MIME table in the
+// backfill script.
+const EXT_TO_MIME: Record<string, string> = {
+  pdf: 'application/pdf',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  csv: 'text/csv',
+  html: 'text/html',
+  htm: 'text/html',
+  png: 'image/png',
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+};
+
+function resolveMimeType(reported: string, displayName: string): string {
+  if (reported && reported !== 'application/octet-stream') return reported;
+  const ext = (displayName.split('.').pop() ?? '').toLowerCase();
+  return EXT_TO_MIME[ext] ?? reported;
+}
 
 const CANVAS_FILE_ID_RE = /\/files\/(\d+)(?:\/|\?|"|$)/g;
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
@@ -137,12 +160,14 @@ async function main() {
       skipped++;
       continue;
     }
-    const mime = meta.mimeType.toLowerCase();
-    const ext = (meta.displayName.split('.').pop() ?? '').toLowerCase();
-    const isPdf = mime.includes('pdf') || ext === 'pdf';
-    const isDocx = mime.includes('officedocument') || ext === 'docx';
-    if (!isPdf && !isDocx) {
-      console.log(`  [skip] ${meta.displayName} — unsupported type ${meta.mimeType || ext}`);
+    const resolvedMime = resolveMimeType(meta.mimeType, meta.displayName);
+    if (LEGACY_OFFICE_MIME_TYPES.has(resolvedMime)) {
+      console.log(`  [skip] ${meta.displayName} — legacy Office format (${resolvedMime}); re-save as modern format`);
+      skipped++;
+      continue;
+    }
+    if (!(SUPPORTED_MIME_TYPES as readonly string[]).includes(resolvedMime)) {
+      console.log(`  [skip] ${meta.displayName} — unsupported type ${resolvedMime}`);
       skipped++;
       continue;
     }
@@ -152,7 +177,7 @@ async function main() {
       continue;
     }
 
-    console.log(`  ${meta.displayName} (${meta.sizeBytes.toLocaleString()} bytes, ${isPdf ? 'PDF' : 'DOCX'})`);
+    console.log(`  ${meta.displayName} (${meta.sizeBytes.toLocaleString()} bytes, ${resolvedMime})`);
 
     if (!apply) continue;
 
@@ -163,10 +188,7 @@ async function main() {
       continue;
     }
     const buffer = Buffer.from(await dl.arrayBuffer());
-    const mimeForExtract = isPdf
-      ? 'application/pdf' as const
-      : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' as const;
-    const result = await extractText({ fileBytes: buffer, mimeType: mimeForExtract, fileName: meta.displayName });
+    const result = await extractText({ fileBytes: buffer, mimeType: resolvedMime as ExtractedMimeType, fileName: meta.displayName });
     if (result.status !== 'ok' || !result.text) {
       console.log(`    extraction failed (${result.status})`);
       skipped++;
@@ -178,7 +200,7 @@ async function main() {
         extractionStatus: 'ok',
         extractionMethod: result.method ?? 'text',
         pageCount: result.pageCount ?? null,
-        mimeType: meta.mimeType || mimeForExtract,
+        mimeType: resolvedMime,
         sizeBytes: buffer.length,
       })
       .where(eq(courseMaterials.id, targetRow.id));
