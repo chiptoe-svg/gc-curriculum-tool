@@ -243,9 +243,9 @@ export function CaptureClient({
 
       {stage === 'generating' && (
         <div className="rounded-md border bg-muted/20 px-4 py-6 text-center">
-          <p className="text-sm font-medium">Generating depth ratings…</p>
+          <p className="text-sm font-medium">Generating KUD+ profile…</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Scoring K/U/D depth on each competency, citing evidence excerpts, and producing audit notes.
+            Scoring K/U/D depth (0–5) on each competency, citing evidence, and assessing productive-failure conditions.
           </p>
         </div>
       )}
