@@ -86,12 +86,20 @@ export default async function CapturePage({ params, searchParams }: Props) {
               {course.code} <span className="text-muted-foreground">— {course.title}</span>
             </h1>
           </div>
-          <Link
-            href={`/preview/${encodeURIComponent(slug)}/courses/${encodeURIComponent(code)}`}
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
-            ← Course Builder view
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link
+              href={`/explore/${encodeURIComponent(code)}?slug=${encodeURIComponent(slug)}`}
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
+              Explore →
+            </Link>
+            <Link
+              href={`/preview/${encodeURIComponent(slug)}/courses/${encodeURIComponent(code)}`}
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
+              ← Course Builder view
+            </Link>
+          </div>
         </div>
       </header>
 

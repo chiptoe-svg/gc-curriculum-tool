@@ -344,6 +344,33 @@ export const courseCaptureSnapshots = pgTable('course_capture_snapshots', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
+// Explore-side persisted state. Two tables: targets (the "what should be"
+// half of the comparison) and analyses (saved comparator runs).
+// Both are write-only from Explore — never touch capture-side tables.
+
+export const courseExploreTargets = pgTable('course_explore_targets', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  courseCode: text('course_code').notNull().references(() => courses.code, { onDelete: 'cascade' }),
+  kind: text('kind').notNull(), // 'custom' | 'downstream'
+  spec: jsonb('spec').notNull(),
+  caption: text('caption'),
+  proseInput: text('prose_input'),
+  authoredAgainstSnapshotId: uuid('authored_against_snapshot_id').references(() => courseCaptureSnapshots.id, { onDelete: 'set null' }),
+  retiredAt: timestamp('retired_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const courseExploreAnalyses = pgTable('course_explore_analyses', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  courseCode: text('course_code').notNull().references(() => courses.code, { onDelete: 'cascade' }),
+  snapshotId: uuid('snapshot_id').notNull().references(() => courseCaptureSnapshots.id, { onDelete: 'cascade' }),
+  targetId: uuid('target_id').notNull().references(() => courseExploreTargets.id, { onDelete: 'cascade' }),
+  analysis: jsonb('analysis').notNull(),
+  model: text('model').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
 // In-flight CourseCapture audit conversation, persisted so faculty can
 // resume after a closed tab, a failed Generate, or a next-day return.
 // One row per course (PK course_code). Cleared on profile confirmation

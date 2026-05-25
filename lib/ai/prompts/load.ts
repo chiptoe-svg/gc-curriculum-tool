@@ -22,6 +22,8 @@ type PromptName =
   | 'kud-chat'
   | 'capture-chat'
   | 'capture-scores'
+  | 'explore-draft-target'
+  | 'explore-compare'
   | 'parse-profile-fields';
 
 interface ParsedPrompt {
