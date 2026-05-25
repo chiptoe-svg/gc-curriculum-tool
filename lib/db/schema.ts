@@ -371,6 +371,30 @@ export const courseExploreAnalyses = pgTable('course_explore_analyses', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
+// Program-level coverage matrix: one row per (snapshot × career-target ×
+// sub-competency). Populated by an AI scoring pass that maps the snapshot's
+// discovered competencies to the canonical sub-competency space. Read by
+// the program coverage matrix view and the scaffolding analysis.
+//
+// Idempotent: UNIQUE(snapshot, target, sub_competency) means a re-score
+// overwrites the cell rather than duplicating it.
+export const snapshotTargetCoverage = pgTable('snapshot_target_coverage', {
+  snapshotId: uuid('snapshot_id').notNull().references(() => courseCaptureSnapshots.id, { onDelete: 'cascade' }),
+  careerTargetId: text('career_target_id').notNull().references(() => careerTargets.id, { onDelete: 'cascade' }),
+  subCompetencyId: text('sub_competency_id').notNull().references(() => subCompetencies.id, { onDelete: 'cascade' }),
+  kDepth: integer('k_depth'),
+  uDepth: integer('u_depth'),
+  dDepth: integer('d_depth').notNull(),
+  matchedCompetency: text('matched_competency'),
+  evidenceExcerpt: text('evidence_excerpt'),
+  confidence: text('confidence').notNull(),
+  rationale: text('rationale').notNull(),
+  model: text('model').notNull(),
+  generatedAt: timestamp('generated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.snapshotId, t.careerTargetId, t.subCompetencyId] }),
+}));
+
 // Per-function AI model settings. One row per function ID. Each row carries
 // either a tier name ('light' | 'default' | 'heavy') that resolves to a
 // model via the tier-mapping in lib/ai/function-settings.ts, or a custom
