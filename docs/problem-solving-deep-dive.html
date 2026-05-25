@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Problem-Solving as a Program-Level Emergent Property — Deep Dive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Mono:wght@300;400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --rail: #141412;
+    --rail-text: #8a8780;
+    --rail-active: #E8A44A;
+    --rail-hover: #2a2925;
+    --bg: #F7F5F0;
+    --bg-card: #FFFFFF;
+    --bg-alt: #F0EDE6;
+    --text: #1C1C18;
+    --text-muted: #6B6860;
+    --text-faint: #9E9B94;
+    --accent: #C8682A;
+    --accent-light: #F5E6D8;
+    --border: #E2DDD4;
+    --border-strong: #C8C4BA;
+    --mono: 'DM Mono', monospace;
+    --serif: 'Source Serif 4', Georgia, serif;
+    --display: 'Playfair Display', Georgia, serif;
+    --t1: #2A5C8C;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--serif);
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    min-height: 100vh;
+    font-size: 16px;
+    line-height: 1.7;
+  }
+
+  #rail {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: 240px;
+    background: var(--rail);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    z-index: 100;
+  }
+  .rail-header { padding: 28px 20px 20px; border-bottom: 1px solid #252420; }
+  .rail-dept { font-family: var(--mono); font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: #5a5750; margin-bottom: 6px; }
+  .rail-title { font-family: var(--display); font-size: 14px; color: #d4d0c8; line-height: 1.4; }
+  .rail-doc-type { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--rail-active); margin-top: 10px; }
+  .rail-nav { padding: 20px 0; flex: 1; }
+  .nav-group-label { font-family: var(--mono); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: #4d4a44; padding: 14px 20px 8px; }
+  .nav-link { display: block; padding: 7px 20px 7px 22px; color: var(--rail-text); text-decoration: none; font-family: var(--serif); font-size: 13.5px; border-left: 2px solid transparent; transition: all 120ms; }
+  .nav-link:hover { color: #c8c4ba; background: var(--rail-hover); }
+  .rail-footer { padding: 16px 20px; font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.08em; color: #5a5750; border-top: 1px solid #252420; line-height: 1.7; }
+  .rail-footer a { color: var(--rail-text); text-decoration: none; }
+  .rail-footer a:hover { color: var(--rail-active); }
+
+  main { margin-left: 240px; flex: 1; padding: 64px 80px 96px; max-width: 1080px; }
+
+  .doc-head { margin-bottom: 56px; padding-bottom: 32px; border-bottom: 1px solid var(--border-strong); }
+  .doc-eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; }
+  .doc-title { font-family: var(--display); font-size: 44px; font-weight: 700; line-height: 1.1; color: var(--text); margin-bottom: 20px; letter-spacing: -0.005em; }
+  .doc-subtitle { font-family: var(--serif); font-size: 18px; color: var(--text-muted); line-height: 1.55; max-width: 740px; font-style: italic; font-weight: 300; }
+  .doc-meta { margin-top: 22px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; color: var(--text-faint); display: flex; gap: 20px; flex-wrap: wrap; }
+  .doc-meta strong { color: var(--text-muted); font-weight: 500; margin-right: 6px; }
+
+  section { margin-bottom: 56px; scroll-margin-top: 32px; }
+
+  h2 { font-family: var(--display); font-size: 30px; font-weight: 600; line-height: 1.2; margin-bottom: 22px; padding-bottom: 12px; border-bottom: 1px solid var(--border); display: flex; align-items: baseline; gap: 14px; }
+  h2 .num { font-family: var(--mono); font-size: 13px; font-weight: 500; letter-spacing: 0.1em; color: var(--accent); background: var(--accent-light); padding: 3px 10px; border-radius: 3px; flex-shrink: 0; }
+  h3 { font-family: var(--display); font-size: 21px; font-weight: 600; line-height: 1.3; margin: 32px 0 14px; color: var(--text); }
+
+  p { margin-bottom: 14px; max-width: 760px; }
+  strong { color: var(--text); font-weight: 600; }
+  em { color: var(--text); font-style: italic; }
+  a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:hover { color: #a85020; }
+
+  ul, ol { margin: 14px 0 22px 22px; max-width: 760px; }
+  li { margin-bottom: 8px; }
+  li strong { color: var(--text); }
+
+  code { font-family: var(--mono); font-size: 0.88em; background: var(--bg-alt); padding: 1px 6px; border-radius: 3px; color: var(--text); }
+
+  blockquote {
+    border-left: 3px solid var(--border-strong);
+    padding: 4px 0 4px 18px;
+    margin: 18px 0;
+    color: var(--text-muted);
+    font-style: italic;
+    max-width: 740px;
+  }
+
+  .callout { background: var(--bg-card); border-left: 3px solid var(--accent); padding: 18px 22px; margin: 22px 0; border-radius: 0 4px 4px 0; max-width: 820px; }
+  .callout-title { font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout.note { border-left-color: var(--t1); }
+  .callout.note .callout-title { color: var(--t1); }
+
+  .doc-foot { margin-top: 96px; padding-top: 24px; border-top: 1px solid var(--border-strong); font-family: var(--mono); font-size: 11px; color: var(--text-faint); letter-spacing: 0.05em; }
+
+  @media (max-width: 900px) {
+    #rail { position: static; width: 100%; height: auto; }
+    main { margin-left: 0; padding: 32px 24px 64px; }
+  }
+</style>
+</head>
+<body>
+
+<aside id="rail">
+  <div class="rail-header">
+    <div class="rail-dept">Clemson · Graphic Communications</div>
+    <div class="rail-title">GC Curriculum Tool</div>
+    <div class="rail-doc-type">Research Deep Dive</div>
+  </div>
+  <nav class="rail-nav">
+    <div class="nav-group-label">Sections</div>
+    <a class="nav-link" href="#why">Why this document exists</a>
+    <div class="nav-group-label">Part I — Research</div>
+    <a class="nav-link" href="#domain-specificity">Domain-specificity</a>
+    <a class="nav-link" href="#productive-failure">Productive failure</a>
+    <a class="nav-link" href="#reflection">Reflection</a>
+    <a class="nav-link" href="#transfer">Transfer</a>
+    <a class="nav-link" href="#expertise">Expertise findings</a>
+    <a class="nav-link" href="#limits">Honest limits</a>
+    <div class="nav-group-label">Part II — Framework</div>
+    <a class="nav-link" href="#claim-1">Claim 1 — Depth encodes facets</a>
+    <a class="nav-link" href="#claim-2">Claim 2 — Audit surfaces conditions</a>
+    <a class="nav-link" href="#claim-3">Claim 3 — Program-level diagnosis</a>
+    <div class="nav-group-label">Part III — Implementation</div>
+    <a class="nav-link" href="#implementation">End-to-end chain</a>
+    <div class="nav-group-label">Part IV — Limits</div>
+    <a class="nav-link" href="#not-doing">What the framework doesn&rsquo;t do</a>
+    <a class="nav-link" href="#watch">What to watch for</a>
+    <div class="nav-group-label" style="margin-top: 18px;">See also</div>
+    <a class="nav-link" href="./background.html#problem-solving">Background §8</a>
+    <a class="nav-link" href="./background.html">KUD+ Background (full)</a>
+    <a class="nav-link" href="./superpowers/vision/gc-curriculum-tool-vision.html">Vision document</a>
+  </nav>
+  <div class="rail-footer">
+    <a href="./background.html#problem-solving">← Background §8</a>
+  </div>
+</aside>
+
+<main>
+
+<header class="doc-head">
+  <div class="doc-eyebrow">Research synthesis &amp; framework design</div>
+  <h1 class="doc-title">Problem-Solving as a Program-Level Emergent Property</h1>
+  <p class="doc-subtitle">A research-tool position on how problem-solving competence actually develops in undergraduate education, and how the KUD+ curriculum-mapping framework operationalizes that view into per-course audit probes and program-level diagnostics. Companion to the <a href="./background.html" style="color: var(--accent);">KUD+ Background</a>; extends §8.</p>
+  <div class="doc-meta">
+    <span><strong>Date</strong> 2026-05-25</span>
+    <span><strong>Status</strong> Research-tool framing — defensible commitments, not settled science</span>
+    <span><strong>Audience</strong> Faculty, curriculum committee, advisory partners</span>
+  </div>
+</header>
+
+<section id="why">
+  <h2><span class="num">§ 1</span>Why this document exists</h2>
+
+  <p>Employers consistently rate problem-solving among the most desirable graduate competencies. The National Association of Colleges and Employers' annual Job Outlook surveys have placed problem-solving at or near the top of the competencies list for years running. Yet faculty conversations about how to develop problem-solving regularly stall: the natural moves — add a "Problem-Solving" course, list it as a generic outcome, ask each instructor to teach it — produce graduates who do not, in the employer signal, solve problems any better than before.</p>
+
+  <p>The mismatch is not a measurement artifact. The intuition that a faculty member developing this tool articulated — that problem-solving requires <em>high levels of K/U/D in a specific domain, followed by forced experience with failure, post-mortem, troubleshooting, and corrective action</em> — turns out to be substantially supported by four decades of cognitive-science research. The natural curricular moves miss because they treat problem-solving as a transferable generic skill, and forty years of research say it is not one.</p>
+
+  <p>This document does two things. First, it reviews the research carefully — surfacing what is well-supported, what is genuinely contested, and where the literature can be cited too confidently. Second, it operationalizes the research into the curriculum-mapping tool's data shape: the per-course audit probes that surface productive-failure conditions, the depth scales that encode problem-solving facets within domains, and the program-level views that aggregate the cumulative pattern. The goal is to make a property that has resisted measurement — problem-solving competence in graduates — legible at the level where it can actually inform curriculum decisions.</p>
+
+  <div class="callout note">
+    <div class="callout-title">A framing note</div>
+    <p>This tool does not need to be perfect or 100% grounded in proven science. It is a research instrument in its own right — a way to make defensible commitments visible, generate data that tests those commitments over time, and revise as evidence accumulates. The document below makes commitments rather than hedges them, while naming the genuine limits where they matter.</p>
+  </div>
+</section>
+
+<h2 style="font-family: var(--display); font-size: 22px; font-weight: 600; margin: 24px 0 8px; color: var(--text-muted); border: none; padding: 0;">Part I — The research</h2>
+
+<section id="domain-specificity">
+  <h2><span class="num">§ 2</span>The domain-specificity finding</h2>
+
+  <p>The most consequential body of work for this question is the cognitive-science research on problem-solving and critical thinking that began in the late 1970s and has remained remarkably stable in its core claim since. The claim is that thinking is not a portable skill that can be cultivated independently of subject matter; it is constitutively entangled with what is being thought about.</p>
+
+  <p>Daniel Willingham's 2007 synthesis in <em>American Educator</em> is the most widely cited accessible articulation. Willingham argues that <em>"the processes of thinking are intertwined with the content of thought"</em> — that even highly trained scientists fail at critical thinking when reasoning about problems outside their domain of expertise. His implication for instruction is direct: it makes no sense to try to teach critical thinking devoid of factual content, because critical thinking <em>is</em> the operation of disciplinary knowledge under the conditions where it matters.</p>
+
+  <p>John McPeck made the philosophical case earlier and more sharply in his 1981 monograph <em>Critical Thinking and Education</em>. McPeck argued that <em>"there are no general thinking skills, since thinking is always thinking about some subject-matter"</em> — and that courses devoted to generalized skill instruction should give way to subject-specific instruction that develops the same capacities within domains where they actually operate. McPeck's strong-specificity position has been contested by Ennis, Paul, Siegel, and others who defend a more moderate generalist view, and the philosophical debate remains genuinely open. What has accumulated is empirical support for the related-but-distinct <em>domain-dependence</em> finding: expert performance, problem-solving capability, and transfer of learning all show strong domain-specific patterns in the cognitive-science literature. The framework rests on the empirical finding, not on philosophical settlement of the McPeck-Ennis debate.</p>
+
+  <p>The empirical bedrock is the expert-novice literature in cognitive science, beginning with Chi, Feltovich, and Glaser's 1981 study of physics problem-solving. Chi and colleagues gave the same set of physics problems to experts (physics professors) and novices (introductory students) and asked them to sort the problems into groups. The novices sorted by surface features — problems that mentioned a pulley went together; problems that mentioned an inclined plane went together. The experts sorted by underlying principle — problems governed by conservation of energy went together, regardless of their surface details. The finding was not that experts knew more. It was that experts had categorically different mental representations of the same problems, organized around principles rather than surface features.</p>
+
+  <p>Larkin, McDermott, Simon, and Simon's contemporaneous 1980 paper extended the analysis to problem-solving strategies. Experts predominantly use forward-chaining inference (starting from given quantities and working toward what is asked); novices predominantly use means-ends analysis (working backward from the goal, searching for operations that reduce the gap to the goal). The difference is not that novices lack a strategy — they have one, and it is laborious. The expert strategy becomes available because the schemas required to recognize which principles are triggered by a problem are in place, allowing immediate forward inference. The novice strategy is what's left when the schemas aren't there yet.</p>
+
+  <p>John Sweller's cognitive load theory, articulated in his 1988 paper, provides the mechanistic account. Working memory has limited capacity. Schema acquisition is what allows complex domain operations to fit within that capacity; in their absence, the operations themselves consume working memory and learning is impaired. The pedagogical implication is sharp: for genuine novices, open-ended problem-solving imposes high cognitive load that crowds out the schema acquisition needed to eventually solve such problems independently. Worked examples and well-structured direct instruction more efficiently build the schemas that, once acquired, make independent problem-solving possible.</p>
+
+  <p>The position that emerges across these literatures is consistent. Problem-solving in a domain is not a separable transferable skill that operates on top of domain knowledge. It <em>is</em> the operation of well-organized domain knowledge under conditions that require it — and the organization is principle-based, schema-mediated, and built through extended engagement with the domain. A "Problem-Solving" course that is decoupled from any specific domain is, on this view, asking students to operate a skill whose substrate they do not yet possess.</p>
+</section>
+
+<section id="productive-failure">
+  <h2><span class="num">§ 3</span>The productive-failure finding</h2>
+
+  <p>If domain knowledge is the substrate, what produces the <em>capacity to deploy it under novelty</em>? The research converges on a specific developmental mechanism: repeated cycles of attempted solutions in conditions where failure is informative, followed by structured sense-making that converts the failure into transferable understanding.</p>
+
+  <p>Manu Kapur's program of research on productive failure has produced the most concentrated empirical investigation of this mechanism. Kapur's original 2008 paper documented a counterintuitive finding: students who struggled with ill-structured problems <em>before</em> receiving instruction outperformed students who received direct instruction first on measures of transfer and conceptual understanding. The struggling students' surface-level performance was worse during the intervention. Their learning was better.</p>
+
+  <p>The mechanism Kapur identifies is the activation of prior knowledge under the demand to generate solutions. When students are asked to solve a problem they don't yet have the canonical method for, they reach for what they do know, attempt to extend it to the new situation, and fail in characteristic ways. The failures expose conceptual gaps, generate diverse partial-solution attempts, and prime learners to attend to subsequent instruction in ways that students given direct instruction first do not. The instruction that follows the struggle is the consolidation phase; the failures encountered in the struggle become the scaffolding around which the consolidation organizes itself.</p>
+
+  <h3>The 2×2 framework — productive/unproductive × failure/success</h3>
+
+  <p>Kapur's 2016 conceptual paper introduces a 2×2 framework that is more useful than a simple productive/unproductive failure binary. The framework crosses two axes — failure versus success, productive versus unproductive — and produces four learning conditions:</p>
+
+  <ul>
+    <li><strong>Productive failure</strong> — students struggle, fail, and learn the underlying concepts deeply through the consolidation phase that follows</li>
+    <li><strong>Productive success</strong> — students succeed, and the success itself produces learning (most common when direct instruction is well-matched to readiness)</li>
+    <li><strong>Unproductive failure</strong> — students struggle without the consolidation that converts failure into understanding; they learn that the material is hard and they cannot do it</li>
+    <li><strong>Unproductive success</strong> — students perform well on familiar problems through rote repetition without developing the underlying conceptual structure; they look competent but the learning is brittle</li>
+  </ul>
+
+  <p>The two unproductive quadrants are the operationally important ones for curriculum design. <em>Unproductive failure</em> is the consequence of designing struggle without the supporting consolidation — Kapur's central warning. <em>Unproductive success</em> is the consequence the framework's depth-only lens cannot detect: a course that reaches D-5 through repetitive practice on familiar problems produces high performance and brittle understanding. A graduate of such a course can perform on known problems and freezes on novelty. This quadrant is exactly what the productive-failure audit area is designed to flag — a course with high depth but absent productive-failure conditions is the unproductive-success scenario, and the framework reads it as exactly that.</p>
+
+  <h3>Effect sizes and the domain-general caveat</h3>
+
+  <p>Sinha and Kapur's 2021 review in <em>Review of Educational Research</em> aggregates the conditions under which the productive-failure effect holds — a meta-analysis of 53 studies finding an overall moderate effect (Hedge's g ≈ 0.36) favoring problem-solving-then-instruction over instruction-then-problem-solving. Two findings from the meta-analysis matter operationally. First, the effect is robust across STEM content domains and student populations from K-12 through undergraduate when the design is faithful to the two-phase structure. Second — and this is critical for a discipline like Graphic Communications that mixes settled technical knowledge with horizontal-knowledge domains — for <em>domain-general skills</em> (the cross-domain habits of mind that some moderate-generalists treat as transferable), the effect direction reverses: instruction-first outperforms struggle-first.</p>
+
+  <p>The framework treats this as informative rather than disqualifying: productive-failure scaffolding has the strongest evidence base for the technical-skill portions of the GC curriculum (color science, press operation, typography principles — domains with canonical solutions and unambiguous failure modes), and a weaker evidence base for the horizontal-knowledge portions (brand strategy, creative direction, editorial judgment). The productive-failure audit area surfaces the conditions either way; the program-level reading should interpret the scaffolding differently across the two zones.</p>
+
+  <h3>Degrees, not thresholds</h3>
+
+  <p>A 2023 paper in <em>npj Science of Learning</em> examined the prior-knowledge question directly: the productive-failure effect benefits lower-achieving students disproportionately <em>if</em> they have at least minimal relevant prior knowledge to activate. The bar for "enough prior knowledge" is not deep expertise; it is enough to generate meaningful, even if wrong, solution attempts.</p>
+
+  <p>The Bjork lab's "desirable difficulties" framework generalizes the finding to a broader principle. Robert Bjork's 1994 chapter laid out the underlying observation: <em>the conditions of practice that maximize short-term performance are often different from the conditions that maximize long-term retention and transfer</em>. Spaced practice (with intervals between sessions) suppresses in-the-moment performance but dramatically improves long-term retention. Interleaved practice (mixing problem types rather than blocked drilling on one type at a time) suppresses fluency on individual problems but improves the ability to discriminate among problem types and select the right approach. Retrieval practice (testing oneself rather than re-reading) feels less productive than passive review but produces stronger memory traces.</p>
+
+  <p>The unifying principle is that struggle, properly designed, is the mechanism of durable learning. Not all struggle qualifies. Productive struggle is calibrated to the learner's current capability and accompanied by the feedback or consolidation that lets the struggle resolve into understanding. Unproductive struggle — too far beyond current capability, or without the resolving phase — does not produce learning and may damage motivation.</p>
+
+  <p>Critically for the curriculum question: Kapur's framework does not establish a discrete threshold of prior knowledge below which productive failure becomes unproductive. The 2023 <em>npj</em> study showed the effect operating in degrees, with the quality of <em>inventive production</em> during the struggle phase being a stronger predictor of learning than starting depth. The implication for curriculum mapping is that productive-failure exposure contributes to problem-solving development at every depth at which it occurs, with the contribution graded by the depth of domain schema available to make the failure informative. Higher-depth productive failure contributes more per cycle. Lower-depth productive failure still contributes — it builds the dispositional habit of attempting before being told the method, which is itself part of what problem-solving development requires.</p>
+</section>
+
+<section id="reflection">
+  <h2><span class="num">§ 4</span>The reflection finding</h2>
+
+  <p>Failure that resolves into understanding requires more than the struggle itself. Donald Schön's <em>The Reflective Practitioner</em> (1983) established the theoretical case that professional expertise develops through cycles of reflection-in-action (adjusting during practice) and reflection-on-action (retrospective analysis). David Kolb's <em>Experiential Learning</em> (1984) made the developmental cycle explicit and pedagogically operable: concrete experience leads to reflective observation, which leads to abstract conceptualization, which leads to active experimentation, which produces the next concrete experience. The cycle is the unit, not any single stage; experience without reflection does not produce abstraction, and abstraction without experimentation does not produce capability.</p>
+
+  <p>The most empirically grounded statement of how to operationalize reflection is the 2013 meta-analysis by Tannenbaum and Cerasoli on team and individual debriefs. Aggregating 46 studies across simulated and real settings, military and civilian populations, individual and team contexts, the authors found that structured debriefs produced approximately 25% performance improvement over control conditions, with effect sizes stable across moderator variables. The structure that worked was not elaborate. What happened, why did it happen, what would you do differently next time — applied specifically to the concrete events of the just-completed performance, applied close in time to the performance itself, applied in a way that yielded explicit takeaways. The features that distinguished effective from ineffective debriefs were not depth of psychological insight or therapeutic processing; they were specificity, timeliness, and outcome orientation.</p>
+
+  <p>Generic reflection prompts — "reflect on your learning," "what did you take away from this course" — do not have the same effect, and the literature is honest about why. The mechanism of effective reflection is the conversion of concrete experience into abstract principle, and that conversion requires the reflection to be anchored to the concrete details of what just happened. Reflection that floats free of the concrete cannot do the abstraction work.</p>
+
+  <p>For curriculum mapping, the implication is that reflection scaffolding is a separable design dimension from productive-failure conditions. A course can require productive struggle and skip the consolidation phase; a course can include reflection prompts that are too generic to convert experience into transfer. Both produce sub-optimal problem-solving development. The conditions are gradable independently and should be observed independently in the audit.</p>
+</section>
+
+<section id="transfer">
+  <h2><span class="num">§ 5</span>The transfer finding</h2>
+
+  <p>The cumulative point of the literature above — domain-specificity plus productive failure plus reflection — is the development of capacity to transfer learning to novel situations. The transfer literature is the place where this becomes most directly visible.</p>
+
+  <p>Perkins and Salomon's 1992 chapter in the <em>International Encyclopedia of Education</em> distinguishes low-road transfer (near transfer, automatic, triggered by surface similarity) from high-road transfer (far transfer, deliberate, requiring conscious abstraction of principles). The deep general finding of the transfer literature is uncomfortable: <em>transfer is hard and rarely happens without explicit scaffolding</em>. Students who can solve a class of problems in the context where they learned them often cannot solve the same problems in a different context, especially if the new context disguises the underlying structure. Far transfer, in particular, requires students to abstract the principle that applies across contexts, and the abstraction is not automatic. It must be deliberately fostered.</p>
+
+  <p>This is the empirical reason why "problem-solving" as a generic course produces such poor results when measured by transfer to actual problem situations: the transfer that would make the course's content useful in graduates' work lives is exactly the kind of high-road far transfer that the research says rarely happens without explicit scaffolding around the principles that bridge the abstract content and the specific application. The scaffolding the literature recommends is exactly what the productive-failure-and-reflection cycle provides: encountering problems in domains where the student already has some schema base, failing in informative ways, and reflecting on those failures in terms that surface the transferable principles.</p>
+
+  <p>The Perkins and Salomon framework is also the reason for caution about the claim that <em>domain expertise alone</em> produces transferable problem-solving. It does not; it produces in-domain problem-solving capability. The transferable capability — what graduates draw on when they encounter genuinely new situations — comes from the meta-pattern of having done the depth + failure + reflection cycle enough times across enough domains that the <em>habit</em> of attempting before being told, failing informatively, and reflecting productively becomes itself something that transfers. This is the moderate-generalist position in the critical-thinking literature: there is a kernel of cross-domain habit, but its cultivation requires repeated domain-specific cycles to operate.</p>
+</section>
+
+<section id="expertise">
+  <h2><span class="num">§ 6</span>The expertise findings — and their qualifications</h2>
+
+  <p>The deliberate-practice literature, beginning with Ericsson, Krampe, and Tesch-Römer's 1993 paper in <em>Psychological Review</em>, sits adjacent to the productive-failure literature and is sometimes conflated with it. Ericsson's framework identifies the conditions that distinguish ordinary practice from the kind of practice that produces expertise: focused effort at the edge of current capability, immediate feedback, repeated cycles of attempt-fail-adjust, and accumulated time on task in the tens of thousands of hours. The mechanism overlaps with productive failure — failure at the edge, feedback, adjustment — but the time horizons and the framing differ.</p>
+
+  <p>Two qualifications matter for the curriculum question. First, the original framework has been substantially tempered by subsequent research. Macnamara, Hambrick, and Oswald's 2014 meta-analysis found that deliberate practice explains 26% of performance variance in games, 21% in music, 18% in sports — but only 4% in education and less than 1% in professions. The mechanism is highly domain-dependent, and the "10,000 hours" popularization significantly overstated the original findings, particularly for the domains most relevant to undergraduate professional preparation. Second, the timescales involved in expert performance development (tens of thousands of hours, years to decades) are not achievable in undergraduate education in any case. What undergraduate curriculum can produce is not expertise but the <em>habit</em> of productive struggle — the disposition to attempt before being told, to fail informatively, to reflect productively, to seek feedback. That disposition is what the program can build, and it is what the deliberate-practice literature converges with the productive-failure literature on identifying as the developmental engine.</p>
+</section>
+
+<section id="limits">
+  <h2><span class="num">§ 7</span>Honest limits of the research case</h2>
+
+  <p>Five honest limits on the research case as it applies to the undergraduate curriculum question.</p>
+
+  <p>First, the literature does not establish a clean threshold for "how much prior knowledge before productive failure becomes productive." Kapur's labs work with students who have completed prerequisite coursework or read pre-assigned material; the bar is "enough to attempt," not a specific depth value. The 2023 <em>npj</em> paper showed the effect operating in degrees, with depth as a contribution-weight rather than a gate. The framework treats this as established: productive failure contributes at every depth, with the contribution graded.</p>
+
+  <p>Second, longitudinal effects across a four-year curriculum are essentially unstudied. Most productive-failure research measures outcomes weeks or months out. Whether cumulative exposure across a degree program produces graduates who are better problem-solvers four years later is an extrapolation. The framework takes the extrapolation as a working commitment for a specific reason: the underlying mechanism is well-established, the intermediate outcomes (depth distribution, productive-failure conditions, reflection scaffolding) are individually measurable, and the framework is itself designed to generate the longitudinal evidence that will eventually test the cumulative claim. Each captured snapshot is a data point about the program at a moment in time; repeated captures across semesters and graduate outcome data linked back to the snapshot record will, over years, produce exactly the longitudinal signal the literature currently lacks. The tool is the experiment.</p>
+
+  <p>Third, the metacognition question — whether some general habits of mind transfer across domains — is genuinely open. The framework structures data around domain-bounded K/U/D and treats cross-domain habit as emergent from the cumulative pattern. This is a working commitment, not a settled finding, and the framework would tell us if it were wrong: a program that satisfies all three structural conditions (depth, productive-failure scaffolding, reflection) and <em>still</em> produces graduates with weak problem-solving competence is evidence the framework's account of the mechanism is incomplete.</p>
+
+  <p>Fourth, the failure-confidence connection is theoretically appealing but thin in direct evidence. The faculty intuition that productive-failure experiences build confidence and self-efficacy as a consequence is plausible and consistent with the productive-failure literature, but the mechanism is not well-studied independently. Albert Bandura's self-efficacy framework actually suggests that <em>mastery experiences</em> — succeeding after effort — build self-efficacy more reliably than failure does, and the productive-failure literature is best read as saying that productive failure works by producing understanding that emerges from struggle, which is then followed by mastery experiences, which then build confidence. The chain is more indirect than "failure builds confidence."</p>
+
+  <p>Fifth, generalizing across disciplinary cultures requires care. The productive-failure paradigm has been most extensively studied in mathematics and science contexts where canonical solutions exist and failure modes are unambiguous. Its application to design fields, professional preparation, and disciplines where multiple defensible solutions coexist is less well-evidenced. For a Graphic Communications program, this is a real caveat: the framework is being applied to a discipline that mixes settled technical knowledge (color management, press operation) with horizontal-knowledge domains (brand strategy, creative judgment) where the productive-failure structure may need to look different. The framework should be applied with humility about its empirical reach.</p>
+</section>
+
+<h2 style="font-family: var(--display); font-size: 22px; font-weight: 600; margin: 24px 0 8px; color: var(--text-muted); border: none; padding: 0;">Part II — The framework's response</h2>
+
+<p>The cumulative position the framework takes is that problem-solving is real, valued, and measurable — but not as a single transferable skill. It is a program-level emergent property that arises from the interaction of three things, each of which can be measured at the appropriate scale, and the cumulative pattern of which can be aggregated to a program-level diagnostic.</p>
+
+<p>This section operationalizes that position into the curriculum-mapping tool's data shape. Three operational claims structure the framework's response.</p>
+
+<section id="claim-1">
+  <h2><span class="num">§ 8</span>Claim 1 — The KUD+ depth scale encodes problem-solving facets within domains</h2>
+
+  <p>The Do dimension's upper-range anchors are not abstract scale-tops. They are explicit definitions of what problem-solving competence looks like within a domain:</p>
+
+  <ul>
+    <li><strong>Do-4</strong> — Adapts performance to new conditions or constraints</li>
+    <li><strong>Do-5</strong> — Performs creatively with critical judgment; can guide others</li>
+  </ul>
+
+  <p>These descriptors map directly onto the transferable-capability targets of the cognitive-science literature. D-4 names transfer to novel conditions, which is precisely the capacity the Perkins-Salomon transfer framework identifies as the hard goal of education. D-5 names creative judgment and the ability to teach, which is the marker Chi's expert-novice work identifies as evidence of principle-level rather than surface-level understanding. (Teaching others requires articulating the principles, which surface-level knowledge cannot do.) The Understand dimension's upper-range anchors do similar work:</p>
+
+  <ul>
+    <li><strong>Understand-4</strong> — Reasons through novel cases not previously seen</li>
+    <li><strong>Understand-5</strong> — Critiques the principle, identifies limits, extends to new domains</li>
+  </ul>
+
+  <p>U-4 and U-5 describe the metacognitive capacity to operate principles under novelty and to know where they break down. This is the moderate-generalist position made operational: the cross-domain habit of mind that can transfer is the habit of reasoning through novelty and critiquing principles, and it is observable at the upper depths of the Understand dimension within each technical competency the program develops.</p>
+
+  <p>The operational consequence is that the framework does not need a separate "Problem-Solving" measurement. The depth scales already encode the problem-solving surface — at the right scale, which is depth-within-domain rather than free-floating-skill. The Program Coverage Matrix, which shows confirmed snapshots × career-target sub-competencies with K/U/D depth values, can be read as a problem-solving-capacity diagnostic when filtered to the upper-range depths. The matrix shows where the program reaches D-4 and D-5; it shows where it does not. The problem-solving lens in the matrix view makes this surface visible by emphasizing the upper depths and de-emphasizing the lower depths in a graded rather than binary way.</p>
+</section>
+
+<section id="claim-2">
+  <h2><span class="num">§ 9</span>Claim 2 — The CourseCapture audit surfaces productive-failure and reflection conditions per course</h2>
+
+  <p>Depth alone is not sufficient. A course can reach D-5 through repetitive practice on familiar problems and never develop transferable problem-solving capacity in students; graduates of such a course can perform on known problems but freeze when novelty arrives. This is exactly Kapur's "unproductive success" quadrant from §3 — high performance, brittle learning — and the framework's depth-only view would not detect it. The literature on transfer is unambiguous about this: depth-without-pedagogy produces in-domain competence without the conditions that make it transferable.</p>
+
+  <p>The audit area added to CourseCapture today probes for the conditions that make the depth productive. The probes are structured around the five conditions the research identifies as the productive-failure-and-reflection mechanism:</p>
+
+  <ol>
+    <li><strong>Generate-then-consolidate structure</strong> — does any assignment require students to attempt a solution before being taught the canonical method? This is Kapur's two-phase unit.</li>
+    <li><strong>Open-ended ill-structured problems</strong> — does the course assign problems where the canonical answer is not pre-given and multiple defensible solutions exist? This is the substrate that makes generation-before-instruction possible.</li>
+    <li><strong>Revision cycles with consequential failure</strong> — does the course require students to respond to specific identified failures with substantive revision? This is the mechanism by which failure becomes informative.</li>
+    <li><strong>Structured post-mortem</strong> — does the course require students to articulate what happened, why, and what to do differently — tied to concrete failure modes rather than as generic reflection? This is the reflection scaffolding that converts experience to transfer.</li>
+    <li><strong>Domain depth that supports productive struggle</strong> — what is the highest K/U/D depth reached in the course's strongest technical competencies? This grades the contribution rather than gating it: productive failure at D-1 contributes less than productive failure at D-4, but every cycle builds dispositional habit.</li>
+  </ol>
+
+  <p>Each condition is observed as graded: present, partial, or absent for the qualitative conditions; a numeric depth for the supporting depth signal. The findings are surfaced into the snapshot's audit-notes structure alongside prerequisite gaps and objective misalignments. They do not modify the K/U/D depth values themselves. They are read by program-level analyses that aggregate the conditions across the curriculum to produce a program-level problem-solving-formation diagnostic.</p>
+</section>
+
+<section id="claim-3">
+  <h2><span class="num">§ 10</span>Claim 3 — Problem-solving competence is diagnosed at the program level</h2>
+
+  <p>No single course produces a problem-solver. The temptation to ask "does GC 3460 develop problem-solving?" is structural confusion: problem-solving is not a course-level property. It is a property of what the program collectively does across the four-year curriculum.</p>
+
+  <p>The program-level diagnostic the framework produces is read across three structural questions:</p>
+
+  <ul>
+    <li><strong>Does the curriculum reach the upper-range depths in the right domains?</strong> The Program Coverage Matrix's problem-solving lens (live now) shows the U/D upper-depth distribution across the program. A career target whose sub-competencies require D-4 and D-5 development but the curriculum tops out at D-2 is a problem-solving gap, even if every cell is "covered" at some depth. The lens highlights this immediately.</li>
+    <li><strong>Are productive-failure conditions placed where the depth progression makes them productive?</strong> The Phase 1B Scaffolding Analysis (specified, not yet built) reads the sequence of productive-failure conditions across courses ordered by program position. The diagnostic asks whether the conditions are introduced in courses where prior coursework has built enough depth for the failure to be productive — graded by depth weight rather than gated by threshold.</li>
+    <li><strong>Is reflection scaffolding present in the courses where the cumulative pattern should consolidate?</strong> Upper-division courses, capstones, and integrating projects are where the developmental pattern should bring the cumulative productive-failure exposure into transferable habit. The Phase 1B analysis flags upper-division courses without structured-post-mortem conditions as a load-bearing absence.</li>
+  </ul>
+
+  <p>A program that satisfies all three structural conditions produces graduates who, when faced with novel problems in the domain they were trained in, attempt solutions, fail informatively, and converge on understanding — which is what employers mean when they say their graduates need to be better problem-solvers. A program that satisfies one or two but not all three produces graduates who have one of the components but not the cumulative pattern, and the employer signal will reflect the missing component specifically.</p>
+</section>
+
+<h2 style="font-family: var(--display); font-size: 22px; font-weight: 600; margin: 24px 0 8px; color: var(--text-muted); border: none; padding: 0;">Part III — The implementation</h2>
+
+<section id="implementation">
+  <h2><span class="num">§ 11</span>The end-to-end chain</h2>
+
+  <p>The operational chain that produces a program-level problem-solving diagnostic, in implementation order:</p>
+
+  <ol>
+    <li><strong>Per-course capture.</strong> An instructor opens CourseCapture for one of their courses. The audit chat covers eight systematic areas including Area 7 (Productive failure and reflection conditions). The instructor responds turn by turn, citing specific assignments and rubrics. The auditor surfaces what conditions are present, partial, or absent and at what depths the conditions occur.</li>
+    <li><strong>Snapshot generation.</strong> When the instructor clicks Generate Course Outcome Profile, the scoring layer reads the audit transcript plus the course materials and emits a structured snapshot. The snapshot includes the standard K/U/D depths per competency and now also includes a <code>productive_failure_conditions</code> block in <code>audit_notes</code>: the four qualitative conditions (each present/partial/absent), the max supporting depth, and short notes citing specific assignments. The snapshot is immutable once saved.</li>
+    <li><strong>Per-target scoring.</strong> The Phase 1A Program Coverage Matrix scorer runs (on demand) against each (snapshot × career target) pair, producing per-sub-competency K/U/D depth values. The conservative scoring discipline established in the Manning-encoded scorer ensures depths are not inflated by topic overlap or aspirational language.</li>
+    <li><strong>Program-level reading.</strong> The Program Coverage Matrix's problem-solving lens reads the resulting coverage cells and produces the upper-depth distribution: across all snapshots that contribute to each sub-competency, where does the program reach D-4 or D-5? Per target, the rollup is visible at a glance. (The lens currently reads depth alone; the sequencing question is answered by Phase 1B.)</li>
+    <li><strong>Scaffolding analysis (planned, Phase 1B).</strong> When implemented, the Scaffolding Analysis reads each snapshot's <code>productive_failure_conditions</code> together with its K/U/D depth values, aggregates across the program-sequence order, and produces three views: the per-target scaffolding strip (which courses contribute what, in what order), the brittle-scaffold list (where the depth progression and pedagogical scaffolding fail to match), and the course-contribution summary (which courses are doing disproportionate problem-solving formation work).</li>
+  </ol>
+
+  <p>Each step is independently shippable and useful. The CourseCapture audit-area addition is the first to produce data; the matrix lens is immediately readable from existing data. Phase 1B will become useful as the snapshot corpus accumulates the productive-failure findings.</p>
+</section>
+
+<h2 style="font-family: var(--display); font-size: 22px; font-weight: 600; margin: 24px 0 8px; color: var(--text-muted); border: none; padding: 0;">Part IV — Limits and what to watch for</h2>
+
+<section id="not-doing">
+  <h2><span class="num">§ 12</span>What the framework does not do</h2>
+
+  <p>Several positions to make explicit, both to constrain over-claiming and to surface what should remain on faculty agendas rather than be delegated to the tool.</p>
+
+  <p>The framework does not produce a single "problem-solving score" per graduate or per course. The right diagnostic is the program-level pattern: depth distribution, productive-failure-condition distribution, reflection scaffolding presence. A summary score would falsely simplify a property whose value lies in the pattern.</p>
+
+  <p>The framework does not treat Problem-Solving as a foundational competency, and the reason is conceptual before it is operational. The five baseline foundationals (Agency, Attention to Detail, Resilience, Curiosity, Communication) are behavioral dispositions: a student exhibits them or doesn't, in whatever domain the course operates, and the per-course question is whether the conditions to develop the disposition were present. Problem-solving is not that kind of construct. It cannot be observed in the absence of domain content — a student who "exhibits problem-solving" in a course where they have K=1, U=0 is exhibiting flailing, not problem-solving. The capability requires the domain substrate, the productive-failure conditions, and the reflection scaffolding cumulatively across the program. The construct lives at the program level, not at the course level, and it is constitutively domain-bound rather than domain-independent in the way the foundational dispositions are. Treating it as a foundational would force the framework to score it in every course on the same dimension that scores Resilience and Communication, which would mis-encode the construct. As a secondary consequence, the data signal would also be polluted by every-course D-1-or-2 inflations that do not in fact contribute to problem-solving development — but the construct-level reason is the primary one, and the operational hygiene follows from it.</p>
+
+  <p>The framework does not claim that productive failure is the only mechanism of problem-solving development. The literature is honest about multiple contributing factors (intrinsic capability, coaching, time on task, deliberate practice, exposure to expertise) and about its own limits (limited research on longitudinal undergraduate effects, contested metacognition findings, varying applicability across disciplinary cultures). The framework operationalizes the most well-evidenced mechanism into curriculum mapping; it does not claim to capture every contributor.</p>
+
+  <p>The framework does not replace faculty judgment about which courses should develop which competencies at which depths. It surfaces patterns; faculty deliberate; the curriculum changes through committee work informed by the patterns. The tool's role is to make legible what is otherwise tacit, not to make decisions that humans should make.</p>
+</section>
+
+<section id="watch">
+  <h2><span class="num">§ 13</span>What to watch for as data accumulates</h2>
+
+  <p>Two empirical questions that will become answerable as the snapshot corpus grows.</p>
+
+  <p>First, do the productive-failure conditions cluster predictably? Theory suggests that courses with strong generate-then-consolidate structure tend to also have strong revision cycles (both are signatures of an instructor who designs around productive struggle), while courses with structured post-mortem may or may not have those upstream conditions. If the empirical clustering surprises us, it will be informative about how the conditions actually develop in practice.</p>
+
+  <p>Second, do the upper-range depth distributions and the productive-failure scaffolding correlate at the program level? If they do, the integration is straightforward. If they diverge — programs reach D-5 in courses without productive-failure scaffolding, or have rich productive-failure conditions in courses that never reach D-4 — the divergence itself is the curriculum-design finding worth surfacing.</p>
+
+  <p>The framework's claim is that both must be present, sequenced correctly, and cumulating across the curriculum for graduates to develop transferable problem-solving capability. The data will tell us, over time, where each program actually stands.</p>
+
+  <div class="callout">
+    <div class="callout-title">The tool as research instrument</div>
+    <p>This framework's central commitment is one that current research cannot fully verify: that cumulative productive-failure exposure plus depth plus reflection produces transferable problem-solving capability four years out. That commitment is the framework's <em>hypothesis</em>, expressed as design. The tool is built to test it. As snapshot data accumulates, as graduates are tracked into the workforce, as employer signals are correlated back to program patterns, the framework either accumulates evidence for itself or surfaces the divergence that will require revision. In the meantime, the commitments are defensible — well-grounded in mechanism, consistent with the established research, and structured to fail informatively if they're wrong.</p>
+  </div>
+</section>
+
+<section style="margin-top: 56px;">
+  <h2 style="font-size: 18px;">References</h2>
+  <p>The substantive bibliographic anchor for this document is the references section of <a href="./background.html#references">background.html</a>, which contains the full citation list. The pivotal works for problem-solving specifically: Willingham (2007); McPeck (1981); Chi, Feltovich &amp; Glaser (1981); Larkin, McDermott, Simon &amp; Simon (1980); Sweller (1988); Kapur (2008, 2016); Sinha &amp; Kapur (2021); the 2023 <em>npj Science of Learning</em> paper on prior knowledge and inventive production; Bjork (1994); Schön (1983); Kolb (1984); Tannenbaum &amp; Cerasoli (2013); Perkins &amp; Salomon (1992); Ericsson, Krampe &amp; Tesch-Römer (1993); Macnamara, Hambrick &amp; Oswald (2014); NACE Job Outlook.</p>
+
+  <p>For the engineering of the framework's response to this research, the operational artifacts:</p>
+
+  <ul>
+    <li><a href="./background.html#problem-solving">background.html §8</a> — the framework position in summary form</li>
+    <li><a href="https://github.com/chiptoe-svg/gc-curriculum-tool/blob/main/docs/superpowers/specs/2026-05-25-scaffolding-analysis-design.md" target="_blank" rel="noopener noreferrer">Phase 1B Scaffolding Analysis design</a> — the planned program-level diagnostic</li>
+    <li>CourseCapture Audit Area 7 source — <code>lib/ai/prompts/capture-chat.md</code> in the repository</li>
+    <li>The <code>productive_failure_conditions</code> schema — <code>lib/ai/capture/schema.ts</code> in the repository</li>
+    <li>The Program Coverage Matrix problem-solving lens — <code>app/program/ProgramCoverageClient.tsx</code> in the repository</li>
+  </ul>
+</section>
+
+<footer class="doc-foot">
+  GC Curriculum Tool · Problem-Solving Deep Dive · Companion to the
+  <a href="./background.html" style="color: var(--accent);">KUD+ Background</a> document
+  and the
+  <a href="./superpowers/vision/gc-curriculum-tool-vision.html" style="color: var(--accent);">Vision</a>.
+</footer>
+
+</main>
+
+</body>
+</html>

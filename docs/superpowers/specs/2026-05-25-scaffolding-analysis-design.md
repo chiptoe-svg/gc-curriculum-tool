@@ -107,7 +107,19 @@ Per career target:
 
 - **Depth-scaffolding distribution** — count of sub-competencies in each `scaffolding_status` category.
 - **Productive-failure capacity** — mean `cumulative_pf_score` across the target's sub-competencies, weighted by sub-competency importance if the target descriptor includes priority signals.
-- **Diagnostic combinations** — flag sub-competencies that are `well_scaffolded` on depth but `absent` or `thin` on productive failure (the curriculum reaches depth-5 in this competency but never asks students to fail in ill-structured contexts — graduates can perform on known problems but not novel ones). Flag the reverse: `coverage_only` depth with `well_developed` PF (the curriculum has the right pedagogy but never builds the depth base for the failure to be productive).
+- **Diagnostic combinations** — three named patterns the analysis surfaces:
+  - **Unproductive success** — sub-competencies where depth is `well_scaffolded` (the program reaches D=4–5) but `pf_status` is `absent` or `thin` (no productive-failure scaffolding in the contributing courses). This is Kapur's 2016 "unproductive success" pattern at the program scale: the curriculum produces apparent depth but through repetitive familiar-problem practice rather than productive struggle. Graduates can perform on known problems and freeze on novelty. The most consequential program-level finding the analysis is designed to surface.
+  - **Premature pedagogy** — sub-competencies where `pf_status` is `well_developed` but depth `scaffolding_status` is `coverage_only` or `bottom_heavy`. The curriculum has the right pedagogical structure but never builds the depth base for the failure to be productive.
+  - **Coverage-without-integration** — sub-competencies touched in many courses at shallow depth (1–2) and never brought to U=4–5 or D=4–5. The cumulative pattern shows program breadth but no integration; problem-solving capacity is correspondingly thin even if every course "covers" the competency.
+
+### Sub-competency type — technical vs. horizontal-knowledge interpretation
+
+The Sinha & Kapur (2021) meta-analysis found productive-failure effects strongest for settled-technical-knowledge domains (mathematics, physics, biology) and reversed for domain-general skills. This implies different interpretations of the same scaffolding diagnostic for different parts of the GC curriculum:
+
+- **Settled-technical sub-competencies** (color science, press operation, file preparation, typography fundamentals, production workflow): the productive-failure conditions have the strongest evidence base. A high `cumulative_pf_score` here is a strong positive program signal; the unproductive-success diagnostic is a strong negative signal.
+- **Horizontal-knowledge sub-competencies** (brand strategy, creative direction, editorial judgment, account management judgment): the meta-analytic evidence is mixed and some research suggests instruction-first works better than struggle-first for cross-domain conceptual skills. The conditions still matter — open-ended ill-structured problems and structured post-mortem in particular — but a low `cumulative_pf_score` in this zone is a weaker negative signal than in the technical zone.
+
+The analysis surfaces the type-of-sub-competency annotation alongside the diagnostic. The classification is determined by the target's sub-competency descriptor (which may need a `knowledge_type: technical | horizontal | mixed` field added in a future iteration); for v1, the AI narrative-generation prompts can be asked to classify on the fly using the sub-competency K/U/D descriptors as evidence.
 
 ## Views
 

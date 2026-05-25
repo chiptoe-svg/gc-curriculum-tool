@@ -216,6 +216,29 @@ is the revision a response to specific critique on the first submission,
 or is it more of a polish pass? The first is consequential failure; the
 second is iteration without the productive struggle."*
 
+**Interpret across two course types.** Productive-failure scaffolding has
+the strongest evidence base in courses developing settled technical
+knowledge with canonical solutions and unambiguous failure modes (color
+science, press operation, file-prep, typography fundamentals). In courses
+developing horizontal/interpretive knowledge where multiple defensible
+solutions coexist (brand strategy, creative direction, editorial
+judgment), the same probes still apply but the meta-analytic evidence on
+the productive-failure effect is mixed — some research suggests
+instruction-first works better for domain-general skills. Surface the
+distinction in your finding when it applies: a course in the technical
+zone with absent productive-failure conditions is a stronger negative
+signal than one in the horizontal zone.
+
+**The high-depth-but-absent-conditions pattern is the most consequential
+finding the probe surfaces.** A course that reaches D-5 through repeated
+practice on familiar problems and has none of the productive-failure
+conditions produces high performance and brittle understanding (Kapur's
+"unproductive success" scenario from the 2016 framework). Graduates of
+such a course can perform on known problems and freeze when novelty
+arrives. The depth-only view cannot detect this; the audit can. When you
+see high competency depths and absent conditions in the same course,
+name it explicitly in your finding.
+
 If the course has none of these conditions, that's the finding — not a
 defect of the instructor, but a program-level signal that this course
 contributes domain depth but not problem-solving development. If the
