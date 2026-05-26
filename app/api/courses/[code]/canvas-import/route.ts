@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { isValidSlug } from '@/lib/slug';
 import { hashIp } from '@/lib/ip-hash';
 import { getCourseByCode } from '@/lib/db/courses-queries';
-import { insertMaterial, updateExtractionResult, findMaterialByFileName, updateMaterialMetadata } from '@/lib/db/course-materials-queries';
+import { insertMaterial, findMaterialByFileName, updateMaterialMetadata } from '@/lib/db/course-materials-queries';
+import { finalizeExtraction } from '@/lib/capture/finalize-extraction';
 import { parseCanvasUrl } from '@/lib/canvas/parseCanvasUrl';
 import { fetchCanvasCourse, fetchCanvasFileMeta } from '@/lib/canvas/fetchCanvasCourse';
 import { htmlToText } from '@/lib/canvas/htmlToText';
@@ -294,8 +295,9 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
         mimeType,
         sizeBytes: text.length,
       });
-      await updateExtractionResult({
+      await finalizeExtraction({
         id: existing.id,
+        fileName,
         extractionStatus: 'ok',
         extractionMethod: 'text',
         extractedText: text,
@@ -311,8 +313,9 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
         sizeBytes: text.length,
         ipHash,
       });
-      await updateExtractionResult({
+      await finalizeExtraction({
         id: mat.id,
+        fileName,
         extractionStatus: 'ok',
         extractionMethod: 'text',
         extractedText: text,
