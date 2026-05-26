@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { del } from '@vercel/blob';
 import { isValidSlug } from '@/lib/slug';
-import { getMaterialById, deleteMaterial, setMaterialIgnored } from '@/lib/db/course-materials-queries';
+import { getMaterialById, deleteMaterial, setMaterialIgnored, setMaterialUseSummary } from '@/lib/db/course-materials-queries';
 
 interface RouteContext {
   params: Promise<{ code: string; id: string }>;
@@ -33,9 +33,9 @@ export async function DELETE(req: Request, { params }: RouteContext): Promise<Re
 }
 
 // PATCH /api/courses/[code]/materials/[id]?slug=...
-// Body: { ignored: boolean }
-// Toggles whether a material's extracted text feeds AI context. The row
-// stays in the table either way.
+// Body: { ignored?: boolean, useSummary?: boolean }
+// Toggles whether a material's extracted text feeds AI context, or whether to use
+// the AI-generated summary instead of raw text. The row stays in the table either way.
 export async function PATCH(req: Request, { params }: RouteContext): Promise<Response> {
   const { code, id } = await params;
   const url = new URL(req.url);
@@ -57,5 +57,10 @@ export async function PATCH(req: Request, { params }: RouteContext): Promise<Res
 
   const updated = await setMaterialIgnored(id, body.ignored);
   if (!updated) return NextResponse.json({ error: 'no row updated' }, { status: 404 });
+
+  if (typeof body.useSummary === 'boolean') {
+    await setMaterialUseSummary(id, body.useSummary);
+  }
+
   return NextResponse.json({ ok: true, ignored: body.ignored });
 }
