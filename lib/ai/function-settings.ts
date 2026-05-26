@@ -24,6 +24,7 @@ export const AI_FUNCTION_IDS = [
   'explore-what-if',
   'program-score-coverage',
   'decompose-prereq-gap',
+  'material-summary',
 ] as const;
 export type AIFunctionId = (typeof AI_FUNCTION_IDS)[number];
 
@@ -60,6 +61,8 @@ export const TIER_TO_MODEL: Record<Exclude<ModelTier, 'custom'>, string> = {
  *   - program-score-coverage: light. Mapping snapshot competencies to
  *     canonical sub-competencies — pattern-matching plus modest reasoning.
  *     Pilot at light; promote if quality is insufficient.
+ *   - material-summary: light. One short summarization pass per long
+ *     reference material at extraction time; cached on the row.
  */
 export const DEFAULT_TIERS: Record<AIFunctionId, Exclude<ModelTier, 'custom'>> = {
   'capture-chat': 'light',
@@ -73,6 +76,7 @@ export const DEFAULT_TIERS: Record<AIFunctionId, Exclude<ModelTier, 'custom'>> =
   // competency rows. Light tier handles this well; promote to default
   // if the decomposition quality is poor on long/aggregated gaps.
   'decompose-prereq-gap': 'light',
+  'material-summary': 'light',
 };
 
 export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
@@ -84,6 +88,7 @@ export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
   'explore-what-if': 'Explore — what-if simulation',
   'program-score-coverage': 'Program coverage scoring',
   'decompose-prereq-gap': 'Decompose prereq gap into competencies (copy-as-KUD)',
+  'material-summary': 'Material summary (for audit compression)',
 };
 
 export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
@@ -95,6 +100,7 @@ export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
   'explore-what-if': 'Predicting the effect of a hypothetical change on the snapshot\'s competencies.',
   'program-score-coverage': 'Scoring each captured snapshot against each career target\'s sub-competencies for the program coverage matrix.',
   'decompose-prereq-gap': 'Decomposing one free-form prereq-gap finding into a structured list of competencies with K/U/D depths, for the copy-as-KUD button in the review panel.',
+  'material-summary': 'Per-material structured summary, generated at extraction time for long reference materials and substituted for the full extracted text in the audit chat prompt.',
 };
 
 interface CachedSetting {
