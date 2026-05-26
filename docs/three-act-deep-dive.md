@@ -102,7 +102,7 @@ Three substantive critiques of staged curricula appear in the literature. The fr
 
 ### The phantom prerequisite problem
 
-Research on prerequisite-course transfer (a 2016 mixed-methods study by Spring, Heckler & Watkins published in *CBE — Life Sciences Education*, *"What's in a Prerequisite? A Mixed-Methods Approach to Identifying the Impact of a Prerequisite Course"*) found that for biology students, concepts categorized as "Familiar" (briefly covered in prerequisites) were statistically indistinguishable from "Not Familiar" concepts on downstream performance. Superficial prerequisite coverage did not transfer to later coursework. Students passed Act-1-equivalent courses without internalizing the foundational competencies those courses were supposed to establish, then arrived in Act-2-equivalent courses with the credential but not the capability.
+Research on prerequisite-course transfer — Sato et al. (2017), a mixed-methods study published in *CBE — Life Sciences Education* (*"What's in a Prerequisite? A Mixed-Methods Approach to Identifying the Impact of a Prerequisite Course"*) — found that students who had completed the prerequisite course performed differently on key concepts than students who had not, suggesting prerequisite courses shape downstream concept-specific performance in ways not fully captured by overall grade outcomes. Students passed Act-1-equivalent courses without internalizing the foundational competencies those courses were supposed to establish, then arrived in Act-2-equivalent courses with the credential but not the capability.
 
 The 3-Act framework's "brittle scaffold" diagnostic is directly aimed at this problem — but only if act-boundary assessment evaluates *internalization*, not merely course completion. The framework currently treats course completion plus the K/U/D depth values as the readiness signal. Strengthening this to include explicit readiness criteria at act boundaries (portfolio reviews, structured demonstrations, instructor sign-off) is one of the framework's load-bearing TODOs. Without it, the diagnostic detects scaffolding gaps after they have already produced poor downstream learning rather than preventing them.
 
@@ -150,7 +150,7 @@ A clean accounting of which 3-Act design choices are research-supported and whic
 
 - The general logic of foundations-before-advanced-work in professional education is supported by the cornerstone-capstone literature, the medical-education and teacher-licensure structures, and Bruner's spiral.
 - The diagnostic logic of prerequisite-network analysis (the "brittle scaffold" concept under a different name) is established in CS education research.
-- The need for explicit readiness criteria at phase boundaries — rather than mere course completion — is supported by the prerequisite-transfer literature (Spring et al., 2016).
+- The need for explicit readiness criteria at phase boundaries — rather than mere course completion — is supported by the prerequisite-transfer literature (Sato et al., 2017).
 - The cognitive-apprenticeship framing (modeling → coaching → scaffolding → articulation → reflection → exploration) is well-supported as a way to operate staged instruction in a community-of-practice-compatible way.
 - Agency development as a learnable, sequentially developable disposition is supported by the self-regulated learning literature (Zimmerman, Pintrich, Baxter Magolda).
 
@@ -194,7 +194,7 @@ The bibliographic anchor for this document is the [Background document's referen
 - Dreyfus & Dreyfus (1986) — *Mind over Machine*, Free Press. Skill acquisition stages.
 - Zimmerman (1989, 2002) — Self-regulated learning model.
 - Baxter Magolda (2009) — *Authoring Your Life*. Self-authorship development.
-- Spring, Heckler & Watkins (2016) — *"What's in a Prerequisite?"*, *CBE — Life Sciences Education*. Prerequisite-transfer empirical finding.
+- Sato, B. K., Lee, A. K., Alam, U., Dang, J. V., Dacanay, S. J., Morgado, P., Pirino, G., Brunner, J. E., Castillo, L. A., Chan, V. W., Sandholtz, J. H., & Watanabe, S. (2017) — *"What's in a Prerequisite? A Mixed-Methods Approach to Identifying the Impact of a Prerequisite Course"*, *CBE-Life Sciences Education, 16*(1), ar16. https://doi.org/10.1187/cbe.16-08-0260. Prerequisite-transfer empirical finding.
 - The 2014 arXiv "Curriculum Prerequisite Network" paper and subsequent CS-education work — the prerequisite-network methodology that "brittle scaffold" instantiates.
 - ASEE Cornerstone-Capstone literature (2010 West Point paper, 2019 Pierrakos et al., ASEE 2023). The engineering analog.
 - A 2018 PMC paper, *"A progressive three-phase innovation to medical education in the United States"* (Varkey et al.) — the modern medical-education structure (with the corrected historical account of Flexner's actual 1910 contribution).

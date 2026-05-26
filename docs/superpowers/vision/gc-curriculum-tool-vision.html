@@ -772,6 +772,26 @@
     .prototype-cta { flex-direction: column; align-items: flex-start; gap: 14px; }
   }
 
+  /* STATUS TAGS — capability / status labels */
+  .status-tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 500;
+    padding: 2px 7px;
+    border-radius: 3px;
+    vertical-align: middle;
+    line-height: 1.6;
+    white-space: nowrap;
+  }
+  .status-live       { background: #e8f3ec; color: #2a6644; }
+  .status-specified  { background: #fef6e4; color: #7a5500; }
+  .status-planned    { background: #f0eeea; color: #5a5750; }
+  .status-endstate   { background: #eaf0f8; color: #2a4e7a; }
+  .status-illustrative { background: #faeaea; color: #7a2a2a; }
+
   .doc-foot {
     margin-top: 64px;
     padding-top: 24px;
@@ -863,11 +883,11 @@
 
 <div class="prototype-cta">
   <div class="prototype-cta-text">
-    Want to test drive the tool?
-    <small>The intended day-to-day workflow runs across three surfaces: per-course audit at <code>/capture/&lt;course-code&gt;</code> (CourseCapture), prescriptive alignment + what-if scenarios at <code>/explore/&lt;course-code&gt;</code>, and the program-level coverage matrix at <code>/program</code>. All available from the same session. Catalog values come from a <a href="https://docs.google.com/spreadsheets/d/12aPhgrIlhDYjKD0-Gt97glf1d9fKtwKmL4FwM8iTz7Q/edit?gid=1024237655#gid=1024237655" target="_blank" rel="noopener noreferrer">shared course sheet</a> — edit your course's tab and click <strong>Sync from Sheet</strong> in CourseCapture to pull the latest values. The audit then combines those values with Canvas + uploads + linked Google Docs/Sheets/Slides + Drive PDFs + voice/chat; the confirmed snapshot feeds the program-level views. <em>(The original three-tool M-trial prototype remains accessible at <code>/preview/&lt;slug&gt;</code> if you want to see the earlier flow — superseded by CourseCapture + Explore + Program for new work.)</em></small>
+    Want to see the analysis in action?
+    <small>The <strong>active build</strong> — per-course audit at <code>/capture/&lt;course-code&gt;</code> (CourseCapture), prescriptive alignment + what-if scenarios at <code>/explore/&lt;course-code&gt;</code>, and the program-level coverage matrix at <code>/program</code> — is faculty-internal on the Clemson LAN, gated by HTTP Basic Auth, running locally against department data and a local LLM. It is not publicly accessible by design. For a quick orientation without LAN access, see the <a href="../../executive-brief.html">executive brief</a>. The <strong>publicly-accessible interactive demo</strong> is the original three-tool M-trial prototype — Course Builder · Prereq Analyzer · Career Target Alignment — which exercises the same analysis quality on real GC courses and remains live on Vercel. The CourseCapture + Explore + Program pipeline supersedes it for new captures, but the M-trial flow is preserved. <em>(Catalog values for the active tool come from a <a href="https://docs.google.com/spreadsheets/d/12aPhgrIlhDYjKD0-Gt97glf1d9fKtwKmL4FwM8iTz7Q/edit?gid=1024237655#gid=1024237655" target="_blank" rel="noopener noreferrer">shared course sheet</a>, one tab per course; the audit combines those values with Canvas + uploads + linked Google Docs/Sheets/Slides + Drive PDFs + voice/chat; the confirmed snapshot feeds the program-level views.)</em></small>
   </div>
-  <a class="prototype-cta-link" href="https://gc-curriculum-tool.vercel.app/capture/GC%203460?slug=4QcseN0pvlpd35gb" target="_blank" rel="noopener noreferrer">
-    Open the tool &rarr;
+  <a class="prototype-cta-link" href="https://gc-curriculum-tool.vercel.app/preview/4QcseN0pvlpd35gb" target="_blank" rel="noopener noreferrer">
+    Open the M-trial demo &rarr;
   </a>
 </div>
 
@@ -887,10 +907,11 @@
     a way to update it as courses evolve.
   </p>
   <p>
-    The tool makes those answers <strong>visible</strong> and <strong>defensible</strong> —
+    The tool makes evidence-backed draft judgments <strong>visible</strong> and <strong>disputable</strong> —
     for advising students, for accreditation conversations, for industry advisory-board
     reviews, for the next curriculum redesign, and for hiring decisions about what
-    kind of faculty the program needs.
+    kind of faculty the program needs. Defensibility depends on source coverage,
+    instructor confirmation, and review of flagged cells.
   </p>
 </section>
 
@@ -989,10 +1010,12 @@
   <p>
     The tool maps both layers. The clusters get explicit coverage analysis;
     the foundational competencies show up implicitly inside every reasoned
-    judgment (a course developing "Quality Control" at Do level is also building
-    Attention to Detail by definition). Over time the tool can surface which
-    courses are doing the most for each foundational competency — and which
-    aren't pulling their weight.
+    judgment. A course developing Quality Control at Do level may create strong
+    conditions for Attention to Detail, but the disposition should be scored only
+    when assignments or rubrics require accuracy, error-catching, revision, or
+    similar observable behaviors. Over time the tool can surface which courses
+    are doing the most for each foundational competency — and which aren't
+    pulling their weight.
   </p>
 </section>
 
@@ -1113,7 +1136,7 @@
   </p>
 
   <div class="callout note" style="margin: 28px 0;">
-    <div class="callout-title">The insight</div>
+    <div class="callout-title">An illustrative example <span class="status-tag status-illustrative">Illustrative</span></div>
     <p>
       <strong>PSYC 2010</strong> introduces consumer psychology before the
       marketing sequence — one of the most direct foundations for Brand
@@ -1127,8 +1150,11 @@
       quietly, in a two-credit slot most students treat as a checkbox.
     </p>
     <p style="margin-bottom:0;">
-      These courses are doing curriculum work. The tool makes that work visible
-      — and when a non-GC course <em>isn't</em> contributing, that's visible too.
+      These are faculty hypotheses about what the analysis will surface once
+      captures are confirmed — not findings from actual snapshots (zero confirmed
+      snapshots exist at this writing). The tool makes that work visible once
+      courses are captured — and when a non-GC course <em>isn't</em> contributing,
+      that's visible too.
     </p>
   </div>
 
@@ -1145,14 +1171,16 @@
 
   <p>
     <strong>2. Which constrained-choice slots are sub-optimal for the program's
-    goals.</strong> The STAT requirement can be satisfied by STAT 2220
-    (Elementary Statistics) or STAT 3090 (Statistical Methods). Only STAT 3090
-    develops the quantitative analytical capability that Brand Strategy employers
-    say they look for — and that AI Workflow requires at the Understand level.
-    The current choice may be making two career targets harder to serve without
-    anyone having made a conscious decision about it. The same logic applies to
-    the Econ choice, the Business Communication choice, and every other
-    constrained slot in the plan.
+    goals.</strong> The STAT requirement illustrates this. Depending on catalog
+    year, the slot may include multiple approved options — such as STAT 2220,
+    STAT 2300, STAT 3090, or STAT 3300. The options vary significantly in
+    quantitative depth; higher-level options develop the analytical capability
+    Brand Strategy employers name explicitly and that AI Workflow requires at the
+    Understand level. The tool should import the official catalog-year option set
+    rather than hard-code comparisons: which option best serves each career target
+    will depend on actual course content captures, not assumed depth levels. The
+    same logic applies to the Econ choice, the Business Communication choice, and
+    every other constrained slot in the plan. <span class="status-tag status-illustrative">Illustrative</span>
   </p>
 
   <p>
@@ -1162,10 +1190,10 @@
     Brand Strategy, the right Specialty Area choices close the consumer research
     gap that no required course addresses at Do level. For AI Workflow, they add
     the systems-thinking component that the GC major alone doesn't reach. The
-    tool makes these recommendations specific: not "consider marketing electives"
-    but "MKT 4250 scores highest for Brand Strategy because it builds the
-    research design sub-competency at Understand level — the gap the rest of
-    the degree leaves open."
+    tool makes these recommendations specific — not "consider marketing
+    electives" but a ranked comparison of captured options against each career
+    target's sub-competency gaps, with the reasoning visible and disputable.
+    <span class="status-tag status-illustrative">Illustrative</span>
   </p>
 
   <div class="callout" style="margin-top: 28px;">
@@ -1186,10 +1214,11 @@
     This is where the industry partner data closes the loop. When an employer
     submits a Brand Strategy position and says "I need someone who can design
     and execute consumer research," that signal flows into the coverage analysis.
-    The tool can then say: "STAT 3090 serves this better than STAT 2220 — and
-    here's the employer language that explains why." Faculty aren't choosing
-    between statistics courses in the abstract. They're choosing between options
-    with real hiring signal attached.
+    The tool can then say: "among the options approved for the statistics slot in
+    this catalog year, option X scores higher for Brand Strategy — and here's the
+    employer language that explains why." Faculty aren't choosing between
+    statistics courses in the abstract. They're choosing between options with real
+    hiring signal attached. <span class="status-tag status-endstate">End-state concept</span>
   </p>
 </section>
 
@@ -1217,9 +1246,18 @@
     ability to discriminate between a brief mention and an assessed performance.
     The depth scales restore that resolution. The anchors at each level describe
     <em>what the student does or grasps</em> rather than what the syllabus
-    claims; above-zero scores require an evidence excerpt from the course
-    materials. The full scale definitions, the evidence rule, and the
-    theoretical grounding behind the extension are documented in the
+    claims. All nonzero scores require evidence of delivery or assessment.
+    K=1 can be supported by delivery evidence such as slides, readings, modules,
+    or instructor confirmation; K&gt;1, U&gt;0, and D&gt;0 require evidence of
+    student engagement, reasoning, or performance.
+  </p>
+  <p>
+    KUD+ scores are <em>course-opportunity scores</em> — what the course is
+    designed and evidenced to develop. They become <em>student-learning claims</em>
+    only when linked to assessed student work; the
+    <a class="inline-link" href="../../../graduate-outcome-validation.html">graduate-outcome-validation work</a>
+    is what bridges that gap. The full scale definitions, the evidence rule, and
+    the theoretical grounding behind the extension are documented in the
     <a class="inline-link" href="../../../background.html">Background document</a>.
   </p>
   <p>
@@ -1276,8 +1314,9 @@
 <section id="end-state">
   <h2><span class="num">§</span>The end state</h2>
   <p>
-    When the full tool is in production, it is the canonical living view of the
-    GC program. These are the capabilities it provides:
+    When the full tool is in production, it is the department's shared, versioned
+    working view of the GC program — a maintained evidence surface for curriculum
+    discussion. These are the capabilities it provides:
   </p>
 
   <div class="capabilities">
@@ -1298,23 +1337,24 @@
       </div>
     </div>
     <div class="cap">
-      <div class="cap-title">A coverage matrix</div>
+      <div class="cap-title">A coverage matrix <span class="status-tag status-live">Live (faculty trial)</span></div>
       <div class="cap-body">
-        For every course × every career target, an AI-maintained judgment of
-        how well the course covers each sub-competency, with confidence and
-        reasoning faculty can read, dispute, and flag.
+        For every course × every career target, the system generates an
+        AI-drafted, evidence-cited coverage judgment from confirmed snapshots;
+        faculty can review, dispute, and override the judgment.
       </div>
     </div>
     <div class="cap">
-      <div class="cap-title">Scaffolding analysis</div>
+      <div class="cap-title">Scaffolding analysis <span class="status-tag status-specified">Specified, not built</span></div>
       <div class="cap-body">
-        Across the program, the AI judges how well each competency is scaffolded
-        — introduced in earlier courses, developed in middle courses, applied in
-        capstones. Flags cases that look fine cell-by-cell but fail program-wide.
+        The planned scaffolding analysis will use confirmed course snapshots to
+        generate evidence-cited scaffold judgments for faculty review — introduced
+        in earlier courses, developed in middle courses, applied in capstones.
+        Flags cases that look fine cell-by-cell but fail program-wide.
       </div>
     </div>
     <div class="cap">
-      <div class="cap-title">Prerequisite-gap analysis</div>
+      <div class="cap-title">Prerequisite-gap analysis <span class="status-tag status-specified">Specified, not built</span></div>
       <div class="cap-body">
         For any course, the tool reports whether the prior coursework students
         actually take supports what this course expects. Not what the registrar
@@ -1330,7 +1370,7 @@
       </div>
     </div>
     <div class="cap">
-      <div class="cap-title">Advising views</div>
+      <div class="cap-title">Advising views <span class="status-tag status-specified">Specified, not built</span></div>
       <div class="cap-body">
         For a student who wants to graduate ready for Brand Strategy roles (or
         any other target), a recommended sequence and the gaps to watch — backed
@@ -1346,7 +1386,7 @@
       </div>
     </div>
     <div class="cap">
-      <div class="cap-title">A program constraint model</div>
+      <div class="cap-title">A program constraint model <span class="status-tag status-planned">Planned</span></div>
       <div class="cap-body">
         Every slot in the BS in GC degree plan — fixed required courses,
         constrained-choice sets, and elective pools — imported from the official
@@ -1355,7 +1395,7 @@
       </div>
     </div>
     <div class="cap">
-      <div class="cap-title">A constraint-aware slot optimizer</div>
+      <div class="cap-title">A constraint-aware slot optimizer <span class="status-tag status-planned">Planned</span></div>
       <div class="cap-body">
         For every open or constrained slot in the degree plan, an AI-rated
         comparison of available options: which choice best serves each career
@@ -1364,7 +1404,7 @@
       </div>
     </div>
     <div class="cap">
-      <div class="cap-title">A student career path advisor</div>
+      <div class="cap-title">A student career path advisor <span class="status-tag status-planned">Planned</span></div>
       <div class="cap-body">
         For any declared career target, a recommended path through the full
         curriculum — which constrained choices to make, which electives matter
@@ -1643,11 +1683,7 @@
 <section id="viz-scaffold">
   <h2><span class="num">§</span>Scaffolding analysis <span class="viz-mock-tag">Illustrative · Data Fabricated</span></h2>
   <p>
-    For each sub-competency of a career target, the AI judges whether the curriculum
-    scaffolds it well — introducing it in early courses, building through middle
-    courses, applying in capstones. This view surfaces <strong>brittle</strong>
-    scaffolds: places where an upper-division course expects mastery of something
-    nothing earlier teaches.
+    <span class="status-tag status-specified">Specified, not built</span> For each sub-competency of a career target, the planned scaffolding analysis will generate evidence-cited scaffold judgments from confirmed course snapshots for faculty review — introducing it in early courses, building through middle courses, applying in capstones. This view surfaces <strong>brittle</strong> scaffolds: places where an upper-division course expects mastery of something nothing earlier teaches.
   </p>
 
   <figure>
@@ -2111,7 +2147,7 @@
           </div>
         </div>
         <div style="padding:10px 16px;font-size:12.5px;color:var(--text-muted);font-style:italic;">
-          STAT 3090 develops quantitative analysis at Understand/Do level — a gap Brand Strategy employers name explicitly. STAT 2220 reaches Know only. The difference is detectable by the advising tool.
+          Depending on catalog year, the statistics slot may include options such as STAT 2220, STAT 2300, STAT 3090, or STAT 3300. Higher-level options tend to develop quantitative analysis depth that Brand Strategy employers name explicitly. The tool should import the official catalog-year option set and compare based on actual course captures. The coverage dots above are illustrative. <span class="status-tag status-illustrative">Illustrative</span>
         </div>
       </div>
 
@@ -2202,10 +2238,11 @@
     <div class="callout-title">The key insight</div>
     <p>
       None of these constrained-choice decisions require a Curriculum Committee proposal
-      to change. The department can recommend STAT 3090 instead of STAT 2220 through
-      advising and degree-plan guidance. These aren't abstract curriculum questions —
-      they're specific, actionable decisions the coverage analysis can rank and support
-      with employer evidence from the Advisory Survey.
+      to change. The department can recommend a higher-depth statistics option through
+      advising and degree-plan guidance — once the catalog-year option set is imported
+      and those options are captured, the coverage analysis will rank them. These aren't
+      abstract curriculum questions — they're specific, actionable decisions the
+      coverage analysis can rank and support with employer evidence from the Advisory Survey.
     </p>
   </div>
 </section>
@@ -2284,10 +2321,14 @@
     Three sub-sources at each course, layered by reliability:
   </p>
   <ul>
-    <li><strong>Syllabi</strong> (primary) — uploaded PDF → AI extraction of
-    objectives, assessment structure, and skills claimed at course level</li>
-    <li><strong>Coursework</strong> (secondary) — assignment sheets, rubrics, project
-    briefs that reveal actual practice-level demands, not just stated objectives</li>
+    <li><strong>Canvas + linked materials</strong> (primary) — assignments, rubrics,
+    pages, discussions, quizzes, file attachments, linked Google Docs/Slides/Sheets,
+    Drive PDFs, YouTube captions. The full current ingestion surface — what is
+    supported, what is suppressed, and what is not yet supported — is documented in
+    the <a class="inline-link" href="../../../background.html">Background document</a>.</li>
+    <li><strong>Direct uploads + catalog values</strong> (supplementary) — uploaded
+    PDF/DOCX/PPTX and other file formats; learning objectives, skills, and projects
+    from the shared catalog sheet (these suppress Canvas Syllabus body when present).</li>
     <li><strong>Faculty annotation</strong> (tertiary) — structured input where
     faculty confirm, extend, or correct the AI-generated profile; disputes and
     corrections persist as part of the permanent record</li>
@@ -2318,10 +2359,10 @@
   </p>
   <p><strong>The current workflow:</strong></p>
   <ul>
-    <li><code>/capture/&lt;code&gt;</code> — <strong>CourseCapture.</strong> The instructor-facing audit conversation that produces a Course Outcome Profile. Pulls catalog + uploads + Canvas (assignments, rubrics, pages, discussions, quizzes — Classic and New Quizzes APIs — file attachments) + linked Google Docs/Slides/Sheets + Drive PDFs + YouTube captions. Voice input via Whisper. Snapshots are immutable and versioned; the draft remains mutable.</li>
-    <li><code>/explore/&lt;code&gt;</code> — <strong>Explore module.</strong> Alignment analyses (custom target / downstream target) and what-if scenarios run against any saved snapshot. Custom-target authoring; downstream-target auto-detection from captured prereq courses.</li>
-    <li><code>/program</code> — <strong>Program Coverage Matrix.</strong> Confirmed snapshots × career-target sub-competencies, rendered as a depth-aware heat map with a problem-solving lens. On-demand AI scoring per cell; full rationale and evidence excerpt visible in a drawer. The coverage-matrix view from the end state, in a snapshot-grid form — the self-updating machinery and the cross-snapshot diff that would make it a true "living" view are Phase 2 work.</li>
-    <li><code>/settings</code> — <strong>Per-function AI model tuning.</strong> Tier-based selection (Light / Default / Heavy) plus per-function model dropdowns sourced from the OpenAI provider's available models.</li>
+    <li><code>/capture/&lt;code&gt;</code> — <strong>CourseCapture.</strong> <span class="status-tag status-live">Live (faculty trial)</span> The instructor-facing audit conversation that produces a Course Outcome Profile. Pulls catalog values, Canvas sources, linked materials, and direct uploads. Full ingestion surface documented in the <a class="inline-link" href="../../../background.html">Background document</a>. Voice input via Whisper. Snapshots are immutable and versioned; the draft remains mutable.</li>
+    <li><code>/explore/&lt;code&gt;</code> — <strong>Explore module.</strong> <span class="status-tag status-live">Live (faculty trial)</span> Alignment analyses (custom target / downstream target) and what-if scenarios run against any saved snapshot. Custom-target authoring; downstream-target auto-detection from captured prereq courses.</li>
+    <li><code>/program</code> — <strong>Program Coverage Matrix.</strong> <span class="status-tag status-live">Live (faculty trial)</span> Confirmed snapshots × career-target sub-competencies, rendered as a depth-aware heat map with a problem-solving lens. On-demand AI scoring per cell; full rationale and evidence excerpt visible in a drawer. The coverage-matrix view from the end state, in a snapshot-grid form — the self-updating machinery and the cross-snapshot diff that would make it a true "living" view are Phase 2 work.</li>
+    <li><code>/settings</code> — <strong>Per-function AI model tuning.</strong> <span class="status-tag status-live">Live (faculty trial)</span> Tier-based selection (Light / Default / Heavy) plus per-function model dropdowns sourced from the OpenAI provider's available models.</li>
   </ul>
   <p style="margin-top: 18px;"><strong>Legacy (still accessible, no new work):</strong></p>
   <ul>
@@ -2454,7 +2495,8 @@
     The most consequential failure mode is systematic over-scoring (the coverage matrix shows
     healthier coverage than the program actually delivers, and the program adopts the misleading
     reading for accreditation or advising purposes). The framework's mitigations are the evidence
-    rule (every above-zero score requires a citable excerpt), the dispute trail (faculty can flag
+    rule (all nonzero scores require evidence of delivery or assessment; K&gt;1, U&gt;0, and D&gt;0
+    require evidence of student engagement or performance), the dispute trail (faculty can flag
     and contest cells), and the deliberately conservative scoring discipline built into the AI
     prompts. Even with those, the tool is not infallible; a recurring audit of the most
     consequential cells against actual student work and graduate-outcome data is the long-term
@@ -2533,10 +2575,14 @@
     </div>
   </div>
 
-  <h3>At each gate</h3>
+  <h3>At each gate <span class="status-tag status-planned">Planned</span></h3>
   <p>
     Gates are curriculum audits, not student evaluations. The question at each gate
     is not "which students passed?" but "did the curriculum deliver what it promised?"
+  </p>
+  <p class="callout" style="border-left-color: var(--t5); background: var(--bg-card); padding: 14px 18px; border-radius: 0 4px 4px 0; max-width: 820px;">
+    <span style="font-family:var(--mono);font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--t5);">Proposed pilot metric</span><br>
+    The numbers below are proposed pilot starting thresholds for faculty review, not validated standards. They should be recalibrated against the first cohort's baseline distributions.
   </p>
 
   <div class="phases">

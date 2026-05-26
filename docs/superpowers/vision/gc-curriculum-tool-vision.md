@@ -1,10 +1,10 @@
 # The GC Curriculum Tool — Vision
 
-> **Want to test drive the tool?** → [Open the tool](https://gc-curriculum-tool.vercel.app/capture/GC%203460?slug=4QcseN0pvlpd35gb). The intended day-to-day workflow runs across three surfaces: per-course audit at `/capture/<course-code>` (CourseCapture), prescriptive alignment + what-if scenarios at `/explore/<course-code>`, and the program-level coverage matrix at `/program`. All available from the same session.
+> **Where the tool actually runs.** The active build — per-course audit at `/capture/<course-code>` (CourseCapture), prescriptive alignment + what-if scenarios at `/explore/<course-code>`, and the program-level coverage matrix at `/program` — is faculty-internal on the Clemson LAN, gated by HTTP Basic Auth. It is not publicly accessible by design: it runs locally against the department's data and a local LLM. For a quick orientation without LAN access, see the [executive brief](../../executive-brief.html).
 >
-> Catalog values come from a [shared course sheet](https://docs.google.com/spreadsheets/d/12aPhgrIlhDYjKD0-Gt97glf1d9fKtwKmL4FwM8iTz7Q/edit?gid=1024237655#gid=1024237655), one tab per course — edit your tab and click **Sync from Sheet** in CourseCapture to pull the latest values for that course. The audit session then combines those catalog values with Canvas-imported assignments and rubrics, uploaded materials, linked Google Docs / Sheets / Slides and Drive PDFs, and voice/chat audit; the confirmed snapshot feeds program-level analyses.
+> **Public-accessible interactive demo.** The original three-tool M-trial prototype — Course Builder · Prereq Analyzer · Career Target Alignment — remains live on Vercel at [`/preview/4QcseN0pvlpd35gb`](https://gc-curriculum-tool.vercel.app/preview/4QcseN0pvlpd35gb). It exercises the same analysis quality on real GC courses, and is the right link to share with anyone outside the LAN who wants to click around. The CourseCapture + Explore + Program pipeline supersedes it for new captures, but the M-trial flow is preserved.
 >
-> *(The original three-tool M-trial prototype — Course Builder · Prereq Analyzer · Career Target Alignment — remains accessible at `/preview/<slug>` if you want to see the earlier flow. It's superseded by the CourseCapture + Explore + Program pipeline for new work.)*
+> **How the active tool works (for faculty on the LAN).** Catalog values come from a [shared course sheet](https://docs.google.com/spreadsheets/d/12aPhgrIlhDYjKD0-Gt97glf1d9fKtwKmL4FwM8iTz7Q/edit?gid=1024237655#gid=1024237655), one tab per course — edit your tab and click **Sync from Sheet** in CourseCapture to pull the latest values. The audit session then combines those catalog values with Canvas-imported assignments and rubrics, uploaded materials, linked Google Docs / Sheets / Slides and Drive PDFs, and voice/chat audit; the confirmed snapshot feeds program-level analyses.
 >
 > For the academic background and theoretical justification behind the KUD+ framework — what it measures, why it's structured as it is, and how it's implemented at the course and career-path levels — see the [Background document](../../../background.html).
 
@@ -18,7 +18,7 @@ Working backwards from career destinations and upwards from foundational courses
 
 Today these questions get answered through committee discussions, gut intuition, and the occasional curriculum review. Faculty know parts of the answer for the courses they teach. Nobody has the whole picture, and nobody has a way to update it as courses evolve.
 
-The tool's job is to make those answers *visible* and *defensible* — for advising students, for accreditation conversations, for industry/advisory-board reviews, for the next curriculum redesign, and for hiring decisions about what kind of faculty the program needs.
+The tool's job is to make evidence-backed draft judgments *visible* and *disputable* — for advising students, for accreditation conversations, for industry/advisory-board reviews, for the next curriculum redesign, and for hiring decisions about what kind of faculty the program needs. Defensibility depends on source coverage, instructor confirmation, and review of flagged cells.
 
 ## What we're producing
 
@@ -28,7 +28,7 @@ Beneath the curriculum sits a clear picture of what every GC graduate should be:
 
 **Cluster competencies** — Structural Design, Color Management, Print Processes, Graphic Workflow, Brand Strategy — are the domain-specific tracks where deep expertise builds across multiple courses. The coverage matrix and scaffolding analysis read at this level.
 
-The tool maps both layers. Clusters get explicit coverage analysis; foundational competencies show up implicitly inside every reasoned judgment.
+The tool maps both layers. Clusters get explicit coverage analysis; foundational competencies show up implicitly inside every reasoned judgment. A course developing Quality Control at Do level may create strong conditions for Attention to Detail, but the disposition should be scored only when assignments or rubrics require accuracy, error-catching, revision, or similar observable behaviors.
 
 ## The 3-Act program (proposed)
 
@@ -52,7 +52,9 @@ The tool classifies every competency at three levels. **Know** is facts and disc
 
 This is the **KUD framework**, drawn from Carol Ann Tomlinson's work on differentiated instruction (Tomlinson, 1999/2014; Tomlinson & Imbeau, 2010) and compatible with Wiggins and McTighe's *Understanding by Design* (2005), which centers curriculum planning on durable understanding and transfer rather than coverage.
 
-**Each of K, U, and D is scored on a 0–5 depth scale.** Binary coverage ("covered/not covered") collapses in practice — most courses touch most relevant competencies at some level, and the matrix loses its ability to discriminate between a brief mention and an assessed performance. The depth scales restore that resolution. The anchors at each level describe **what the student does or grasps** rather than what the syllabus claims; above-zero scores require an evidence excerpt from the course materials. The full scale definitions, the evidence rule, and the theoretical grounding behind the extension are documented in the [Background document](../../../background.html).
+**Each of K, U, and D is scored on a 0–5 depth scale.** Binary coverage ("covered/not covered") collapses in practice — most courses touch most relevant competencies at some level, and the matrix loses its ability to discriminate between a brief mention and an assessed performance. The depth scales restore that resolution. The anchors at each level describe **what the student does or grasps** rather than what the syllabus claims. All nonzero scores require evidence of delivery or assessment. K=1 can be supported by delivery evidence such as slides, readings, modules, or instructor confirmation; K>1, U>0, and D>0 require evidence of student engagement, reasoning, or performance.
+
+KUD+ scores are *course-opportunity scores* — what the course is designed and evidenced to develop. They become *student-learning claims* only when linked to assessed student work; the [graduate-outcome-validation work](../../../graduate-outcome-validation.html) is what bridges that gap. The full scale definitions, the evidence rule, and the theoretical grounding behind the extension are documented in the [Background document](../../../background.html).
 
 **Why not Bloom's Taxonomy?** Bloom's six-level cognitive taxonomy (Bloom, 1956; Anderson & Krathwohl, 2001) is the right tool for analyzing the cognitive demand of an *assessment task* — it discriminates finely between types of thinking and is well-suited to writing and evaluating assessments. That is a different job than the one this tool has to do. The GC Curriculum Tool needs a small set of faculty-readable categories that can drive coverage analysis, scaffolding analysis, prerequisite checks, and advising decisions *across an entire program*. For that purpose, three categories with internal depth outperforms six categories without: the question "does this prior course develop the *Understand*-level concept the focal course expects, and at what depth?" is clean and answerable. The finer distinctions Bloom provides — Analyze vs. Evaluate, Apply vs. Create — compound across hundreds of (course × competency × dimension) cells into judgment calls that make faculty review harder, not easier. KUD with depth is better suited to curriculum mapping; Bloom remains the right lens for assessment design and continues to inform the audit-conversation probes used inside each cell.
 
@@ -70,15 +72,15 @@ The framework fits a professional field like Graphic Communications naturally. *
 
 ## The end state
 
-When the full tool is in production, it is the canonical living view of the GC program:
+When the full tool is in production, it is the department's shared, versioned working view of the GC program — a maintained evidence surface for curriculum discussion:
 
 - **A career-target framework.** Five (initially) named career destinations — Account Management, Brand Strategy, Production & Operations, Creative Generalist, AI Workflow / Orchestrator — each with sub-competencies described at Know / Understand / Do levels (the "KUD" rubric). These are editable by the faculty leading each track; changes propagate through the rest of the system.
 
 - **A complete course inventory.** Every active GC course has a structured record: description, learning objectives, projects, skills the instructor assumes students walk in with. The record is editable by the course owner and synced from each semester's syllabus.
 
-- **A coverage matrix.** For every course × every career target, the AI maintains a current judgment of how well the course covers each sub-competency, at what level (Know / Understand / Do / not addressed), with confidence and reasoning that faculty can read, dispute, and flag.
+- **A coverage matrix.** For every course × every career target, the system generates an AI-drafted, evidence-cited coverage judgment from confirmed snapshots; faculty can review, dispute, and override the judgment. [LIVE (faculty trial)]
 
-- **Scaffolding analysis.** Across all 28+ courses, the AI judges how well each competency is scaffolded *as a program* — introduced in earlier courses, developed in middle courses, applied in capstones. It flags the cases that look fine cell-by-cell but fail program-wide: a senior-level course that expects mastery of something never taught before.
+- **Scaffolding analysis.** [Specified, not built] The planned scaffolding analysis will use confirmed course snapshots to generate evidence-cited scaffold judgments for faculty review — introduced in earlier courses, developed in middle courses, applied in capstones. It will flag the cases that look fine cell-by-cell but fail program-wide: a senior-level course that expects mastery of something never taught before.
 
 - **Prerequisite-gap analysis.** For any course, the tool reports whether the prior coursework students actually take supports what this course expects. Not what the registrar says is required — what the *competencies* require.
 
@@ -110,10 +112,10 @@ The framework's intended day-to-day workflow runs across four surfaces. A fifth 
 
 **The current workflow:**
 
-- **`/capture/<code>` — CourseCapture.** The instructor-facing audit conversation that produces a Course Outcome Profile. Pulls catalog + uploads + Canvas (assignments, rubrics, pages, discussions, quizzes — Classic and New Quizzes APIs — file attachments) + linked Google Docs/Slides/Sheets + Drive PDFs + YouTube captions. Voice input via Whisper. Snapshots are immutable and versioned; the draft remains mutable.
-- **`/explore/<code>` — Explore module.** Alignment analyses (custom target / downstream target) and what-if scenarios run against any saved snapshot. Custom-target authoring; downstream-target auto-detection from captured prereq courses.
-- **`/program` — Program Coverage Matrix.** Confirmed snapshots × career-target sub-competencies, rendered as a depth-aware heat map with a problem-solving lens. On-demand AI scoring per cell; full rationale and evidence excerpt visible in a drawer. The coverage-matrix view from the end state, in a snapshot-grid form — the self-updating machinery and the cross-snapshot diff that would make it a true "living" view are Phase 2 work.
-- **`/settings` — Per-function AI model tuning.** Tier-based selection (Light / Default / Heavy) plus per-function model dropdowns sourced from the OpenAI provider's available models.
+- **`/capture/<code>` — CourseCapture.** [LIVE (faculty trial)] The instructor-facing audit conversation that produces a Course Outcome Profile. For details on what Canvas sources and uploaded materials are ingested, see the ingestion summary in the Background document. Voice input via Whisper. Snapshots are immutable and versioned; the draft remains mutable.
+- **`/explore/<code>` — Explore module.** [LIVE (faculty trial)] Alignment analyses (custom target / downstream target) and what-if scenarios run against any saved snapshot. Custom-target authoring; downstream-target auto-detection from captured prereq courses.
+- **`/program` — Program Coverage Matrix.** [LIVE (faculty trial)] Confirmed snapshots × career-target sub-competencies, rendered as a depth-aware heat map with a problem-solving lens. On-demand AI scoring per cell; full rationale and evidence excerpt visible in a drawer. The coverage-matrix view from the end state, in a snapshot-grid form — the self-updating machinery and the cross-snapshot diff that would make it a true "living" view are Phase 2 work.
+- **`/settings` — Per-function AI model tuning.** [LIVE (faculty trial)] Tier-based selection (Light / Default / Heavy) plus per-function model dropdowns sourced from the OpenAI provider's available models.
 
 **Legacy (still accessible, no new work):**
 
@@ -137,7 +139,7 @@ A research tool that runs on real institutional data sits inside an institutiona
 
 **Cost.** AI scoring has a quantifiable per-pair cost (roughly $0.04 per snapshot-target cell at current model defaults; ~$5 for a full program-wide refresh against five targets and ~30 courses). Recurring re-scoring at end-of-semester cadence is well within typical departmental software budgets. The tool optimizes for prompt-cache reuse to keep this number low; the function-tier settings page (`/settings`) lets the program tune cost-per-call against analytical depth on a per-function basis.
 
-**Failure modes.** The most consequential failure mode is systematic over-scoring (the coverage matrix shows healthier coverage than the program actually delivers, and the program adopts the misleading reading for accreditation or advising purposes). The framework's mitigations are the evidence rule (every above-zero score requires a citable excerpt), the dispute trail (faculty can flag and contest cells), and the deliberately conservative scoring discipline built into the AI prompts. Even with those, the tool is not infallible; a recurring audit of the most consequential cells against actual student work and graduate-outcome data is the long-term validation path described in the Validation proposal.
+**Failure modes.** The most consequential failure mode is systematic over-scoring (the coverage matrix shows healthier coverage than the program actually delivers, and the program adopts the misleading reading for accreditation or advising purposes). The framework's mitigations are the evidence rule (all nonzero scores require evidence of delivery or assessment; K>1, U>0, and D>0 require evidence of student engagement or performance), the dispute trail (faculty can flag and contest cells), and the deliberately conservative scoring discipline built into the AI prompts. Even with those, the tool is not infallible; a recurring audit of the most consequential cells against actual student work and graduate-outcome data is the long-term validation path described in the Validation proposal.
 
 ### Trial period
 
