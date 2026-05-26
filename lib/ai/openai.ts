@@ -192,7 +192,7 @@ export class OpenAIProvider implements AIProvider {
           ],
         };
       }
-      return { role: m.role as 'system' | 'user' | 'assistant', content: m.content };
+      return { role: m.role as 'system' | 'user' | 'assistant', content: m.content ?? '' };
     });
 
     // v6: Use generateText + Output.object (not generateObject) for structured output with tools.

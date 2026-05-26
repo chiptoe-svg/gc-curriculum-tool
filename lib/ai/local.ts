@@ -133,7 +133,7 @@ export class LocalProvider implements AIProvider {
           ],
         };
       }
-      return { role: m.role as 'system' | 'user' | 'assistant', content: m.content };
+      return { role: m.role as 'system' | 'user' | 'assistant', content: m.content ?? '' };
     });
 
     // Build the openai-compatible model via @ai-sdk/openai-compatible.

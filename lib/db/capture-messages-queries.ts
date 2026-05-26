@@ -73,6 +73,15 @@ export async function appendMessage(input: AppendMessageInput): Promise<void> {
  * Return all messages for a session, ordered by turn_index ascending.
  * Used by the audit chat to rehydrate context and by the Review panel
  * to render the full transcript for snapshot review.
+ *
+ * **Stage 3 rehydration note for tool-role rows:** the `toolResult` column is
+ * an array (`Array<{ toolCallId, result }>`) because one assistant turn can
+ * produce multiple tool calls that resolve to multiple results in one logical
+ * "tool turn." When rehydrating these rows into the `Message[]` shape that the
+ * agent loop expects (where `role: 'tool'` is a flat single-result entry),
+ * callers must EXPAND each tool-role row into one `Message` per array element.
+ * Without this expansion, only the first result will surface in the model's
+ * context and the rest will be silently dropped.
  */
 export async function getSessionMessages(courseCode: string, sessionId: string) {
   return db

@@ -36,17 +36,40 @@ export interface ToolResult {
   result: unknown;
 }
 
-/** Message types the provider accepts and emits during a tool-using session. */
+/**
+ * Message types the provider accepts and emits during a tool-using session.
+ *
+ * `assistant` content is nullable: when the model issues only tool calls and no
+ * text body, content is null. Matches the `capture_messages.content` nullable
+ * column and the Vercel AI SDK's assistant-message shape.
+ *
+ * `role: 'tool'` carries one tool result per Message. The DB stores tool results
+ * as an array (`capture_messages.toolResult: Array<...>`) because a single
+ * assistant turn can produce multiple tool calls that resolve into multiple
+ * results in one logical "tool turn." When rehydrating a session from the DB
+ * for the agent loop, callers must EXPAND each `tool`-role row's array into
+ * one `Message` entry per array element. Stage 3 will provide that helper.
+ */
 export type Message =
   | { role: 'system'; content: string }
   | { role: 'user'; content: string }
-  | { role: 'assistant'; content: string; toolCalls?: ToolCall[] }
+  | { role: 'assistant'; content: string | null; toolCalls?: ToolCall[] }
   | { role: 'tool'; toolCallId: string; result: unknown };
 
 /**
  * Result of one `completeWithTools` call. Either the model returned a
  * final structured response, or it issued tool calls that the caller
  * needs to dispatch and reinvoke with the results.
+ *
+ * NOTE: All current SDK-backed providers (OpenAI, Anthropic, Local) delegate
+ * the tool-dispatch loop to the Vercel AI SDK and always return
+ * `kind: 'response'` with `toolCallsUsed` listing the tools the SDK fired
+ * internally. The `kind: 'tool_calls'` variant is currently UNREACHABLE for
+ * those providers and is reserved for a future provider that yields mid-loop
+ * (e.g., a streaming implementation that surfaces tool calls before
+ * dispatching). Stage 3's agent loop should call `completeWithTools`
+ * expecting `kind: 'response'` always; FakeProvider's scripted mode also
+ * resolves to `kind: 'response'` after running scripted tool steps.
  */
 export type CompleteWithToolsResult<T> =
   | {
