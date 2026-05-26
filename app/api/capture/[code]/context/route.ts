@@ -70,9 +70,9 @@ export async function GET(req: Request, { params }: RouteContext): Promise<Respo
       extractedText: m.extractedText,
       ignored: m.ignored,
       uploadedAt: m.uploadedAt,
-      summary: m.summary,
-      summaryGeneratedAt: m.summaryGeneratedAt,
-      useSummary: m.useSummary,
+      digest: m.digest,
+      digestGeneratedAt: m.digestGeneratedAt,
+      useDigest: m.useDigest,
     })),
     existingCaptureProfile: existingCaptureProfile
       ? {

@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const updateExtractionResult = vi.fn();
-const updateMaterialSummary = vi.fn();
+const updateMaterialDigest = vi.fn();
 const summarizeMaterial = vi.fn();
 
 vi.mock('@/lib/db/course-materials-queries', () => ({
   updateExtractionResult: (...args: unknown[]) => updateExtractionResult(...args),
-  updateMaterialSummary: (...args: unknown[]) => updateMaterialSummary(...args),
+  updateMaterialDigest: (...args: unknown[]) => updateMaterialDigest(...args),
 }));
 vi.mock('@/lib/ai/analyze/material-summary', () => ({
   summarizeMaterial: (...args: unknown[]) => summarizeMaterial(...args),
@@ -19,7 +19,7 @@ const LONG = 'x'.repeat(60_001); // > 15k tokens
 describe('finalizeExtraction', () => {
   beforeEach(() => {
     updateExtractionResult.mockReset().mockResolvedValue(undefined);
-    updateMaterialSummary.mockReset().mockResolvedValue(undefined);
+    updateMaterialDigest.mockReset().mockResolvedValue(undefined);
     summarizeMaterial.mockReset();
   });
 
@@ -32,7 +32,7 @@ describe('finalizeExtraction', () => {
     });
     expect(updateExtractionResult).toHaveBeenCalledOnce();
     expect(summarizeMaterial).not.toHaveBeenCalled();
-    expect(updateMaterialSummary).not.toHaveBeenCalled();
+    expect(updateMaterialDigest).not.toHaveBeenCalled();
   });
 
   it('writes extraction result and skips summarization when not a candidate (dense kind)', async () => {
@@ -56,7 +56,7 @@ describe('finalizeExtraction', () => {
   });
 
   it('summarizes when candidate and status ok', async () => {
-    summarizeMaterial.mockResolvedValue({ summary: 'SUMMARY', model: 'gpt-5.4-mini' });
+    summarizeMaterial.mockResolvedValue({ digest: 'DIGEST', model: 'gpt-5.4-mini' });
     await finalizeExtraction({
       id: 'm1',
       fileName: 'Drive PDF: chapter-3.pdf',
@@ -68,10 +68,10 @@ describe('finalizeExtraction', () => {
       fileName: 'Drive PDF: chapter-3.pdf',
       extractedText: LONG,
     });
-    expect(updateMaterialSummary).toHaveBeenCalledWith({
+    expect(updateMaterialDigest).toHaveBeenCalledWith({
       id: 'm1',
-      summary: 'SUMMARY',
-      summaryModel: 'gpt-5.4-mini',
+      digest: 'DIGEST',
+      digestModel: 'gpt-5.4-mini',
     });
   });
 
@@ -84,7 +84,7 @@ describe('finalizeExtraction', () => {
       extractedText: LONG,
     })).resolves.toBeUndefined();
     expect(updateExtractionResult).toHaveBeenCalledOnce();
-    expect(updateMaterialSummary).not.toHaveBeenCalled();
+    expect(updateMaterialDigest).not.toHaveBeenCalled();
   });
 
   it('passes through extractionMethod and pageCount', async () => {

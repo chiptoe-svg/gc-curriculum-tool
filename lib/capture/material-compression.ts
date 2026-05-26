@@ -1,10 +1,10 @@
 /**
- * Rules for deciding which materials get replaced by a structured summary
+ * Rules for deciding which materials get replaced by a structured digest
  * in the audit chat prompt. Pure logic — no DB or network. Used by:
- *   - `finalizeExtraction` to decide whether to summarize a freshly
+ *   - `finalizeExtraction` to decide whether to digest a freshly
  *     extracted material;
  *   - the backfill endpoint to find pre-existing eligible materials;
- *   - the capture chat route to substitute summary for extracted text.
+ *   - the capture chat route to substitute digest for extracted text.
  */
 
 export type SourceKind =
@@ -18,8 +18,8 @@ export type SourceKind =
 export interface CompressionMaterial {
   fileName: string;
   extractedText: string | null;
-  summary: string | null;
-  useSummary: boolean;
+  digest: string | null;
+  useDigest: boolean;
 }
 
 // 15k tokens ≈ 60k chars under the ~4 chars/token rule of thumb.
@@ -48,6 +48,6 @@ export function isCompressionCandidate(m: CompressionMaterial): boolean {
 }
 
 export function effectiveAuditText(m: CompressionMaterial): string | null {
-  if (m.useSummary && m.summary) return m.summary;
+  if (m.useDigest && m.digest) return m.digest;
   return m.extractedText;
 }

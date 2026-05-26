@@ -13,8 +13,8 @@ function mat(overrides: Partial<CompressionMaterial>): CompressionMaterial {
   return {
     fileName: 'Drive PDF: foo.pdf',
     extractedText: LONG,
-    summary: null,
-    useSummary: false,
+    digest: null,
+    useDigest: false,
     ...overrides,
   };
 }
@@ -69,19 +69,19 @@ describe('isCompressionCandidate', () => {
 });
 
 describe('effectiveAuditText', () => {
-  it('uses summary when useSummary=true and summary is non-null', () => {
-    const m = mat({ summary: 'SUMMARY', useSummary: true });
-    expect(effectiveAuditText(m)).toBe('SUMMARY');
+  it('uses digest when useDigest=true and digest is non-null', () => {
+    const m = mat({ digest: 'DIGEST', useDigest: true });
+    expect(effectiveAuditText(m)).toBe('DIGEST');
   });
-  it('uses extractedText when useSummary=false', () => {
-    const m = mat({ summary: 'SUMMARY', useSummary: false });
+  it('uses extractedText when useDigest=false', () => {
+    const m = mat({ digest: 'DIGEST', useDigest: false });
     expect(effectiveAuditText(m)).toBe(LONG);
   });
-  it('uses extractedText when useSummary=true but summary is null', () => {
-    const m = mat({ summary: null, useSummary: true });
+  it('uses extractedText when useDigest=true but digest is null', () => {
+    const m = mat({ digest: null, useDigest: true });
     expect(effectiveAuditText(m)).toBe(LONG);
   });
   it('returns null when both are null', () => {
-    expect(effectiveAuditText(mat({ extractedText: null, summary: null, useSummary: true }))).toBe(null);
+    expect(effectiveAuditText(mat({ extractedText: null, digest: null, useDigest: true }))).toBe(null);
   });
 });

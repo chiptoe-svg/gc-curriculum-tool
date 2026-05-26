@@ -8,7 +8,7 @@ export interface SummarizeInput {
 }
 
 export interface SummarizeResult {
-  summary: string;
+  digest: string;
   model: string;
 }
 
@@ -39,7 +39,7 @@ export async function summarizeMaterial(input: SummarizeInput): Promise<Summariz
     ],
   });
 
-  const summary = response.choices[0]?.message?.content;
-  if (!summary) throw new Error('No content in summarizer response');
-  return { summary, model };
+  const digest = response.choices[0]?.message?.content;
+  if (!digest) throw new Error('No content in summarizer response');
+  return { digest, model };
 }

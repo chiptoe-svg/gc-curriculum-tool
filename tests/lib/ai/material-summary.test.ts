@@ -30,7 +30,7 @@ describe('summarizeMaterial', () => {
       fileName: 'Drive PDF: chapter-3.pdf',
       extractedText: 'long text here',
     });
-    expect(result.summary).toContain('Material kind: textbook chapter');
+    expect(result.digest).toContain('Material kind: textbook chapter');
     expect(result.model).toBe('gpt-5.4-mini');
     expect(createMock).toHaveBeenCalledOnce();
     const args = createMock.mock.calls[0]![0];

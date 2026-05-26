@@ -30,8 +30,8 @@ export interface CaptureChatMaterial {
   fileName: string;
   extractionStatus: string;
   extractedText: string | null;
-  summary: string | null;
-  useSummary: boolean;
+  digest: string | null;
+  useDigest: boolean;
 }
 
 export interface PrerequisiteCaptureProfile {
@@ -86,8 +86,8 @@ function formatMaterials(materials: CaptureChatMaterial[]): string {
   if (materials.length === 0) return '**Uploaded and Canvas-imported materials:**\n(none)';
   const sections: string[] = ['**Uploaded and Canvas-imported materials:**'];
   for (const m of materials) {
-    const usingSummary = m.useSummary && m.summary !== null;
-    const tag = usingSummary ? ' (audit summary — full text on file)' : '';
+    const usingDigest = m.useDigest && m.digest !== null;
+    const tag = usingDigest ? ' (audit digest — full text on file)' : '';
     const header = `### ${m.fileName} [status: ${m.extractionStatus}]${tag}`;
     const text = effectiveAuditText(m);
     const body = text && text.length > 0 ? text : '(no extracted text available)';

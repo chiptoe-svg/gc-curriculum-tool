@@ -1,6 +1,6 @@
 import {
   updateExtractionResult,
-  updateMaterialSummary,
+  updateMaterialDigest,
   type ExtractionStatus,
   type ExtractionMethod,
 } from '@/lib/db/course-materials-queries';
@@ -40,17 +40,17 @@ export async function finalizeExtraction(input: FinalizeExtractionInput): Promis
   const candidate = isCompressionCandidate({
     fileName: input.fileName,
     extractedText: input.extractedText,
-    summary: null,
-    useSummary: false,
+    digest: null,
+    useDigest: false,
   });
   if (!candidate) return;
 
   try {
-    const { summary, model } = await summarizeMaterial({
+    const { digest, model } = await summarizeMaterial({
       fileName: input.fileName,
       extractedText: input.extractedText,
     });
-    await updateMaterialSummary({ id: input.id, summary, summaryModel: model });
+    await updateMaterialDigest({ id: input.id, digest, digestModel: model });
   } catch (err) {
     console.error(`finalizeExtraction: summarizer failed for ${input.id} (${input.fileName})`, err);
     // Intentionally swallowed — extraction itself succeeded. The backfill

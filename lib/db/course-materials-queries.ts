@@ -119,31 +119,68 @@ export async function setMaterialIgnored(id: string, ignored: boolean): Promise<
   return rows.length > 0;
 }
 
-export interface UpdateMaterialSummaryInput {
+export interface UpdateMaterialDigestInput {
   id: string;
-  summary: string;
-  summaryModel: string;
+  digest: string;
+  digestModel: string;
 }
-// Writes a fresh summary and turns useSummary ON. Callers that want to
-// keep useSummary off (e.g., a re-summary done while faculty have it
-// explicitly disabled) should follow up with setMaterialUseSummary.
-export async function updateMaterialSummary(input: UpdateMaterialSummaryInput): Promise<void> {
+// Writes a fresh digest and turns useDigest ON. Callers that want to
+// keep useDigest off (e.g., a re-digest done while faculty have it
+// explicitly disabled) should follow up with setMaterialUseDigest.
+export async function updateMaterialDigest(input: UpdateMaterialDigestInput): Promise<void> {
   await db
     .update(courseMaterials)
     .set({
-      summary: input.summary,
-      summaryModel: input.summaryModel,
-      summaryGeneratedAt: new Date(),
-      useSummary: true,
+      digest: input.digest,
+      digestModel: input.digestModel,
+      digestGeneratedAt: new Date(),
+      useDigest: true,
     })
     .where(eq(courseMaterials.id, input.id));
 }
 
-export async function setMaterialUseSummary(id: string, useSummary: boolean): Promise<boolean> {
+export async function setMaterialUseDigest(id: string, useDigest: boolean): Promise<boolean> {
   const rows = await db
     .update(courseMaterials)
-    .set({ useSummary })
+    .set({ useDigest })
     .where(eq(courseMaterials.id, id))
     .returning({ id: courseMaterials.id });
   return rows.length > 0;
+}
+
+export async function updateIndexingStatus(args: {
+  id: string;
+  status: 'pending' | 'indexing' | 'ready' | 'failed' | 'skipped';
+  indexedAt?: Date;
+}): Promise<void> {
+  await db.update(courseMaterials)
+    .set({
+      indexingStatus: args.status,
+      ...(args.indexedAt ? { indexedAt: args.indexedAt } : {}),
+    })
+    .where(eq(courseMaterials.id, args.id));
+}
+
+export async function updateFerpaRisk(args: {
+  id: string;
+  risk: 'low' | 'medium' | 'high';
+}): Promise<void> {
+  await db.update(courseMaterials)
+    .set({ ferpaRisk: args.risk })
+    .where(eq(courseMaterials.id, args.id));
+}
+
+export async function updateAutoSetAside(args: {
+  id: string;
+  autoSetAside: boolean;
+  setAsideReason: string | null;
+  ignored: boolean;
+}): Promise<void> {
+  await db.update(courseMaterials)
+    .set({
+      autoSetAside: args.autoSetAside,
+      setAsideReason: args.setAsideReason,
+      ignored: args.ignored,
+    })
+    .where(eq(courseMaterials.id, args.id));
 }

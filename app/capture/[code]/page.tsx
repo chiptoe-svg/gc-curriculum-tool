@@ -74,9 +74,9 @@ export default async function CapturePage({ params, searchParams }: Props) {
     extractionMethod: m.extractionMethod,
     extractedText: m.extractedText,
     ignored: m.ignored,
-    summary: m.summary ?? null,
-    summaryGeneratedAt: m.summaryGeneratedAt ? m.summaryGeneratedAt.toISOString() : null,
-    useSummary: m.useSummary,
+    digest: m.digest ?? null,
+    digestGeneratedAt: m.digestGeneratedAt ? m.digestGeneratedAt.toISOString() : null,
+    useDigest: m.useDigest,
   }));
 
   return (

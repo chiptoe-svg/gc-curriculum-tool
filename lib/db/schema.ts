@@ -188,14 +188,25 @@ export const courseMaterials = pgTable('course_materials', {
   analysisCostUsdCents: integer('analysis_cost_usd_cents'),
   uploadedAt: timestamp('uploaded_at', { withTimezone: true }).defaultNow().notNull(),
   ipHash: text('ip_hash').notNull(),
-  summary: text('summary'),
-  summaryModel: text('summary_model'),
-  summaryGeneratedAt: timestamp('summary_generated_at', { withTimezone: true }),
-  // When true and `summary` is non-null, AI-facing context loaders use the
-  // summary in place of extractedText. Default false; `updateMaterialSummary`
-  // flips it to true the first time a summary is written, so newly-extracted
+  digest: text('digest'),
+  digestModel: text('digest_model'),
+  digestGeneratedAt: timestamp('digest_generated_at', { withTimezone: true }),
+  // When true and `digest` is non-null, AI-facing context loaders use the
+  // digest in place of extractedText. Default false; `updateMaterialDigest`
+  // flips it to true the first time a digest is written, so newly-extracted
   // long materials auto-substitute. Faculty toggle per-row from the UI.
-  useSummary: boolean('use_summary').notNull().default(false),
+  useDigest: boolean('use_digest').notNull().default(false),
+  // FERPA risk band derived during ingestion: 'low' | 'medium' | 'high'.
+  ferpaRisk: text('ferpa_risk').notNull().default('low'),
+  // Set true by policy when the material was auto-excluded from AI context
+  // (e.g. high FERPA risk). When faculty overrides, `ignored` flips back to
+  // false but `autoSetAside` stays true to preserve the audit trail.
+  autoSetAside: boolean('auto_set_aside').notNull().default(false),
+  // Human-readable reason for the auto set-aside (e.g. "PII detected").
+  setAsideReason: text('set_aside_reason'),
+  // Indexing pipeline status: 'pending' | 'indexing' | 'ready' | 'failed' | 'skipped'.
+  indexingStatus: text('indexing_status').notNull().default('pending'),
+  indexedAt: timestamp('indexed_at', { withTimezone: true }),
   // Set true to keep the material in the system but exclude it from AI context
   // (CourseCapture chat + scoring) — useful for Canvas imports that turn out
   // to be duplicate, outdated, or irrelevant.

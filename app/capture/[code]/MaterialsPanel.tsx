@@ -13,9 +13,9 @@ export interface CaptureMaterial {
   extractionMethod: string | null;
   extractedText: string | null;
   ignored: boolean;
-  summary: string | null;
-  summaryGeneratedAt: string | null;
-  useSummary: boolean;
+  digest: string | null;
+  digestGeneratedAt: string | null;
+  useDigest: boolean;
 }
 
 export interface CourseCatalogView {
@@ -208,13 +208,13 @@ function MaterialRow({
   material,
   onToggleIgnored,
   onDelete,
-  onToggleUseSummary,
+  onToggleUseDigest,
   busy,
 }: {
   material: CaptureMaterial;
   onToggleIgnored: (next: boolean) => void;
   onDelete: () => void;
-  onToggleUseSummary: (next: boolean) => void;
+  onToggleUseDigest: (next: boolean) => void;
   busy: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -228,8 +228,8 @@ function MaterialRow({
   const summary = canvas ? summarizeCanvas(material) : '';
   const wordCount = material.extractedText ? material.extractedText.split(/\s+/).filter(Boolean).length : 0;
   const tokenEstimate = material.extractedText ? estimateTokens(material.extractedText) : 0;
-  const summaryTokenEstimate = material.summary ? estimateTokens(material.summary) : 0;
-  const usingSummary = material.useSummary && material.summary !== null;
+  const digestTokenEstimate = material.digest ? estimateTokens(material.digest) : 0;
+  const usingDigest = material.useDigest && material.digest !== null;
   // Highlight materials that take a meaningful slice of the 272k input budget
   // so faculty can spot which ones to ignore when the audit chokes.
   const tokenTone =
@@ -261,21 +261,21 @@ function MaterialRow({
               <span className="rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-medium text-purple-800">uploaded</span>
             )}
             <StatusChip status={material.extractionStatus} />
-            {material.summary && (
+            {material.digest && (
               <span
                 className={
                   'rounded px-1.5 py-0.5 text-[10px] font-medium ' +
-                  (usingSummary
+                  (usingDigest
                     ? 'bg-teal-100 text-teal-800'
                     : 'bg-slate-100 text-slate-600')
                 }
                 title={
-                  usingSummary
-                    ? 'The audit prompt uses this material\'s structured summary instead of its full extracted text.'
-                    : 'A summary exists but is currently disabled — the audit uses the full extracted text.'
+                  usingDigest
+                    ? 'The audit prompt uses this material\'s structured digest instead of its full extracted text.'
+                    : 'A digest exists but is currently disabled — the audit uses the full extracted text.'
                 }
               >
-                {usingSummary ? `summary (~${formatTokens(summaryTokenEstimate)})` : 'summary off'}
+                {usingDigest ? `digest (~${formatTokens(digestTokenEstimate)})` : 'digest off'}
               </span>
             )}
             {material.ignored && (
@@ -293,9 +293,9 @@ function MaterialRow({
                 ~{formatTokens(tokenEstimate)} ·{' '}
               </span>
             )}
-            {usingSummary && summaryTokenEstimate > 0 && (
-              <span className="text-teal-700" title="Tokens the summary contributes to the audit prompt (replaces the full token count shown above).">
-                audit sends ~{formatTokens(summaryTokenEstimate)} ·{' '}
+            {usingDigest && digestTokenEstimate > 0 && (
+              <span className="text-teal-700" title="Tokens the digest contributes to the audit prompt (replaces the full token count shown above).">
+                audit sends ~{formatTokens(digestTokenEstimate)} ·{' '}
               </span>
             )}
             <span>{humanSize(material.sizeBytes)}</span>
@@ -303,16 +303,16 @@ function MaterialRow({
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
-          {material.summary && (
+          {material.digest && (
             <label className="flex cursor-pointer items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground">
               <input
                 type="checkbox"
-                checked={material.useSummary}
-                onChange={e => onToggleUseSummary(e.target.checked)}
+                checked={material.useDigest}
+                onChange={e => onToggleUseDigest(e.target.checked)}
                 disabled={busy}
                 className="h-3 w-3"
               />
-              summarize
+              digest
             </label>
           )}
           <label className="flex cursor-pointer items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground">
@@ -494,9 +494,9 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
           extractionMethod: string | null;
           extractedText: string | null;
           ignored: boolean;
-          summary: string | null;
-          summaryGeneratedAt: string | null;
-          useSummary: boolean;
+          digest: string | null;
+          digestGeneratedAt: string | null;
+          useDigest: boolean;
         }>;
       };
       pushMaterials(json.materials);
@@ -549,7 +549,7 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
     onMaterialsChange?.(next);
   }
 
-  async function toggleUseSummary(id: string, useSummary: boolean) {
+  async function toggleUseDigest(id: string, useDigest: boolean) {
     setBusy(id);
     try {
       const res = await fetch(
@@ -557,11 +557,11 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
         {
           method: 'PATCH',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ useSummary }),
+          body: JSON.stringify({ useDigest }),
         },
       );
       if (res.ok) {
-        pushMaterials(materials.map(m => (m.id === id ? { ...m, useSummary } : m)));
+        pushMaterials(materials.map(m => (m.id === id ? { ...m, useDigest } : m)));
       }
     } finally {
       setBusy(null);
@@ -674,9 +674,9 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
         extractionMethod: data.extractionMethod,
         extractedText: null,  // server returns full row, but the upload response trims it — capture page will reload from /context if needed
         ignored: false,
-        summary: null,
-        summaryGeneratedAt: null,
-        useSummary: false,
+        digest: null,
+        digestGeneratedAt: null,
+        useDigest: false,
       };
       pushMaterials([...materials, newMaterial]);
     } catch (e) {
@@ -691,13 +691,13 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
   const activeCount = materials.length - ignoredCount;
 
   // Rough sum of what the audit chat will actually send: per-material
-  // effective text (summary when useSummary && summary, else raw extracted
+  // effective text (digest when useDigest && digest, else raw extracted
   // text). Catalog + profile + system prompt add ~5–10k tokens on top —
   // small relative to the materials, so we don't account for them here.
   const totalAuditTokens = materials
     .filter(m => !m.ignored)
     .reduce((sum, m) => {
-      const text = m.useSummary && m.summary ? m.summary : (m.extractedText ?? '');
+      const text = m.useDigest && m.digest ? m.digest : (m.extractedText ?? '');
       return sum + estimateTokens(text);
     }, 0);
   // Calibrated against the gpt-5.4-mini 272k cap (the floor) so faculty
@@ -804,10 +804,10 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
                   type="button"
                   onClick={handleCompressMaterials}
                   disabled={compressing}
-                  title="One-time backfill: generate structured summaries for any long reference materials uploaded before auto-compression shipped. New uploads are summarized automatically."
+                  title="One-time backfill: generate structured digests for any long reference materials uploaded before auto-compression shipped. New uploads are digested automatically."
                   className="rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
                 >
-                  {compressing ? 'Compressing…' : 'Compress existing materials'}
+                  {compressing ? 'Regenerating…' : 'Regenerate digests'}
                 </button>
                 <button
                   type="button"
@@ -882,7 +882,7 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
                         material={m}
                         onToggleIgnored={next => toggleIgnored(m.id, next)}
                         onDelete={() => deleteMaterial(m.id)}
-                        onToggleUseSummary={next => toggleUseSummary(m.id, next)}
+                        onToggleUseDigest={next => toggleUseDigest(m.id, next)}
                         busy={busy === m.id}
                       />
                     ))}

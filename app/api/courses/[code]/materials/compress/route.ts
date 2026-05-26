@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { isValidSlug } from '@/lib/slug';
 import { getCourseByCode } from '@/lib/db/courses-queries';
-import { listMaterialsByCourse, updateMaterialSummary } from '@/lib/db/course-materials-queries';
+import { listMaterialsByCourse, updateMaterialDigest } from '@/lib/db/course-materials-queries';
 import { isCompressionCandidate } from '@/lib/capture/material-compression';
 import { summarizeMaterial } from '@/lib/ai/analyze/material-summary';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
@@ -39,10 +39,10 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     isCompressionCandidate({
       fileName: m.fileName,
       extractedText: m.extractedText,
-      summary: m.summary,
-      useSummary: m.useSummary,
+      digest: m.digest,
+      useDigest: m.useDigest,
     }) &&
-    (force || m.summary === null),
+    (force || m.digest === null),
   );
 
   let summarized = 0;
@@ -53,11 +53,11 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   // Serial: keeps OpenAI usage predictable. Faculty hit this rarely.
   for (const m of candidates) {
     try {
-      const { summary, model } = await summarizeMaterial({
+      const { digest, model } = await summarizeMaterial({
         fileName: m.fileName,
         extractedText: m.extractedText!,
       });
-      await updateMaterialSummary({ id: m.id, summary, summaryModel: model });
+      await updateMaterialDigest({ id: m.id, digest, digestModel: model });
       summarized += 1;
       results.push({ id: m.id, fileName: m.fileName, status: 'summarized' });
     } catch (err) {
