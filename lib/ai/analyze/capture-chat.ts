@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import { loadPrompt } from '@/lib/ai/prompts/load';
 import { resolveModelForFunction } from '@/lib/ai/function-settings';
+import { effectiveAuditText } from '@/lib/capture/material-compression';
 import {
   baselineFoundationalCompetencies,
   captureChatReplySchema,
@@ -29,6 +30,8 @@ export interface CaptureChatMaterial {
   fileName: string;
   extractionStatus: string;
   extractedText: string | null;
+  summary: string | null;
+  useSummary: boolean;
 }
 
 export interface PrerequisiteCaptureProfile {
@@ -83,10 +86,11 @@ function formatMaterials(materials: CaptureChatMaterial[]): string {
   if (materials.length === 0) return '**Uploaded and Canvas-imported materials:**\n(none)';
   const sections: string[] = ['**Uploaded and Canvas-imported materials:**'];
   for (const m of materials) {
-    const header = `### ${m.fileName} [status: ${m.extractionStatus}]`;
-    const body = m.extractedText && m.extractedText.length > 0
-      ? m.extractedText
-      : '(no extracted text available)';
+    const usingSummary = m.useSummary && m.summary !== null;
+    const tag = usingSummary ? ' (audit summary — full text on file)' : '';
+    const header = `### ${m.fileName} [status: ${m.extractionStatus}]${tag}`;
+    const text = effectiveAuditText(m);
+    const body = text && text.length > 0 ? text : '(no extracted text available)';
     sections.push(header, body, '');
   }
   return sections.join('\n');
