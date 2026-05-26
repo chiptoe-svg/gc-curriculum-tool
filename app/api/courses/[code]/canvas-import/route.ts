@@ -103,7 +103,16 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
   const toInsert: Array<{ fileName: string; text: string; mimeType: string }> = [];
 
   const syllabusText = htmlToText(data.course.syllabusHtml);
-  if (syllabusText) toInsert.push({ fileName: 'Canvas: Syllabus', text: syllabusText, mimeType: 'text/html' });
+  // Suppress Canvas: Syllabus when the curated Sheets catalog already has LOs.
+  // The Sheets row is the structured source of truth; the Canvas Syllabus page
+  // tends to be a rambling, often-stale duplicate. Faculty can re-include by
+  // un-ignoring the row in the Materials panel if Sheets is missing structure.
+  const sheetsHasCatalog = (course.learningObjectives ?? []).length > 0;
+  if (syllabusText && !sheetsHasCatalog) {
+    toInsert.push({ fileName: 'Canvas: Syllabus', text: syllabusText, mimeType: 'text/html' });
+  } else if (syllabusText && sheetsHasCatalog) {
+    console.log(`[canvas-import] ${code}: suppressed Canvas: Syllabus (Sheets has ${course.learningObjectives!.length} LOs)`);
+  }
 
   if (data.assignments.length > 0) {
     const parts = data.assignments.map(a => {

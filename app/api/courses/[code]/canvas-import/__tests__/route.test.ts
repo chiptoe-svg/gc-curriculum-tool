@@ -124,6 +124,27 @@ describe('POST /api/courses/[code]/canvas-import', () => {
     expect(mockUpdateMeta).not.toHaveBeenCalled();
   });
 
+  it('suppresses Canvas: Syllabus when Sheets catalog has learning objectives', async () => {
+    // Sheets is the curated source of truth; Canvas Syllabus is typically a
+    // rambling duplicate. When LOs are present, skip it. Faculty can
+    // re-include by un-ignoring in the Materials panel.
+    mockGetCourse.mockResolvedValue({
+      ...FAKE_COURSE,
+      learningObjectives: ['Understand color theory', 'Apply CMYK separations'],
+    });
+    mockFetch.mockResolvedValue(CANVAS_DATA);
+
+    const [req, ctx] = makeReq({ slug: 'valid-slug', canvasUrl: 'https://clemson.instructure.com/courses/12345', canvasToken: 'tok' });
+    const res = await POST(req, ctx);
+    expect(res.status).toBe(200);
+
+    // The other Canvas content (assignments, modules) still imports.
+    // Only the Syllabus is suppressed.
+    const insertCalls = mockInsert.mock.calls.map(c => c[0].fileName);
+    expect(insertCalls).not.toContain('Canvas: Syllabus');
+    expect(insertCalls.length).toBeGreaterThan(0);
+  });
+
   it('upserts: existing fileName takes the UPDATE branch, no duplicate INSERT', async () => {
     mockGetCourse.mockResolvedValue(FAKE_COURSE);
     mockFetch.mockResolvedValue(CANVAS_DATA);
