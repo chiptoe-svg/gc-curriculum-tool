@@ -34,6 +34,7 @@ export async function DELETE(req: Request, { params }: RouteContext): Promise<Re
 
 // PATCH /api/courses/[code]/materials/[id]?slug=...
 // Body: { ignored?: boolean, useSummary?: boolean }
+// At least one of `ignored` or `useSummary` must be provided as a boolean.
 // Toggles whether a material's extracted text feeds AI context, or whether to use
 // the AI-generated summary instead of raw text. The row stays in the table either way.
 export async function PATCH(req: Request, { params }: RouteContext): Promise<Response> {
@@ -51,16 +52,20 @@ export async function PATCH(req: Request, { params }: RouteContext): Promise<Res
   }
 
   const body = await req.json().catch(() => ({})) as Record<string, unknown>;
-  if (typeof body.ignored !== 'boolean') {
-    return NextResponse.json({ error: 'ignored must be a boolean' }, { status: 400 });
+  const hasIgnored = typeof body.ignored === 'boolean';
+  const hasUseSummary = typeof body.useSummary === 'boolean';
+  if (!hasIgnored && !hasUseSummary) {
+    return NextResponse.json({ error: 'at least one of `ignored` or `useSummary` must be a boolean' }, { status: 400 });
   }
 
-  const updated = await setMaterialIgnored(id, body.ignored);
-  if (!updated) return NextResponse.json({ error: 'no row updated' }, { status: 404 });
-
-  if (typeof body.useSummary === 'boolean') {
-    await setMaterialUseSummary(id, body.useSummary);
+  if (hasIgnored) {
+    const updated = await setMaterialIgnored(id, body.ignored as boolean);
+    if (!updated) return NextResponse.json({ error: 'no row updated' }, { status: 404 });
+  }
+  if (hasUseSummary) {
+    const updated = await setMaterialUseSummary(id, body.useSummary as boolean);
+    if (!updated) return NextResponse.json({ error: 'no row updated' }, { status: 404 });
   }
 
-  return NextResponse.json({ ok: true, ignored: body.ignored });
+  return NextResponse.json({ ok: true });
 }
