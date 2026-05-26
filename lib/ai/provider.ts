@@ -20,6 +20,12 @@ export interface TranscribeDocumentResult {
   truncated: boolean;
 }
 
+import type {
+  ToolDefinition,
+  Message,
+  CompleteWithToolsResult,
+} from './tool-use-types';
+
 export interface AIProvider {
   readonly name: 'openai' | 'anthropic' | 'fake' | 'local';
   readonly model: string;
@@ -46,6 +52,32 @@ export interface AIProvider {
    * Cost is NOT recorded here — caller is responsible for checkDailyCap + recordSpend.
    */
   transcribeDocument(args: TranscribeDocumentArgs): Promise<TranscribeDocumentResult>;
+
+  /**
+   * Tool-use enabled completion. The caller supplies the system prompt,
+   * the full message history (assistant turns + tool results inclusive),
+   * and the tool definitions the model is allowed to call.
+   *
+   * Returns either a final structured response (kind: 'response') OR
+   * a set of tool calls the model wants made (kind: 'tool_calls').
+   * Callers loop: execute the tools, append the tool-result messages,
+   * reinvoke with the updated message history, until kind === 'response'.
+   *
+   * Tool execution can also be handled by the provider itself when the
+   * underlying SDK supports it (Vercel AI SDK does); in that case the
+   * resolved `value` is returned directly with `toolCallsUsed` listing
+   * the tools that fired during the run.
+   */
+  completeWithTools<T>(args: {
+    systemPrompt: string;
+    messages: Message[];
+    tools: ToolDefinition[];
+    schemaName: string;
+    jsonSchema: object;
+    validate: (raw: unknown) => T;
+    /** Maximum tool calls allowed per top-level invocation. Default: 4. */
+    maxToolCalls?: number;
+  }): Promise<CompleteWithToolsResult<T>>;
 }
 
 import { OpenAIProvider } from './openai';
@@ -112,3 +144,5 @@ function buildProvider(modelOverride: string | undefined): AIProvider {
   }
   throw new Error(`Unknown AI provider: ${which}`);
 }
+
+export type { ToolDefinition, ToolCall, ToolResult, Message, CompleteWithToolsResult } from './tool-use-types';
