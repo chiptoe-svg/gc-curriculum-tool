@@ -26,6 +26,7 @@ export const AI_FUNCTION_IDS = [
   'decompose-prereq-gap',
   'material-summary',
   'material-digest',
+  'chunk-contextualize',
 ] as const;
 export type AIFunctionId = (typeof AI_FUNCTION_IDS)[number];
 
@@ -84,6 +85,11 @@ export const DEFAULT_TIERS: Record<AIFunctionId, Exclude<ModelTier, 'custom'>> =
   // Loaded into the audit agent's at-rest context. Light tier is appropriate —
   // one summarization pass per material; promote if output quality is poor.
   'material-digest': 'light',
+  // Light per-chunk position blurb generated at extraction time for every
+  // detail chunk. Prepended before embedding so the vector encodes position +
+  // content (Anthropic contextual-retrieval pattern). Light tier is correct —
+  // one short summarization call per chunk; promote if output quality is poor.
+  'chunk-contextualize': 'light',
 };
 
 export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
@@ -97,6 +103,7 @@ export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
   'decompose-prereq-gap': 'Decompose prereq gap into competencies (copy-as-KUD)',
   'material-summary': 'Material summary (for audit compression)',
   'material-digest': 'Material digest (every material, audit at-rest context)',
+  'chunk-contextualize': 'Chunk contextualizer (per-chunk position blurb)',
 };
 
 export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
@@ -110,6 +117,7 @@ export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
   'decompose-prereq-gap': 'Decomposing one free-form prereq-gap finding into a structured list of competencies with K/U/D depths, for the copy-as-KUD button in the review panel.',
   'material-summary': 'Per-material structured summary, generated at extraction time for long reference materials and substituted for the full extracted text in the audit chat prompt.',
   'material-digest': 'Per-material structured digest, generated at extraction for every material. Loaded into the audit agent\'s at-rest context.',
+  'chunk-contextualize': 'One short positional blurb per detail chunk, prepended before embedding so the embedding encodes position + content.',
 };
 
 interface CachedSetting {

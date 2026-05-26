@@ -29,7 +29,8 @@ type PromptName =
   | 'parse-profile-fields'
   | 'decompose-prereq-gap'
   | 'material-summary'
-  | 'material-digest';
+  | 'material-digest'
+  | 'chunk-contextualize';
 
 interface ParsedPrompt {
   frontmatter: Record<string, unknown>;
