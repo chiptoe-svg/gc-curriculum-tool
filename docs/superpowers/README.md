@@ -54,6 +54,7 @@ Implementation plans — TDD-style, one plan per increment.
 | 2026-05-22 | [`plans/2026-05-22-phase2-agent-design.md`](./plans/2026-05-22-phase2-agent-design.md) | Phase 2 conversational-agent design decisions (materials auditor + KUD chat); blocked on nanoclaw API contract. |
 | 2026-05-23 | [`plans/2026-05-23-coursecapture-prototype.md`](./plans/2026-05-23-coursecapture-prototype.md) | ✅ Done. CourseCapture v1 prototype: per-course audit chat, scoring pipeline, voice input. |
 | 2026-05-25 | [`plans/2026-05-25-manning-encoding-backfill.md`](./plans/2026-05-25-manning-encoding-backfill.md) | In progress. Backfill Manning-skill encoding for prompts written after the original M-trial pattern was set; `manning_skills:` frontmatter as the contract. Phase A (program-score-coverage) and Phase B (4 capture-pipeline prompts) done; `capture-chat` deferred pending verification. |
+| 2026-05-25 | [`plans/2026-05-25-capture-reference-compression.md`](./plans/2026-05-25-capture-reference-compression.md) | ✅ Done. Auto-compress long reference materials at extraction so the audit-chat prompt stays under the OpenAI input cap. New `material-summary` AI function + `summary` columns on `course_materials` + shared `finalizeExtraction` helper that every extraction site routes through. Faculty get a per-row `summarize` toggle and a one-time "Compress existing materials" backfill button. |
 
 ## Pilot docs
 
@@ -114,13 +115,15 @@ Added since 2026-05-21:
 - `course_explore_analyses` — alignment runs per snapshot × target
 - `course_explore_what_ifs` — what-if scenarios per analysis
 - `snapshot_target_coverage` — Phase 1A coverage matrix cells (composite PK)
+- `course_materials.summary` / `summary_model` / `summary_generated_at` / `use_summary` (added 2026-05-25) — per-material structured summary substituted for raw extracted text in the audit chat when the material is a long reference-style upload (textbook PDF, Drive PDF, YouTube transcript, plain upload ≥15k tokens). Faculty toggle `use_summary` per row from the Materials panel.
 
 `courses.builder_status` enum (M-trial): `draft | profile_complete | kuds_generated | approved`.
 
 ### AI architecture
 
 - **Provider abstraction** (`lib/ai/provider.ts`): `getProviderForFunction(functionId)` returns the configured OpenAI / Anthropic / Local provider for each AI function. Structured-output via OpenAI strict JSON-schema mode where the output shape is enforced.
-- **Function tier system** (`lib/ai/function-settings.ts`): each AI integration point is a named function; `light/default/heavy` tiers map to model defaults that can be overridden per-function in `/settings`. Cost optimization point: most light-tier functions use gpt-5.4-mini; heavy-tier (e.g., synthesis, score-coverage) use gpt-5.4 or gpt-5.5.
+- **Function tier system** (`lib/ai/function-settings.ts`): each AI integration point is a named function; `light/default/heavy` tiers map to model defaults that can be overridden per-function in `/settings`. Cost optimization point: most light-tier functions use gpt-5.4-mini; heavy-tier (e.g., synthesis, score-coverage) use gpt-5.4 or gpt-5.5. `capture-chat` runs at default tier (gpt-5.4) because the audit bundle outgrew mini's 272k input cap; `material-summary` runs at light tier (one short summarization pass per long reference material at extraction time, cached on the row).
+- **Reference-material compression** (`lib/capture/material-compression.ts`, `lib/capture/finalize-extraction.ts`, `lib/ai/analyze/material-summary.ts`): every extraction-completion site routes through `finalizeExtraction`, which calls `updateExtractionResult` then — if the material is long enough (≥15k tokens) and a reference-leaning kind (Canvas File, Drive PDF, YouTube, plain upload) — calls the summarizer and caches a structured-markdown summary on the row. `effectiveAuditText(m)` substitutes the summary in the audit prompt when `useSummary` is true. Canvas dense kinds and Google Workspace materials are never summarized (assignment-grade detail kept verbatim). Backfill via `POST /api/courses/[code]/materials/compress`.
 - **Prompt library** (`lib/ai/prompts/*.md`): all 22 system prompts are version-controlled markdown with frontmatter. `includes:` composes shared rubric partials (notably `shared/depth-scale.md` and `shared/kud-rubric.md`). **The `manning_skills:` frontmatter is the build-time encoding contract** — every prompt that embodies a Gareth Manning Education Agent Skill names which ones in its frontmatter and embodies them in its body. As of 2026-05-25, 16 of 22 prompts are Manning-encoded; the remaining 6 are either pure I/O glue (no pedagogical reasoning to encode) or deliberately deferred (capture-chat — see the [Manning encoding backfill plan](./plans/2026-05-25-manning-encoding-backfill.md)).
 - **Prompt caching**: ~10% of input rate for cached tokens. Scorers sort batches by target/snapshot to maximize cache hits.
 
@@ -145,6 +148,7 @@ Added since 2026-05-21:
 | **AnthropicProvider native PDF blocks** | Preserves tables/headers in PDF ingestion. Prerequisite for high-quality syllabus extraction. | Not built |
 | **Capture-chat Manning encoding** | Whether to backfill `capture-chat` with Backwards Design framing. Held pending verification that the 4 other Phase B prompts produce better snapshots. | Deferred — see [the backfill plan](./plans/2026-05-25-manning-encoding-backfill.md) |
 | **Phase-2 conversational agents** | Materials auditor + KUD chat as standalone agents (nanoclaw-style). | Blocked on nanoclaw API contract |
+| **Audit agentic retrieval** | Universal per-material structured digest (always in context) + a `fetch_material_section` tool the auditor can call on demand. Supersedes reference-compression once 1–2 more faculty hit the cap even after compression. See future-directions section of [`plans/2026-05-25-capture-reference-compression.md`](./plans/2026-05-25-capture-reference-compression.md). | Held; revisit after more real-corpus data |
 | **Cross-snapshot diff** | Show what changed between two snapshots of the same course. | Phase 2 carryover |
 | **Industry Partner Input Plan 2** | Position ratings table + project-rating heat map. | Gap between Plan 1 and Plan 3 |
 
