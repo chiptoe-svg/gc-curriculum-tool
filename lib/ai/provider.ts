@@ -148,7 +148,13 @@ function buildProvider(modelOverride: string | undefined): AIProvider {
     if (!baseURL) throw new Error('CAMPUS_LLM_BASE_URL not set');
     const apiKey = process.env.CAMPUS_LLM_API_KEY?.trim();
     if (!apiKey) throw new Error('CAMPUS_LLM_API_KEY not set');
-    const model = modelOverride ?? process.env.CAMPUS_LLM_DEFAULT_MODEL?.trim() ?? 'glm-5.1-fp8';
+    // CAMPUS_LLM_DEFAULT_MODEL always wins for campus — the DB stores OpenAI
+    // model names (e.g. gpt-5.4-mini) which are meaningless on the campus
+    // endpoint. When set, prefer it over any modelOverride from the DB.
+    const model =
+      process.env.CAMPUS_LLM_DEFAULT_MODEL?.trim() ??
+      modelOverride ??
+      'glm-5.1-fp8';
     return new CampusProvider(model, baseURL, apiKey);
   }
   throw new Error(`Unknown AI provider: ${which}`);
