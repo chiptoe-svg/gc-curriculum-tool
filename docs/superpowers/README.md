@@ -69,88 +69,11 @@ Public-facing milestone writeups and interactive previews.
 
 ---
 
-## Current state (as of 2026-05-25)
+## Current state, active arc, and what's next
 
-### What's live at `gc-curriculum-tool.vercel.app`
+These live in **[`docs/STATE.md`](../STATE.md)** — the volatile snapshot that gets updated as part of any commit touching routes, schema, AI functions, env vars, deployment surface, plan/spec status, or "What's live." For a full reconciliation against the repo + recent commits, run `/refresh-state`.
 
-Five top-level surfaces, all accessible behind a single slug-gated session:
-
-**`/capture/[code]` — CourseCapture v1** (fully functional, in active use)
-- The instructor-facing audit conversation that produces a Course Outcome Profile for a single course.
-- Header: Program · Settings · Explore · Course Builder · Profile actions.
-- Materials & catalog panel: catalog text + uploads + Canvas-imported syllabus, assignments (with point values), pages, discussions, quizzes (Classic + New Quizzes APIs), file attachments, YouTube/Vimeo/Panopto/Loom/etc. references, Google Docs/Slides/Sheets (via "Anyone with link" sharing), Drive PDFs. Voice input via OpenAI Whisper.
-- Audit chat: one question per turn, finding-and-question on same topic, three-paragraph opening / two-paragraph follow-ups; readiness signal on every turn (0–100 with `covered` / `remaining` labels).
-- Save Snapshot: immutable versioned Course Outcome Profile written to `course_capture_snapshots`. Draft remains mutable; snapshots are the historical record. Multiple snapshots per course supported.
-
-**`/program` — Program Coverage Matrix (Phase 1A)** (shipped 2026-05-25, today)
-- Heat map of confirmed snapshots × career-target sub-competencies, colored by D depth (0–5 ramp).
-- Target tabs along the top; one row per snapshotted course; one column per sub-competency; cell shows K/U/D.
-- "Score N stale pairs" button runs the AI scorer on un-scored cross-product cells, sorted by target for prompt-cache reuse (~$0.04 per pair via gpt-5.4-mini default tier; ~$5 for a full GC-program refresh).
-- Cell drawer: matched snapshot competency, evidence excerpt, confidence chip, full rationale, re-score button, snapshot link.
-- Backed by `snapshot_target_coverage` (composite PK: snapshotId × careerTargetId × subCompetencyId) and the `program-score-coverage` AI scorer.
-
-**`/explore` — Explore module v1** (shipped 2026-05-24)
-- Two modes: **custom target** (faculty/student composes a hypothetical role profile, alignment to a chosen snapshot) and **downstream target** (a downstream course's incoming expectations, alignment to a snapshot of an upstream course).
-- What-if scenarios: simulate proposed snapshot changes (e.g., "what if we added project X with these depths?") against the alignment analysis; rates each scenario `worth_doing` / `worth_considering` / `not_worth_doing`.
-- Career-path mode deferred until graduate-outcome dataset is wired in.
-
-**`/settings` — Per-function AI model selector** (shipped 2026-05-24)
-- Tier-based selection (Light / Default / Heavy) plus per-function model dropdown sourced from the OpenAI provider's `models.list` (filtered to chat-completion-capable models, sorted newest/largest).
-- 60-second TTL cache on the function-→-model resolver so changes propagate without restart.
-- AI functions exposed for tuning: materials analysis, course-profile synthesis, capture chat, capture scoring, explore drafting / comparison / what-if, program coverage scoring.
-
-**`/preview/[slug]` — original M-trial prototype** (still live)
-- The three earlier tools (Course Builder · Prereq Analyzer · Career Target Alignment) remain as built. CourseCapture and the program matrix supersede them for new work but the M-trial cards still function.
-
-### Schema (Neon Postgres via Drizzle)
-
-Core tables (M-trial era): `courses`, `career_targets`, `sub_competencies`, `course_materials`, `course_profiles`, `course_profile_runs`, `coverage_scores`, `prototype_runs`, `prototype_flags`, `partners`, `partner_positions`, `course_kuds`, `course_kud_runs`.
-
-Added since 2026-05-21:
-- `course_capture_profiles` — the mutable draft profile per course
-- `capture_conversations` — persistent audit transcripts (per course, per session)
-- `course_capture_snapshots` — immutable versioned Course Outcome Profiles
-- `ai_function_settings` — per-function model overrides feeding `/settings`
-- `course_explore_targets` — custom + downstream target specs
-- `course_explore_analyses` — alignment runs per snapshot × target
-- `course_explore_what_ifs` — what-if scenarios per analysis
-- `snapshot_target_coverage` — Phase 1A coverage matrix cells (composite PK)
-- `course_materials.summary` / `summary_model` / `summary_generated_at` / `use_summary` (added 2026-05-25) — per-material structured summary substituted for raw extracted text in the audit chat when the material is a long reference-style upload (textbook PDF, Drive PDF, YouTube transcript, plain upload ≥15k tokens). Faculty toggle `use_summary` per row from the Materials panel.
-
-`courses.builder_status` enum (M-trial): `draft | profile_complete | kuds_generated | approved`.
-
-### AI architecture
-
-- **Provider abstraction** (`lib/ai/provider.ts`): `getProviderForFunction(functionId)` returns the configured OpenAI / Anthropic / Local provider for each AI function. Structured-output via OpenAI strict JSON-schema mode where the output shape is enforced.
-- **Function tier system** (`lib/ai/function-settings.ts`): each AI integration point is a named function; `light/default/heavy` tiers map to model defaults that can be overridden per-function in `/settings`. Cost optimization point: most light-tier functions use gpt-5.4-mini; heavy-tier (e.g., synthesis, score-coverage) use gpt-5.4 or gpt-5.5. `capture-chat` runs at default tier (gpt-5.4) because the audit bundle outgrew mini's 272k input cap; `material-summary` runs at light tier (one short summarization pass per long reference material at extraction time, cached on the row).
-- **Reference-material compression** (`lib/capture/material-compression.ts`, `lib/capture/finalize-extraction.ts`, `lib/ai/analyze/material-summary.ts`): every extraction-completion site routes through `finalizeExtraction`, which calls `updateExtractionResult` then — if the material is long enough (≥15k tokens) and a reference-leaning kind (Canvas File, Drive PDF, YouTube, plain upload) — calls the summarizer and caches a structured-markdown summary on the row. `effectiveAuditText(m)` substitutes the summary in the audit prompt when `useSummary` is true. Canvas dense kinds and Google Workspace materials are never summarized (assignment-grade detail kept verbatim). Backfill via `POST /api/courses/[code]/materials/compress`.
-- **Prompt library** (`lib/ai/prompts/*.md`): all 22 system prompts are version-controlled markdown with frontmatter. `includes:` composes shared rubric partials (notably `shared/depth-scale.md` and `shared/kud-rubric.md`). **The `manning_skills:` frontmatter is the build-time encoding contract** — every prompt that embodies a Gareth Manning Education Agent Skill names which ones in its frontmatter and embodies them in its body. As of 2026-05-25, 16 of 22 prompts are Manning-encoded; the remaining 6 are either pure I/O glue (no pedagogical reasoning to encode) or deliberately deferred (capture-chat — see the [Manning encoding backfill plan](./plans/2026-05-25-manning-encoding-backfill.md)).
-- **Prompt caching**: ~10% of input rate for cached tokens. Scorers sort batches by target/snapshot to maximize cache hits.
-
-### Other current-state notes
-- **Catalog data flow.** Bootstrapped from a seed script (`pnpm db:seed-courses`, 120 courses), then faculty edit per-course tabs on a shared Google Sheet. The bulk M-trial-era resync was retired, but per-course on-demand sync is live inside CourseCapture: the Materials panel's "Sync from Sheet" button calls `POST /api/courses/[code]/sync-from-sheet`, which re-reads the course's tab and updates its catalog row in place. The shared sheet remains the faculty-facing source of truth for catalog values.
-- Canvas integration: tokens stored per-course in `course_canvas_links`; import pulls assignments + rubrics, modules + items, pages, discussions, quizzes, file metadata. Quizzes use both Classic (`/api/v1/`) and New Quizzes (`/api/quiz/v1/`) APIs.
-- YouTube captions fetched via `youtube-transcript` npm package; Vimeo/Panopto/Loom appear as references the auditor surfaces but cannot transcribe (deferred).
-- Auth model: single-user, slug-gated via `PROTOTYPE_SLUG` env. No per-user accounts.
-- Vercel for app deploy; GitHub Pages for docs (this folder).
-
----
-
-## Future increments (not yet planned, or partial)
-
-| Increment | Description | Status |
-| --------- | ----------- | ------ |
-| **Phase 1A — Coverage Matrix** | Confirmed snapshots × career targets, heat map, on-demand AI scoring, cell drawer with evidence. | ✅ Shipped 2026-05-25 |
-| **Phase 1B — Scaffolding Analysis** | Across the full degree plan, judge whether each competency is introduced (K1–2), practiced (K3–4 / U2–3 / D2–3), and brought to integration (U4–5 / D4–5) in the right course-level sequence. | Spec drafted; not implemented |
-| **Phase 1C — Prerequisite Gap Analysis** | For any focal course, check prior coursework students actually take against the focal course's `incoming_expectations`. | Spec drafted; not implemented |
-| **Phase 1D — Advising View** | Per-student / per-career-target advising slice. | Spec drafted; not implemented |
-| **CareerCapture** | Employer-side parallel of CourseCapture: produces Role Outcome Profiles via audit conversation with employer respondents. | Strategic, no spec yet |
-| **AnthropicProvider native PDF blocks** | Preserves tables/headers in PDF ingestion. Prerequisite for high-quality syllabus extraction. | Not built |
-| **Capture-chat Manning encoding** | Whether to backfill `capture-chat` with Backwards Design framing. Held pending verification that the 4 other Phase B prompts produce better snapshots. | Deferred — see [the backfill plan](./plans/2026-05-25-manning-encoding-backfill.md) |
-| **Phase-2 conversational agents** | Materials auditor + KUD chat as standalone agents (nanoclaw-style). | Blocked on nanoclaw API contract |
-| **Audit agentic retrieval** | Universal per-material structured digest (always in context) + a `fetch_material_section` tool the auditor can call on demand. Supersedes reference-compression once 1–2 more faculty hit the cap even after compression. See future-directions section of [`plans/2026-05-25-capture-reference-compression.md`](./plans/2026-05-25-capture-reference-compression.md). | Held; revisit after more real-corpus data |
-| **Cross-snapshot diff** | Show what changed between two snapshots of the same course. | Phase 2 carryover |
-| **Industry Partner Input Plan 2** | Position ratings table + project-rating heat map. | Gap between Plan 1 and Plan 3 |
+This README is the stable doc index above; STATE.md is the live picture. Session bootstrap at [`CLAUDE.md`](../../CLAUDE.md) points to both.
 
 ---
 

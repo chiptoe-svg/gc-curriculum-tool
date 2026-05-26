@@ -46,6 +46,7 @@ drizzle/meta/
 /.codegraph/
 /.playwright-mcp/
 /.worktrees/
+/.claude/worktrees/
 
 # Local one-off scripts (provider smoke tests, scratch validation, etc.)
 /scripts/_one-off/

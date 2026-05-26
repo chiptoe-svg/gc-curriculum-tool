@@ -1,0 +1,126 @@
+# GC Curriculum Tool — Session Bootstrap
+
+Orientation for Claude Code sessions on this repo. **Read [`docs/STATE.md`](./docs/STATE.md) before any feature work, schema change, AI function add, deployment change, or new spec/plan.** For trivial fixes (typos, copy edits, single-line bugfixes, internal refactors) skip the ritual and just work.
+
+---
+
+## What this is
+
+A curriculum-design and analysis tool for the Clemson Department of Graphic Communications. It serves as the living record of the GC department's curriculum — what it is, what it is becoming, and how well it builds toward defined career destinations. Two questions drive everything:
+
+> **Q1.** How well does the GC curriculum build students toward the careers we claim to prepare them for?
+>
+> **Q2.** For any individual course, do the prerequisites students walk in with actually support what the course expects?
+
+Vision in full: [`docs/superpowers/vision/gc-curriculum-tool-vision.md`](./docs/superpowers/vision/gc-curriculum-tool-vision.md). Today's deployment state and what's next: [`docs/STATE.md`](./docs/STATE.md).
+
+---
+
+## Framework — KUD+ at a glance
+
+Every coverage judgment in the tool factors into three categories, each scored 0–5 on a depth scale anchored to student-side evidence (not syllabus aspiration):
+
+- **Know (K)** — recall and identification of content. Probe: "What is X?" / "Name X." / "Which of these is X?"
+- **Understand (U)** — reasoning about the why. Probe: "Why does X work?" / "What follows from X?" / "When would you use X vs. Y?"
+- **Do (D)** — behavioral output. Probe: "Make X. Produce X. Demonstrate X."
+
+**Depth scale (same shape per dimension):**
+
+```
+0  Not present
+1  Exposure / restates the explanation / performs with direction
+2  Recognize / explains in own words / performs with reference
+3  Recall / predicts consequences / performs independently in familiar conditions
+4  Use correct terminology / reasons through novel cases / adapts to new conditions
+5  Fluent + edge cases / critiques + extends / performs creatively, guides others
+```
+
+Authoritative rubric: `lib/ai/prompts/shared/depth-scale.md` (every scoring prompt includes it).
+
+**Three load-bearing rules:**
+
+1. **Evidence-above-zero.** Any K, U, or D score above 1 (above 0 for U and D) requires evidence of student attainment — assessment items for K, student-produced reasoning for U, graded artifacts for D. Aspirational syllabus verbs do not by themselves justify a score above U1 or D0.
+2. **Foundational competencies (Agency, Attention to Detail, Resilience, Curiosity, Communication) score on D only.** K and U are stored as `null` (not zero) and hidden in the UI — zero would imply "the course tried to develop this and failed."
+3. **Dissociation cases matter.** K-high/U-low = jargon without rationale. U-high/D-low = theory without craft. D-high/U-low = craft without articulation. K1-only with U0/D0 = mentioned in passing, never engaged. The depth scales make these visible; binary "covered/not covered" collapses them.
+
+Academic background, theoretical justification, and the relationship to Bloom + Wiggins/McTighe: [`docs/background.html`](./docs/background.html). Why we don't use Bloom for curriculum mapping (it's the right tool for assessment design, wrong granularity for cross-program mapping): same doc.
+
+**Problem-solving as program-level emergent property.** Problem-solving is not a transferable generic skill; it's the operation of well-organized domain knowledge under conditions that require deployment, developed through repeated cycles of productive failure × structured reflection × depth. Full research synthesis: [`docs/problem-solving-deep-dive.md`](./docs/problem-solving-deep-dive.md). The Phase 1B Scaffolding Analysis ([spec](./docs/superpowers/specs/2026-05-25-scaffolding-analysis-design.md)) operationalizes this at program scale.
+
+**3-Act program structure** (proposed, not institutional policy): Act 1 Foundations & Agency → Act 2 Integration & Mastery (the mid-Junior "aha" moment, GC 4400 / GC 4060) → Act 3 Specialty & Application. Used as analytical waypoints in scaffolding diagnostics. Research synthesis: [`docs/three-act-deep-dive.md`](./docs/three-act-deep-dive.md).
+
+---
+
+## Architecture (the one-paragraph version)
+
+Next.js 15 (App Router, Turbopack) + TypeScript strict + Drizzle on Neon Postgres + Tailwind + shadcn + Vitest. **Hybrid deployment**: faculty-facing surfaces (`/capture`, `/explore`, `/program`, `/admin`, `/settings`, home) run on a local Mac on Clemson LAN, gated by HTTP Basic Auth through middleware, using local omlx (Qwen3.6 family) for LLM calls and Docling for PDF extraction; partner-facing surfaces (`/partners/*` magic-link survey, `/preview/*` legacy M-trial) run on Vercel against OpenAI. Same codebase, same Neon DB; deployment personality is flipped by env-var presence. Setup: [`docs/superpowers/running-locally.md`](./docs/superpowers/running-locally.md). Full current-state inventory: [`docs/STATE.md`](./docs/STATE.md).
+
+---
+
+## Doc map
+
+- [`docs/STATE.md`](./docs/STATE.md) — **read first for any non-trivial work.** What's live, current arc, what's blocked, what to update on commit.
+- [`docs/superpowers/README.md`](./docs/superpowers/README.md) — full doc index: specs, plans, pilot writeups.
+- [`docs/superpowers/vision/`](./docs/superpowers/vision/) — vision document.
+- [`docs/superpowers/specs/`](./docs/superpowers/specs/) — design documents (architectural rationale, decisions before implementation).
+- [`docs/superpowers/plans/`](./docs/superpowers/plans/) — TDD-style implementation plans, one per increment.
+- [`docs/superpowers/pilot/`](./docs/superpowers/pilot/) — milestone writeups and interactive previews.
+- [`docs/superpowers/running-locally.md`](./docs/superpowers/running-locally.md) — local Mac setup.
+- [`docs/background.html`](./docs/background.html) — KUD+ academic companion.
+- [`docs/problem-solving-deep-dive.md`](./docs/problem-solving-deep-dive.md) — problem-solving research synthesis.
+- [`docs/three-act-deep-dive.md`](./docs/three-act-deep-dive.md) — 3-Act structure research synthesis.
+- [`docs/graduate-outcome-validation.html`](./docs/graduate-outcome-validation.html) — proposal to validate the analysis against 268 GC graduates' destinations.
+- [`docs/using-coursecapture-and-explore.html`](./docs/using-coursecapture-and-explore.html) — faculty-facing walkthrough (linked from in-app headers).
+- [`gc-curriculum-tool-spec.md`](./gc-curriculum-tool-spec.md) — full original source spec.
+
+---
+
+## CodeGraph (project-specific notes)
+
+This project has CodeGraph initialized (`.codegraph/`, ~301 indexed files, TypeScript-heavy). Inherit the global CodeGraph protocol from `~/.claude/CLAUDE.md`:
+
+- **Structural questions** (where is X defined, what calls X, signatures, what would break if I change X) → `codegraph_*` tools. Reads are sub-millisecond and grep-equivalent answers cost an order of magnitude more.
+- **Literal-text queries** (string contents, log messages, comments) → grep is fine.
+- For "how does X work" or unfamiliar-area onboarding: **`codegraph_context` first**, then a single `codegraph_explore` for source if needed. Don't delegate exploration to a subagent — that re-does the work codegraph already has.
+- File-watcher debounces ~500ms behind writes. Run `codegraph sync` if you've just edited and immediately want to query. (`codegraph status` shows index health.)
+- If `.codegraph/` is missing (fresh clone), ask before running `codegraph init -i`.
+
+---
+
+## Pre-implementation ritual
+
+For features, schema changes, AI function adds, deployment changes, new specs/plans:
+
+1. **Read [`docs/STATE.md`](./docs/STATE.md)** — the volatile snapshot.
+2. **`codegraph_context`** on the surface you're touching. Hand it the task description, not a symbol name.
+3. **If you're creating something new** (a feature, a component, a meaningful behavior change), use `superpowers:brainstorming` first to align on intent.
+4. **If it's a multi-step build**, use `superpowers:writing-plans` to produce a dated plan in `docs/superpowers/plans/`, then execute via `superpowers:subagent-driven-development`.
+5. Spec/plan files are append-only history — never edit an existing one; write a new one that supersedes.
+
+For trivial fixes (typos, copy edits, single-line bugfixes, internal refactors that don't change anything tracked by STATE.md), skip the ritual.
+
+---
+
+## Update protocol — keeping STATE.md honest
+
+If your commit touches **routes, schema, AI function IDs, env vars, deployment surface, plan/spec status, or "What's live"** — update [`docs/STATE.md`](./docs/STATE.md) in the same commit. The list of triggers is canonicalized at the bottom of STATE.md under "What this file tracks."
+
+For a periodic full reconciliation (e.g., after a sprint or a stretch of merges), run **`/refresh-state`**. It walks git log since the last-verified hash, re-derives what's live from the repo, and rewrites STATE.md.
+
+Trivial commits do not update STATE.md.
+
+---
+
+## Operational notes
+
+- **Port registry.** Check `~/.dev-ports.yaml` before binding any port. Docling-serve owns `5001` (registered). Register what you start, kill + remove when done. Never touch processes that aren't yours.
+- **Subagent model defaults.** Default to Sonnet or Haiku for delegated tasks; use Opus only when real judgment is required. Make the cost/performance tradeoff explicit before every Agent dispatch.
+- **Pushing to main.** When the user says "push", push. The safety-classifier prompt that sometimes blocks the first attempt is a rail, not a "maybe they don't want this" signal.
+- **`.gitignore` anchoring.** Generic dir names (`coverage/`, `dist/`, `build/`) should be anchored with a leading slash unless you genuinely want them ignored at every depth. The unanchored `coverage/` once silently swallowed `app/api/program/coverage/`; the rule is now `/coverage/`. If files exist locally but `git status` is clean, run `git check-ignore -v <path>`.
+
+---
+
+## Skills + memory
+
+- **Superpowers skills** at `~/.claude/skills/superpowers/*` cover brainstorming, writing plans, executing plans, debugging, TDD, code review, etc. The system reminder at session start lists the full set. Use the relevant skill rather than freelancing the process.
+- **Auto memory** at `~/.claude/projects/-Users-admin-projects-curriculum-developer/memory/` — used for **feedback** (how the user wants to collaborate), **user** (role / perspective), and **reference** (pointers to external systems) types only. **Project state is NOT in memory** — it lives in [`docs/STATE.md`](./docs/STATE.md). If you find yourself about to save a project-state memory, update STATE.md instead.
