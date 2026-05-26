@@ -1,6 +1,6 @@
 # Project State — GC Curriculum Tool
 
-> **Last verified:** `8774b92` · 2026-05-26 (pending the agentic-retrieval spec commit; bump on next reconciliation)
+> **Last verified:** `b4e0cac` · 2026-05-26
 >
 > **What this is:** the single source of truth for "what's live, what's next, what's blocked." Read this before any feature work, schema change, AI function add, deployment change, or new spec/plan. Static framing (KUD+, vision, architecture rationale) lives in [`CLAUDE.md`](../CLAUDE.md) and [`docs/superpowers/README.md`](./superpowers/README.md); this file is the volatile snapshot that sits in front of them.
 >
@@ -48,7 +48,7 @@ Setup details: [`docs/superpowers/running-locally.md`](./superpowers/running-loc
 
 ### AI provider + function tiers
 
-- **Provider abstraction** at `lib/ai/provider.ts`: `getProvider()` returns OpenAI / Anthropic / Local / Fake. Structured output via OpenAI strict JSON-schema + Zod parse.
+- **Provider abstraction** at `lib/ai/provider.ts`: `getProvider()` returns OpenAI / Anthropic / Local / Fake. Structured output via OpenAI strict JSON-schema + Zod parse. **New as of 2026-05-26 (CourseCapture v2 Stage 1):** `completeWithTools` method on all four providers, built on Vercel AI SDK v6 — used by Stage 3's agent loop (not exposed by any AI function yet).
 - **Function tier system** at `lib/ai/function-settings.ts`: 9 named function IDs. Tier (light / default / heavy) maps to a model; per-function override stored in `ai_function_settings` table. 60s TTL resolver cache.
 
 | Function ID | Default tier | Note |
@@ -67,14 +67,16 @@ Setup details: [`docs/superpowers/running-locally.md`](./superpowers/running-loc
 
 ### Schema (Neon Postgres via Drizzle)
 
-Latest migration: **`0021_soft_the_liberteens.sql`** (added `summary`, `summary_model`, `summary_generated_at`, `use_summary` to `course_materials`).
+Latest migration: **`0023_tiresome_rhino.sql`** (CourseCapture v2 Stage 1: adds UNIQUE constraint on `capture_messages(session_id, turn_index)`; follows `0022_mighty_firedrake.sql` which created `capture_messages` + added `courses.audit_mode` + `course_capture_snapshots.transcript_session_id`).
 
 Tables defined in [`lib/db/schema.ts`](../lib/db/schema.ts):
 
 - **Career target framework:** `careerTargets`, `subCompetencies`, `prototypeTargetEdits`
 - **Courses + catalog:** `courses` (with `builder_status` enum: `draft | profile_complete | kuds_generated | approved`), `sheetSyncState`
 - **Course profile (M-trial):** `courseProfiles`, `courseProfileRuns`, `courseMaterials`, `courseKuds`, `courseKudRuns`, `coverageScores`
-- **CourseCapture v1:** `courseCaptureProfiles` (mutable draft), `courseCaptureSnapshots` (immutable versioned), `captureConversations` (persistent transcripts)
+- **CourseCapture v1:** `courseCaptureProfiles` (mutable draft), `courseCaptureSnapshots` (immutable versioned + new `transcript_session_id` linking to v2 sessions), `captureConversations` (legacy; preserved as-is, no new writes after Stage 3 cutover)
+- **CourseCapture v2 Foundation:** `captureMessages` (append-only conversation log keyed by `session_id` + `turn_index`, UNIQUE-constrained; replaces session-overwriting `captureConversations`)
+- **Course-level toggle:** `courses.audit_mode` (`'full'` | `'simple'`, default `'full'`; UI lands in Stage 2)
 - **Explore v1:** `courseExploreTargets`, `courseExploreAnalyses`, `courseExploreWhatIfs`
 - **Phase 1A coverage:** `snapshotTargetCoverage` (composite PK: `snapshotId × careerTargetId × subCompetencyId`)
 - **Partners:** `partners`, `partnerSessions`, `partnerEvents`, `partnerSubmissions`, `synthesisRuns`
@@ -103,7 +105,14 @@ Tables defined in [`lib/db/schema.ts`](../lib/db/schema.ts):
 
 **Faculty trial period.** The trial period started with the M-trial prototype and continues now across CourseCapture + Explore + Program. The point hasn't changed: confirm that the analysis is good enough to be useful before building the rest of Phase 1.
 
-**CourseCapture v2 — Agentic Retrieval Architecture (pending review).** Spec at [`docs/superpowers/specs/2026-05-26-coursecapture-agentic-retrieval-design.md`](./superpowers/specs/2026-05-26-coursecapture-agentic-retrieval-design.md). Replaces the "dump every material into one context" pipeline with three phases — per-material ingestion (chunk + digest + index in Weaviate), tool-using audit agent, synthesis with intrinsic provenance. Coexists with user's local agent infrastructure (shared Weaviate, per-course tenant). Pending implementation plan via `superpowers:writing-plans`. Supersedes the Phase 2 agent design ([`2026-05-22-phase2-agent-design.md`](./superpowers/plans/2026-05-22-phase2-agent-design.md)) and generalizes the reference-compression plan's two-tier future-directions.
+**CourseCapture v2 — Agentic Retrieval Architecture (Stage 1 shipped; Stages 2–5 pending).** Spec at [`docs/superpowers/specs/2026-05-26-coursecapture-agentic-retrieval-design.md`](./superpowers/specs/2026-05-26-coursecapture-agentic-retrieval-design.md); Stage 1 plan at [`docs/superpowers/plans/2026-05-26-coursecapture-v2-stage1-foundation.md`](./superpowers/plans/2026-05-26-coursecapture-v2-stage1-foundation.md). Replaces the "dump every material into one context" pipeline with three phases — per-material ingestion (chunk + digest + index in Weaviate), tool-using audit agent, synthesis with intrinsic provenance. Coexists with user's local agent infrastructure (shared Weaviate, per-course tenant). Supersedes the Phase 2 agent design ([`2026-05-22-phase2-agent-design.md`](./superpowers/plans/2026-05-22-phase2-agent-design.md)) and generalizes the reference-compression plan's two-tier future-directions.
+
+**Stage 1 (Foundation) shipped 2026-05-26** (commits `a280db6` → `b4e0cac`, 9 commits):
+- Schema: `capture_messages` append-only table with `UNIQUE(session_id, turn_index)`, `courses.audit_mode` toggle (default `'full'`), `course_capture_snapshots.transcript_session_id` link. Migrations `0022_mighty_firedrake.sql` + `0023_tiresome_rhino.sql`.
+- Queries: `lib/db/capture-messages-queries.ts` (`appendMessage`, `getSessionMessages`, `startNewSession`).
+- Data migration: existing `capture_conversations` row for GC 4800 mirrored into `capture_messages` (one-off script in `scripts/_one-off/`).
+- Provider abstraction extended with `completeWithTools` across OpenAI, Anthropic, Local, Fake providers. Built on Vercel AI SDK v6 (`ai@6.0.191`) using `generateText` + `Output.object` + `tool` primitives (v6 replaces v4's `generateObject`). No AI function exposes this yet — wires up in Stage 3.
+- Stages 2–5 wait on user's local Weaviate instance (~2 days out per the spec phasing).
 
 **Tactical Canvas-Syllabus suppression shipped 2026-05-26** (commit `8774b92`). Canvas Syllabus pages are skipped at import when the Sheets catalog has ≥1 learning objective; three existing rows (GC 1010, GC 3800, GC 4800) retroactively marked ignored. Step ahead of the broader curation rule set in the agentic-retrieval spec.
 
