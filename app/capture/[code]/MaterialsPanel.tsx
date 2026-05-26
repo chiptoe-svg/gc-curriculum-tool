@@ -18,16 +18,6 @@ export interface CaptureMaterial {
   useSummary: boolean;
 }
 
-function estimateTokens(text: string): number {
-  // ~4 chars per token is a reasonable approximation for English prose
-  return Math.round(text.length / 4);
-}
-
-function formatTokens(tokens: number): string {
-  if (tokens < 1000) return `${tokens}`;
-  return `~${(tokens / 1000).toFixed(1).replace(/\.0$/, '')}k`;
-}
-
 export interface CourseCatalogView {
   code: string;
   title: string;
@@ -140,6 +130,18 @@ function humanSize(bytes: number): string {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
+// Rough estimate matching OpenAI's ~4 chars/token rule of thumb for English.
+// Good enough for spotting whales in the materials list; do not use for
+// strict budgeting.
+function estimateTokens(text: string): number {
+  return Math.ceil(text.length / 4);
+}
+
+function formatTokens(tokens: number): string {
+  if (tokens < 1000) return `${tokens} tok`;
+  return `${(tokens / 1000).toFixed(tokens >= 10_000 ? 0 : 1)}k tok`;
+}
+
 function StatusChip({ status }: { status: string }) {
   if (status === 'ok') {
     return <span className="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-800">extracted</span>;
@@ -228,6 +230,12 @@ function MaterialRow({
   const tokenEstimate = material.extractedText ? estimateTokens(material.extractedText) : 0;
   const summaryTokenEstimate = material.summary ? estimateTokens(material.summary) : 0;
   const usingSummary = material.useSummary && material.summary !== null;
+  // Highlight materials that take a meaningful slice of the 272k input budget
+  // so faculty can spot which ones to ignore when the audit chokes.
+  const tokenTone =
+    tokenEstimate >= 50_000 ? 'text-red-700 font-semibold'
+      : tokenEstimate >= 20_000 ? 'text-amber-700'
+      : '';
 
   return (
     <li className={'flex flex-col gap-1 px-3 py-2 ' + (material.ignored ? 'opacity-60' : '')}>
@@ -280,7 +288,11 @@ function MaterialRow({
             {summary && <span>{summary} · </span>}
             {material.pageCount !== null && <span>{material.pageCount} pages · </span>}
             {wordCount > 0 && <span>{wordCount.toLocaleString()} words · </span>}
-            {tokenEstimate > 0 && <span>{formatTokens(tokenEstimate)} tok · </span>}
+            {tokenEstimate > 0 && (
+              <span className={tokenTone} title="Approximate tokens this material contributes to the audit prompt (~4 chars/token). The audit input cap is 272k tokens total.">
+                ~{formatTokens(tokenEstimate)} ·{' '}
+              </span>
+            )}
             {usingSummary && summaryTokenEstimate > 0 && (
               <span className="text-teal-700" title="Tokens the summary contributes to the audit prompt (replaces the full token count shown above).">
                 audit sends ~{formatTokens(summaryTokenEstimate)} ·{' '}
