@@ -142,6 +142,8 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         fileName: m.fileName,
         extractionStatus: m.extractionStatus,
         extractedText: m.extractedText,
+        summary: m.summary,
+        useSummary: m.useSummary,
       })),
     priorCaptureProfile: priorCapture?.profile ?? null,
     prerequisiteCaptureProfiles,

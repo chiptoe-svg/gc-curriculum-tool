@@ -13,6 +13,9 @@ export interface CaptureMaterial {
   extractionMethod: string | null;
   extractedText: string | null;
   ignored: boolean;
+  summary: string | null;
+  summaryGeneratedAt: string | null;
+  useSummary: boolean;
 }
 
 export interface CourseCatalogView {
@@ -205,11 +208,13 @@ function MaterialRow({
   material,
   onToggleIgnored,
   onDelete,
+  onToggleUseSummary,
   busy,
 }: {
   material: CaptureMaterial;
   onToggleIgnored: (next: boolean) => void;
   onDelete: () => void;
+  onToggleUseSummary: (next: boolean) => void;
   busy: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -223,6 +228,8 @@ function MaterialRow({
   const summary = canvas ? summarizeCanvas(material) : '';
   const wordCount = material.extractedText ? material.extractedText.split(/\s+/).filter(Boolean).length : 0;
   const tokenEstimate = material.extractedText ? estimateTokens(material.extractedText) : 0;
+  const summaryTokenEstimate = material.summary ? estimateTokens(material.summary) : 0;
+  const usingSummary = material.useSummary && material.summary !== null;
   // Highlight materials that take a meaningful slice of the 272k input budget
   // so faculty can spot which ones to ignore when the audit chokes.
   const tokenTone =
@@ -254,6 +261,23 @@ function MaterialRow({
               <span className="rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-medium text-purple-800">uploaded</span>
             )}
             <StatusChip status={material.extractionStatus} />
+            {material.summary && (
+              <span
+                className={
+                  'rounded px-1.5 py-0.5 text-[10px] font-medium ' +
+                  (usingSummary
+                    ? 'bg-teal-100 text-teal-800'
+                    : 'bg-slate-100 text-slate-600')
+                }
+                title={
+                  usingSummary
+                    ? 'The audit prompt uses this material\'s structured summary instead of its full extracted text.'
+                    : 'A summary exists but is currently disabled — the audit uses the full extracted text.'
+                }
+              >
+                {usingSummary ? `summary (~${formatTokens(summaryTokenEstimate)})` : 'summary off'}
+              </span>
+            )}
             {material.ignored && (
               <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 border border-amber-200">
                 ignored
@@ -269,11 +293,28 @@ function MaterialRow({
                 ~{formatTokens(tokenEstimate)} ·{' '}
               </span>
             )}
+            {usingSummary && summaryTokenEstimate > 0 && (
+              <span className="text-teal-700" title="Tokens the summary contributes to the audit prompt (replaces the full token count shown above).">
+                audit sends ~{formatTokens(summaryTokenEstimate)} ·{' '}
+              </span>
+            )}
             <span>{humanSize(material.sizeBytes)}</span>
             {material.extractionMethod && <span> · via {material.extractionMethod}</span>}
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
+          {material.summary && (
+            <label className="flex cursor-pointer items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground">
+              <input
+                type="checkbox"
+                checked={material.useSummary}
+                onChange={e => onToggleUseSummary(e.target.checked)}
+                disabled={busy}
+                className="h-3 w-3"
+              />
+              summarize
+            </label>
+          )}
           <label className="flex cursor-pointer items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground">
             <input
               type="checkbox"
@@ -324,6 +365,8 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
   const [materialsCollapsed, setMaterialsCollapsed] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [scanMessage, setScanMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
+  const [compressing, setCompressing] = useState(false);
+  const [compressMessage, setCompressMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
   // Re-extract Canvas files: shows an inline token prompt when opened,
   // posts to /canvas-reextract, refreshes materials on success. Token
   // never persists — re-prompted each time.
@@ -451,6 +494,9 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
           extractionMethod: string | null;
           extractedText: string | null;
           ignored: boolean;
+          summary: string | null;
+          summaryGeneratedAt: string | null;
+          useSummary: boolean;
         }>;
       };
       pushMaterials(json.materials);
@@ -501,6 +547,56 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
   function pushMaterials(next: CaptureMaterial[]) {
     setMaterials(next);
     onMaterialsChange?.(next);
+  }
+
+  async function toggleUseSummary(id: string, useSummary: boolean) {
+    setBusy(id);
+    try {
+      const res = await fetch(
+        `/api/courses/${encodeURIComponent(course.code)}/materials/${encodeURIComponent(id)}?slug=${encodeURIComponent(slug)}`,
+        {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ useSummary }),
+        },
+      );
+      if (res.ok) {
+        pushMaterials(materials.map(m => (m.id === id ? { ...m, useSummary } : m)));
+      }
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function handleCompressMaterials() {
+    setCompressing(true);
+    setCompressMessage(null);
+    try {
+      const res = await fetch(
+        `/api/courses/${encodeURIComponent(course.code)}/materials/compress?slug=${encodeURIComponent(slug)}`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({}),
+        },
+      );
+      const json = await res.json() as {
+        summarized?: number; skipped?: number; failed?: number; error?: string;
+      };
+      if (!res.ok) {
+        setCompressMessage({ kind: 'error', text: json.error ?? `Compress failed (${res.status})` });
+        return;
+      }
+      const parts = [`summarized ${json.summarized ?? 0}`];
+      if ((json.skipped ?? 0) > 0) parts.push(`${json.skipped} skipped`);
+      if ((json.failed ?? 0) > 0) parts.push(`${json.failed} failed`);
+      setCompressMessage({ kind: (json.failed ?? 0) > 0 ? 'error' : 'ok', text: parts.join(', ') + '.' });
+      await refetchMaterialsFromContext();
+    } catch (e) {
+      setCompressMessage({ kind: 'error', text: e instanceof Error ? e.message : 'Compress failed' });
+    } finally {
+      setCompressing(false);
+    }
   }
 
   async function toggleIgnored(id: string, ignored: boolean) {
@@ -578,6 +674,9 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
         extractionMethod: data.extractionMethod,
         extractedText: null,  // server returns full row, but the upload response trims it — capture page will reload from /context if needed
         ignored: false,
+        summary: null,
+        summaryGeneratedAt: null,
+        useSummary: false,
       };
       pushMaterials([...materials, newMaterial]);
     } catch (e) {
@@ -670,6 +769,15 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
                 )}
                 <button
                   type="button"
+                  onClick={handleCompressMaterials}
+                  disabled={compressing}
+                  title="One-time backfill: generate structured summaries for any long reference materials uploaded before auto-compression shipped. New uploads are summarized automatically."
+                  className="rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
+                >
+                  {compressing ? 'Compressing…' : 'Compress existing materials'}
+                </button>
+                <button
+                  type="button"
                   onClick={handleScanLinkedDocs}
                   disabled={scanning}
                   title="Find Google Docs, Slides, Sheets, Drive PDFs, and YouTube URLs in existing materials and pull in their content. Requires 'Anyone with the link can view' sharing on Google files; YouTube videos need captions."
@@ -697,6 +805,11 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
                 {reextractMessage && (
                   <p className={'border-b px-3 py-1.5 text-[11px] ' + (reextractMessage.kind === 'ok' ? 'text-green-700 bg-green-50' : 'text-destructive bg-red-50')}>
                     {reextractMessage.text}
+                  </p>
+                )}
+                {compressMessage && (
+                  <p className={'border-b px-3 py-1.5 text-[11px] ' + (compressMessage.kind === 'ok' ? 'text-green-700 bg-green-50' : 'text-destructive bg-red-50')}>
+                    {compressMessage.text}
                   </p>
                 )}
                 {reextractOpen && (
@@ -736,6 +849,7 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
                         material={m}
                         onToggleIgnored={next => toggleIgnored(m.id, next)}
                         onDelete={() => deleteMaterial(m.id)}
+                        onToggleUseSummary={next => toggleUseSummary(m.id, next)}
                         busy={busy === m.id}
                       />
                     ))}

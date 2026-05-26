@@ -5,7 +5,8 @@ import { getCourseByCode } from '@/lib/db/courses-queries';
 import { hashIp } from '@/lib/ip-hash';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
-import { insertMaterial, updateExtractionResult } from '@/lib/db/course-materials-queries';
+import { insertMaterial } from '@/lib/db/course-materials-queries';
+import { finalizeExtraction } from '@/lib/capture/finalize-extraction';
 import { extractText } from '@/lib/courses/extract-text';
 import type { ExtractedMimeType } from '@/lib/courses/extract-text';
 import { SUPPORTED_MIME_TYPES, LEGACY_OFFICE_MIME_TYPES } from '@/lib/courses/material-extractor';
@@ -114,8 +115,9 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   }
 
   // Persist extraction result.
-  await updateExtractionResult({
+  await finalizeExtraction({
     id: material.id,
+    fileName: material.fileName,
     extractionStatus: extracted.status,
     extractionMethod: extracted.method,
     extractedText: extracted.text,

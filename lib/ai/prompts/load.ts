@@ -27,7 +27,8 @@ type PromptName =
   | 'explore-what-if'
   | 'program-score-coverage'
   | 'parse-profile-fields'
-  | 'decompose-prereq-gap';
+  | 'decompose-prereq-gap'
+  | 'material-summary';
 
 interface ParsedPrompt {
   frontmatter: Record<string, unknown>;

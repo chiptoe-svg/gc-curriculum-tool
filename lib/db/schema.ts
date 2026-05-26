@@ -187,6 +187,14 @@ export const courseMaterials = pgTable('course_materials', {
   analysisCostUsdCents: integer('analysis_cost_usd_cents'),
   uploadedAt: timestamp('uploaded_at', { withTimezone: true }).defaultNow().notNull(),
   ipHash: text('ip_hash').notNull(),
+  summary: text('summary'),
+  summaryModel: text('summary_model'),
+  summaryGeneratedAt: timestamp('summary_generated_at', { withTimezone: true }),
+  // When true and `summary` is non-null, AI-facing context loaders use the
+  // summary in place of extractedText. Default false; `updateMaterialSummary`
+  // flips it to true the first time a summary is written, so newly-extracted
+  // long materials auto-substitute. Faculty toggle per-row from the UI.
+  useSummary: boolean('use_summary').notNull().default(false),
   // Set true to keep the material in the system but exclude it from AI context
   // (CourseCapture chat + scoring) — useful for Canvas imports that turn out
   // to be duplicate, outdated, or irrelevant.

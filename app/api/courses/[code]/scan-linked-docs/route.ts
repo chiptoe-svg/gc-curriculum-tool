@@ -4,8 +4,8 @@ import { getCourseByCode } from '@/lib/db/courses-queries';
 import {
   listMaterialsByCourse,
   insertMaterial,
-  updateExtractionResult,
 } from '@/lib/db/course-materials-queries';
+import { finalizeExtraction } from '@/lib/capture/finalize-extraction';
 import {
   extractGoogleWorkspaceReferences,
   type GoogleWorkspaceKind,
@@ -101,8 +101,9 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         sizeBytes: Buffer.byteLength(fetched.text, 'utf8'),
         ipHash,
       });
-      await updateExtractionResult({
+      await finalizeExtraction({
         id: row.id,
+        fileName,
         extractionStatus: 'ok',
         extractionMethod: 'text',
         extractedText: fetched.text,
@@ -118,8 +119,9 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         sizeBytes: 0,
         ipHash,
       });
-      await updateExtractionResult({
+      await finalizeExtraction({
         id: row.id,
+        fileName,
         extractionStatus: 'failed',
         extractionMethod: 'text',
       });
@@ -166,8 +168,9 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         sizeBytes: Buffer.byteLength(fetched.text, 'utf8'),
         ipHash,
       });
-      await updateExtractionResult({
+      await finalizeExtraction({
         id: row.id,
+        fileName,
         extractionStatus: 'ok',
         extractionMethod: 'text',
         extractedText: fetched.text,
@@ -183,8 +186,9 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         sizeBytes: 0,
         ipHash,
       });
-      await updateExtractionResult({
+      await finalizeExtraction({
         id: row.id,
+        fileName,
         extractionStatus: 'failed',
         extractionMethod: 'text',
       });
@@ -231,8 +235,9 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         sizeBytes: Buffer.byteLength(fetched.text, 'utf8'),
         ipHash,
       });
-      await updateExtractionResult({
+      await finalizeExtraction({
         id: row.id,
+        fileName,
         extractionStatus: 'ok',
         extractionMethod: 'text',
         extractedText: fetched.text,
@@ -255,8 +260,9 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         sizeBytes: 0,
         ipHash,
       });
-      await updateExtractionResult({
+      await finalizeExtraction({
         id: row.id,
+        fileName,
         extractionStatus: 'failed',
         extractionMethod: 'text',
       });

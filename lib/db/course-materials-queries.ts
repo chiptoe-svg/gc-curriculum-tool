@@ -118,3 +118,32 @@ export async function setMaterialIgnored(id: string, ignored: boolean): Promise<
     .returning({ id: courseMaterials.id });
   return rows.length > 0;
 }
+
+export interface UpdateMaterialSummaryInput {
+  id: string;
+  summary: string;
+  summaryModel: string;
+}
+// Writes a fresh summary and turns useSummary ON. Callers that want to
+// keep useSummary off (e.g., a re-summary done while faculty have it
+// explicitly disabled) should follow up with setMaterialUseSummary.
+export async function updateMaterialSummary(input: UpdateMaterialSummaryInput): Promise<void> {
+  await db
+    .update(courseMaterials)
+    .set({
+      summary: input.summary,
+      summaryModel: input.summaryModel,
+      summaryGeneratedAt: new Date(),
+      useSummary: true,
+    })
+    .where(eq(courseMaterials.id, input.id));
+}
+
+export async function setMaterialUseSummary(id: string, useSummary: boolean): Promise<boolean> {
+  const rows = await db
+    .update(courseMaterials)
+    .set({ useSummary })
+    .where(eq(courseMaterials.id, id))
+    .returning({ id: courseMaterials.id });
+  return rows.length > 0;
+}
