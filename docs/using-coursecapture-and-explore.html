@@ -284,6 +284,23 @@
     <li>Major project briefs and rubrics uploaded (the highest-stakes assignments).</li>
     <li>The syllabus PDF uploaded if it's not in Canvas.</li>
   </ul>
+
+  <h3>How material compression works</h3>
+  <p>The auditor's prompt has a hard upper size limit. For courses with many or lengthy materials, keeping every file verbatim would push past that limit and drop some materials from the auditor's view entirely. To avoid that, the system automatically generates a structured summary of long reference-style materials at upload time — so the auditor retains a faithful view of every piece of content even for the largest courses.</p>
+
+  <h4>What gets summarised</h4>
+  <p>Compression applies to materials that exceed roughly 15,000 tokens: textbook PDFs, reading PDFs fetched from Drive, YouTube transcripts, and plain PDF or DOCX uploads. These tend to be reference-dense and compress well without losing the signal the auditor needs.</p>
+
+  <h4>What is always kept verbatim</h4>
+  <p>Canvas pages, the syllabus, assignments, modules, quizzes, discussions, and Google Docs/Slides/Sheets are never summarised — the auditor needs the exact assignment language, rubric criteria, and point values to score competency evidence accurately. These items carry the assignment-grade detail the audit depends on.</p>
+
+  <h4>How it looks in the Materials list</h4>
+  <p>Each row in the Materials list shows an estimated token count. Rows at or above 20,000 tokens are marked in amber; rows at or above 50,000 are marked in red. For a material that has been summarised, the row displays a <code>summary (~Xk tok)</code> chip alongside an <code>audit sends ~Xk tok</code> note so you can see how much the prompt footprint was reduced. A per-row <strong>summarize</strong> checkbox lets you fall back to the full verbatim text for any specific material when you need the auditor to read every word — for example, if a course reader contains assessment-critical rubric language embedded in prose.</p>
+
+  <div class="callout note">
+    <div class="callout-title">Backfilling materials uploaded before compression shipped</div>
+    <p>Materials already in the system before this feature was deployed won't have summaries yet. Click <strong>Compress existing materials</strong> once per course to generate summaries for those rows in place. New uploads are summarised automatically on the way in.</p>
+  </div>
 </section>
 
 <section id="cc-audit">
