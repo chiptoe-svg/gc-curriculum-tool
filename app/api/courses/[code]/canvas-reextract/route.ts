@@ -185,6 +185,7 @@ async function run(req: Request, params: Ctx['params']): Promise<Response> {
       });
       await finalizeExtraction({
         id: targetRow.id,
+        courseCode: code,
         fileName: targetRow.fileName,
         extractionStatus: 'ok',
         extractionMethod: extracted.method ?? 'text',

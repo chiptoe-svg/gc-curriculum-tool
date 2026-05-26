@@ -103,6 +103,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
       });
       await finalizeExtraction({
         id: row.id,
+        courseCode,
         fileName,
         extractionStatus: 'ok',
         extractionMethod: 'text',
@@ -121,6 +122,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
       });
       await finalizeExtraction({
         id: row.id,
+        courseCode,
         fileName,
         extractionStatus: 'failed',
         extractionMethod: 'text',
@@ -170,6 +172,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
       });
       await finalizeExtraction({
         id: row.id,
+        courseCode,
         fileName,
         extractionStatus: 'ok',
         extractionMethod: 'text',
@@ -188,6 +191,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
       });
       await finalizeExtraction({
         id: row.id,
+        courseCode,
         fileName,
         extractionStatus: 'failed',
         extractionMethod: 'text',
@@ -237,6 +241,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
       });
       await finalizeExtraction({
         id: row.id,
+        courseCode,
         fileName,
         extractionStatus: 'ok',
         extractionMethod: 'text',
@@ -262,6 +267,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
       });
       await finalizeExtraction({
         id: row.id,
+        courseCode,
         fileName,
         extractionStatus: 'failed',
         extractionMethod: 'text',

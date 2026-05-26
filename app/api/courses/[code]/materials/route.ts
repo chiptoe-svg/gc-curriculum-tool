@@ -117,6 +117,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   // Persist extraction result.
   await finalizeExtraction({
     id: material.id,
+    courseCode: code,
     fileName: material.fileName,
     extractionStatus: extracted.status,
     extractionMethod: extracted.method,

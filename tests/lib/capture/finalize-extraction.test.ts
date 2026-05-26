@@ -26,6 +26,7 @@ describe('finalizeExtraction', () => {
   it('writes extraction result and skips summarization when not a candidate (short)', async () => {
     await finalizeExtraction({
       id: 'm1',
+      courseCode: 'GC 4800',
       fileName: 'Drive PDF: short.pdf',
       extractionStatus: 'ok',
       extractedText: 'short',
@@ -38,6 +39,7 @@ describe('finalizeExtraction', () => {
   it('writes extraction result and skips summarization when not a candidate (dense kind)', async () => {
     await finalizeExtraction({
       id: 'm1',
+      courseCode: 'GC 4800',
       fileName: 'Canvas: Pages',
       extractionStatus: 'ok',
       extractedText: LONG,
@@ -48,6 +50,7 @@ describe('finalizeExtraction', () => {
   it('writes extraction result and skips summarization when status is not ok', async () => {
     await finalizeExtraction({
       id: 'm1',
+      courseCode: 'GC 4800',
       fileName: 'Drive PDF: long.pdf',
       extractionStatus: 'low_text',
       extractedText: LONG,
@@ -59,6 +62,7 @@ describe('finalizeExtraction', () => {
     summarizeMaterial.mockResolvedValue({ digest: 'DIGEST', model: 'gpt-5.4-mini' });
     await finalizeExtraction({
       id: 'm1',
+      courseCode: 'GC 4800',
       fileName: 'Drive PDF: chapter-3.pdf',
       extractionStatus: 'ok',
       extractedText: LONG,
@@ -79,6 +83,7 @@ describe('finalizeExtraction', () => {
     summarizeMaterial.mockRejectedValue(new Error('OpenAI 500'));
     await expect(finalizeExtraction({
       id: 'm1',
+      courseCode: 'GC 4800',
       fileName: 'Drive PDF: long.pdf',
       extractionStatus: 'ok',
       extractedText: LONG,
@@ -90,6 +95,7 @@ describe('finalizeExtraction', () => {
   it('passes through extractionMethod and pageCount', async () => {
     await finalizeExtraction({
       id: 'm1',
+      courseCode: 'GC 4800',
       fileName: 'foo.pdf',
       extractionStatus: 'ok',
       extractionMethod: 'vision',

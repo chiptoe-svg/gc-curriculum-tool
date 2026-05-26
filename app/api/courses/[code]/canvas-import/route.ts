@@ -306,6 +306,7 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
       });
       await finalizeExtraction({
         id: existing.id,
+        courseCode: code,
         fileName,
         extractionStatus: 'ok',
         extractionMethod: 'text',
@@ -324,6 +325,7 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
       });
       await finalizeExtraction({
         id: mat.id,
+        courseCode: code,
         fileName,
         extractionStatus: 'ok',
         extractionMethod: 'text',
