@@ -5,9 +5,12 @@ vi.mock('@/lib/ip-hash', () => ({ hashIp: () => 'test-hash' }));
 vi.mock('@/lib/db/courses-queries', () => ({ getCourseByCode: vi.fn() }));
 vi.mock('@/lib/db/course-materials-queries', () => ({
   insertMaterial: vi.fn(),
-  updateExtractionResult: vi.fn(),
   findMaterialByFileName: vi.fn(),
   updateMaterialMetadata: vi.fn(),
+}));
+const mockFinalize = vi.fn();
+vi.mock('@/lib/capture/finalize-extraction', () => ({
+  finalizeExtraction: (...args: unknown[]) => mockFinalize(...args),
 }));
 vi.mock('@/lib/canvas/fetchCanvasCourse', () => ({
   fetchCanvasCourse: vi.fn(),
@@ -20,7 +23,6 @@ import { POST } from '@/app/api/courses/[code]/canvas-import/route';
 import { getCourseByCode } from '@/lib/db/courses-queries';
 import {
   insertMaterial,
-  updateExtractionResult,
   findMaterialByFileName,
   updateMaterialMetadata,
 } from '@/lib/db/course-materials-queries';
@@ -28,7 +30,6 @@ import { fetchCanvasCourse } from '@/lib/canvas/fetchCanvasCourse';
 
 const mockGetCourse = getCourseByCode as ReturnType<typeof vi.fn>;
 const mockInsert = insertMaterial as ReturnType<typeof vi.fn>;
-const mockUpdate = updateExtractionResult as ReturnType<typeof vi.fn>;
 const mockFindByName = findMaterialByFileName as ReturnType<typeof vi.fn>;
 const mockUpdateMeta = updateMaterialMetadata as ReturnType<typeof vi.fn>;
 const mockFetch = fetchCanvasCourse as ReturnType<typeof vi.fn>;
@@ -68,7 +69,7 @@ function makeReq(body: unknown, code = 'GC 3460') {
 beforeEach(() => {
   vi.resetAllMocks();
   mockInsert.mockResolvedValue({ id: 'mat-1' });
-  mockUpdate.mockResolvedValue(undefined);
+  mockFinalize.mockResolvedValue(undefined);
   mockUpdateMeta.mockResolvedValue(undefined);
   // Default to "no existing row" — the upsert path takes the INSERT branch.
   // Tests for the UPDATE branch override this in-place.
@@ -119,7 +120,7 @@ describe('POST /api/courses/[code]/canvas-import', () => {
     expect(json.inserted).toBeGreaterThanOrEqual(1);
     expect(json.updated).toBe(0);
     expect(mockInsert).toHaveBeenCalledWith(expect.objectContaining({ fileName: 'Canvas: Syllabus' }));
-    expect(mockUpdate).toHaveBeenCalledWith(expect.objectContaining({ extractionStatus: 'ok' }));
+    expect(mockFinalize).toHaveBeenCalledWith(expect.objectContaining({ extractionStatus: 'ok' }));
     expect(mockUpdateMeta).not.toHaveBeenCalled();
   });
 
@@ -139,8 +140,8 @@ describe('POST /api/courses/[code]/canvas-import', () => {
     expect(mockUpdateMeta).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'existing-mat-id', mimeType: 'text/html' }),
     );
-    expect(mockUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'existing-mat-id', extractionStatus: 'ok' }),
+    expect(mockFinalize).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'existing-mat-id', extractionStatus: 'ok', fileName: 'Canvas: Syllabus' }),
     );
   });
 });

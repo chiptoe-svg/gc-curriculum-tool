@@ -4,6 +4,8 @@ import { db } from '@/lib/db/client';
 import { courseMaterials } from '@/lib/db/schema';
 import { isValidSlug } from '@/lib/slug';
 import { getCourseByCode } from '@/lib/db/courses-queries';
+import { updateMaterialMetadata } from '@/lib/db/course-materials-queries';
+import { finalizeExtraction } from '@/lib/capture/finalize-extraction';
 import { fetchCanvasFileMeta } from '@/lib/canvas/fetchCanvasCourse';
 import { extractText, SUPPORTED_MIME_TYPES, type ExtractedMimeType } from '@/lib/courses/extract-text';
 import { LEGACY_OFFICE_MIME_TYPES } from '@/lib/courses/material-extractor';
@@ -176,16 +178,19 @@ async function run(req: Request, params: Ctx['params']): Promise<Response> {
         results.push({ fileName: meta.displayName, status: 'skipped', reason: `extraction ${extracted.status}` });
         continue;
       }
-      await db.update(courseMaterials)
-        .set({
-          extractedText: extracted.text,
-          extractionStatus: 'ok',
-          extractionMethod: extracted.method ?? 'text',
-          pageCount: extracted.pageCount ?? null,
-          mimeType: resolvedMime,
-          sizeBytes: buffer.length,
-        })
-        .where(eq(courseMaterials.id, targetRow.id));
+      await updateMaterialMetadata({
+        id: targetRow.id,
+        mimeType: resolvedMime,
+        sizeBytes: buffer.length,
+      });
+      await finalizeExtraction({
+        id: targetRow.id,
+        fileName: targetRow.fileName,
+        extractionStatus: 'ok',
+        extractionMethod: extracted.method ?? 'text',
+        extractedText: extracted.text,
+        ...(extracted.pageCount !== undefined && extracted.pageCount !== null && { pageCount: extracted.pageCount }),
+      });
       results.push({ fileName: meta.displayName, status: 'updated' });
     } catch (e) {
       results.push({ fileName: meta.displayName, status: 'skipped', reason: e instanceof Error ? e.message : 'fetch error' });
