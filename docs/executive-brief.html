@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GC Curriculum Tool — Executive Brief</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Mono:wght@300;400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F7F5F0;
+    --bg-card: #FFFFFF;
+    --text: #1C1C18;
+    --text-muted: #6B6860;
+    --text-faint: #9E9B94;
+    --accent: #C8682A;
+    --accent-light: #F5E6D8;
+    --border: #E2DDD4;
+    --border-strong: #C8C4BA;
+    --mono: 'DM Mono', monospace;
+    --serif: 'Source Serif 4', Georgia, serif;
+    --display: 'Playfair Display', Georgia, serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--serif);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 64px 32px;
+    font-size: 16.5px;
+    line-height: 1.7;
+  }
+  main { max-width: 720px; margin: 0 auto; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+  h1 {
+    font-family: var(--display);
+    font-size: 42px;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--text);
+    margin-bottom: 16px;
+    letter-spacing: -0.01em;
+  }
+  .lede {
+    font-size: 19px;
+    color: var(--text-muted);
+    font-style: italic;
+    font-weight: 300;
+    margin-bottom: 28px;
+    max-width: 620px;
+  }
+  .meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--text-faint);
+    margin-bottom: 56px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  h2 {
+    font-family: var(--display);
+    font-size: 26px;
+    font-weight: 600;
+    margin: 52px 0 16px;
+    color: var(--text);
+    letter-spacing: -0.005em;
+  }
+  h3 {
+    font-family: var(--display);
+    font-size: 19px;
+    font-weight: 600;
+    margin: 28px 0 8px;
+    color: var(--text);
+  }
+  p { margin-bottom: 16px; color: var(--text); }
+  p + p { margin-top: -2px; }
+  strong { font-weight: 600; color: var(--text); }
+  em { color: var(--text); }
+  a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 120ms; }
+  a:hover { border-bottom-color: var(--accent); }
+  blockquote {
+    border-left: 3px solid var(--accent);
+    padding: 6px 0 6px 22px;
+    margin: 18px 0;
+    font-style: italic;
+    color: var(--text);
+    font-size: 17.5px;
+  }
+  blockquote p { margin-bottom: 8px; }
+  blockquote p:last-child { margin-bottom: 0; }
+  blockquote .q-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-style: normal;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 4px;
+  }
+  ul { padding-left: 22px; margin: 12px 0 18px; }
+  li { margin-bottom: 8px; }
+  li strong { color: var(--text); }
+  .surfaces {
+    margin: 18px 0 12px;
+  }
+  .surface {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 18px 22px;
+    margin-bottom: 10px;
+  }
+  .surface-title {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+  .surface-desc {
+    font-size: 15.5px;
+    color: var(--text-muted);
+    line-height: 1.55;
+  }
+  .deeper {
+    margin-top: 56px;
+    padding: 28px 30px;
+    background: var(--accent-light);
+    border-radius: 6px;
+  }
+  .deeper h2 {
+    margin-top: 0;
+    margin-bottom: 14px;
+    font-size: 21px;
+  }
+  .deeper ul { margin-bottom: 0; }
+  .deeper li { font-size: 15.5px; color: var(--text); }
+  footer {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-strong);
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-faint);
+    letter-spacing: 0.05em;
+  }
+  footer a { color: var(--text-muted); border-bottom: none; }
+  footer a:hover { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<main>
+
+<div class="eyebrow">Clemson · Graphic Communications · Executive Brief</div>
+<h1>The GC Curriculum Tool</h1>
+<p class="lede">A living, evidence-backed view of what the GC curriculum is, what it is becoming, and how well it builds toward the careers we claim to prepare students for.</p>
+<div class="meta">Three-minute read · Last updated 2026-05-26</div>
+
+<h2>What the tool does</h2>
+
+<p>The GC Curriculum Tool answers two questions that the department has historically answered through committee discussion, faculty intuition, and periodic curriculum review:</p>
+
+<blockquote>
+  <span class="q-label">Q1</span>
+  How well does the GC curriculum build students toward the careers we claim to prepare them for?
+</blockquote>
+
+<blockquote>
+  <span class="q-label">Q2</span>
+  For any individual course, do the prerequisites students walk in with actually support what the course expects?
+</blockquote>
+
+<p>It answers them by maintaining a structured, evidence-backed record of every course in the program — what it develops, at what depth, against which career destinations — and surfacing the program-wide picture that no single faculty member has on their own. Faculty deliberation, advising decisions, accreditation conversations, and curriculum redesigns all benefit from having that picture in the room.</p>
+
+<h2>Why this matters</h2>
+
+<p>Faculty know parts of the answer for the courses they teach. Nobody has the whole picture, and nobody has a way to keep it current as courses evolve. The tool exists because three kinds of conversations are hard to have without one:</p>
+
+<ul>
+  <li><strong>Curriculum redesigns</strong> often re-create courses without the program-wide view of what each course was actually delivering — so the redesigned curriculum inherits the gaps the old one had.</li>
+  <li><strong>Accreditation and advisory-board reviews</strong> require defensible claims about what graduates can do; "graduates of this program are ready for X" should be a verifiable statement, not a marketing assertion.</li>
+  <li><strong>Advising</strong> works better when "if you want career X, take this sequence and watch for these gaps" can be backed by evidence about what each course actually develops.</li>
+</ul>
+
+<p>The tool's commitments make these conversations possible: every coverage judgment is <strong>evidence-backed</strong> (no above-zero score without an excerpt from the course materials that justifies it), <strong>disputable</strong> (every AI reading can be flagged with a faculty note that persists across re-scores), and <strong>versioned</strong> (every snapshot is dated and immutable, so the curriculum's evolution is a record rather than an oral tradition).</p>
+
+<h2>The framework</h2>
+
+<p>Every coverage judgment factors into three categories — <strong>Know</strong> (recall and use of terminology), <strong>Understand</strong> (reasoning about why), <strong>Do</strong> (behavioral output, what a student can actually execute). Each is scored independently on a 0–5 depth scale anchored to <em>what the student does or grasps</em>, not what the syllabus claims. Binary coverage ("covered / not covered") collapses in practice — most courses touch most relevant competencies at some level, and the matrix loses its ability to discriminate between a brief mention and an assessed performance. The depth scales restore that resolution.</p>
+
+<p>This is the <strong>KUD+ framework</strong>, drawn from Carol Ann Tomlinson's work on differentiated instruction and compatible with Wiggins &amp; McTighe's <em>Understanding by Design</em>. Three rules anchor the rubric across the program:</p>
+
+<ul>
+  <li><strong>Evidence-above-zero.</strong> Any score above 1 (above 0 for U and D) requires a citable excerpt from the course materials demonstrating student attainment. Aspirational syllabus verbs do not by themselves justify depth.</li>
+  <li><strong>Foundational competencies</strong> — Agency, Attention to Detail, Resilience, Curiosity, Communication — are scored on D only. K and U are stored as null. These are dispositions demonstrated through behavior, not recalled or reasoned-about.</li>
+  <li><strong>Dissociation cases are signal.</strong> K-high with U-low is jargon without rationale; U-high with D-low is theory without craft; D-high with U-low is craft without articulation. The depth scales surface these patterns; binary coverage hides them.</li>
+</ul>
+
+<p>The framework also takes a specific position on problem-solving — one of the competencies employers consistently rate as most important and that faculty conversations regularly stall on. The position, drawn from four decades of cognitive-science research: <strong>problem-solving is not a transferable generic skill that can be cultivated independently of subject matter.</strong> It is the operation of well-organized domain knowledge under conditions that require deployment, developed through repeated cycles of productive failure followed by structured reflection. A "Problem-Solving" course decoupled from any specific domain is, on this view, asking students to operate a skill whose substrate they do not yet possess. The tool's per-course audit surfaces these conditions; the planned program-level scaffolding analysis aggregates them.</p>
+
+<p>The full academic case for KUD+ and its theoretical antecedents is in the <a href="./background.html">Background document</a>. The full research synthesis on problem-solving is in <a href="./problem-solving-deep-dive.html">Problem-Solving as a Program-Level Emergent Property</a>.</p>
+
+<h2>How it functions</h2>
+
+<p>Faculty work happens across three connected surfaces. Each is useful on its own; together they form the per-course-to-program-wide pipeline.</p>
+
+<div class="surfaces">
+
+  <div class="surface">
+    <div class="surface-title">CourseCapture · /capture/&lt;code&gt;</div>
+    <div class="surface-desc">An instructor-facing audit conversation that produces a <em>Course Outcome Profile</em> for one course. The system pulls in catalog data, Canvas materials (assignments, rubrics, pages, quizzes, file attachments), Google Docs/Slides/Sheets, Drive PDFs, YouTube transcripts, and any uploaded files. Voice or text input. One focused question per turn. When the instructor confirms, an immutable, versioned snapshot is written — the historical record. Drafts remain mutable for further iteration.</div>
+  </div>
+
+  <div class="surface">
+    <div class="surface-title">Explore · /explore/&lt;code&gt;</div>
+    <div class="surface-desc">A read-only-on-the-snapshot module that asks <em>what should change</em>. Two modes: <strong>custom target</strong> (the instructor types in plain-language goals; AI proposes a structured KUD+ target; analysis surfaces alignment + ranked recommendations); <strong>downstream target</strong> (auto-detects courses that list this one as a prereq and unions their incoming expectations into a target). Includes what-if scenarios that simulate proposed changes.</div>
+  </div>
+
+  <div class="surface">
+    <div class="surface-title">Program Coverage Matrix · /program</div>
+    <div class="surface-desc">The end-state view in snapshot form: every confirmed snapshot crossed with every career-target sub-competency, rendered as a depth-aware heat map. Click any cell to see which snapshot competency contributed, the evidence excerpt that justifies the depth, the AI's confidence, and the full rationale. On-demand AI scoring with prompt-cache batching keeps cost bounded.</div>
+  </div>
+
+</div>
+
+<p>The flow: faculty capture courses one at a time; explore prescriptive analyses against the resulting snapshots; the program matrix aggregates across all snapshots into the cross-course picture. Industry input feeds the career-target side through a separate magic-link survey for industry partners; an AI synthesis layer aggregates partner submissions into proposed updates to career-target descriptors that faculty curate before adopting.</p>
+
+<p>Faculty walkthrough of the day-to-day workflow: <a href="./using-coursecapture-and-explore.html">Using CourseCapture &amp; Explore</a>.</p>
+
+<h2>Trust and governance</h2>
+
+<p>The tool drafts; faculty decide. Three commitments make the partnership work:</p>
+
+<ul>
+  <li><strong>Every AI reading is disputable.</strong> A "Flag" button with a note field is attached to every judgment. Flags persist; they are not silently overwritten on the next re-score. Patterns of flagged disagreement update the prompts the system uses, so the tool sharpens over time.</li>
+  <li><strong>Snapshots are owned by the faculty member who confirmed them.</strong> Visible to the program coordinator and the curriculum committee; retired by request (soft-deleted from views, retained as historical record). Hard deletion is not exposed.</li>
+  <li><strong>The curriculum committee retains all authority over curriculum changes.</strong> The tool informs deliberation. It does not replace it. A proposed change still goes through the committee; what the tool adds is the ability to bring evidence-grounded readings into the conversation and to model the proposed change's coverage impact before the committee votes.</li>
+</ul>
+
+<p>Cost is bounded and quantifiable: roughly four cents per snapshot–target cell at current defaults, roughly five dollars for a full program-wide refresh against five career targets and the captured courses. Recurring re-scoring at end-of-semester cadence sits comfortably within typical departmental software budgets.</p>
+
+<h2>Where it stands today</h2>
+
+<p>The faculty trial period is underway. CourseCapture, Explore, and the Program Coverage Matrix (Phase 1A) are live. The other Phase 1 views — scaffolding analysis (Phase 1B), prerequisite-gap analysis (Phase 1C), and the advising view (Phase 1D) — are specified and queued; implementation order will follow what the trial period surfaces. Industry Partner Input is live in two of three planned increments (the magic-link survey and the AI synthesis layer; the position-ratings table is the gap).</p>
+
+<p>The honest list of what's <em>not</em> yet in place is also worth naming: per-user authentication for faculty is currently a stopgap; the snapshot dispute pipeline is informal; the program-wide cross-snapshot diff that operationalizes "honest defense against curricular drift" is Phase 2 work. The framework expects to refine these as the trial period reveals what matters.</p>
+
+<p>The detailed, continually-updated status of every surface, every plan, and every blocker lives in the project's <a href="https://github.com/chiptoe-svg/gc-curriculum-tool/blob/main/docs/STATE.md">STATE document</a>.</p>
+
+<div class="deeper">
+<h2>Deeper reading</h2>
+<ul>
+  <li><a href="./superpowers/vision/gc-curriculum-tool-vision.html">Vision</a> — the full high-level picture, end-state visualizations, governance and operational realities.</li>
+  <li><a href="./background.html">KUD+ Background</a> — academic justification for the framework: Backward Design, Constructive Alignment, the relationship to Bloom's, the depth-scale extension.</li>
+  <li><a href="./problem-solving-deep-dive.html">Problem-Solving as a Program-Level Emergent Property</a> — the research synthesis behind the tool's position on how problem-solving competence actually develops.</li>
+  <li><a href="./three-act-deep-dive.html">The 3-Act Program Structure</a> — an honest accounting of what the proposed 3-Act organizing model is consistent with, what it is not grounded in, and how it engages the strongest critiques.</li>
+  <li><a href="./graduate-outcome-validation.html">Graduate Outcome Validation</a> — proposal to validate the framework's output against 268 Clemson GC graduates' actual occupational destinations.</li>
+  <li><a href="./using-coursecapture-and-explore.html">Faculty guide</a> — practical walkthrough of CourseCapture and Explore.</li>
+</ul>
+</div>
+
+<footer>
+  Source: <a href="https://github.com/chiptoe-svg/gc-curriculum-tool" target="_blank" rel="noopener noreferrer">github.com/chiptoe-svg/gc-curriculum-tool</a>
+</footer>
+
+</main>
+
+</body>
+</html>

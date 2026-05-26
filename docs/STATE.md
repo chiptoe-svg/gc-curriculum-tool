@@ -1,6 +1,6 @@
 # Project State — GC Curriculum Tool
 
-> **Last verified:** `3adf862` · 2026-05-26
+> **Last verified:** `154952c` · 2026-05-26
 >
 > **What this is:** the single source of truth for "what's live, what's next, what's blocked." Read this before any feature work, schema change, AI function add, deployment change, or new spec/plan. Static framing (KUD+, vision, architecture rationale) lives in [`CLAUDE.md`](../CLAUDE.md) and [`docs/superpowers/README.md`](./superpowers/README.md); this file is the volatile snapshot that sits in front of them.
 >
