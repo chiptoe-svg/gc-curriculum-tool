@@ -51,25 +51,26 @@ Setup details: [`docs/superpowers/running-locally.md`](./superpowers/running-loc
 - **Provider abstraction** at `lib/ai/provider.ts`: `getProvider()` returns OpenAI / Anthropic / Local / Campus / Fake. Structured output via OpenAI strict JSON-schema + Zod parse. **New as of 2026-05-26 (CourseCapture v2 Stage 1):** `completeWithTools` method on all five providers, built on Vercel AI SDK v6 — used by Stage 3's agent loop (not exposed by any AI function yet).
 - **Campus provider** at `lib/ai/campus.ts` (added 2026-05-26): OpenAI-compatible client against the Clemson RCD endpoint `https://llm.rcd.clemson.edu/v1`. Default model `glm-5.1-fp8` (754B, native tool-calling, 202k ctx); `deepseek-v4-pro` (1M ctx) and the `qwen3.6-*` family are reachable via the same provider by passing a model override. Cost reported as 0. Selected with `AI_PROVIDER=campus`; tier-system integration deferred (campus models don't map cleanly onto gpt-5.4 light/default/heavy — see "Deferred / debt").
 - **Embeddings client** at `lib/ai/embeddings.ts` (added 2026-05-26): hits `/v1/embeddings` on the same campus endpoint with `qwen3-embedding-4b` (2560-dim). Same env vars as the campus provider (`CAMPUS_LLM_BASE_URL` / `CAMPUS_LLM_API_KEY`) regardless of which generation provider is active. Includes an `InMemoryVectorStore` used to exercise the chunk → embed → search path before Weaviate lands; Stage 2 will swap that store for Weaviate while keeping `embedBatch` / `embedText` unchanged.
-- **Function tier system** at `lib/ai/function-settings.ts`: 9 named function IDs. Tier (light / default / heavy) maps to a model; per-function override stored in `ai_function_settings` table. 60s TTL resolver cache.
+- **Function tier system** at `lib/ai/function-settings.ts`: 10 named function IDs. Tier (light / default / heavy) maps to a model; per-function override stored in `ai_function_settings` table. 60s TTL resolver cache.
 
 | Function ID | Default tier | Note |
 | ----------- | ------------ | ---- |
 | `capture-chat` | default | Bumped from light when audit bundle outgrew gpt-5.4-mini's 272k input cap |
 | `capture-scores` | default | |
 | `materials-analysis` | default | |
-| `material-summary` | light | One short summarization pass per long reference material at extraction; cached on row |
 | `explore-draft-target` | default | |
 | `explore-compare` | default | |
 | `explore-what-if` | default | |
 | `program-score-coverage` | heavy | Heaviest scorer; batches by target for cache reuse |
 | `decompose-prereq-gap` | default | |
+| `material-digest` | light | Per-material structured digest generated at extraction for every material (supersedes `material-summary`); loaded into audit agent's at-rest context |
+| `chunk-contextualize` | light | Per-chunk position blurb prepended before embedding so the vector encodes position + content (Anthropic contextual-retrieval pattern) |
 
-**Reference-material compression** (`lib/capture/material-compression.ts`, `lib/capture/finalize-extraction.ts`, `lib/ai/analyze/material-summary.ts`): every extraction call site now routes through `finalizeExtraction`, which writes the extracted text and — if the material is long (≥15k tokens) AND a reference-leaning kind (Canvas File, Drive PDF, YouTube, plain upload) — synchronously summarizes and caches the result. `effectiveAuditText(m)` substitutes the summary in the audit prompt when `useSummary` is true. Canvas dense kinds (Syllabus, Assignments, Modules, Pages, Discussions, Quizzes) and Google Workspace materials are never summarized. Faculty toggle per row from the Materials panel; one-time backfill via `POST /api/courses/[code]/materials/compress`.
+**Reference-material compression / ingestion** (`lib/capture/material-compression.ts`, `lib/capture/finalize-extraction.ts`, `lib/ai/analyze/material-digest.ts`): every extraction call site routes through `finalizeExtraction`. Legacy path (no `COURSECAPTURE_V2_INGESTION`): long reference materials (≥15k tokens, Canvas File / Drive PDF / YouTube / plain upload) get a digest via `generateMaterialDigest`; Canvas dense kinds and Google Workspace materials are skipped. `effectiveAuditText(m)` substitutes the digest in the audit prompt when `useDigest` is true. Faculty toggle per row from the Materials panel; one-time backfill via `POST /api/courses/[code]/materials/compress`. V2 path (`COURSECAPTURE_V2_INGESTION=1`): FERPA detection → materials policy → digest every material → chunk + contextualize + embed + upsert into vector store. New modules shipped in Stage 2a: `lib/capture/chunker.ts`, `lib/capture/ferpa-detect.ts`, `lib/capture/materials-policy.ts`, `lib/capture/vector-store.ts` (in-memory backend; Weaviate adapter pending Stage 2b). `material-summary` was superseded by `material-digest` and removed in Stage 2a.
 
 ### Schema (Neon Postgres via Drizzle)
 
-Latest migration: **`0023_tiresome_rhino.sql`** (CourseCapture v2 Stage 1: adds UNIQUE constraint on `capture_messages(session_id, turn_index)`; follows `0022_mighty_firedrake.sql` which created `capture_messages` + added `courses.audit_mode` + `course_capture_snapshots.transcript_session_id`).
+Latest migration: **`0024_noisy_omega_flight.sql`** (CourseCapture v2 Stage 2a: renames `course_materials.summary*` → `digest*`, adds `ferpa_risk`, `auto_set_aside`, `set_aside_reason`, `indexing_status`, `indexed_at`; follows `0023_tiresome_rhino.sql` which added UNIQUE constraint on `capture_messages(session_id, turn_index)`).
 
 Tables defined in [`lib/db/schema.ts`](../lib/db/schema.ts):
 
@@ -94,7 +95,7 @@ Tables defined in [`lib/db/schema.ts`](../lib/db/schema.ts):
 `.env.example` lists the full surface. Categories:
 
 - **DB:** `DATABASE_URL`
-- **AI:** `AI_PROVIDER`, `OPENAI_API_KEY`, `OPENAI_MODEL`, `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`, `LOCAL_BASE_URL`, `LOCAL_API_KEY`, `LOCAL_MODEL`, `CAMPUS_LLM_BASE_URL`, `CAMPUS_LLM_API_KEY`, `CAMPUS_LLM_DEFAULT_MODEL`
+- **AI:** `AI_PROVIDER`, `OPENAI_API_KEY`, `OPENAI_MODEL`, `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`, `LOCAL_BASE_URL`, `LOCAL_API_KEY`, `LOCAL_MODEL`, `CAMPUS_LLM_BASE_URL`, `CAMPUS_LLM_API_KEY`, `CAMPUS_LLM_DEFAULT_MODEL`, `COURSECAPTURE_V2_INGESTION`
 - **PDF:** `PDF_PARSER`, `DOCLING_URL`, `DOCLING_VLM_*`
 - **Auth / slug:** `FACULTY_BASIC_AUTH` (faculty gate on local), `PROTOTYPE_SLUG` (single-user slug-gated session)
 - **Cost guard:** `DAILY_COST_CAP_USD`, `COST_ALERT_EMAIL`
@@ -128,7 +129,7 @@ Tables defined in [`lib/db/schema.ts`](../lib/db/schema.ts):
 
 | Increment | Spec | Description |
 | --------- | ---- | ----------- |
-| **CourseCapture v2 — Agentic Retrieval** | [spec](./superpowers/specs/2026-05-26-coursecapture-agentic-retrieval-design.md) | Three-phase architecture: per-material ingestion (chunk + digest + Weaviate index), tool-using audit agent, synthesis with intrinsic provenance. Per-course Weaviate tenants on a shared local instance. `audit_mode` toggle per course (Full / Simple). Pending implementation plan. **Next move.** |
+| **CourseCapture v2 — Agentic Retrieval** | [spec](./superpowers/specs/2026-05-26-coursecapture-agentic-retrieval-design.md) | Three-phase architecture: per-material ingestion (chunk + digest + Weaviate index), tool-using audit agent, synthesis with intrinsic provenance. **Stage 1 (foundation) + Stage 2a (pre-Weaviate ingestion: chunker, FERPA, policy, digest, contextualizer, vector-store abstraction with in-memory backend, wired into finalizeExtraction behind `COURSECAPTURE_V2_INGESTION=1`) shipped 2026-05-26.** Stage 2b (Weaviate adapter + Materials UI + check-in chat) pending local Weaviate instance. Stages 3–5 (agent loop, synthesis, migration) ahead. |
 | **Phase 1B — Scaffolding Analysis** | [spec](./superpowers/specs/2026-05-25-scaffolding-analysis-design.md) | Depth-sequence scaffolding (introduce / practice / integrate) + productive-failure + reflection sequencing. Data dependency satisfied by the agentic-retrieval architecture once snapshots are produced with it. |
 | **Phase 1C — Prerequisite Gap Analysis** | sketched in [Phase 1 umbrella spec](./superpowers/specs/2026-05-24-program-coverage-views-spec.md) | For each captured course, compare its `incoming_expectations` against captured snapshots of its declared prerequisites. |
 | **Phase 1D — Advising View** | sketched in same umbrella | Per-target recommended course sequence + gap detection. |

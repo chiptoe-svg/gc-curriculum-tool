@@ -9,7 +9,6 @@ import {
 } from '@/lib/db/course-materials-queries';
 import { isCompressionCandidate } from '@/lib/capture/material-compression';
 import { generateMaterialDigest } from '@/lib/ai/analyze/material-digest';
-import { summarizeMaterial } from '@/lib/ai/analyze/material-summary';
 import { contextualizeChunk } from '@/lib/ai/analyze/chunk-contextualize';
 import { embedBatch } from '@/lib/ai/embeddings';
 import { chunkMaterial } from '@/lib/capture/chunker';
@@ -67,7 +66,7 @@ export async function finalizeExtraction(input: FinalizeExtractionInput): Promis
   });
   if (!candidate) return;
   try {
-    const { digest, model } = await summarizeMaterial({
+    const { digest, model } = await generateMaterialDigest({
       fileName: input.fileName,
       extractedText: input.extractedText,
     });

@@ -3,7 +3,7 @@ import { isValidSlug } from '@/lib/slug';
 import { getCourseByCode } from '@/lib/db/courses-queries';
 import { listMaterialsByCourse, updateMaterialDigest } from '@/lib/db/course-materials-queries';
 import { isCompressionCandidate } from '@/lib/capture/material-compression';
-import { summarizeMaterial } from '@/lib/ai/analyze/material-summary';
+import { generateMaterialDigest } from '@/lib/ai/analyze/material-digest';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { hashIp } from '@/lib/ip-hash';
 
@@ -53,7 +53,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   // Serial: keeps OpenAI usage predictable. Faculty hit this rarely.
   for (const m of candidates) {
     try {
-      const { digest, model } = await summarizeMaterial({
+      const { digest, model } = await generateMaterialDigest({
         fileName: m.fileName,
         extractedText: m.extractedText!,
       });
@@ -63,7 +63,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     } catch (err) {
       failed += 1;
       const reason = err instanceof Error ? err.message : 'unknown error';
-      console.error(`material-summary failed for ${m.id} (${m.fileName})`, err);
+      console.error(`material-digest failed for ${m.id} (${m.fileName})`, err);
       results.push({ id: m.id, fileName: m.fileName, status: 'failed', reason });
     }
   }

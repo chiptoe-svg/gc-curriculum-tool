@@ -28,7 +28,6 @@ type PromptName =
   | 'program-score-coverage'
   | 'parse-profile-fields'
   | 'decompose-prereq-gap'
-  | 'material-summary'
   | 'material-digest'
   | 'chunk-contextualize';
 

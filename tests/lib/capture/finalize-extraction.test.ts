@@ -2,14 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const updateExtractionResult = vi.fn();
 const updateMaterialDigest = vi.fn();
-const summarizeMaterial = vi.fn();
+const generateMaterialDigest = vi.fn();
 
 vi.mock('@/lib/db/course-materials-queries', () => ({
   updateExtractionResult: (...args: unknown[]) => updateExtractionResult(...args),
   updateMaterialDigest: (...args: unknown[]) => updateMaterialDigest(...args),
 }));
-vi.mock('@/lib/ai/analyze/material-summary', () => ({
-  summarizeMaterial: (...args: unknown[]) => summarizeMaterial(...args),
+vi.mock('@/lib/ai/analyze/material-digest', () => ({
+  generateMaterialDigest: (...args: unknown[]) => generateMaterialDigest(...args),
 }));
 
 import { finalizeExtraction } from '@/lib/capture/finalize-extraction';
@@ -20,10 +20,11 @@ describe('finalizeExtraction', () => {
   beforeEach(() => {
     updateExtractionResult.mockReset().mockResolvedValue(undefined);
     updateMaterialDigest.mockReset().mockResolvedValue(undefined);
-    summarizeMaterial.mockReset();
+    generateMaterialDigest.mockReset();
+    delete process.env.COURSECAPTURE_V2_INGESTION;
   });
 
-  it('writes extraction result and skips summarization when not a candidate (short)', async () => {
+  it('writes extraction result and skips digest when not a candidate (short)', async () => {
     await finalizeExtraction({
       id: 'm1',
       courseCode: 'GC 4800',
@@ -32,11 +33,11 @@ describe('finalizeExtraction', () => {
       extractedText: 'short',
     });
     expect(updateExtractionResult).toHaveBeenCalledOnce();
-    expect(summarizeMaterial).not.toHaveBeenCalled();
+    expect(generateMaterialDigest).not.toHaveBeenCalled();
     expect(updateMaterialDigest).not.toHaveBeenCalled();
   });
 
-  it('writes extraction result and skips summarization when not a candidate (dense kind)', async () => {
+  it('writes extraction result and skips digest when not a candidate (dense kind)', async () => {
     await finalizeExtraction({
       id: 'm1',
       courseCode: 'GC 4800',
@@ -44,10 +45,10 @@ describe('finalizeExtraction', () => {
       extractionStatus: 'ok',
       extractedText: LONG,
     });
-    expect(summarizeMaterial).not.toHaveBeenCalled();
+    expect(generateMaterialDigest).not.toHaveBeenCalled();
   });
 
-  it('writes extraction result and skips summarization when status is not ok', async () => {
+  it('writes extraction result and skips digest when status is not ok', async () => {
     await finalizeExtraction({
       id: 'm1',
       courseCode: 'GC 4800',
@@ -55,11 +56,11 @@ describe('finalizeExtraction', () => {
       extractionStatus: 'low_text',
       extractedText: LONG,
     });
-    expect(summarizeMaterial).not.toHaveBeenCalled();
+    expect(generateMaterialDigest).not.toHaveBeenCalled();
   });
 
-  it('summarizes when candidate and status ok', async () => {
-    summarizeMaterial.mockResolvedValue({ digest: 'DIGEST', model: 'gpt-5.4-mini' });
+  it('generates digest when candidate and status ok', async () => {
+    generateMaterialDigest.mockResolvedValue({ digest: 'DIGEST', model: 'gpt-5.4-mini' });
     await finalizeExtraction({
       id: 'm1',
       courseCode: 'GC 4800',
@@ -67,8 +68,8 @@ describe('finalizeExtraction', () => {
       extractionStatus: 'ok',
       extractedText: LONG,
     });
-    expect(summarizeMaterial).toHaveBeenCalledOnce();
-    expect(summarizeMaterial.mock.calls[0]![0]).toEqual({
+    expect(generateMaterialDigest).toHaveBeenCalledOnce();
+    expect(generateMaterialDigest.mock.calls[0]![0]).toEqual({
       fileName: 'Drive PDF: chapter-3.pdf',
       extractedText: LONG,
     });
@@ -79,8 +80,8 @@ describe('finalizeExtraction', () => {
     });
   });
 
-  it('does not throw when the summarizer fails — extraction succeeds anyway', async () => {
-    summarizeMaterial.mockRejectedValue(new Error('OpenAI 500'));
+  it('does not throw when the digest fails — extraction succeeds anyway', async () => {
+    generateMaterialDigest.mockRejectedValue(new Error('OpenAI 500'));
     await expect(finalizeExtraction({
       id: 'm1',
       courseCode: 'GC 4800',

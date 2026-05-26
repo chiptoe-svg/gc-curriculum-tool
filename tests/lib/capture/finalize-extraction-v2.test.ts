@@ -23,13 +23,6 @@ vi.mock('@/lib/ai/analyze/material-digest', () => ({
   })),
 }));
 
-vi.mock('@/lib/ai/analyze/material-summary', () => ({
-  summarizeMaterial: vi.fn(async (input: { fileName: string }) => ({
-    digest: `legacy summary of ${input.fileName}`,
-    model: 'legacy-model',
-  })),
-}));
-
 vi.mock('@/lib/ai/analyze/chunk-contextualize', () => ({
   contextualizeChunk: vi.fn(async (input: { chunkText: string }) => ({
     blurb: `blurb for ${input.chunkText.slice(0, 10)}`,
