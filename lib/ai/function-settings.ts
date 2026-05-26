@@ -47,9 +47,11 @@ export const TIER_TO_MODEL: Record<Exclude<ModelTier, 'custom'>, string> = {
  * settings page.
  *
  * Rationale per function:
- *   - capture-chat: light. Turn-by-turn conversation, mostly summarization
- *     and targeted follow-up questions; structured-output JSON schema does
- *     the format heavy lifting.
+ *   - capture-chat: default. Started on light (gpt-5.4-mini), but real
+ *     courses can dump 300k+ tokens of materials into the bundle and the
+ *     mini's 272k input cap kept rejecting fresh sessions. Default tier
+ *     (gpt-5.4) has the larger window and the audit's judgement quality
+ *     benefits from it too.
  *   - capture-scores: default. Drives every downstream view; structured
  *     output but with rich reasoning across the whole audit transcript.
  *   - materials-analysis: light. Per-file extraction is bounded.
@@ -62,7 +64,7 @@ export const TIER_TO_MODEL: Record<Exclude<ModelTier, 'custom'>, string> = {
  *     Pilot at light; promote if quality is insufficient.
  */
 export const DEFAULT_TIERS: Record<AIFunctionId, Exclude<ModelTier, 'custom'>> = {
-  'capture-chat': 'light',
+  'capture-chat': 'default',
   'capture-scores': 'default',
   'materials-analysis': 'light',
   'explore-draft-target': 'light',

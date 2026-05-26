@@ -127,6 +127,18 @@ function humanSize(bytes: number): string {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
+// Rough estimate matching OpenAI's ~4 chars/token rule of thumb for English.
+// Good enough for spotting whales in the materials list; do not use for
+// strict budgeting.
+function estimateTokens(text: string): number {
+  return Math.ceil(text.length / 4);
+}
+
+function formatTokens(tokens: number): string {
+  if (tokens < 1000) return `${tokens} tok`;
+  return `${(tokens / 1000).toFixed(tokens >= 10_000 ? 0 : 1)}k tok`;
+}
+
 function StatusChip({ status }: { status: string }) {
   if (status === 'ok') {
     return <span className="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-800">extracted</span>;
@@ -210,6 +222,13 @@ function MaterialRow({
   const youtube = isYouTubeMaterial(material);
   const summary = canvas ? summarizeCanvas(material) : '';
   const wordCount = material.extractedText ? material.extractedText.split(/\s+/).filter(Boolean).length : 0;
+  const tokenEstimate = material.extractedText ? estimateTokens(material.extractedText) : 0;
+  // Highlight materials that take a meaningful slice of the 272k input budget
+  // so faculty can spot which ones to ignore when the audit chokes.
+  const tokenTone =
+    tokenEstimate >= 50_000 ? 'text-red-700 font-semibold'
+      : tokenEstimate >= 20_000 ? 'text-amber-700'
+      : '';
 
   return (
     <li className={'flex flex-col gap-1 px-3 py-2 ' + (material.ignored ? 'opacity-60' : '')}>
@@ -245,6 +264,11 @@ function MaterialRow({
             {summary && <span>{summary} · </span>}
             {material.pageCount !== null && <span>{material.pageCount} pages · </span>}
             {wordCount > 0 && <span>{wordCount.toLocaleString()} words · </span>}
+            {tokenEstimate > 0 && (
+              <span className={tokenTone} title="Approximate tokens this material contributes to the audit prompt (~4 chars/token). The audit input cap is 272k tokens total.">
+                ~{formatTokens(tokenEstimate)} ·{' '}
+              </span>
+            )}
             <span>{humanSize(material.sizeBytes)}</span>
             {material.extractionMethod && <span> · via {material.extractionMethod}</span>}
           </p>
