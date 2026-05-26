@@ -27,7 +27,7 @@ import type {
 } from './tool-use-types';
 
 export interface AIProvider {
-  readonly name: 'openai' | 'anthropic' | 'fake' | 'local';
+  readonly name: 'openai' | 'anthropic' | 'fake' | 'local' | 'campus';
   readonly model: string;
 
   /**
@@ -83,6 +83,7 @@ export interface AIProvider {
 import { OpenAIProvider } from './openai';
 import { AnthropicProvider } from './anthropic';
 import { LocalProvider } from './local';
+import { CampusProvider } from './campus';
 import { resolveModelForFunction, type AIFunctionId } from './function-settings';
 
 export interface GetProviderOptions {
@@ -141,6 +142,14 @@ function buildProvider(modelOverride: string | undefined): AIProvider {
     const apiKey = process.env.LOCAL_API_KEY?.trim();
     if (!apiKey) throw new Error('LOCAL_API_KEY not set');
     return new LocalProvider(model, baseURL, apiKey);
+  }
+  if (which === 'campus') {
+    const baseURL = process.env.CAMPUS_LLM_BASE_URL?.trim();
+    if (!baseURL) throw new Error('CAMPUS_LLM_BASE_URL not set');
+    const apiKey = process.env.CAMPUS_LLM_API_KEY?.trim();
+    if (!apiKey) throw new Error('CAMPUS_LLM_API_KEY not set');
+    const model = modelOverride ?? process.env.CAMPUS_LLM_DEFAULT_MODEL?.trim() ?? 'glm-5.1-fp8';
+    return new CampusProvider(model, baseURL, apiKey);
   }
   throw new Error(`Unknown AI provider: ${which}`);
 }

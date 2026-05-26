@@ -48,7 +48,9 @@ Setup details: [`docs/superpowers/running-locally.md`](./superpowers/running-loc
 
 ### AI provider + function tiers
 
-- **Provider abstraction** at `lib/ai/provider.ts`: `getProvider()` returns OpenAI / Anthropic / Local / Fake. Structured output via OpenAI strict JSON-schema + Zod parse. **New as of 2026-05-26 (CourseCapture v2 Stage 1):** `completeWithTools` method on all four providers, built on Vercel AI SDK v6 — used by Stage 3's agent loop (not exposed by any AI function yet).
+- **Provider abstraction** at `lib/ai/provider.ts`: `getProvider()` returns OpenAI / Anthropic / Local / Campus / Fake. Structured output via OpenAI strict JSON-schema + Zod parse. **New as of 2026-05-26 (CourseCapture v2 Stage 1):** `completeWithTools` method on all five providers, built on Vercel AI SDK v6 — used by Stage 3's agent loop (not exposed by any AI function yet).
+- **Campus provider** at `lib/ai/campus.ts` (added 2026-05-26): OpenAI-compatible client against the Clemson RCD endpoint `https://llm.rcd.clemson.edu/v1`. Default model `glm-5.1-fp8` (754B, native tool-calling, 202k ctx); `deepseek-v4-pro` (1M ctx) and the `qwen3.6-*` family are reachable via the same provider by passing a model override. Cost reported as 0. Selected with `AI_PROVIDER=campus`; tier-system integration deferred (campus models don't map cleanly onto gpt-5.4 light/default/heavy — see "Deferred / debt").
+- **Embeddings client** at `lib/ai/embeddings.ts` (added 2026-05-26): hits `/v1/embeddings` on the same campus endpoint with `qwen3-embedding-4b` (2560-dim). Same env vars as the campus provider (`CAMPUS_LLM_BASE_URL` / `CAMPUS_LLM_API_KEY`) regardless of which generation provider is active. Includes an `InMemoryVectorStore` used to exercise the chunk → embed → search path before Weaviate lands; Stage 2 will swap that store for Weaviate while keeping `embedBatch` / `embedText` unchanged.
 - **Function tier system** at `lib/ai/function-settings.ts`: 9 named function IDs. Tier (light / default / heavy) maps to a model; per-function override stored in `ai_function_settings` table. 60s TTL resolver cache.
 
 | Function ID | Default tier | Note |
@@ -92,7 +94,7 @@ Tables defined in [`lib/db/schema.ts`](../lib/db/schema.ts):
 `.env.example` lists the full surface. Categories:
 
 - **DB:** `DATABASE_URL`
-- **AI:** `AI_PROVIDER`, `OPENAI_API_KEY`, `OPENAI_MODEL`, `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`, `LOCAL_BASE_URL`, `LOCAL_API_KEY`, `LOCAL_MODEL`
+- **AI:** `AI_PROVIDER`, `OPENAI_API_KEY`, `OPENAI_MODEL`, `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`, `LOCAL_BASE_URL`, `LOCAL_API_KEY`, `LOCAL_MODEL`, `CAMPUS_LLM_BASE_URL`, `CAMPUS_LLM_API_KEY`, `CAMPUS_LLM_DEFAULT_MODEL`
 - **PDF:** `PDF_PARSER`, `DOCLING_URL`, `DOCLING_VLM_*`
 - **Auth / slug:** `FACULTY_BASIC_AUTH` (faculty gate on local), `PROTOTYPE_SLUG` (single-user slug-gated session)
 - **Cost guard:** `DAILY_COST_CAP_USD`, `COST_ALERT_EMAIL`
@@ -144,6 +146,7 @@ Tables defined in [`lib/db/schema.ts`](../lib/db/schema.ts):
 - **AnthropicProvider native PDF blocks.** Prerequisite for high-quality syllabus extraction; not built.
 - **Capture-chat Manning encoding.** Held pending snapshot-quality evidence; **absorbed into the v2 agentic-retrieval spec** — the new `capture-chat-agent.md` prompt will carry Manning encoding from the start, so this deferred decision becomes moot when v2 ships.
 - **Cross-snapshot diff view.** Phase 2 carryover.
+- **Provider-aware function-tier routing.** `lib/ai/function-settings.ts` maps `light/default/heavy` to OpenAI model names (`gpt-5.4-mini` / `gpt-5.4` / `gpt-5.5`); selecting `AI_PROVIDER=campus` currently sends those names through to the campus endpoint, which doesn't host them. To actually use GLM/DeepSeek/Qwen via the tier system, the resolver needs to be provider-aware (different tier→model map per provider, or per-function `(provider, model)` rows). Tactical wire-in works today by using `AI_PROVIDER=campus` + setting a per-function `customModel`, but that's a workaround. Spec the refactor once one campus model is in production use.
 
 ---
 
