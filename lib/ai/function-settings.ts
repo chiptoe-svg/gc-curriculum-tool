@@ -25,6 +25,7 @@ export const AI_FUNCTION_IDS = [
   'program-score-coverage',
   'decompose-prereq-gap',
   'material-summary',
+  'material-digest',
 ] as const;
 export type AIFunctionId = (typeof AI_FUNCTION_IDS)[number];
 
@@ -79,6 +80,10 @@ export const DEFAULT_TIERS: Record<AIFunctionId, Exclude<ModelTier, 'custom'>> =
   // if the decomposition quality is poor on long/aggregated gaps.
   'decompose-prereq-gap': 'light',
   'material-summary': 'light',
+  // Light per-material digest generated at extraction time for every material.
+  // Loaded into the audit agent's at-rest context. Light tier is appropriate —
+  // one summarization pass per material; promote if output quality is poor.
+  'material-digest': 'light',
 };
 
 export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
@@ -91,6 +96,7 @@ export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
   'program-score-coverage': 'Program coverage scoring',
   'decompose-prereq-gap': 'Decompose prereq gap into competencies (copy-as-KUD)',
   'material-summary': 'Material summary (for audit compression)',
+  'material-digest': 'Material digest (every material, audit at-rest context)',
 };
 
 export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
@@ -103,6 +109,7 @@ export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
   'program-score-coverage': 'Scoring each captured snapshot against each career target\'s sub-competencies for the program coverage matrix.',
   'decompose-prereq-gap': 'Decomposing one free-form prereq-gap finding into a structured list of competencies with K/U/D depths, for the copy-as-KUD button in the review panel.',
   'material-summary': 'Per-material structured summary, generated at extraction time for long reference materials and substituted for the full extracted text in the audit chat prompt.',
+  'material-digest': 'Per-material structured digest, generated at extraction for every material. Loaded into the audit agent\'s at-rest context.',
 };
 
 interface CachedSetting {
