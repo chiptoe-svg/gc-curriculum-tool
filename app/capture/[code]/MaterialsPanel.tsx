@@ -690,6 +690,30 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
   const ignoredCount = materials.filter(m => m.ignored).length;
   const activeCount = materials.length - ignoredCount;
 
+  // Rough sum of what the audit chat will actually send: per-material
+  // effective text (summary when useSummary && summary, else raw extracted
+  // text). Catalog + profile + system prompt add ~5–10k tokens on top —
+  // small relative to the materials, so we don't account for them here.
+  const totalAuditTokens = materials
+    .filter(m => !m.ignored)
+    .reduce((sum, m) => {
+      const text = m.useSummary && m.summary ? m.summary : (m.extractedText ?? '');
+      return sum + estimateTokens(text);
+    }, 0);
+  // Calibrated against the gpt-5.4-mini 272k cap (the floor) so faculty
+  // get a warning well before they actually break — even though
+  // capture-chat now runs on the wider gpt-5.4 window.
+  const totalTone =
+    totalAuditTokens >= 220_000 ? 'text-red-700 font-semibold'
+      : totalAuditTokens >= 150_000 ? 'text-amber-700'
+      : 'text-muted-foreground';
+  const compressionHint =
+    totalAuditTokens >= 220_000
+      ? 'Approaching the audit-prompt cap. Compress reference materials below, then ignore uploads you don\'t need.'
+      : totalAuditTokens >= 150_000
+      ? 'Getting large. Compressing reference materials below will shrink this.'
+      : '';
+
   return (
     <section className="rounded-md border bg-card shadow-sm">
       <header className="flex items-center justify-between gap-3 border-b px-4 py-2">
@@ -701,6 +725,15 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
             {course.learningObjectives.length} objectives · {course.majorProjects.length} projects ·{' '}
             {course.skillsRequired.length} required skills
           </p>
+          {totalAuditTokens > 0 && (
+            <p
+              className={'text-[11px] ' + totalTone}
+              title="Estimated tokens the audit prompt will carry from your active materials. The audit input cap is 272k tokens; aim to stay well under it."
+            >
+              Audit prompt: ~{formatTokens(totalAuditTokens)} from materials
+              {compressionHint && <span className="ml-1 font-normal">— {compressionHint}</span>}
+            </p>
+          )}
           {syncMessage && (
             <p className={'mt-1 text-[11px] ' + (syncMessage.kind === 'ok' ? 'text-green-700' : 'text-destructive')}>
               {syncMessage.text}
