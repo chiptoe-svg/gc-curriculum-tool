@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, jsonb, timestamp, integer, boolean, primaryKey, index } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, jsonb, timestamp, integer, boolean, primaryKey, index, unique } from 'drizzle-orm/pg-core';
 import type { CaptureProfile, CaptureReadiness, CaptureReviewerStatus } from '@/lib/ai/capture/schema';
 
 export const careerTargets = pgTable('career_targets', {
@@ -455,16 +455,16 @@ export const captureMessages = pgTable('capture_messages', {
   sessionId: uuid('session_id').notNull(),
   turnIndex: integer('turn_index').notNull(),
   role: text('role').notNull(),  // 'system' | 'user' | 'assistant' | 'tool'
-  content: text('content'),
+  content: text('content'),  // nullable: assistant messages with only tool_calls and no text body
   toolCalls: jsonb('tool_calls').$type<Array<{
     id: string;
     toolName: string;
     args: Record<string, unknown>;
   }>>(),
-  toolResult: jsonb('tool_result').$type<{
+  toolResult: jsonb('tool_result').$type<Array<{
     toolCallId: string;
     result: unknown;
-  }>(),
+  }>>(),
   citations: jsonb('citations').$type<Array<{
     type: 'chunk' | 'instructor';
     chunkId?: string;
@@ -474,4 +474,5 @@ export const captureMessages = pgTable('capture_messages', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({
   sessionIdx: index('idx_capture_messages_session').on(table.courseCode, table.sessionId, table.turnIndex),
+  sessionTurnUnique: unique('uq_capture_messages_session_turn').on(table.sessionId, table.turnIndex),
 }));
