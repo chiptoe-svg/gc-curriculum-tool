@@ -1,6 +1,6 @@
 # Project State — GC Curriculum Tool
 
-> **Last verified:** `154952c` · 2026-05-26
+> **Last verified:** `8774b92` · 2026-05-26 (pending the agentic-retrieval spec commit; bump on next reconciliation)
 >
 > **What this is:** the single source of truth for "what's live, what's next, what's blocked." Read this before any feature work, schema change, AI function add, deployment change, or new spec/plan. Static framing (KUD+, vision, architecture rationale) lives in [`CLAUDE.md`](../CLAUDE.md) and [`docs/superpowers/README.md`](./superpowers/README.md); this file is the volatile snapshot that sits in front of them.
 >
@@ -103,9 +103,11 @@ Tables defined in [`lib/db/schema.ts`](../lib/db/schema.ts):
 
 **Faculty trial period.** The trial period started with the M-trial prototype and continues now across CourseCapture + Explore + Program. The point hasn't changed: confirm that the analysis is good enough to be useful before building the rest of Phase 1.
 
-**Reference compression in production** (shipped 2026-05-25, today's most recent feature). Watching whether `gpt-5.4`'s 272k input cap holds for 2–3 more course captures with compression on. If 1+ more faculty hit the wall *after* compression, escalate to the two-tier digest + agentic retrieval design captured in the "Future directions" section of the reference-compression plan.
+**CourseCapture v2 — Agentic Retrieval Architecture (pending review).** Spec at [`docs/superpowers/specs/2026-05-26-coursecapture-agentic-retrieval-design.md`](./superpowers/specs/2026-05-26-coursecapture-agentic-retrieval-design.md). Replaces the "dump every material into one context" pipeline with three phases — per-material ingestion (chunk + digest + index in Weaviate), tool-using audit agent, synthesis with intrinsic provenance. Coexists with user's local agent infrastructure (shared Weaviate, per-course tenant). Pending implementation plan via `superpowers:writing-plans`. Supersedes the Phase 2 agent design ([`2026-05-22-phase2-agent-design.md`](./superpowers/plans/2026-05-22-phase2-agent-design.md)) and generalizes the reference-compression plan's two-tier future-directions.
 
-**Manning encoding backfill** (in progress). Phase A and Phase B (4 of 5) done; `capture-chat` deliberately deferred pending verification that the 4 encoded Phase B prompts produce better snapshots. If snapshot quality is unchanged or worse, Phase B becomes a revert candidate.
+**Tactical Canvas-Syllabus suppression shipped 2026-05-26** (commit `8774b92`). Canvas Syllabus pages are skipped at import when the Sheets catalog has ≥1 learning objective; three existing rows (GC 1010, GC 3800, GC 4800) retroactively marked ignored. Step ahead of the broader curation rule set in the agentic-retrieval spec.
+
+**Manning encoding backfill** (in progress). Phase A and Phase B (4 of 5) done; `capture-chat` deliberately deferred pending verification that the 4 encoded Phase B prompts produce better snapshots. If snapshot quality is unchanged or worse, Phase B becomes a revert candidate. **The capture-chat rewrite in the agentic-retrieval spec absorbs this work** — the new `capture-chat-agent.md` will carry Manning encoding from the start.
 
 ---
 
@@ -115,13 +117,14 @@ Tables defined in [`lib/db/schema.ts`](../lib/db/schema.ts):
 
 | Increment | Spec | Description |
 | --------- | ---- | ----------- |
-| **Phase 1B — Scaffolding Analysis** | [spec](./superpowers/specs/2026-05-25-scaffolding-analysis-design.md) | Depth-sequence scaffolding (introduce / practice / integrate) + productive-failure + reflection sequencing. Requires re-captured snapshots with `productive_failure_conditions` populated. |
+| **CourseCapture v2 — Agentic Retrieval** | [spec](./superpowers/specs/2026-05-26-coursecapture-agentic-retrieval-design.md) | Three-phase architecture: per-material ingestion (chunk + digest + Weaviate index), tool-using audit agent, synthesis with intrinsic provenance. Per-course Weaviate tenants on a shared local instance. `audit_mode` toggle per course (Full / Simple). Pending implementation plan. **Next move.** |
+| **Phase 1B — Scaffolding Analysis** | [spec](./superpowers/specs/2026-05-25-scaffolding-analysis-design.md) | Depth-sequence scaffolding (introduce / practice / integrate) + productive-failure + reflection sequencing. Data dependency satisfied by the agentic-retrieval architecture once snapshots are produced with it. |
 | **Phase 1C — Prerequisite Gap Analysis** | sketched in [Phase 1 umbrella spec](./superpowers/specs/2026-05-24-program-coverage-views-spec.md) | For each captured course, compare its `incoming_expectations` against captured snapshots of its declared prerequisites. |
 | **Phase 1D — Advising View** | sketched in same umbrella | Per-target recommended course sequence + gap detection. |
 
 ### Blocked
 
-- **Phase 2 conversational agents** ([plan](./superpowers/plans/2026-05-22-phase2-agent-design.md)) — materials auditor + KUD chat as standalone nanoclaw-style agents. CourseCapture has absorbed much of the materials-auditor vision; the remaining piece is the nanoclaw integration. **Blocked on:** nanoclaw API contract (endpoint, auth, request/response shape, tool-registration model).
+- **Phase 2 conversational agents** ([plan](./superpowers/plans/2026-05-22-phase2-agent-design.md)) — **superseded by the agentic-retrieval spec** above. The remaining pieces (materials auditor + KUD chat as standalone agents) are absorbed into the v2 architecture; nanoclaw block is no longer load-bearing since the v2 design uses the existing provider abstraction extended with tool-use.
 - **CareerCapture** — employer-side parallel of CourseCapture (Phase 3). Strategic, no spec yet. The current `/partners/*` magic-link survey is the partner-input precursor; CareerCapture would be the audit-conversational evolution.
 
 ### Deferred / debt
@@ -130,7 +133,7 @@ Tables defined in [`lib/db/schema.ts`](../lib/db/schema.ts):
 - **DB off Neon, backup/restore, always-on hosting.** Deferred to deployment-planning phase.
 - **Industry Partner Input Plan 2** — position ratings table + project-rating heat map. Gap between Plan 1 and the already-shipped Plan 3 synthesis.
 - **AnthropicProvider native PDF blocks.** Prerequisite for high-quality syllabus extraction; not built.
-- **Capture-chat Manning encoding.** Held pending snapshot-quality evidence from the 4 already-encoded Phase B prompts.
+- **Capture-chat Manning encoding.** Held pending snapshot-quality evidence; **absorbed into the v2 agentic-retrieval spec** — the new `capture-chat-agent.md` prompt will carry Manning encoding from the start, so this deferred decision becomes moot when v2 ships.
 - **Cross-snapshot diff view.** Phase 2 carryover.
 
 ---
