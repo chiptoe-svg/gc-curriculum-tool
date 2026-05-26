@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, jsonb, timestamp, integer, boolean, primaryKey } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, jsonb, timestamp, integer, boolean, primaryKey, index } from 'drizzle-orm/pg-core';
 import type { CaptureProfile, CaptureReadiness, CaptureReviewerStatus } from '@/lib/ai/capture/schema';
 
 export const careerTargets = pgTable('career_targets', {
@@ -91,6 +91,7 @@ export const courses = pgTable('courses', {
   skillsRequired: jsonb('skills_required').$type<string[]>().notNull().default([]),
   lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }).defaultNow().notNull(),
   builderStatus: text('builder_status').notNull().default('draft'),
+  auditMode: text('audit_mode').notNull().default('full'),  // 'full' | 'simple'
 });
 
 export const sheetSyncState = pgTable('sheet_sync_state', {
@@ -346,6 +347,7 @@ export const courseCaptureSnapshots = pgTable('course_capture_snapshots', {
   transcript: jsonb('transcript').$type<Array<{ role: 'user' | 'assistant'; content: string }>>().notNull().default([]),
   caption: text('caption'),
   captionNote: text('caption_note'),
+  transcriptSessionId: uuid('transcript_session_id'),  // nullable; populated for snapshots produced by v2 captures
   scaleVersion: text('scale_version').notNull(),
   model: text('model').notNull(),
   retiredAt: timestamp('retired_at', { withTimezone: true }),
@@ -441,3 +443,35 @@ export const captureConversations = pgTable('capture_conversations', {
   readiness: jsonb('readiness').$type<CaptureReadiness | null>(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
+
+// CourseCapture v2 — append-only conversation log keyed by session. Replaces
+// the session-overwriting behavior of capture_conversations. A session_id
+// groups all messages from one audit attempt; multiple sessions per course
+// are allowed. Snapshots link to the session that produced them via
+// course_capture_snapshots.transcript_session_id.
+export const captureMessages = pgTable('capture_messages', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  courseCode: text('course_code').notNull().references(() => courses.code, { onDelete: 'cascade' }),
+  sessionId: uuid('session_id').notNull(),
+  turnIndex: integer('turn_index').notNull(),
+  role: text('role').notNull(),  // 'system' | 'user' | 'assistant' | 'tool'
+  content: text('content'),
+  toolCalls: jsonb('tool_calls').$type<Array<{
+    id: string;
+    toolName: string;
+    args: Record<string, unknown>;
+  }>>(),
+  toolResult: jsonb('tool_result').$type<{
+    toolCallId: string;
+    result: unknown;
+  }>(),
+  citations: jsonb('citations').$type<Array<{
+    type: 'chunk' | 'instructor';
+    chunkId?: string;
+    messageId?: string;
+    excerpt: string;
+  }>>(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  sessionIdx: index('idx_capture_messages_session').on(table.courseCode, table.sessionId, table.turnIndex),
+}));
