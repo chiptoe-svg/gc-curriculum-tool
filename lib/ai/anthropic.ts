@@ -1,6 +1,12 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { ToolUseBlock } from '@anthropic-ai/sdk/resources';
 import type { AIProvider, CompletionTelemetry, TranscribeDocumentArgs, TranscribeDocumentResult } from './provider';
+// v6 Vercel AI SDK: structured output with tools uses generateText + Output.object, not generateObject.
+// tool() in v6 uses `inputSchema` (not `parameters`), matching our ToolDefinition shape directly.
+// jsonSchema() wraps a plain JSON Schema object into the SDK's Schema type for Output.object.
+import { generateText, tool as aiTool, Output, stepCountIs, jsonSchema as aiJsonSchema } from 'ai';
+import { anthropic as aiAnthropic } from '@ai-sdk/anthropic';
+import type { ToolDefinition, Message, CompleteWithToolsResult, ToolCall } from './tool-use-types';
 
 // USD per 1M tokens. Update from https://docs.anthropic.com/en/docs/about-claude/models
 const MODEL_PRICING: Record<string, { input: number; output: number }> = {
@@ -133,5 +139,106 @@ export class AnthropicProvider implements AIProvider {
       toCents((outputTokens / 1_000_000) * pricing.output);
 
     return { text, costUsdCents, truncated: false };
+  }
+
+  async completeWithTools<T>(args: {
+    systemPrompt: string;
+    messages: Message[];
+    tools: ToolDefinition[];
+    schemaName: string;
+    jsonSchema: object;
+    validate: (raw: unknown) => T;
+    maxToolCalls?: number;
+  }): Promise<CompleteWithToolsResult<T>> {
+    if (!process.env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY not set');
+    const start = Date.now();
+
+    // Convert our ToolDefinition[] into the Vercel AI SDK v6 tool shape.
+    // v6: tool() uses `inputSchema` (not `parameters`), which matches our ToolDefinition directly.
+    // Cast to Record<string, never> to satisfy the ToolSet constraint in generateText's tools parameter.
+    const sdkTools: Record<string, ReturnType<typeof aiTool<never, never>>> = {};
+    for (const t of args.tools) {
+      sdkTools[t.name] = aiTool({
+        description: t.description,
+        inputSchema: t.inputSchema as never,
+        execute: t.execute as never,
+      });
+    }
+
+    // Convert our Message[] into the SDK's ModelMessage shape.
+    // v6: tool-call content uses `input` key (not `args`); tool-result uses `output` wrapped in { type, value }.
+    const sdkMessages = args.messages.map(m => {
+      if (m.role === 'tool') {
+        return {
+          role: 'tool' as const,
+          content: [{
+            type: 'tool-result' as const,
+            toolCallId: m.toolCallId,
+            toolName: 'unknown',
+            // Cast to JSONValue: tool results from our interface are `unknown`; the SDK requires JSONValue.
+            output: { type: 'json' as const, value: m.result as import('ai').JSONValue },
+          }],
+        };
+      }
+      if (m.role === 'assistant' && m.toolCalls?.length) {
+        return {
+          role: 'assistant' as const,
+          content: [
+            ...(m.content ? [{ type: 'text' as const, text: m.content }] : []),
+            ...m.toolCalls.map(tc => ({
+              type: 'tool-call' as const,
+              toolCallId: tc.id,
+              toolName: tc.toolName,
+              input: tc.args,
+            })),
+          ],
+        };
+      }
+      return { role: m.role as 'system' | 'user' | 'assistant', content: m.content };
+    });
+
+    // v6: Use generateText + Output.object (not generateObject) for structured output with tools.
+    // Output.object accepts a Zod schema; the result is in `result.output`.
+    // stopWhen: use maxToolCalls+1 steps (extra step for the structured output generation itself).
+    const { output, usage, toolCalls } = await generateText({
+      model: aiAnthropic(this.model),
+      system: args.systemPrompt,
+      messages: sdkMessages,
+      tools: sdkTools,
+      // v6: Output.object requires a Schema (not a plain object); aiJsonSchema() wraps the raw JSON schema.
+      output: Output.object({ schema: aiJsonSchema(args.jsonSchema as never), name: args.schemaName }),
+      // Add 1 to maxToolCalls to account for the structured output step itself (v6 requirement).
+      stopWhen: stepCountIs((args.maxToolCalls ?? 4) + 1),
+    });
+
+    const value = args.validate(output);
+
+    // v6: StaticToolCall has `toolCallId`, `toolName`, and `input` (not `args`).
+    const toolCallsUsed: ToolCall[] = (toolCalls ?? []).map(tc => ({
+      id: tc.toolCallId,
+      toolName: tc.toolName,
+      args: (tc as unknown as { input: Record<string, unknown> }).input ?? {},
+    }));
+
+    // v6: LanguageModelUsage uses `inputTokens`/`outputTokens`/`inputTokenDetails.cacheReadTokens`
+    // (not `promptTokens`/`completionTokens`/`cachedPromptTokens` from the plan's v4 reference).
+    const inputTokens = usage?.inputTokens ?? 0;
+    const outputTokens = usage?.outputTokens ?? 0;
+    const cachedTokens = usage?.inputTokenDetails?.cacheReadTokens ?? 0;
+    const uncachedPromptTokens = Math.max(0, inputTokens - cachedTokens);
+
+    return {
+      kind: 'response',
+      value,
+      toolCallsUsed,
+      telemetry: {
+        // Stage 1: cost estimation is a placeholder — Stage 3 will wire per-token pricing.
+        costUsdCents: 0,
+        durationMs: Date.now() - start,
+        cachedTokens,
+        uncachedPromptTokens,
+        completionTokens: outputTokens,
+      },
+    };
   }
 }
