@@ -151,10 +151,15 @@ function buildProvider(modelOverride: string | undefined): AIProvider {
     // CAMPUS_LLM_DEFAULT_MODEL always wins for campus — the DB stores OpenAI
     // model names (e.g. gpt-5.4-mini) which are meaningless on the campus
     // endpoint. When set, prefer it over any modelOverride from the DB.
+    // Default to qwen3.6-35b-a3b-fp8: MoE with 3B active params, ~2s and ~180
+    // tok/s on a 400-token output. GLM-5.1 was the initial choice but its
+    // 4 tok/s throughput makes any hot-path call unworkable on the shared
+    // cluster; pass it explicitly via per-call model override when reasoning
+    // depth justifies the latency.
     const model =
       process.env.CAMPUS_LLM_DEFAULT_MODEL?.trim() ??
       modelOverride ??
-      'glm-5.1-fp8';
+      'qwen3.6-35b-a3b-fp8';
     return new CampusProvider(model, baseURL, apiKey);
   }
   throw new Error(`Unknown AI provider: ${which}`);

@@ -8,10 +8,12 @@ import type { ToolDefinition, Message, CompleteWithToolsResult, ToolCall } from 
  * Campus-hosted LLM provider (Clemson RCD). Speaks the OpenAI-compatible
  * chat-completions + tool-use protocol exposed by the RCD vLLM/SGLang
  * deployment at https://llm.rcd.clemson.edu/v1. The default model is
- * glm-5.1-fp8 (754B, native tool-calling, 202k context). Set
- * CAMPUS_LLM_DEFAULT_MODEL or pass a per-call model override to use
- * deepseek-v4-pro (1M context), qwen3.6-* variants, or any other model
- * the endpoint exposes via /v1/models.
+ * qwen3.6-35b-a3b-fp8 — MoE with 3B active params, ~180 tok/s on the
+ * shared cluster, the right speed/quality balance for hot-path calls.
+ * Set CAMPUS_LLM_DEFAULT_MODEL or pass a per-call model override to use
+ * glm-5.1-fp8 (754B, deepest reasoning but ~4 tok/s), deepseek-v4-pro
+ * (1M context, ~15 tok/s), or any other model the endpoint exposes via
+ * /v1/models.
  *
  * Cost is reported as 0 — campus inference is free at the point of use,
  * but concurrency is shared (GLM=128, DeepSeek=48). Don't blast it with

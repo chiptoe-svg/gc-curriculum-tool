@@ -106,14 +106,14 @@ describe('buildProvider with AI_PROVIDER=campus', () => {
     expect(p.model).toBe('deepseek-v4-pro');
   });
 
-  it('defaults the model to glm-5.1-fp8 when CAMPUS_LLM_DEFAULT_MODEL is unset', async () => {
+  it('defaults the model to qwen3.6-35b-a3b-fp8 when CAMPUS_LLM_DEFAULT_MODEL is unset', async () => {
     process.env.AI_PROVIDER = 'campus';
     process.env.CAMPUS_LLM_BASE_URL = 'https://llm.example.test/v1';
     process.env.CAMPUS_LLM_API_KEY = 'k';
     delete process.env.CAMPUS_LLM_DEFAULT_MODEL;
     const { getProvider } = await import('@/lib/ai/provider');
     const p = getProvider();
-    expect(p.model).toBe('glm-5.1-fp8');
+    expect(p.model).toBe('qwen3.6-35b-a3b-fp8');
   });
 
   it('throws when CAMPUS_LLM_BASE_URL is missing', async () => {
