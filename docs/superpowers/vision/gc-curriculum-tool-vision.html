@@ -735,13 +735,16 @@
   .prototype-cta-text small {
     display: block;
     font-family: var(--serif);
-    font-size: 13.5px;
-    line-height: 1.5;
-    color: #a8a59c;
+    font-size: 14px;
+    line-height: 1.55;
+    color: #c4c1b7;
     font-weight: 400;
-    margin-top: 8px;
-    font-style: italic;
+    margin-top: 10px;
     max-width: 580px;
+  }
+  .prototype-cta-text small em {
+    color: #a8a59c;
+    font-style: italic;
   }
   .prototype-cta-text small a {
     color: var(--rail-active);
@@ -830,7 +833,7 @@
 
   <nav class="rail-nav">
     <div class="nav-group-label">Companion</div>
-    <a class="nav-link" href="../../../background.html">KUD+ Background</a>
+    <a class="nav-link" href="../../background.html">KUD+ Background</a>
     <div class="nav-group-label">Sections</div>
     <a class="nav-link" href="#what">What we're building</a>
     <a class="nav-link" href="#questions">The core questions</a>
@@ -884,16 +887,16 @@
 <div class="prototype-cta">
   <div class="prototype-cta-text">
     Want to see the analysis in action?
-    <small>The <strong>active build</strong> — per-course audit at <code>/capture/&lt;course-code&gt;</code> (CourseCapture), prescriptive alignment + what-if scenarios at <code>/explore/&lt;course-code&gt;</code>, and the program-level coverage matrix at <code>/program</code> — is faculty-internal on the Clemson LAN, gated by HTTP Basic Auth, running locally against department data and a local LLM. It is not publicly accessible by design. For a quick orientation without LAN access, see the <a href="../../executive-brief.html">executive brief</a>. The <strong>publicly-accessible interactive demo</strong> is the original three-tool M-trial prototype — Course Builder · Prereq Analyzer · Career Target Alignment — which exercises the same analysis quality on real GC courses and remains live on Vercel. The CourseCapture + Explore + Program pipeline supersedes it for new captures, but the M-trial flow is preserved. <em>(Catalog values for the active tool come from a <a href="https://docs.google.com/spreadsheets/d/12aPhgrIlhDYjKD0-Gt97glf1d9fKtwKmL4FwM8iTz7Q/edit?gid=1024237655#gid=1024237655" target="_blank" rel="noopener noreferrer">shared course sheet</a>, one tab per course; the audit combines those values with Canvas + uploads + linked Google Docs/Sheets/Slides + Drive PDFs + voice/chat; the confirmed snapshot feeds the program-level views.)</em></small>
+    <small>The live tool runs locally on the Clemson LAN — per-course audit at <code>/capture/&lt;code&gt;</code>, alignment + what-if scenarios at <code>/explore/&lt;code&gt;</code>, and the program-level coverage matrix at <code>/program</code>. It is gated by HTTP Basic Auth and reachable only from inside the Clemson network. For a quick orientation without LAN access, see the <a href="../../executive-brief.html">executive brief</a>. <em>(Catalog values come from a <a href="https://docs.google.com/spreadsheets/d/12aPhgrIlhDYjKD0-Gt97glf1d9fKtwKmL4FwM8iTz7Q/edit?gid=1024237655#gid=1024237655" target="_blank" rel="noopener noreferrer">shared course sheet</a>; the audit combines those with Canvas + uploads + linked Docs/Sheets/Slides + Drive PDFs + voice/chat; the confirmed snapshot feeds the program-level views.)</em></small>
   </div>
-  <a class="prototype-cta-link" href="https://gc-curriculum-tool.vercel.app/preview/4QcseN0pvlpd35gb" target="_blank" rel="noopener noreferrer">
-    Open the M-trial demo &rarr;
+  <a class="prototype-cta-link" href="http://130.127.162.180:3000/" target="_blank" rel="noopener noreferrer">
+    Open the live tool &rarr;
   </a>
 </div>
 
 <div class="callout note" style="margin: 28px 0;">
   <div class="callout-title">Academic companion</div>
-  <p>For the theoretical justification behind the KUD+ framework — what it measures, why it's structured as it is, and how it's implemented at the course and career-path levels — see the <a href="../../../background.html">Background document</a>. The vision below is the high-level picture; the Background is the academic case.</p>
+  <p>For the theoretical justification behind the KUD+ framework — what it measures, why it's structured as it is, and how it's implemented at the course and career-path levels — see the <a href="../../background.html">Background document</a>. The vision below is the high-level picture; the Background is the academic case.</p>
 </div>
 
 <section id="what">
@@ -1171,16 +1174,17 @@
 
   <p>
     <strong>2. Which constrained-choice slots are sub-optimal for the program's
-    goals.</strong> The STAT requirement illustrates this. Depending on catalog
-    year, the slot may include multiple approved options — such as STAT 2220,
-    STAT 2300, STAT 3090, or STAT 3300. The options vary significantly in
-    quantitative depth; higher-level options develop the analytical capability
-    Brand Strategy employers name explicitly and that AI Workflow requires at the
-    Understand level. The tool should import the official catalog-year option set
-    rather than hard-code comparisons: which option best serves each career target
-    will depend on actual course content captures, not assumed depth levels. The
-    same logic applies to the Econ choice, the Business Communication choice, and
-    every other constrained slot in the plan. <span class="status-tag status-illustrative">Illustrative</span>
+    goals.</strong> The Business Communication requirement illustrates this.
+    Depending on catalog year, the slot may include several approved options
+    whose framings differ substantially — courses oriented toward client
+    correspondence, technical documentation, or presentation design develop
+    different audience-and-purpose judgment. Which option best serves a
+    Brand-Strategy track is not the same as which best serves a Production
+    or Sales-Engineering track. The tool should import the official catalog-year
+    option set rather than hard-code comparisons: which option best serves each
+    career target will depend on actual course content captures, not assumed
+    depth levels. The same logic applies to the Econ choice, the Statistics
+    choice, and every other constrained slot in the plan. <span class="status-tag status-illustrative">Illustrative</span>
   </p>
 
   <p>
@@ -1255,10 +1259,10 @@
     KUD+ scores are <em>course-opportunity scores</em> — what the course is
     designed and evidenced to develop. They become <em>student-learning claims</em>
     only when linked to assessed student work; the
-    <a class="inline-link" href="../../../graduate-outcome-validation.html">graduate-outcome-validation work</a>
+    <a class="inline-link" href="../../graduate-outcome-validation.html">graduate-outcome-validation work</a>
     is what bridges that gap. The full scale definitions, the evidence rule, and
     the theoretical grounding behind the extension are documented in the
-    <a class="inline-link" href="../../../background.html">Background document</a>.
+    <a class="inline-link" href="../../background.html">Background document</a>.
   </p>
   <p>
     <strong>Why not Bloom's Taxonomy?</strong> Bloom's six-level cognitive
@@ -1291,7 +1295,7 @@
   </p>
   <p>
     <strong>Further reading:</strong> the
-    <a class="inline-link" href="../../../background.html">KUD+ Background document</a>
+    <a class="inline-link" href="../../background.html">KUD+ Background document</a>
     is the academic companion to this vision; ASCD's
     <em>Understanding by Design</em> white paper —
     <a href="https://files.ascd.org/staticfiles/ascd/pdf/siteASCD/publications/UbD_WhitePaper0312.pdf"
@@ -1876,8 +1880,8 @@
 
     <div style="margin-top: 14px; padding: 10px 14px; background: var(--bg-alt); border: 1px solid var(--border); border-radius: 4px; font-size: 12.5px; color: var(--text-muted);">
       Try the real thing:
-      <a href="https://gc-curriculum-tool.vercel.app/preview/4QcseN0pvlpd35gb">open the live Prereq Analyzer prototype</a>
-      — the actual working tool, running on GC course data.
+      <a href="http://130.127.162.180:3000/">open the live tool</a>
+      — running locally on the Clemson LAN (Basic Auth, LAN-only).
     </div>
 
     <div class="heatmap" style="margin-top: 14px;">
@@ -2325,7 +2329,7 @@
     pages, discussions, quizzes, file attachments, linked Google Docs/Slides/Sheets,
     Drive PDFs, YouTube captions. The full current ingestion surface — what is
     supported, what is suppressed, and what is not yet supported — is documented in
-    the <a class="inline-link" href="../../../background.html">Background document</a>.</li>
+    the <a class="inline-link" href="../../background.html">Background document</a>.</li>
     <li><strong>Direct uploads + catalog values</strong> (supplementary) — uploaded
     PDF/DOCX/PPTX and other file formats; learning objectives, skills, and projects
     from the shared catalog sheet (these suppress Canvas Syllabus body when present).</li>
@@ -2359,7 +2363,7 @@
   </p>
   <p><strong>The current workflow:</strong></p>
   <ul>
-    <li><code>/capture/&lt;code&gt;</code> — <strong>CourseCapture.</strong> <span class="status-tag status-live">Live (faculty trial)</span> The instructor-facing audit conversation that produces a Course Outcome Profile. Pulls catalog values, Canvas sources, linked materials, and direct uploads. Full ingestion surface documented in the <a class="inline-link" href="../../../background.html">Background document</a>. Voice input via Whisper. Snapshots are immutable and versioned; the draft remains mutable.</li>
+    <li><code>/capture/&lt;code&gt;</code> — <strong>CourseCapture.</strong> <span class="status-tag status-live">Live (faculty trial)</span> The instructor-facing audit conversation that produces a Course Outcome Profile. Pulls catalog values, Canvas sources, linked materials, and direct uploads. Full ingestion surface documented in the <a class="inline-link" href="../../background.html">Background document</a>. Voice input via Whisper. Snapshots are immutable and versioned; the draft remains mutable.</li>
     <li><code>/explore/&lt;code&gt;</code> — <strong>Explore module.</strong> <span class="status-tag status-live">Live (faculty trial)</span> Alignment analyses (custom target / downstream target) and what-if scenarios run against any saved snapshot. Custom-target authoring; downstream-target auto-detection from captured prereq courses.</li>
     <li><code>/program</code> — <strong>Program Coverage Matrix.</strong> <span class="status-tag status-live">Live (faculty trial)</span> Confirmed snapshots × career-target sub-competencies, rendered as a depth-aware heat map with a problem-solving lens. On-demand AI scoring per cell; full rationale and evidence excerpt visible in a drawer. The coverage-matrix view from the end state, in a snapshot-grid form — the self-updating machinery and the cross-snapshot diff that would make it a true "living" view are Phase 2 work.</li>
     <li><code>/settings</code> — <strong>Per-function AI model tuning.</strong> <span class="status-tag status-live">Live (faculty trial)</span> Tier-based selection (Light / Default / Heavy) plus per-function model dropdowns sourced from the OpenAI provider's available models.</li>

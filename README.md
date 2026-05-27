@@ -12,7 +12,7 @@ Two questions drive everything:
 >
 > 📖 **[Full vision →](https://chiptoe-svg.github.io/gc-curriculum-tool/docs/superpowers/vision/gc-curriculum-tool-vision.html)** — the two questions in full, the 3-Act program structure, the Problem-Solver pyramid, and illustrative end-state visualizations.
 >
-> 🧪 **[Legacy M-trial prototype →](https://gc-curriculum-tool.vercel.app/preview/4QcseN0pvlpd35gb)** — the public-accessible original three-tool slice (Course Builder · Prereq Analyzer · Career-Target Alignment). The active build (CourseCapture · Explore · Program) is faculty-internal on the Clemson LAN.
+> 🧪 **[Open the live tool →](http://130.127.162.180:3000/)** — CourseCapture · Explore · Program, running locally on a Clemson LAN host (Basic Auth, reachable only from inside the Clemson network). For a quick orientation without LAN access, the [executive brief](https://chiptoe-svg.github.io/gc-curriculum-tool/docs/executive-brief.html) is the right starting point.
 
 ## Status
 
