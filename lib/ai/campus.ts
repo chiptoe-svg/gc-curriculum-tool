@@ -109,13 +109,15 @@ export class CampusProvider implements AIProvider {
     // json_object call for the structured response. Same pattern as `complete()`.
 
     // --- Phase 1: tool-call loop ---
-    // Convert schema into OpenAI tool format.
+    // Convert schema into OpenAI tool format. `parameters` must be a JSON
+    // Schema object (Record<string, unknown>); the ToolDefinition's
+    // `inputSchema` is a Zod schema, so cast to satisfy the SDK type.
     const oaiTools: ChatCompletionTool[] = args.tools.map(t => ({
       type: 'function',
       function: {
         name: t.name,
         description: t.description,
-        parameters: t.inputSchema,
+        parameters: t.inputSchema as unknown as Record<string, unknown>,
       },
     }));
 
@@ -171,8 +173,11 @@ export class CampusProvider implements AIProvider {
       const toolCalls = msg.tool_calls ?? [];
       if (toolCalls.length === 0) break; // model stopped calling tools
 
-      // Execute each tool call and append results.
+      // Execute each tool call and append results. ChatCompletionMessageToolCall
+      // is a discriminated union (function / custom in the v5 SDK); narrow on
+      // type === 'function' so we can access the .function payload.
       for (const tc of toolCalls) {
+        if (tc.type !== 'function') continue;
         let result: unknown;
         const toolDef = args.tools.find(t => t.name === tc.function.name);
         if (toolDef) {
