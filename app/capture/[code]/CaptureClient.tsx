@@ -6,6 +6,7 @@ import { CaptureChatPanel, type ChatMessage } from './CaptureChatPanel';
 import { ProfileReviewPanel } from './ProfileReviewPanel';
 import { MaterialsPanel, type CaptureMaterial, type CourseCatalogView } from './MaterialsPanel';
 import { SnapshotHistoryPanel } from './SnapshotHistoryPanel';
+import { IngestionCheckIn } from './IngestionCheckIn';
 
 interface Props {
   course: CourseCatalogView;
@@ -205,6 +206,7 @@ export function CaptureClient({
               </button>
             </div>
           )}
+          <IngestionCheckIn courseCode={courseCode} slug={slug} />
           <CaptureChatPanel
             courseCode={courseCode}
             slug={slug}
