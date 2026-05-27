@@ -26,6 +26,7 @@ export const AI_FUNCTION_IDS = [
   'decompose-prereq-gap',
   'material-digest',
   'chunk-contextualize',
+  'ingestion-checkin',
 ] as const;
 export type AIFunctionId = (typeof AI_FUNCTION_IDS)[number];
 
@@ -86,6 +87,10 @@ export const DEFAULT_TIERS: Record<AIFunctionId, Exclude<ModelTier, 'custom'>> =
   // content (Anthropic contextual-retrieval pattern). Light tier is correct —
   // one short summarization call per chunk; promote if output quality is poor.
   'chunk-contextualize': 'light',
+  // Light pre-audit curation review. One call per page open; either silent or
+  // emits a short heads-up panel about missing core sources, stacked
+  // auto-set-asides, kept high-FERPA risk, or near-empty digest clusters.
+  'ingestion-checkin': 'light',
 };
 
 export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
@@ -99,6 +104,7 @@ export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
   'decompose-prereq-gap': 'Decompose prereq gap into competencies (copy-as-KUD)',
   'material-digest': 'Material digest (every material, audit at-rest context)',
   'chunk-contextualize': 'Chunk contextualizer (per-chunk position blurb)',
+  'ingestion-checkin': 'Ingestion check-in (materials curation review)',
 };
 
 export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
@@ -112,6 +118,7 @@ export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
   'decompose-prereq-gap': 'Decomposing one free-form prereq-gap finding into a structured list of competencies with K/U/D depths, for the copy-as-KUD button in the review panel.',
   'material-digest': 'Per-material structured digest, generated at extraction for every material. Loaded into the audit agent\'s at-rest context.',
   'chunk-contextualize': 'One short positional blurb per detail chunk, prepended before embedding so the embedding encodes position + content.',
+  'ingestion-checkin': 'Reviews the curated materials state before audit chat begins and emits either a short heads-up panel or silence.',
 };
 
 interface CachedSetting {
