@@ -50,3 +50,7 @@ drizzle/meta/
 
 # Local one-off scripts (provider smoke tests, scratch validation, etc.)
 /scripts/_one-off/
+
+# Compiled bun --compile binaries (large, regenerated from .ts source)
+/scripts/nanoclaw-bridge/echo-shim
+/scripts/nanoclaw-bridge/coursecapture-mcp-shim

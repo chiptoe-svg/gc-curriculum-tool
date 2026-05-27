@@ -23,6 +23,7 @@
     "@ai-sdk/openai-compatible": "^2.0.48",
     "@anthropic-ai/sdk": "^0.97.1",
     "@base-ui/react": "^1.4.1",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@neondatabase/serverless": "^1.1.0",
     "@react-email/components": "^1.0.12",
     "@vercel/blob": "^2.4.0",
