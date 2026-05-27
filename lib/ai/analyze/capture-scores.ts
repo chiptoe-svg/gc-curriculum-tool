@@ -9,6 +9,27 @@ import {
 import type { ChatMessage, CaptureChatContext } from '@/lib/ai/analyze/capture-chat';
 import { buildCaptureChatUserMessage } from '@/lib/ai/analyze/capture-chat';
 
+// ---------------------------------------------------------------------------
+// Shared sub-schema fragments for v2 source attribution (optional fields).
+// Inlined at each finding site rather than using $defs so the object remains
+// compatible with strict-mode structured-output providers that flatten refs.
+// ---------------------------------------------------------------------------
+const SOURCE_ENUM = { enum: ['instructor', 'materials', 'inferred'] } as const;
+const CITATIONS_ARRAY = {
+  type: 'array',
+  items: {
+    type: 'object',
+    additionalProperties: false,
+    required: ['type', 'excerpt'],
+    properties: {
+      type: { enum: ['chunk', 'instructor'] },
+      chunkId: { type: 'string' },
+      messageId: { type: 'string' },
+      excerpt: { type: 'string', maxLength: 200 },
+    },
+  },
+} as const;
+
 /**
  * JSON Schema (Draft 2020-12) for OpenAI strict structured-output.
  *
@@ -61,6 +82,8 @@ const captureProfileJsonSchema = {
           evidence_u: { type: ['string', 'null'] },
           evidence_d: { type: ['string', 'null'] },
           rationale: { type: 'string', minLength: 1 },
+          source: SOURCE_ENUM,
+          citations: CITATIONS_ARRAY,
         },
       },
     },
@@ -85,6 +108,8 @@ const captureProfileJsonSchema = {
           },
           evidenced_by: { type: 'array', minItems: 1, items: { type: 'string' } },
           confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
+          source: SOURCE_ENUM,
+          citations: CITATIONS_ARRAY,
         },
       },
     },
@@ -104,6 +129,8 @@ const captureProfileJsonSchema = {
         dimensional_patterns: { type: 'array', maxItems: 4, items: { type: 'string' } },
         catalog_vs_evidence: { type: 'array', maxItems: 4, items: { type: 'string' } },
         foundationals_glance: { type: 'string', minLength: 1 },
+        source: SOURCE_ENUM,
+        citations: CITATIONS_ARRAY,
       },
     },
     audit_notes: {
@@ -147,6 +174,8 @@ const captureProfileJsonSchema = {
             notes: { type: 'array', items: { type: 'string' } },
           },
         },
+        source: SOURCE_ENUM,
+        citations: CITATIONS_ARRAY,
       },
     },
     revised_objectives_draft: {
