@@ -106,9 +106,20 @@ export function createWeaviateVectorStore(): VectorStore {
       const client = await getWeaviateClient();
       for (const cls of [MATERIAL_CHUNK_CLASS, MATERIAL_SECTION_CLASS]) {
         const col = client.collections.use(cls).withTenant(tenant);
-        await col.data.deleteMany(
-          col.filter.byProperty('materialId').equal(materialId),
-        );
+        try {
+          await col.data.deleteMany(
+            col.filter.byProperty('materialId').equal(materialId),
+          );
+        } catch (e) {
+          // Tenant doesn't exist yet (this is the first ingest for the
+          // course, or the tenant was dropped via /admin/v2-reset). That's
+          // the same outcome as deleting from an empty tenant — no-op.
+          const msg = e instanceof Error ? e.message : String(e);
+          if (msg.includes('tenant not found') || msg.includes('does not exist')) {
+            continue;
+          }
+          throw e;
+        }
       }
     },
 

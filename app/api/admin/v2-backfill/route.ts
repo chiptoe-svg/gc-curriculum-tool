@@ -59,7 +59,23 @@ export async function POST(req: Request): Promise<Response> {
         vectorStore,
         courseHasLearningObjectives: course.learningObjectives.length > 0,
       });
-      results.push({ id: m.id, fileName: m.fileName, status: 'ok' });
+      // finalizeExtraction catches its own pipeline errors and sets
+      // indexing_status='failed' instead of throwing. Re-read the
+      // canonical status from the DB to know whether the material
+      // actually indexed.
+      const [updated] = await db
+        .select({ status: courseMaterials.indexingStatus })
+        .from(courseMaterials)
+        .where(eq(courseMaterials.id, m.id))
+        .limit(1);
+      const actual = updated?.status ?? 'unknown';
+      if (actual === 'ready') {
+        results.push({ id: m.id, fileName: m.fileName, status: 'ok' });
+      } else if (actual === 'skipped') {
+        results.push({ id: m.id, fileName: m.fileName, status: 'skipped' });
+      } else {
+        results.push({ id: m.id, fileName: m.fileName, status: 'failed', error: `indexing_status=${actual} after finalizeExtraction (see server log)` });
+      }
     } catch (e) {
       results.push({ id: m.id, fileName: m.fileName, status: 'failed', error: String(e) });
     }
