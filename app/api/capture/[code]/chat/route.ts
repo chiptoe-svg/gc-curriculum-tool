@@ -8,6 +8,8 @@ import { getLatestSnapshotByCourse } from '@/lib/db/capture-snapshots-queries';
 import { captureChatTurn, ChatMessage, CaptureChatContext } from '@/lib/ai/analyze/capture-chat';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { hashIp } from '@/lib/ip-hash';
+import { runAuditAgent } from '@/lib/ai/agent/audit-agent';
+import { startNewSession } from '@/lib/db/capture-messages-queries';
 
 // Parse "GC 1040, GC 1020" / "GC 1040 or GC 1020" / etc. into a list of
 // course codes. Matches the catalog convention from lib/sheets/fetchSheet.ts.
@@ -58,6 +60,43 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         typeof (m as { content?: unknown }).content === 'string',
     )
     .map(m => ({ role: m.role, content: m.content }));
+
+  const v2Enabled =
+    process.env.COURSECAPTURE_V2_INGESTION === '1' &&
+    (course.auditMode === 'full' || course.auditMode === 'simple');
+
+  if (v2Enabled) {
+    const sessionId =
+      typeof body.sessionId === 'string' && body.sessionId.length > 0
+        ? body.sessionId
+        : startNewSession();
+
+    const lastUserMessage = history.filter(m => m.role === 'user').slice(-1)[0]?.content;
+    if (!lastUserMessage) {
+      return NextResponse.json({ error: 'no user message in history' }, { status: 400 });
+    }
+
+    try {
+      const { response, toolCallsUsed } = await runAuditAgent({
+        sessionId,
+        courseCode,
+        userMessage: lastUserMessage,
+        auditMode: course.auditMode as 'full' | 'simple',
+      });
+      return NextResponse.json({
+        sessionId,
+        reply: response.finding + '\n\n' + response.question,
+        finding: response.finding,
+        question: response.question,
+        citations: response.citations,
+        readiness: response.readiness,
+        toolCallsUsed,
+      });
+    } catch (err) {
+      console.error(`POST /api/capture/${courseCode}/chat (v2) failed`, err);
+      return NextResponse.json({ error: 'agent loop failed' }, { status: 500 });
+    }
+  }
 
   const [builderProfile, materials, priorCapture] = await Promise.all([
     getCourseProfile(courseCode),
