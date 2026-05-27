@@ -3,11 +3,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { VoiceRecorder } from '@/components/VoiceRecorder';
 import type { CaptureReadiness } from '@/lib/ai/capture/schema';
+import type { ChatMessage } from '@/lib/ai/analyze/capture-chat';
 
-export interface ChatMessage {
-  role: 'user' | 'assistant';
-  content: string;
-}
+// Re-export so existing imports from this module keep working.
+export type { ChatMessage } from '@/lib/ai/analyze/capture-chat';
 
 function ReadinessStrip({ readiness }: { readiness: CaptureReadiness }) {
   const tone =
@@ -83,6 +82,10 @@ export function CaptureChatPanel({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [readiness, setReadiness] = useState<CaptureReadiness | null>(initialReadiness ?? null);
+  // Set on the first v2 turn that responds with a sessionId; threaded back on
+  // every subsequent request so the audit-agent loop can stitch the
+  // conversation together server-side. v1 responses leave this null.
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const transcriptRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -98,7 +101,12 @@ export function CaptureChatPanel({
         {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ messages: next }),
+          body: JSON.stringify({
+            messages: next,
+            // Only sent when we already have a v2 session in flight. v1 path
+            // ignores this; v2 path uses it to look up tool-call history.
+            ...(sessionId ? { sessionId } : {}),
+          }),
         },
       );
       const json = await res.json();
@@ -106,8 +114,28 @@ export function CaptureChatPanel({
         setError((json as { error?: string }).error ?? `Chat failed (${res.status})`);
         return;
       }
-      const { reply, readiness: nextReadiness } = json as { reply: string; readiness?: CaptureReadiness };
-      const newMessages = [...next, { role: 'assistant' as const, content: reply }];
+      const {
+        reply,
+        readiness: nextReadiness,
+        sessionId: nextSessionId,
+        citations: nextCitations,
+      } = json as {
+        reply: string;
+        readiness?: CaptureReadiness;
+        sessionId?: string;
+        citations?: ChatMessage['citations'];
+      };
+      if (typeof nextSessionId === 'string' && nextSessionId.length > 0) {
+        setSessionId(nextSessionId);
+      }
+      const assistantMessage: ChatMessage = {
+        role: 'assistant',
+        content: typeof reply === 'string' ? reply : '',
+        ...(Array.isArray(nextCitations) && nextCitations.length > 0
+          ? { citations: nextCitations }
+          : {}),
+      };
+      const newMessages = [...next, assistantMessage];
       onMessagesChange(newMessages);
       if (nextReadiness) setReadiness(nextReadiness);
       // Autosave after every successful turn so a closed tab / failed
@@ -184,6 +212,34 @@ export function CaptureChatPanel({
                 {m.role === 'user' ? 'You' : 'Auditor'}
               </p>
               <p className="mt-1 whitespace-pre-wrap text-sm leading-snug">{m.content}</p>
+              {m.role === 'assistant' && m.citations && m.citations.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {m.citations.map((c, ci) => {
+                    const idTail = c.chunkId
+                      ? ` (chunk ${c.chunkId.slice(0, 8)}…)`
+                      : c.messageId
+                      ? ` (msg ${c.messageId.slice(0, 8)}…)`
+                      : '';
+                    return (
+                      <span
+                        key={ci}
+                        title={`${c.excerpt}${idTail}`}
+                        className="inline-flex max-w-full items-center gap-1.5 rounded border bg-background px-1.5 py-0.5 text-[10.5px] font-mono leading-none text-muted-foreground cursor-help"
+                      >
+                        <span
+                          className={
+                            'font-semibold '
+                            + (c.type === 'chunk' ? 'text-teal-700' : 'text-amber-700')
+                          }
+                        >
+                          {c.type === 'chunk' ? 'CH' : 'IN'}
+                        </span>
+                        <span className="max-w-[280px] truncate">{c.excerpt}</span>
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           ))
         )}

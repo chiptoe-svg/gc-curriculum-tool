@@ -20,9 +20,22 @@ import {
  * context. If a model rejects on size, we'll see it surface and trim then.
  */
 
+export interface ChatMessageCitation {
+  type: 'chunk' | 'instructor';
+  chunkId?: string;
+  messageId?: string;
+  excerpt: string;
+}
+
 export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
+  /**
+   * Populated only on v2 (audit-agent) assistant turns. v1 responses don't
+   * include citations and leave this undefined. UI-only data — server-side
+   * captureChatTurn ignores it (it only reads role + content).
+   */
+  citations?: ChatMessageCitation[];
 }
 
 export interface CaptureChatMaterial {
