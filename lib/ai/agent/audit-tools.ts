@@ -49,13 +49,23 @@ export function buildAuditTools(courseCode: string): ToolDefinition[] {
       const a = args as { courseCode: string; materialId: string; query: string; k?: number };
       const store = createVectorStore();
       const queryVector = await embedText(a.query);
-      const chunks = await store.hybridSearch(tenant, {
-        queryVector,
-        queryText: a.query,
-        k: a.k ?? 3,
-        materialId: a.materialId,
-      });
-      return { chunks };
+      try {
+        const chunks = await store.hybridSearch(tenant, {
+          queryVector,
+          queryText: a.query,
+          k: a.k ?? 3,
+          materialId: a.materialId,
+        });
+        return { chunks };
+      } catch (e) {
+        // Tenant doesn't exist yet (no v2-indexed materials) — return empty results
+        // rather than throwing so the agent can still produce a coherent response.
+        const msg = e instanceof Error ? e.message : String(e);
+        if (msg.includes('tenant not found') || msg.includes('tenant')) {
+          return { chunks: [], note: 'No v2-indexed chunks available for this course yet.' };
+        }
+        throw e;
+      }
     },
   };
 
@@ -72,12 +82,22 @@ export function buildAuditTools(courseCode: string): ToolDefinition[] {
       const a = args as { courseCode: string; query: string; k?: number };
       const store = createVectorStore();
       const queryVector = await embedText(a.query);
-      const chunks = await store.hybridSearch(tenant, {
-        queryVector,
-        queryText: a.query,
-        k: a.k ?? 5,
-      });
-      return { chunks };
+      try {
+        const chunks = await store.hybridSearch(tenant, {
+          queryVector,
+          queryText: a.query,
+          k: a.k ?? 5,
+        });
+        return { chunks };
+      } catch (e) {
+        // Tenant doesn't exist yet (no v2-indexed materials) — return empty results
+        // rather than throwing so the agent can still produce a coherent response.
+        const msg = e instanceof Error ? e.message : String(e);
+        if (msg.includes('tenant not found') || msg.includes('tenant')) {
+          return { chunks: [], note: 'No v2-indexed chunks available for this course yet.' };
+        }
+        throw e;
+      }
     },
   };
 
