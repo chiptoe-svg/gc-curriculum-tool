@@ -6,6 +6,7 @@ import { isValidSlug } from '@/lib/slug';
 import { getCourseByCode } from '@/lib/db/courses-queries';
 import { updateMaterialMetadata } from '@/lib/db/course-materials-queries';
 import { finalizeExtraction } from '@/lib/capture/finalize-extraction';
+import { createVectorStore } from '@/lib/capture/vector-store';
 import { fetchCanvasFileMeta } from '@/lib/canvas/fetchCanvasCourse';
 import { extractText, SUPPORTED_MIME_TYPES, type ExtractedMimeType } from '@/lib/courses/extract-text';
 import { LEGACY_OFFICE_MIME_TYPES } from '@/lib/courses/material-extractor';
@@ -131,6 +132,8 @@ async function run(req: Request, params: Ctx['params']): Promise<Response> {
       ),
     );
 
+  const vectorStore = createVectorStore();
+
   interface Result {
     fileName: string;
     status: 'updated' | 'skipped';
@@ -191,6 +194,7 @@ async function run(req: Request, params: Ctx['params']): Promise<Response> {
         extractionMethod: extracted.method ?? 'text',
         extractedText: extracted.text,
         ...(extracted.pageCount !== undefined && extracted.pageCount !== null && { pageCount: extracted.pageCount }),
+        vectorStore,
       });
       results.push({ fileName: meta.displayName, status: 'updated' });
     } catch (e) {

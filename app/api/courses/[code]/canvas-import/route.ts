@@ -4,6 +4,7 @@ import { hashIp } from '@/lib/ip-hash';
 import { getCourseByCode } from '@/lib/db/courses-queries';
 import { insertMaterial, findMaterialByFileName, updateMaterialMetadata } from '@/lib/db/course-materials-queries';
 import { finalizeExtraction } from '@/lib/capture/finalize-extraction';
+import { createVectorStore } from '@/lib/capture/vector-store';
 import { parseCanvasUrl } from '@/lib/canvas/parseCanvasUrl';
 import { fetchCanvasCourse, fetchCanvasFileMeta } from '@/lib/canvas/fetchCanvasCourse';
 import { htmlToText } from '@/lib/canvas/htmlToText';
@@ -292,6 +293,7 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
   // (Canvas: Syllabus, Canvas File: X.pdf), so fileName is the natural key.
   // Returned `imported` includes both inserted and updated rows; callers
   // can tell them apart via `inserted`/`updated` counts.
+  const vectorStore = createVectorStore();
   const imported: Array<{ id: string; fileName: string }> = [];
   let insertedCount = 0;
   let updatedCount = 0;
@@ -311,6 +313,7 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
         extractionStatus: 'ok',
         extractionMethod: 'text',
         extractedText: text,
+        vectorStore,
       });
       imported.push({ id: existing.id, fileName });
       updatedCount++;
@@ -330,6 +333,7 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
         extractionStatus: 'ok',
         extractionMethod: 'text',
         extractedText: text,
+        vectorStore,
       });
       imported.push({ id: mat.id, fileName });
       insertedCount++;

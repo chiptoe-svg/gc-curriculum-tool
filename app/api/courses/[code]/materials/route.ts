@@ -7,6 +7,7 @@ import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
 import { insertMaterial } from '@/lib/db/course-materials-queries';
 import { finalizeExtraction } from '@/lib/capture/finalize-extraction';
+import { createVectorStore } from '@/lib/capture/vector-store';
 import { extractText } from '@/lib/courses/extract-text';
 import type { ExtractedMimeType } from '@/lib/courses/extract-text';
 import { SUPPORTED_MIME_TYPES, LEGACY_OFFICE_MIME_TYPES } from '@/lib/courses/material-extractor';
@@ -98,6 +99,8 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     ipHash,
   });
 
+  const vectorStore = createVectorStore();
+
   // Run extraction synchronously.
   const fileBytes = Buffer.from(await file.arrayBuffer());
   const extracted = await extractText({
@@ -123,6 +126,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     extractionMethod: extracted.method,
     extractedText: extracted.text,
     pageCount: extracted.pageCount,
+    vectorStore,
   });
 
   return NextResponse.json({

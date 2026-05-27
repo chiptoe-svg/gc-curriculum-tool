@@ -6,6 +6,7 @@ import {
   insertMaterial,
 } from '@/lib/db/course-materials-queries';
 import { finalizeExtraction } from '@/lib/capture/finalize-extraction';
+import { createVectorStore } from '@/lib/capture/vector-store';
 import {
   extractGoogleWorkspaceReferences,
   type GoogleWorkspaceKind,
@@ -54,6 +55,8 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
 
   const course = await getCourseByCode(courseCode);
   if (!course) return NextResponse.json({ error: 'course not found' }, { status: 404 });
+
+  const vectorStore = createVectorStore();
 
   const materials = await listMaterialsByCourse(courseCode);
 
@@ -108,6 +111,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         extractionStatus: 'ok',
         extractionMethod: 'text',
         extractedText: fetched.text,
+        vectorStore,
       });
       results.push({ kind: ref.kind, fileId: ref.fileId, status: 'ok', fileName });
     } else {
@@ -126,6 +130,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         fileName,
         extractionStatus: 'failed',
         extractionMethod: 'text',
+        vectorStore,
       });
       results.push({ kind: ref.kind, fileId: ref.fileId, status: 'inaccessible', fileName, errorReason: fetched.errorReason });
     }
@@ -177,6 +182,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         extractionStatus: 'ok',
         extractionMethod: 'text',
         extractedText: fetched.text,
+        vectorStore,
       });
       youtubeResults.push({ videoId, status: 'ok', fileName });
     } else {
@@ -195,6 +201,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         fileName,
         extractionStatus: 'failed',
         extractionMethod: 'text',
+        vectorStore,
       });
       youtubeResults.push({ videoId, status: 'inaccessible', fileName, errorReason: fetched.errorReason });
     }
@@ -246,6 +253,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         extractionStatus: 'ok',
         extractionMethod: 'text',
         extractedText: fetched.text,
+        vectorStore,
       });
       driveResults.push({ fileId, status: 'ok', fileName });
     } else {
@@ -271,6 +279,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         fileName,
         extractionStatus: 'failed',
         extractionMethod: 'text',
+        vectorStore,
       });
       driveResults.push({ fileId, status: fetched.status, fileName, errorReason: fetched.errorReason });
     }
