@@ -27,6 +27,7 @@ export const AI_FUNCTION_IDS = [
   'material-digest',
   'chunk-contextualize',
   'ingestion-checkin',
+  'capture-chat-agent',
 ] as const;
 export type AIFunctionId = (typeof AI_FUNCTION_IDS)[number];
 
@@ -91,6 +92,11 @@ export const DEFAULT_TIERS: Record<AIFunctionId, Exclude<ModelTier, 'custom'>> =
   // emits a short heads-up panel about missing core sources, stacked
   // auto-set-asides, kept high-FERPA risk, or near-empty digest clusters.
   'ingestion-checkin': 'light',
+  // Stage 3 tool-using auditor. Drives the per-turn agent loop in
+  // CourseCapture v2: reads at-rest digests, retrieves chunks on demand,
+  // emits a structured finding/question/citations response. Default tier —
+  // same reasoning load as 'capture-chat' but with tool routing on top.
+  'capture-chat-agent': 'default',
 };
 
 export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
@@ -105,6 +111,7 @@ export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
   'material-digest': 'Material digest (every material, audit at-rest context)',
   'chunk-contextualize': 'Chunk contextualizer (per-chunk position blurb)',
   'ingestion-checkin': 'Ingestion check-in (materials curation review)',
+  'capture-chat-agent': 'Audit chat agent (Stage 3 — tool-using auditor)',
 };
 
 export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
@@ -119,6 +126,7 @@ export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
   'material-digest': 'Per-material structured digest, generated at extraction for every material. Loaded into the audit agent\'s at-rest context.',
   'chunk-contextualize': 'One short positional blurb per detail chunk, prepended before embedding so the embedding encodes position + content.',
   'ingestion-checkin': 'Reviews the curated materials state before audit chat begins and emits either a short heads-up panel or silence.',
+  'capture-chat-agent': 'Per-turn agent loop for CourseCapture v2 audit chat; reads at-rest digests, retrieves chunks on demand, emits a structured finding + question + citations.',
 };
 
 interface CachedSetting {
