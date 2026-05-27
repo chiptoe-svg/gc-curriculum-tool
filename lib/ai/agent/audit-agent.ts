@@ -27,6 +27,7 @@ import {
 import {
   appendMessage,
   getSessionMessages,
+  listPriorSessionSummaries,
   type CaptureMessageToolCall,
   type CaptureMessageCitation,
 } from '@/lib/db/capture-messages-queries';
@@ -62,9 +63,10 @@ export async function runAuditAgent(input: AuditAgentInput): Promise<AuditAgentR
   });
 
   // 3. Load at-rest context.
-  const [course, materials] = await Promise.all([
+  const [course, materials, priorSessions] = await Promise.all([
     getCourseByCode(courseCode),
     listMaterialsByCourse(courseCode),
+    listPriorSessionSummaries(courseCode, sessionId, 3),
   ]);
   if (!course) throw new Error(`course not found: ${courseCode}`);
 
@@ -97,6 +99,25 @@ export async function runAuditAgent(input: AuditAgentInput): Promise<AuditAgentR
         .join('\n\n')
     : '(no included materials)';
 
+  // Prior session summaries (most recent up to 3). Gives the agent enough
+  // continuity to not repeat questions, without burning context on every
+  // prior turn verbatim.
+  const priorSessionsBlock = priorSessions.length
+    ? priorSessions
+        .map(s => {
+          const r = s.lastAssistantReadiness as { score?: number; covered?: string[]; remaining?: string[] } | null;
+          const readinessSummary = r
+            ? `readiness ${r.score ?? '?'}%; covered: ${(r.covered ?? []).join(', ') || '(none)'}; remaining: ${(r.remaining ?? []).join(', ') || '(none)'}`
+            : '(no readiness recorded)';
+          return [
+            `--- Session ${s.sessionId.slice(0, 8)}… (started ${s.startedAt.toISOString().slice(0, 10)}, ${s.turnCount} turns) ---`,
+            `Final readiness: ${readinessSummary}`,
+            s.lastAssistantContent ? `Last assistant turn: ${s.lastAssistantContent.slice(0, 600)}` : '',
+          ].filter(Boolean).join('\n');
+        })
+        .join('\n\n')
+    : '(none — this is the first audit session for this course)';
+
   // 5. Construct messages for completeWithTools.
   // First a user message with the at-rest context, then the conversation
   // history. The capture-chat-agent.md system prompt instructs the model
@@ -104,7 +125,7 @@ export async function runAuditAgent(input: AuditAgentInput): Promise<AuditAgentR
   const messages: Message[] = [
     {
       role: 'user',
-      content: `# Course catalog\n\n${catalogBlock}\n\n# Material digests\n\n${digestBlock}`,
+      content: `# Course catalog\n\n${catalogBlock}\n\n# Material digests\n\n${digestBlock}\n\n# Prior audit sessions (most recent)\n\n${priorSessionsBlock}`,
     },
     ...history
       .filter(m => m.role === 'user' || m.role === 'assistant')

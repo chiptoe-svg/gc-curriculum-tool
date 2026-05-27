@@ -20,33 +20,46 @@ import { tenantForCourse } from '@/lib/capture/vector-store';
 
 /**
  * POST /api/admin/v2-reset
- * Body: { courseCode: string, includeSnapshots?: boolean, includeExplore?: boolean }
+ * Body: {
+ *   courseCode: string,
+ *   scope?: 'session' | 'materials' | 'everything',  // default 'session'
+ *   includeSnapshots?: boolean,
+ *   includeExplore?: boolean,
+ * }
  *
- * Drops the v2 audit state for one course so you can start from scratch:
- *   - capture_messages rows (the v2 transcript)
- *   - course_capture_profiles row (the working draft)
- *   - Weaviate tenant for the course (MaterialChunk + MaterialSection)
- *   - course_materials columns reset: indexing_status='pending', indexed_at=null,
- *     digest=null, digest_model=null, digest_generated_at=null,
- *     ferpa_risk='low', auto_set_aside=false, set_aside_reason=null,
- *     use_digest=false. The material rows themselves stay (extracted_text
- *     preserved) so re-running the backfill is cheap.
+ * Three reset scopes — pick the gentlest one that solves your problem:
  *
- * Optional flags:
- *   - includeSnapshots: ALSO drops course_capture_snapshots + any
- *     dependent rows (snapshot_target_coverage, explore_analyses). Snapshots
- *     are the system of record per the spec — only use this for true reset
- *     scenarios (e.g., resetting a course you're using as a test fixture).
- *   - includeExplore: drops explore analyses, targets, what-ifs for the
- *     course. Implied by includeSnapshots.
+ *   - scope='session' (DEFAULT, what the in-page "Reset audit" button calls).
+ *     Drops the working draft (course_capture_profiles row). Preserves all
+ *     prior capture_messages transcripts (the agent reads them as continuity
+ *     context on the next session). Preserves Weaviate index + material
+ *     columns. Cheap, no re-backfill needed. Use when an audit took a wrong
+ *     turn and you want to start the conversation fresh while keeping the
+ *     prior session's record.
+ *
+ *   - scope='materials'. Everything in 'session' PLUS resets material
+ *     columns (indexing_status, digest, ferpa_risk, auto_set_aside) and
+ *     drops the Weaviate tenant. Forces re-backfill. Use when ingestion
+ *     produced bad chunks or digests.
+ *
+ *   - scope='everything'. Everything in 'materials' PLUS deletes all
+ *     capture_messages for the course (loses prior session transcripts).
+ *     Use for true clean-slate scenarios (e.g., resetting a course you're
+ *     using as a test fixture).
+ *
+ * Optional flags (independent of scope):
+ *   - includeSnapshots: ALSO drops course_capture_snapshots + dependent
+ *     rows (snapshot_target_coverage). Snapshots are the system of record;
+ *     dropping them is destructive.
+ *   - includeExplore: drops explore analyses, targets, what-ifs. Implied
+ *     by includeSnapshots.
  *
  * Gated by /api/admin/* middleware (FACULTY_BASIC_AUTH).
- *
- * Returns the counts of what was deleted, plus the Weaviate tenant status.
  */
 export async function POST(req: Request): Promise<Response> {
   const body = (await req.json().catch(() => ({}))) as {
     courseCode?: unknown;
+    scope?: unknown;
     includeSnapshots?: unknown;
     includeExplore?: unknown;
   };
@@ -54,17 +67,28 @@ export async function POST(req: Request): Promise<Response> {
   if (!courseCode) {
     return NextResponse.json({ error: 'courseCode required' }, { status: 400 });
   }
+  const scope: 'session' | 'materials' | 'everything' =
+    body.scope === 'materials' ? 'materials'
+      : body.scope === 'everything' ? 'everything'
+      : 'session';
   const includeSnapshots = body.includeSnapshots === true;
   const includeExplore = body.includeExplore === true || includeSnapshots;
 
-  const result: Record<string, unknown> = { courseCode };
+  const result: Record<string, unknown> = { courseCode, scope };
 
-  // 1. Delete capture_messages.
-  const captureMessagesDeleted = await db
-    .delete(captureMessages)
-    .where(eq(captureMessages.courseCode, courseCode))
-    .returning({ id: captureMessages.id });
-  result.captureMessagesDeleted = captureMessagesDeleted.length;
+  // 1. Delete capture_messages only at the deepest scope. The 'session'
+  //    and 'materials' scopes preserve prior session transcripts so the
+  //    agent has continuity context on the next session.
+  if (scope === 'everything') {
+    const captureMessagesDeleted = await db
+      .delete(captureMessages)
+      .where(eq(captureMessages.courseCode, courseCode))
+      .returning({ id: captureMessages.id });
+    result.captureMessagesDeleted = captureMessagesDeleted.length;
+  } else {
+    result.captureMessagesDeleted = 0;
+    result.priorSessionsPreserved = true;
+  }
 
   // 2. Delete the working draft profile.
   const profilesDeleted = await db
@@ -114,7 +138,15 @@ export async function POST(req: Request): Promise<Response> {
     result.snapshotCoverageDeleted = coverageDeleted;
   }
 
-  // 4. Reset material rows: clear v2 columns, keep extracted_text + blob.
+  // 4. Reset material rows + drop Weaviate tenant only at 'materials' or
+  //    'everything' scope. The 'session' scope leaves both intact so we don't
+  //    have to re-backfill on every reset.
+  if (scope === 'session') {
+    result.materialsReset = 0;
+    result.weaviate = 'preserved (scope=session)';
+    return NextResponse.json(result);
+  }
+
   const materialsReset = await db
     .update(courseMaterials)
     .set({

@@ -9,7 +9,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, desc, eq, ne } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { captureMessages } from '@/lib/db/schema';
 
@@ -89,4 +89,78 @@ export async function getSessionMessages(courseCode: string, sessionId: string) 
     .from(captureMessages)
     .where(and(eq(captureMessages.courseCode, courseCode), eq(captureMessages.sessionId, sessionId)))
     .orderBy(asc(captureMessages.turnIndex));
+}
+
+/**
+ * Summary of one prior audit session for a course. Used to give a new
+ * session's agent enough continuity ("here's where the last audit left
+ * off") without burning context on every prior turn verbatim.
+ */
+export interface PriorSessionSummary {
+  sessionId: string;
+  startedAt: Date;
+  lastAssistantContent: string | null;
+  lastAssistantReadiness: unknown | null;
+  turnCount: number;
+}
+
+/**
+ * For each session in this course OTHER than `excludeSessionId`, return a
+ * concise summary. Only sessions with at least one assistant turn count
+ * (a session that consists solely of a stray user message isn't useful
+ * continuity). Most-recent first; capped at `limit` (default 3) so the
+ * agent's at-rest context stays bounded.
+ */
+export async function listPriorSessionSummaries(
+  courseCode: string,
+  excludeSessionId: string,
+  limit: number = 3,
+): Promise<PriorSessionSummary[]> {
+  // Get all sessions for the course, newest first.
+  const rows = await db
+    .select()
+    .from(captureMessages)
+    .where(and(eq(captureMessages.courseCode, courseCode), ne(captureMessages.sessionId, excludeSessionId)))
+    .orderBy(desc(captureMessages.createdAt));
+
+  if (rows.length === 0) return [];
+
+  // Group by session id, preserving order (newest session first by createdAt).
+  const bySession = new Map<string, typeof rows>();
+  for (const r of rows) {
+    const arr = bySession.get(r.sessionId) ?? [];
+    arr.push(r);
+    bySession.set(r.sessionId, arr);
+  }
+
+  const summaries: PriorSessionSummary[] = [];
+  for (const [sessionId, sessionRows] of bySession) {
+    // sessionRows are desc by createdAt; sort asc by turnIndex for sanity.
+    sessionRows.sort((a, b) => a.turnIndex - b.turnIndex);
+    const lastAssistant = [...sessionRows].reverse().find(r => r.role === 'assistant');
+    if (!lastAssistant) continue; // session has no assistant turns
+    let readiness: unknown = null;
+    let assistantText: string | null = null;
+    if (typeof lastAssistant.content === 'string' && lastAssistant.content.length > 0) {
+      try {
+        const parsed = JSON.parse(lastAssistant.content) as Record<string, unknown>;
+        readiness = parsed.readiness ?? null;
+        const finding = typeof parsed.finding === 'string' ? parsed.finding : '';
+        const question = typeof parsed.question === 'string' ? parsed.question : '';
+        assistantText = [finding, question].filter(Boolean).join(' / ') || lastAssistant.content;
+      } catch {
+        // Not JSON — treat the whole content as the message body.
+        assistantText = lastAssistant.content;
+      }
+    }
+    summaries.push({
+      sessionId,
+      startedAt: sessionRows[0]!.createdAt,
+      lastAssistantContent: assistantText,
+      lastAssistantReadiness: readiness,
+      turnCount: sessionRows.length,
+    });
+    if (summaries.length >= limit) break;
+  }
+  return summaries;
 }

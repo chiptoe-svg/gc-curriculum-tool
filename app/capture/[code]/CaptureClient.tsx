@@ -113,6 +113,43 @@ export function CaptureClient({
     setMessages([]);
   }, [courseCode, slug]);
 
+  const [resetState, setResetState] = useState<'idle' | 'resetting' | 'error'>('idle');
+  const [chatPanelKey, setChatPanelKey] = useState(0);
+  const handleResetAudit = useCallback(async () => {
+    if (
+      !window.confirm(
+        'Reset this course\'s audit chat?\n\n' +
+        'Clears the current working draft. Prior session transcripts, ' +
+        'snapshots, and indexed materials are preserved. The agent on the ' +
+        'next session will see the prior sessions as continuity context.\n\n' +
+        'For a deeper reset (re-ingest materials too), use the curl runbook.',
+      )
+    ) return;
+    setResetState('resetting');
+    try {
+      const res = await fetch('/api/admin/v2-reset', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ courseCode, scope: 'session' }),
+      });
+      if (!res.ok) throw new Error(`v2-reset ${res.status}`);
+      // Also drop the legacy v1 conversation row so they stay in sync.
+      await fetch(
+        `/api/capture/${encodeURIComponent(courseCode)}/conversation?slug=${encodeURIComponent(slug)}`,
+        { method: 'DELETE' },
+      ).catch(() => {});
+      setMessages([]);
+      setProfile(null);
+      setReviewerStatus(null);
+      setStage('chat');
+      setChatPanelKey(k => k + 1);
+      setResetState('idle');
+    } catch (e) {
+      console.error('reset failed', e);
+      setResetState('error');
+    }
+  }, [courseCode, slug]);
+
   async function handleGenerate() {
     setStage('generating');
     setGenerationError(null);
@@ -208,6 +245,7 @@ export function CaptureClient({
           )}
           <IngestionCheckIn courseCode={courseCode} slug={slug} />
           <CaptureChatPanel
+            key={chatPanelKey}
             courseCode={courseCode}
             slug={slug}
             messages={messages}
@@ -216,6 +254,20 @@ export function CaptureClient({
             initialReadiness={initialReadiness}
             onConversationChange={handleConversationChange}
           />
+          <div className="flex items-center justify-end gap-3 text-xs text-muted-foreground">
+            {resetState === 'error' && (
+              <span className="text-destructive">Reset failed — check the server log.</span>
+            )}
+            <button
+              type="button"
+              onClick={handleResetAudit}
+              disabled={resetState === 'resetting'}
+              className="rounded border border-stone-300 bg-white px-2 py-1 font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-50"
+              title="Clear the working draft for this course and start the audit chat fresh. Prior sessions and indexed materials stay."
+            >
+              {resetState === 'resetting' ? 'Resetting…' : 'Reset audit'}
+            </button>
+          </div>
           {generationError && (
             <div className="rounded-md border border-destructive/30 bg-red-50 px-4 py-3 text-sm">
               <p className="font-medium text-destructive">Generation failed: {generationError}</p>
