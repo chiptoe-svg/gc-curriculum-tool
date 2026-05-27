@@ -63,7 +63,10 @@ function makeId(
   h.update(String(position));
   h.update('|');
   h.update(sample.slice(0, 80));
-  return h.digest('hex').slice(0, 16);
+  // Format as UUID (8-4-4-4-12) so Weaviate v3 accepts the id field.
+  // Deterministic from the same inputs; changing length from 16 → 32 hex chars.
+  const hex = h.digest('hex').slice(0, 32);
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
 }
 
 function splitByHeadings(text: string): Array<{ title: string; body: string }> {

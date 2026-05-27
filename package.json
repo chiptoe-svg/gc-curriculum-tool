@@ -64,13 +64,5 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.6"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "protobufjs",
-      "esbuild",
-      "sharp",
-      "unrs-resolver"
-    ]
   }
 }
