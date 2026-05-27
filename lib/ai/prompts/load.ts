@@ -30,7 +30,8 @@ type PromptName =
   | 'decompose-prereq-gap'
   | 'material-digest'
   | 'chunk-contextualize'
-  | 'ingestion-checkin';
+  | 'ingestion-checkin'
+  | 'capture-chat-agent';
 
 interface ParsedPrompt {
   frontmatter: Record<string, unknown>;
