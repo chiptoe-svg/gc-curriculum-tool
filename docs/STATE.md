@@ -1,5 +1,7 @@
 # Project State — GC Curriculum Tool
 
+> **Audience:** developer / implementation detail. This file is the engineering snapshot — what's live, what's blocked, what's next at the code and deployment level. Stakeholder-facing surfaces (executive brief, vision, background) summarize the same state in non-implementation terms; if you're orienting non-technical reviewers, point them there first and use this file as the backing source they can drop into when they want detail. The executive brief links here intentionally — anyone following that link is opting into the operational view.
+>
 > **Last verified:** `b4e0cac` · 2026-05-26
 >
 > **What this is:** the single source of truth for "what's live, what's next, what's blocked." Read this before any feature work, schema change, AI function add, deployment change, or new spec/plan. Static framing (KUD+, vision, architecture rationale) lives in [`CLAUDE.md`](../CLAUDE.md) and [`docs/superpowers/README.md`](./superpowers/README.md); this file is the volatile snapshot that sits in front of them.
