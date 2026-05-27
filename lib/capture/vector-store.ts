@@ -11,6 +11,7 @@
  */
 
 import { cosineSimilarity } from '@/lib/ai/embeddings';
+import { createWeaviateVectorStore } from './vector-store-weaviate';
 
 export interface ChunkVectorRecord {
   id: string;
@@ -123,4 +124,14 @@ export function createInMemoryVectorStore(): VectorStore {
 
 export function tenantForCourse(courseCode: string): string {
   return `coursecapture-${courseCode.toLowerCase().replace(/\s+/g, '-')}`;
+}
+
+/** Construct the configured vector-store backend. Selects between the
+ *  in-memory backend (test/dev default) and Weaviate via the VECTOR_STORE
+ *  env var. Stage 2b adds the Weaviate option. */
+export function createVectorStore(): VectorStore {
+  const which = (process.env.VECTOR_STORE ?? 'in-memory').trim();
+  if (which === 'weaviate') return createWeaviateVectorStore();
+  if (which === 'in-memory') return createInMemoryVectorStore();
+  throw new Error(`Unknown VECTOR_STORE: ${which}`);
 }
