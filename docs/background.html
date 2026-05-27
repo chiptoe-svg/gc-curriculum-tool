@@ -185,7 +185,7 @@
 <header class="doc-head">
   <div class="doc-eyebrow">Background &amp; Justification</div>
   <h1 class="doc-title">The KUD+ Framework</h1>
-  <p class="doc-subtitle">A theoretical and practical account of how the GC Curriculum Tool measures what a course actually develops, scored on Know, Understand, and Do depth scales, and how those measurements feed program-level analysis and career-path alignment.</p>
+  <p class="doc-subtitle">A theoretical and practical account of how the GC Curriculum Tool measures what a course is evidenced to require, assess, and support — scored on Know, Understand, and Do depth scales — and how those measurements feed program-level analysis and career-path alignment.</p>
   <div class="doc-meta">
     <span><strong>Companion to:</strong> Vision document</span>
     <span><strong>Audience:</strong> Faculty, curriculum committee, advisory board</span>
@@ -195,14 +195,49 @@
 
 <div class="callout" style="margin: 0 0 48px;">
   <div class="callout-title">Currently in production</div>
-  <p>The framework described in this document is implemented as a working tool. Five surfaces are live <span class="status-tag status-live">Live (faculty trial)</span> at <a href="https://gc-curriculum-tool.vercel.app/preview/4QcseN0pvlpd35gb" target="_blank" rel="noopener noreferrer">gc-curriculum-tool.vercel.app</a>:</p>
-  <ul style="margin: 8px 0 12px 22px;">
-    <li><code>/capture/&lt;course-code&gt;</code> — <strong>CourseCapture.</strong> <span class="status-tag status-live">Live</span> Per-course audit conversation that produces an evidence-backed Course Outcome Profile from catalog values, Canvas materials (assignments, rubrics, pages, discussions, quizzes, file attachments), uploaded files, linked Google Docs/Sheets/Slides and Drive PDFs, YouTube captions, and voice/chat dialog with the instructor.</li>
-    <li><code>/program</code> — <strong>Program Coverage Matrix (Phase 1A).</strong> <span class="status-tag status-live">Live</span> Confirmed snapshots × career-target sub-competencies, rendered as a depth-aware heat map with a problem-solving lens. On-demand AI scoring per cell; full rationale and evidence drawer.</li>
-    <li><code>/explore/&lt;course-code&gt;</code> — <strong>Explore module.</strong> <span class="status-tag status-live">Live</span> Alignment analyses (custom or downstream targets) and what-if scenarios run against any saved snapshot.</li>
-    <li><code>/settings</code> — <strong>Per-function AI model tuning.</strong> <span class="status-tag status-live">Live</span> Tier-based selection plus model dropdowns sourced from the OpenAI provider's available models.</li>
-    <li><code>/preview/&lt;slug&gt;</code> — <strong>M-trial.</strong> <span class="status-tag status-live">Live</span> The original three-tool prototype (Course Builder · Prereq Analyzer · Career Target Alignment), still live.</li>
-  </ul>
+  <p>The framework described in this document is implemented as a working tool. The active build runs on a Mac on the Clemson LAN, gated by HTTP Basic Auth. A legacy three-tool prototype is preserved on Vercel as the public M-trial. <a href="./STATE.md">STATE.md</a> is the developer-facing source of truth for what's live; the table below is the current snapshot.</p>
+  <table style="width:100%; border-collapse: collapse; margin: 12px 0 12px;">
+    <thead>
+      <tr style="text-align: left; border-bottom: 1px solid currentColor;">
+        <th style="padding: 6px 10px 6px 0;">Surface</th>
+        <th style="padding: 6px 10px;">Status</th>
+        <th style="padding: 6px 10px;">Access</th>
+        <th style="padding: 6px 0 6px 10px;">Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-bottom: 1px solid rgba(0,0,0,0.06);">
+        <td style="padding: 6px 10px 6px 0;"><code>/capture/&lt;course-code&gt;</code></td>
+        <td style="padding: 6px 10px;"><span class="status-tag status-live">Live (faculty trial)</span></td>
+        <td style="padding: 6px 10px;">Clemson LAN / Basic Auth</td>
+        <td style="padding: 6px 0 6px 10px;">Per-course audit conversation; supersedes the M-trial prototype for new captures.</td>
+      </tr>
+      <tr style="border-bottom: 1px solid rgba(0,0,0,0.06);">
+        <td style="padding: 6px 10px 6px 0;"><code>/program</code></td>
+        <td style="padding: 6px 10px;"><span class="status-tag status-live">Live (faculty trial)</span></td>
+        <td style="padding: 6px 10px;">Clemson LAN / Basic Auth</td>
+        <td style="padding: 6px 0 6px 10px;">Phase 1A coverage matrix; confirmed snapshots × career-target sub-competencies.</td>
+      </tr>
+      <tr style="border-bottom: 1px solid rgba(0,0,0,0.06);">
+        <td style="padding: 6px 10px 6px 0;"><code>/explore/&lt;course-code&gt;</code></td>
+        <td style="padding: 6px 10px;"><span class="status-tag status-live">Live (faculty trial)</span></td>
+        <td style="padding: 6px 10px;">Clemson LAN / Basic Auth</td>
+        <td style="padding: 6px 0 6px 10px;">Snapshot-based alignment analyses and what-if scenarios.</td>
+      </tr>
+      <tr style="border-bottom: 1px solid rgba(0,0,0,0.06);">
+        <td style="padding: 6px 10px 6px 0;"><code>/settings</code></td>
+        <td style="padding: 6px 10px;"><span class="status-tag status-live">Live (faculty trial)</span></td>
+        <td style="padding: 6px 10px;">Clemson LAN / Basic Auth</td>
+        <td style="padding: 6px 0 6px 10px;">Per-function AI model tuning. In the LAN deployment, dropdowns reflect the configured provider (OpenAI, Anthropic, local omlx, or Clemson RCD campus); the public prototype does not expose model configuration.</td>
+      </tr>
+      <tr>
+        <td style="padding: 6px 10px 6px 0;"><code>/preview/&lt;slug&gt;</code></td>
+        <td style="padding: 6px 10px;"><span class="status-tag status-specified">Public prototype</span></td>
+        <td style="padding: 6px 10px;">Vercel public URL</td>
+        <td style="padding: 6px 0 6px 10px;">Legacy M-trial only (Course Builder · Prereq Analyzer · Career Target Alignment). Preserved but not the active build.</td>
+      </tr>
+    </tbody>
+  </table>
   <p style="margin-bottom: 0;">For the day-to-day workflow and screen-by-screen description, see the <a href="./superpowers/vision/gc-curriculum-tool-vision.html#prototype">Vision's "What's live now"</a> section. For a how-to guide on CourseCapture and Explore, see the <a href="./using-coursecapture-and-explore.html">faculty guide</a>.</p>
 </div>
 
@@ -319,9 +354,10 @@ DO — behavioral output
 
   <p>Each level on each scale describes <em>what the student does or grasps</em>, not what the syllabus claims the course will teach. This is the most important practical commitment in the framework: <strong>aspirational syllabus language alone is not sufficient evidence for any score above the lowest meaningful level on its dimension.</strong> A syllabus statement that "students will understand X" does not by itself justify a score above U=1; the evidence above U=1 must come from student-produced reasoning (a graded written rationale, an oral defense, a journal entry, a memo that requires explaining the principle).</p>
 
-  <p>The evidence requirement is formalized in the scoring rule. Above-zero depth values must be backed by an excerpt from the course materials (a rubric criterion, an assignment prompt, a graded artifact, or a recorded instructor confirmation). Specifically:</p>
+  <p>The evidence requirement is formalized in the scoring rule. All nonzero scores require evidence, but the kind of evidence differs by level:</p>
 
   <ul>
+    <li><code>k_depth = 1</code> requires evidence of delivery — a lecture topic listed, a textbook chapter assigned, a Canvas page covering the content.</li>
     <li><code>k_depth &gt; 1</code> requires an evidence excerpt naming where the student is tested or measured on the content.</li>
     <li><code>u_depth &gt; 0</code> requires an evidence excerpt showing student-produced reasoning.</li>
     <li><code>d_depth &gt; 0</code> requires an evidence excerpt showing student-produced behavioral output.</li>
@@ -362,7 +398,7 @@ DO — behavioral output
 <section id="grounding">
   <h2><span class="num">§ 5</span>Theoretical grounding</h2>
 
-  <p>The framework is consistent with several established traditions in curriculum design. None of them prescribe the specific depth scales used here; the language below describes how the framework is <em>consistent with</em> each tradition, not derived from any of them. The specific design choices — 0–5 grain, student-side anchors, evidence-required-above-zero, the null-vs-zero treatment of foundationals — are framework commitments that go beyond what the cited traditions individually establish, and are presented as such throughout this document.</p>
+  <p>The framework is consistent with several established traditions in curriculum design. None of them prescribe the specific depth scales used here; the language below describes how the framework is <em>consistent with</em> each tradition, not derived from any of them. The specific design choices — 0–5 grain, student-side anchors, the evidence-typed scoring rule, the null-vs-zero treatment of foundationals — are framework commitments that go beyond what the cited traditions individually establish, and are presented as such throughout this document.</p>
 
   <h3>Backward Design (Wiggins &amp; McTighe)</h3>
 
@@ -445,7 +481,7 @@ DO — behavioral output
 
   <h3>The selection of the five baselines</h3>
 
-  <p>The choice of <em>these</em> five — rather than four, seven, or a different set — is a framework commitment rather than a derivation from a single canonical source. The selection draws on three influences. First, the NACE Career Readiness Competencies framework, which identifies eight competencies employers most consistently name (Critical Thinking, Communication, Teamwork, Technology, Leadership, Professionalism, Career &amp; Self-Development, Equity &amp; Inclusion). Communication appears in the framework's baseline directly; Critical Thinking is handled separately in §8 as a program-level emergent property rather than a per-course foundational, on the reasoning the same section articulates. Second, the broader dispositional-learning literature — including the AAC&amp;U Essential Learning Outcomes, the CASEL social-emotional learning framework (Self-Awareness, Self-Management, Social Awareness, Relationship Skills, Responsible Decision-Making), and the executive-function research in developmental psychology — converges on a small set of dispositional capacities that include initiative, persistence, attention regulation, and curiosity. Third, faculty surveys and advisory-board input specific to the Graphic Communications program identified Attention to Detail as a domain-relevant disposition consistently named as a graduate gap; this is the most GC-specific entry in the list.</p>
+  <p>The choice of <em>these</em> five — rather than four, seven, or a different set — is a framework commitment rather than a derivation from a single canonical source. The selection draws on three influences. First, the NACE Career Readiness Competencies framework, which identifies eight competencies employers most consistently name (Critical Thinking, Communication, Teamwork, Technology, Leadership, Professionalism, Career &amp; Self-Development, Equity &amp; Inclusion). Communication appears in the framework's baseline directly; Critical Thinking is handled separately in §8 as a program-level emergent property rather than a per-course foundational, on the reasoning the same section articulates. Second, the broader dispositional-learning literature — including the AAC&amp;U Essential Learning Outcomes, the CASEL social-emotional learning framework (Self-Awareness, Self-Management, Social Awareness, Relationship Skills, Responsible Decision-Making), and the executive-function research in developmental psychology — converges on a small set of dispositional capacities that include initiative, persistence, attention regulation, and curiosity. Third, faculty surveys and advisory-board input specific to the Graphic Communications program identified Attention to Detail as a domain-relevant disposition consistently named in employer feedback for the program; this is the most GC-specific entry in the list.</p>
 
   <p>The choice of five rather than a larger number reflects two practical commitments: every baseline foundational is scored in every captured snapshot, so the marginal cost of each additional foundational compounds across the program, and inter-rater agreement on dispositional Do scoring degrades when the list is long enough that auditors reach for the closest fit rather than recognizing absence. Five is a working hypothesis the framework treats as research input: as the snapshot corpus accumulates and advisory-board feedback surfaces gaps, the baseline can be revised. Collaboration is the most consistently mentioned candidate for inclusion; the framework's current treatment is to allow the auditor to add it per-course when materials evidence it, with the explicit acknowledgment that this creates uneven coverage across the program. If repeated captures show Collaboration is genuinely program-wide, it is a strong candidate for promotion to the baseline in a future revision.</p>
 
@@ -455,7 +491,7 @@ DO — behavioral output
 <section id="problem-solving">
   <h2><span class="num">§ 8</span>Problem-solving as a program-level emergent property</h2>
 
-  <p>Problem-solving is among the most consistently named graduate competencies in employer surveys — repeatedly cited in NACE's annual Job Outlook reports as a top-rated attribute, alongside teamwork and written communication <a href="#ref-nace">(NACE, 2023)</a>. The natural curricular response is to add a "Problem-Solving" course, or to list problem-solving as a generic transferable skill the program develops. Both responses fail in characteristic ways, and the framework is deliberately structured to surface why and to support the alternative.</p>
+  <p>Problem-solving is among the attributes employers most consistently value when reviewing graduates' resumes — repeatedly ranked at the top of NACE's annual Job Outlook resume-attribute surveys, alongside teamwork and written communication <a href="#ref-nace">(NACE, 2023)</a>. The natural curricular response is to add a "Problem-Solving" course, or to list problem-solving as a generic transferable skill the program develops. Both responses fail in characteristic ways, and the framework is deliberately structured to surface why and to support the alternative.</p>
 
   <h3>Why generic problem-solving instruction doesn't transfer</h3>
 
@@ -508,12 +544,12 @@ DO — behavioral output
 
   <div class="callout note" style="margin: 22px 0;">
     <div class="callout-title">Deeper treatment</div>
-    <p>This section summarizes the framework's position. The full research synthesis — including the Kapur 2×2 productive/unproductive framework, the Sinha &amp; Kapur 2021 finding that productive failure effects reverse for domain-general skills (consequential for GC's mix of technical and horizontal-knowledge competencies), the operational chain from cognitive science to audit probe to program diagnostic, and the framework's commitment to function as its own research instrument — is in the companion document <a href="./problem-solving-deep-dive.html"><strong>Problem-Solving as a Program-Level Emergent Property: A Research Deep Dive</strong></a>.</p>
+    <p>This section summarizes the framework's position. The full research synthesis — including the Kapur 2×2 productive/unproductive framework, the Sinha &amp; Kapur 2021 finding that the productive-failure advantage is outcome-dependent, with no significant advantage for procedural knowledge, and the framework's caution about applying the paradigm to domain-general dispositions or design judgment, the operational chain from cognitive science to audit probe to program diagnostic, and the framework's commitment to function as its own research instrument — is in the companion document <a href="./problem-solving-deep-dive.html"><strong>Problem-Solving as a Program-Level Emergent Property: A Research Deep Dive</strong></a>.</p>
   </div>
 
   <h3>Caveats and where the research is honestly thin</h3>
 
-  <p>Three honest acknowledgments. First, the literature does not provide a clean threshold for "how much domain depth before productive failure becomes productive rather than unproductive." Kapur's labs work with students who have completed prerequisite coursework or read pre-assigned material; the bar is "enough prior knowledge to generate meaningful attempts," not a specific depth value. Empirical evidence suggests productive failure can benefit lower-achieving students disproportionately when at least minimal relevant knowledge is in place <a href="#ref-npj-2023">(Sinha et al., 2023)</a>. The framework treats this as a degrees-not-thresholds question: productive failure at lower depths contributes less per cycle than productive failure at higher depths, but every cycle builds dispositional habit. The scaffolding analysis weights contributions by depth rather than gating them at a threshold.</p>
+  <p>Three honest acknowledgments. First, the literature does not provide a clean threshold for "how much domain depth before productive failure becomes productive rather than unproductive." Kapur's labs work with students who have completed prerequisite coursework or read pre-assigned material; the bar is "enough prior knowledge to generate meaningful attempts," not a specific depth value. Empirical evidence suggests productive failure can benefit lower-achieving students disproportionately when at least minimal relevant knowledge is in place <a href="#ref-npj-2023">(Kapur, Saba, &amp; Roll, 2023)</a>. The framework treats this as a degrees-not-thresholds question: productive failure at lower depths contributes less per cycle than productive failure at higher depths; whether lower-depth cycles accumulate into a transferable disposition across a four-year curriculum remains a framework hypothesis. The scaffolding analysis weights contributions by depth rather than gating them at a threshold.</p>
 
   <p>Second, longitudinal effects across a four-year curriculum are essentially unstudied. Most productive-failure research measures outcomes weeks or months out, not years. The framework's claim that cumulative productive-failure exposure across the degree produces better problem-solvers four years later is theoretically coherent and consistent with the deliberate-practice literature <a href="#ref-ericsson-1993">(Ericsson, Krampe, &amp; Tesch-Römer, 1993)</a> — but it is an extrapolation, not an empirically settled finding. Macnamara and colleagues' critiques further note that practice time alone explains only a fraction of expertise variance <a href="#ref-macnamara-2014">(Macnamara, Hambrick, &amp; Oswald, 2014)</a>, which is why the framework requires the productive-failure <em>and</em> reflection conditions, not raw cycle counts.</p>
 
@@ -712,7 +748,7 @@ DO — behavioral output
     <li id="ref-kapur-2008">Kapur, M. (2008). Productive Failure. <em>Cognition and Instruction</em>, 26(3), 379–424. The original productive-failure paradigm: students who struggle with ill-structured problems before instruction outperform direct-instruction controls on transfer.</li>
     <li id="ref-kapur-2016">Kapur, M. (2016). Examining Productive Failure, Productive Success, Unproductive Failure, and Unproductive Success in Learning. <em>Educational Psychologist</em>, 51(2), 289–299. The conceptual paper that introduces the productive/unproductive distinction and identifies the two-phase generate-then-consolidate structure as the design unit.</li>
     <li id="ref-sinha-kapur-2021">Sinha, T., &amp; Kapur, M. (2021). When Problem Solving Followed by Instruction Works: Evidence for Productive Failure. <em>Review of Educational Research</em>, 91(5), 761–798. Review of conditions under which the productive-failure effect holds.</li>
-    <li id="ref-npj-2023">Sinha, T., et al. (2023). Prior Knowledge and Inventive Production Predict Learning from Productive Failure. <em>npj Science of Learning</em>, 8(1). Empirical examination of how prior knowledge and the quality of inventive attempts predict learning — establishes that productive failure works in degrees rather than at a discrete threshold.</li>
+    <li id="ref-npj-2023">Kapur, M., Saba, J., &amp; Roll, I. (2023). Prior math achievement and inventive production predict learning from productive failure. <em>npj Science of Learning</em>, 8, Article 18. <a href="https://doi.org/10.1038/s41539-023-00165-y">https://doi.org/10.1038/s41539-023-00165-y</a>. Empirical examination of how prior achievement and the quality of inventive attempts predict learning — establishes that productive failure works in degrees rather than at a discrete threshold.</li>
     <li id="ref-bjork-1994">Bjork, R. A. (1994). Memory and Metamemory Considerations in the Training of Human Beings. In J. Metcalfe &amp; A. Shimamura (Eds.), <em>Metacognition: Knowing About Knowing</em>. MIT Press. Introduces the desirable-difficulties framework: conditions that suppress short-term performance often improve long-term retention and transfer.</li>
     <li id="ref-schon-1983">Schön, D. A. (1983). <em>The Reflective Practitioner: How Professionals Think in Action</em>. Basic Books. The theoretical case for reflection-in-action and reflection-on-action as the mechanism of professional expertise development.</li>
     <li id="ref-kolb-1984">Kolb, D. A. (1984). <em>Experiential Learning: Experience as the Source of Learning and Development</em>. Prentice Hall. The canonical experiential learning cycle (concrete experience → reflective observation → abstract conceptualization → active experimentation).</li>
