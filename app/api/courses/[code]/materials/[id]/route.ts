@@ -1,7 +1,13 @@
 import { NextResponse } from 'next/server';
 import { del } from '@vercel/blob';
 import { isValidSlug } from '@/lib/slug';
-import { getMaterialById, deleteMaterial, setMaterialIgnored, setMaterialUseDigest } from '@/lib/db/course-materials-queries';
+import {
+  getMaterialById,
+  deleteMaterial,
+  setMaterialIgnored,
+  setMaterialUseDigest,
+  updateFerpaRisk,
+} from '@/lib/db/course-materials-queries';
 
 interface RouteContext {
   params: Promise<{ code: string; id: string }>;
@@ -33,10 +39,15 @@ export async function DELETE(req: Request, { params }: RouteContext): Promise<Re
 }
 
 // PATCH /api/courses/[code]/materials/[id]?slug=...
-// Body: { ignored?: boolean, useDigest?: boolean }
-// At least one of `ignored` or `useDigest` must be provided as a boolean.
-// Toggles whether a material's extracted text feeds AI context, or whether to use
-// the AI-generated digest instead of raw text. The row stays in the table either way.
+// Body: { ignored?: boolean, useDigest?: boolean, ferpaRisk?: 'low' | 'medium' | 'high' }
+// At least one of the supported fields must be provided.
+// - `ignored`: toggles whether the material's extracted text feeds AI context.
+// - `useDigest`: switches between digest and raw text for AI context.
+// - `ferpaRisk`: faculty-set risk band. Typically used to downgrade a
+//   false-positive flag (e.g. 'medium' → 'low'); accepts any of the
+//   three literal values. `autoSetAside` itself is policy-driven and not
+//   editable via this route — faculty override the policy by toggling
+//   `ignored`.
 export async function PATCH(req: Request, { params }: RouteContext): Promise<Response> {
   const { code, id } = await params;
   const url = new URL(req.url);
@@ -54,8 +65,19 @@ export async function PATCH(req: Request, { params }: RouteContext): Promise<Res
   const body = await req.json().catch(() => ({})) as Record<string, unknown>;
   const hasIgnored = typeof body.ignored === 'boolean';
   const hasUseDigest = typeof body.useDigest === 'boolean';
-  if (!hasIgnored && !hasUseDigest) {
-    return NextResponse.json({ error: 'at least one of `ignored` or `useDigest` must be a boolean' }, { status: 400 });
+  const hasFerpaRisk =
+    body.ferpaRisk === 'low' || body.ferpaRisk === 'medium' || body.ferpaRisk === 'high';
+  if (!hasIgnored && !hasUseDigest && !hasFerpaRisk) {
+    return NextResponse.json(
+      { error: 'at least one of `ignored`, `useDigest`, or `ferpaRisk` must be provided' },
+      { status: 400 },
+    );
+  }
+  if (body.ferpaRisk !== undefined && !hasFerpaRisk) {
+    return NextResponse.json(
+      { error: '`ferpaRisk` must be one of "low", "medium", "high"' },
+      { status: 400 },
+    );
   }
 
   if (hasIgnored) {
@@ -65,6 +87,9 @@ export async function PATCH(req: Request, { params }: RouteContext): Promise<Res
   if (hasUseDigest) {
     const updated = await setMaterialUseDigest(id, body.useDigest as boolean);
     if (!updated) return NextResponse.json({ error: 'no row updated' }, { status: 404 });
+  }
+  if (hasFerpaRisk) {
+    await updateFerpaRisk({ id, risk: body.ferpaRisk as 'low' | 'medium' | 'high' });
   }
 
   return NextResponse.json({ ok: true });

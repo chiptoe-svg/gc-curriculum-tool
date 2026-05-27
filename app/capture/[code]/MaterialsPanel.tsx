@@ -3,6 +3,10 @@
 import { useRef, useState } from 'react';
 import { CanvasImportZone } from '@/components/CanvasImportZone';
 
+export type IndexingStatus = 'pending' | 'indexing' | 'ready' | 'failed' | 'skipped';
+export type FerpaRisk = 'low' | 'medium' | 'high';
+export type AuditMode = 'full' | 'simple';
+
 export interface CaptureMaterial {
   id: string;
   fileName: string;
@@ -16,6 +20,11 @@ export interface CaptureMaterial {
   digest: string | null;
   digestGeneratedAt: string | null;
   useDigest: boolean;
+  indexingStatus: IndexingStatus;
+  indexedAt: string | null;
+  ferpaRisk: FerpaRisk;
+  autoSetAside: boolean;
+  setAsideReason: string | null;
 }
 
 export interface CourseCatalogView {
@@ -26,6 +35,7 @@ export interface CourseCatalogView {
   learningObjectives: string[];
   majorProjects: string[];
   skillsRequired: string[];
+  auditMode: AuditMode;
 }
 
 interface Props {
@@ -142,6 +152,48 @@ function formatTokens(tokens: number): string {
   return `${(tokens / 1000).toFixed(tokens >= 10_000 ? 0 : 1)}k tok`;
 }
 
+function formatRelativeTime(iso: string | null): string {
+  if (!iso) return '';
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return '';
+  const diffSec = Math.max(0, Math.floor((Date.now() - then) / 1000));
+  if (diffSec < 60) return `${diffSec}s ago`;
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  const diffDay = Math.floor(diffHr / 24);
+  return `${diffDay}d ago`;
+}
+
+function IndexingStatusDot({ status, indexedAt }: { status: IndexingStatus; indexedAt: string | null }) {
+  const color =
+    status === 'ready' ? '#10B981'
+      : status === 'indexing' ? '#F59E0B'
+      : status === 'failed' ? '#EF4444'
+      : '#9CA3AF';
+  const tooltip = (() => {
+    const base =
+      status === 'ready' ? 'ready'
+        : status === 'indexing' ? 'indexing'
+        : status === 'failed' ? 'failed'
+        : status === 'skipped' ? 'skipped'
+        : 'pending';
+    if (status === 'ready' && indexedAt) {
+      return `${base} · indexed ${formatRelativeTime(indexedAt)}`;
+    }
+    return base;
+  })();
+  return (
+    <span
+      aria-label={`indexing status: ${status}`}
+      title={tooltip}
+      className={'inline-block shrink-0 rounded-full ' + (status === 'indexing' ? 'animate-pulse' : '')}
+      style={{ width: '10px', height: '10px', backgroundColor: color }}
+    />
+  );
+}
+
 function StatusChip({ status }: { status: string }) {
   if (status === 'ok') {
     return <span className="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-800">extracted</span>;
@@ -209,15 +261,24 @@ function MaterialRow({
   onToggleIgnored,
   onDelete,
   onToggleUseDigest,
+  onIncludeAnyway,
+  onDowngradeFerpa,
   busy,
 }: {
   material: CaptureMaterial;
   onToggleIgnored: (next: boolean) => void;
   onDelete: () => void;
   onToggleUseDigest: (next: boolean) => void;
+  onIncludeAnyway: () => Promise<void>;
+  onDowngradeFerpa: () => Promise<void>;
   busy: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [ferpaWidgetOpen, setFerpaWidgetOpen] = useState(false);
+  const [overrideError, setOverrideError] = useState<string | null>(null);
+  const [ferpaError, setFerpaError] = useState<string | null>(null);
+  const [overrideBusy, setOverrideBusy] = useState(false);
+  const [ferpaBusy, setFerpaBusy] = useState(false);
   const canvas = isCanvasMaterial(material);
   const gdoc = isGoogleDocMaterial(material);
   const gslides = isGoogleSlidesMaterial(material);
@@ -237,12 +298,45 @@ function MaterialRow({
       : tokenEstimate >= 20_000 ? 'text-amber-700'
       : '';
 
+  const skippedIndex = material.indexingStatus === 'skipped';
+  // The row is visually dimmed when faculty (or policy) excluded it from
+  // the audit. Skipped-by-indexing materials get the same strike-through
+  // treatment as auto-set-aside rows so faculty can spot them at a glance.
+  const rowDimmed = material.ignored || skippedIndex;
+  const filenameStrike = skippedIndex || (material.ignored && material.autoSetAside);
+
+  async function handleIncludeAnyway() {
+    setOverrideError(null);
+    setOverrideBusy(true);
+    try {
+      await onIncludeAnyway();
+    } catch (e) {
+      setOverrideError(e instanceof Error ? e.message : 'Failed to include');
+    } finally {
+      setOverrideBusy(false);
+    }
+  }
+
+  async function handleDowngradeFerpa() {
+    setFerpaError(null);
+    setFerpaBusy(true);
+    try {
+      await onDowngradeFerpa();
+      setFerpaWidgetOpen(false);
+    } catch (e) {
+      setFerpaError(e instanceof Error ? e.message : 'Failed to downgrade');
+    } finally {
+      setFerpaBusy(false);
+    }
+  }
+
   return (
-    <li className={'flex flex-col gap-1 px-3 py-2 ' + (material.ignored ? 'opacity-60' : '')}>
+    <li className={'flex flex-col gap-1 px-3 py-2 ' + (rowDimmed ? 'opacity-60' : '')}>
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-medium truncate">{material.fileName}</span>
+            <IndexingStatusDot status={material.indexingStatus} indexedAt={material.indexedAt} />
+            <span className={'text-sm font-medium truncate ' + (filenameStrike ? 'line-through' : '')}>{material.fileName}</span>
             {canvas ? (
               <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-800">Canvas</span>
             ) : canvasFile ? (
@@ -283,6 +377,18 @@ function MaterialRow({
                 ignored
               </span>
             )}
+            {material.ferpaRisk !== 'low' && (
+              <button
+                type="button"
+                onClick={() => setFerpaWidgetOpen(o => !o)}
+                title="FERPA risk band — click to review or downgrade if it's a false positive."
+                className="rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-800 hover:bg-amber-100"
+              >
+                {material.ferpaRisk === 'high'
+                  ? 'Student names + IDs detected'
+                  : 'Student names detected — FERPA review'}
+              </button>
+            )}
           </div>
           <p className="mt-0.5 text-[11px] text-muted-foreground">
             {summary && <span>{summary} · </span>}
@@ -301,6 +407,59 @@ function MaterialRow({
             <span>{humanSize(material.sizeBytes)}</span>
             {material.extractionMethod && <span> · via {material.extractionMethod}</span>}
           </p>
+          {material.autoSetAside && (
+            <div className="mt-1 flex items-start justify-between gap-2 rounded border border-amber-200 bg-amber-50/50 px-2 py-1">
+              <p className="text-[11px] leading-snug text-amber-800">
+                <span className="font-medium">Auto-set-aside:</span>{' '}
+                {material.setAsideReason ?? 'flagged by the materials policy'}
+                {!material.ignored && (
+                  <span className="ml-1 italic text-amber-700">(overridden — included in audit)</span>
+                )}
+              </p>
+              {material.ignored && (
+                <button
+                  type="button"
+                  onClick={handleIncludeAnyway}
+                  disabled={busy || overrideBusy}
+                  className="shrink-0 text-[11px] font-medium text-amber-900 underline hover:text-amber-700 disabled:opacity-50"
+                >
+                  {overrideBusy ? 'Including…' : 'Include anyway'}
+                </button>
+              )}
+            </div>
+          )}
+          {overrideError && (
+            <p className="mt-1 text-[11px] text-destructive">{overrideError}</p>
+          )}
+          {ferpaWidgetOpen && (
+            <div className="mt-1 flex flex-wrap items-center gap-2 rounded border border-amber-200 bg-amber-50/50 px-2 py-1.5 text-[11px]">
+              <button
+                type="button"
+                onClick={handleDowngradeFerpa}
+                disabled={ferpaBusy}
+                className="rounded border border-amber-300 bg-white px-1.5 py-0.5 font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-50"
+              >
+                {ferpaBusy ? 'Saving…' : 'Mark as low (false positive)'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setFerpaWidgetOpen(false)}
+                disabled={ferpaBusy}
+                className="rounded border border-amber-300 bg-white px-1.5 py-0.5 font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-50"
+              >
+                Keep the flag
+              </button>
+              <button
+                type="button"
+                onClick={() => setFerpaWidgetOpen(false)}
+                disabled={ferpaBusy}
+                className="text-amber-700 underline hover:text-amber-900 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              {ferpaError && <span className="text-destructive">{ferpaError}</span>}
+            </div>
+          )}
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
           {material.digest && (
@@ -367,6 +526,9 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
   const [scanMessage, setScanMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
   const [compressing, setCompressing] = useState(false);
   const [compressMessage, setCompressMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
+  const [auditModeOpen, setAuditModeOpen] = useState(false);
+  const [auditModeBusy, setAuditModeBusy] = useState(false);
+  const [auditModeError, setAuditModeError] = useState<string | null>(null);
   // Re-extract Canvas files: shows an inline token prompt when opened,
   // posts to /canvas-reextract, refreshes materials on success. Token
   // never persists — re-prompted each time.
@@ -497,6 +659,11 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
           digest: string | null;
           digestGeneratedAt: string | null;
           useDigest: boolean;
+          indexingStatus: IndexingStatus;
+          indexedAt: string | null;
+          ferpaRisk: FerpaRisk;
+          autoSetAside: boolean;
+          setAsideReason: string | null;
         }>;
       };
       pushMaterials(json.materials);
@@ -534,6 +701,7 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
         learningObjectives: updated.learningObjectives ?? [],
         majorProjects: updated.majorProjects ?? [],
         skillsRequired: updated.skillsRequired ?? [],
+        auditMode: updated.auditMode ?? course.auditMode,
       };
       onCourseChange?.(merged);
       setSyncMessage({ kind: 'ok', text: 'Catalog synced from Google Sheet.' });
@@ -618,6 +786,94 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
     }
   }
 
+  // Faculty override: include an auto-set-aside material in the audit by
+  // flipping `ignored` off while leaving `autoSetAside` true (audit trail).
+  // Optimistic — local state first, revert + rethrow on failure so the row
+  // can surface the inline error.
+  async function includeAutoSetAside(id: string): Promise<void> {
+    const previous = materials;
+    const next = materials.map(m => (m.id === id ? { ...m, ignored: false } : m));
+    pushMaterials(next);
+    try {
+      const res = await fetch(
+        `/api/courses/${encodeURIComponent(course.code)}/materials/${encodeURIComponent(id)}?slug=${encodeURIComponent(slug)}`,
+        {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ ignored: false }),
+        },
+      );
+      if (!res.ok) {
+        pushMaterials(previous);
+        const body = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(body.error ?? `Failed (${res.status})`);
+      }
+    } catch (e) {
+      pushMaterials(previous);
+      throw e;
+    }
+  }
+
+  // Faculty downgrade of a FERPA flag — typically a false positive.
+  // Optimistic, with revert on failure.
+  async function downgradeFerpa(id: string): Promise<void> {
+    const previous = materials;
+    const next = materials.map(m => (m.id === id ? { ...m, ferpaRisk: 'low' as const } : m));
+    pushMaterials(next);
+    try {
+      const res = await fetch(
+        `/api/courses/${encodeURIComponent(course.code)}/materials/${encodeURIComponent(id)}?slug=${encodeURIComponent(slug)}`,
+        {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ ferpaRisk: 'low' }),
+        },
+      );
+      if (!res.ok) {
+        pushMaterials(previous);
+        const body = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(body.error ?? `Failed (${res.status})`);
+      }
+    } catch (e) {
+      pushMaterials(previous);
+      throw e;
+    }
+  }
+
+  async function setAuditMode(next: AuditMode): Promise<void> {
+    if (next === course.auditMode) {
+      setAuditModeOpen(false);
+      return;
+    }
+    setAuditModeBusy(true);
+    setAuditModeError(null);
+    const previousCourse = course;
+    // Optimistic local update via the parent's onCourseChange.
+    onCourseChange?.({ ...course, auditMode: next });
+    try {
+      const res = await fetch(
+        `/api/courses/${encodeURIComponent(course.code)}?slug=${encodeURIComponent(slug)}`,
+        {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ auditMode: next }),
+        },
+      );
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({})) as { error?: string };
+        onCourseChange?.(previousCourse);
+        setAuditModeError(body.error ?? `Failed (${res.status})`);
+        return;
+      }
+      setAuditModeOpen(false);
+    } catch (e) {
+      onCourseChange?.(previousCourse);
+      setAuditModeError(e instanceof Error ? e.message : 'Failed to update audit mode');
+    } finally {
+      setAuditModeBusy(false);
+    }
+  }
+
   async function deleteMaterial(id: string) {
     setBusy(id);
     try {
@@ -677,6 +933,14 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
         digest: null,
         digestGeneratedAt: null,
         useDigest: false,
+        // Newly-inserted rows start in the pre-pipeline state; the post-
+        // upload /context refetch picks up the real indexing + policy
+        // outcomes once the server side completes.
+        indexingStatus: 'pending',
+        indexedAt: null,
+        ferpaRisk: 'low',
+        autoSetAside: false,
+        setAsideReason: null,
       };
       pushMaterials([...materials, newMaterial]);
     } catch (e) {
@@ -741,6 +1005,48 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
           )}
         </div>
         <div className="flex items-center gap-2">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setAuditModeOpen(o => !o)}
+              disabled={auditModeBusy}
+              title="Simple mode skips chunk indexing for this course; the agent runs against digests inline. Switch to Full to enable retrieval."
+              className="rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
+            >
+              Audit mode: {course.auditMode === 'simple' ? 'Simple' : 'Full'} {auditModeOpen ? '▴' : '▾'}
+            </button>
+            {auditModeOpen && (
+              <div className="absolute right-0 top-full z-10 mt-1 w-56 rounded-md border bg-card shadow-md">
+                <button
+                  type="button"
+                  onClick={() => void setAuditMode('full')}
+                  disabled={auditModeBusy}
+                  className={
+                    'block w-full px-3 py-1.5 text-left text-xs hover:bg-muted ' +
+                    (course.auditMode === 'full' ? 'font-medium text-foreground' : 'text-muted-foreground')
+                  }
+                >
+                  Full {course.auditMode === 'full' && '✓'}
+                  <span className="block text-[10px] text-muted-foreground">Retrieval enabled (default).</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void setAuditMode('simple')}
+                  disabled={auditModeBusy}
+                  className={
+                    'block w-full border-t px-3 py-1.5 text-left text-xs hover:bg-muted ' +
+                    (course.auditMode === 'simple' ? 'font-medium text-foreground' : 'text-muted-foreground')
+                  }
+                >
+                  Simple {course.auditMode === 'simple' && '✓'}
+                  <span className="block text-[10px] text-muted-foreground">Skip indexing; digests inline.</span>
+                </button>
+                {auditModeError && (
+                  <p className="border-t px-3 py-1.5 text-[10px] text-destructive">{auditModeError}</p>
+                )}
+              </div>
+            )}
+          </div>
           <button
             type="button"
             onClick={handleSyncFromSheet}
@@ -883,6 +1189,8 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
                         onToggleIgnored={next => toggleIgnored(m.id, next)}
                         onDelete={() => deleteMaterial(m.id)}
                         onToggleUseDigest={next => toggleUseDigest(m.id, next)}
+                        onIncludeAnyway={() => includeAutoSetAside(m.id)}
+                        onDowngradeFerpa={() => downgradeFerpa(m.id)}
                         busy={busy === m.id}
                       />
                     ))}

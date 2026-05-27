@@ -62,6 +62,7 @@ export default async function CapturePage({ params, searchParams }: Props) {
     learningObjectives: course.learningObjectives as string[],
     majorProjects: course.majorProjects as string[],
     skillsRequired: course.skillsRequired as string[],
+    auditMode: (course.auditMode === 'simple' ? 'simple' : 'full') as 'full' | 'simple',
   };
 
   const materialsView = materials.map(m => ({
@@ -77,6 +78,11 @@ export default async function CapturePage({ params, searchParams }: Props) {
     digest: m.digest ?? null,
     digestGeneratedAt: m.digestGeneratedAt ? m.digestGeneratedAt.toISOString() : null,
     useDigest: m.useDigest,
+    indexingStatus: (m.indexingStatus ?? 'pending') as 'pending' | 'indexing' | 'ready' | 'failed' | 'skipped',
+    indexedAt: m.indexedAt ? m.indexedAt.toISOString() : null,
+    ferpaRisk: (m.ferpaRisk ?? 'low') as 'low' | 'medium' | 'high',
+    autoSetAside: m.autoSetAside,
+    setAsideReason: m.setAsideReason ?? null,
   }));
 
   return (

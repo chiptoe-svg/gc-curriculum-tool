@@ -47,6 +47,7 @@ export async function GET(req: Request, { params }: RouteContext): Promise<Respo
       majorProjects: course.majorProjects,
       skillsRequired: course.skillsRequired,
       builderStatus: course.builderStatus,
+      auditMode: course.auditMode,
     },
     profile: profile
       ? {
@@ -73,6 +74,11 @@ export async function GET(req: Request, { params }: RouteContext): Promise<Respo
       digest: m.digest,
       digestGeneratedAt: m.digestGeneratedAt,
       useDigest: m.useDigest,
+      indexingStatus: m.indexingStatus,
+      indexedAt: m.indexedAt,
+      ferpaRisk: m.ferpaRisk,
+      autoSetAside: m.autoSetAside,
+      setAsideReason: m.setAsideReason,
     })),
     existingCaptureProfile: existingCaptureProfile
       ? {

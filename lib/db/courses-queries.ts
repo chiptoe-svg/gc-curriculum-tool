@@ -41,6 +41,24 @@ export async function getCourseByCode(code: string) {
   return rows[0] ?? null;
 }
 
+/**
+ * Sets the per-course audit mode. 'simple' tells the audit pipeline to
+ * skip chunk indexing and feed digests inline; 'full' (default) enables
+ * retrieval over indexed chunks. Returns false if the course code was
+ * not found.
+ */
+export async function setCourseAuditMode(
+  code: string,
+  auditMode: 'full' | 'simple',
+): Promise<boolean> {
+  const rows = await db
+    .update(courses)
+    .set({ auditMode })
+    .where(eq(courses.code, code))
+    .returning({ code: courses.code });
+  return rows.length > 0;
+}
+
 export async function upsertCourses(parsed: ParsedCourse[]): Promise<number> {
   if (parsed.length === 0) return 0;
   const rows = parsed.map(p => ({
