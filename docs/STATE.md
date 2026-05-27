@@ -117,7 +117,7 @@ Tables defined in [`lib/db/schema.ts`](../lib/db/schema.ts):
 - Queries: `lib/db/capture-messages-queries.ts` (`appendMessage`, `getSessionMessages`, `startNewSession`).
 - Data migration: existing `capture_conversations` row for GC 4800 mirrored into `capture_messages` (one-off script in `scripts/_one-off/`).
 - Provider abstraction extended with `completeWithTools` across OpenAI, Anthropic, Local, Fake providers. Built on Vercel AI SDK v6 (`ai@6.0.191`) using `generateText` + `Output.object` + `tool` primitives (v6 replaces v4's `generateObject`). No AI function exposes this yet — wires up in Stage 3.
-- Stages 2–5 wait on user's local Weaviate instance (~2 days out per the spec phasing).
+- Weaviate installed 2026-05-27 on the local Mac (v1.37.5 via Homebrew, launchd-managed at `~/Library/LaunchAgents/com.weaviate.plist`, anonymous access, HTTP `127.0.0.1:8090` + gRPC `127.0.0.1:50051`, data under `~/.weaviate/data`, registered in `~/.dev-ports.yaml`). Stage 2b unblocked. Stages 3–5 (agent loop, synthesis, migration) still ahead.
 
 **Tactical Canvas-Syllabus suppression shipped 2026-05-26** (commit `8774b92`). Canvas Syllabus pages are skipped at import when the Sheets catalog has ≥1 learning objective; three existing rows (GC 1010, GC 3800, GC 4800) retroactively marked ignored. Step ahead of the broader curation rule set in the agentic-retrieval spec.
 
