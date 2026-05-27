@@ -387,10 +387,23 @@
 
       <p>The employment dataset documented in this proposal tells a different story. Clemson GC graduates between 2018 and 2026 entered 43 distinct occupational categories across 58 industries, including design, marketing, technology, sales, and management roles at a wide range of employers. The distribution differs substantially from what the current crosswalk would predict.</p>
 
-      <p>The gap between the crosswalk and the employment record suggests that the program has been producing outcomes that its official classification does not describe. The data presented here is not aspirational — it represents verified employment records. The question this proposal addresses is whether those outcomes can be connected systematically to what the curriculum teaches, course by course.</p>
+      <p>The gap between the crosswalk and the employment record indicates that Clemson GC graduates have entered outcomes not well described by the current crosswalk. The data presented here is not aspirational — it documents observed graduate placements. The question this proposal addresses is whether the curriculum's stated learning outcomes can be compared systematically against the competency profiles of the occupations graduates actually enter, course by course.</p>
 
       <div class="callout">
-        <p>The 268 graduate records in this dataset precede the curriculum analysis tool described in this proposal. They provide an independent empirical baseline against which AI-generated course learning outcomes can be evaluated — a comparison that is possible precisely because the two datasets were developed separately.</p>
+        <p>The 268 graduate records in this dataset precede the curriculum analysis tool described in this proposal. They provide an independent reference set against which AI-generated course learning outcomes can be compared — a comparison that is possible precisely because the two datasets were developed separately. <strong>Important scope note:</strong> strong alignment between AI-generated KUDs and the competency profiles of occupations graduates entered would provide evidence of <em>external relevance</em>. It would not, by itself, establish student attainment, instructional effectiveness, or causal impact of the curriculum on career outcomes. The proposal is therefore better described as an <em>external-alignment / criterion-relevance check</em> than as validation in the stronger sense.</p>
+      </div>
+
+      <div class="callout" style="margin-top: 14px;">
+        <strong>Data methods (placeholder — to be completed before publication):</strong>
+        <ul style="margin: 8px 0 0 22px;">
+          <li>Source of records — Clemson Graphic Communications department alumni tracking, supplemented by ACCGC Graduate Employment Dataset 2018–2026.</li>
+          <li>Collection dates — 2018–2026; specific cohorts and collection cadence to be documented.</li>
+          <li>Inclusion / exclusion rules — to be specified (e.g., requirement for verifiable employer + job title; treatment of graduate-school enrollees, non-degree completers, no-response cases).</li>
+          <li>Coding of job title → SOC and employer → NAICS — to be specified, including whether human, AI-assisted, or automated; inter-rater or audit procedure if multiple coders.</li>
+          <li>Definition of "verified" — currently used as shorthand for records confirmed against at least one external source (LinkedIn, employer directory, or alumni-office confirmation); to be tightened.</li>
+          <li>Relationship between the 268 Clemson subset and the 603 cross-program records: the broader ACCGC dataset spans 9 graphic-communications programs; the 268 are the Clemson-specific subset used for this proposal's curriculum-alignment work.</li>
+          <li>Privacy / FERPA / IRB or institutional review status — to be confirmed.</li>
+        </ul>
       </div>
     </div>
 
@@ -399,7 +412,7 @@
       <div class="section-label">Section 2 — Graduate Employment Distribution</div>
       <h2>Documented graduate employment, 2018–2026</h2>
 
-      <p>The following occupations represent where 268 Clemson GC graduates were employed between 2018 and 2026. All records are drawn from verified employment data with job titles, employers, and SOC codes.</p>
+      <p>The following occupations represent where 268 Clemson GC graduates were employed between 2018 and 2026. Records are drawn from the alumni-tracking dataset described in the Data Methods callout above; each carries a job title, employer, and SOC code coded from those values.</p>
 
       <table class="soc-table">
         <thead>
@@ -596,7 +609,7 @@
         </div>
         <div class="coverage-box proposed">
           <div class="coverage-pct">88.4%</div>
-          <div class="coverage-desc"><strong>Proposed crosswalk (2030)</strong><br>21 SOC codes grounded in graduate data<br>237 of 268 Clemson graduates captured</div>
+          <div class="coverage-desc"><strong>Project-proposed 21-code reference set</strong><br>21 SOC codes grounded in Clemson graduate data<br>237 of 268 Clemson graduates captured</div>
         </div>
       </div>
 
@@ -637,7 +650,7 @@
           </div>
         </div>
         <div class="function-body">
-          <p>O*NET (Occupational Information Network), maintained by the Department of Labor, provides a public competency profile for each SOC code: knowledge areas, skills, abilities, and work activities. Those categories map to KUD structure as follows:</p>
+          <p>O*NET (Occupational Information Network), maintained by the Department of Labor, provides a public competency profile for each SOC code: knowledge areas, skills, abilities, and work activities. O*NET categories do not map one-to-one onto KUD — O*NET "Skills" often describe performed capabilities closer to Do than Understand; "Abilities" do not map cleanly to any KUD dimension; "Tasks" may be more directly Do-like than the generalized work activities; "Knowledge" may involve both Know and Understand. The proposed crosswalk below is a starting heuristic that the validation module would refine with a transparent mapping rubric tested on sampled occupations before treating it as the benchmark:</p>
 
           <div style="background:#f5f7fb; border-radius:6px; padding:16px 20px; margin:14px 0; font-family:'Arial',sans-serif; font-size:13px;">
             <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; text-align:center;">
@@ -703,7 +716,7 @@
         </div>
         <div class="function-body">
           <p>Point-in-time employment data shows where graduates are when observed. Career trajectory data shows the arc — where they start, where they are five years later, and what that progression reveals about what the program actually enables over time.</p>
-          <p>A graduate who enters as a Graphic Designer and advances to Creative Director at a national agency, or who starts in print production and moves into brand management at a consumer goods company — those trajectories are evidence of curriculum impact that first-job data cannot capture.</p>
+          <p>A graduate who enters as a Graphic Designer and advances to Creative Director at a national agency, or who starts in print production and moves into brand management at a consumer goods company — those trajectories provide external context about where graduates move over time. Trajectories are influenced by labor markets, employer training, individual aptitude, networks, internships, geography, and post-graduation experience; on their own they can suggest whether curricular competencies remain relevant to later roles, but they do not establish curriculum impact without additional study design.</p>
           <p><strong>What it would produce:</strong> Trajectory pattern map — which starting roles lead where across the graduate population. Curriculum-to-trajectory alignment: does the KUD profile explain career advancement patterns, not just entry placement?</p>
           <p>
             <span class="tag amber">Data collection planned</span>
@@ -717,20 +730,20 @@
     <!-- Section 5: Methodology validation -->
     <div class="section">
       <div class="section-label">Section 6 — Methodological Significance</div>
-      <h2>Empirical validation of the KUD framework</h2>
+      <h2>External-alignment check for the KUD framework</h2>
 
-      <p>Curriculum frameworks are typically validated theoretically — by alignment with established taxonomies or expert judgment about what constitutes good outcome language. This proposal would enable a less common form of validation: comparison against an empirical record of graduate outcomes that preceded the tool's development by a decade.</p>
+      <p>Curriculum frameworks are typically evaluated theoretically — by alignment with established taxonomies or expert judgment about what constitutes good outcome language. This proposal would enable a less common form of evidence: comparison against an empirical record of graduate placements that preceded the tool's development by a decade. The check is best characterized as <em>external-alignment validation</em> or <em>criterion-relevance</em>: it tests whether AI-generated course profiles correspond to the occupational competency profiles for the roles graduates actually enter. It does not, by itself, establish student attainment, instructional effectiveness, or causal impact on career outcomes.</p>
 
-      <p>The historical graduate data is fixed and independent. It was not generated by this methodology, and it was not shaped by it. Those 268 records represent careers that materialized before this analysis framework existed. That independence is what makes it a genuine validation rather than a circular argument. The data is the benchmark. The tool is what we test against it.</p>
+      <p>The historical graduate data is fixed and independent. It was not generated by this methodology and was not shaped by it. The 268 records document placements that materialized before this analysis framework existed. That independence is what makes the comparison non-circular — but non-circular is not the same as causal. The data is a useful external reference; the tool is what we test against it.</p>
 
-      <p>If the KUDs generated from GC course materials align well with the O*NET competency profiles of jobs that 88.4% of Clemson GC graduates actually hold, that is evidence the methodology captures something real — not just plausible-sounding academic language. If they don't align, that is a calibration signal: the framework tells us where the methodology over- or under-weights certain competencies relative to what the careers actually require.</p>
+      <p>Strong alignment between AI-generated KUDs and the O*NET competency profiles of occupations 88.4% of Clemson GC graduates hold would provide evidence that the methodology produces outcome descriptions corresponding to documented placements — not a claim that students learned those competencies, nor that the curriculum caused the career outcomes. Weak alignment would be a calibration signal: the comparison would tell us where the methodology over- or under-weights certain competencies relative to occupational requirements (with the caveat that O*NET itself is a generic public profile, not a precise proxy for any specific first-job's requirements).</p>
 
       <div class="two-col">
         <div class="card">
-          <div class="card-header">The validation chain</div>
+          <div class="card-header">The alignment chain</div>
           <div class="card-body">
-            <p>Course materials → AI-generated KUDs → O*NET competency alignment → Graduate career destinations</p>
-            <p>Each link is independently verifiable. The graduate data is fixed — it preceded the tool. That independence is what makes this a genuine validation rather than a circular argument.</p>
+            <p>Course materials → AI-generated KUDs → O*NET competency mapping → Graduate career destinations</p>
+            <p>Each link is independently inspectable. The graduate data is fixed — it preceded the tool — which makes this comparison non-circular. Non-circular is not the same as causal: this chain establishes external alignment, not curriculum impact.</p>
           </div>
         </div>
         <div class="card">
@@ -743,8 +756,8 @@
       </div>
 
       <div class="callout">
-        <p>The analytical chain — course materials → AI-generated KUDs → O*NET competency alignment → 268 independent graduate career records — constitutes, to our knowledge, the first empirically grounded curriculum-to-career alignment analysis attempted in graphic communications education. Prior work in this area has relied on crosswalk-based mapping or expert judgment; individual graduate outcome data at this scale has not previously been available alongside a systematic course-level outcomes analysis.</p>
-        <p style="margin-top:10px;">If the analysis yields strong alignment, the results would be relevant beyond Clemson: they would provide evidence that AI-assisted curriculum materials analysis produces outcome descriptions that correspond to documented career placements. That finding would be generalizable to other GC programs and potentially to adjacent programs sharing similar occupational distributions.</p>
+        <p>The analytical chain — course materials → AI-generated KUDs → O*NET competency mapping → 268 independent graduate career records — would be an unusually concrete curriculum-to-career alignment analysis for this program, because it joins course-level evidence with documented graduate destinations rather than relying on crosswalk-based mapping or expert judgment alone. Whether comparable empirical work has been done in graphic-communications education elsewhere is a literature-review question that has not been completed for this proposal.</p>
+        <p style="margin-top:10px;">If the analysis yields strong alignment, the results would be evidence that AI-assisted curriculum materials analysis produces outcome descriptions corresponding to documented placements for this program. Replication in other programs would be needed before generalizing.</p>
       </div>
     </div>
 
