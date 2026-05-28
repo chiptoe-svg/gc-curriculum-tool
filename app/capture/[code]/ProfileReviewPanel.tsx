@@ -4,10 +4,45 @@ import { useMemo, useState } from 'react';
 import type {
   CaptureProfile,
   CaptureCompetency,
+  CaptureProfileSourceType,
+  CaptureProfileCitationType,
   CaptureReviewerStatus,
 } from '@/lib/ai/capture/schema';
 import { VerificationSummary } from './VerificationSummary';
 import { describeDepth, type Dimension } from '@/lib/ai/capture/depth-anchors';
+
+/**
+ * v2 provenance badge — renders nothing for pre-v2 findings (source absent).
+ * Color encodes provenance (teal = instructor-only, amber = materials-only,
+ * gray = inferred / mixed / no citations); `title` shows citation count on
+ * hover. Click-through to the citation drawer is Stage 5 polish.
+ */
+export function SourceBadge({
+  source,
+  citations,
+}: {
+  source: CaptureProfileSourceType | undefined;
+  citations: CaptureProfileCitationType[] | undefined;
+}) {
+  if (!source) return null;
+  const count = citations?.length ?? 0;
+  const palette =
+    source === 'instructor'
+      ? 'bg-teal-100 text-teal-900 border-teal-300'
+      : source === 'materials'
+        ? 'bg-amber-100 text-amber-900 border-amber-300'
+        : 'bg-stone-100 text-stone-700 border-stone-300';
+  const label =
+    source === 'instructor' ? 'instructor' : source === 'materials' ? 'materials' : 'inferred';
+  return (
+    <span
+      title={count > 0 ? `${count} citation${count === 1 ? '' : 's'}` : source}
+      className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider ${palette}`}
+    >
+      {label}
+    </span>
+  );
+}
 
 interface Telemetry {
   costUsdCents: number;
@@ -91,16 +126,19 @@ function CompetencyCard({
     <div className="rounded-md border bg-card px-4 py-3 space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 space-y-1">
-          <span
-            className={
-              'inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide '
-              + (isTechnical
-                ? 'bg-blue-50 text-blue-700'
-                : 'bg-amber-50 text-amber-700')
-            }
-          >
-            {competency.type}
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span
+              className={
+                'inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide '
+                + (isTechnical
+                  ? 'bg-blue-50 text-blue-700'
+                  : 'bg-amber-50 text-amber-700')
+              }
+            >
+              {competency.type}
+            </span>
+            <SourceBadge source={competency.source} citations={competency.citations} />
+          </div>
           <textarea
             value={competency.statement}
             onChange={e => onChange({ ...competency, statement: e.target.value })}
@@ -539,7 +577,13 @@ export function ProfileReviewPanel({
 
         <aside className="space-y-5 rounded-md border bg-card px-4 py-3">
           <div>
-            <h3 className="text-sm font-semibold">Audit notes</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-semibold">Audit notes</h3>
+              <SourceBadge
+                source={working.audit_notes.source}
+                citations={working.audit_notes.citations}
+              />
+            </div>
             <p className="text-xs text-muted-foreground">
               Findings from the audit that don&apos;t fit into a competency cell.
             </p>

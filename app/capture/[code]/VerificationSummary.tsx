@@ -1,6 +1,7 @@
 'use client';
 
 import type { CaptureVerificationSummary } from '@/lib/ai/capture/schema';
+import { SourceBadge } from './ProfileReviewPanel';
 
 interface Props {
   summary: CaptureVerificationSummary;
@@ -32,9 +33,12 @@ export function VerificationSummary({ summary }: Props) {
   return (
     <section className="rounded-md border bg-amber-50/50 px-4 py-4 shadow-sm space-y-4">
       <header>
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-700">
-          Does this capture your course?
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-700">
+            Does this capture your course?
+          </p>
+          <SourceBadge source={summary.source} citations={summary.citations} />
+        </div>
         <p className="mt-0.5 text-xs text-muted-foreground">
           Read each section and decide whether the system got it right. Use
           &ldquo;Back to chat&rdquo; if anything looks off, or &ldquo;Confirm and snapshot&rdquo;
