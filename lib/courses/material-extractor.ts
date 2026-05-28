@@ -120,6 +120,16 @@ class DoclingExtractor implements MaterialExtractor {
     form.append('files', blob, fileName);
     form.append('to_formats', 'md');
 
+    // XLSX images (embedded charts, logos, screenshots) are almost never
+    // audit-relevant — the agent cares about cell content, not the
+    // graphics. Skip image extraction entirely so Docling doesn't drop
+    // base64 data URIs into the markdown. Defaults to include_images=true
+    // upstream, so for PDFs/DOCX/PPTX we still pull them.
+    const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    if (mimeType === XLSX_MIME) {
+      form.append('include_images', 'false');
+    }
+
     // Optional VLM picture-description pass. Enabled when DOCLING_VLM_ENABLED
     // is truthy AND docling-serve was started with
     // DOCLING_SERVE_ALLOW_CUSTOM_PICTURE_DESCRIPTION_CONFIG=true and
@@ -169,8 +179,7 @@ class DoclingExtractor implements MaterialExtractor {
     // (Docling preserves every cell of every sheet). Compact it before
     // returning so the digest + indexing pipeline sees content-shaped
     // markdown rather than 100× syntax overhead.
-    const xlsxMime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-    const text = mimeType === xlsxMime ? compactSpreadsheetMarkdown(rawText) : rawText;
+    const text = mimeType === XLSX_MIME ? compactSpreadsheetMarkdown(rawText) : rawText;
     // Best-effort page/slide/sheet count from --- separators in the markdown.
     // Docling's ExportDocumentResponse doesn't surface a count field when
     // only md is requested.

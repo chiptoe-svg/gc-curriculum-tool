@@ -23,8 +23,25 @@
  *   - A table that becomes degenerate (zero non-empty rows or zero
  *     non-empty cols) is dropped from the output entirely.
  */
+/**
+ * Strip inline base64 data URIs from a markdown image — `![alt](data:...)`
+ * or bare `(data:...)`. Replaces each with an `(image)` placeholder so the
+ * fact that there WAS an image at that position is preserved without the
+ * megabyte of base64 payload. Used as the first step of compaction because
+ * Docling can emit these blobs for xlsx workbooks with embedded charts /
+ * logos even with image_export_mode=placeholder set upstream.
+ */
+function stripInlineBase64Images(markdown: string): string {
+  // Match the full markdown-image form first (greedy on `]`, narrow on
+  // `(data:...)`), then any bare unparenthesized data URIs as a fallback.
+  return markdown
+    .replace(/!\[[^\]]*\]\(data:image\/[^)]+\)/gi, '(image)')
+    .replace(/\(data:image\/[^)]+\)/gi, '(image)');
+}
+
 export function compactSpreadsheetMarkdown(markdown: string): string {
-  const lines = markdown.split('\n');
+  const stripped = stripInlineBase64Images(markdown);
+  const lines = stripped.split('\n');
   const out: string[] = [];
   let i = 0;
 

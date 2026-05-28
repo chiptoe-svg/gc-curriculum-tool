@@ -162,6 +162,26 @@ describe('compactSpreadsheetMarkdown', () => {
     expect(result).not.toContain('| A | B | C |');
   });
 
+  it('strips inline base64 data URI images (Docling xlsx embed quirk)', () => {
+    const input = [
+      '| A | B |',
+      '|---|---|',
+      '| 1 | 2 |',
+      '',
+      '![chart](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAAklEQVR4nGMAAQAABQABDQottAAAAABJRU5ErkJggg==)',
+      '',
+      '![](data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD)',
+      '',
+      'Trailing text.',
+    ].join('\n');
+    const out = compactSpreadsheetMarkdown(input);
+    expect(out).not.toContain('base64,');
+    expect(out).not.toContain('iVBORw0K');
+    expect(out).toContain('(image)');
+    expect(out).toContain('Trailing text.');
+    expect(out).toContain('| 1 | 2 |');
+  });
+
   it('handles a realistic sparse-budget shape with measurable compression', () => {
     // 5x5 grid where only 3 cells have content. Expect compression to a
     // small representation; assert the output is materially smaller than
