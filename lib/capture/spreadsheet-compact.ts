@@ -16,6 +16,10 @@
  *   - Column order never changed.
  *   - An "empty" cell is one whose trimmed value is the empty string.
  *     Cells containing "0", "-", "0.00", etc. are real values.
+ *   - A column is dropped when every data row's cell in that column is
+ *     empty, regardless of whether the column header is non-empty.
+ *     (A header-only column carries no audit-relevant content and would
+ *     just inflate token count.)
  *   - A table that becomes degenerate (zero non-empty rows or zero
  *     non-empty cols) is dropped from the output entirely.
  */
