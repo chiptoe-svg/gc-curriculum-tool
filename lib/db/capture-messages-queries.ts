@@ -126,6 +126,29 @@ export interface PriorSessionSummary {
  * continuity). Most-recent first; capped at `limit` (default 3) so the
  * agent's at-rest context stays bounded.
  */
+/**
+ * Lookup one message by id, scoped to a course. The session_id is not
+ * required by the storage layer but the route enforces it to keep messages
+ * from different sessions from leaking across the slug boundary.
+ */
+export async function getMessageById(
+  courseCode: string,
+  messageId: string,
+): Promise<{ id: string; sessionId: string; turnIndex: number; role: string; content: string | null } | null> {
+  const rows = await db
+    .select({
+      id: captureMessages.id,
+      sessionId: captureMessages.sessionId,
+      turnIndex: captureMessages.turnIndex,
+      role: captureMessages.role,
+      content: captureMessages.content,
+    })
+    .from(captureMessages)
+    .where(and(eq(captureMessages.courseCode, courseCode), eq(captureMessages.id, messageId)))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
 export async function listPriorSessionSummaries(
   courseCode: string,
   excludeSessionId: string,

@@ -197,5 +197,42 @@ export function createWeaviateVectorStore(): VectorStore {
         };
       });
     },
+
+    // -----------------------------------------------------------------------
+    // fetchChunkById — direct object lookup by UUID for the citation drawer
+    // -----------------------------------------------------------------------
+    async fetchChunkById(tenant, chunkId) {
+      await ensureSchemaOnce();
+      const client = await getWeaviateClient();
+      const col = client.collections.use(MATERIAL_CHUNK_CLASS).withTenant(tenant);
+      const obj = await col.query.fetchObjectById(chunkId);
+      if (!obj) return null;
+      const p = obj.properties as {
+        text: string;
+        fileName: string;
+        sectionTitle: string;
+        sectionIndex: number;
+        materialId: string;
+        parentSectionId: string;
+      };
+      let parentSectionText: string | null = null;
+      if (p.parentSectionId) {
+        const sec = client.collections.use(MATERIAL_SECTION_CLASS).withTenant(tenant);
+        try {
+          const parent = await sec.query.fetchObjectById(p.parentSectionId);
+          if (parent) parentSectionText = (parent.properties as { text?: string }).text ?? null;
+        } catch {
+          // Skip missing/deleted parent section gracefully
+        }
+      }
+      return {
+        text: p.text,
+        fileName: p.fileName,
+        sectionTitle: p.sectionTitle,
+        sectionIndex: p.sectionIndex,
+        materialId: p.materialId,
+        parentSectionText,
+      };
+    },
   };
 }

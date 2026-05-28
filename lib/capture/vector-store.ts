@@ -59,6 +59,14 @@ export interface VectorStore {
   upsertSections(tenant: string, sections: SectionRecord[]): Promise<void>;
   deleteByMaterial(tenant: string, materialId: string): Promise<void>;
   hybridSearch(tenant: string, input: SearchInput): Promise<SearchHit[]>;
+  fetchChunkById(tenant: string, chunkId: string): Promise<{
+    text: string;
+    fileName: string;
+    sectionTitle: string;
+    sectionIndex: number;
+    materialId: string;
+    parentSectionText: string | null;
+  } | null>;
 }
 
 interface TenantState {
@@ -118,6 +126,21 @@ export function createInMemoryVectorStore(): VectorStore {
       }
       scored.sort((a, b) => b.score - a.score);
       return scored.slice(0, input.k);
+    },
+
+    async fetchChunkById(tenant, chunkId) {
+      const state = tenants.get(tenant);
+      const c = state?.chunks.get(chunkId);
+      if (!c) return null;
+      const parent = state?.sections.get(c.parentSectionId) ?? null;
+      return {
+        text: c.text,
+        fileName: c.fileName,
+        sectionTitle: c.sectionTitle,
+        sectionIndex: c.sectionIndex,
+        materialId: c.materialId,
+        parentSectionText: parent?.text ?? null,
+      };
     },
   };
 }
