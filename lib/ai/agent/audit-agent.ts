@@ -17,7 +17,7 @@
 
 import { loadPrompt } from '@/lib/ai/prompts/load';
 import { getProviderForFunction } from '@/lib/ai/provider';
-import type { Message } from '@/lib/ai/tool-use-types';
+import type { Message, ToolCall } from '@/lib/ai/tool-use-types';
 import { buildAuditTools } from './audit-tools';
 import {
   AuditResponseSchema,
@@ -53,23 +53,24 @@ export interface AuditAgentResult {
   toolCallsUsed: number;
 }
 
-export async function runAuditAgent(input: AuditAgentInput): Promise<AuditAgentResult> {
+interface BuiltAgentCall {
+  systemPrompt: string;
+  messages: Message[];
+  tools: ReturnType<typeof buildAuditTools>;
+  isOpeningTurn: boolean;
+  userTurnIndex: number;
+}
+
+export async function buildAgentCall(input: AuditAgentInput): Promise<BuiltAgentCall> {
   const { sessionId, courseCode, userMessage, auditMode } = input;
 
   const existingBeforeUser = await getSessionMessages(courseCode, sessionId);
-  // Opening turn = no prior history AND no user message in this call.
-  // In that case the agent self-starts from at-rest context; no fake user
-  // row is written to capture_messages.
   const isOpeningTurn = existingBeforeUser.length === 0 && !userMessage;
 
-  // 1+2. Persist the faculty's typed turn at the next turn_index. Doing
-  // this BEFORE the model call means the message is durable even if the
-  // agent step throws — they'll see it on the next page load. Skip for
-  // the opening turn (nothing to persist).
   const userTurnIndex = existingBeforeUser.length;
   if (!isOpeningTurn) {
     if (!userMessage) {
-      throw new Error('runAuditAgent: userMessage required when continuing an existing session');
+      throw new Error('buildAgentCall: userMessage required when continuing an existing session');
     }
     await appendMessage({
       sessionId,
@@ -80,7 +81,6 @@ export async function runAuditAgent(input: AuditAgentInput): Promise<AuditAgentR
     });
   }
 
-  // 3. Load at-rest context.
   const [course, materials, priorSessions] = await Promise.all([
     getCourseByCode(courseCode),
     listMaterialsByCourse(courseCode),
@@ -88,16 +88,12 @@ export async function runAuditAgent(input: AuditAgentInput): Promise<AuditAgentR
   ]);
   if (!course) throw new Error(`course not found: ${courseCode}`);
 
-  // 4. Reload history (now includes the user turn we just appended).
   const history = await getSessionMessages(courseCode, sessionId);
 
-  // Build the at-rest digest block (sorted by fileName for stability).
   const includedMaterials = materials
     .filter(m => !m.ignored && m.extractionStatus === 'ok')
     .sort((a, b) => a.fileName.localeCompare(b.fileName));
 
-  // The jsonb columns are typed as string[] via Drizzle $type, but cast
-  // defensively in case a legacy row carries a different runtime shape.
   const learningObjectives = (course.learningObjectives ?? []) as string[];
   const majorProjects = (course.majorProjects ?? []) as string[];
   const skillsRequired = (course.skillsRequired ?? []) as string[];
@@ -117,9 +113,6 @@ export async function runAuditAgent(input: AuditAgentInput): Promise<AuditAgentR
         .join('\n\n')
     : '(no included materials)';
 
-  // Prior session summaries (most recent up to 3). Gives the agent enough
-  // continuity to not repeat questions, without burning context on every
-  // prior turn verbatim.
   const priorSessionsBlock = priorSessions.length
     ? priorSessions
         .map(s => {
@@ -136,16 +129,6 @@ export async function runAuditAgent(input: AuditAgentInput): Promise<AuditAgentR
         .join('\n\n')
     : '(none — this is the first audit session for this course)';
 
-  // 5. Construct messages for completeWithTools.
-  // First a user message with the at-rest context, then the conversation
-  // history. The capture-chat-agent.md system prompt instructs the model
-  // to expect this layout.
-  //
-  // For the opening turn, append a final user message with a "begin the
-  // audit now" instruction so the agent has something to respond to —
-  // the model can't generate an assistant turn from a system + at-rest
-  // context alone. This synthetic instruction is NOT persisted to
-  // capture_messages; it lives only in this LLM call.
   const messages: Message[] = [
     {
       role: 'user',
@@ -182,45 +165,28 @@ export async function runAuditAgent(input: AuditAgentInput): Promise<AuditAgentR
   const systemPrompt = await loadPrompt('capture-chat-agent');
   const tools = auditMode === 'full' ? buildAuditTools(courseCode) : [];
 
-  const provider = await getProviderForFunction('capture-chat-agent');
-  const result = await provider.completeWithTools<AuditResponse>({
-    systemPrompt,
-    messages,
-    tools,
-    schemaName: 'audit_response',
-    jsonSchema: AuditResponseJsonSchema,
-    validate: (raw) => AuditResponseSchema.parse(raw),
-    maxToolCalls: 2, // per-turn budget per spec
-  });
+  return { systemPrompt, messages, tools, isOpeningTurn, userTurnIndex };
+}
 
-  if (result.kind !== 'response') {
-    throw new Error(
-      'agent loop did not converge — completeWithTools returned mid-loop tool_calls',
-    );
-  }
+export interface PersistAssistantTurnInput {
+  sessionId: string;
+  courseCode: string;
+  isOpeningTurn: boolean;
+  userTurnIndex: number;
+  response: AuditResponse;
+  toolCallsUsed: ToolCall[];
+}
 
-  // 7. Persist the assistant turn. For a continuing turn the assistant is
-  // turn N+1 (after the user's turn N we just wrote). For the opening
-  // turn no user row exists, so the assistant occupies turn 0.
-  const assistantTurnIndex = isOpeningTurn ? 0 : userTurnIndex + 1;
+export async function persistAssistantTurn(input: PersistAssistantTurnInput): Promise<void> {
+  const assistantTurnIndex = input.isOpeningTurn ? 0 : input.userTurnIndex + 1;
 
-  const toolCalls: CaptureMessageToolCall[] | undefined = result.toolCallsUsed.length
-    ? result.toolCallsUsed.map(tc => ({
-        id: tc.id,
-        toolName: tc.toolName,
-        args: tc.args,
-      }))
+  const toolCalls: CaptureMessageToolCall[] | undefined = input.toolCallsUsed.length
+    ? input.toolCallsUsed.map(tc => ({ id: tc.id, toolName: tc.toolName, args: tc.args }))
     : undefined;
 
-  const citations: CaptureMessageCitation[] | undefined = result.value.citations.length
-    ? result.value.citations.map(c => {
-        const out: CaptureMessageCitation = {
-          type: c.type,
-          excerpt: c.excerpt,
-        };
-        // chunkId / messageId now accept null in addition to undefined (the
-        // OpenAI strict-mode JSON schema emits null for the unused slot).
-        // Only persist the value when it's a real string.
+  const citations: CaptureMessageCitation[] | undefined = input.response.citations.length
+    ? input.response.citations.map(c => {
+        const out: CaptureMessageCitation = { type: c.type, excerpt: c.excerpt };
         if (c.chunkId) out.chunkId = c.chunkId;
         if (c.messageId) out.messageId = c.messageId;
         return out;
@@ -228,14 +194,38 @@ export async function runAuditAgent(input: AuditAgentInput): Promise<AuditAgentR
     : undefined;
 
   await appendMessage({
-    sessionId,
-    courseCode,
+    sessionId: input.sessionId,
+    courseCode: input.courseCode,
     turnIndex: assistantTurnIndex,
     role: 'assistant',
-    content: JSON.stringify(result.value),
+    content: JSON.stringify(input.response),
     toolCalls,
     citations,
   });
+}
 
+export async function runAuditAgent(input: AuditAgentInput): Promise<AuditAgentResult> {
+  const built = await buildAgentCall(input);
+  const provider = await getProviderForFunction('capture-chat-agent');
+  const result = await provider.completeWithTools<AuditResponse>({
+    systemPrompt: built.systemPrompt,
+    messages: built.messages,
+    tools: built.tools,
+    schemaName: 'audit_response',
+    jsonSchema: AuditResponseJsonSchema,
+    validate: (raw) => AuditResponseSchema.parse(raw),
+    maxToolCalls: 2,
+  });
+  if (result.kind !== 'response') {
+    throw new Error('agent loop did not converge — completeWithTools returned mid-loop tool_calls');
+  }
+  await persistAssistantTurn({
+    sessionId: input.sessionId,
+    courseCode: input.courseCode,
+    isOpeningTurn: built.isOpeningTurn,
+    userTurnIndex: built.userTurnIndex,
+    response: result.value,
+    toolCallsUsed: result.toolCallsUsed,
+  });
   return { response: result.value, toolCallsUsed: result.toolCallsUsed.length };
 }
