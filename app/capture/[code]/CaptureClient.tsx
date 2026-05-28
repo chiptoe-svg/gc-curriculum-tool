@@ -7,6 +7,7 @@ import { ProfileReviewPanel } from './ProfileReviewPanel';
 import { MaterialsPanel, type CaptureMaterial, type CourseCatalogView } from './MaterialsPanel';
 import { SnapshotHistoryPanel } from './SnapshotHistoryPanel';
 import { IngestionCheckIn } from './IngestionCheckIn';
+import { CaptureHelpPanel } from './HelpPanel';
 
 interface Props {
   course: CourseCatalogView;
@@ -210,6 +211,7 @@ export function CaptureClient({
 
   return (
     <div className="space-y-6">
+      <CaptureHelpPanel />
       <MaterialsPanel
         course={course}
         initialMaterials={materials}
