@@ -24,6 +24,21 @@ In the user message you will receive a JSON payload with:
   - `autoSetAside` (boolean)
   - `setAsideReason` (string | null)
   - `digestSnippet` (first ~400 chars of the material's digest)
+- `context` — pre-computed signals about the catalog and materials state
+  that you MUST use when evaluating Rule 1 below:
+  - `catalogCoversSyllabus` (boolean) — `true` when the Sheets catalog
+    has both learning objectives AND major projects listed. When `true`,
+    the course's syllabus content is effectively present via the catalog
+    row even if no `Canvas: Syllabus` material appears in the included
+    materials list (the import-time tactical suppression marks it
+    ignored when the catalog covers it).
+  - `hasCanvasAssignments` (boolean) — `true` when a `Canvas: Assignments`
+    material is in the included materials list. Per-assignment rubrics
+    live inside that material's digest, so the audit DOES have access
+    to rubric content even when no standalone rubric file appears.
+  - `canvasSyllabusSetAside` (boolean) — `true` when a `Canvas: Syllabus`
+    row exists in the database but is currently ignored (either auto or
+    manually). Distinct from "no Canvas syllabus at all."
 
 # What you produce
 
@@ -43,9 +58,19 @@ Return JSON of the shape:
 
 **Speak only when** one of these conditions holds:
 
-1. **Missing core source.** No syllabus uploaded AND no Canvas: Syllabus
-   material. Or no rubrics in the materials list when the catalog lists
-   major projects.
+1. **Missing core source.** Be precise here — the inputs you receive
+   exclude ignored materials, so do NOT call out missing files that the
+   `context` block tells you are present-but-ignored or covered by the
+   catalog. Specifically:
+   - **Syllabus.** Flag a missing syllabus ONLY when ALL of the following
+     are true: (a) no syllabus file in `materials`, (b) `context.canvasSyllabusSetAside` is `false`,
+     and (c) `context.catalogCoversSyllabus` is `false`. If the catalog
+     covers the syllabus content (`catalogCoversSyllabus: true`), the
+     audit has what it needs regardless of file presence — stay silent.
+   - **Rubrics.** Flag missing rubrics for the catalog's major projects
+     ONLY when `context.hasCanvasAssignments` is `false` AND no standalone
+     rubric-shaped file is in `materials`. When Canvas Assignments is
+     present, per-assignment rubrics live in its digest — stay silent.
 2. **Multiple auto-set-asides in a row.** Three or more materials with
    `autoSetAside: true` — likely an import issue (e.g., bulk
    `Canvas File: *.xlsx` because the Canvas course is gradebook-heavy).

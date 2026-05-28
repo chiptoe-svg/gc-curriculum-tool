@@ -41,10 +41,22 @@ export async function GET(req: Request, { params }: RouteContext): Promise<Respo
   const course = await getCourseByCode(courseCode);
   if (!course) return NextResponse.json({ error: 'course not found' }, { status: 404 });
 
+  const allMaterials = await listMaterialsByCourse(courseCode);
   // Mirror the audit-context filter: only materials the audit chat could
   // actually retrieve evidence from.
-  const materials = (await listMaterialsByCourse(courseCode))
-    .filter(m => !m.ignored && m.extractionStatus === 'ok');
+  const materials = allMaterials.filter(m => !m.ignored && m.extractionStatus === 'ok');
+
+  // Catalog-richness + materials-presence signals so the LLM can suppress
+  // false-positive "missing core source" highlights without us having to
+  // pattern-match its prose output. The post-filter below still runs as
+  // a safety net if the LLM ignores these signals.
+  const catalogCoversSyllabus =
+    (course.learningObjectives ?? []).length > 0 &&
+    (course.majorProjects ?? []).length > 0;
+  const hasCanvasAssignments = materials.some(m => m.fileName === 'Canvas: Assignments');
+  const canvasSyllabusSetAside = allMaterials.some(
+    m => m.fileName === 'Canvas: Syllabus' && (m.ignored || m.autoSetAside),
+  );
 
   const input: CheckInInput = {
     catalog: {
@@ -60,26 +72,17 @@ export async function GET(req: Request, { params }: RouteContext): Promise<Respo
       setAsideReason: m.setAsideReason ?? null,
       digestSnippet: (m.digest ?? m.extractedText ?? '').slice(0, 400),
     })),
+    context: {
+      catalogCoversSyllabus,
+      hasCanvasAssignments,
+      canvasSyllabusSetAside,
+    },
   };
 
-  // Rule-based suppression of two known false-positive signals — applied
-  // after the LLM runs so the other signals (FERPA, stacked auto-set-asides,
-  // near-empty digests) still surface.
-  // 1. "No syllabus uploaded" when the Sheets catalog already lists this
-  //    course's learning objectives and major projects. The tactical
-  //    Canvas-Syllabus suppression (shipped 2026-05-26) marks the Canvas
-  //    syllabus material as ignored at import time precisely because the
-  //    catalog covers it; the check-in LLM doesn't see the ignored row, so
-  //    it incorrectly flags the syllabus as missing.
-  // 2. "No rubrics found for listed major projects" when the Canvas
-  //    Assignments material is in the audit context — per-assignment
-  //    rubrics typically live inside Canvas Assignment descriptions, which
-  //    are already in the assignments material's digest.
-  const catalogCoversSyllabus =
-    (course.learningObjectives ?? []).length > 0 &&
-    (course.majorProjects ?? []).length > 0;
-  const hasCanvasAssignments = materials.some(m => m.fileName === 'Canvas: Assignments');
-
+  // Belt-and-suspenders post-filter: the LLM is told about
+  // catalogCoversSyllabus / hasCanvasAssignments in `context`, so it should
+  // suppress these signals on its own — but if it ignores the context
+  // (older Qwen / GLM weights sometimes do), this catches the leakage.
   try {
     const result = await generateIngestionCheckIn(input);
     const filteredHighlights = (result.highlights ?? []).filter(h => {

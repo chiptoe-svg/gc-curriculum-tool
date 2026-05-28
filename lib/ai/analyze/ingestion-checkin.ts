@@ -15,6 +15,28 @@ export interface CheckInInput {
     setAsideReason: string | null;
     digestSnippet: string;
   }>;
+  /**
+   * Pre-computed signals about the catalog + materials that the LLM
+   * needs to make the "missing core source" call correctly. Without
+   * these, the model would fire false-positive "no syllabus" highlights
+   * when the Sheets catalog already covers the syllabus content, and
+   * false-positive "no rubrics" highlights when Canvas Assignments
+   * carries per-assignment rubric criteria in its digest. Computed at
+   * the route, passed in so the model can reason about them rather than
+   * inferring from the materials list (which excludes ignored rows).
+   */
+  context: {
+    /** Catalog has learningObjectives.length > 0 AND majorProjects.length > 0. */
+    catalogCoversSyllabus: boolean;
+    /** A "Canvas: Assignments" material is in the included materials list. */
+    hasCanvasAssignments: boolean;
+    /**
+     * True when a Canvas: Syllabus material exists in the database but
+     * was auto-set-aside or manually ignored — the file IS present, just
+     * not feeding the audit. Distinct from "no Canvas syllabus at all."
+     */
+    canvasSyllabusSetAside: boolean;
+  };
 }
 
 export type CheckInHighlight = {
