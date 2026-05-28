@@ -8,6 +8,7 @@ import {
   TIER_TO_MODEL,
   listAllFunctionSettings,
 } from '@/lib/ai/function-settings';
+import { getDailyCapCents, getDailyCostHistory } from '@/lib/rate-limit/daily-cap';
 import { SettingsClient } from './SettingsClient';
 
 export const dynamic = 'force-dynamic';
@@ -28,7 +29,11 @@ export default async function SettingsPage({ searchParams }: Props) {
     );
   }
 
-  const settings = await listAllFunctionSettings();
+  const [settings, costHistory] = await Promise.all([
+    listAllFunctionSettings(),
+    getDailyCostHistory(14),
+  ]);
+  const capCents = getDailyCapCents();
 
   return (
     <div className="min-h-screen bg-background">
@@ -52,6 +57,8 @@ export default async function SettingsPage({ searchParams }: Props) {
           labels={FUNCTION_LABELS}
           descriptions={FUNCTION_DESCRIPTIONS}
           functionIds={[...AI_FUNCTION_IDS]}
+          costHistory={costHistory}
+          capCents={capCents}
         />
       </main>
     </div>

@@ -148,6 +148,10 @@ export function CaptureChatPanel({
     }
   }
 
+  // Empty messages array signals an "opening turn" to the chat route;
+  // the v2 audit agent self-introduces from at-rest context (no fake
+  // user message is written to the transcript). v1 path also handles
+  // empty messages by self-introducing.
   async function handleStart() {
     await postChat([]);
   }
@@ -186,8 +190,9 @@ export function CaptureChatPanel({
           <div className="flex h-full flex-col items-center justify-center py-12 text-center">
             <p className="text-sm font-medium">Start the audit when you&apos;re ready.</p>
             <p className="mt-1 max-w-md text-xs text-muted-foreground">
-              The auditor opens with what it found in the materials and its first questions.
-              The conversation runs as long as it needs to ground every rating in evidence.
+              The auditor opens with what it found in the materials and its first question.
+              The conversation runs as long as it needs to ground every rating in evidence —
+              you can steer it any time.
             </p>
             <button
               type="button"

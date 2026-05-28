@@ -15,6 +15,95 @@ interface Props {
   labels: Record<AIFunctionId, string>;
   descriptions: Record<AIFunctionId, string>;
   functionIds: AIFunctionId[];
+  /** Last N days of daily spend, ASC by day. Today is the last entry. */
+  costHistory: Array<{ day: string; spentCents: number }>;
+  /** Daily cap in 1/100-of-a-cent units (matches spentCents unit). */
+  capCents: number;
+}
+
+/**
+ * Convert the internal 1/100-of-a-cent unit to a dollar string.
+ * `recordSpend` and `spentCents` both use this unit despite the misleading
+ * name; division by 10000 yields dollars. See lib/rate-limit/daily-cap.ts.
+ */
+function dollars(units: number): string {
+  return `$${(units / 10000).toFixed(2)}`;
+}
+
+function DailyCostPanel({
+  history,
+  capCents,
+}: {
+  history: Array<{ day: string; spentCents: number }>;
+  capCents: number;
+}) {
+  const today = history.at(-1) ?? { day: '', spentCents: 0 };
+  const pct = capCents > 0 ? Math.min(100, (today.spentCents / capCents) * 100) : 0;
+  const tone =
+    pct >= 90 ? 'text-destructive'
+    : pct >= 60 ? 'text-amber-700'
+    : 'text-foreground';
+  const barTone =
+    pct >= 90 ? 'bg-destructive'
+    : pct >= 60 ? 'bg-amber-500'
+    : 'bg-emerald-500';
+  // Find max for sparkline scaling — use the bigger of (history max, cap).
+  const histMax = Math.max(0, ...history.map(d => d.spentCents));
+  const sparkMax = Math.max(histMax, capCents);
+
+  return (
+    <section className="rounded-md border bg-card px-4 py-3">
+      <div className="flex items-baseline justify-between gap-3">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Today&apos;s AI cost</p>
+          <p className={`mt-0.5 text-2xl font-semibold ${tone}`}>
+            {dollars(today.spentCents)} <span className="text-sm font-normal text-muted-foreground">of {dollars(capCents)} cap</span>
+          </p>
+        </div>
+        <p className="text-xs text-muted-foreground">UTC day · resets at 00:00 UTC</p>
+      </div>
+      <div className="mt-2 h-2 overflow-hidden rounded bg-muted">
+        <div
+          className={`h-full ${barTone} transition-all`}
+          style={{ width: `${pct}%` }}
+          aria-label={`${pct.toFixed(0)}% of cap used`}
+        />
+      </div>
+
+      {history.length > 1 && (
+        <div className="mt-4">
+          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Last {history.length} days</p>
+          <div className="mt-2 flex items-end gap-1 h-16">
+            {history.map((d, i) => {
+              const heightPct = sparkMax > 0 ? (d.spentCents / sparkMax) * 100 : 0;
+              const isToday = i === history.length - 1;
+              const overCap = d.spentCents > capCents;
+              return (
+                <div key={d.day} className="flex flex-1 flex-col items-center gap-1">
+                  <div className="relative w-full h-12 flex items-end">
+                    <div
+                      className={
+                        'w-full rounded-sm ' +
+                        (overCap ? 'bg-destructive' : isToday ? 'bg-emerald-600' : 'bg-emerald-300')
+                      }
+                      style={{ height: `${Math.max(2, heightPct)}%` }}
+                      title={`${d.day} — ${dollars(d.spentCents)}`}
+                    />
+                  </div>
+                  <span className={`text-[9px] ${isToday ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
+                    {d.day.slice(5)}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            Hover any bar for the exact figure. Bars exceeding the daily cap show in red. Today is highlighted.
+          </p>
+        </div>
+      )}
+    </section>
+  );
 }
 
 export function SettingsClient({
@@ -25,6 +114,8 @@ export function SettingsClient({
   labels,
   descriptions,
   functionIds,
+  costHistory,
+  capCents,
 }: Props) {
   const [settings, setSettings] = useState<FunctionSettingRow[]>(initialSettings);
   const [busy, setBusy] = useState<AIFunctionId | null>(null);
@@ -114,6 +205,8 @@ export function SettingsClient({
 
   return (
     <div className="space-y-6">
+      <DailyCostPanel history={costHistory} capCents={capCents} />
+
       <section className="rounded-md border bg-card px-4 py-3 text-xs leading-snug text-muted-foreground">
         <p className="font-medium text-foreground">How tiers work</p>
         <p className="mt-1">

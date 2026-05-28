@@ -62,9 +62,38 @@ export async function GET(req: Request, { params }: RouteContext): Promise<Respo
     })),
   };
 
+  // Rule-based suppression of two known false-positive signals — applied
+  // after the LLM runs so the other signals (FERPA, stacked auto-set-asides,
+  // near-empty digests) still surface.
+  // 1. "No syllabus uploaded" when the Sheets catalog already lists this
+  //    course's learning objectives and major projects. The tactical
+  //    Canvas-Syllabus suppression (shipped 2026-05-26) marks the Canvas
+  //    syllabus material as ignored at import time precisely because the
+  //    catalog covers it; the check-in LLM doesn't see the ignored row, so
+  //    it incorrectly flags the syllabus as missing.
+  // 2. "No rubrics found for listed major projects" when the Canvas
+  //    Assignments material is in the audit context — per-assignment
+  //    rubrics typically live inside Canvas Assignment descriptions, which
+  //    are already in the assignments material's digest.
+  const catalogCoversSyllabus =
+    (course.learningObjectives ?? []).length > 0 &&
+    (course.majorProjects ?? []).length > 0;
+  const hasCanvasAssignments = materials.some(m => m.fileName === 'Canvas: Assignments');
+
   try {
     const result = await generateIngestionCheckIn(input);
-    return NextResponse.json(result);
+    const filteredHighlights = (result.highlights ?? []).filter(h => {
+      if (h.kind !== 'missing') return true;
+      if (catalogCoversSyllabus && /syllabus/i.test(h.text)) return false;
+      if (hasCanvasAssignments && /rubric/i.test(h.text)) return false;
+      return true;
+    });
+    // If filtering dropped every highlight, suppress the leading message too —
+    // it's almost certainly summarizing the same dropped signals.
+    const filtered: CheckInResult = filteredHighlights.length === 0
+      ? { message: null, highlights: [], model: result.model }
+      : { ...result, highlights: filteredHighlights };
+    return NextResponse.json(filtered);
   } catch (e) {
     // Silent failure — the panel renders nothing if the AI call fails.
     console.error('ingestion-checkin failed:', e);

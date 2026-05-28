@@ -407,16 +407,21 @@ function MaterialRow({
             <span>{humanSize(material.sizeBytes)}</span>
             {material.extractionMethod && <span> · via {material.extractionMethod}</span>}
           </p>
-          {material.autoSetAside && (
+          {(material.ignored || material.autoSetAside) && (
             <div className="mt-1 flex items-start justify-between gap-2 rounded border border-amber-200 bg-amber-50/50 px-2 py-1">
               <p className="text-[11px] leading-snug text-amber-800">
-                <span className="font-medium">Auto-set-aside:</span>{' '}
-                {material.setAsideReason ?? 'flagged by the materials policy'}
-                {!material.ignored && (
+                <span className="font-medium">Why ignored:</span>{' '}
+                {material.setAsideReason
+                  ?? (material.fileName.startsWith('Canvas: Syllabus')
+                        ? "the Sheets catalog already lists this course's learning objectives and projects, so the Canvas syllabus would duplicate them"
+                        : material.autoSetAside
+                          ? 'flagged by the materials policy'
+                          : 'manually toggled off by the faculty reviewer')}
+                {material.autoSetAside && !material.ignored && (
                   <span className="ml-1 italic text-amber-700">(overridden — included in audit)</span>
                 )}
               </p>
-              {material.ignored && (
+              {material.autoSetAside && material.ignored && (
                 <button
                   type="button"
                   onClick={handleIncludeAnyway}

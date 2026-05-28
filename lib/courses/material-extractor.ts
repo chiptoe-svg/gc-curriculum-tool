@@ -26,6 +26,7 @@
 
 import { extractText as unpdfExtractText } from 'unpdf';
 import mammoth from 'mammoth';
+import { compactSpreadsheetMarkdown } from '@/lib/capture/spreadsheet-compact';
 
 // Source-format MIME types the system can handle. Anything outside this
 // list is rejected at the upload-route allowlist level — by the time a
@@ -119,6 +120,16 @@ class DoclingExtractor implements MaterialExtractor {
     form.append('files', blob, fileName);
     form.append('to_formats', 'md');
 
+    // XLSX images (embedded charts, logos, screenshots) are almost never
+    // audit-relevant — the agent cares about cell content, not the
+    // graphics. Skip image extraction entirely so Docling doesn't drop
+    // base64 data URIs into the markdown. Defaults to include_images=true
+    // upstream, so for PDFs/DOCX/PPTX we still pull them.
+    const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    if (mimeType === XLSX_MIME) {
+      form.append('include_images', 'false');
+    }
+
     // Optional VLM picture-description pass. Enabled when DOCLING_VLM_ENABLED
     // is truthy AND docling-serve was started with
     // DOCLING_SERVE_ALLOW_CUSTOM_PICTURE_DESCRIPTION_CONFIG=true and
@@ -163,7 +174,12 @@ class DoclingExtractor implements MaterialExtractor {
       throw new Error(`docling-serve conversion failed: ${reason}`);
     }
     const doc = data.document ?? {};
-    const text = (doc.md_content ?? doc.text_content ?? '').trim();
+    const rawText = (doc.md_content ?? doc.text_content ?? '').trim();
+    // XLSX → markdown output is dominated by sparse-cell syntax noise
+    // (Docling preserves every cell of every sheet). Compact it before
+    // returning so the digest + indexing pipeline sees content-shaped
+    // markdown rather than 100× syntax overhead.
+    const text = mimeType === XLSX_MIME ? compactSpreadsheetMarkdown(rawText) : rawText;
     // Best-effort page/slide/sheet count from --- separators in the markdown.
     // Docling's ExportDocumentResponse doesn't surface a count field when
     // only md is requested.

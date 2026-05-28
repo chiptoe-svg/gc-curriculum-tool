@@ -2,7 +2,7 @@
 
 > **Audience:** developer / implementation detail. This file is the engineering snapshot — what's live, what's blocked, what's next at the code and deployment level. Stakeholder-facing surfaces (executive brief, vision, background) summarize the same state in non-implementation terms; if you're orienting non-technical reviewers, point them there first and use this file as the backing source they can drop into when they want detail. The executive brief links here intentionally — anyone following that link is opting into the operational view.
 >
-> **Last verified:** `cfdb6ed5e864591bb3e9bee5ca21e6599a5a125c` · 2026-05-28
+> **Last verified:** `ce20d55` · 2026-05-28
 >
 > **What this is:** the single source of truth for "what's live, what's next, what's blocked." Read this before any feature work, schema change, AI function add, deployment change, or new spec/plan. Static framing (KUD+, vision, architecture rationale) lives in [`CLAUDE.md`](../CLAUDE.md) and [`docs/superpowers/README.md`](./superpowers/README.md); this file is the volatile snapshot that sits in front of them.
 >
@@ -71,6 +71,8 @@ Setup details: [`docs/superpowers/running-locally.md`](./superpowers/running-loc
 | `capture-chat-agent` | default | Stage 3 audit-chat per-turn loop; tool-using retrieval against Weaviate per-course tenants; returns structured finding + question + citations + readiness |
 
 **Reference-material compression / ingestion** (`lib/capture/material-compression.ts`, `lib/capture/finalize-extraction.ts`, `lib/ai/analyze/material-digest.ts`): every extraction call site routes through `finalizeExtraction`. Legacy path (no `COURSECAPTURE_V2_INGESTION`): long reference materials (≥15k tokens, Canvas File / Drive PDF / YouTube / plain upload) get a digest via `generateMaterialDigest`; Canvas dense kinds and Google Workspace materials are skipped. `effectiveAuditText(m)` substitutes the digest in the audit prompt when `useDigest` is true. Faculty toggle per row from the Materials panel; one-time backfill via `POST /api/courses/[code]/materials/compress`. V2 path (`COURSECAPTURE_V2_INGESTION=1`): FERPA detection → materials policy → digest every material → chunk + contextualize + embed + upsert into vector store. New modules shipped in Stage 2a: `lib/capture/chunker.ts`, `lib/capture/ferpa-detect.ts`, `lib/capture/materials-policy.ts`, `lib/capture/vector-store.ts` (in-memory backend; Weaviate adapter pending Stage 2b). `material-summary` was superseded by `material-digest` and removed in Stage 2a.
+
+**Spreadsheet handling refined 2026-05-28.** xlsx/xls/xlsm files no longer auto-excluded — `lib/capture/materials-policy.ts` narrowed to gradebook-shaped filenames (`gradebook`, `grades`, `attendance`, `roster`, `scores`, `enrol(l)ment`) with `ferpaRisk: 'high'` on those matches. Docling's xlsx → markdown output is post-processed through `compactSpreadsheetMarkdown` (`lib/capture/spreadsheet-compact.ts`) to drop empty rows, drop empty columns, and drop degenerate tables — Docling preserves every cell of every sheet by design, which inflates token count 20–30× for sparse grids. Legacy `.xls` flows through the same code path via `legacy-converter.ts`'s LibreOffice upgrade. Trial-readiness — budgets, asset trackers, QC logs, project templates are usable in audits now.
 
 ### Schema (Neon Postgres via Drizzle)
 
