@@ -6,6 +6,7 @@ import type { AIProvider, CompletionTelemetry, TranscribeDocumentArgs, Transcrib
 import { generateText, tool as aiTool, Output, stepCountIs, jsonSchema as aiJsonSchema } from 'ai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import type { ToolDefinition, Message, CompleteWithToolsResult, ToolCall } from './tool-use-types';
+import { renderToolDescription } from './tool-use-types';
 
 export class LocalProvider implements AIProvider {
   readonly name = 'local' as const;
@@ -98,7 +99,7 @@ export class LocalProvider implements AIProvider {
     const sdkTools: Record<string, ReturnType<typeof aiTool<never, never>>> = {};
     for (const t of args.tools) {
       sdkTools[t.name] = aiTool({
-        description: t.description,
+        description: renderToolDescription(t),
         inputSchema: t.inputSchema as never,
         execute: t.execute as never,
       });

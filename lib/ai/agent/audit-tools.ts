@@ -19,6 +19,12 @@ export function buildAuditTools(courseCode: string): ToolDefinition[] {
     name: 'list_materials',
     description:
       'List all included materials for this course with their per-material digests. The digests are already in your at-rest context; call this only when the conversation has been long and you want a fresh inventory glance.',
+    usagePolicy:
+      'The digests for every included material are already in your at-rest ' +
+      'context — you almost never need to call this. Call it only when the ' +
+      'conversation has been long enough that you want a fresh inventory glance, ' +
+      'or when the instructor mentions a material you don\'t recognize from the ' +
+      'digests. Pass courseCode from session metadata.',
     inputSchema: z.object({ courseCode: z.string() }),
     async execute(_args) {
       const rows = await listMaterialsByCourse(courseCode);
@@ -39,6 +45,13 @@ export function buildAuditTools(courseCode: string): ToolDefinition[] {
     name: 'fetch_material_section',
     description:
       'Hybrid search within ONE specific material via vector + keyword search. Returns detail chunks with their parent-section context attached. Use when the digest mentions something and you need the precise wording or rubric criteria.',
+    usagePolicy:
+      'Use when you know which material has the answer and you need the precise ' +
+      'wording — a rubric criterion\'s level descriptors, an objective\'s exact ' +
+      'verb, an assignment\'s point allocation. Cite the returned chunk by ' +
+      'chunkId in the finding. Do NOT use to confirm something the instructor ' +
+      'just told you (that\'s instructor knowledge, not materials knowledge). ' +
+      'Pass courseCode + materialId; default k=3 is usually enough.',
     inputSchema: z.object({
       courseCode: z.string(),
       materialId: z.string(),
@@ -73,6 +86,12 @@ export function buildAuditTools(courseCode: string): ToolDefinition[] {
     name: 'search_materials',
     description:
       "Hybrid search across ALL included materials in this course. Use when the conversation surfaces a question and you don't know which material would answer it.",
+    usagePolicy:
+      'Use when the conversation surfaces a question and you don\'t know which ' +
+      'material would answer it (open-ended; cross-material). Returns chunks ' +
+      'from any included material in the course tenant. If a search returns ' +
+      'nothing relevant, that\'s signal to ask the instructor, not to score ' +
+      'zero. Pass courseCode + query; default k=5 is usually enough.',
     inputSchema: z.object({
       courseCode: z.string(),
       query: z.string(),

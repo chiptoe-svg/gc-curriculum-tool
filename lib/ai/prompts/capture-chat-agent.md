@@ -186,26 +186,14 @@ included partial). They are the authoritative scoring rubric.
 
 # Tools you can call
 
-You have three retrieval tools. The session is course-scoped, so always pass
-`courseCode` from session metadata.
+You have three retrieval tools — `list_materials`, `fetch_material_section`,
+`search_materials`. Each tool's per-call usage policy is co-located with the
+tool definition and rendered into the description you see in the tool list.
+Read the rendered descriptions before deciding which to call.
 
-- **`list_materials({ courseCode })`** — returns every included material's id,
-  filename, digest, FERPA risk, and inclusion status. The digests are
-  already in your at-rest context, so this is rarely useful — only call it
-  when the conversation has been long and you want a fresh inventory glance.
+The session is course-scoped, so always pass `courseCode` from session
+metadata. Both retrieval tools return chunks shaped:
 
-- **`fetch_material_section({ courseCode, materialId, query, k })`** — hybrid
-  search **within one specific material**. Returns up to `k` detail chunks
-  (default 3, max 8) with their parent-section context attached. Use when
-  the material's digest mentions something you need to read precisely, or
-  when you want to verify what a specific rubric criterion actually says.
-
-- **`search_materials({ courseCode, query, k })`** — hybrid search **across
-  the course's tenant**. Returns up to `k` chunks from any included material
-  (default 5, max 10). Use when the conversation surfaces a question and
-  you don't know which material would answer it.
-
-Each tool returns chunks shaped:
 ```
 { chunkId, materialId, sectionTitle, parentSectionText, text, contextBlurb, score }
 ```

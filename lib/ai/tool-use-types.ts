@@ -21,6 +21,24 @@ export interface ToolDefinition {
   inputSchema: z.ZodSchema;
   /** Async function that actually executes the tool when the model calls it. */
   execute: (args: unknown) => Promise<unknown>;
+  /**
+   * Optional usage policy co-located with the tool. Surfaced to the model
+   * by appending under a "**Usage:**" marker to the rendered description.
+   * Use for per-tool guidance ("call this when X, not when Y; pass course-
+   * code from session metadata"). General retrieval discipline (per-turn
+   * budgets, when-to-retrieve-vs-ask) belongs in the system prompt.
+   */
+  usagePolicy?: string;
+}
+
+/**
+ * Render a tool's description for the model — description verbatim when no
+ * usagePolicy is set; description plus a "**Usage:**" appendage otherwise.
+ * Centralizes the rendering so all four providers stay in sync.
+ */
+export function renderToolDescription(t: ToolDefinition): string {
+  const policy = t.usagePolicy?.trim();
+  return policy ? `${t.description}\n\n**Usage:** ${policy}` : t.description;
 }
 
 /** One tool invocation issued by the model. */
