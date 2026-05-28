@@ -6,6 +6,7 @@ import type { AIProvider, CompletionTelemetry, TranscribeDocumentArgs, Transcrib
 import { generateText, tool as aiTool, Output, stepCountIs, jsonSchema as aiJsonSchema } from 'ai';
 import { openai as aiOpenai } from '@ai-sdk/openai';
 import type { ToolDefinition, Message, CompleteWithToolsResult, ToolCall } from './tool-use-types';
+import { renderToolDescription } from './tool-use-types';
 
 // Per-model pricing in USD per 1M tokens. Update from
 // https://developers.openai.com/api/docs/pricing when adding models.
@@ -157,7 +158,7 @@ export class OpenAIProvider implements AIProvider {
     const sdkTools: Record<string, ReturnType<typeof aiTool<never, never>>> = {};
     for (const t of args.tools) {
       sdkTools[t.name] = aiTool({
-        description: t.description,
+        description: renderToolDescription(t),
         inputSchema: t.inputSchema as never,
         execute: t.execute as never,
       });

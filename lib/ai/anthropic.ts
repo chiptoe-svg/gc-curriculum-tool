@@ -7,6 +7,7 @@ import type { AIProvider, CompletionTelemetry, TranscribeDocumentArgs, Transcrib
 import { generateText, tool as aiTool, Output, stepCountIs, jsonSchema as aiJsonSchema } from 'ai';
 import { anthropic as aiAnthropic } from '@ai-sdk/anthropic';
 import type { ToolDefinition, Message, CompleteWithToolsResult, ToolCall } from './tool-use-types';
+import { renderToolDescription } from './tool-use-types';
 
 // USD per 1M tokens. Update from https://docs.anthropic.com/en/docs/about-claude/models
 const MODEL_PRICING: Record<string, { input: number; output: number }> = {
@@ -159,7 +160,7 @@ export class AnthropicProvider implements AIProvider {
     const sdkTools: Record<string, ReturnType<typeof aiTool<never, never>>> = {};
     for (const t of args.tools) {
       sdkTools[t.name] = aiTool({
-        description: t.description,
+        description: renderToolDescription(t),
         inputSchema: t.inputSchema as never,
         execute: t.execute as never,
       });

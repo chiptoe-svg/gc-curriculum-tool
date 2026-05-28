@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import type { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions';
 import type { AIProvider, CompletionTelemetry, TranscribeDocumentArgs, TranscribeDocumentResult } from './provider';
 import type { ToolDefinition, Message, CompleteWithToolsResult, ToolCall } from './tool-use-types';
+import { renderToolDescription } from './tool-use-types';
 
 /**
  * Campus-hosted LLM provider (Clemson RCD). Speaks the OpenAI-compatible
@@ -116,7 +117,7 @@ export class CampusProvider implements AIProvider {
       type: 'function',
       function: {
         name: t.name,
-        description: t.description,
+        description: renderToolDescription(t),
         parameters: t.inputSchema as unknown as Record<string, unknown>,
       },
     }));
