@@ -17,16 +17,20 @@ import type { InferSelectModel } from 'drizzle-orm';
 // compatible with strict-mode structured-output providers that flatten refs.
 // ---------------------------------------------------------------------------
 const SOURCE_ENUM = { enum: ['instructor', 'materials', 'inferred'] } as const;
+// OpenAI strict structured-output requires every property in `properties`
+// to be listed in `required`. Optional fields (chunkId / messageId — one
+// is set depending on citation type) are encoded as nullable union types
+// instead. Same shape as audit-response-schema.ts's Citation.
 const CITATIONS_ARRAY = {
   type: 'array',
   items: {
     type: 'object',
     additionalProperties: false,
-    required: ['type', 'excerpt'],
+    required: ['type', 'chunkId', 'messageId', 'excerpt'],
     properties: {
       type: { enum: ['chunk', 'instructor'] },
-      chunkId: { type: 'string' },
-      messageId: { type: 'string' },
+      chunkId: { type: ['string', 'null'] },
+      messageId: { type: ['string', 'null'] },
       excerpt: { type: 'string', maxLength: 200 },
     },
   },
@@ -73,6 +77,8 @@ const captureProfileJsonSchema = {
           'evidence_u',
           'evidence_d',
           'rationale',
+          'source',
+          'citations',
         ],
         properties: {
           statement: { type: 'string', minLength: 1 },
@@ -95,7 +101,7 @@ const captureProfileJsonSchema = {
       items: {
         type: 'object',
         additionalProperties: false,
-        required: ['statement', 'expected_depth', 'evidenced_by', 'confidence'],
+        required: ['statement', 'expected_depth', 'evidenced_by', 'confidence', 'source', 'citations'],
         properties: {
           statement: { type: 'string', minLength: 1 },
           expected_depth: {
@@ -124,6 +130,8 @@ const captureProfileJsonSchema = {
         'dimensional_patterns',
         'catalog_vs_evidence',
         'foundationals_glance',
+        'source',
+        'citations',
       ],
       properties: {
         course_shape: { type: 'string', minLength: 1 },
@@ -144,6 +152,8 @@ const captureProfileJsonSchema = {
         'cross_source_conflicts',
         'suggested_objective_revisions',
         'productive_failure_conditions',
+        'source',
+        'citations',
       ],
       properties: {
         prereq_gaps: { type: 'array', items: { type: 'string' } },
@@ -262,18 +272,25 @@ export async function generateCaptureProfile(
 
 type CaptureMessageRow = InferSelectModel<typeof captureMessages>;
 
-// v2-only schema variant: productive_failure_conditions is dropped from
-// audit_notes.required because the synthesis prompt emits the block only when
-// Audit Area 7 was probed in the transcript. Cloned at load time so the v1
-// schema (still in use when COURSECAPTURE_V2_INGESTION is off) keeps the
-// stricter required list.
+// v2-only schema variant: productive_failure_conditions can be null when
+// Audit Area 7 wasn't probed in the transcript. OpenAI strict mode requires
+// the field to stay in `required` (we can't omit it from required like the
+// previous implementation did), so we keep it required and widen its type
+// to "object or null." The synthesis prompt is responsible for emitting
+// null when Area 7 was not probed.
 const captureProfileJsonSchemaV2 = (() => {
   const cloned = JSON.parse(JSON.stringify(captureProfileJsonSchema)) as {
-    properties: { audit_notes: { required: string[] } };
+    properties: {
+      audit_notes: {
+        properties: { productive_failure_conditions: { type?: string | string[] } };
+      };
+    };
   };
-  cloned.properties.audit_notes.required = cloned.properties.audit_notes.required.filter(
-    k => k !== 'productive_failure_conditions',
-  );
+  const pf = cloned.properties.audit_notes.properties.productive_failure_conditions;
+  // Replace the object-only `type: 'object'` with a nullable union so the
+  // model may emit null. The nested properties / required of pf remain
+  // intact and apply when the value IS an object.
+  pf.type = ['object', 'null'];
   return cloned;
 })();
 

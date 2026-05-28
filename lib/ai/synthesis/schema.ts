@@ -25,9 +25,12 @@ const interviewThemeSchema = z.object({
 });
 
 const salaryDistributionSchema = z.object({
-  p25: z.number().int().optional(),
-  p50: z.number().int().optional(),
-  p75: z.number().int().optional(),
+  // Percentiles now accept null (OpenAI strict mode emits null when n is
+  // too small to report a percentile). The model can also omit them when
+  // running against providers that allow optional fields.
+  p25: z.number().int().nullable().optional(),
+  p50: z.number().int().nullable().optional(),
+  p75: z.number().int().nullable().optional(),
   n: z.number().int().nonnegative(),
 });
 
@@ -39,7 +42,9 @@ const sampleQuoteSchema = z.object({
 const proposedKUDEditSchema = z.object({
   descriptor: z.enum(['know', 'understand', 'do']),
   type: z.enum(['addition', 'edit']),
-  targetDescriptorIndex: z.number().int().nonnegative().optional(),
+  // null for additions; integer index for edits. OpenAI strict mode emits
+  // null rather than omitting the field for additions.
+  targetDescriptorIndex: z.number().int().nonnegative().nullable().optional(),
   proposedText: z.string().min(1),
   rationale: z.string().min(1),
   supportingPartnerIds: z.array(z.string()),
@@ -131,11 +136,13 @@ export const synthesisResultJsonSchema = {
     },
     salaryDistribution: {
       type: 'object', additionalProperties: false,
-      required: ['n'],
+      // OpenAI strict mode requires every property in `required`. Percentile
+      // values default to null when n is too small to report a percentile.
+      required: ['p25', 'p50', 'p75', 'n'],
       properties: {
-        p25: { type: 'integer' },
-        p50: { type: 'integer' },
-        p75: { type: 'integer' },
+        p25: { type: ['integer', 'null'] },
+        p50: { type: ['integer', 'null'] },
+        p75: { type: ['integer', 'null'] },
         n: { type: 'integer', minimum: 0 },
       },
     },
@@ -151,11 +158,13 @@ export const synthesisResultJsonSchema = {
       type: 'array',
       items: {
         type: 'object', additionalProperties: false,
-        required: ['descriptor', 'type', 'proposedText', 'rationale', 'supportingPartnerIds'],
+        // targetDescriptorIndex is null for additions; integer for edits.
+        // Strict mode requires it in `required` so we widen the type.
+        required: ['descriptor', 'type', 'targetDescriptorIndex', 'proposedText', 'rationale', 'supportingPartnerIds'],
         properties: {
           descriptor: { type: 'string', enum: ['know', 'understand', 'do'] },
           type: { type: 'string', enum: ['addition', 'edit'] },
-          targetDescriptorIndex: { type: 'integer', minimum: 0 },
+          targetDescriptorIndex: { type: ['integer', 'null'], minimum: 0 },
           proposedText: { type: 'string' },
           rationale: { type: 'string' },
           supportingPartnerIds: { type: 'array', items: { type: 'string' } },

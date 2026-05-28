@@ -30,10 +30,14 @@ export const captureScaleVersion = 'v1' as const;
 export const CaptureProfileSource = z.enum(['instructor', 'materials', 'inferred']);
 export type CaptureProfileSourceType = z.infer<typeof CaptureProfileSource>;
 
+// chunkId / messageId now accept null in addition to undefined — OpenAI
+// strict-mode JSON schema can't encode "optional," so the model emits
+// null for the unused slot. See lib/ai/analyze/capture-scores.ts
+// CITATIONS_ARRAY for the corresponding JSON schema shape.
 export const CaptureProfileCitation = z.object({
   type: z.enum(['chunk', 'instructor']),
-  chunkId: z.string().optional(),
-  messageId: z.string().optional(),
+  chunkId: z.string().nullable().optional(),
+  messageId: z.string().nullable().optional(),
   excerpt: z.string().max(200),
 });
 export type CaptureProfileCitationType = z.infer<typeof CaptureProfileCitation>;
@@ -108,9 +112,10 @@ export const captureAuditNotesSchema = z.object({
   cross_source_conflicts: z.array(z.string()),
   suggested_objective_revisions: z.array(z.string()),
   // Optional: snapshots taken before the productive-failure audit area was
-  // added (pre-2026-05-25) will not have this field. Downstream views must
-  // tolerate its absence and treat it as "no data yet" rather than "absent".
-  productive_failure_conditions: productiveFailureConditionsSchema.optional(),
+  // added (pre-2026-05-25) will not have this field. v2 synthesis under
+  // OpenAI strict-mode emits null when Audit Area 7 wasn't probed.
+  // Downstream views must tolerate both absence and null as "no data yet".
+  productive_failure_conditions: productiveFailureConditionsSchema.nullable().optional(),
   source: CaptureProfileSource.optional(),
   citations: z.array(CaptureProfileCitation).optional(),
 });
