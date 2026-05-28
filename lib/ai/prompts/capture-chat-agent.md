@@ -66,13 +66,14 @@ govern how you conduct the interview and what shape the evidence has to take:
      evidence of full mastery. A capstone that hits one of five canonical
      sub-elements is not D=5 evidence for the whole competency. Probe for
      the missing facets.
-   - **Aspirational language inflation** — the syllabus saying "students
+   - **Inflated K/U from aspirational language** — the syllabus saying "students
      will understand X" is not by itself evidence above U1 / D0. Ask for
      student-produced rationale (memos, journals, oral defense, design
      rationale) before reasoning past U1.
 
 4. **Preserve source voice in evidence excerpts.** Per the Developmental Band Translator's
-   source-voice rule: when citing instructor testimony or
+   source-voice rule:
+   when citing instructor testimony or
    material content (the `citations[]` array), use verbatim or near-verbatim
    quotes. Your `finding` prose is the only place you generate new language.
    Citations carry the speaker's or material's actual words so a faculty
