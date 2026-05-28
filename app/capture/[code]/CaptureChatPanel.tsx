@@ -148,8 +148,20 @@ export function CaptureChatPanel({
     }
   }
 
+  // Opening message sent on the user's behalf when they click "Start
+  // session." Required because the v2 audit agent expects at least one
+  // user message in history — it doesn't self-introduce from context
+  // alone the way the v1 chat path did. Visible as the first user bubble
+  // in the transcript so the user can see what was sent.
+  const OPENING_MESSAGE =
+    'Please walk me through what you see in my materials so far. Name the '
+    + 'most consequential gap or contradiction first, then ask me one focused '
+    + 'question.';
+
   async function handleStart() {
-    await postChat([]);
+    const next: ChatMessage[] = [{ role: 'user', content: OPENING_MESSAGE }];
+    onMessagesChange(next);
+    await postChat(next);
   }
 
   async function handleSend() {
@@ -186,8 +198,9 @@ export function CaptureChatPanel({
           <div className="flex h-full flex-col items-center justify-center py-12 text-center">
             <p className="text-sm font-medium">Start the audit when you&apos;re ready.</p>
             <p className="mt-1 max-w-md text-xs text-muted-foreground">
-              The auditor opens with what it found in the materials and its first questions.
-              The conversation runs as long as it needs to ground every rating in evidence.
+              We&apos;ll send a short opening message that asks the auditor to walk through
+              what it sees and ask one focused question. The conversation runs as long as
+              it needs to ground every rating in evidence — you can steer it any time.
             </p>
             <button
               type="button"
