@@ -218,8 +218,11 @@ export async function runAuditAgent(input: AuditAgentInput): Promise<AuditAgentR
           type: c.type,
           excerpt: c.excerpt,
         };
-        if (c.chunkId !== undefined) out.chunkId = c.chunkId;
-        if (c.messageId !== undefined) out.messageId = c.messageId;
+        // chunkId / messageId now accept null in addition to undefined (the
+        // OpenAI strict-mode JSON schema emits null for the unused slot).
+        // Only persist the value when it's a real string.
+        if (c.chunkId) out.chunkId = c.chunkId;
+        if (c.messageId) out.messageId = c.messageId;
         return out;
       })
     : undefined;

@@ -13,10 +13,13 @@ import { z } from 'zod';
  *   readiness — 0-100 score + lists of covered/remaining audit areas
  */
 
+// Citation: one of chunkId / messageId is set per type. Both must accept
+// null because OpenAI strict-mode JSON schema can't encode "optional";
+// the model emits null for the unused slot.
 const Citation = z.object({
   type: z.enum(['chunk', 'instructor']),
-  chunkId: z.string().optional(),
-  messageId: z.string().optional(),
+  chunkId: z.string().nullable().optional(),
+  messageId: z.string().nullable().optional(),
   excerpt: z.string().max(200),
 });
 
@@ -48,13 +51,18 @@ export const AuditResponseJsonSchema = {
       type: 'array',
       items: {
         type: 'object',
+        // OpenAI strict-mode structured-output requires `required` to list
+        // every property in `properties`. Optional fields (chunkId,
+        // messageId — one is set depending on citation type) are encoded
+        // as nullable union types instead. The Zod schema's `.optional()`
+        // on these fields accepts both undefined and null.
         properties: {
           type: { enum: ['chunk', 'instructor'] },
-          chunkId: { type: 'string' },
-          messageId: { type: 'string' },
+          chunkId: { type: ['string', 'null'] },
+          messageId: { type: ['string', 'null'] },
           excerpt: { type: 'string', maxLength: 200 },
         },
-        required: ['type', 'excerpt'],
+        required: ['type', 'chunkId', 'messageId', 'excerpt'],
         additionalProperties: false,
       },
     },
