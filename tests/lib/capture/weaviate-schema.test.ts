@@ -63,7 +63,7 @@ describe('ensureSchema()', () => {
     await ensureSchema();
 
     expect(createCollection).toHaveBeenCalledTimes(1);
-    expect(createCollection.mock.calls[0][0]).toMatchObject({ name: MATERIAL_SECTION_CLASS });
+    expect(createCollection.mock.calls[0]?.[0]).toMatchObject({ name: MATERIAL_SECTION_CLASS });
   });
 });
 

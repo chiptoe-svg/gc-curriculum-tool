@@ -39,6 +39,11 @@ const sampleInput = {
       digestSnippet: 'A syllabus covering all capstone expectations.',
     },
   ],
+  context: {
+    catalogCoversSyllabus: true,
+    hasCanvasAssignments: false,
+    canvasSyllabusSetAside: false,
+  },
 };
 
 describe('generateIngestionCheckIn', () => {

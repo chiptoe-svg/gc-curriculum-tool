@@ -6,7 +6,7 @@ import type { AuditResponse } from '@/lib/ai/agent/audit-response-schema';
 
 const mockAppendMessage = vi.fn();
 const mockGetSessionMessages = vi.fn();
-const mockListPriorSessionSummaries = vi.fn(async () => []);
+const mockListPriorSessionSummaries = vi.fn<(...args: unknown[]) => Promise<unknown[]>>(async () => []);
 
 vi.mock('@/lib/db/capture-messages-queries', () => ({
   appendMessage: (...a: unknown[]) => mockAppendMessage(...a),
