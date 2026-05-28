@@ -1,6 +1,6 @@
 'use client';
 
-import type { CaptureVerificationSummary } from '@/lib/ai/capture/schema';
+import type { CaptureVerificationSummary, CaptureProfileCitationType } from '@/lib/ai/capture/schema';
 import { SourceBadge } from './ProfileReviewPanel';
 import { LegacyBanner } from './LegacyBanner';
 
@@ -8,6 +8,8 @@ interface Props {
   summary: CaptureVerificationSummary;
   /** When true, renders the amber legacy-draft banner above the summary. */
   isLegacy?: boolean;
+  /** When supplied, SourceBadge becomes interactive. */
+  onCitationClick?: (c: CaptureProfileCitationType) => void;
 }
 
 function BulletList({ items, label }: { items: string[]; label: string }) {
@@ -32,7 +34,7 @@ function BulletList({ items, label }: { items: string[]; label: string }) {
  * section and decides whether the system has captured the course faithfully
  * — strict description, no recommendations.
  */
-export function VerificationSummary({ summary, isLegacy }: Props) {
+export function VerificationSummary({ summary, isLegacy, onCitationClick }: Props) {
   return (
     <section className="rounded-md border bg-amber-50/50 px-4 py-4 shadow-sm space-y-4">
       {isLegacy && <LegacyBanner />}
@@ -41,7 +43,7 @@ export function VerificationSummary({ summary, isLegacy }: Props) {
           <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-700">
             Does this capture your course?
           </p>
-          <SourceBadge source={summary.source} citations={summary.citations} />
+          <SourceBadge source={summary.source} citations={summary.citations} onCitationClick={onCitationClick} />
         </div>
         <p className="mt-0.5 text-xs text-muted-foreground">
           Read each section and decide whether the system got it right. Use

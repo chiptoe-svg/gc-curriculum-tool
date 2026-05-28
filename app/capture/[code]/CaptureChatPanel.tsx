@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { VoiceRecorder } from '@/components/VoiceRecorder';
 import type { CaptureReadiness } from '@/lib/ai/capture/schema';
 import type { ChatMessage } from '@/lib/ai/analyze/capture-chat';
+import { CitationDrawer, type CitationTarget } from './CitationDrawer';
 
 // Re-export so existing imports from this module keep working.
 export type { ChatMessage } from '@/lib/ai/analyze/capture-chat';
@@ -116,6 +117,7 @@ export function CaptureChatPanel({
   // every subsequent request so the audit-agent loop can stitch the
   // conversation together server-side. v1 responses leave this null.
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [drawerTarget, setDrawerTarget] = useState<CitationTarget | null>(null);
   const transcriptRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -280,30 +282,25 @@ export function CaptureChatPanel({
               <p className="mt-1 whitespace-pre-wrap text-sm leading-snug">{m.content}</p>
               {m.role === 'assistant' && m.citations && m.citations.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1.5">
-                  {m.citations.map((c, ci) => {
-                    const idTail = c.chunkId
-                      ? ` (chunk ${c.chunkId.slice(0, 8)}…)`
-                      : c.messageId
-                      ? ` (msg ${c.messageId.slice(0, 8)}…)`
-                      : '';
-                    return (
-                      <span
-                        key={ci}
-                        title={`${c.excerpt}${idTail}`}
-                        className="inline-flex max-w-full items-center gap-1.5 rounded border bg-background px-1.5 py-0.5 text-[10.5px] font-mono leading-none text-muted-foreground cursor-help"
-                      >
-                        <span
-                          className={
-                            'font-semibold '
-                            + (c.type === 'chunk' ? 'text-teal-700' : 'text-amber-700')
-                          }
-                        >
-                          {c.type === 'chunk' ? 'CH' : 'IN'}
-                        </span>
-                        <span className="max-w-[280px] truncate">{c.excerpt}</span>
+                  {m.citations.map((c, ci) => (
+                    <button
+                      key={ci}
+                      type="button"
+                      onClick={() => setDrawerTarget({
+                        type: c.type,
+                        chunkId: c.chunkId ?? null,
+                        messageId: c.messageId ?? null,
+                        excerpt: c.excerpt,
+                      })}
+                      title={c.excerpt}
+                      className="inline-flex max-w-full items-center gap-1.5 rounded border bg-background px-1.5 py-0.5 text-[10.5px] font-mono leading-none text-muted-foreground hover:bg-muted"
+                    >
+                      <span className={'font-semibold ' + (c.type === 'chunk' ? 'text-teal-700' : 'text-amber-700')}>
+                        {c.type === 'chunk' ? 'CH' : 'IN'}
                       </span>
-                    );
-                  })}
+                      <span className="max-w-[280px] truncate">{c.excerpt}</span>
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
@@ -371,6 +368,12 @@ export function CaptureChatPanel({
           {error && <p className="text-xs text-destructive">{error}</p>}
         </div>
       )}
+      <CitationDrawer
+        courseCode={courseCode}
+        slug={slug}
+        target={drawerTarget}
+        onClose={() => setDrawerTarget(null)}
+      />
     </section>
   );
 }

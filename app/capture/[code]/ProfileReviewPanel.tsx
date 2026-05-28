@@ -10,6 +10,7 @@ import type {
 } from '@/lib/ai/capture/schema';
 import { VerificationSummary } from './VerificationSummary';
 import { LegacyBanner } from './LegacyBanner';
+import { CitationDrawer, type CitationTarget } from './CitationDrawer';
 import { describeDepth, type Dimension } from '@/lib/ai/capture/depth-anchors';
 
 /**
@@ -37,9 +38,11 @@ export function isLegacyProfile(profile: CaptureProfile): boolean {
 export function SourceBadge({
   source,
   citations,
+  onCitationClick,
 }: {
   source: CaptureProfileSourceType | undefined;
   citations: CaptureProfileCitationType[] | undefined;
+  onCitationClick?: (c: CaptureProfileCitationType) => void;
 }) {
   if (!source) return null;
   const count = citations?.length ?? 0;
@@ -51,10 +54,28 @@ export function SourceBadge({
         : 'bg-stone-100 text-stone-700 border-stone-300';
   const label =
     source === 'instructor' ? 'instructor' : source === 'materials' ? 'materials' : 'inferred';
+
+  const interactive = onCitationClick && citations && citations.length > 0;
+  const className =
+    `inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider ${palette}` +
+    (interactive ? ' hover:opacity-80 cursor-pointer' : '');
+
+  if (interactive) {
+    return (
+      <button
+        type="button"
+        title={count > 0 ? `${count} citation${count === 1 ? '' : 's'} — click to view` : source}
+        className={className}
+        onClick={() => onCitationClick!(citations[0]!)}
+      >
+        {label}
+      </button>
+    );
+  }
   return (
     <span
       title={count > 0 ? `${count} citation${count === 1 ? '' : 's'}` : source}
-      className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider ${palette}`}
+      className={className}
     >
       {label}
     </span>
@@ -133,10 +154,12 @@ function CompetencyCard({
   competency,
   index,
   onChange,
+  onCitationClick,
 }: {
   competency: CaptureCompetency;
   index: number;
   onChange: (next: CaptureCompetency) => void;
+  onCitationClick?: (c: CaptureProfileCitationType) => void;
 }) {
   const isTechnical = competency.type === 'technical';
   return (
@@ -154,7 +177,7 @@ function CompetencyCard({
             >
               {competency.type}
             </span>
-            <SourceBadge source={competency.source} citations={competency.citations} />
+            <SourceBadge source={competency.source} citations={competency.citations} onCitationClick={onCitationClick} />
           </div>
           <textarea
             value={competency.statement}
@@ -417,6 +440,16 @@ export function ProfileReviewPanel({
   const [snapshotNote, setSnapshotNote] = useState('');
   const [snapshotting, setSnapshotting] = useState(false);
   const [snapshotMessage, setSnapshotMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
+  const [drawerTarget, setDrawerTarget] = useState<CitationTarget | null>(null);
+
+  function handleCitationClick(c: CaptureProfileCitationType) {
+    setDrawerTarget({
+      type: c.type,
+      chunkId: c.chunkId ?? null,
+      messageId: c.messageId ?? null,
+      excerpt: c.excerpt,
+    });
+  }
 
   async function handleConfirmAndSnapshot() {
     setSnapshotting(true);
@@ -585,13 +618,13 @@ export function ProfileReviewPanel({
       {saveError && <p className="text-sm text-destructive">{saveError}</p>}
 
       {working.verification_summary && (
-        <VerificationSummary summary={working.verification_summary} isLegacy={legacy} />
+        <VerificationSummary summary={working.verification_summary} isLegacy={legacy} onCitationClick={handleCitationClick} />
       )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
         <div className="space-y-3">
           {working.competencies.map((c, i) => (
-            <CompetencyCard key={i} competency={c} index={i} onChange={next => updateCompetency(i, next)} />
+            <CompetencyCard key={i} competency={c} index={i} onChange={next => updateCompetency(i, next)} onCitationClick={handleCitationClick} />
           ))}
         </div>
 
@@ -602,6 +635,7 @@ export function ProfileReviewPanel({
               <SourceBadge
                 source={working.audit_notes.source}
                 citations={working.audit_notes.citations}
+                onCitationClick={handleCitationClick}
               />
             </div>
             <p className="text-xs text-muted-foreground">
@@ -633,6 +667,12 @@ export function ProfileReviewPanel({
           )}
         </aside>
       </div>
+      <CitationDrawer
+        courseCode={courseCode}
+        slug={slug}
+        target={drawerTarget}
+        onClose={() => setDrawerTarget(null)}
+      />
     </section>
   );
 }
