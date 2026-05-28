@@ -51,7 +51,7 @@ export function buildAuditTools(courseCode: string): ToolDefinition[] {
       'verb, an assignment\'s point allocation. Cite the returned chunk by ' +
       'chunkId in the finding. Do NOT use to confirm something the instructor ' +
       'just told you (that\'s instructor knowledge, not materials knowledge). ' +
-      'Pass courseCode + materialId; default k=3 is usually enough.',
+      'Pass courseCode + materialId; default k=3 is usually enough (max 8).',
     inputSchema: z.object({
       courseCode: z.string(),
       materialId: z.string(),
@@ -91,7 +91,7 @@ export function buildAuditTools(courseCode: string): ToolDefinition[] {
       'material would answer it (open-ended; cross-material). Returns chunks ' +
       'from any included material in the course tenant. If a search returns ' +
       'nothing relevant, that\'s signal to ask the instructor, not to score ' +
-      'zero. Pass courseCode + query; default k=5 is usually enough.',
+      'zero. Pass courseCode + query; default k=5 is usually enough (max 10).',
     inputSchema: z.object({
       courseCode: z.string(),
       query: z.string(),

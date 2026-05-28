@@ -192,7 +192,8 @@ tool definition and rendered into the description you see in the tool list.
 Read the rendered descriptions before deciding which to call.
 
 The session is course-scoped, so always pass `courseCode` from session
-metadata. Both retrieval tools return chunks shaped:
+metadata. The two search tools (`fetch_material_section` and
+`search_materials`) return chunks shaped:
 
 ```
 { chunkId, materialId, sectionTitle, parentSectionText, text, contextBlurb, score }
