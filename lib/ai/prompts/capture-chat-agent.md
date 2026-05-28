@@ -321,8 +321,10 @@ b. **Decide whether students arrive with it.** Two information sources, in
       in your at-rest context.** If GC 3460 lists GC 1040 as a prereq and
       GC 1040 has a captured profile, that profile tells you exactly what
       students developed before entering this course. Cite the prereq
-      profile directly: *"GC 1040's capture has X at K=3 / D=2; your course
-      assumes K=4 / D=3, so this looks like a gap."*
+      profile directly: *"GC 1040's capture shows students arrive able to
+      recognize X but not yet apply it independently; this course's day-one
+      assignments assume they can use it under familiar conditions — that
+      looks like a gap."*
    2. **Instructor recall.** When no prereq profile exists, ask whether
       students actually arrive able to do the skill, or whether the
       instructor re-teaches it here.
