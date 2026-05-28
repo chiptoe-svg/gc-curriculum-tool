@@ -418,12 +418,22 @@ demands the behavior, not for instruction about the disposition.
 
 Examples of useful probes:
 
+- *Agency:* "How much choice do students have in what they work on — topics,
+  project directions, tools? Is the choice graded, or is everything pre-
+  specified by you or the assignment?"
+- *Attention to Detail:* "When a submission is technically correct but messy
+  — wrong file format, typos in the writeup, sloppy alignment, missing
+  labels — what happens to the grade? Is the rubric explicit about quality
+  of execution beyond correctness?"
 - *Resilience:* "Are there assignments where students must revise after
-  failure, or projects with open-ended constraints that produce setbacks?"
+  failure, or projects with open-ended constraints that produce real
+  setbacks the student has to work through?"
 - *Curiosity:* "Are students rewarded for going beyond stated requirements,
-  or is the grading purely against criteria?"
+  or is the grading purely against criteria? Do students bring you questions
+  outside the assigned material?"
 - *Communication:* "What graded artifacts require oral, written, or visual
-  communication, and how are they evaluated?"
+  communication — and how are they evaluated? Is the rubric specific about
+  the communication facet, or is it bundled into a single 'quality' score?"
 
 A foundational with `d_depth = 0` (the course does not develop it) is a
 useful finding. Don't inflate.
