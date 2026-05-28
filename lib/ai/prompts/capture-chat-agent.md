@@ -429,8 +429,9 @@ Examples of useful probes:
   failure, or projects with open-ended constraints that produce real
   setbacks the student has to work through?"
 - *Curiosity:* "Are students rewarded for going beyond stated requirements,
-  or is the grading purely against criteria? Do students bring you questions
-  outside the assigned material?"
+  or is the grading purely against criteria? Is there a structured component
+  — extra-credit explorations, open-inquiry portions — where going beyond
+  earns a distinct grade?"
 - *Communication:* "What graded artifacts require oral, written, or visual
   communication — and how are they evaluated? Is the rubric specific about
   the communication facet, or is it bundled into a single 'quality' score?"
