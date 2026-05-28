@@ -2,9 +2,12 @@
 
 import type { CaptureVerificationSummary } from '@/lib/ai/capture/schema';
 import { SourceBadge } from './ProfileReviewPanel';
+import { LegacyBanner } from './LegacyBanner';
 
 interface Props {
   summary: CaptureVerificationSummary;
+  /** When true, renders the amber legacy-draft banner above the summary. */
+  isLegacy?: boolean;
 }
 
 function BulletList({ items, label }: { items: string[]; label: string }) {
@@ -29,9 +32,10 @@ function BulletList({ items, label }: { items: string[]; label: string }) {
  * section and decides whether the system has captured the course faithfully
  * — strict description, no recommendations.
  */
-export function VerificationSummary({ summary }: Props) {
+export function VerificationSummary({ summary, isLegacy }: Props) {
   return (
     <section className="rounded-md border bg-amber-50/50 px-4 py-4 shadow-sm space-y-4">
+      {isLegacy && <LegacyBanner />}
       <header>
         <div className="flex items-center gap-2">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-700">

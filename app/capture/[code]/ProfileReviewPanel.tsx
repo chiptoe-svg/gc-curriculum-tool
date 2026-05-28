@@ -9,7 +9,24 @@ import type {
   CaptureReviewerStatus,
 } from '@/lib/ai/capture/schema';
 import { VerificationSummary } from './VerificationSummary';
+import { LegacyBanner } from './LegacyBanner';
 import { describeDepth, type Dimension } from '@/lib/ai/capture/depth-anchors';
+
+/**
+ * Returns true when NONE of the profile's findings carry a `source` flag.
+ * v2 synthesis always emits `source` on every finding; pre-v2 snapshots
+ * and in-flight drafts have no provenance fields at all.
+ */
+export function isLegacyProfile(profile: CaptureProfile): boolean {
+  const allFindings: Array<{ source?: unknown }> = [
+    ...profile.competencies,
+    ...profile.incoming_expectations,
+    profile.verification_summary,
+    profile.audit_notes,
+  ];
+  if (allFindings.length === 0) return false;
+  return allFindings.every(f => f.source === undefined);
+}
 
 /**
  * v2 provenance badge — renders nothing for pre-v2 findings (source absent).
@@ -463,8 +480,11 @@ export function ProfileReviewPanel({
   const technicalCount = working.competencies.filter(c => c.type === 'technical').length;
   const foundationalCount = working.competencies.filter(c => c.type === 'foundational').length;
 
+  const legacy = isLegacyProfile(working);
+
   return (
     <section className="space-y-6">
+      {legacy && <LegacyBanner onReaudit={onResumeChat} />}
       <header className="flex items-center justify-between gap-3 rounded-md border bg-card px-4 py-3">
         <div>
           <h2 className="text-sm font-semibold">Course Outcome Profile</h2>
@@ -565,7 +585,7 @@ export function ProfileReviewPanel({
       {saveError && <p className="text-sm text-destructive">{saveError}</p>}
 
       {working.verification_summary && (
-        <VerificationSummary summary={working.verification_summary} />
+        <VerificationSummary summary={working.verification_summary} isLegacy={legacy} />
       )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
