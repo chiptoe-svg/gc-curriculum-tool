@@ -152,6 +152,16 @@ describe('compactSpreadsheetMarkdown', () => {
     expect(result).not.toMatch(/\|---\|/);
   });
 
+  it('drops a table with header + separator but no data rows', () => {
+    const input = [
+      '| A | B | C |',
+      '|---|---|---|',
+    ].join('\n');
+    const result = compactSpreadsheetMarkdown(input);
+    expect(result).not.toMatch(/\|---\|/);
+    expect(result).not.toContain('| A | B | C |');
+  });
+
   it('handles a realistic sparse-budget shape with measurable compression', () => {
     // 5x5 grid where only 3 cells have content. Expect compression to a
     // small representation; assert the output is materially smaller than

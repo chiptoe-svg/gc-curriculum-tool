@@ -12,8 +12,8 @@
  * Contract:
  *   - Pure function. No I/O.
  *   - Non-table content (prose, headers, blank lines) preserved verbatim.
- *   - Cell values never modified beyond trimming whitespace.
- *   - Column order never changed.
+ *   - Cell values are trimmed; surrounding padding is normalized to a
+ *     single space on each side. Column order never changed.
  *   - An "empty" cell is one whose trimmed value is the empty string.
  *     Cells containing "0", "-", "0.00", etc. are real values.
  *   - A column is dropped when every data row's cell in that column is
@@ -30,7 +30,7 @@ export function compactSpreadsheetMarkdown(markdown: string): string {
 
   while (i < lines.length) {
     const line = lines[i] ?? '';
-    if (isTableHeaderLine(line) && i + 1 < lines.length && isTableSeparatorLine(lines[i + 1] ?? '')) {
+    if (isTableRowLine(line) && i + 1 < lines.length && isTableSeparatorLine(lines[i + 1] ?? '')) {
       // Collect the full table block.
       const tableLines: string[] = [line, lines[i + 1] ?? ''];
       let j = i + 2;
@@ -55,10 +55,6 @@ export function compactSpreadsheetMarkdown(markdown: string): string {
 function isTableRowLine(line: string): boolean {
   const trimmed = line.trim();
   return trimmed.startsWith('|') && trimmed.endsWith('|');
-}
-
-function isTableHeaderLine(line: string): boolean {
-  return isTableRowLine(line);
 }
 
 function isTableSeparatorLine(line: string): boolean {
@@ -93,11 +89,14 @@ function joinCells(cells: string[]): string {
  * normalising to `---`.
  */
 function joinSeparatorCells(cells: string[]): string {
-  return '|' + cells.map(c => c).join('|') + '|';
+  return '|' + cells.join('|') + '|';
 }
 
 function compactTableBlock(tableLines: string[]): string[] {
-  if (tableLines.length < 3) return tableLines; // header + separator + at least one row
+  // A header + separator with no data rows is degenerate — same shape as
+  // a table whose data rows are all empty (which we drop below). Treat
+  // both consistently.
+  if (tableLines.length < 3) return [];
 
   const header = tableLines[0]!;
   const separator = tableLines[1]!;
