@@ -8,6 +8,36 @@ import type { ChatMessage } from '@/lib/ai/analyze/capture-chat';
 // Re-export so existing imports from this module keep working.
 export type { ChatMessage } from '@/lib/ai/analyze/capture-chat';
 
+async function readNdjson(
+  res: Response,
+  onEvent: (event: Record<string, unknown>) => void,
+): Promise<void> {
+  if (!res.body) throw new Error('no body to stream');
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = '';
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    let nl: number;
+    while ((nl = buf.indexOf('\n')) !== -1) {
+      const line = buf.slice(0, nl).trim();
+      buf = buf.slice(nl + 1);
+      if (!line) continue;
+      try {
+        onEvent(JSON.parse(line));
+      } catch {
+        // ignore malformed lines — server only emits valid JSON per line
+      }
+    }
+  }
+  const tail = buf.trim();
+  if (tail) {
+    try { onEvent(JSON.parse(tail)); } catch { /* ignore */ }
+  }
+}
+
 function ReadinessStrip({ readiness }: { readiness: CaptureReadiness }) {
   const tone =
     readiness.score >= 75 ? 'bg-green-500'
@@ -95,54 +125,85 @@ export function CaptureChatPanel({
   async function postChat(next: ChatMessage[]) {
     setBusy(true);
     setError(null);
+
+    // Optimistically push an empty assistant message so deltas have a place
+    // to land. We replace it on each delta and reconcile at 'final'.
+    let streamed = '';
+    let toolBanner = '';
+    const optimistic: ChatMessage = { role: 'assistant', content: '' };
+    onMessagesChange([...next, optimistic]);
+
     try {
       const res = await fetch(
-        `/api/capture/${encodeURIComponent(courseCode)}/chat?slug=${encodeURIComponent(slug)}`,
+        `/api/capture/${encodeURIComponent(courseCode)}/chat?slug=${encodeURIComponent(slug)}&stream=1`,
         {
           method: 'POST',
-          headers: { 'content-type': 'application/json' },
+          headers: { 'content-type': 'application/json', accept: 'text/event-stream' },
           body: JSON.stringify({
             messages: next,
-            // Only sent when we already have a v2 session in flight. v1 path
-            // ignores this; v2 path uses it to look up tool-call history.
             ...(sessionId ? { sessionId } : {}),
           }),
         },
       );
-      const json = await res.json();
-      if (!res.ok) {
+      if (!res.ok || !res.body) {
+        const json = await res.json().catch(() => ({}));
         setError((json as { error?: string }).error ?? `Chat failed (${res.status})`);
+        // Drop the optimistic empty assistant turn.
+        onMessagesChange(next);
         return;
       }
-      const {
-        reply,
-        readiness: nextReadiness,
-        sessionId: nextSessionId,
-        citations: nextCitations,
-      } = json as {
-        reply: string;
-        readiness?: CaptureReadiness;
-        sessionId?: string;
+
+      type FinalResponse = {
+        finding?: string;
+        question?: string;
         citations?: ChatMessage['citations'];
+        readiness?: CaptureReadiness;
       };
-      if (typeof nextSessionId === 'string' && nextSessionId.length > 0) {
-        setSessionId(nextSessionId);
+      let finalResponse: FinalResponse | null = null;
+
+      await readNdjson(res, (ev) => {
+        const e = ev as { kind: string } & Record<string, unknown>;
+        if (e.kind === 'session' && typeof e.sessionId === 'string') {
+          setSessionId(e.sessionId);
+        } else if (e.kind === 'tool-start' && typeof e.toolName === 'string') {
+          toolBanner = `Searching materials via ${e.toolName}…`;
+          onMessagesChange([
+            ...next,
+            { role: 'assistant', content: streamed || toolBanner },
+          ]);
+        } else if (e.kind === 'text-delta' && typeof e.delta === 'string') {
+          streamed += e.delta;
+          onMessagesChange([
+            ...next,
+            { role: 'assistant', content: streamed },
+          ]);
+        } else if (e.kind === 'final' && e.response && typeof e.response === 'object') {
+          finalResponse = e.response as FinalResponse;
+        } else if (e.kind === 'error' && typeof e.message === 'string') {
+          setError(e.message);
+        }
+      });
+
+      if (!finalResponse) {
+        if (!streamed) onMessagesChange(next);
+        return;
       }
+
+      const fr: FinalResponse = finalResponse;
       const assistantMessage: ChatMessage = {
         role: 'assistant',
-        content: typeof reply === 'string' ? reply : '',
-        ...(Array.isArray(nextCitations) && nextCitations.length > 0
-          ? { citations: nextCitations }
+        content: (fr.finding ?? '') + '\n\n' + (fr.question ?? ''),
+        ...(Array.isArray(fr.citations) && fr.citations.length > 0
+          ? { citations: fr.citations }
           : {}),
       };
       const newMessages = [...next, assistantMessage];
       onMessagesChange(newMessages);
-      if (nextReadiness) setReadiness(nextReadiness);
-      // Autosave after every successful turn so a closed tab / failed
-      // Generate / next-day return doesn't lose the conversation.
-      onConversationChange?.(newMessages, nextReadiness ?? readiness ?? null);
+      if (fr.readiness) setReadiness(fr.readiness);
+      onConversationChange?.(newMessages, fr.readiness ?? readiness ?? null);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Chat failed');
+      onMessagesChange(next);
     } finally {
       setBusy(false);
     }
@@ -248,7 +309,7 @@ export function CaptureChatPanel({
             </div>
           ))
         )}
-        {busy && messages.length > 0 && (
+        {busy && messages.length > 0 && messages[messages.length - 1]?.content === '' && (
           <p className="text-xs italic text-muted-foreground">Auditor is thinking…</p>
         )}
       </div>
