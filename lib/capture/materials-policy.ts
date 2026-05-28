@@ -54,11 +54,16 @@ export function evaluateMaterialsPolicy(input: PolicyInput): PolicyDecision {
     };
   }
 
-  if (/^Canvas File:.*\.(xlsx?|xlsm)$/i.test(fileName)) {
+  // xlsx/xls/xlsm: default to included. Auto-exclude only when the
+  // filename matches gradebook-shaped patterns where the content is
+  // almost certainly student data (FERPA-sensitive and not audit-relevant).
+  // Faculty retain the manual `ignore` checkbox for course-specific calls.
+  if (/^Canvas File:.*\.(xlsx?|xlsm)$/i.test(fileName)
+      && /(?<![a-zA-Z])(gradebook|grades?|attendance|roster|scores?|enrolment|enrollment)(?![a-zA-Z])/i.test(fileName)) {
     return {
       included: false,
-      reason: 'Spreadsheet — usually data, not audit material',
-      ferpaRisk: 'low',
+      reason: 'Filename looks like grades/roster data',
+      ferpaRisk: 'high',
       overridable: true,
     };
   }
