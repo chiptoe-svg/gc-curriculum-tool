@@ -9,6 +9,7 @@ import { captureChatTurn, ChatMessage, CaptureChatContext } from '@/lib/ai/analy
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { hashIp } from '@/lib/ip-hash';
 import { runAuditAgent } from '@/lib/ai/agent/audit-agent';
+import { streamAuditAgent } from '@/lib/ai/agent/audit-agent-stream';
 import { startNewSession } from '@/lib/db/capture-messages-queries';
 
 // Parse "GC 1040, GC 1020" / "GC 1040 or GC 1020" / etc. into a list of
@@ -74,6 +75,41 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     // No user message = opening turn; runAuditAgent handles that by
     // self-introducing from at-rest context (no fake user row written).
     const lastUserMessage = history.filter(m => m.role === 'user').slice(-1)[0]?.content;
+
+    const wantsStream =
+      url.searchParams.get('stream') === '1' ||
+      (req.headers.get('accept') ?? '').includes('text/event-stream');
+
+    if (wantsStream) {
+      const encoder = new TextEncoder();
+      const stream = new ReadableStream({
+        async start(controller) {
+          try {
+            const gen = streamAuditAgent({
+              sessionId,
+              courseCode,
+              ...(lastUserMessage ? { userMessage: lastUserMessage } : {}),
+              auditMode: course.auditMode as 'full' | 'simple',
+            });
+            for await (const ev of gen) {
+              controller.enqueue(encoder.encode(JSON.stringify(ev) + '\n'));
+            }
+          } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            controller.enqueue(encoder.encode(JSON.stringify({ kind: 'error', message }) + '\n'));
+          } finally {
+            controller.close();
+          }
+        },
+      });
+      return new Response(stream, {
+        headers: {
+          'content-type': 'application/x-ndjson; charset=utf-8',
+          'cache-control': 'no-cache, no-transform',
+          'x-accel-buffering': 'no',
+        },
+      });
+    }
 
     try {
       const { response, toolCallsUsed } = await runAuditAgent({
