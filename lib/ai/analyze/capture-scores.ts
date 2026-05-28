@@ -8,6 +8,29 @@ import {
 } from '@/lib/ai/capture/schema';
 import type { ChatMessage, CaptureChatContext } from '@/lib/ai/analyze/capture-chat';
 import { buildCaptureChatUserMessage } from '@/lib/ai/analyze/capture-chat';
+import type { captureMessages } from '@/lib/db/schema';
+import type { InferSelectModel } from 'drizzle-orm';
+
+// ---------------------------------------------------------------------------
+// Shared sub-schema fragments for v2 source attribution (optional fields).
+// Inlined at each finding site rather than using $defs so the object remains
+// compatible with strict-mode structured-output providers that flatten refs.
+// ---------------------------------------------------------------------------
+const SOURCE_ENUM = { enum: ['instructor', 'materials', 'inferred'] } as const;
+const CITATIONS_ARRAY = {
+  type: 'array',
+  items: {
+    type: 'object',
+    additionalProperties: false,
+    required: ['type', 'excerpt'],
+    properties: {
+      type: { enum: ['chunk', 'instructor'] },
+      chunkId: { type: 'string' },
+      messageId: { type: 'string' },
+      excerpt: { type: 'string', maxLength: 200 },
+    },
+  },
+} as const;
 
 /**
  * JSON Schema (Draft 2020-12) for OpenAI strict structured-output.
@@ -61,6 +84,8 @@ const captureProfileJsonSchema = {
           evidence_u: { type: ['string', 'null'] },
           evidence_d: { type: ['string', 'null'] },
           rationale: { type: 'string', minLength: 1 },
+          source: SOURCE_ENUM,
+          citations: CITATIONS_ARRAY,
         },
       },
     },
@@ -85,6 +110,8 @@ const captureProfileJsonSchema = {
           },
           evidenced_by: { type: 'array', minItems: 1, items: { type: 'string' } },
           confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
+          source: SOURCE_ENUM,
+          citations: CITATIONS_ARRAY,
         },
       },
     },
@@ -104,6 +131,8 @@ const captureProfileJsonSchema = {
         dimensional_patterns: { type: 'array', maxItems: 4, items: { type: 'string' } },
         catalog_vs_evidence: { type: 'array', maxItems: 4, items: { type: 'string' } },
         foundationals_glance: { type: 'string', minLength: 1 },
+        source: SOURCE_ENUM,
+        citations: CITATIONS_ARRAY,
       },
     },
     audit_notes: {
@@ -147,6 +176,8 @@ const captureProfileJsonSchema = {
             notes: { type: 'array', items: { type: 'string' } },
           },
         },
+        source: SOURCE_ENUM,
+        citations: CITATIONS_ARRAY,
       },
     },
     revised_objectives_draft: {
@@ -209,6 +240,148 @@ export async function generateCaptureProfile(
     userMessage,
     schemaName: 'course_capture_profile_v1',
     jsonSchema: captureProfileJsonSchema as unknown as object,
+    validate: (raw: unknown) => captureProfileSchema.parse(raw),
+  });
+
+  return {
+    profile: result.data,
+    telemetry: {
+      costUsdCents: result.costUsdCents,
+      durationMs: result.durationMs,
+      cachedTokens: result.cachedTokens,
+      uncachedPromptTokens: result.uncachedPromptTokens,
+      completionTokens: result.completionTokens,
+    },
+    model: provider.model,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// v2 synthesis path (capture-synthesis.md prompt + capture_messages transcript)
+// ---------------------------------------------------------------------------
+
+type CaptureMessageRow = InferSelectModel<typeof captureMessages>;
+
+// v2-only schema variant: productive_failure_conditions is dropped from
+// audit_notes.required because the synthesis prompt emits the block only when
+// Audit Area 7 was probed in the transcript. Cloned at load time so the v1
+// schema (still in use when COURSECAPTURE_V2_INGESTION is off) keeps the
+// stricter required list.
+const captureProfileJsonSchemaV2 = (() => {
+  const cloned = JSON.parse(JSON.stringify(captureProfileJsonSchema)) as {
+    properties: { audit_notes: { required: string[] } };
+  };
+  cloned.properties.audit_notes.required = cloned.properties.audit_notes.required.filter(
+    k => k !== 'productive_failure_conditions',
+  );
+  return cloned;
+})();
+
+export interface V2SynthesisContext {
+  chatContext: CaptureChatContext;
+  sessionId: string;
+  transcript: CaptureMessageRow[];
+}
+
+/**
+ * Render one transcript row for the synthesis prompt. The assistant's content
+ * column for v2 turns is a JSON-stringified AuditResponse
+ * (finding + question + citations + readiness) — we surface `finding` (the
+ * scoring-relevant prose) and the row's `citations` jsonb column. Tool-role
+ * rows are summarized; the citation/finding signal is already on the
+ * assistant turn that requested the tool call.
+ */
+function formatTranscriptRow(row: CaptureMessageRow): string | null {
+  const idShort = row.id.slice(0, 8);
+  if (row.role === 'user') {
+    return `USER (turn ${row.turnIndex}, id=${idShort}): ${row.content ?? '(empty)'}`;
+  }
+  if (row.role === 'assistant') {
+    let assistantText = row.content ?? '';
+    if (assistantText.length > 0) {
+      try {
+        const parsed = JSON.parse(assistantText) as { finding?: unknown; question?: unknown };
+        const finding = typeof parsed.finding === 'string' ? parsed.finding : '';
+        const question = typeof parsed.question === 'string' ? parsed.question : '';
+        assistantText = [finding && `Finding: ${finding}`, question && `Question: ${question}`]
+          .filter(Boolean)
+          .join('\n');
+      } catch {
+        // Non-JSON assistant content (legacy v1-style row) — fall through with raw text.
+      }
+    }
+    const cites = (row.citations ?? [])
+      .map(c => {
+        const ref = c.chunkId
+          ? `chunk=${c.chunkId.slice(0, 8)}`
+          : c.messageId
+            ? `msg=${c.messageId.slice(0, 8)}`
+            : '?';
+        return `[${c.type}:${ref}] "${c.excerpt.slice(0, 140)}"`;
+      })
+      .join(' | ');
+    return [
+      `ASSISTANT (turn ${row.turnIndex}, id=${idShort}):`,
+      assistantText || '(no prose)',
+      `CITATIONS: ${cites || '(none)'}`,
+    ].join('\n');
+  }
+  if (row.role === 'tool') {
+    const tools = (row.toolResult ?? []).map(t => t.toolCallId.slice(0, 8)).join(',');
+    return `TOOL (turn ${row.turnIndex}): result for [${tools || '?'}] — see preceding ASSISTANT citations`;
+  }
+  return null;
+}
+
+function formatV2Transcript(rows: CaptureMessageRow[]): string {
+  const lines = rows.map(formatTranscriptRow).filter((s): s is string => s !== null);
+  if (lines.length === 0) {
+    return '**Audit transcript:** (no v2 turns recorded — synthesizing from materials + catalog only)';
+  }
+  return ['**Audit transcript (chronological; each ASSISTANT turn lists the citations it relied on):**', ...lines].join('\n\n');
+}
+
+function buildV2SynthesisUserMessage(context: V2SynthesisContext): string {
+  return [
+    buildCaptureChatUserMessage(context.chatContext),
+    '',
+    '---',
+    '',
+    formatV2Transcript(context.transcript),
+    '',
+    '---',
+    '',
+    'Produce the Course Outcome Profile JSON now. Conform exactly to the',
+    'schema. Score all five baseline foundational competencies (Agency,',
+    'Attention to Detail, Resilience, Curiosity, Communication) plus any',
+    'additional foundationals the materials evidence. Keep technical',
+    'competencies in the 5–15 range. Above-zero scores require an evidence',
+    'excerpt; foundationals must have null k_depth and u_depth. Populate',
+    'citations[] verbatim from the assistant turns that established each',
+    "finding, then derive source per the mechanical rule (instructor-only →",
+    "'instructor', chunk-only → 'materials', mixed-or-empty → 'inferred').",
+    'Emit productive_failure_conditions only if Audit Area 7 was probed.',
+  ].join('\n');
+}
+
+/**
+ * v2 synthesis: reads the v2 capture-synthesis prompt + the full session
+ * transcript from capture_messages, emits a CaptureProfile with source +
+ * citations on each finding. Same JSON schema shape as v1 modulo the optional
+ * productive_failure_conditions block.
+ */
+export async function generateCaptureProfileV2(
+  context: V2SynthesisContext,
+): Promise<GenerateCaptureProfileResult> {
+  const provider = await getProviderForFunction('capture-scores');
+  const systemPrompt = await loadPrompt('capture-synthesis');
+  const userMessage = buildV2SynthesisUserMessage(context);
+
+  const result = await provider.complete<CaptureProfile>({
+    systemPrompt,
+    userMessage,
+    schemaName: 'course_capture_profile_v2',
+    jsonSchema: captureProfileJsonSchemaV2 as unknown as object,
     validate: (raw: unknown) => captureProfileSchema.parse(raw),
   });
 

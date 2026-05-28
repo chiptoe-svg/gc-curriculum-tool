@@ -20,6 +20,23 @@ import { z } from 'zod';
  */
 
 export const captureScaleVersion = 'v1' as const;
+
+// ---------------------------------------------------------------------------
+// v2 source attribution — added in Stage 4, optional for backward-compat.
+// Pre-v2 profiles (no source/citations) remain valid; v2 synthesis populates
+// these fields when it has multi-source evidence to track.
+// ---------------------------------------------------------------------------
+
+export const CaptureProfileSource = z.enum(['instructor', 'materials', 'inferred']);
+export type CaptureProfileSourceType = z.infer<typeof CaptureProfileSource>;
+
+export const CaptureProfileCitation = z.object({
+  type: z.enum(['chunk', 'instructor']),
+  chunkId: z.string().optional(),
+  messageId: z.string().optional(),
+  excerpt: z.string().max(200),
+});
+export type CaptureProfileCitationType = z.infer<typeof CaptureProfileCitation>;
 export type CaptureScaleVersion = typeof captureScaleVersion;
 
 export const baselineFoundationalCompetencies = [
@@ -47,6 +64,8 @@ export const captureCompetencySchema = z
     evidence_u: z.string().nullable(),
     evidence_d: z.string().nullable(),
     rationale: z.string().min(1),
+    source: CaptureProfileSource.optional(),
+    citations: z.array(CaptureProfileCitation).optional(),
   })
   .refine(
     (c) => c.type !== 'foundational' || (c.k_depth === null && c.u_depth === null),
@@ -92,6 +111,8 @@ export const captureAuditNotesSchema = z.object({
   // added (pre-2026-05-25) will not have this field. Downstream views must
   // tolerate its absence and treat it as "no data yet" rather than "absent".
   productive_failure_conditions: productiveFailureConditionsSchema.optional(),
+  source: CaptureProfileSource.optional(),
+  citations: z.array(CaptureProfileCitation).optional(),
 });
 export type CaptureAuditNotes = z.infer<typeof captureAuditNotesSchema>;
 
@@ -106,6 +127,8 @@ export const incomingExpectationSchema = z.object({
   }),
   evidenced_by: z.array(z.string()).min(1),
   confidence: z.enum(['high', 'medium', 'low']),
+  source: CaptureProfileSource.optional(),
+  citations: z.array(CaptureProfileCitation).optional(),
 });
 export type CaptureIncomingExpectation = z.infer<typeof incomingExpectationSchema>;
 
@@ -115,6 +138,8 @@ export const verificationSummarySchema = z.object({
   dimensional_patterns: z.array(z.string()).max(4),
   catalog_vs_evidence: z.array(z.string()).max(4),
   foundationals_glance: z.string().min(1),
+  source: CaptureProfileSource.optional(),
+  citations: z.array(CaptureProfileCitation).optional(),
 });
 export type CaptureVerificationSummary = z.infer<typeof verificationSummarySchema>;
 
