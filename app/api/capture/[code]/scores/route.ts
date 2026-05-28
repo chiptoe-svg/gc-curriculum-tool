@@ -8,9 +8,10 @@ import {
   upsertCaptureProfile,
   setCaptureProfileStatus,
 } from '@/lib/db/course-capture-profiles-queries';
-import { generateCaptureProfile } from '@/lib/ai/analyze/capture-scores';
+import { generateCaptureProfile, generateCaptureProfileV2 } from '@/lib/ai/analyze/capture-scores';
 import type { ChatMessage, CaptureChatContext } from '@/lib/ai/analyze/capture-chat';
 import { getLatestSnapshotByCourse } from '@/lib/db/capture-snapshots-queries';
+import { getLatestSessionId, getSessionMessages } from '@/lib/db/capture-messages-queries';
 
 const COURSE_CODE_RE = /GC\s+\d{4}[a-z]{0,2}/gi;
 
@@ -149,8 +150,36 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     prerequisiteCaptureProfiles,
   };
 
+  const v2Enabled =
+    process.env.COURSECAPTURE_V2_INGESTION === '1' &&
+    (course.auditMode === 'full' || course.auditMode === 'simple');
+
   try {
-    const { profile, telemetry, model } = await generateCaptureProfile(context, history);
+    let profile: CaptureProfile;
+    let telemetry: Awaited<ReturnType<typeof generateCaptureProfile>>['telemetry'];
+    let model: string;
+
+    if (v2Enabled) {
+      // v2: synthesize from the append-only capture_messages transcript.
+      // The agent persists each turn there during the chat phase; here we
+      // hand the full session log + materials/digests to the synthesis prompt.
+      const sessionId = await getLatestSessionId(courseCode);
+      const transcript = sessionId ? await getSessionMessages(courseCode, sessionId) : [];
+      const result = await generateCaptureProfileV2({
+        chatContext: context,
+        sessionId: sessionId ?? '',
+        transcript,
+      });
+      profile = result.profile;
+      telemetry = result.telemetry;
+      model = result.model;
+    } else {
+      const result = await generateCaptureProfile(context, history);
+      profile = result.profile;
+      telemetry = result.telemetry;
+      model = result.model;
+    }
+
     await upsertCaptureProfile({ courseCode, profile, reviewerStatus: 'ai_drafted' });
     return NextResponse.json({
       profile,

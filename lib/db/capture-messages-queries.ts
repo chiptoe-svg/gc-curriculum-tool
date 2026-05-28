@@ -92,6 +92,21 @@ export async function getSessionMessages(courseCode: string, sessionId: string) 
 }
 
 /**
+ * Latest session_id for a course in capture_messages, or null when no
+ * v2 audit has been started yet. Used by the synthesis route to find
+ * the transcript that produced the current draft profile.
+ */
+export async function getLatestSessionId(courseCode: string): Promise<string | null> {
+  const rows = await db
+    .select({ sessionId: captureMessages.sessionId })
+    .from(captureMessages)
+    .where(eq(captureMessages.courseCode, courseCode))
+    .orderBy(desc(captureMessages.createdAt))
+    .limit(1);
+  return rows[0]?.sessionId ?? null;
+}
+
+/**
  * Summary of one prior audit session for a course. Used to give a new
  * session's agent enough continuity ("here's where the last audit left
  * off") without burning context on every prior turn verbatim.
