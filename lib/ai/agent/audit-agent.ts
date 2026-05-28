@@ -37,7 +37,14 @@ import { getCourseByCode } from '@/lib/db/courses-queries';
 export interface AuditAgentInput {
   sessionId: string;
   courseCode: string;
-  userMessage: string;
+  /**
+   * The faculty's typed turn. Omit for the **opening turn** — the agent
+   * generates its first message from the at-rest context (catalog +
+   * digests) alone, per the conversation rules in capture-chat-agent.md.
+   * The opening synthesis isn't persisted as a fake user turn; only the
+   * assistant's reply is written to capture_messages.
+   */
+  userMessage?: string;
   auditMode: 'full' | 'simple';
 }
 
@@ -49,18 +56,29 @@ export interface AuditAgentResult {
 export async function runAuditAgent(input: AuditAgentInput): Promise<AuditAgentResult> {
   const { sessionId, courseCode, userMessage, auditMode } = input;
 
-  // 1+2. Persist the user turn at the next turn_index. Doing this BEFORE the
-  // model call means the faculty's typed message is durable even if the
-  // agent step throws — they'll see it on the next page load.
   const existingBeforeUser = await getSessionMessages(courseCode, sessionId);
+  // Opening turn = no prior history AND no user message in this call.
+  // In that case the agent self-starts from at-rest context; no fake user
+  // row is written to capture_messages.
+  const isOpeningTurn = existingBeforeUser.length === 0 && !userMessage;
+
+  // 1+2. Persist the faculty's typed turn at the next turn_index. Doing
+  // this BEFORE the model call means the message is durable even if the
+  // agent step throws — they'll see it on the next page load. Skip for
+  // the opening turn (nothing to persist).
   const userTurnIndex = existingBeforeUser.length;
-  await appendMessage({
-    sessionId,
-    courseCode,
-    turnIndex: userTurnIndex,
-    role: 'user',
-    content: userMessage,
-  });
+  if (!isOpeningTurn) {
+    if (!userMessage) {
+      throw new Error('runAuditAgent: userMessage required when continuing an existing session');
+    }
+    await appendMessage({
+      sessionId,
+      courseCode,
+      turnIndex: userTurnIndex,
+      role: 'user',
+      content: userMessage,
+    });
+  }
 
   // 3. Load at-rest context.
   const [course, materials, priorSessions] = await Promise.all([
@@ -122,6 +140,12 @@ export async function runAuditAgent(input: AuditAgentInput): Promise<AuditAgentR
   // First a user message with the at-rest context, then the conversation
   // history. The capture-chat-agent.md system prompt instructs the model
   // to expect this layout.
+  //
+  // For the opening turn, append a final user message with a "begin the
+  // audit now" instruction so the agent has something to respond to —
+  // the model can't generate an assistant turn from a system + at-rest
+  // context alone. This synthetic instruction is NOT persisted to
+  // capture_messages; it lives only in this LLM call.
   const messages: Message[] = [
     {
       role: 'user',
@@ -139,6 +163,21 @@ export async function runAuditAgent(input: AuditAgentInput): Promise<AuditAgentR
         return { role: 'user', content: m.content ?? '' };
       }),
   ];
+  if (isOpeningTurn) {
+    messages.push({
+      role: 'user',
+      content:
+        'Begin the audit now. Produce your opening turn per the conversation '
+        + 'rules in the system prompt: three short paragraphs with blank lines '
+        + 'between them — (1) one sentence on what the digests show overall, '
+        + '(2) one sentence naming the single most consequential gap, '
+        + 'contradiction, or missing piece (cite specific evidence by name: '
+        + 'assignment, rubric criterion, point value, or objective number), '
+        + 'and (3) one focused follow-up question on that same topic, ending '
+        + 'with a question mark on its own line. Return the standard structured '
+        + 'response shape (finding + question + citations + readiness).',
+    });
+  }
 
   const systemPrompt = await loadPrompt('capture-chat-agent');
   const tools = auditMode === 'full' ? buildAuditTools(courseCode) : [];
@@ -160,8 +199,10 @@ export async function runAuditAgent(input: AuditAgentInput): Promise<AuditAgentR
     );
   }
 
-  // 7. Persist the assistant turn.
-  const assistantTurnIndex = userTurnIndex + 1;
+  // 7. Persist the assistant turn. For a continuing turn the assistant is
+  // turn N+1 (after the user's turn N we just wrote). For the opening
+  // turn no user row exists, so the assistant occupies turn 0.
+  const assistantTurnIndex = isOpeningTurn ? 0 : userTurnIndex + 1;
 
   const toolCalls: CaptureMessageToolCall[] | undefined = result.toolCallsUsed.length
     ? result.toolCallsUsed.map(tc => ({

@@ -71,16 +71,15 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         ? body.sessionId
         : startNewSession();
 
+    // No user message = opening turn; runAuditAgent handles that by
+    // self-introducing from at-rest context (no fake user row written).
     const lastUserMessage = history.filter(m => m.role === 'user').slice(-1)[0]?.content;
-    if (!lastUserMessage) {
-      return NextResponse.json({ error: 'no user message in history' }, { status: 400 });
-    }
 
     try {
       const { response, toolCallsUsed } = await runAuditAgent({
         sessionId,
         courseCode,
-        userMessage: lastUserMessage,
+        ...(lastUserMessage ? { userMessage: lastUserMessage } : {}),
         auditMode: course.auditMode as 'full' | 'simple',
       });
       return NextResponse.json({
