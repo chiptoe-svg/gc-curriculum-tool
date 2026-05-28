@@ -39,10 +39,14 @@ export interface DailyCostRow {
  * needing client-side gap-filling.
  */
 export async function getDailyCostHistory(days: number = 7): Promise<DailyCostRow[]> {
+  // MAKE_INTERVAL accepts a typed integer parameter cleanly. Multiplying a
+  // raw bind parameter by INTERVAL '1 day' trips Postgres's type inference
+  // because the parameter could be any number type and the planner won't
+  // pick one.
   const result = await db.execute(sql`
     SELECT day::text AS day, COALESCE(total_cost_usd_cents, 0) AS spent
     FROM daily_cost
-    WHERE day >= CURRENT_DATE - (${days - 1} * INTERVAL '1 day')
+    WHERE day >= CURRENT_DATE - MAKE_INTERVAL(days => ${days - 1}::int)
     ORDER BY day ASC
   `);
   const byDay = new Map<string, number>();
