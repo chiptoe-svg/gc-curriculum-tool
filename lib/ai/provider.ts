@@ -24,6 +24,7 @@ import type {
   ToolDefinition,
   Message,
   CompleteWithToolsResult,
+  StreamEvent,
 } from './tool-use-types';
 
 export interface AIProvider {
@@ -78,6 +79,24 @@ export interface AIProvider {
     /** Maximum tool calls allowed per top-level invocation. Default: 4. */
     maxToolCalls?: number;
   }): Promise<CompleteWithToolsResult<T>>;
+
+  /**
+   * Streaming variant of `completeWithTools`. Yields progressive events as
+   * tools fire and text generates, ending with a `final` event carrying the
+   * validated structured value. Errors terminate the stream with a `kind: 'error'` event.
+   *
+   * Providers that don't yet stream may throw "not implemented" — callers
+   * must either gate on a feature flag or fall back to `completeWithTools`.
+   */
+  streamWithTools<T>(args: {
+    systemPrompt: string;
+    messages: Message[];
+    tools: ToolDefinition[];
+    schemaName: string;
+    jsonSchema: object;
+    validate: (raw: unknown) => T;
+    maxToolCalls?: number;
+  }): AsyncIterable<StreamEvent<T>>;
 }
 
 import { OpenAIProvider } from './openai';
@@ -165,4 +184,4 @@ function buildProvider(modelOverride: string | undefined): AIProvider {
   throw new Error(`Unknown AI provider: ${which}`);
 }
 
-export type { ToolDefinition, ToolCall, ToolResult, Message, CompleteWithToolsResult } from './tool-use-types';
+export type { ToolDefinition, ToolCall, ToolResult, Message, CompleteWithToolsResult, StreamEvent } from './tool-use-types';

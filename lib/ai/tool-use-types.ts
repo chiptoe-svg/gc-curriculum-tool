@@ -114,3 +114,22 @@ export type CompleteWithToolsResult<T> =
         completionTokens: number;
       };
     };
+
+/**
+ * One event yielded by `streamWithTools`. The stream begins with zero or more
+ * `tool-start` events (one per tool the model calls during retrieval),
+ * followed by `text-delta` events as the structured output's text fields
+ * stream in, and ends with one `final` event carrying the validated value
+ * plus telemetry. `error` may appear at any point and terminates the stream.
+ */
+export type StreamEvent<T> =
+  | { kind: 'tool-start'; toolName: string; args: Record<string, unknown> }
+  | { kind: 'text-delta'; delta: string }
+  | { kind: 'final'; value: T; toolCallsUsed: ToolCall[]; telemetry: {
+      costUsdCents: number;
+      durationMs: number;
+      cachedTokens: number;
+      uncachedPromptTokens: number;
+      completionTokens: number;
+    } }
+  | { kind: 'error'; message: string };

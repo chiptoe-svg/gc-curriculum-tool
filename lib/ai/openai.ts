@@ -3,9 +3,9 @@ import type { AIProvider, CompletionTelemetry, TranscribeDocumentArgs, Transcrib
 // v6 Vercel AI SDK: structured output with tools uses generateText + Output.object, not generateObject.
 // tool() in v6 uses `inputSchema` (not `parameters`), matching our ToolDefinition shape directly.
 // jsonSchema() wraps a plain JSON Schema object into the SDK's Schema type for Output.object.
-import { generateText, tool as aiTool, Output, stepCountIs, jsonSchema as aiJsonSchema } from 'ai';
+import { generateText, streamText, tool as aiTool, Output, stepCountIs, jsonSchema as aiJsonSchema } from 'ai';
 import { openai as aiOpenai } from '@ai-sdk/openai';
-import type { ToolDefinition, Message, CompleteWithToolsResult, ToolCall } from './tool-use-types';
+import type { ToolDefinition, Message, CompleteWithToolsResult, ToolCall, StreamEvent } from './tool-use-types';
 import { renderToolDescription } from './tool-use-types';
 
 // Per-model pricing in USD per 1M tokens. Update from
@@ -239,5 +239,129 @@ export class OpenAIProvider implements AIProvider {
         completionTokens: outputTokens,
       },
     };
+  }
+
+  async *streamWithTools<T>(args: {
+    systemPrompt: string;
+    messages: Message[];
+    tools: ToolDefinition[];
+    schemaName: string;
+    jsonSchema: object;
+    validate: (raw: unknown) => T;
+    maxToolCalls?: number;
+  }): AsyncGenerator<StreamEvent<T>, void, unknown> {
+    if (!this.apiKey) throw new Error('OPENAI_API_KEY not set');
+    const start = Date.now();
+
+    const sdkTools: Record<string, ReturnType<typeof aiTool<never, never>>> = {};
+    for (const t of args.tools) {
+      sdkTools[t.name] = aiTool({
+        description: renderToolDescription(t),
+        inputSchema: t.inputSchema as never,
+        execute: t.execute as never,
+      });
+    }
+
+    const sdkMessages = args.messages.map(m => {
+      if (m.role === 'tool') {
+        return {
+          role: 'tool' as const,
+          content: [{
+            type: 'tool-result' as const,
+            toolCallId: m.toolCallId,
+            toolName: 'unknown',
+            output: { type: 'json' as const, value: m.result as import('ai').JSONValue },
+          }],
+        };
+      }
+      if (m.role === 'assistant' && m.toolCalls?.length) {
+        return {
+          role: 'assistant' as const,
+          content: [
+            ...(m.content ? [{ type: 'text' as const, text: m.content }] : []),
+            ...m.toolCalls.map(tc => ({
+              type: 'tool-call' as const,
+              toolCallId: tc.id,
+              toolName: tc.toolName,
+              input: tc.args,
+            })),
+          ],
+        };
+      }
+      return { role: m.role as 'system' | 'user' | 'assistant', content: m.content ?? '' };
+    });
+
+    const result = streamText({
+      model: aiOpenai(this.model),
+      system: args.systemPrompt,
+      messages: sdkMessages,
+      tools: sdkTools,
+      experimental_output: Output.object({
+        schema: aiJsonSchema(args.jsonSchema as never),
+        name: args.schemaName,
+      }),
+      stopWhen: stepCountIs((args.maxToolCalls ?? 4) + 1),
+    });
+
+    try {
+      for await (const part of result.fullStream) {
+        if (part.type === 'tool-call') {
+          yield {
+            kind: 'tool-start',
+            toolName: part.toolName,
+            args: (part as unknown as { input?: Record<string, unknown> }).input ?? {},
+          };
+        } else if (part.type === 'text-delta') {
+          // v6: text-delta carries `text` (the delta string itself).
+          const delta = (part as unknown as { text?: string }).text ?? '';
+          if (delta) yield { kind: 'text-delta', delta };
+        } else if (part.type === 'error') {
+          yield {
+            kind: 'error',
+            message: part.error instanceof Error ? part.error.message : String(part.error),
+          };
+          return;
+        }
+      }
+
+      const usage = await result.usage;
+      const finalToolCalls = await result.toolCalls;
+      const finalOutput = await result.output;
+
+      const value = args.validate(finalOutput);
+      const toolCallsUsed: ToolCall[] = (finalToolCalls ?? []).map(tc => ({
+        id: tc.toolCallId,
+        toolName: tc.toolName,
+        args: (tc as unknown as { input: Record<string, unknown> }).input ?? {},
+      }));
+
+      const inputTokens = usage?.inputTokens ?? 0;
+      const outputTokens = usage?.outputTokens ?? 0;
+      const cachedTokens = usage?.inputTokenDetails?.cacheReadTokens ?? 0;
+      const uncachedPromptTokens = Math.max(0, inputTokens - cachedTokens);
+      const pricing = MODEL_PRICING[this.model] ?? FALLBACK_PRICING;
+      const costUsdCents =
+        toCents((uncachedPromptTokens / 1_000_000) * pricing.input) +
+        toCents((cachedTokens / 1_000_000) * pricing.input * 0.1) +
+        toCents((outputTokens / 1_000_000) * pricing.output);
+
+      yield {
+        kind: 'final',
+        value,
+        toolCallsUsed,
+        telemetry: {
+          costUsdCents,
+          durationMs: Date.now() - start,
+          cachedTokens,
+          uncachedPromptTokens,
+          completionTokens: outputTokens,
+        },
+      };
+    } catch (err) {
+      yield {
+        kind: 'error',
+        message: err instanceof Error ? err.message : String(err),
+      };
+    }
   }
 }

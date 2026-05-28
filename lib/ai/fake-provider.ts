@@ -1,5 +1,5 @@
 import type { AIProvider, CompletionTelemetry, TranscribeDocumentArgs, TranscribeDocumentResult } from './provider';
-import type { ToolDefinition, ToolCall, Message, CompleteWithToolsResult } from './tool-use-types';
+import type { ToolDefinition, ToolCall, Message, CompleteWithToolsResult, StreamEvent } from './tool-use-types';
 
 type FakeResponse = unknown;
 
@@ -103,6 +103,19 @@ export class FakeProvider implements AIProvider {
       }
     }
     throw new Error('FakeProvider: toolUseScript exhausted without a response step');
+  }
+
+  // eslint-disable-next-line require-yield
+  async *streamWithTools<T>(_args: {
+    systemPrompt: string;
+    messages: Message[];
+    tools: ToolDefinition[];
+    schemaName: string;
+    jsonSchema: object;
+    validate: (raw: unknown) => T;
+    maxToolCalls?: number;
+  }): AsyncGenerator<StreamEvent<T>, void, unknown> {
+    throw new Error(`${this.name} provider does not implement streamWithTools yet`);
   }
 
   reset() {

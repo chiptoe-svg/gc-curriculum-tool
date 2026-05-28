@@ -1,7 +1,7 @@
 import OpenAI from 'openai';
 import type { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions';
 import type { AIProvider, CompletionTelemetry, TranscribeDocumentArgs, TranscribeDocumentResult } from './provider';
-import type { ToolDefinition, Message, CompleteWithToolsResult, ToolCall } from './tool-use-types';
+import type { ToolDefinition, Message, CompleteWithToolsResult, ToolCall, StreamEvent } from './tool-use-types';
 import { renderToolDescription } from './tool-use-types';
 
 /**
@@ -238,5 +238,18 @@ export class CampusProvider implements AIProvider {
         completionTokens: totalCompletionTokens,
       },
     };
+  }
+
+  // eslint-disable-next-line require-yield
+  async *streamWithTools<T>(_args: {
+    systemPrompt: string;
+    messages: Message[];
+    tools: ToolDefinition[];
+    schemaName: string;
+    jsonSchema: object;
+    validate: (raw: unknown) => T;
+    maxToolCalls?: number;
+  }): AsyncGenerator<StreamEvent<T>, void, unknown> {
+    throw new Error(`${this.name} provider does not implement streamWithTools yet`);
   }
 }

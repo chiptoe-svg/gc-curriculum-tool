@@ -5,7 +5,7 @@ import type { AIProvider, CompletionTelemetry, TranscribeDocumentArgs, Transcrib
 // jsonSchema() wraps a plain JSON Schema object into the SDK's Schema type for Output.object.
 import { generateText, tool as aiTool, Output, stepCountIs, jsonSchema as aiJsonSchema } from 'ai';
 import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
-import type { ToolDefinition, Message, CompleteWithToolsResult, ToolCall } from './tool-use-types';
+import type { ToolDefinition, Message, CompleteWithToolsResult, ToolCall, StreamEvent } from './tool-use-types';
 import { renderToolDescription } from './tool-use-types';
 
 export class LocalProvider implements AIProvider {
@@ -188,5 +188,18 @@ export class LocalProvider implements AIProvider {
         completionTokens: outputTokens,
       },
     };
+  }
+
+  // eslint-disable-next-line require-yield
+  async *streamWithTools<T>(_args: {
+    systemPrompt: string;
+    messages: Message[];
+    tools: ToolDefinition[];
+    schemaName: string;
+    jsonSchema: object;
+    validate: (raw: unknown) => T;
+    maxToolCalls?: number;
+  }): AsyncGenerator<StreamEvent<T>, void, unknown> {
+    throw new Error(`${this.name} provider does not implement streamWithTools yet`);
   }
 }
