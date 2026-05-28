@@ -26,6 +26,7 @@
 
 import { extractText as unpdfExtractText } from 'unpdf';
 import mammoth from 'mammoth';
+import { compactSpreadsheetMarkdown } from '@/lib/capture/spreadsheet-compact';
 
 // Source-format MIME types the system can handle. Anything outside this
 // list is rejected at the upload-route allowlist level — by the time a
@@ -163,7 +164,13 @@ class DoclingExtractor implements MaterialExtractor {
       throw new Error(`docling-serve conversion failed: ${reason}`);
     }
     const doc = data.document ?? {};
-    const text = (doc.md_content ?? doc.text_content ?? '').trim();
+    const rawText = (doc.md_content ?? doc.text_content ?? '').trim();
+    // XLSX → markdown output is dominated by sparse-cell syntax noise
+    // (Docling preserves every cell of every sheet). Compact it before
+    // returning so the digest + indexing pipeline sees content-shaped
+    // markdown rather than 100× syntax overhead.
+    const xlsxMime = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    const text = mimeType === xlsxMime ? compactSpreadsheetMarkdown(rawText) : rawText;
     // Best-effort page/slide/sheet count from --- separators in the markdown.
     // Docling's ExportDocumentResponse doesn't surface a count field when
     // only md is requested.
