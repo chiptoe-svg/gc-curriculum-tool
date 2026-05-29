@@ -365,11 +365,11 @@ function MaterialRow({
                 }
                 title={
                   usingDigest
-                    ? 'The audit prompt uses this material\'s structured digest instead of its full extracted text.'
-                    : 'A digest exists but is currently disabled — the audit uses the full extracted text.'
+                    ? 'The audit prompt uses this material\'s structured AI summary instead of its full extracted text.'
+                    : 'An AI summary exists but is currently disabled — the audit uses the full extracted text.'
                 }
               >
-                {usingDigest ? `digest (~${formatTokens(digestTokenEstimate)})` : 'digest off'}
+                {usingDigest ? `AI summary (~${formatTokens(digestTokenEstimate)})` : 'AI summary off'}
               </span>
             )}
             {material.ignored && (
@@ -400,7 +400,7 @@ function MaterialRow({
               </span>
             )}
             {usingDigest && digestTokenEstimate > 0 && (
-              <span className="text-teal-700" title="Tokens the digest contributes to the audit prompt (replaces the full token count shown above).">
+              <span className="text-teal-700" title="Tokens the AI summary contributes to the audit prompt (replaces the full token count shown above).">
                 audit sends ~{formatTokens(digestTokenEstimate)} ·{' '}
               </span>
             )}
@@ -476,7 +476,7 @@ function MaterialRow({
                 disabled={busy}
                 className="h-3 w-3"
               />
-              digest
+              AI summary
             </label>
           )}
           <label className="flex cursor-pointer items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground">
@@ -1015,7 +1015,7 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
               type="button"
               onClick={() => setAuditModeOpen(o => !o)}
               disabled={auditModeBusy}
-              title="Simple mode skips chunk indexing for this course; the agent runs against digests inline. Switch to Full to enable retrieval."
+              title="Simple mode skips chunk indexing for this course; the agent runs against AI summaries inline. Switch to Full to enable retrieval."
               className="rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
             >
               Audit mode: {course.auditMode === 'simple' ? 'Simple' : 'Full'} {auditModeOpen ? '▴' : '▾'}
@@ -1044,7 +1044,7 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
                   }
                 >
                   Simple {course.auditMode === 'simple' && '✓'}
-                  <span className="block text-[10px] text-muted-foreground">Skip indexing; digests inline.</span>
+                  <span className="block text-[10px] text-muted-foreground">Skip indexing; AI summaries inline.</span>
                 </button>
                 {auditModeError && (
                   <p className="border-t px-3 py-1.5 text-[10px] text-destructive">{auditModeError}</p>
@@ -1115,10 +1115,10 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
                   type="button"
                   onClick={handleCompressMaterials}
                   disabled={compressing}
-                  title="One-time backfill: generate structured digests for any long reference materials uploaded before auto-compression shipped. New uploads are digested automatically."
+                  title="One-time backfill: generate structured AI summaries for any long reference materials uploaded before auto-compression shipped. New uploads are summarized automatically."
                   className="rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
                 >
-                  {compressing ? 'Regenerating…' : 'Regenerate digests'}
+                  {compressing ? 'Regenerating…' : 'Regenerate AI summaries'}
                 </button>
                 <button
                   type="button"

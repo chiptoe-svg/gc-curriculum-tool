@@ -39,7 +39,7 @@ export function CaptureHelpPanel() {
                   <em>Canvas: Syllabus</em> is auto-ignored when your Sheets catalog already lists learning objectives, projects, and skills — the syllabus content is redundant.
                 </li>
                 <li>
-                  Files with a red token count (e.g. <em>~131k tok</em>) are auto-set-aside because they exceed the digest size limit. Usually safe to leave ignored unless the file is genuinely audit-relevant.
+                  Files with a red token count (e.g. <em>~131k tok</em>) are auto-set-aside because they exceed the summary size limit. Usually safe to leave ignored unless the file is genuinely audit-relevant.
                 </li>
                 <li>
                   Gradebook / attendance / roster spreadsheets are auto-ignored as likely student data.
@@ -47,7 +47,7 @@ export function CaptureHelpPanel() {
               </ul>
             </li>
             <li>
-              <strong>&ldquo;digest&rdquo; checkbox</strong> — when checked, the agent reads a ~700–900-token compressed summary of this material in its at-rest context every turn. It can still pull the full chunked content via search tools when it needs precise wording. Leave checked unless the material is short enough that the agent can read it whole.
+              <strong>&ldquo;AI summary&rdquo; checkbox</strong> — when checked, the agent reads a ~700–900-token structured summary of this material in its at-rest context every turn. It can still pull the full chunked content via search tools when it needs precise wording. Leave checked unless the material is short enough that the agent can read it whole.
             </li>
             <li>
               <strong>&ldquo;ignore&rdquo; checkbox</strong> — exclude entirely from the audit. The file stays in the database (you can un-ignore later) but the agent never sees it. Use to manually override an auto-included material the agent shouldn&apos;t reason about.
@@ -65,8 +65,8 @@ export function CaptureHelpPanel() {
               <dd className="text-muted-foreground">Only if you suspect the extracted text is stale (e.g. you re-uploaded a rubric in Canvas). Skip otherwise.</dd>
             </div>
             <div className="flex gap-3">
-              <dt className="w-44 shrink-0 font-medium">Regenerate digests</dt>
-              <dd className="text-muted-foreground">Only if you&apos;ve materially changed how digests are generated. Skip on a normal audit.</dd>
+              <dt className="w-44 shrink-0 font-medium">Regenerate AI summaries</dt>
+              <dd className="text-muted-foreground">Only if you&apos;ve materially changed how the AI summaries are generated. Skip on a normal audit.</dd>
             </div>
             <div className="flex gap-3">
               <dt className="w-44 shrink-0 font-medium">Scan linked files</dt>
@@ -87,7 +87,7 @@ export function CaptureHelpPanel() {
             <strong>Full</strong> — agent has three retrieval tools and can search the indexed materials during the conversation. <em>Use this unless you have a specific reason not to.</em>
           </p>
           <p className="mt-1 text-muted-foreground">
-            <strong>Simple</strong> — agent skips tools and audits only from the at-rest digests. Faster but less precise; the agent can&apos;t quote rubric language verbatim.
+            <strong>Simple</strong> — agent skips tools and audits only from the at-rest AI summaries. Faster but less precise; the agent can&apos;t quote rubric language verbatim.
           </p>
         </section>
 
