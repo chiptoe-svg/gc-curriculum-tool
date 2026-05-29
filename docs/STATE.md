@@ -2,7 +2,7 @@
 
 > **Audience:** developer / implementation detail. This file is the engineering snapshot — what's live, what's blocked, what's next at the code and deployment level. Stakeholder-facing surfaces (executive brief, vision, background) summarize the same state in non-implementation terms; if you're orienting non-technical reviewers, point them there first and use this file as the backing source they can drop into when they want detail. The executive brief links here intentionally — anyone following that link is opting into the operational view.
 >
-> **Last verified:** `503f250` · 2026-05-28
+> **Last verified:** `82c11bd` · 2026-05-29
 >
 > **What this is:** the single source of truth for "what's live, what's next, what's blocked." Read this before any feature work, schema change, AI function add, deployment change, or new spec/plan. Static framing (KUD+, vision, architecture rationale) lives in [`CLAUDE.md`](../CLAUDE.md) and [`docs/superpowers/README.md`](./superpowers/README.md); this file is the volatile snapshot that sits in front of them.
 >
@@ -36,6 +36,12 @@ Two deployments, same codebase. Faculty side is gated by HTTP Basic Auth on the 
 | `/preview/[slug]/courses/[code]` | Per-course 4-tab page from M-trial: Info / Materials / Profile / KUDs | live |
 
 The static GitHub-Pages preview at `chiptoe-svg.github.io/gc-curriculum-tool/` serves the docs (vision, specs, plans, deep-dives, faculty guide) plus the legacy interactive partner-interface preview. Submissions and feedback POST to a Google Apps Script Web App which appends to the shared Google Sheet's "Submissions" and "Feedback" tabs.
+
+### Cross-cutting
+
+| Surface | What it does | Status | Shipped |
+| ------- | ------------ | ------ | ------- |
+| **`<FeedbackWidget />`** on every faculty page (layout-mounted; self-gates on `?slug=`) | Floating "💬 Feedback" button → modal (name + freeform) → `POST /api/feedback` → creates a GitHub Issue with auto-captured route / course code / user-agent / timestamp context. `gc-feedback` label. Phase 1 — Phase 2 will add scheduled Claude Code triage on `issue.opened`. | live | 2026-05-29 |
 
 ---
 
@@ -124,6 +130,7 @@ Tables defined in [`lib/db/schema.ts`](../lib/db/schema.ts):
 - **Vector store:** `VECTOR_STORE` (`'in-memory'` default | `'weaviate'` — selects the backend for the v2 ingestion pipeline's chunk storage), `WEAVIATE_URL`, `WEAVIATE_GRPC_URL`, `WEAVIATE_API_KEY`, `WEAVIATE_TENANT_PREFIX`
 - **PDF:** `PDF_PARSER`, `DOCLING_URL`, `DOCLING_VLM_*`
 - **Auth / slug:** `FACULTY_BASIC_AUTH` (faculty gate on local), `PROTOTYPE_SLUG` (single-user slug-gated session)
+- **Feedback intake:** `GITHUB_TOKEN`, `GITHUB_FEEDBACK_REPO` (set on the local Mac; when unset, `/api/feedback` returns 503)
 - **Cost guard:** `DAILY_COST_CAP_USD`, `COST_ALERT_EMAIL`
 - **Sheets / partners:** `GOOGLE_SHEET_ID`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `PARTNERS_BASE_URL`, `SYNTHESIS_STALENESS_THRESHOLD`
 - **Vercel Blob:** `BLOB_READ_WRITE_TOKEN`
