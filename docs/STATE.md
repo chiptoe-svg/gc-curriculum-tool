@@ -2,7 +2,7 @@
 
 > **Audience:** developer / implementation detail. This file is the engineering snapshot — what's live, what's blocked, what's next at the code and deployment level. Stakeholder-facing surfaces (executive brief, vision, background) summarize the same state in non-implementation terms; if you're orienting non-technical reviewers, point them there first and use this file as the backing source they can drop into when they want detail. The executive brief links here intentionally — anyone following that link is opting into the operational view.
 >
-> **Last verified:** `82c11bd` · 2026-05-29
+> **Last verified:** `170a130` · 2026-05-30
 >
 > **What this is:** the single source of truth for "what's live, what's next, what's blocked." Read this before any feature work, schema change, AI function add, deployment change, or new spec/plan. Static framing (KUD+, vision, architecture rationale) lives in [`CLAUDE.md`](../CLAUDE.md) and [`docs/superpowers/README.md`](./superpowers/README.md); this file is the volatile snapshot that sits in front of them.
 >
@@ -41,7 +41,7 @@ The static GitHub-Pages preview at `chiptoe-svg.github.io/gc-curriculum-tool/` s
 
 | Surface | What it does | Status | Shipped |
 | ------- | ------------ | ------ | ------- |
-| **`<FeedbackWidget />`** on every faculty page (layout-mounted; self-gates on `?slug=`) | Floating "💬 Feedback" button → modal (name + freeform) → `POST /api/feedback` → creates a GitHub Issue with auto-captured route / course code / user-agent / timestamp context. `gc-feedback` label. Phase 1 — Phase 2 will add scheduled Claude Code triage on `issue.opened`. | live | 2026-05-29 |
+| **Feedback widget Phase 1 + 2** on every faculty page | Phase 1: floating "💬 Feedback" button → modal (name + freeform) → `POST /api/feedback` → GitHub Issue (`gc-feedback` label) with auto-captured route / course / UA / timestamp context. **Phase 2 (2026-05-30):** launchd cron `com.gc.feedback-cron` (every 15 min) orchestrates `/triage-feedback <N> auto-post` for untriaged issues and `/implement-feedback <N>` for eligible triaged ones (effort-trivial/small without gates, or any effort with `approved`). Hard gates: `gate-prompts-or-schema`, `gate-auth`, `gate-cost`, `gate-anonymous` block auto-implement until operator removes the gate or adds `approved`. Cost interlock: `daily_cost` table lookup before each dispatch, run halts when today's spend ≥ `DAILY_COST_CAP_USD`. PRs prefixed `[bot-<effort>]` for inbox filtering; `@chiptoe-svg`-tagged; never auto-merged. | live | 2026-05-30 |
 
 ---
 
