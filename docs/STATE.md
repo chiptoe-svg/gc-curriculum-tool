@@ -2,7 +2,7 @@
 
 > **Audience:** developer / implementation detail. This file is the engineering snapshot — what's live, what's blocked, what's next at the code and deployment level. Stakeholder-facing surfaces (executive brief, vision, background) summarize the same state in non-implementation terms; if you're orienting non-technical reviewers, point them there first and use this file as the backing source they can drop into when they want detail. The executive brief links here intentionally — anyone following that link is opting into the operational view.
 >
-> **Last verified:** `170a130` · 2026-05-30
+> **Last verified:** `3304e8d` · 2026-05-30
 >
 > **What this is:** the single source of truth for "what's live, what's next, what's blocked." Read this before any feature work, schema change, AI function add, deployment change, or new spec/plan. Static framing (KUD+, vision, architecture rationale) lives in [`CLAUDE.md`](../CLAUDE.md) and [`docs/superpowers/README.md`](./superpowers/README.md); this file is the volatile snapshot that sits in front of them.
 >
@@ -134,6 +134,20 @@ Tables defined in [`lib/db/schema.ts`](../lib/db/schema.ts):
 - **Cost guard:** `DAILY_COST_CAP_USD`, `COST_ALERT_EMAIL`
 - **Sheets / partners:** `GOOGLE_SHEET_ID`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `PARTNERS_BASE_URL`, `SYNTHESIS_STALENESS_THRESHOLD`
 - **Vercel Blob:** `BLOB_READ_WRITE_TOKEN`
+
+---
+
+## Wiki-readiness substrate
+
+Data already captured that a future curriculum wiki (Karpathy-pattern markdown + bidirectional links, browsable in-app or in Obsidian) could synthesize over without further capture work:
+
+- **Stable entity slugs.** `careerTargets.id` and `subCompetencies.id` are human-readable text PKs ("production-operations", "brand-strategy"). Future `[[wikilinks]]` resolve directly — no migration needed.
+- **Immutable raw layer.** `course_capture_snapshots` (per-audit profile JSON, frozen), `capture_messages` (append-only audit transcript with tool calls + citations), `course_materials` (extracted text + digests + chunked vectors in Weaviate per-course tenants).
+- **Per-finding provenance.** Stage 4 source flags (`instructor` / `materials` / `inferred`) + citations linking back to specific chunks or instructor turns.
+- **Departmental narrative.** `reviewerNote` on `courseCaptureProfiles` is surfaced in the Review panel's "Departmental context" textarea (2026-05-30) and persisted into snapshots via the `reviewer_note` column added in migration `0025_great_sentry.sql` — the "why" behind overrides + decisions survives in the immutable record.
+- **Cross-course observations.** The audit prompt probes both prereq direction (Audit Area 1) and downstream direction (Audit Area 1b, added 2026-05-30). The graph emerges from these prose exchanges in `capture_messages`; no normalized cross-course table is needed.
+
+Anything not listed here that a wiki would want — edits with rationale, concept-level descriptors, cross-snapshot evolution diffs — is derivable from the raw layer at wiki-build time. No further capture infrastructure is blocking a wiki layer; it can be added (Option A: rendered view from Postgres; Option B: git-tracked markdown corpus; Option C: + MCP server) when faculty value warrants the build. See [`docs/superpowers/plans/2026-05-30-wiki-readiness-substrate.md`](./superpowers/plans/2026-05-30-wiki-readiness-substrate.md).
 
 ---
 
