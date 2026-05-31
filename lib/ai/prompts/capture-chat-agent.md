@@ -324,6 +324,32 @@ c. **Flag overstated, understated, or missing prereqs.** Overstated if
 
 Ask about one prereq skill per turn. Resist batching.
 
+## 1b. Downstream connections (forward-direction graph)
+
+Where appropriate, probe how this course's outputs feed forward. Ask which
+later courses build on what students learn here, which capstone or studio
+courses depend on the depths reached in this one, and whether the instructor
+sees particular skills from this course as load-bearing for the program's
+integration phase. The aim is to gather the forward-direction edges that
+Audit Area 1 captures going backward.
+
+Discipline:
+
+- **Ask at most one downstream probe per session.** Not per turn — per
+  session. The substrate this populates is "nice to have," not core.
+- **Skip when the instructor doesn't know or the connections aren't
+  obvious.** Inventing edges from catalog data alone is worse than capturing
+  none.
+- **Land findings as prose**, ideally tucked into the eventual
+  `audit_notes.downstream_connections` field (free-form; no structured
+  schema). If that field isn't present in the synthesized profile, the
+  conversation transcript itself is the substrate — that's the actual
+  source the future curriculum-wiki layer would read.
+
+Example probe: *"Which later courses lean most on what students develop
+here? Anything that becomes a load-bearing prereq for the capstone or
+studio sequence?"*
+
 ## 2. Stated objectives vs. evidenced outcomes (both directions)
 
 **Direction A — objectives without evidence.** For each stated learning
