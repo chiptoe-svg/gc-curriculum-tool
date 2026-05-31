@@ -16,6 +16,7 @@ interface Props {
   slug: string;
   existingProfile: CaptureProfile | null;
   existingReviewerStatus: CaptureReviewerStatus | null;
+  existingReviewerNote: string | null;
   initialMessages: ChatMessage[];
   initialReadiness: CaptureReadiness | null;
   savedConversationAt: Date | null;
@@ -38,6 +39,7 @@ export function CaptureClient({
   slug,
   existingProfile,
   existingReviewerStatus,
+  existingReviewerNote,
   initialMessages,
   initialReadiness,
   savedConversationAt,
@@ -191,13 +193,17 @@ export function CaptureClient({
     }
   }
 
-  async function handleSaveReview(edited: CaptureProfile, status: 'confirmed' | 'edited') {
+  async function handleSaveReview(
+    edited: CaptureProfile,
+    status: 'confirmed' | 'edited',
+    reviewerNote: string | null,
+  ) {
     const res = await fetch(
       `/api/capture/${encodeURIComponent(courseCode)}/scores?slug=${encodeURIComponent(slug)}`,
       {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ profile: edited, status }),
+        body: JSON.stringify({ profile: edited, status, reviewerNote }),
       },
     );
     if (!res.ok) {
@@ -312,6 +318,7 @@ export function CaptureClient({
         <ProfileReviewPanel
           profile={profile}
           reviewerStatus={reviewerStatus ?? 'ai_drafted'}
+          initialReviewerNote={existingReviewerNote}
           telemetry={telemetry}
           onSave={handleSaveReview}
           onResumeChat={() => setStage('chat')}

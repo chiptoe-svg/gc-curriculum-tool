@@ -155,6 +155,7 @@ export default async function CapturePage({ params, searchParams }: Props) {
           slug={slug}
           existingProfile={priorCapture?.profile ?? null}
           existingReviewerStatus={priorCapture?.reviewerStatus ?? null}
+          existingReviewerNote={priorCapture?.reviewerNote ?? null}
           initialMessages={savedConversation?.messages ?? []}
           initialReadiness={savedConversation?.readiness ?? null}
           savedConversationAt={savedConversation?.updatedAt ?? null}

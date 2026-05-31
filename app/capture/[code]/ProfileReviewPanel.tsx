@@ -95,7 +95,14 @@ interface Props {
   profile: CaptureProfile;
   reviewerStatus: CaptureReviewerStatus;
   telemetry: Telemetry | null;
-  onSave: (edited: CaptureProfile, status: 'confirmed' | 'edited') => Promise<void>;
+  /**
+   * Initial value for the "Departmental context" textarea. Faculty narrative
+   * that explains overrides + decisions; persists with the draft profile and
+   * is frozen into snapshots at capture time. Future curriculum-wiki layer
+   * synthesizes this into per-course narrative pages.
+   */
+  initialReviewerNote: string | null;
+  onSave: (edited: CaptureProfile, status: 'confirmed' | 'edited', reviewerNote: string | null) => Promise<void>;
   onResumeChat: () => void;
   courseCode: string;
   slug: string;
@@ -424,6 +431,7 @@ function MergeGapIntoSkillsButton({
 export function ProfileReviewPanel({
   profile,
   reviewerStatus,
+  initialReviewerNote,
   telemetry,
   onSave,
   onResumeChat,
@@ -432,6 +440,7 @@ export function ProfileReviewPanel({
   onSnapshotCreated,
 }: Props) {
   const [working, setWorking] = useState<CaptureProfile>(profile);
+  const [reviewerNote, setReviewerNote] = useState<string>(initialReviewerNote ?? '');
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [lastSavedStatus, setLastSavedStatus] = useState<CaptureReviewerStatus>(reviewerStatus);
@@ -458,7 +467,7 @@ export function ProfileReviewPanel({
     try {
       // Save any pending edits first so the snapshot reflects current state.
       if (dirty) {
-        await onSave(working, 'edited');
+        await onSave(working, 'edited', reviewerNote.trim() || null);
       }
       const res = await fetch(
         `/api/capture/${encodeURIComponent(courseCode)}/snapshots?slug=${encodeURIComponent(slug)}`,
@@ -501,7 +510,7 @@ export function ProfileReviewPanel({
     setSaving(true);
     setSaveError(null);
     try {
-      await onSave(working, status);
+      await onSave(working, status, reviewerNote.trim() || null);
       setLastSavedStatus(status);
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : 'Save failed');
@@ -616,6 +625,20 @@ export function ProfileReviewPanel({
       )}
 
       {saveError && <p className="text-sm text-destructive">{saveError}</p>}
+
+      <section className="rounded-md border bg-card px-4 py-3 shadow-sm">
+        <label htmlFor="reviewer-note" className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Departmental context <span className="font-normal normal-case text-muted-foreground">— why these scores, what overrides you made, anything a future reader (or future audit) should know. Persisted with the profile and frozen into snapshots.</span>
+        </label>
+        <textarea
+          id="reviewer-note"
+          value={reviewerNote}
+          onChange={e => setReviewerNote(e.target.value)}
+          rows={3}
+          placeholder="e.g. &quot;Lowered D from 4 to 3 because the Spring 2026 rubric dropped the project-defense component.&quot; Optional."
+          className="mt-1 w-full resize-y rounded border border-input bg-background px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+        />
+      </section>
 
       {working.verification_summary && (
         <VerificationSummary summary={working.verification_summary} isLegacy={legacy} onCitationClick={handleCitationClick} />
