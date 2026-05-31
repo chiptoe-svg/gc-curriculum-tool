@@ -358,6 +358,11 @@ export const courseCaptureSnapshots = pgTable('course_capture_snapshots', {
   transcript: jsonb('transcript').$type<Array<{ role: 'user' | 'assistant'; content: string }>>().notNull().default([]),
   caption: text('caption'),
   captionNote: text('caption_note'),
+  // Departmental-context narrative copied from the draft profile's
+  // reviewer_note at snapshot-creation time. Frozen with the snapshot
+  // so the "why" behind overrides survives in the immutable record.
+  // Substrate for the future curriculum-wiki layer.
+  reviewerNote: text('reviewer_note'),
   transcriptSessionId: uuid('transcript_session_id'),  // nullable; populated for snapshots produced by v2 captures
   scaleVersion: text('scale_version').notNull(),
   model: text('model').notNull(),

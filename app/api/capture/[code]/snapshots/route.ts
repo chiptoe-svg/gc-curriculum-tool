@@ -98,6 +98,9 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     transcript: conversation?.messages ?? [],
     caption,
     captionNote,
+    // Freeze the current draft's reviewerNote into the snapshot. Wiki-readiness:
+    // departmental-context narrative survives in the immutable record.
+    reviewerNote: draft.reviewerNote ?? null,
     model: process.env.OPENAI_MODEL?.trim() || 'gpt-4o',
   });
 

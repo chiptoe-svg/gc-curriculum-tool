@@ -43,6 +43,7 @@ export interface SnapshotRow {
   transcript: ChatMessage[];
   caption: string | null;
   captionNote: string | null;
+  reviewerNote: string | null;
   scaleVersion: string;
   model: string;
   retiredAt: Date | null;
@@ -56,6 +57,7 @@ export interface CreateSnapshotInput {
   transcript: ChatMessage[];
   caption: string | null;
   captionNote: string | null;
+  reviewerNote: string | null;
   model: string;
 }
 
@@ -67,6 +69,7 @@ export async function createSnapshot(input: CreateSnapshotInput): Promise<Snapsh
     transcript: input.transcript,
     caption: input.caption,
     captionNote: input.captionNote,
+    reviewerNote: input.reviewerNote,
     scaleVersion: input.profile.scale_version,
     model: input.model,
   }).returning();
@@ -183,6 +186,7 @@ function rowToSnapshot(row: typeof courseCaptureSnapshots.$inferSelect): Snapsho
     transcript: row.transcript,
     caption: row.caption,
     captionNote: row.captionNote,
+    reviewerNote: row.reviewerNote,
     scaleVersion: row.scaleVersion,
     model: row.model,
     retiredAt: row.retiredAt,

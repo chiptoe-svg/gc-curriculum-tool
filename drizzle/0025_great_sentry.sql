@@ -1,0 +1,1 @@
+ALTER TABLE "course_capture_snapshots" ADD COLUMN "reviewer_note" text;
