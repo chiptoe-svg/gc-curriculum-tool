@@ -2,7 +2,7 @@
 
 > **Audience:** developer / implementation detail. This file is the engineering snapshot — what's live, what's blocked, what's next at the code and deployment level. Stakeholder-facing surfaces (executive brief, vision, background) summarize the same state in non-implementation terms; if you're orienting non-technical reviewers, point them there first and use this file as the backing source they can drop into when they want detail. The executive brief links here intentionally — anyone following that link is opting into the operational view.
 >
-> **Last verified:** `3304e8d` · 2026-05-30
+> **Last verified:** `3f1f7e5` · 2026-05-31
 >
 > **What this is:** the single source of truth for "what's live, what's next, what's blocked." Read this before any feature work, schema change, AI function add, deployment change, or new spec/plan. Static framing (KUD+, vision, architecture rationale) lives in [`CLAUDE.md`](../CLAUDE.md) and [`docs/superpowers/README.md`](./superpowers/README.md); this file is the volatile snapshot that sits in front of them.
 >
@@ -22,6 +22,7 @@ Two deployments, same codebase. Faculty side is gated by HTTP Basic Auth on the 
 | `/explore/[code]` | **Explore v1** — custom-target authoring, downstream-target auto-detection, what-if scenarios | live | 2026-05-24 |
 | `/program` | **Program Coverage Matrix (Phase 1A)** — snapshots × career-target sub-competencies, depth-aware heat map, on-demand AI scoring | live | 2026-05-25 |
 | `/program/scaffolding` | **Scaffolding Strip (Phase 1B Stage 1)** — per-target depth × productive-failure × reflection heat map; deterministic scoring | live | 2026-05-28 |
+| `/courses` | **Course catalog — typeset index** of every catalog course with computed capture status (`not-started / in-audit / ai-drafted / reviewed / captured`), last-captured date, click-through to `/capture/[code]`. Editorial design language (Fraunces serif + DM Sans + IBM Plex Mono via `next/font`). Status grouped by 1000/2000/3000/4000-level. | live | 2026-05-31 |
 | `/settings` | Per-function AI model tier + override | live | 2026-05-24 |
 | `/admin/partners` | Partner CSV import, invites, status | live | 2026-05-19 (Plan 1) |
 | `/admin/synthesis?slug=…` | Per-target AI synthesis dashboard (themes, salaries, partner quotes, proposed KUD edits) | live | 2026-05-19 (Plan 3) |
@@ -136,6 +137,8 @@ Tables defined in [`lib/db/schema.ts`](../lib/db/schema.ts):
 - **Vercel Blob:** `BLOB_READ_WRITE_TOKEN`
 
 ---
+
+**Course Overview + editorial profile + `/courses` landing shipped 2026-05-31**: `CaptureProfile.overview` (nullable; `narrative` + `at_a_glance` bullets + `who_for` + `arc` + source/citations) drafted by the LLM at synthesis time per `capture-scores.md`. Surfaced as the front matter of `ProfileReviewPanel` via the new `<CourseOverview>` component — Fraunces serif display + narrative with drop-cap, DM Sans bullets with em-dash leaders, small-caps marginalia on the who-it's-for / semester-arc sidebar; click any section to edit in place (blur to save, no per-section save buttons). Three editorial fonts loaded once via `next/font/google` (Fraunces / DM Sans / IBM Plex Mono) and exposed as Tailwind v4 `font-display` / `font-body-sans` / `font-mono-plex` utilities — opt-in to the new surfaces, default sans on existing surfaces untouched. "Confirm and snapshot" renamed to **"Capture this profile"** (CTA visually promoted to high-contrast); semantics unchanged (still creates the immutable snapshot). New `/courses` route renders a typeset index grouped by course level: code (mono) · title (serif) · status pill · last-captured date · → arrow, with header counters and a `listCoursesWithStatus()` helper that derives the 5-rung status ladder from a single pass over courses + profiles + non-retired snapshots + recent capture_messages (24h window for in-audit detection).
 
 ## Wiki-readiness substrate
 
