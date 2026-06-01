@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { put } from '@vercel/blob';
 import { isValidSlug } from '@/lib/slug';
+import { putLocal, courseSlug, safeFilename } from '@/lib/storage/local-storage';
 import { getCourseByCode } from '@/lib/db/courses-queries';
 import { hashIp } from '@/lib/ip-hash';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
@@ -85,15 +85,27 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     );
   }
 
-  // Store in Vercel Blob.
-  const blobKey = `course-materials/${code}/${Date.now()}-${file.name}`;
-  const blob = await put(blobKey, file, { access: 'public' });
+  // Store on local disk under ~/.local/share/gc-curriculum-tool/materials/...
+  // (was Vercel Blob; the local Mac deploy has no business reaching into Vercel).
+  // We read the bytes once and reuse them for both storage and extraction.
+  const fileBytes = Buffer.from(await file.arrayBuffer());
+  const storageKey = `${courseSlug(code)}/${Date.now()}-${safeFilename(file.name)}`;
+  let stored;
+  try {
+    stored = await putLocal({ key: storageKey, bytes: fileBytes });
+  } catch (err) {
+    console.error('local storage write failed', err);
+    return NextResponse.json(
+      { error: 'failed to store uploaded file on disk' },
+      { status: 503 },
+    );
+  }
 
   // Insert the row with extractionStatus='pending'.
   const material = await insertMaterial({
     courseCode: code,
     fileName: file.name,
-    blobUrl: blob.url,
+    blobUrl: stored.url,
     mimeType: file.type,
     sizeBytes: file.size,
     ipHash,
@@ -101,8 +113,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
 
   const vectorStore = createVectorStore();
 
-  // Run extraction synchronously.
-  const fileBytes = Buffer.from(await file.arrayBuffer());
+  // Run extraction synchronously using the bytes we already read.
   const extracted = await extractText({
     fileBytes,
     mimeType: file.type as ExtractedMimeType,

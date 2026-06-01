@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { del } from '@vercel/blob';
 import { isValidSlug } from '@/lib/slug';
+import { deleteLocal, keyFromLocalUrl } from '@/lib/storage/local-storage';
 import {
   getMaterialById,
   deleteMaterial,
@@ -29,9 +30,15 @@ export async function DELETE(req: Request, { params }: RouteContext): Promise<Re
     return NextResponse.json({ error: 'material does not belong to this course' }, { status: 403 });
   }
 
-  // Only call del() for real Vercel Blob URLs; Canvas imports use the Canvas URL as blobUrl.
+  // Storage cleanup: handle Vercel Blob (legacy), local FS, or external URLs.
+  // Canvas / Google Docs URLs are passthrough references — nothing to delete.
   if (material.blobUrl.includes('blob.vercel-storage.com')) {
     await del(material.blobUrl);
+  } else {
+    const localKey = keyFromLocalUrl(material.blobUrl);
+    if (localKey) {
+      await deleteLocal(localKey).catch(err => console.error('local delete failed', err));
+    }
   }
   await deleteMaterial(id);
 
