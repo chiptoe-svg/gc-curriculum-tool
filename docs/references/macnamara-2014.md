@@ -1,31 +1,75 @@
 # Macnamara, Hambrick & Oswald (2014) — Deliberate Practice and Performance: A Meta-Analysis
 
-**Full citation:** Macnamara, B. N., Hambrick, D. Z., & Oswald, F. L. (2014). Deliberate Practice and Performance in Music, Games, Sports, Education, and Professions: A Meta-Analysis. *Psychological Science*, 25(8), 1608–1618. Tempers the deliberate-practice claims: practice time alone explains only ~12% of expertise variance across domains.
+**Full citation:** Macnamara, B. N., Hambrick, D. Z., & Oswald, F. L. (2014). Deliberate Practice and Performance in Music, Games, Sports, Education, and Professions: A Meta-Analysis. *Psychological Science*, 25(8), 1608–1618. https://doi.org/10.1177/0956797614535810
 
 **Reference ID in background.html:** `ref-macnamara-2014`; cited in §4.
 
 **Where it lives:**
-- DOI: https://journals.sagepub.com/doi/abs/10.1177/0956797614535810
+- DOI: https://doi.org/10.1177/0956797614535810
 - PubMed: https://pubmed.ncbi.nlm.nih.gov/24986855/
-- ResearchGate: https://www.researchgate.net/publication/263713247_Deliberate_Practice_and_Performance_in_Music_Games_Sports_Education_and_Professions_A_Meta-Analysis
 - Gwern archive: https://gwern.net/doc/psychology/2014-macnamara.pdf
-- Open-access status: Paywall (SAGE). Abstract freely available; ResearchGate version available.
+- Local copy: `docs/references/_pdfs/macnamara-hambrick-oswald-2014.pdf` (verified via direct PDF read 2026-06-01)
+- Open-access status: Paywall (SAGE) but the full text was supplied via Clemson library access for verification.
 
-**Accessibility:** Partially accessible — abstract from PubMed plus extensive secondary descriptions confirm the core statistics. One notable discrepancy to flag (see Verdict).
+**Accessibility:** ✅ Verified accessible — full text read from the source PDF.
 
-**What the background doc claims it says:** Macnamara and colleagues' critiques note that practice time alone explains only a fraction of expertise variance, which is why the framework requires the productive-failure *and* reflection conditions, not raw cycle counts. The specific figure cited in the background doc is "~12%."
+---
 
-**What it actually says (synthesis):** This meta-analysis examined 88 studies involving approximately 11,000 participants across five domains: music, games (e.g., chess), sports, education, and professions. The central question: what fraction of the variance in performance is explained by deliberate practice time, as operationalized following Ericsson et al.'s definition?
+## What the background doc claims it says
 
-Domain-specific findings:
-- **Games (chess, etc.):** 26% of variance explained
-- **Music:** 21% of variance explained
-- **Sports:** 18% of variance explained
-- **Education:** 4% of variance explained
-- **Professions:** less than 1% of variance explained
+In §4 of `background.html`: *"Macnamara and colleagues' critiques further note that practice time alone explains only a fraction of expertise variance (Macnamara, Hambrick, & Oswald, 2014), which is why the framework requires the productive-failure and reflection conditions, not raw cycle counts."*
 
-**Overall / weighted average:** The paper reports an overall meta-analytic estimate. The commonly cited figure varies depending on how the domains are weighted. The unweighted average of the five domain-specific figures gives approximately 14%; the paper's weighted meta-analytic estimate considering all studies together appears to be approximately 18% of *reliable variance* (excluding error variance) — or approximately 12% of raw variance. Sources vary on which figure to cite, leading to confusion in secondary literature.
+The implicit specific figure cited via the in-doc references-section gloss: practice explains "only ~12% of expertise variance across domains."
 
-The key finding regardless of exact figure: deliberate practice is important but explains far less than Ericsson et al.'s original claims implied. Talent, starting age, working memory capacity, domain-specific factors, and other variables account for the majority of variance in performance, even in the domains where practice matters most (music: 21%, games: 26%).
+---
 
-**Verdict:** Partially inconsistent — the "~12%" figure requires scrutiny. The background doc cites "practice time alone explains only ~12% of expertise variance across domains." The meta-analysis's domain-specific figures (26%, 21%, 18%, 4%, <1%) give an unweighted average of about 14%, and the overall meta-analytic estimate appears to be around 18% of reliable variance or ~12% of raw variance depending on the method. Multiple secondary sources cite "12%" (and it appears in some abstracts), while others cite "18–21%." The exact number depends on whether one reports percent of raw variance or percent of reliable variance. The background doc's "~12%" is defensible but on the low end of the range reported, and readers should know the figure varies by domain and methodological choice. The substantive claim — that practice time alone explains only a fraction of expertise variance — is robustly supported regardless of which exact figure is used.
+## What it actually says
+
+**Design:** Meta-analysis of 157 effect sizes from 88 studies, comprising approximately 11,000 participants across five domains (music, games, sports, education, professions). Effect sizes were correlations between amount of deliberate practice and performance.
+
+**Headline result (p. 230 of the paper, paragraph immediately after Results introduction):**
+
+> "Deliberate practice explained **12% of the variance in performance, 95% CI = [9%, 15%]**; thus, **88% of the variance was unexplained.**"
+
+The overall meta-analytic estimate is **r = .35**, 95% CI [.30, .39].
+
+**Domain-specific findings:**
+
+| Domain | Variance explained | Effect size (r) |
+| --- | --- | --- |
+| Games (chess, Scrabble, etc.) | **26%** | .51 |
+| Music | **21%** | .46 |
+| Sports | **18%** | .42 |
+| Education | **4%** | .21 |
+| Professions | **<1%** | .05 (n.s.) |
+
+**Moderator analyses:**
+
+- **Activity predictability** — deliberate practice was a stronger predictor in high-predictability activities (running: 24%) than in low-predictability ones (aviation emergency response: 4%).
+- **Method of measuring practice** — retrospective interviews yielded larger estimates (20%) than retrospective questionnaires (12%) or practice logs (5%).
+- **Method of measuring performance** — group-membership comparisons (26%) > laboratory tasks (14%) > expert ratings (9%) > standardized objective measures (8%).
+
+**Sensitivity analyses (alternative models):**
+
+- Excluding effect sizes for non-solitary deliberate practice: overall 11% (games 23%, music 23%, sports 22%, education 3%).
+- Solitary deliberate practice only, excluding team sports: overall 10% (games 23%, music 23%, sports 28%, education 3%).
+
+**No reliability-corrected version produces 18%** — the only "18%" in the paper is the sports-specific domain estimate.
+
+**Discussion / framing (p. 9-10):**
+
+> "Regardless of domain, a large amount of variance in performance is not explained by deliberate practice and is potentially explainable by other factors. We conclude that amount of deliberate practice — although unquestionably important as a predictor of individual differences in performance from both a statistical and a practical perspective — is not as important as Ericsson and his colleagues have argued."
+
+The paper explicitly tempers Ericsson et al.'s (1993) "individual differences in ultimate performance can largely be accounted for by differential amounts of past and current levels of practice" — calling that claim unsupported by the meta-analytic evidence.
+
+---
+
+## Verdict
+
+**Consistent.** The background doc's "~12%" figure is **exactly the paper's headline meta-analytic estimate** (12%, 95% CI [9%, 15%]). The agent's earlier flag — that "~18% of reliable variance" was also a citation-worthy figure — was a false positive: the "18%" in the paper is the sports-specific domain estimate, not the overall meta-analytic figure. The paper's alternative models give 10% or 11%, not 18%. The reliability-corrected version doesn't exist in this paper (though a similar figure of "one third of reliable variance" appears in *Hambrick et al. 2014*, a separate study — possibly the source of the agent's confusion).
+
+The framework's substantive use of this reference — that practice cycles alone, without reflection and productive-failure conditions, explain only a fraction of expertise — is robustly supported by the paper.
+
+---
+
+*Re-verified against source PDF on 2026-06-01 via Clemson library access. The previous version of this file flagged the "~12%" figure as "Partially inconsistent"; corrected to Consistent after direct source-text verification.*

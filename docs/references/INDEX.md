@@ -11,14 +11,14 @@ Audit of the 28 references in `/docs/background.html` §14. Each row links to a 
 
 | Status | Count |
 |---|---|
-| Verified accessible (full text fetched or open access) | 9 (incl. npj 2023, verified from source PDF 2026-06-01) |
-| Partially accessible (abstract / secondary descriptions / publisher pages / ERIC / Wikipedia) | 19 |
+| Verified accessible (full text fetched or open access) | 10 (incl. npj 2023 and Macnamara 2014, both verified from source PDFs 2026-06-01) |
+| Partially accessible (abstract / secondary descriptions / publisher pages / ERIC / Wikipedia) | 18 |
 | Inaccessible (citation only, no secondary found) | 0 |
 
 | Verdict | Count |
 |---|---|
-| Consistent | 23 → 24 (npj 2023 resolved 2026-06-01 via direct source-PDF read; references entry + §4 prose softened) |
-| Partially inconsistent (minor discrepancy flagged) | 2 → 1 (Macnamara 2014 still open: "~12%" vs "~18%" variance figure — needs Clemson library full-text check) |
+| Consistent | 23 → 25 (npj 2023 resolved 2026-06-01 via source-PDF; Macnamara 2014 resolved 2026-06-01 via source-PDF — agent's "~18%" flag was a false positive, the paper's headline figure is precisely 12%) |
+| Partially inconsistent (minor discrepancy flagged) | 2 → 0 |
 | Unverifiable | 0 |
 | Questionable | 0 |
 
@@ -54,7 +54,7 @@ Audit of the 28 references in `/docs/background.html` §14. Each row links to a 
 | 24 | Tannenbaum & Cerasoli 2013 — Debriefs Meta-Analysis | [tannenbaum-cerasoli-2013.md](tannenbaum-cerasoli-2013.md) | §4 | **Open** (Safety Insights summary; PubMed abstract) | Consistent |
 | 25 | Perkins & Salomon 1992 — Transfer of Learning | [perkins-salomon-1992.md](perkins-salomon-1992.md) | §4 | Partial (McTighe PDF binary; educationforproblemsolving.net summary) | Consistent |
 | 26 | Ericsson, Krampe & Tesch-Römer 1993 — Deliberate Practice | [ericsson-1993.md](ericsson-1993.md) | §4 | Partial (APA paywall; open Royal Society revisit; secondary) | Consistent |
-| 27 | Macnamara, Hambrick & Oswald 2014 — Deliberate Practice Meta-Analysis | [macnamara-2014.md](macnamara-2014.md) | §4 | Partial (SAGE paywall; ResearchGate; detailed secondary) | **Partially inconsistent** |
+| 27 | Macnamara, Hambrick & Oswald 2014 — Deliberate Practice Meta-Analysis | [macnamara-2014.md](macnamara-2014.md) | §4 | **Verified via source PDF** (paywall; full text fetched via Clemson library) | Consistent (after 2026-06-01 source-PDF verification — see note below) |
 | 28 | NACE — Job Outlook (annual) | [nace.md](nace.md) | §4, §8 | Partial (member paywall; public press releases freely available) | Consistent |
 
 ---
@@ -65,7 +65,21 @@ Audit of the 28 references in `/docs/background.html` §14. Each row links to a 
 
 **Discrepancy:** The background doc says this paper "establishes that productive failure works in degrees rather than at a discrete threshold." The paper's data more naturally supports a *threshold* reading: students need sufficient topic-specific prerequisite knowledge to engage, but once past that threshold, global prior achievement becomes less predictive (with inventive production being the stronger predictor). The paper does not explicitly frame its findings as "degrees not thresholds." The doc's caveat in the same paragraph — "productive failure can benefit lower-achieving students disproportionately when at least minimal relevant knowledge is in place" — is actually a more precise characterization of the paper's findings than the "degrees not thresholds" sentence. **Severity: Minor.** The core empirical claim (PF can benefit lower-achieving students; inventive production > prior achievement as predictor) is correctly represented.
 
-### 2. Macnamara 2014 — "~12% of expertise variance" figure [file: macnamara-2014.md]
+### 2. Macnamara 2014 — RESOLVED 2026-06-01 (false positive)
+
+The audit-agent flagged the "~12%" figure as potentially understating
+the paper, citing "~18%" as an alternative figure circulating in
+secondary literature. Direct read of the source PDF (now in
+`docs/references/_pdfs/macnamara-hambrick-oswald-2014.pdf`) confirms
+the paper's headline meta-analytic estimate is precisely 12% (95% CI
+[9%, 15%]). The "18%" in the paper is the sports-specific domain
+estimate (games 26%, music 21%, sports 18%, education 4%, professions
+<1%) — not an overall figure. The "~18% of reliable variance" the
+agent thought might apply is from Hambrick et al. 2014, a different
+paper. The background doc's "~12%" is exactly correct; no revision
+needed.
+
+### 2 (HISTORICAL, NOW RESOLVED). Macnamara 2014 — "~12% of expertise variance" figure [file: macnamara-2014.md]
 
 **Discrepancy:** The background doc says "practice time alone explains only ~12% of expertise variance across domains." The meta-analysis reports domain-specific figures (games: 26%, music: 21%, sports: 18%, education: 4%, professions: <1%) and an overall estimate that varies by methodology — approximately 12% of *raw variance* or ~18% of *reliable variance*. The "~12%" figure is defensible but on the low end of the cited range and is not the figure most prominently reported in the paper's abstract. Secondary sources cite both "12%" and "18%" for this paper, leading to confusion. **Severity: Minor.** The substantive point — that practice time explains only a fraction of expertise variance — is robustly supported. The doc's use of "~" appropriately signals approximation.
 
