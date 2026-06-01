@@ -8,6 +8,8 @@ import { getCaptureConversation } from '@/lib/db/capture-conversations-queries';
 import { getLatestSnapshotByCourse, createSnapshot, listSnapshotsByCourse, type InputsMeta } from '@/lib/db/capture-snapshots-queries';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { hashIp } from '@/lib/ip-hash';
+import { updateWikiForSnapshot } from '@/lib/ai/wiki/update';
+import { writeAndPush } from '@/lib/wiki/git-ops';
 
 interface RouteContext { params: Promise<{ code: string }> }
 
@@ -107,6 +109,28 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   // Mark the working draft as confirmed (so edits since snapshot will move
   // it back to 'edited' and signal "you have unsnapshotted changes").
   await setCaptureProfileStatus(courseCode, 'confirmed');
+
+  // Fire wiki-update in the background. Snapshot is already persisted; if
+  // wiki regen fails we log + continue. The next snapshot will catch up.
+  // Don't await — let the response return immediately.
+  (async () => {
+    try {
+      const { raw, wiki, logEntry } = await updateWikiForSnapshot(snapshot.id);
+      // writeAndPush handles both raw (deterministic) and wiki (LLM-generated)
+      // entries — both are just { path, content } pairs.
+      const allPages = [...raw, ...wiki];
+      const commitMessage = `feat(${snapshot.courseCode.toLowerCase().replace(/\s+/g, '-')}): snapshot ${new Date().toISOString().slice(0, 10)} — ${snapshot.caption ?? 'untitled'}`;
+      await writeAndPush({ pages: allPages, logEntry, commitMessage });
+    } catch (err) {
+      console.error(
+        'wiki-update failed for snapshot',
+        snapshot.id,
+        'course', snapshot.courseCode,
+        err instanceof Error ? err.message : err,
+        err instanceof Error ? err.stack : '',
+      );
+    }
+  })();
 
   return NextResponse.json({
     snapshot: {
