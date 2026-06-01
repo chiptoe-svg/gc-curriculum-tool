@@ -158,13 +158,13 @@
   <nav class="rail-nav">
     <div class="nav-group-label">Background</div>
     <a class="nav-link" href="#problem">The problem this addresses</a>
+    <a class="nav-link" href="#grounding">Theoretical grounding</a>
+    <a class="nav-link" href="#alternatives">Why not other frameworks</a>
+    <a class="nav-link" href="#problem-solving">Problem-solving as program-level</a>
     <a class="nav-link" href="#kud">The KUD model</a>
     <a class="nav-link" href="#depth">The depth extension (KUD+)</a>
     <a class="nav-link" href="#anchors">Student-side anchors</a>
-    <a class="nav-link" href="#grounding">Theoretical grounding</a>
-    <a class="nav-link" href="#alternatives">Why not other frameworks</a>
     <a class="nav-link" href="#foundational">Foundational competencies</a>
-    <a class="nav-link" href="#problem-solving">Problem-solving as program-level</a>
     <a class="nav-link" href="#program-structure">Program-level structure: the 3-Act model</a>
     <a class="nav-link" href="#course-impl">Course-by-course implementation</a>
     <a class="nav-link" href="#career-impl">Career-path alignment</a>
@@ -260,143 +260,8 @@
   <p>The framework described here, designated <em>KUD+</em>, is the working answer to those constraints. It begins with a well-established three-category outcome model (Know, Understand, Do) and extends each category with a 0–5 depth scale anchored to observable student attainment. The remainder of this document explains the theoretical basis for those choices, their practical implementation, and the limitations the approach acknowledges.</p>
 </section>
 
-<section id="kud">
-  <h2><span class="num">§ 2</span>The KUD model</h2>
-
-  <p>The framework adopts the three-category Know / Understand / Do structure as a planning vocabulary; Tomlinson's work on differentiated instruction <a href="#ref-tomlinson-1999">(Tomlinson, 1999/2014)</a> uses this same structure as a categorical pre-unit planning aid, and Wiggins &amp; McTighe's <em>Understanding by Design</em> <a href="#ref-wiggins-2005">(Wiggins &amp; McTighe, 2005)</a> uses a structurally similar separation of desired understandings, knowledge, and skills in Stage 1 of backward design. Neither Tomlinson nor Wiggins/McTighe attach numerical depth scales to the categories; the depth extension introduced in §3 is this framework's contribution. The three categories are intended to separate what is often conflated in outcome statements:</p>
-
-  <ul>
-    <li><strong>Know.</strong> Facts, terms, conventions, vocabulary, procedural steps — content the student can recall, recognize, or reproduce. The cognitive operation is retrieval.</li>
-    <li><strong>Understand.</strong> Principles, relationships, consequences, transferable ideas — the <em>why</em> behind the content. The cognitive operation is reasoning.</li>
-    <li><strong>Do.</strong> Skills, procedures, performances, produced artifacts — what the student can execute or demonstrate. The cognitive operation is behavioral output.</li>
-  </ul>
-
-  <p>The framework is widely deployed in outcome-writing guidance at the K–12 and undergraduate levels, where its three categories are valued for being faculty-readable without sacrificing the discrimination needed to distinguish a course that teaches definitions from one that teaches reasoning from one that teaches performance.</p>
-
-  <h3>Why three categories rather than Bloom's six</h3>
-
-  <p>Bloom's revised taxonomy (<a href="#ref-bloom-1956">Bloom, 1956</a>; <a href="#ref-anderson-2001">Anderson &amp; Krathwohl, 2001</a>) provides six cognitive levels — Remember, Understand, Apply, Analyze, Evaluate, Create — and is the established tool for analyzing the cognitive demand of an <em>assessment task</em>. For that purpose its granularity is appropriate.</p>
-
-  <p>The job of curriculum mapping at the program level is different. The tool must score hundreds of (course × competency × dimension) cells, each of which faculty may review and dispute. The finer the rubric, the more disputes resolve on the interpretation of category boundaries (Apply vs. Analyze, Evaluate vs. Create) rather than on the substantive question of whether the course covers the competency at all. The <a href="#ref-tuning">EU Tuning project's</a> degree profiles use a comparably compact set of competency descriptors for the same reason, distinguishing <em>competence</em> (the holistic ability) from <em>learning outcome</em> (the level of competence achieved). This compact-and-leveled approach motivates the framework's choice of a small category set with depth extension over a fine-grained taxonomy without depth.</p>
-
-  <p>The three KUD categories give faculty enough resolution to express the dissociations that matter for curriculum work (a course can teach vocabulary without conceptual grasp, conceptual grasp without performance, or performance without articulation) while keeping inter-rater agreement tractable across a 28-course program. Bloom remains the right lens for assessment design at the course level; the verbs from Bloom's taxonomy continue to inform the prompts the auditor uses to probe each cell.</p>
-
-  <h3>Dissociation cases the model surfaces</h3>
-
-  <p>Measuring K, U, and D independently is worthwhile because well-taught courses develop them together but failure modes are dimension-specific. The framework is designed to make the following patterns visible:</p>
-
-  <table class="compact">
-    <thead>
-      <tr><th>Pattern</th><th>What it means</th><th>Where it shows up</th></tr>
-    </thead>
-    <tbody>
-      <tr><td class="kud">K-high, U-low</td><td>Vocabulary mastered without rationale</td><td>Term-heavy courses with quiz-based assessment</td></tr>
-      <tr><td class="kud">K-low, U-high</td><td>Conceptual grasp without professional language</td><td>Discussion-heavy seminars without vocabulary expectations</td></tr>
-      <tr><td class="kud">U-high, D-low</td><td>Theory without craft</td><td>Critique-heavy courses without studio production</td></tr>
-      <tr><td class="kud">D-high, U-low</td><td>Craft without articulation</td><td>Studio-heavy courses without written rationale</td></tr>
-      <tr><td class="kud">K1 only</td><td>Topic mentioned but never engaged</td><td>Items listed on syllabus but absent from assessment</td></tr>
-    </tbody>
-  </table>
-
-  <p>Each pattern is actionable. A K-high/U-low result for a foundational vocabulary course is a question to ask the instructor; a U-high/D-low result for a capstone is a curriculum-committee concern.</p>
-</section>
-
-<section id="depth">
-  <h2><span class="num">§ 3</span>The depth extension (KUD+)</h2>
-
-  <p>KUD as written treats coverage as essentially binary. A course either addresses a competency at the Know level or it does not; either at the Understand level or not; either at Do or not. Early piloting on the GC curriculum confirmed the limitation predicted by this design: when nearly every relevant course "covers" a competency, the binary cells collapse and the matrix loses its ability to discriminate. The prerequisite analyzer cannot distinguish a course that briefly mentions a skill from one that requires students to perform it independently; career-path alignment becomes a recitation of intersections rather than a depth-aware judgment.</p>
-
-  <p>KUD+ extends each of Know, Understand, and Do with a <strong>0–5 depth scale</strong> anchored to observable student attainment. The scale's structure is intentionally uniform across dimensions; the anchors at each level differ because the underlying cognitive operations differ.</p>
-
-  <div class="scale">
-KNOW — recall and identification of content
-  0  Not present in this course
-  1  Exposure — student encountered it (heard about, read about), not tested
-  2  Recognize — student can identify the term/fact when shown options
-  3  Recall — student can produce the term/fact on cue, without prompt
-  4  Use correct terminology when discussing the domain
-  5  Fluent across the full vocabulary, including conventions and edge cases
-
-UNDERSTAND — reasoning about the why
-  0  Not present
-  1  Restates the explanation as given
-  2  Explains the rationale in own words
-  3  Predicts consequences (if X then Y, because…)
-  4  Reasons through novel cases not previously seen
-  5  Critiques the principle, identifies limits, extends to new domains
-
-DO — behavioral output
-  0  Not present
-  1  Performs with per-step direction or supervision
-  2  Performs using a reference or checklist
-  3  Performs independently in familiar conditions
-  4  Adapts performance to new conditions or constraints
-  5  Performs creatively with critical judgment; can guide others
-  </div>
-
-  <p>Three properties of this scale are deliberate and worth naming explicitly.</p>
-
-  <h3>Zero means absence, not weakness</h3>
-
-  <p>A score of 0 indicates the dimension is not present in the course at all — a structurally different claim from a low non-zero score. Rendered in the coverage matrix, 0 produces an empty cell; 1 produces a faintly filled cell. This distinction matters for prerequisite analysis: a downstream course that needs students to <em>use</em> a term cannot rely on a prior course that scored only K1 (exposure).</p>
-
-  <h3>Exposure (K1) is exclusively a Know event</h3>
-
-  <p>Hearing a principle stated, watching a demonstration, reading about a technique — these are encounters with content the student has not yet engaged. They score K=1 with U=0 and D=0, because awareness is the definition of a Know event and the other dimensions require engagement. The scale enforces this asymmetry: the Understand and Do scales begin at active engagement (restating, performing with direction); they do not include a passive-exposure step. This prevents the inflation common in coverage rubrics where lecture-only content acquires a misleading depth score.</p>
-
-  <h3>The scale is uniform in shape but distinct in anchor</h3>
-
-  <p>Each dimension's level descriptors are specific to that dimension. "Mastery" of a fact (K5: fluent vocabulary command) is not the same achievement as mastery of a principle (U5: critique and extension) or mastery of a skill (D5: creative independence). Using the same numerical range across the three permits a clean coverage-matrix rendering; anchoring the levels differently keeps the model honest about what each dimension is measuring.</p>
-</section>
-
-<section id="anchors">
-  <h2><span class="num">§ 4</span>Student-side anchors and the evidence rule</h2>
-
-  <p>Each level on each scale describes <em>what the student does or grasps</em>, not what the syllabus claims the course will teach. This is the most important practical commitment in the framework: <strong>aspirational syllabus language alone is not sufficient evidence for any score above the lowest meaningful level on its dimension.</strong> A syllabus statement that "students will understand X" does not by itself justify a score above U=1; the evidence above U=1 must come from student-produced reasoning (a graded written rationale, an oral defense, a journal entry, a memo that requires explaining the principle).</p>
-
-  <p>The evidence requirement is formalized in the scoring rule. All nonzero scores require evidence, but the kind of evidence differs by level:</p>
-
-  <ul>
-    <li><code>k_depth = 1</code> requires evidence of delivery — a lecture topic listed, a textbook chapter assigned, a Canvas page covering the content.</li>
-    <li><code>k_depth &gt; 1</code> requires an evidence excerpt naming where the student is tested or measured on the content.</li>
-    <li><code>u_depth &gt; 0</code> requires an evidence excerpt showing student-produced reasoning.</li>
-    <li><code>d_depth &gt; 0</code> requires an evidence excerpt showing student-produced behavioral output.</li>
-  </ul>
-
-  <p>This anchoring is consistent with the second stage of Wiggins and McTighe's backward design <a href="#ref-wiggins-2005">(Wiggins &amp; McTighe, 2005)</a>: outcomes are paired with the evidence that would demonstrate them. It is also the practical mechanism by which the binary collapse described in §3 is avoided. When the AI is required to cite evidence before assigning a level, lecture-only content cannot acquire above-K1 scores by accident, and the depth distribution across the program becomes informative.</p>
-
-  <h3>What KUD+ scores measure — and what they don't</h3>
-
-  <p>KUD+ operates on three distinct levels of evidence, and keeping them distinct matters for how the scores are interpreted:</p>
-
-  <ul>
-    <li><strong>Course materials</strong> evidence <em>intended and assessed opportunities</em> — what the course is designed to develop, as expressed in assignments, rubrics, prompts, and modules. This is the primary source for the audit.</li>
-    <li><strong>Instructor confirmation</strong> during the audit conversation improves construct validity — it upgrades "the rubric suggests students wrote rationale" to "the instructor confirms this was graded reasoning, not template compliance." This closes the gap between what was assessed and what was actually developed, per the instructor's account.</li>
-    <li><strong>Student attainment</strong> requires student work, rubric-scored performance, or external outcome evidence — what students demonstrably learned, not what the course aimed to develop.</li>
-  </ul>
-
-  <p>A KUD+ score derived from course materials and instructor confirmation is a <strong>course-opportunity score</strong>: it characterizes the depth of learning opportunities the course creates and assesses. It becomes a student-learning claim only when linked to assessed student work or longitudinal outcomes — which is precisely what the <a href="./graduate-outcome-validation.html">Graduate Outcome Validation</a> proposal addresses. This distinction should be carried forward wherever KUD+ scores are cited in program-level analysis: the coverage matrix reports the depth the curriculum was designed to develop; it does not yet directly report the depth graduates achieved.</p>
-
-  <h3>What K=1 specifically requires</h3>
-
-  <p>The evidence rule formally requires excerpts above K=1, which leaves K=1 itself uncovered by the rule and creates the appearance that K=1 can be assigned from syllabus mention alone. The framework's position is more constrained than this. The scoring rule in full:</p>
-
-  <ul>
-    <li><strong>K=1</strong> can be supported by <em>delivery evidence</em> — lecture slides, module item titles, reading lists, or instructor confirmation that the topic was covered in class. A topic listed only in the aspirational syllabus, with no module, lecture, or assigned reading that actually delivered it, does not qualify for K=1 and scores K=0.</li>
-    <li><strong>K&gt;1</strong> requires an evidence excerpt showing where the student is tested or measured on the content.</li>
-    <li><strong>U&gt;0</strong> requires an evidence excerpt showing student-produced reasoning.</li>
-    <li><strong>D&gt;0</strong> requires an evidence excerpt showing student-produced behavioral output.</li>
-  </ul>
-
-  <p>What K=1 does <em>not</em> require is evidence of student engagement with the material — the whole point of K=1 is to mark presence-without-engagement. The auditor's job at this level is distinguishing actual delivery from aspirational mention.</p>
-
-  <h3>An acknowledged measurement bias</h3>
-
-  <p>The student-side evidence rule introduces a predictable measurement bias the framework should name explicitly: courses that assess through valid but text-poor methods — studio critique, oral defense, observed performance, portfolio pattern across multiple artifacts — produce less quotable rubric language than courses with written assignments and explicit rubric criteria. Both kinds of assessment can validly evidence high U and D depths; only the latter produces easily-cited text. Naïve application of the evidence rule would systematically under-score the former kind of course. The framework's mitigation is the instructor-confirmation step in the audit conversation: when the auditor cannot find a text-quotable excerpt but the instructor describes a graded oral defense or critique that demonstrates the depth, the instructor's transcript statement becomes the evidence excerpt. This works in practice but depends on the auditor probing for it. The audit conversation explicitly asks about non-text assessment modes for this reason.</p>
-</section>
-
 <section id="grounding">
-  <h2><span class="num">§ 5</span>Theoretical grounding</h2>
+  <h2><span class="num">§ 2</span>Theoretical grounding</h2>
 
   <p>The framework is consistent with several established traditions in curriculum design. None of them prescribe the specific depth scales used here; the language below describes how the framework is <em>consistent with</em> each tradition, not derived from any of them. The specific design choices — 0–5 grain, student-side anchors, the evidence-typed scoring rule, the null-vs-zero treatment of foundationals — are framework commitments that go beyond what the cited traditions individually establish, and are presented as such throughout this document.</p>
 
@@ -422,7 +287,7 @@ DO — behavioral output
 </section>
 
 <section id="alternatives">
-  <h2><span class="num">§ 6</span>Why not other frameworks</h2>
+  <h2><span class="num">§ 3</span>Why not other frameworks</h2>
 
   <p>Several alternative frameworks deserve specific mention, both for completeness and because the choice not to use them clarifies what KUD+ is trying to accomplish.</p>
 
@@ -432,7 +297,7 @@ DO — behavioral output
       <tr>
         <td><strong>Bloom's six-level taxonomy</strong></td>
         <td>Finest-grained discrimination of cognitive demand; standard for assessment writing.</td>
-        <td>Too granular for program-wide mapping; faculty reviews collapse into Apply-vs-Analyze disputes. Used in support inside the audit (see §5).</td>
+        <td>Too granular for program-wide mapping; faculty reviews collapse into Apply-vs-Analyze disputes. Used in support inside the audit (see §2).</td>
       </tr>
       <tr>
         <td><strong>AAC&amp;U VALUE Rubrics</strong></td>
@@ -460,36 +325,8 @@ DO — behavioral output
   <p>The framework's design choice — three outcome categories with depth scales — is therefore not a rejection of these traditions but a selection among them, with explicit attention to which one is well-suited for the program-mapping task and which one is well-suited for the assessment-design task.</p>
 </section>
 
-<section id="foundational">
-  <h2><span class="num">§ 7</span>Foundational competencies</h2>
-
-  <p>The KUD model fits cognitive and procedural outcomes cleanly. It fits affective and dispositional outcomes — agency, attention to detail, resilience, curiosity, communication — less cleanly, because there is no meaningful "Know resilience" or "Understand attention to detail" event in undergraduate practice. Students do not recall facts about resilience or reason their way through it in the moment; they exhibit it.</p>
-
-  <p>The framework treats five baseline foundational competencies as program-wide threads and scores each one on Do only:</p>
-
-  <ul>
-    <li><strong>Agency</strong> — initiative, ownership of decisions, drive.</li>
-    <li><strong>Attention to Detail</strong> — care, accuracy, error-catching, follow-through.</li>
-    <li><strong>Resilience</strong> — persistence through failure, adaptive recovery.</li>
-    <li><strong>Curiosity</strong> — substantive questioning, inquiry beyond requirements.</li>
-    <li><strong>Communication</strong> — written, oral, and visual articulation.</li>
-  </ul>
-
-  <p>Their Know and Understand cells are recorded as null rather than zero; zero would imply the course tried to develop them at the K or U level and failed, which is not the right reading. A foundational with <code>d_depth = 0</code> is a valid and informative finding: it means the course does not create the conditions (open-ended challenges, revision cycles, productive failure, peer-facing communication) that develop the disposition.</p>
-
-  <p>The framework adopts a hybrid approach: the five baseline foundationals are fixed and scored in every course, and the auditor may add additional foundational competencies (e.g., Collaboration, Professionalism, Ethical Judgment) when the course materials evidence them. This permits institutional stability in the baseline while allowing the data to surface dispositions the original list did not anticipate.</p>
-
-  <h3>The selection of the five baselines</h3>
-
-  <p>The choice of <em>these</em> five — rather than four, seven, or a different set — is a framework commitment rather than a derivation from a single canonical source. The selection draws on three influences. First, the NACE Career Readiness Competencies framework, which identifies eight competencies employers most consistently name (Critical Thinking, Communication, Teamwork, Technology, Leadership, Professionalism, Career &amp; Self-Development, Equity &amp; Inclusion). Communication appears in the framework's baseline directly; Critical Thinking is handled separately in §8 as a program-level emergent property rather than a per-course foundational, on the reasoning the same section articulates. Second, the broader dispositional-learning literature — including the AAC&amp;U Essential Learning Outcomes, the CASEL social-emotional learning framework (Self-Awareness, Self-Management, Social Awareness, Relationship Skills, Responsible Decision-Making), and the executive-function research in developmental psychology — converges on a small set of dispositional capacities that include initiative, persistence, attention regulation, and curiosity. Third, faculty surveys and advisory-board input specific to the Graphic Communications program identified Attention to Detail as a domain-relevant disposition consistently named in employer feedback for the program; this is the most GC-specific entry in the list.</p>
-
-  <p>The choice of five rather than a larger number reflects two practical commitments: every baseline foundational is scored in every captured snapshot, so the marginal cost of each additional foundational compounds across the program, and inter-rater agreement on dispositional Do scoring degrades when the list is long enough that auditors reach for the closest fit rather than recognizing absence. Five is a working hypothesis the framework treats as research input: as the snapshot corpus accumulates and advisory-board feedback surfaces gaps, the baseline can be revised. Collaboration is the most consistently mentioned candidate for inclusion; the framework's current treatment is to allow the auditor to add it per-course when materials evidence it, with the explicit acknowledgment that this creates uneven coverage across the program. If repeated captures show Collaboration is genuinely program-wide, it is a strong candidate for promotion to the baseline in a future revision.</p>
-
-  <p>The framework explicitly does not claim the five baselines are <em>the right</em> set. It claims they are a defensible working set, derived from the named influences, that the framework can revise as the data accumulates. This is the research-instrument framing applied to the baseline competency choice itself.</p>
-</section>
-
 <section id="problem-solving">
-  <h2><span class="num">§ 8</span>Problem-solving as a program-level emergent property</h2>
+  <h2><span class="num">§ 4</span>Problem-solving as a program-level emergent property</h2>
 
   <p>Problem-solving is among the attributes employers most consistently value when reviewing graduates' resumes — repeatedly ranked at the top of NACE's annual Job Outlook resume-attribute surveys, alongside teamwork and written communication <a href="#ref-nace">(NACE, 2023)</a>. The natural curricular response is to add a "Problem-Solving" course, or to list problem-solving as a generic transferable skill the program develops. Both responses fail in characteristic ways, and the framework is deliberately structured to surface why and to support the alternative.</p>
 
@@ -558,6 +395,169 @@ DO — behavioral output
   <p>Fourth, the metacognition / dispositional question is genuinely contested. Strong-specificity scholars (Willingham, McPeck) and moderate generalists (Ennis, Flavell) both hold defensible positions. Habits of mind like "what do I know, what don't I know, where does my current model break" do appear to transfer somewhat across domains, but their cultivation still requires domain context to actually operate. The framework takes the strong-specificity position by structuring the data shape around domain-bounded K/U/D and treating cross-domain habits as emergent from the cumulative pattern — but this is a defensible reading of contested literature, not a settled scientific finding.</p>
 
   <p>The position the framework takes, stated plainly: problem-solving competence is real, valued by employers, and consistently named among the attributes employers most want. The literature does not support treating it as a free-floating skill that transfers reliably without domain knowledge and explicit transfer scaffolding: far transfer is difficult, domain knowledge is required, and generic problem-solving instruction is weak. Problem-solving is the cumulative product of depth + productive struggle or failure + reflection, and the curriculum-mapping tool that wants to make it visible must measure each of those components at the right scale — the depths at the cell level, the conditions at the course level, the cumulative pattern at the program level. The framework is built to do that.</p>
+</section>
+
+<section id="kud">
+  <h2><span class="num">§ 5</span>The KUD model</h2>
+
+  <p>The framework adopts the three-category Know / Understand / Do structure as a planning vocabulary; Tomlinson's work on differentiated instruction <a href="#ref-tomlinson-1999">(Tomlinson, 1999/2014)</a> uses this same structure as a categorical pre-unit planning aid, and Wiggins &amp; McTighe's <em>Understanding by Design</em> <a href="#ref-wiggins-2005">(Wiggins &amp; McTighe, 2005)</a> uses a structurally similar separation of desired understandings, knowledge, and skills in Stage 1 of backward design. Neither Tomlinson nor Wiggins/McTighe attach numerical depth scales to the categories; the depth extension introduced in §6 is this framework's contribution. The three categories are intended to separate what is often conflated in outcome statements:</p>
+
+  <ul>
+    <li><strong>Know.</strong> Facts, terms, conventions, vocabulary, procedural steps — content the student can recall, recognize, or reproduce. The cognitive operation is retrieval.</li>
+    <li><strong>Understand.</strong> Principles, relationships, consequences, transferable ideas — the <em>why</em> behind the content. The cognitive operation is reasoning.</li>
+    <li><strong>Do.</strong> Skills, procedures, performances, produced artifacts — what the student can execute or demonstrate. The cognitive operation is behavioral output.</li>
+  </ul>
+
+  <p>The framework is widely deployed in outcome-writing guidance at the K–12 and undergraduate levels, where its three categories are valued for being faculty-readable without sacrificing the discrimination needed to distinguish a course that teaches definitions from one that teaches reasoning from one that teaches performance.</p>
+
+  <h3>Why three categories rather than Bloom's six</h3>
+
+  <p>Bloom's revised taxonomy (<a href="#ref-bloom-1956">Bloom, 1956</a>; <a href="#ref-anderson-2001">Anderson &amp; Krathwohl, 2001</a>) provides six cognitive levels — Remember, Understand, Apply, Analyze, Evaluate, Create — and is the established tool for analyzing the cognitive demand of an <em>assessment task</em>. For that purpose its granularity is appropriate.</p>
+
+  <p>The job of curriculum mapping at the program level is different. The tool must score hundreds of (course × competency × dimension) cells, each of which faculty may review and dispute. The finer the rubric, the more disputes resolve on the interpretation of category boundaries (Apply vs. Analyze, Evaluate vs. Create) rather than on the substantive question of whether the course covers the competency at all. The <a href="#ref-tuning">EU Tuning project's</a> degree profiles use a comparably compact set of competency descriptors for the same reason, distinguishing <em>competence</em> (the holistic ability) from <em>learning outcome</em> (the level of competence achieved). This compact-and-leveled approach motivates the framework's choice of a small category set with depth extension over a fine-grained taxonomy without depth.</p>
+
+  <p>The three KUD categories give faculty enough resolution to express the dissociations that matter for curriculum work (a course can teach vocabulary without conceptual grasp, conceptual grasp without performance, or performance without articulation) while keeping inter-rater agreement tractable across a 28-course program. Bloom remains the right lens for assessment design at the course level; the verbs from Bloom's taxonomy continue to inform the prompts the auditor uses to probe each cell.</p>
+
+  <h3>Dissociation cases the model surfaces</h3>
+
+  <p>Measuring K, U, and D independently is worthwhile because well-taught courses develop them together but failure modes are dimension-specific. The framework is designed to make the following patterns visible:</p>
+
+  <table class="compact">
+    <thead>
+      <tr><th>Pattern</th><th>What it means</th><th>Where it shows up</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="kud">K-high, U-low</td><td>Vocabulary mastered without rationale</td><td>Term-heavy courses with quiz-based assessment</td></tr>
+      <tr><td class="kud">K-low, U-high</td><td>Conceptual grasp without professional language</td><td>Discussion-heavy seminars without vocabulary expectations</td></tr>
+      <tr><td class="kud">U-high, D-low</td><td>Theory without craft</td><td>Critique-heavy courses without studio production</td></tr>
+      <tr><td class="kud">D-high, U-low</td><td>Craft without articulation</td><td>Studio-heavy courses without written rationale</td></tr>
+      <tr><td class="kud">K1 only</td><td>Topic mentioned but never engaged</td><td>Items listed on syllabus but absent from assessment</td></tr>
+    </tbody>
+  </table>
+
+  <p>Each pattern is actionable. A K-high/U-low result for a foundational vocabulary course is a question to ask the instructor; a U-high/D-low result for a capstone is a curriculum-committee concern.</p>
+</section>
+
+<section id="depth">
+  <h2><span class="num">§ 6</span>The depth extension (KUD+)</h2>
+
+  <p>KUD as written treats coverage as essentially binary. A course either addresses a competency at the Know level or it does not; either at the Understand level or not; either at Do or not. Early piloting on the GC curriculum confirmed the limitation predicted by this design: when nearly every relevant course "covers" a competency, the binary cells collapse and the matrix loses its ability to discriminate. The prerequisite analyzer cannot distinguish a course that briefly mentions a skill from one that requires students to perform it independently; career-path alignment becomes a recitation of intersections rather than a depth-aware judgment.</p>
+
+  <p>KUD+ extends each of Know, Understand, and Do with a <strong>0–5 depth scale</strong> anchored to observable student attainment. The scale's structure is intentionally uniform across dimensions; the anchors at each level differ because the underlying cognitive operations differ.</p>
+
+  <div class="scale">
+KNOW — recall and identification of content
+  0  Not present in this course
+  1  Exposure — student encountered it (heard about, read about), not tested
+  2  Recognize — student can identify the term/fact when shown options
+  3  Recall — student can produce the term/fact on cue, without prompt
+  4  Use correct terminology when discussing the domain
+  5  Fluent across the full vocabulary, including conventions and edge cases
+
+UNDERSTAND — reasoning about the why
+  0  Not present
+  1  Restates the explanation as given
+  2  Explains the rationale in own words
+  3  Predicts consequences (if X then Y, because…)
+  4  Reasons through novel cases not previously seen
+  5  Critiques the principle, identifies limits, extends to new domains
+
+DO — behavioral output
+  0  Not present
+  1  Performs with per-step direction or supervision
+  2  Performs using a reference or checklist
+  3  Performs independently in familiar conditions
+  4  Adapts performance to new conditions or constraints
+  5  Performs creatively with critical judgment; can guide others
+  </div>
+
+  <p>Three properties of this scale are deliberate and worth naming explicitly.</p>
+
+  <h3>Zero means absence, not weakness</h3>
+
+  <p>A score of 0 indicates the dimension is not present in the course at all — a structurally different claim from a low non-zero score. Rendered in the coverage matrix, 0 produces an empty cell; 1 produces a faintly filled cell. This distinction matters for prerequisite analysis: a downstream course that needs students to <em>use</em> a term cannot rely on a prior course that scored only K1 (exposure).</p>
+
+  <h3>Exposure (K1) is exclusively a Know event</h3>
+
+  <p>Hearing a principle stated, watching a demonstration, reading about a technique — these are encounters with content the student has not yet engaged. They score K=1 with U=0 and D=0, because awareness is the definition of a Know event and the other dimensions require engagement. The scale enforces this asymmetry: the Understand and Do scales begin at active engagement (restating, performing with direction); they do not include a passive-exposure step. This prevents the inflation common in coverage rubrics where lecture-only content acquires a misleading depth score.</p>
+
+  <h3>The scale is uniform in shape but distinct in anchor</h3>
+
+  <p>Each dimension's level descriptors are specific to that dimension. "Mastery" of a fact (K5: fluent vocabulary command) is not the same achievement as mastery of a principle (U5: critique and extension) or mastery of a skill (D5: creative independence). Using the same numerical range across the three permits a clean coverage-matrix rendering; anchoring the levels differently keeps the model honest about what each dimension is measuring.</p>
+</section>
+
+<section id="anchors">
+  <h2><span class="num">§ 7</span>Student-side anchors and the evidence rule</h2>
+
+  <p>Each level on each scale describes <em>what the student does or grasps</em>, not what the syllabus claims the course will teach. This is the most important practical commitment in the framework: <strong>aspirational syllabus language alone is not sufficient evidence for any score above the lowest meaningful level on its dimension.</strong> A syllabus statement that "students will understand X" does not by itself justify a score above U=1; the evidence above U=1 must come from student-produced reasoning (a graded written rationale, an oral defense, a journal entry, a memo that requires explaining the principle).</p>
+
+  <p>The evidence requirement is formalized in the scoring rule. All nonzero scores require evidence, but the kind of evidence differs by level:</p>
+
+  <ul>
+    <li><code>k_depth = 1</code> requires evidence of delivery — a lecture topic listed, a textbook chapter assigned, a Canvas page covering the content.</li>
+    <li><code>k_depth &gt; 1</code> requires an evidence excerpt naming where the student is tested or measured on the content.</li>
+    <li><code>u_depth &gt; 0</code> requires an evidence excerpt showing student-produced reasoning.</li>
+    <li><code>d_depth &gt; 0</code> requires an evidence excerpt showing student-produced behavioral output.</li>
+  </ul>
+
+  <p>This anchoring is consistent with the second stage of Wiggins and McTighe's backward design <a href="#ref-wiggins-2005">(Wiggins &amp; McTighe, 2005)</a>: outcomes are paired with the evidence that would demonstrate them. It is also the practical mechanism by which the binary collapse described in §6 is avoided. When the AI is required to cite evidence before assigning a level, lecture-only content cannot acquire above-K1 scores by accident, and the depth distribution across the program becomes informative.</p>
+
+  <h3>What KUD+ scores measure — and what they don't</h3>
+
+  <p>KUD+ operates on three distinct levels of evidence, and keeping them distinct matters for how the scores are interpreted:</p>
+
+  <ul>
+    <li><strong>Course materials</strong> evidence <em>intended and assessed opportunities</em> — what the course is designed to develop, as expressed in assignments, rubrics, prompts, and modules. This is the primary source for the audit.</li>
+    <li><strong>Instructor confirmation</strong> during the audit conversation improves construct validity — it upgrades "the rubric suggests students wrote rationale" to "the instructor confirms this was graded reasoning, not template compliance." This closes the gap between what was assessed and what was actually developed, per the instructor's account.</li>
+    <li><strong>Student attainment</strong> requires student work, rubric-scored performance, or external outcome evidence — what students demonstrably learned, not what the course aimed to develop.</li>
+  </ul>
+
+  <p>A KUD+ score derived from course materials and instructor confirmation is a <strong>course-opportunity score</strong>: it characterizes the depth of learning opportunities the course creates and assesses. It becomes a student-learning claim only when linked to assessed student work or longitudinal outcomes — which is precisely what the <a href="./graduate-outcome-validation.html">Graduate Outcome Validation</a> proposal addresses. This distinction should be carried forward wherever KUD+ scores are cited in program-level analysis: the coverage matrix reports the depth the curriculum was designed to develop; it does not yet directly report the depth graduates achieved.</p>
+
+  <h3>What K=1 specifically requires</h3>
+
+  <p>The evidence rule formally requires excerpts above K=1, which leaves K=1 itself uncovered by the rule and creates the appearance that K=1 can be assigned from syllabus mention alone. The framework's position is more constrained than this. The scoring rule in full:</p>
+
+  <ul>
+    <li><strong>K=1</strong> can be supported by <em>delivery evidence</em> — lecture slides, module item titles, reading lists, or instructor confirmation that the topic was covered in class. A topic listed only in the aspirational syllabus, with no module, lecture, or assigned reading that actually delivered it, does not qualify for K=1 and scores K=0.</li>
+    <li><strong>K&gt;1</strong> requires an evidence excerpt showing where the student is tested or measured on the content.</li>
+    <li><strong>U&gt;0</strong> requires an evidence excerpt showing student-produced reasoning.</li>
+    <li><strong>D&gt;0</strong> requires an evidence excerpt showing student-produced behavioral output.</li>
+  </ul>
+
+  <p>What K=1 does <em>not</em> require is evidence of student engagement with the material — the whole point of K=1 is to mark presence-without-engagement. The auditor's job at this level is distinguishing actual delivery from aspirational mention.</p>
+
+  <h3>An acknowledged measurement bias</h3>
+
+  <p>The student-side evidence rule introduces a predictable measurement bias the framework should name explicitly: courses that assess through valid but text-poor methods — studio critique, oral defense, observed performance, portfolio pattern across multiple artifacts — produce less quotable rubric language than courses with written assignments and explicit rubric criteria. Both kinds of assessment can validly evidence high U and D depths; only the latter produces easily-cited text. Naïve application of the evidence rule would systematically under-score the former kind of course. The framework's mitigation is the instructor-confirmation step in the audit conversation: when the auditor cannot find a text-quotable excerpt but the instructor describes a graded oral defense or critique that demonstrates the depth, the instructor's transcript statement becomes the evidence excerpt. This works in practice but depends on the auditor probing for it. The audit conversation explicitly asks about non-text assessment modes for this reason.</p>
+</section>
+
+<section id="foundational">
+  <h2><span class="num">§ 8</span>Foundational competencies</h2>
+
+  <p>The KUD model fits cognitive and procedural outcomes cleanly. It fits affective and dispositional outcomes — agency, attention to detail, resilience, curiosity, communication — less cleanly, because there is no meaningful "Know resilience" or "Understand attention to detail" event in undergraduate practice. Students do not recall facts about resilience or reason their way through it in the moment; they exhibit it.</p>
+
+  <p>The framework treats five baseline foundational competencies as program-wide threads and scores each one on Do only:</p>
+
+  <ul>
+    <li><strong>Agency</strong> — initiative, ownership of decisions, drive.</li>
+    <li><strong>Attention to Detail</strong> — care, accuracy, error-catching, follow-through.</li>
+    <li><strong>Resilience</strong> — persistence through failure, adaptive recovery.</li>
+    <li><strong>Curiosity</strong> — substantive questioning, inquiry beyond requirements.</li>
+    <li><strong>Communication</strong> — written, oral, and visual articulation.</li>
+  </ul>
+
+  <p>Their Know and Understand cells are recorded as null rather than zero; zero would imply the course tried to develop them at the K or U level and failed, which is not the right reading. A foundational with <code>d_depth = 0</code> is a valid and informative finding: it means the course does not create the conditions (open-ended challenges, revision cycles, productive failure, peer-facing communication) that develop the disposition.</p>
+
+  <p>The framework adopts a hybrid approach: the five baseline foundationals are fixed and scored in every course, and the auditor may add additional foundational competencies (e.g., Collaboration, Professionalism, Ethical Judgment) when the course materials evidence them. This permits institutional stability in the baseline while allowing the data to surface dispositions the original list did not anticipate.</p>
+
+  <h3>The selection of the five baselines</h3>
+
+  <p>The choice of <em>these</em> five — rather than four, seven, or a different set — is a framework commitment rather than a derivation from a single canonical source. The selection draws on three influences. First, the NACE Career Readiness Competencies framework, which identifies eight competencies employers most consistently name (Critical Thinking, Communication, Teamwork, Technology, Leadership, Professionalism, Career &amp; Self-Development, Equity &amp; Inclusion). Communication appears in the framework's baseline directly; Critical Thinking is handled separately in §4 as a program-level emergent property rather than a per-course foundational, on the reasoning the same section articulates. Second, the broader dispositional-learning literature — including the AAC&amp;U Essential Learning Outcomes, the CASEL social-emotional learning framework (Self-Awareness, Self-Management, Social Awareness, Relationship Skills, Responsible Decision-Making), and the executive-function research in developmental psychology — converges on a small set of dispositional capacities that include initiative, persistence, attention regulation, and curiosity. Third, faculty surveys and advisory-board input specific to the Graphic Communications program identified Attention to Detail as a domain-relevant disposition consistently named in employer feedback for the program; this is the most GC-specific entry in the list.</p>
+
+  <p>The choice of five rather than a larger number reflects two practical commitments: every baseline foundational is scored in every captured snapshot, so the marginal cost of each additional foundational compounds across the program, and inter-rater agreement on dispositional Do scoring degrades when the list is long enough that auditors reach for the closest fit rather than recognizing absence. Five is a working hypothesis the framework treats as research input: as the snapshot corpus accumulates and advisory-board feedback surfaces gaps, the baseline can be revised. Collaboration is the most consistently mentioned candidate for inclusion; the framework's current treatment is to allow the auditor to add it per-course when materials evidence it, with the explicit acknowledgment that this creates uneven coverage across the program. If repeated captures show Collaboration is genuinely program-wide, it is a strong candidate for promotion to the baseline in a future revision.</p>
+
+  <p>The framework explicitly does not claim the five baselines are <em>the right</em> set. It claims they are a defensible working set, derived from the named influences, that the framework can revise as the data accumulates. This is the research-instrument framing applied to the baseline competency choice itself.</p>
 </section>
 
 <section id="program-structure">
@@ -650,7 +650,7 @@ DO — behavioral output
 
   <p>The auditor's reasoning is not free-form. Each AI integration point in the system is governed by a version-controlled system prompt that encodes one or more named pedagogical skills from an external library — Manning's <em>Education Agent Skills Library</em> <a href="#ref-manning-skills">(Manning, 2025)</a>. The prompts encode procedural skill definitions from this open GitHub-based library. It is used as an implementation scaffold, not as independent validation of KUD+. The scholarly grounding for the analytical commitments the prompts encode — backward design (Wiggins &amp; McTighe), assessment validity, evidence-first planning — is the pedagogical research those prompts operationalize; Manning's library is the implementation artifact through which that grounding is applied to AI agent behavior.</p>
 
-  <p>The encoding is build-time, not runtime: the skill definitions (Backwards Design, KUD Chart Authoring, Coverage Audit, Developmental Band Translator, Assessment Validity Checker, Disciplinary AI Literacy, KUD Knowledge Type Mapper) are read at design time and their reasoning frameworks are embodied directly in the prompt bodies. Each prompt names the skills it encodes in its frontmatter as the contract that the encoding happened. The intent is to make the AI's analytical disposition inspectable and citable rather than opaque. Where Manning frameworks describe the analytical scaffold (how to read evidence, how to type knowledge correctly, how to weigh validity threats), the depth scales described in §3 remain the operational rubric — Manning frames the question; KUD+ supplies the answer space.</p>
+  <p>The encoding is build-time, not runtime: the skill definitions (Backwards Design, KUD Chart Authoring, Coverage Audit, Developmental Band Translator, Assessment Validity Checker, Disciplinary AI Literacy, KUD Knowledge Type Mapper) are read at design time and their reasoning frameworks are embodied directly in the prompt bodies. Each prompt names the skills it encodes in its frontmatter as the contract that the encoding happened. The intent is to make the AI's analytical disposition inspectable and citable rather than opaque. Where Manning frameworks describe the analytical scaffold (how to read evidence, how to type knowledge correctly, how to weigh validity threats), the depth scales described in §6 remain the operational rubric — Manning frames the question; KUD+ supplies the answer space.</p>
 </section>
 
 <section id="career-impl">
@@ -740,7 +740,7 @@ DO — behavioral output
     <li id="ref-tomlinson-1999">Tomlinson, C. A. (1999). <em>The Differentiated Classroom: Responding to the Needs of All Learners</em>. ASCD. (2nd ed., 2014.) Establishes the K/U/D three-category planning vocabulary that this framework adopts as a categorical structure. Tomlinson uses K/U/D as a pre-unit planning aid for differentiated instruction in K–12 contexts; the depth-scale extension and the program-mapping application are this framework's contributions, not Tomlinson's.</li>
     <li>Tomlinson, C. A., &amp; Imbeau, M. B. (2010). <em>Leading and Managing a Differentiated Classroom</em>. ASCD.</li>
     <li id="ref-wiggins-2005">Wiggins, G., &amp; McTighe, J. (2005). <em>Understanding by Design</em> (Expanded 2nd ed.). ASCD. Foundational reference for backward design and the structural commitment to evidence-as-stage-2.</li>
-    <li id="ref-willingham-2007">Willingham, D. T. (2007). Critical Thinking: Why Is It So Hard to Teach? <em>American Educator</em>, 31, 8–19. Synthesizes the cognitive-science position that critical thinking is constitutively domain-bound; central reference for §8.</li>
+    <li id="ref-willingham-2007">Willingham, D. T. (2007). Critical Thinking: Why Is It So Hard to Teach? <em>American Educator</em>, 31, 8–19. Synthesizes the cognitive-science position that critical thinking is constitutively domain-bound; central reference for §4.</li>
     <li id="ref-mcpeck-1981">McPeck, J. E. (1981). <em>Critical Thinking and Education</em>. Oxford University Press. The strong-specificity philosophical case: "there are no general thinking skills, since thinking is always thinking about some subject-matter."</li>
     <li id="ref-chi-1981">Chi, M. T. H., Feltovich, P. J., &amp; Glaser, R. (1981). Categorization and Representation of Physics Problems by Experts and Novices. <em>Cognitive Science</em>, 5(2), 121–152. Landmark expert-novice study; experts sort by underlying principles, novices by surface features.</li>
     <li id="ref-larkin-1980">Larkin, J., McDermott, J., Simon, D. P., &amp; Simon, H. A. (1980). Models of Competence in Solving Physics Problems. <em>Cognitive Science</em>, 4(4), 317–345. Companion to Chi et al. — experts use forward-chaining strategies that novices cannot access for lack of schemas.</li>
