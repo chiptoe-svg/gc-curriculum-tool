@@ -110,7 +110,28 @@ class DoclingExtractor implements MaterialExtractor {
   constructor(private readonly baseUrl: string) {}
   supports(mimeType: string): boolean { return DoclingExtractor.SUPPORTED.has(mimeType); }
 
+  /**
+   * Size threshold above which Docling has historically timed out or
+   * silently failed on PDFs (notably 13 MB image-heavy lab manuals).
+   * For PDFs over this size, we split into pages via poppler's
+   * `pdfseparate`, extract each page individually, and concatenate —
+   * Docling's working set stays small and a single bad page no longer
+   * poisons the whole document.
+   */
+  private static readonly LARGE_PDF_THRESHOLD_BYTES = 5 * 1024 * 1024;
+
   async extract({ fileBytes, mimeType, fileName }: { fileBytes: Buffer; mimeType: string; fileName: string }): Promise<MaterialExtractorResult> {
+    // Large-PDF path: split into pages first, extract each, concatenate.
+    // Page-citable output: each page's text is prefaced with `--- page N ---`
+    // so downstream chunking + the agent's citation tooling can reference
+    // specific pages. Per-page failures are isolated rather than fatal.
+    if (mimeType === 'application/pdf' && fileBytes.length > DoclingExtractor.LARGE_PDF_THRESHOLD_BYTES) {
+      return this.extractByPageSplit(fileBytes, fileName);
+    }
+    return this.extractWhole({ fileBytes, mimeType, fileName });
+  }
+
+  private async extractWhole({ fileBytes, mimeType, fileName }: { fileBytes: Buffer; mimeType: string; fileName: string }): Promise<MaterialExtractorResult> {
     // docling-serve auto-detects from_format based on the upload's
     // content-type + filename, so we don't pass from_formats explicitly.
     // We do ask for markdown specifically — Docling's main quality
@@ -185,6 +206,92 @@ class DoclingExtractor implements MaterialExtractor {
     // only md is requested.
     const pageCount = text ? Math.max(1, (text.match(/^---$/gm) ?? []).length + 1) : 0;
     return { text, pageCount };
+  }
+
+  /**
+   * Large-PDF path. Splits the PDF into per-page files via poppler's
+   * `pdfseparate`, extracts each page through Docling, and concatenates
+   * the results with `--- page N ---` separator headers so the downstream
+   * chunker + agent citation surface can reference specific pages.
+   *
+   * Per-page failures are recorded as "extraction failed" placeholders
+   * but do not abort the whole document — a single bad scan page no
+   * longer takes down a 10-page lab manual.
+   *
+   * Requires poppler-utils (`pdfseparate`) on PATH. Local Mac has it via
+   * `brew install poppler`; the Vercel deploy doesn't use this extractor
+   * because PDF_PARSER=unpdf there.
+   */
+  private async extractByPageSplit(fileBytes: Buffer, fileName: string): Promise<MaterialExtractorResult> {
+    const fsp = await import('node:fs/promises');
+    const os = await import('node:os');
+    const pathMod = await import('node:path');
+    const { execFile } = await import('node:child_process');
+    const { promisify } = await import('node:util');
+    // Promisified execFile (NOT exec — no shell involved; args pass through
+    // as a literal array, so paths with spaces / shell-meta-chars are safe).
+    const execFileAsync = promisify(execFile);
+
+    const tmpDir = await fsp.mkdtemp(pathMod.join(os.tmpdir(), 'pdf-split-'));
+    try {
+      const srcPath = pathMod.join(tmpDir, 'src.pdf');
+      await fsp.writeFile(srcPath, fileBytes);
+
+      // pdfseparate writes one file per page using %d substitution.
+      const pagePattern = pathMod.join(tmpDir, 'page-%d.pdf');
+      await execFileAsync('pdfseparate', [srcPath, pagePattern]);
+
+      const entries = await fsp.readdir(tmpDir);
+      const pageFiles = entries
+        .filter(f => /^page-\d+\.pdf$/.test(f))
+        .sort((a, b) => {
+          const na = parseInt(a.match(/page-(\d+)\.pdf/)?.[1] ?? '0', 10);
+          const nb = parseInt(b.match(/page-(\d+)\.pdf/)?.[1] ?? '0', 10);
+          return na - nb;
+        });
+
+      if (pageFiles.length === 0) {
+        throw new Error('pdfseparate produced zero pages — input may be malformed');
+      }
+
+      const sections: string[] = [];
+      let successful = 0;
+      for (const f of pageFiles) {
+        const pageNum = parseInt(f.match(/page-(\d+)\.pdf/)?.[1] ?? '0', 10);
+        const pageBytes = await fsp.readFile(pathMod.join(tmpDir, f));
+        try {
+          const r = await this.extractWhole({
+            fileBytes: pageBytes,
+            mimeType: 'application/pdf',
+            fileName: `${fileName}#page-${pageNum}`,
+          });
+          if (r.text && r.text.trim().length > 0) {
+            sections.push(`--- page ${pageNum} ---\n\n${r.text}`);
+            successful++;
+          } else {
+            sections.push(`--- page ${pageNum} (no text extracted) ---`);
+          }
+        } catch (err) {
+          console.error(`pdf-split: page ${pageNum} extraction failed`,
+            err instanceof Error ? err.message : err);
+          sections.push(`--- page ${pageNum} (extraction failed) ---`);
+        }
+      }
+
+      if (successful === 0) {
+        // Whole document yielded zero usable text — propagate as a failure
+        // so the caller marks extractionStatus=failed rather than persisting
+        // a document of separator placeholders.
+        throw new Error(`pdf-split: all ${pageFiles.length} pages failed to extract`);
+      }
+
+      return {
+        text: sections.join('\n\n'),
+        pageCount: pageFiles.length,
+      };
+    } finally {
+      await fsp.rm(tmpDir, { recursive: true, force: true }).catch(() => { /* ignore */ });
+    }
   }
 }
 
