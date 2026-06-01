@@ -1,6 +1,7 @@
 import {
   updateExtractionResult,
   updateMaterialDigest,
+  shouldDigestByDefault,
   updateIndexingStatus,
   updateFerpaRisk,
   updateAutoSetAside,
@@ -103,12 +104,20 @@ async function runV2Pipeline(input: FinalizeExtractionInput): Promise<void> {
     return;
   }
 
-  // 3. Digest (every material, not just long reference ones)
+  // 3. Digest (every material, not just long reference ones).
+  //    useDigest default depends on material shape — Canvas-imported
+  //    list-shaped materials (Assignments, Discussions, Quizzes, Pages,
+  //    Module List) keep useDigest OFF so the agent reads the structured
+  //    original. Narrative documents (PDFs, faculty uploads) keep ON.
+  //    Faculty can toggle from the Review panel's per-material checkbox.
   let digestText = '';
   try {
     const { digest, model } = await generateMaterialDigest({ fileName, extractedText });
     digestText = digest;
-    await updateMaterialDigest({ id, digest, digestModel: model });
+    await updateMaterialDigest({
+      id, digest, digestModel: model,
+      useDigest: shouldDigestByDefault(fileName),
+    });
   } catch (err) {
     console.error(`finalizeExtraction (v2): digest failed for ${id}`, err);
     await updateIndexingStatus({ id, status: 'failed' });

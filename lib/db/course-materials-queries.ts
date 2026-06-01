@@ -123,10 +123,16 @@ export interface UpdateMaterialDigestInput {
   id: string;
   digest: string;
   digestModel: string;
+  /**
+   * Whether to also turn useDigest ON. Default `true` (matches the original
+   * behavior — most materials are narrative and benefit from the digest
+   * standing in for full text in at-rest context). Pass `false` for
+   * structured-list Canvas materials where the original is already
+   * curriculum-shaped and precision (point values, rubric criteria) matters
+   * more than compression. See `shouldDigestByDefault()`.
+   */
+  useDigest?: boolean;
 }
-// Writes a fresh digest and turns useDigest ON. Callers that want to
-// keep useDigest off (e.g., a re-digest done while faculty have it
-// explicitly disabled) should follow up with setMaterialUseDigest.
 export async function updateMaterialDigest(input: UpdateMaterialDigestInput): Promise<void> {
   await db
     .update(courseMaterials)
@@ -134,9 +140,31 @@ export async function updateMaterialDigest(input: UpdateMaterialDigestInput): Pr
       digest: input.digest,
       digestModel: input.digestModel,
       digestGeneratedAt: new Date(),
-      useDigest: true,
+      useDigest: input.useDigest ?? true,
     })
     .where(eq(courseMaterials.id, input.id));
+}
+
+/**
+ * Whether a freshly-extracted material should default to `useDigest = true`
+ * (digest replaces raw text in the agent's at-rest context) or `false`
+ * (agent reads the original extracted text).
+ *
+ * **Defaults to false** for Canvas-imported list-shaped materials
+ * (`Canvas: Assignments`, `Canvas: Discussions`, `Canvas: Quizzes`,
+ * `Canvas: Module List`, `Canvas: Pages`) — the originals are already
+ * structured per-block (title + points + description) and the audit
+ * specifically needs to read assignment-by-assignment precision (point
+ * weights, rubric criteria). Summarizing them loses signal.
+ *
+ * **Defaults to true** for everything else — `Canvas File: *.pdf`
+ * (narrative documents pulled from Canvas) and faculty-uploaded files.
+ * Faculty can still toggle via the Review panel's per-material checkbox;
+ * this controls only the initial value.
+ */
+export function shouldDigestByDefault(fileName: string): boolean {
+  if (fileName.startsWith('Canvas: ')) return false;
+  return true;
 }
 
 export async function setMaterialUseDigest(id: string, useDigest: boolean): Promise<boolean> {
