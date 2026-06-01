@@ -17,8 +17,8 @@ Audit of the 28 references in `/docs/background.html` §14. Each row links to a 
 
 | Verdict | Count |
 |---|---|
-| Consistent | 23 |
-| Partially inconsistent (minor discrepancy flagged) | 2 |
+| Consistent | 23 → 24 (npj 2023 resolved 2026-06-01 via direct source-PDF read; references entry + §4 prose softened) |
+| Partially inconsistent (minor discrepancy flagged) | 2 → 1 (Macnamara 2014 still open: "~12%" vs "~18%" variance figure — needs Clemson library full-text check) |
 | Unverifiable | 0 |
 | Questionable | 0 |
 
@@ -47,7 +47,7 @@ Audit of the 28 references in `/docs/background.html` §14. Each row links to a 
 | 17 | Kapur 2008 — Productive Failure | [kapur-2008.md](kapur-2008.md) | §4 | **Open** (KU Leuven archive PDF; ERIC) | Consistent |
 | 18 | Kapur 2016 — Productive/Unproductive Failure/Success | [kapur-2016.md](kapur-2016.md) | §4 | Partial (Margulieux summary verified; ERIC abstract) | Consistent |
 | 19 | Sinha & Kapur 2021 — When Problem Solving Followed by Instruction Works | [sinha-kapur-2021.md](sinha-kapur-2021.md) | §4 | Partial (SAGE paywall; multiple detailed secondary descriptions) | Consistent |
-| 20 | Kapur, Saba & Roll 2023 — Prior Achievement and Inventive Production | [npj-2023.md](npj-2023.md) | §4 | **Open** (PubMed Central full text; npj open access) | **Partially inconsistent** |
+| 20 | Kapur, Saba & Roll 2023 — Prior Achievement and Inventive Production | [npj-2023.md](npj-2023.md) | §4 | **Verified via source PDF** (open access) | Consistent (after 2026-06-01 background.html revision) |
 | 21 | Bjork 1994 — Desirable Difficulties | [bjork-1994.md](bjork-1994.md) | §4 | Partial (Gwern PDF binary; extensive secondary descriptions) | Consistent |
 | 22 | Schön 1983 — The Reflective Practitioner | [schon-1983.md](schon-1983.md) | §4 | Partial (commercial; extensive secondary literature) | Consistent |
 | 23 | Kolb 1984 — Experiential Learning | [kolb-1984.md](kolb-1984.md) | §4 | Partial (commercial; Wikipedia; Simply Psychology) | Consistent |
@@ -85,7 +85,7 @@ The audit priority was §4 (problem-solving as program-level emergent property) 
 | Kapur 2008 | Two-phase generate-then-consolidate; failure before instruction improves transfer | Yes — KU Leuven archive |
 | Kapur 2016 | Four-quadrant framework; unproductive failure lacks consolidation | Yes — Margulieux summary |
 | Sinha & Kapur 2021 | g ≈ 0.36, 53 studies, 166 comparisons, no procedural advantage | Yes — confirmed via multiple sources |
-| npj 2023 | "degrees not thresholds" on prior achievement | Partially — paper supports threshold more than degrees framing |
+| npj 2023 | "degrees not thresholds" on prior achievement | **Resolved 2026-06-01** — references entry + §4 prose softened to match what the paper actually shows (inventive production dominates prior achievement when topic-specific prerequisites are present; degrees-not-thresholds is now explicitly the framework's interpretation, not the paper's claim) |
 | Tannenbaum & Cerasoli 2013 | ~25% performance improvement from structured debriefs | Yes — confirmed |
 | Perkins & Salomon 1992 | Far transfer requires explicit scaffolding; low-road vs high-road | Yes — secondary sources confirm |
 | Ericsson 1993 | Deliberate practice → expertise | Yes — partial access; well-documented |
