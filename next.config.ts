@@ -14,6 +14,16 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "/api/**/*": ["./lib/ai/prompts/**/*.md"],
   },
+
+  // Next.js 15's middleware caps multipart bodies at 10 MB by default.
+  // A faculty member's 13 MB lab PDF got rejected ("Request body exceeded
+  // 10MB for /api/courses/GC 4440/materials") even though our route's own
+  // MAX_SIZE_BYTES is 15 MB — middleware rejects before the route handler
+  // sees the body. Raising the middleware-side ceiling to 25 MB; the
+  // materials route still enforces its own 15 MB limit.
+  experimental: {
+    middlewareClientMaxBodySize: '25mb',
+  },
 };
 
 export default nextConfig;
