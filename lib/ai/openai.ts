@@ -61,7 +61,13 @@ export class OpenAIProvider implements AIProvider {
           strict: true,
         },
       },
-      temperature: 0.2,
+      // OpenAI's gpt-5 family rejects any temperature ≠ 1 (the wiki-update
+      // function 400'd with "Unsupported value: 'temperature' does not
+      // support 0.2 with this model"). For structured outputs the JSON
+      // schema constrains the response shape regardless of temperature;
+      // the previous 0.2 override gave a marginal determinism boost that
+      // no longer earns its keep. Default (1) works across all current
+      // OpenAI models.
     });
     const durationMs = Date.now() - started;
 
@@ -118,7 +124,7 @@ export class OpenAIProvider implements AIProvider {
         },
       ],
       max_completion_tokens: 4096,
-      temperature: 0,
+      // No temperature override — gpt-5 family rejects non-default values.
     });
 
     const text = response.choices[0]?.message?.content ?? '';
