@@ -115,10 +115,13 @@ class DoclingExtractor implements MaterialExtractor {
    * silently failed on PDFs (notably 13 MB image-heavy lab manuals).
    * For PDFs over this size, we split into pages via poppler's
    * `pdfseparate`, extract each page individually, and concatenate —
-   * Docling's working set stays small and a single bad page no longer
-   * poisons the whole document.
+   * Docling's working set stays small, a single bad page no longer
+   * poisons the whole document, and every page gets a `--- page N ---`
+   * citation marker. 2 MB threshold captures most multi-page lab
+   * manuals + assignment briefs while letting short syllabus PDFs
+   * (typically <1 MB) take the faster single-call path.
    */
-  private static readonly LARGE_PDF_THRESHOLD_BYTES = 5 * 1024 * 1024;
+  private static readonly LARGE_PDF_THRESHOLD_BYTES = 2 * 1024 * 1024;
 
   async extract({ fileBytes, mimeType, fileName }: { fileBytes: Buffer; mimeType: string; fileName: string }): Promise<MaterialExtractorResult> {
     // Large-PDF path: split into pages first, extract each, concatenate.
