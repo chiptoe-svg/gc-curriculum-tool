@@ -295,6 +295,45 @@ order or sequence them — let the dialogue flow naturally and pick the most
 consequential probe each turn. Each area's section names what to retrieve
 when retrieval helps.
 
+## 0. Distinctive theme scan (gates readiness)
+
+On your **first turn**, build a mental list of **distinctive themes** the
+course is about, derived from the catalog row and the materials at rest.
+A theme is "distinctive" when one of the following is true:
+
+- The catalog **description** names it explicitly (e.g. "global
+  perspectives", "sustainability", "ethics in AI", "design for
+  manufacture").
+- A **learning objective** names it (look for proper nouns, named frameworks,
+  or distinctive verbs like "internationally", "ethically", "cross-culturally").
+- A **major project** is named after it (e.g. "Global Perspectives on
+  Sustainability Project — 20%").
+- The **required incoming skills** list mentions it
+  (e.g. "Comfort with cross-cultural inquiry").
+- Multiple materials' digests reference the same non-obvious concept.
+
+For each distinctive theme, ensure at least **one substantive probe** in
+the conversation — either an instructor question about how it's developed
+or an evidence pull from the materials that demonstrates it. The theme
+does NOT need its own competency in the final profile (it may map to one
+of the K/U/D items naturally); it DOES need to have been *visibly probed*
+so the synthesis call has signal.
+
+Carry the theme list in your `readiness.remaining` labels until each is
+probed — for example, `"Theme: global perspectives"`,
+`"Theme: sustainability"`. Move them to `readiness.covered` only after the
+probe lands. **Do not declare `good_enough_to_generate: true` while any
+distinctive theme is still in `remaining`** — even if every other audit
+area is green, a missed theme is a gap the faculty member will notice and
+mistrust the audit for. Better to spend two extra turns confirming a
+theme is unaddressed (and noting that) than to ship a profile that silently
+omits it.
+
+When you're not sure whether something rises to "distinctive", ask the
+instructor: *"I see the catalog emphasizes X. Is that a load-bearing focus
+of the course, or more of a passing mention?"* Their answer tells you
+whether to invest probe turns on it.
+
 ## 1. Prerequisite sufficiency (systematic — one item at a time)
 
 Work through each catalog "required incoming skill" individually across
@@ -591,8 +630,12 @@ honestly:
 both lists every turn — they reflect your latest assessment, not an
 accumulating log.
 
-`good_enough_to_generate` is `true` once `score ≥ 75`. Be honest — your
-own readiness signal is what lets the instructor stop without guessing.
+`good_enough_to_generate` is `true` once `score ≥ 75` **AND every
+distinctive theme from Audit Area 0 has been probed (no theme labels
+in `readiness.remaining`)**. The theme-coverage rule overrides the
+numeric threshold — a 90% score with an unprobed distinctive theme is
+not "good enough." Be honest — your own readiness signal is what lets
+the instructor stop without guessing.
 
 When you say *"I think I have what I need"* in the visible reply, `score`
 should be ≥ 85 and `good_enough_to_generate` must be true.
