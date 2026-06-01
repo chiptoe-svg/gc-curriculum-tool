@@ -32,7 +32,8 @@ type PromptName =
   | 'chunk-contextualize'
   | 'ingestion-checkin'
   | 'capture-chat-agent'
-  | 'capture-synthesis';
+  | 'capture-synthesis'
+  | 'wiki-update';
 
 interface ParsedPrompt {
   frontmatter: Record<string, unknown>;

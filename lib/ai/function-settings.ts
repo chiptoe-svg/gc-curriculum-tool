@@ -28,6 +28,7 @@ export const AI_FUNCTION_IDS = [
   'chunk-contextualize',
   'ingestion-checkin',
   'capture-chat-agent',
+  'wiki-update',
 ] as const;
 export type AIFunctionId = (typeof AI_FUNCTION_IDS)[number];
 
@@ -97,6 +98,12 @@ export const DEFAULT_TIERS: Record<AIFunctionId, Exclude<ModelTier, 'custom'>> =
   // emits a structured finding/question/citations response. Default tier —
   // same reasoning load as 'capture-chat' but with tool routing on top.
   'capture-chat-agent': 'default',
+  // Wiki-layer regeneration on snapshot creation. Synthesizes 5–15 affected
+  // markdown pages (course, competencies, targets, concepts) from the new
+  // snapshot + related Postgres substrate. Heavy tier — quality matters more
+  // than cost here; a well-written wiki page may be read dozens of times.
+  // Estimated ~$1–3 per snapshot at scale.
+  'wiki-update': 'heavy',
 };
 
 export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
@@ -112,6 +119,7 @@ export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
   'chunk-contextualize': 'Chunk contextualizer (per-chunk position blurb)',
   'ingestion-checkin': 'Ingestion check-in (materials curation review)',
   'capture-chat-agent': 'Audit chat agent (Stage 3 — tool-using auditor)',
+  'wiki-update': 'Wiki page regeneration (on snapshot creation)',
 };
 
 export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
@@ -127,6 +135,7 @@ export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
   'chunk-contextualize': 'One short positional blurb per detail chunk, prepended before embedding so the embedding encodes position + content.',
   'ingestion-checkin': 'Reviews the curated materials state before audit chat begins and emits either a short heads-up panel or silence.',
   'capture-chat-agent': 'Per-turn agent loop for CourseCapture v2 audit chat; reads at-rest digests, retrieves chunks on demand, emits a structured finding + question + citations.',
+  'wiki-update': 'Regenerates the affected wiki-layer pages (course, competencies, targets, concepts) from a new snapshot + related substrate. Returns a page map; Task A3 git-ops writes + commits.',
 };
 
 interface CachedSetting {

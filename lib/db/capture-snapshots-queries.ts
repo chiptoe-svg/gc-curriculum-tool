@@ -44,6 +44,8 @@ export interface SnapshotRow {
   caption: string | null;
   captionNote: string | null;
   reviewerNote: string | null;
+  /** Populated for v2 captures; null for v1 legacy snapshots. */
+  transcriptSessionId: string | null;
   scaleVersion: string;
   model: string;
   retiredAt: Date | null;
@@ -187,6 +189,7 @@ function rowToSnapshot(row: typeof courseCaptureSnapshots.$inferSelect): Snapsho
     caption: row.caption,
     captionNote: row.captionNote,
     reviewerNote: row.reviewerNote,
+    transcriptSessionId: row.transcriptSessionId ?? null,
     scaleVersion: row.scaleVersion,
     model: row.model,
     retiredAt: row.retiredAt,
