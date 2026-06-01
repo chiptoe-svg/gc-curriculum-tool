@@ -46,6 +46,14 @@ The static GitHub-Pages preview at `chiptoe-svg.github.io/gc-curriculum-tool/` s
 
 ---
 
+### Sibling repos
+
+| Repo | Path on local Mac | Purpose |
+| --- | --- | --- |
+| [`chiptoe-svg/gc-curriculum-tool`](https://github.com/chiptoe-svg/gc-curriculum-tool) | `/Users/admin/projects/curriculum_developer/` | This repo. The app. |
+| [`chiptoe-svg/gc-curriculum-wiki`](https://github.com/chiptoe-svg/gc-curriculum-wiki) | `/Users/admin/projects/gc-curriculum-wiki/` | LLM-maintained markdown corpus (Karpathy wiki pattern). Bootstrapped 2026-06-01 (Task A1 of the wiki+chat plan). Two layers: `raw/` (immutable snapshot JSON + transcripts) and `courses/competencies/targets/concepts/` (LLM-regenerated narrative). Read by the app's `/wiki/...` routes; populated by `wiki-update` on each approved snapshot (Task A2, not yet implemented). |
+| [`chiptoe-svg/gc-curriculum-backups`](https://github.com/chiptoe-svg/gc-curriculum-backups) | `/Users/admin/projects/gc-curriculum-backups/` | Off-site weekly `pg_dump` backups. Tier 3 of the 4-tier backup chain. |
+
 ## Architecture (at-a-glance)
 
 **Hybrid deploy (Phase 2, implementation complete per commit `01286f1`).** Same codebase, two runtime personalities flipped by env-var presence:
