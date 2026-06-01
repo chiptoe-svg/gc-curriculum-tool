@@ -11,9 +11,9 @@ Audit of the 28 references in `/docs/background.html` §14. Each row links to a 
 
 | Status | Count |
 |---|---|
-| Verified accessible (full text fetched or open access) | 8 |
-| Partially accessible (abstract / secondary descriptions / open summary) | 18 |
-| Paywall — citation only, no accessible content | 2 |
+| Verified accessible (full text fetched or open access) | 9 (incl. npj 2023, verified from source PDF 2026-06-01) |
+| Partially accessible (abstract / secondary descriptions / publisher pages / ERIC / Wikipedia) | 19 |
+| Inaccessible (citation only, no secondary found) | 0 |
 
 | Verdict | Count |
 |---|---|
