@@ -527,8 +527,56 @@ export function ProfileReviewPanel({
 
   const legacy = isLegacyProfile(working);
 
+  // Approval status — drives the persistent banner + which Approve buttons render.
+  // 'captured' = last save was a snapshot AND there are no pending edits. Any edit
+  // moves us back to 'draft' until the next approval. Faculty needs to see this
+  // distinction clearly — generating an AI draft is not the same as approving it.
+  const isCaptured = lastSavedStatus === 'confirmed' && !dirty;
+
+  function openApprovalModal() {
+    setSnapshotOpen(true);
+  }
+
+  function approveFromBottom() {
+    // Bottom button = "approve quickly" — opens the modal AND scrolls to it so
+    // the user sees the caption/note inputs rather than dispatching blindly.
+    setSnapshotOpen(true);
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
   return (
     <section className="space-y-6">
+      {/* ── Approval-status banner — first thing the faculty sees ── */}
+      {isCaptured ? (
+        <div className="rounded-md border border-teal-300 bg-teal-50 px-4 py-3 text-sm text-teal-900 shadow-sm">
+          <p className="font-semibold tracking-wide">CAPTURED ✓ — approved</p>
+          <p className="mt-0.5 text-xs leading-snug">
+            This is the official record. Any edit creates a new draft you&apos;ll need to approve again.
+          </p>
+        </div>
+      ) : (
+        <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <p className="font-semibold tracking-wide">DRAFT — pending your approval</p>
+              <p className="mt-0.5 text-xs leading-snug">
+                This profile was generated from your audit. Review, edit if needed, then approve to capture it as the official record.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={openApprovalModal}
+              disabled={saving || snapshotting}
+              className="shrink-0 rounded-md bg-amber-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-800 disabled:opacity-50"
+            >
+              Approve this profile
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── Course overview — editable document front matter ── */}
       <div className="rounded-md border bg-card px-6 py-8 shadow-sm">
         <CourseOverview
@@ -580,7 +628,7 @@ export function ProfileReviewPanel({
             disabled={saving || snapshotting}
             className="rounded-md bg-foreground px-4 py-1.5 text-sm font-medium text-background shadow-sm hover:bg-foreground/85 disabled:opacity-50"
           >
-            {snapshotOpen ? 'Cancel capture' : 'Capture this profile'}
+            {snapshotOpen ? 'Cancel' : 'Approve this profile'}
           </button>
         </div>
       </header>
@@ -588,9 +636,9 @@ export function ProfileReviewPanel({
       {snapshotOpen && (
         <div className="rounded-md border bg-card px-4 py-4 space-y-3 shadow-sm">
           <header>
-            <h3 className="text-sm font-semibold">Capture this profile</h3>
+            <h3 className="text-sm font-semibold">Approve this profile</h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              This creates a permanent, dated record of the current draft. The draft stays editable; new edits create a new captured version when you capture again.
+              Captures the current draft as a permanent, dated, immutable record. The draft stays editable; later edits create a new draft you can approve again.
             </p>
           </header>
           <div className="space-y-1">
@@ -620,9 +668,9 @@ export function ProfileReviewPanel({
               type="button"
               onClick={handleConfirmAndSnapshot}
               disabled={snapshotting}
-              className="rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50"
+              className="rounded-md bg-foreground px-4 py-1.5 text-sm font-semibold text-background shadow-sm hover:bg-foreground/85 disabled:opacity-50"
             >
-              {snapshotting ? 'Snapshotting…' : 'Snapshot'}
+              {snapshotting ? 'Capturing…' : 'Approve & capture'}
             </button>
           </div>
           {snapshotMessage && (
@@ -705,6 +753,24 @@ export function ProfileReviewPanel({
           )}
         </aside>
       </div>
+      {/* ── Bottom Approve CTA — for faculty who scroll all the way through ── */}
+      {!isCaptured && (
+        <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-5 text-center shadow-sm">
+          <p className="text-sm text-amber-900">Done reviewing?</p>
+          <p className="mt-0.5 text-xs text-amber-800/80">
+            Approving captures the current draft as the official, dated record.
+          </p>
+          <button
+            type="button"
+            onClick={approveFromBottom}
+            disabled={saving || snapshotting}
+            className="mt-3 rounded-md bg-amber-700 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-800 disabled:opacity-50"
+          >
+            Approve this profile
+          </button>
+        </div>
+      )}
+
       <CitationDrawer
         courseCode={courseCode}
         slug={slug}
