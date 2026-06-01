@@ -12,6 +12,7 @@ import { VerificationSummary } from './VerificationSummary';
 import { LegacyBanner } from './LegacyBanner';
 import { CitationDrawer, type CitationTarget } from './CitationDrawer';
 import { describeDepth, type Dimension } from '@/lib/ai/capture/depth-anchors';
+import { CourseOverview } from './CourseOverview';
 
 /**
  * Returns true when NONE of the profile's findings carry a `source` flag.
@@ -105,6 +106,7 @@ interface Props {
   onSave: (edited: CaptureProfile, status: 'confirmed' | 'edited', reviewerNote: string | null) => Promise<void>;
   onResumeChat: () => void;
   courseCode: string;
+  courseTitle: string;
   slug: string;
   onSnapshotCreated: () => void;
 }
@@ -436,6 +438,7 @@ export function ProfileReviewPanel({
   onSave,
   onResumeChat,
   courseCode,
+  courseTitle,
   slug,
   onSnapshotCreated,
 }: Props) {
@@ -526,6 +529,18 @@ export function ProfileReviewPanel({
 
   return (
     <section className="space-y-6">
+      {/* ── Course overview — editable document front matter ── */}
+      <div className="rounded-md border bg-card px-6 py-8 shadow-sm">
+        <CourseOverview
+          courseCode={courseCode}
+          courseTitle={courseTitle}
+          overview={working.overview ?? null}
+          onOverviewChange={(next) => setWorking({ ...working, overview: next })}
+          editable={true}
+          onCitationClick={handleCitationClick}
+        />
+      </div>
+
       {legacy && <LegacyBanner onReaudit={onResumeChat} />}
       <header className="flex items-center justify-between gap-3 rounded-md border bg-card px-4 py-3">
         <div>
@@ -563,9 +578,9 @@ export function ProfileReviewPanel({
             type="button"
             onClick={() => setSnapshotOpen(o => !o)}
             disabled={saving || snapshotting}
-            className="rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50"
+            className="rounded-md bg-foreground px-4 py-1.5 text-sm font-medium text-background shadow-sm hover:bg-foreground/85 disabled:opacity-50"
           >
-            {snapshotOpen ? 'Cancel snapshot' : 'Confirm and snapshot'}
+            {snapshotOpen ? 'Cancel capture' : 'Capture this profile'}
           </button>
         </div>
       </header>
@@ -573,9 +588,9 @@ export function ProfileReviewPanel({
       {snapshotOpen && (
         <div className="rounded-md border bg-card px-4 py-4 space-y-3 shadow-sm">
           <header>
-            <h3 className="text-sm font-semibold">Confirm and snapshot</h3>
+            <h3 className="text-sm font-semibold">Capture this profile</h3>
             <p className="mt-1 text-xs text-muted-foreground">
-              Records the current draft as a permanent, dated, immutable snapshot. The working draft stays editable; new edits will live in a new snapshot when you confirm again.
+              This creates a permanent, dated record of the current draft. The draft stays editable; new edits create a new captured version when you capture again.
             </p>
           </header>
           <div className="space-y-1">

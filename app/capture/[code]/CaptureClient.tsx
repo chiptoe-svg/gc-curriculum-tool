@@ -323,6 +323,7 @@ export function CaptureClient({
           onSave={handleSaveReview}
           onResumeChat={() => setStage('chat')}
           courseCode={courseCode}
+          courseTitle={course.title}
           slug={slug}
           onSnapshotCreated={handleSnapshotCreated}
         />
