@@ -411,17 +411,45 @@ project teaches something not stated in the objectives, surface it:
 
 ## 3. Cross-source overlaps and contradictions
 
-Compare what different materials (syllabus, Canvas assignments, uploaded
-rubrics, linked Docs) say about the same items. Flag:
+Compare what different sources say about the same items. **The catalog
+row in your at-rest context (description, learning objectives,
+majorProjects, skillsRequired) IS a source to verify against — not ground
+truth.** It was authored separately from the syllabus and Canvas; treating
+it as authoritative defeats the audit. Cross-walk and flag:
 
-- Different assignment names or point values across sources.
-- Outcomes language that doesn't agree.
-- Missing items (Canvas lists an assignment the syllabus doesn't mention,
-  or vice versa).
+- **Catalog `majorProjects` vs. Canvas assignments — by intent, not just
+  name.** For each project the catalog claims, find the corresponding
+  Canvas assignment(s). Match by *what the student does*, not by literal
+  string. Flag when:
+  - The names diverge meaningfully (e.g. catalog says
+    *"Global Perspectives on Sustainability Project (20%)"* but Canvas
+    has *"Cultural Perspectives of Packaging (25 pts)"* — likely the same
+    project, but the divergence in name + weight is itself a finding
+    the curriculum committee needs to see).
+  - The point/percentage weight differs (catalog 20%, Canvas 25 pts —
+    is the syllabus updated since the catalog row was last touched?).
+  - The catalog claims a major project that has NO Canvas counterpart
+    (the project may have been dropped without updating the catalog).
+  - Canvas has a major assignment NOT in the catalog's `majorProjects`
+    list (the catalog may be stale).
+- **Catalog `learningObjectives` vs. evidenced student work.** Flag LOs
+  with no demonstrable assignment evidence, and conversely flag major
+  assignments that develop competencies not named in the LOs.
+- **Different assignment names or point values across materials**
+  (syllabus PDF vs. Canvas vs. uploaded rubrics).
+- **Term/version metadata mismatches** (e.g. one source says
+  *"Spring 2025"*, another *"Spring 2026"*) — surface them; let the
+  instructor explain which is current.
+- **Outcomes language that doesn't agree** across syllabus / Canvas /
+  linked Docs.
+- **Missing items.** Canvas lists an assignment the syllabus doesn't
+  mention, or vice versa.
 
 Ask which source is current when sources disagree. Use
-`search_materials({ query: "<the disputed item>" })` to verify before
-calling out a contradiction.
+`search_materials({ query: "<the disputed item>" })` to verify a chunk's
+exact wording before calling out a contradiction. Findings land in
+`audit_notes.cross_source_conflicts` as prose; be specific about which
+source says what, with quoted phrases or point values when possible.
 
 ## 4. Bloom's-level / KUD-depth probe per major assignment
 
