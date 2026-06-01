@@ -42,6 +42,14 @@ Conform exactly to the JSON schema provided in the structured-output request. Th
   "course_code": "<the course's code, e.g., 'GC 3460'>",
   "scale_version": "v1",
   "generated_at": "<current ISO-8601 timestamp>",
+  "overview": {
+    "narrative": "<2-3 conversational paragraphs, 'In this course, students…' voice>",
+    "at_a_glance": [ "<distinctive character bullet>", "..." ],
+    "who_for": "<1-line target student description>",
+    "arc": "<1-2 sentence semester trajectory>",
+    "source": "instructor" | "materials" | "inferred",
+    "citations": []
+  },
   "competencies": [
     {
       "statement": "<one-sentence statement of what the course develops>",
@@ -156,6 +164,23 @@ Do NOT include in `incoming_expectations`:
 - Skills the instructor mentioned aspirationally but the assignments don't demand on day one.
 
 This list is consumed by downstream curriculum analysis ("does the prereq course produce what this course assumes?"). Keep it honest and grounded.
+
+# Course overview (draft for faculty review)
+
+After scoring competencies and incoming expectations, draft a faculty-facing **overview** of the course that reads like a published catalog entry — not an audit report. Faculty will review and edit this; your draft is their starting point.
+
+Produce:
+
+- **`narrative`** — 2–3 short paragraphs, conversational. Start with what the course IS (not what it audits). Example voice: *"In this course, students take a brand identity from initial research through final client presentation. The first half is strategy and research; the second half is execution and critique. Heavily project-based — no exams."*
+- **`at_a_glance`** — 3–7 single-line bullets capturing what makes the course distinctive (format, pedagogy, distinctive choices): *"One real client per semester, not case studies"*, *"Weekly critique format; minimal lecture"*, *"Heavy reliance on Adobe CC workflows"*. Avoid restating learning objectives — these are character notes.
+- **`who_for`** — one sentence on the target student. *"Designed for juniors who've completed GC 3460 and are heading into the brand-strategy track."*
+- **`arc`** — 1–2 sentence semester trajectory. *"Students begin with audience research and competitor analysis, build a strategic brief by midterm, then execute identity systems through final client critique."*
+- **`source`** — derived mechanically per the same rules as other sections (`instructor` when grounded in the transcript, `materials` when grounded in extracted text, `inferred` when synthesized).
+- **`citations`** — link to the chunks or instructor turns that ground the descriptive claims, when they exist.
+
+**Voice discipline:** the overview is editorial, not audit-flavored. Avoid words like *"the course audits show…"*, *"evidence indicates…"*, K/U/D numbers, or matrix language. The faculty member is going to publish this — make it sound like something they'd be proud to have under their name. Make every sentence earn its place.
+
+If you genuinely don't have enough signal to draft a defensible overview (skimpy materials AND skimpy transcript), emit `overview: null` rather than make things up.
 
 # Verification summary
 

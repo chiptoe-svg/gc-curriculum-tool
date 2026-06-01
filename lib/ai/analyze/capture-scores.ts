@@ -51,6 +51,7 @@ const captureProfileJsonSchema = {
     'course_code',
     'scale_version',
     'generated_at',
+    'overview',
     'competencies',
     'incoming_expectations',
     'verification_summary',
@@ -61,6 +62,19 @@ const captureProfileJsonSchema = {
     course_code: { type: 'string', minLength: 1 },
     scale_version: { type: 'string', enum: [captureScaleVersion] },
     generated_at: { type: 'string', minLength: 1 },
+    overview: {
+      type: ['object', 'null'],
+      additionalProperties: false,
+      required: ['narrative', 'at_a_glance', 'who_for', 'arc', 'source', 'citations'],
+      properties: {
+        narrative: { type: 'string', minLength: 40 },
+        at_a_glance: { type: 'array', items: { type: 'string', minLength: 3 }, minItems: 3, maxItems: 7 },
+        who_for: { type: 'string', minLength: 10 },
+        arc: { type: 'string', minLength: 20 },
+        source: { type: ['string', 'null'], enum: ['instructor', 'materials', 'inferred', null] },
+        citations: CITATIONS_ARRAY,
+      },
+    },
     competencies: {
       type: 'array',
       minItems: 1,

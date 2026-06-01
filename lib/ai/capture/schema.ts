@@ -148,10 +148,28 @@ export const verificationSummarySchema = z.object({
 });
 export type CaptureVerificationSummary = z.infer<typeof verificationSummarySchema>;
 
+export const courseOverviewSchema = z.object({
+  /** 2-3 paragraphs, conversational. "In this course, students…" voice. */
+  narrative: z.string().min(40),
+  /** 3-7 single-line bullets capturing course character (pedagogy, format, distinctive choices). */
+  at_a_glance: z.array(z.string().min(3)).min(3).max(7),
+  /** 1-line target student description. "Designed for juniors heading into the brand-strategy track." */
+  who_for: z.string().min(10),
+  /** 1-2 sentence semester trajectory. "Students start by X, then Y, finally Z." */
+  arc: z.string().min(20),
+  source: CaptureProfileSource.optional(),
+  citations: z.array(CaptureProfileCitation).optional(),
+});
+export type CaptureCourseOverview = z.infer<typeof courseOverviewSchema>;
+
 export const captureProfileSchema = z.object({
   course_code: z.string().min(1),
   scale_version: z.literal(captureScaleVersion),
   generated_at: z.string(),
+  // Nullable for backward compat: snapshots taken before 2026-05-31 won't have it.
+  // V2 captures always populate it; v1 captures get null and the Review panel
+  // shows a "this is a legacy snapshot — re-audit to add an overview" hint.
+  overview: courseOverviewSchema.nullable().optional(),
   competencies: z.array(captureCompetencySchema).min(1),
   incoming_expectations: z.array(incomingExpectationSchema).max(10),
   verification_summary: verificationSummarySchema,
