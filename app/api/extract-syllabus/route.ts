@@ -2,8 +2,16 @@ import { NextResponse } from 'next/server';
 import { isValidSlug } from '@/lib/slug';
 import { extractText } from '@/lib/courses/extract-text';
 import type { ExtractedMimeType } from '@/lib/courses/extract-text';
+import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
+import { hashIp } from '@/lib/ip-hash';
 
 export const maxDuration = 60;
+
+// Match the materials route's cap. The middleware ceiling
+// (next.config.ts:middlewareClientMaxBodySize) was raised to 25 MB to
+// allow large lab-PDF uploads on the materials route; this route doesn't
+// need that headroom and shouldn't accept it.
+const MAX_SIZE_BYTES = 15 * 1024 * 1024;
 
 const ALLOWED_MIME_TYPES = new Set<string>([
   'application/pdf',
@@ -23,6 +31,11 @@ export async function POST(req: Request): Promise<Response> {
     return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
   }
 
+  const { allowed } = await checkIpRateLimit(hashIp(req));
+  if (!allowed) {
+    return NextResponse.json({ error: 'rate limit exceeded' }, { status: 429 });
+  }
+
   const file = form.get('file') as File | null;
   if (!file || typeof file !== 'object' || typeof (file as File).arrayBuffer !== 'function') {
     return NextResponse.json({ error: 'file field is required' }, { status: 400 });
@@ -30,6 +43,12 @@ export async function POST(req: Request): Promise<Response> {
   if (!ALLOWED_MIME_TYPES.has(file.type)) {
     return NextResponse.json(
       { error: 'unsupported file type — upload a PDF or DOCX' },
+      { status: 400 },
+    );
+  }
+  if (file.size > MAX_SIZE_BYTES) {
+    return NextResponse.json(
+      { error: `file too large: ${file.size} bytes (max ${MAX_SIZE_BYTES})` },
       { status: 400 },
     );
   }
