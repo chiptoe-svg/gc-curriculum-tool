@@ -23,6 +23,8 @@ Two deployments, same codebase. Faculty side is gated by HTTP Basic Auth on the 
 | `/program` | **Program Coverage Matrix (Phase 1A)** — snapshots × career-target sub-competencies, depth-aware heat map, on-demand AI scoring | live | 2026-05-25 |
 | `/program/scaffolding` | **Scaffolding Strip (Phase 1B Stage 1)** — per-target depth × productive-failure × reflection heat map; deterministic scoring | live | 2026-05-28 |
 | `/courses` | **Course catalog — typeset index** of every catalog course with computed capture status (`not-started / in-audit / ai-drafted / reviewed / captured`), last-captured date, click-through to `/capture/[code]`. Editorial design language (Fraunces serif + DM Sans + IBM Plex Mono via `next/font`). Status grouped by 1000/2000/3000/4000-level. | live | 2026-05-31 |
+| `/wiki` | **Curriculum Wiki index** — reads `index.md` from the local wiki clone; empty-state message until pages exist | live | 2026-06-01 |
+| `/wiki/[type]/[slug]` | **Wiki per-page** — reads `<type>/<slug>.md`; renders markdown with GFM + wikilink resolution; frontmatter-gated title + breadcrumb; 404 when file is absent; `type` ∈ `{courses,competencies,targets,concepts}` | live | 2026-06-01 |
 | `/settings` | Per-function AI model tier + override | live | 2026-05-24 |
 | `/admin/partners` | Partner CSV import, invites, status | live | 2026-05-19 (Plan 1) |
 | `/admin/synthesis?slug=…` | Per-target AI synthesis dashboard (themes, salaries, partner quotes, proposed KUD edits) | live | 2026-05-19 (Plan 3) |

@@ -1,7 +1,8 @@
 import Link from 'next/link';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { isValidSlug } from '@/lib/slug';
-import { listCoursesWithStatus } from '@/lib/db/capture-status-queries';
-import { CoursesIndex } from './CoursesIndex';
+import { readWikiPage } from '@/lib/wiki/git-ops';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,7 +10,7 @@ interface Props {
   searchParams: Promise<{ slug?: string }>;
 }
 
-export default async function CoursesPage({ searchParams }: Props) {
+export default async function WikiIndexPage({ searchParams }: Props) {
   const { slug = '' } = await searchParams;
 
   if (!isValidSlug(slug)) {
@@ -23,31 +24,33 @@ export default async function CoursesPage({ searchParams }: Props) {
     );
   }
 
-  const rows = await listCoursesWithStatus();
-  rows.sort((a, b) => (a.level ?? 9999) - (b.level ?? 9999) || a.code.localeCompare(b.code));
+  const raw = await readWikiPage('index.md');
+  const isEmpty = !raw || raw.trim().length === 0;
 
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
-        <div className="mx-auto flex max-w-5xl items-baseline justify-between gap-4 px-6 py-4">
+        <div className="mx-auto flex max-w-3xl items-baseline justify-between gap-4 px-6 py-4">
           <div>
             <p className="font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-              Catalog · GC
+              GC · Knowledge base
             </p>
-            <h1 className="mt-0.5 font-display text-2xl font-semibold tracking-tight">Courses</h1>
+            <h1 className="mt-0.5 font-display text-2xl font-semibold tracking-tight">
+              Curriculum Wiki
+            </h1>
           </div>
           <div className="flex items-center gap-4">
             <Link
               href={`/program?slug=${encodeURIComponent(slug)}`}
               className="text-sm text-muted-foreground hover:text-foreground"
             >
-              Coverage matrix →
+              Program →
             </Link>
             <Link
-              href={`/wiki?slug=${encodeURIComponent(slug)}`}
+              href={`/courses?slug=${encodeURIComponent(slug)}`}
               className="text-sm text-muted-foreground hover:text-foreground"
             >
-              Wiki →
+              Courses →
             </Link>
             <Link
               href={`/?slug=${encodeURIComponent(slug)}`}
@@ -58,8 +61,25 @@ export default async function CoursesPage({ searchParams }: Props) {
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-5xl px-6 py-8">
-        <CoursesIndex rows={rows} slug={slug} />
+
+      <main className="mx-auto max-w-3xl px-6 py-8">
+        {isEmpty ? (
+          <div className="rounded-lg border border-dashed border-border p-8 text-center">
+            <p className="text-muted-foreground">
+              No pages yet. They appear here once a course profile is approved.
+            </p>
+            <Link
+              href={`/courses?slug=${encodeURIComponent(slug)}`}
+              className="mt-4 inline-block text-sm text-blue-700 hover:underline"
+            >
+              Go to Courses →
+            </Link>
+          </div>
+        ) : (
+          <article className="wiki-prose">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{raw}</ReactMarkdown>
+          </article>
+        )}
       </main>
     </div>
   );

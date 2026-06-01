@@ -34,6 +34,7 @@ export default async function ProgramPage({ searchParams }: Props) {
           <div className="flex items-center gap-4">
             <Link href={`/courses?slug=${encodeURIComponent(slug)}`} className="text-sm text-muted-foreground hover:text-foreground">Courses →</Link>
             <Link href={`/program/scaffolding?slug=${encodeURIComponent(slug)}`} className="text-sm text-muted-foreground hover:text-foreground">Scaffolding view →</Link>
+            <Link href={`/wiki?slug=${encodeURIComponent(slug)}`} className="text-sm text-muted-foreground hover:text-foreground">Wiki →</Link>
             <Link href={`/settings?slug=${encodeURIComponent(slug)}`} className="text-sm text-muted-foreground hover:text-foreground">Settings</Link>
             <Link href={`/?slug=${encodeURIComponent(slug)}`} className="text-sm text-muted-foreground hover:text-foreground">← Hub</Link>
           </div>
