@@ -204,7 +204,7 @@ Anything not listed here that a wiki would want — edits with rationale, concep
 ### Deferred / debt
 
 - **Real faculty auth.** Current Basic Auth gate is a stopgap. Options: magic-link sessions (same pattern as `/partners/*`), Clemson SSO/Shibboleth, OAuth via Clemson IdP. Revisit in deployment-planning phase.
-- **DB off Neon, backup/restore, always-on hosting.** Deferred to deployment-planning phase.
+- **DB off Neon, always-on hosting.** Deferred to deployment-planning phase. **Backup/restore is no longer deferred** — three-tier scheme shipped 2026-06-01: Neon's own ~7h PITR (continuous), local `pg_dump`/gzip every 6h to `~/Documents/gc-curriculum-backups/` via `scripts/backup/pg-snapshot.sh` + `com.gc.pg-backup` launchd plist (auto-prunes >365d), and weekly off-site push to private repo `chiptoe-svg/gc-curriculum-backups` (Sundays first run of day, retained forever). Restore procedure in that repo's README.
 - **Industry Partner Input Plan 2** — position ratings table + project-rating heat map. Gap between Plan 1 and the already-shipped Plan 3 synthesis.
 - **AnthropicProvider native PDF blocks.** Prerequisite for high-quality syllabus extraction; not built.
 - **Capture-chat Manning encoding.** Held pending snapshot-quality evidence; **absorbed into the v2 agentic-retrieval spec** — the new `capture-chat-agent.md` prompt will carry Manning encoding from the start, so this deferred decision becomes moot when v2 ships.
