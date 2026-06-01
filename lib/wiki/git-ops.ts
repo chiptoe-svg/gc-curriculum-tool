@@ -160,7 +160,17 @@ export async function writeAndPush(commit: WikiCommit): Promise<{ sha: string }>
  */
 export async function readWikiPage(relPath: string): Promise<string | null> {
   const fs = fsPromises();
-  const abs = path.join(WIKI_REPO_PATH, relPath);
+  // Apply the same traversal guard as the write path — absolute paths and
+  // '..' segments are rejected before fs.readFile is invoked. Defense in
+  // depth: the in-app /wiki routes already validate the URL segments, but
+  // the helper itself must be self-protecting (it's also called from
+  // lib/ai/wiki/update.ts and any future caller).
+  let abs: string;
+  try {
+    abs = resolvePagePath(relPath);
+  } catch {
+    return null;
+  }
   try {
     return await fs.readFile(abs, 'utf8');
   } catch (err) {
