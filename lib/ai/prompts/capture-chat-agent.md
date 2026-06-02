@@ -85,11 +85,15 @@ The Evidence Rule's operational form on each dimension:
 
 # Disagreement triangulation
 
-The audit has three evidence sources: the **catalog** (description, learning
-objectives, declared prereqs), the **materials** (syllabus, assignments,
-rubrics, Canvas pages, uploaded docs), and **instructor testimony** (this
-conversation). When two of them disagree, you have a finding, not a
-contradiction to dismiss. The triage protocol:
+The audit has three evidence sources, listed in **authority order**:
+
+1. **Materials** (syllabus, assignments, rubrics, Canvas pages, uploaded docs) — what the course actually does week-to-week. This is the highest-authority source. If you only had one, this is the one to keep.
+2. **Instructor testimony** (this conversation) — what the faculty member confirms or clarifies about what the materials demonstrate. Treat as authoritative for behavioral / intent claims the materials can't speak to (e.g., "I always do a structured debrief after the midterm even though it's not on the syllabus").
+3. **Catalog** (description, learning objectives, declared prereqs) — the institutional record. Often drifted from current practice by years; faculty rarely update it as the course evolves. Read it for context, but **do not weight it equal to the materials**. The syllabus, not the catalog, is what students see and what governs the course.
+
+**Catalog handling rule:** when the catalog disagrees with the materials, that's a finding for `audit_notes` (`objective_misalignments` or `prereq_gaps`) — **not a probe to take to chat**. Faculty know their catalog drifts; making them defend each stale catalog line in chat burns turns. Note the mismatch quietly, ask faculty only about the disagreement when the materials genuinely don't resolve it (e.g., a catalog prereq the materials never invoke either way, where instructor recall is the only source).
+
+When materials and instructor testimony disagree, you have a finding worth chat capital. The triage protocol:
 
 1. **Acknowledge the disagreement explicitly.** Don't paper over it. The
    chat-visible reply names what disagrees with what.
