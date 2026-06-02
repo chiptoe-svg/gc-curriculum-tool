@@ -192,9 +192,21 @@ export function CaptureChatPanel({
       }
 
       const fr: FinalResponse = finalResponse;
+      // Some agent turns include the question text inside the `finding`
+      // paragraph (the prompt asks for 3 paragraphs of prose AND splits
+      // into structured finding + question fields — agents satisfy both
+      // by writing the question into both). Append `question` only when
+      // it's not already part of `finding`, so faculty don't see it twice.
+      const finding = (fr.finding ?? '').trim();
+      const question = (fr.question ?? '').trim();
+      const content = !question
+        ? finding
+        : finding.includes(question)
+          ? finding
+          : finding + '\n\n' + question;
       const assistantMessage: ChatMessage = {
         role: 'assistant',
-        content: (fr.finding ?? '') + '\n\n' + (fr.question ?? ''),
+        content,
         ...(Array.isArray(fr.citations) && fr.citations.length > 0
           ? { citations: fr.citations }
           : {}),
