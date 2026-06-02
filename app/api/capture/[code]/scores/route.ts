@@ -145,6 +145,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         extractedText: m.extractedText,
         digest: m.digest,
         useDigest: m.useDigest,
+        ignoredItems: m.ignoredItems,
       })),
     priorCaptureProfile: priorCapture?.profile ?? null,
     prerequisiteCaptureProfiles,

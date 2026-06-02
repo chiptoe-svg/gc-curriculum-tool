@@ -79,6 +79,7 @@ export async function GET(req: Request, { params }: RouteContext): Promise<Respo
       ferpaRisk: m.ferpaRisk,
       autoSetAside: m.autoSetAside,
       setAsideReason: m.setAsideReason,
+      ignoredItems: m.ignoredItems,
     })),
     existingCaptureProfile: existingCaptureProfile
       ? {

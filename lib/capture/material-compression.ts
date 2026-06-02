@@ -20,6 +20,15 @@ export interface CompressionMaterial {
   extractedText: string | null;
   digest: string | null;
   useDigest: boolean;
+  /**
+   * Per-item ignore list for Canvas-list materials. When non-empty AND the
+   * material is a Canvas-list (Assignments, Discussions, Quizzes, Pages,
+   * Module List), `effectiveAuditText` parses the blob and drops items
+   * whose `## Title` matches an entry. Has no effect on non-Canvas
+   * materials. Optional for older call sites that don't track this yet —
+   * those default to "no items ignored" (full text).
+   */
+  ignoredItems?: readonly string[];
 }
 
 // 15k tokens ≈ 60k chars under the ~4 chars/token rule of thumb.
@@ -48,6 +57,22 @@ export function isCompressionCandidate(m: CompressionMaterial): boolean {
 }
 
 export function effectiveAuditText(m: CompressionMaterial): string | null {
+  const hasItemIgnores = (m.ignoredItems?.length ?? 0) > 0;
+  const isCanvasList = m.fileName.startsWith('Canvas:') && !m.fileName.startsWith('Canvas File:');
+
+  // When the user has dropped specific items from a Canvas-list material,
+  // override useDigest. The digest is a paragraph-form summary that doesn't
+  // preserve per-item structure, so honoring useDigest would silently
+  // re-include the dropped items in summarized form. Use the parsed +
+  // filtered raw text instead.
+  if (isCanvasList && hasItemIgnores && m.extractedText) {
+    // Lazy import to avoid loading the parser when not needed and to keep
+    // the compression module free of canvas-specific dependencies.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { filterCanvasBlob } = require('@/lib/canvas/parseCanvasBlob') as typeof import('@/lib/canvas/parseCanvasBlob');
+    return filterCanvasBlob(m.extractedText, m.ignoredItems ?? []);
+  }
+
   if (m.useDigest && m.digest) return m.digest;
   return m.extractedText;
 }

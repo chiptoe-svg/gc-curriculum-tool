@@ -1,0 +1,1 @@
+ALTER TABLE "course_materials" ADD COLUMN "ignored_items" jsonb DEFAULT '[]'::jsonb NOT NULL;

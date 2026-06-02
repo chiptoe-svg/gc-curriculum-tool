@@ -1,7 +1,8 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { CanvasImportZone } from '@/components/CanvasImportZone';
+import { parseCanvasBlob, isCanvasListMaterial } from '@/lib/canvas/parseCanvasBlob';
 
 export type IndexingStatus = 'pending' | 'indexing' | 'ready' | 'failed' | 'skipped';
 export type FerpaRisk = 'low' | 'medium' | 'high';
@@ -25,6 +26,13 @@ export interface CaptureMaterial {
   ferpaRisk: FerpaRisk;
   autoSetAside: boolean;
   setAsideReason: string | null;
+  /**
+   * Per-item ignore list for Canvas-list materials. Empty/undefined for
+   * other materials. Item titles are the full `## Title` text after the
+   * marker (importer adds inline tags like `[unpublished]`; those are
+   * part of the title here).
+   */
+  ignoredItems?: readonly string[];
 }
 
 export interface CourseCatalogView {
@@ -263,6 +271,7 @@ function MaterialRow({
   onToggleUseDigest,
   onIncludeAnyway,
   onDowngradeFerpa,
+  onSetIgnoredItems,
   busy,
 }: {
   material: CaptureMaterial;
@@ -271,14 +280,35 @@ function MaterialRow({
   onToggleUseDigest: (next: boolean) => void;
   onIncludeAnyway: () => Promise<void>;
   onDowngradeFerpa: () => Promise<void>;
+  onSetIgnoredItems: (next: string[]) => Promise<void>;
   busy: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [itemsExpanded, setItemsExpanded] = useState(false);
   const [ferpaWidgetOpen, setFerpaWidgetOpen] = useState(false);
   const [overrideError, setOverrideError] = useState<string | null>(null);
   const [ferpaError, setFerpaError] = useState<string | null>(null);
   const [overrideBusy, setOverrideBusy] = useState(false);
   const [ferpaBusy, setFerpaBusy] = useState(false);
+  const isCanvasList = isCanvasListMaterial(material.fileName);
+  const items = useMemo(
+    () => (isCanvasList && material.extractedText ? parseCanvasBlob(material.extractedText) : []),
+    [isCanvasList, material.extractedText],
+  );
+  const ignoredItemTitles = useMemo(
+    () => new Set(material.ignoredItems ?? []),
+    [material.ignoredItems],
+  );
+  const ignoredItemCount = ignoredItemTitles.size;
+  const itemRowsBusy = busy;
+
+  async function toggleItemIgnored(itemTitle: string, ignored: boolean) {
+    const current = Array.from(ignoredItemTitles);
+    const next = ignored
+      ? Array.from(new Set([...current, itemTitle]))
+      : current.filter(t => t !== itemTitle);
+    await onSetIgnoredItems(next);
+  }
   const canvas = isCanvasMaterial(material);
   const gdoc = isGoogleDocMaterial(material);
   const gslides = isGoogleSlidesMaterial(material);
@@ -512,6 +542,42 @@ function MaterialRow({
           {material.extractedText.slice(0, 8000)}
           {material.extractedText.length > 8000 && '\n\n…(truncated)'}
         </pre>
+      )}
+      {isCanvasList && items.length > 0 && !material.ignored && (
+        <div className="mt-1 ml-5 text-[11px] text-muted-foreground">
+          <button
+            type="button"
+            onClick={() => setItemsExpanded(e => !e)}
+            className="flex items-center gap-1 hover:text-foreground"
+          >
+            <span>{itemsExpanded ? '▾' : '▸'}</span>
+            <span>
+              {items.length} item{items.length === 1 ? '' : 's'}
+              {ignoredItemCount > 0 && ` · ${ignoredItemCount} ignored`}
+              {!itemsExpanded && ignoredItemCount === 0 && ' — click to manage'}
+            </span>
+          </button>
+          {itemsExpanded && (
+            <ul className="mt-1 max-h-60 overflow-auto rounded border bg-muted/30 px-2 py-1.5 space-y-0.5">
+              {items.map(it => {
+                const ignored = ignoredItemTitles.has(it.title);
+                return (
+                  <li key={`${it.ordinalIndex}-${it.title}`} className="flex items-start gap-2 py-0.5">
+                    <input
+                      type="checkbox"
+                      checked={!ignored}
+                      onChange={e => toggleItemIgnored(it.title, !e.target.checked)}
+                      disabled={itemRowsBusy}
+                      className="mt-0.5 h-3 w-3 flex-shrink-0"
+                      title={ignored ? 'Included — uncheck to ignore' : 'Ignored — check to re-include'}
+                    />
+                    <span className={ignored ? 'line-through opacity-50' : ''}>{it.title}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
       )}
     </li>
   );
@@ -785,6 +851,32 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
       );
       if (res.ok) {
         pushMaterials(materials.map(m => (m.id === id ? { ...m, ignored } : m)));
+      }
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  // Optimistic — local state first, revert on failure. Used by per-item
+  // disclosure on Canvas-list materials. The audit-context builder filters
+  // these titles out before sending text to the AI.
+  async function setIgnoredItems(id: string, ignoredItems: string[]): Promise<void> {
+    const previous = materials;
+    pushMaterials(materials.map(m => (m.id === id ? { ...m, ignoredItems } : m)));
+    setBusy(id);
+    try {
+      const res = await fetch(
+        `/api/courses/${encodeURIComponent(course.code)}/materials/${encodeURIComponent(id)}?slug=${encodeURIComponent(slug)}`,
+        {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ ignoredItems }),
+        },
+      );
+      if (!res.ok) {
+        pushMaterials(previous);
+        const body = await res.json().catch(() => ({})) as { error?: string };
+        throw new Error(body.error ?? `Failed (${res.status})`);
       }
     } finally {
       setBusy(null);
@@ -1196,6 +1288,7 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
                         onToggleUseDigest={next => toggleUseDigest(m.id, next)}
                         onIncludeAnyway={() => includeAutoSetAside(m.id)}
                         onDowngradeFerpa={() => downgradeFerpa(m.id)}
+                        onSetIgnoredItems={next => setIgnoredItems(m.id, next)}
                         busy={busy === m.id}
                       />
                     ))}

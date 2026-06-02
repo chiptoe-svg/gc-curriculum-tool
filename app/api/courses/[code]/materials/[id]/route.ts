@@ -6,6 +6,7 @@ import {
   getMaterialById,
   deleteMaterial,
   setMaterialIgnored,
+  setMaterialIgnoredItems,
   setMaterialUseDigest,
   updateFerpaRisk,
 } from '@/lib/db/course-materials-queries';
@@ -46,7 +47,7 @@ export async function DELETE(req: Request, { params }: RouteContext): Promise<Re
 }
 
 // PATCH /api/courses/[code]/materials/[id]?slug=...
-// Body: { ignored?: boolean, useDigest?: boolean, ferpaRisk?: 'low' | 'medium' | 'high' }
+// Body: { ignored?: boolean, useDigest?: boolean, ferpaRisk?: 'low' | 'medium' | 'high', ignoredItems?: string[] }
 // At least one of the supported fields must be provided.
 // - `ignored`: toggles whether the material's extracted text feeds AI context.
 // - `useDigest`: switches between digest and raw text for AI context.
@@ -55,6 +56,10 @@ export async function DELETE(req: Request, { params }: RouteContext): Promise<Re
 //   three literal values. `autoSetAside` itself is policy-driven and not
 //   editable via this route — faculty override the policy by toggling
 //   `ignored`.
+// - `ignoredItems`: per-item ignore list for Canvas-list materials. Each
+//   entry is the verbatim title of a parsed item (the text after `## `
+//   in the concatenated blob). Replaces the existing list; pass `[]` to
+//   re-include every item.
 export async function PATCH(req: Request, { params }: RouteContext): Promise<Response> {
   const { code, id } = await params;
   const url = new URL(req.url);
@@ -74,15 +79,23 @@ export async function PATCH(req: Request, { params }: RouteContext): Promise<Res
   const hasUseDigest = typeof body.useDigest === 'boolean';
   const hasFerpaRisk =
     body.ferpaRisk === 'low' || body.ferpaRisk === 'medium' || body.ferpaRisk === 'high';
-  if (!hasIgnored && !hasUseDigest && !hasFerpaRisk) {
+  const hasIgnoredItems = Array.isArray(body.ignoredItems)
+    && (body.ignoredItems as unknown[]).every(v => typeof v === 'string');
+  if (!hasIgnored && !hasUseDigest && !hasFerpaRisk && !hasIgnoredItems) {
     return NextResponse.json(
-      { error: 'at least one of `ignored`, `useDigest`, or `ferpaRisk` must be provided' },
+      { error: 'at least one of `ignored`, `useDigest`, `ferpaRisk`, or `ignoredItems` must be provided' },
       { status: 400 },
     );
   }
   if (body.ferpaRisk !== undefined && !hasFerpaRisk) {
     return NextResponse.json(
       { error: '`ferpaRisk` must be one of "low", "medium", "high"' },
+      { status: 400 },
+    );
+  }
+  if (body.ignoredItems !== undefined && !hasIgnoredItems) {
+    return NextResponse.json(
+      { error: '`ignoredItems` must be an array of strings' },
       { status: 400 },
     );
   }
@@ -97,6 +110,10 @@ export async function PATCH(req: Request, { params }: RouteContext): Promise<Res
   }
   if (hasFerpaRisk) {
     await updateFerpaRisk({ id, risk: body.ferpaRisk as 'low' | 'medium' | 'high' });
+  }
+  if (hasIgnoredItems) {
+    const updated = await setMaterialIgnoredItems(id, body.ignoredItems as string[]);
+    if (!updated) return NextResponse.json({ error: 'no row updated' }, { status: 404 });
   }
 
   return NextResponse.json({ ok: true });

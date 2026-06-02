@@ -84,6 +84,7 @@ export default async function CapturePage({ params, searchParams }: Props) {
     ferpaRisk: (m.ferpaRisk ?? 'low') as 'low' | 'medium' | 'high',
     autoSetAside: m.autoSetAside,
     setAsideReason: m.setAsideReason ?? null,
+    ignoredItems: m.ignoredItems,
   }));
 
   return (

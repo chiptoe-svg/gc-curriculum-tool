@@ -45,6 +45,13 @@ export interface CaptureChatMaterial {
   extractedText: string | null;
   digest: string | null;
   useDigest: boolean;
+  /**
+   * Per-item ignore list for Canvas-list materials (e.g. `["Old Quiz",
+   * "Draft Assignment"]`). Used by `effectiveAuditText` to strip those
+   * items from the blob before the AI sees it. Empty for non-Canvas
+   * materials; optional for legacy call sites (defaults to []).
+   */
+  ignoredItems?: readonly string[];
 }
 
 export interface PrerequisiteCaptureProfile {

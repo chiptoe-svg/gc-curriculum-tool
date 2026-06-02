@@ -211,6 +211,14 @@ export const courseMaterials = pgTable('course_materials', {
   // (CourseCapture chat + scoring) — useful for Canvas imports that turn out
   // to be duplicate, outdated, or irrelevant.
   ignored: boolean('ignored').notNull().default(false),
+  // Per-item ignore for Canvas-list materials (Assignments, Discussions,
+  // Quizzes, Pages, Module List). Array of item titles (the `## Title` text
+  // that delimits each item in the concatenated extractedText). Audit
+  // context + v2 chunker filter these out before sending to the AI.
+  // Empty array means "all items included." Ignored at the whole-material
+  // level still wins — if `ignored` is true the whole material is excluded
+  // regardless of this field.
+  ignoredItems: jsonb('ignored_items').$type<string[]>().notNull().default([]),
 });
 
 export const courseProfiles = pgTable('course_profiles', {

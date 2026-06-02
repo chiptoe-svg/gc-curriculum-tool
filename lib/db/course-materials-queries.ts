@@ -167,6 +167,21 @@ export function shouldDigestByDefault(fileName: string): boolean {
   return true;
 }
 
+/**
+ * Replaces the per-item ignore list for a Canvas-list material. The array
+ * stores item titles (the `## Title` text that delimits items in the
+ * concatenated extractedText). Audit context + v2 chunker filter these out
+ * downstream. Returns true if the row was updated, false if it did not exist.
+ */
+export async function setMaterialIgnoredItems(id: string, ignoredItems: string[]): Promise<boolean> {
+  const rows = await db
+    .update(courseMaterials)
+    .set({ ignoredItems })
+    .where(eq(courseMaterials.id, id))
+    .returning({ id: courseMaterials.id });
+  return rows.length > 0;
+}
+
 export async function setMaterialUseDigest(id: string, useDigest: boolean): Promise<boolean> {
   const rows = await db
     .update(courseMaterials)
