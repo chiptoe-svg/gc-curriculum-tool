@@ -34,6 +34,7 @@ export default async function ScaffoldingPage({ searchParams }: Props) {
           </div>
           <div className="flex items-center gap-4">
             <Link href={`/program?slug=${encodeURIComponent(slug)}`} className="text-sm text-muted-foreground hover:text-foreground">← Coverage matrix</Link>
+            <Link href={`/ask?slug=${encodeURIComponent(slug)}`} className="text-sm text-muted-foreground hover:text-foreground">💬 Ask</Link>
             <Link href={`/?slug=${encodeURIComponent(slug)}`} className="text-sm text-muted-foreground hover:text-foreground">Hub</Link>
             <FeedbackLink />
           </div>

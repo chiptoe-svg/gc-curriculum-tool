@@ -9,7 +9,7 @@ import type {
   Recommendation,
   WhatIfResult,
 } from '@/lib/ai/explore/schema';
-import { AskTab } from './AskTab';
+import { AskTab } from '@/components/AskTab';
 
 interface SnapshotListItem {
   id: string;

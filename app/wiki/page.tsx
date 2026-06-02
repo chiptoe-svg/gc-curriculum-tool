@@ -4,6 +4,7 @@ import remarkGfm from 'remark-gfm';
 import { isValidSlug } from '@/lib/slug';
 import { readWikiPage } from '@/lib/wiki/git-ops';
 import { FeedbackLink } from '@/app/FeedbackLink';
+import { AskTab } from '@/components/AskTab';
 
 export const dynamic = 'force-dynamic';
 
@@ -54,6 +55,12 @@ export default async function WikiIndexPage({ searchParams }: Props) {
               Courses →
             </Link>
             <Link
+              href={`/ask?slug=${encodeURIComponent(slug)}`}
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
+              💬 Ask
+            </Link>
+            <Link
               href={`/?slug=${encodeURIComponent(slug)}`}
               className="text-sm text-muted-foreground hover:text-foreground"
             >
@@ -82,6 +89,13 @@ export default async function WikiIndexPage({ searchParams }: Props) {
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{raw}</ReactMarkdown>
           </article>
         )}
+
+        <div className="mt-10 border-t pt-6">
+          <p className="mb-3 text-sm text-muted-foreground">
+            Or just ask — the curriculum chat reads the same pages and cites them back as you go.
+          </p>
+          <AskTab slug={slug} />
+        </div>
       </main>
     </div>
   );

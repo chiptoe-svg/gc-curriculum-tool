@@ -51,6 +51,12 @@ export default async function CoursesPage({ searchParams }: Props) {
               Wiki →
             </Link>
             <Link
+              href={`/ask?slug=${encodeURIComponent(slug)}`}
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
+              💬 Ask
+            </Link>
+            <Link
               href={`/?slug=${encodeURIComponent(slug)}`}
               className="text-sm text-muted-foreground hover:text-foreground"
             >

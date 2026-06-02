@@ -5,7 +5,7 @@ import { getCourseByCode } from '@/lib/db/courses-queries';
 import { listSnapshotsByCourse } from '@/lib/db/capture-snapshots-queries';
 import { listTargetsByCourse, listAnalysesByCourse } from '@/lib/db/explore-queries';
 import { ExploreClient } from './ExploreClient';
-import { AskTab } from './AskTab';
+import { AskTab } from '@/components/AskTab';
 import { FeedbackLink } from '@/app/FeedbackLink';
 
 export const dynamic = 'force-dynamic';
@@ -123,6 +123,13 @@ export default async function ExplorePage({ params, searchParams }: Props) {
               className="text-sm text-muted-foreground hover:text-foreground"
             >
               ← CourseCapture
+            </Link>
+            <Link
+              href={`/ask?slug=${encodeURIComponent(slug)}`}
+              className="text-sm text-muted-foreground hover:text-foreground"
+              title="Curriculum chat — program-level questions across the wiki"
+            >
+              💬 Ask
             </Link>
             <FeedbackLink />
           </div>

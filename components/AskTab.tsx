@@ -24,9 +24,19 @@ interface AskMessage {
 }
 
 interface Props {
-  courseCode: string;
-  courseTitle: string;
+  /**
+   * When set, the panel header reads "Asking about <courseCode>" and the
+   * empty-state suggestions are course-anchored. When undefined, the panel
+   * runs in standalone mode (program-level chat).
+   */
+  courseCode?: string;
+  courseTitle?: string;
   slug: string;
+  /**
+   * Override the chat endpoint. Defaults to /api/explore/[courseCode]/chat
+   * when `courseCode` is set, /api/ask/chat otherwise.
+   */
+  endpoint?: string;
 }
 
 async function readNdjson(
@@ -59,14 +69,28 @@ async function readNdjson(
   }
 }
 
-const SUGGESTIONS = [
+const COURSE_SUGGESTIONS = [
   'What does this course set up for downstream courses?',
   'Which career targets does this course support best?',
   'What concepts are anchored in this course?',
   'How does this compare to its prerequisites?',
 ];
 
-export function AskTab({ courseCode, courseTitle, slug }: Props) {
+const STANDALONE_SUGGESTIONS = [
+  'What career paths is the program structured around?',
+  'Where in the program do students develop problem-solving?',
+  'Which courses are the load-bearing pieces of brand-strategy?',
+  'Are there gaps in Act 2 (mid-program integration)?',
+];
+
+export function AskTab({ courseCode, courseTitle, slug, endpoint }: Props) {
+  const isCourseAnchored = Boolean(courseCode);
+  const suggestions = isCourseAnchored ? COURSE_SUGGESTIONS : STANDALONE_SUGGESTIONS;
+  const resolvedEndpoint =
+    endpoint
+    ?? (courseCode
+      ? `/api/explore/${encodeURIComponent(courseCode)}/chat?slug=${encodeURIComponent(slug)}`
+      : `/api/ask/chat?slug=${encodeURIComponent(slug)}`);
   const [messages, setMessages] = useState<AskMessage[]>([]);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
@@ -96,16 +120,13 @@ export function AskTab({ courseCode, courseTitle, slug }: Props) {
     setMessages(m => [...m, { role: 'assistant', content: '', toolCalls: [] }]);
 
     try {
-      const res = await fetch(
-        `/api/explore/${encodeURIComponent(courseCode)}/chat?slug=${encodeURIComponent(slug)}`,
-        {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            messages: nextMessages.map(m => ({ role: m.role, content: m.content })),
-          }),
-        },
-      );
+      const res = await fetch(resolvedEndpoint, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          messages: nextMessages.map(m => ({ role: m.role, content: m.content })),
+        }),
+      });
       if (!res.ok) {
         const detail = await res.text();
         throw new Error(`${res.status}: ${detail.slice(0, 200)}`);
@@ -163,8 +184,17 @@ export function AskTab({ courseCode, courseTitle, slug }: Props) {
       <header className="border-b px-4 py-3">
         <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Ask · Curriculum chat</p>
         <h3 className="mt-0.5 text-sm font-semibold">
-          Asking about {courseCode}
-          <span className="ml-2 font-normal text-muted-foreground">— anchored to this course, but you can ask about the whole program.</span>
+          {isCourseAnchored ? (
+            <>
+              Asking about {courseCode}
+              <span className="ml-2 font-normal text-muted-foreground">— anchored to this course, but you can ask about the whole program.</span>
+            </>
+          ) : (
+            <>
+              Asking about the curriculum
+              <span className="ml-2 font-normal text-muted-foreground">— program-level questions across courses, competencies, career targets, and concepts.</span>
+            </>
+          )}
         </h3>
       </header>
 
@@ -174,9 +204,13 @@ export function AskTab({ courseCode, courseTitle, slug }: Props) {
       >
         {messages.length === 0 ? (
           <div className="space-y-2 text-sm text-muted-foreground">
-            <p>Ask a question about {courseTitle}, or anything else in the program. Some starting points:</p>
+            <p>
+              {isCourseAnchored
+                ? `Ask a question about ${courseTitle}, or anything else in the program. Some starting points:`
+                : 'Ask a question about the GC curriculum. Some starting points:'}
+            </p>
             <ul className="space-y-1">
-              {SUGGESTIONS.map(s => (
+              {suggestions.map(s => (
                 <li key={s}>
                   <button
                     type="button"

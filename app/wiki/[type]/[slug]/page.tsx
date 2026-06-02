@@ -85,13 +85,22 @@ export default async function WikiPage({ params, searchParams }: Props) {
             <span className="font-medium text-foreground">{title}</span>
           </nav>
 
-          {/* Back link */}
-          <Link
-            href={`/wiki?slug=${encodeURIComponent(slug)}`}
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
-            ← Wiki index
-          </Link>
+          {/* Back link + ask */}
+          <div className="flex items-center gap-4">
+            <Link
+              href={`/ask?slug=${encodeURIComponent(slug)}`}
+              className="text-sm text-muted-foreground hover:text-foreground"
+              title="Ask the curriculum chat about this — works at program scope"
+            >
+              💬 Ask
+            </Link>
+            <Link
+              href={`/wiki?slug=${encodeURIComponent(slug)}`}
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
+              ← Wiki index
+            </Link>
+          </div>
         </div>
       </header>
 

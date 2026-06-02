@@ -122,6 +122,13 @@ export default async function CapturePage({ params, searchParams }: Props) {
               Settings
             </Link>
             <Link
+              href={`/ask?slug=${encodeURIComponent(slug)}`}
+              className="text-sm text-muted-foreground hover:text-foreground"
+              title="Curriculum chat — program-level questions"
+            >
+              💬 Ask
+            </Link>
+            <Link
               href={`/explore/${encodeURIComponent(code)}?slug=${encodeURIComponent(slug)}`}
               className="text-sm text-muted-foreground hover:text-foreground"
             >
