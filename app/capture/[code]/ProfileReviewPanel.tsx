@@ -1,12 +1,13 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import type {
-  CaptureProfile,
-  CaptureCompetency,
-  CaptureProfileSourceType,
-  CaptureProfileCitationType,
-  CaptureReviewerStatus,
+import {
+  captureProfileSchema,
+  type CaptureProfile,
+  type CaptureCompetency,
+  type CaptureProfileSourceType,
+  type CaptureProfileCitationType,
+  type CaptureReviewerStatus,
 } from '@/lib/ai/capture/schema';
 import { VerificationSummary } from './VerificationSummary';
 import { LegacyBanner } from './LegacyBanner';
@@ -528,6 +529,13 @@ export function ProfileReviewPanel({
   }
 
   async function handleConfirmAndSnapshot() {
+    if (validationError) {
+      setSnapshotMessage({
+        kind: 'error',
+        text: `Can't approve — ${validationError}. Fix the offending row above, then try again.`,
+      });
+      return;
+    }
     setSnapshotting(true);
     setSnapshotMessage(null);
     setSaveError(null);
@@ -573,7 +581,29 @@ export function ProfileReviewPanel({
     setWorking({ ...working, competencies });
   }
 
+  // Client-side validation against the same Zod schema the server uses.
+  // Memoized so it runs on every working-state change without re-parsing
+  // unnecessarily. If the working profile would fail server-side
+  // validation, we surface the specific zod error here BEFORE submit
+  // instead of letting the user mash "Save"/"Approve" and get a generic
+  // 400 "invalid profile" back.
+  const validationError = useMemo(() => {
+    const result = captureProfileSchema.safeParse(working);
+    if (result.success) return null;
+    // Take the first issue — usually the most actionable one. Zod paths
+    // look like ['competencies', 3, 'evidence_k']; format as a string
+    // faculty can map back to a row in the review panel.
+    const issue = result.error.issues[0];
+    if (!issue) return null;
+    const path = issue.path.join(' › ');
+    return `${path}: ${issue.message}`;
+  }, [working]);
+
   async function persist(status: 'confirmed' | 'edited') {
+    if (validationError) {
+      setSaveError(`Can't save — ${validationError}. Fix the offending row above, then try again.`);
+      return;
+    }
     setSaving(true);
     setSaveError(null);
     try {
@@ -592,10 +622,16 @@ export function ProfileReviewPanel({
   const legacy = isLegacyProfile(working);
 
   // Approval status — drives the persistent banner + which Approve buttons render.
-  // 'captured' = last save was a snapshot AND there are no pending edits. Any edit
-  // moves us back to 'draft' until the next approval. Faculty needs to see this
-  // distinction clearly — generating an AI draft is not the same as approving it.
-  const isCaptured = lastSavedStatus === 'confirmed' && !dirty;
+  // 'captured' = the profile has been approved as a snapshot. Once captured,
+  // it stays captured even if faculty makes new edits — those edits are
+  // additive and don't un-capture the prior snapshot. We surface dirty
+  // separately as an "(unsaved edits)" hint under the banner so the captured
+  // state and the in-flight-edits state are both visible.
+  //
+  // Previously this also required !dirty, which caused the DRAFT banner to
+  // linger after a successful approve because the parent re-passes the
+  // `profile` prop asynchronously and working momentarily ≠ profile.
+  const isCaptured = lastSavedStatus === 'confirmed';
 
   function openApprovalModal() {
     setSnapshotOpen(true);
@@ -617,7 +653,12 @@ export function ProfileReviewPanel({
         <div className="rounded-md border border-teal-300 bg-teal-50 px-4 py-3 text-sm text-teal-900 shadow-sm">
           <p className="font-semibold tracking-wide">CAPTURED ✓ — approved</p>
           <p className="mt-0.5 text-xs leading-snug">
-            This is the official record. Any edit creates a new draft you&apos;ll need to approve again.
+            This is the official record.
+            {dirty && (
+              <span className="ml-1 text-amber-700">
+                You have unsaved edits — Save them to update the draft, then re-approve to capture a new snapshot.
+              </span>
+            )}
           </p>
         </div>
       ) : (
@@ -681,21 +722,27 @@ export function ProfileReviewPanel({
           <button
             type="button"
             onClick={() => persist('edited')}
-            disabled={!dirty || saving}
-            className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted disabled:opacity-50"
+            disabled={!dirty || saving || validationError !== null}
+            title={validationError ? `Fix validation issue first: ${validationError}` : undefined}
+            className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? 'Saving…' : 'Save edits'}
           </button>
-          <button
-            type="button"
-            onClick={() => setSnapshotOpen(o => !o)}
-            disabled={saving || snapshotting}
-            className="rounded-md bg-foreground px-4 py-1.5 text-sm font-medium text-background shadow-sm hover:bg-foreground/85 disabled:opacity-50"
-          >
-            {snapshotOpen ? 'Cancel' : 'Approve this profile'}
-          </button>
+          {/*
+            The third Approve button used to live here. Removed 2026-06-02:
+            the top DRAFT-banner CTA and the bottom "Done reviewing?" CTA
+            cover both entry-points (top-of-page action + scroll-to-bottom
+            action). Three buttons doing the same thing felt cluttered.
+          */}
         </div>
       </header>
+
+      {validationError && (
+        <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-2 text-xs text-amber-900">
+          <span className="font-semibold">Profile has a validation issue:</span> {validationError}
+          <span className="ml-1 text-amber-700">— Save and Approve are disabled until this is fixed. Typical cause: a K/U/D score was raised above its evidence threshold (K ≥ 2, U ≥ 1, or D ≥ 1 requires evidence text the AI didn&apos;t generate). Lower the score, regenerate from chat, or edit the cited row manually.</span>
+        </div>
+      )}
 
       {snapshotOpen && (
         <div className="rounded-md border bg-card px-4 py-4 space-y-3 shadow-sm">
