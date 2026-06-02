@@ -83,6 +83,7 @@ export default async function CapturePage({ params, searchParams }: Props) {
     autoSetAside: m.autoSetAside,
     setAsideReason: m.setAsideReason ?? null,
     ignoredItems: m.ignoredItems,
+    blobUrl: m.blobUrl,
   }));
 
   return (

@@ -80,6 +80,7 @@ export async function GET(req: Request, { params }: RouteContext): Promise<Respo
       autoSetAside: m.autoSetAside,
       setAsideReason: m.setAsideReason,
       ignoredItems: m.ignoredItems,
+      blobUrl: m.blobUrl,
     })),
     existingCaptureProfile: existingCaptureProfile
       ? {

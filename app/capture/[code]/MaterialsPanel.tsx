@@ -27,6 +27,14 @@ export interface CaptureMaterial {
   autoSetAside: boolean;
   setAsideReason: string | null;
   /**
+   * Remote URL for materials whose content lives off-server: YouTube,
+   * Google Doc/Slides/Sheet, Drive PDF, Canvas File. UI surfaces it as
+   * a small ↗ link next to the filename so faculty can verify which
+   * underlying resource a row maps to. For local uploads this is the
+   * internal blob path; the link is hidden for those.
+   */
+  blobUrl: string;
+  /**
    * Per-item ignore list for Canvas-list materials. Empty/undefined for
    * other materials. Item titles are the full `## Title` text after the
    * marker (importer adds inline tags like `[unpublished]`; those are
@@ -367,6 +375,17 @@ function MaterialRow({
           <div className="flex flex-wrap items-center gap-2">
             <IndexingStatusDot status={material.indexingStatus} indexedAt={material.indexedAt} />
             <span className={'text-sm font-medium truncate ' + (filenameStrike ? 'line-through' : '')}>{material.fileName}</span>
+            {(youtube || gdoc || gslides || gsheet || canvasFile || drivePdf) && /^https?:\/\//.test(material.blobUrl) && (
+              <a
+                href={material.blobUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shrink-0 text-[11px] text-muted-foreground hover:text-foreground"
+                title={material.blobUrl}
+              >
+                ↗
+              </a>
+            )}
             {canvas ? (
               <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-800">Canvas</span>
             ) : canvasFile ? (
@@ -735,6 +754,7 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
           ferpaRisk: FerpaRisk;
           autoSetAside: boolean;
           setAsideReason: string | null;
+          blobUrl: string;
         }>;
       };
       pushMaterials(json.materials);
@@ -1016,6 +1036,7 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
         pageCount: number | null;
         extractionStatus: string;
         extractionMethod: string | null;
+        blobUrl?: string;
       };
       const newMaterial: CaptureMaterial = {
         id: data.id,
@@ -1038,6 +1059,7 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
         ferpaRisk: 'low',
         autoSetAside: false,
         setAsideReason: null,
+        blobUrl: data.blobUrl ?? '',  // for local uploads, the URL is internal; the link won't render anyway
       };
       pushMaterials([...materials, newMaterial]);
     } catch (e) {
