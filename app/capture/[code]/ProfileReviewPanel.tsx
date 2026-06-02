@@ -24,12 +24,13 @@ export function isLegacyProfile(profile: CaptureProfile): boolean {
   // fields rather than empty arrays — the Zod schema requires arrays, but
   // direct DB writes bypassed it. Guard the spreads defensively so the
   // review panel renders instead of crashing.
-  const allFindings: Array<{ source?: unknown }> = [
+  const raw = [
     ...(profile.competencies ?? []),
     ...(profile.incoming_expectations ?? []),
     profile.verification_summary,
     profile.audit_notes,
-  ].filter((f): f is { source?: unknown } => f != null);
+  ];
+  const allFindings = raw.filter(f => f != null) as Array<{ source?: unknown }>;
   if (allFindings.length === 0) return false;
   return allFindings.every(f => f.source === undefined);
 }

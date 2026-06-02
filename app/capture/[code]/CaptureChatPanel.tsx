@@ -171,13 +171,17 @@ export function CaptureChatPanel({
           toolBanner = `Searching materials via ${e.toolName}…`;
           onMessagesChange([
             ...next,
-            { role: 'assistant', content: streamed || toolBanner },
+            { role: 'assistant', content: toolBanner },
           ]);
         } else if (e.kind === 'text-delta' && typeof e.delta === 'string') {
+          // Accumulate but don't render — structured-output streaming
+          // emits raw JSON tokens as they're built, and showing that
+          // mid-stream looks like garbage to the user. Wait for the
+          // `final` event to swap in the validated text.
           streamed += e.delta;
           onMessagesChange([
             ...next,
-            { role: 'assistant', content: streamed },
+            { role: 'assistant', content: toolBanner || 'Thinking…' },
           ]);
         } else if (e.kind === 'final' && e.response && typeof e.response === 'object') {
           finalResponse = e.response as FinalResponse;
@@ -331,13 +335,16 @@ export function CaptureChatPanel({
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => {
-              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+              // Enter sends; Shift+Enter inserts a newline (standard chat
+              // convention). IME composition events are skipped so plain
+              // Enter doesn't fire mid-character on languages that need it.
+              if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
                 e.preventDefault();
                 void handleSend();
               }
             }}
             rows={3}
-            placeholder="Type a reply, or use voice. Cmd/Ctrl+Enter to send."
+            placeholder="Type a reply, or use voice. Enter to send, Shift+Enter for a new line."
             className="w-full resize-y rounded border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
           />
           <div className="flex items-center justify-between gap-3">
