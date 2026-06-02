@@ -104,40 +104,52 @@ function CourseRow({
   slug: string;
   index: number;
 }) {
-  const href = `/capture/${encodeURIComponent(row.code)}?slug=${encodeURIComponent(slug)}`;
+  const captureHref = `/capture/${encodeURIComponent(row.code)}?slug=${encodeURIComponent(slug)}`;
+  const askHref = `/explore/${encodeURIComponent(row.code)}?slug=${encodeURIComponent(slug)}&tab=ask`;
   const delay = Math.min(index * 30, 600); // cap stagger at 600ms
 
   return (
-    <Link
-      href={href}
-      className="group flex items-center gap-4 rounded-md px-3 py-3 transition-colors hover:bg-muted/40 animate-in fade-in slide-in-from-bottom-1"
+    <div
+      className="group flex items-center gap-4 rounded-md transition-colors hover:bg-muted/40 animate-in fade-in slide-in-from-bottom-1"
       style={{ animationDelay: `${delay}ms`, animationFillMode: 'both' }}
     >
-      {/* Course code */}
-      <span className="w-28 shrink-0 font-mono-plex text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-        {row.code}
-      </span>
+      {/* Main row link — capture is the primary action */}
+      <Link href={captureHref} className="flex flex-1 items-center gap-4 px-3 py-3">
+        {/* Course code */}
+        <span className="w-28 shrink-0 font-mono-plex text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+          {row.code}
+        </span>
 
-      {/* Title */}
-      <span className="flex-1 font-display text-[1.0625rem] font-medium leading-snug tracking-tight">
-        {row.title}
-      </span>
+        {/* Title */}
+        <span className="flex-1 font-display text-[1.0625rem] font-medium leading-snug tracking-tight">
+          {row.title}
+        </span>
 
-      {/* Status pill */}
-      <span className="shrink-0">
-        <StatusPill status={row.status} />
-      </span>
+        {/* Status pill */}
+        <span className="shrink-0">
+          <StatusPill status={row.status} />
+        </span>
 
-      {/* Last captured date */}
-      <span className="w-32 shrink-0 text-right font-mono-plex text-[10px] text-muted-foreground/70">
-        {row.lastCapturedAt ? formatDate(row.lastCapturedAt) : ''}
-      </span>
+        {/* Last captured date */}
+        <span className="w-32 shrink-0 text-right font-mono-plex text-[10px] text-muted-foreground/70">
+          {row.lastCapturedAt ? formatDate(row.lastCapturedAt) : ''}
+        </span>
 
-      {/* Arrow */}
-      <span className="shrink-0 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5">
-        →
-      </span>
-    </Link>
+        {/* Arrow */}
+        <span className="shrink-0 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5">
+          →
+        </span>
+      </Link>
+
+      {/* Ask affordance — separate Link so the chat tab deep-links cleanly */}
+      <Link
+        href={askHref}
+        className="shrink-0 pr-3 text-xs text-muted-foreground/70 transition-colors hover:text-foreground"
+        title="Ask the curriculum chat about this course (anchored here, but ranges across the whole program)"
+      >
+        💬 Ask
+      </Link>
+    </div>
   );
 }
 
