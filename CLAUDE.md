@@ -53,7 +53,7 @@ Academic background, theoretical justification, and the relationship to Bloom + 
 
 ## Architecture (the one-paragraph version)
 
-Next.js 15 (App Router, Turbopack) + TypeScript strict + Drizzle on Neon Postgres + Tailwind + shadcn + Vitest. **Hybrid deployment**: faculty-facing surfaces (`/capture`, `/explore`, `/program`, `/admin`, `/settings`, home) run on a local Mac on Clemson LAN, gated by HTTP Basic Auth through middleware, using local omlx (Qwen3.6 family) for LLM calls and Docling for PDF extraction; partner-facing surfaces (`/partners/*` magic-link survey, `/preview/*` legacy M-trial) run on Vercel against OpenAI. Same codebase, same Neon DB; deployment personality is flipped by env-var presence. Setup: [`docs/superpowers/running-locally.md`](./docs/superpowers/running-locally.md). Full current-state inventory: [`docs/STATE.md`](./docs/STATE.md).
+Next.js 15 (App Router, Turbopack) + TypeScript strict + Drizzle on Neon Postgres + Tailwind + shadcn + Vitest. **Hybrid deployment**: faculty-facing surfaces (`/capture`, `/explore`, `/program`, `/admin`, `/settings`, `/wiki`, `/ask`, `/courses`, home) run on a local Mac on Clemson LAN, gated by HTTP Basic Auth through middleware, using local omlx (Qwen3.6 family) for LLM calls and Docling for PDF extraction; the partner-facing `/partners/*` magic-link survey runs on Vercel against OpenAI. Same codebase, same Neon DB; deployment personality is flipped by env-var presence. (The legacy `/preview/*` M-trial surface was removed 2026-06-02.) Setup: [`docs/superpowers/running-locally.md`](./docs/superpowers/running-locally.md). Full current-state inventory: [`docs/STATE.md`](./docs/STATE.md).
 
 ---
 

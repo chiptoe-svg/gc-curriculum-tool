@@ -1,7 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import type { UploadedMaterial } from '@/app/preview/[slug]/courses/[code]/UploadZone';
+
+/**
+ * The shape an upload (file or Canvas import) hands back to the parent so
+ * it can append a row to the materials list optimistically. Mirror of the
+ * server `course_materials` row, minus database-only fields.
+ */
+export interface UploadedMaterial {
+  id: string;
+  fileName: string;
+  blobUrl: string;
+  extractionStatus: 'pending' | 'ok' | 'low_text' | 'failed';
+  extractionMethod?: string;
+}
 
 interface Props {
   courseCode: string;

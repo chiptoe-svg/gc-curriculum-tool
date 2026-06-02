@@ -36,10 +36,10 @@ Two deployments, same codebase. Faculty side is gated by HTTP Basic Auth on the 
 | Route | Surface | Status |
 | ----- | ------- | ------ |
 | `/partners/[token]` | Magic-link survey: welcome, target match, position-submission wizard (draft/submit/delete) | live |
-| `/preview/[slug]` | M-trial prototype — Course Builder · Prereq Analyzer · Career-Target Alignment (legacy; still functional, superseded by Capture/Explore/Program for new work) | live |
-| `/preview/[slug]/courses/[code]` | Per-course 4-tab page from M-trial: Info / Materials / Profile / KUDs | live |
 
 The static GitHub-Pages preview at `chiptoe-svg.github.io/gc-curriculum-tool/` serves the docs (vision, specs, plans, deep-dives, faculty guide) plus the legacy interactive partner-interface preview. Submissions and feedback POST to a Google Apps Script Web App which appends to the shared Google Sheet's "Submissions" and "Feedback" tabs.
+
+The `/preview/*` M-trial surface (Course Builder · Prereq Analyzer · Career-Target Alignment) was removed 2026-06-02; everything it did is now covered by `/capture`, `/explore`, and `/program`. Two orphaned components (`TargetChainForm`, `TargetKUDPreview`) and their tests were swept at the same time.
 
 ### Cross-cutting
 

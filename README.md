@@ -16,7 +16,7 @@ Two questions drive everything:
 
 ## Status
 
-**Hybrid deploy shipped (Phase 2).** Same codebase, two runtime personalities. Faculty surfaces (`/capture`, `/explore`, `/program`, `/admin`, `/settings`) run on a local Mac on the Clemson LAN behind HTTP Basic Auth, using local omlx (Qwen3.6 family) for LLM calls and Docling for PDF extraction. Partner-facing surfaces (`/partners/*` magic-link survey, `/preview/*` legacy M-trial) run on Vercel against OpenAI. Same Neon Postgres backs both.
+**Hybrid deploy shipped (Phase 2).** Same codebase, two runtime personalities. Faculty surfaces (`/capture`, `/explore`, `/program`, `/admin`, `/settings`, `/wiki`, `/ask`, `/courses`) run on a local Mac on the Clemson LAN behind HTTP Basic Auth, using local omlx (Qwen3.6 family) for LLM calls and Docling for PDF extraction. The partner-facing `/partners/*` magic-link survey runs on Vercel against OpenAI. Same Neon Postgres backs both. (The legacy `/preview/*` M-trial was removed 2026-06-02.)
 
 **CourseCapture v1 live.** Audit-conversation workflow at `/capture/<course-code>` that combines catalog values, Canvas imports, uploaded materials, linked Google Docs/Sheets/Slides + Drive PDFs, and voice/chat audit, then produces an immutable Course Outcome Profile snapshot. Faculty are actively running audits.
 

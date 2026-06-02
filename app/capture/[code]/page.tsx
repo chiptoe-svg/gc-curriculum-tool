@@ -17,9 +17,7 @@ interface Props {
 }
 
 // Self-standing CourseCapture entry point at /capture/[code]?slug=...
-// Distinct from the existing /preview/[slug]/courses/[code] shell; this page
-// is a single chat surface that drives the depth-rating Course Outcome
-// Profile flow.
+// Single chat surface that drives the depth-rating Course Outcome Profile flow.
 export default async function CapturePage({ params, searchParams }: Props) {
   const { code: rawCode } = await params;
   const { slug = '' } = await searchParams;
@@ -133,12 +131,6 @@ export default async function CapturePage({ params, searchParams }: Props) {
               className="text-sm text-muted-foreground hover:text-foreground"
             >
               Explore →
-            </Link>
-            <Link
-              href={`/preview/${encodeURIComponent(slug)}/courses/${encodeURIComponent(code)}`}
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
-              ← Course Builder view
             </Link>
             <FeedbackLink />
           </div>

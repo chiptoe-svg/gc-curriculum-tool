@@ -35,7 +35,7 @@ export function FeedbackWidget() {
   }, []);
 
   if (!slug) return null;
-  if (pathname?.startsWith('/partners/') || pathname?.startsWith('/preview/')) return null;
+  if (pathname?.startsWith('/partners/')) return null;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
