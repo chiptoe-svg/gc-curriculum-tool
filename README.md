@@ -12,7 +12,7 @@ Two questions drive everything:
 >
 > 📖 **[Full vision →](https://chiptoe-svg.github.io/gc-curriculum-tool/docs/superpowers/vision/gc-curriculum-tool-vision.html)** — the two questions in full, the 3-Act program structure, the Problem-Solver pyramid, and illustrative end-state visualizations.
 >
-> 🧪 **[Open the live tool →](http://130.127.162.180:3000/)** — CourseCapture · Explore · Program, running locally on a Clemson LAN host (Basic Auth, reachable only from inside the Clemson network). For a quick orientation without LAN access, the [executive brief](https://chiptoe-svg.github.io/gc-curriculum-tool/docs/executive-brief.html) is the right starting point.
+> 🧪 **[Open the live tool →](http://130.127.162.180:3000/courses?slug=4QcseN0pvlpd35gb)** — CourseCapture · Explore · Program, running locally on a Clemson LAN host (reachable only from inside the Clemson network). For a quick orientation without LAN access, the [executive brief](https://chiptoe-svg.github.io/gc-curriculum-tool/docs/executive-brief.html) is the right starting point.
 
 ## Status
 
