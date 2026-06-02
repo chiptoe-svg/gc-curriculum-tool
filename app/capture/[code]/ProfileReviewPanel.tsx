@@ -633,10 +633,6 @@ export function ProfileReviewPanel({
   // `profile` prop asynchronously and working momentarily ≠ profile.
   const isCaptured = lastSavedStatus === 'confirmed';
 
-  function openApprovalModal() {
-    setSnapshotOpen(true);
-  }
-
   function approveFromBottom() {
     // Bottom button = "approve quickly" — opens the modal AND scrolls to it so
     // the user sees the caption/note inputs rather than dispatching blindly.
@@ -663,22 +659,10 @@ export function ProfileReviewPanel({
         </div>
       ) : (
         <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <p className="font-semibold tracking-wide">DRAFT — pending your approval</p>
-              <p className="mt-0.5 text-xs leading-snug">
-                This profile was generated from your audit. Review, edit if needed, then approve to capture it as the official record.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={openApprovalModal}
-              disabled={saving || snapshotting}
-              className="shrink-0 rounded-md bg-amber-700 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-800 disabled:opacity-50"
-            >
-              Approve this profile
-            </button>
-          </div>
+          <p className="font-semibold tracking-wide">DRAFT — pending your approval</p>
+          <p className="mt-0.5 text-xs leading-snug">
+            This profile was generated from your audit. Review, edit if needed, then scroll to the bottom to approve and capture it as the official record.
+          </p>
         </div>
       )}
 
