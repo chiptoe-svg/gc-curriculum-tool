@@ -9,6 +9,7 @@ import type {
   Recommendation,
   WhatIfResult,
 } from '@/lib/ai/explore/schema';
+import { AskTab } from './AskTab';
 
 interface SnapshotListItem {
   id: string;
@@ -50,9 +51,14 @@ interface Props {
   initialSnapshotId: string;
   initialTargets: TargetListItem[];
   initialAnalyses: AnalysisListItem[];
+  /**
+   * When set (typically via `?tab=ask` deep-link), initialize the mode toggle
+   * to this value so the user lands directly in the chat surface.
+   */
+  initialMode?: Mode;
 }
 
-type Mode = 'custom' | 'downstream';
+type Mode = 'custom' | 'downstream' | 'ask';
 type Stage = 'authoring' | 'editing-target' | 'ready-to-analyze' | 'analyzing' | 'viewing-analysis';
 
 function formatDate(iso: string): string {
@@ -85,14 +91,16 @@ function DepthMini({ depth, label }: { depth: { k: number | null; u: number | nu
 
 export function ExploreClient({
   courseCode,
+  courseTitle,
   slug,
   snapshots,
   initialSnapshotId,
   initialTargets,
   initialAnalyses,
+  initialMode,
 }: Props) {
   const [snapshotId, setSnapshotId] = useState<string>(initialSnapshotId);
-  const [mode, setMode] = useState<Mode>('custom');
+  const [mode, setMode] = useState<Mode>(initialMode ?? 'custom');
   const [targets, setTargets] = useState<TargetListItem[]>(initialTargets);
   const [analyses, setAnalyses] = useState<AnalysisListItem[]>(initialAnalyses);
 
@@ -297,9 +305,19 @@ export function ExploreClient({
               onClick={() => setMode('downstream')}
               className={'rounded-md border px-3 py-1.5 text-xs font-medium ' + (mode === 'downstream' ? 'border-primary bg-primary/10 text-foreground' : 'border-input bg-background text-muted-foreground')}
             >Downstream courses</button>
+            <button
+              type="button"
+              onClick={() => setMode('ask')}
+              className={'rounded-md border px-3 py-1.5 text-xs font-medium ' + (mode === 'ask' ? 'border-primary bg-primary/10 text-foreground' : 'border-input bg-background text-muted-foreground')}
+              title="Ask about this course or anything else in the program — answers come from the curriculum wiki"
+            >💬 Ask about this course</button>
           </div>
         </div>
       </section>
+
+      {mode === 'ask' && (
+        <AskTab courseCode={courseCode} courseTitle={courseTitle} slug={slug} />
+      )}
 
       {/* Saved targets */}
       {targets.filter(t => t.kind === mode).length > 0 && (
