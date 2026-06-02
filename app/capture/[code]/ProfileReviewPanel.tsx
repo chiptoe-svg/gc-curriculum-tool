@@ -838,20 +838,31 @@ export function ProfileReviewPanel({
           )}
         </aside>
       </div>
-      {/* ── Bottom Approve CTA — for faculty who scroll all the way through ── */}
-      {!isCaptured && (
+      {/*
+        Bottom Approve / Update CTA.
+          - Not yet captured → show as "Approve this profile" (first capture).
+          - Already captured AND faculty has edited since → show as
+            "Approve update" so faculty can roll a new snapshot.
+          - Captured AND no pending edits → hide entirely (nothing to do).
+      */}
+      {(!isCaptured || dirty) && (
         <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-5 text-center shadow-sm">
-          <p className="text-sm text-amber-900">Done reviewing?</p>
+          <p className="text-sm text-amber-900">
+            {isCaptured ? 'You have unsaved edits to a captured profile.' : 'Done reviewing?'}
+          </p>
           <p className="mt-0.5 text-xs text-amber-800/80">
-            Approving captures the current draft as the official, dated record.
+            {isCaptured
+              ? 'Approving captures these edits as a new dated snapshot. The prior snapshot stays in the historical record.'
+              : 'Approving captures the current draft as the official, dated record.'}
           </p>
           <button
             type="button"
             onClick={approveFromBottom}
-            disabled={saving || snapshotting}
-            className="mt-3 rounded-md bg-amber-700 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-800 disabled:opacity-50"
+            disabled={saving || snapshotting || validationError !== null}
+            title={validationError ? `Fix validation issue first: ${validationError}` : undefined}
+            className="mt-3 rounded-md bg-amber-700 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-800 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Approve this profile
+            {isCaptured ? 'Approve update' : 'Approve this profile'}
           </button>
         </div>
       )}
