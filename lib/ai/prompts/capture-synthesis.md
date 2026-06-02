@@ -188,6 +188,52 @@ surface it explicitly in `notes`.
 
 # Scoring discipline
 
+## Default policy — score low; faculty correct upward
+
+This audit is read by curriculum designers, accreditors, and program reviewers who treat the published scores as defensible claims about the program. Under-scoring is recovered by faculty in the review panel — they raise the slider when the score misses their reality, and the audit trail captures the change. **Over-scoring is invisible until it shows up in an external review** as an inflated claim the curriculum can't substantiate.
+
+Therefore:
+
+- When evidence could plausibly support two adjacent depth values, **pick the lower one.**
+- "Students did the activity" is **D=2** evidence (performed with a reference). It is NOT D=4 evidence (adapted to novel conditions).
+- Each step above D=2 requires explicit evidence of the anchor's distinguishing property:
+  - **D=3** — independence in familiar conditions. Evidence: a student-produced artifact where the student made the structural decisions (not template fill-in), in conditions the student has seen before.
+  - **D=4** — adaptation to novel conditions. Evidence: the student applied the skill to a problem they had not been shown the answer to, OR transferred it across context.
+  - **D=5** — guides others, or performs at the edge of the practice. Evidence: peer teaching, defense before practitioners with substantive critique, portfolio piece evaluated against professional benchmark.
+
+If you cannot quote evidence that proves the higher anchor's distinguishing property, **you do not have evidence for that score**. Drop to the lower anchor.
+
+## Worked calibration examples (follow these exactly)
+
+These four examples calibrate the D=2 → D=4 boundary. When your evidence resembles example N, score at most the depth shown for example N.
+
+**Example A — "Students completed a survey of N participants."**
+→ **D=2.** They performed the activity using a reference (the survey instrument). No evidence of design decisions; not D=3.
+
+**Example B — "Students designed surveys for their specific project context and analyzed the results."**
+→ **D=3.** Independent decisions in familiar conditions (survey design in a class-provided framework).
+
+**Example C — "Students adapted their methodology when initial data was ambiguous; revised instrument and re-ran."**
+→ **D=4.** Adaptation to novel conditions is explicit.
+
+**Example D — "Students presented methodology to industry partners, defended choices, revised based on critique."**
+→ **D=5.** External validation + iteration.
+
+**Collaboration-specific calibration** (this is where over-scoring is most common):
+
+- A peer-contribution % field or group deliverable is **D=2** evidence — students performed group work using a structure provided to them. Not D=3.
+- **D=3 collaboration** requires evidence of coordination decisions students made themselves (who-does-what plans, role assignment, scheduling).
+- **D=4 collaboration** requires evidence of integration work (resolving conflicts, restructuring after a teammate change, etc.).
+- **D=5 collaboration** requires evidence of leadership through a stuck moment (peer or instructor noting it).
+
+**Presentation / communication calibration:**
+
+- "Presented their findings" or "summarizing what they had done" — **D=3** (independent performance in familiar conditions).
+- Adapting register for a non-academic audience, defending choices under critique, or producing publication-grade deliverables — **D=4**.
+- Only **D=5** if peers / external practitioners explicitly evaluated and endorsed.
+
+## Strict anchor application
+
 Apply the depth-scale anchors strictly. Aspirational syllabus language ("students will understand X") is not by itself sufficient evidence for any score above U1 or D0 — you need a graded assignment, rubric criterion, or explicit instructor statement of student attainment.
 
 **Common failure modes to avoid** (named per the three validity threats above):
@@ -204,6 +250,18 @@ Conversely, do not under-score:
 - If the transcript captures the instructor's explanation of why a foundational is or isn't developed, treat that as authoritative evidence for the score.
 
 **Inaccessible content (videos, Canvas Pages, file attachments, quizzes, discussions, external links):** stay conservative. The materials show references to these but not their contents, so they are not evidence of attainment on their own. Do not raise scores above what the *readable* evidence supports. If a reference is significant enough that ignoring it materially understates the score, name the uncertainty explicitly in the `rationale` ("Score may be one step lower than reality because the Module 3 dot-gain video was not accessible — the instructor's reply about quizzing on it would shift this to K=3 if confirmed").
+
+## Dimensional consistency check (apply BEFORE finalizing each technical competency)
+
+The framework treats K/U/D dissociations as load-bearing diagnostic signal. They must not be smoothed over.
+
+For each technical competency, after you've scored K, U, and D, check:
+
+- If `d_depth >= 3` while `u_depth <= 1` — the student is producing without articulating rationale. Either **downgrade D** to D=2 (most common — the "doing" was recipe-following without engagement), OR keep D and **name the pattern explicitly in the rationale**: `"D-high/U-low: craft without articulation — students produced the artifact via instructor-provided template without engaging the underlying rationale."`
+- If `d_depth >= 4` while `k_depth <= 2` — the student is performing at expert level without expert vocabulary. Almost always a typing error: re-examine the evidence, downgrade D.
+- If `k_depth >= 3` while `u_depth <= 1` — vocabulary without rationale. Acceptable but must be named in the rationale.
+
+**A D=4 score with U≤1 or K≤2 and no rationale entry naming the dissociation is treated by downstream consumers as undefended inflation.**
 
 # Audit notes
 
