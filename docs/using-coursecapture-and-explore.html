@@ -242,6 +242,8 @@
     <div class="step-num">2</div>
     <div class="step-body">
       <strong>Connect &amp; Import from Canvas.</strong> The first time, you'll paste a Canvas access token and the course's Canvas course ID; that pair is stored per-course. Subsequent visits just need an <strong>Import from Canvas</strong> click. The import pulls the syllabus body, every assignment with its rubric and point value, every page, every discussion topic, every quiz (both Classic and New Quizzes APIs), and file metadata. Each item appears as a row in the Materials list with its kind and source labeled.
+      <br><br>
+      The dialog has a <strong>Skip unpublished items</strong> checkbox that's <em>on by default</em>. Most Canvas courses carry a graveyard of half-built draft assignments, pages, and quizzes that the auditor would otherwise read as real coverage. With the box checked, those drafts are filtered server-side; the import summary tells you how many were skipped. Uncheck if you specifically want the drafts included — they'll arrive tagged <code>[unpublished]</code> in the imported text so the auditor knows what it's looking at.
     </div>
   </div>
 
@@ -268,7 +270,7 @@
 
   <div class="callout warn">
     <div class="callout-title">Heads up — content the system can't read</div>
-    <p>The Canvas import pulls the syllabus body, assignment descriptions and rubrics, module item titles, Canvas Pages content, Canvas file attachments (PDF/DOCX/PPTX/XLSX/CSV/HTML/image are extracted server-side; legacy Office formats are auto-converted first), discussion prompts and graded-status flags, and quiz content from both Classic and New Quizzes (questions, answer choices, points, correct-answer marks). It also pulls YouTube captions when available for linked videos. It does <em>not</em> read: video content on platforms other than YouTube (Vimeo, Panopto, Canvas Studio, Loom, Kaltura), discussion replies, or external LTI tool content. The auditor will notice references to these in the materials it <em>can</em> read and surface each one with its title or URL — but the scoring will stay conservative until you tell it what's in the inaccessible content. The full source-coverage table is in the <a href="./background.html#course-impl">Background document</a>.</p>
+    <p>The Canvas import pulls the syllabus body, assignment descriptions and rubrics, module item titles, Canvas Pages content, Canvas file attachments (PDF/DOCX/PPTX/XLSX/CSV/HTML/image are extracted server-side; legacy Office formats are auto-converted first), discussion prompts and graded-status flags, and quiz content from both Classic and New Quizzes (questions, answer choices, points, correct-answer marks). It also pulls YouTube captions when available for linked videos. By default, unpublished assignments, pages, discussions, quizzes, modules, and module items are skipped (see step 2 above); if you choose to include them, they arrive tagged <code>[unpublished]</code> so the auditor scores them accordingly. The import does <em>not</em> read: video content on platforms other than YouTube (Vimeo, Panopto, Canvas Studio, Loom, Kaltura), discussion replies, or external LTI tool content. The auditor will notice references to these in the materials it <em>can</em> read and surface each one with its title or URL — but the scoring will stay conservative until you tell it what's in the inaccessible content. The full source-coverage table is in the <a href="./background.html#course-impl">Background document</a>.</p>
   </div>
 
   <div class="callout note">
@@ -311,6 +313,7 @@
   <ol>
     <li><strong>Compress existing materials.</strong> One click. Eligible long reference rows get a summary; the audit prompt switches to using those summaries automatically. This is reversible per-row via the <strong>summarize</strong> checkbox if you ever need verbatim text on a specific material.</li>
     <li><strong>Ignore unused uploads.</strong> The <strong>ignore</strong> checkbox on a row keeps the material in the database but excludes it from the audit prompt entirely. Use this for materials that don't actually belong to this course (e.g., a stray file from another section that landed here by mistake).</li>
+    <li><strong>Ignore specific Canvas items.</strong> Canvas-list materials (Assignments, Discussions, Quizzes, Pages, Module List) carry a disclosure beneath the row showing every item the auditor will see. Click the <strong>▸ N items — click to manage</strong> link to expand the checklist; uncheck any item to drop it from the audit while leaving the rest of the material active. Useful when one specific assignment is irrelevant or misleading but the other ten on the list are fine. Re-check to bring it back.</li>
   </ol>
   <p>Deleting a material is fine too, but irreversible — it removes the row and the blob storage. Ignore is the safer first move.</p>
 
