@@ -15,6 +15,7 @@ import {
 import { fetchGoogleFileText } from '@/lib/google-docs/fetch-doc';
 import { extractYouTubeReferences } from '@/lib/youtube/extract-urls';
 import { fetchYouTubeTranscript } from '@/lib/youtube/fetch-transcript';
+import { transcribeYouTubeAudio } from '@/lib/youtube/transcribe-audio';
 import { extractDriveFileReferences } from '@/lib/google-drive/extract-urls';
 import { fetchDrivePdf } from '@/lib/google-drive/fetch-pdf';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
@@ -158,21 +159,44 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   const youtubeResults: Array<{
     videoId: string;
     status: 'ok' | 'inaccessible';
+    source?: 'captions' | 'whisper';
     fileName?: string;
     errorReason?: string;
   }> = [];
 
   for (const [videoId, canonicalUrl] of youtubeToFetch) {
-    const fetched = await fetchYouTubeTranscript(videoId);
-    if (fetched.status === 'ok') {
-      const titleGuess = fetched.text.slice(0, 80).trim() || videoId;
-      const fileName = `YouTube: ${titleGuess.slice(0, 60)}${titleGuess.length > 60 ? '…' : ''}`;
+    // First try captions (free, instant, English when available).
+    let text: string | null = null;
+    let source: 'captions' | 'whisper' = 'captions';
+    let lastError: string | undefined;
+
+    const captionsResult = await fetchYouTubeTranscript(videoId);
+    if (captionsResult.status === 'ok') {
+      text = captionsResult.text;
+    } else {
+      lastError = captionsResult.errorReason;
+      // No captions (or only foreign-language captions that
+      // youtube-transcript can't reach in English) → Whisper fallback.
+      // Local whisper.cpp on the Mac, free + on-device.
+      const whisper = await transcribeYouTubeAudio(videoId);
+      if (whisper.status === 'ok' && whisper.text) {
+        text = whisper.text;
+        source = 'whisper';
+      } else {
+        lastError = whisper.errorReason ?? lastError;
+      }
+    }
+
+    if (text !== null) {
+      const titleGuess = text.slice(0, 80).trim() || videoId;
+      const suffix = source === 'whisper' ? ' (Whisper)' : '';
+      const fileName = `YouTube: ${titleGuess.slice(0, 60)}${titleGuess.length > 60 ? '…' : ''}${suffix}`;
       const row = await insertMaterial({
         courseCode,
         fileName,
         blobUrl: canonicalUrl,
         mimeType: 'text/plain',
-        sizeBytes: Buffer.byteLength(fetched.text, 'utf8'),
+        sizeBytes: Buffer.byteLength(text, 'utf8'),
         ipHash,
       });
       await finalizeExtraction({
@@ -181,12 +205,12 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         fileName,
         extractionStatus: 'ok',
         extractionMethod: 'text',
-        extractedText: fetched.text,
+        extractedText: text,
         vectorStore,
       });
-      youtubeResults.push({ videoId, status: 'ok', fileName });
+      youtubeResults.push({ videoId, status: 'ok', source, fileName });
     } else {
-      const fileName = `YouTube: ${videoId} (no captions)`;
+      const fileName = `YouTube: ${videoId} (inaccessible)`;
       const row = await insertMaterial({
         courseCode,
         fileName,
@@ -203,7 +227,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         extractionMethod: 'text',
         vectorStore,
       });
-      youtubeResults.push({ videoId, status: 'inaccessible', fileName, errorReason: fetched.errorReason });
+      youtubeResults.push({ videoId, status: 'inaccessible', fileName, errorReason: lastError });
     }
   }
 
