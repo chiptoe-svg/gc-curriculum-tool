@@ -5,6 +5,7 @@ import { getCourseByCode } from '@/lib/db/courses-queries';
 import { listSnapshotsByCourse } from '@/lib/db/capture-snapshots-queries';
 import { listTargetsByCourse, listAnalysesByCourse } from '@/lib/db/explore-queries';
 import { ExploreClient } from './ExploreClient';
+import { FeedbackLink } from '@/app/FeedbackLink';
 
 export const dynamic = 'force-dynamic';
 
@@ -90,6 +91,7 @@ export default async function ExplorePage({ params, searchParams }: Props) {
             >
               ← CourseCapture
             </Link>
+            <FeedbackLink />
           </div>
         </div>
       </header>

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { isValidSlug } from '@/lib/slug';
 import { getMatrixData } from '@/lib/db/program-coverage-queries';
 import { ProgramCoverageClient } from './ProgramCoverageClient';
+import { FeedbackLink } from '@/app/FeedbackLink';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,6 +38,7 @@ export default async function ProgramPage({ searchParams }: Props) {
             <Link href={`/wiki?slug=${encodeURIComponent(slug)}`} className="text-sm text-muted-foreground hover:text-foreground">Wiki →</Link>
             <Link href={`/settings?slug=${encodeURIComponent(slug)}`} className="text-sm text-muted-foreground hover:text-foreground">Settings</Link>
             <Link href={`/?slug=${encodeURIComponent(slug)}`} className="text-sm text-muted-foreground hover:text-foreground">← Hub</Link>
+            <FeedbackLink />
           </div>
         </div>
       </header>

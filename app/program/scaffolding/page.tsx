@@ -4,6 +4,7 @@ import { db } from '@/lib/db/client';
 import { careerTargets } from '@/lib/db/schema';
 import { asc } from 'drizzle-orm';
 import { ScaffoldingStripClient } from './ScaffoldingStripClient';
+import { FeedbackLink } from '@/app/FeedbackLink';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,6 +35,7 @@ export default async function ScaffoldingPage({ searchParams }: Props) {
           <div className="flex items-center gap-4">
             <Link href={`/program?slug=${encodeURIComponent(slug)}`} className="text-sm text-muted-foreground hover:text-foreground">← Coverage matrix</Link>
             <Link href={`/?slug=${encodeURIComponent(slug)}`} className="text-sm text-muted-foreground hover:text-foreground">Hub</Link>
+            <FeedbackLink />
           </div>
         </div>
       </header>

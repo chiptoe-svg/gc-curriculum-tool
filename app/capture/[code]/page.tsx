@@ -7,6 +7,7 @@ import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
 import { getCaptureProfileByCourse } from '@/lib/db/course-capture-profiles-queries';
 import { getCaptureConversation } from '@/lib/db/capture-conversations-queries';
 import { CaptureClient } from './CaptureClient';
+import { FeedbackLink } from '@/app/FeedbackLink';
 
 export const dynamic = 'force-dynamic';
 
@@ -131,6 +132,7 @@ export default async function CapturePage({ params, searchParams }: Props) {
             >
               ← Course Builder view
             </Link>
+            <FeedbackLink />
           </div>
         </div>
       </header>

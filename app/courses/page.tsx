@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { isValidSlug } from '@/lib/slug';
 import { listCoursesWithStatus } from '@/lib/db/capture-status-queries';
 import { CoursesIndex } from './CoursesIndex';
+import { FeedbackLink } from '@/app/FeedbackLink';
 
 export const dynamic = 'force-dynamic';
 
@@ -55,6 +56,7 @@ export default async function CoursesPage({ searchParams }: Props) {
             >
               ← Hub
             </Link>
+            <FeedbackLink />
           </div>
         </div>
       </header>

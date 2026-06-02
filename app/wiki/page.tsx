@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { isValidSlug } from '@/lib/slug';
 import { readWikiPage } from '@/lib/wiki/git-ops';
+import { FeedbackLink } from '@/app/FeedbackLink';
 
 export const dynamic = 'force-dynamic';
 
@@ -58,6 +59,7 @@ export default async function WikiIndexPage({ searchParams }: Props) {
             >
               ← Hub
             </Link>
+            <FeedbackLink />
           </div>
         </div>
       </header>

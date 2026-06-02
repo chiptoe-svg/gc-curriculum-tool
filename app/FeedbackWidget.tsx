@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
+import { OPEN_FEEDBACK_EVENT } from './FeedbackLink';
 
 const NAME_KEY = 'gc-feedback-name';
 
@@ -22,6 +23,15 @@ export function FeedbackWidget() {
       const saved = window.localStorage.getItem(NAME_KEY);
       if (saved) setName(saved);
     }
+  }, []);
+
+  // Listen for the trigger event dispatched by <FeedbackLink /> in route
+  // headers. Decoupling the trigger from the modal lets headers render a
+  // plain text link without threading state down through every layout.
+  useEffect(() => {
+    const handler = () => setOpen(true);
+    window.addEventListener(OPEN_FEEDBACK_EVENT, handler);
+    return () => window.removeEventListener(OPEN_FEEDBACK_EVENT, handler);
   }, []);
 
   if (!slug) return null;
@@ -74,15 +84,6 @@ export function FeedbackWidget() {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        title="Send feedback"
-        className="fixed bottom-4 right-4 z-40 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-lg hover:bg-primary/90"
-      >
-        💬 Feedback
-      </button>
-
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={reset}>
           <div
