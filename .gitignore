@@ -54,3 +54,6 @@ drizzle/meta/
 # Compiled bun --compile binaries (large, regenerated from .ts source)
 /scripts/nanoclaw-bridge/echo-shim
 /scripts/nanoclaw-bridge/coursecapture-mcp-shim
+
+# Self-signed certs for LAN HTTPS (mkcert; regenerate with mkcert in scripts/setup-lan-https.sh)
+/certs/

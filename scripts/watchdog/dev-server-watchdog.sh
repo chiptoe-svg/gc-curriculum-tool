@@ -22,7 +22,7 @@ REPO_DIR="/Users/admin/projects/curriculum_developer"
 LOG_DIR="$HOME/.local/state/gc-curriculum-tool"
 LOG_FILE="$LOG_DIR/watchdog.log"
 HEARTBEAT_DIR="$LOG_DIR/watchdog-heartbeats"
-HEALTH_URL="http://127.0.0.1:3000/"
+HEALTH_URL="https://127.0.0.1:3000/"
 TIMEOUT_SECS=10
 PROBE_SLEEP=12     # after kickstart, time for Next to start serving
 REBUILD_SLEEP=25   # after .next clear + kickstart, longer compile cycle
@@ -31,8 +31,9 @@ mkdir -p "$LOG_DIR" "$HEARTBEAT_DIR"
 TS() { date -u +%Y-%m-%dT%H:%M:%SZ; }
 
 # Returns the HTTP status code (or "000" on transport error).
+# -k accepts the self-signed cert (mkcert root isn't installed system-wide).
 probe() {
-  curl -sS -o /dev/null -m "$TIMEOUT_SECS" -w '%{http_code}' "$HEALTH_URL" 2>/dev/null || echo "000"
+  curl -sS -k -o /dev/null -m "$TIMEOUT_SECS" -w '%{http_code}' "$HEALTH_URL" 2>/dev/null || echo "000"
 }
 
 # Unhealthy: 5xx code OR "000" (curl error / timeout).
