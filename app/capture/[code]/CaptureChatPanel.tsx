@@ -39,11 +39,27 @@ async function readNdjson(
   }
 }
 
-function ReadinessStrip({ readiness }: { readiness: CaptureReadiness }) {
+function ReadinessStrip({
+  readiness,
+  peakScore,
+  coveredEver,
+}: {
+  readiness: CaptureReadiness;
+  /** Highest score the agent has reported across this session. */
+  peakScore: number;
+  /** Union of covered topics across every turn in this session. */
+  coveredEver: string[];
+}) {
   const tone =
     readiness.score >= 75 ? 'bg-green-500'
       : readiness.score >= 50 ? 'bg-amber-500'
       : 'bg-slate-400';
+  // A meaningful regression — the agent dropped its estimate by ≥15 points
+  // from a previous high. Almost always means the catalog changed (faculty
+  // edited objectives / skills) and the agent is honestly re-probing the
+  // new scope. Surface the prior peak so faculty don't read this as state
+  // loss or a bug.
+  const regressed = peakScore - readiness.score >= 15;
   return (
     <div className="border-t bg-muted/20 px-4 py-2 space-y-1.5">
       <div className="flex items-center gap-2">
@@ -58,6 +74,14 @@ function ReadinessStrip({ readiness }: { readiness: CaptureReadiness }) {
         </div>
         <span className="text-[11px] font-mono tabular-nums text-muted-foreground">
           {readiness.score}%
+          {regressed && (
+            <span
+              className="ml-1 text-amber-700"
+              title={`Earlier in this session the agent reported ${peakScore}%. The drop usually means the catalog (objectives, skills) changed and the agent is re-probing — not a state-loss bug. Coverage from earlier turns is preserved in the cumulative list below.`}
+            >
+              (↓ from {peakScore}% — re-probing)
+            </span>
+          )}
         </span>
         {readiness.good_enough_to_generate && (
           <span
@@ -68,10 +92,10 @@ function ReadinessStrip({ readiness }: { readiness: CaptureReadiness }) {
           </span>
         )}
       </div>
-      {readiness.covered.length > 0 && (
+      {coveredEver.length > 0 && (
         <p className="text-[11px] leading-snug text-muted-foreground">
-          <span className="font-medium text-foreground">Covered:</span>{' '}
-          {readiness.covered.join(' · ')}
+          <span className="font-medium text-foreground">Covered (this session):</span>{' '}
+          {coveredEver.join(' · ')}
         </p>
       )}
       {readiness.remaining.length > 0 && (
@@ -113,6 +137,11 @@ export function CaptureChatPanel({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [readiness, setReadiness] = useState<CaptureReadiness | null>(initialReadiness ?? null);
+  // Session-cumulative counterparts to readiness. peakScore tracks the
+  // highest score the agent reported; coveredEver is the union of all
+  // covered-topic lists. Reset when the conversation resets.
+  const [peakScore, setPeakScore] = useState<number>(initialReadiness?.score ?? 0);
+  const [coveredEver, setCoveredEver] = useState<string[]>(initialReadiness?.covered ?? []);
   // Set on the first v2 turn that responds with a sessionId; threaded back on
   // every subsequent request so the audit-agent loop can stitch the
   // conversation together server-side. v1 responses leave this null.
@@ -217,7 +246,14 @@ export function CaptureChatPanel({
       };
       const newMessages = [...next, assistantMessage];
       onMessagesChange(newMessages);
-      if (fr.readiness) setReadiness(fr.readiness);
+      if (fr.readiness) {
+        setReadiness(fr.readiness);
+        // Track session-cumulative progress so a per-turn score drop
+        // (typical after faculty edits the catalog mid-audit) doesn't
+        // erase the coverage history the user can already see.
+        setPeakScore(prev => Math.max(prev, fr.readiness!.score));
+        setCoveredEver(prev => Array.from(new Set([...prev, ...fr.readiness!.covered])));
+      }
       onConversationChange?.(newMessages, fr.readiness ?? readiness ?? null);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Chat failed');
@@ -327,7 +363,13 @@ export function CaptureChatPanel({
         )}
       </div>
 
-      {readiness && <ReadinessStrip readiness={readiness} />}
+      {readiness && (
+        <ReadinessStrip
+          readiness={readiness}
+          peakScore={peakScore}
+          coveredEver={coveredEver}
+        />
+      )}
 
       {messages.length > 0 && (
         <div className="border-t px-4 py-3 space-y-2">
