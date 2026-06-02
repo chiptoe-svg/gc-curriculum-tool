@@ -118,7 +118,9 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
   if (data.assignments.length > 0) {
     const parts = data.assignments.map(a => {
       const desc = htmlToText(a.descriptionHtml);
-      const header = `## ${a.name}${a.pointsPossible != null ? ` (${a.pointsPossible} pts)` : ''}`;
+      const pts = a.pointsPossible != null ? ` (${a.pointsPossible} pts)` : '';
+      const status = a.published ? '' : ' [unpublished]';
+      const header = `## ${a.name}${pts}${status}`;
       // Rubric criteria are what faculty actually grade against. Including
       // them inline gives the auditor the "what we grade for" picture that
       // the assignment description alone often doesn't carry.
@@ -154,9 +156,11 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
         // Surface the URL for ExternalUrl items so downstream consumers
         // (audit, Google Docs scan) can follow the link.
         const linkSuffix = i.externalUrl ? ` → ${i.externalUrl}` : '';
-        return `  - ${i.title} (${i.type})${linkSuffix}`;
+        const itemStatus = i.published ? '' : ' [unpublished]';
+        return `  - ${i.title} (${i.type})${itemStatus}${linkSuffix}`;
       }).join('\n');
-      return `## ${m.name}\n${items}`;
+      const modStatus = m.published ? '' : ' [unpublished]';
+      return `## ${m.name}${modStatus}\n${items}`;
     });
     const modulesText = parts.join('\n\n');
     if (modulesText.trim()) toInsert.push({ fileName: 'Canvas: Module List', text: modulesText, mimeType: 'text/html' });
@@ -200,7 +204,9 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
     const parts = data.quizzes.map(q => {
       const pts = q.pointsPossible != null ? ` (${q.pointsPossible} pts)` : '';
       const desc = htmlToText(q.descriptionHtml);
-      const lines: string[] = [`## ${q.title}${pts} [${q.source} quiz]`];
+      const tags = [`${q.source} quiz`, q.published ? null : 'unpublished']
+        .filter(Boolean).join(', ');
+      const lines: string[] = [`## ${q.title}${pts} [${tags}]`];
       if (desc.trim()) lines.push(desc);
       if (q.questions.length > 0) {
         lines.push('', 'Questions:');

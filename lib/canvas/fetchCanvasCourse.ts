@@ -26,6 +26,7 @@ export interface CanvasAssignment {
   rubric: CanvasRubricCriterion[];
   /** Title of the rubric (separate from the assignment name) when set. */
   rubricTitle: string | null;
+  published: boolean;
 }
 
 export interface CanvasModuleItem {
@@ -35,12 +36,14 @@ export interface CanvasModuleItem {
   externalUrl: string | null;
   /** Canvas's own internal URL for the item (page, file, etc.). Useful for File/Page items. */
   htmlUrl: string | null;
+  published: boolean;
 }
 
 export interface CanvasModule {
   id: string;
   name: string;
   items: CanvasModuleItem[];
+  published: boolean;
 }
 
 export interface CanvasPage {
@@ -78,6 +81,7 @@ export interface CanvasQuiz {
   questions: CanvasQuizQuestion[];
   /** 'classic' for the legacy Quizzes API, 'new' for the New Quizzes API. */
   source: 'classic' | 'new';
+  published: boolean;
 }
 
 export interface CanvasFileRef {
@@ -176,6 +180,7 @@ async function fetchCanvasQuizzes(canvasBaseUrl: string, courseId: string, token
     descriptionHtml: String(q['description'] ?? ''),
     pointsPossible: typeof q['points_possible'] === 'number' ? q['points_possible'] : null,
     questionCount: typeof q['question_count'] === 'number' ? q['question_count'] : null,
+    published: typeof q['published'] === 'boolean' ? (q['published'] as boolean) : true,
   }));
   // Fetch each quiz's questions in parallel.
   const withQuestions = await Promise.all(
@@ -264,6 +269,8 @@ async function fetchNewQuizzes(canvasBaseUrl: string, courseId: string, token: s
     descriptionHtml: String(q['instructions'] ?? ''),
     pointsPossible: typeof q['points_possible'] === 'number' ? q['points_possible'] : null,
     questionCount: null,  // not exposed on the list endpoint; will reflect actual count after items fetch
+    // New Quizzes uses 'published' identically to classic; default to true if absent.
+    published: typeof q['published'] === 'boolean' ? (q['published'] as boolean) : true,
   }));
   const withQuestions = await Promise.all(
     quizMeta.map(async meta => {
@@ -369,17 +376,20 @@ export async function fetchCanvasCourse(canvasBaseUrl: string, courseId: string,
       pointsPossible: typeof a['points_possible'] === 'number' ? a['points_possible'] : null,
       rubric,
       rubricTitle,
+      published: typeof a['published'] === 'boolean' ? (a['published'] as boolean) : true,
     };
   });
 
   const modules: CanvasModule[] = ((Array.isArray(modulesRaw) ? modulesRaw : []) as Record<string, unknown>[]).map((m) => ({
     id: String(m['id'] ?? ''),
     name: String(m['name'] ?? ''),
+    published: typeof m['published'] === 'boolean' ? (m['published'] as boolean) : true,
     items: ((Array.isArray(m['items']) ? m['items'] : []) as Record<string, unknown>[]).map((i) => ({
       title: String(i['title'] ?? ''),
       type: String(i['type'] ?? ''),
       externalUrl: typeof i['external_url'] === 'string' ? (i['external_url'] as string) : null,
       htmlUrl: typeof i['html_url'] === 'string' ? (i['html_url'] as string) : null,
+      published: typeof i['published'] === 'boolean' ? (i['published'] as boolean) : true,
     })),
   }));
 
