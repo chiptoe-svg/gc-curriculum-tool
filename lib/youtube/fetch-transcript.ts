@@ -15,6 +15,15 @@ export interface FetchedYouTubeTranscript {
   text: string;
   status: 'ok' | 'inaccessible';
   errorReason?: string;
+  /**
+   * Captions language detected from the returned text. 'en' when the
+   * caption track looks English (≥85% ASCII chars in the first 500 chars),
+   * 'other' when it doesn't (e.g. Arabic / CJK / Cyrillic — the library
+   * silently returns whatever caption track exists, not necessarily
+   * English). Callers should treat 'other' as "no usable captions" and
+   * fall through to the Whisper audio path.
+   */
+  detectedLang?: 'en' | 'other';
 }
 
 interface RawTranscriptEntry {
@@ -59,5 +68,18 @@ export async function fetchYouTubeTranscript(videoId: string): Promise<FetchedYo
     return { videoId, text: '', status: 'inaccessible', errorReason: 'empty transcript' };
   }
 
-  return { videoId, text: cleaned, status: 'ok' };
+  // Cheap English-vs-other detector: ASCII-ratio over the first 500 chars.
+  // English caption text is overwhelmingly ASCII (letters, digits, space,
+  // punctuation). Arabic / CJK / Cyrillic / Devanagari etc. is mostly
+  // non-ASCII. 85% threshold is generous — handles English text with the
+  // occasional smart-quote or emoji.
+  const sample = cleaned.slice(0, 500);
+  let asciiCount = 0;
+  for (let i = 0; i < sample.length; i++) {
+    if (sample.charCodeAt(i) < 128) asciiCount++;
+  }
+  const asciiRatio = sample.length > 0 ? asciiCount / sample.length : 1;
+  const detectedLang: 'en' | 'other' = asciiRatio >= 0.85 ? 'en' : 'other';
+
+  return { videoId, text: cleaned, status: 'ok', detectedLang };
 }

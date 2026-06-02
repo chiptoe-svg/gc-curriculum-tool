@@ -171,13 +171,19 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     let lastError: string | undefined;
 
     const captionsResult = await fetchYouTubeTranscript(videoId);
-    if (captionsResult.status === 'ok') {
+    const captionsUsable =
+      captionsResult.status === 'ok' && captionsResult.detectedLang === 'en';
+
+    if (captionsUsable) {
       text = captionsResult.text;
     } else {
-      lastError = captionsResult.errorReason;
-      // No captions (or only foreign-language captions that
-      // youtube-transcript can't reach in English) → Whisper fallback.
-      // Local whisper.cpp on the Mac, free + on-device.
+      // Captions missing OR only available in a non-English language
+      // (youtube-transcript silently returns Arabic/CJK/etc. as if it
+      // were a valid result). Either way, fall through to Whisper for
+      // English audio transcription via the local whisper.cpp.
+      lastError = captionsResult.status === 'ok'
+        ? `captions are non-English (detectedLang=${captionsResult.detectedLang}); audio transcription instead`
+        : captionsResult.errorReason;
       const whisper = await transcribeYouTubeAudio(videoId);
       if (whisper.status === 'ok' && whisper.text) {
         text = whisper.text;
