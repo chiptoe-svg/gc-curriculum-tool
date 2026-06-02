@@ -326,16 +326,45 @@ interface MergedSkill {
  */
 function RevisedObjectivesDraft({ items }: { items: string[] }) {
   const [copiedIdx, setCopiedIdx] = useState<number | 'all' | null>(null);
+  const [copyError, setCopyError] = useState<string | null>(null);
 
   async function copy(text: string, marker: number | 'all') {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopiedIdx(marker);
-      setTimeout(() => setCopiedIdx(prev => (prev === marker ? null : prev)), 1400);
-    } catch {
-      // Older browsers / non-secure contexts may refuse clipboard access —
-      // fail quietly; the text is still visible for manual selection.
+    setCopyError(null);
+    // Path 1: modern Clipboard API. Requires a secure context (HTTPS or
+    // localhost). On plain-HTTP LAN URLs the API is undefined or rejects.
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(text);
+        setCopiedIdx(marker);
+        setTimeout(() => setCopiedIdx(prev => (prev === marker ? null : prev)), 1400);
+        return;
+      } catch {
+        // Fall through to the textarea fallback.
+      }
     }
+    // Path 2: legacy execCommand('copy') via a hidden textarea. Works in
+    // some non-secure contexts where the modern API doesn't. Deprecated
+    // but widely supported as the fallback path.
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      if (ok) {
+        setCopiedIdx(marker);
+        setTimeout(() => setCopiedIdx(prev => (prev === marker ? null : prev)), 1400);
+        return;
+      }
+    } catch {
+      // both paths failed
+    }
+    // Both failed — tell the user instead of silently doing nothing.
+    setCopyError('Copy blocked by the browser. Likely cause: you are on http (not https). Select the text manually for now, or use the https://… URL of the site.');
   }
 
   return (
@@ -372,6 +401,9 @@ function RevisedObjectivesDraft({ items }: { items: string[] }) {
       <p className="mt-2 text-[10px] italic text-muted-foreground">
         Consolidated from the existing catalog objectives + the audit&apos;s findings. Copy these into your syllabus if you want them; the catalog is not modified automatically.
       </p>
+      {copyError && (
+        <p className="mt-1 text-[10px] text-destructive">{copyError}</p>
+      )}
     </div>
   );
 }
