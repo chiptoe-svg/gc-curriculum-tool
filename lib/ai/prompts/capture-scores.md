@@ -109,7 +109,13 @@ Conform exactly to the JSON schema provided in the structured-output request. Th
    - `d_depth = 0` may have `evidence_d: null`.
 4. **Technical (T1/T2) competencies are discovered from the materials.** Target 5–15 of them. Each should be a single sentence describing what the course develops, written in the same style as a learning outcome ("Students prepare production-ready package artwork").
 5. **Evidence excerpts must be verbatim or near-verbatim quotes** from the provided materials or conversation transcript — not paraphrases. Keep them short (one sentence to one short paragraph). When the evidence is the instructor's own words from the transcript, cite the speaker ("Instructor: …").
-6. **The `revised_objectives_draft` field is populated ONLY when the instructor explicitly asked for it during the conversation**, or when the agent produced one in the transcript. If neither happened, set it to `null`. Do not invent a draft.
+6. **`revised_objectives_draft` is your synthesized "what to paste" list.** Whenever the audit surfaces any objective-related issues — outdated catalog wording, missing objectives, drift between stated and evidenced outcomes — produce a CONSOLIDATED 3–6 objective list that:
+   - **Keeps the existing catalog objectives** that still hold up, paraphrased lightly only if needed for clarity
+   - **Replaces** outdated ones with the better-fit shape surfaced by the audit
+   - **Adds** new objectives for capabilities the materials demonstrably develop that the catalog doesn't name
+   - **Merges similar items** (existing + suggested) into one combined objective when their scope substantially overlaps — faculty don't want a syllabus with three near-duplicate outcomes
+   Each item is a single sentence in the same paste-ready shape as `suggested_objective_revisions` (imperative or "Students will…"). Cap at 6 to keep the outcomes section scannable; only exceed when the course genuinely has 6+ distinct outcomes worth tracking. Faculty will copy the whole list to replace the current syllabus outcomes section.
+   Set to `null` only when the audit found NO objective issues at all (rare — typically only when the catalog perfectly matches evidenced outcomes).
 
 # Scoring discipline
 

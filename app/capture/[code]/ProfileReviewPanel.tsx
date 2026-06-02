@@ -316,6 +316,65 @@ interface MergedSkill {
  * Re-clicking the button re-runs the merge (faculty can fix a vague
  * gap mid-review or just regenerate if the first pass is off).
  */
+/**
+ * Render the synthesized "what to paste" objectives list with per-item
+ * copy buttons + a "Copy all" affordance. The prompt instructs the
+ * agent to consolidate existing catalog objectives + audit suggestions
+ * into a single 3–6 item list ready for the syllabus's outcomes
+ * section — this component just makes the copying frictionless.
+ */
+function RevisedObjectivesDraft({ items }: { items: string[] }) {
+  const [copiedIdx, setCopiedIdx] = useState<number | 'all' | null>(null);
+
+  async function copy(text: string, marker: number | 'all') {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedIdx(marker);
+      setTimeout(() => setCopiedIdx(prev => (prev === marker ? null : prev)), 1400);
+    } catch {
+      // Older browsers / non-secure contexts may refuse clipboard access —
+      // fail quietly; the text is still visible for manual selection.
+    }
+  }
+
+  return (
+    <div className="border-t pt-3">
+      <div className="flex items-baseline justify-between gap-2">
+        <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Revised objectives — paste-ready
+        </h4>
+        <button
+          type="button"
+          onClick={() => copy(items.map((it, i) => `${i + 1}. ${it}`).join('\n'), 'all')}
+          className="text-[10px] text-muted-foreground hover:text-foreground"
+          title="Copy the full list (numbered) to your clipboard"
+        >
+          {copiedIdx === 'all' ? 'Copied ✓' : 'Copy all'}
+        </button>
+      </div>
+      <ol className="mt-1 space-y-1 text-xs leading-snug">
+        {items.map((obj, i) => (
+          <li key={i} className="flex items-start gap-2">
+            <span className="mt-0.5 w-4 shrink-0 text-right text-muted-foreground">{i + 1}.</span>
+            <span className="flex-1">{obj}</span>
+            <button
+              type="button"
+              onClick={() => copy(obj, i)}
+              className="shrink-0 text-[10px] text-muted-foreground hover:text-foreground"
+              title="Copy this objective to your clipboard"
+            >
+              {copiedIdx === i ? 'Copied ✓' : 'Copy'}
+            </button>
+          </li>
+        ))}
+      </ol>
+      <p className="mt-2 text-[10px] italic text-muted-foreground">
+        Consolidated from the existing catalog objectives + the audit&apos;s findings. Copy these into your syllabus if you want them; the catalog is not modified automatically.
+      </p>
+    </div>
+  );
+}
+
 function MergeGapIntoSkillsButton({
   gapText,
   courseCode,
@@ -744,17 +803,7 @@ export function ProfileReviewPanel({
           <AuditNotesList title="Cross-source conflicts" items={working.audit_notes.cross_source_conflicts} />
           <AuditNotesList title="Suggested objective revisions" items={working.audit_notes.suggested_objective_revisions} />
           {working.revised_objectives_draft && working.revised_objectives_draft.length > 0 && (
-            <div className="border-t pt-3">
-              <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Revised objectives draft
-              </h4>
-              <ol className="mt-1 list-decimal space-y-1 pl-4 text-xs leading-snug">
-                {working.revised_objectives_draft.map((obj, i) => <li key={i}>{obj}</li>)}
-              </ol>
-              <p className="mt-2 text-[10px] italic text-muted-foreground">
-                Copy these into your syllabus if you want them. The catalog is not modified automatically.
-              </p>
-            </div>
+            <RevisedObjectivesDraft items={working.revised_objectives_draft} />
           )}
         </aside>
       </div>
