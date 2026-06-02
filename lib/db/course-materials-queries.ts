@@ -150,12 +150,13 @@ export async function updateMaterialDigest(input: UpdateMaterialDigestInput): Pr
  * (digest replaces raw text in the agent's at-rest context) or `false`
  * (agent reads the original extracted text).
  *
- * **Defaults to false** for Canvas-imported list-shaped materials
- * (`Canvas: Assignments`, `Canvas: Discussions`, `Canvas: Quizzes`,
- * `Canvas: Module List`, `Canvas: Pages`) — the originals are already
- * structured per-block (title + points + description) and the audit
- * specifically needs to read assignment-by-assignment precision (point
- * weights, rubric criteria). Summarizing them loses signal.
+ * **Defaults to false** for materials whose original IS the audit signal:
+ *   - `Canvas: Assignments / Discussions / Quizzes / Module List / Pages` —
+ *     structured per-block (title + points + description + rubric); the
+ *     audit needs per-item precision (point weights, rubric criteria)
+ *   - `YouTube: <title>` — the transcript IS the material; the digest of a
+ *     transcript loses the speaker's actual words, which is exactly the
+ *     evidence the audit needs to evaluate K/U/D
  *
  * **Defaults to true** for everything else — `Canvas File: *.pdf`
  * (narrative documents pulled from Canvas) and faculty-uploaded files.
@@ -164,6 +165,7 @@ export async function updateMaterialDigest(input: UpdateMaterialDigestInput): Pr
  */
 export function shouldDigestByDefault(fileName: string): boolean {
   if (fileName.startsWith('Canvas: ')) return false;
+  if (fileName.startsWith('YouTube:')) return false;
   return true;
 }
 
