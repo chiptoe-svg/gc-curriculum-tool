@@ -1,18 +1,19 @@
 'use client';
 
 /**
- * "Ask" mode inside /explore/[code]. Conversational layer over the
- * curriculum wiki, anchored to the focused course but free to range
- * across the whole program.
+ * Curriculum-chat panel. Shared across three surfaces:
+ *   - Explore "Ask" tab — course-anchored, hits /api/explore/[code]/chat
+ *   - /ask standalone — no anchor, hits /api/ask/chat
+ *   - /wiki index — no anchor (same as /ask)
  *
  * Local state only — the chat transcript lives in component state and
  * is discarded on unmount / route change. No DB persistence (yet);
- * audit chat is the only persisted surface and that's a separate
- * concern.
+ * audit chat is the only persisted surface and that's a separate concern.
  */
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { VoiceRecorder } from '@/components/VoiceRecorder';
 import type { CurriculumChatCitation } from '@/lib/ai/wiki/response-schema';
 
 interface AskMessage {
@@ -247,9 +248,19 @@ export function AskTab({ courseCode, courseTitle, slug, endpoint }: Props) {
           type="text"
           value={input}
           onChange={e => setInput(e.target.value)}
-          placeholder="Ask about this course or anything in the program…"
+          placeholder={isCourseAnchored ? 'Ask about this course or anything in the program…' : 'Ask about the curriculum…'}
           disabled={busy}
           className="flex-1 rounded border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
+        />
+        <VoiceRecorder
+          slug={slug}
+          disabled={busy}
+          onTranscript={text => {
+            // Append to the input rather than auto-send — faculty often
+            // want to read what was transcribed (and trim filler) before
+            // sending. Matches the CaptureChatPanel pattern.
+            setInput(prev => (prev ? `${prev} ${text}` : text));
+          }}
         />
         <button
           type="submit"
