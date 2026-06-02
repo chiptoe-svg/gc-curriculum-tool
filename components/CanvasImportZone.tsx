@@ -112,9 +112,11 @@ export function CanvasImportZone({ courseCode, slug, onImported, open: controlle
   const [canvasUrl, setCanvasUrl] = useState('');
   const [canvasToken, setCanvasToken] = useState('');
   const [skipUnpublished, setSkipUnpublished] = useState(true);
-  const [status, setStatus] = useState<'idle' | 'importing' | 'done' | 'error'>('idle');
+  const [scanLinkedDocs, setScanLinkedDocs] = useState(true);
+  const [status, setStatus] = useState<'idle' | 'importing' | 'scanning' | 'done' | 'error'>('idle');
   const [message, setMessage] = useState('');
   const [importDetails, setImportDetails] = useState<ImportDetails | null>(null);
+  const [scanSummary, setScanSummary] = useState<string | null>(null);
 
   async function handleImport() {
     setStatus('importing');
@@ -167,7 +169,8 @@ export function CanvasImportZone({ courseCode, slug, onImported, open: controlle
           extractionMethod: 'text',
         });
       }
-      setStatus('done');
+      // Don't set done here — wait for the optional scan-linked-docs chain
+      // below. If the scan is skipped, we set done at the end of the block.
       // Canvas import is upsert by (course, fileName). When re-importing, most
       // items will be `updated` (refreshed in place); first import they'll all
       // be `inserted`. Surface both so faculty can see whether their action
@@ -181,6 +184,39 @@ export function CanvasImportZone({ courseCode, slug, onImported, open: controlle
       setMessage(`Synced from Canvas: ${summary}.`);
       setImportDetails(data.details);
       setCanvasToken('');
+
+      // Chained scan-linked-docs: pulls YouTube captions for any video URL
+      // referenced in the imported material text, and downloads any Google
+      // Docs / Sheets / Slides / Drive PDFs that resolve. Faculty can
+      // opt-out by unchecking the box (e.g. for re-imports where the linked
+      // docs haven't changed).
+      if (scanLinkedDocs) {
+        setStatus('scanning');
+        try {
+          const scanRes = await fetch(
+            `/api/courses/${encodeURIComponent(courseCode)}/scan-linked-docs?slug=${encodeURIComponent(slug)}`,
+            { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({}) },
+          );
+          if (scanRes.ok) {
+            const scanJson = await scanRes.json() as {
+              youtube_fetched?: Array<{ status: string }>;
+              files_fetched?: Array<{ status: string }>;
+              [k: string]: unknown;
+            };
+            const yt = (scanJson.youtube_fetched ?? []).filter(x => x.status === 'ok').length;
+            const files = (scanJson.files_fetched ?? []).filter(x => x.status === 'ok').length;
+            const parts: string[] = [];
+            if (yt > 0) parts.push(`${yt} YouTube transcript${yt === 1 ? '' : 's'}`);
+            if (files > 0) parts.push(`${files} linked file${files === 1 ? '' : 's'}`);
+            setScanSummary(parts.length > 0 ? `+ ${parts.join(' + ')} fetched` : 'no new linked content');
+          } else {
+            setScanSummary('linked-docs scan failed (canvas import succeeded)');
+          }
+        } catch {
+          setScanSummary('linked-docs scan failed (canvas import succeeded)');
+        }
+      }
+      setStatus('done');
     } catch (e) {
       setStatus('error');
       setMessage(e instanceof Error ? e.message : 'Import failed');
@@ -240,17 +276,34 @@ export function CanvasImportZone({ courseCode, slug, onImported, open: controlle
               <span className="ml-1 text-muted-foreground/80">— exclude draft assignments, quizzes, pages, and module items so they don&apos;t pollute the audit. Uncheck to import everything tagged <span className="font-mono">[unpublished]</span>.</span>
             </span>
           </label>
+          <label className="flex cursor-pointer items-start gap-2 text-xs text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={scanLinkedDocs}
+              onChange={e => setScanLinkedDocs(e.target.checked)}
+              className="mt-0.5 h-3.5 w-3.5"
+            />
+            <span>
+              <span className="font-medium text-foreground">Scan linked content after import</span>
+              <span className="ml-1 text-muted-foreground/80">— auto-fetch YouTube captions, Google Docs / Slides / Sheets, and Drive PDFs referenced in the imported material. Without this, links sit in the materials but their content is invisible to the auditor. Uncheck for a faster re-import when linked content hasn&apos;t changed.</span>
+            </span>
+          </label>
           <button
             type="button"
             onClick={handleImport}
-            disabled={!canvasUrl || !canvasToken || status === 'importing'}
+            disabled={!canvasUrl || !canvasToken || status === 'importing' || status === 'scanning'}
             className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {status === 'importing' ? 'Importing…' : 'Import from Canvas'}
+            {status === 'importing' ? 'Importing…'
+              : status === 'scanning' ? 'Scanning linked docs…'
+              : 'Import from Canvas'}
           </button>
           {status === 'done' && (
             <div className="space-y-1">
-              <p className="text-sm text-green-700">{message}</p>
+              <p className="text-sm text-green-700">
+                {message}
+                {scanSummary && <span className="ml-1 text-muted-foreground">{scanSummary}.</span>}
+              </p>
               {importDetails && <ImportSummary details={importDetails} />}
             </div>
           )}
