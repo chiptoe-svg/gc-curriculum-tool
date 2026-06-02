@@ -33,7 +33,8 @@ type PromptName =
   | 'ingestion-checkin'
   | 'capture-chat-agent'
   | 'capture-synthesis'
-  | 'wiki-update';
+  | 'wiki-update'
+  | 'curriculum-chat';
 
 interface ParsedPrompt {
   frontmatter: Record<string, unknown>;

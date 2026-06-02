@@ -29,6 +29,7 @@ export const AI_FUNCTION_IDS = [
   'ingestion-checkin',
   'capture-chat-agent',
   'wiki-update',
+  'curriculum-chat',
 ] as const;
 export type AIFunctionId = (typeof AI_FUNCTION_IDS)[number];
 
@@ -104,6 +105,11 @@ export const DEFAULT_TIERS: Record<AIFunctionId, Exclude<ModelTier, 'custom'>> =
   // than cost here; a well-written wiki page may be read dozens of times.
   // Estimated ~$1–3 per snapshot at scale.
   'wiki-update': 'heavy',
+  // Conversational layer over the wiki — tool-using agent that reads, lists,
+  // and searches the curated narrative corpus to answer faculty questions.
+  // Default tier: same reasoning load as capture-chat-agent (read context,
+  // route 1-3 tool calls, synthesize an evidence-cited response).
+  'curriculum-chat': 'default',
 };
 
 export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
@@ -120,6 +126,7 @@ export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
   'ingestion-checkin': 'Ingestion check-in (materials curation review)',
   'capture-chat-agent': 'Audit chat agent (Stage 3 — tool-using auditor)',
   'wiki-update': 'Wiki page regeneration (on snapshot creation)',
+  'curriculum-chat': 'Curriculum chat (Explore "Ask" tab + future /ask)',
 };
 
 export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
@@ -136,6 +143,7 @@ export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
   'ingestion-checkin': 'Reviews the curated materials state before audit chat begins and emits either a short heads-up panel or silence.',
   'capture-chat-agent': 'Per-turn agent loop for CourseCapture v2 audit chat; reads at-rest digests, retrieves chunks on demand, emits a structured finding + question + citations.',
   'wiki-update': 'Regenerates the affected wiki-layer pages (course, competencies, targets, concepts) from a new snapshot + related substrate. Returns a page map; Task A3 git-ops writes + commits.',
+  'curriculum-chat': 'Faculty-facing chat over the curriculum wiki. Tool-using agent reads / lists / searches wiki pages and emits a markdown response with structured page citations. Powers Explore\'s "Ask" tab and the future standalone /ask route.',
 };
 
 interface CachedSetting {
