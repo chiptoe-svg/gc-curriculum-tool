@@ -65,6 +65,10 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
 
   const canvasUrl = typeof body.canvasUrl === 'string' ? body.canvasUrl.trim() : '';
   const canvasToken = typeof body.canvasToken === 'string' ? body.canvasToken.trim() : '';
+  // Default ON: most courses have a graveyard of draft assignments / pages
+  // that the auditor reads as real coverage. Faculty can opt back in to
+  // including unpublished items per import.
+  const skipUnpublished = typeof body.skipUnpublished === 'boolean' ? body.skipUnpublished : true;
   if (!canvasUrl) return NextResponse.json({ error: 'canvasUrl is required' }, { status: 400 });
   if (!canvasToken) return NextResponse.json({ error: 'canvasToken is required' }, { status: 400 });
 
@@ -90,6 +94,36 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
     if (msg.includes('401')) return NextResponse.json({ error: 'Canvas API token is invalid or expired. Generate a new token in Canvas → Profile → Settings → Approved Integrations.' }, { status: 422 });
     if (msg.includes('404')) return NextResponse.json({ error: 'Canvas course not found. Check the URL and make sure you have access to that course.' }, { status: 422 });
     return NextResponse.json({ error: `Canvas import failed: ${msg}` }, { status: 502 });
+  }
+
+  // Apply the skip-unpublished filter before formatting. Counted as a single
+  // metric (`unpublishedSkipped`) we surface back to the client.
+  let unpublishedSkipped = 0;
+  if (skipUnpublished) {
+    const beforeA = data.assignments.length;
+    const beforeP = data.pages.length;
+    const beforeD = data.discussions.length;
+    const beforeQ = data.quizzes.length;
+    const beforeM = data.modules.length;
+    const beforeMI = data.modules.reduce((n, m) => n + m.items.length, 0);
+
+    data.assignments = data.assignments.filter(a => a.published);
+    data.pages = data.pages.filter(p => p.published);
+    data.discussions = data.discussions.filter(d => d.published);
+    data.quizzes = data.quizzes.filter(q => q.published);
+    // For modules, drop unpublished modules entirely; for published modules,
+    // drop any unpublished items inside them.
+    data.modules = data.modules
+      .filter(m => m.published)
+      .map(m => ({ ...m, items: m.items.filter(i => i.published) }));
+
+    unpublishedSkipped =
+      (beforeA - data.assignments.length) +
+      (beforeP - data.pages.length) +
+      (beforeD - data.discussions.length) +
+      (beforeQ - data.quizzes.length) +
+      (beforeM - data.modules.length) +
+      (beforeMI - data.modules.reduce((n, m) => n + m.items.length, 0));
   }
 
   const ipHash = hashIp(req);
@@ -357,6 +391,7 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
       .filter(f => f.status === 'ok' && f.fileName)
       .map(f => f.fileName as string),
     filesSkipped: fileResults.filter(f => f.status !== 'ok').length,
+    unpublishedSkipped,
   };
 
   return NextResponse.json({

@@ -26,6 +26,12 @@ interface ImportDetails {
   quizzes: string[];
   files: string[];
   filesSkipped: number;
+  /**
+   * Total items dropped by the skip-unpublished filter, summed across
+   * assignments / modules / module items / pages / discussions / quizzes.
+   * 0 when the filter was off.
+   */
+  unpublishedSkipped: number;
 }
 
 function ToggleList({ label, items }: { label: string; items: string[] }) {
@@ -74,6 +80,11 @@ function ImportSummary({ details }: { details: ImportDetails }) {
           items={details.files}
         />
       )}
+      {details.unpublishedSkipped > 0 && (
+        <li className="text-muted-foreground/70">
+          · {details.unpublishedSkipped} unpublished item{details.unpublishedSkipped === 1 ? '' : 's'} skipped
+        </li>
+      )}
     </ul>
   );
 }
@@ -88,6 +99,7 @@ export function CanvasImportZone({ courseCode, slug, onImported, open: controlle
   };
   const [canvasUrl, setCanvasUrl] = useState('');
   const [canvasToken, setCanvasToken] = useState('');
+  const [skipUnpublished, setSkipUnpublished] = useState(true);
   const [status, setStatus] = useState<'idle' | 'importing' | 'done' | 'error'>('idle');
   const [message, setMessage] = useState('');
   const [importDetails, setImportDetails] = useState<ImportDetails | null>(null);
@@ -99,7 +111,12 @@ export function CanvasImportZone({ courseCode, slug, onImported, open: controlle
       const res = await fetch(`/api/courses/${encodeURIComponent(courseCode)}/canvas-import`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ slug, canvasUrl: canvasUrl.trim(), canvasToken: canvasToken.trim() }),
+        body: JSON.stringify({
+          slug,
+          canvasUrl: canvasUrl.trim(),
+          canvasToken: canvasToken.trim(),
+          skipUnpublished,
+        }),
       });
       // The route hands back JSON for every defined error path. If the response
       // isn't JSON (typically Next.js's HTML 500 page from an unhandled
@@ -199,6 +216,18 @@ export function CanvasImportZone({ courseCode, slug, onImported, open: controlle
               In Canvas: click your name (top-right) → <strong className="font-medium text-muted-foreground">Settings</strong> → scroll to <strong className="font-medium text-muted-foreground">Approved Integrations</strong> → <strong className="font-medium text-muted-foreground">+ New Access Token</strong>. Give it any name, leave expiry blank, then copy the token — Canvas only shows it once.
             </p>
           </div>
+          <label className="flex cursor-pointer items-start gap-2 text-xs text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={skipUnpublished}
+              onChange={e => setSkipUnpublished(e.target.checked)}
+              className="mt-0.5 h-3.5 w-3.5"
+            />
+            <span>
+              <span className="font-medium text-foreground">Skip unpublished items</span>
+              <span className="ml-1 text-muted-foreground/80">— exclude draft assignments, quizzes, pages, and module items so they don&apos;t pollute the audit. Uncheck to import everything tagged <span className="font-mono">[unpublished]</span>.</span>
+            </span>
+          </label>
           <button
             type="button"
             onClick={handleImport}
