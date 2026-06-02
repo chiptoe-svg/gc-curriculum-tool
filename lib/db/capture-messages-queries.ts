@@ -117,6 +117,13 @@ export interface PriorSessionSummary {
   lastAssistantContent: string | null;
   lastAssistantReadiness: unknown | null;
   turnCount: number;
+  /**
+   * The last ~8 user/assistant turns (chronological), each content
+   * truncated to ~1500 chars. Persists conversational memory across
+   * sessions so the next-session agent doesn't ask faculty questions
+   * faculty has already answered.
+   */
+  recentTurns: Array<{ role: 'user' | 'assistant'; content: string }>;
 }
 
 /**
@@ -191,12 +198,40 @@ export async function listPriorSessionSummaries(
         assistantText = lastAssistant.content;
       }
     }
+    // Collect the last 8 user/assistant turns (chronological) so the next
+    // session's agent can see what faculty actually said, not just the
+    // agent's own last summary. Tool turns are skipped — they're internal
+    // retrieval noise, not conversation memory.
+    const RECENT_TURNS_CAP = 8;
+    const PER_TURN_CHAR_CAP = 1500;
+    const conversational = sessionRows.filter(r => r.role === 'user' || r.role === 'assistant');
+    const tail = conversational.slice(-RECENT_TURNS_CAP);
+    const recentTurns = tail.map(r => {
+      let content = typeof r.content === 'string' ? r.content : '';
+      // Assistant turns are stored as JSON ({finding, question, ...});
+      // unwrap to the readable prose so the next session sees what the
+      // user would've seen, not raw JSON.
+      if (r.role === 'assistant' && content.startsWith('{')) {
+        try {
+          const parsed = JSON.parse(content) as { finding?: string; question?: string };
+          content = [parsed.finding, parsed.question].filter(Boolean).join('\n\n') || content;
+        } catch {
+          // leave raw if parse fails
+        }
+      }
+      if (content.length > PER_TURN_CHAR_CAP) {
+        content = content.slice(0, PER_TURN_CHAR_CAP) + '…';
+      }
+      return { role: r.role as 'user' | 'assistant', content };
+    });
+
     summaries.push({
       sessionId,
       startedAt: sessionRows[0]!.createdAt,
       lastAssistantContent: assistantText,
       lastAssistantReadiness: readiness,
       turnCount: sessionRows.length,
+      recentTurns,
     });
     if (summaries.length >= limit) break;
   }

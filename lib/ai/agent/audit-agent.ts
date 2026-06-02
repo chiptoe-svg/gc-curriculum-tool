@@ -120,11 +120,24 @@ export async function buildAgentCall(input: AuditAgentInput): Promise<BuiltAgent
           const readinessSummary = r
             ? `readiness ${r.score ?? '?'}%; covered: ${(r.covered ?? []).join(', ') || '(none)'}; remaining: ${(r.remaining ?? []).join(', ') || '(none)'}`
             : '(no readiness recorded)';
+          // Render the last few conversational turns verbatim so the new
+          // session inherits what faculty actually said — not just a
+          // summary. Helps avoid asking the same questions twice across
+          // page reloads / fresh sessions.
+          const conversationBlock = s.recentTurns.length
+            ? [
+                'Recent turns (chronological — what faculty already told you, what you already said):',
+                ...s.recentTurns.map(t => {
+                  const speaker = t.role === 'user' ? 'FACULTY' : 'YOU (prior agent turn)';
+                  return `  [${speaker}] ${t.content}`;
+                }),
+              ].join('\n')
+            : '';
           return [
             `--- Session ${s.sessionId.slice(0, 8)}… (started ${s.startedAt.toISOString().slice(0, 10)}, ${s.turnCount} turns) ---`,
             `Final readiness: ${readinessSummary}`,
-            s.lastAssistantContent ? `Last assistant turn: ${s.lastAssistantContent.slice(0, 600)}` : '',
-          ].filter(Boolean).join('\n');
+            conversationBlock,
+          ].filter(Boolean).join('\n\n');
         })
         .join('\n\n')
     : '(none — this is the first audit session for this course)';
