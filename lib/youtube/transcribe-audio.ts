@@ -72,6 +72,27 @@ function runFile(file: string, args: string[], opts: { timeoutMs?: number } = {}
 }
 
 /**
+ * Probe a YouTube video's title via yt-dlp. Returns null if yt-dlp
+ * can't reach the video (private / age-gated / region-locked) — caller
+ * falls back to the videoId or transcript opening.
+ */
+export async function fetchYouTubeTitle(videoId: string): Promise<string | null> {
+  if (!/^[a-zA-Z0-9_-]{11}$/.test(videoId)) return null;
+  try {
+    const { stdout, code } = await runFile(
+      'yt-dlp',
+      ['--no-warnings', '--get-title', `https://www.youtube.com/watch?v=${videoId}`],
+      { timeoutMs: 15_000 },
+    );
+    if (code !== 0) return null;
+    const title = stdout.trim();
+    return title.length > 0 ? title : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Probe a YouTube video's duration without downloading. Returns null if
  * yt-dlp can't even inspect it (private / age-gated / region-locked).
  */

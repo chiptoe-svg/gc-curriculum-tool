@@ -15,7 +15,7 @@ import {
 import { fetchGoogleFileText } from '@/lib/google-docs/fetch-doc';
 import { extractYouTubeReferences } from '@/lib/youtube/extract-urls';
 import { fetchYouTubeTranscript } from '@/lib/youtube/fetch-transcript';
-import { transcribeYouTubeAudio } from '@/lib/youtube/transcribe-audio';
+import { transcribeYouTubeAudio, fetchYouTubeTitle } from '@/lib/youtube/transcribe-audio';
 import { extractDriveFileReferences } from '@/lib/google-drive/extract-urls';
 import { fetchDrivePdf } from '@/lib/google-drive/fetch-pdf';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
@@ -194,7 +194,10 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     }
 
     if (text !== null) {
-      const titleGuess = text.slice(0, 80).trim() || videoId;
+      // Prefer the real video title (yt-dlp --get-title, ~1s). Fall back
+      // to the transcript opening or the videoId if title lookup fails.
+      const realTitle = await fetchYouTubeTitle(videoId);
+      const titleGuess = realTitle ?? text.slice(0, 80).trim() ?? videoId;
       const suffix = source === 'whisper' ? ' (Whisper)' : '';
       const fileName = `YouTube: ${titleGuess.slice(0, 60)}${titleGuess.length > 60 ? '…' : ''}${suffix}`;
       const row = await insertMaterial({
