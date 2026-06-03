@@ -62,6 +62,12 @@ PATHS=(
   /voice-bridge
   /api/transcribe
   /api/voice-session
+  # Next.js JS/CSS chunks the iframe needs to hydrate. Without /_next
+  # exposed, the iframe HTML loads but every script tag 404s and
+  # React never hydrates — page sits at the SSR initial state and
+  # no postMessage handshake happens. Same content as LAN; no risk
+  # in exposing it because the rest of the app's routes still 404.
+  /_next
 )
 for P in "${PATHS[@]}"; do
   echo "Mounting funnel: ${P}"
