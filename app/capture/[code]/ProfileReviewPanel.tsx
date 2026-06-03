@@ -433,9 +433,9 @@ function RevisedObjectivesDraft({ items }: { items: string[] }) {
         </h4>
         <button
           type="button"
-          onClick={() => copy(items.map((it, i) => `${i + 1}. ${it}`).join('\n'), 'all')}
+          onClick={() => copy(items.join('\n'), 'all')}
           className="text-[10px] text-muted-foreground hover:text-foreground"
-          title="Copy the full list (numbered) to your clipboard"
+          title="Copy all (one per line — paste into a Sheets cell to fill multiple rows; paste into a doc and apply numbered list there)"
         >
           {copiedIdx === 'all' ? 'Copied ✓' : 'Copy all'}
         </button>
