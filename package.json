@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "dev:lan": "next dev --turbopack --hostname 0.0.0.0 --experimental-https --experimental-https-key ./certs/localhost+2-key.pem --experimental-https-cert ./certs/localhost+2.pem",
+    "dev:lan": "next dev --turbopack --hostname 0.0.0.0",
+    "dev:lan-https": "next dev --turbopack --hostname 0.0.0.0 --experimental-https --experimental-https-key ./certs/localhost+2-key.pem --experimental-https-cert ./certs/localhost+2.pem",
     "build": "next build --turbopack",
     "start": "next start",
     "start:lan": "next start --hostname 0.0.0.0",
