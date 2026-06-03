@@ -13,7 +13,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { VoiceRecorder } from '@/components/VoiceRecorder';
+import { VoiceBridgeProxy } from '@/components/VoiceBridgeProxy';
 import type { CurriculumChatCitation } from '@/lib/ai/wiki/response-schema';
 
 interface AskMessage {
@@ -252,7 +252,7 @@ export function AskTab({ courseCode, courseTitle, slug, endpoint }: Props) {
           disabled={busy}
           className="flex-1 rounded border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
         />
-        <VoiceRecorder
+        <VoiceBridgeProxy
           slug={slug}
           disabled={busy}
           onTranscript={text => {

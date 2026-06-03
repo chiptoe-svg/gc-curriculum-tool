@@ -34,6 +34,31 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+
+  // Allow the voice-bridge iframe (loaded from the Tailscale Funnel HTTPS
+  // origin) to access the microphone when embedded in the main app's
+  // (LAN-HTTP) pages. Without this, even a secure-context iframe has its
+  // mic blocked by the parent's default Permissions-Policy on Chrome.
+  // The funnel origin is set via env (TAILSCALE_FUNNEL_ORIGIN); we read
+  // it at build time. Falls back to no Permissions-Policy header when
+  // unset so dev environments without Tailscale still work.
+  async headers() {
+    const funnelOrigin = process.env.TAILSCALE_FUNNEL_ORIGIN;
+    if (!funnelOrigin) return [];
+    return [
+      {
+        // Apply to every page; the iframe-from-funnel needs mic on any
+        // page that might host the VoiceBridgeProxy.
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Permissions-Policy',
+            value: `microphone=(self "${funnelOrigin}")`,
+          },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
