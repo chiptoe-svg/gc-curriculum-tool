@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { listCoursesWithStatus } from '@/lib/db/capture-status-queries';
+import { listCoursesWithStatus, type CaptureStatus, type CourseStatusRow } from '@/lib/db/capture-status-queries';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,17 +23,22 @@ export default async function HomePage() {
   const funnelOrigin = process.env.TAILSCALE_FUNNEL_ORIGIN ?? '';
 
   const rows = await listCoursesWithStatus();
-  rows.sort((a, b) => (a.level ?? 9999) - (b.level ?? 9999) || a.code.localeCompare(b.code));
+  rows.sort((a, b) => (a.level ?? Number.POSITIVE_INFINITY) - (b.level ?? Number.POSITIVE_INFINITY)
+    || a.code.localeCompare(b.code));
 
-  // Group by 1000/2000/3000/4000-level (matches the existing /courses page).
-  const groups = new Map<number, typeof rows>();
+  // Group by 1000/2000/3000/4000-level. Null level → "Other" (matches /courses).
+  const groups = new Map<number | null, CourseStatusRow[]>();
   for (const r of rows) {
-    const lvl = r.level ?? 9999;
-    const bucket = Math.floor(lvl / 1000) * 1000;
-    if (!groups.has(bucket)) groups.set(bucket, []);
-    groups.get(bucket)!.push(r);
+    const key = r.level ?? null;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(r);
   }
-  const orderedBuckets = Array.from(groups.keys()).sort((a, b) => a - b);
+  // Numeric levels ascending, then null ("Other") last.
+  const orderedKeys = Array.from(groups.keys()).sort((a, b) => {
+    if (a === null) return 1;
+    if (b === null) return -1;
+    return a - b;
+  });
 
   const facultyHubHref = funnelOrigin && slug
     ? `${funnelOrigin}/courses?slug=${encodeURIComponent(slug)}`
@@ -70,21 +75,38 @@ export default async function HomePage() {
         </p>
 
         <div className="space-y-10">
-          {orderedBuckets.map((bucket) => (
-            <section key={bucket}>
+          {orderedKeys.map((key) => (
+            <section key={key ?? 'other'}>
               <h2 className="mb-3 font-mono-plex text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                {bucket}-level
+                {levelLabel(key)}
               </h2>
               <ul className="divide-y border-y">
-                {groups.get(bucket)!.map((row) => {
+                {groups.get(key)!.map((row) => {
                   const editHref = funnelOrigin && slug
                     ? `${funnelOrigin}/capture/${encodeURIComponent(row.code)}?slug=${encodeURIComponent(slug)}`
                     : null;
                   return (
-                    <li key={row.code} className="grid grid-cols-[8rem_1fr_auto] items-baseline gap-4 py-3">
-                      <span className="font-mono-plex text-sm">{row.code}</span>
-                      <span className="font-display text-base">{row.title ?? '—'}</span>
-                      <span className="flex items-baseline gap-3">
+                    <li
+                      key={row.code}
+                      className="grid grid-cols-[7rem_minmax(0,1fr)_auto_8rem_auto] items-baseline gap-x-4 py-3"
+                    >
+                      <Link
+                        href={`/view/${encodeURIComponent(row.code)}`}
+                        className="font-mono-plex text-sm text-foreground hover:text-muted-foreground"
+                      >
+                        {row.code}
+                      </Link>
+                      <Link
+                        href={`/view/${encodeURIComponent(row.code)}`}
+                        className="font-display text-base text-foreground hover:text-muted-foreground"
+                      >
+                        {row.title ?? '—'}
+                      </Link>
+                      <StatusPill status={row.status} />
+                      <span className="font-mono-plex text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                        {row.lastCapturedAt ? formatDate(row.lastCapturedAt) : ''}
+                      </span>
+                      <span className="flex items-baseline gap-3 justify-end">
                         <Link
                           href={`/view/${encodeURIComponent(row.code)}`}
                           className="text-sm text-muted-foreground hover:text-foreground"
@@ -111,4 +133,33 @@ export default async function HomePage() {
       </main>
     </div>
   );
+}
+
+const STATUS_CONFIG: Record<CaptureStatus, { label: string; className: string }> = {
+  captured:     { label: 'Captured',    className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300' },
+  reviewed:     { label: 'Reviewed',    className: 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300' },
+  'ai-drafted': { label: 'AI drafted',  className: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' },
+  'in-audit':   { label: 'In audit',    className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' },
+  'not-started':{ label: 'Not started', className: 'bg-stone-100 text-stone-600 dark:bg-stone-800/40 dark:text-stone-400' },
+};
+
+function StatusPill({ status }: { status: CaptureStatus }) {
+  const { label, className } = STATUS_CONFIG[status];
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2 py-0.5 font-body-sans text-[10px] uppercase tracking-[0.18em] font-medium ${className}`}
+    >
+      {label}
+    </span>
+  );
+}
+
+function levelLabel(key: number | null): string {
+  if (key === null) return 'Other';
+  return `${key}000-level`;
+}
+
+function formatDate(d: Date | string): string {
+  const date = typeof d === 'string' ? new Date(d) : d;
+  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(date);
 }
