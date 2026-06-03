@@ -1,5 +1,15 @@
 # Microphone bridge via Tailscale Funnel
 
+> **Status (2026-06-03):** SUPERSEDED by
+> [`2026-06-03-hybrid-http-https-mic-architecture.md`](./2026-06-03-hybrid-http-https-mic-architecture.md).
+> The iframe-bridge approach this plan implemented turned out to be
+> spec-broken: per W3C Secure Contexts, an HTTPS iframe inside an HTTP
+> parent is NOT a secure context, so `navigator.mediaDevices` was
+> `undefined` and mic didn't work. The replacement architecture moves
+> faculty surfaces to top-level HTTPS via the Tailscale Funnel (Basic
+> Auth gates them) while keeping a public HTTP landing + read-only
+> profile views on the LAN IP.
+
 > **Status:** drafted, awaiting Chip's go-ahead. Independent of (but synergistic with) [`2026-06-03-single-db-local-migration.md`](./2026-06-03-single-db-local-migration.md), which shares the Tailscale Funnel setup.
 
 **Goal.** Restore voice-input on the audit chat without forcing the entire app to HTTPS and without per-device cert installs. Solve it by exposing **only** the microphone-related paths (`/voice-bridge` + `/api/transcribe` + `/api/voice-session`) over an HTTPS Tailscale Funnel; the main app stays plain-HTTP LAN-only.
