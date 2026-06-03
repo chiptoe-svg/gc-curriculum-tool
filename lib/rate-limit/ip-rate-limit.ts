@@ -2,7 +2,16 @@ import { db } from '@/lib/db/client';
 import { ipHourly } from '@/lib/db/schema';
 import { sql } from 'drizzle-orm';
 
-export const MAX_PER_HOUR = 60;
+// Per-IP cap across ALL routes that call checkIpRateLimit (chat turns,
+// transcribes, snapshots, etc.). The bound exists as an abuse floor — not
+// a per-feature throttle. 60/hr was the original conservative value when
+// these routes might have been internet-facing; with Basic Auth on the
+// funnel and only-faculty access, one engaged audit easily exceeds 60
+// (10 chat turns × 2 calls each + 10 mic transcribes + saves). Bumped
+// to 600/hr — still catches abuse (~10 calls/minute sustained) but
+// doesn't break legitimate audit work. Lower if/when per-faculty auth
+// replaces Basic Auth and we have real per-user accountability.
+export const MAX_PER_HOUR = 600;
 
 function currentHourKey(): string {
   const d = new Date();
