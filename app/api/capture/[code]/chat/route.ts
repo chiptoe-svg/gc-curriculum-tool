@@ -76,6 +76,19 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     // self-introducing from at-rest context (no fake user row written).
     const lastUserMessage = history.filter(m => m.role === 'user').slice(-1)[0]?.content;
 
+    // Instructor identity for this session — stamped on every message
+    // by the agent so snapshots inherit it. Optional for back-compat
+    // with sessions that started before the chooser UI shipped.
+    const instructorName =
+      typeof body.instructorName === 'string' && body.instructorName.length > 0
+        ? body.instructorName
+        : null;
+
+    // When true, the agent's at-rest context skips the "prior sessions"
+    // block — fresh-start capture for a new instructor who shouldn't be
+    // anchored on prior instructors' findings.
+    const includePriorSessions = body.includePriorSessions !== false;
+
     const wantsStream =
       url.searchParams.get('stream') === '1' ||
       (req.headers.get('accept') ?? '').includes('text/event-stream');
@@ -90,6 +103,8 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
               courseCode,
               ...(lastUserMessage ? { userMessage: lastUserMessage } : {}),
               auditMode: course.auditMode as 'full' | 'simple',
+              instructorName,
+              includePriorSessions,
             });
             for await (const ev of gen) {
               controller.enqueue(encoder.encode(JSON.stringify(ev) + '\n'));
@@ -117,6 +132,8 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         courseCode,
         ...(lastUserMessage ? { userMessage: lastUserMessage } : {}),
         auditMode: course.auditMode as 'full' | 'simple',
+        instructorName,
+        includePriorSessions,
       });
       return NextResponse.json({
         sessionId,

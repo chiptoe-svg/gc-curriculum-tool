@@ -374,6 +374,12 @@ export const courseCaptureSnapshots = pgTable('course_capture_snapshots', {
   transcriptSessionId: uuid('transcript_session_id'),  // nullable; populated for snapshots produced by v2 captures
   scaleVersion: text('scale_version').notNull(),
   model: text('model').notNull(),
+  // Whose perspective this capture represents — same course code can be
+  // taught very differently by different faculty, and the depth-scoring
+  // is a function of what students under that specific instructor
+  // actually do. Nullable for pre-2026-06-03 snapshots (backfilled to
+  // 'Department canonical' in migration 0027).
+  instructorName: text('instructor_name'),
   retiredAt: timestamp('retired_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
@@ -495,6 +501,10 @@ export const captureMessages = pgTable('capture_messages', {
     messageId?: string;
     excerpt: string;
   }>>(),
+  // Auditor identity for this session. Frozen at session start; carried
+  // through every turn so resumed sessions preserve the auditor and
+  // snapshots created from this session inherit instructor_name.
+  instructorName: text('instructor_name'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({
   sessionIdx: index('idx_capture_messages_session').on(table.courseCode, table.sessionId, table.turnIndex),

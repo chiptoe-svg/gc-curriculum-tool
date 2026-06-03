@@ -5,6 +5,7 @@ import { getCourseProfile } from '@/lib/db/course-profile-queries';
 import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
 import { getCaptureProfileByCourse, setCaptureProfileStatus } from '@/lib/db/course-capture-profiles-queries';
 import { getCaptureConversation } from '@/lib/db/capture-conversations-queries';
+import { getLatestSessionId, getSessionInstructor } from '@/lib/db/capture-messages-queries';
 import { getLatestSnapshotByCourse, createSnapshot, listSnapshotsByCourse, type InputsMeta } from '@/lib/db/capture-snapshots-queries';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { hashIp } from '@/lib/ip-hash';
@@ -93,6 +94,15 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     },
   };
 
+  // Inherit auditor identity from the v2 session that produced this draft.
+  // For pre-chooser sessions (no instructor_name stamped on any message),
+  // falls through to null and is rendered as "Department canonical" by
+  // consumers — same display as the backfilled pre-2026-06-03 snapshots.
+  const latestSessionId = await getLatestSessionId(courseCode);
+  const sessionInstructor = latestSessionId
+    ? await getSessionInstructor(courseCode, latestSessionId)
+    : null;
+
   const snapshot = await createSnapshot({
     courseCode,
     profile: draft.profile,
@@ -104,6 +114,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     // departmental-context narrative survives in the immutable record.
     reviewerNote: draft.reviewerNote ?? null,
     model: process.env.OPENAI_MODEL?.trim() || 'gpt-4o',
+    instructorName: sessionInstructor,
   });
 
   // Mark the working draft as confirmed (so edits since snapshot will move

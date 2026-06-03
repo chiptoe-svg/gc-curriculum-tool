@@ -151,6 +151,7 @@ const mockSnapshot: SnapshotRow = {
   transcriptSessionId: SESSION_ID,
   scaleVersion: 'v1',
   model: 'gpt-5.4',
+  instructorName: 'Department canonical',
   retiredAt: null,
   createdAt: new Date('2026-05-25T14:00:00Z'),
 };

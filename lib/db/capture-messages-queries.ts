@@ -42,6 +42,13 @@ export interface AppendMessageInput {
   toolCalls?: CaptureMessageToolCall[];
   toolResult?: CaptureMessageToolResult[];  // plural array per Task 1 fix
   citations?: CaptureMessageCitation[];
+  /**
+   * Auditor identity for this session. Set on every row of a session so
+   * resumes preserve the identity even if early rows are pruned, and so
+   * snapshots created from the session can inherit instructor_name
+   * trivially via a "pick any message from session" lookup.
+   */
+  instructorName?: string | null;
 }
 
 /**
@@ -66,7 +73,30 @@ export async function appendMessage(input: AppendMessageInput): Promise<void> {
     toolCalls: input.toolCalls ?? null,
     toolResult: input.toolResult ?? null,
     citations: input.citations ?? null,
+    instructorName: input.instructorName ?? null,
   });
+}
+
+/**
+ * Returns the instructor_name stamped on any message of this session,
+ * or null if the session has no messages yet (or none had an instructor
+ * stamped). Used by snapshot creation to inherit the auditor identity
+ * from the session that produced the snapshot.
+ */
+export async function getSessionInstructor(
+  courseCode: string,
+  sessionId: string,
+): Promise<string | null> {
+  const rows = await db
+    .select({ instructorName: captureMessages.instructorName })
+    .from(captureMessages)
+    .where(and(eq(captureMessages.courseCode, courseCode), eq(captureMessages.sessionId, sessionId)))
+    .orderBy(asc(captureMessages.turnIndex))
+    .limit(50);
+  for (const r of rows) {
+    if (r.instructorName) return r.instructorName;
+  }
+  return null;
 }
 
 /**

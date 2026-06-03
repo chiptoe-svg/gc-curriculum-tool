@@ -83,6 +83,7 @@ export async function* streamAuditAgent(
       userTurnIndex: built.userTurnIndex,
       response: finalValue,
       toolCallsUsed: finalToolCallsUsed,
+      instructorName: input.instructorName ?? null,
     });
   } catch (err) {
     yield { kind: 'error', message: err instanceof Error ? err.message : String(err) };

@@ -46,6 +46,19 @@ export interface AuditAgentInput {
    */
   userMessage?: string;
   auditMode: 'full' | 'simple';
+  /**
+   * Auditor identity for this session. Stamped on every appended message
+   * so the snapshot created from this session can inherit it. Optional;
+   * sessions started before the chooser UI shipped will be null.
+   */
+  instructorName?: string | null;
+  /**
+   * When false, the agent's at-rest context skips the "prior audit
+   * sessions" block — useful when a new instructor wants to audit the
+   * same course without being anchored on a previous instructor's
+   * findings. Default true (current behavior).
+   */
+  includePriorSessions?: boolean;
 }
 
 export interface AuditAgentResult {
@@ -62,7 +75,7 @@ interface BuiltAgentCall {
 }
 
 export async function buildAgentCall(input: AuditAgentInput): Promise<BuiltAgentCall> {
-  const { sessionId, courseCode, userMessage, auditMode } = input;
+  const { sessionId, courseCode, userMessage, auditMode, instructorName, includePriorSessions } = input;
 
   const existingBeforeUser = await getSessionMessages(courseCode, sessionId);
   const isOpeningTurn = existingBeforeUser.length === 0 && !userMessage;
@@ -78,13 +91,20 @@ export async function buildAgentCall(input: AuditAgentInput): Promise<BuiltAgent
       turnIndex: userTurnIndex,
       role: 'user',
       content: userMessage,
+      instructorName: instructorName ?? null,
     });
   }
+
+  // Fresh-start: skip the prior-sessions block so a new instructor's
+  // capture isn't anchored on whatever the previous instructor said.
+  // Default is to include (preserves the historical behavior for
+  // existing call sites).
+  const wantPriorSessions = includePriorSessions !== false;
 
   const [course, materials, priorSessions] = await Promise.all([
     getCourseByCode(courseCode),
     listMaterialsByCourse(courseCode),
-    listPriorSessionSummaries(courseCode, sessionId, 3),
+    wantPriorSessions ? listPriorSessionSummaries(courseCode, sessionId, 3) : Promise.resolve([]),
   ]);
   if (!course) throw new Error(`course not found: ${courseCode}`);
 
@@ -188,6 +208,7 @@ export interface PersistAssistantTurnInput {
   userTurnIndex: number;
   response: AuditResponse;
   toolCallsUsed: ToolCall[];
+  instructorName?: string | null;
 }
 
 export async function persistAssistantTurn(input: PersistAssistantTurnInput): Promise<void> {
@@ -214,6 +235,7 @@ export async function persistAssistantTurn(input: PersistAssistantTurnInput): Pr
     content: JSON.stringify(input.response),
     toolCalls,
     citations,
+    instructorName: input.instructorName ?? null,
   });
 }
 
@@ -239,6 +261,7 @@ export async function runAuditAgent(input: AuditAgentInput): Promise<AuditAgentR
     userTurnIndex: built.userTurnIndex,
     response: result.value,
     toolCallsUsed: result.toolCallsUsed,
+    instructorName: input.instructorName ?? null,
   });
   return { response: result.value, toolCallsUsed: result.toolCallsUsed.length };
 }

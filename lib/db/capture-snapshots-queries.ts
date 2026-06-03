@@ -48,6 +48,8 @@ export interface SnapshotRow {
   transcriptSessionId: string | null;
   scaleVersion: string;
   model: string;
+  /** Auditor identity at capture time. 'Department canonical' for backfilled rows. */
+  instructorName: string | null;
   retiredAt: Date | null;
   createdAt: Date;
 }
@@ -61,6 +63,8 @@ export interface CreateSnapshotInput {
   captionNote: string | null;
   reviewerNote: string | null;
   model: string;
+  /** Inherited from the producing session's capture_messages.instructor_name. */
+  instructorName?: string | null;
 }
 
 export async function createSnapshot(input: CreateSnapshotInput): Promise<SnapshotRow> {
@@ -74,6 +78,7 @@ export async function createSnapshot(input: CreateSnapshotInput): Promise<Snapsh
     reviewerNote: input.reviewerNote,
     scaleVersion: input.profile.scale_version,
     model: input.model,
+    instructorName: input.instructorName ?? null,
   }).returning();
   if (!row) throw new Error('createSnapshot: no row returned');
   return rowToSnapshot(row);
@@ -192,6 +197,7 @@ function rowToSnapshot(row: typeof courseCaptureSnapshots.$inferSelect): Snapsho
     transcriptSessionId: row.transcriptSessionId ?? null,
     scaleVersion: row.scaleVersion,
     model: row.model,
+    instructorName: row.instructorName ?? null,
     retiredAt: row.retiredAt,
     createdAt: row.createdAt,
   };
