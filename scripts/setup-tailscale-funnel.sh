@@ -2,13 +2,19 @@
 # Set up Tailscale Funnel on this Mac to expose ONLY the voice-bridge
 # paths over HTTPS. Everything else stays LAN-only HTTP.
 #
-# Prerequisite: Tailscale.app installed + signed in. Install with:
-#   brew install --cask tailscale-app    # requires sudo for the .pkg
-# Then launch the app once and sign in with a Tailscale account.
-# (Free for personal use.)
+# Prerequisites:
+#   1. Tailscale.app installed + signed in. Install with:
+#        brew install --cask tailscale-app   (needs sudo for the .pkg)
+#      Then launch the app once and sign in.
+#   2. In the Tailscale admin web UI:
+#        - DNS panel → click "Enable HTTPS..." (provisions Let's Encrypt cert)
+#        - Access Controls panel → add a top-level nodeAttrs block granting
+#          this machine the "funnel" attribute. (See setup-tailscale.md for
+#          the exact JSON snippet, or the chat history with Claude.)
+#   3. Verify with: tailscale funnel status (should not say "no permission")
 #
-# Then run this script. Idempotent — re-run safely after Tailscale upgrades
-# or after a reboot.
+# Then run this script. Idempotent — re-runnable after Tailscale upgrades
+# or after a reboot. The serve config is persistent across reboots.
 
 set -euo pipefail
 
@@ -19,7 +25,8 @@ if ! command -v tailscale > /dev/null 2>&1; then
   exit 1
 fi
 
-# Confirm Tailscale is up + logged in
+# Confirm Tailscale is up + signed in. Extract the machine's tailnet
+# DNS name so we can build the funnel URL the rest of the app expects.
 STATUS_JSON=$(tailscale status --json 2>/dev/null || echo '{}')
 SELF_DNS=$(echo "$STATUS_JSON" | python3 -c "import sys, json; d=json.load(sys.stdin); print(d.get('Self', {}).get('DNSName','').rstrip('.'))" 2>/dev/null || echo "")
 if [[ -z "$SELF_DNS" ]]; then
@@ -32,26 +39,43 @@ echo "Tailscale Self DNS: ${SELF_DNS}"
 echo "Funnel origin will be: ${FUNNEL_ORIGIN}"
 echo
 
-# Clear any default '/'-rooted serve config so we don't accidentally expose
-# the whole app.
-tailscale serve --https=443 --bg / off 2>/dev/null || true
+# Build a path-restricted serve config. Three paths mount the local
+# Next.js dev server; everything else 404s. AllowFunnel: true makes the
+# whole serve-config block publicly reachable over the internet via
+# Tailscale Funnel's Let's Encrypt cert.
+CONFIG_FILE=$(mktemp -t tailscale-serve-config.XXXXXX.json)
+trap 'rm -f "$CONFIG_FILE"' EXIT
 
-# Mount only the three voice-related paths on HTTPS, proxying to localhost:3000.
-echo "Configuring path-restricted Funnel..."
-tailscale serve --https=443 --bg /voice-bridge       http://localhost:3000
-tailscale serve --https=443 --bg /api/transcribe     http://localhost:3000
-tailscale serve --https=443 --bg /api/voice-session  http://localhost:3000
+cat > "$CONFIG_FILE" <<JSON
+{
+  "TCP": {
+    "443": { "HTTPS": true }
+  },
+  "Web": {
+    "${SELF_DNS}:443": {
+      "Handlers": {
+        "/voice-bridge":       { "Proxy": "http://127.0.0.1:3000" },
+        "/api/transcribe":     { "Proxy": "http://127.0.0.1:3000" },
+        "/api/voice-session":  { "Proxy": "http://127.0.0.1:3000" }
+      }
+    }
+  },
+  "AllowFunnel": {
+    "${SELF_DNS}:443": true
+  }
+}
+JSON
 
-# Promote to Funnel (public reachability over the internet, with Tailscale's
-# real Let's Encrypt cert).
-echo "Enabling Funnel..."
-tailscale funnel --https=443 --bg on
+echo "Applying serve config..."
+tailscale serve set-config "$CONFIG_FILE"
 
 echo
-echo "✓ Funnel up. Verify:"
+echo "✓ Funnel is up. Verify with:"
 echo "  curl -I ${FUNNEL_ORIGIN}/voice-bridge       # expect 200 or 401"
 echo "  curl -I ${FUNNEL_ORIGIN}/capture/test       # expect 404 (NOT exposed)"
 echo
 echo "Add to .env.local:"
 echo "  TAILSCALE_FUNNEL_ORIGIN=${FUNNEL_ORIGIN}"
 echo "  NEXT_PUBLIC_TAILSCALE_FUNNEL_ORIGIN=${FUNNEL_ORIGIN}"
+echo
+echo "Then restart Next.js: launchctl kickstart -k gui/501/com.gc.curriculum-tool"
