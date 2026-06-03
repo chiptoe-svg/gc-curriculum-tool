@@ -124,6 +124,7 @@ const mockProfile: CaptureProfile = {
     },
   },
   revised_objectives_draft: null,
+  course_emphasis: null,
 };
 
 const mockSnapshot: SnapshotRow = {

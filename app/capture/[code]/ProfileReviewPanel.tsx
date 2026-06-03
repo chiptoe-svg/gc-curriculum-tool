@@ -318,6 +318,64 @@ interface MergedSkill {
  * gap mid-review or just regenerate if the first pass is off).
  */
 /**
+ * Render the course_emphasis ranking — what the course actually weights
+ * through point allocation, as distinct from K/U/D depth scoring. Faculty
+ * can see at a glance which competencies carry the bulk of the graded
+ * effort and which are peripheral, even when the catalog treats them as
+ * peers.
+ */
+function CourseEmphasis({ items }: { items: ReadonlyArray<{
+  competency: string;
+  points: number;
+  share_pct: number;
+  centrality: 'central' | 'supporting' | 'peripheral';
+}> }) {
+  const max = Math.max(...items.map(i => i.points), 1);
+  const chipTone = (c: 'central' | 'supporting' | 'peripheral') =>
+    c === 'central' ? 'bg-blue-100 text-blue-800'
+    : c === 'supporting' ? 'bg-slate-100 text-slate-700'
+    : 'bg-stone-100 text-stone-600';
+  return (
+    <section className="rounded-md border bg-card px-4 py-3">
+      <div className="flex items-baseline justify-between gap-2">
+        <h3 className="text-sm font-semibold">Course emphasis — by point weight</h3>
+        <p className="text-[10px] text-muted-foreground">
+          Independent of depth scoring; reflects what the course&apos;s graded work weights.
+        </p>
+      </div>
+      <ul className="mt-2 space-y-1.5">
+        {items.map((it, i) => {
+          const widthPct = Math.max(2, (it.points / max) * 100);
+          return (
+            <li key={i} className="space-y-0.5">
+              <div className="flex items-baseline gap-2">
+                <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${chipTone(it.centrality)}`}>
+                  {it.centrality}
+                </span>
+                <span className="flex-1 text-xs leading-snug">{it.competency}</span>
+                <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">
+                  {it.points} pts · {it.share_pct}%
+                </span>
+              </div>
+              <div className="ml-12 h-1 rounded-full bg-muted overflow-hidden">
+                <div
+                  className={
+                    it.centrality === 'central' ? 'h-full bg-blue-500'
+                    : it.centrality === 'supporting' ? 'h-full bg-slate-400'
+                    : 'h-full bg-stone-400'
+                  }
+                  style={{ width: `${widthPct}%` }}
+                />
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+/**
  * Render the synthesized "what to paste" objectives list with per-item
  * copy buttons + a "Copy all" affordance. The prompt instructs the
  * agent to consolidate existing catalog objectives + audit suggestions
@@ -832,6 +890,10 @@ export function ProfileReviewPanel({
 
       {working.verification_summary && (
         <VerificationSummary summary={working.verification_summary} isLegacy={legacy} onCitationClick={handleCitationClick} />
+      )}
+
+      {working.course_emphasis && working.course_emphasis.length > 0 && (
+        <CourseEmphasis items={working.course_emphasis} />
       )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">

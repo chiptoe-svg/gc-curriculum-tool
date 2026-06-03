@@ -137,6 +137,24 @@ export const incomingExpectationSchema = z.object({
 });
 export type CaptureIncomingExpectation = z.infer<typeof incomingExpectationSchema>;
 
+/**
+ * One entry in the `course_emphasis` ranking. Attributes graded-work points
+ * to a competency so faculty can see which competencies the course
+ * actually weights through point allocation (independent of depth scoring,
+ * which measures student capability per competency).
+ */
+export const courseEmphasisItemSchema = z.object({
+  /** The competency statement this entry attributes points to. Must match (or paraphrase closely to) one of the entries in the `competencies` array. */
+  competency: z.string().min(1),
+  /** Total graded-work points attributed to this competency across all assignments + rubric criteria evidencing it. */
+  points: z.number().int().min(0),
+  /** Share of total attributed points (0–100). Sum across all entries should be ~100. */
+  share_pct: z.number().int().min(0).max(100),
+  /** Derived from share_pct: ≥20% = central, 5–19% = supporting, <5% = peripheral. */
+  centrality: z.enum(['central', 'supporting', 'peripheral']),
+});
+export type CaptureCourseEmphasisItem = z.infer<typeof courseEmphasisItemSchema>;
+
 export const verificationSummarySchema = z.object({
   course_shape: z.string().min(1),
   strongest_evidence: z.array(z.string()).min(1).max(5),
@@ -175,6 +193,17 @@ export const captureProfileSchema = z.object({
   verification_summary: verificationSummarySchema,
   audit_notes: captureAuditNotesSchema,
   revised_objectives_draft: z.array(z.string()).nullable(),
+  /**
+   * Point-weight ranking of competencies — what the course actually emphasizes
+   * through graded work (independent of K/U/D depth, which measures student
+   * capability). Helps faculty see when stated importance diverges from
+   * actual point allocation. Sort desc by `points`. Centrality is auto-
+   * derived from `share_pct`: ≥20% = central, 5–19% = supporting, <5% =
+   * peripheral. Nullable because pre-2026-06-03 profiles don't have this
+   * field, and courses without per-assignment point values can legitimately
+   * be empty.
+   */
+  course_emphasis: z.array(courseEmphasisItemSchema).nullable(),
 });
 export type CaptureProfile = z.infer<typeof captureProfileSchema>;
 

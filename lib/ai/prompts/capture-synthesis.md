@@ -111,7 +111,11 @@ Conform exactly to the JSON schema provided in the structured-output request. Th
     "source": "instructor" | "materials" | "inferred",
     "citations": [ ... ]
   },
-  "revised_objectives_draft": [ "<objective>", ... ] or null
+  "revised_objectives_draft": [ "<objective>", ... ] or null,
+  "course_emphasis": [
+    { "competency": "<one of the competency statements above>", "points": <int>, "share_pct": <int 0-100>, "centrality": "central" | "supporting" | "peripheral" },
+    ...
+  ] or null
 }
 ```
 
@@ -306,6 +310,46 @@ Do NOT include in `incoming_expectations`:
 - Skills the instructor mentioned aspirationally but the assignments don't demand on day one.
 
 This list is consumed by downstream curriculum analysis ("does the prereq course produce what this course assumes?"). Keep it honest and grounded.
+
+# Course emphasis (point-weight ranking — separate from depth scoring)
+
+After scoring competencies, produce `course_emphasis` — a per-competency tally of graded-work points that evidences each competency. This is **what the course actually weights through point allocation**, independent of K/U/D depth (which measures student capability). The two dimensions answer different questions:
+
+- **Depth** — *can students perform this competency at what level?* (per-competency K/U/D)
+- **Emphasis** — *how much of the course's graded effort is on this competency?* (point share)
+
+Both matter; both should be visible to faculty. A course can have a competency at D=4 that's worth only 25 pts (high capability, low emphasis) and another at D=3 worth 280 pts (slightly lower capability but where the course is structured).
+
+## How to attribute points
+
+1. **Walk every graded assignment / quiz / test / project in the materials** that has a point value in its header (e.g. `## Brand Color Report (150 pts)`) or in its rubric criteria (`- Slide deck quality (10 pts)`).
+2. **For each, decide which competency or competencies it evidences.** Most assignments evidence one primary competency; some split across multiple (a presentation rubric with separate `Slide deck quality` and `Delivery` criteria → slides go to a design/production competency, delivery goes to Communication).
+3. **Attribute points accordingly.** When a rubric breaks down points per criterion, use those numbers directly. When an assignment has only a total point value, attribute the whole total to the dominant competency it evidences (split across two only when the assignment is genuinely split-purpose, like the presentation example).
+4. **Sum per-competency totals across all assignments**, then compute `share_pct = (competency_points / sum_all_attributed_points) * 100`, rounded to nearest integer.
+5. **Assign `centrality`:** `central` when `share_pct ≥ 20`, `supporting` when `5 ≤ share_pct < 20`, `peripheral` when `share_pct < 5`.
+6. **Sort the array descending by `points`** so the most-emphasized competency is first.
+
+## Rules + edge cases
+
+- **One entry per competency** (don't list a competency twice with different attributions).
+- **Don't double-count.** A 100-point project evidencing two competencies should be split (e.g. 60 + 40), not listed as 100 + 100. The sum of `points` across all entries equals the total graded-work points found in the materials.
+- **Participation-style "show up = full credit" point allocations are still points.** The GC 4800 presentation rubric's "Successful Presentation (65 pts)" — just for delivering — gets attributed to whichever competency the presentation is about (Communication / Career Planning), even though it's not a high-bar demonstration. Depth scoring handles the "but is it actually D=4 work" question separately.
+- **Foundational competencies usually get small or zero point shares** because they're rarely graded as line items. That's expected and informative — surfaces the "high stakes / low explicit assessment" pattern.
+- **When the materials genuinely have no per-assignment point values** (e.g. a studio course graded entirely on instructor judgment without rubrics), set `course_emphasis: null`. Don't fabricate point allocations.
+- **Each `competency` string in `course_emphasis` should match (or paraphrase closely) one of the entries in `competencies`** so the UI can wire them together.
+
+## Worked example
+
+For a course with a Cultural Packaging Project (rubric 200 pts) + DuPont Cyrel Project (rubric 200 pts) + Internship Presentation (rubric 125 pts) + ArtPro+ Lab (25 pts):
+
+```jsonc
+"course_emphasis": [
+  { "competency": "Students design cross-cultural packaging concepts…",     "points": 200, "share_pct": 36, "centrality": "central" },
+  { "competency": "Students conduct sponsor-defined experimental research…", "points": 200, "share_pct": 36, "centrality": "central" },
+  { "competency": "Students communicate findings through technical presentation…", "points": 125, "share_pct": 23, "centrality": "central" },
+  { "competency": "Students use ArtPro+ prepress workflows…",                 "points":  25, "share_pct":  4, "centrality": "peripheral" }
+]
+```
 
 # Verification summary
 

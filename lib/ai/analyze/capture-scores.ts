@@ -57,6 +57,7 @@ const captureProfileJsonSchema = {
     'verification_summary',
     'audit_notes',
     'revised_objectives_draft',
+    'course_emphasis',
   ],
   properties: {
     course_code: { type: 'string', minLength: 1 },
@@ -207,6 +208,20 @@ const captureProfileJsonSchema = {
     revised_objectives_draft: {
       type: ['array', 'null'],
       items: { type: 'string' },
+    },
+    course_emphasis: {
+      type: ['array', 'null'],
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['competency', 'points', 'share_pct', 'centrality'],
+        properties: {
+          competency: { type: 'string', minLength: 1 },
+          points: { type: 'integer', minimum: 0 },
+          share_pct: { type: 'integer', minimum: 0, maximum: 100 },
+          centrality: { type: 'string', enum: ['central', 'supporting', 'peripheral'] },
+        },
+      },
     },
   },
 } as const;
