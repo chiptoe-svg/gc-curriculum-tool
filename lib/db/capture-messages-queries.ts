@@ -186,12 +186,20 @@ export async function getMessageById(
   messageId: string,
 ): Promise<{ id: string; sessionId: string; turnIndex: number; role: string; content: string | null } | null> {
   const isFullUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(messageId);
-  const whereClause = isFullUuid
-    ? and(eq(captureMessages.courseCode, courseCode), eq(captureMessages.id, messageId))
-    : and(
-        eq(captureMessages.courseCode, courseCode),
-        sql`${captureMessages.id}::text LIKE ${messageId + '%'}`,
-      );
+  let whereClause;
+  if (isFullUuid) {
+    whereClause = and(eq(captureMessages.courseCode, courseCode), eq(captureMessages.id, messageId));
+  } else {
+    // Prefix-lookup path. Refuse short prefixes (would enumerate) and
+    // refuse anything that isn't the 8-char hex shape the synthesis
+    // prompt emits — keeps the input domain narrow and rejects LIKE
+    // metacharacters by construction.
+    if (!/^[0-9a-f]{8}$/i.test(messageId)) return null;
+    whereClause = and(
+      eq(captureMessages.courseCode, courseCode),
+      sql`${captureMessages.id}::text LIKE ${messageId + '%'}`,
+    );
+  }
   const rows = await db
     .select({
       id: captureMessages.id,
