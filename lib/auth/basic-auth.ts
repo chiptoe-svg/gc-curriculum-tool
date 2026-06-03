@@ -23,27 +23,24 @@ const PUBLIC_PREFIXES = [
   '/preview',
   '/api/partners',
   '/api/preview',
-  // Voice bridge surfaces. Reached cross-origin via Tailscale Funnel
-  // from the iframe — the browser can't forward the parent's Basic Auth
-  // creds across origins. Each has its own auth model: /api/voice-session
-  // is slug+IP-bound, /api/transcribe requires a voice-session token +
-  // origin pin + per-slug rate limit, /voice-bridge is a static MediaRecorder
-  // page that produces no data on its own.
-  '/voice-bridge',
-  '/api/voice-session',
-  '/api/transcribe',
+  // Public read-only surfaces. The HTTP landing at "/" lists every
+  // course; "/view/[code]" renders the latest captured profile read-only.
+  // Both are intentionally reachable by anyone on the LAN — the value
+  // is "transparent curriculum, anyone can read; only faculty can edit."
+  // Edit pages link to the HTTPS Tailscale Funnel where Basic Auth
+  // gates them.
+  '/view',
 ] as const;
 
 /**
  * Returns true if the given pathname should be guarded by faculty
  * Basic Auth (assuming the env var that enables the gate is set).
  *
- * Note: this still returns true for paths like `/` — the home page
- * gets gated too when FACULTY_BASIC_AUTH is set. That's intentional:
- * defense in depth on LAN. The Vercel deploy doesn't set the env var,
- * so the home page stays public there.
+ * Special case: the bare home "/" path is public (it's the new landing).
+ * Everything else not in PUBLIC_PREFIXES is gated.
  */
 export function requiresBasicAuth(pathname: string): boolean {
+  if (pathname === '/') return false;
   return !PUBLIC_PREFIXES.some(p => pathname === p || pathname.startsWith(`${p}/`));
 }
 
