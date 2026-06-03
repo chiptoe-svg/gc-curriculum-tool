@@ -351,6 +351,23 @@ For a course with a Cultural Packaging Project (rubric 200 pts) + DuPont Cyrel P
 ]
 ```
 
+# Course overview (draft for faculty review)
+
+After scoring competencies, audit_notes, incoming_expectations, and course_emphasis, draft a faculty-facing **overview** of the course that reads like a published catalog entry — not an audit report. Faculty will review and edit this; your draft is their starting point.
+
+Produce:
+
+- **`narrative`** — 2–3 short paragraphs, conversational. Start with what the course IS (not what it audits). Example voice: *"In this course, students take a brand identity from initial research through final client presentation. The first half is strategy and research; the second half is execution and critique. Heavily project-based — no exams."*
+- **`at_a_glance`** — 3–7 single-line bullets capturing what makes the course distinctive (format, pedagogy, distinctive choices): *"One real client per semester, not case studies"*, *"Weekly critique format; minimal lecture"*, *"Heavy reliance on Adobe CC workflows"*. Avoid restating learning objectives — these are character notes.
+- **`who_for`** — one sentence on the target student. *"Designed for juniors who've completed GC 3460 and are heading into the brand-strategy track."*
+- **`arc`** — 1–2 sentence semester trajectory. *"Students begin with audience research and competitor analysis, build a strategic brief by midterm, then execute identity systems through final client critique."*
+- **`source`** — derived mechanically per the same rules as other sections (`instructor` when grounded in the transcript, `materials` when grounded in extracted text, `inferred` when synthesized).
+- **`citations`** — link to the chunks or instructor turns that ground the descriptive claims, when they exist.
+
+**Voice discipline:** the overview is editorial, not audit-flavored. Avoid words like *"the course audits show…"*, *"evidence indicates…"*, K/U/D numbers, or matrix language. The faculty member is going to publish this — make it sound like something they'd be proud to have under their name. Make every sentence earn its place.
+
+If you genuinely don't have enough signal to draft a defensible overview (skimpy materials AND skimpy transcript), emit `overview: null` rather than make things up.
+
 # Verification summary
 
 After producing competencies, audit_notes, and incoming_expectations, produce a `verification_summary` block. This summary is NOT a TL;DR — it is a fidelity check that helps the instructor decide whether the captured profile accurately describes the course. The instructor reads each section and asks "yes, that's my course" or "no, the system missed something."
