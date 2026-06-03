@@ -7,18 +7,29 @@ import path from 'node:path';
 /**
  * Audio transcription.
  *
- * Default backend: **local MLX-Whisper** (`mlx_whisper` CLI, M4 Max
- * Metal). Free, on-device, no network round-trip. Same engine the
- * YouTube path uses (lib/youtube/transcribe-audio.ts) — unified
- * 2026-06-03 so the mic path and the YouTube path share the same
- * Whisper model and produce comparable output.
+ * Backend ladder (first one to return a transcript wins):
  *
- * Fallback backend: **OpenAI Whisper API** (`whisper-1`). Used when
- * env `WHISPER_BACKEND=openai` is set OR when the local mlx_whisper
- * binary is missing. Costs ~$0.006/min.
+ *   1. **omlx persistent MLX server** — opportunistic, gated by a
+ *      pre-flight against `/api/status`. Only used when omlx is up,
+ *      idle (no in-flight or queued STT requests), and the configured
+ *      Whisper model is loaded. ~3× faster than the CLI because the
+ *      model stays resident across calls. Skipped silently when not
+ *      configured or when the pre-flight says "busy" — the audit-time
+ *      use case can't tolerate queueing behind a 3-minute YouTube
+ *      transcribe. See lib/youtube/transcribe-audio.ts for the YouTube
+ *      path that always tries omlx (different priority calculus).
+ *
+ *   2. **local MLX-Whisper CLI** (`mlx_whisper` binary, M4 Max Metal).
+ *      Free, on-device, no contention with omlx. Pays ~0.8s of Python
+ *      startup + MLX runtime init per call, which is the cost of total
+ *      isolation. Always tried before OpenAI when the binary exists.
+ *
+ *   3. **OpenAI Whisper API** (`whisper-1`). Last resort: only when
+ *      env `WHISPER_BACKEND=openai` is set OR when the CLI binary is
+ *      missing (e.g., dev machine without mlx-whisper). Costs ~$0.006/min.
  *
  * Accepts the raw audio bytes plus the MIME type the browser reported.
- * Both backends accept mp3, mp4, m4a, wav, webm, ogg. The browser
+ * All backends accept mp3, mp4, m4a, wav, webm, ogg. The browser
  * MediaRecorder API on Chrome produces audio/webm;codecs=opus; Safari
  * produces audio/mp4. Both work.
  */
@@ -37,6 +48,13 @@ const MLX_WHISPER = process.env.MLX_WHISPER_PATH
   ?? path.join(process.env.HOME ?? '/Users/admin', '.local/bin/mlx_whisper');
 const MLX_WHISPER_MODEL = process.env.MLX_WHISPER_MODEL
   ?? 'mlx-community/whisper-large-v3-turbo';
+
+const OMLX_BASE_URL = process.env.LOCAL_BASE_URL?.trim() ?? '';
+const OMLX_API_KEY = process.env.LOCAL_API_KEY?.trim() ?? '';
+const OMLX_WHISPER_MODEL = process.env.WHISPER_OMLX_MODEL?.trim() ?? '';
+// Pre-flight cap. 100ms is plenty for a localhost JSON ping; anything
+// slower means omlx is sluggish and we'd rather just go to CLI.
+const OMLX_PREFLIGHT_TIMEOUT_MS = 100;
 
 export interface TranscribeOptions {
   /** Override the model. Default 'mlx-large-v3-turbo' or 'whisper-1' depending on backend. */
@@ -88,6 +106,68 @@ function runFile(
       },
     );
   });
+}
+
+/**
+ * Pre-flight: returns true iff omlx is reachable within 100ms, has no
+ * STT requests in flight or queued, and has the configured Whisper
+ * model loaded. False on any failure (env unset, network error, timeout,
+ * non-200, model not loaded, busy). Never throws — callers treat false
+ * as "skip omlx, use CLI."
+ *
+ * omlx is strict FIFO per engine pool (no priority queueing — confirmed
+ * by inspecting the OpenAPI surface), so this gate is the only way to
+ * keep mic out of YouTube's queue. The gate is directional (a YouTube
+ * request could land between our check and our POST), so worst case is
+ * one transcribe ahead of us — not catastrophic.
+ */
+async function omlxIdleAndReady(): Promise<boolean> {
+  if (!OMLX_BASE_URL || !OMLX_API_KEY || !OMLX_WHISPER_MODEL) return false;
+  try {
+    // LOCAL_BASE_URL is the /v1 root (e.g. http://localhost:8000/v1).
+    // /api/status sits at the server root, not under /v1, so strip /v1.
+    const statusUrl = OMLX_BASE_URL.replace(/\/v1\/?$/, '') + '/api/status';
+    const res = await fetch(statusUrl, {
+      headers: { authorization: `Bearer ${OMLX_API_KEY}` },
+      signal: AbortSignal.timeout(OMLX_PREFLIGHT_TIMEOUT_MS),
+    });
+    if (!res.ok) return false;
+    const status = await res.json() as {
+      active_requests?: number;
+      waiting_requests?: number;
+      loaded_models?: string[];
+    };
+    const idle = (status.active_requests ?? 0) === 0 && (status.waiting_requests ?? 0) === 0;
+    const modelReady = (status.loaded_models ?? []).includes(OMLX_WHISPER_MODEL);
+    return idle && modelReady;
+  } catch {
+    return false;
+  }
+}
+
+async function transcribeAudioOmlx(
+  audio: Buffer | Uint8Array,
+  mimeType: string,
+): Promise<TranscribeResult> {
+  const fileName = fileNameForMime(mimeType);
+  const blob = new Blob([new Uint8Array(audio)], { type: mimeType });
+  const form = new FormData();
+  form.append('file', blob, fileName);
+  form.append('model', OMLX_WHISPER_MODEL);
+
+  const url = OMLX_BASE_URL.replace(/\/$/, '') + '/audio/transcriptions';
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${OMLX_API_KEY}` },
+    body: form,
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`omlx returned ${res.status}: ${body.slice(0, 200)}`);
+  }
+  const json = await res.json() as { text?: string };
+  if (!json.text) throw new Error('omlx returned no text');
+  return { text: json.text.trim(), model: `omlx:${OMLX_WHISPER_MODEL}` };
 }
 
 async function transcribeAudioMlx(
@@ -154,11 +234,25 @@ export async function transcribeAudio(
     throw new Error(`Unsupported audio MIME type: ${mimeType}`);
   }
 
-  // Local MLX-Whisper is the default. Fall back to OpenAI when:
-  //  - Env forces it (`WHISPER_BACKEND=openai`)
-  //  - The mlx_whisper binary is missing (we let runFile error bubble)
-  const wantOpenAI = process.env.WHISPER_BACKEND === 'openai';
-  if (wantOpenAI) return transcribeAudioOpenAI(audio, mimeType, opts);
+  // WHISPER_BACKEND=openai forces the OpenAI hop, skipping the local
+  // ladder entirely. Used for dev parity-checks or as an emergency lever.
+  if (process.env.WHISPER_BACKEND === 'openai') {
+    return transcribeAudioOpenAI(audio, mimeType, opts);
+  }
+
+  // Opportunistic omlx. Pre-flight gates against the case where omlx
+  // is mid-YouTube-transcribe — we'd rather pay 0.8s of CLI startup
+  // than queue behind a multi-second STT call.
+  if (await omlxIdleAndReady()) {
+    try {
+      return await transcribeAudioOmlx(audio, mimeType);
+    } catch (e) {
+      // Fall through to CLI. Log so a recurring omlx failure doesn't
+      // hide silently — but a single failure on a transient blip is
+      // fine to absorb.
+      console.warn(`[transcribe] omlx attempt failed, falling back to CLI:`, e instanceof Error ? e.message : e);
+    }
+  }
 
   try {
     return await transcribeAudioMlx(audio, mimeType);
