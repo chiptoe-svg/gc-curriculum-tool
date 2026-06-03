@@ -3,11 +3,16 @@
  *
  * Pipeline (LAN Mac only — partner Vercel deploy has none of these tools):
  *   yt-dlp → audio extract (m4a/wav) → ffmpeg resample 16kHz mono →
- *   whisper-cli (whisper.cpp) → plain text
+ *   mlx_whisper (Apple MLX) → plain text
  *
- * All local. No API calls, no per-minute cost. Runs on the M4 Max's
- * Metal GPU; about 1/10 realtime with the medium.en model — a 30-min
- * lecture transcribes in ~3 min wall-clock.
+ * All local. No API calls, no per-minute cost. Runs on the M4 Max via
+ * MLX's Metal kernels with the whisper-large-v3-turbo model — about
+ * 1/60 realtime in practice (13-min video → ~12s; 30-min lecture → ~30s).
+ *
+ * History: we previously used whisper.cpp + ggml-medium.en. Migrated to
+ * mlx-whisper 2026-06-03 for ~2× speedup and slightly cleaner
+ * segmentation. The old whisper.cpp install at /opt/homebrew/bin/whisper-cli
+ * is still around for fallback / comparison if needed.
  *
  * Constraints:
  *   - Default 30-minute length cap. Longer videos are likely lectures
@@ -15,12 +20,13 @@
  *     needs verbatim.
  *   - Skip on duration probe failure (private / age-gated / region-locked
  *     videos that yt-dlp can't even inspect).
- *   - Skip when yt-dlp / whisper-cli are missing — surface as inaccessible
+ *   - Skip when yt-dlp / mlx_whisper are missing — surface as inaccessible
  *     so the caller falls back to the existing "no captions" placeholder.
  *
  * Env overrides (optional; sensible Mac-Homebrew defaults are baked in):
- *   - WHISPER_CLI_PATH         path to whisper-cli binary
- *   - WHISPER_MODEL_PATH       path to ggml-*.bin model file
+ *   - MLX_WHISPER_PATH         path to mlx_whisper binary
+ *   - MLX_WHISPER_MODEL        model id (Hugging Face) or path; default
+ *                              mlx-community/whisper-large-v3-turbo
  *   - WHISPER_MAX_DURATION_SEC per-video cap; default 1800 (30 min)
  */
 
@@ -29,10 +35,10 @@ import { promises as fs } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-const WHISPER_CLI = process.env.WHISPER_CLI_PATH ?? '/opt/homebrew/bin/whisper-cli';
-const WHISPER_MODEL =
-  process.env.WHISPER_MODEL_PATH ??
-  path.join(process.env.HOME ?? '/Users/admin', '.cache/whisper.cpp/ggml-medium.en.bin');
+const MLX_WHISPER = process.env.MLX_WHISPER_PATH
+  ?? path.join(process.env.HOME ?? '/Users/admin', '.local/bin/mlx_whisper');
+const MLX_WHISPER_MODEL = process.env.MLX_WHISPER_MODEL
+  ?? 'mlx-community/whisper-large-v3-turbo';
 const MAX_DURATION_SEC = Number(process.env.WHISPER_MAX_DURATION_SEC ?? 1800);
 
 export interface WhisperResult {
@@ -143,10 +149,9 @@ export async function transcribeYouTubeAudio(videoId: string): Promise<WhisperRe
   // Work in a tempdir so we don't leak audio files on crash.
   const workDir = await fs.mkdtemp(path.join(tmpdir(), `whisper-yt-${videoId}-`));
   const audioPath = path.join(workDir, 'audio.wav');
-  const txtBase = path.join(workDir, 'transcript');
 
   try {
-    // 1. Download + resample to 16kHz mono wav (whisper.cpp requirement).
+    // 1. Download + resample to 16kHz mono wav (whisper input format).
     const dl = await runFile(
       'yt-dlp',
       [
@@ -170,24 +175,32 @@ export async function transcribeYouTubeAudio(videoId: string): Promise<WhisperRe
       };
     }
 
-    // 2. Transcribe. `-np` suppresses ggml/metal init noise on stdout.
+    // 2. Transcribe via mlx-whisper. Outputs <basename>.txt next to the
+    // input file inside the work dir (audio.txt). On first run for a model,
+    // mlx-whisper downloads it to ~/.cache/huggingface; subsequent calls
+    // load instantly.
     const tx = await runFile(
-      WHISPER_CLI,
-      ['-m', WHISPER_MODEL, '-f', audioPath, '-of', txtBase, '--output-txt', '-np'],
-      // 10x realtime headroom — 30-min audio should transcribe in ~3 min on
-      // M4 Max; cap at 15 min so a misconfig or huge file doesn't hang.
+      MLX_WHISPER,
+      [
+        audioPath,
+        '--model', MLX_WHISPER_MODEL,
+        '--output-format', 'txt',
+        '--output-dir', workDir,
+      ],
+      // 15-min cap — first call may include a model download (~1.6GB);
+      // steady-state, a 30-min audio transcribes in ~30s on M4 Max.
       { timeoutMs: 15 * 60_000 },
     );
     if (tx.code !== 0) {
       return {
         status: 'failed',
         durationSec,
-        errorReason: `whisper-cli failed (exit ${tx.code}): ${tx.stderr.slice(0, 300)}`,
+        errorReason: `mlx_whisper failed (exit ${tx.code}): ${tx.stderr.slice(0, 300)}`,
       };
     }
 
-    // 3. Read the .txt whisper-cli wrote.
-    const text = (await fs.readFile(`${txtBase}.txt`, 'utf8')).trim();
+    // 3. Read the .txt mlx-whisper wrote (basename matches the input).
+    const text = (await fs.readFile(path.join(workDir, 'audio.txt'), 'utf8')).trim();
     if (!text) {
       return { status: 'failed', durationSec, errorReason: 'whisper produced empty transcript' };
     }
