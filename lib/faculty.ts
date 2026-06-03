@@ -47,6 +47,7 @@ export const FACULTY_ROSTER: readonly string[] = [
   'John Seymour',
   'Daryl Stevens',
   'Danita Swaney',
+  'Chip Tonkin',
   'Erica Walker',
   'Eric Weisenmiller',
   'Charles Weiss',
