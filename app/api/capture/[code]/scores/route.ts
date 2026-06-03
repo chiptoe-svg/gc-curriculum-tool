@@ -181,6 +181,13 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
       model = result.model;
     }
 
+    // Server-stamp generated_at — the model occasionally echoes a stale
+    // timestamp from earlier context (e.g., the prior profile's value
+    // leaking back in via transcript text), which makes the "generated"
+    // line in the header lie about when synthesis actually ran. The
+    // server's clock is the source of truth.
+    profile = { ...profile, generated_at: new Date().toISOString() };
+
     await upsertCaptureProfile({ courseCode, profile, reviewerStatus: 'ai_drafted' });
     return NextResponse.json({
       profile,

@@ -9,7 +9,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import { and, asc, desc, eq, ne } from 'drizzle-orm';
+import { and, asc, desc, eq, ne, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { captureMessages } from '@/lib/db/schema';
 
@@ -174,11 +174,24 @@ export interface PriorSessionSummary {
  * Lookup one message by id, scoped to a course. The session_id is not
  * required by the storage layer but the route enforces it to keep messages
  * from different sessions from leaking across the slug boundary.
+ *
+ * The synthesis prompt emits truncated (8-char) message ids in
+ * `citations[].messageId` for readability, while the DB stores the full
+ * UUID. Try the exact UUID match first (cheap); fall back to a prefix
+ * match cast to text when the input isn't a full UUID. Postgres will
+ * reject `id = 'short'` with a type error otherwise.
  */
 export async function getMessageById(
   courseCode: string,
   messageId: string,
 ): Promise<{ id: string; sessionId: string; turnIndex: number; role: string; content: string | null } | null> {
+  const isFullUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(messageId);
+  const whereClause = isFullUuid
+    ? and(eq(captureMessages.courseCode, courseCode), eq(captureMessages.id, messageId))
+    : and(
+        eq(captureMessages.courseCode, courseCode),
+        sql`${captureMessages.id}::text LIKE ${messageId + '%'}`,
+      );
   const rows = await db
     .select({
       id: captureMessages.id,
@@ -188,8 +201,12 @@ export async function getMessageById(
       content: captureMessages.content,
     })
     .from(captureMessages)
-    .where(and(eq(captureMessages.courseCode, courseCode), eq(captureMessages.id, messageId)))
-    .limit(1);
+    .where(whereClause)
+    .limit(2);
+  // If the prefix matched more than one row, we can't safely resolve it —
+  // return null and let the caller surface "not found" rather than picking
+  // a random match.
+  if (rows.length !== 1) return null;
   return rows[0] ?? null;
 }
 
