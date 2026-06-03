@@ -40,11 +40,19 @@ export function VoiceRecorder({ slug, onTranscript, disabled, maxDurationMs = 5 
   const [message, setMessage] = useState<string>('');
   const [permission, setPermission] = useState<PermissionState>('unknown');
   const [elapsedMs, setElapsedMs] = useState(0);
+  // True when status is 'error' AND we still have the audio in memory.
+  // Drives the "Retry upload" UI — distinguishes "the recording was lost"
+  // from "the recording is preserved and just needs re-uploading."
+  const [pendingRetryable, setPendingRetryable] = useState(false);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
   const stopTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // The Blob from the last completed recording. Held until either (a) it
+  // successfully uploads, or (b) the user starts a new recording. Lets
+  // the upload step retry without forcing the user to re-speak.
+  const lastBlobRef = useRef<Blob | null>(null);
 
   useEffect(() => {
     return () => {
@@ -83,6 +91,10 @@ export function VoiceRecorder({ slug, onTranscript, disabled, maxDurationMs = 5 
     setMessage('');
     setStatus('recording');
     setElapsedMs(0);
+    // Starting a fresh recording invalidates any preserved blob from a
+    // prior failed upload — the user is explicitly moving on.
+    lastBlobRef.current = null;
+    setPendingRetryable(false);
 
     let stream: MediaStream;
     try {
@@ -176,33 +188,89 @@ export function VoiceRecorder({ slug, onTranscript, disabled, maxDurationMs = 5 
       return;
     }
 
+    // Preserve the blob across upload attempts so a transient network
+    // failure (TLS hiccup through the funnel, Safari fetch blip, etc.)
+    // doesn't force the user to re-record what they just said.
+    lastBlobRef.current = blob;
+    await attemptUpload();
+  }
+
+  // Upload (or re-upload) the blob in lastBlobRef. Single silent auto-
+  // retry on transport-layer failures so a one-packet glitch doesn't
+  // ever surface to the user.
+  async function attemptUpload(opts: { isManualRetry?: boolean } = {}) {
+    const blob = lastBlobRef.current;
+    if (!blob) {
+      setStatus('idle');
+      setMessage('No recording to upload.');
+      return;
+    }
+    setStatus('transcribing');
+    setMessage('');
+
     const form = new FormData();
     form.append('audio', blob, 'recording');
 
-    try {
-      const res = await fetch(`/api/transcribe?slug=${encodeURIComponent(slug)}`, {
-        method: 'POST',
-        body: form,
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        setStatus('error');
-        setMessage((json as { error?: string }).error ?? `Transcription failed (${res.status})`);
-        return;
+    const maxAttempts = opts.isManualRetry ? 1 : 2;
+    let lastError: string | null = null;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        const res = await fetch(`/api/transcribe?slug=${encodeURIComponent(slug)}`, {
+          method: 'POST',
+          body: form,
+        });
+        // res.ok means HTTP 2xx — happy path.
+        if (res.ok) {
+          const json = await res.json();
+          const text = (json as { text?: string }).text ?? '';
+          onTranscript(text);
+          setStatus('idle');
+          setMessage('');
+          lastBlobRef.current = null;
+          setPendingRetryable(false);
+          return;
+        }
+        // Server returned 4xx/5xx — don't retry, this is a real refusal.
+        let errMsg: string | undefined;
+        try {
+          const errBody = await res.json();
+          errMsg = (errBody as { error?: string }).error;
+        } catch { /* non-JSON body */ }
+        lastError = errMsg ?? `Transcription failed (${res.status})`;
+        break;
+      } catch (e) {
+        // fetch() rejected — transport-layer failure ("Load failed",
+        // network reset, TLS error). Worth one retry; the audio is
+        // still in lastBlobRef so we don't lose it either way.
+        lastError = e instanceof Error ? e.message : 'Network error';
+        if (attempt < maxAttempts) {
+          await new Promise(r => setTimeout(r, 500));
+        }
       }
-      const text = (json as { text?: string }).text ?? '';
-      onTranscript(text);
-      setStatus('idle');
-      setMessage('');
-    } catch (e) {
-      setStatus('error');
-      setMessage(e instanceof Error ? e.message : 'Transcription failed');
     }
+
+    setStatus('error');
+    setMessage(`${lastError} — recording preserved; click Retry to try again.`);
+    setPendingRetryable(true);
   }
 
   function handleClick() {
-    if (status === 'recording') stopRecording();
-    else if (status === 'idle' || status === 'error') void startRecording();
+    if (status === 'recording') {
+      stopRecording();
+    } else if (status === 'error' && pendingRetryable && lastBlobRef.current) {
+      // Retry uploading the preserved blob — don't make the user re-speak.
+      void attemptUpload({ isManualRetry: true });
+    } else if (status === 'idle' || status === 'error') {
+      void startRecording();
+    }
+  }
+
+  function discardAndReRecord() {
+    lastBlobRef.current = null;
+    setPendingRetryable(false);
+    setStatus('idle');
+    setMessage('');
   }
 
   // MM:SS for the live timer; updated every 250ms during recording.
@@ -213,6 +281,7 @@ export function VoiceRecorder({ slug, onTranscript, disabled, maxDurationMs = 5 
   const label =
     status === 'recording' ? `Stop · ${timer}`
       : status === 'transcribing' ? 'Transcribing…'
+      : status === 'error' && pendingRetryable ? 'Retry upload'
       : status === 'error' ? 'Retry'
       : 'Record';
 
@@ -261,6 +330,15 @@ export function VoiceRecorder({ slug, onTranscript, disabled, maxDurationMs = 5 
         >
           {message || preflightHint}
         </div>
+      )}
+      {pendingRetryable && (
+        <button
+          type="button"
+          onClick={discardAndReRecord}
+          className="text-[11px] text-muted-foreground underline-offset-2 hover:underline"
+        >
+          Discard and re-record
+        </button>
       )}
     </div>
   );
