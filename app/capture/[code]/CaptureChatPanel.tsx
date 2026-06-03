@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { VoiceBridgeProxy } from '@/components/VoiceBridgeProxy';
+import { VoiceRecorder } from '@/components/VoiceRecorder';
 import type { CaptureReadiness } from '@/lib/ai/capture/schema';
 import type { ChatMessage } from '@/lib/ai/analyze/capture-chat';
 import { CitationDrawer, type CitationTarget } from './CitationDrawer';
@@ -390,7 +390,7 @@ export function CaptureChatPanel({
             className="w-full resize-y rounded border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
           />
           <div className="flex items-center justify-between gap-3">
-            <VoiceBridgeProxy slug={slug} onTranscript={appendTranscript} disabled={busy} />
+            <VoiceRecorder slug={slug} onTranscript={appendTranscript} disabled={busy} />
             <div className="flex items-center gap-2">
               <button
                 type="button"
