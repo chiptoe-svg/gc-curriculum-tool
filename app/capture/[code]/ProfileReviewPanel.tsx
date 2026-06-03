@@ -757,22 +757,11 @@ export function ProfileReviewPanel({
           </p>
         </div>
       ) : (
-        <div className="flex items-start justify-between gap-3 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm">
-          <div>
-            <p className="font-semibold tracking-wide">DRAFT — pending your approval</p>
-            <p className="mt-0.5 text-xs leading-snug">
-              This profile was generated from your audit. Review, edit if needed, then approve to capture it as the official record.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={openSnapshotPanel}
-            disabled={saving || snapshotting || validationError !== null}
-            title={validationError ? `Fix validation issue first: ${validationError}` : 'Open the approve-and-capture panel'}
-            className="shrink-0 rounded-md bg-amber-700 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-amber-800 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Approve →
-          </button>
+        <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm">
+          <p className="font-semibold tracking-wide">DRAFT — pending your approval</p>
+          <p className="mt-0.5 text-xs leading-snug">
+            This profile was generated from your audit. Review, edit if needed, then approve at the bottom to capture it as the official record.
+          </p>
         </div>
       )}
 
