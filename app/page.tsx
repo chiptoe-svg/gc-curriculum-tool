@@ -104,7 +104,9 @@ export default async function HomePage() {
                       </Link>
                       <StatusPill status={row.status} />
                       <span className="font-mono-plex text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                        {row.lastCapturedAt ? formatDate(row.lastCapturedAt) : ''}
+                        {row.lastCapturedAt
+                          ? `${formatDate(row.lastCapturedAt)}${row.lastCapturedBy ? ` · ${row.lastCapturedBy}` : ''}`
+                          : ''}
                       </span>
                       <span className="flex items-baseline gap-3 justify-end">
                         <Link

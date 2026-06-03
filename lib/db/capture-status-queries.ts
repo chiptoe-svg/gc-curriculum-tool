@@ -10,6 +10,8 @@ export interface CourseStatusRow {
   level: number | null;
   status: CaptureStatus;
   lastCapturedAt: Date | null;   // most-recent non-retired snapshot createdAt
+  /** Auditor identity on the most-recent non-retired snapshot. Null when no snapshot or pre-backfill row had nothing. */
+  lastCapturedBy: string | null;
   lastEditedAt: Date | null;     // capture_profiles.updatedAt
   hasActiveSession: boolean;     // any capture_messages within last 24h
 }
@@ -82,6 +84,7 @@ export async function listCoursesWithStatus(): Promise<CourseStatusRow[]> {
       level: c.level ?? null,
       status,
       lastCapturedAt: snapshot?.createdAt ?? null,
+      lastCapturedBy: snapshot?.instructorName ?? null,
       lastEditedAt: profile?.updatedAt ?? null,
       hasActiveSession,
     };

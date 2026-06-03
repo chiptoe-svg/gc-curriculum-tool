@@ -46,6 +46,7 @@ export default async function ViewCoursePage({ params }: Props) {
       id: courseCaptureSnapshots.id,
       profile: courseCaptureSnapshots.profile,
       createdAt: courseCaptureSnapshots.createdAt,
+      instructorName: courseCaptureSnapshots.instructorName,
     })
     .from(courseCaptureSnapshots)
     .where(
@@ -56,6 +57,27 @@ export default async function ViewCoursePage({ params }: Props) {
     )
     .orderBy(desc(courseCaptureSnapshots.createdAt))
     .limit(1);
+
+  // Other (older or same-course-different-instructor) captures that
+  // exist but aren't the latest. Drives the "Other captures →" line in
+  // the header when >0.
+  const otherCaptures = snapshot
+    ? await db
+        .select({
+          id: courseCaptureSnapshots.id,
+          instructorName: courseCaptureSnapshots.instructorName,
+          createdAt: courseCaptureSnapshots.createdAt,
+        })
+        .from(courseCaptureSnapshots)
+        .where(
+          and(
+            eq(courseCaptureSnapshots.courseCode, code),
+            isNull(courseCaptureSnapshots.retiredAt),
+          ),
+        )
+        .orderBy(desc(courseCaptureSnapshots.createdAt))
+    : [];
+  const otherCount = Math.max(0, otherCaptures.length - 1);
 
   // Bake the slug into the Edit link server-side so faculty don't need
   // to know or type it. The slug is a deeper-layer access gate alongside
@@ -77,6 +99,21 @@ export default async function ViewCoursePage({ params }: Props) {
             <h1 className="mt-0.5 font-display text-2xl font-semibold tracking-tight">
               {course.title}
             </h1>
+            {snapshot && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Captured by <span className="font-medium text-foreground">{snapshot.instructorName ?? 'Department canonical'}</span>
+                {' · '}
+                {snapshot.createdAt.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                {otherCount > 0 && (
+                  <>
+                    {' · '}
+                    <span title="Other instructors have also captured this course">
+                      {otherCount} other {otherCount === 1 ? 'capture' : 'captures'} on file
+                    </span>
+                  </>
+                )}
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-4">
             <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">
