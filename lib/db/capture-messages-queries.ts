@@ -78,10 +78,17 @@ export async function appendMessage(input: AppendMessageInput): Promise<void> {
 }
 
 /**
- * Returns the instructor_name stamped on any message of this session,
- * or null if the session has no messages yet (or none had an instructor
- * stamped). Used by snapshot creation to inherit the auditor identity
- * from the session that produced the snapshot.
+ * Returns the instructor_name stamped on the MOST RECENT message of this
+ * session, or null if no message had an instructor stamped. Used by
+ * snapshot creation to inherit the auditor identity from the session
+ * that produced the snapshot.
+ *
+ * Most-recent-wins (not first-wins) so that mid-session identity changes
+ * — e.g., a faculty member opens an audit started under "Department
+ * canonical" and asserts ownership — propagate cleanly to the snapshot.
+ * Earlier rows keep their original stamp (the transcript stays honest
+ * about who actually typed each turn); only the snapshot picks up the
+ * "who's wrapping up" identity.
  */
 export async function getSessionInstructor(
   courseCode: string,
@@ -91,7 +98,7 @@ export async function getSessionInstructor(
     .select({ instructorName: captureMessages.instructorName })
     .from(captureMessages)
     .where(and(eq(captureMessages.courseCode, courseCode), eq(captureMessages.sessionId, sessionId)))
-    .orderBy(asc(captureMessages.turnIndex))
+    .orderBy(desc(captureMessages.turnIndex))
     .limit(50);
   for (const r of rows) {
     if (r.instructorName) return r.instructorName;

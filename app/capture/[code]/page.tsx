@@ -7,6 +7,7 @@ import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
 import { getCaptureProfileByCourse } from '@/lib/db/course-capture-profiles-queries';
 import { getCaptureConversation } from '@/lib/db/capture-conversations-queries';
 import { getLatestSnapshotByCourse } from '@/lib/db/capture-snapshots-queries';
+import { getLatestSessionId, getSessionInstructor } from '@/lib/db/capture-messages-queries';
 import { CaptureClient } from './CaptureClient';
 import { FeedbackLink } from '@/app/FeedbackLink';
 
@@ -55,6 +56,14 @@ export default async function CapturePage({ params, searchParams }: Props) {
         instructorName: latestSnapshot.instructorName,
         createdAt: latestSnapshot.createdAt.toISOString(),
       }
+    : null;
+
+  // Auditor identity stamped on the in-flight session (if any) — used to
+  // pre-fill the always-visible "Auditor: X · change" badge on resume so
+  // mid-session changes propagate without losing the prior selection.
+  const currentSessionId = await getLatestSessionId(code);
+  const initialInstructor = currentSessionId
+    ? await getSessionInstructor(code, currentSessionId)
     : null;
 
   const materialCounts = {
@@ -175,6 +184,7 @@ export default async function CapturePage({ params, searchParams }: Props) {
           initialReadiness={savedConversation?.readiness ?? null}
           savedConversationAt={savedConversation?.updatedAt ?? null}
           priorSnapshotInfo={priorSnapshotInfo}
+          initialInstructor={initialInstructor}
         />
       </main>
     </div>

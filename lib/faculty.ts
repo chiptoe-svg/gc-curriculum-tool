@@ -30,13 +30,27 @@ export const DEPARTMENT_CANONICAL = 'Department canonical';
  * to change.
  */
 export const FACULTY_ROSTER: readonly string[] = [
-  // Replace with real names, e.g.:
-  //   'Smith',
-  //   'Jones',
-  //   'Wong',
-  'Faculty A',
-  'Faculty B',
-  'Faculty C',
+  // Sorted by last name (standard academic convention) but displayed
+  // First Last in the UI. Add/remove by editing this file.
+  'Carl Blue',
+  'Amanda Bridges',
+  'Bobby Congdon',
+  'Kern Cox',
+  'Gerry Dersken',
+  'Michelle Fox',
+  'Jesse Alan Godfrey',
+  'Gilbert Santiago Gomez',
+  'Jackie Herr',
+  'Katie Hildebrand',
+  'Carla Marchione',
+  'Lori Pindar',
+  'John Seymour',
+  'Daryl Stevens',
+  'Danita Swaney',
+  'Erica Walker',
+  'Eric Weisenmiller',
+  'Charles Weiss',
+  'Charles Williams',
   DEPARTMENT_CANONICAL,
 ] as const;
 

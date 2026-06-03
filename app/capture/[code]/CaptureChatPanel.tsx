@@ -121,6 +121,8 @@ interface Props {
   onConversationChange?: (messages: ChatMessage[], readiness: CaptureReadiness | null) => void;
   /** Latest non-retired snapshot's instructor + date — drives the "build on prior" option in the session-start chooser. Null when no prior snapshot. */
   priorSnapshotInfo?: { instructorName: string | null; createdAt: string } | null;
+  /** Instructor stamped on the in-flight session (resumed audit). Pre-fills the badge so mid-session change preserves the prior selection. */
+  initialInstructor?: string | null;
 }
 
 // The chat panel renders the full transcript, the input row with text +
@@ -136,20 +138,27 @@ export function CaptureChatPanel({
   initialReadiness,
   onConversationChange,
   priorSnapshotInfo,
+  initialInstructor,
 }: Props) {
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [readiness, setReadiness] = useState<CaptureReadiness | null>(initialReadiness ?? null);
-  // Session-start chooser state. Instructor identity is required before the
-  // first turn fires; start mode determines whether the agent's at-rest
-  // context includes prior sessions (build-on) or skips them (fresh).
+  // Auditor identity for this session. Pre-fills from a resumed session's
+  // stamped instructor, or falls back to the first real faculty in the
+  // roster. Drives BOTH the session-start chooser (empty state) and the
+  // always-visible "Auditor: X · change" badge.
   const [chooserInstructor, setChooserInstructor] = useState<string>(
-    FACULTY_ROSTER.find(n => n !== DEPARTMENT_CANONICAL) ?? DEPARTMENT_CANONICAL,
+    initialInstructor && FACULTY_ROSTER.includes(initialInstructor)
+      ? initialInstructor
+      : (FACULTY_ROSTER.find(n => n !== DEPARTMENT_CANONICAL) ?? DEPARTMENT_CANONICAL),
   );
   const [chooserMode, setChooserMode] = useState<'fresh' | 'continue'>(
     priorSnapshotInfo ? 'continue' : 'fresh',
   );
+  // Toggles the inline dropdown next to the always-visible badge — lets
+  // faculty change identity mid-session without leaving the audit page.
+  const [editingInstructor, setEditingInstructor] = useState(false);
   // Session-cumulative counterparts to readiness. peakScore tracks the
   // highest score the agent reported; coveredEver is the union of all
   // covered-topic lists. Reset when the conversation resets.
@@ -308,12 +317,54 @@ export function CaptureChatPanel({
 
   return (
     <section className="rounded-md border bg-card shadow-sm">
-      <div className="border-b px-4 py-2">
-        <h2 className="text-sm font-semibold">Audit conversation</h2>
-        <p className="text-xs text-muted-foreground">
-          The auditor reads everything already in the system and asks clarifying questions about
-          prereqs, stated vs. evidenced outcomes, and any contradictions across sources.
-        </p>
+      <div className="flex items-start justify-between gap-3 border-b px-4 py-2">
+        <div>
+          <h2 className="text-sm font-semibold">Audit conversation</h2>
+          <p className="text-xs text-muted-foreground">
+            The auditor reads everything already in the system and asks clarifying questions about
+            prereqs, stated vs. evidenced outcomes, and any contradictions across sources.
+          </p>
+        </div>
+        {/* Always-visible auditor badge — same source of truth as the
+            session-start chooser. Mid-session changes propagate to the
+            snapshot via getSessionInstructor (most-recent-wins). */}
+        <div className="shrink-0 flex items-center gap-2 text-xs">
+          {editingInstructor ? (
+            <>
+              <label htmlFor="badge-instructor" className="font-mono-plex text-[9px] uppercase tracking-[0.16em] text-muted-foreground">Auditor:</label>
+              <select
+                id="badge-instructor"
+                value={chooserInstructor}
+                onChange={e => setChooserInstructor(e.target.value)}
+                className="rounded border border-input bg-background px-2 py-1 text-xs"
+              >
+                {FACULTY_ROSTER.map(name => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => setEditingInstructor(false)}
+                className="text-[11px] text-muted-foreground hover:text-foreground"
+              >
+                Done
+              </button>
+            </>
+          ) : (
+            <>
+              <span className="font-mono-plex text-[9px] uppercase tracking-[0.16em] text-muted-foreground">Auditor:</span>
+              <span className="font-medium">{chooserInstructor}</span>
+              <button
+                type="button"
+                onClick={() => setEditingInstructor(true)}
+                className="text-[11px] text-muted-foreground underline-offset-2 hover:underline"
+                title="Change auditor — earlier turns keep their original tag; new turns and the snapshot use the new one."
+              >
+                change
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       <div
