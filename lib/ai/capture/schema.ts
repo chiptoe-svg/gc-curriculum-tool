@@ -54,22 +54,27 @@ export const CaptureProfileCitation = z.object({
   chunkId: z.string().nullable().optional(),
   messageId: z.string().nullable().optional(),
   excerpt: z.string().max(200),
-}).refine(
-  c => {
-    if (c.type === 'chunk') {
-      return typeof c.chunkId === 'string' && c.chunkId.length > 0;
+}).superRefine((c, ctx) => {
+  if (c.type === 'chunk') {
+    if (typeof c.chunkId !== 'string' || c.chunkId.length === 0) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'chunk citation requires a chunkId — excerpt-only citations are not allowed (would mask hallucinated provenance)',
+      });
     }
-    // type === 'instructor' — messageId must be a UUID or its 8-char hex
-    // prefix (the form the transcript exposes to the synthesizer).
-    return typeof c.messageId === 'string'
-      && (FULL_UUID_RE.test(c.messageId) || SHORT_HEX_RE.test(c.messageId));
-  },
-  c => ({
-    message: c.type === 'chunk'
-      ? 'chunk citation requires a chunkId — excerpt-only citations are not allowed (would mask hallucinated provenance)'
-      : 'instructor citation requires a real messageId (full UUID or 8-char hex prefix as shown in the transcript) — synthetic ids like "user_3" are not allowed',
-  }),
-);
+    return;
+  }
+  // type === 'instructor' — messageId must be a UUID or its 8-char hex
+  // prefix (the form the transcript exposes to the synthesizer).
+  const ok = typeof c.messageId === 'string'
+    && (FULL_UUID_RE.test(c.messageId) || SHORT_HEX_RE.test(c.messageId));
+  if (!ok) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'instructor citation requires a real messageId (full UUID or 8-char hex prefix as shown in the transcript) — synthetic ids like "user_3" are not allowed',
+    });
+  }
+});
 export type CaptureProfileCitationType = z.infer<typeof CaptureProfileCitation>;
 export type CaptureScaleVersion = typeof captureScaleVersion;
 
