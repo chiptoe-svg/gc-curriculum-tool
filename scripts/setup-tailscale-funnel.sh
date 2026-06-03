@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Set up Tailscale Funnel on this Mac to expose ONLY the voice-bridge
-# paths over HTTPS. Everything else stays LAN-only HTTP.
+# Set up Tailscale Funnel on this Mac to expose the whole app over HTTPS.
+# Basic Auth in middleware (middleware.ts) is the only gate.
 #
 # Prerequisites:
 #   1. Tailscale.app installed + signed in. Install with:
@@ -17,11 +17,11 @@
 # or after a reboot. The funnel config is persistent across reboots.
 #
 # History: this previously used `tailscale serve set-config <json-file>`,
-# which broke in Tailscale v1.98 (requires --all/--service AND a versioned
-# JSON schema). Switched to per-handler `tailscale funnel` invocations,
-# which match the stable CLI surface and mount each path with its full
-# upstream URL (so Next.js sees the original path, not "/" — otherwise
-# Basic Auth middleware gates the funnel-side request).
+# which broke in Tailscale v1.98. Switched to `tailscale funnel`
+# invocations. Originally exposed only four narrow voice-bridge paths;
+# re-scoped to root when the architecture moved from an iframe bridge
+# to whole-app HTTPS so mic works natively in a top-level secure context.
+# See docs/superpowers/plans/2026-06-03-hybrid-http-https-mic-architecture.md.
 
 set -euo pipefail
 
@@ -52,35 +52,25 @@ echo
 echo "Resetting any prior funnel config..."
 tailscale serve reset
 
-# Mount each path independently. CRITICAL: target URL must include the
-# path (e.g. http://127.0.0.1:3000/voice-bridge, NOT just :3000).
-# Without the trailing path on the upstream URL, Tailscale strips
-# --set-path before forwarding and Next.js sees the request as "/" —
-# which the Basic Auth middleware then 401s, even though /voice-bridge
-# itself is on the public-prefix allowlist.
-PATHS=(
-  /voice-bridge
-  /api/transcribe
-  /api/voice-session
-  # Next.js JS/CSS chunks the iframe needs to hydrate. Without /_next
-  # exposed, the iframe HTML loads but every script tag 404s and
-  # React never hydrates — page sits at the SSR initial state and
-  # no postMessage handshake happens. Same content as LAN; no risk
-  # in exposing it because the rest of the app's routes still 404.
-  /_next
-)
-for P in "${PATHS[@]}"; do
-  echo "Mounting funnel: ${P}"
-  tailscale funnel --bg --https=443 --set-path="$P" "http://127.0.0.1:3000${P}"
-done
+# Mount root — the funnel now proxies the whole app, with Basic Auth in
+# middleware as the gate. The new HTTP landing at the LAN IP (which has
+# a small allowlist for public read-only paths) is reachable separately
+# at http://<lan-ip>:3000.
+#
+# Why root and not a path allowlist: the architecture moved from "narrow
+# iframe bridge for mic" to "whole faculty app on HTTPS so mic works
+# natively in a top-level secure context." See plan
+# docs/superpowers/plans/2026-06-03-hybrid-http-https-mic-architecture.md.
+echo "Mounting funnel: /"
+tailscale funnel --bg --https=443 http://127.0.0.1:3000
 
 echo
 echo "✓ Funnel is up. Verify with:"
-echo "  curl -I ${FUNNEL_ORIGIN}/voice-bridge       # expect 200"
-echo "  curl -I ${FUNNEL_ORIGIN}/capture/test       # expect 404 (NOT exposed)"
+echo "  curl -I ${FUNNEL_ORIGIN}/capture/test   # expect 401 (Basic Auth challenge)"
+echo "  curl -I ${FUNNEL_ORIGIN}/_next/static/  # expect 401 (Basic Auth challenge)"
 echo
-echo "Add to .env.local:"
+echo ".env.local should already have:"
 echo "  TAILSCALE_FUNNEL_ORIGIN=${FUNNEL_ORIGIN}"
 echo "  NEXT_PUBLIC_TAILSCALE_FUNNEL_ORIGIN=${FUNNEL_ORIGIN}"
-echo
-echo "Then restart Next.js: launchctl kickstart -k gui/501/com.gc.curriculum-tool"
+echo "(These are no longer used by app code post-cleanup, but kept for"
+echo " the landing page to know where to link Edit buttons.)"
