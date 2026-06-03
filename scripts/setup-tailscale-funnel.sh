@@ -14,7 +14,14 @@
 #   3. Verify with: tailscale funnel status (should not say "no permission")
 #
 # Then run this script. Idempotent — re-runnable after Tailscale upgrades
-# or after a reboot. The serve config is persistent across reboots.
+# or after a reboot. The funnel config is persistent across reboots.
+#
+# History: this previously used `tailscale serve set-config <json-file>`,
+# which broke in Tailscale v1.98 (requires --all/--service AND a versioned
+# JSON schema). Switched to per-handler `tailscale funnel` invocations,
+# which match the stable CLI surface and mount each path with its full
+# upstream URL (so Next.js sees the original path, not "/" — otherwise
+# Basic Auth middleware gates the funnel-side request).
 
 set -euo pipefail
 
@@ -39,39 +46,31 @@ echo "Tailscale Self DNS: ${SELF_DNS}"
 echo "Funnel origin will be: ${FUNNEL_ORIGIN}"
 echo
 
-# Build a path-restricted serve config. Three paths mount the local
-# Next.js dev server; everything else 404s. AllowFunnel: true makes the
-# whole serve-config block publicly reachable over the internet via
-# Tailscale Funnel's Let's Encrypt cert.
-CONFIG_FILE=$(mktemp -t tailscale-serve-config.XXXXXX.json)
-trap 'rm -f "$CONFIG_FILE"' EXIT
+# Wipe any prior serve/funnel state so reruns are deterministic. The
+# config is persistent across reboots, so leaving stale entries during
+# a re-run would mean accidentally exposing extra paths.
+echo "Resetting any prior funnel config..."
+tailscale serve reset
 
-cat > "$CONFIG_FILE" <<JSON
-{
-  "TCP": {
-    "443": { "HTTPS": true }
-  },
-  "Web": {
-    "${SELF_DNS}:443": {
-      "Handlers": {
-        "/voice-bridge":       { "Proxy": "http://127.0.0.1:3000" },
-        "/api/transcribe":     { "Proxy": "http://127.0.0.1:3000" },
-        "/api/voice-session":  { "Proxy": "http://127.0.0.1:3000" }
-      }
-    }
-  },
-  "AllowFunnel": {
-    "${SELF_DNS}:443": true
-  }
-}
-JSON
-
-echo "Applying serve config..."
-tailscale serve set-config "$CONFIG_FILE"
+# Mount each path independently. CRITICAL: target URL must include the
+# path (e.g. http://127.0.0.1:3000/voice-bridge, NOT just :3000).
+# Without the trailing path on the upstream URL, Tailscale strips
+# --set-path before forwarding and Next.js sees the request as "/" —
+# which the Basic Auth middleware then 401s, even though /voice-bridge
+# itself is on the public-prefix allowlist.
+PATHS=(
+  /voice-bridge
+  /api/transcribe
+  /api/voice-session
+)
+for P in "${PATHS[@]}"; do
+  echo "Mounting funnel: ${P}"
+  tailscale funnel --bg --https=443 --set-path="$P" "http://127.0.0.1:3000${P}"
+done
 
 echo
 echo "✓ Funnel is up. Verify with:"
-echo "  curl -I ${FUNNEL_ORIGIN}/voice-bridge       # expect 200 or 401"
+echo "  curl -I ${FUNNEL_ORIGIN}/voice-bridge       # expect 200"
 echo "  curl -I ${FUNNEL_ORIGIN}/capture/test       # expect 404 (NOT exposed)"
 echo
 echo "Add to .env.local:"

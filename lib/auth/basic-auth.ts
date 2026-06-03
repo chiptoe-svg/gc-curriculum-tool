@@ -23,6 +23,15 @@ const PUBLIC_PREFIXES = [
   '/preview',
   '/api/partners',
   '/api/preview',
+  // Voice bridge surfaces. Reached cross-origin via Tailscale Funnel
+  // from the iframe — the browser can't forward the parent's Basic Auth
+  // creds across origins. Each has its own auth model: /api/voice-session
+  // is slug+IP-bound, /api/transcribe requires a voice-session token +
+  // origin pin + per-slug rate limit, /voice-bridge is a static MediaRecorder
+  // page that produces no data on its own.
+  '/voice-bridge',
+  '/api/voice-session',
+  '/api/transcribe',
 ] as const;
 
 /**
