@@ -307,9 +307,22 @@ export function CaptureClient({
 
       {stage === 'generating' && (
         <div className="rounded-md border bg-muted/20 px-4 py-6 text-center">
-          <p className="text-sm font-medium">Generating KUD+ profile…</p>
+          <div className="mx-auto mb-3 flex items-center justify-center gap-3">
+            {/* Animated spinner — gives visible "I'm working" feedback during
+                the ~15-60s synthesis call. animate-spin is Tailwind's built-in
+                360° rotation; pairs with a pulsing label below so the page
+                doesn't read as frozen. */}
+            <span
+              aria-hidden="true"
+              className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-foreground"
+            />
+            <p className="text-sm font-medium animate-pulse">Generating KUD+ profile…</p>
+          </div>
           <p className="mt-1 text-xs text-muted-foreground">
             Scoring K/U/D depth (0–5) on each competency, citing evidence, and assessing productive-failure conditions.
+          </p>
+          <p className="mt-2 text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70">
+            Usually 15–60 seconds — please don&apos;t close this tab
           </p>
         </div>
       )}

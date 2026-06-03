@@ -3,7 +3,8 @@ import Link from 'next/link';
 import { db } from '@/lib/db/client';
 import { eq, desc, and, isNull } from 'drizzle-orm';
 import { courses, courseCaptureSnapshots } from '@/lib/db/schema';
-import { ReadOnlyProfile } from './ReadOnlyProfile';
+import { CapturedView } from './CapturedView';
+import { CatalogFallbackView } from './CatalogFallbackView';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,20 +13,28 @@ interface Props {
 }
 
 /**
- * Public HTTP read-only profile view. No slug, no Basic Auth — anyone
- * on the LAN can read a captured course profile. Renders the latest
- * non-retired snapshot if one exists; falls back to a "no profile yet"
- * message otherwise.
+ * Public HTTP read-only profile view. No slug, no Basic Auth — anyone on
+ * the LAN can read a course's captured profile or, if uncaptured, the
+ * catalog/Google-Sheets data we have.
  *
- * The Edit link sends faculty to the HTTPS Tailscale Funnel origin
- * where Basic Auth gates the editor and mic works natively.
+ * Two states:
+ *   - Captured: snapshot exists → <CapturedView> renders the rich
+ *     post-audit findings (course shape, real outcomes, catalog deltas,
+ *     incoming expectations, strongest evidence). Depth scores and
+ *     citation chunk IDs are hidden — auditor calibration internals.
+ *   - Uncaptured: no snapshot → <CatalogFallbackView> shows description,
+ *     learning objectives, major projects, prereqs, syllabus link from
+ *     the courses table, with a prominent "not yet audited" banner.
+ *
+ * Edit button (header) sends faculty to the HTTPS Tailscale Funnel where
+ * Basic Auth gates the editor and mic works natively.
  */
 export default async function ViewCoursePage({ params }: Props) {
   const { code: rawCode } = await params;
   const code = decodeURIComponent(rawCode);
 
   const [course] = await db
-    .select({ code: courses.code, title: courses.title })
+    .select()
     .from(courses)
     .where(eq(courses.code, code))
     .limit(1);
@@ -36,7 +45,7 @@ export default async function ViewCoursePage({ params }: Props) {
     .select({
       id: courseCaptureSnapshots.id,
       profile: courseCaptureSnapshots.profile,
-      capturedAt: courseCaptureSnapshots.createdAt,
+      createdAt: courseCaptureSnapshots.createdAt,
     })
     .from(courseCaptureSnapshots)
     .where(
@@ -49,8 +58,8 @@ export default async function ViewCoursePage({ params }: Props) {
     .limit(1);
 
   // Bake the slug into the Edit link server-side so faculty don't need
-  // to know or type it. The slug is a deeper-layer gate (defense in
-  // depth alongside Basic Auth); the env var is the canonical source.
+  // to know or type it. The slug is a deeper-layer access gate alongside
+  // Basic Auth; PROTOTYPE_SLUG is the canonical source.
   const slug = process.env.PROTOTYPE_SLUG ?? '';
   const funnelOrigin = process.env.TAILSCALE_FUNNEL_ORIGIN ?? '';
   const editHref = funnelOrigin && slug
@@ -63,10 +72,10 @@ export default async function ViewCoursePage({ params }: Props) {
         <div className="mx-auto flex max-w-4xl items-baseline justify-between gap-4 px-6 py-4">
           <div>
             <p className="font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-              {course.code} · read-only
+              {course.code}{snapshot ? ' · captured' : ' · catalog'}
             </p>
             <h1 className="mt-0.5 font-display text-2xl font-semibold tracking-tight">
-              {course.title ?? course.code}
+              {course.title}
             </h1>
           </div>
           <div className="flex items-center gap-4">
@@ -87,16 +96,9 @@ export default async function ViewCoursePage({ params }: Props) {
       </header>
       <main className="mx-auto max-w-4xl px-6 py-8">
         {snapshot ? (
-          <ReadOnlyProfile profile={snapshot.profile} capturedAt={snapshot.capturedAt} />
+          <CapturedView profile={snapshot.profile} capturedAt={snapshot.createdAt} />
         ) : (
-          <div className="rounded-md border border-dashed p-8 text-center text-muted-foreground">
-            <p>No captured profile yet for {course.code}.</p>
-            {editHref && (
-              <p className="mt-2 text-sm">
-                Faculty can start a capture via the Edit link above.
-              </p>
-            )}
-          </div>
+          <CatalogFallbackView course={course} editHref={editHref} />
         )}
       </main>
     </div>
