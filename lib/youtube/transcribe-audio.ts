@@ -39,6 +39,18 @@ const MLX_WHISPER = process.env.MLX_WHISPER_PATH
   ?? path.join(process.env.HOME ?? '/Users/admin', '.local/bin/mlx_whisper');
 const MLX_WHISPER_MODEL = process.env.MLX_WHISPER_MODEL
   ?? 'mlx-community/whisper-large-v3-turbo';
+
+// omlx (local persistent MLX server) optional preferred path. When
+// reachable + the configured Whisper model is loaded there, transcription
+// uses the persistent server (no per-call model load tax, shared across
+// concurrent YouTube transcribes). On any failure (omlx not running,
+// model not loaded, network blip) we transparently fall back to the CLI
+// shell-out, so YouTube transcription keeps working before the model is
+// loaded into omlx.
+const OMLX_BASE_URL = process.env.LOCAL_BASE_URL?.trim() ?? '';
+const OMLX_API_KEY = process.env.LOCAL_API_KEY?.trim() ?? '';
+const OMLX_WHISPER_MODEL = process.env.WHISPER_OMLX_MODEL?.trim()
+  ?? 'mlx-community/whisper-large-v3-turbo';
 const MAX_DURATION_SEC = Number(process.env.WHISPER_MAX_DURATION_SEC ?? 1800);
 
 export interface WhisperResult {
@@ -123,7 +135,65 @@ async function probeDurationSec(videoUrl: string): Promise<number | null> {
 }
 
 /**
- * Download YouTube audio and transcribe via whisper.cpp.
+ * Try transcribing via the omlx persistent server (OpenAI-compatible
+ * /v1/audio/transcriptions endpoint). Returns the transcript text on
+ * success, throws on any failure (model not loaded, network, etc.) so
+ * the caller can fall back to CLI.
+ */
+async function tryOmlxTranscribe(audioPath: string): Promise<string> {
+  const audioBytes = await fs.readFile(audioPath);
+  const blob = new Blob([new Uint8Array(audioBytes)], { type: 'audio/wav' });
+  const form = new FormData();
+  form.append('file', blob, 'audio.wav');
+  form.append('model', OMLX_WHISPER_MODEL);
+
+  // Build the transcriptions URL from LOCAL_BASE_URL (which is the /v1
+  // root, e.g. http://localhost:8000/v1).
+  const url = OMLX_BASE_URL.replace(/\/$/, '') + '/audio/transcriptions';
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${OMLX_API_KEY}` },
+    body: form,
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`omlx returned ${res.status}: ${body.slice(0, 200)}`);
+  }
+  const json = await res.json() as { text?: string };
+  if (!json.text) throw new Error('omlx returned no text');
+  return json.text.trim();
+}
+
+/**
+ * Fallback: shell out to mlx_whisper CLI. Writes <audio-basename>.txt
+ * next to the input in workDir. Returns the transcript text or null
+ * on failure (so the calling code can surface a unified error).
+ */
+async function cliTranscribe(audioPath: string, workDir: string): Promise<string | null> {
+  const tx = await runFile(
+    MLX_WHISPER,
+    [audioPath, '--model', MLX_WHISPER_MODEL, '--output-format', 'txt', '--output-dir', workDir],
+    { timeoutMs: 15 * 60_000 },
+  );
+  if (tx.code !== 0) {
+    console.error(`[transcribe-yt] mlx_whisper CLI failed (exit ${tx.code}): ${tx.stderr.slice(0, 300)}`);
+    return null;
+  }
+  // mlx_whisper writes <basename>.txt to --output-dir
+  const stem = path.basename(audioPath, path.extname(audioPath));
+  return (await fs.readFile(path.join(workDir, `${stem}.txt`), 'utf8')).trim();
+}
+
+/**
+ * Download YouTube audio and transcribe.
+ *
+ * Transcription backend selection:
+ *   1. If LOCAL_BASE_URL + LOCAL_API_KEY are set, try omlx first
+ *      (persistent MLX server — no per-call model load tax).
+ *   2. On any omlx failure (server not running, Whisper model not loaded,
+ *      network blip), fall back to the mlx_whisper CLI shell-out.
+ *   3. If both fail, return failed status.
+ *
  * `videoId` is the 11-char YouTube id; we build the canonical URL internally.
  */
 export async function transcribeYouTubeAudio(videoId: string): Promise<WhisperResult> {
@@ -175,32 +245,28 @@ export async function transcribeYouTubeAudio(videoId: string): Promise<WhisperRe
       };
     }
 
-    // 2. Transcribe via mlx-whisper. Outputs <basename>.txt next to the
-    // input file inside the work dir (audio.txt). On first run for a model,
-    // mlx-whisper downloads it to ~/.cache/huggingface; subsequent calls
-    // load instantly.
-    const tx = await runFile(
-      MLX_WHISPER,
-      [
-        audioPath,
-        '--model', MLX_WHISPER_MODEL,
-        '--output-format', 'txt',
-        '--output-dir', workDir,
-      ],
-      // 15-min cap — first call may include a model download (~1.6GB);
-      // steady-state, a 30-min audio transcribes in ~30s on M4 Max.
-      { timeoutMs: 15 * 60_000 },
-    );
-    if (tx.code !== 0) {
+    // 2. Transcribe. Prefer omlx persistent server (model stays loaded
+    // across calls; shared across concurrent scans). Fall back to CLI
+    // shell-out on any failure so this keeps working before omlx has
+    // the Whisper model loaded.
+    let text: string | null = null;
+    if (OMLX_BASE_URL && OMLX_API_KEY) {
+      const omlxText = await tryOmlxTranscribe(audioPath).catch(err => {
+        console.warn(`[transcribe-yt] omlx unavailable for ${videoId}, falling back to CLI:`, err instanceof Error ? err.message : err);
+        return null;
+      });
+      if (omlxText) text = omlxText;
+    }
+    if (text === null) {
+      text = await cliTranscribe(audioPath, workDir);
+    }
+    if (text === null) {
       return {
         status: 'failed',
         durationSec,
-        errorReason: `mlx_whisper failed (exit ${tx.code}): ${tx.stderr.slice(0, 300)}`,
+        errorReason: 'both omlx and CLI transcription failed',
       };
     }
-
-    // 3. Read the .txt mlx-whisper wrote (basename matches the input).
-    const text = (await fs.readFile(path.join(workDir, 'audio.txt'), 'utf8')).trim();
     if (!text) {
       return { status: 'failed', durationSec, errorReason: 'whisper produced empty transcript' };
     }
