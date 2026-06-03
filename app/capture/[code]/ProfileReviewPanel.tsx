@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import {
   captureProfileSchema,
   type CaptureProfile,
@@ -603,6 +603,11 @@ export function ProfileReviewPanel({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [lastSavedStatus, setLastSavedStatus] = useState<CaptureReviewerStatus>(reviewerStatus);
   const [snapshotOpen, setSnapshotOpen] = useState(false);
+  // Anchor for scroll-to-snapshot-panel. Used by both the top-banner
+  // "Approve" button and the bottom "Done reviewing" button so they
+  // land you ON the snapshot caption/note inputs rather than at y=0
+  // (which is above the modal, since the modal sits mid-page).
+  const snapshotPanelRef = useRef<HTMLDivElement | null>(null);
   const [snapshotCaption, setSnapshotCaption] = useState('');
   const [snapshotNote, setSnapshotNote] = useState('');
   const [snapshotting, setSnapshotting] = useState(false);
@@ -723,13 +728,17 @@ export function ProfileReviewPanel({
   // `profile` prop asynchronously and working momentarily ≠ profile.
   const isCaptured = lastSavedStatus === 'confirmed';
 
-  function approveFromBottom() {
-    // Bottom button = "approve quickly" — opens the modal AND scrolls to it so
-    // the user sees the caption/note inputs rather than dispatching blindly.
+  function openSnapshotPanel() {
+    // Opens the caption/note modal and scrolls it INTO view. Previously
+    // scrolled to y=0 (page top), which sat above the modal because the
+    // modal renders below the course-overview block — user landed
+    // mid-page with no visible target. Now scrolls to the modal itself
+    // via ref + scrollIntoView, after a tick so React has rendered it.
     setSnapshotOpen(true);
-    if (typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    if (typeof window === 'undefined') return;
+    requestAnimationFrame(() => {
+      snapshotPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   }
 
   return (
@@ -748,11 +757,22 @@ export function ProfileReviewPanel({
           </p>
         </div>
       ) : (
-        <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm">
-          <p className="font-semibold tracking-wide">DRAFT — pending your approval</p>
-          <p className="mt-0.5 text-xs leading-snug">
-            This profile was generated from your audit. Review, edit if needed, then scroll to the bottom to approve and capture it as the official record.
-          </p>
+        <div className="flex items-start justify-between gap-3 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm">
+          <div>
+            <p className="font-semibold tracking-wide">DRAFT — pending your approval</p>
+            <p className="mt-0.5 text-xs leading-snug">
+              This profile was generated from your audit. Review, edit if needed, then approve to capture it as the official record.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={openSnapshotPanel}
+            disabled={saving || snapshotting || validationError !== null}
+            title={validationError ? `Fix validation issue first: ${validationError}` : 'Open the approve-and-capture panel'}
+            className="shrink-0 rounded-md bg-amber-700 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-amber-800 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Approve →
+          </button>
         </div>
       )}
 
@@ -819,7 +839,10 @@ export function ProfileReviewPanel({
       )}
 
       {snapshotOpen && (
-        <div className="rounded-md border bg-card px-4 py-4 space-y-3 shadow-sm">
+        <div
+          ref={snapshotPanelRef}
+          className="scroll-mt-4 rounded-md border-2 border-amber-400 bg-card px-4 py-4 space-y-3 shadow-md"
+        >
           <header>
             <h3 className="text-sm font-semibold">Approve this profile</h3>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -951,7 +974,7 @@ export function ProfileReviewPanel({
           </p>
           <button
             type="button"
-            onClick={approveFromBottom}
+            onClick={openSnapshotPanel}
             disabled={saving || snapshotting || validationError !== null}
             title={validationError ? `Fix validation issue first: ${validationError}` : undefined}
             className="mt-3 rounded-md bg-amber-700 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-800 disabled:opacity-50 disabled:cursor-not-allowed"
