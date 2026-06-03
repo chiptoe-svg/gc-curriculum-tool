@@ -53,10 +53,24 @@ export function CitationDrawer({ courseCode, slug, target, onClose }: Props) {
       try {
         if (target.type === 'chunk' && target.chunkId) {
           const res = await fetch(`${base}/chunks/${encodeURIComponent(target.chunkId)}${qs}`);
+          // 404 = the chunk id doesn't resolve (e.g., synthetic id from
+          // earlier prompt era). Treat as "excerpt-only" rather than an
+          // error — the excerpt alone is enough to ground the citation.
+          if (res.status === 404) {
+            return;
+          }
           if (!res.ok) throw new Error(`chunk lookup failed (${res.status})`);
           if (!cancelled) setChunk((await res.json()) as ChunkPayload);
         } else if (target.type === 'instructor' && target.messageId) {
           const res = await fetch(`${base}/messages/${encodeURIComponent(target.messageId)}${qs}`);
+          // 404 = the synthesis prompt emitted a synthetic messageId
+          // (e.g., "user_3") that doesn't correspond to a real DB row.
+          // Older profiles from before the prompt was tightened can carry
+          // these; the cited excerpt is shown unmodified by the caller —
+          // no need to error, just leave message null.
+          if (res.status === 404) {
+            return;
+          }
           if (!res.ok) throw new Error(`message lookup failed (${res.status})`);
           if (!cancelled) setMessage((await res.json()) as MessagePayload);
         }
@@ -121,7 +135,19 @@ export function CitationDrawer({ courseCode, slug, target, onClose }: Props) {
         )}
 
         {target.excerpt && !chunk && !message && !loading && (
-          <p className="text-xs italic text-muted-foreground">Cited excerpt: {target.excerpt}</p>
+          <div className="space-y-2">
+            <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">
+              Synthesized citation — excerpt only
+            </p>
+            <p className="rounded bg-muted/40 px-3 py-2 text-sm leading-relaxed text-foreground">
+              {target.excerpt}
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              The synthesizer included this excerpt to ground a finding without linking
+              to a specific transcript turn. The full turn isn&apos;t directly resolvable —
+              the excerpt above is what the synthesizer is citing.
+            </p>
+          </div>
         )}
       </aside>
     </div>

@@ -133,11 +133,15 @@ message is cited by multiple turns, include it once (de-duplicate by
 `chunkId`/`messageId`).
 
 If a finding rests on instructor statements the agent did not explicitly cite,
-add a synthetic `{ type: 'instructor', messageId: '<id of that user turn>',
-excerpt: '<≤200 char quote>' }` citation. If it rests on material content the
-agent did not explicitly cite, add a `{ type: 'chunk', excerpt: '<verbatim
-phrase from the digest or material>' }` citation (omit `chunkId` if you do not
-have one — the excerpt is enough to trace it back).
+add a synthetic `{ type: 'instructor', excerpt: '<≤200 char quote>' }` citation
+— **omit `messageId` entirely** (do not invent IDs like `user_3`, `turn_5`, or
+similar; only emit `messageId` when you are carrying forward an agent-tool
+citation verbatim with a real UUID-shaped id). If a finding rests on material
+content the agent did not explicitly cite, add a `{ type: 'chunk', excerpt:
+'<verbatim phrase from the digest or material>' }` citation (omit `chunkId` if
+you do not have one — the excerpt is enough to trace it back). The excerpt
+alone is sufficient to ground a synthetic citation; the UI surfaces it without
+needing a resolvable underlying turn.
 
 # How to derive `source` (mechanical rule — apply per finding, no exceptions)
 
