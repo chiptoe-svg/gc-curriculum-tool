@@ -34,12 +34,42 @@ export type CaptureProfileSourceType = z.infer<typeof CaptureProfileSource>;
 // strict-mode JSON schema can't encode "optional," so the model emits
 // null for the unused slot. See lib/ai/analyze/capture-scores.ts
 // CITATIONS_ARRAY for the corresponding JSON schema shape.
+//
+// Provenance discipline (tightened 2026-06-03): every citation MUST resolve
+// to a real source. A chunk citation requires a chunkId; an instructor
+// citation requires a real messageId (either the full UUID stored in
+// capture_messages.id, or the 8-char hex prefix the synthesis transcript
+// exposes via `id=<prefix>` — both lookup paths work via getMessageById).
+// The "excerpt alone is enough" allowance was a synthesizer-side escape
+// that masked hallucinated citations as ground-truth; rejected here at
+// validate-time. Findings that can't be grounded in a real chunk/turn
+// shouldn't be made.
+//
+// Synthetic positional ids (`user_3`, `turn_5`, `msg_2`, etc.) fail both
+// shape tests below and are rejected.
+const FULL_UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const SHORT_HEX_RE = /^[0-9a-f]{8}$/i;
 export const CaptureProfileCitation = z.object({
   type: z.enum(['chunk', 'instructor']),
   chunkId: z.string().nullable().optional(),
   messageId: z.string().nullable().optional(),
   excerpt: z.string().max(200),
-});
+}).refine(
+  c => {
+    if (c.type === 'chunk') {
+      return typeof c.chunkId === 'string' && c.chunkId.length > 0;
+    }
+    // type === 'instructor' — messageId must be a UUID or its 8-char hex
+    // prefix (the form the transcript exposes to the synthesizer).
+    return typeof c.messageId === 'string'
+      && (FULL_UUID_RE.test(c.messageId) || SHORT_HEX_RE.test(c.messageId));
+  },
+  c => ({
+    message: c.type === 'chunk'
+      ? 'chunk citation requires a chunkId — excerpt-only citations are not allowed (would mask hallucinated provenance)'
+      : 'instructor citation requires a real messageId (full UUID or 8-char hex prefix as shown in the transcript) — synthetic ids like "user_3" are not allowed',
+  }),
+);
 export type CaptureProfileCitationType = z.infer<typeof CaptureProfileCitation>;
 export type CaptureScaleVersion = typeof captureScaleVersion;
 

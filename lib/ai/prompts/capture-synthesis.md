@@ -132,16 +132,27 @@ A finding may carry multiple citations of either type. If the same chunk or
 message is cited by multiple turns, include it once (de-duplicate by
 `chunkId`/`messageId`).
 
-If a finding rests on instructor statements the agent did not explicitly cite,
-add a synthetic `{ type: 'instructor', excerpt: '<≤200 char quote>' }` citation
-— **omit `messageId` entirely** (do not invent IDs like `user_3`, `turn_5`, or
-similar; only emit `messageId` when you are carrying forward an agent-tool
-citation verbatim with a real UUID-shaped id). If a finding rests on material
-content the agent did not explicitly cite, add a `{ type: 'chunk', excerpt:
-'<verbatim phrase from the digest or material>' }` citation (omit `chunkId` if
-you do not have one — the excerpt is enough to trace it back). The excerpt
-alone is sufficient to ground a synthetic citation; the UI surfaces it without
-needing a resolvable underlying turn.
+**Hard provenance rule (validate-time enforced — the schema will reject
+violations and the run will fail):**
+
+- Every `instructor` citation MUST include a real `messageId` — the
+  UUID-shaped id of the actual `capture_messages` row the citation grounds
+  in. The full transcript is in your context, every user turn has a real
+  id; cite one of them. Do NOT invent positional ids like `user_3`,
+  `turn_5`, `msg_2`, or similar — those will fail validation.
+- Every `chunk` citation MUST include a real `chunkId` — the id the agent
+  retrieved via its tool calls. Do NOT include a `chunk` citation if no
+  agent tool call ever surfaced that chunk id.
+
+If you cannot ground a finding in real chunk/turn pointers, **omit the
+finding** rather than emit excerpt-only citations. Multiple citations per
+finding are encouraged: a single finding can carry 3-5 real citations
+across both chunks and turns when the synthesis genuinely draws from
+multiple sources.
+
+The `excerpt` field is still required on every citation — it's the
+≤200-char quote that makes the citation human-readable in the UI. But
+excerpt alone is not provenance; the id is.
 
 # How to derive `source` (mechanical rule — apply per finding, no exceptions)
 
