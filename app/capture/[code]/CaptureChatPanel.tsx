@@ -5,6 +5,7 @@ import { VoiceRecorder } from '@/components/VoiceRecorder';
 import type { CaptureReadiness } from '@/lib/ai/capture/schema';
 import type { ChatMessage } from '@/lib/ai/analyze/capture-chat';
 import { CitationDrawer, type CitationTarget } from './CitationDrawer';
+import { FACULTY_ROSTER, DEPARTMENT_CANONICAL } from '@/lib/faculty';
 
 // Re-export so existing imports from this module keep working.
 export type { ChatMessage } from '@/lib/ai/analyze/capture-chat';
@@ -118,6 +119,8 @@ interface Props {
   initialReadiness?: CaptureReadiness | null;
   /** Called after each successful turn so the parent can persist progress. */
   onConversationChange?: (messages: ChatMessage[], readiness: CaptureReadiness | null) => void;
+  /** Latest non-retired snapshot's instructor + date — drives the "build on prior" option in the session-start chooser. Null when no prior snapshot. */
+  priorSnapshotInfo?: { instructorName: string | null; createdAt: string } | null;
 }
 
 // The chat panel renders the full transcript, the input row with text +
@@ -132,11 +135,21 @@ export function CaptureChatPanel({
   onGenerate,
   initialReadiness,
   onConversationChange,
+  priorSnapshotInfo,
 }: Props) {
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [readiness, setReadiness] = useState<CaptureReadiness | null>(initialReadiness ?? null);
+  // Session-start chooser state. Instructor identity is required before the
+  // first turn fires; start mode determines whether the agent's at-rest
+  // context includes prior sessions (build-on) or skips them (fresh).
+  const [chooserInstructor, setChooserInstructor] = useState<string>(
+    FACULTY_ROSTER.find(n => n !== DEPARTMENT_CANONICAL) ?? DEPARTMENT_CANONICAL,
+  );
+  const [chooserMode, setChooserMode] = useState<'fresh' | 'continue'>(
+    priorSnapshotInfo ? 'continue' : 'fresh',
+  );
   // Session-cumulative counterparts to readiness. peakScore tracks the
   // highest score the agent reported; coveredEver is the union of all
   // covered-topic lists. Reset when the conversation resets.
@@ -173,6 +186,12 @@ export function CaptureChatPanel({
           body: JSON.stringify({
             messages: next,
             ...(sessionId ? { sessionId } : {}),
+            instructorName: chooserInstructor,
+            // Only "fresh" sessions skip the prior-sessions block. Once a
+            // session has started (sessionId set), the choice doesn't
+            // change behavior — but we send it anyway so the server can
+            // validate consistency if it wants.
+            includePriorSessions: chooserMode !== 'fresh',
           }),
         },
       );
@@ -309,13 +328,74 @@ export function CaptureChatPanel({
               The conversation runs as long as it needs to ground every rating in evidence —
               you can steer it any time.
             </p>
+
+            <div className="mt-6 grid w-full max-w-md gap-4 rounded-md border bg-card px-4 py-4 text-left shadow-sm">
+              <div className="space-y-1">
+                <label htmlFor="chooser-instructor" className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  I&apos;m the auditor:
+                </label>
+                <select
+                  id="chooser-instructor"
+                  value={chooserInstructor}
+                  onChange={e => setChooserInstructor(e.target.value)}
+                  className="w-full rounded border border-input bg-background px-2 py-1.5 text-sm"
+                >
+                  {FACULTY_ROSTER.map(name => (
+                    <option key={name} value={name}>{name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {priorSnapshotInfo && (
+                <fieldset className="space-y-1">
+                  <legend className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    Start mode:
+                  </legend>
+                  <label className="flex items-start gap-2 rounded border border-transparent px-2 py-1.5 text-xs hover:bg-muted/40">
+                    <input
+                      type="radio"
+                      name="chooser-mode"
+                      value="continue"
+                      checked={chooserMode === 'continue'}
+                      onChange={() => setChooserMode('continue')}
+                      className="mt-0.5"
+                    />
+                    <span>
+                      <span className="font-medium">Build on prior capture</span>
+                      <span className="block text-[11px] text-muted-foreground">
+                        {priorSnapshotInfo.instructorName ?? 'Unknown'}
+                        {' · '}
+                        {new Date(priorSnapshotInfo.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </span>
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-2 rounded border border-transparent px-2 py-1.5 text-xs hover:bg-muted/40">
+                    <input
+                      type="radio"
+                      name="chooser-mode"
+                      value="fresh"
+                      checked={chooserMode === 'fresh'}
+                      onChange={() => setChooserMode('fresh')}
+                      className="mt-0.5"
+                    />
+                    <span>
+                      <span className="font-medium">Fresh capture</span>
+                      <span className="block text-[11px] text-muted-foreground">
+                        Don&apos;t anchor on what previous instructors found — start from materials + catalog only.
+                      </span>
+                    </span>
+                  </label>
+                </fieldset>
+              )}
+            </div>
+
             <button
               type="button"
               onClick={handleStart}
               disabled={busy}
               className="mt-4 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50"
             >
-              {busy ? 'Starting…' : 'Start session'}
+              {busy ? 'Starting…' : 'Start audit'}
             </button>
           </div>
         ) : (

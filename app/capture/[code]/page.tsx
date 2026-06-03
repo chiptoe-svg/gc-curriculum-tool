@@ -6,6 +6,7 @@ import { getCourseProfile } from '@/lib/db/course-profile-queries';
 import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
 import { getCaptureProfileByCourse } from '@/lib/db/course-capture-profiles-queries';
 import { getCaptureConversation } from '@/lib/db/capture-conversations-queries';
+import { getLatestSnapshotByCourse } from '@/lib/db/capture-snapshots-queries';
 import { CaptureClient } from './CaptureClient';
 import { FeedbackLink } from '@/app/FeedbackLink';
 
@@ -38,12 +39,23 @@ export default async function CapturePage({ params, searchParams }: Props) {
   const course = await getCourseByCode(code);
   if (!course) notFound();
 
-  const [builderProfile, materials, priorCapture, savedConversation] = await Promise.all([
+  const [builderProfile, materials, priorCapture, savedConversation, latestSnapshot] = await Promise.all([
     getCourseProfile(code),
     listMaterialsByCourse(code),
     getCaptureProfileByCourse(code),
     getCaptureConversation(code),
+    getLatestSnapshotByCourse(code),
   ]);
+
+  // Tells the chat panel's session-start chooser whether there's a prior
+  // snapshot to "build on" vs. forcing fresh-only. Just the identity +
+  // date — full snapshot is heavyweight and unnecessary here.
+  const priorSnapshotInfo = latestSnapshot
+    ? {
+        instructorName: latestSnapshot.instructorName,
+        createdAt: latestSnapshot.createdAt.toISOString(),
+      }
+    : null;
 
   const materialCounts = {
     total: materials.length,
@@ -162,6 +174,7 @@ export default async function CapturePage({ params, searchParams }: Props) {
           initialMessages={savedConversation?.messages ?? []}
           initialReadiness={savedConversation?.readiness ?? null}
           savedConversationAt={savedConversation?.updatedAt ?? null}
+          priorSnapshotInfo={priorSnapshotInfo}
         />
       </main>
     </div>

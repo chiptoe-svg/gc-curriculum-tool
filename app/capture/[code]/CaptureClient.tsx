@@ -20,6 +20,8 @@ interface Props {
   initialMessages: ChatMessage[];
   initialReadiness: CaptureReadiness | null;
   savedConversationAt: Date | null;
+  /** Latest non-retired snapshot's instructor + date, for the session-start chooser's "build on" option. */
+  priorSnapshotInfo: { instructorName: string | null; createdAt: string } | null;
 }
 
 type Stage = 'chat' | 'generating' | 'review';
@@ -43,6 +45,7 @@ export function CaptureClient({
   initialMessages,
   initialReadiness,
   savedConversationAt,
+  priorSnapshotInfo,
 }: Props) {
   const [course, setCourse] = useState<CourseCatalogView>(initialCourse);
   const courseCode = course.code;
@@ -263,6 +266,7 @@ export function CaptureClient({
             onGenerate={handleGenerate}
             initialReadiness={initialReadiness}
             onConversationChange={handleConversationChange}
+            priorSnapshotInfo={priorSnapshotInfo}
           />
           <div className="flex items-center justify-end gap-3 text-xs text-muted-foreground">
             {resetState === 'error' && (
