@@ -2,6 +2,9 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 vi.mock('@/lib/slug', () => ({ isValidSlug: vi.fn() }));
 vi.mock('@/lib/db/courses-queries', () => ({ getCourseByCode: vi.fn() }));
+vi.mock('@/lib/db/course-materials-queries', () => ({
+  listMaterialsByCourse: vi.fn().mockResolvedValue([]),
+}));
 vi.mock('@/lib/ai/analyze/kud-chat', () => ({ kudChatTurn: vi.fn() }));
 vi.mock('@/lib/rate-limit/ip-rate-limit', () => ({
   checkIpRateLimit: vi.fn().mockResolvedValue({ allowed: true }),
@@ -11,12 +14,14 @@ vi.mock('@/lib/ip-hash', () => ({ hashIp: vi.fn().mockReturnValue('testhash') })
 import { POST } from '@/app/api/courses/[code]/kuds/chat/route';
 import { isValidSlug } from '@/lib/slug';
 import { getCourseByCode } from '@/lib/db/courses-queries';
+import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
 import { kudChatTurn } from '@/lib/ai/analyze/kud-chat';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { hashIp } from '@/lib/ip-hash';
 
 const mockIsValidSlug = isValidSlug as ReturnType<typeof vi.fn>;
 const mockGetCourseByCode = getCourseByCode as ReturnType<typeof vi.fn>;
+const mockListMaterials = listMaterialsByCourse as ReturnType<typeof vi.fn>;
 const mockKudChatTurn = kudChatTurn as ReturnType<typeof vi.fn>;
 const mockCheckIpRateLimit = checkIpRateLimit as ReturnType<typeof vi.fn>;
 const mockHashIp = hashIp as ReturnType<typeof vi.fn>;
@@ -48,7 +53,12 @@ function makeReq(
 beforeEach(() => {
   vi.resetAllMocks();
   mockIsValidSlug.mockReturnValue(true);
+  // resetAllMocks wipes the default-return-values set at vi.mock factory
+  // time; re-set them here.
+  mockCheckIpRateLimit.mockResolvedValue({ allowed: true, remaining: 100 });
+  mockHashIp.mockReturnValue('testhash');
   mockGetCourseByCode.mockResolvedValue(FAKE_COURSE);
+  mockListMaterials.mockResolvedValue([]);
   mockKudChatTurn.mockResolvedValue('Here are my questions...');
   mockCheckIpRateLimit.mockResolvedValue({ allowed: true });
   mockHashIp.mockReturnValue('testhash');

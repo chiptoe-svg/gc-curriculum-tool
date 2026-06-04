@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { getProvider, loadPrompt } = vi.hoisted(() => ({
-  getProvider: vi.fn(),
+const { getProviderForFunction, loadPrompt } = vi.hoisted(() => ({
+  getProviderForFunction: vi.fn(),
   loadPrompt: vi.fn(),
 }));
-vi.mock('@/lib/ai/provider', () => ({ getProvider }));
+vi.mock('@/lib/ai/provider', () => ({ getProviderForFunction }));
 vi.mock('@/lib/ai/prompts/load', () => ({ loadPrompt }));
 
 import { synthesizeCourseProfile } from '@/lib/ai/course-profile/synthesize-course-profile';
@@ -31,7 +31,7 @@ const fakeProfile = {
 beforeEach(() => {
   vi.clearAllMocks();
   loadPrompt.mockResolvedValue('SYNTHESIZE SYSTEM PROMPT');
-  getProvider.mockReturnValue({
+  getProviderForFunction.mockResolvedValue({
     name: 'openai',
     model: 'gpt-5.4-mini',
     complete: vi.fn().mockResolvedValue({
@@ -86,7 +86,7 @@ describe('synthesizeCourseProfile', () => {
       uncachedPromptTokens: 0,
       completionTokens: 0,
     });
-    getProvider.mockReturnValue({ name: 'openai', model: 'gpt', complete: completeMock });
+    getProviderForFunction.mockResolvedValue({ name: 'openai', model: 'gpt', complete: completeMock });
 
     await synthesizeCourseProfile({ course, findings });
 

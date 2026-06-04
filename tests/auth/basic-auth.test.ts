@@ -3,7 +3,6 @@ import { requiresBasicAuth, authorizedForBasicAuth } from '@/lib/auth/basic-auth
 
 describe('requiresBasicAuth', () => {
   it.each([
-    '/',
     '/capture',
     '/capture/GC-4800',
     '/explore',
@@ -21,6 +20,11 @@ describe('requiresBasicAuth', () => {
   });
 
   it.each([
+    // '/' became public 2026-06-03 (hybrid HTTP/HTTPS landing).
+    '/',
+    // /view/* is the public read-only profile surface (2026-06-03).
+    '/view',
+    '/view/GC%204800',
     '/partners',
     '/partners/some-token',
     '/partners/some-token/survey',

@@ -2,6 +2,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('@/lib/slug', () => ({ isValidSlug: (s: string) => s === 'valid-slug' }));
 vi.mock('@/lib/courses/extract-text', () => ({ extractText: vi.fn() }));
+vi.mock('@/lib/rate-limit/ip-rate-limit', () => ({
+  checkIpRateLimit: vi.fn().mockResolvedValue({ allowed: true, remaining: 100 }),
+}));
+vi.mock('@/lib/ip-hash', () => ({ hashIp: vi.fn().mockReturnValue('testhash') }));
+
+import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
+import { hashIp } from '@/lib/ip-hash';
+const mockRateLimit = checkIpRateLimit as ReturnType<typeof vi.fn>;
+const mockHashIp = hashIp as ReturnType<typeof vi.fn>;
 
 import { POST } from '@/app/api/extract-syllabus/route';
 import { extractText } from '@/lib/courses/extract-text';
@@ -17,7 +26,12 @@ function makeReq(slug: string, hasFile: boolean, mimeType = 'application/pdf') {
   return new Request('http://x/api/extract-syllabus', { method: 'POST', body: form });
 }
 
-beforeEach(() => { vi.resetAllMocks(); });
+beforeEach(() => {
+  vi.resetAllMocks();
+  // re-arm the ip-rate-limit mock — resetAllMocks wipes the factory defaults
+  mockRateLimit.mockResolvedValue({ allowed: true, remaining: 100 });
+  mockHashIp.mockReturnValue('testhash');
+});
 
 describe('POST /api/extract-syllabus', () => {
   it('returns 401 for invalid slug', async () => {

@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { getProvider, loadPrompt } = vi.hoisted(() => ({
-  getProvider: vi.fn(),
+const { getProviderForFunction, loadPrompt } = vi.hoisted(() => ({
+  getProviderForFunction: vi.fn(),
   loadPrompt: vi.fn(),
 }));
-vi.mock('@/lib/ai/provider', () => ({ getProvider }));
+vi.mock('@/lib/ai/provider', () => ({ getProviderForFunction }));
 vi.mock('@/lib/ai/prompts/load', () => ({ loadPrompt }));
 
 import { analyzeMaterial } from '@/lib/ai/course-profile/analyze-material';
@@ -21,7 +21,8 @@ const fakeFinding = {
 beforeEach(() => {
   vi.clearAllMocks();
   loadPrompt.mockResolvedValue('ANALYZE SYSTEM PROMPT');
-  getProvider.mockReturnValue({
+  // getProviderForFunction is async (returns Promise<AIProvider>) — mockResolvedValue.
+  getProviderForFunction.mockResolvedValue({
     name: 'openai',
     model: 'gpt-5.4-mini',
     complete: vi.fn().mockResolvedValue({
@@ -64,7 +65,7 @@ describe('analyzeMaterial', () => {
       uncachedPromptTokens: 0,
       completionTokens: 0,
     });
-    getProvider.mockReturnValue({ name: 'openai', model: 'gpt', complete: completeMock });
+    getProviderForFunction.mockResolvedValue({ name: 'openai', model: 'gpt', complete: completeMock });
 
     await analyzeMaterial({
       courseContext,
@@ -93,7 +94,7 @@ describe('analyzeMaterial', () => {
       uncachedPromptTokens: 0,
       completionTokens: 0,
     });
-    getProvider.mockReturnValue({ name: 'anthropic', model: 'claude-sonnet-4-6', complete: completeMock });
+    getProviderForFunction.mockResolvedValue({ name: 'anthropic', model: 'claude-sonnet-4-6', complete: completeMock });
 
     const pdfBytes = Buffer.from('%PDF-1.4 fake pdf content');
     await analyzeMaterial({
@@ -119,7 +120,7 @@ describe('analyzeMaterial', () => {
       uncachedPromptTokens: 0,
       completionTokens: 0,
     });
-    getProvider.mockReturnValue({ name: 'anthropic', model: 'claude-sonnet-4-6', complete: completeMock });
+    getProviderForFunction.mockResolvedValue({ name: 'anthropic', model: 'claude-sonnet-4-6', complete: completeMock });
 
     await analyzeMaterial({
       courseContext,

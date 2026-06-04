@@ -14,6 +14,10 @@ vi.mock('@/lib/db/course-materials-queries', () => ({
   updateIndexingStatus: (...a: unknown[]) => updateIndexingStatus(...a),
   updateFerpaRisk: (...a: unknown[]) => updateFerpaRisk(...a),
   updateAutoSetAside: (...a: unknown[]) => updateAutoSetAside(...a),
+  // shouldDigestByDefault is a pure helper, not a DB query — but it's
+  // exported from the same module so the mock must include it.
+  // Forcing true so the digest branch always runs in tests.
+  shouldDigestByDefault: () => true,
 }));
 
 vi.mock('@/lib/ai/analyze/material-digest', () => ({

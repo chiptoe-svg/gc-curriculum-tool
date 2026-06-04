@@ -44,10 +44,12 @@ const FAKE_COURSE = {
 const CANVAS_DATA = {
   course: { id: '12345', name: 'Ink and Substrates', syllabusHtml: '<p>Course syllabus content here.</p>' },
   assignments: [
-    { id: '1', name: 'Substrate Analysis', descriptionHtml: '<p>Analyze substrates.</p>', pointsPossible: 100, rubric: [] },
+    // published: true required since the 2026-06-02 skipUnpublished filter
+    // (defaults on) — unpublished items get dropped before formatting.
+    { id: '1', name: 'Substrate Analysis', descriptionHtml: '<p>Analyze substrates.</p>', pointsPossible: 100, rubric: [], published: true },
   ],
   modules: [
-    { id: '1', name: 'Week 1', items: [{ title: 'Intro', type: 'Page' }] },
+    { id: '1', name: 'Week 1', published: true, items: [{ title: 'Intro', type: 'Page', published: true }] },
   ],
   // Empty arrays for the other Canvas content types — route iterates them.
   pages: [],

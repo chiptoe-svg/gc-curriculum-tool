@@ -3,13 +3,21 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('@/lib/slug', () => ({ isValidSlug: (s: string) => s === 'valid-slug' }));
 vi.mock('@/lib/courses/extract-text', () => ({ extractText: vi.fn() }));
 vi.mock('@/lib/ai/analyze/parse-profile-fields', () => ({ parseProfileFields: vi.fn() }));
+vi.mock('@/lib/rate-limit/ip-rate-limit', () => ({
+  checkIpRateLimit: vi.fn().mockResolvedValue({ allowed: true, remaining: 100 }),
+}));
+vi.mock('@/lib/ip-hash', () => ({ hashIp: vi.fn().mockReturnValue('testhash') }));
 
 import { POST } from '@/app/api/courses/[code]/parse-profile/route';
 import { extractText } from '@/lib/courses/extract-text';
 import { parseProfileFields } from '@/lib/ai/analyze/parse-profile-fields';
+import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
+import { hashIp } from '@/lib/ip-hash';
 
 const mockExtract = extractText as ReturnType<typeof vi.fn>;
 const mockParse = parseProfileFields as ReturnType<typeof vi.fn>;
+const mockRateLimit = checkIpRateLimit as ReturnType<typeof vi.fn>;
+const mockHashIp = hashIp as ReturnType<typeof vi.fn>;
 
 const FAKE_FIELDS = {
   learningObjectives: ['Operate a press', 'Mix ink'],
@@ -29,7 +37,11 @@ function makeReq(slug: string, hasFile: boolean, mimeType = 'application/pdf', c
   ] as const;
 }
 
-beforeEach(() => { vi.resetAllMocks(); });
+beforeEach(() => {
+  vi.resetAllMocks();
+  mockRateLimit.mockResolvedValue({ allowed: true, remaining: 100 });
+  mockHashIp.mockReturnValue('testhash');
+});
 
 describe('POST /api/courses/[code]/parse-profile', () => {
   it('returns 401 for invalid slug', async () => {
