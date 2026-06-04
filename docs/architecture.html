@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GC Curriculum Tool — Architecture Overview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Mono:wght@300;400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --rail: #141412;
+    --rail-text: #8a8780;
+    --rail-active: #E8A44A;
+    --rail-hover: #2a2925;
+    --bg: #F7F5F0;
+    --bg-card: #FFFFFF;
+    --bg-alt: #F0EDE6;
+    --text: #1C1C18;
+    --text-muted: #6B6860;
+    --text-faint: #9E9B94;
+    --accent: #C8682A;
+    --accent-light: #F5E6D8;
+    --border: #E2DDD4;
+    --border-strong: #C8C4BA;
+    --mono: 'DM Mono', monospace;
+    --serif: 'Source Serif 4', Georgia, serif;
+    --display: 'Playfair Display', Georgia, serif;
+    --t1: #2A5C8C;
+    --status-covered: #2e7d3a;
+    --status-missing: #b03030;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--serif);
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    min-height: 100vh;
+    font-size: 16px;
+    line-height: 1.7;
+  }
+
+  #rail {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: 240px;
+    background: var(--rail);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    z-index: 100;
+  }
+  .rail-header { padding: 28px 20px 20px; border-bottom: 1px solid #252420; }
+  .rail-dept { font-family: var(--mono); font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: #5a5750; margin-bottom: 6px; }
+  .rail-title { font-family: var(--display); font-size: 14px; color: #d4d0c8; line-height: 1.4; }
+  .rail-doc-type { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--rail-active); margin-top: 10px; }
+  .rail-nav { padding: 20px 0; flex: 1; }
+  .nav-group-label { font-family: var(--mono); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: #4d4a44; padding: 14px 20px 8px; }
+  .nav-link { display: block; padding: 7px 20px 7px 22px; color: var(--rail-text); text-decoration: none; font-family: var(--serif); font-size: 13.5px; border-left: 2px solid transparent; transition: all 120ms; }
+  .nav-link:hover { color: #c8c4ba; background: var(--rail-hover); }
+  .rail-footer { padding: 16px 20px; font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.08em; color: #5a5750; border-top: 1px solid #252420; line-height: 1.7; }
+  .rail-footer a { color: var(--rail-text); text-decoration: none; }
+  .rail-footer a:hover { color: var(--rail-active); }
+
+  main { margin-left: 240px; flex: 1; padding: 64px 80px 96px; max-width: 1080px; }
+
+  .doc-head { margin-bottom: 56px; padding-bottom: 32px; border-bottom: 1px solid var(--border-strong); }
+  .doc-eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; }
+  .doc-title { font-family: var(--display); font-size: 44px; font-weight: 700; line-height: 1.1; color: var(--text); margin-bottom: 20px; letter-spacing: -0.005em; }
+  .doc-subtitle { font-family: var(--serif); font-size: 18px; color: var(--text-muted); line-height: 1.55; max-width: 740px; font-style: italic; font-weight: 300; }
+  .doc-meta { margin-top: 22px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; color: var(--text-faint); display: flex; gap: 20px; flex-wrap: wrap; }
+  .doc-meta strong { color: var(--text-muted); font-weight: 500; margin-right: 6px; }
+
+  section { margin-bottom: 56px; scroll-margin-top: 32px; }
+
+  h2 { font-family: var(--display); font-size: 30px; font-weight: 600; line-height: 1.2; margin-bottom: 22px; padding-bottom: 12px; border-bottom: 1px solid var(--border); display: flex; align-items: baseline; gap: 14px; }
+  h2 .num { font-family: var(--mono); font-size: 13px; font-weight: 500; letter-spacing: 0.1em; color: var(--accent); background: var(--accent-light); padding: 3px 10px; border-radius: 3px; flex-shrink: 0; }
+  h3 { font-family: var(--display); font-size: 21px; font-weight: 600; line-height: 1.3; margin: 32px 0 14px; color: var(--text); }
+  h4 { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-muted); margin: 24px 0 10px; font-weight: 500; }
+
+  p { margin-bottom: 14px; max-width: 760px; }
+  strong { color: var(--text); font-weight: 600; }
+  em { color: var(--text); font-style: italic; }
+  a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:hover { color: #a85020; }
+
+  ul, ol { margin: 14px 0 22px 22px; max-width: 760px; }
+  li { margin-bottom: 8px; }
+  li strong { color: var(--text); }
+
+  code, kbd { font-family: var(--mono); font-size: 0.88em; background: var(--bg-alt); padding: 1px 6px; border-radius: 3px; color: var(--text); }
+
+  .callout { background: var(--bg-card); border-left: 3px solid var(--accent); padding: 18px 22px; margin: 22px 0; border-radius: 0 4px 4px 0; max-width: 820px; }
+  .callout-title { font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout.note { border-left-color: var(--t1); }
+  .callout.note .callout-title { color: var(--t1); }
+  .callout.warn { border-left-color: var(--status-missing); }
+  .callout.warn .callout-title { color: var(--status-missing); }
+
+  blockquote {
+    border-left: 3px solid var(--accent);
+    padding: 6px 0 6px 22px;
+    margin: 18px 0;
+    font-style: italic;
+    color: var(--text);
+    font-size: 17.5px;
+    max-width: 740px;
+  }
+  blockquote p { margin-bottom: 8px; }
+  blockquote p:last-child { margin-bottom: 0; }
+  blockquote .q-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-style: normal;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .flow-sequence {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 22px 28px;
+    margin: 22px 0;
+    max-width: 820px;
+  }
+  .flow-sequence ol { margin-left: 0; list-style: none; counter-reset: flow-counter; }
+  .flow-sequence li {
+    counter-increment: flow-counter;
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .flow-sequence li:last-child { border-bottom: none; }
+  .flow-sequence li::before {
+    content: counter(flow-counter);
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--accent);
+    background: var(--accent-light);
+    width: 24px;
+    height: 24px;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .flow-sequence li strong { display: block; margin-bottom: 2px; }
+  .flow-sequence li p { margin: 0; font-size: 14.5px; color: var(--text-muted); max-width: unset; }
+
+  .surface-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 22px 0; max-width: 820px; }
+  .surface-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; padding: 16px 20px; }
+  .surface-card-label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+  .surface-card-access { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; color: var(--text-faint); margin-bottom: 8px; }
+  .surface-card p { font-size: 14.5px; color: var(--text-muted); line-height: 1.55; margin: 0; max-width: unset; }
+
+  .doc-foot { margin-top: 96px; padding-top: 24px; border-top: 1px solid var(--border-strong); font-family: var(--mono); font-size: 11px; color: var(--text-faint); letter-spacing: 0.05em; }
+
+  @media (max-width: 900px) {
+    #rail { position: static; width: 100%; height: auto; }
+    main { margin-left: 0; padding: 32px 24px 64px; }
+    .surface-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<aside id="rail">
+  <div class="rail-header">
+    <div class="rail-dept">Clemson · Graphic Communications</div>
+    <div class="rail-title">GC Curriculum Tool</div>
+    <div class="rail-doc-type">Architecture Overview</div>
+  </div>
+  <nav class="rail-nav">
+    <div class="nav-group-label">Sections</div>
+    <a class="nav-link" href="#overview">§1 Overview</a>
+    <a class="nav-link" href="#two-questions">§2 The Driving Questions</a>
+    <a class="nav-link" href="#framework">§3 The KUD+ Framework</a>
+    <a class="nav-link" href="#surfaces">§4 Surfaces</a>
+    <a class="nav-link" href="#pipeline">§5 The Agentic Pipeline</a>
+    <a class="nav-link" href="#provenance">§6 Provenance</a>
+    <a class="nav-link" href="#instructor-and-time">§7 Instructor &amp; Time</a>
+    <a class="nav-link" href="#deployment">§8 Deployment</a>
+    <a class="nav-link" href="#cost-and-discipline">§9 Cost &amp; Discipline</a>
+    <a class="nav-link" href="#connections">§10 Connections</a>
+    <a class="nav-link" href="#further-reading">§11 Further Reading</a>
+    <div class="nav-group-label" style="margin-top: 18px;">Related</div>
+    <a class="nav-link" href="./executive-brief.html">Executive Brief</a>
+    <a class="nav-link" href="./superpowers/vision/gc-curriculum-tool-vision.html">Vision Document</a>
+    <a class="nav-link" href="./using-coursecapture-and-explore.html">Faculty Guide</a>
+    <a class="nav-link" href="./background.html">KUD+ Background</a>
+  </nav>
+  <div class="rail-footer">
+    <a href="./index.html">← Docs hub</a>
+  </div>
+</aside>
+
+<main>
+
+<header class="doc-head">
+  <div class="doc-eyebrow">Architecture Overview</div>
+  <h1 class="doc-title">How the GC Curriculum Tool Works</h1>
+  <p class="doc-subtitle">A system-level view of the surfaces, framework, agentic pipeline, and data substrate — and how they connect to each other and to program-wide views.</p>
+  <div class="doc-meta">
+    <span><strong>Audience</strong> Technical reviewers, faculty curious about the AI, future maintainers</span>
+    <span><strong>Date</strong> 2026-06-03</span>
+  </div>
+</header>
+
+<section id="overview">
+  <h2><span class="num">§ 1</span>Overview</h2>
+
+  <p>The GC Curriculum Tool is a curriculum-analysis platform for Clemson's Graphic Communications department. It maintains a structured, evidence-backed record of what each captured course is evidenced to develop — scored across three learning dimensions at graduated depths — and aggregates those records into program-wide views that expose gaps, scaffold patterns, and prereq sufficiency at a granularity that committee intuition and periodic review reliably miss.</p>
+
+  <p>The system has three main layers that work together: a <strong>framework</strong> (KUD+ with evidence discipline) that defines what counts as coverage and at what depth; a set of <strong>surfaces</strong> (per-course capture and analysis tools, plus program-level views) that faculty and administrators interact with; and an <strong>agentic pipeline</strong> (material ingestion, retrieval-augmented audit conversation, and synthesis with provenance) that produces the structured records those surfaces display. This document describes all three layers and maps how they connect.</p>
+
+  <p>For the stakeholder-facing picture of what the tool does and why it matters, see the <a href="./executive-brief.html">executive brief</a>. For the end-state vision and governance context, see the <a href="./superpowers/vision/gc-curriculum-tool-vision.html">vision document</a>. For the day-to-day faculty workflow, see the <a href="./using-coursecapture-and-explore.html">faculty guide</a>. This document is the "system as a system" read — architecture, not aspiration.</p>
+</section>
+
+<section id="two-questions">
+  <h2><span class="num">§ 2</span>The Driving Questions</h2>
+
+  <p>Every design decision in the tool traces back to two questions, which the department has historically answered through committee discussion, gut intuition, and occasional formal review:</p>
+
+  <blockquote>
+    <span class="q-label">Q1</span>
+    How well does the GC curriculum build students toward the careers we claim to prepare them for?
+  </blockquote>
+
+  <blockquote>
+    <span class="q-label">Q2</span>
+    For any individual course, do the prerequisites students walk in with actually support what the course expects?
+  </blockquote>
+
+  <p>Q1 operates at program scale: it requires knowing what each course actually develops (not what its syllabus claims) and how that maps against career-target competencies. Q2 operates at course scale: it requires comparing a course's incoming-expectations profile against the confirmed output of its declared prerequisites. Both questions are unanswerable without structured, evidence-grounded records of what courses do — which is what the capture pipeline produces.</p>
+
+  <p>The tool does not claim to answer these questions definitively. It produces AI-drafted, evidence-cited readings that faculty can review, dispute, and refine. The commitment is that those readings are disputable — backed by specific evidence, not syllabus aspiration — and that faculty disagreements are persistent rather than silently overwritten.</p>
+</section>
+
+<section id="framework">
+  <h2><span class="num">§ 3</span>The KUD+ Framework</h2>
+
+  <p>Every coverage judgment in the tool factors into three categories drawn from Carol Ann Tomlinson's differentiated-instruction work and compatible with Wiggins and McTighe's <em>Understanding by Design</em>:</p>
+
+  <ul>
+    <li><strong>Know (K)</strong> — recall and identification of content: terms, facts, conventions, procedural sequences. Probe: "What is X?" / "Which of these is X?"</li>
+    <li><strong>Understand (U)</strong> — reasoning about the why: principles, relationships, consequences. Probe: "Why does X work?" / "What follows from X?" / "When would you use X vs. Y?"</li>
+    <li><strong>Do (D)</strong> — behavioral output: artifacts, performances, demonstrated skills. Probe: "Make X. Produce X. Demonstrate X."</li>
+  </ul>
+
+  <p>Each dimension is scored on a 0–5 depth scale anchored to what the student does or grasps, not what the syllabus claims:</p>
+
+  <ul>
+    <li><strong>0</strong> — Not present (or listed only in aspirational syllabus language)</li>
+    <li><strong>1</strong> — Exposure / restates the explanation as given / performs with per-step direction</li>
+    <li><strong>2</strong> — Recognize / explains in own words / performs using a reference</li>
+    <li><strong>3</strong> — Recall / predicts consequences / performs independently in familiar conditions</li>
+    <li><strong>4</strong> — Uses correct terminology across the domain / reasons through novel cases / adapts to new conditions</li>
+    <li><strong>5</strong> — Fluent across edge cases / critiques and extends / performs creatively with judgment, can guide others</li>
+  </ul>
+
+  <p>These anchors matter because binary coverage ("covered/not covered") collapses in practice — most courses touch most relevant competencies at some level, and the matrix loses its ability to discriminate between a brief mention and an assessed performance. The depth scales restore that resolution.</p>
+
+  <h3>Evidence discipline</h3>
+
+  <p>Any score above the lowest exposure level requires evidence of student engagement, not just syllabus intent. Specifically: K=1 requires delivery evidence (a lecture, module item, or reading list entry); K&gt;1, U&gt;0, and D&gt;0 require evidence of assessed student engagement, reasoning, or performance. Aspirational syllabus language ("students will understand X") does not by itself justify a score above those thresholds. This is the evidence-above-zero rule, and it is the load-bearing constraint that distinguishes a coverage map from a marketing document.</p>
+
+  <h3>Foundational competencies</h3>
+
+  <p>Five program-wide competencies — Agency, Attention to Detail, Resilience, Curiosity, and Communication — are scored on D only. K and U are stored as null (not zero) for these rows. These are dispositions demonstrated through behavior; students don't recall facts about Resilience or reason their way through it — they exhibit it or they don't. Scoring K and U would imply the course tried and failed to develop the cognitive recall or reasoning aspect of a disposition, which is a category error. A foundational competency with D=0 is a valid and informative finding: the course doesn't create the conditions that develop the disposition.</p>
+
+  <h3>Dissociation cases</h3>
+
+  <p>The three-dimensional depth model surfaces patterns that binary coverage hides. K-high with U-low is jargon without rationale — students can name the thing but can't reason about why it works. U-high with D-low is theory without craft — students understand the principle but can't execute. D-high with U-low is craft without articulation — students can perform the procedure but can't explain why it works. These patterns are diagnostic; the tool surfaces them; faculty deliberate about whether and how to close them.</p>
+
+  <h3>Why not Bloom's Taxonomy?</h3>
+
+  <p>Bloom's six-level taxonomy is the right tool for analyzing the cognitive demand of a specific assessment task. It is not well-suited to cross-program coverage mapping, for two reasons. First, its six levels (Remember, Understand, Apply, Analyze, Evaluate, Create) produce a compound judgment across hundreds of course-by-competency cells that makes faculty review harder rather than easier — the distinction between Apply and Analyze is a calibration burden at scale. Second, Bloom is assessment-design vocabulary; it doesn't natively represent the behavioral output dimension (Do) as separable from the cognitive dimension, which the GC curriculum needs because craft skills in a professional field (pressing, color management, layout, prepress) involve behavioral performance that is distinct from cognitive understanding of the same content. KUD with depth serves curriculum mapping; Bloom remains the right lens for writing and evaluating individual assessments and continues to inform the audit-conversation probes used inside each cell.</p>
+
+  <p>The full academic case — theoretical grounding, relationship to Constructive Alignment, the evidence for the depth-scale extension — is in the <a href="./background.html">Background document</a>.</p>
+</section>
+
+<section id="surfaces">
+  <h2><span class="num">§ 4</span>Surfaces</h2>
+
+  <p>The tool presents two categories of surfaces: per-course editing surfaces, which are faculty-facing and gated by authentication, and read-only or public surfaces, which are accessible to anyone on the Clemson LAN. The deployment section (§8) explains why these run on different network origins.</p>
+
+  <div class="surface-grid">
+    <div class="surface-card">
+      <div class="surface-card-label">CourseCapture</div>
+      <div class="surface-card-access">HTTPS · Faculty (Basic Auth) · /capture/&lt;code&gt;</div>
+      <p>Per-course audit conversation that produces an evidence-backed Course Outcome Profile. Reads catalog values, Canvas materials, Google Drive content, uploaded files. Tool-using AI agent retrieves from a per-course vector index during the chat. Faculty confirm the profile; the system writes an immutable, versioned snapshot.</p>
+    </div>
+    <div class="surface-card">
+      <div class="surface-card-label">Explore</div>
+      <div class="surface-card-access">HTTPS · Faculty (Basic Auth) · /explore/&lt;code&gt;</div>
+      <p>Alignment analysis against a confirmed snapshot. Two modes: custom target (instructor writes goals; AI structures them into a KUD+ target spec; analysis surfaces gaps and ranked recommendations) and downstream target (auto-detects prereq expectations from downstream courses' captured profiles). What-if scenarios simulate proposed changes. Ask tab: streaming chat over the curriculum wiki anchored to the focused course.</p>
+    </div>
+    <div class="surface-card">
+      <div class="surface-card-label">Program Coverage Matrix</div>
+      <div class="surface-card-access">HTTPS · Faculty (Basic Auth) · /program</div>
+      <p>All confirmed snapshots crossed with all career-target sub-competencies, rendered as a depth-aware heat map. On-demand AI scoring with prompt-cache batching. Click any cell to see the contributing snapshot competency, evidence excerpt, confidence, and full rationale. The program-wide answer to Q1.</p>
+    </div>
+    <div class="surface-card">
+      <div class="surface-card-label">Scaffolding Strip</div>
+      <div class="surface-card-access">HTTPS · Faculty (Basic Auth) · /program/scaffolding</div>
+      <p>Phase 1B view. Per-target heat map of depth, productive-failure conditions, and structured-reflection signals derived deterministically from confirmed snapshots. Surfaces brittle scaffolds — courses that expect mastery of competencies no earlier course actually introduces. Supplemental AI narrative layer is Phase 1B Stage 2 (specified, not yet built).</p>
+    </div>
+    <div class="surface-card">
+      <div class="surface-card-label">Course Catalog</div>
+      <div class="surface-card-access">HTTPS · Faculty (Basic Auth) · /courses</div>
+      <p>Editorial index of all 120 catalog courses grouped by level, with computed capture-status ladders (not-started / in-audit / ai-drafted / reviewed / captured), last-captured date, and deep-link Ask buttons into each course's Explore chat tab.</p>
+    </div>
+    <div class="surface-card">
+      <div class="surface-card-label">Wiki + Ask</div>
+      <div class="surface-card-access">HTTPS · Faculty (Basic Auth) · /wiki, /ask</div>
+      <p>Curriculum wiki index (markdown corpus from the gc-curriculum-wiki repo) plus standalone and course-anchored curriculum chat. Agent navigates the wiki via read/list/search tools and cites verbatim excerpts per turn. Same chat surface mounts in Explore (/explore/&lt;code&gt;?tab=ask) and on the /wiki index page.</p>
+    </div>
+    <div class="surface-card">
+      <div class="surface-card-label">Public Landing + View</div>
+      <div class="surface-card-access">HTTP · Public (LAN) · /, /view/&lt;code&gt;</div>
+      <p>"Transparent curriculum" surfaces. Anyone on the Clemson LAN can browse the course list and read any captured profile without authentication. Edit links forward to the HTTPS faculty surfaces. Intentionally public — advisors, chairs, accreditors, and industry reviewers can read without needing faculty credentials.</p>
+    </div>
+    <div class="surface-card">
+      <div class="surface-card-label">Partner Survey</div>
+      <div class="surface-card-access">HTTPS · Magic-link · /partners/&lt;token&gt;</div>
+      <p>Industry-partner input surface running on Vercel (not the local Mac). Partners receive a magic-link invitation, match themselves to career targets, and submit position descriptions. AI synthesis on /admin/synthesis aggregates submissions into proposed KUD+ edits for faculty to review and adopt or reject.</p>
+    </div>
+  </div>
+
+  <div class="callout note">
+    <div class="callout-title">Settings and Admin</div>
+    <p>Two additional faculty-only surfaces: <code>/settings</code> for per-function AI model tier configuration (light / default / heavy, with per-function model override) and a daily cost panel; <code>/admin/partners</code> and <code>/admin/synthesis</code> for partner management and AI synthesis review. These don't participate in the core data flow but are part of the operational toolkit.</p>
+  </div>
+</section>
+
+<section id="pipeline">
+  <h2><span class="num">§ 5</span>The Agentic-Retrieval Pipeline</h2>
+
+  <p>The pipeline that produces a Course Outcome Profile runs in three phases. This architecture — called CourseCapture v2 — replaced the earlier approach of dumping every course material into a single large context window. The core insight driving the redesign: when every material is visible to the AI at once, findings can emerge from pattern-matching across the entire context rather than from specific evidence, making provenance unverifiable. The v2 architecture ensures that every finding the audit agent surfaces is grounded in a specific, citable retrieval result.</p>
+
+  <h3>Phase A — Material Ingestion</h3>
+
+  <p>When a faculty member loads materials (Canvas import, file upload, Google Drive fetch, YouTube transcript), each material goes through an ingestion pipeline before the audit chat begins. The pipeline has four steps:</p>
+
+  <div class="flow-sequence">
+    <ol>
+      <li>
+        <strong>Extract</strong>
+        <p>Raw content is converted to clean text. PDFs go through Docling (local deploy) or unpdf (Vercel), which produces markdown with figure descriptions for the local deploy. Legacy Office formats are converted via LibreOffice headless. Spreadsheets are compacted to strip empty rows, degenerate tables, and inline base64 image blobs that inflate token counts 20–30× over their information content.</p>
+      </li>
+      <li>
+        <strong>FERPA screening + materials policy</strong>
+        <p>An automated policy layer flags materials that are likely gradebook or roster data (by filename pattern) as high FERPA risk and auto-sets them aside with a dismissible warning. Other materials proceed. The policy is always overridable by the faculty reviewer.</p>
+      </li>
+      <li>
+        <strong>Chunk + contextualize + embed</strong>
+        <p>Each material is chunked into retrieval-sized segments. Before embedding, each chunk receives a short position blurb ("this chunk is from the GC 4800 Color Management assignment, page 2 of 4") that is prepended to the chunk text. This means the vector encoding captures both position and content, not just content — the Anthropic contextual-retrieval pattern. Embedded vectors are upserted into a per-course Weaviate tenant via a 2560-dimension campus embedding model.</p>
+      </li>
+      <li>
+        <strong>Digest</strong>
+        <p>In parallel with chunking, each material receives a structured digest — a compressed but faithful summary of the material's content, optimized for the audit agent's at-rest view. Canvas Syllabus pages, assignments, and quiz content are always kept verbatim (the audit agent needs exact assignment language and point values); long reference materials (textbook PDFs, YouTube transcripts, Drive reading PDFs) are digested. The digest substitutes for the full text in the audit context, with a per-row toggle for verbatim fallback.</p>
+      </li>
+    </ol>
+  </div>
+
+  <p>After ingestion, an ingestion check-in agent makes one silent review pass over the assembled materials. It flags meaningful curation concerns — missing syllabus, stacked auto-set-asides, near-empty digests — but is silent the majority of the time. The faculty reviewer sees the flag only when there is something to act on.</p>
+
+  <h3>Phase B — Audit Chat as Tool-Using Agent</h3>
+
+  <p>The audit conversation is conducted by a tool-using AI agent, not a simple chat completion. On each turn, the agent:</p>
+
+  <div class="flow-sequence">
+    <ol>
+      <li>
+        <strong>Loads the at-rest context</strong>
+        <p>System prompt + catalog values (description, prerequisites, learning objectives, major projects, required incoming skills) + per-material digests + the conversation transcript so far. This is the bounded context the agent operates from without retrieval.</p>
+      </li>
+      <li>
+        <strong>Decides whether to retrieve</strong>
+        <p>The agent determines whether the current finding or question requires specific evidence beyond what the digest layer provides. If so, it uses one or two tool calls (at most) before responding.</p>
+      </li>
+      <li>
+        <strong>Retrieves if needed</strong>
+        <p>Three retrieval tools are available: <code>list_materials</code> (see what's in the corpus), <code>fetch_material_section</code> (retrieve a specific section of a specific material by chunk ID), and <code>search_materials</code> (hybrid vector + BM25 search across the per-course Weaviate tenant). Tool results carry chunk IDs that become citable sources.</p>
+      </li>
+      <li>
+        <strong>Responds in structured format</strong>
+        <p>Each agent turn returns a structured finding (the most consequential evidence-gap or conflict the agent sees), a single focused question, citations (chunk IDs from vector retrieval or message IDs from instructor turns), and a readiness signal (0–100 score, areas covered, areas remaining, a "good enough to generate" flag that flips at ~75).</p>
+      </li>
+      <li>
+        <strong>Persists the turn</strong>
+        <p>Every message — both instructor and agent — is appended to a session-scoped, append-only message log in Postgres. Turns are uniquely constrained by session ID and turn index, so there is no overwriting. The transcript is a permanent record that links to any snapshot produced from that session.</p>
+      </li>
+    </ol>
+  </div>
+
+  <p>The audit conversation systematically covers seven areas: prerequisite sufficiency, objectives vs. evidence, cross-source conflicts, cognitive-level probe, threshold concept, foundational dispositions, and inaccessible content references. The agent weaves these in order of what the materials surface, not mechanically in sequence. Turns are streamed (NDJSON), so the faculty reviewer sees the agent's response appearing in real time rather than waiting 3–7 seconds for a full turn.</p>
+
+  <div class="callout note">
+    <div class="callout-title">Voice input</div>
+    <p>The microphone button in the audit chat sends audio to an on-device Whisper transcription pipeline. Voice input is particularly useful for narrative explanations — describing what a capstone project actually requires, or why a rubric criterion means what it does in context. Transcription replaces the in-progress text; the faculty reviewer edits before sending. Mic works because the faculty surfaces run as top-level HTTPS contexts on the Tailscale Funnel (§8), where the browser grants microphone access natively.</p>
+  </div>
+
+  <h3>Phase C — Synthesis</h3>
+
+  <p>When the faculty member is satisfied with the audit conversation, they click "Generate Course Outcome Profile." This triggers a separate synthesis call — distinct from the chat, not more conversation — that reads the full audit transcript plus the materials context and produces a structured Course Outcome Profile in a single pass.</p>
+
+  <p>The synthesis agent produces a profile with several sections: competencies (5–15 technical plus 5 baseline foundational, each with K/U/D depth values, evidence excerpts, and rationale), incoming expectations (what the course assumes students arrive able to do), a verification summary (course shape, strongest evidence, dimensional patterns, catalog-vs-evidence findings), and audit notes (prerequisite gaps, objective misalignments, cross-source conflicts). Every finding in the profile carries a source flag and citations — see §6 on Provenance.</p>
+
+  <h3>Optional: Stress-Test</h3>
+
+  <p>After synthesis, faculty can run an adversarial stress-test reviewer — a separate on-demand agent call whose only job is to find problems. Unlike the synthesis agent, whose job is to produce a profile, the stress-test agent is explicitly adversarial: it checks citation-to-claim ratios, evidence excerpts against the claims they're supposed to support, internal consistency between rationale text and K/U/D scores, source flag honesty, and objective-misalignment claims against the actual transcript. It returns per-competency confidence ratings (high / medium / low / disputed) and profile-level concerns across three buckets: catalog-vs-evidence, consistency, and coverage. Results are ephemeral — they are never baked into the working draft or into snapshots, and are cleared whenever the faculty reviewer edits any score. They are a thinking surface, not an authority.</p>
+
+  <h3>Snapshot</h3>
+
+  <p>When the faculty reviewer is satisfied — after reviewing the profile, adjusting any scores, reading the verification summary, and optionally running the stress-test — they confirm and save a snapshot. A snapshot is an immutable, versioned record in Postgres: it freezes the profile JSON, the timestamp, the AI model that produced it, the instructor name, and a link to the transcript session that produced it. Snapshots are the artifact that downstream views (Program Coverage Matrix, Scaffolding Strip, Explore's downstream mode) consume. Drafts remain mutable for further iteration; only confirmed snapshots feed program-level analysis.</p>
+</section>
+
+<section id="provenance">
+  <h2><span class="num">§ 6</span>Provenance</h2>
+
+  <p>Every finding in a Course Outcome Profile carries a source flag and citations. This is not optional decoration — it is a structural commitment that the pipeline enforces at validation time.</p>
+
+  <h3>Source flags</h3>
+
+  <p>Three values:</p>
+  <ul>
+    <li><strong>materials</strong> — the finding is supported by citations that all trace to specific chunks in the vector store (material-sourced retrieval results).</li>
+    <li><strong>instructor</strong> — the finding is supported by citations that all trace to instructor turns in the audit transcript (things the faculty member said that aren't in the materials).</li>
+    <li><strong>inferred</strong> — the finding has no direct citations, or the citations are indirect. This is the weakest signal level; findings at this level carry more uncertainty.</li>
+  </ul>
+
+  <p>The source flag is derived mechanically from the citation types, not asserted by the synthesis agent as a judgment. If all citations are chunk citations, the source is <code>materials</code>. If all are transcript-turn citations, it is <code>instructor</code>. Mixed or empty gets <code>inferred</code>. This mechanical derivation means the source flag is verifiable rather than stylistic.</p>
+
+  <h3>Citations resolve to real sources</h3>
+
+  <p>Every citation in a profile is either a chunk ID (resolving to a specific text segment in the Weaviate vector store for that course) or a message ID (resolving to a specific instructor turn in the <code>capture_messages</code> table). The synthesis prompt and Zod validation schema both reject excerpt-only citations — a citation that exists only as a quoted string without a resolvable ID fails validation and causes the synthesis to be rejected and retried. This closes a class of hallucinated provenance where the model paraphrases "what it remembered" instead of pointing at a specific, verifiable source.</p>
+
+  <p>In the profile review UI, every source badge is also a button. Clicking it opens a citation drawer that resolves the citation and displays the actual chunk text or instructor turn, with its section header and parent material name for chunk citations, or the finding + question for transcript citations. The faculty reviewer can verify, directly, that the evidence actually says what the finding claims it says.</p>
+
+  <div class="callout note">
+    <div class="callout-title">Pre-v2 profiles</div>
+    <p>Snapshots confirmed before the v2 pipeline was introduced don't carry source flags or resolved citations — they were produced by the earlier "dump everything into context" approach. They render with a legacy banner in the review UI and gracefully degrade the citation drawer to an "excerpt only" display. They remain valid as historical records and continue to feed program-level views; they just don't have the provenance infrastructure that v2 produces.</p>
+  </div>
+</section>
+
+<section id="instructor-and-time">
+  <h2><span class="num">§ 7</span>Instructor and Time</h2>
+
+  <h3>Per-instructor capture</h3>
+
+  <p>The same course code can be taught very differently by different faculty. A GC 3800 section run by one instructor may develop Color Management at D=4 through a semester-long production project; the same course run by another instructor may develop it at D=2 through lab exercises and a final exam. Both are valid findings — the depth scores are a function of what students under that specific instructor actually do, not a platonic average of what the course catalog claims. Capturing one and displaying it as the course's profile erases variance that may be significant for advising decisions and curriculum review.</p>
+
+  <p>The system supports per-instructor captures on the same course code. Each capture session begins with an instructor identification step (a dropdown from a faculty roster); the instructor name is stored with every session message and with every resulting snapshot. The public course listing shows "by [instructor]" attribution alongside the capture date; the read-only profile view notes how many other captures exist for the course when more than one are on file.</p>
+
+  <h3>Snapshots are immutable</h3>
+
+  <p>Once confirmed, a snapshot cannot be edited. It is a timestamped record of what the course was evidenced to develop at that moment in time, by that instructor, under that session's materials. The immutability is intentional: curricula erode over decades, and the only way to make that erosion visible is to preserve the dated records that accumulate over time. Faculty can re-capture the same course as many times as they like; each new snapshot adds to the historical record. The Program Coverage Matrix automatically uses the newest non-retired snapshot per course.</p>
+
+  <p>Soft-retirement is available: a faculty member can request that a snapshot be hidden from downstream views (it was superseded, or it reflects a version of the course that no longer exists). Retired snapshots remain in the database as historical records and can be viewed directly but don't feed program-level analysis. Hard deletion is not exposed.</p>
+
+  <h3>Instructor variance as signal</h3>
+
+  <p>When multiple instructors have captured the same course code, the system surfaces the variance. The Program Coverage Matrix uses the newest snapshot per course (which may be by a different instructor than an older snapshot); future phase work will expose cross-snapshot diffs and instructor-variance analysis explicitly. For now, the per-snapshot attribution and the "N other captures on file" hint are the variance visibility mechanism.</p>
+</section>
+
+<section id="deployment">
+  <h2><span class="num">§ 8</span>Deployment</h2>
+
+  <p>The tool runs as a single Next.js application codebase deployed in two configurations with different runtime personalities, flipped by environment-variable presence. The same database (Neon Postgres), the same Drizzle schema, and the same application code serve both deployments.</p>
+
+  <h3>Local Mac — faculty surfaces</h3>
+
+  <p>A Mac Studio running on the Clemson LAN serves the faculty-facing surfaces. The relevant env-var differences:</p>
+
+  <ul>
+    <li><strong>AI provider:</strong> <code>AI_PROVIDER=openai</code> (OpenAI API). The campus provider (<code>AI_PROVIDER=campus</code>, Clemson RCD's cluster at <code>llm.rcd.clemson.edu</code> running Qwen3.6 and related models) and the local provider (<code>AI_PROVIDER=local</code>, omlx with Qwen3.6 family via a local inference server) are available as one-line env-var switches. The architecture supports this swap without changes to the application layer.</li>
+    <li><strong>PDF extraction:</strong> Docling (via <code>docling-serve</code> on <code>127.0.0.1:5001</code>, launchd-managed) with optional local vision-language model for figure descriptions in lecture slides and research papers — a real evidence gap that text-only extraction misses.</li>
+    <li><strong>Vector store:</strong> Weaviate (v1.37.5, via Homebrew, launchd-managed at <code>127.0.0.1:8090</code> HTTP + gRPC, anonymous access, per-course tenant isolation).</li>
+    <li><strong>YouTube transcription:</strong> mlx-whisper with <code>whisper-large-v3-turbo</code> on Apple Metal GPU, falling back to yt-dlp + ffmpeg + whisper.cpp for non-captioned videos.</li>
+    <li><strong>Auth:</strong> HTTP Basic Auth in Next.js middleware (<code>FACULTY_BASIC_AUTH</code> env var) gates all faculty surfaces.</li>
+  </ul>
+
+  <h3>HTTP/HTTPS split on the local Mac</h3>
+
+  <p>The local Mac runs two origins simultaneously. The LAN IP (<code>http://130.127.162.180:3000/</code>) serves the public landing and read-only profile views — no authentication, browsable by anyone on the Clemson network. The Tailscale Funnel origin (<code>https://admins-mac-studio-2.tailb723c1.ts.net/</code>) serves the full faculty application with HTTP Basic Auth via the middleware layer.</p>
+
+  <p>The split exists because browsers enforce a rule: microphone access requires a secure context (HTTPS). An earlier architecture tried to deliver mic access via an HTTPS iframe embedded in an HTTP parent page; this fails because per the W3C Secure Contexts specification, an HTTPS iframe inside an HTTP parent is not a secure context, and <code>navigator.mediaDevices</code> is undefined. The current architecture moves the faculty surfaces to top-level HTTPS via Tailscale Funnel (which provides a valid, CA-signed certificate), so the microphone works natively as a first-class browser feature.</p>
+
+  <p>Faculty workflow: they bookmark the HTTP landing page (<code>http://130.127.162.180:3000/</code>), browse courses and read profiles there with no login, then click "Edit" when they want to work in CourseCapture. The Edit link navigates to the Tailscale HTTPS origin; the browser presents a Basic Auth prompt once per session and caches the credential for the HTTPS origin going forward. The slug — a URL parameter that acts as defense-in-depth alongside Basic Auth — is baked into the Edit link server-side so faculty don't need to know or type it.</p>
+
+  <h3>Vercel — partner survey</h3>
+
+  <p>The industry-partner input surface (<code>/partners/&lt;token&gt;</code>) runs on Vercel, reachable from anywhere on the public internet. Partners receive magic-link invitation emails, complete a survey, and submit position descriptions without needing VPN or Clemson network access. This surface uses the same Neon database as the local Mac but runs against the OpenAI API (<code>AI_PROVIDER=openai</code> is the Vercel default) and uses <code>unpdf</code> for PDF extraction (no Docling on Vercel). Basic Auth middleware no-ops on Vercel (the <code>FACULTY_BASIC_AUTH</code> env var is not set there).</p>
+
+  <h3>Shared infrastructure</h3>
+
+  <p>Both deployments share: Neon Postgres (the single source of truth for all captured data), a single OpenAI organization for API calls, and the same application code and Drizzle schema. The separation is entirely runtime-configuration — no code branching, no separate repositories.</p>
+
+  <p>The launchd service manager keeps four processes alive on the local Mac: the Next.js app server, a Docling PDF extraction server, a Weaviate vector database server, and a dev-server watchdog that probes the app every five minutes and attempts recovery if it detects 5xx responses or connection failures (covering the failure mode where the process is alive but returning errors, which launchd's native KeepAlive doesn't catch).</p>
+</section>
+
+<section id="cost-and-discipline">
+  <h2><span class="num">§ 9</span>Cost and Discipline</h2>
+
+  <h3>Function-tier model selection</h3>
+
+  <p>The tool has a tiered model-selection system. Every AI operation is assigned to one of ten named function IDs, each with a default tier (light / default / heavy) that maps to a model. The tier-to-model mapping is provider-aware and overridable per-function from the <code>/settings</code> page.</p>
+
+  <ul>
+    <li><strong>Light tier</strong> — per-material digest generation, per-chunk contextualization, ingestion check-in. These run frequently (once per material, once per chunk), so cost efficiency matters more than reasoning depth.</li>
+    <li><strong>Default tier</strong> — the audit chat agent, synthesis, explore alignment analysis, what-if scenarios. These are the high-value calls where reasoning quality affects the quality of the output faculty will review.</li>
+    <li><strong>Heavy tier</strong> — program coverage scoring (the most context-intensive call; batches by career target for prompt-cache reuse) and the adversarial stress-test reviewer (where skeptical cross-referenced reasoning earns its keep). Heavy-tier calls are either rare (stress-test is on-demand), batched (program scoring reuses cached prompts), or high-stakes enough to justify the cost.</li>
+  </ul>
+
+  <h3>Daily cost cap</h3>
+
+  <p>A daily cost guard prevents runaway spending. Every AI call records its cost against a <code>daily_cost</code> table; when the day's total reaches the configured cap (<code>DAILY_COST_CAP_USD</code>), subsequent calls return a 429 and the faculty reviewer sees an informative error. The cap is configurable in the local <code>.env.local</code> and is visible on the <code>/settings</code> page alongside a 14-day cost sparkline. The feedback-automation system (which auto-triages and auto-implements some feedback issues) also checks the daily cap before each dispatch and halts the cron run if spending is at limit.</p>
+
+  <h3>Stress-test cost</h3>
+
+  <p>The adversarial stress-test reviewer costs approximately $0.05–0.20 per click at the heavy tier, depending on profile size and transcript length. This is predictable (one call per click, not auto-triggered on generate), visible in the review panel, and counts against the daily cap. The cost is the tradeoff for running a skeptical, reasoning-intensive pass over the full synthesis context — the same reasoning that makes it useful makes it expensive, and the heavy-tier model is where that reasoning is most reliable.</p>
+
+  <h3>"AI is your assistant, not your authority"</h3>
+
+  <p>The cost model reflects the epistemic model: AI calls are tools for producing better-informed drafts that faculty review, not oracles that produce authoritative verdicts. Every depth score is editable. Every recommendation is a starting point. Every stress-test concern is advisory. The AI's job is to reduce the cognitive load of processing dozens of assignments and rubrics, surface patterns that committee-level review tends to miss, and produce a disputable reading that is specific enough to argue against. Faculty deliberation is where the analysis becomes institutional record.</p>
+</section>
+
+<section id="connections">
+  <h2><span class="num">§ 10</span>Connections</h2>
+
+  <p>The Course Outcome Profile is not a terminal artifact — it feeds a network of connected views. Here is the explicit map:</p>
+
+  <h3>Snapshots → Program Coverage Matrix</h3>
+
+  <p>Every confirmed snapshot contributes to the Program Coverage Matrix. The matrix is the cross-product of all confirmed snapshots against all career-target sub-competencies. For each cell (course snapshot × sub-competency), the system runs an AI scoring call that reads the snapshot's competency list and determines whether, and at what depth, the snapshot's evidence supports the sub-competency. The score is the K/U/D depth at which the snapshot is evidenced to develop the sub-competency, not the snapshot's own internal competency depth score — they may differ, because the snapshot organizes competencies around what the course teaches and the matrix organizes around what career destinations require.</p>
+
+  <h3>Snapshots → Scaffolding Analysis</h3>
+
+  <p>The Scaffolding Strip reads the same confirmed snapshots and analyzes them through a different lens: not "does the course develop this sub-competency" but "at what depth, and with what evidence of productive struggle and structured reflection." The strip's deterministic scoring engine classifies each course-by-sub-competency cell as well-scaffolded, top-heavy, bottom-heavy, coverage-only, brittle-scaffold, or not-addressed. A brittle scaffold is the diagnostic finding that drives the most curriculum-redesign work: it flags when a downstream course expects mastery of a competency that no upstream course actually introduces.</p>
+
+  <h3>Snapshots → Explore Downstream Mode</h3>
+
+  <p>Explore's downstream-target mode auto-constructs a prerequisite-sufficiency target by reading the <code>incoming_expectations</code> fields of every captured downstream course — courses that list the focal course as a prerequisite. The union of their incoming demands is what the focal course collectively needs to produce. As more courses are captured, the auto-detected downstream target becomes richer and the downstream mode becomes the primary prereq-sufficiency diagnostic.</p>
+
+  <h3>Snapshots → Prerequisite Gap Analysis (Phase 1C)</h3>
+
+  <p>The planned Phase 1C Prerequisite Gap Analysis will work in the reverse direction: for each captured course, it reads the course's <code>incoming_expectations</code> (what it assumes students arrive able to do) and compares them against the confirmed output profiles of its declared prerequisites. A prerequisite gap is not "the registrar says students need course X" but "this specific competency at this specific depth is required by this course's assignments, and the confirmed profile of the declared prerequisite does not develop it above that threshold." This is the Q2 answer at scale.</p>
+
+  <h3>Snapshots → Curriculum Wiki</h3>
+
+  <p>A planned wiki layer (the gc-curriculum-wiki sibling repo) will regenerate narrative markdown from confirmed snapshot data. The wiki follows a Karpathy-style structure: an immutable raw layer (snapshot JSON, transcripts) and a regeneratable narrative layer (per-course, per-competency, per-career-target, per-concept pages) produced by LLM synthesis over the raw layer. The curriculum chat agent already navigates this wiki structure via read/list/search tools; the wiki-update pipeline that regenerates the narrative layer from new snapshots is Phase 2 work.</p>
+
+  <h3>Industry Partner Input → Career-Target Descriptors</h3>
+
+  <p>The partner survey surface on Vercel feeds a separate AI synthesis pipeline (<code>/admin/synthesis</code>) that aggregates partner submissions into proposed updates to career-target sub-competency descriptors. These proposals are advisory — a faculty reviewer reads them and adopts, modifies, or rejects each proposed change before it takes effect. When a sub-competency descriptor changes, existing coverage scores against that target are marked stale and queued for re-scoring; the program's self-understanding updates rather than silently inheriting the new descriptor with old scores.</p>
+
+  <div class="callout note">
+    <div class="callout-title">The accumulation pattern</div>
+    <p>Most of the system's value is cumulative. A single confirmed snapshot is useful for the course it describes. Ten confirmed snapshots make the program coverage matrix informative. Twenty confirmed snapshots make downstream-target mode in Explore load-bearing. A full cohort of captures makes the scaffolding analysis diagnostic. The trial period is about confirming that the per-snapshot analysis is credible before investing in the program-scale infrastructure that depends on snapshot accumulation.</p>
+  </div>
+</section>
+
+<section id="further-reading">
+  <h2><span class="num">§ 11</span>Further Reading</h2>
+
+  <ul>
+    <li><a href="./executive-brief.html">Executive Brief</a> — the stakeholder-facing summary: what the tool does, why it matters, how it functions, and where it stands. The entry point for chairs, advisory-board members, and accreditors.</li>
+    <li><a href="./superpowers/vision/gc-curriculum-tool-vision.html">Vision Document</a> — the full high-level picture: end-state visualizations, governance model, operational realities, roadmap. Includes the detailed career-target framework, the 3-Act program structure proposal, and the trial-period framing.</li>
+    <li><a href="./STATE.md">STATE.md</a> — the engineering operational snapshot: what routes are live, what schema migrations have run, what AI functions exist, what's in progress, what's blocked. Authoritative for implementation-level questions. Updated on every commit that touches routes, schema, or AI function IDs.</li>
+    <li><a href="./using-coursecapture-and-explore.html">Faculty Guide</a> — practical walkthrough of CourseCapture and Explore: how to load materials, how to conduct the audit chat, how to read the readiness signal, how to author custom targets and run downstream-target analysis, tips and gotchas. Oriented toward GC faculty doing their first capture.</li>
+    <li><a href="./background.html">KUD+ Background</a> — academic companion document: theoretical grounding for the KUD+ framework, the relationship to Bloom's Taxonomy and to Backward Design / Constructive Alignment, the evidence base for the depth-scale extension, and the definition of what counts as evidence at each level. The reference for any question about why the framework is structured the way it is.</li>
+    <li><a href="./problem-solving-deep-dive.html">Problem-Solving as a Program-Level Emergent Property</a> — research synthesis behind the tool's position on problem-solving: why it is treated as domain-embedded rather than as a transferable generic skill, what the Kapur PS-I research says, how the scaffolding analysis operationalizes productive-failure conditions at program scale.</li>
+    <li><a href="./three-act-deep-dive.html">The 3-Act Program Structure: A Research Synthesis</a> — honest accounting of what the proposed 3-Act organizing model (Foundations → Integration → Specialty) is consistent with, what it is not grounded in, how it engages the strongest critiques (Lave &amp; Wenger on situated learning, Schön on artificial boundaries, prerequisite-transfer findings), and which design choices are research-supported vs. stipulated.</li>
+    <li><a href="./graduate-outcome-validation.html">Graduate Outcome Validation</a> — proposal to validate the framework's outputs against 268 Clemson GC graduates' actual occupational destinations; the long-term path from "course-opportunity scores" to "student-learning claims."</li>
+    <li><a href="./superpowers/specs/2026-05-26-coursecapture-agentic-retrieval-design.md">CourseCapture v2 Agentic Retrieval Spec</a> — the architectural design document for the three-phase pipeline described in §5. Explains the background, goals, non-goals, and detailed component design for the per-material ingestion, tool-using audit agent, and synthesis-with-provenance architecture.</li>
+  </ul>
+</section>
+
+<div class="doc-foot">
+  Architecture overview · 2026-06-03 · GC Curriculum Tool · <a href="https://github.com/chiptoe-svg/gc-curriculum-tool" target="_blank" rel="noopener noreferrer">source</a>
+</div>
+
+</main>
+
+</body>
+</html>

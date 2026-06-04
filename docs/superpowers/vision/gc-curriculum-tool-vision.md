@@ -2,6 +2,8 @@
 
 > **Where the tool runs.** The live tool runs locally on the Clemson LAN at [http://130.127.162.180:3000/](http://130.127.162.180:3000/) — per-course audit at `/capture/<code>` (CourseCapture), alignment + what-if scenarios at `/explore/<code>`, and the program-level coverage matrix at `/program`. It is gated by HTTP Basic Auth and reachable only from inside the Clemson network. For a quick orientation without LAN access, see the [executive brief](../../executive-brief.html).
 >
+> **How it's built.** For an architectural overview of how the surfaces, pipeline, and data substrate connect — the agentic-retrieval pipeline, KUD+ framework, provenance discipline, deployment split, and program-level connections — see the [architecture doc](../../architecture.html).
+>
 > **How it works.** Catalog values come from a [shared course sheet](https://docs.google.com/spreadsheets/d/12aPhgrIlhDYjKD0-Gt97glf1d9fKtwKmL4FwM8iTz7Q/edit?gid=1024237655#gid=1024237655), one tab per course — edit your tab and click **Sync from Sheet** in CourseCapture to pull the latest values. The audit session then combines those catalog values with Canvas-imported assignments and rubrics, uploaded materials, linked Google Docs / Sheets / Slides and Drive PDFs, and voice/chat audit; the confirmed snapshot feeds program-level analyses.
 >
 > For the academic background and theoretical justification behind the KUD+ framework — what it measures, why it's structured as it is, and how it's implemented at the course and career-path levels — see the [Background document](../../background.html).
