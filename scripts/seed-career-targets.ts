@@ -9,8 +9,8 @@
  *   set -a; source .env.local; set +a; pnpm db:seed
  */
 
-import { neon } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-http';
+import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import { sql } from 'drizzle-orm';
 import { CAREER_TARGETS } from '../lib/domain/seed-targets';
 
@@ -20,7 +20,8 @@ if (!DATABASE_URL) {
   process.exit(1);
 }
 
-const db = drizzle(neon(DATABASE_URL));
+const pool = new Pool({ connectionString: DATABASE_URL });
+const db = drizzle(pool);
 
 async function seed() {
   console.log(`Seeding ${CAREER_TARGETS.length} career targets...`);

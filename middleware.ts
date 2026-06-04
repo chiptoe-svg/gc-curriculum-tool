@@ -90,4 +90,7 @@ export const config = {
   // Auth. Standard Next.js exclusion list keeps middleware off of
   // _next assets and the favicon.
   matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  // Run in Node runtime so we can import lib/db/client (node-postgres).
+  // Edge runtime lacks Node builtins that `pg` needs.
+  runtime: 'nodejs',
 };

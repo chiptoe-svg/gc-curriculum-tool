@@ -16,8 +16,8 @@
  *   pnpm db:seed-courses
  */
 
-import { neon } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-http';
+import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import { sql } from 'drizzle-orm';
 
 const DATABASE_URL = process.env.DATABASE_URL?.trim();
@@ -26,7 +26,8 @@ if (!DATABASE_URL) {
   process.exit(1);
 }
 
-const db = drizzle(neon(DATABASE_URL));
+const pool = new Pool({ connectionString: DATABASE_URL });
+const db = drizzle(pool);
 
 interface CourseSeed {
   code: string;
