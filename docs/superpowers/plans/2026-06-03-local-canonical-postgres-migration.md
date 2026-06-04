@@ -1,5 +1,7 @@
 # Local-canonical Postgres migration (Neon as partner-handoff buffer)
 
+> **Status:** ⏸ Superseded 2026-06-04 by [`2026-06-04-partner-handoff-vercel-phaseout.md`](./2026-06-04-partner-handoff-vercel-phaseout.md) (shipped at `afd56a8`). Once the partner survey moved onto the Mac via the Tailscale Funnel, the "Neon as transient buffer + sync functions" framing became unnecessary — no Vercel-side anything, no need for a second DB. The simpler wholesale phaseout won.
+>
 > **Supersedes** [`2026-06-03-neon-to-local-postgres-migration.md`](./2026-06-03-neon-to-local-postgres-migration.md). The prior plan kept partner data + reference tables canonical on Neon. After Chip's "partner survey is one-time per employer, then feed info to local" framing, the architecture flips: **local Mac is the canonical store for everything**, and **Neon is reduced to a transient handoff buffer** for the partner survey only.
 
 **Goal.** Migrate the data layer so local Postgres on the host Mac is the single source of truth for the entire curriculum tool. Vercel-served partner survey (`/partners/*`) writes to a small Neon buffer; faculty side ingests from that buffer into local on a schedule (and on demand).

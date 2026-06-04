@@ -337,7 +337,7 @@
     <div class="surface-card">
       <div class="surface-card-label">Partner Survey</div>
       <div class="surface-card-access">HTTPS · Magic-link · /partners/&lt;token&gt;</div>
-      <p>Industry-partner input surface running on Vercel (not the local Mac). Partners receive a magic-link invitation, match themselves to career targets, and submit position descriptions. AI synthesis on /admin/synthesis aggregates submissions into proposed KUD+ edits for faculty to review and adopt or reject.</p>
+      <p>Industry-partner input surface served by the same Mac via Tailscale Funnel (was on Vercel until 2026-06-04). Partners receive a magic-link invitation, match themselves to career targets, and submit position descriptions. AI synthesis on /admin/synthesis aggregates submissions into proposed KUD+ edits for faculty to review and adopt or reject. As of CareerCapture v1 (2026-06-04) partners can also do a 20-45 minute AI-conducted interview anchored to one career target; the synthesis is read back on /admin/synthesis as "Employer interviews".</p>
     </div>
   </div>
 
@@ -360,7 +360,7 @@
     <ol>
       <li>
         <strong>Extract</strong>
-        <p>Raw content is converted to clean text. PDFs go through Docling (local deploy) or unpdf (Vercel), which produces markdown with figure descriptions for the local deploy. Legacy Office formats are converted via LibreOffice headless. Spreadsheets are compacted to strip empty rows, degenerate tables, and inline base64 image blobs that inflate token counts 20–30× over their information content.</p>
+        <p>Raw content is converted to clean text. PDFs go through Docling, which produces markdown with figure descriptions via a local vision-language model. Legacy Office formats are converted via LibreOffice headless. Spreadsheets are compacted to strip empty rows, degenerate tables, and inline base64 image blobs that inflate token counts 20–30× over their information content.</p>
       </li>
       <li>
         <strong>FERPA screening + materials policy</strong>
@@ -481,37 +481,40 @@
 <section id="deployment">
   <h2><span class="num">§ 8</span>Deployment</h2>
 
-  <p>The tool runs as a single Next.js application codebase deployed in two configurations with different runtime personalities, flipped by environment-variable presence. The same database (Neon Postgres), the same Drizzle schema, and the same application code serve both deployments.</p>
+  <p>The tool runs as a single Next.js application on one Mac Studio. The earlier two-personality hybrid — local Mac for faculty surfaces plus Vercel for the partner survey, sharing a Neon Postgres — retired on <strong>2026-06-04</strong>: the Mac now serves everything via a Tailscale Funnel that exposes the same Next.js process to the public internet for partners, and Postgres runs locally too. One codebase, one DB, one host.</p>
 
-  <h3>Local Mac — faculty surfaces</h3>
+  <h3>The Mac</h3>
 
-  <p>A Mac Studio running on the Clemson LAN serves the faculty-facing surfaces. The relevant env-var differences:</p>
+  <p>A Mac Studio on the Clemson LAN runs:</p>
 
   <ul>
     <li><strong>AI provider:</strong> <code>AI_PROVIDER=openai</code> (OpenAI API). The campus provider (<code>AI_PROVIDER=campus</code>, Clemson RCD's cluster at <code>llm.rcd.clemson.edu</code> running Qwen3.6 and related models) and the local provider (<code>AI_PROVIDER=local</code>, omlx with Qwen3.6 family via a local inference server) are available as one-line env-var switches. The architecture supports this swap without changes to the application layer.</li>
+    <li><strong>Database:</strong> Postgres 17 via Postgres.app on <code>127.0.0.1:5433</code>, db <code>gc_curriculum</code>, launchd-managed (<code>com.gc.postgres</code>). The Next.js middleware runs in Node runtime (<code>runtime: 'nodejs'</code>) so it can use the <code>node-postgres</code> driver for per-request DB lookups like partner-session minting.</li>
     <li><strong>PDF extraction:</strong> Docling (via <code>docling-serve</code> on <code>127.0.0.1:5001</code>, launchd-managed) with optional local vision-language model for figure descriptions in lecture slides and research papers — a real evidence gap that text-only extraction misses.</li>
     <li><strong>Vector store:</strong> Weaviate (v1.37.5, via Homebrew, launchd-managed at <code>127.0.0.1:8090</code> HTTP + gRPC, anonymous access, per-course tenant isolation).</li>
     <li><strong>YouTube transcription:</strong> mlx-whisper with <code>whisper-large-v3-turbo</code> on Apple Metal GPU, falling back to yt-dlp + ffmpeg + whisper.cpp for non-captioned videos.</li>
-    <li><strong>Auth:</strong> HTTP Basic Auth in Next.js middleware (<code>FACULTY_BASIC_AUTH</code> env var) gates all faculty surfaces.</li>
+    <li><strong>Material storage:</strong> Local filesystem under <code>~/Library/Application Support/gc-curriculum-tool/materials/</code> served back through <code>/api/storage/materials/&lt;key&gt;</code>. The earlier Vercel Blob layer retired with the rest of the Vercel stack.</li>
   </ul>
 
-  <h3>HTTP/HTTPS split on the local Mac</h3>
+  <h3>Two-origin split + auth model</h3>
 
-  <p>The local Mac runs two origins simultaneously. The LAN IP (<code>http://130.127.162.180:3000/</code>) serves the public landing and read-only profile views — no authentication, browsable by anyone on the Clemson network. The Tailscale Funnel origin (<code>https://admins-mac-studio-2.tailb723c1.ts.net/</code>) serves the full faculty application with HTTP Basic Auth via the middleware layer.</p>
+  <p>The same Next.js process serves two origins simultaneously. The LAN IP (<code>http://130.127.162.180:3000/</code>) is the public HTTP landing — anyone on the Clemson network can browse the course catalog and read-only profile views. The Tailscale Funnel origin (<code>https://admins-mac-studio-2.tailb723c1.ts.net/</code>) is the full HTTPS app reachable from the public internet, gated by HTTP Basic Auth in middleware (<code>FACULTY_BASIC_AUTH</code> env var) for all paths outside <code>PUBLIC_PREFIXES</code> (which permit <code>/</code>, <code>/view/*</code>, <code>/partners/*</code>, <code>/api/partners/*</code>).</p>
 
   <p>The split exists because browsers enforce a rule: microphone access requires a secure context (HTTPS). An earlier architecture tried to deliver mic access via an HTTPS iframe embedded in an HTTP parent page; this fails because per the W3C Secure Contexts specification, an HTTPS iframe inside an HTTP parent is not a secure context, and <code>navigator.mediaDevices</code> is undefined. The current architecture moves the faculty surfaces to top-level HTTPS via Tailscale Funnel (which provides a valid, CA-signed certificate), so the microphone works natively as a first-class browser feature.</p>
 
   <p>Faculty workflow: they bookmark the HTTP landing page (<code>http://130.127.162.180:3000/</code>), browse courses and read profiles there with no login, then click "Edit" when they want to work in CourseCapture. The Edit link navigates to the Tailscale HTTPS origin; the browser presents a Basic Auth prompt once per session and caches the credential for the HTTPS origin going forward. The slug — a URL parameter that acts as defense-in-depth alongside Basic Auth — is baked into the Edit link server-side so faculty don't need to know or type it.</p>
 
-  <h3>Vercel — partner survey</h3>
+  <h3>Partner survey on the same Mac</h3>
 
-  <p>The industry-partner input surface (<code>/partners/&lt;token&gt;</code>) runs on Vercel, reachable from anywhere on the public internet. Partners receive magic-link invitation emails, complete a survey, and submit position descriptions without needing VPN or Clemson network access. This surface uses the same Neon database as the local Mac but runs against the OpenAI API (<code>AI_PROVIDER=openai</code> is the Vercel default) and uses <code>unpdf</code> for PDF extraction (no Docling on Vercel). Basic Auth middleware no-ops on Vercel (the <code>FACULTY_BASIC_AUTH</code> env var is not set there).</p>
+  <p>The industry-partner survey (<code>/partners/&lt;token&gt;</code>) runs on the same Next.js process — same DB, same code, just routed under a <code>PUBLIC_PREFIXES</code>-permitted path so Basic Auth doesn't gate it. Partners receive magic-link URLs by email (handed to them by faculty from the <code>/admin/partners</code> admin UI's Copy / Compose buttons — the earlier Resend automated-invite path retired in the cutover), open the link via the Funnel, complete the survey, submit. Voice transcription for partner interviews uses a separate <code>/api/partners/transcribe?token=…</code> route that validates the magic token rather than the faculty slug, so partners don't need Basic Auth credentials.</p>
 
-  <h3>Shared infrastructure</h3>
+  <h3>Process management</h3>
 
-  <p>Both deployments share: Neon Postgres (the single source of truth for all captured data), a single OpenAI organization for API calls, and the same application code and Drizzle schema. The separation is entirely runtime-configuration — no code branching, no separate repositories.</p>
+  <p>The launchd service manager keeps five processes alive on the Mac: the Next.js app server, the local Postgres server, a Docling PDF extraction server, a Weaviate vector database server, and a dev-server watchdog that probes the app every five minutes and attempts recovery if it detects 5xx responses or connection failures (covering the failure mode where the process is alive but returning errors, which launchd's native KeepAlive doesn't catch).</p>
 
-  <p>The launchd service manager keeps four processes alive on the local Mac: the Next.js app server, a Docling PDF extraction server, a Weaviate vector database server, and a dev-server watchdog that probes the app every five minutes and attempts recovery if it detects 5xx responses or connection failures (covering the failure mode where the process is alive but returning errors, which launchd's native KeepAlive doesn't catch).</p>
+  <h3>Backups</h3>
+
+  <p>Two-tier scheme via <code>com.gc.pg-backup</code> launchd (every 6h): (1) local <code>pg_dump</code>/gzip to <code>~/Library/Application Support/gc-curriculum-tool/backups/</code>, pruned >365 days; (2) weekly off-site push to private repo <code>chiptoe-svg/gc-curriculum-backups</code> on Sundays, retained indefinitely. The earlier Neon-PITR + Neon-branch-checkpoint layers retired with the source DB.</p>
 </section>
 
 <section id="cost-and-discipline">
@@ -567,7 +570,7 @@
 
   <h3>Industry Partner Input → Career-Target Descriptors</h3>
 
-  <p>The partner survey surface on Vercel feeds a separate AI synthesis pipeline (<code>/admin/synthesis</code>) that aggregates partner submissions into proposed updates to career-target sub-competency descriptors. These proposals are advisory — a faculty reviewer reads them and adopts, modifies, or rejects each proposed change before it takes effect. When a sub-competency descriptor changes, existing coverage scores against that target are marked stale and queued for re-scoring; the program's self-understanding updates rather than silently inheriting the new descriptor with old scores.</p>
+  <p>The partner survey surface (now Mac-served, same Next.js process) feeds a separate AI synthesis pipeline (<code>/admin/synthesis</code>) that aggregates partner submissions and employer interviews into proposed updates to career-target sub-competency descriptors. These proposals are advisory — a faculty reviewer reads them and adopts, modifies, or rejects each proposed change before it takes effect. When a sub-competency descriptor changes, existing coverage scores against that target are marked stale and queued for re-scoring; the program's self-understanding updates rather than silently inheriting the new descriptor with old scores.</p>
 
   <div class="callout note">
     <div class="callout-title">The accumulation pattern</div>

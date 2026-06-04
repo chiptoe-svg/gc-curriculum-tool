@@ -1,6 +1,6 @@
 # Neon → Local Postgres migration
 
-> **Status:** drafted, awaiting scope confirmation. Not started.
+> **Status:** ⏸ Superseded same day (2026-06-03) by [`2026-06-03-local-canonical-postgres-migration.md`](./2026-06-03-local-canonical-postgres-migration.md), which was itself superseded on 2026-06-04 by [`2026-06-04-partner-handoff-vercel-phaseout.md`](./2026-06-04-partner-handoff-vercel-phaseout.md) (shipped at `afd56a8`). The wholesale move to local Postgres + a funnel-served partner survey on the same Mac is now live; this plan's "Neon stays alive for partner data" framing was abandoned.
 
 **Goal.** Move the curriculum-tool's data layer from Neon (cloud) to a local Postgres on the host Mac, except for the partner-facing magic-link survey, which stays on Neon so the Vercel `/partners/*` deploy continues to function.
 
