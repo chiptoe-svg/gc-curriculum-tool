@@ -46,6 +46,7 @@ function makePrior(overrides: Partial<PriorSessionSummary> = {}): PriorSessionSu
     sessionId: '4f3a1b2c-dddd-eeee-ffff-000000000000',
     startedAt: new Date('2026-05-30T00:00:00Z'),
     turnCount: 12,
+    recentTurns: [],
     assistantTurns: [],
     lastFacultyTurn: null,
     ...overrides,

@@ -12,6 +12,7 @@ import { randomUUID } from 'node:crypto';
 import { and, asc, desc, eq, ne, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { captureMessages } from '@/lib/db/schema';
+import { parseAssistantContent, type ParsedAssistantTurn } from '@/lib/ai/agent/session-briefing';
 
 export type CaptureMessageRole = 'system' | 'user' | 'assistant' | 'tool';
 
@@ -151,8 +152,10 @@ export async function getLatestSessionId(courseCode: string): Promise<string | n
 export interface PriorSessionSummary {
   sessionId: string;
   startedAt: Date;
-  lastAssistantContent: string | null;
-  lastAssistantReadiness: unknown | null;
+  /** @deprecated Removed in Task 4 — use assistantTurns instead. */
+  lastAssistantContent?: string | null;
+  /** @deprecated Removed in Task 4 — use assistantTurns instead. */
+  lastAssistantReadiness?: unknown | null;
   turnCount: number;
   /**
    * The last ~8 user/assistant turns (chronological), each content
@@ -161,6 +164,10 @@ export interface PriorSessionSummary {
    * faculty has already answered.
    */
   recentTurns: Array<{ role: 'user' | 'assistant'; content: string }>;
+  /** Parsed assistant turns in chronological order (turnIndex asc). Drives the structured session briefing. */
+  assistantTurns: ParsedAssistantTurn[];
+  /** The most recent faculty (user) message body for this session, raw. null if the session has no faculty turns. */
+  lastFacultyTurn: string | null;
 }
 
 /**
@@ -287,6 +294,18 @@ export async function listPriorSessionSummaries(
       return { role: r.role as 'user' | 'assistant', content };
     });
 
+    // parseAssistantContent returns null for non-JSON / no-signal rows; those are intentionally skipped.
+    const assistantTurns: ParsedAssistantTurn[] = sessionRows
+      .filter(r => r.role === 'assistant')
+      .map(r => parseAssistantContent(typeof r.content === 'string' ? r.content : null))
+      .filter((t): t is ParsedAssistantTurn => t !== null);
+
+    const lastFacultyRow = [...sessionRows].reverse().find(r => r.role === 'user');
+    const lastFacultyTurn =
+      lastFacultyRow && typeof lastFacultyRow.content === 'string' && lastFacultyRow.content.length > 0
+        ? lastFacultyRow.content
+        : null;
+
     summaries.push({
       sessionId,
       startedAt: sessionRows[0]!.createdAt,
@@ -294,6 +313,8 @@ export async function listPriorSessionSummaries(
       lastAssistantReadiness: readiness,
       turnCount: sessionRows.length,
       recentTurns,
+      assistantTurns,
+      lastFacultyTurn,
     });
     if (summaries.length >= limit) break;
   }
