@@ -12,7 +12,7 @@
 
 ## What's live
 
-Two deployments, same codebase. Faculty side is gated by HTTP Basic Auth on the local Mac; partner side is public on Vercel.
+One Mac, one DB, one Next.js process. Faculty surfaces gated by HTTP Basic Auth (via the Tailscale Funnel); partner surfaces public via the same Funnel under `PUBLIC_PREFIXES`. Vercel + Neon + Resend retired 2026-06-04.
 
 ### Faculty surfaces — local Mac (LAN, `0.0.0.0:3000`, Basic Auth)
 
@@ -31,11 +31,12 @@ Two deployments, same codebase. Faculty side is gated by HTTP Basic Auth on the 
 | `/admin/synthesis?slug=…` | Per-target AI synthesis dashboard (themes, salaries, partner quotes, proposed KUD edits) | live | 2026-05-19 (Plan 3) |
 | `/` | Home (slug-gated) | live | — |
 
-### Partner / public surfaces — Vercel (`gc-curriculum-tool.vercel.app`)
+### Partner / public surfaces — Mac via Tailscale Funnel (`admins-mac-studio-2.tailb723c1.ts.net`)
 
 | Route | Surface | Status |
 | ----- | ------- | ------ |
 | `/partners/[token]` | Magic-link survey: welcome, target match, position-submission wizard (draft/submit/delete) | live |
+| `/partners/[token]/interview/[targetId]` | **CareerCapture v1** — AI-conducted 20-45 min employer interview anchored to one career target; ends with a CareerCaptureProfile (role shape + day-1 K/U/D + dealbreakers + hiring signals + divergence from catalog). Voice via `/api/partners/transcribe?token=`. | live (2026-06-04) |
 
 The static GitHub-Pages preview at `chiptoe-svg.github.io/gc-curriculum-tool/` serves the docs (vision, specs, plans, deep-dives, faculty guide) plus the legacy interactive partner-interface preview. Submissions and feedback POST to a Google Apps Script Web App which appends to the shared Google Sheet's "Submissions" and "Feedback" tabs.
 
@@ -164,7 +165,7 @@ Tables defined in [`lib/db/schema.ts`](../lib/db/schema.ts):
 - **Feedback intake:** `GITHUB_TOKEN`, `GITHUB_FEEDBACK_REPO` (set on the local Mac; when unset, `/api/feedback` returns 503)
 - **Cost guard:** `DAILY_COST_CAP_USD`, `COST_ALERT_EMAIL`
 - **Sheets / partners:** `GOOGLE_SHEET_ID`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `PARTNERS_BASE_URL`, `SYNTHESIS_STALENESS_THRESHOLD`
-- **Vercel Blob:** `BLOB_READ_WRITE_TOKEN`
+- **Local material storage:** `~/Library/Application Support/gc-curriculum-tool/materials/` served via `/api/storage/materials/<key>` (was Vercel Blob until 2026-06-04)
 
 ---
 
