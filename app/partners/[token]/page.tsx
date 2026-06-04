@@ -6,6 +6,7 @@ import {
   logPartnerEvent,
 } from '@/lib/partners/queries';
 import { getPartnerStats } from '@/lib/partners/stats';
+import { listTargets } from '@/lib/db/career-targets-queries';
 import { WelcomeScreen } from './WelcomeScreen';
 import { PartnerDashboard } from './PartnerDashboard';
 
@@ -34,11 +35,21 @@ export default async function PartnerLandingPage({ params }: Props) {
     await bumpLastActive(partner.id);
   }
 
-  const stats = await getPartnerStats(partner.id);
+  const [stats, allTargets] = await Promise.all([
+    getPartnerStats(partner.id),
+    listTargets(),
+  ]);
   const hasActivity = stats.drafts + stats.submitted + stats.ratingsCount > 0;
 
   if (!hasActivity) {
     return <WelcomeScreen partner={partner} />;
   }
-  return <PartnerDashboard partner={partner} stats={stats} />;
+  return (
+    <PartnerDashboard
+      partner={partner}
+      stats={stats}
+      token={token}
+      targets={allTargets.map(t => ({ id: t.id, name: t.name }))}
+    />
+  );
 }

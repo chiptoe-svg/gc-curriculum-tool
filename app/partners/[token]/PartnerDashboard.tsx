@@ -1,12 +1,19 @@
 import Link from 'next/link';
 import { SubmissionsList } from './submit/SubmissionsList';
 
+interface TargetOption {
+  id: string;
+  name: string;
+}
+
 interface Props {
   partner: { firstName: string; company: string };
   stats: { drafts: number; submitted: number; ratingsCount: number };
+  token: string;
+  targets: TargetOption[];
 }
 
-export function PartnerDashboard({ partner, stats }: Props) {
+export function PartnerDashboard({ partner, stats, token, targets }: Props) {
   return (
     <div className="space-y-8">
       <div>
@@ -30,6 +37,25 @@ export function PartnerDashboard({ partner, stats }: Props) {
         />
         <Card title="" metric="" cta="I'm done for now" href="./done" subtle />
       </div>
+
+      {targets.length > 0 && (
+        <section>
+          <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-slate-500">Career-target interviews</h2>
+          <div className="divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white">
+            {targets.map(target => (
+              <div key={target.id} className="flex items-center justify-between px-4 py-3">
+                <span className="text-sm font-medium">{target.name}</span>
+                <Link
+                  href={`/partners/${encodeURIComponent(token)}/interview/${encodeURIComponent(target.id)}`}
+                  className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
+                >
+                  Start interview
+                </Link>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section>
         <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-slate-500">Your submissions</h2>
