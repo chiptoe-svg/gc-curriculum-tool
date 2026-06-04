@@ -380,7 +380,7 @@ export function CaptureChatPanel({
         </div>
       </div>
 
-      {priorBriefings && priorBriefings.length > 0 && (
+      {chooserMode !== 'fresh' && priorBriefings && priorBriefings.length > 0 && (
         <details className="mb-3 rounded border border-stone-200 bg-stone-50 text-sm">
           <summary className="cursor-pointer select-none px-3 py-2 font-medium text-stone-700">
             Where we left off · {priorBriefings.length} prior session{priorBriefings.length > 1 ? 's' : ''}
