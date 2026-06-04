@@ -30,6 +30,7 @@ export const AI_FUNCTION_IDS = [
   'capture-chat-agent',
   'wiki-update',
   'curriculum-chat',
+  'capture-stress-test',
 ] as const;
 export type AIFunctionId = (typeof AI_FUNCTION_IDS)[number];
 
@@ -110,6 +111,14 @@ export const DEFAULT_TIERS: Record<AIFunctionId, Exclude<ModelTier, 'custom'>> =
   // Default tier: same reasoning load as capture-chat-agent (read context,
   // route 1-3 tool calls, synthesize an evidence-cited response).
   'curriculum-chat': 'default',
+  // Heavy tier. Adversarial review of a produced profile: read all
+  // competencies + audit_notes + verification_summary + the full
+  // transcript + materials and challenge per-finding confidence,
+  // surface internal contradictions, and flag catalog-vs-evidence
+  // claims that don't hold up. This is exactly the kind of cross-
+  // referenced critical-reasoning task where heavy-tier reasoning
+  // is the value. One call per stress-test click; not auto-on-generate.
+  'capture-stress-test': 'heavy',
 };
 
 export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
@@ -127,6 +136,7 @@ export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
   'capture-chat-agent': 'Audit chat agent (Stage 3 — tool-using auditor)',
   'wiki-update': 'Wiki page regeneration (on snapshot creation)',
   'curriculum-chat': 'Curriculum chat (Explore "Ask" tab + future /ask)',
+  'capture-stress-test': 'Capture stress test (adversarial profile review)',
 };
 
 export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
@@ -144,6 +154,7 @@ export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
   'capture-chat-agent': 'Per-turn agent loop for CourseCapture v2 audit chat; reads at-rest digests, retrieves chunks on demand, emits a structured finding + question + citations.',
   'wiki-update': 'Regenerates the affected wiki-layer pages (course, competencies, targets, concepts) from a new snapshot + related substrate. Returns a page map; Task A3 git-ops writes + commits.',
   'curriculum-chat': 'Faculty-facing chat over the curriculum wiki. Tool-using agent reads / lists / searches wiki pages and emits a markdown response with structured page citations. Powers Explore\'s "Ask" tab and the future standalone /ask route.',
+  'capture-stress-test': 'Adversarial review of a produced Course Outcome Profile: challenges per-finding confidence, surfaces internal contradictions, flags catalog-vs-evidence claims that don\'t hold up. Heavy reasoning tier; one call per on-demand stress-test click.',
 };
 
 interface CachedSetting {
