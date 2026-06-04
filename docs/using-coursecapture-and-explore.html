@@ -155,20 +155,24 @@
   <nav class="rail-nav">
     <div class="nav-group-label">Guide</div>
     <a class="nav-link" href="#overview">Overview</a>
+    <a class="nav-link" href="#access">How you reach the tool</a>
     <a class="nav-link" href="#before">Before you start</a>
     <div class="nav-group-label" style="margin-top: 10px;">CourseCapture</div>
     <a class="nav-link" href="#cc-materials">1 · Loading materials</a>
-    <a class="nav-link" href="#cc-audit">2 · The audit chat</a>
-    <a class="nav-link" href="#cc-generate">3 · Generate &amp; confirm</a>
-    <a class="nav-link" href="#cc-snapshots">4 · Snapshots &amp; revisions</a>
+    <a class="nav-link" href="#cc-instructor">2 · Identifying yourself</a>
+    <a class="nav-link" href="#cc-audit">3 · The audit chat</a>
+    <a class="nav-link" href="#cc-generate">4 · Generate &amp; confirm</a>
+    <a class="nav-link" href="#cc-snapshots">5 · Snapshots &amp; revisions</a>
+    <a class="nav-link" href="#cc-stresstest">6 · Stress-test the profile</a>
     <div class="nav-group-label" style="margin-top: 10px;">Explore</div>
-    <a class="nav-link" href="#ex-modes">5 · Pick a snapshot and a mode</a>
-    <a class="nav-link" href="#ex-custom">6 · Custom target</a>
-    <a class="nav-link" href="#ex-downstream">7 · Downstream target</a>
-    <a class="nav-link" href="#ex-analysis">8 · Reading the analysis</a>
-    <a class="nav-link" href="#ex-whatif">9 · What-if scenarios</a>
+    <a class="nav-link" href="#ex-modes">7 · Pick a snapshot and a mode</a>
+    <a class="nav-link" href="#ex-custom">8 · Custom target</a>
+    <a class="nav-link" href="#ex-downstream">9 · Downstream target</a>
+    <a class="nav-link" href="#ex-analysis">10 · Reading the analysis</a>
+    <a class="nav-link" href="#ex-whatif">11 · What-if scenarios</a>
     <div class="nav-group-label" style="margin-top: 10px;">Reference</div>
     <a class="nav-link" href="#tips">Tips &amp; gotchas</a>
+    <a class="nav-link" href="#readonly">Sharing the read-only view</a>
     <a class="nav-link" href="#scope">What these tools don't do</a>
     <div class="nav-group-label" style="margin-top: 18px;">See also</div>
     <a class="nav-link" href="./superpowers/vision/gc-curriculum-tool-vision.html">Vision document</a>
@@ -188,7 +192,7 @@
   <div class="doc-meta">
     <span><strong>Audience</strong> GC faculty using the tool on their own courses</span>
     <span><strong>Time per course</strong> 20–45 minutes for a first capture</span>
-    <span><strong>Date</strong> 2026-05-25</span>
+    <span><strong>Date</strong> 2026-06-03</span>
   </div>
 </header>
 
@@ -201,12 +205,32 @@
 
   <div class="callout note">
     <div class="callout-title">Read in this order</div>
-    <p>You only need to read sections about Explore (§5–9) once you have at least one confirmed snapshot for a course. Explore refuses to open if there's no snapshot — it sends you back to CourseCapture first.</p>
+    <p>You only need to read sections about Explore (§10–14) once you have at least one confirmed snapshot for a course. Explore refuses to open if there's no snapshot — it sends you back to CourseCapture first.</p>
+  </div>
+</section>
+
+<section id="access">
+  <h2><span class="num">§ 2</span>How you reach the tool</h2>
+
+  <p>The tool lives on two surfaces that serve different purposes. Understanding which URL to use for which task will save you a frustrating moment the first time a browser blocks the microphone.</p>
+
+  <h3>The public landing — browse without logging in</h3>
+  <p>Point any browser on the Clemson LAN (or VPN) to <code>http://130.127.162.180:3000/</code>. No username, no password. You land on a course listing that shows every course in the catalog with its current capture status and "by [instructor]" attribution. Each row has a <strong>View</strong> link that opens the read-only profile for that course — useful for quickly checking whether a course has been captured and what it says, or for sharing a profile link with a chair, colleague, or accreditor without giving anyone edit access. View links stay on HTTP and require no authentication.</p>
+
+  <h3>Edit pages — HTTPS via Tailscale, Basic Auth once per browser</h3>
+  <p>Edit links go to <code>https://admins-mac-studio-2.tailb723c1.ts.net/capture/&lt;code&gt;?slug=…</code>. This address uses Tailscale Funnel, which means it's a proper HTTPS secure context reachable from anywhere — off-campus, over VPN, or from a phone. The first time your browser visits this host it will prompt for a username and password (HTTP Basic Auth). Enter the credentials your administrator provided; the browser remembers them for subsequent visits, so this is a one-time prompt per browser. Edit pages cover CourseCapture, Explore, Program, Admin, and Settings — anything that writes data.</p>
+
+  <h3>Why the split matters for the microphone</h3>
+  <p>Browsers enforce a rule: microphone access is only permitted on secure contexts (HTTPS). The <code>http://130.127.162.180…</code> address is plain HTTP, so the mic button on that surface will always be blocked by the browser. If you want to use voice input during the audit chat, use the edit-surface URL (<code>https://admins-mac-studio-2…</code>) — the mic works there because it's a top-level HTTPS context. This replaces an earlier approach that tried to proxy mic access through an iframe, which browser security rules ultimately blocked.</p>
+
+  <div class="callout note">
+    <div class="callout-title">Bookmark the edit address</div>
+    <p>The slug is part of the edit URL — keep that link handy. If you lose it, ask your administrator to regenerate it or look it up on the Admin page. The public landing (<code>http://130.127.162.180:3000/</code>) never needs a slug; the edit surface always does.</p>
   </div>
 </section>
 
 <section id="before">
-  <h2><span class="num">§ 2</span>Before you start</h2>
+  <h2><span class="num">§ 3</span>Before you start</h2>
 
   <h3>Access</h3>
   <p>The tool is slug-gated: you open it through the access URL your administrator shared. The slug is part of the URL (<code>?slug=…</code>). All pages — CourseCapture, Explore, Program, Settings — pass the same slug forward; just keep the tab open and the navigation will preserve it.</p>
@@ -225,7 +249,7 @@
 </section>
 
 <section id="cc-materials">
-  <h2><span class="num">§ 3</span>CourseCapture · Loading materials</h2>
+  <h2><span class="num">§ 4</span>CourseCapture · Loading materials</h2>
 
   <p>Open <code>/capture/&lt;course-code&gt;</code>. The page splits into a Materials &amp; catalog panel (top) and the audit chat (below). Spend a couple of minutes on the materials panel <em>before</em> talking to the auditor — every item you load is evidence the auditor can read directly instead of asking you to recall.</p>
 
@@ -323,8 +347,30 @@
   </div>
 </section>
 
+<section id="cc-instructor">
+  <h2><span class="num">§ 5</span>CourseCapture · Identifying yourself as the auditor</h2>
+
+  <p>Because the same course code can be taught very differently by different faculty members, depth scores are now recorded per instructor. A GC 3550 taught by one person with a heavy press-lab emphasis produces a different profile than a GC 3550 taught another way — averaging those together would erase information worth preserving. The instructor identity is captured at the start of every session and stamped on every snapshot and audit message.</p>
+
+  <h3>The session-start chooser</h3>
+  <p>When you open <code>/capture/&lt;course-code&gt;</code>, a modal appears before the audit panel loads. It presents two choices:</p>
+  <ul>
+    <li><strong>Instructor dropdown.</strong> Select your name from the list of faculty associated with this course. If your name isn't there, ask the administrator to add it — the list comes from the course's instructor roster in the system.</li>
+    <li><strong>Fresh start vs. Build on prior session.</strong> <em>Fresh start</em> opens a clean audit chat with no prior transcript. <em>Build on prior session</em> loads the most recent audit session for this instructor on this course, so you can pick up where you left off without replaying the whole conversation. Choose Build on prior session when you're returning to a course you've already partially audited; choose Fresh start for a new semester's capture or a major revision where the prior session's context would mislead the auditor.</li>
+  </ul>
+  <p>Confirm your choices and the audit panel loads.</p>
+
+  <h3>The Auditor badge</h3>
+  <p>Once the session is open, an <strong>Auditor: [your name] · change</strong> badge appears at the top of the audit panel. It stays visible throughout the session so you always know whose lens the auditor is using. Click <strong>change</strong> to return to the chooser — for example, if you're an administrator stepping through multiple instructors' captures in sequence, or if you opened the wrong name by mistake. Changing the auditor identity mid-session starts a fresh chat for the new instructor; the prior session's messages are preserved under the previous instructor's name.</p>
+
+  <div class="callout note">
+    <div class="callout-title">Why this matters for scoring</div>
+    <p>Scores in the Program Coverage Matrix and in Explore reflect whose profile is the most recent snapshot. If two instructors have both captured GC 3550, the matrix shows both rows separately — one per instructor — rather than merging them. When a downstream course asks "does GC 3550 cover X?", the answer can differ by instructor. The split is intentional: it surfaces real variation instead of hiding it in an average.</p>
+  </div>
+</section>
+
 <section id="cc-audit">
-  <h2><span class="num">§ 4</span>CourseCapture · The audit chat</h2>
+  <h2><span class="num">§ 6</span>CourseCapture · The audit chat</h2>
 
   <p>The chat panel sits below the Materials &amp; catalog panel. The auditor opens by reading everything in the materials and writing three short paragraphs:</p>
 
@@ -372,7 +418,7 @@
 </section>
 
 <section id="cc-generate">
-  <h2><span class="num">§ 5</span>CourseCapture · Generate &amp; confirm the profile</h2>
+  <h2><span class="num">§ 7</span>CourseCapture · Generate &amp; confirm the profile</h2>
 
   <p>When you're ready, click <strong>Generate Course Outcome Profile</strong> in the chat header. The system reads the full audit transcript plus all the materials and produces a structured profile in one pass. This is a separate AI call from the chat — it's the <em>scoring</em> step, not more conversation.</p>
 
@@ -403,7 +449,7 @@
 </section>
 
 <section id="cc-snapshots">
-  <h2><span class="num">§ 6</span>CourseCapture · Snapshots &amp; revisions</h2>
+  <h2><span class="num">§ 8</span>CourseCapture · Snapshots &amp; revisions</h2>
 
   <h3>Multiple snapshots over time</h3>
   <p>You can re-capture the same course as many times as you like. Each Save Snapshot creates a new versioned record; older snapshots are not overwritten. This is the unit of historical comparison: a "spring 2026 capture" and a "fall 2026 capture" of the same course can both exist, with their differences visible to anyone reading the snapshot list.</p>
@@ -417,8 +463,35 @@
   <p>Re-importing from Canvas before a re-capture is safe — file attachments upsert by <code>(course, fileName)</code>, so existing rows are updated in place rather than duplicated. You don't need to clear old materials before clicking <strong>Import from Canvas</strong> again.</p>
 </section>
 
+<section id="cc-stresstest">
+  <h2><span class="num">§ 9</span>CourseCapture · Stress-testing the profile before you approve</h2>
+
+  <p>After the profile has been generated but before you save a snapshot, you can run an adversarial review of it. The <strong>Stress-test this profile</strong> button appears on the review panel. Click it and a separate, heavier-tier AI agent reads the produced profile alongside the full audit transcript and all materials, then returns a structured critique — not an editorial rewrite, but a targeted search for places where the profile's claims outrun its evidence.</p>
+
+  <h3>What the reviewer looks at</h3>
+  <p>The reviewer works at two levels:</p>
+  <ul>
+    <li><strong>Per-competency annotations.</strong> For each competency, it returns a confidence indicator, any specific concerns (for example: a D=4 score where the only evidence is a single low-stakes exercise), and — optionally — a suggested score adjustment with a one-sentence rationale. It only annotates rows where it found something worth flagging; competencies it considers solidly evidenced show nothing.</li>
+    <li><strong>Profile-level concerns.</strong> Three categories: <em>catalog-vs-evidence mismatches</em> (the catalog description implies something the materials don't support, or vice versa), <em>internal consistency</em> (K/U/D patterns within or across competencies that look contradictory), and <em>coverage gaps</em> (things the materials clearly develop that the profile doesn't capture). Each profile-level concern is a short finding with an explanation.</li>
+  </ul>
+  <p>The reviewer also returns an overall assessment — a one-sentence judgment of whether the profile is ready to publish, needs minor refinement, or has substantive problems that warrant another audit conversation.</p>
+
+  <h3>How the results appear</h3>
+  <p>Competency rows that have concerns get an inline colored badge next to the row — the badge shows the concern count and opens the annotation on click. Rows the reviewer found acceptable show nothing. Profile-level concerns appear as a collapsible list below the competency table. The overall assessment appears at the top of the review panel.</p>
+
+  <p>The results are ephemeral: they're shown for this session only and are cleared the moment you make any edit to the profile. They don't persist into the snapshot. If you edit a depth value in response to a suggestion and want a fresh read on the revised profile, click the button again.</p>
+
+  <h3>Cost and cadence</h3>
+  <p>Each stress-test call costs roughly $0.05–$0.20, depending on course size. It's an on-demand tool — run it once when the profile looks mostly done, read the concerns, make adjustments you agree with, and ignore the rest. You don't need to run it to convergence; your judgment about the course is the ground truth the reviewer is challenging, not replacing.</p>
+
+  <div class="callout tip">
+    <div class="callout-title">The AI's job is to find problems</div>
+    <p>The reviewer is designed to be skeptical. Its concerns will sometimes be wrong — it may not know your course's context the way you do. Treat each concern as a question worth considering, not an authoritative verdict. If you read a suggestion and disagree, ignore it and move on. If a concern identifies something genuine you hadn't noticed, adjust the profile before saving. Either outcome is a good use of the tool.</p>
+  </div>
+</section>
+
 <section id="ex-modes">
-  <h2><span class="num">§ 7</span>Explore · Pick a snapshot and a mode</h2>
+  <h2><span class="num">§ 10</span>Explore · Pick a snapshot and a mode</h2>
 
   <p>Open <code>/explore/&lt;course-code&gt;</code> — the same course code as in CourseCapture. The header shows a snapshot picker (defaults to the newest) and a mode toggle.</p>
 
@@ -438,7 +511,7 @@
 </section>
 
 <section id="ex-custom">
-  <h2><span class="num">§ 8</span>Explore · Authoring a custom target</h2>
+  <h2><span class="num">§ 11</span>Explore · Authoring a custom target</h2>
 
   <div class="step">
     <div class="step-num">1</div>
@@ -471,7 +544,7 @@
   <div class="step">
     <div class="step-num">5</div>
     <div class="step-body">
-      <strong>Run the analysis.</strong> Click <strong>Generate analysis</strong>. The AI compares the snapshot to the saved target and produces the alignment output described in §10.
+      <strong>Run the analysis.</strong> Click <strong>Generate analysis</strong>. The AI compares the snapshot to the saved target and produces the alignment output described in §13.
     </div>
   </div>
 
@@ -482,7 +555,7 @@
 </section>
 
 <section id="ex-downstream">
-  <h2><span class="num">§ 9</span>Explore · Downstream target auto-detection</h2>
+  <h2><span class="num">§ 12</span>Explore · Downstream target auto-detection</h2>
 
   <p>This mode works when at least one downstream course — a course that lists this one as a prereq — has itself been captured. Click <strong>Downstream target</strong>; the system queries the catalog for downstream courses, checks which have snapshots, and proposes a target derived from the union of their <code>incoming_expectations</code>.</p>
 
@@ -499,7 +572,7 @@
 </section>
 
 <section id="ex-analysis">
-  <h2><span class="num">§ 10</span>Explore · Reading the analysis output</h2>
+  <h2><span class="num">§ 13</span>Explore · Reading the analysis output</h2>
 
   <p>The analysis renders below the target with three sections.</p>
 
@@ -528,7 +601,7 @@
 </section>
 
 <section id="ex-whatif">
-  <h2><span class="num">§ 11</span>Explore · What-if scenarios</h2>
+  <h2><span class="num">§ 14</span>Explore · What-if scenarios</h2>
 
   <p>What-if scenarios let you propose a change to the course without actually re-capturing it, and see how the analysis would shift. Useful for course-revision deliberation: "if we added project X with depth Y on competency Z, would it close the gap on target item W?"</p>
 
@@ -571,7 +644,7 @@
 </section>
 
 <section id="tips">
-  <h2><span class="num">§ 12</span>Tips &amp; gotchas</h2>
+  <h2><span class="num">§ 15</span>Tips &amp; gotchas</h2>
 
   <h3>For CourseCapture</h3>
   <ul>
@@ -591,8 +664,31 @@
   </ul>
 </section>
 
+<section id="readonly">
+  <h2><span class="num">§ 16</span>Sharing the read-only view</h2>
+
+  <p>Every captured course has a public profile page at <code>/view/&lt;course-code&gt;</code>. This address requires no authentication and works over plain HTTP on the LAN — anyone who can reach <code>http://130.127.162.180:3000/</code> can open it. The page shows the course's captured essence, outcomes, and the "how it differs from the catalog" notes when a snapshot exists; if the course hasn't been captured yet, it falls back to the catalog description.</p>
+
+  <h3>What the read-only view is for</h3>
+  <p>Share <code>/view/&lt;course-code&gt;</code> links with people who need to read what a course is actually evidenced to do but shouldn't be in the edit flow:</p>
+  <ul>
+    <li><strong>Department chairs and associate deans</strong> reviewing the curriculum ahead of an accreditation visit. They can open every course's profile without needing a slug or credentials.</li>
+    <li><strong>Accreditation reviewers.</strong> A link to the public landing (<code>http://130.127.162.180:3000/</code>) gives auditors a live, browsable view of every captured course with its status. The catalog-vs-evidence notes in each profile speak directly to the kind of currency and alignment evidence accreditors typically request.</li>
+    <li><strong>Students</strong> researching what a course actually develops, beyond the catalog blurb.</li>
+    <li><strong>Colleagues at other institutions</strong> you'd like to share a profile with informally — point them to the view link; they don't need access to the full tool.</li>
+  </ul>
+
+  <h3>What the read-only view does not show</h3>
+  <p>The view page shows the confirmed snapshot's outcomes and essence. It does not show the raw audit transcript, individual competency K/U/D scores, audit notes, or the review panel — those are internal working documents that live on the edit surface. The intent is a clean, faculty-authored statement of what the course does, not the full analytical machinery behind it.</p>
+
+  <div class="callout note">
+    <div class="callout-title">Transparent curriculum framing</div>
+    <p>The public landing and read-only views embody a principle: the curriculum itself is public. Anyone can read what the GC program claims each course develops; only faculty can change the record. This gives chairs, accreditors, and students a reliable, up-to-date reference without creating an edit-access management problem. The Basic Auth gate on the edit surface protects the writing; nothing protects the reading.</p>
+  </div>
+</section>
+
 <section id="scope">
-  <h2><span class="num">§ 13</span>What these tools don't do</h2>
+  <h2><span class="num">§ 17</span>What these tools don't do</h2>
 
   <ul>
     <li><strong>Not student or faculty evaluation.</strong> Depth scores describe what the course's materials and assignments require, not how well any instructor delivers the course or how well any student performs in it.</li>
@@ -607,7 +703,7 @@
 </section>
 
 <div class="doc-foot">
-  Faculty guide · 2026-05-25 · GC Curriculum Tool · <a href="https://github.com/chiptoe-svg/gc-curriculum-tool" target="_blank" rel="noopener noreferrer">source</a>
+  Faculty guide · 2026-06-03 · GC Curriculum Tool · <a href="https://github.com/chiptoe-svg/gc-curriculum-tool" target="_blank" rel="noopener noreferrer">source</a>
 </div>
 
 </main>
