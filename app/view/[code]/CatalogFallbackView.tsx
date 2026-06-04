@@ -23,9 +23,13 @@ interface CourseRow {
 interface Props {
   course: CourseRow;
   editHref: string | null;
+  /** Where the catalog content came from. 'sheet-live' = fetched from the
+   * Google Sheet at request time (default for uncaptured courses);
+   * 'db' = the snapshotted seed in the courses table (Sheet unreachable). */
+  catalogSource?: 'sheet-live' | 'db';
 }
 
-export function CatalogFallbackView({ course, editHref }: Props) {
+export function CatalogFallbackView({ course, editHref, catalogSource = 'db' }: Props) {
   const hasObjectives = course.learningObjectives.length > 0;
   const hasProjects = course.majorProjects.length > 0;
   const hasPrereqs = course.prerequisites.trim().length > 0;
@@ -38,8 +42,17 @@ export function CatalogFallbackView({ course, editHref }: Props) {
           Not yet audited
         </p>
         <p className="mt-1 text-sm text-stone-800 dark:text-stone-200">
-          {course.code} hasn&apos;t been audited yet. Showing catalog data from the
-          GC course list and the live syllabus.
+          {course.code} hasn&apos;t been audited yet. Showing{' '}
+          {catalogSource === 'sheet-live' ? (
+            <span title="Fetched from the GC course Google Sheet at request time">
+              data from the GC course Google Sheet
+            </span>
+          ) : (
+            <span title="Sheet unreachable; showing last-seeded snapshot">
+              the last-seeded catalog data
+            </span>
+          )}
+          {' '}and the live syllabus.
           {editHref && (
             <>
               {' '}Faculty can start a capture via the{' '}

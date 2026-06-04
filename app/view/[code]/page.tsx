@@ -5,6 +5,7 @@ import { eq, desc, and, isNull } from 'drizzle-orm';
 import { courses, courseCaptureSnapshots } from '@/lib/db/schema';
 import { CapturedView } from './CapturedView';
 import { CatalogFallbackView } from './CatalogFallbackView';
+import { fetchLiveCourseFromSheet } from '@/lib/sheets/fetchLiveCourse';
 
 export const dynamic = 'force-dynamic';
 
@@ -79,6 +80,36 @@ export default async function ViewCoursePage({ params }: Props) {
     : [];
   const otherCount = Math.max(0, otherCaptures.length - 1);
 
+  // For catalog-fallback courses, pull the live Sheet tab so faculty
+  // edits in the Sheet appear without waiting for a re-seed. Falls back
+  // to the DB row on any failure (sheet unavailable, tab missing,
+  // timeout). Captured courses skip this — the snapshot is canonical.
+  const liveSheet = !snapshot ? await fetchLiveCourseFromSheet(code) : null;
+  const catalogSource: 'sheet-live' | 'db' = liveSheet ? 'sheet-live' : 'db';
+  const fallbackCourse = liveSheet
+    ? {
+        code,
+        title: liveSheet.title || course.title,
+        description: liveSheet.description || course.description,
+        prerequisites: liveSheet.prerequisites || course.prerequisites,
+        syllabusUrl: liveSheet.syllabusUrl ?? course.syllabusUrl ?? null,
+        learningObjectives: liveSheet.learningObjectives.length > 0
+          ? liveSheet.learningObjectives
+          : ((course.learningObjectives ?? []) as string[]),
+        majorProjects: liveSheet.majorProjects.length > 0
+          ? liveSheet.majorProjects
+          : ((course.majorProjects ?? []) as string[]),
+      }
+    : {
+        code,
+        title: course.title,
+        description: course.description,
+        prerequisites: course.prerequisites,
+        syllabusUrl: course.syllabusUrl ?? null,
+        learningObjectives: (course.learningObjectives ?? []) as string[],
+        majorProjects: (course.majorProjects ?? []) as string[],
+      };
+
   // Bake the slug into the Edit link server-side so faculty don't need
   // to know or type it. The slug is a deeper-layer access gate alongside
   // Basic Auth; PROTOTYPE_SLUG is the canonical source.
@@ -135,7 +166,7 @@ export default async function ViewCoursePage({ params }: Props) {
         {snapshot ? (
           <CapturedView profile={snapshot.profile} capturedAt={snapshot.createdAt} />
         ) : (
-          <CatalogFallbackView course={course} editHref={editHref} />
+          <CatalogFallbackView course={fallbackCourse} editHref={editHref} catalogSource={catalogSource} />
         )}
       </main>
     </div>
