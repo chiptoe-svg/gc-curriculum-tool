@@ -5,7 +5,7 @@ import { resolvePartner } from '@/lib/partners/auth';
 // separate sub-competency query is needed.
 import { getTargetById } from '@/lib/db/career-targets-queries';
 import { runEmployerInterview } from '@/lib/ai/employer-capture/run';
-import { getLatestEmployerSessionId, startEmployerSession } from '@/lib/db/employer-capture-queries';
+import { getLatestEmployerSessionId, isEmployerSessionOwnedBy, startEmployerSession } from '@/lib/db/employer-capture-queries';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { checkDailyCap } from '@/lib/rate-limit/daily-cap';
 import { hashIp } from '@/lib/ip-hash';
@@ -47,7 +47,12 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   let sessionId = typeof body.sessionId === 'string' && body.sessionId.length > 0
     ? body.sessionId : null;
 
-  if (!sessionId) {
+  if (sessionId) {
+    // Client supplied a sessionId — verify this partner+target owns it before
+    // we let runEmployerInterview append turns under it (IDOR guard).
+    const owned = await isEmployerSessionOwnedBy(sessionId, partner.id, targetId);
+    if (!owned) return NextResponse.json({ error: 'invalid session' }, { status: 403 });
+  } else {
     // No session passed; check if there's an open one for this (partner, target)
     sessionId = await getLatestEmployerSessionId(partner.id, targetId);
     if (!sessionId) sessionId = startEmployerSession();

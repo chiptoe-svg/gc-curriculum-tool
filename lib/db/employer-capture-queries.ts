@@ -90,6 +90,28 @@ export function startEmployerSession(): string {
   return randomUUID();
 }
 
+/**
+ * Authorization check: does this (partnerId, careerTargetId) own messages
+ * under this sessionId? Used by the chat route before trusting a
+ * client-supplied sessionId — prevents one partner from appending turns
+ * to another partner's session. A brand-new session id (zero rows) is
+ * considered owned: minting one client-side and using it on the first
+ * turn is the expected flow.
+ */
+export async function isEmployerSessionOwnedBy(
+  sessionId: string,
+  partnerId: string,
+  careerTargetId: string,
+): Promise<boolean> {
+  const rows = await db
+    .select({ partnerId: careerCaptureMessages.partnerId, careerTargetId: careerCaptureMessages.careerTargetId })
+    .from(careerCaptureMessages)
+    .where(eq(careerCaptureMessages.sessionId, sessionId))
+    .limit(1);
+  if (rows.length === 0) return true;
+  return rows[0]!.partnerId === partnerId && rows[0]!.careerTargetId === careerTargetId;
+}
+
 export interface CreateCareerCaptureInput {
   partnerId: string;
   careerTargetId: string;
