@@ -7,7 +7,9 @@ import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
 import { getCaptureProfileByCourse } from '@/lib/db/course-capture-profiles-queries';
 import { getCaptureConversation } from '@/lib/db/capture-conversations-queries';
 import { getLatestSnapshotByCourse } from '@/lib/db/capture-snapshots-queries';
-import { getLatestSessionId, getSessionInstructor } from '@/lib/db/capture-messages-queries';
+import { getLatestSessionId, getSessionInstructor, listPriorSessionSummaries } from '@/lib/db/capture-messages-queries';
+import { composeSessionBriefing } from '@/lib/ai/agent/session-briefing';
+import type { SessionBriefingView } from './CaptureChatPanel';
 import { CaptureClient } from './CaptureClient';
 import { FeedbackLink } from '@/app/FeedbackLink';
 
@@ -65,6 +67,18 @@ export default async function CapturePage({ params, searchParams }: Props) {
   const initialInstructor = currentSessionId
     ? await getSessionInstructor(code, currentSessionId)
     : null;
+
+  // Distilled recap of prior sessions (excludes the in-flight one). Serializable
+  // view: Date -> ISO string, citations dropped (not surfaced in the card).
+  const priorSummaries = await listPriorSessionSummaries(code, currentSessionId ?? '', 3);
+  const priorBriefings: SessionBriefingView[] = composeSessionBriefing(priorSummaries).map(b => ({
+    sessionId: b.sessionId,
+    startedAt: b.startedAt.toISOString(),
+    turnCount: b.turnCount,
+    readiness: b.readiness,
+    stickyFindings: b.stickyFindings.map(f => ({ text: f.text })),
+    lastFacultyTurn: b.lastFacultyTurn,
+  }));
 
   const materialCounts = {
     total: materials.length,
@@ -185,6 +199,7 @@ export default async function CapturePage({ params, searchParams }: Props) {
           savedConversationAt={savedConversation?.updatedAt ?? null}
           priorSnapshotInfo={priorSnapshotInfo}
           initialInstructor={initialInstructor}
+          priorBriefings={priorBriefings}
         />
       </main>
     </div>

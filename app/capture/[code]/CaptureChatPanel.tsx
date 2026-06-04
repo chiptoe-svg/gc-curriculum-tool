@@ -10,6 +10,16 @@ import { FACULTY_ROSTER, DEPARTMENT_CANONICAL } from '@/lib/faculty';
 // Re-export so existing imports from this module keep working.
 export type { ChatMessage } from '@/lib/ai/analyze/capture-chat';
 
+export interface SessionBriefingView {
+  sessionId: string;
+  startedAt: string; // ISO — Date is not passed across the RSC boundary here
+  turnCount: number;
+  readiness: { score: number | null; covered: string[]; remaining: string[] };
+  stickyFindings: Array<{ text: string }>;
+  /** Mirrors the briefing shape; carried but not yet rendered — reserved for a future "Faculty last said" line. */
+  lastFacultyTurn: string | null;
+}
+
 async function readNdjson(
   res: Response,
   onEvent: (event: Record<string, unknown>) => void,
@@ -123,6 +133,8 @@ interface Props {
   priorSnapshotInfo?: { instructorName: string | null; createdAt: string } | null;
   /** Instructor stamped on the in-flight session (resumed audit). Pre-fills the badge so mid-session change preserves the prior selection. */
   initialInstructor?: string | null;
+  /** Distilled recap of prior sessions for the "Where we left off" card. Empty/omitted hides the card. */
+  priorBriefings?: SessionBriefingView[];
 }
 
 // The chat panel renders the full transcript, the input row with text +
@@ -139,6 +151,7 @@ export function CaptureChatPanel({
   onConversationChange,
   priorSnapshotInfo,
   initialInstructor,
+  priorBriefings,
 }: Props) {
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
@@ -366,6 +379,41 @@ export function CaptureChatPanel({
           )}
         </div>
       </div>
+
+      {priorBriefings && priorBriefings.length > 0 && (
+        <details className="mb-3 rounded border border-stone-200 bg-stone-50 text-sm">
+          <summary className="cursor-pointer select-none px-3 py-2 font-medium text-stone-700">
+            Where we left off · {priorBriefings.length} prior session{priorBriefings.length > 1 ? 's' : ''}
+          </summary>
+          <div className="space-y-3 px-3 pb-3">
+            {priorBriefings.map(b => (
+              <div key={b.sessionId} className="border-t border-stone-200 pt-2 first:border-t-0 first:pt-0">
+                <div className="text-xs text-stone-500">
+                  {/* startedAt is UTC ISO; render in the browser's local timezone so the date isn't off-by-one. */}
+                  {new Date(b.startedAt).toLocaleDateString()} · {b.turnCount} turns · readiness {b.readiness.score ?? '?'}%
+                </div>
+                {(b.readiness.covered.length > 0 || b.readiness.remaining.length > 0) && (
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {b.readiness.covered.map((c, i) => (
+                      <span key={`c-${i}`} className="rounded bg-emerald-100 px-1.5 py-0.5 text-xs text-emerald-800">{c}</span>
+                    ))}
+                    {b.readiness.remaining.map((c, i) => (
+                      <span key={`r-${i}`} className="rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-800">{c}</span>
+                    ))}
+                  </div>
+                )}
+                {b.stickyFindings.length > 0 && (
+                  <ul className="mt-1 list-disc pl-5 text-stone-700">
+                    {b.stickyFindings.map((f, i) => (
+                      <li key={i}>{f.text}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
 
       <div
         ref={transcriptRef}

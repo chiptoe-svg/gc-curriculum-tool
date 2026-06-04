@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import type { CaptureProfile, CaptureReadiness, CaptureReviewerStatus } from '@/lib/ai/capture/schema';
-import { CaptureChatPanel, type ChatMessage } from './CaptureChatPanel';
+import { CaptureChatPanel, type ChatMessage, type SessionBriefingView } from './CaptureChatPanel';
 import { ProfileReviewPanel } from './ProfileReviewPanel';
 import { MaterialsPanel, type CaptureMaterial, type CourseCatalogView } from './MaterialsPanel';
 import { SnapshotHistoryPanel } from './SnapshotHistoryPanel';
@@ -24,6 +24,8 @@ interface Props {
   priorSnapshotInfo: { instructorName: string | null; createdAt: string } | null;
   /** Instructor stamped on the in-flight session (resumed audit). Null when no session or no instructor was stamped. */
   initialInstructor: string | null;
+  /** Distilled recap of prior sessions for the "Where we left off" card. Empty/omitted hides the card. */
+  priorBriefings?: SessionBriefingView[];
 }
 
 type Stage = 'chat' | 'generating' | 'review';
@@ -49,6 +51,7 @@ export function CaptureClient({
   savedConversationAt,
   priorSnapshotInfo,
   initialInstructor,
+  priorBriefings,
 }: Props) {
   const [course, setCourse] = useState<CourseCatalogView>(initialCourse);
   const courseCode = course.code;
@@ -271,6 +274,7 @@ export function CaptureClient({
             onConversationChange={handleConversationChange}
             priorSnapshotInfo={priorSnapshotInfo}
             initialInstructor={initialInstructor}
+            priorBriefings={priorBriefings}
           />
           <div className="flex items-center justify-end gap-3 text-xs text-muted-foreground">
             {resetState === 'error' && (
