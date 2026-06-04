@@ -26,7 +26,7 @@ export function PartnerDashboard({ partner, stats, token, targets }: Props) {
           title="Positions"
           metric={`${stats.submitted} submitted${stats.drafts ? ` · ${stats.drafts} draft` : ''}`}
           cta="Add another position"
-          href="./submit"
+          href={`/partners/${encodeURIComponent(token)}/submit`}
         />
         <Card
           title="Project ratings"
@@ -35,7 +35,7 @@ export function PartnerDashboard({ partner, stats, token, targets }: Props) {
           href="#"
           disabled
         />
-        <Card title="" metric="" cta="I'm done for now" href="./done" subtle />
+        <Card title="" metric="" cta="I'm done for now" href={`/partners/${encodeURIComponent(token)}/done`} subtle />
       </div>
 
       {targets.length > 0 && (
@@ -59,7 +59,7 @@ export function PartnerDashboard({ partner, stats, token, targets }: Props) {
 
       <section>
         <h2 className="mb-3 text-sm font-medium uppercase tracking-wide text-slate-500">Your submissions</h2>
-        <SubmissionsList />
+        <SubmissionsList token={token} />
       </section>
     </div>
   );

@@ -12,7 +12,15 @@ interface Submission {
   unmappedTargetLabel: string | null;
 }
 
-export function SubmissionsList() {
+interface Props {
+  /** Optional — when set, the "Resume" link is built as an absolute path
+   * `/partners/<token>/submit?draft=…`. When omitted, falls back to a
+   * relative `./submit?draft=…` (works inside /partners/<token>/submit,
+   * where the trailing-slash semantics resolve correctly). */
+  token?: string;
+}
+
+export function SubmissionsList({ token }: Props = {}) {
   const [list, setList] = useState<Submission[] | null>(null);
   const [pending, start] = useTransition();
 
@@ -47,7 +55,9 @@ export function SubmissionsList() {
           </div>
           <div className="flex gap-3 text-sm">
             {s.status === 'draft' && (
-              <Link href={`./submit?draft=${s.id}`} className="text-blue-700 hover:underline">Resume</Link>
+              <Link
+                href={token ? `/partners/${encodeURIComponent(token)}/submit?draft=${s.id}` : `./submit?draft=${s.id}`}
+                className="text-blue-700 hover:underline">Resume</Link>
             )}
             <button onClick={() => remove(s.id)} disabled={pending} className="text-red-700 hover:underline disabled:opacity-50">
               Delete

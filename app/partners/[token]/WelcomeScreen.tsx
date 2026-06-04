@@ -2,9 +2,10 @@ import Link from 'next/link';
 
 interface Props {
   partner: { firstName: string; company: string };
+  token: string;
 }
 
-export function WelcomeScreen({ partner }: Props) {
+export function WelcomeScreen({ partner, token }: Props) {
   return (
     <div className="space-y-8">
       <div>
@@ -19,7 +20,7 @@ export function WelcomeScreen({ partner }: Props) {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Link
-          href="./submit"
+          href={`/partners/${encodeURIComponent(token)}/submit`}
           className="block rounded-lg border border-slate-200 bg-white p-6 hover:border-slate-400"
         >
           <div className="text-lg font-medium">Describe a position you hire for</div>

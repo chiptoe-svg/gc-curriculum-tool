@@ -42,7 +42,7 @@ export default async function PartnerLandingPage({ params }: Props) {
   const hasActivity = stats.drafts + stats.submitted + stats.ratingsCount > 0;
 
   if (!hasActivity) {
-    return <WelcomeScreen partner={partner} />;
+    return <WelcomeScreen partner={partner} token={token} />;
   }
   return (
     <PartnerDashboard
