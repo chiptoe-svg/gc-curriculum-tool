@@ -1,4 +1,4 @@
-import { listPartners } from '@/lib/partners/queries';
+import { listPartners, magicLinkUrl } from '@/lib/partners/queries';
 import { PartnersTable } from './PartnersTable';
 import { ImportCsvDialog } from './ImportCsvDialog';
 
@@ -14,11 +14,14 @@ export default async function AdminPartnersPage({ searchParams }: Props) {
     return <main className="p-8"><p className="text-sm text-slate-600">Missing slug query param.</p></main>;
   }
   const raw = await listPartners();
-  // Strip magicToken; convert Date columns to ISO strings so they cross the
-  // server→client component boundary cleanly and match PartnersTable's prop type.
+  // Compute magicLinkUrl server-side (reads PARTNERS_BASE_URL from process.env,
+  // which isn't available in the client bundle) before stripping magicToken.
+  // Convert Date columns to ISO strings so they cross the server→client
+  // component boundary cleanly and match PartnersTable's prop type.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const partners = raw.map(({ magicToken, ...rest }) => ({
     ...rest,
+    magicLinkUrl: magicLinkUrl({ magicToken }),
     invitedAt: rest.invitedAt ? rest.invitedAt.toISOString() : null,
     lastActiveAt: rest.lastActiveAt ? rest.lastActiveAt.toISOString() : null,
     firstOpenedAt: rest.firstOpenedAt ? rest.firstOpenedAt.toISOString() : null,

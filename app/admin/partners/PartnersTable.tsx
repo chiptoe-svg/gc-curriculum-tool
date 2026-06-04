@@ -1,7 +1,5 @@
 'use client';
 
-import { useTransition } from 'react';
-
 export interface AdminPartnerRow {
   id: string;
   email: string;
@@ -12,21 +10,53 @@ export interface AdminPartnerRow {
   invitedAt: string | null;
   lastActiveAt: string | null;
   active: boolean;
+  magicLinkUrl: string;
 }
 
-export function PartnersTable({ partners, slug }: { partners: AdminPartnerRow[]; slug: string }) {
-  const [pending, start] = useTransition();
+export function PartnersTable({ partners }: { partners: AdminPartnerRow[]; slug: string }) {
+  async function copyLink(url: string) {
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {
+      // Fallback for non-secure contexts (we shouldn't hit this since
+      // /admin is on the HTTPS funnel — but be defensive)
+      const ta = document.createElement('textarea');
+      ta.value = url;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); }
+      finally { document.body.removeChild(ta); }
+    }
+  }
 
-  async function resend(id: string) {
-    start(async () => {
-      const res = await fetch(`/api/admin/partners/${id}/resend-invite`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ slug }),
-      });
-      if (!res.ok) alert(`Resend failed: ${res.status}`);
-      else alert('Invite re-sent.');
+  function composeEmailHref(partner: AdminPartnerRow, magicLink: string): string {
+    const subject = `Your GC industry input — 15-min survey link`;
+    const body = [
+      `Hi ${partner.firstName},`,
+      '',
+      `Thanks for being willing to share your perspective on what ${partner.company} looks for in entry-level graphic-communications hires. The survey takes ~15 minutes and helps us audit how well the GC curriculum is preparing students for roles like yours.`,
+      '',
+      `Your personal link:`,
+      magicLink,
+      '',
+      `Let me know if you have any trouble accessing it.`,
+      '',
+      `— Chip`,
+    ].join('\n');
+    return `mailto:${encodeURIComponent(partner.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  }
+
+  async function markInvited(partnerId: string) {
+    const res = await fetch(`/api/admin/partners/${partnerId}/mark-invited`, {
+      method: 'POST',
     });
+    if (!res.ok) {
+      alert(`Mark-invited failed: ${res.status}`);
+      return;
+    }
+    window.location.reload();
   }
 
   if (partners.length === 0) {
@@ -56,13 +86,32 @@ export function PartnersTable({ partners, slug }: { partners: AdminPartnerRow[];
             <td className="text-xs">{p.lastActiveAt ? new Date(p.lastActiveAt).toLocaleDateString() : '—'}</td>
             <td>{p.active ? <span className="text-green-700">active</span> : <span className="text-slate-500">off</span>}</td>
             <td>
-              <button
-                onClick={() => resend(p.id)}
-                disabled={pending}
-                className="text-xs text-blue-700 hover:underline disabled:opacity-50"
-              >
-                Resend invite
-              </button>
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <button
+                  type="button"
+                  onClick={() => copyLink(p.magicLinkUrl)}
+                  className="rounded border border-input bg-background px-2 py-1 hover:bg-muted"
+                  title="Copy the magic-link URL to your clipboard"
+                >
+                  Copy link
+                </button>
+                <a
+                  href={composeEmailHref(p, p.magicLinkUrl)}
+                  className="rounded border border-input bg-background px-2 py-1 hover:bg-muted"
+                  title="Opens your default email client with a draft you can edit before sending"
+                >
+                  Compose email
+                </a>
+                <button
+                  type="button"
+                  onClick={() => markInvited(p.id)}
+                  disabled={!!p.invitedAt}
+                  className="rounded border border-input bg-background px-2 py-1 hover:bg-muted disabled:opacity-50"
+                  title={p.invitedAt ? `Marked invited ${new Date(p.invitedAt).toLocaleDateString()}` : 'Record that you sent the invite'}
+                >
+                  {p.invitedAt ? '✓ Invited' : 'Mark invited'}
+                </button>
+              </div>
             </td>
           </tr>
         ))}
