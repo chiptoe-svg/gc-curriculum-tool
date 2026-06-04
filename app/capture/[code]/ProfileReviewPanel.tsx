@@ -14,6 +14,9 @@ import { LegacyBanner } from './LegacyBanner';
 import { CitationDrawer, type CitationTarget } from './CitationDrawer';
 import { describeDepth, type Dimension } from '@/lib/ai/capture/depth-anchors';
 import { CourseOverview } from './CourseOverview';
+import { StressTestPanel } from './StressTestPanel';
+import { StressTestBadge } from './StressTestBadge';
+import type { StressTestResultType } from '@/lib/ai/stress-test/schema';
 
 /**
  * Returns true when NONE of the profile's findings carry a `source` flag.
@@ -613,6 +616,10 @@ export function ProfileReviewPanel({
   const [snapshotting, setSnapshotting] = useState(false);
   const [snapshotMessage, setSnapshotMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
   const [drawerTarget, setDrawerTarget] = useState<CitationTarget | null>(null);
+  // Adversarial reviewer result — ephemeral. Cleared whenever the user
+  // edits the profile (mutating `working` via setWorking), so stale
+  // annotations don't linger after the underlying scores change.
+  const [stressTestResult, setStressTestResult] = useState<StressTestResultType | null>(null);
 
   function handleCitationClick(c: CaptureProfileCitationType) {
     setDrawerTarget({
@@ -674,6 +681,7 @@ export function ProfileReviewPanel({
     const competencies = working.competencies.slice();
     competencies[i] = next;
     setWorking({ ...working, competencies });
+    setStressTestResult(null);
   }
 
   // Client-side validation against the same Zod schema the server uses.
@@ -765,13 +773,20 @@ export function ProfileReviewPanel({
         </div>
       )}
 
+      {/* ── Adversarial reviewer — mounts between banner and overview ── */}
+      <StressTestPanel
+        courseCode={courseCode}
+        slug={slug}
+        onResult={setStressTestResult}
+      />
+
       {/* ── Course overview — editable document front matter ── */}
       <div className="rounded-md border bg-card px-6 py-8 shadow-sm">
         <CourseOverview
           courseCode={courseCode}
           courseTitle={courseTitle}
           overview={working.overview ?? null}
-          onOverviewChange={(next) => setWorking({ ...working, overview: next })}
+          onOverviewChange={(next) => { setWorking({ ...working, overview: next }); setStressTestResult(null); }}
           editable={true}
           onCitationClick={handleCitationClick}
         />
@@ -911,7 +926,12 @@ export function ProfileReviewPanel({
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
         <div className="space-y-3">
           {working.competencies.map((c, i) => (
-            <CompetencyCard key={i} competency={c} index={i} onChange={next => updateCompetency(i, next)} onCitationClick={handleCitationClick} />
+            <div key={i} className="space-y-1">
+              <CompetencyCard competency={c} index={i} onChange={next => updateCompetency(i, next)} onCitationClick={handleCitationClick} />
+              <StressTestBadge
+                annotation={stressTestResult?.per_competency.find(a => a.competency_index === i) ?? null}
+              />
+            </div>
           ))}
         </div>
 
