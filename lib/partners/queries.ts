@@ -52,6 +52,17 @@ export async function markInvited(id: string) {
   await db.update(partners).set({ invitedAt: sql`now()` }).where(eq(partners.id, id));
 }
 
+/**
+ * Build the partner-survey magic-link URL from PARTNERS_BASE_URL +
+ * the partner's magic_token. PARTNERS_BASE_URL is currently the
+ * Vercel deploy URL; flips to the Tailscale Funnel URL in Phase B.
+ */
+export function magicLinkUrl(partner: { magicToken: string }): string {
+  const base = process.env.PARTNERS_BASE_URL?.trim();
+  if (!base) throw new Error('PARTNERS_BASE_URL not set');
+  return `${base.replace(/\/$/, '')}/partners/${partner.magicToken}`;
+}
+
 export async function logPartnerEvent(
   partnerId: string | null,
   eventType: string,
