@@ -55,6 +55,41 @@ function normalizeReadiness(v: unknown): StoredReadiness | null {
   };
 }
 
+export function composeSessionBriefing(priorSessions: PriorSessionSummary[]): SessionBriefing[] {
+  return priorSessions.map((s): SessionBriefing => {
+    const turns = s.assistantTurns;
+
+    // Readiness = the most recent turn that recorded one.
+    let readiness: StoredReadiness = { score: null, covered: [], remaining: [] };
+    for (let i = turns.length - 1; i >= 0; i--) {
+      const r = turns[i]!.readiness;
+      if (r) { readiness = r; break; }
+    }
+
+    // Sticky findings: newest-first, distinct by normalized text, up to MAX_FINDINGS.
+    const seen = new Set<string>();
+    const stickyFindings: BriefingFinding[] = [];
+    for (let i = turns.length - 1; i >= 0 && stickyFindings.length < MAX_FINDINGS; i--) {
+      const raw = (turns[i]!.finding ?? '').trim();
+      if (!raw) continue;
+      const normalized = raw.replace(/\s+/g, ' ');
+      const norm = normalized.toLowerCase();
+      if (seen.has(norm)) continue;
+      seen.add(norm);
+      stickyFindings.push({ text: cap(normalized, FINDING_CHAR_CAP), citations: turns[i]!.citations });
+    }
+
+    return {
+      sessionId: s.sessionId,
+      startedAt: s.startedAt,
+      turnCount: s.turnCount,
+      readiness,
+      stickyFindings,
+      lastFacultyTurn: s.lastFacultyTurn ? cap(s.lastFacultyTurn.trim().replace(/\s+/g, ' '), FACULTY_CHAR_CAP) : null,
+    };
+  });
+}
+
 /**
  * Parse a stored assistant-turn `content` string (a JSON-stringified
  * AuditResponse) into typed fields. Returns null when the content is
