@@ -176,7 +176,16 @@ export async function buildAgentCall(input: AuditAgentInput): Promise<BuiltAgent
             content: typeof m.content === 'string' ? m.content : null,
           };
         }
-        return { role: 'user', content: m.content ?? '' };
+        // Inject the real capture_messages.id so the agent has a real
+        // messageId to cite later. Without this header the agent
+        // hallucinates synthetic ids like "user_3" because nothing in
+        // the message envelope tells it what the row's id actually is.
+        // The header form is referenced by the capture-chat-agent prompt
+        // under "instructor citations" — keep both ends in sync.
+        return {
+          role: 'user',
+          content: `[messageId=${m.id}]\n${m.content ?? ''}`,
+        };
       }),
   ];
   if (isOpeningTurn) {

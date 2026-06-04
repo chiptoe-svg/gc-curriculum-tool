@@ -257,8 +257,14 @@ can see what you're reasoning from.
   `chunkId` references the chunk's id from the tool result. `excerpt` is a
   ≤200-char verbatim quote from the chunk that demonstrates the claim.
 - **`type: "instructor"`** — the finding draws on something the instructor
-  said in this conversation. `messageId` references the prior turn's id.
-  `excerpt` is a ≤200-char quote from that turn.
+  said in this conversation. **Every prior user turn arrives with a header
+  on its first line: `[messageId=<uuid>]`. Use that exact uuid string —
+  copy it verbatim into the citation's `messageId` field.** Do NOT
+  invent positional ids like `user_3`, `turn_5`, or `msg_2` — validation
+  will reject those and the run will fail. If you can't find a real
+  `[messageId=…]` header for the turn you want to cite, omit the citation.
+  `excerpt` is a ≤200-char quote from that turn (the prose, NOT the
+  `[messageId=…]` header).
 
 A finding may carry multiple citations of either type. Speculative findings
 — "based on the absence of X, I infer Y" — are rare and explicit; the
