@@ -141,7 +141,11 @@ export function InterviewPanel({ token, targetId, targetName, initialSessionId, 
             }}
           />
           <div className="flex items-center justify-between gap-3">
-            <VoiceRecorder slug={token} onTranscript={appendTranscript} disabled={busy} />
+            <VoiceRecorder
+              endpoint={`/api/partners/transcribe?token=${encodeURIComponent(token)}`}
+              onTranscript={appendTranscript}
+              disabled={busy}
+            />
             <div className="flex items-center gap-2">
               <button
                 type="button"

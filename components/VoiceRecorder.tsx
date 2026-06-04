@@ -3,8 +3,14 @@
 import { useEffect, useRef, useState } from 'react';
 
 interface Props {
-  /** Slug to authenticate against the `/api/transcribe` endpoint. */
-  slug: string;
+  /** Slug to authenticate against the `/api/transcribe` endpoint (faculty path). */
+  slug?: string;
+  /**
+   * Optional override of the upload URL. When set, takes precedence over
+   * `slug` — the consumer is responsible for embedding its own auth (e.g.
+   * `?token=<magic>` for partner-side use against `/api/partners/transcribe`).
+   */
+  endpoint?: string;
   /** Called with the transcribed text once Whisper returns. */
   onTranscript: (text: string) => void;
   /** Optional disabled flag — usually true while the consumer is busy. */
@@ -35,7 +41,8 @@ type PermissionState = 'unknown' | 'granted' | 'denied' | 'prompt';
  * Permissions API for microphone (older Safari) leave the state at 'unknown'
  * and the error is surfaced from the catch block instead.
  */
-export function VoiceRecorder({ slug, onTranscript, disabled, maxDurationMs = 5 * 60 * 1000 }: Props) {
+export function VoiceRecorder({ slug, endpoint, onTranscript, disabled, maxDurationMs = 5 * 60 * 1000 }: Props) {
+  const uploadUrl = endpoint ?? `/api/transcribe?slug=${encodeURIComponent(slug ?? '')}`;
   const [status, setStatus] = useState<Status>('idle');
   const [message, setMessage] = useState<string>('');
   const [permission, setPermission] = useState<PermissionState>('unknown');
@@ -216,7 +223,7 @@ export function VoiceRecorder({ slug, onTranscript, disabled, maxDurationMs = 5 
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
-        const res = await fetch(`/api/transcribe?slug=${encodeURIComponent(slug)}`, {
+        const res = await fetch(uploadUrl, {
           method: 'POST',
           body: form,
         });
