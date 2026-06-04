@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import { isValidSlug } from '@/lib/slug';
 import { parsePartnersCsv } from '@/lib/partners/csv';
-import { createPartner, findPartnerByEmail, markInvited, logPartnerEvent } from '@/lib/partners/queries';
-import { sendPartnerInvite } from '@/lib/email/send-partner-invite';
+import { createPartner, findPartnerByEmail, magicLinkUrl, logPartnerEvent } from '@/lib/partners/queries';
 
 export const maxDuration = 120;
 
@@ -24,7 +23,14 @@ export async function POST(req: Request) {
 
   let inserted = 0;
   let skipped = 0;
-  const sendFailures: Array<{ email: string; message: string }> = [];
+  const createdPartners: Array<{
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    company: string;
+    magicLinkUrl: string;
+  }> = [];
 
   for (const row of parsed.rows) {
     const existing = await findPartnerByEmail(row.email);
@@ -34,29 +40,25 @@ export async function POST(req: Request) {
     }
     const created = await createPartner(row);
     inserted++;
-    try {
-      await sendPartnerInvite({
-        firstName: created.firstName,
-        email: created.email,
-        token: created.magicToken,
-      });
-      await markInvited(created.id);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      sendFailures.push({ email: created.email, message: msg });
-    }
+    createdPartners.push({
+      id: created.id,
+      firstName: created.firstName,
+      lastName: created.lastName,
+      email: created.email,
+      company: created.company,
+      magicLinkUrl: magicLinkUrl(created),
+    });
   }
 
   await logPartnerEvent(null, 'admin_imported_csv', {
     inserted, skipped,
     rowErrors: parsed.errors,
-    sendFailures,
   });
 
   return NextResponse.json({
     inserted,
     skipped,
     errors: parsed.errors,
-    sendFailures,
+    createdPartners,
   });
 }
