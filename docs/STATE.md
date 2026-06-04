@@ -2,7 +2,7 @@
 
 > **Audience:** developer / implementation detail. This file is the engineering snapshot — what's live, what's blocked, what's next at the code and deployment level. Stakeholder-facing surfaces (executive brief, vision, background) summarize the same state in non-implementation terms; if you're orienting non-technical reviewers, point them there first and use this file as the backing source they can drop into when they want detail. The executive brief links here intentionally — anyone following that link is opting into the operational view.
 >
-> **Last verified:** `afd56a8` · 2026-06-04
+> **Last verified:** `2fc9e79` · 2026-06-04
 >
 > **What this is:** the single source of truth for "what's live, what's next, what's blocked." Read this before any feature work, schema change, AI function add, deployment change, or new spec/plan. Static framing (KUD+, vision, architecture rationale) lives in [`CLAUDE.md`](../CLAUDE.md) and [`docs/superpowers/README.md`](./superpowers/README.md); this file is the volatile snapshot that sits in front of them.
 >
@@ -36,7 +36,8 @@ One Mac, one DB, one Next.js process. Faculty surfaces gated by HTTP Basic Auth 
 | Route | Surface | Status |
 | ----- | ------- | ------ |
 | `/partners/[token]` | Magic-link survey: welcome, target match, position-submission wizard (draft/submit/delete) | live |
-| `/partners/[token]/interview/[targetId]` | **CareerCapture v1** — AI-conducted 20-45 min employer interview anchored to one career target; ends with a CareerCaptureProfile (role shape + day-1 K/U/D + dealbreakers + hiring signals + divergence from catalog). Voice via `/api/partners/transcribe?token=`. | live (2026-06-04) |
+| `/partners/[token]/interview/[targetId]` | **CareerCapture v1** — AI-conducted 20-45 min employer interview anchored to one career target; ends with a CareerCaptureProfile (role shape + day-1 K/U/D + dealbreakers + hiring signals + divergence from catalog). Voice via `/api/partners/transcribe?token=`. **Slated for subsumption** by Position Capture v1 (see Next-up) — that plan retires this route and renames its tables. | live (2026-06-04) |
+| `/view/[code]` | **Read-only public profile view** — HTTP, no auth, linked from the public landing. For captured courses: rich splash + per-competency K/U/D depth ratings (`CapturedView`). For un-captured courses: catalog fallback with a live Google Sheet pull (`CatalogFallbackView`, 2026-06-04). | live |
 
 The static GitHub-Pages preview at `chiptoe-svg.github.io/gc-curriculum-tool/` serves the docs (vision, specs, plans, deep-dives, faculty guide) plus the legacy interactive partner-interface preview. Submissions and feedback POST to a Google Apps Script Web App which appends to the shared Google Sheet's "Submissions" and "Feedback" tabs.
 
@@ -87,7 +88,7 @@ Setup details: [`docs/superpowers/running-locally.md`](./superpowers/running-loc
 - **Provider abstraction** at `lib/ai/provider.ts`: `getProvider()` returns OpenAI / Anthropic / Local / Campus / Fake. Structured output via OpenAI strict JSON-schema + Zod parse. **New as of 2026-05-26 (CourseCapture v2 Stage 1):** `completeWithTools` method on all five providers, built on Vercel AI SDK v6 — used by Stage 3's agent loop (not exposed by any AI function yet).
 - **Campus provider** at `lib/ai/campus.ts` (added 2026-05-26): OpenAI-compatible client against the Clemson RCD endpoint `https://llm.rcd.clemson.edu/v1`. Default model `qwen3.6-35b-a3b-fp8` — MoE with 3B active params, ~180 tok/s on the shared cluster. Initial default was `glm-5.1-fp8` (754B) but a 2026-05-26 latency probe found GLM throughput at ~4 tok/s makes hot-path calls unworkable; GLM and `deepseek-v4-pro` (1M ctx, ~15 tok/s) stay reachable via per-call model override when reasoning depth justifies the latency. Cost reported as 0. Selected with `AI_PROVIDER=campus`. The campus branch in `buildProvider` lets `CAMPUS_LLM_DEFAULT_MODEL` win over DB-stored function-settings model names (which point at OpenAI models that don't exist on the campus endpoint); the full provider-aware tier refactor is still deferred — see "Deferred / debt".
 - **Embeddings client** at `lib/ai/embeddings.ts` (added 2026-05-26): hits `/v1/embeddings` on the same campus endpoint with `qwen3-embedding-4b` (2560-dim). Same env vars as the campus provider (`CAMPUS_LLM_BASE_URL` / `CAMPUS_LLM_API_KEY`) regardless of which generation provider is active. Includes an `InMemoryVectorStore` used to exercise the chunk → embed → search path before Weaviate lands; Stage 2 will swap that store for Weaviate while keeping `embedBatch` / `embedText` unchanged.
-- **Function tier system** at `lib/ai/function-settings.ts`: 17 named function IDs. Tier (light / default / heavy) maps to a model; per-function override stored in `ai_function_settings` table. 60s TTL resolver cache.
+- **Function tier system** at `lib/ai/function-settings.ts`: 18 named function IDs. Tier (light / default / heavy) maps to a model; per-function override stored in `ai_function_settings` table. 60s TTL resolver cache.
 
 | Function ID | Default tier | Note |
 | ----------- | ------------ | ---- |
@@ -133,7 +134,7 @@ An audit of all 36 strict-mode schemas in the codebase confirmed the remaining 3
 
 ### Schema (local Postgres 17 via Drizzle)
 
-Latest migration: **`0026_add_ignored_items.sql`** (2026-06-02 — adds `course_materials.ignored_items jsonb default '[]'::jsonb not null` for per-Canvas-item ignore lists; precedes `0025_great_sentry.sql` which added `course_capture_snapshots.reviewer_note`; precedes `0024_noisy_omega_flight.sql` which renamed `course_materials.summary*` → `digest*` and added FERPA / indexing columns).
+Latest migration: **`0028_medical_stick.sql`** (2026-06-04 — CareerCapture v1: `career_capture_messages` + `career_captures`); preceded by `0027_opposite_black_bird.sql` (2026-06-03 — per-instructor capture: `instructor_name` on `course_capture_snapshots` + `capture_messages`) and `0026_add_ignored_items.sql` (2026-06-02 — `course_materials.ignored_items jsonb` for per-Canvas-item ignore lists; itself preceded by `0025_great_sentry.sql` `reviewer_note` and `0024_noisy_omega_flight.sql` `summary*` → `digest*` + FERPA / indexing columns).
 
 Tables defined in [`lib/db/schema.ts`](../lib/db/schema.ts):
 
@@ -151,7 +152,7 @@ Tables defined in [`lib/db/schema.ts`](../lib/db/schema.ts):
 
 ### Prompt library
 
-22 system prompts in `lib/ai/prompts/*.md` with `manning_skills:` frontmatter contract. Shared partials in `lib/ai/prompts/shared/` (notably `depth-scale.md` — the authoritative KUD+ rubric — and `kud-rubric.md`). 16/22 are Manning-encoded; the remaining 6 are either pure I/O glue or deliberately deferred. See [`docs/superpowers/plans/2026-05-25-manning-encoding-backfill.md`](./superpowers/plans/2026-05-25-manning-encoding-backfill.md).
+33 `.md` files in `lib/ai/prompts/` (several are legacy M-trial prompts no longer wired to an AI function — e.g. `draft-outcomes.md`, `kud-chat.md`, `score-coverage.md` — pending a sweep). 22 active system prompts carry the `manning_skills:` frontmatter contract; shared partials in `lib/ai/prompts/shared/` (notably `depth-scale.md` — the authoritative KUD+ rubric — and `kud-rubric.md`). 16/22 Manning-encoded; the remaining 6 are pure I/O glue or deliberately deferred (ratio last verified 2026-05-25). See [`docs/superpowers/plans/2026-05-25-manning-encoding-backfill.md`](./superpowers/plans/2026-05-25-manning-encoding-backfill.md).
 
 ### Env vars
 
@@ -164,7 +165,7 @@ Tables defined in [`lib/db/schema.ts`](../lib/db/schema.ts):
 - **Auth / slug:** `FACULTY_BASIC_AUTH` (faculty gate on local), `PROTOTYPE_SLUG` (single-user slug-gated session)
 - **Feedback intake:** `GITHUB_TOKEN`, `GITHUB_FEEDBACK_REPO` (set on the local Mac; when unset, `/api/feedback` returns 503)
 - **Cost guard:** `DAILY_COST_CAP_USD`, `COST_ALERT_EMAIL`
-- **Sheets / partners:** `GOOGLE_SHEET_ID`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `PARTNERS_BASE_URL`, `SYNTHESIS_STALENESS_THRESHOLD`
+- **Sheets / partners:** `GOOGLE_SHEET_ID`, `PARTNERS_BASE_URL`, `SYNTHESIS_STALENESS_THRESHOLD` (`RESEND_API_KEY` / `RESEND_FROM_EMAIL` are **dead** post-2026-06-04 teardown — still present in `.env.example` but unused; see Deferred / debt)
 - **Local material storage:** `~/Library/Application Support/gc-curriculum-tool/materials/` served via `/api/storage/materials/<key>` (was Vercel Blob until 2026-06-04)
 
 ---
@@ -224,18 +225,20 @@ Anything not listed here that a wiki would want — edits with rationale, concep
 | --------- | ---- | ----------- |
 | **CourseCapture v2 — Agentic Retrieval** | [spec](./superpowers/specs/2026-05-26-coursecapture-agentic-retrieval-design.md) | Three-phase architecture: per-material ingestion (chunk + digest + Weaviate index), tool-using audit agent, synthesis with intrinsic provenance. **Stages 1, 2a, 2b, 3, 4, 5, 6, 7a all shipped 2026-05-26 through 2026-05-28 (see Active arc).** Stage 7 remainder (session-continuity briefing, faculty profiles) is the open track. |
 | **Phase 1B — Scaffolding Analysis Stage 2** | [spec](./superpowers/specs/2026-05-25-scaffolding-analysis-design.md) | Stage 1 (deterministic scoring + View 1 strip) shipped 2026-05-28. Stage 2 = AI narrative + summary functions (`program-scaffolding-narrative`, `program-scaffolding-summary`), View 2 (brittle-scaffold list at `?lens=brittle`), View 3 (course-contribution summary at `?lens=course-contributions`), sub-competency type classification (`technical / horizontal / mixed`), cross-target rollups (unproductive-success / premature-pedagogy / coverage-without-integration named patterns). |
+| **Position Capture v1** | [plan](./superpowers/plans/2026-06-04-position-capture-v1.md) | 6-page partner flow (target picker → JD ingest via Docling+LLM → uniqueness → interview questions → trajectory → AI-rated "experiences worth having" → agent interview). **Subsumes & retires the shipped CareerCapture v1 surface**: renames its two tables (migration `0029`: `career_captures` → `position_captures`, `career_capture_messages` → `position_capture_messages`), repurposes the runner + prompts, reuses ~80% of CC v1's machinery. Each completed position is an immutable `position_captures` row; many positions per target roll up into a new `career_target_kud_aggregate` (v1 = deterministic Markdown side-by-side; AI synthesis deferred). Drafted 2026-06-04, not yet implemented. |
 | **Phase 1C — Prerequisite Gap Analysis** | sketched in [Phase 1 umbrella spec](./superpowers/specs/2026-05-24-program-coverage-views-spec.md) | For each captured course, compare its `incoming_expectations` against captured snapshots of its declared prerequisites. |
 | **Phase 1D — Advising View** | sketched in same umbrella | Per-target recommended course sequence + gap detection. |
 
 ### Blocked
 
 - **Phase 2 conversational agents** ([plan](./superpowers/plans/2026-05-22-phase2-agent-design.md)) — **superseded by the agentic-retrieval spec** above. The remaining pieces (materials auditor + KUD chat as standalone agents) are absorbed into the v2 architecture; nanoclaw block is no longer load-bearing since the v2 design uses the existing provider abstraction extended with tool-use.
-- **CareerCapture** — employer-side parallel of CourseCapture (Phase 3). Strategic, no spec yet. The current `/partners/*` magic-link survey is the partner-input precursor; CareerCapture would be the audit-conversational evolution.
+- **CareerCapture** — _shipped as v1 on 2026-06-04_ (`/partners/[token]/interview/[targetId]`; see "What's live"). Now slated for subsumption by **Position Capture v1** (see Next-up), which generalizes it to a per-position 6-page flow. No longer blocked.
 
 ### Deferred / debt
 
 - **Real faculty auth.** Current Basic Auth gate is a stopgap. Options: magic-link sessions (same pattern as `/partners/*`), Clemson SSO/Shibboleth, OAuth via Clemson IdP. Revisit in deployment-planning phase.
-- **DB off Neon, always-on hosting.** Done 2026-06-04. Local Postgres 17 via Postgres.app on `:5433` is canonical; `lib/db/client.ts` uses `node-postgres` with a `Pool`. Neon URL preserved in `.env.local` as `NEON_LEGACY_URL` pending dashboard decommission. Backups: two-tier now (the Neon-PITR + Neon-branch-checkpoint layers retired with the source DB) — (1) local `pg_dump`/gzip every 6h to `~/Library/Application Support/gc-curriculum-tool/backups/` via `scripts/backup/pg-snapshot.sh` + `com.gc.pg-backup` launchd plist, auto-prunes >365d; (2) weekly off-site push to private repo `chiptoe-svg/gc-curriculum-backups` on Sundays, retained forever. The monthly-checkpoint code path in the script now no-ops because `NEON_API_KEY` is unset. Restore procedure in that repo's README.
+- **DB off Neon, always-on hosting.** Done 2026-06-04. Local Postgres 17 via Postgres.app on `:5433` is canonical; `lib/db/client.ts` uses `node-postgres` with a `Pool`. Neon URL preserved in `.env.local` as `NEON_LEGACY_URL` pending dashboard decommission. Backups: two-tier now (the Neon-PITR + Neon-branch-checkpoint layers retired with the source DB) — (1) local `pg_dump`/gzip every 6h to `~/Library/Application Support/gc-curriculum-tool/backups/` via `scripts/backup/pg-snapshot.sh` + `com.gc.pg-backup` launchd plist, auto-prunes >365d; (2) weekly off-site push to private repo `chiptoe-svg/gc-curriculum-backups` on Sundays, retained forever. The dead Neon-branch-checkpoint code path was removed entirely (commit `35bf9b6`). Restore procedure in that repo's README.
+- **`.env.example` carries dead vars.** The 2026-06-04 Vercel/Neon/Resend teardown (`afd56a8`) removed the *code* but `.env.example` still lists `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `BLOB_READ_WRITE_TOKEN`, `NEON_API_KEY`, `NEON_PROJECT_ID`. Harmless but misleading for fresh clones; sweep when convenient.
 - **Industry Partner Input Plan 2** — position ratings table + project-rating heat map. Gap between Plan 1 and the already-shipped Plan 3 synthesis.
 - **AnthropicProvider native PDF blocks.** Prerequisite for high-quality syllabus extraction; not built.
 - **Capture-chat Manning encoding.** Held pending snapshot-quality evidence; **absorbed into the v2 agentic-retrieval spec** — the new `capture-chat-agent.md` prompt will carry Manning encoding from the start, so this deferred decision becomes moot when v2 ships.
