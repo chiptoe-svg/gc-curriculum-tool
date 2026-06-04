@@ -19,6 +19,7 @@ import { loadPrompt } from '@/lib/ai/prompts/load';
 import { getProviderForFunction } from '@/lib/ai/provider';
 import type { Message, ToolCall } from '@/lib/ai/tool-use-types';
 import { buildAuditTools } from './audit-tools';
+import { composeSessionBriefing, renderBriefing } from '@/lib/ai/agent/session-briefing';
 import {
   AuditResponseSchema,
   AuditResponseJsonSchema,
@@ -133,34 +134,7 @@ export async function buildAgentCall(input: AuditAgentInput): Promise<BuiltAgent
         .join('\n\n')
     : '(no included materials)';
 
-  const priorSessionsBlock = priorSessions.length
-    ? priorSessions
-        .map(s => {
-          const r = s.lastAssistantReadiness as { score?: number; covered?: string[]; remaining?: string[] } | null;
-          const readinessSummary = r
-            ? `readiness ${r.score ?? '?'}%; covered: ${(r.covered ?? []).join(', ') || '(none)'}; remaining: ${(r.remaining ?? []).join(', ') || '(none)'}`
-            : '(no readiness recorded)';
-          // Render the last few conversational turns verbatim so the new
-          // session inherits what faculty actually said — not just a
-          // summary. Helps avoid asking the same questions twice across
-          // page reloads / fresh sessions.
-          const conversationBlock = s.recentTurns.length
-            ? [
-                'Recent turns (chronological — what faculty already told you, what you already said):',
-                ...s.recentTurns.map(t => {
-                  const speaker = t.role === 'user' ? 'FACULTY' : 'YOU (prior agent turn)';
-                  return `  [${speaker}] ${t.content}`;
-                }),
-              ].join('\n')
-            : '';
-          return [
-            `--- Session ${s.sessionId.slice(0, 8)}… (started ${s.startedAt.toISOString().slice(0, 10)}, ${s.turnCount} turns) ---`,
-            `Final readiness: ${readinessSummary}`,
-            conversationBlock,
-          ].filter(Boolean).join('\n\n');
-        })
-        .join('\n\n')
-    : '(none — this is the first audit session for this course)';
+  const priorSessionsBlock = renderBriefing(composeSessionBriefing(priorSessions));
 
   const messages: Message[] = [
     {

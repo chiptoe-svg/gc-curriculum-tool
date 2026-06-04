@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseAssistantContent, composeSessionBriefing } from '@/lib/ai/agent/session-briefing';
+import { parseAssistantContent, composeSessionBriefing, renderBriefing, type SessionBriefing } from '@/lib/ai/agent/session-briefing';
 import type { PriorSessionSummary } from '@/lib/db/capture-messages-queries';
 
 describe('parseAssistantContent', () => {
@@ -46,7 +46,6 @@ function makePrior(overrides: Partial<PriorSessionSummary> = {}): PriorSessionSu
     sessionId: '4f3a1b2c-dddd-eeee-ffff-000000000000',
     startedAt: new Date('2026-05-30T00:00:00Z'),
     turnCount: 12,
-    recentTurns: [],
     assistantTurns: [],
     lastFacultyTurn: null,
     ...overrides,
@@ -117,5 +116,54 @@ describe('composeSessionBriefing', () => {
       assistantTurns: [{ finding: 'f', citations: [], readiness: null }],
     })]);
     expect(b!.readiness).toEqual({ score: null, covered: [], remaining: [] });
+  });
+});
+
+describe('renderBriefing', () => {
+  it('returns the first-session sentinel for an empty array', () => {
+    expect(renderBriefing([])).toBe('(none — this is the first audit session for this course)');
+  });
+
+  it('renders readiness, carried findings with citations, and the faculty line', () => {
+    const out = renderBriefing([{
+      sessionId: '4f3a1b2c-dddd-eeee-ffff-000000000000',
+      startedAt: new Date('2026-05-30T00:00:00Z'),
+      turnCount: 12,
+      readiness: { score: 70, covered: ['outcomes', 'projects'], remaining: ['prereqs'] },
+      stickyFindings: [
+        { text: 'GC 3450 projects reach D=3 on layout.', citations: [{ type: 'chunk', chunkId: '8a1f0c11-aaaa', excerpt: 'x' }] },
+        { text: 'No structured post-mortem; crits are informal.', citations: [{ type: 'instructor', messageId: '22b9ee01-bbbb', excerpt: 'y' }] },
+      ],
+      lastFacultyTurn: 'We do informal crits, no post-mortem.',
+    }]);
+    expect(out).toContain('Session 4f3a1b2c… · 2026-05-30 · 12 turns');
+    expect(out).toContain('Readiness: 70% · covered: outcomes, projects · remaining: prereqs');
+    expect(out).toContain('• "GC 3450 projects reach D=3 on layout." [cites: chunk 8a1f0c11]');
+    expect(out).toContain('• "No structured post-mortem; crits are informal." [cites: msg 22b9ee01]');
+    expect(out).toContain('Faculty last said: "We do informal crits, no post-mortem."');
+  });
+
+  it('handles missing readiness score and no findings/faculty gracefully', () => {
+    const out = renderBriefing([{
+      sessionId: 'abcd1234-0000', startedAt: new Date('2026-05-01T00:00:00Z'), turnCount: 1,
+      readiness: { score: null, covered: [], remaining: [] }, stickyFindings: [], lastFacultyTurn: null,
+    }]);
+    expect(out).toContain('Readiness: ?% · covered: (none) · remaining: (none)');
+    expect(out).toContain('Findings carried forward: (none recorded)');
+    expect(out).not.toContain('Faculty last said');
+  });
+
+  it('separates multiple sessions with a blank line, preserving order', () => {
+    const mk = (id: string, day: string): SessionBriefing => ({
+      sessionId: id, startedAt: new Date(`2026-05-${day}T00:00:00Z`), turnCount: 3,
+      readiness: { score: 50, covered: [], remaining: [] }, stickyFindings: [], lastFacultyTurn: null,
+    });
+    const out = renderBriefing([mk('aaaaaaaa-1111', '30'), mk('bbbbbbbb-2222', '28')]);
+    expect(out).toContain('Session aaaaaaaa… · 2026-05-30');
+    expect(out).toContain('Session bbbbbbbb… · 2026-05-28');
+    // Two sessions joined by a blank line, in the order passed.
+    expect(out.indexOf('aaaaaaaa…')).toBeLessThan(out.indexOf('bbbbbbbb…'));
+    // Sessions are joined by a blank line, so splitting on \n\n yields one chunk per session.
+    expect(out.split('\n\n')).toHaveLength(2);
   });
 });

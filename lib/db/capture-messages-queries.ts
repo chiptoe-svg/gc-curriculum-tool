@@ -152,18 +152,7 @@ export async function getLatestSessionId(courseCode: string): Promise<string | n
 export interface PriorSessionSummary {
   sessionId: string;
   startedAt: Date;
-  /** @deprecated Removed in Task 4 — use assistantTurns instead. */
-  lastAssistantContent?: string | null;
-  /** @deprecated Removed in Task 4 — use assistantTurns instead. */
-  lastAssistantReadiness?: unknown | null;
   turnCount: number;
-  /**
-   * The last ~8 user/assistant turns (chronological), each content
-   * truncated to ~1500 chars. Persists conversational memory across
-   * sessions so the next-session agent doesn't ask faculty questions
-   * faculty has already answered.
-   */
-  recentTurns: Array<{ role: 'user' | 'assistant'; content: string }>;
   /** Parsed assistant turns in chronological order (turnIndex asc). Drives the structured session briefing. */
   assistantTurns: ParsedAssistantTurn[];
   /** The most recent faculty (user) message body for this session, raw. null if the session has no faculty turns. */
@@ -251,54 +240,16 @@ export async function listPriorSessionSummaries(
   for (const [sessionId, sessionRows] of bySession) {
     // sessionRows are desc by createdAt; sort asc by turnIndex for sanity.
     sessionRows.sort((a, b) => a.turnIndex - b.turnIndex);
-    const lastAssistant = [...sessionRows].reverse().find(r => r.role === 'assistant');
-    if (!lastAssistant) continue; // session has no assistant turns
-    let readiness: unknown = null;
-    let assistantText: string | null = null;
-    if (typeof lastAssistant.content === 'string' && lastAssistant.content.length > 0) {
-      try {
-        const parsed = JSON.parse(lastAssistant.content) as Record<string, unknown>;
-        readiness = parsed.readiness ?? null;
-        const finding = typeof parsed.finding === 'string' ? parsed.finding : '';
-        const question = typeof parsed.question === 'string' ? parsed.question : '';
-        assistantText = [finding, question].filter(Boolean).join(' / ') || lastAssistant.content;
-      } catch {
-        // Not JSON — treat the whole content as the message body.
-        assistantText = lastAssistant.content;
-      }
-    }
-    // Collect the last 8 user/assistant turns (chronological) so the next
-    // session's agent can see what faculty actually said, not just the
-    // agent's own last summary. Tool turns are skipped — they're internal
-    // retrieval noise, not conversation memory.
-    const RECENT_TURNS_CAP = 8;
-    const PER_TURN_CHAR_CAP = 1500;
-    const conversational = sessionRows.filter(r => r.role === 'user' || r.role === 'assistant');
-    const tail = conversational.slice(-RECENT_TURNS_CAP);
-    const recentTurns = tail.map(r => {
-      let content = typeof r.content === 'string' ? r.content : '';
-      // Assistant turns are stored as JSON ({finding, question, ...});
-      // unwrap to the readable prose so the next session sees what the
-      // user would've seen, not raw JSON.
-      if (r.role === 'assistant' && content.startsWith('{')) {
-        try {
-          const parsed = JSON.parse(content) as { finding?: string; question?: string };
-          content = [parsed.finding, parsed.question].filter(Boolean).join('\n\n') || content;
-        } catch {
-          // leave raw if parse fails
-        }
-      }
-      if (content.length > PER_TURN_CHAR_CAP) {
-        content = content.slice(0, PER_TURN_CHAR_CAP) + '…';
-      }
-      return { role: r.role as 'user' | 'assistant', content };
-    });
 
     // parseAssistantContent returns null for non-JSON / no-signal rows; those are intentionally skipped.
     const assistantTurns: ParsedAssistantTurn[] = sessionRows
       .filter(r => r.role === 'assistant')
       .map(r => parseAssistantContent(typeof r.content === 'string' ? r.content : null))
       .filter((t): t is ParsedAssistantTurn => t !== null);
+
+    // Tightens the prior `if (!lastAssistant) continue` guard: a session counts as
+    // useful continuity only if it has at least one PARSEABLE assistant turn (intentional).
+    if (assistantTurns.length === 0) continue;
 
     const lastFacultyRow = [...sessionRows].reverse().find(r => r.role === 'user');
     const lastFacultyTurn =
@@ -309,10 +260,7 @@ export async function listPriorSessionSummaries(
     summaries.push({
       sessionId,
       startedAt: sessionRows[0]!.createdAt,
-      lastAssistantContent: assistantText,
-      lastAssistantReadiness: readiness,
       turnCount: sessionRows.length,
-      recentTurns,
       assistantTurns,
       lastFacultyTurn,
     });

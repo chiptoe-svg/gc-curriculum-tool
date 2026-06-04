@@ -90,6 +90,49 @@ export function composeSessionBriefing(priorSessions: PriorSessionSummary[]): Se
   });
 }
 
+function renderCitations(citations: CaptureMessageCitation[]): string {
+  if (!citations.length) return '';
+  const parts = citations
+    .map(c => {
+      if (c.chunkId) return `chunk ${c.chunkId.slice(0, 8)}`;
+      if (c.messageId) return `msg ${c.messageId.slice(0, 8)}`;
+      return null;
+    })
+    .filter((p): p is string => p !== null);
+  return parts.length ? `[cites: ${parts.join(', ')}]` : '';
+}
+
+export function renderBriefing(briefings: SessionBriefing[]): string {
+  if (briefings.length === 0) {
+    return '(none — this is the first audit session for this course)';
+  }
+  return briefings
+    .map(b => {
+      const r = b.readiness;
+      const readinessLine =
+        `Readiness: ${r.score ?? '?'}% · covered: ${r.covered.join(', ') || '(none)'} · remaining: ${r.remaining.join(', ') || '(none)'}`;
+      const findingsBlock = b.stickyFindings.length
+        ? [
+            'Findings carried forward (your prior turns, verbatim):',
+            ...b.stickyFindings.map(f => {
+              const cites = renderCitations(f.citations);
+              return `  • "${f.text}"${cites ? ` ${cites}` : ''}`;
+            }),
+          ].join('\n')
+        : 'Findings carried forward: (none recorded)';
+      const facultyLine = b.lastFacultyTurn ? `Faculty last said: "${b.lastFacultyTurn}"` : '';
+      return [
+        `--- Session ${b.sessionId.slice(0, 8)}… · ${b.startedAt.toISOString().slice(0, 10)} · ${b.turnCount} turns ---`,
+        readinessLine,
+        findingsBlock,
+        facultyLine,
+      ]
+        .filter(Boolean)
+        .join('\n');
+    })
+    .join('\n\n');
+}
+
 /**
  * Parse a stored assistant-turn `content` string (a JSON-stringified
  * AuditResponse) into typed fields. Returns null when the content is

@@ -71,7 +71,7 @@ vi.mock('@/lib/ai/agent/audit-tools', () => ({
 }));
 
 // --- Import module under test AFTER mocks are registered ---
-import { runAuditAgent } from '@/lib/ai/agent/audit-agent';
+import { runAuditAgent, buildAgentCall } from '@/lib/ai/agent/audit-agent';
 
 // --- Helpers ---
 
@@ -369,5 +369,42 @@ describe('runAuditAgent', () => {
     expect(first.content).toContain('# Material digests');
     expect(first.content).toContain('GC 4800');
     expect(first.content).toContain('syllabus.pdf');
+  });
+
+  // -----------------------------------------------------------------------
+  // 8. Structured briefing replaces raw turn dump
+  // -----------------------------------------------------------------------
+  it('at-rest context uses the structured briefing, not the raw turn dump', async () => {
+    mockGetCourseByCode.mockResolvedValue(makeCourse());
+    mockListMaterialsByCourse.mockResolvedValue([makeMaterial()]);
+    mockGetSessionMessages.mockResolvedValue([]); // opening turn (no history)
+    mockListPriorSessionSummaries.mockResolvedValue([
+      {
+        sessionId: '4f3a1b2c-dddd-eeee-ffff-000000000000',
+        startedAt: new Date('2026-05-30T00:00:00Z'),
+        turnCount: 12,
+        assistantTurns: [
+          { finding: 'Older finding.', citations: [], readiness: { score: 40, covered: ['outcomes'], remaining: ['rubrics'] } },
+          {
+            finding: 'GC 3450 projects reach D=3 on layout.',
+            citations: [{ type: 'chunk', chunkId: '8a1f0c11-aaaa-bbbb', excerpt: 'x' }],
+            readiness: { score: 70, covered: ['outcomes', 'projects'], remaining: ['prereqs'] },
+          },
+        ],
+        lastFacultyTurn: 'We do informal crits, no post-mortem.',
+      },
+    ]);
+
+    const built = await buildAgentCall({ sessionId: 'new-session', courseCode: 'GC 4800', auditMode: 'full' });
+    const first = built.messages[0]!;
+    expect(first.role).toBe('user');
+    if (first.role !== 'user') throw new Error('unreachable');
+    const atRest = first.content as string;
+
+    expect(atRest).toContain('Readiness: 70% · covered: outcomes, projects · remaining: prereqs');
+    expect(atRest).toContain('GC 3450 projects reach D=3 on layout.');
+    expect(atRest).toContain('[cites: chunk 8a1f0c11]');
+    expect(atRest).toContain('Faculty last said: "We do informal crits, no post-mortem."');
+    expect(atRest).not.toContain('Recent turns (chronological');
   });
 });
