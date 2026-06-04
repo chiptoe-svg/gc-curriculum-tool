@@ -3,8 +3,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const {
   isValidSlug,
   getCourseByCode,
-  put,
-  del,
+  putLocal,
+  deleteLocal,
+  keyFromLocalUrl,
   insertMaterial,
   updateExtractionResult,
   getMaterialById,
@@ -18,8 +19,9 @@ const {
 } = vi.hoisted(() => ({
   isValidSlug: vi.fn(),
   getCourseByCode: vi.fn(),
-  put: vi.fn(),
-  del: vi.fn(),
+  putLocal: vi.fn(),
+  deleteLocal: vi.fn(),
+  keyFromLocalUrl: vi.fn(),
   insertMaterial: vi.fn(),
   updateExtractionResult: vi.fn(),
   getMaterialById: vi.fn(),
@@ -34,7 +36,13 @@ const {
 
 vi.mock('@/lib/slug', () => ({ isValidSlug }));
 vi.mock('@/lib/db/courses-queries', () => ({ getCourseByCode }));
-vi.mock('@vercel/blob', () => ({ put, del }));
+vi.mock('@/lib/storage/local-storage', () => ({
+  putLocal,
+  deleteLocal,
+  keyFromLocalUrl,
+  courseSlug: (s: string) => s.toLowerCase().replace(/\s+/g, '-'),
+  safeFilename: (s: string) => s,
+}));
 vi.mock('@/lib/db/course-materials-queries', () => ({
   insertMaterial,
   updateExtractionResult,
@@ -92,8 +100,9 @@ beforeEach(() => {
   vi.clearAllMocks();
   isValidSlug.mockImplementation((s: string) => s === SLUG);
   getCourseByCode.mockResolvedValue({ code: CODE, title: 'Digital Publishing' });
-  put.mockResolvedValue({ url: 'https://blob.vercel-storage.com/rubric.pdf' });
-  insertMaterial.mockResolvedValue({ id: 'mat-1', courseCode: CODE, fileName: 'rubric.pdf', blobUrl: 'https://blob.vercel-storage.com/rubric.pdf', extractionStatus: 'pending' });
+  putLocal.mockResolvedValue({ url: '/api/storage/materials/gc-3460/rubric.pdf', key: 'gc-3460/rubric.pdf' });
+  keyFromLocalUrl.mockImplementation((u: string) => u.replace('/api/storage/materials/', ''));
+  insertMaterial.mockResolvedValue({ id: 'mat-1', courseCode: CODE, fileName: 'rubric.pdf', blobUrl: '/api/storage/materials/gc-3460/rubric.pdf', extractionStatus: 'pending' });
   updateExtractionResult.mockResolvedValue(undefined);
   checkIpRateLimit.mockResolvedValue({ allowed: true, remaining: 9 });
   checkDailyCap.mockResolvedValue({ ok: true, spentCents: 0 });
@@ -124,7 +133,10 @@ describe('POST /api/courses/[code]/materials', () => {
   });
 
   it('returns 400 on unsupported MIME type', async () => {
-    const [req, ctx] = makeUploadReq({ mimeType: 'image/jpeg' });
+    // image/jpeg is now allowed (PNG/JPG supported via the local Docling
+    // pipeline). Use a genuinely unsupported MIME to exercise the
+    // rejection path.
+    const [req, ctx] = makeUploadReq({ mimeType: 'application/zip' });
     const res = await POST(req, ctx);
     expect(res.status).toBe(400);
     const json = await res.json();
@@ -140,14 +152,14 @@ describe('POST /api/courses/[code]/materials', () => {
     expect(res.status).toBe(400);
   });
 
-  it('uploads to Blob, inserts row, runs extraction, returns 200 with status', async () => {
+  it('stores locally, inserts row, runs extraction, returns 200 with status', async () => {
     const [req, ctx] = makeUploadReq();
     const res = await POST(req, ctx);
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json.id).toBe('mat-1');
     expect(json.extractionStatus).toBe('ok');
-    expect(put).toHaveBeenCalledOnce();
+    expect(putLocal).toHaveBeenCalledOnce();
     expect(insertMaterial).toHaveBeenCalledOnce();
     expect(extractText).toHaveBeenCalledOnce();
     expect(updateExtractionResult).toHaveBeenCalledWith(
@@ -178,9 +190,9 @@ describe('DELETE /api/courses/[code]/materials/[id]', () => {
     getMaterialById.mockResolvedValue({
       id: 'mat-1',
       courseCode: CODE,
-      blobUrl: 'https://blob.vercel-storage.com/rubric.pdf',
+      blobUrl: '/api/storage/materials/gc-3460/rubric.pdf',
     });
-    del.mockResolvedValue(undefined);
+    deleteLocal.mockResolvedValue(undefined);
     deleteMaterial.mockResolvedValue(undefined);
   });
 
@@ -198,17 +210,17 @@ describe('DELETE /api/courses/[code]/materials/[id]', () => {
   });
 
   it('returns 403 when material belongs to a different course', async () => {
-    getMaterialById.mockResolvedValue({ id: 'mat-1', courseCode: 'GC 9999', blobUrl: 'https://blob.vercel-storage.com/x.pdf' });
+    getMaterialById.mockResolvedValue({ id: 'mat-1', courseCode: 'GC 9999', blobUrl: '/api/storage/materials/gc-9999/x.pdf' });
     const [req, ctx] = makeDeleteReq(SLUG, 'mat-1');
     const res = await DELETE(req, ctx);
     expect(res.status).toBe(403);
   });
 
-  it('deletes Blob object + row and returns 200', async () => {
+  it('deletes the local file + row and returns 200', async () => {
     const [req, ctx] = makeDeleteReq(SLUG, 'mat-1');
     const res = await DELETE(req, ctx);
     expect(res.status).toBe(200);
-    expect(del).toHaveBeenCalledWith('https://blob.vercel-storage.com/rubric.pdf');
+    expect(deleteLocal).toHaveBeenCalledWith('gc-3460/rubric.pdf');
     expect(deleteMaterial).toHaveBeenCalledWith('mat-1');
   });
 });

@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
-# pg_dump of the Neon DB, run every 6 hours by launchd (com.gc.pg-backup).
+# pg_dump of the curriculum DB, run every 6 hours by launchd (com.gc.pg-backup).
+# Cutover 2026-06-04: Neon serverless → local Postgres.app on 127.0.0.1:5433.
+# The DATABASE_URL in .env.local already points at the local DB; the only
+# script-level change needed was the pg_dump binary path (Neon needed libpq;
+# Postgres.app ships its own client tools).
 #
 # Three behaviors per invocation:
 #   1. Always dump to ~/Documents/gc-curriculum-backups/dump-<ts>.sql.gz
@@ -20,8 +24,10 @@ LOG_FILE="$LOG_DIR/pg-backup.log"
 WEEKLY_PUSH_DOW=0  # 0 = Sunday (date +%w)
 WEEKLY_MARKER_DIR="$LOG_DIR/pg-backup-state"
 
-# Postgres client (installed via `brew install libpq`; not on PATH by default).
-export PATH="/opt/homebrew/opt/libpq/bin:$PATH"
+# Postgres client (Postgres.app bundles a matched pg_dump for the local
+# server). If you upgrade the bundled Postgres major version, update the
+# path or use 'latest' (which Postgres.app symlinks).
+export PATH="/Applications/Postgres.app/Contents/Versions/17/bin:$PATH"
 
 mkdir -p "$LOCAL_BACKUPS" "$LOG_DIR" "$WEEKLY_MARKER_DIR"
 exec >> "$LOG_FILE" 2>&1
