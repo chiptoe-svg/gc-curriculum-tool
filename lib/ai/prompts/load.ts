@@ -33,6 +33,7 @@ type PromptName =
   | 'ingestion-checkin'
   | 'capture-chat-agent'
   | 'capture-synthesis'
+  | 'capture-stress-test'
   | 'wiki-update'
   | 'curriculum-chat';
 
