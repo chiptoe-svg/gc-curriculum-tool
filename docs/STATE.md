@@ -223,6 +223,8 @@ Anything not listed here that a wiki would want — edits with rationale, concep
 
 ### Spec'd, not yet implemented
 
+> **Capture adequacy audit (2026-06-04):** two multi-agent audits assessed whether course- and career-level capture record what the vision needs. Findings + prioritized fixes in [`docs/superpowers/2026-06-04-capture-adequacy-audit.md`](./2026-06-04-capture-adequacy-audit.md). Headline: Q1 *breadth* is computable but Q1 *sufficiency* and Q2 are not (career demand is free-text/unkeyed with no numeric demand axis; prereq links are free-text; problem-solving/productive-failure capture is the weakest area — "not probed" collapses to "absent", violating the scaffolding spec). Drives the unified-coverage-layer spec (in brainstorming) and pre-build changes to Position Capture v1.
+
 | Increment | Spec | Description |
 | --------- | ---- | ----------- |
 | **CourseCapture v2 — Agentic Retrieval** | [spec](./superpowers/specs/2026-05-26-coursecapture-agentic-retrieval-design.md) | Three-phase architecture: per-material ingestion (chunk + digest + Weaviate index), tool-using audit agent, synthesis with intrinsic provenance. **Stages 1, 2a, 2b, 3, 4, 5, 6, 7a all shipped 2026-05-26 through 2026-05-28 (see Active arc).** Stage 7 remainder: **session-continuity briefing shipped 2026-06-04** ([design](./superpowers/specs/2026-06-04-session-continuity-briefing-design.md) · [plan](./superpowers/plans/2026-06-04-session-continuity-briefing.md)) — deterministic structured briefing (`lib/ai/agent/session-briefing.ts`) replaced the raw-transcript dump in the audit agent's at-rest context, plus a "Where we left off" recap card on `/capture/[code]`; no new AI call, no migration. Faculty profiles still unspec'd. |
