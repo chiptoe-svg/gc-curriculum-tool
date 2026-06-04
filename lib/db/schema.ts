@@ -510,3 +510,48 @@ export const captureMessages = pgTable('capture_messages', {
   sessionIdx: index('idx_capture_messages_session').on(table.courseCode, table.sessionId, table.turnIndex),
   sessionTurnUnique: unique('uq_capture_messages_session_turn').on(table.sessionId, table.turnIndex),
 }));
+
+/**
+ * CareerCapture append-only message log. Parallel to capture_messages
+ * (which is course-scoped); this one is partner+career-target-scoped.
+ *
+ * One session = one interview about one career target. Partners can
+ * do multiple interviews across targets (or re-interview a target
+ * later); each interview gets its own session_id.
+ */
+export const careerCaptureMessages = pgTable('career_capture_messages', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  partnerId: uuid('partner_id').notNull().references(() => partners.id, { onDelete: 'cascade' }),
+  careerTargetId: text('career_target_id').notNull().references(() => careerTargets.id, { onDelete: 'cascade' }),
+  sessionId: uuid('session_id').notNull(),
+  turnIndex: integer('turn_index').notNull(),
+  role: text('role').notNull(),                              // 'user' | 'assistant'
+  content: text('content'),
+  citations: jsonb('citations').$type<Array<{
+    type: 'transcript';
+    messageId?: string;
+    excerpt: string;
+  }>>(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  sessionIdx: index('idx_career_capture_messages_session').on(table.partnerId, table.careerTargetId, table.sessionId, table.turnIndex),
+  sessionTurnUnique: unique('uq_career_capture_messages_session_turn').on(table.sessionId, table.turnIndex),
+}));
+
+/**
+ * CareerCapture finished record. Immutable. Each row = one interview's
+ * synthesis output. Re-interviewing the same partner on the same target
+ * appends a new row; the latest non-retired row wins for display.
+ */
+export const careerCaptures = pgTable('career_captures', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  partnerId: uuid('partner_id').notNull().references(() => partners.id, { onDelete: 'cascade' }),
+  careerTargetId: text('career_target_id').notNull().references(() => careerTargets.id, { onDelete: 'cascade' }),
+  sessionId: uuid('session_id').notNull(),                   // the interview session that produced this
+  profile: jsonb('profile').notNull(),                       // CareerCaptureProfile JSON
+  model: text('model').notNull(),
+  retiredAt: timestamp('retired_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (table) => ({
+  partnerTargetIdx: index('idx_career_captures_partner_target').on(table.partnerId, table.careerTargetId, table.createdAt),
+}));
