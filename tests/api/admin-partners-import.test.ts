@@ -1,21 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { send, createPartner, findPartnerByEmail, markInvited, logPartnerEvent } = vi.hoisted(() => ({
-  send: vi.fn(),
+const { createPartner, findPartnerByEmail, magicLinkUrl, logPartnerEvent } = vi.hoisted(() => ({
   createPartner: vi.fn(),
   findPartnerByEmail: vi.fn(),
-  markInvited: vi.fn(),
+  magicLinkUrl: vi.fn(),
   logPartnerEvent: vi.fn(),
-}));
-
-vi.mock('@/lib/email/send-partner-invite', () => ({
-  sendPartnerInvite: send,
 }));
 
 vi.mock('@/lib/partners/queries', () => ({
   createPartner,
   findPartnerByEmail,
-  markInvited,
+  magicLinkUrl,
   logPartnerEvent,
 }));
 
@@ -26,10 +21,10 @@ vi.mock('@/lib/slug', () => ({
 import { POST } from '@/app/api/admin/partners/import/route';
 
 beforeEach(() => {
-  send.mockReset(); send.mockResolvedValue(undefined);
   createPartner.mockReset();
   findPartnerByEmail.mockReset(); findPartnerByEmail.mockResolvedValue(null);
-  markInvited.mockReset(); markInvited.mockResolvedValue(undefined);
+  magicLinkUrl.mockReset(); magicLinkUrl.mockImplementation((p: { magicToken: string }) =>
+    `https://example.test/partners/${p.magicToken}`);
   logPartnerEvent.mockReset(); logPartnerEvent.mockResolvedValue(undefined);
 });
 
@@ -47,7 +42,7 @@ describe('POST /api/admin/partners/import', () => {
     expect(res.status).toBe(401);
   });
 
-  it('inserts new partners and sends invites', async () => {
+  it('inserts new partners and returns magic links for manual sending', async () => {
     let n = 0;
     createPartner.mockImplementation(async (input) => ({
       id: `id-${++n}`, ...input, magicToken: `tok-${n}`,
@@ -62,11 +57,20 @@ describe('POST /api/admin/partners/import', () => {
     const json = await res.json();
     expect(json).toMatchObject({ inserted: 2, skipped: 0, errors: [] });
     expect(createPartner).toHaveBeenCalledTimes(2);
-    expect(send).toHaveBeenCalledTimes(2);
-    expect(markInvited).toHaveBeenCalledTimes(2);
+    expect(json.createdPartners).toHaveLength(2);
+    expect(json.createdPartners[0]).toMatchObject({
+      id: 'id-1',
+      email: 'a@acme.test',
+      magicLinkUrl: 'https://example.test/partners/tok-1',
+    });
+    expect(json.createdPartners[1]).toMatchObject({
+      id: 'id-2',
+      email: 'b@acme.test',
+      magicLinkUrl: 'https://example.test/partners/tok-2',
+    });
   });
 
-  it('skips duplicate emails without sending', async () => {
+  it('skips duplicate emails without creating', async () => {
     findPartnerByEmail.mockResolvedValueOnce({ id: 'existing-id', email: 'a@acme.test' });
     const csv = [
       'email,firstName,lastName,company,roleTitle,weight,careerTargetHints',
@@ -77,7 +81,8 @@ describe('POST /api/admin/partners/import', () => {
     const json = await res.json();
     expect(json.inserted).toBe(0);
     expect(json.skipped).toBe(1);
-    expect(send).not.toHaveBeenCalled();
+    expect(createPartner).not.toHaveBeenCalled();
+    expect(json.createdPartners).toEqual([]);
   });
 
   it('returns 400 with errors on CSV validation failure', async () => {
@@ -88,18 +93,19 @@ describe('POST /api/admin/partners/import', () => {
     expect(json.errors.length).toBeGreaterThan(0);
   });
 
-  it('continues after a single send failure and reports it', async () => {
+  it('logs an admin_imported_csv event with the row counts', async () => {
     let n = 0;
-    createPartner.mockImplementation(async (input) => ({ id: `id-${++n}`, ...input, magicToken: `tok-${n}` }));
-    send.mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('boom'));
+    createPartner.mockImplementation(async (input) => ({
+      id: `id-${++n}`, ...input, magicToken: `tok-${n}`,
+    }));
     const csv = [
       'email,firstName,lastName,company,roleTitle,weight,careerTargetHints',
       'a@acme.test,A,One,Acme,,1,',
-      'b@acme.test,B,Two,Acme,,1,',
     ].join('\n');
-    const res = await POST(makeReq({ slug: 'valid-slug-12345', csv }));
-    const json = await res.json();
-    expect(json.inserted).toBe(2);
-    expect(json.sendFailures).toEqual([{ email: 'b@acme.test', message: 'boom' }]);
+    await POST(makeReq({ slug: 'valid-slug-12345', csv }));
+    expect(logPartnerEvent).toHaveBeenCalledWith(null, 'admin_imported_csv', expect.objectContaining({
+      inserted: 1,
+      skipped: 0,
+    }));
   });
 });
