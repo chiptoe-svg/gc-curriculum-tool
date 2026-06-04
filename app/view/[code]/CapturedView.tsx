@@ -3,16 +3,15 @@
  * not auditor framing — surfaces what a reader (chair, accreditor, student,
  * incoming faculty) actually wants to know:
  *
- *   - The essence (what the course really is)
- *   - What students leave able to do (competencies as statements + the
- *     D-evidence sentence that shows what they actually produce)
- *   - Where this differs from the catalog (catalog_vs_evidence delta +
- *     suggested catalog rewrites)
- *   - What students walk in with (incoming_expectations)
+ *   - The course's essence (overview narrative, drop-capped first paragraph)
+ *   - At-a-glance bullets, who-it's-for, the-arc
+ *   - What students leave able to do — competencies WITH K/U/D depth ratings
+ *     (foundational competencies show only D; technical show all three)
+ *   - Where this differs from the catalog
+ *   - What students walk in with
  *   - Strongest evidence behind the capture (small, near the end)
  *
  * Hidden on this page (auditor-only — visible on the HTTPS Edit page):
- *   - K/U/D depth scores (calibration internals)
  *   - Citation chunk IDs and source flags
  *   - prereq_gaps, cross_source_conflicts, objective_misalignments,
  *     productive_failure_conditions, audit_notes.source
@@ -26,12 +25,25 @@ interface Props {
 interface CompetencyShape {
   statement?: string;
   evidence_d?: string;
+  evidence_k?: string;
+  evidence_u?: string;
+  k_depth?: number | null;
+  u_depth?: number | null;
+  d_depth?: number | null;
   type?: string;
+  rationale?: string;
 }
 
 interface IncomingExpectationShape {
   statement?: string;
   confidence?: string;
+}
+
+interface OverviewShape {
+  narrative?: string;
+  at_a_glance?: string[];
+  who_for?: string;
+  arc?: string;
 }
 
 interface CapturedProfile {
@@ -45,13 +57,54 @@ interface CapturedProfile {
   };
   competencies?: CompetencyShape[];
   incoming_expectations?: IncomingExpectationShape[];
-  overview?: {
-    narrative?: string;
-  };
+  overview?: OverviewShape;
 }
 
 function isCapturedProfile(p: unknown): p is CapturedProfile {
   return typeof p === 'object' && p !== null;
+}
+
+/** One K/U/D depth chip. Renders "K 3" with a label; muted when null. */
+function DepthChip({ label, value }: { label: 'K' | 'U' | 'D'; value: number | null | undefined }) {
+  const isNull = value == null;
+  const tone =
+    isNull ? 'border-stone-200 bg-stone-50 text-stone-400'
+      : value >= 4 ? 'border-emerald-300 bg-emerald-50 text-emerald-900'
+      : value >= 2 ? 'border-amber-300 bg-amber-50 text-amber-900'
+      : 'border-stone-300 bg-stone-50 text-stone-700';
+  const labelText =
+    label === 'K' ? 'Know' : label === 'U' ? 'Understand' : 'Do';
+  return (
+    <span
+      title={`${labelText} — depth ${value ?? 'n/a'} on the 0–5 scale`}
+      className={`inline-flex items-center gap-1 rounded border px-2 py-0.5 font-mono-plex text-[10px] uppercase tracking-[0.12em] ${tone}`}
+    >
+      <span className="font-semibold">{label}</span>
+      <span>{isNull ? '—' : value}</span>
+    </span>
+  );
+}
+
+/** Format the narrative as paragraphs, drop-cap on the first paragraph. */
+function NarrativeBlock({ text }: { text: string }) {
+  const paragraphs = text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
+  if (paragraphs.length === 0) return null;
+  return (
+    <div className="space-y-5">
+      {paragraphs.map((p, i) => (
+        <p
+          key={i}
+          className={
+            i === 0
+              ? 'font-display text-lg leading-relaxed text-foreground first-letter:float-left first-letter:mr-2 first-letter:font-display first-letter:text-6xl first-letter:font-semibold first-letter:leading-none'
+              : 'font-display text-lg leading-relaxed text-foreground'
+          }
+        >
+          {p}
+        </p>
+      ))}
+    </div>
+  );
 }
 
 export function CapturedView({ profile, capturedAt }: Props) {
@@ -65,7 +118,13 @@ export function CapturedView({ profile, capturedAt }: Props) {
 
   const date = typeof capturedAt === 'string' ? new Date(capturedAt) : capturedAt;
 
-  const essence = profile.verification_summary?.course_shape || profile.overview?.narrative;
+  const narrative = profile.overview?.narrative ?? '';
+  const atAGlance = profile.overview?.at_a_glance ?? [];
+  const whoFor = profile.overview?.who_for ?? '';
+  const arc = profile.overview?.arc ?? '';
+  // Fallback essence sentence when overview.narrative is empty (legacy v1)
+  const essence = !narrative ? profile.verification_summary?.course_shape : null;
+
   const outcomes = (profile.competencies ?? []).filter(c => c.statement);
   const catalogDelta = profile.verification_summary?.catalog_vs_evidence ?? [];
   const suggestedRewrites = profile.audit_notes?.suggested_objective_revisions ?? [];
@@ -78,37 +137,94 @@ export function CapturedView({ profile, capturedAt }: Props) {
         Captured {date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
       </p>
 
-      {essence && (
+      {/* Splash: narrative with drop cap */}
+      {narrative && (
         <section>
-          <p className="font-display text-lg leading-relaxed text-foreground">
-            {essence}
-          </p>
+          <NarrativeBlock text={narrative} />
+        </section>
+      )}
+      {essence && !narrative && (
+        <section>
+          <p className="font-display text-lg leading-relaxed text-foreground">{essence}</p>
         </section>
       )}
 
-      {outcomes.length > 0 && (
+      {/* At a glance */}
+      {atAGlance.length > 0 && (
         <section>
-          <h2 className="mb-4 font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-            What students leave able to do
+          <h2 className="mb-3 font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            At a glance
           </h2>
-          <ul className="space-y-5">
-            {outcomes.map((c, i) => (
-              <li key={i} className="border-l-2 border-stone-200 pl-4 dark:border-stone-700">
-                <p className="font-display text-base leading-snug text-foreground">
-                  {c.statement}
-                </p>
-                {c.evidence_d && (
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    <span className="font-mono-plex text-[10px] uppercase tracking-[0.16em]">Evidence: </span>
-                    {c.evidence_d}
-                  </p>
-                )}
-              </li>
+          <ul className="space-y-2">
+            {atAGlance.map((bullet, i) => (
+              <li key={i} className="text-sm leading-relaxed text-foreground">— {bullet}</li>
             ))}
           </ul>
         </section>
       )}
 
+      {/* Who it's for + the arc — two column on wider screens */}
+      {(whoFor || arc) && (
+        <section className="grid gap-8 md:grid-cols-2">
+          {whoFor && (
+            <div>
+              <h2 className="mb-2 font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                Who it&apos;s for
+              </h2>
+              <p className="font-display text-base italic leading-relaxed text-foreground">{whoFor}</p>
+            </div>
+          )}
+          {arc && (
+            <div>
+              <h2 className="mb-2 font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                The arc
+              </h2>
+              <p className="font-display text-base italic leading-relaxed text-foreground">{arc}</p>
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* What students leave able to do — with K/U/D ratings */}
+      {outcomes.length > 0 && (
+        <section>
+          <h2 className="mb-4 font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            What students leave able to do
+          </h2>
+          <ul className="space-y-6">
+            {outcomes.map((c, i) => {
+              const isFoundational = c.type === 'foundational';
+              return (
+                <li key={i} className="border-l-2 border-stone-200 pl-4 dark:border-stone-700">
+                  <p className="font-display text-base leading-snug text-foreground">{c.statement}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    {!isFoundational && <DepthChip label="K" value={c.k_depth} />}
+                    {!isFoundational && <DepthChip label="U" value={c.u_depth} />}
+                    <DepthChip label="D" value={c.d_depth} />
+                    {isFoundational && (
+                      <span className="ml-1 font-mono-plex text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                        foundational
+                      </span>
+                    )}
+                  </div>
+                  {c.evidence_d && (
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      <span className="font-mono-plex text-[10px] uppercase tracking-[0.16em]">Evidence: </span>
+                      {c.evidence_d}
+                    </p>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+          <p className="mt-5 text-xs text-muted-foreground">
+            <span className="font-mono-plex uppercase tracking-[0.12em]">Depth scale</span>{' '}
+            — 0 not present, 1 exposure, 2 recognize, 3 recall/predict/perform independently, 4 use correctly/reason novel/adapt, 5 fluent + edge cases.
+          </p>
+        </section>
+      )}
+
+      {/* Catalog delta + proposed rewrites */}
       {(catalogDelta.length > 0 || suggestedRewrites.length > 0) && (
         <section>
           <h2 className="mb-4 font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
@@ -117,9 +233,7 @@ export function CapturedView({ profile, capturedAt }: Props) {
           {catalogDelta.length > 0 && (
             <ul className="mb-6 space-y-2">
               {catalogDelta.map((bullet, i) => (
-                <li key={i} className="text-sm leading-relaxed text-foreground">
-                  — {bullet}
-                </li>
+                <li key={i} className="text-sm leading-relaxed text-foreground">— {bullet}</li>
               ))}
             </ul>
           )}
@@ -130,9 +244,7 @@ export function CapturedView({ profile, capturedAt }: Props) {
               </p>
               <ul className="space-y-1.5">
                 {suggestedRewrites.map((rev, i) => (
-                  <li key={i} className="text-sm leading-relaxed text-amber-950 dark:text-amber-100">
-                    — {rev}
-                  </li>
+                  <li key={i} className="text-sm leading-relaxed text-amber-950 dark:text-amber-100">— {rev}</li>
                 ))}
               </ul>
             </div>
@@ -140,6 +252,7 @@ export function CapturedView({ profile, capturedAt }: Props) {
         </section>
       )}
 
+      {/* Incoming expectations */}
       {incoming.length > 0 && (
         <section>
           <h2 className="mb-4 font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
@@ -147,14 +260,13 @@ export function CapturedView({ profile, capturedAt }: Props) {
           </h2>
           <ul className="space-y-2">
             {incoming.map((e, i) => (
-              <li key={i} className="text-sm leading-relaxed text-foreground">
-                — {e.statement}
-              </li>
+              <li key={i} className="text-sm leading-relaxed text-foreground">— {e.statement}</li>
             ))}
           </ul>
         </section>
       )}
 
+      {/* Strongest evidence */}
       {strongest.length > 0 && (
         <section className="border-t pt-6">
           <h2 className="mb-3 font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
@@ -162,9 +274,7 @@ export function CapturedView({ profile, capturedAt }: Props) {
           </h2>
           <ul className="space-y-1">
             {strongest.map((s, i) => (
-              <li key={i} className="text-xs text-muted-foreground">
-                — {s}
-              </li>
+              <li key={i} className="text-xs text-muted-foreground">— {s}</li>
             ))}
           </ul>
         </section>
