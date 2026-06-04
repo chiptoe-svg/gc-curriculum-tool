@@ -34,6 +34,8 @@ type PromptName =
   | 'capture-chat-agent'
   | 'capture-synthesis'
   | 'capture-stress-test'
+  | 'capture-employer-chat-agent'
+  | 'capture-employer-synthesis'
   | 'wiki-update'
   | 'curriculum-chat';
 

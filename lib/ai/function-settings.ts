@@ -31,6 +31,8 @@ export const AI_FUNCTION_IDS = [
   'wiki-update',
   'curriculum-chat',
   'capture-stress-test',
+  'capture-employer-chat-agent',
+  'capture-employer-synthesis',
 ] as const;
 export type AIFunctionId = (typeof AI_FUNCTION_IDS)[number];
 
@@ -119,6 +121,17 @@ export const DEFAULT_TIERS: Record<AIFunctionId, Exclude<ModelTier, 'custom'>> =
   // referenced critical-reasoning task where heavy-tier reasoning
   // is the value. One call per stress-test click; not auto-on-generate.
   'capture-stress-test': 'heavy',
+  // Default tier. Per-turn chat agent for employer/partner interview
+  // sessions. Reads career-destination context + employer brief, routes
+  // tool calls to retrieve relevant curriculum evidence, emits a
+  // structured finding + question + citations. Same reasoning load as
+  // capture-chat-agent; default tier is appropriate.
+  'capture-employer-chat-agent': 'default',
+  // Default tier. End-of-session synthesis for an employer interview:
+  // reads the full transcript + retrieved evidence and produces a
+  // structured CareerCaptureProfile (employer-side counterpart to
+  // CaptureProfile). Default tier — same shape as capture-scores.
+  'capture-employer-synthesis': 'default',
 };
 
 export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
@@ -137,6 +150,8 @@ export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
   'wiki-update': 'Wiki page regeneration (on snapshot creation)',
   'curriculum-chat': 'Curriculum chat (Explore "Ask" tab + future /ask)',
   'capture-stress-test': 'Capture stress test (adversarial profile review)',
+  'capture-employer-chat-agent': 'Employer interview chat',
+  'capture-employer-synthesis': 'Employer interview synthesis',
 };
 
 export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
@@ -155,6 +170,8 @@ export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
   'wiki-update': 'Regenerates the affected wiki-layer pages (course, competencies, targets, concepts) from a new snapshot + related substrate. Returns a page map; Task A3 git-ops writes + commits.',
   'curriculum-chat': 'Faculty-facing chat over the curriculum wiki. Tool-using agent reads / lists / searches wiki pages and emits a markdown response with structured page citations. Powers Explore\'s "Ask" tab and the future standalone /ask route.',
   'capture-stress-test': 'Adversarial review of a produced Course Outcome Profile: challenges per-finding confidence, surfaces internal contradictions, flags catalog-vs-evidence claims that don\'t hold up. Heavy reasoning tier; one call per on-demand stress-test click.',
+  'capture-employer-chat-agent': 'Per-turn agent loop for employer/partner interview sessions; reads career-destination context, retrieves curriculum evidence, emits structured finding + question + citations.',
+  'capture-employer-synthesis': 'End-of-session synthesis for an employer interview; produces a structured CareerCaptureProfile from the full transcript + retrieved evidence.',
 };
 
 interface CachedSetting {
