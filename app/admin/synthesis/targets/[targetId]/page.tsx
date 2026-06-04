@@ -12,6 +12,7 @@ import {
 import { stalenessCheck } from '@/lib/ai/synthesis/staleness';
 import { getLatestRun } from '@/lib/ai/synthesis/orchestrator';
 import type { SynthesisResult } from '@/lib/ai/synthesis/schema';
+import { listCapturesByTarget } from '@/lib/db/employer-capture-queries';
 import { HeaderStats } from './HeaderStats';
 import { SynthesizedInsightsPanel } from './SynthesizedInsightsPanel';
 import { ProposedKUDEditsPanel } from './ProposedKUDEditsPanel';
@@ -34,7 +35,7 @@ export default async function SynthesisTargetPage({ params, searchParams }: Prop
   const target = rows[0];
   if (!target) return notFound();
 
-  const [submissions, partnersCount, weightedSum, salary, unmapped, staleness, latestRun] = await Promise.all([
+  const [submissions, partnersCount, weightedSum, salary, unmapped, staleness, latestRun, captures] = await Promise.all([
     countSubmittedForTarget(targetId),
     countUniquePartnersForTarget(targetId),
     sumPartnerWeightsForTarget(targetId),
@@ -42,6 +43,7 @@ export default async function SynthesisTargetPage({ params, searchParams }: Prop
     nearbyUnmappedLabelsForTarget(targetId),
     stalenessCheck(targetId),
     getLatestRun(targetId),
+    listCapturesByTarget(targetId),
   ]);
 
   const result = latestRun?.result as SynthesisResult | undefined;
@@ -90,6 +92,31 @@ export default async function SynthesisTargetPage({ params, searchParams }: Prop
           />
         </>
       )}
+      <section className="mt-8">
+        <h2 className="text-lg font-semibold">Employer interviews ({captures.length})</h2>
+        {captures.length === 0 ? (
+          <p className="mt-2 text-sm text-muted-foreground">No interviews recorded yet.</p>
+        ) : (
+          <div className="mt-3 space-y-3">
+            {captures.map(c => {
+              const p = c.profile as { partner_summary?: string; role_shape?: { title_actual?: string } };
+              return (
+                <div key={c.id} className="rounded-md border bg-card px-4 py-3 text-sm">
+                  <p className="font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                    Captured {new Date(c.createdAt).toLocaleDateString()}
+                  </p>
+                  {p.role_shape?.title_actual && (
+                    <p className="mt-1 font-semibold">{p.role_shape.title_actual}</p>
+                  )}
+                  {p.partner_summary && (
+                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground line-clamp-3">{p.partner_summary}</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
     </main>
   );
 }
