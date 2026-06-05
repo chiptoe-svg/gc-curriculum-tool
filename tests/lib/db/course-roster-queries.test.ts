@@ -1,11 +1,14 @@
 /**
  * Tests for the course-roster query helpers added to lib/db/courses-queries.ts:
- *   getCourseDataStates, bulkCreateCourses, createCourse, courseExists
+ *   getCourseDataStates, bulkCreateCourses, createCourse, courseExists,
+ *   replaceIntendedCoverage, getIntendedCoverageForCourses
  *
  * DB convention: mock @/lib/db/client (same as prerequisite-edge-queries.test.ts).
- * getCourseDataStates uses db.execute (raw SQL) — mock returns { rows: [...] }.
+ * getCourseDataStates / listUncapturedCourseCodes use db.execute (raw SQL).
  * bulkCreateCourses / createCourse use insert + select chains.
  * courseExists uses select + from + where + limit chain.
+ * replaceIntendedCoverage uses db.transaction (callback receives a tx mock).
+ * getIntendedCoverageForCourse / getIntendedCoverageForCourses use select chain.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -17,26 +20,31 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 let executeMock = vi.fn();
 // selectMock is called at the terminal step. Two select chains exist:
 //   - courseExists:        .select().from().where().limit(n)  → selectLimitMock(n)
-//   - bulkCreateCourses:   .select().from().where(inArray)    → selectWhereMock(arg)
+//   - bulkCreateCourses:   .select().from().where(arg)        → selectWhereMock(arg)
+//   - getIntendedCoverageForCourse / getIntendedCoverageForCourses: .select().from().where(arg) → selectWhereMock(arg)
 // We use a single mock that is reused; each test configures it as needed.
 let selectLimitMock = vi.fn();
 let selectWhereMock = vi.fn();
 let insertMock = vi.fn();
 
+// Transaction sub-mocks — expose the tx.delete and tx.insert calls
+let txDeleteWhereMock = vi.fn();
+let txInsertValuesMock = vi.fn();
+
 vi.mock('@/lib/db/client', () => ({
   db: {
-    // db.execute(sql`...`) — used by getCourseDataStates
+    // db.execute(sql`...`) — used by getCourseDataStates, listUncapturedCourseCodes
     execute: (q: unknown) => executeMock(q),
 
     // select chain — two terminal shapes:
     //   .from().where().limit(n)   → courseExists
-    //   .from().where(arg)         → bulkCreateCourses (where returns a Promise directly)
+    //   .from().where(arg)         → bulkCreateCourses / getIntendedCoverageFor* (awaited directly)
     select: () => ({
       from: () => ({
         where: (arg: unknown) => ({
           // courseExists calls .limit() on the where result
           limit: (n: number) => selectLimitMock(n),
-          // bulkCreateCourses awaits where() directly (treated as a Promise via then)
+          // bulkCreateCourses / getIntendedCoverageFor* await where() directly (via then)
           then: (resolve: (v: unknown) => unknown, reject: (e: unknown) => unknown) =>
             selectWhereMock(arg).then(resolve, reject),
         }),
@@ -49,6 +57,19 @@ vi.mock('@/lib/db/client', () => ({
         onConflictDoNothing: () => insertMock(rows),
       }),
     }),
+
+    // transaction: executes the callback with a tx object
+    transaction: async (fn: (tx: unknown) => Promise<void>) => {
+      const tx = {
+        delete: () => ({
+          where: (arg: unknown) => txDeleteWhereMock(arg),
+        }),
+        insert: () => ({
+          values: (rows: unknown) => txInsertValuesMock(rows),
+        }),
+      };
+      return fn(tx);
+    },
   },
 }));
 
@@ -58,8 +79,10 @@ import {
   bulkCreateCourses,
   createCourse,
   courseExists,
+  replaceIntendedCoverage,
+  getIntendedCoverageForCourses,
 } from '@/lib/db/courses-queries';
-import type { CourseDataState, CourseRosterRow } from '@/lib/db/courses-queries';
+import type { CourseDataState, CourseRosterRow, NewIntendedRow } from '@/lib/db/courses-queries';
 
 // ---------------------------------------------------------------------------
 
@@ -94,17 +117,30 @@ describe('getCourseDataStates', () => {
     expect(result).toEqual([]);
   });
 
-  it('only produces measured or no-data (not intended)', async () => {
+  it('maps intended state when course_intended_coverage row exists and no snapshot', async () => {
     executeMock.mockResolvedValue({
       rows: [
         { code: 'GC 4100', title: 'Adv Print', level: 4, prerequisites: '', data_state: 'measured' },
-        { code: 'GC 1010', title: 'Intro GC', level: 1, prerequisites: '', data_state: 'no-data' },
+        { code: 'GC 1010', title: 'Intro GC', level: 1, prerequisites: '', data_state: 'intended' },
+        { code: 'GC 5000', title: 'Empty', level: 5, prerequisites: '', data_state: 'no-data' },
       ],
     });
     const result = await getCourseDataStates();
-    for (const row of result) {
-      expect(['measured', 'no-data']).toContain(row.dataState);
-    }
+    expect(result[0]!.dataState).toBe('measured');
+    expect(result[1]!.dataState).toBe('intended');
+    expect(result[2]!.dataState).toBe('no-data');
+  });
+
+  it('measured wins over intended: snapshot present → measured, not intended', async () => {
+    // The SQL CASE puts measured first — this test asserts the mapping is passed
+    // through correctly (the precedence is enforced in SQL, not in the mapper).
+    executeMock.mockResolvedValue({
+      rows: [
+        { code: 'GC 3010', title: 'Typography', level: 3, prerequisites: '', data_state: 'measured' },
+      ],
+    });
+    const [row] = await getCourseDataStates();
+    expect(row!.dataState).toBe('measured');
   });
 
   it('maps all required fields onto CourseRosterRow', async () => {
@@ -121,6 +157,63 @@ describe('getCourseDataStates', () => {
       prerequisites: 'GC 3900',
       dataState: 'no-data',
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+
+describe('replaceIntendedCoverage', () => {
+  const MODEL = 'qwen3:14b';
+
+  beforeEach(() => {
+    txDeleteWhereMock.mockReset().mockResolvedValue(undefined);
+    txInsertValuesMock.mockReset().mockResolvedValue(undefined);
+  });
+
+  it('issues a delete then an insert when rows are provided', async () => {
+    const rows: NewIntendedRow[] = [
+      { subCompetencyId: 'sub-1', intendedK: 2, intendedU: 2, intendedD: 1, confidence: 'medium', rationale: 'test' },
+      { subCompetencyId: 'sub-2', intendedK: 1, intendedU: null, intendedD: null, confidence: 'low', rationale: 'thin' },
+    ];
+    await replaceIntendedCoverage('GC 3010', rows, MODEL);
+    expect(txDeleteWhereMock).toHaveBeenCalledOnce();
+    expect(txInsertValuesMock).toHaveBeenCalledOnce();
+    const inserted = txInsertValuesMock.mock.calls[0]![0] as Array<Record<string, unknown>>;
+    expect(inserted).toHaveLength(2);
+    expect(inserted[0]!['courseCode']).toBe('GC 3010');
+    expect(inserted[0]!['subCompetencyId']).toBe('sub-1');
+    expect(inserted[0]!['model']).toBe(MODEL);
+    expect(inserted[1]!['subCompetencyId']).toBe('sub-2');
+  });
+
+  it('issues a delete but skips insert when rows is empty', async () => {
+    await replaceIntendedCoverage('GC 1010', [], MODEL);
+    expect(txDeleteWhereMock).toHaveBeenCalledOnce();
+    expect(txInsertValuesMock).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+
+describe('getIntendedCoverageForCourses', () => {
+  beforeEach(() => {
+    selectWhereMock.mockReset();
+  });
+
+  it('returns [] immediately for empty input without issuing a query', async () => {
+    const result = await getIntendedCoverageForCourses([]);
+    expect(result).toEqual([]);
+    expect(selectWhereMock).not.toHaveBeenCalled();
+  });
+
+  it('returns rows from the db for a non-empty input', async () => {
+    const fakeRows = [
+      { courseCode: 'GC 2010', subCompetencyId: 'sub-1', intendedK: 2, intendedU: 1, intendedD: 1, confidence: 'medium', rationale: 'ok' },
+    ];
+    selectWhereMock.mockResolvedValue(fakeRows);
+    const result = await getIntendedCoverageForCourses(['GC 2010']);
+    expect(result).toEqual(fakeRows);
+    expect(selectWhereMock).toHaveBeenCalledOnce();
   });
 });
 

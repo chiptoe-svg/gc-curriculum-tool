@@ -1,5 +1,5 @@
 import { db } from './client';
-import { courses, sheetSyncState, courseProfiles, courseMaterials, courseCaptureSnapshots } from './schema';
+import { courses, sheetSyncState, courseProfiles, courseMaterials, courseCaptureSnapshots, courseIntendedCoverage } from './schema';
 import type { ParsedCourse } from '@/lib/sheets/parseCourseTab';
 import { eq, asc, sql, count, inArray } from 'drizzle-orm';
 
@@ -187,15 +187,19 @@ export interface CourseRosterRow {
 
 /**
  * Returns one row per course with its data-state badge value.
- * 'measured' iff a course_capture_snapshots row exists for the course.
+ * 'measured' when a course_capture_snapshots row exists (measured wins).
+ * 'intended' when a course_intended_coverage row exists but no snapshot.
+ * 'no-data' otherwise.
  * Ordered by level then code.
  */
 export async function getCourseDataStates(): Promise<CourseRosterRow[]> {
   const result = await db.execute(sql`
     SELECT c.code, c.title, c.level, c.prerequisites,
-      CASE WHEN EXISTS (
-        SELECT 1 FROM course_capture_snapshots s WHERE s.course_code = c.code
-      ) THEN 'measured' ELSE 'no-data' END AS data_state
+      CASE
+        WHEN EXISTS (SELECT 1 FROM course_capture_snapshots s WHERE s.course_code = c.code) THEN 'measured'
+        WHEN EXISTS (SELECT 1 FROM course_intended_coverage i WHERE i.course_code = c.code) THEN 'intended'
+        ELSE 'no-data'
+      END AS data_state
     FROM courses c
     ORDER BY c.level, c.code
   `);
@@ -206,6 +210,94 @@ export async function getCourseDataStates(): Promise<CourseRosterRow[]> {
     prerequisites: r['prerequisites'] as string,
     dataState: r['data_state'] as CourseDataState,
   }));
+}
+
+// ---------------------------------------------------------------------------
+// Intended-coverage queries (Task 2 — intended-skills rough-pass plan)
+// ---------------------------------------------------------------------------
+
+export interface IntendedCoverageRow {
+  courseCode: string;
+  subCompetencyId: string;
+  intendedK: number | null;
+  intendedU: number | null;
+  intendedD: number | null;
+  confidence: 'high' | 'medium' | 'low';
+  rationale: string;
+}
+
+export interface NewIntendedRow {
+  subCompetencyId: string;
+  intendedK: number | null;
+  intendedU: number | null;
+  intendedD: number | null;
+  confidence: 'high' | 'medium' | 'low';
+  rationale: string;
+}
+
+/**
+ * Replace a course's intended coverage atomically (delete-then-insert in a tx).
+ * Idempotent: re-running with the same rows produces the same result.
+ * No-op insert when rows is empty (delete still fires to clear stale data).
+ */
+export async function replaceIntendedCoverage(
+  courseCode: string,
+  rows: NewIntendedRow[],
+  model: string,
+): Promise<void> {
+  await db.transaction(async (tx) => {
+    await tx.delete(courseIntendedCoverage).where(eq(courseIntendedCoverage.courseCode, courseCode));
+    if (rows.length === 0) return;
+    await tx.insert(courseIntendedCoverage).values(
+      rows.map((r) => ({
+        courseCode,
+        subCompetencyId: r.subCompetencyId,
+        intendedK: r.intendedK,
+        intendedU: r.intendedU,
+        intendedD: r.intendedD,
+        confidence: r.confidence,
+        rationale: r.rationale,
+        model,
+      })),
+    );
+  });
+}
+
+/** Return all intended-coverage rows for a single course. */
+export async function getIntendedCoverageForCourse(courseCode: string): Promise<IntendedCoverageRow[]> {
+  const rows = await db
+    .select()
+    .from(courseIntendedCoverage)
+    .where(eq(courseIntendedCoverage.courseCode, courseCode));
+  return rows as IntendedCoverageRow[];
+}
+
+/**
+ * Batch lookup for the gap engine: intended rows for a set of (prereq) courses.
+ * Returns [] immediately for empty input (no query issued).
+ */
+export async function getIntendedCoverageForCourses(
+  courseCodes: string[],
+): Promise<IntendedCoverageRow[]> {
+  if (courseCodes.length === 0) return [];
+  const rows = await db
+    .select()
+    .from(courseIntendedCoverage)
+    .where(inArray(courseIntendedCoverage.courseCode, courseCodes));
+  return rows as IntendedCoverageRow[];
+}
+
+/**
+ * Course codes that lack any measured snapshot — the rough-pass targets.
+ * These are courses where only intended (or no) coverage data exists.
+ */
+export async function listUncapturedCourseCodes(): Promise<string[]> {
+  const rows = await db.execute(sql`
+    SELECT c.code FROM courses c
+    WHERE NOT EXISTS (SELECT 1 FROM course_capture_snapshots s WHERE s.course_code = c.code)
+    ORDER BY c.code
+  `);
+  return rows.rows.map((r: any) => r.code as string);
 }
 
 export interface NewCourseInput {
