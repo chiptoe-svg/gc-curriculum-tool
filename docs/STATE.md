@@ -223,6 +223,40 @@ Anything not listed here that a wiki would want — edits with rationale, concep
 
 ## Next-up
 
+### Next steps — ordered (the working sequence)
+
+> Consolidated 2026-06-05 so nothing drops. Status: ✅ shipped · 📋 spec'd, ready to build · ◻ not spec'd. The detailed catalog is the "Spec'd, not yet implemented" table below; this is the *order* + dependencies.
+
+**Arc A — Employer demand → curriculum-sufficiency loop (vision Q1 spine; current priority)**
+1. ◻ **Diagnose why the CC v1 employer trial failed** (UX confusion vs functional bug). Cheap; **gates A2** since Position Capture v1 reuses ~80% of CC v1's machinery. ← *recommended immediate next.*
+2. 📋 **Build Position Capture v1 — data-collection core** (thin slice: `position_captures` schema **with the pre-build amendments baked in** + the interview + a correctly-shaped `PositionProfile` synthesis). Goal: start collecting **keepable** employer data on a shape-correct backend; iterate the flow later. Depends on (1). [plan + amendments both spec'd]
+3. 📋 **Grow PC v1 to the full 6-page flow** (JD ingest via Docling, uniqueness, AI-rated experiences, aggregate view) — iterate from real testing.
+4. ◻ **Step 4 — demand half (unified demand/coverage layer):** numeric `k/u/d_demand` on `sub_competencies` keyed by `sub_competency_id`, populated from the PC aggregate and differenced against course attainment → **Q1 *sufficiency* computable.** Depends on (2) (the join key + keyed demand data).
+
+**Arc B — Prerequisite support (Q2); independent of the employer side, can run in parallel**
+5. ◻ **Step 4 — prereq-edges half:** parse `courses.prerequisites` → FK `course_prerequisites` table + persisted `incoming_expectation → prereq-competency` alignment → **Q2 computable program-wide** (subsumes Phase 1C).
+
+**Arc C — Capture-credibility follow-ups (smaller; from the evidence ladder + adversarial review)**
+6. ◻ **Evidence-ladder program-rollup split** (claimed-vs-supported counts in the matrix) — needs per-cell `source`/`citations` plumbed through the matrix API (`TODO(evidence-ladder)` marks the spot).
+7. ◻ **"Diagnostic constraint modeling" Area-7 condition** (GC-specific troubleshooting; no-migration — JSON field on `productive_failure_conditions`).
+8. ◻ Rubric-vs-prompt evidence typing (the L1/L2 distinction; ladder v2).
+
+**Arc D — Program analytics**
+9. 📋 **Phase 1B Scaffolding Stage 2** (AI narrative/summary functions, View 2 brittle-scaffold list, View 3 course-contribution, cross-target named patterns).
+10. ◻ Phase 1D — Advising View.
+
+**Arc E — Wiki / memory layer**
+11. 📋 **Review the `wiki-update` compile-loop design** → writing-plans → build (5 increments). Makes `/wiki` + `/ask` non-empty.
+12. ◻ CourseCapture v2 Stage 7 — **faculty profiles** (cross-course memory); still unspec'd.
+
+**Arc F — Documentation debt (interleave anytime)**
+13. ◻ Deep-dive `.html` re-export (new identity + competence/framing sections live in `.md` only — no md→html generator in repo).
+14. ◻ Tighten the validation plan (`graduate-outcome-validation.html`; review #9 — hypotheses / indicators / controls / threats table).
+
+**Single most-next thing:** (1) diagnose the CC v1 failure → (2) PC v1 data-collection core. Arc B (5) can run alongside for parallel Q2 progress.
+
+---
+
 ### Spec'd, not yet implemented
 
 > **Capture adequacy audit (2026-06-04):** two multi-agent audits assessed whether course- and career-level capture record what the vision needs. Findings + prioritized fixes in [`docs/superpowers/2026-06-04-capture-adequacy-audit.md`](./2026-06-04-capture-adequacy-audit.md). Headline: Q1 *breadth* is computable but Q1 *sufficiency* and Q2 are not (career demand is free-text/unkeyed with no numeric demand axis; prereq links are free-text; problem-solving/productive-failure capture is the weakest area — "not probed" collapses to "absent", violating the scaffolding spec). Drives the **unified demand/coverage layer** (audit step 4 — the strategic spine; design pending, see Next-up) and the Position Capture v1 pre-build amendments.
