@@ -109,17 +109,27 @@ function runFile(
 }
 
 /**
- * Pre-flight: returns true iff omlx is reachable within 100ms, has no
- * STT requests in flight or queued, and has the configured Whisper
- * model loaded. False on any failure (env unset, network error, timeout,
- * non-200, model not loaded, busy). Never throws — callers treat false
- * as "skip omlx, use CLI."
+ * Pre-flight: returns true iff omlx is reachable within 100ms and has no
+ * STT requests in flight or queued. False on any failure (env unset,
+ * network error, timeout, non-200, busy). Never throws — callers treat
+ * false as "skip omlx, use CLI."
  *
- * omlx is strict FIFO per engine pool (no priority queueing — confirmed
- * by inspecting the OpenAPI surface), so this gate is the only way to
- * keep mic out of YouTube's queue. The gate is directional (a YouTube
- * request could land between our check and our POST), so worst case is
- * one transcribe ahead of us — not catastrophic.
+ * We do NOT require the Whisper model to be pre-loaded: omlx **lazy-loads
+ * the model on first request** and keeps it resident afterward (verified
+ * against the running server — `models_discovered` includes the Whisper
+ * model even when `loaded_models` doesn't, and POSTing a transcription
+ * loads it). The old gate required `loaded_models.includes(model)`, which
+ * was never true at boot (omlx loads only the chat model), so omlx was
+ * silently skipped on every mic transcription and everything fell to the
+ * per-call CLI — the source of the cold-start/contention 500s. The first
+ * call after a cold model pays the load cost; subsequent calls are fast.
+ * A misconfigured `WHISPER_OMLX_MODEL` self-heals: omlx returns an error,
+ * `transcribeAudioOmlx` throws, and we fall through to the CLI.
+ *
+ * omlx is strict FIFO per engine pool (no priority queueing), so this idle
+ * gate is the only way to keep mic out of YouTube's queue. The gate is
+ * directional (a YouTube request could land between our check and our
+ * POST), so worst case is one transcribe ahead of us — not catastrophic.
  */
 async function omlxIdleAndReady(): Promise<boolean> {
   if (!OMLX_BASE_URL || !OMLX_API_KEY || !OMLX_WHISPER_MODEL) return false;
@@ -135,11 +145,9 @@ async function omlxIdleAndReady(): Promise<boolean> {
     const status = await res.json() as {
       active_requests?: number;
       waiting_requests?: number;
-      loaded_models?: string[];
     };
-    const idle = (status.active_requests ?? 0) === 0 && (status.waiting_requests ?? 0) === 0;
-    const modelReady = (status.loaded_models ?? []).includes(OMLX_WHISPER_MODEL);
-    return idle && modelReady;
+    // Idle only — model readiness is handled by omlx's lazy-load (see above).
+    return (status.active_requests ?? 0) === 0 && (status.waiting_requests ?? 0) === 0;
   } catch {
     return false;
   }
