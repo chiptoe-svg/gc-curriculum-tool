@@ -52,6 +52,7 @@ export async function POST(req: Request): Promise<Response> {
   const mode = body.mode;
 
   if (mode === 'bulk') {
+    const MAX_LINES = 500;
     const text = typeof body.text === 'string' ? body.text : '';
     if (!text.trim()) {
       return NextResponse.json({ error: 'text is required' }, { status: 400 });
@@ -59,6 +60,12 @@ export async function POST(req: Request): Promise<Response> {
     const items = parseCourseLines(text);
     if (items.length === 0) {
       return NextResponse.json({ error: 'no parseable course lines found' }, { status: 400 });
+    }
+    if (items.length > MAX_LINES) {
+      return NextResponse.json(
+        { error: 'too many courses; max 500 per request' },
+        { status: 400 },
+      );
     }
     const result = await bulkCreateCourses(items);
     return NextResponse.json(result);

@@ -7,6 +7,7 @@ import {
   addFacultyEdge,
   updateEdge,
   deleteEdge,
+  getEdgeById,
   type SeedEdgeInput,
   type UpdateEdgeInput,
 } from '@/lib/db/prerequisite-edge-queries';
@@ -120,13 +121,28 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
 
     // Load latest snapshot to get incoming_expectations (or [] for no snapshot).
     const snapshot = await getLatestSnapshotByCourse(code);
-    const incomingExpectations = snapshot?.profile?.incoming_expectations ?? [];
+    // Coerce legacy-null expected_depth.d → 0 so the seeder never renders "Dnull".
+    type RawExpectation = {
+      statement: string;
+      expected_depth: { k: number | null; u: number | null; d: number | null };
+    };
+    const rawExpectations: RawExpectation[] =
+      snapshot?.profile?.incoming_expectations ?? [];
+    const incomingExpectations = rawExpectations.map((exp) => ({
+      statement: exp.statement,
+      expected_depth: {
+        k: exp.expected_depth?.k ?? null,
+        u: exp.expected_depth?.u ?? null,
+        d: exp.expected_depth?.d ?? 0,
+      },
+    }));
 
     // Load the full sub-competency catalog (all non-retired sub-competencies
     // across all targets).
     const targets = await listTargets();
     const subCompetencies = targets.flatMap((t) => t.subCompetencies);
 
+    // Run AI call first; recordSpend must fire even if the upsert below throws.
     let result: Awaited<ReturnType<typeof seedPrereqEdges>>;
     try {
       result = await seedPrereqEdges({
@@ -136,38 +152,51 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         subCompetencies,
       });
     } catch (e) {
+      // AI call failed — no spend incurred, safe to return early.
       const msg = e instanceof Error ? e.message : String(e);
       return NextResponse.json({ error: msg.slice(0, 400) }, { status: 500 });
     }
 
     // Split edges into matched (prereq code exists in courses) vs unknown.
+    // recordSpend fires in finally regardless of upsert outcome.
     const unknownPrereqs: string[] = [];
     const matchedEdges: SeedEdgeInput[] = [];
+    let upsertResult: { inserted: number; skippedConfirmed: number } | undefined;
+    let upsertError: unknown;
 
-    await Promise.all(
-      result.edges.map(async (e) => {
-        const exists = await courseExists(e.prereq_course_code);
-        if (exists) {
-          matchedEdges.push({
-            focalCourseCode: code,
-            prereqCourseCode: e.prereq_course_code,
-            subCompetencyId: e.sub_competency_id,
-            expectedK: e.expected_k,
-            expectedU: e.expected_u,
-            expectedD: e.expected_d,
-            confidence: e.confidence,
-            rationale: e.rationale,
-          });
-        } else {
-          unknownPrereqs.push(e.prereq_course_code);
-        }
-      }),
-    );
+    try {
+      await Promise.all(
+        result.edges.map(async (e) => {
+          const exists = await courseExists(e.prereq_course_code);
+          if (exists) {
+            matchedEdges.push({
+              focalCourseCode: code,
+              prereqCourseCode: e.prereq_course_code,
+              subCompetencyId: e.sub_competency_id,
+              expectedK: e.expected_k,
+              expectedU: e.expected_u,
+              expectedD: e.expected_d,
+              confidence: e.confidence,
+              rationale: e.rationale,
+            });
+          } else {
+            unknownPrereqs.push(e.prereq_course_code);
+          }
+        }),
+      );
+      upsertResult = await upsertSeededEdges(matchedEdges);
+    } catch (e) {
+      upsertError = e;
+    } finally {
+      await recordSpend(result.costUsdCents);
+    }
 
-    const { inserted, skippedConfirmed } = await upsertSeededEdges(matchedEdges);
+    if (upsertError !== undefined) {
+      const msg = upsertError instanceof Error ? upsertError.message : String(upsertError);
+      return NextResponse.json({ error: msg.slice(0, 400) }, { status: 500 });
+    }
 
-    await recordSpend(result.costUsdCents);
-
+    const { inserted, skippedConfirmed } = upsertResult!;
     return NextResponse.json({
       inserted,
       skippedConfirmed,
@@ -186,6 +215,17 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     if (!prereqCourseCode || !subCompetencyId) {
       return NextResponse.json(
         { error: 'prereqCourseCode and subCompetencyId are required' },
+        { status: 400 },
+      );
+    }
+
+    // Validate both courses exist before attempting the FK insert.
+    if (!(await courseExists(code))) {
+      return NextResponse.json({ error: `course ${code} not found` }, { status: 404 });
+    }
+    if (!(await courseExists(prereqCourseCode))) {
+      return NextResponse.json(
+        { error: 'prereq course not found', code: prereqCourseCode },
         { status: 400 },
       );
     }
@@ -222,17 +262,28 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
 // Body: { id, expected_k?, expected_u?, expected_d?, confirmed? }
 // ---------------------------------------------------------------------------
 
-export async function PATCH(req: Request, { params: _params }: RouteContext): Promise<Response> {
+export async function PATCH(req: Request, { params }: RouteContext): Promise<Response> {
   const url = new URL(req.url);
   const slug = url.searchParams.get('slug') ?? '';
   if (!isValidSlug(slug)) {
     return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
   }
 
+  const { code } = await params;
+
   const body = await req.json().catch(() => ({})) as Record<string, unknown>;
   const id = typeof body.id === 'string' ? body.id.trim() : '';
   if (!id) {
     return NextResponse.json({ error: 'id is required' }, { status: 400 });
+  }
+
+  // Verify the edge exists and belongs to this course (avoid cross-course mutation).
+  const edge = await getEdgeById(id);
+  if (!edge) {
+    return NextResponse.json({ error: 'edge not found' }, { status: 404 });
+  }
+  if (edge.focalCourseCode !== code) {
+    return NextResponse.json({ error: 'edge does not belong to this course' }, { status: 404 });
   }
 
   const input: UpdateEdgeInput = {
@@ -251,24 +302,46 @@ export async function PATCH(req: Request, { params: _params }: RouteContext): Pr
     }),
   };
 
-  await updateEdge(input);
-  return NextResponse.json({ ok: true });
+  try {
+    await updateEdge(input);
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (/cannot unconfirm/i.test(msg)) {
+      return NextResponse.json({ error: msg }, { status: 400 });
+    }
+    if (/not found/i.test(msg)) {
+      return NextResponse.json({ error: msg }, { status: 404 });
+    }
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
 }
 
 // ---------------------------------------------------------------------------
 // DELETE /api/admin/courses/[code]/prereq-edges?slug=&id=
 // ---------------------------------------------------------------------------
 
-export async function DELETE(req: Request, { params: _params }: RouteContext): Promise<Response> {
+export async function DELETE(req: Request, { params }: RouteContext): Promise<Response> {
   const url = new URL(req.url);
   const slug = url.searchParams.get('slug') ?? '';
   if (!isValidSlug(slug)) {
     return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
   }
 
+  const { code } = await params;
+
   const id = url.searchParams.get('id') ?? '';
   if (!id) {
     return NextResponse.json({ error: 'id query param is required' }, { status: 400 });
+  }
+
+  // Verify the edge exists and belongs to this course (avoid cross-course mutation).
+  const edge = await getEdgeById(id);
+  if (!edge) {
+    return NextResponse.json({ error: 'edge not found' }, { status: 404 });
+  }
+  if (edge.focalCourseCode !== code) {
+    return NextResponse.json({ error: 'edge does not belong to this course' }, { status: 404 });
   }
 
   await deleteEdge(id);
