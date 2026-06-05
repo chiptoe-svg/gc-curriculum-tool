@@ -6,13 +6,14 @@ import { Page1Section } from './Page1Section';
 import { Page2Section } from './Page2Section';
 import { Page3Section } from './Page3Section';
 import { Page4Section } from './Page4Section';
+import { Page5Section, type RatedSkillsValue } from './Page5Section';
 
 interface CaptureSnapshot {
   id: string;
   positionTitle: string | null;
   company: string;
   structuredInputs: Record<string, unknown>;
-  ratedSkills: { items: Array<{ name: string; description?: string; rating: number }>; generatedAt: string } | null;
+  ratedSkills: RatedSkillsValue | null;
   sessionId: string | null;
 }
 
@@ -28,6 +29,10 @@ export function PositionWizard({ token, step, capture, target }: Props) {
   const [draft, setDraft] = useState<CaptureSnapshot>(capture);
   const [saving, startSave] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  // Step-5 min-5-ratings gate: starts valid only if coming back to a previously saved page with ≥5 rated items
+  const [step5Valid, setStep5Valid] = useState<boolean>(
+    () => (capture.ratedSkills?.items.filter(it => typeof it.rating === 'number').length ?? 0) >= 5,
+  );
 
   async function saveAndGo(next: number | 'done', completeness?: 'title-only' | 'structured' | 'rated') {
     setError(null);
@@ -99,9 +104,20 @@ export function PositionWizard({ token, step, capture, target }: Props) {
           onChange={(patch) => setDraft(d => ({ ...d, ...patch }))}
         />
       )}
-      {(step === 5 || step === 6) && (
+      {step === 5 && (
+        <Page5Section
+          token={token}
+          captureId={draft.id}
+          structuredInputs={draft.structuredInputs}
+          positionTitle={draft.positionTitle}
+          ratedSkills={draft.ratedSkills}
+          onChange={(patch) => setDraft(d => ({ ...d, ...patch }))}
+          onValidityChange={setStep5Valid}
+        />
+      )}
+      {step === 6 && (
         <div className="rounded-md border bg-card p-6">
-          <p className="text-sm text-muted-foreground">Page {step} content lands in the next task.</p>
+          <p className="text-sm text-muted-foreground">Page 6 content lands in the next task.</p>
         </div>
       )}
 
@@ -126,8 +142,12 @@ export function PositionWizard({ token, step, capture, target }: Props) {
           {step < 6 && (
             <button
               type="button"
-              disabled={saving || (step === 1 && !draft.positionTitle)}
-              onClick={() => saveAndGo(step + 1)}
+              disabled={
+                saving ||
+                (step === 1 && !draft.positionTitle) ||
+                (step === 5 && !step5Valid)
+              }
+              onClick={() => saveAndGo(step + 1, step === 5 ? 'rated' : undefined)}
               className="rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground disabled:opacity-50"
             >
               Next →
