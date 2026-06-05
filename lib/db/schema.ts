@@ -570,6 +570,32 @@ export const positionCaptures = pgTable('position_captures', {
 }));
 
 /**
+ * Direct, skill-tagged course→course prerequisite edges. One row per
+ * (focalCourse, prereqCourse, subCompetency) the focal course relies on.
+ * Edges are DIRECT only; transitivity is derived by traversal, never authored.
+ * Migration 0030. Design: docs/superpowers/specs/2026-06-05-prerequisite-edges-design.md
+ */
+export const prerequisiteEdges = pgTable('prerequisite_edges', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  focalCourseCode: text('focal_course_code').notNull().references(() => courses.code, { onDelete: 'cascade' }),
+  prereqCourseCode: text('prereq_course_code').notNull().references(() => courses.code, { onDelete: 'cascade' }),
+  subCompetencyId: text('sub_competency_id').notNull().references(() => subCompetencies.id, { onDelete: 'cascade' }),
+  expectedK: integer('expected_k'),       // depth the focal course relies on incoming; nullable per dim
+  expectedU: integer('expected_u'),
+  expectedD: integer('expected_d'),
+  source: text('source').notNull(),                                  // 'llm_seed' | 'faculty'
+  confidence: text('confidence').notNull(),                          // 'high' | 'medium' | 'low'
+  confirmed: boolean('confirmed').notNull().default(false),
+  rationale: text('rationale').notNull().default(''),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => ({
+  uniq: unique('uq_prerequisite_edges_focal_prereq_subcomp').on(t.focalCourseCode, t.prereqCourseCode, t.subCompetencyId),
+  focalIdx: index('idx_prerequisite_edges_focal').on(t.focalCourseCode),
+  prereqIdx: index('idx_prerequisite_edges_prereq').on(t.prereqCourseCode),
+}));
+
+/**
  * Derived: per-career-target KUD+ aggregate, recomputed from non-superseded
  * position_captures with status='submitted' and completeness='interviewed'.
  * v1 aggregate function is deterministic Markdown side-by-side (no AI);
