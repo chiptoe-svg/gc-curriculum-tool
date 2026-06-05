@@ -83,7 +83,14 @@ For each sub-competency *X* the focal course relies on (across its confirmed dir
 - `needed(X)` per dimension = **MAX** over edges-for-*X* of `expected_{k,u,d}` (the focal's incoming need; max keeps it consistent if multiple edges tag *X*).
 - `delivered(X)` per dimension = **MAX** over `{prereq courses tagged for X}` of that prereq course's **measured attainment** of *X* — read from the prereq course's **latest** `snapshotTargetCoverage` row for *(X's target, X)*. (A sub-competency belongs to exactly one target, so the lookup is unambiguous.)
 - `gap(X)` per dimension = `max(0, needed − delivered)`.
-- **Status** per *X*: `met` (gap 0 on all relied dims), `gap` (≥1 dim short), or `unmeasured` (the prereq course has no snapshot/coverage row for *X* — we have not measured it, so we assert no gap, only "not yet measured", mirroring the evidence-ladder honesty rule).
+- **`basis`** per *X* records WHERE `delivered` came from: `measured` (a real captured `snapshotTargetCoverage` attainment row) or `intended` (a syllabus-rough estimate — see below) or `none` (no data at all).
+- **Status** per *X*: `met` (gap 0 on all relied dims), `gap` (≥1 dim short), or `no_data` (no measured or intended attainment exists for the prereq's delivery of *X* — we assert no gap, only "no data", mirroring the evidence-ladder honesty rule). A `met`/`gap` carrying `basis='intended'` is explicitly **a syllabus-promise comparison, not a verified one**, and every surface labels it as such.
+
+### `intended` vs `measured` — the credibility band (the cold-start answer)
+
+Capturing every prereq course via the full agentic pipeline is slow, so for a long while most prereq courses will have **no measured attainment** — which would make the gap engine render mostly `no_data`. The honest mitigation: a **syllabus-rough "intended" estimate** — "what the course *says* it teaches" — which is a **different quantity** from attained depth and is governed by the **evidence-above-zero rule** (CLAUDE.md): syllabus aspiration may NOT be presented as student attainment.
+
+So `intended` attainment is stored and surfaced as the evidence ladder's lowest band (`claimed` / syllabus-asserted), **never merged into measured `snapshotTargetCoverage`**, and the gap engine prefers `measured` over `intended` when both exist for a prereq×*X*. Producing these `intended` baselines across the course roster is the **rough-pass companion increment** (below) — sequenced *after* this prereq engine, which works with whatever data exists (`measured`, `intended`, or `none`) from day one.
 
 The function reads **only direct edges' measured attainment** — it does **not** traverse the chain. A prereq's snapshot already reflects what its students demonstrably attained regardless of where they first learned it, so the direct check is sufficient for the gap number. Chain traversal (to diagnose *where* a missing skill should have originated) belongs to the deferred program-wide layer.
 
@@ -105,17 +112,30 @@ The concern: a course reachable both directly and transitively, or a skill deliv
 ## What this reuses vs. adds
 
 - **Reuses:** `incomingExpectationSchema`, `snapshotTargetCoverage` (attainment per sub-comp), `analyzeCourseGaps`/`PrerequisiteGap`, `PrerequisiteGapPanel`, the slug-gated admin route pattern, the strict-mode JSON-schema discipline + walker-test pattern.
-- **Adds:** the `prerequisite_edges` table + migration `0030`, the `prereq-edge-seed` AI function (+ prompt, + function-settings registration, + `PromptName` union entry), the faculty confirm/edit admin UI, the deterministic `computePrereqGaps(courseCode)`, and a per-course gap view wired to it.
+- **Adds:** the `prerequisite_edges` table + migration `0030`, the `prereq-edge-seed` AI function (+ prompt, + function-settings registration, + `PromptName` union entry), the faculty confirm/edit admin UI, the deterministic `computePrereqGaps(courseCode)` (with `basis`), a per-course gap view wired to it, the **course-roster surface** on `/courses` (data-state badge + bulk preload + add-a-class + unknown-course placeholders), and the **docs + background-HTML updates**.
 
-## Scope
+## Course roster surface (in v1 — needed for edges to resolve)
 
-**In v1 (single focal course):** the data model + migration, the LLM seeder, the faculty confirm/edit UI, `computePrereqGaps`, and a per-course gap view. The whole loop works for one course at a time.
+Prereq edges reference course *codes*; the seed validates each against `courses.code` and an absent course can't be a resolvable edge. So the program's full course roster must exist as records for the graph to be useful — and this is the most common cold-start gap. The existing course-list page (`/courses`) gains:
+- **A data-state badge per course** — `measured` (has a captured snapshot), `intended` (syllabus-rough only — once the rough pass exists), or `no-data`. (Pre-rough-pass, the badge shows `measured` vs `no-data`.)
+- **Bulk preload** — paste a list of course codes (optionally `code — title`) to create many `courses` records at once (idempotent: existing codes skipped, reported). This is how the faculty stand up the full roster quickly.
+- **Add a single course** — a small form to add one course manually.
+- An **"unknown course" placeholder** state: a prereq edge whose `prereqCourseCode` isn't in `courses` is NOT silently dropped — it's surfaced on the focal course's edge list as "unknown course `<code>` — add it?", linking to the add-course flow.
 
-**Deferred (additive, read-only — does NOT change this engine):**
+## Deferred (additive, read-only — does NOT change this engine)
+- The **rough-pass companion increment** (next in sequence): a cheap one-LLM-call-per-course `intended` skills/depth extractor, evidence-ladder-banded `claimed`, that floods the gap engine with `intended` baselines and lights up the `intended` data-state badge. Its own spec + plan; this engine already consumes `intended` data wherever it exists.
 - Program-wide all-courses graph **visualization** + aggregation rollup (runs `computePrereqGaps` across all courses + chain traversal for diagnostics). `computePrereqGaps` is intentionally a clean per-course function the program view can `map` over.
 - Chain-level diagnostics ("trace a gap back to its origin course") — traversal over the same direct edges.
-- Auto-re-seed on syllabus/prereq-text change.
-- Edge importance weighting.
+- Auto-re-seed on syllabus/prereq-text change; edge importance weighting.
+
+## Docs + background HTML (in v1)
+
+The build updates, in the same arc:
+- `docs/STATE.md` — new `prerequisite_edges` table, migration 0030, the `prereq-edge-seed` AI function (count 19→20), the new route(s), the course-roster surface, and flip this spec's "spec'd → shipped".
+- `docs/superpowers/README.md` — plan row.
+- `docs/background.html` (the KUD+ academic companion) — explain the **intended-vs-attained** distinction + the prereq-gap method + why `intended` is evidence-ladder-banded `claimed` (this is methodology, it belongs in the companion).
+- `docs/using-coursecapture-and-explore.html` (faculty walkthrough) — the new course-roster bulk-preload/add-class flow + the per-course prerequisite-gap view + the data-state badges.
+- Any other background HTML that references the course list, prerequisites, or the coverage method, audited and updated for consistency.
 
 ## Open decisions (resolved)
 
@@ -123,7 +143,10 @@ The concern: a course reachable both directly and transitively, or a skill deliv
 - **Edge richness** → skill-tagged (locked).
 - **Transitivity** → direct-only, derived by traversal (locked).
 - **Aggregation** → ordinal MAX, no double-count (locked).
-- **`unmeasured` status** → assert "not yet measured", not a gap, when the prereq course has no attainment data for *X* (locked, mirrors evidence-ladder honesty).
+- **`no_data` status + `basis`** → when a prereq has no measured *or* intended attainment for *X*, assert "no data", not a gap (locked, mirrors evidence-ladder honesty). Each gap result carries `basis: measured | intended | none`.
+- **Cold-start `intended` band** → a syllabus-rough estimate is stored/surfaced as the evidence ladder's `claimed` band, is a *different quantity* from measured attainment, is never merged into `snapshotTargetCoverage`, and `measured` wins over `intended` when both exist. Produced by the separate rough-pass increment (sequenced after this engine). (locked)
+- **Course roster surface** → in v1: data-state badge + bulk preload + add-a-class on `/courses`; unmatched prereq codes surface as "unknown course" placeholders, never silently dropped. (locked)
+- **Sequencing** → prereq engine first; rough `intended` pass second. (locked 2026-06-05)
 - **Program-wide** → deferred, additive (locked).
 
 ## Success criteria
@@ -132,7 +155,9 @@ The concern: a course reachable both directly and transitively, or a skill deliv
 - `computePrereqGaps(courseCode)` returns per-sub-competency `needed`/`delivered`/`gap`/`status`, reading only direct edges and prereq-course attainment, using MAX aggregation.
 - Listing a prerequisite redundantly (direct + transitive, or the same skill via two prereqs) provably changes no gap result — covered by the three regression tests.
 - A cycle introduced by a faculty edit is rejected with a clear message; the traversal (deferred) never infinite-loops.
-- The existing `PrerequisiteGapPanel` renders the per-course result, now driven by persisted edges rather than hand-fed prior coursework.
+- The existing `PrerequisiteGapPanel` renders the per-course result, now driven by persisted edges rather than hand-fed prior coursework; a `basis='intended'` result is visibly marked as a syllabus-promise comparison.
+- The `/courses` list shows a data-state badge per course and supports bulk-preloading a roster + adding a single class; an unmatched prereq code surfaces as an "unknown course" placeholder, never silently dropped.
+- Docs are reconciled (STATE.md, README) and the applicable background HTML (`background.html` methodology, `using-coursecapture-and-explore.html` walkthrough) explain the intended-vs-attained distinction + the prereq-gap surfaces.
 - No partner/position data is required for any of the above (course-side only).
 
 ## Related
