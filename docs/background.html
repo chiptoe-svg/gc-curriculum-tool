@@ -721,7 +721,8 @@ DO — behavioral output
 
   <div class="callout note">
     <div class="callout-title">Design status</div>
-    <p>The prerequisite-edge method described here is implemented in the tool as of 2026-06-05. The per-course gap view is live at <code>/courses/[code]</code> for confirmed snapshots. The program-wide graph visualization and the <code>intended</code>-basis rough-pass increment (which would let edges be seeded before a prerequisite course has a snapshot) are deferred to a subsequent increment.</p>
+    <p>The prerequisite-edge method described here is implemented in the tool as of 2026-06-05. The per-course gap view is live at <code>/courses/[code]</code> for confirmed snapshots. The program-wide graph visualization is deferred.</p>
+    <p>The <code>intended</code>-basis rough pass is also live as of 2026-06-05. A one-LLM-call-per-course extractor (<code>intended-skills-extract</code>) reads catalog fields (description, learning objectives, major projects, required skills) against the sub-competency catalog and stores syllabus-asserted K/U/D depths in a separate <code>course_intended_coverage</code> table, banded <code>claimed</code> on the evidence ladder. This is the mechanism that produces <code>intended</code> coverage for uncaptured courses, feeding the gap engine's <code>basis:'intended'</code> seam so cold-start gap views are non-empty before any instructor has been audited. The <strong>binding rule</strong> applies without exception: intended coverage is reference-only in CourseCapture. The credibility band leaves <code>claimed</code> only through real evidence gathered in the audit conversation — never by the instructor confirming what the syllabus already says. This rule prevents acquiescence-bias laundering, where an instructor's natural inclination to agree with their own syllabus would otherwise launder aspiration into attainment.</p>
   </div>
 </section>
 
