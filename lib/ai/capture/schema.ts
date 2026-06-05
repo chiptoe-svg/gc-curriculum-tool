@@ -136,8 +136,23 @@ export const productiveFailureConditionsSchema = z.object({
   open_ended_problems: productiveFailureConditionEnum,
   revision_cycles: productiveFailureConditionEnum,
   structured_post_mortem: productiveFailureConditionEnum,
+  // Required when structured_post_mortem is above 'absent' (see superRefine).
+  // Nullable for OpenAI strict-mode; the model emits null when reflection is
+  // 'absent'. Mirrors the evidence-above-zero discipline on K/U/D.
+  structured_post_mortem_evidence: z.array(CaptureProfileCitation).nullable().optional(),
   max_supporting_depth: z.number().int().min(0).max(5),
   notes: z.array(z.string()),
+}).superRefine((pf, ctx) => {
+  if (pf.structured_post_mortem !== 'absent') {
+    const ev = pf.structured_post_mortem_evidence;
+    if (!ev || ev.length === 0) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['structured_post_mortem_evidence'],
+        message: 'structured_post_mortem above "absent" requires at least one resolvable citation (mirrors the K/U/D evidence-above-zero rule). With no graded post-mortem artifact to cite, rate it "absent".',
+      });
+    }
+  }
 });
 export type ProductiveFailureConditions = z.infer<typeof productiveFailureConditionsSchema>;
 
@@ -146,10 +161,13 @@ export const captureAuditNotesSchema = z.object({
   objective_misalignments: z.array(z.string()),
   cross_source_conflicts: z.array(z.string()),
   suggested_objective_revisions: z.array(z.string()),
-  // Optional: snapshots taken before the productive-failure audit area was
-  // added (pre-2026-05-25) will not have this field. v2 synthesis under
-  // OpenAI strict-mode emits null when Audit Area 7 wasn't probed.
-  // Downstream views must tolerate both absence and null as "no data yet".
+  // PRESENCE CONTRACT (authoritative): null/omitted ⇒ Audit Area 7 was NOT
+  // assessed ("no data"); a PRESENT block ⇒ assessed, and its conditions are
+  // real judgments — an 'absent' condition then means "we looked, there's
+  // none", NOT "not probed". Downstream scoring treats null as a distinct
+  // no-data state (excluded from rollups), never as 0. Snapshots created
+  // before PF_CONTRACT_EPOCH are reclassified to no-data (their pre-fix block
+  // may be fabricated-absent).
   productive_failure_conditions: productiveFailureConditionsSchema.nullable().optional(),
   source: CaptureProfileSource.optional(),
   citations: z.array(CaptureProfileCitation).optional(),

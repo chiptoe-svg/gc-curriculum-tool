@@ -9,6 +9,12 @@
 
 export type PfConditionValue = 'present' | 'partial' | 'absent';
 
+// Scoring-only projection of the capture schema's productive_failure_conditions
+// (lib/ai/capture/schema.ts). Intentionally narrower: it omits
+// `structured_post_mortem_evidence` because the deterministic scoring here never
+// reads the citation provenance — only the four condition values + depth. Kept a
+// hand-written interface (not a re-export) to avoid an ai-layer dependency in this
+// pure program-scoring module; any value satisfying the schema type is assignable here.
 export interface ProductiveFailureConditions {
   generate_then_consolidate: PfConditionValue;
   open_ended_problems: PfConditionValue;
