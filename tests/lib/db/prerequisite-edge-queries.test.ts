@@ -16,9 +16,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Capture the chain-builder so individual tests can control .returning() output.
 let returningMock = vi.fn();
-let updateSetMock = vi.fn();
+// update chain: .set().where().returning()
+let updateReturningMock = vi.fn();
 let deleteMock = vi.fn();
 let selectDistinctMock = vi.fn();
+// selectDistinct with .where() — used by listConfirmedEdgePairs
+let selectDistinctWhereMock = vi.fn();
+// select with .where().limit() — used by getEdgeById
+let selectLimitMock = vi.fn();
 
 vi.mock('@/lib/db/client', () => ({
   db: {
@@ -30,24 +35,34 @@ vi.mock('@/lib/db/client', () => ({
         }),
       }),
     }),
-    // update chain: .set().where()
+    // update chain: .set().where().returning()
     update: () => ({
       set: (v: unknown) => ({
-        where: () => updateSetMock(v),
+        where: () => ({
+          returning: () => updateReturningMock(v),
+        }),
       }),
     }),
     // delete chain: .where()
     delete: () => ({
       where: () => deleteMock(),
     }),
-    // selectDistinct chain: .from()
+    // selectDistinct chain: .from() or .from().where()
     selectDistinct: () => ({
-      from: () => selectDistinctMock(),
+      from: () => ({
+        // listEdgePairs awaits .from() directly
+        then: (resolve: (v: unknown) => unknown, reject: (e: unknown) => unknown) =>
+          selectDistinctMock().then(resolve, reject),
+        // listConfirmedEdgePairs calls .where() on .from() result
+        where: () => selectDistinctWhereMock(),
+      }),
     }),
-    // select chain (used by listEdgesForFocal)
+    // select chain — used by listEdgesForFocal and getEdgeById
     select: () => ({
       from: () => ({
-        where: () => Promise.resolve([]),
+        where: () => ({
+          limit: (n: number) => selectLimitMock(n),
+        }),
       }),
     }),
   },
@@ -61,6 +76,7 @@ import {
   deleteEdge,
   bfsWouldCycle,
   wouldCreateCycle,
+  getEdgeById,
 } from '@/lib/db/prerequisite-edge-queries';
 
 // ---------------------------------------------------------------------------
@@ -83,9 +99,11 @@ const BASE_EDGE = {
 describe('upsertSeededEdges', () => {
   beforeEach(() => {
     returningMock.mockReset();
-    updateSetMock.mockReset();
+    updateReturningMock.mockReset();
     deleteMock.mockReset();
     selectDistinctMock.mockReset();
+    selectDistinctWhereMock.mockReset();
+    selectLimitMock.mockReset().mockResolvedValue([]);
   });
 
   it('returns { inserted: 0, skippedConfirmed: 0 } for an empty array', async () => {
@@ -142,13 +160,14 @@ describe('upsertSeededEdges', () => {
 
 describe('updateEdge / confirmEdge', () => {
   beforeEach(() => {
-    updateSetMock.mockReset().mockResolvedValue(undefined);
+    // Default: return a row so no-op guard is not triggered
+    updateReturningMock.mockReset().mockResolvedValue([{ id: 'edge-id-1' }]);
   });
 
   it('confirmEdge sets confirmed=true, source=faculty, confidence=high', async () => {
     await confirmEdge('edge-id-1');
-    expect(updateSetMock).toHaveBeenCalledOnce();
-    const setArg = updateSetMock.mock.calls[0]![0] as Record<string, unknown>;
+    expect(updateReturningMock).toHaveBeenCalledOnce();
+    const setArg = updateReturningMock.mock.calls[0]![0] as Record<string, unknown>;
     expect(setArg.confirmed).toBe(true);
     expect(setArg.source).toBe('faculty');
     expect(setArg.confidence).toBe('high');
@@ -156,7 +175,7 @@ describe('updateEdge / confirmEdge', () => {
 
   it('updateEdge only spreads provided fields', async () => {
     await updateEdge({ id: 'edge-id-2', expectedK: 3 });
-    const setArg = updateSetMock.mock.calls[0]![0] as Record<string, unknown>;
+    const setArg = updateReturningMock.mock.calls[0]![0] as Record<string, unknown>;
     expect(setArg.expectedK).toBe(3);
     // confirmed was not passed — should not appear in the set object
     expect('confirmed' in setArg).toBe(false);
@@ -165,11 +184,25 @@ describe('updateEdge / confirmEdge', () => {
 
   it('updateEdge with confirmed=true adds source+confidence', async () => {
     await updateEdge({ id: 'edge-id-3', confirmed: true, expectedD: 2 });
-    const setArg = updateSetMock.mock.calls[0]![0] as Record<string, unknown>;
+    const setArg = updateReturningMock.mock.calls[0]![0] as Record<string, unknown>;
     expect(setArg.confirmed).toBe(true);
     expect(setArg.source).toBe('faculty');
     expect(setArg.confidence).toBe('high');
     expect(setArg.expectedD).toBe(2);
+  });
+
+  it('updateEdge throws when confirmed=false (downgrade rejected)', async () => {
+    await expect(
+      updateEdge({ id: 'edge-id-4', confirmed: false }),
+    ).rejects.toThrow(/cannot unconfirm/);
+    expect(updateReturningMock).not.toHaveBeenCalled();
+  });
+
+  it('updateEdge throws when the edge does not exist (zero rows returned)', async () => {
+    updateReturningMock.mockResolvedValue([]);
+    await expect(
+      updateEdge({ id: 'nonexistent-id', expectedK: 1 }),
+    ).rejects.toThrow(/edge not found/);
   });
 });
 
@@ -178,11 +211,45 @@ describe('updateEdge / confirmEdge', () => {
 describe('deleteEdge', () => {
   beforeEach(() => {
     deleteMock.mockReset().mockResolvedValue(undefined);
+    updateReturningMock.mockReset();
   });
 
   it('calls delete on the db', async () => {
     await deleteEdge('edge-id-99');
     expect(deleteMock).toHaveBeenCalledOnce();
+  });
+});
+
+// ---------------------------------------------------------------------------
+
+describe('getEdgeById', () => {
+  beforeEach(() => {
+    selectLimitMock.mockReset();
+  });
+
+  it('returns the row when found', async () => {
+    const fakeRow = {
+      id: 'edge-abc',
+      focalCourseCode: 'GC 3010',
+      prereqCourseCode: 'GC 2010',
+      subCompetencyId: 'sub-1',
+      expectedK: 2,
+      expectedU: 2,
+      expectedD: 1,
+      source: 'faculty',
+      confidence: 'high',
+      confirmed: true,
+      rationale: 'rationale text',
+    };
+    selectLimitMock.mockResolvedValue([fakeRow]);
+    const result = await getEdgeById('edge-abc');
+    expect(result).toEqual(fakeRow);
+  });
+
+  it('returns null when no row found', async () => {
+    selectLimitMock.mockResolvedValue([]);
+    const result = await getEdgeById('nonexistent-id');
+    expect(result).toBeNull();
   });
 });
 
@@ -247,23 +314,23 @@ describe('bfsWouldCycle (pure helper)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// wouldCreateCycle (DB-backed wrapper) — uses mocked selectDistinct
+// wouldCreateCycle (DB-backed wrapper) — uses confirmed-only pairs
 // ---------------------------------------------------------------------------
 
 describe('wouldCreateCycle (DB wrapper)', () => {
   beforeEach(() => {
-    selectDistinctMock.mockReset();
+    selectDistinctWhereMock.mockReset();
   });
 
-  it('returns true when the DB pairs show a transitive path back to focal', async () => {
-    // Existing edges: B→A (B's focal=B, prereq=A means A is a prereq of B)
+  it('returns true when CONFIRMED DB pairs show a transitive path back to focal', async () => {
+    // Existing confirmed edge: B→A (A is prereq of B)
     // We want to add A→B (make B a prereq of A → would cycle)
-    selectDistinctMock.mockResolvedValue([{ focal: 'B', prereq: 'A' }]);
+    selectDistinctWhereMock.mockResolvedValue([{ focal: 'B', prereq: 'A' }]);
     expect(await wouldCreateCycle('A', 'B')).toBe(true);
   });
 
   it('returns false when no path exists', async () => {
-    selectDistinctMock.mockResolvedValue([
+    selectDistinctWhereMock.mockResolvedValue([
       { focal: 'X', prereq: 'Y' },
       { focal: 'Y', prereq: 'Z' },
     ]);
@@ -271,7 +338,19 @@ describe('wouldCreateCycle (DB wrapper)', () => {
   });
 
   it('returns true for self-reference without querying the DB shape', async () => {
-    selectDistinctMock.mockResolvedValue([]);
+    selectDistinctWhereMock.mockResolvedValue([]);
     expect(await wouldCreateCycle('A', 'A')).toBe(true);
+  });
+
+  it('does NOT cycle when only an UNCONFIRMED seed A→B exists (confirmed-only check)', async () => {
+    // listConfirmedEdgePairs returns [] because A→B is unconfirmed
+    selectDistinctWhereMock.mockResolvedValue([]);
+    // So the faculty's correct reverse B→A should not be blocked
+    expect(await wouldCreateCycle('B', 'A')).toBe(false);
+  });
+
+  it('DOES cycle when a CONFIRMED A→B exists and faculty tries B→A', async () => {
+    selectDistinctWhereMock.mockResolvedValue([{ focal: 'A', prereq: 'B' }]);
+    expect(await wouldCreateCycle('B', 'A')).toBe(true);
   });
 });

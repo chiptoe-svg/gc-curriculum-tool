@@ -225,7 +225,17 @@ export interface NewCourseInput {
 export async function bulkCreateCourses(
   items: NewCourseInput[],
 ): Promise<{ created: string[]; skipped: string[] }> {
-  const codes = items.map((i) => i.code.trim()).filter(Boolean);
+  // Dedupe by trimmed code — keep first occurrence of each code.
+  const seen = new Set<string>();
+  const uniqueItems: NewCourseInput[] = [];
+  for (const i of items) {
+    const code = i.code.trim();
+    if (code && !seen.has(code)) {
+      seen.add(code);
+      uniqueItems.push({ ...i, code });
+    }
+  }
+  const codes = [...seen];
   if (codes.length === 0) return { created: [], skipped: [] };
 
   const existing = await db
@@ -234,13 +244,13 @@ export async function bulkCreateCourses(
     .where(inArray(courses.code, codes));
   const have = new Set(existing.map((e) => e.code));
 
-  const toCreate = items.filter((i) => !have.has(i.code.trim()));
+  const toCreate = uniqueItems.filter((i) => !have.has(i.code));
   for (const i of toCreate) {
     await db
       .insert(courses)
       .values({
-        code: i.code.trim(),
-        title: (i.title ?? i.code.trim()).trim(),
+        code: i.code,
+        title: (i.title ?? i.code).trim(),
         level: i.level ?? 0,
         track: i.track ?? 'unspecified',
         prerequisites: i.prerequisites ?? '',
@@ -249,7 +259,7 @@ export async function bulkCreateCourses(
   }
 
   return {
-    created: toCreate.map((i) => i.code.trim()),
+    created: toCreate.map((i) => i.code),
     skipped: codes.filter((c) => have.has(c)),
   };
 }

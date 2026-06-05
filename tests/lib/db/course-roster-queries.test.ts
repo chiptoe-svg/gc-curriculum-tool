@@ -189,6 +189,25 @@ describe('bulkCreateCourses', () => {
     const result = await bulkCreateCourses([{ code: '  GC 1010  ', title: 'Foundations' }]);
     expect(result.created).toEqual(['GC 1010']);
   });
+
+  it('deduplicates input: duplicate code appears only once in created and skipped', async () => {
+    // GC 1010 appears twice in input; GC 2010 appears twice and already exists
+    selectWhereMock.mockResolvedValue([{ code: 'GC 2010' }]);
+    const result = await bulkCreateCourses([
+      { code: 'GC 1010', title: 'Foundations' },
+      { code: 'GC 1010', title: 'Foundations (dup)' },
+      { code: 'GC 2010', title: 'Design I' },
+      { code: 'GC 2010', title: 'Design I (dup)' },
+    ]);
+    // created should contain GC 1010 exactly once
+    expect(result.created).toEqual(['GC 1010']);
+    expect(result.created.filter((c) => c === 'GC 1010')).toHaveLength(1);
+    // skipped should contain GC 2010 exactly once
+    expect(result.skipped).toEqual(['GC 2010']);
+    expect(result.skipped.filter((c) => c === 'GC 2010')).toHaveLength(1);
+    // only one insert issued (for GC 1010)
+    expect(insertMock).toHaveBeenCalledOnce();
+  });
 });
 
 // ---------------------------------------------------------------------------

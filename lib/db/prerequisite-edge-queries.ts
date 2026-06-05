@@ -5,7 +5,7 @@
  * Design: docs/superpowers/specs/2026-06-05-prerequisite-edges-design.md
  */
 
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { prerequisiteEdges } from '@/lib/db/schema';
 
@@ -138,8 +138,8 @@ export async function listEdgesForFocal(
 }
 
 /**
- * All distinct (focal → prereq) structural pairs — for cycle detection and
- * program-wide traversal.
+ * All distinct (focal → prereq) structural pairs — for program-wide traversal.
+ * Includes ALL edges (confirmed and unconfirmed).
  */
 export async function listEdgePairs(): Promise<
   Array<{ focal: string; prereq: string }>
@@ -153,25 +153,63 @@ export async function listEdgePairs(): Promise<
   return rows.map((r) => ({ focal: r.focal, prereq: r.prereq }));
 }
 
+/**
+ * Confirmed-only distinct (focal → prereq) pairs — used by cycle detection
+ * so that unreviewed LLM seeds cannot block faculty writes.
+ */
+export async function listConfirmedEdgePairs(): Promise<
+  Array<{ focal: string; prereq: string }>
+> {
+  const rows = await db
+    .selectDistinct({
+      focal: prerequisiteEdges.focalCourseCode,
+      prereq: prerequisiteEdges.prereqCourseCode,
+    })
+    .from(prerequisiteEdges)
+    .where(eq(prerequisiteEdges.confirmed, true));
+  return rows.map((r) => ({ focal: r.focal, prereq: r.prereq }));
+}
+
+/**
+ * Returns the edge row for the given id, or null if not found.
+ */
+export async function getEdgeById(id: string): Promise<PrereqEdgeRow | null> {
+  const rows = await db
+    .select()
+    .from(prerequisiteEdges)
+    .where(eq(prerequisiteEdges.id, id))
+    .limit(1);
+  return (rows[0] as PrereqEdgeRow) ?? null;
+}
+
 // ---------------------------------------------------------------------------
 // Mutations
 // ---------------------------------------------------------------------------
 
 export async function updateEdge(input: UpdateEdgeInput): Promise<void> {
-  await db
+  if (input.confirmed === false) {
+    throw new Error(
+      'cannot unconfirm an edge via update; delete and re-seed instead',
+    );
+  }
+  const rows = await db
     .update(prerequisiteEdges)
     .set({
       ...(input.expectedK !== undefined && { expectedK: input.expectedK }),
       ...(input.expectedU !== undefined && { expectedU: input.expectedU }),
       ...(input.expectedD !== undefined && { expectedD: input.expectedD }),
-      ...(input.confirmed !== undefined && {
-        confirmed: input.confirmed,
+      ...(input.confirmed === true && {
+        confirmed: true,
         source: 'faculty',
         confidence: 'high',
       }),
       updatedAt: sql`now()`,
     })
-    .where(eq(prerequisiteEdges.id, input.id));
+    .where(eq(prerequisiteEdges.id, input.id))
+    .returning({ id: prerequisiteEdges.id });
+  if (rows.length === 0) {
+    throw new Error('updateEdge: edge not found');
+  }
 }
 
 export async function deleteEdge(id: string): Promise<void> {
@@ -257,16 +295,17 @@ export function bfsWouldCycle(
 
 /**
  * DB-backed cycle guard.  True if making `prereq` a prerequisite of `focal`
- * would create a directed cycle in the existing edge graph.
+ * would create a directed cycle in the existing confirmed edge graph.
  *
- * Uses `listEdgePairs()` to fetch the current adjacency list, then delegates
- * to the pure `bfsWouldCycle` helper (diamond-safe — visited set prevents loops).
+ * Uses `listConfirmedEdgePairs()` (confirmed=true only) so that unreviewed
+ * LLM seeds cannot block faculty writes.  Delegates to the pure
+ * `bfsWouldCycle` helper (diamond-safe — visited set prevents loops).
  */
 export async function wouldCreateCycle(
   focal: string,
   prereq: string,
 ): Promise<boolean> {
-  const pairs = await listEdgePairs();
+  const pairs = await listConfirmedEdgePairs();
   const adj = new Map<string, string[]>();
   for (const { focal: f, prereq: p } of pairs) {
     if (!adj.has(f)) adj.set(f, []);
