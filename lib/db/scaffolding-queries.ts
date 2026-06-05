@@ -31,7 +31,7 @@ import type { SnapshotCellInput, ProductiveFailureConditions } from '@/lib/progr
  * it is bumped to the actual deploy moment in the close-out task so snapshots
  * captured today under the OLD prompts are also reclassified.
  */
-export const PF_CONTRACT_EPOCH = new Date('2026-06-05T00:00:00Z');
+export const PF_CONTRACT_EPOCH = new Date('2026-06-05T02:50:48Z');
 
 /** Presence-as-sentinel with the legacy cutoff: pre-epoch => null (no data). */
 export function pfForSnapshot(

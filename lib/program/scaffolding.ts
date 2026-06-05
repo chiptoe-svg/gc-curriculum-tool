@@ -241,6 +241,8 @@ export function aggregateSubCompetency(
       subCompetencyName,
       cells,
       scaffolding,
+      // Placeholder only — `pfStatus: 'no_data'` is the load-bearing signal here.
+      // Consumers MUST branch on pfStatus first; a no_data row is NOT a genuine 0.
       cumulativePfScore: 0,
       pfStatus: 'no_data',
     };
