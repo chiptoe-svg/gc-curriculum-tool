@@ -299,6 +299,14 @@ export function ProgramCoverageClient({ slug, initialData }: Props) {
             <span> shallow (1–2), </span>
             <span className="text-slate-400">{psRollup.absent}</span>
             <span> absent.</span>
+            {/* TODO(evidence-ladder): add "N of M upper-depth cells materials-supported"
+                split here once the coverage cell payload exposes per-claim source/citations.
+                Currently MatrixCoverageCell (lib/db/program-coverage-queries.ts) only carries
+                pre-computed depth scores from snapshot_target_coverage; per-claim provenance
+                would need to be joined from the raw snapshot profile JSON at query time and
+                plumbed through getMatrixData() → /api/program/coverage → this client.
+                Deferred to avoid data-plumbing scope expansion; see spec
+                docs/superpowers/specs/2026-06-04-evidence-ladder-design.md §"Program views". */}
           </div>
         )}
       </section>

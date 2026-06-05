@@ -17,6 +17,7 @@ import { CourseOverview } from './CourseOverview';
 import { StressTestPanel } from './StressTestPanel';
 import { StressTestBadge } from './StressTestBadge';
 import type { StressTestResultType } from '@/lib/ai/stress-test/schema';
+import { deriveEvidenceBand, type EvidenceBand, type EvidenceClaim } from '@/lib/program/evidence-ladder';
 
 /**
  * Returns true when NONE of the profile's findings carry a `source` flag.
@@ -86,6 +87,50 @@ export function SourceBadge({
     <span
       title={count > 0 ? `${count} citation${count === 1 ? '' : 's'}` : source}
       className={className}
+    >
+      {label}
+    </span>
+  );
+}
+
+/**
+ * Evidence-band chip — small read-time credibility annotation derived from
+ * the claim's existing source + citations fields.  Sits next to SourceBadge.
+ * Never gates or changes a score; purely a transparency annotation.
+ *
+ * Bands:
+ *   claimed           → gray  "claim"     (≈L0 — instructor testimony / no material cite)
+ *   materials_supported → green "materials" (≈L1-L2 — cites a course-material chunk)
+ *   artifact_verified   → teal  "artifact"  (≈L3-L4 — student-produced evidence; unreachable today)
+ */
+export function EvidenceBandChip({ claim }: { claim: EvidenceClaim }) {
+  const band: EvidenceBand = deriveEvidenceBand(claim);
+
+  const palette =
+    band === 'materials_supported'
+      ? 'bg-green-100 text-green-900 border-green-300'
+      : band === 'artifact_verified'
+        ? 'bg-teal-100 text-teal-800 border-teal-400'
+        : 'bg-stone-100 text-stone-500 border-stone-300';
+
+  const label =
+    band === 'materials_supported'
+      ? 'materials'
+      : band === 'artifact_verified'
+        ? 'artifact'
+        : 'claim';
+
+  const tooltip =
+    band === 'materials_supported'
+      ? 'Cites a course-material chunk (assignment/rubric/syllabus). ≈ ladder L1–L2.'
+      : band === 'artifact_verified'
+        ? 'Cites student-produced evidence. ≈ ladder L3–L4.'
+        : 'Instructor claim — no course-material citation. ≈ ladder L0.';
+
+  return (
+    <span
+      title={tooltip}
+      className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider ${palette}`}
     >
       {label}
     </span>
@@ -180,11 +225,24 @@ function CompetencyCard({
   onCitationClick?: (c: CaptureProfileCitationType) => void;
 }) {
   const isTechnical = competency.type === 'technical';
+  const evidenceBand = deriveEvidenceBand({
+    source: competency.source,
+    citations: competency.citations,
+  });
+  const isUnverifiedHighScore =
+    evidenceBand === 'claimed' &&
+    ((competency.u_depth !== null && competency.u_depth >= 3) ||
+      competency.d_depth >= 3);
   return (
-    <div className="rounded-md border bg-card px-4 py-3 space-y-3">
+    <div
+      className={
+        'rounded-md border bg-card px-4 py-3 space-y-3' +
+        (isUnverifiedHighScore ? ' border-l-4 border-l-amber-400' : '')
+      }
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 space-y-1">
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <span
               className={
                 'inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide '
@@ -196,6 +254,15 @@ function CompetencyCard({
               {competency.type}
             </span>
             <SourceBadge source={competency.source} citations={competency.citations} onCitationClick={onCitationClick} />
+            <EvidenceBandChip claim={{ source: competency.source, citations: competency.citations }} />
+            {isUnverifiedHighScore && (
+              <span
+                title="High score (D/U≥3) resting on instructor claim — no course material cited. Review whether assignment/rubric evidence could be added."
+                className="inline-flex items-center gap-0.5 rounded border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-[10px] font-mono text-amber-700"
+              >
+                ⚠ unverified
+              </span>
+            )}
           </div>
           <textarea
             value={competency.statement}
