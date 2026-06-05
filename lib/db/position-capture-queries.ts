@@ -59,6 +59,7 @@ export interface UpdateDraftInput {
   ratedSkills?: PositionCaptureRow['ratedSkills'];
   sourceFiles?: PositionCaptureRow['sourceFiles'];
   completeness?: PositionCaptureRow['completeness'];
+  sessionId?: string;
 }
 
 /**
@@ -78,6 +79,7 @@ export async function updatePositionDraft(input: UpdateDraftInput): Promise<void
       ...(input.ratedSkills !== undefined && { ratedSkills: input.ratedSkills }),
       ...(input.sourceFiles !== undefined && { sourceFiles: input.sourceFiles }),
       ...(input.completeness !== undefined && { completeness: input.completeness }),
+      ...(input.sessionId !== undefined && { sessionId: input.sessionId }),
     })
     .where(and(
       eq(positionCaptures.id, input.id),

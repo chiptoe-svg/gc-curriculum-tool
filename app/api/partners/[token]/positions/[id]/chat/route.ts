@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { findPartnerByToken } from '@/lib/partners/queries';
-import { getPositionCaptureById, startPositionSession, isPositionSessionOwnedBy } from '@/lib/db/position-capture-queries';
+import { getPositionCaptureById, startPositionSession, isPositionSessionOwnedBy, getPositionSession } from '@/lib/db/position-capture-queries';
 import { runPositionInterview, generatePositionProfile } from '@/lib/ai/position-capture/run';
 import { getTargetById } from '@/lib/db/career-targets-queries';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
@@ -10,6 +10,34 @@ import { hashIp } from '@/lib/ip-hash';
 export const maxDuration = 60;
 
 interface RouteContext { params: Promise<{ token: string; id: string }> }
+
+/**
+ * GET /api/partners/[token]/positions/[id]/chat?sessionId=<sid>
+ * Loads the stored transcript for an existing session so Page6Section
+ * can rehydrate after a remount / refresh.
+ */
+export async function GET(req: Request, { params }: RouteContext): Promise<Response> {
+  const { token, id } = await params;
+  const partner = await findPartnerByToken(token);
+  if (!partner || !partner.active) return NextResponse.json({ error: 'invalid token' }, { status: 401 });
+
+  const existing = await getPositionCaptureById(id);
+  if (!existing) return NextResponse.json({ error: 'not found' }, { status: 404 });
+  if (existing.partnerId !== partner.id) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+
+  const { searchParams } = new URL(req.url);
+  const sessionId = searchParams.get('sessionId');
+  if (!sessionId) return NextResponse.json({ error: 'sessionId required' }, { status: 400 });
+
+  if (!await isPositionSessionOwnedBy(sessionId, partner.id, id)) {
+    return NextResponse.json({ error: 'invalid session' }, { status: 403 });
+  }
+
+  const rows = await getPositionSession(id, sessionId);
+  return NextResponse.json({
+    messages: rows.map(r => ({ role: r.role, content: r.content, turnIndex: r.turnIndex })),
+  });
+}
 
 /**
  * POST /api/partners/[token]/positions/[id]/chat

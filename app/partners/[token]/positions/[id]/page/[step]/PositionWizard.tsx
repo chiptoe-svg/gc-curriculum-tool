@@ -121,6 +121,7 @@ export function PositionWizard({ token, step, capture, target }: Props) {
           token={token}
           captureId={draft.id}
           positionTitle={draft.positionTitle}
+          initialSessionId={draft.sessionId}
         />
       )}
 

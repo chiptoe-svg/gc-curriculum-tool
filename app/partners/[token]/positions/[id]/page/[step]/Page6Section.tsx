@@ -19,12 +19,13 @@ interface Props {
   token: string;
   captureId: string;
   positionTitle: string | null;
+  initialSessionId?: string | null;
 }
 
-export function Page6Section({ token, captureId, positionTitle }: Props) {
+export function Page6Section({ token, captureId, positionTitle, initialSessionId }: Props) {
   const router = useRouter();
   const [messages, setMessages] = useState<AgentMessage[]>([]);
-  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(initialSessionId ?? null);
   const [input, setInput] = useState('');
   const [readinessScore, setReadinessScore] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
@@ -32,10 +33,14 @@ export function Page6Section({ token, captureId, positionTitle }: Props) {
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const bootRef = useRef(false);
 
-  // Auto-start: fire the opening anchor turn on mount
+  // Auto-start: resume existing session or fire fresh opening turn (ref-guarded for StrictMode)
   useEffect(() => {
-    void fireOpeningTurn();
+    if (bootRef.current) return;
+    bootRef.current = true;
+    if (initialSessionId) { void loadExistingSession(initialSessionId); }
+    else { void fireOpeningTurn(); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -43,6 +48,53 @@ export function Page6Section({ token, captureId, positionTitle }: Props) {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  async function loadExistingSession(sid: string) {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(
+        `/api/partners/${encodeURIComponent(token)}/positions/${encodeURIComponent(captureId)}/chat?sessionId=${encodeURIComponent(sid)}`,
+      );
+      if (!res.ok) {
+        // Session load failed — fall back to a fresh opening turn
+        void fireOpeningTurn();
+        return;
+      }
+      const json = await res.json() as { messages?: Array<{ role: string; content: string | null; turnIndex: number }> };
+      const rows = json.messages ?? [];
+      if (rows.length === 0) {
+        // No stored messages — fall back to a fresh opening turn
+        void fireOpeningTurn();
+        return;
+      }
+      // Rehydrate: build AgentMessage array from stored rows
+      const hydrated: AgentMessage[] = rows
+        .filter(r => r.content !== null)
+        .map(r => {
+          if (r.role === 'user') {
+            return { role: 'user' as const, content: r.content! };
+          }
+          // assistant rows store JSON-stringified AuditResponse in content
+          try {
+            const parsed = JSON.parse(r.content!) as AuditResponse;
+            // Update readiness from the last assistant row that has it
+            if (parsed.readiness?.score !== undefined) setReadinessScore(parsed.readiness.score);
+            return { role: 'assistant' as const, content: buildAssistantText(parsed) };
+          } catch {
+            return { role: 'assistant' as const, content: r.content! };
+          }
+        });
+      setSessionId(sid);
+      setMessages(hydrated);
+    } catch (e) {
+      // Network error — fall back to a fresh opening turn
+      void fireOpeningTurn();
+      void e; // suppress lint
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function fireOpeningTurn() {
     setBusy(true);
@@ -66,7 +118,19 @@ export function Page6Section({ token, captureId, positionTitle }: Props) {
         setError(json.error ? `${json.error}${json.detail ? ' — ' + json.detail : ''}` : `Failed to start interview (${res.status})`);
         return;
       }
-      if (json.sessionId) setSessionId(json.sessionId);
+      const newId = json.sessionId;
+      if (newId) {
+        setSessionId(newId);
+        // Persist sessionId to the draft immediately so remount/refresh can resume
+        void fetch(
+          `/api/partners/${encodeURIComponent(token)}/positions/${encodeURIComponent(captureId)}`,
+          {
+            method: 'PATCH',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ sessionId: newId }),
+          },
+        );
+      }
       if (json.response.readiness?.score !== undefined) setReadinessScore(json.response.readiness.score);
       const assistantText = buildAssistantText(json.response);
       setMessages([{ role: 'assistant', content: assistantText }]);

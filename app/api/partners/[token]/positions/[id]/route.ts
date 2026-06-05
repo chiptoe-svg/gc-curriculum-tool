@@ -33,6 +33,7 @@ export async function PATCH(req: Request, { params }: RouteContext): Promise<Res
       ...(typeof body.ratedSkills === 'object' && body.ratedSkills !== null && { ratedSkills: body.ratedSkills as Parameters<typeof updatePositionDraft>[0]['ratedSkills'] }),
       ...(Array.isArray(body.sourceFiles) && { sourceFiles: body.sourceFiles as Parameters<typeof updatePositionDraft>[0]['sourceFiles'] }),
       ...(typeof body.completeness === 'string' && { completeness: body.completeness as Parameters<typeof updatePositionDraft>[0]['completeness'] }),
+      ...(typeof body.sessionId === 'string' && { sessionId: body.sessionId }),
     });
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'update failed' }, { status: 400 });
