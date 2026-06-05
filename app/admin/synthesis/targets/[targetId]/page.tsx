@@ -12,11 +12,15 @@ import {
 import { stalenessCheck } from '@/lib/ai/synthesis/staleness';
 import { getLatestRun } from '@/lib/ai/synthesis/orchestrator';
 import type { SynthesisResult } from '@/lib/ai/synthesis/schema';
-import { listCapturesByTarget } from '@/lib/db/employer-capture-queries';
+import {
+  listSubmittedPositionsForTarget,
+  getAggregateForTarget,
+} from '@/lib/db/position-capture-queries';
 import { HeaderStats } from './HeaderStats';
 import { SynthesizedInsightsPanel } from './SynthesizedInsightsPanel';
 import { ProposedKUDEditsPanel } from './ProposedKUDEditsPanel';
 import { ReRunButton } from './ReRunButton';
+import { AggregatePanel } from './AggregatePanel';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,7 +39,7 @@ export default async function SynthesisTargetPage({ params, searchParams }: Prop
   const target = rows[0];
   if (!target) return notFound();
 
-  const [submissions, partnersCount, weightedSum, salary, unmapped, staleness, latestRun, captures] = await Promise.all([
+  const [submissions, partnersCount, weightedSum, salary, unmapped, staleness, latestRun, positions, aggregate] = await Promise.all([
     countSubmittedForTarget(targetId),
     countUniquePartnersForTarget(targetId),
     sumPartnerWeightsForTarget(targetId),
@@ -43,10 +47,25 @@ export default async function SynthesisTargetPage({ params, searchParams }: Prop
     nearbyUnmappedLabelsForTarget(targetId),
     stalenessCheck(targetId),
     getLatestRun(targetId),
-    listCapturesByTarget(targetId),
+    listSubmittedPositionsForTarget(targetId),
+    getAggregateForTarget(targetId),
   ]);
 
   const result = latestRun?.result as SynthesisResult | undefined;
+
+  const completenessLabel: Record<string, string> = {
+    'title-only': 'Title only',
+    structured: 'Structured',
+    rated: 'Rated',
+    interviewed: 'Interviewed',
+  };
+
+  const completenessColor: Record<string, string> = {
+    'title-only': 'bg-slate-100 text-slate-600',
+    structured: 'bg-blue-100 text-blue-700',
+    rated: 'bg-violet-100 text-violet-700',
+    interviewed: 'bg-green-100 text-green-700',
+  };
 
   return (
     <main className="mx-auto max-w-5xl p-6 space-y-8">
@@ -92,28 +111,51 @@ export default async function SynthesisTargetPage({ params, searchParams }: Prop
           />
         </>
       )}
-      <section className="mt-8">
-        <h2 className="text-lg font-semibold">Employer interviews ({captures.length})</h2>
-        {captures.length === 0 ? (
-          <p className="mt-2 text-sm text-muted-foreground">No interviews recorded yet.</p>
+
+      <AggregatePanel
+        targetId={targetId}
+        slug={slug}
+        initialMarkdown={aggregate?.markdown ?? null}
+        initialStale={aggregate?.stale ?? false}
+        initialGeneratedAt={aggregate?.generatedAt ?? null}
+      />
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold">Positions in this target ({positions.length})</h2>
+        {positions.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No submitted positions yet.</p>
         ) : (
-          <div className="mt-3 space-y-3">
-            {captures.map(c => {
-              const p = c.profile as { partner_summary?: string; role_shape?: { title_actual?: string } };
-              return (
-                <div key={c.id} className="rounded-md border bg-card px-4 py-3 text-sm">
-                  <p className="font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                    Captured {new Date(c.createdAt).toLocaleDateString()}
-                  </p>
-                  {p.role_shape?.title_actual && (
-                    <p className="mt-1 font-semibold">{p.role_shape.title_actual}</p>
-                  )}
-                  {p.partner_summary && (
-                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground line-clamp-3">{p.partner_summary}</p>
-                  )}
-                </div>
-              );
-            })}
+          <div className="overflow-hidden rounded border">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th className="px-4 py-2 text-left">Company</th>
+                  <th className="px-4 py-2 text-left">Title</th>
+                  <th className="px-4 py-2 text-left">Completeness</th>
+                  <th className="px-4 py-2 text-left">Submitted</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {positions.map(pos => (
+                  <tr key={pos.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-2 font-medium">{pos.company}</td>
+                    <td className="px-4 py-2 text-slate-700">{pos.positionTitle ?? <span className="text-slate-400">—</span>}</td>
+                    <td className="px-4 py-2">
+                      {pos.completeness ? (
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${completenessColor[pos.completeness] ?? 'bg-slate-100 text-slate-600'}`}>
+                          {completenessLabel[pos.completeness] ?? pos.completeness}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-2 text-slate-500">
+                      {pos.submittedAt ? new Date(pos.submittedAt).toLocaleDateString() : '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </section>
