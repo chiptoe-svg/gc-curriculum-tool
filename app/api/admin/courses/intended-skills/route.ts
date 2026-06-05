@@ -72,7 +72,7 @@ export async function POST(req: Request): Promise<Response> {
   const validIdSet = new Set(subCompetencies.map((sc) => sc.id));
 
   // Accumulators.
-  const seeded: Array<{ code: string; count: number }> = [];
+  const seeded: Array<{ code: string; count: number; droppedUnknown: number }> = [];
   const skippedNoCatalogText: string[] = [];
   let stoppedAtCap = false;
 
@@ -98,8 +98,9 @@ export async function POST(req: Request): Promise<Response> {
       skillsRequired: (course.skillsRequired as string[] | null) ?? [],
     };
 
-    // Detect courses with no usable catalog text — still call the extractor
-    // (it handles "(empty)" / "(none)") but record them for the caller.
+    // Detect courses with no usable catalog text.  Purge any stale intended
+    // rows so a stale badge doesn't persist, record the skip, and continue —
+    // do NOT fire an AI call or record spend for these courses.
     const hasText =
       catalog.description.trim() !== '' ||
       catalog.learningObjectives.length > 0 ||
@@ -107,7 +108,9 @@ export async function POST(req: Request): Promise<Response> {
       catalog.skillsRequired.length > 0;
 
     if (!hasText) {
+      await replaceIntendedCoverage(code, [], 'none');
       skippedNoCatalogText.push(code);
+      continue;
     }
 
     // Run the AI call.  recordSpend fires in the finally block of the DB
@@ -164,11 +167,7 @@ export async function POST(req: Request): Promise<Response> {
       continue;
     }
 
-    seeded.push({ code, count: validRows.length });
-
-    // Suppress unused-variable warning (droppedUnknown is informational;
-    // keeping it explicit here in case we want to surface it later).
-    void droppedUnknown;
+    seeded.push({ code, count: validRows.length, droppedUnknown });
   }
 
   const response: {

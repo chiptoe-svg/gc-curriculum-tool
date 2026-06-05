@@ -171,9 +171,9 @@ export async function listCoursesWithStatus(): Promise<CourseWithStatus[]> {
 
 /**
  * Data-state for a course in the roster.
- * - 'measured'  — at least one course_capture_snapshots row exists.
- * - 'intended'  — reserved for the rough-pass increment (not produced here yet).
- * - 'no-data'   — no snapshot; no capture data available.
+ * - 'measured'  — at least one course_capture_snapshots row exists (measured wins).
+ * - 'intended'  — a course_intended_coverage row exists but no snapshot.
+ * - 'no-data'   — no snapshot and no intended-coverage row.
  */
 export type CourseDataState = 'measured' | 'intended' | 'no-data';
 
@@ -182,7 +182,7 @@ export interface CourseRosterRow {
   title: string;
   level: number;
   prerequisites: string;
-  dataState: CourseDataState; // 'intended' is reserved; only 'measured'/'no-data' produced here
+  dataState: CourseDataState;
 }
 
 /**
