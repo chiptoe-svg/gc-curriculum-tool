@@ -13,8 +13,19 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { VoiceRecorder } from '@/components/VoiceRecorder';
 import type { CurriculumChatCitation } from '@/lib/ai/wiki/response-schema';
+
+/**
+ * Strip inline citation markers like [courses/gc-3460.md] from assistant
+ * content. The structured `citations` array is rendered separately below the
+ * bubble, so these inline path markers are redundant and clutter the prose.
+ */
+function stripInlineCitations(s: string): string {
+  return s.replace(/\s*\[(courses|competencies|targets|concepts)\/[^\]\s]+\.md\]/g, '');
+}
 
 interface AskMessage {
   role: 'user' | 'assistant';
@@ -148,11 +159,9 @@ export function AskTab({ courseCode, courseTitle, slug, endpoint }: Props) {
             return [...m.slice(0, -1), { ...last, toolCalls: [...toolCalls!] }];
           });
         } else if (kind === 'text-delta') {
+          // Accumulate deltas internally but don't push raw structured-output
+          // JSON to the visible bubble — the `final` event sets the real answer.
           assistantText += (ev.delta as string) ?? '';
-          setMessages(m => {
-            const last = m[m.length - 1]!;
-            return [...m.slice(0, -1), { ...last, content: assistantText }];
-          });
         } else if (kind === 'final') {
           const response = ev.response as { response: string; citations: CurriculumChatCitation[] };
           setMessages(m => {
@@ -229,9 +238,6 @@ export function AskTab({ courseCode, courseTitle, slug, endpoint }: Props) {
             <MessageBubble key={i} message={m} slug={slug} />
           ))
         )}
-        {busy && (
-          <p className="text-xs text-muted-foreground italic">Thinking…</p>
-        )}
         {error && (
           <p className="text-xs text-destructive">Error: {error}</p>
         )}
@@ -281,8 +287,18 @@ function MessageBubble({ message, slug }: { message: AskMessage; slug: string })
       <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
         {isUser ? 'You' : 'Assistant'}
       </p>
-      <div className="mt-1 text-sm whitespace-pre-wrap leading-snug">
-        {message.content || (isUser ? '' : <span className="italic text-muted-foreground">…</span>)}
+      <div className="mt-1 leading-snug">
+        {isUser ? (
+          <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+        ) : message.content ? (
+          <div className="ask-prose">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {stripInlineCitations(message.content)}
+            </ReactMarkdown>
+          </div>
+        ) : (
+          <span className="text-sm italic text-muted-foreground">Composing…</span>
+        )}
       </div>
       {!isUser && message.toolCalls && message.toolCalls.length > 0 && (
         <p className="mt-1 text-[10px] text-muted-foreground">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { StressTestResultType } from '@/lib/ai/stress-test/schema';
 
 interface Props {
@@ -28,6 +28,17 @@ export function StressTestPanel({ courseCode, slug, onResult }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<StressTestResultType | null>(null);
   const [telemetry, setTelemetry] = useState<{ costUsdCents: number; durationMs: number; model: string } | null>(null);
+  const [elapsed, setElapsed] = useState(0);
+
+  // Tick elapsed-seconds counter while running.
+  useEffect(() => {
+    if (!running) {
+      setElapsed(0);
+      return;
+    }
+    const id = setInterval(() => setElapsed(s => s + 1), 1000);
+    return () => clearInterval(id);
+  }, [running]);
 
   async function handleRun() {
     setRunning(true);
@@ -82,6 +93,16 @@ export function StressTestPanel({ courseCode, slug, onResult }: Props) {
           {running ? 'Reviewing…' : result ? 'Re-run' : 'Stress-test'}
         </button>
       </div>
+
+      {running && (
+        <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+          <span
+            className="inline-block h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent"
+            aria-hidden="true"
+          />
+          <span>{elapsed}s elapsed · Heavy model — usually 10–30s.</span>
+        </div>
+      )}
 
       {error && (
         <p className="mt-3 rounded border border-red-300 bg-red-50 px-2 py-1 text-xs text-red-800 dark:border-red-900/40 dark:bg-red-900/10 dark:text-red-200">
