@@ -44,7 +44,7 @@ const CITATIONS_ARRAY = {
  * client-side by `captureProfileSchema.parse` since JSON Schema can't easily
  * express conditional requiredness.
  */
-const captureProfileJsonSchema = {
+export const captureProfileJsonSchema = {
   type: 'object',
   additionalProperties: false,
   required: [
@@ -182,13 +182,16 @@ const captureProfileJsonSchema = {
         // the schema for new captures; the Zod schema treats it optional so
         // pre-existing snapshots remain valid.
         productive_failure_conditions: {
-          type: 'object',
+          // Nullable: the model emits null when Audit Area 7 was not probed
+          // (presence-as-sentinel). Unified with the v2 variant.
+          type: ['object', 'null'],
           additionalProperties: false,
           required: [
             'generate_then_consolidate',
             'open_ended_problems',
             'revision_cycles',
             'structured_post_mortem',
+            'structured_post_mortem_evidence',
             'max_supporting_depth',
             'notes',
           ],
@@ -197,6 +200,9 @@ const captureProfileJsonSchema = {
             open_ended_problems: { type: 'string', enum: ['present', 'partial', 'absent'] },
             revision_cycles: { type: 'string', enum: ['present', 'partial', 'absent'] },
             structured_post_mortem: { type: 'string', enum: ['present', 'partial', 'absent'] },
+            // Nullable array of citations; required-by-superRefine in Zod when
+            // structured_post_mortem is above 'absent'. Model emits null otherwise.
+            structured_post_mortem_evidence: { type: ['array', 'null'], items: CITATIONS_ARRAY.items },
             max_supporting_depth: { type: 'integer', minimum: 0, maximum: 5 },
             notes: { type: 'array', items: { type: 'string' } },
           },
@@ -307,7 +313,7 @@ type CaptureMessageRow = InferSelectModel<typeof captureMessages>;
 // previous implementation did), so we keep it required and widen its type
 // to "object or null." The synthesis prompt is responsible for emitting
 // null when Area 7 was not probed.
-const captureProfileJsonSchemaV2 = (() => {
+export const captureProfileJsonSchemaV2 = (() => {
   const cloned = JSON.parse(JSON.stringify(captureProfileJsonSchema)) as {
     properties: {
       audit_notes: {
@@ -316,9 +322,10 @@ const captureProfileJsonSchemaV2 = (() => {
     };
   };
   const pf = cloned.properties.audit_notes.properties.productive_failure_conditions;
-  // Replace the object-only `type: 'object'` with a nullable union so the
-  // model may emit null. The nested properties / required of pf remain
-  // intact and apply when the value IS an object.
+  // v1 already carries type: ['object', 'null'] (unified in Task 4), so this is
+  // now a no-op on the clone — retained as a safety net in case v1 is ever
+  // narrowed back to object-only. The nested properties / required apply when
+  // the value IS an object.
   pf.type = ['object', 'null'];
   return cloned;
 })();
