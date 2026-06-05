@@ -31,8 +31,10 @@ export const AI_FUNCTION_IDS = [
   'wiki-update',
   'curriculum-chat',
   'capture-stress-test',
-  'capture-employer-chat-agent',
-  'capture-employer-synthesis',
+  'jd-extract',
+  'position-rated-items',
+  'position-interview-agent',
+  'position-synthesis',
 ] as const;
 export type AIFunctionId = (typeof AI_FUNCTION_IDS)[number];
 
@@ -121,17 +123,19 @@ export const DEFAULT_TIERS: Record<AIFunctionId, Exclude<ModelTier, 'custom'>> =
   // referenced critical-reasoning task where heavy-tier reasoning
   // is the value. One call per stress-test click; not auto-on-generate.
   'capture-stress-test': 'heavy',
-  // Default tier. Per-turn chat agent for employer/partner interview
-  // sessions. Reads career-destination context + employer brief, routes
-  // tool calls to retrieve relevant curriculum evidence, emits a
-  // structured finding + question + citations. Same reasoning load as
-  // capture-chat-agent; default tier is appropriate.
-  'capture-employer-chat-agent': 'default',
-  // Default tier. End-of-session synthesis for an employer interview:
-  // reads the full transcript + retrieved evidence and produces a
-  // structured CareerCaptureProfile (employer-side counterpart to
-  // CaptureProfile). Default tier — same shape as capture-scores.
-  'capture-employer-synthesis': 'default',
+  // Light tier. One-shot LLM call that reads an extracted JD (Docling
+  // markdown or pasted text) and emits structured fields with per-field
+  // confidence scores. Small input, structured output, cheap.
+  'jd-extract': 'light',
+  // Default tier. Reads pages 1-4 + career target sub-comps and emits
+  // 10 "experiences worth having" candidates. Single-call generator.
+  'position-rated-items': 'default',
+  // Default tier. Page 6 per-turn loop — anchor-probe-confirm posture.
+  // Reads pages 1-5 context; emits AuditResponse-shaped per-turn output.
+  'position-interview-agent': 'default',
+  // Default tier. Synthesis over a completed Page 6 interview transcript
+  // + the upstream page inputs. Emits a PositionProfile.
+  'position-synthesis': 'default',
 };
 
 export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
@@ -150,8 +154,10 @@ export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
   'wiki-update': 'Wiki page regeneration (on snapshot creation)',
   'curriculum-chat': 'Curriculum chat (Explore "Ask" tab + future /ask)',
   'capture-stress-test': 'Capture stress test (adversarial profile review)',
-  'capture-employer-chat-agent': 'Employer interview chat',
-  'capture-employer-synthesis': 'Employer interview synthesis',
+  'jd-extract': 'JD field extraction',
+  'position-rated-items': 'Position rated-items generator',
+  'position-interview-agent': 'Position interview agent',
+  'position-synthesis': 'Position interview synthesis',
 };
 
 export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
@@ -170,8 +176,10 @@ export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
   'wiki-update': 'Regenerates the affected wiki-layer pages (course, competencies, targets, concepts) from a new snapshot + related substrate. Returns a page map; Task A3 git-ops writes + commits.',
   'curriculum-chat': 'Faculty-facing chat over the curriculum wiki. Tool-using agent reads / lists / searches wiki pages and emits a markdown response with structured page citations. Powers Explore\'s "Ask" tab and the future standalone /ask route.',
   'capture-stress-test': 'Adversarial review of a produced Course Outcome Profile: challenges per-finding confidence, surfaces internal contradictions, flags catalog-vs-evidence claims that don\'t hold up. Heavy reasoning tier; one call per on-demand stress-test click.',
-  'capture-employer-chat-agent': 'Per-turn agent loop for employer/partner interview sessions; reads career-destination context, retrieves curriculum evidence, emits structured finding + question + citations.',
-  'capture-employer-synthesis': 'End-of-session synthesis for an employer interview; produces a structured CareerCaptureProfile from the full transcript + retrieved evidence.',
+  'jd-extract': 'One-shot extraction of structured fields from a job description (Docling markdown or pasted text), with per-field confidence scores.',
+  'position-rated-items': 'Generates 10 "experiences worth having" candidates from pages 1-4 inputs + career target sub-competencies. Single-call generator.',
+  'position-interview-agent': 'Per-turn interview agent for page 6 of Position Capture; anchor-probe-confirm posture using pages 1-5 context. Emits AuditResponse-shaped output.',
+  'position-synthesis': 'Synthesis over a completed page 6 interview transcript + upstream page inputs; produces a structured PositionProfile.',
 };
 
 interface CachedSetting {
