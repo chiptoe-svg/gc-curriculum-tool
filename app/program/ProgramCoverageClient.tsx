@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import type {
   MatrixCourse,
@@ -114,6 +114,15 @@ export function ProgramCoverageClient({ slug, initialData }: Props) {
   const [scoringCell, setScoringCell] = useState<string | null>(null);
   const [scoringError, setScoringError] = useState<string | null>(null);
   const [lens, setLens] = useState<Lens>('coverage');
+  // Live elapsed counter while the batch scorer runs. The route scores pairs
+  // sequentially and only returns at the end (no per-pair stream yet), so this
+  // is the "it's working" signal — heavy-tier, ~3–8s per pair.
+  const [scoreElapsed, setScoreElapsed] = useState(0);
+  useEffect(() => {
+    if (!refreshing) { setScoreElapsed(0); return; }
+    const t = setInterval(() => setScoreElapsed(s => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [refreshing]);
 
   // For each (snapshot, target) pair, fast-lookup of cells indexed by
   // sub-competency. The matrix view drives off this.
@@ -254,7 +263,14 @@ export function ProgramCoverageClient({ slug, initialData }: Props) {
             {' '}
             <span className="font-medium text-foreground">{scoredCount}/{totalPairs}</span> pairs scored
           </p>
-          {refreshStatus && <p className="mt-1 text-muted-foreground">{refreshStatus}</p>}
+          {refreshing ? (
+            <p className="mt-1 flex items-center gap-2 text-muted-foreground">
+              <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground/40 border-t-transparent" aria-hidden />
+              Scoring {totalPairs - scoredCount} pair{totalPairs - scoredCount === 1 ? '' : 's'}… {scoreElapsed}s · heavy model, ~3–8s each (usually under 2 min).
+            </p>
+          ) : refreshStatus ? (
+            <p className="mt-1 text-muted-foreground">{refreshStatus}</p>
+          ) : null}
         </div>
         <button
           type="button"
