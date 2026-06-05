@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, jsonb, timestamp, integer, boolean, primaryKey, index, unique } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, jsonb, timestamp, integer, boolean, primaryKey, index, unique, foreignKey } from 'drizzle-orm/pg-core';
 import type { CaptureProfile, CaptureReadiness, CaptureReviewerStatus } from '@/lib/ai/capture/schema';
 
 export const careerTargets = pgTable('career_targets', {
@@ -512,46 +512,73 @@ export const captureMessages = pgTable('capture_messages', {
 }));
 
 /**
- * CareerCapture append-only message log. Parallel to capture_messages
- * (which is course-scoped); this one is partner+career-target-scoped.
- *
- * One session = one interview about one career target. Partners can
- * do multiple interviews across targets (or re-interview a target
- * later); each interview gets its own session_id.
+ * Position Capture append-only message log. One session = one Page 6
+ * interview about one specific position the partner is hiring for.
+ * Renamed from career_capture_messages (CareerCapture v1 retired 2026-06-04).
  */
-export const careerCaptureMessages = pgTable('career_capture_messages', {
+export const positionCaptureMessages = pgTable('position_capture_messages', {
   id: uuid('id').primaryKey().defaultRandom(),
   partnerId: uuid('partner_id').notNull().references(() => partners.id, { onDelete: 'cascade' }),
-  careerTargetId: text('career_target_id').notNull().references(() => careerTargets.id, { onDelete: 'cascade' }),
+  positionCaptureId: uuid('position_capture_id').notNull().references(() => positionCaptures.id, { onDelete: 'cascade' }),
   sessionId: uuid('session_id').notNull(),
   turnIndex: integer('turn_index').notNull(),
-  role: text('role').notNull(),                              // 'user' | 'assistant'
+  role: text('role').notNull(),
   content: text('content'),
   citations: jsonb('citations').$type<Array<{
-    type: 'transcript';
+    type: 'transcript' | 'page-input';
     messageId?: string;
+    pageRef?: string;
     excerpt: string;
   }>>(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({
-  sessionIdx: index('idx_career_capture_messages_session').on(table.partnerId, table.careerTargetId, table.sessionId, table.turnIndex),
-  sessionTurnUnique: unique('uq_career_capture_messages_session_turn').on(table.sessionId, table.turnIndex),
+  sessionIdx: index('idx_position_capture_messages_session').on(table.positionCaptureId, table.sessionId, table.turnIndex),
+  sessionTurnUnique: unique('uq_position_capture_messages_session_turn').on(table.sessionId, table.turnIndex),
 }));
 
 /**
- * CareerCapture finished record. Immutable. Each row = one interview's
- * synthesis output. Re-interviewing the same partner on the same target
- * appends a new row; the latest non-retired row wins for display.
+ * Position Capture row. Drafts live here (status='draft', rolling JSONB inputs).
+ * On submission becomes immutable (status='submitted'); subsequent re-captures
+ * of the same position create a new row with `supersedes` pointing to the old.
+ *
+ * Schema 0029. Renamed from career_captures (CareerCapture v1 retired
+ * 2026-06-04, subsumed by Position Capture v1).
  */
-export const careerCaptures = pgTable('career_captures', {
+export const positionCaptures = pgTable('position_captures', {
   id: uuid('id').primaryKey().defaultRandom(),
   partnerId: uuid('partner_id').notNull().references(() => partners.id, { onDelete: 'cascade' }),
   careerTargetId: text('career_target_id').notNull().references(() => careerTargets.id, { onDelete: 'cascade' }),
-  sessionId: uuid('session_id').notNull(),                   // the interview session that produced this
-  profile: jsonb('profile').notNull(),                       // CareerCaptureProfile JSON
-  model: text('model').notNull(),
+  status: text('status').notNull().default('draft'),                          // 'draft' | 'submitted'
+  company: text('company').notNull(),
+  positionTitle: text('position_title'),                                       // null until partner enters one
+  structuredInputs: jsonb('structured_inputs'),                                // pages 1-4 data
+  ratedSkills: jsonb('rated_skills'),                                          // page 5: { items: [{name, rating}], generatedAt }
+  sourceFiles: jsonb('source_files'),                                          // [{kind, fileName, key, extractedText?}]
+  sessionId: uuid('session_id'),                                               // page 6 interview session (null until page 6 starts)
+  profile: jsonb('profile'),                                                   // PositionProfile JSON (null until submitted+interviewed)
+  model: text('model'),                                                        // synthesis model name
+  completeness: text('completeness'),                                          // 'title-only' | 'structured' | 'rated' | 'interviewed'
+  supersedes: uuid('supersedes'),                                              // self-FK; set when partner re-captures
   retiredAt: timestamp('retired_at', { withTimezone: true }),
+  submittedAt: timestamp('submitted_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 }, (table) => ({
-  partnerTargetIdx: index('idx_career_captures_partner_target').on(table.partnerId, table.careerTargetId, table.createdAt),
+  partnerTargetIdx: index('idx_position_captures_partner_target').on(table.partnerId, table.careerTargetId, table.createdAt),
+  targetStatusIdx: index('idx_position_captures_target_status').on(table.careerTargetId, table.status),
+  supersedesIdx: index('idx_position_captures_supersedes').on(table.supersedes),
+  supersedesFk: foreignKey({ columns: [table.supersedes], foreignColumns: [table.id], name: 'fk_position_captures_supersedes' }).onDelete('set null'),
 }));
+
+/**
+ * Derived: per-career-target KUD+ aggregate, recomputed from non-superseded
+ * position_captures with status='submitted' and completeness='interviewed'.
+ * v1 aggregate function is deterministic Markdown side-by-side (no AI);
+ * v2 may swap in AI synthesis.
+ */
+export const careerTargetKudAggregate = pgTable('career_target_kud_aggregate', {
+  careerTargetId: text('career_target_id').primaryKey().references(() => careerTargets.id, { onDelete: 'cascade' }),
+  aggregateMarkdown: text('aggregate_markdown').notNull(),
+  derivedFromPositionIds: jsonb('derived_from_position_ids').$type<string[]>().notNull(),
+  stale: boolean('stale').notNull().default(false),
+  generatedAt: timestamp('generated_at', { withTimezone: true }).defaultNow().notNull(),
+});
