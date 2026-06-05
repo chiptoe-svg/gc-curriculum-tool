@@ -3,6 +3,9 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Page1Section } from './Page1Section';
+import { Page2Section } from './Page2Section';
+import { Page3Section } from './Page3Section';
+import { Page4Section } from './Page4Section';
 
 interface CaptureSnapshot {
   id: string;
@@ -69,7 +72,34 @@ export function PositionWizard({ token, step, capture, target }: Props) {
           onChange={(patch) => setDraft(d => ({ ...d, ...patch }))}
         />
       )}
-      {step >= 2 && step <= 6 && (
+      {step === 2 && (
+        <Page2Section
+          token={token}
+          captureId={draft.id}
+          structuredInputs={draft.structuredInputs}
+          positionTitle={draft.positionTitle}
+          onChange={(patch) => setDraft(d => ({ ...d, ...patch }))}
+        />
+      )}
+      {step === 3 && (
+        <Page3Section
+          token={token}
+          captureId={draft.id}
+          structuredInputs={draft.structuredInputs}
+          positionTitle={draft.positionTitle}
+          onChange={(patch) => setDraft(d => ({ ...d, ...patch }))}
+        />
+      )}
+      {step === 4 && (
+        <Page4Section
+          token={token}
+          captureId={draft.id}
+          structuredInputs={draft.structuredInputs}
+          positionTitle={draft.positionTitle}
+          onChange={(patch) => setDraft(d => ({ ...d, ...patch }))}
+        />
+      )}
+      {(step === 5 || step === 6) && (
         <div className="rounded-md border bg-card p-6">
           <p className="text-sm text-muted-foreground">Page {step} content lands in the next task.</p>
         </div>
