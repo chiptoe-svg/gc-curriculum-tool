@@ -5,7 +5,7 @@ import {
   bumpLastActive,
   logPartnerEvent,
 } from '@/lib/partners/queries';
-import { getPartnerStats } from '@/lib/partners/stats';
+import { listPositionsByPartner } from '@/lib/db/position-capture-queries';
 import { listTargets } from '@/lib/db/career-targets-queries';
 import { WelcomeScreen } from './WelcomeScreen';
 import { PartnerDashboard } from './PartnerDashboard';
@@ -35,11 +35,11 @@ export default async function PartnerLandingPage({ params }: Props) {
     await bumpLastActive(partner.id);
   }
 
-  const [stats, allTargets] = await Promise.all([
-    getPartnerStats(partner.id),
+  const [positions, allTargets] = await Promise.all([
+    listPositionsByPartner(partner.id),
     listTargets(),
   ]);
-  const hasActivity = stats.drafts + stats.submitted + stats.ratingsCount > 0;
+  const hasActivity = positions.length > 0;
 
   if (!hasActivity) {
     return <WelcomeScreen partner={partner} token={token} />;
@@ -47,8 +47,8 @@ export default async function PartnerLandingPage({ params }: Props) {
   return (
     <PartnerDashboard
       partner={partner}
-      stats={stats}
       token={token}
+      positions={positions}
       targets={allTargets.map(t => ({ id: t.id, name: t.name }))}
     />
   );

@@ -20,10 +20,10 @@ export function WelcomeScreen({ partner, token }: Props) {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Link
-          href={`/partners/${encodeURIComponent(token)}/submit`}
+          href={`/partners/${encodeURIComponent(token)}/positions/new`}
           className="block rounded-lg border border-slate-200 bg-white p-6 hover:border-slate-400"
         >
-          <div className="text-lg font-medium">Describe a position you hire for</div>
+          <div className="text-lg font-medium">Describe a position</div>
           <p className="mt-2 text-sm text-slate-600">
             Pick the closest match from our career targets, then tell us about the actual role.
           </p>
