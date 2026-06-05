@@ -348,6 +348,77 @@ describe('per-prereq measured-vs-intended pool', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Task 4 — intended-basis seam: wrapper feeds both measured+intended to the
+// pure engine.  These pure-function cases prove the contracts the wrapper
+// relies on.
+// ---------------------------------------------------------------------------
+describe('intended-basis seam (Task 4)', () => {
+  // A relied prereq whose ONLY data is an intended row must produce
+  // basis:'intended' and a real status (gap/met), NOT no_data.
+  it('intended-only prereq → basis=intended, NOT no_data', () => {
+    const edges: RelyEdge[] = [edge('B', 'X', null, null, 3)];
+    const del: DeliveredAttainment[] = [
+      delivered('B', 'X', null, null, 4, 'intended'),
+    ];
+    const gaps = computeGapsFromInputs(edges, del);
+    const g = gapFor(gaps, 'X');
+    expect(g.basis).toBe('intended');
+    expect(g.status).not.toBe('no_data');
+    expect(g.delivered.d).toBe(4);
+    expect(g.gap.d).toBe(0);
+    expect(g.status).toBe('met');
+  });
+
+  // Intended-only prereq that falls SHORT of needed → gap, not no_data.
+  it('intended-only prereq delivering below needed → basis=intended, status=gap', () => {
+    const edges: RelyEdge[] = [edge('B', 'X', null, null, 4)];
+    const del: DeliveredAttainment[] = [
+      delivered('B', 'X', null, null, 2, 'intended'),
+    ];
+    const gaps = computeGapsFromInputs(edges, del);
+    const g = gapFor(gaps, 'X');
+    expect(g.basis).toBe('intended');
+    expect(g.status).toBe('gap');
+    expect(g.gap.d).toBe(2);
+  });
+
+  // When the wrapper pushes BOTH measured and intended for the same prereq,
+  // the measured row wins (per-prereq pool logic suppresses the intended row).
+  // This mirrors the wrapper emitting both and relying on the engine to pick.
+  it('both measured + intended pushed for same prereq → measured wins (basis=measured, lower depth used)', () => {
+    const edges: RelyEdge[] = [edge('B', 'X', null, null, 4)];
+    // wrapper emits: measured d=2, intended d=5 for the same prereq B
+    const del: DeliveredAttainment[] = [
+      delivered('B', 'X', null, null, 2, 'measured'),
+      delivered('B', 'X', null, null, 5, 'intended'),
+    ];
+    const gaps = computeGapsFromInputs(edges, del);
+    const g = gapFor(gaps, 'X');
+    // measured pool wins: delivered=2, not 5
+    expect(g.basis).toBe('measured');
+    expect(g.delivered.d).toBe(2);
+    expect(g.gap.d).toBe(2); // needed 4, got 2
+    expect(g.status).toBe('gap');
+  });
+
+  // Wrapper pushes intended for a prereq with NO snapshot (no measured row).
+  // Ensures no_data does NOT fire when only intended data is available.
+  it('no measured data for prereq (no snapshot) → intended row prevents no_data', () => {
+    // Simulates: wrapper found no snapshot for prereq B but has intended data.
+    // Only intended row is in the pool.
+    const edges: RelyEdge[] = [edge('B', 'X', null, null, 2)];
+    const del: DeliveredAttainment[] = [
+      delivered('B', 'X', null, null, 3, 'intended'),
+    ];
+    const gaps = computeGapsFromInputs(edges, del);
+    const g = gapFor(gaps, 'X');
+    expect(g.basis).toBe('intended');
+    expect(g.status).toBe('met');
+    expect(g.delivered.d).toBe(3);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Edge case: empty input
 // ---------------------------------------------------------------------------
 describe('edge cases', () => {

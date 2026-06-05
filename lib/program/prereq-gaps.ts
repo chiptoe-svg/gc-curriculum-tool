@@ -28,6 +28,7 @@ import {
   subCompetencies,
 } from '@/lib/db/schema';
 import { listEdgesForFocal } from '@/lib/db/prerequisite-edge-queries';
+import { getIntendedCoverageForCourses } from '@/lib/db/courses-queries';
 
 // ---------------------------------------------------------------------------
 // Types (exported for callers + tests)
@@ -218,11 +219,11 @@ export interface PrereqGapResult {
  *        (snapshotId, careerTargetId, subCompetencyId).
  *     d. If found → DeliveredAttainment{ basis: 'measured', k/u/d from depths }.
  *        If not found → contributes nothing (will surface as no_data).
- *  3. INTENDED-BASIS SEAM (not yet wired):
- *     The rough-pass increment will add `basis:'intended'` rows here by
- *     reading incomingExpectationSchema or syllabus-level coverage. They
- *     slot in as additional DeliveredAttainment entries; the pure engine
- *     already handles them (measured wins over intended via the pool filter).
+ *  3. INTENDED-BASIS SEAM (wired):
+ *     `course_intended_coverage` rows are batch-loaded for all distinct
+ *     prereq courses and pushed as `basis:'intended'` DeliveredAttainment
+ *     entries alongside any measured rows. The pure engine applies per-prereq
+ *     measured-beats-intended logic; no precedence code is needed here.
  *  4. Call computeGapsFromInputs(edges, delivered) and return.
  */
 export async function computePrereqGaps(
@@ -250,6 +251,16 @@ export async function computePrereqGaps(
     ).values(),
   );
 
+  // INTENDED-BASIS SEAM — batch-load intended coverage for all distinct prereq courses
+  const distinctPrereqCodes = Array.from(
+    new Set(relyEdges.map((e) => e.prereqCourseCode)),
+  );
+  const intendedRows = await getIntendedCoverageForCourses(distinctPrereqCodes);
+  // Build lookup: `${courseCode}::${subCompetencyId}` → IntendedCoverageRow
+  const intendedLookup = new Map(
+    intendedRows.map((r) => [`${r.courseCode}::${r.subCompetencyId}`, r]),
+  );
+
   const deliveredAttainments: DeliveredAttainment[] = [];
 
   for (const pair of pairs) {
@@ -262,7 +273,21 @@ export async function computePrereqGaps(
       .where(eq(subCompetencies.id, subCompetencyId))
       .limit(1);
 
-    if (!subComp) continue; // sub-comp not found — skip (no_data)
+    if (!subComp) {
+      // sub-comp not found — still emit intended if available
+      const intRow = intendedLookup.get(`${prereqCourseCode}::${subCompetencyId}`);
+      if (intRow) {
+        deliveredAttainments.push({
+          prereqCourseCode,
+          subCompetencyId,
+          k: intRow.intendedK,
+          u: intRow.intendedU,
+          d: intRow.intendedD,
+          basis: 'intended',
+        });
+      }
+      continue;
+    }
 
     // (b) Latest non-retired snapshot for the prereq course
     const [snapshot] = await db
@@ -278,7 +303,21 @@ export async function computePrereqGaps(
       .orderBy(desc(courseCaptureSnapshots.createdAt))
       .limit(1);
 
-    if (!snapshot) continue; // no snapshot → no_data
+    if (!snapshot) {
+      // No snapshot — emit intended if available, then continue
+      const intRow = intendedLookup.get(`${prereqCourseCode}::${subCompetencyId}`);
+      if (intRow) {
+        deliveredAttainments.push({
+          prereqCourseCode,
+          subCompetencyId,
+          k: intRow.intendedK,
+          u: intRow.intendedU,
+          d: intRow.intendedD,
+          basis: 'intended',
+        });
+      }
+      continue;
+    }
 
     // (c) Coverage row for (snapshotId, careerTargetId, subCompetencyId)
     const [coverage] = await db
@@ -297,7 +336,21 @@ export async function computePrereqGaps(
       )
       .limit(1);
 
-    if (!coverage) continue; // no coverage row → no_data
+    if (!coverage) {
+      // No coverage row — emit intended if available, then continue
+      const intRow = intendedLookup.get(`${prereqCourseCode}::${subCompetencyId}`);
+      if (intRow) {
+        deliveredAttainments.push({
+          prereqCourseCode,
+          subCompetencyId,
+          k: intRow.intendedK,
+          u: intRow.intendedU,
+          d: intRow.intendedD,
+          basis: 'intended',
+        });
+      }
+      continue;
+    }
 
     // (d) Emit a measured attainment row
     deliveredAttainments.push({
@@ -309,12 +362,20 @@ export async function computePrereqGaps(
       basis: 'measured',
     });
 
-    // INTENDED-BASIS SEAM:
-    // When the rough-pass increment is implemented, add DeliveredAttainment
-    // entries with basis:'intended' here (e.g. from incomingExpectationSchema
-    // or a syllabus-level coverage pass). The pure engine already handles them:
-    // measured rows in the pool suppress intended rows for the same
-    // (prereqCourseCode, subCompetencyId) pair. No engine change needed.
+    // INTENDED-BASIS SEAM — also push intended row if one exists for this pair.
+    // Both rows are emitted; the pure engine's per-prereq pool logic selects
+    // measured over intended for the same prereq, so no precedence code is needed here.
+    const intRow = intendedLookup.get(`${prereqCourseCode}::${subCompetencyId}`);
+    if (intRow) {
+      deliveredAttainments.push({
+        prereqCourseCode,
+        subCompetencyId,
+        k: intRow.intendedK,
+        u: intRow.intendedU,
+        d: intRow.intendedD,
+        basis: 'intended',
+      });
+    }
   }
 
   // Step 4 — delegate to pure engine
