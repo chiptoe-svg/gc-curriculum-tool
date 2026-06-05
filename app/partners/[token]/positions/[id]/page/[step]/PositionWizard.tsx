@@ -7,6 +7,7 @@ import { Page2Section } from './Page2Section';
 import { Page3Section } from './Page3Section';
 import { Page4Section } from './Page4Section';
 import { Page5Section, type RatedSkillsValue } from './Page5Section';
+import { Page6Section } from './Page6Section';
 
 interface CaptureSnapshot {
   id: string;
@@ -116,9 +117,11 @@ export function PositionWizard({ token, step, capture, target }: Props) {
         />
       )}
       {step === 6 && (
-        <div className="rounded-md border bg-card p-6">
-          <p className="text-sm text-muted-foreground">Page 6 content lands in the next task.</p>
-        </div>
+        <Page6Section
+          token={token}
+          captureId={draft.id}
+          positionTitle={draft.positionTitle}
+        />
       )}
 
       <nav className="mt-6 flex items-center justify-between">
@@ -131,14 +134,16 @@ export function PositionWizard({ token, step, capture, target }: Props) {
           ← Back
         </button>
         <div className="flex gap-2">
-          <button
-            type="button"
-            disabled={saving || !draft.positionTitle}
-            onClick={() => saveAndGo('done', step === 1 ? 'title-only' : step <= 4 ? 'structured' : 'rated')}
-            className="rounded-md border px-3 py-1.5 text-sm font-medium"
-          >
-            Save &amp; finish later
-          </button>
+          {step < 6 && (
+            <button
+              type="button"
+              disabled={saving || !draft.positionTitle}
+              onClick={() => saveAndGo('done', step === 1 ? 'title-only' : step <= 4 ? 'structured' : 'rated')}
+              className="rounded-md border px-3 py-1.5 text-sm font-medium"
+            >
+              Save &amp; finish later
+            </button>
+          )}
           {step < 6 && (
             <button
               type="button"
