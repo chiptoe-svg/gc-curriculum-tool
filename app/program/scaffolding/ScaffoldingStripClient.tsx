@@ -26,7 +26,7 @@ interface Row {
   scaffoldingStatus: 'well_scaffolded' | 'top_heavy' | 'bottom_heavy' | 'coverage_only' | 'brittle_scaffold' | 'not_addressed';
   phases: { introduction: boolean; practice: boolean; integration: boolean };
   cumulativePfScore: number;
-  pfStatus: 'well_developed' | 'developing' | 'thin' | 'absent';
+  pfStatus: 'well_developed' | 'developing' | 'thin' | 'absent' | 'no_data';
 }
 interface CourseHeader {
   snapshotId: string;
@@ -69,12 +69,19 @@ function statusChip(s: Row['scaffoldingStatus']): { label: string; cls: string }
 }
 
 function pfChip(s: Row['pfStatus'], cum: number): { label: string; cls: string } {
-  const label = `${s.replace('_', '-')} · ${cum.toFixed(2)}`;
+  if (s === 'no_data') {
+    return { label: 'no PF data', cls: 'bg-stone-50 text-stone-400 italic' };
+  }
+  const label = `${s.replaceAll('_', '-')} · ${cum.toFixed(2)}`;
   switch (s) {
     case 'well_developed': return { label, cls: 'bg-emerald-100 text-emerald-900' };
     case 'developing':     return { label, cls: 'bg-amber-100 text-amber-900' };
     case 'thin':           return { label, cls: 'bg-orange-100 text-orange-900' };
     case 'absent':         return { label, cls: 'bg-stone-100 text-stone-700' };
+    default: {
+      const _exhaustive: never = s;
+      return { label: String(_exhaustive), cls: 'bg-stone-100 text-stone-700' };
+    }
   }
 }
 
@@ -148,7 +155,7 @@ export function ScaffoldingStripClient({ slug, targets, selectedTargetId }: Prop
                             className={`relative h-6 w-full rounded ${depthBg(cell.dDepth)} ring-1 ring-stone-300`}
                             title={`K=${cell.kDepth ?? '·'} U=${cell.uDepth ?? '·'} D=${cell.dDepth}`}
                           >
-                            <span className={`absolute left-0.5 top-0.5 h-1.5 w-1.5 rounded-full ${pfDotColor(cell.pfConditions)}`} />
+                            <span className={`absolute left-0.5 top-0.5 h-1.5 w-1.5 rounded-full ${pfDotColor(cell.pfConditions)}`} title="Productive-failure conditions are assessed at the course level and shown against each sub-competency this course contributes to." />
                             {cell.pfConditions?.structured_post_mortem === 'present' && (
                               <span className="absolute right-0.5 top-0 text-[8px] font-bold text-emerald-700">R</span>
                             )}
@@ -170,11 +177,14 @@ export function ScaffoldingStripClient({ slug, targets, selectedTargetId }: Prop
               })}
             </tbody>
           </table>
+          <p className="mt-2 px-2 text-[11px] text-stone-500">
+            PF dots reflect course-level productive-failure conditions applied to each sub-competency the course contributes to. &ldquo;no PF data&rdquo; means Audit Area 7 was not assessed for that course (distinct from &ldquo;absent&rdquo;).
+          </p>
         </div>
       )}
 
       <div className="space-y-1 text-[11px] text-muted-foreground">
-        <p><span className="inline-block h-2 w-2 rounded-full bg-emerald-500 mr-1.5 align-middle" />green dot = ≥3 PF conditions present · <span className="inline-block h-2 w-2 rounded-full bg-amber-400 mx-1.5 align-middle" />amber = ≥1.5 · <span className="inline-block h-2 w-2 rounded-full bg-rose-500 mx-1.5 align-middle" />red = &lt;1.5 or no data</p>
+        <p><span className="inline-block h-2 w-2 rounded-full bg-emerald-500 mr-1.5 align-middle" />green dot = ≥3 PF conditions present · <span className="inline-block h-2 w-2 rounded-full bg-amber-400 mx-1.5 align-middle" />amber = ≥1.5 · <span className="inline-block h-2 w-2 rounded-full bg-rose-500 mx-1.5 align-middle" />red = &lt;1.5 · <span className="inline-block h-2 w-2 rounded-full bg-stone-300 mx-1.5 align-middle" />grey = PF not assessed</p>
         <p>R = structured post-mortem present · r = partial · cell background = D depth (0–5, light→saturated)</p>
       </div>
     </div>
