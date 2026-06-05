@@ -73,7 +73,9 @@ Step 3's two open questions (threshold, hard-vs-soft) collapse: **soft, always**
 - **No migration / no schema change** — the band is computed from existing fields. (A future option to *persist* a derived `evidence_level` is in Open Decisions, not v1.)
 - **No change to the depth scores or the synthesis prompts' scoring** — only the credibility annotation is added.
 
-## Open decisions (for review)
+## Decisions (resolved 2026-06-04 — went with all recommendations)
+
+All four resolved to the recommended option: **3 bands**; **defer** prompt-vs-rubric typing (revisit via the Canvas rubric-✓ signal); **compute at read time** (no persist); **light prompt nudge**, bundled whenever rubric typing lands. The detail + rationale per item:
 
 1. **Band granularity.** Three bands (claimed / materials-supported / artifact-verified) for v1, or the full 0–4? *Recommendation: three bands now* — they're honestly derivable; 0–4 is the conceptual frame in the docs.
 2. **Prompt-vs-rubric (L1 vs L2).** Distinguishing them needs material-type classification (is the cited chunk a rubric?). *Recommendation: defer* — collapse to "materials-supported" for v1; revisit if the ingestion pipeline starts tagging material types.
