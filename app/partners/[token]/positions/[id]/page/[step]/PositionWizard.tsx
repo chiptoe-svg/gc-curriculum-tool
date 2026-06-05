@@ -35,6 +35,12 @@ export function PositionWizard({ token, step, capture, target }: Props) {
     () => (capture.ratedSkills?.items.filter(it => typeof it.rating === 'number').length ?? 0) >= 5,
   );
 
+  function completenessFor(s: number): 'title-only' | 'structured' | 'rated' {
+    if (s === 1) return 'title-only';
+    if (s <= 4) return 'structured';
+    return step5Valid ? 'rated' : 'structured';
+  }
+
   async function saveAndGo(next: number | 'done', completeness?: 'title-only' | 'structured' | 'rated') {
     setError(null);
     startSave(async () => {
@@ -139,7 +145,7 @@ export function PositionWizard({ token, step, capture, target }: Props) {
             <button
               type="button"
               disabled={saving || !draft.positionTitle}
-              onClick={() => saveAndGo('done', step === 1 ? 'title-only' : step <= 4 ? 'structured' : 'rated')}
+              onClick={() => saveAndGo('done', completenessFor(step))}
               className="rounded-md border px-3 py-1.5 text-sm font-medium"
             >
               Save &amp; finish later
@@ -153,7 +159,7 @@ export function PositionWizard({ token, step, capture, target }: Props) {
                 (step === 1 && !draft.positionTitle) ||
                 (step === 5 && !step5Valid)
               }
-              onClick={() => saveAndGo(step + 1, step === 5 ? 'rated' : undefined)}
+              onClick={() => saveAndGo(step + 1, completenessFor(step))}
               className="rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground disabled:opacity-50"
             >
               Next →

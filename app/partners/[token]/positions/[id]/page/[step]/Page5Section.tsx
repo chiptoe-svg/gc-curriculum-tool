@@ -262,6 +262,7 @@ function ExperienceCard({ index, item, onUpdate, onRemove }: CardProps) {
               step={1}
               value={rated ? item.rating : 4}
               onChange={e => onUpdate({ rating: Number(e.target.value) })}
+              onClick={(e) => { if (!rated) onUpdate({ rating: Number((e.currentTarget as HTMLInputElement).value) }); }}
               className="flex-1 accent-slate-800"
             />
             <span

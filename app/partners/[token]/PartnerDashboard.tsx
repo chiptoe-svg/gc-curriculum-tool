@@ -13,6 +13,16 @@ interface Props {
   targets: TargetOption[];
 }
 
+function resumeStep(c: string | null): number {
+  switch (c) {
+    case 'interviewed':
+    case 'rated': return 6;
+    case 'structured': return 5;
+    case 'title-only': return 2;
+    default: return 1;
+  }
+}
+
 export function PartnerDashboard({ partner, token, positions, targets }: Props) {
   const targetMap = new Map(targets.map(t => [t.id, t.name]));
 
@@ -99,7 +109,7 @@ export function PartnerDashboard({ partner, token, positions, targets }: Props) 
                       </div>
                       {pos.status === 'draft' && (
                         <Link
-                          href={`/partners/${encodeURIComponent(token)}/positions/${pos.id}/page/1`}
+                          href={`/partners/${encodeURIComponent(token)}/positions/${pos.id}/page/${resumeStep(pos.completeness)}`}
                           className="ml-4 shrink-0 rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
                         >
                           Resume draft
