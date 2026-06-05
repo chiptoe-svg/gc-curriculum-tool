@@ -40,7 +40,8 @@ type PromptName =
   | 'position-synthesis'
   | 'wiki-update'
   | 'curriculum-chat'
-  | 'prereq-edge-seed';
+  | 'prereq-edge-seed'
+  | 'intended-skills-extract';
 
 interface ParsedPrompt {
   frontmatter: Record<string, unknown>;

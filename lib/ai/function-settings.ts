@@ -36,6 +36,7 @@ export const AI_FUNCTION_IDS = [
   'position-interview-agent',
   'position-synthesis',
   'prereq-edge-seed',
+  'intended-skills-extract',
 ] as const;
 export type AIFunctionId = (typeof AI_FUNCTION_IDS)[number];
 
@@ -143,6 +144,13 @@ export const DEFAULT_TIERS: Record<AIFunctionId, Exclude<ModelTier, 'custom'>> =
   // Default (not light) because it must reason across the full sub-comp
   // catalog + match catalog ids precisely to avoid hallucinated join keys.
   'prereq-edge-seed': 'default',
+  // Default tier. Reads a course's catalog text (description, learning
+  // objectives, major projects, skills required) + the sub-competency
+  // catalog and emits INTENDED (syllabus-asserted, NOT verified-attainment)
+  // K/U/D per sub-competency. Default because it must align catalog prose
+  // against the full sub-comp catalog and emit exact catalog ids —
+  // same reasoning load as prereq-edge-seed; light would risk id errors.
+  'intended-skills-extract': 'default',
 };
 
 export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
@@ -166,6 +174,7 @@ export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
   'position-interview-agent': 'Position interview agent',
   'position-synthesis': 'Position interview synthesis',
   'prereq-edge-seed': 'Prerequisite edge seeder',
+  'intended-skills-extract': 'Intended skills extractor',
 };
 
 export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
@@ -189,6 +198,7 @@ export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
   'position-interview-agent': 'Per-turn interview agent for page 6 of Position Capture; anchor-probe-confirm posture using pages 1-5 context. Emits AuditResponse-shaped output.',
   'position-synthesis': 'Synthesis over a completed page 6 interview transcript + upstream page inputs; produces a structured PositionProfile.',
   'prereq-edge-seed': 'Reads a focal course\'s free-text prerequisites + incoming-expectation statements + the catalog sub-competencies and proposes direct, skill-tagged prerequisite edges with expected K/U/D depths.',
+  'intended-skills-extract': 'Reads a course\'s catalog text (description, learning objectives, major projects, skills required) + the sub-competency catalog and emits INTENDED (syllabus-asserted, NOT verified student attainment) K/U/D per sub-competency the catalog plausibly implies.',
 };
 
 interface CachedSetting {
