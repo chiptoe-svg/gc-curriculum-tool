@@ -105,6 +105,7 @@ Conform exactly to the JSON schema provided in the structured-output request. Th
       "open_ended_problems": "present" | "partial" | "absent",
       "revision_cycles": "present" | "partial" | "absent",
       "structured_post_mortem": "present" | "partial" | "absent",
+      "structured_post_mortem_evidence": [ { "type": "chunk" | "instructor", "chunkId": "...", "messageId": null, "excerpt": "..." } ] | null,
       "max_supporting_depth": 0-5,
       "notes": [ "<one-line finding tying a specific assignment to a condition>", ... ]
     },
@@ -176,10 +177,10 @@ in the transcript — i.e., the transcript contains explicit discussion of
 generate-then-consolidate structure, ill-structured / open-ended problems,
 revision cycles with consequential feedback, structured post-mortem, or the
 course's domain depth as it relates to problem-solving capacity. If the
-auditor never asked about these conditions, omit the entire
-`productive_failure_conditions` field (it is optional in the Zod schema). Do
-NOT infer the conditions from absence — silence in the transcript means
-"unknown," not "absent."
+auditor never asked about these conditions, set `productive_failure_conditions`
+to `null` (do NOT omit the field — under OpenAI strict mode it must be present
+as `null`, not absent). Do NOT infer the conditions from absence — silence in
+the transcript means "unknown," not "absent."
 
 If you do emit the block: each of the four condition fields takes one of
 `present` / `partial` / `absent`, judged from the transcript and materials.
@@ -191,6 +192,8 @@ Report's revision cycle responds to specific rubric critique on submission 1 —
 present"). When `max_supporting_depth` is high (≥4) but the four condition
 fields are mostly `absent`, this is Kapur's "unproductive success" pattern —
 surface it explicitly in `notes`.
+
+`structured_post_mortem` may be `present` or `partial` ONLY when you can cite a specific graded post-mortem / debrief artifact in `structured_post_mortem_evidence` (a real chunk or instructor-turn citation, same provenance rules as competency citations). A generic "reflect on your learning" prompt with no graded artifact is `absent` — do not credit reflection you cannot ground. Emit `null` for `structured_post_mortem_evidence` when `structured_post_mortem` is `absent`.
 
 # Hard rules (the structured-output schema will reject violations)
 
