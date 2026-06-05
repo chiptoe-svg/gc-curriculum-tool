@@ -174,6 +174,13 @@
   table.ref td strong { color: var(--text); }
   table.ref td code { font-size: 0.82em; }
 
+  .st { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.06em; text-transform: uppercase; padding: 2px 7px; border-radius: 3px; white-space: nowrap; font-weight: 500; display: inline-block; }
+  .st-enforced { background: #e2f0e4; color: #2e7d3a; }
+  .st-partial { background: #f6ecd4; color: #97670f; }
+  .st-stipulated { background: #e2eaf2; color: #2A5C8C; }
+  .st-unbuilt { background: #f1ddd8; color: #b03030; }
+  td .src { color: var(--text-faint); font-size: 0.85em; }
+
   .doc-foot { margin-top: 96px; padding-top: 24px; border-top: 1px solid var(--border-strong); font-family: var(--mono); font-size: 11px; color: var(--text-faint); letter-spacing: 0.05em; }
 
   @media (max-width: 900px) {
@@ -204,7 +211,8 @@
     <a class="nav-link" href="#infrastructure">§9 Infrastructure — The Pieces</a>
     <a class="nav-link" href="#cost-and-discipline">§10 Cost &amp; Discipline</a>
     <a class="nav-link" href="#connections">§11 Connections</a>
-    <a class="nav-link" href="#further-reading">§12 Further Reading</a>
+    <a class="nav-link" href="#aspiration-to-implementation">§12 Aspiration → Implementation</a>
+    <a class="nav-link" href="#further-reading">§13 Further Reading</a>
     <div class="nav-group-label" style="margin-top: 18px;">Related</div>
     <a class="nav-link" href="./executive-brief.html">Executive Brief</a>
     <a class="nav-link" href="./superpowers/vision/gc-curriculum-tool-vision.html">Vision Document</a>
@@ -346,7 +354,7 @@
     <p><strong>The five foundational competencies are a "defensible working set," not "the right set"</strong> — revisable as the corpus grows. And the <code>artifact_verified</code> evidence band is defined but currently unreachable in code (no student-artifact citation type exists yet), so credibility bands top out at "materials-supported" today.</p>
   </div>
 
-  <p>The full academic case — theoretical grounding, relationship to Constructive Alignment, the evidence for the depth-scale extension — is in the <a href="./background.html">Background document</a>. The problem-solving position is detailed in the <a href="./problem-solving-deep-dive.html">problem-solving deep-dive</a>; the 3-Act accounting in the <a href="./three-act-deep-dive.html">3-Act deep-dive</a>.</p>
+  <p>The full academic case — theoretical grounding, relationship to Constructive Alignment, the evidence for the depth-scale extension — is in the <a href="./background.html">Background document</a>. The problem-solving position is detailed in the <a href="./problem-solving-deep-dive.html">problem-solving deep-dive</a>; the 3-Act accounting in the <a href="./three-act-deep-dive.html">3-Act deep-dive</a>. And for the question this table only samples — <em>which of these aspirations the running code actually enforces vs. merely guides a model toward vs. leaves stipulated or unbuilt</em> — see the claim-by-claim traceability map in <a href="#aspiration-to-implementation">§12</a>.</p>
 </section>
 
 <section id="two-sides">
@@ -711,8 +719,215 @@
   </div>
 </section>
 
+<section id="aspiration-to-implementation">
+  <h2><span class="num">§ 12</span>Aspiration → Implementation</h2>
+
+  <p>The companion documents — the <a href="./background.html">KUD+ Background</a>, the <a href="./problem-solving-deep-dive.html">problem-solving</a> and <a href="./three-act-deep-dive.html">3-Act</a> deep-dives, and the <a href="./superpowers/vision/gc-curriculum-tool-vision.html">vision</a> — describe what the framework <em>should</em> do. This section traces each load-bearing claim to the code that implements it, and is deliberately candid about the most important distinction in the whole system: the difference between a rule the code <strong>structurally enforces</strong> and one it merely <strong>guides a model toward</strong>. Every row below was verified against the actual schema, prompt, or scoring code.</p>
+
+  <h4>How to read the status</h4>
+  <ul>
+    <li><span class="st st-enforced">enforced</span> — the code structurally guarantees it: a schema guard that <em>rejects</em> violations, a deterministic computation, a DB constraint, or a passing test. The model cannot emit a record that breaks it.</li>
+    <li><span class="st st-partial">partial</span> — implemented, but the guarantee is soft: enforced only by prompt instruction / model discretion, built on the happy path, or incomplete.</li>
+    <li><span class="st st-stipulated">stipulated</span> — a deliberate framework <em>choice</em> the docs themselves flag as invented (not derived), with no enforcing code by design.</li>
+    <li><span class="st st-unbuilt">unbuilt</span> — aspired-to in the docs, not yet implemented anywhere.</li>
+  </ul>
+
+  <div class="callout warn">
+    <div class="callout-title">The honest headline</div>
+    <p>Roughly <strong>a third of the aspiration is genuinely enforced in code.</strong> The course-capture schema guards (foundational null-K/U, the asymmetric evidence thresholds, depth bounds, the structured-post-mortem evidence gate) and the prerequisite-gap engine (ordinal-MAX, basis stamp, direct-edges-only) are real structural guarantees, reached by <code>.parse()</code> on the production path and pinned by tests. The remaining two-thirds splits into <em>prompt-guided</em> rules that depend on model discretion, <em>stipulated</em> framework choices invented by design, and <em>unbuilt</em> end-state aspirations. The single most consequential gap: the tool's headline question — <em>does the curriculum build students toward the careers it claims?</em> — has <strong>both halves built (course-attainment scoring and employer-demand capture) but the join between them wired nowhere</strong>, so Q1 <em>sufficiency</em> remains aspirational even though the coverage matrix looks live.</p>
+  </div>
+
+  <h3>A. The KUD+ scoring contract (course capture)</h3>
+  <table class="ref">
+    <thead><tr><th>Aspirational claim</th><th>What the code actually does</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>K/U/D scored as <strong>three independent dimensions</strong>, never collapsed to one number <span class="src">(background §5)</span></td>
+        <td><code>capture/schema.ts</code> stores <code>k_depth/u_depth/d_depth</code> as three separate fields — dissociation patterns are representable <em>because</em> of this shape. The choice of <em>three</em> categories is the invented part.</td>
+        <td><span class="st st-stipulated">stipulated</span></td>
+      </tr>
+      <tr>
+        <td>Each dimension on a <strong>0–5 depth scale</strong> with named anchors <span class="src">(background §6)</span></td>
+        <td><code>depthSchema = z.number().int().min(0).max(5)</code> rejects out-of-range/non-integer depths on parse. The <em>range</em> is enforced; the 0–5 grain itself is a stipulated invention (the docs call it a "working-hypothesis instrument").</td>
+        <td><span class="st st-enforced">enforced</span></td>
+      </tr>
+      <tr>
+        <td><strong>Evidence-above-zero</strong>, asymmetric: K&gt;1 / U&gt;0 / D&gt;0 require an evidence excerpt <span class="src">(background §7)</span></td>
+        <td>Three Zod <code>.refine()</code> guards in <code>schema.ts</code> reject violators on parse. <strong>Scope caveat:</strong> enforced only at <em>course capture</em> — the program-scoring schema (<code>program-score-coverage.ts</code> <code>coverageCellSchema</code>) has no such guard, so at the matrix layer the same rule is prompt-only.</td>
+        <td><span class="st st-enforced">enforced</span></td>
+      </tr>
+      <tr>
+        <td>Exposure (K1) is a <strong>Know-only event</strong>; U/D begin at active engagement <span class="src">(background §6)</span></td>
+        <td>Lives in the anchor text (<code>depth-anchors.ts</code>, <code>depth-scale.md</code>) and "score the lower value" prompt guidance. No cross-dimension guard forces U/D toward 0 when K=1.</td>
+        <td><span class="st st-partial">partial</span></td>
+      </tr>
+      <tr>
+        <td>Foundationals score <strong>D-only; K/U stored null, not zero</strong> <span class="src">(background §8)</span></td>
+        <td>A <code>.refine()</code> rejects any <code>type:'foundational'</code> row with non-null <code>k_depth</code>/<code>u_depth</code>. A true type distinction in the DB layer.</td>
+        <td><span class="st st-enforced">enforced</span></td>
+      </tr>
+      <tr>
+        <td><strong>All five</strong> baseline foundationals must appear in every profile <span class="src">(background §8)</span></td>
+        <td>Prompt-only: <code>capture-scores.md</code> says they MUST appear, but the schema requires only <code>competencies.min(1)</code> — a profile missing Resilience parses cleanly.</td>
+        <td><span class="st st-partial">partial</span></td>
+      </tr>
+      <tr>
+        <td>Dissociation cases (K-high/U-low, etc.) are <strong>made visible</strong> <span class="src">(background §5)</span></td>
+        <td>Representable (independent fields) and surfaced in the model-authored <code>dimensional_patterns</code> prose, but no deterministic detector labels the named quadrants.</td>
+        <td><span class="st st-partial">partial</span></td>
+      </tr>
+      <tr>
+        <td>Bloom is used <strong>only inside the audit probe</strong>, never stored as data <span class="src">(background §2, §5)</span></td>
+        <td>Enforced by <em>absence</em>: the Bloom probe lives in the chat-agent prompt; there is no <code>bloom_level</code> field anywhere in the profile schema to store it in.</td>
+        <td><span class="st st-enforced">enforced</span></td>
+      </tr>
+      <tr>
+        <td>A read-time <strong>evidence ladder</strong> bands credibility: claimed / materials-supported / artifact-verified <span class="src">(background §7, §12)</span></td>
+        <td><code>evidence-ladder.ts</code> <code>deriveEvidenceBand</code> deterministically returns the first two. <code>artifact_verified</code> is a defined-but-dormant branch — unreachable until a student-artifact citation type exists.</td>
+        <td><span class="st st-partial">partial</span></td>
+      </tr>
+      <tr>
+        <td>Snapshots are <strong>soft-retired, never purged</strong> — the historical trail survives <span class="src">(vision)</span></td>
+        <td><code>retiredAt</code> column + no hard-DELETE route; downstream views filter on non-retired. Hard deletion is structurally not exposed.</td>
+        <td><span class="st st-enforced">enforced</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>B. Problem-solving &amp; scaffolding</h3>
+  <table class="ref">
+    <thead><tr><th>Aspirational claim</th><th>What the code actually does</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Problem-solving is a <strong>program-level emergent property</strong> — no per-course or per-graduate score <span class="src">(deep-dive II/IV)</span></td>
+        <td>Enforced by absence: there is no problem-solving scalar anywhere; the only signals are cross-program aggregates (<code>scaffolding.ts</code> <code>aggregateSubCompetency</code>).</td>
+        <td><span class="st st-enforced">enforced</span></td>
+      </tr>
+      <tr>
+        <td>Audit Area 7 records productive-failure conditions: <strong>four qualitative</strong> (present/partial/absent) <strong>+ one numeric</strong> supporting depth <span class="src">(deep-dive II)</span></td>
+        <td><code>productiveFailureConditionsSchema</code> enforces the <em>shape</em> (the four enums + the 0–5 depth). <em>Which</em> value each condition gets is model discretion under prompt guidance.</td>
+        <td><span class="st st-partial">partial</span></td>
+      </tr>
+      <tr>
+        <td>A credited <strong>structured post-mortem must cite a graded artifact</strong> <span class="src">(deep-dive II/III)</span></td>
+        <td>A <code>.superRefine()</code> rejects the block when post-mortem is above "absent" with no citation — the same evidence-above-zero pattern, on the reflection axis.</td>
+        <td><span class="st st-enforced">enforced</span></td>
+      </tr>
+      <tr>
+        <td>Scoring model is <strong>depth × productive-failure × reflection</strong> <span class="src">(deep-dive III)</span></td>
+        <td>Deterministic functions in <code>scaffolding.ts</code> (a non-linear depth ramp × a reflection multiplier × a condition score), test-pinned. The specific weights/thresholds are stipulated calibration, not derived.</td>
+        <td><span class="st st-enforced">enforced</span></td>
+      </tr>
+      <tr>
+        <td>The audit <strong>flags "unproductive success"</strong> (high depth + absent struggle = brittle competence) <span class="src">(deep-dive I/II)</span></td>
+        <td>Prompt-only: three prompt files tell the model to name it in the notes array. The data substrate (depth and conditions stored separately) exists, but no code computes the flag.</td>
+        <td><span class="st st-partial">partial</span></td>
+      </tr>
+      <tr>
+        <td><strong>Not-assessed ≠ absent</strong>: a never-probed course records no-data, excluded from rollups, never scored 0 <span class="src">(deep-dive II)</span></td>
+        <td>A null PF block contributes <code>null</code> (not 0); the aggregate returns a first-class <code>no_data</code> band; <code>PF_CONTRACT_EPOCH</code> reclassifies legacy blocks. All three test-pinned.</td>
+        <td><span class="st st-enforced">enforced</span></td>
+      </tr>
+      <tr>
+        <td>Cumulative depth × failure × reflection over four years yields <strong>transferable problem-solving</strong> <span class="src">(deep-dive I/II)</span></td>
+        <td>The docs self-label this a hypothesis. No code links snapshots to graduate outcomes; the data-collection scaffolding exists, the claim it would test does not.</td>
+        <td><span class="st st-unbuilt">unbuilt</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>C. Program structure (the 3-Act model)</h3>
+  <table class="ref">
+    <thead><tr><th>Aspirational claim</th><th>What the code actually does</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>The <strong>named acts</strong> (Foundations &amp; Agency → Integration → Specialty), the act↔course map, the agency pairing, the mid-Junior "aha" timing <span class="src">(3-Act V)</span></td>
+        <td>None of it is in the scoring engine. The scaffolding pipeline orders courses by catalog <code>level</code>, not act membership; "three-act-structure" exists only as a wiki concept-page slug (prose output, not a scoring input).</td>
+        <td><span class="st st-stipulated">stipulated</span></td>
+      </tr>
+      <tr>
+        <td>Scaffolding maps a <strong>depth-phase sequence</strong>: introduction → practice → integration <span class="src">(3-Act I)</span></td>
+        <td>Deterministic pure functions in <code>scaffolding.ts</code> classify each cell by K/U/D depth bands; test-covered. (Generic phases, decoupled from the named acts.)</td>
+        <td><span class="st st-enforced">enforced</span></td>
+      </tr>
+      <tr>
+        <td>The <strong>brittle-scaffold</strong> diagnostic: a course expects mastery no earlier course introduces <span class="src">(3-Act I)</span></td>
+        <td>Deterministic index comparison (integration cell with no preceding intro/practice cell), pinned by a test, exposed via the live <code>/program/scaffolding</code> route + UI.</td>
+        <td><span class="st st-enforced">enforced</span></td>
+      </tr>
+      <tr>
+        <td>Courses ordered by <strong>act / prerequisite chain</strong> for the analysis <span class="src">(3-Act; spec)</span></td>
+        <td>Uses catalog <code>level</code> (1000–4000) as a proxy; act-true and prerequisite-chain ordering are explicitly deferred. So "brittle across act boundaries" is really "integration-depth before intro/practice in level order."</td>
+        <td><span class="st st-partial">partial</span></td>
+      </tr>
+      <tr>
+        <td>Act-boundary <strong>readiness gates</strong> + a prior-learning/transfer protocol <span class="src">(3-Act III/V)</span></td>
+        <td>The docs name these as structural holes, not enhancements. No gate or prior-learning logic exists; progression is never blocked (a stated non-goal).</td>
+        <td><span class="st st-unbuilt">unbuilt</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>D. The two questions &amp; the end state</h3>
+  <table class="ref">
+    <thead><tr><th>Aspirational claim</th><th>What the code actually does</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Q1 coverage matrix</strong>: AI-drafted, evidence-cited depth for every course × target <span class="src">(vision)</span></td>
+        <td>The route, schema, persistence, and heat map all run (live in trial). Partial because it's supply-only and the evidence rule is prompt-only at this layer (no <code>.refine</code> on the coverage cell).</td>
+        <td><span class="st st-partial">partial</span></td>
+      </tr>
+      <tr>
+        <td><strong>Q1 sufficiency = demand − attainment</strong>, differenced at program scale <span class="src">(vision)</span></td>
+        <td>The headline gap. <code>ScoreCoverageInput</code> has <em>no demand parameter</em>; the demand aggregate is read only by the admin synthesis page, never by any scoring code. Both halves exist; the join is wired nowhere.</td>
+        <td><span class="st st-unbuilt">unbuilt</span></td>
+      </tr>
+      <tr>
+        <td><strong>Q2 prerequisite support</strong>: do the prereqs students take support what a course expects? <span class="src">(vision)</span></td>
+        <td>A fully deterministic gap engine (<code>prereq-gaps.ts</code>: ordinal-MAX, measured/mixed/intended/none basis, direct edges only, no-data ≠ zero), wired into <code>/courses/[code]</code>. The most solidly enforced claim in the vision.</td>
+        <td><span class="st st-enforced">enforced</span></td>
+      </tr>
+      <tr>
+        <td>Employer demand captured in KUD+ <strong>keyed to <code>sub_competency_id</code></strong> <span class="src">(vision; Position Capture)</span></td>
+        <td>The position schema carries the field and required K/U/D, but <code>sub_competency_id</code> is nullable (model may omit it), and the per-target aggregate is human-readable Markdown — not a machine-keyed demand vector consumed by scoring.</td>
+        <td><span class="st st-partial">partial</span></td>
+      </tr>
+      <tr>
+        <td>Intended (syllabus-claimed) coverage is <strong>never merged into measured attainment</strong> <span class="src">(vision; background §12)</span></td>
+        <td>A physically separate table, a per-gap basis stamp, and code isolation — intended coverage is imported only by the gap engine, never by capture synthesis, so it cannot enter a confirmed snapshot.</td>
+        <td><span class="st st-enforced">enforced</span></td>
+      </tr>
+      <tr>
+        <td>Governance loop: partner input → <strong>proposed descriptor edits</strong> that refine targets <span class="src">(vision)</span></td>
+        <td>The synthesis pipeline produces proposed edits with rationale, but the panel only offers "copy text" for a human to paste — no code auto-applies an edit. Intentionally human-in-the-loop, so propagation is not automated.</td>
+        <td><span class="st st-partial">partial</span></td>
+      </tr>
+      <tr>
+        <td>KUD+ are <strong>course-opportunity scores</strong>, becoming learning claims only via validation against 268 graduates <span class="src">(vision; §7)</span></td>
+        <td>The opportunity-vs-attainment framing is an interpretive commitment (consistent with the unreachable artifact band). The graduate-outcome validation is a proposal doc — no schema, route, or destination data.</td>
+        <td><span class="st st-unbuilt">unbuilt</span></td>
+      </tr>
+      <tr>
+        <td>End-state <strong>visualizations</strong>: coverage heat map · Sankey curriculum-flow · persistent flag/dispute trail <span class="src">(vision)</span></td>
+        <td>The heat map is live (partial — manual refresh, supply-only). The Sankey flow map does not exist. Flagging exists, but nothing structurally prevents a re-score from overwriting a flagged cell (the doc itself defers that to Phase 2).</td>
+        <td><span class="st st-partial">partial</span></td>
+      </tr>
+      <tr>
+        <td><strong>Explore / what-if</strong> alignment + scenario simulation <span class="src">(vision)</span></td>
+        <td>The <code>/explore/&lt;code&gt;</code> routes and UI are live; the analyses are LLM-driven (prompt-guided, not structurally enforced).</td>
+        <td><span class="st st-partial">partial</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout note">
+    <div class="callout-title">Where the docs are now behind the code</div>
+    <p>Two honest inversions surfaced while tracing. (1) <code>background.html</code> §11 still tags the prerequisite-gap and scaffolding views "Specified, not built" — but both are live: the gap engine is the most enforced claim in the system, and the scaffolding Stage-1 primitives ship behind <code>/program/scaffolding</code>. The source doc under-claims the current build; the "Specified, not built" label now applies only to the <em>Stage 2</em> diagnostics (AI narrative, cross-tabs, act-true ordering). (2) There are <em>two</em> parallel demand surfaces — the older partner-submission synthesis (which feeds proposed descriptor edits) and Position Capture (which feeds the per-target aggregate) — and neither one feeds the coverage score. The vision speaks of a single "demand side"; the code has two, joined to nothing yet.</p>
+  </div>
+</section>
+
 <section id="further-reading">
-  <h2><span class="num">§ 12</span>Further Reading</h2>
+  <h2><span class="num">§ 13</span>Further Reading</h2>
 
   <ul>
     <li><a href="./executive-brief.html">Executive Brief</a> — the stakeholder-facing summary: what the tool does, why it matters, how it functions, where it stands. The entry point for chairs, advisory-board members, and accreditors.</li>
