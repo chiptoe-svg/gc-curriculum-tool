@@ -84,16 +84,19 @@ export function reflectionWeight(v: PfConditionValue): number {
 
 /**
  * Per-snapshot productive-failure contribution to one sub-competency.
- * snapshot_contribution = conditions_score × depth_weight × reflection_weight
+ * snapshot_contribution = conditions_score × depth_weight × reflection_weight.
+ * Returns null when the snapshot's PF was NOT assessed (Area 7 not probed) —
+ * the caller excludes null contributions rather than scoring them 0.
  */
-export function snapshotPfContribution(cell: SnapshotCellInput): number {
+export function snapshotPfContribution(cell: SnapshotCellInput): number | null {
+  if (!cell.productiveFailureConditions) return null;
   const cs = conditionsScore(cell.productiveFailureConditions);
   const dw = depthWeight(cell.dDepth);
-  const rw = reflectionWeight(cell.productiveFailureConditions?.structured_post_mortem ?? 'absent');
+  const rw = reflectionWeight(cell.productiveFailureConditions.structured_post_mortem);
   return cs * dw * rw;
 }
 
-export type PfStatus = 'well_developed' | 'developing' | 'thin' | 'absent';
+export type PfStatus = 'well_developed' | 'developing' | 'thin' | 'absent' | 'no_data';
 
 /**
  * Map a cumulative PF score to a band. `well_developed` requires both the
@@ -221,8 +224,24 @@ export function aggregateSubCompetency(
   cells: SnapshotCellInput[],
 ): SubCompetencyScaffolding {
   const scaffolding = depthScaffoldingStatus(cells);
-  const cumulative = cells.reduce((acc, c) => acc + snapshotPfContribution(c), 0);
-  const hasUpper = cells.some(c => c.dDepth >= 4);
+  // PF is computed over data-bearing (assessed) cells only. A not-assessed
+  // cell contributes null and is excluded — never scored as 0.
+  const contributions = cells
+    .map(snapshotPfContribution)
+    .filter((c): c is number => c !== null);
+  if (contributions.length === 0) {
+    return {
+      subCompetencyId,
+      subCompetencyName,
+      cells,
+      scaffolding,
+      cumulativePfScore: 0,
+      pfStatus: 'no_data',
+    };
+  }
+  const cumulative = contributions.reduce((acc, c) => acc + c, 0);
+  // A D≥4 contributor only counts toward `well_developed` if it was assessed.
+  const hasUpper = cells.some(c => c.productiveFailureConditions !== null && c.dDepth >= 4);
   const pfStatus = cumulativePfStatus(cumulative, hasUpper);
   return {
     subCompetencyId,
