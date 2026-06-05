@@ -202,15 +202,7 @@ export function CaptureChatPanel({
   // conversation together server-side. v1 responses leave this null.
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [drawerTarget, setDrawerTarget] = useState<CitationTarget | null>(null);
-  const [pendingGenerate, setPendingGenerate] = useState(false);
   const transcriptRef = useRef<HTMLDivElement>(null);
-
-  // Auto-dismiss the soft nudge if problem-solving gets covered while it's open.
-  useEffect(() => {
-    if (pendingGenerate && coveredIncludesProblemSolving(coveredEver)) {
-      setPendingGenerate(false);
-    }
-  }, [pendingGenerate, coveredEver]);
 
   useEffect(() => {
     transcriptRef.current?.scrollTo({ top: transcriptRef.current.scrollHeight, behavior: 'smooth' });
@@ -355,12 +347,13 @@ export function CaptureChatPanel({
   }
 
   const canGenerate = messages.some(m => m.role === 'assistant');
+  // Non-blocking: generation always proceeds. When problem-solving / productive
+  // failure wasn't probed, the profile still records it honestly as "not assessed"
+  // (the no_data band) and we show a neutral heads-up below — no gate, no guilt.
+  // Many course types (a 1-hour seminar, say) legitimately don't develop it.
+  const problemSolvingUnprobed = canGenerate && !coveredIncludesProblemSolving(coveredEver);
 
   function handleGenerateClick() {
-    if (!coveredIncludesProblemSolving(coveredEver)) {
-      setPendingGenerate(true);
-      return;
-    }
     onGenerate();
   }
 
@@ -604,28 +597,10 @@ export function CaptureChatPanel({
             placeholder="Type a reply, or use voice. Enter to send, Shift+Enter for a new line."
             className="w-full resize-y rounded border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
           />
-          {pendingGenerate && (
-            <div className="mb-2 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-              <p className="mb-2">
-                Problem-solving (productive failure, Audit Area 7) wasn&rsquo;t probed &mdash; the profile will record it as <strong>&ldquo;not assessed&rdquo;</strong>. You can generate anyway, or keep auditing to capture it.
-              </p>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => { setPendingGenerate(false); onGenerate(); }}
-                  className="rounded border border-amber-400 bg-white px-2 py-1 font-medium hover:bg-amber-100"
-                >
-                  Generate anyway
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPendingGenerate(false)}
-                  className="rounded border border-stone-300 bg-white px-2 py-1 font-medium text-stone-700 hover:bg-stone-50"
-                >
-                  Keep auditing
-                </button>
-              </div>
-            </div>
+          {problemSolvingUnprobed && (
+            <p className="mb-2 text-xs text-muted-foreground">
+              Heads up: this session didn&rsquo;t cover problem-solving (productive failure), so the profile will record it as <em>not assessed</em> — expected for many courses (a short seminar, for instance). Keep auditing if this course develops it; otherwise generate as usual.
+            </p>
           )}
           <div className="flex items-center justify-between gap-3">
             <VoiceRecorder slug={slug} onTranscript={appendTranscript} disabled={busy} />
