@@ -182,6 +182,27 @@ export interface MatrixData {
 }
 
 /**
+ * Invalidate (delete) all Phase-1A coverage cells for one sub-competency under
+ * one target. Called when the sub-competency's descriptor/name changes — the
+ * cells were scored against the OLD prose and must be recomputed. listStalePairs()
+ * then sees the pair as needing re-score; the matrix view recomputes on next load.
+ * Returns the count of deleted cells.
+ */
+export async function invalidateCoverageForSubCompetency(
+  careerTargetId: string,
+  subCompetencyId: string,
+): Promise<number> {
+  const deleted = await db
+    .delete(snapshotTargetCoverage)
+    .where(and(
+      eq(snapshotTargetCoverage.careerTargetId, careerTargetId),
+      eq(snapshotTargetCoverage.subCompetencyId, subCompetencyId),
+    ))
+    .returning();
+  return deleted.length;
+}
+
+/**
  * Read the full matrix payload in one shot: every course with a non-retired
  * snapshot, every active career target with its non-retired sub-competencies,
  * and every scored cell currently in the table.

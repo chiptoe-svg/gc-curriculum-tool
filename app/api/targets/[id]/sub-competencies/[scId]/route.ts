@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { db } from '@/lib/db/client';
 import { subCompetencies, prototypeTargetEdits } from '@/lib/db/schema';
 import { clearTargetCache } from '@/lib/db/career-targets-queries';
+import { invalidateCoverageForSubCompetency } from '@/lib/db/program-coverage-queries';
 import { hashIp } from '@/lib/ip-hash';
 import { eq, and } from 'drizzle-orm';
 
@@ -66,6 +67,7 @@ export async function PATCH(
       after: parsed.data as Record<string, unknown>,
     });
 
+    await invalidateCoverageForSubCompetency(id, scId);
     clearTargetCache();
     return NextResponse.json(updated);
   } catch (err) {
