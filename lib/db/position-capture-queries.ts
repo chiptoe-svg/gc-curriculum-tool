@@ -11,7 +11,7 @@ export interface PositionCaptureRow {
   company: string;
   positionTitle: string | null;
   structuredInputs: Record<string, unknown> | null;
-  ratedSkills: { items: Array<{ name: string; description?: string; rating: number }>; generatedAt: string } | null;
+  ratedSkills: { items: Array<{ name: string; description?: string; sub_competency_id?: string | null; evidence_source?: string; rating: number }>; generatedAt: string } | null;
   sourceFiles: Array<{ kind: string; fileName: string; key: string; extractedText?: string }> | null;
   sessionId: string | null;
   profile: unknown;

@@ -552,7 +552,7 @@ export const positionCaptures = pgTable('position_captures', {
   company: text('company').notNull(),
   positionTitle: text('position_title'),                                       // null until partner enters one
   structuredInputs: jsonb('structured_inputs'),                                // pages 1-4 data
-  ratedSkills: jsonb('rated_skills'),                                          // page 5: { items: [{name, rating}], generatedAt }
+  ratedSkills: jsonb('rated_skills'),                                          // page 5: { items: [{name, description?, evidence_source?, sub_competency_id?: string|null, rating}], generatedAt }
   sourceFiles: jsonb('source_files'),                                          // [{kind, fileName, key, extractedText?}]
   sessionId: uuid('session_id'),                                               // page 6 interview session (null until page 6 starts)
   profile: jsonb('profile'),                                                   // PositionProfile JSON (null until submitted+interviewed)

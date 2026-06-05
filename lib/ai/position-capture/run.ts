@@ -23,7 +23,7 @@ export interface PositionContextBundle {
     subCompetencies: Array<{ id: string; name: string; description: string }>;
   };
   structuredInputs: Record<string, unknown> | null;
-  ratedSkills: { items: Array<{ name: string; description?: string; rating: number }>; generatedAt: string } | null;
+  ratedSkills: { items: Array<{ name: string; description?: string; sub_competency_id?: string | null; evidence_source?: string; rating: number }>; generatedAt: string } | null;
 }
 
 export interface RunPositionInterviewInput extends PositionContextBundle {
@@ -52,7 +52,7 @@ function buildContextBlock(input: PositionContextBundle): string {
     `**${input.targetContext.name}** — ${input.targetContext.description}`,
     '',
     `# Sub-competencies`,
-    ...input.targetContext.subCompetencies.map(sc => `- ${sc.name}: ${sc.description}`),
+    ...input.targetContext.subCompetencies.map(sc => `- [${sc.id}] ${sc.name}: ${sc.description}`),
   ];
   if (input.structuredInputs) {
     lines.push('', `# Pages 1-4 input`, '```json', JSON.stringify(input.structuredInputs, null, 2), '```');
@@ -60,7 +60,7 @@ function buildContextBlock(input: PositionContextBundle): string {
   if (input.ratedSkills) {
     lines.push('', `# Page 5 rated items`);
     for (const item of input.ratedSkills.items) {
-      lines.push(`- (${item.rating}/7) **${item.name}** — ${item.description ?? ''}`);
+      lines.push(`- (${item.rating}/7) [${item.sub_competency_id ?? 'no-id'}] **${item.name}** — ${item.description ?? ''}`);
     }
   }
   return lines.join('\n');
