@@ -18,7 +18,29 @@ import {
   careerTargets,
   subCompetencies,
 } from '@/lib/db/schema';
-import type { SnapshotCellInput } from '@/lib/program/scaffolding';
+import type { SnapshotCellInput, ProductiveFailureConditions } from '@/lib/program/scaffolding';
+
+/**
+ * Deploy moment of the problem-solving capture fix. Snapshots created BEFORE
+ * this cannot be trusted for productive-failure data: the pre-fix v1 scores
+ * path fabricated an all-`absent` block when Area 7 wasn't probed, so a stored
+ * block may be fake-absent. Such snapshots are reclassified to no-data.
+ *
+ * SET THIS to the UTC timestamp at which this change merges/deploys
+ * (`date -u +%Y-%m-%dT%H:%M:%SZ`). The default below is the fix's design date;
+ * it is bumped to the actual deploy moment in the close-out task so snapshots
+ * captured today under the OLD prompts are also reclassified.
+ */
+export const PF_CONTRACT_EPOCH = new Date('2026-06-05T00:00:00Z');
+
+/** Presence-as-sentinel with the legacy cutoff: pre-epoch => null (no data). */
+export function pfForSnapshot(
+  createdAt: Date,
+  block: ProductiveFailureConditions | null,
+): ProductiveFailureConditions | null {
+  if (createdAt < PF_CONTRACT_EPOCH) return null;
+  return block;
+}
 
 export interface ScaffoldingCourse {
   snapshotId: string;
@@ -117,14 +139,17 @@ export async function loadScaffoldingTarget(targetId: string): Promise<Scaffoldi
   }
 
   // Reconstruct productive-failure conditions per snapshot from its profile blob.
-  const pfBySnapshot = new Map<string, SnapshotCellInput['productiveFailureConditions']>();
+  const pfBySnapshot = new Map<string, ProductiveFailureConditions | null>();
   for (const r of latest) {
     const profile = r.profile as {
       audit_notes?: {
-        productive_failure_conditions?: SnapshotCellInput['productiveFailureConditions'];
+        productive_failure_conditions?: ProductiveFailureConditions | null;
       };
     } | null;
-    pfBySnapshot.set(r.snapshotId, profile?.audit_notes?.productive_failure_conditions ?? null);
+    pfBySnapshot.set(
+      r.snapshotId,
+      pfForSnapshot(r.createdAt, profile?.audit_notes?.productive_failure_conditions ?? null),
+    );
   }
 
   const cellsBySub = new Map<string, SnapshotCellInput[]>();
