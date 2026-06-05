@@ -36,6 +36,9 @@ export async function GET(req: Request, { params }: RouteContext): Promise<Respo
   const partner = await findPartnerByToken(token);
   if (!partner || !partner.active) return NextResponse.json({ error: 'invalid token' }, { status: 401 });
 
+  const { allowed } = await checkIpRateLimit(hashIp(req));
+  if (!allowed) return NextResponse.json({ error: 'rate limit exceeded' }, { status: 429 });
+
   const positions = await listPositionsByPartner(partner.id);
   return NextResponse.json({
     positions: positions.map(p => ({

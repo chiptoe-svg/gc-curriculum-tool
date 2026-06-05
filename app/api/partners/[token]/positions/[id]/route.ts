@@ -8,6 +8,7 @@ import {
 } from '@/lib/db/position-capture-queries';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { hashIp } from '@/lib/ip-hash';
+import { PositionProfile } from '@/lib/ai/position-capture/schema';
 
 interface RouteContext { params: Promise<{ token: string; id: string }> }
 
@@ -22,6 +23,7 @@ export async function PATCH(req: Request, { params }: RouteContext): Promise<Res
   const existing = await getPositionCaptureById(id);
   if (!existing) return NextResponse.json({ error: 'not found' }, { status: 404 });
   if (existing.partnerId !== partner.id) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  if (existing.status !== 'draft') return NextResponse.json({ error: 'not editable' }, { status: 409 });
 
   const body = await req.json().catch(() => ({})) as Record<string, unknown>;
   try {
@@ -46,9 +48,13 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   const partner = await findPartnerByToken(token);
   if (!partner || !partner.active) return NextResponse.json({ error: 'invalid token' }, { status: 401 });
 
+  const { allowed } = await checkIpRateLimit(hashIp(req));
+  if (!allowed) return NextResponse.json({ error: 'rate limit exceeded' }, { status: 429 });
+
   const existing = await getPositionCaptureById(id);
   if (!existing) return NextResponse.json({ error: 'not found' }, { status: 404 });
   if (existing.partnerId !== partner.id) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  if (existing.status !== 'draft') return NextResponse.json({ error: 'not editable' }, { status: 409 });
 
   const body = await req.json().catch(() => ({})) as { completeness?: unknown; profile?: unknown; model?: unknown; sessionId?: unknown };
   const validCompleteness = ['title-only', 'structured', 'rated', 'interviewed'] as const;
@@ -56,10 +62,17 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     return NextResponse.json({ error: 'invalid completeness' }, { status: 400 });
   }
   const completeness = body.completeness as typeof validCompleteness[number];
+
+  let validatedProfile: ReturnType<typeof PositionProfile.parse> | undefined;
   if (completeness === 'interviewed') {
-    if (!body.profile || typeof body.model !== 'string' || typeof body.sessionId !== 'string') {
-      return NextResponse.json({ error: 'profile + model + sessionId required for interviewed' }, { status: 400 });
+    if (typeof body.model !== 'string' || typeof body.sessionId !== 'string') {
+      return NextResponse.json({ error: 'model + sessionId required for interviewed' }, { status: 400 });
     }
+    const parsed = PositionProfile.safeParse(body.profile);
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'invalid profile', detail: parsed.error.message.slice(0, 300) }, { status: 400 });
+    }
+    validatedProfile = parsed.data;
   }
 
   try {
@@ -68,7 +81,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
       partnerId: partner.id,
       completeness,
       ...(completeness === 'interviewed' && {
-        profile: body.profile,
+        profile: validatedProfile,
         model: body.model as string,
         sessionId: body.sessionId as string,
       }),

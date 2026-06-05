@@ -60,6 +60,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   const existing = await getPositionCaptureById(id);
   if (!existing) return NextResponse.json({ error: 'not found' }, { status: 404 });
   if (existing.partnerId !== partner.id) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
+  if (existing.status !== 'draft') return NextResponse.json({ error: 'not editable' }, { status: 409 });
 
   const target = await getTargetById(existing.careerTargetId);
   if (!target) return NextResponse.json({ error: 'career target not found' }, { status: 404 });

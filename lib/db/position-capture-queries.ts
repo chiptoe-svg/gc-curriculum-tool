@@ -35,6 +35,17 @@ export interface CreateDraftInput {
  * defaulted from `partners.company`; partner can override on page 1).
  */
 export async function createPositionDraft(input: CreateDraftInput): Promise<{ id: string }> {
+  if (input.supersedes) {
+    const sup = await db.select({ id: positionCaptures.id })
+      .from(positionCaptures)
+      .where(and(
+        eq(positionCaptures.id, input.supersedes),
+        eq(positionCaptures.partnerId, input.partnerId),
+        eq(positionCaptures.status, 'submitted'),
+      ))
+      .limit(1);
+    if (sup.length === 0) throw new Error('createPositionDraft: supersedes target not found, not owned, or not submitted');
+  }
   const [row] = await db.insert(positionCaptures).values({
     partnerId: input.partnerId,
     careerTargetId: input.careerTargetId,
@@ -159,6 +170,7 @@ export async function listSubmittedPositionsForTarget(targetId: string): Promise
       AND NOT EXISTS (
         SELECT 1 FROM position_captures sup
         WHERE sup.supersedes = pc.id
+          AND sup.status = 'submitted'
       )
     ORDER BY pc.submitted_at DESC NULLS LAST, pc.created_at DESC
   `);
@@ -235,7 +247,13 @@ export async function isPositionSessionOwnedBy(
     .from(positionCaptureMessages)
     .where(eq(positionCaptureMessages.sessionId, sessionId))
     .limit(1);
-  if (rows.length === 0) return true;
+  if (rows.length === 0) {
+    const owned = await db.select({ id: positionCaptures.id })
+      .from(positionCaptures)
+      .where(and(eq(positionCaptures.id, positionCaptureId), eq(positionCaptures.partnerId, partnerId)))
+      .limit(1);
+    return owned.length > 0;
+  }
   return rows[0]!.partnerId === partnerId && rows[0]!.positionCaptureId === positionCaptureId;
 }
 
