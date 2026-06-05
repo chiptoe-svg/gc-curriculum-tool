@@ -1,7 +1,7 @@
 import { db } from './client';
-import { courses, sheetSyncState, courseProfiles, courseMaterials } from './schema';
+import { courses, sheetSyncState, courseProfiles, courseMaterials, courseCaptureSnapshots } from './schema';
 import type { ParsedCourse } from '@/lib/sheets/parseCourseTab';
-import { eq, asc, sql, count } from 'drizzle-orm';
+import { eq, asc, sql, count, inArray } from 'drizzle-orm';
 
 export interface CourseListItem {
   code: string;
@@ -163,4 +163,121 @@ export async function listCoursesWithStatus(): Promise<CourseWithStatus[]> {
     manuallyEdited: r.manuallyEdited ?? false,
     materialCount: Number(r.materialCount),
   }));
+}
+
+// ---------------------------------------------------------------------------
+// Course-roster helpers (Task 3 — prerequisite-edges plan)
+// ---------------------------------------------------------------------------
+
+/**
+ * Data-state for a course in the roster.
+ * - 'measured'  — at least one course_capture_snapshots row exists.
+ * - 'intended'  — reserved for the rough-pass increment (not produced here yet).
+ * - 'no-data'   — no snapshot; no capture data available.
+ */
+export type CourseDataState = 'measured' | 'intended' | 'no-data';
+
+export interface CourseRosterRow {
+  code: string;
+  title: string;
+  level: number;
+  prerequisites: string;
+  dataState: CourseDataState; // 'intended' is reserved; only 'measured'/'no-data' produced here
+}
+
+/**
+ * Returns one row per course with its data-state badge value.
+ * 'measured' iff a course_capture_snapshots row exists for the course.
+ * Ordered by level then code.
+ */
+export async function getCourseDataStates(): Promise<CourseRosterRow[]> {
+  const result = await db.execute(sql`
+    SELECT c.code, c.title, c.level, c.prerequisites,
+      CASE WHEN EXISTS (
+        SELECT 1 FROM course_capture_snapshots s WHERE s.course_code = c.code
+      ) THEN 'measured' ELSE 'no-data' END AS data_state
+    FROM courses c
+    ORDER BY c.level, c.code
+  `);
+  return (result.rows as Array<Record<string, unknown>>).map((r) => ({
+    code: r['code'] as string,
+    title: r['title'] as string,
+    level: r['level'] as number,
+    prerequisites: r['prerequisites'] as string,
+    dataState: r['data_state'] as CourseDataState,
+  }));
+}
+
+export interface NewCourseInput {
+  code: string;
+  title: string;
+  level?: number;
+  track?: string;
+  prerequisites?: string;
+}
+
+/**
+ * Idempotent bulk create: inserts only codes not already in courses.
+ * Returns { created, skipped } code arrays.
+ * Required NOT-NULL cols without DB defaults: code, title, level, track.
+ * Defaults: level=0, track='unspecified', prerequisites=''.
+ */
+export async function bulkCreateCourses(
+  items: NewCourseInput[],
+): Promise<{ created: string[]; skipped: string[] }> {
+  const codes = items.map((i) => i.code.trim()).filter(Boolean);
+  if (codes.length === 0) return { created: [], skipped: [] };
+
+  const existing = await db
+    .select({ code: courses.code })
+    .from(courses)
+    .where(inArray(courses.code, codes));
+  const have = new Set(existing.map((e) => e.code));
+
+  const toCreate = items.filter((i) => !have.has(i.code.trim()));
+  for (const i of toCreate) {
+    await db
+      .insert(courses)
+      .values({
+        code: i.code.trim(),
+        title: (i.title ?? i.code.trim()).trim(),
+        level: i.level ?? 0,
+        track: i.track ?? 'unspecified',
+        prerequisites: i.prerequisites ?? '',
+      })
+      .onConflictDoNothing();
+  }
+
+  return {
+    created: toCreate.map((i) => i.code.trim()),
+    skipped: codes.filter((c) => have.has(c)),
+  };
+}
+
+/**
+ * Insert a single course (no-op if code already exists).
+ * Required NOT-NULL cols without DB defaults: code, title, level, track.
+ * Defaults: level=0, track='unspecified', prerequisites=''.
+ */
+export async function createCourse(input: NewCourseInput): Promise<void> {
+  await db
+    .insert(courses)
+    .values({
+      code: input.code.trim(),
+      title: (input.title ?? input.code.trim()).trim(),
+      level: input.level ?? 0,
+      track: input.track ?? 'unspecified',
+      prerequisites: input.prerequisites ?? '',
+    })
+    .onConflictDoNothing();
+}
+
+/** Returns true if a course with the given code exists in the courses table. */
+export async function courseExists(code: string): Promise<boolean> {
+  const [row] = await db
+    .select({ code: courses.code })
+    .from(courses)
+    .where(eq(courses.code, code))
+    .limit(1);
+  return !!row;
 }
