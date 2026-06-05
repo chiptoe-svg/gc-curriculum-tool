@@ -34,7 +34,12 @@ export function Page3Section({ token, captureId, structuredInputs, onChange }: P
   // Upload state
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
-  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
+  // Show a badge for returning partners who already uploaded (interview_doc_text present in DB).
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(
+    typeof structuredInputs.interview_doc_text === 'string' && structuredInputs.interview_doc_text.length > 0
+      ? '(previously uploaded)'
+      : null,
+  );
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   const transcribeEndpoint = `/api/partners/transcribe?token=${encodeURIComponent(token)}`;
@@ -62,8 +67,10 @@ export function Page3Section({ token, captureId, structuredInputs, onChange }: P
         setUploadError(j.error ?? `Upload failed (${res.status})`);
         return;
       }
-      const { fileName } = await res.json() as { ok: boolean; fileName: string; textLength: number };
-      setUploadedFileName(fileName);
+      const data = await res.json() as { ok: boolean; fileName: string; textLength: number; interview_doc_text: string };
+      setUploadedFileName(data.fileName);
+      // Carry the server-written text into the client draft so the next PATCH includes it.
+      onChange({ structuredInputs: { ...structuredInputs, interview_doc_text: data.interview_doc_text } });
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : 'Network error');
     } finally {

@@ -70,7 +70,11 @@ export async function updatePositionDraft(input: UpdateDraftInput): Promise<void
   const result = await db.update(positionCaptures)
     .set({
       ...(input.positionTitle !== undefined && { positionTitle: input.positionTitle }),
-      ...(input.structuredInputs !== undefined && { structuredInputs: input.structuredInputs }),
+      // Shallow-merge (jsonb ||): each wizard page owns top-level sibling keys, none nests,
+      // so a PATCH that omits a key cannot clobber a server-written key (e.g. interview_doc_text).
+      ...(input.structuredInputs !== undefined && {
+        structuredInputs: sql`coalesce(${positionCaptures.structuredInputs}, '{}'::jsonb) || ${JSON.stringify(input.structuredInputs)}::jsonb`,
+      }),
       ...(input.ratedSkills !== undefined && { ratedSkills: input.ratedSkills }),
       ...(input.sourceFiles !== undefined && { sourceFiles: input.sourceFiles }),
       ...(input.completeness !== undefined && { completeness: input.completeness }),

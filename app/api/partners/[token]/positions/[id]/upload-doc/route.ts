@@ -97,14 +97,16 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   };
   const updatedSourceFiles = [...existingFiles, newEntry];
 
-  // Write interview_doc_text + sourceFiles to the draft
-  const currentInputs = (existing.structuredInputs as Record<string, unknown>) ?? {};
+  // Write interview_doc_text delta + sourceFiles to the draft.
+  // updatePositionDraft now shallow-merges structuredInputs (jsonb ||), so passing
+  // only the delta key is safe — existing keys are preserved by the DB, not the caller.
   await updatePositionDraft({
     id,
     partnerId: partner.id,
-    structuredInputs: { ...currentInputs, interview_doc_text: docText },
+    structuredInputs: { interview_doc_text: docText },
     sourceFiles: updatedSourceFiles,
   });
 
-  return NextResponse.json({ ok: true, fileName, textLength: docText.length });
+  // Return the text so the client can merge it into its local draft state.
+  return NextResponse.json({ ok: true, fileName, textLength: docText.length, interview_doc_text: docText });
 }
