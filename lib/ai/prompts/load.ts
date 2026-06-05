@@ -39,7 +39,8 @@ type PromptName =
   | 'position-interview-agent'
   | 'position-synthesis'
   | 'wiki-update'
-  | 'curriculum-chat';
+  | 'curriculum-chat'
+  | 'prereq-edge-seed';
 
 interface ParsedPrompt {
   frontmatter: Record<string, unknown>;
