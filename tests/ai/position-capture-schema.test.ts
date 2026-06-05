@@ -1,5 +1,23 @@
 import { describe, it, expect } from 'vitest';
 import { PositionProfile, positionProfileJsonSchema } from '@/lib/ai/position-capture/schema';
+import { jdExtractionJsonSchema } from '@/lib/ai/position-capture/jd-extract';
+import { ratedItemsJsonSchema } from '@/lib/ai/position-capture/rated-items';
+
+/** Recursive strict-mode invariant: every key in `properties` must appear in `required`. */
+function assertStrictMode(node: unknown): void {
+  if (!node || typeof node !== 'object') return;
+  const obj = node as Record<string, unknown>;
+  if (obj.type === 'object' && obj.properties && typeof obj.properties === 'object') {
+    const propKeys = Object.keys(obj.properties as object);
+    const required = (obj.required as string[] | undefined) ?? [];
+    for (const key of propKeys) {
+      expect(required, `property "${key}" must appear in required`).toContain(key);
+    }
+    for (const v of Object.values(obj.properties as object)) assertStrictMode(v);
+  }
+  if (obj.items) assertStrictMode(obj.items);
+  if (obj.anyOf && Array.isArray(obj.anyOf)) for (const v of obj.anyOf) assertStrictMode(v);
+}
 
 describe('PositionProfile schema', () => {
   it('accepts a valid minimal profile', () => {
@@ -45,21 +63,15 @@ describe('PositionProfile schema', () => {
   });
 
   it('JSON schema has every property listed in required (strict-mode invariant)', () => {
-    function walk(node: unknown): void {
-      if (!node || typeof node !== 'object') return;
-      const obj = node as Record<string, unknown>;
-      if (obj.type === 'object' && obj.properties && typeof obj.properties === 'object') {
-        const propKeys = Object.keys(obj.properties as object);
-        const required = (obj.required as string[] | undefined) ?? [];
-        for (const key of propKeys) {
-          expect(required, `property "${key}" must appear in required`).toContain(key);
-        }
-        for (const v of Object.values(obj.properties as object)) walk(v);
-      }
-      if (obj.items) walk(obj.items);
-      if (obj.anyOf && Array.isArray(obj.anyOf)) for (const v of obj.anyOf) walk(v);
-    }
-    walk(positionProfileJsonSchema);
+    assertStrictMode(positionProfileJsonSchema);
+  });
+
+  it('jdExtractionJsonSchema has every property listed in required (strict-mode invariant)', () => {
+    assertStrictMode(jdExtractionJsonSchema);
+  });
+
+  it('ratedItemsJsonSchema has every property listed in required (strict-mode invariant)', () => {
+    assertStrictMode(ratedItemsJsonSchema);
   });
 
   it('rejects an above-floor depth with no evidenced_by', () => {

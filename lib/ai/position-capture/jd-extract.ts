@@ -22,36 +22,36 @@ export const JdExtraction = z.object({
 });
 export type JdExtractionType = z.infer<typeof JdExtraction>;
 
-const stringField = {
+const stringField = (maxLength: number) => ({
   type: 'object' as const,
   additionalProperties: false as const,
   required: ['value', 'confidence'] as const,
   properties: {
-    value: { type: ['string', 'null'] as const },
+    value: { type: ['string', 'null'] as const, maxLength },
     confidence: { type: 'number' as const, minimum: 0, maximum: 1 },
   },
-};
+});
 
 export const jdExtractionJsonSchema = {
   type: 'object',
   additionalProperties: false,
   required: ['title', 'responsibilities', 'required_qualifications', 'preferred_qualifications', 'years_experience', 'education', 'location', 'remote_status', 'salary_range', 'reports_to', 'extras_notes'],
   properties: {
-    title: stringField,
-    responsibilities: stringField,
-    required_qualifications: stringField,
-    preferred_qualifications: stringField,
-    education: stringField,
-    location: stringField,
-    reports_to: stringField,
-    extras_notes: stringField,
+    title: stringField(200),
+    responsibilities: stringField(4000),
+    required_qualifications: stringField(4000),
+    preferred_qualifications: stringField(4000),
+    education: stringField(500),
+    location: stringField(200),
+    reports_to: stringField(200),
+    extras_notes: stringField(8000),
     years_experience: {
       type: 'object', additionalProperties: false, required: ['value', 'confidence'],
       properties: {
         value: {
           anyOf: [
             { type: 'null' },
-            { type: 'object', additionalProperties: false, required: ['min', 'max'], properties: { min: { type: 'integer' }, max: { type: ['integer', 'null'] as const } } },
+            { type: 'object', additionalProperties: false, required: ['min', 'max'], properties: { min: { type: 'integer', minimum: 0, maximum: 50 }, max: { type: ['integer', 'null'] as const, minimum: 0, maximum: 50 } } },
           ],
         },
         confidence: { type: 'number', minimum: 0, maximum: 1 },
@@ -70,7 +70,7 @@ export const jdExtractionJsonSchema = {
         value: {
           anyOf: [
             { type: 'null' },
-            { type: 'object', additionalProperties: false, required: ['min', 'max', 'currency'], properties: { min: { type: 'number' }, max: { type: 'number' }, currency: { type: 'string' } } },
+            { type: 'object', additionalProperties: false, required: ['min', 'max', 'currency'], properties: { min: { type: 'number' }, max: { type: 'number' }, currency: { type: 'string', maxLength: 10 } } },
           ],
         },
         confidence: { type: 'number', minimum: 0, maximum: 1 },
