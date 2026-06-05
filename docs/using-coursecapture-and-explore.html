@@ -170,6 +170,9 @@
     <a class="nav-link" href="#ex-downstream">9 · Downstream target</a>
     <a class="nav-link" href="#ex-analysis">10 · Reading the analysis</a>
     <a class="nav-link" href="#ex-whatif">11 · What-if scenarios</a>
+    <div class="nav-group-label" style="margin-top: 10px;">Course Roster</div>
+    <a class="nav-link" href="#roster-overview">15 · The /courses roster</a>
+    <a class="nav-link" href="#roster-prereq">16 · Prerequisite confirm &amp; gap view</a>
     <div class="nav-group-label" style="margin-top: 10px;">Reference</div>
     <a class="nav-link" href="#tips">Tips &amp; gotchas</a>
     <a class="nav-link" href="#readonly">Sharing the read-only view</a>
@@ -205,7 +208,7 @@
 
   <div class="callout note">
     <div class="callout-title">Read in this order</div>
-    <p>You only need to read sections about Explore (§10–14) once you have at least one confirmed snapshot for a course. Explore refuses to open if there's no snapshot — it sends you back to CourseCapture first.</p>
+    <p>You only need to read sections about Explore (§10–14) once you have at least one confirmed snapshot for a course. Explore refuses to open if there's no snapshot — it sends you back to CourseCapture first. Sections §15–16 cover the <code>/courses</code> roster and the prerequisite-gap view — useful once several courses have been captured.</p>
   </div>
 </section>
 
@@ -643,8 +646,83 @@
   </div>
 </section>
 
+<section id="roster-overview">
+  <h2><span class="num">§ 15</span>The <code>/courses</code> roster</h2>
+
+  <p>The <strong>Course Catalog</strong> at <code>/courses</code> is the program-wide control panel for capture status and prerequisite work. It lists all 120 GC catalog courses grouped by level (1000 / 2000 / 3000 / 4000), with a data-state badge per row and controls for bulk-loading courses and adding new entries.</p>
+
+  <h3>Data-state badges</h3>
+  <p>Every row shows one of three badges:</p>
+  <table class="compact">
+    <thead><tr><th>Badge</th><th>What it means</th></tr></thead>
+    <tbody>
+      <tr><td><strong>captured</strong></td><td>The course has at least one confirmed, non-retired snapshot. The prerequisite-gap view is available at <code>/courses/[code]</code>.</td></tr>
+      <tr><td><strong>in-audit</strong></td><td>A capture session is in progress (audit messages exist in the last 24 hours) but no snapshot has been confirmed yet.</td></tr>
+      <tr><td><strong>not-started</strong></td><td>No capture session has begun. The course exists in the catalog but has no materials or audit history.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Bulk preload</h3>
+  <p>The <strong>Preload all</strong> button at the top of the roster runs a bulk sync of catalog data (from the shared Google Sheet) for every course in the list in one pass, rather than requiring you to visit each course's Materials panel individually. Use this at the start of a new semester to ensure the catalog row for every course is current before captures begin. The button shows a progress indicator as it processes courses in batches; it can be stopped mid-run.</p>
+
+  <h3>Add a class</h3>
+  <p>If a course exists in the program but is not yet in the catalog (a new course number, a new special-topics section), use the <strong>Add a class</strong> form at the bottom of the roster. Enter the course code, title, level, and a short description. The course row is created immediately; you can then open <code>/capture/[code]</code> and begin a capture session as with any existing course. Coordinate with the administrator before adding courses — the roster is shared across all faculty using the tool.</p>
+</section>
+
+<section id="roster-prereq">
+  <h2><span class="num">§ 16</span>Prerequisite confirm &amp; gap view</h2>
+
+  <p>Click any captured course row in the roster to open <code>/courses/[code]</code>, the per-course prerequisite surface. This is where you seed the skill-tagged prerequisite edges for the course, confirm or edit them, and read the computed prerequisite-gap view.</p>
+
+  <h3>Step 1 — Seed edges from the syllabus prerequisites</h3>
+  <p>The course's catalog entry lists its declared prerequisites as free text (e.g., "GC 2150 and GC 2800 or consent of instructor"). The <strong>Seed prerequisite edges</strong> button runs the <code>prereq-edge-seed</code> AI function, which reads that free text alongside the course's <code>incoming_expectations</code> from any existing capture and proposes a structured list of edges: for each prerequisite course code it identifies, it names the specific sub-competency it believes the focal course's assignments depend on, along with the expected K/U/D depths. One pass is usually sufficient; run it again if you add materials or re-run the audit.</p>
+
+  <h3>Step 2 — Confirm or edit the edges</h3>
+  <p>The proposed edges appear in an editable list. For each row:</p>
+  <ul>
+    <li><strong>Prerequisite course code</strong> — the upstream course the edge links to. If the seeder misread the free-text prereqs (course codes can be ambiguous), correct this here.</li>
+    <li><strong>Sub-competency</strong> — the specific program sub-competency this edge is tagged to. You can change this if the seeder chose a different sub-competency than you'd pick.</li>
+    <li><strong>Expected K / U / D</strong> — the depth this course's assignments presuppose from incoming students. Adjust if the seeded values don't match what you'd actually grade students on.</li>
+  </ul>
+  <p>Click <strong>Confirm edges</strong> to persist the list. You can re-seed at any time to regenerate the proposals, or edit individual rows by hand at any point.</p>
+
+  <h3>Step 3 — Read the gap view</h3>
+  <p>Once edges are confirmed, the gap view renders below the edge list. For each confirmed edge, it shows:</p>
+  <table class="compact">
+    <thead><tr><th>Column</th><th>What it means</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Prerequisite course</strong></td><td>The upstream course the edge links to.</td></tr>
+      <tr><td><strong>Sub-competency</strong></td><td>The specific skill the gap is about.</td></tr>
+      <tr><td><strong>Expected K / U / D</strong></td><td>What this course's assignments presuppose.</td></tr>
+      <tr><td><strong>Attained K / U / D</strong></td><td>The depth the prerequisite course actually reached, per its confirmed snapshot (or intended estimate).</td></tr>
+      <tr><td><strong>Gap (per dimension)</strong></td><td>Expected minus attained, per dimension. Positive = gap; zero or negative = met or exceeded.</td></tr>
+      <tr><td><strong>Basis</strong></td><td>How the attained depth was determined — see below.</td></tr>
+    </tbody>
+  </table>
+
+  <h4>What "syllabus-promise" means</h4>
+  <p>The <code>basis</code> field distinguishes the quality of evidence behind the attained depth:</p>
+  <ul>
+    <li><strong>measured</strong> — the prerequisite course has a confirmed Course Outcome Profile. The attained depth comes from a real capture backed by assignments and instructor confirmation.</li>
+    <li><strong>syllabus-promise</strong> (also labeled <code>intended</code> in the tool) — the prerequisite course has not been captured, but a depth estimate was derived from its catalog description or your course's <code>incoming_expectations</code> field. This is what the course <em>claims</em> to develop, not what it's been confirmed to produce. It is marked as unverified; treat it as a placeholder pending a real capture of that course.</li>
+  </ul>
+
+  <h4>What "not yet captured" means</h4>
+  <p>When the basis reads <strong>not yet captured</strong> (displayed as a <code>no_data</code> state in the tool), the prerequisite course has no snapshot and no intended estimate was available. The gap engine explicitly returns <em>no data</em> for that edge — it does not assume the gap is zero (which would hide a real problem) or assume the gap is maximal (which would generate false alarms). The only resolution is to capture the prerequisite course. Until then, the gap for that edge is genuinely unknown.</p>
+
+  <div class="callout note">
+    <div class="callout-title">No double-counting across multiple prereqs</div>
+    <p>If two prerequisite courses both develop the same sub-competency, the gap engine takes the <strong>maximum attained depth</strong> across the two, not the sum. This is intentional: KUD+ depth values are ordinal levels (not additive quantities), and a student who practiced a skill in two courses at depth 3 each has attained depth 3 — not depth 6. The maximum reflects the best preparation available from any prerequisite; supplementary coverage adds practice value but doesn't change the attained level for gap purposes.</p>
+  </div>
+
+  <div class="callout tip">
+    <div class="callout-title">Most useful once prereqs are captured</div>
+    <p>Like Explore's downstream mode, the gap view gets richer as more courses are captured. Early on, many edges will show "not yet captured" for the upstream course. As the captured-course list grows, the basis improves from "not yet captured" → "syllabus-promise" → "measured," and the gap judgments become increasingly reliable.</p>
+  </div>
+</section>
+
 <section id="tips">
-  <h2><span class="num">§ 15</span>Tips &amp; gotchas</h2>
+  <h2><span class="num">§ 17</span>Tips &amp; gotchas</h2>
 
   <h3>For CourseCapture</h3>
   <ul>
@@ -665,7 +743,7 @@
 </section>
 
 <section id="readonly">
-  <h2><span class="num">§ 16</span>Sharing the read-only view</h2>
+  <h2><span class="num">§ 18</span>Sharing the read-only view</h2>
 
   <p>Every captured course has a public profile page at <code>/view/&lt;course-code&gt;</code>. This address requires no authentication and works over plain HTTP on the LAN — anyone who can reach <code>http://130.127.162.180:3000/</code> can open it. The page shows the course's captured essence, outcomes, and the "how it differs from the catalog" notes when a snapshot exists; if the course hasn't been captured yet, it falls back to the catalog description.</p>
 
@@ -688,7 +766,7 @@
 </section>
 
 <section id="scope">
-  <h2><span class="num">§ 17</span>What these tools don't do</h2>
+  <h2><span class="num">§ 19</span>What these tools don't do</h2>
 
   <ul>
     <li><strong>Not student or faculty evaluation.</strong> Depth scores describe what the course's materials and assignments require, not how well any instructor delivers the course or how well any student performs in it.</li>

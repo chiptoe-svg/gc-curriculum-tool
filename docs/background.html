@@ -168,6 +168,7 @@
     <a class="nav-link" href="#program-structure">Program-level structure: the 3-Act model</a>
     <a class="nav-link" href="#course-impl">Course-by-course implementation</a>
     <a class="nav-link" href="#career-impl">Career-path alignment</a>
+    <a class="nav-link" href="#prereq-gap-method">Prerequisite-gap method</a>
     <a class="nav-link" href="#validation">Validation</a>
     <a class="nav-link" href="#not">What this is not</a>
     <a class="nav-link" href="#references">References</a>
@@ -581,7 +582,7 @@ DO — behavioral output
 
   <h3>Source coverage</h3>
 
-  <p>The capture session draws on every source the system holds for the course. The table below is the canonical record of what the pipeline supports; §13 and other references to ingestion should be read against this table rather than maintained separately.</p>
+  <p>The capture session draws on every source the system holds for the course. The table below is the canonical record of what the pipeline supports; §14 and other references to ingestion should be read against this table rather than maintained separately.</p>
 
   <table class="ingestion">
     <caption style="text-align:left; font-family:var(--mono); font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-muted); padding-bottom:10px;">Source coverage and scoring implication. A source marked "Supported" means the audit pipeline can retrieve and prompt against it; instructor confirmation during the audit conversation upgrades retrieval evidence to evidence-of-intent.</caption>
@@ -677,8 +678,55 @@ DO — behavioral output
   <p>These views are not produced by the framework itself but by program-level analyses that consume the confirmed Course Outcome Profiles and Role Outcome Profiles. The framework's contribution is to make the underlying data commensurable across courses and across the course-employer boundary. At the time of writing, the coverage matrix is implemented and reading confirmed snapshots; the scaffolding and prerequisite-gap views are specified but not yet built.</p>
 </section>
 
+<section id="prereq-gap-method">
+  <h2><span class="num">§ 12</span>Prerequisite-gap method</h2>
+
+  <p>The prerequisite-gap analysis answers Q2 at the course level: <em>do the skills students bring in from declared prerequisite courses actually support what this course's assignments require?</em> The method is implemented as a set of persisted, faculty-confirmed <strong>prerequisite edges</strong> from which a deterministic gap engine reads. This section explains the methodological commitments that distinguish this approach from simpler alternatives.</p>
+
+  <h3>Direct edges, not authored transitivity</h3>
+
+  <p>Each prerequisite edge is a <strong>direct, skill-tagged relationship</strong>: it connects one focal course to one prerequisite course and names the specific sub-competency the focal course's assignments expect, along with the K/U/D depths it presupposes. These edges are the only authored artifact. <strong>Transitivity</strong> — the fact that a course two levels back in the prerequisite chain may also contribute to the expected depth — is never authored explicitly; it is derived at analysis time by traversing the graph of direct edges. This design choice prevents the combinatorial maintenance burden that arises when transitive dependencies are hand-curated and prevents double-counting: each course's contribution is counted once, at its position in the chain, not once per downstream consumer.</p>
+
+  <h3>Ordinal-MAX aggregation: why depths are not summed</h3>
+
+  <p>When multiple prerequisite courses all develop the same sub-competency, the gap engine computes the gap by taking the <strong>maximum attained depth across all direct prerequisites</strong>, then comparing that maximum against the focal course's expected depth. It does not sum the depths across prerequisites.</p>
+
+  <p>The reason is structural: KUD+ depth values are ordinal levels, not quantities. A student who has encountered a skill in two separate courses at depth 3 each has not thereby attained depth 6 — they have attained depth 3, perhaps reinforced. What matters for prerequisite sufficiency is whether any course in the student's background has developed the skill to the required level; additional courses developing the same skill at the same or lower level add practice value but do not change the attained depth for the purpose of the gap calculation. Summing ordinal levels would produce a number that has no interpretable meaning in the depth-scale framework and would cause the analysis to erroneously judge students well-prepared when no single course reaches the required depth.</p>
+
+  <h3>The intended-vs-attained distinction and the <em>basis</em> stamp</h3>
+
+  <p>Every gap computation carries a <code>basis</code> field that distinguishes three conditions:</p>
+
+  <ul>
+    <li><strong><code>measured</code></strong> — the prerequisite course's attained depth comes from a confirmed, evidence-backed Course Outcome Profile (a captured snapshot). This is the highest-quality basis: it reflects what students who completed the course actually demonstrated, per instructor confirmation during an audit conversation.</li>
+    <li><strong><code>intended</code></strong> — the prerequisite course's depth is estimated from the catalog description, syllabus, or the focal course's <code>incoming_expectations</code> field, without a confirmed snapshot. This is <em>intended</em> coverage — what the course claims or is understood to provide — not <em>attained</em> depth. Per the evidence-above-zero rule (§7), a syllabus statement is not by itself evidence of student attainment; the <code>intended</code> basis exposes this caveat transparently rather than presenting the estimate as equivalent to measured depth. In the gap view, <code>intended</code>-basis cells are rendered as <em>claimed</em> — matching the evidence ladder's terminology — and are flagged as unverified.</li>
+    <li><strong><code>none</code></strong> — the prerequisite course has not been captured and no intended estimate is available. The gap engine returns <strong>no data</strong> for this edge, not a gap. This is the honesty commitment: an uncaptured prerequisite cannot be assumed to provide zero coverage (which would make every unprobed edge look like a critical gap) or assumed to provide full coverage (which would make the absence of data invisible). <code>no_data</code> cells are displayed explicitly with a "not yet captured" label; the burden of resolving them is to capture the prerequisite course, not to infer from absence.</li>
+  </ul>
+
+  <p>The <code>intended</code>-vs-<code>measured</code> distinction maps directly onto the evidence-above-zero rule described in §7: measured depth has the same evidentiary status as a confirmed Course Outcome Profile cell; intended depth has the status of a syllabus claim (K=1 in the framework's evidence hierarchy). Program-level analyses that aggregate across courses should weight these differently and surface the distinction, not collapse them into a single gap count.</p>
+
+  <h3>What the gap engine computes</h3>
+
+  <p>For each (focal course, sub-competency) pair where the focal course specifies an expected incoming depth, the engine:</p>
+
+  <ol>
+    <li>Collects all direct prerequisite edges on that sub-competency.</li>
+    <li>For each edge, looks up the prerequisite course's attained or intended depth for that sub-competency, with its basis.</li>
+    <li>Selects the edge with the maximum depth (if multiple edges share the same sub-competency) — ordinal-MAX, no double-count.</li>
+    <li>Computes the gap as <code>expected_depth − max_attained_depth</code> per dimension (K, U, D). A positive result is a gap; zero or negative means the requirement is met or exceeded at that depth.</li>
+    <li>Stamps the result with the <code>basis</code> of the max-depth edge, since the reliability of the gap judgment is that of its best-evidenced source.</li>
+  </ol>
+
+  <p>The result is a per-(course × sub-competency × dimension) gap record, stamped with its evidence basis, that feeds both the per-course gap view and any future program-wide rollup.</p>
+
+  <div class="callout note">
+    <div class="callout-title">Design status</div>
+    <p>The prerequisite-edge method described here is implemented in the tool as of 2026-06-05. The per-course gap view is live at <code>/courses/[code]</code> for confirmed snapshots. The program-wide graph visualization and the <code>intended</code>-basis rough-pass increment (which would let edges be seeded before a prerequisite course has a snapshot) are deferred to a subsequent increment.</p>
+  </div>
+</section>
+
 <section id="validation">
-  <h2><span class="num">§ 12</span>Validation: how we'd know if this works</h2>
+  <h2><span class="num">§ 13</span>Validation: how we'd know if this works</h2>
 
   <p>The framework makes substantive commitments that established research does not directly validate. The depth scales are working-hypothesis instruments. The 3-Act program structure is a proposed organizing model. The claim that cumulative depth + productive-failure scaffolding + reflection produces transferable problem-solving competence four years out is theoretically coherent but empirically untested at the program scale this tool operates at. The framework's stance is not that these commitments are settled — it's that the tool is itself the research instrument that generates the evidence to test them.</p>
 
@@ -711,7 +759,7 @@ DO — behavioral output
 </section>
 
 <section id="not">
-  <h2><span class="num">§ 13</span>What this framework is not</h2>
+  <h2><span class="num">§ 14</span>What this framework is not</h2>
 
   <p>Several limitations and scope decisions are worth naming explicitly.</p>
 
@@ -719,14 +767,14 @@ DO — behavioral output
     <li><strong>Not an evaluation of faculty or students.</strong> Depth scores describe what the course's materials and assignments require, not how well any instructor delivers the course or how well any student performs in it.</li>
     <li><strong>Not an automated curriculum designer.</strong> The framework surfaces what is and supports faculty deliberation; redesign decisions remain committee work informed by the evidence, not generated by it.</li>
     <li><strong>Not a replacement for faculty judgment.</strong> The auditor drafts, the instructor confirms. Every depth value is editable in the review step; reviewer status is recorded on each profile.</li>
-    <li><strong>Not empirically validated yet.</strong> The framework's specific scales, the 3-Act structure, and the cumulative-scaffolding claim are working hypotheses. The framework's response to the absence of validation is structural rather than evasive: the tool generates the longitudinal evidence its own commitments would need from external research. The full three-layer validation approach — internal flag-and-dispute pipeline <span class="status-tag status-live">Live</span>, external graduate-outcome comparison <span class="status-tag status-planned">Planned</span>, faculty/advisory-board review — is described in <a href="#validation">§12 above</a>, with the graduate-outcome dataset path detailed separately in the <a href="./graduate-outcome-validation.html">Graduate Outcome Validation</a> proposal.</li>
+    <li><strong>Not empirically validated yet.</strong> The framework's specific scales, the 3-Act structure, and the cumulative-scaffolding claim are working hypotheses. The framework's response to the absence of validation is structural rather than evasive: the tool generates the longitudinal evidence its own commitments would need from external research. The full three-layer validation approach — internal flag-and-dispute pipeline <span class="status-tag status-live">Live</span>, external graduate-outcome comparison <span class="status-tag status-planned">Planned</span>, faculty/advisory-board review — is described in <a href="#validation">§13 above</a>, with the graduate-outcome dataset path detailed separately in the <a href="./graduate-outcome-validation.html">Graduate Outcome Validation</a> proposal.</li>
     <li><strong>Not extensible to fully automated assessment scoring.</strong> Bloom's taxonomy and AAC&amp;U VALUE rubrics remain the appropriate lenses for evaluating student work; this framework is designed for describing what a course develops, not for grading what a student produced.</li>
     <li><strong>Not insensitive to material limitations.</strong> The pipeline's source coverage — what it can retrieve, what it cannot, and the scoring implication for each — is documented in the canonical ingestion table in <a href="#course-impl">§10</a>. In brief: Canvas materials (assignments, rubrics, pages, discussions, quizzes, modules, file attachments), linked Google Docs/Sheets/Slides and Drive PDFs, YouTube captions, direct uploads, and catalog values are all within reach. Video platforms other than YouTube (Panopto, Canvas Studio, Vimeo, Kaltura) and external LTI content are not. The auditor is required to detect references to unsupported sources, flag them with their specifics, and keep scoring conservative pending instructor confirmation; profiles produced from incomplete materials carry that uncertainty in their rationale fields.</li>
   </ul>
 </section>
 
 <section id="references">
-  <h2><span class="num">§ 14</span>References</h2>
+  <h2><span class="num">§ 15</span>References</h2>
 
   <ol class="refs">
     <li id="ref-anderson-2001">Anderson, L. W., &amp; Krathwohl, D. R. (Eds.). (2001). <em>A Taxonomy for Learning, Teaching, and Assessing: A Revision of Bloom's Taxonomy of Educational Objectives</em>. Longman.</li>

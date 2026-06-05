@@ -322,7 +322,7 @@
     <div class="surface-card">
       <div class="surface-card-label">Course Catalog</div>
       <div class="surface-card-access">HTTPS · Faculty (Basic Auth) · /courses</div>
-      <p>Editorial index of all 120 catalog courses grouped by level, with computed capture-status ladders (not-started / in-audit / ai-drafted / reviewed / captured), last-captured date, and deep-link Ask buttons into each course's Explore chat tab.</p>
+      <p>Editorial index of all 120 catalog courses grouped by level, with computed capture-status ladders (not-started / in-audit / ai-drafted / reviewed / captured), last-captured date, and deep-link Ask buttons into each course's Explore chat tab. Each captured row links to <code>/courses/[code]</code> — the prerequisite confirm/edit and gap view where faculty seed skill-tagged prerequisite edges and read <code>computePrereqGaps</code> output.</p>
     </div>
     <div class="surface-card">
       <div class="surface-card-label">Wiki + Ask</div>
@@ -560,9 +560,9 @@
 
   <p>Explore's downstream-target mode auto-constructs a prerequisite-sufficiency target by reading the <code>incoming_expectations</code> fields of every captured downstream course — courses that list the focal course as a prerequisite. The union of their incoming demands is what the focal course collectively needs to produce. As more courses are captured, the auto-detected downstream target becomes richer and the downstream mode becomes the primary prereq-sufficiency diagnostic.</p>
 
-  <h3>Snapshots → Prerequisite Gap Analysis (Phase 1C)</h3>
+  <h3>Snapshots → Prerequisite Gap Analysis (Phase 1C — shipped as skill-tagged prerequisite edges)</h3>
 
-  <p>The planned Phase 1C Prerequisite Gap Analysis will work in the reverse direction: for each captured course, it reads the course's <code>incoming_expectations</code> (what it assumes students arrive able to do) and compares them against the confirmed output profiles of its declared prerequisites. A prerequisite gap is not "the registrar says students need course X" but "this specific competency at this specific depth is required by this course's assignments, and the confirmed profile of the declared prerequisite does not develop it above that threshold." This is the Q2 answer at scale.</p>
+  <p>The Phase 1C Prerequisite Gap Analysis shipped as persisted, skill-tagged prerequisite edges (2026-06-05). Rather than reconstructing gaps on-demand from free-text prerequisites, the system now maintains a <code>prerequisite_edges</code> table: each row is a direct FK edge from a focal course to a prerequisite course, tagged to a specific sub-competency with expected K/U/D depths and a <code>basis</code> stamp (<code>measured</code> | <code>intended</code> | <code>none</code>). Edges are LLM-seeded from free-text prerequisites + <code>incoming_expectations</code> and faculty-confirmed. The <code>computePrereqGaps</code> engine reads these edges against confirmed snapshot attainment via ordinal-MAX aggregation — depths are levels, not quantities, so the maximum attained depth across all prereqs is what matters, not the sum. A prerequisite gap is "this specific competency at this specific depth is required here, and no confirmed prerequisite develops it to that level." Uncaptured prerequisites yield <code>no_data</code>, not an assumed gap. Per-course gap view: <code>/courses/[code]</code>. Program-wide graph visualization is deferred.</p>
 
   <h3>Snapshots → Curriculum Wiki</h3>
 
