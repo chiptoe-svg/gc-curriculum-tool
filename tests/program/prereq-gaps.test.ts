@@ -152,22 +152,23 @@ describe('Invariant 2 — duplicate skill-tag: result stable whether edge duplic
 });
 
 // ---------------------------------------------------------------------------
-// Invariant 3: REDUNDANT DIRECT+TRANSITIVE — same depth from two prereqs
+// Invariant 3: REDUNDANT DIRECT+TRANSITIVE — LOWER-depth redundant prereq
 //
-// F→B (B delivers X@d3) plus a redundant F→A direct edge (A delivers X@d3).
-// Gap result must be byte-identical to F→B alone.
+// F→B (B delivers X@d3), needed d3. Adding a redundant F→A edge where A
+// delivers X@d1 must NOT drag delivered below 3 (MAX, not average/min).
+// Gap result on the key dimensions must be identical with/without A.
 // ---------------------------------------------------------------------------
-describe('Invariant 3 — redundant direct: result stable with or without redundant same-depth prereq', () => {
+describe('Invariant 3 — redundant direct: MAX stability with lower-depth redundant prereq', () => {
   const edgesBase: RelyEdge[] = [edge('B', 'X', null, null, 3)];
   const delBase: DeliveredAttainment[] = [delivered('B', 'X', null, null, 3)];
 
   const edgesWithA: RelyEdge[] = [
     edge('B', 'X', null, null, 3),
-    edge('A', 'X', null, null, 3), // redundant direct edge at same depth
+    edge('A', 'X', null, null, 3), // redundant direct edge; A delivers only d1
   ];
   const delWithA: DeliveredAttainment[] = [
     delivered('B', 'X', null, null, 3),
-    delivered('A', 'X', null, null, 3), // same depth, redundant
+    delivered('A', 'X', null, null, 1), // lower-depth — must NOT drag MAX down
   ];
 
   it('base (B only): delivered=3, gap=0, met', () => {
@@ -178,7 +179,17 @@ describe('Invariant 3 — redundant direct: result stable with or without redund
     expect(g.status).toBe('met');
   });
 
-  it('with redundant A edge: delivered/gap/status byte-identical to B-only', () => {
+  it('with lower-depth redundant A: delivered.d stays 3 (MAX, not dragged down)', () => {
+    const withA = computeGapsFromInputs(edgesWithA, delWithA);
+    const gA = gapFor(withA, 'X');
+
+    // MAX stability: A@d1 cannot drag the result below B@d3
+    expect(gA.delivered.d).toBe(3);
+    expect(gA.gap.d).toBe(0);
+    expect(gA.status).toBe('met');
+  });
+
+  it('with lower-depth redundant A: delivered/gap/status identical to B-only', () => {
     const withA = computeGapsFromInputs(edgesWithA, delWithA);
     const without = computeGapsFromInputs(edgesBase, delBase);
 
@@ -271,6 +282,68 @@ describe('basis and no_data', () => {
     expect(gapFor(gaps, 'X').status).toBe('met');
     expect(gapFor(gaps, 'Y').status).toBe('gap');
     expect(gapFor(gaps, 'Y').gap.d).toBe(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Per-prereq measured-vs-intended pool (Fix 2)
+//
+// A measured row for prereq B must NOT suppress an intended row for prereq C.
+// Each prereq contributes its own measured attainment if present, else its
+// intended attainment.
+// ---------------------------------------------------------------------------
+describe('per-prereq measured-vs-intended pool', () => {
+  // Case 1: B has measured d2; C has intended d5.
+  // C's intended must NOT be dropped just because B has measured data.
+  // Pool = [B measured d2, C intended d5] → MAX = 5.
+  // basis = 'measured' (pool contains at least one measured row).
+  it('B measured d2 + C intended d5 → delivered.d=5, basis=measured (C not suppressed)', () => {
+    const edges: RelyEdge[] = [
+      edge('B', 'X', null, null, 3),
+      edge('C', 'X', null, null, 3),
+    ];
+    const del: DeliveredAttainment[] = [
+      delivered('B', 'X', null, null, 2, 'measured'),
+      delivered('C', 'X', null, null, 5, 'intended'),
+    ];
+    const gaps = computeGapsFromInputs(edges, del);
+    const g = gapFor(gaps, 'X');
+    expect(g.delivered.d).toBe(5); // C's intended d5 is NOT suppressed by B's measured
+    expect(g.basis).toBe('measured'); // pool has B's measured row
+    expect(g.gap.d).toBe(0); // needed 3, delivered 5 → met
+    expect(g.status).toBe('met');
+  });
+
+  // Case 2: B measured d2; C intended d1 → MAX = 2, basis = measured.
+  it('B measured d2 + C intended d1 → delivered.d=2, basis=measured', () => {
+    const edges: RelyEdge[] = [
+      edge('B', 'X', null, null, 3),
+      edge('C', 'X', null, null, 3),
+    ];
+    const del: DeliveredAttainment[] = [
+      delivered('B', 'X', null, null, 2, 'measured'),
+      delivered('C', 'X', null, null, 1, 'intended'),
+    ];
+    const gaps = computeGapsFromInputs(edges, del);
+    const g = gapFor(gaps, 'X');
+    expect(g.delivered.d).toBe(2);
+    expect(g.basis).toBe('measured');
+    expect(g.gap.d).toBe(1); // needed 3, delivered 2
+    expect(g.status).toBe('gap');
+  });
+
+  // Case 3: single prereq, all-intended → basis = 'intended'.
+  it('single prereq with only intended rows → basis=intended', () => {
+    const edges: RelyEdge[] = [edge('B', 'X', null, null, 3)];
+    const del: DeliveredAttainment[] = [
+      delivered('B', 'X', null, null, 4, 'intended'),
+    ];
+    const gaps = computeGapsFromInputs(edges, del);
+    const g = gapFor(gaps, 'X');
+    expect(g.delivered.d).toBe(4);
+    expect(g.basis).toBe('intended');
+    expect(g.gap.d).toBe(0);
+    expect(g.status).toBe('met');
   });
 });
 

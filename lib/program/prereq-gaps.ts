@@ -11,15 +11,16 @@
  * same sub-competency — no sum, no double-count. Redundant edges, diamond
  * paths, and duplicate skill-tags all collapse cleanly under MAX.
  *
- * `measured` attainment beats `intended` — when any measured row exists for
- * a (prereq × sub-comp) pair the intended rows are ignored entirely.
+ * Per-prereq measured-beats-intended: each relied prereq contributes its own
+ * measured attainment if it has one, else its intended attainment. A measured
+ * row for prereq B does NOT suppress an intended row for a different prereq C.
  *
  * Chain traversal (transitivity) is NOT performed here. Direct edges only.
  * Program-wide transitive diagnostics belong to the deferred scaffolding-
  * analysis increment; this function is a per-course building block.
  */
 
-import { and, desc, eq } from 'drizzle-orm';
+import { and, desc, eq, isNull } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import {
   courseCaptureSnapshots,
@@ -99,7 +100,8 @@ const gapDim = (need: number | null, got: number | null): number =>
  *     a. needed  = MAX of expected{K,U,D} across the group's edges.
  *     b. reliedPrereqs = deduped set of prereqCourseCodes in the group.
  *     c. relevant delivered = rows whose (prereqCourseCode, subCompetencyId)
- *        matches the group. measured rows win over intended.
+ *        matches the group. Per-prereq: each prereq contributes its own
+ *        measured rows if present, else its intended rows.
  *     d. delivered = MAX of {k,u,d} across the winning pool.
  *     e. gap = max(0, needed - delivered) per dim.
  *     f. status = no_data | gap | met.
@@ -140,9 +142,12 @@ export function computeGapsFromInputs(
         reliedPrereqs.includes(d.prereqCourseCode),
     );
 
-    // measured wins over intended — if any measured row exists, drop intended
-    const hasMeasured = relevant.some((d) => d.basis === 'measured');
-    const pool = hasMeasured ? relevant.filter((d) => d.basis === 'measured') : relevant;
+    // Per-prereq: each relied prereq uses its own measured attainment if present, else its intended.
+    const pool = reliedPrereqs.flatMap((rc) => {
+      const rcRows = relevant.filter((d) => d.prereqCourseCode === rc);
+      const rcMeasured = rcRows.filter((d) => d.basis === 'measured');
+      return rcMeasured.length > 0 ? rcMeasured : rcRows;
+    });
 
     // (d) delivered = MAX across pool
     let basis: GapBasis;
@@ -152,7 +157,7 @@ export function computeGapsFromInputs(
       basis = 'none';
       delivD = { k: null, u: null, d: null };
     } else {
-      basis = hasMeasured ? 'measured' : 'intended';
+      basis = pool.some((d) => d.basis === 'measured') ? 'measured' : 'intended';
       delivD = {
         k: pool.reduce<number | null>((m, d) => maxN(m, d.k), null),
         u: pool.reduce<number | null>((m, d) => maxN(m, d.u), null),
@@ -267,7 +272,7 @@ export async function computePrereqGaps(
         and(
           eq(courseCaptureSnapshots.courseCode, prereqCourseCode),
           // retiredAt IS NULL — exclude retired snapshots
-          eq(courseCaptureSnapshots.retiredAt, null as unknown as Date),
+          isNull(courseCaptureSnapshots.retiredAt),
         ),
       )
       .orderBy(desc(courseCaptureSnapshots.createdAt))
