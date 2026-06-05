@@ -6,6 +6,7 @@ import { careerTargets, subCompetencies } from '@/lib/db/schema';
 import { getSnapshotById } from '@/lib/db/capture-snapshots-queries';
 import { upsertCoverageCell } from '@/lib/db/program-coverage-queries';
 import { scoreSnapshotAgainstTarget } from '@/lib/ai/analyze/program-score-coverage';
+import { regenerateWikiInBackground } from '@/lib/ai/wiki/update';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { hashIp } from '@/lib/ip-hash';
 
@@ -75,6 +76,13 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         rationale: cell.rationale,
         model,
       });
+    }
+
+    // Re-fire wiki-update for this snapshot now that coverage exists — lets the
+    // competency/target pages generate (they derive from snapshot_target_coverage).
+    // Fire-and-forget; only when cells were actually written.
+    if (result.cells.length > 0) {
+      regenerateWikiInBackground(snapshotId, 'wiki recompile after coverage scoring (single pair)');
     }
 
     return NextResponse.json({ cellCount: result.cells.length, model });

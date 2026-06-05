@@ -30,6 +30,7 @@ import {
 import type { CaptureProfile, ProductiveFailureConditions } from '@/lib/ai/capture/schema';
 import { loadPrompt } from '@/lib/ai/prompts/load';
 import { getProviderForFunction } from '@/lib/ai/provider';
+import { writeAndPush } from '@/lib/wiki/git-ops';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -739,4 +740,38 @@ export async function updateWikiForSnapshot(snapshotId: string): Promise<WikiUpd
     wiki,
     logEntry: data.log_entry,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Step 5 — fire-and-forget background regeneration (snapshot create + post-scoring)
+// ---------------------------------------------------------------------------
+
+/**
+ * Regenerate + push the wiki for a snapshot, fire-and-forget. Two call sites:
+ *   1. snapshot creation (course + concept pages + index), and
+ *   2. AFTER coverage scoring (`program-score-coverage` writes
+ *      `snapshot_target_coverage`) — this is what lets the COMPETENCY and
+ *      TARGET pages generate at all, since `computeAffectedPages` derives them
+ *      from coverage rows that don't exist yet at snapshot-creation time.
+ *
+ * Non-blocking and never throws to the caller: a wiki-gen failure must not
+ * break capture or coverage scoring. Errors are logged.
+ */
+export function regenerateWikiInBackground(snapshotId: string, reason: string): void {
+  void (async () => {
+    try {
+      const snap = await getSnapshotById(snapshotId);
+      const { raw, wiki, logEntry } = await updateWikiForSnapshot(snapshotId);
+      const allPages = [...raw, ...wiki];
+      const codeSlug = (snap?.courseCode ?? 'wiki').toLowerCase().replace(/\s+/g, '-');
+      const date = new Date().toISOString().slice(0, 10);
+      const commitMessage = `feat(${codeSlug}): ${reason} ${date}${snap?.caption ? ` — ${snap.caption}` : ''}`;
+      await writeAndPush({ pages: allPages, logEntry, commitMessage });
+    } catch (err) {
+      console.error(
+        '[wiki regen] failed for snapshot', snapshotId, 'reason:', reason,
+        err instanceof Error ? err.message : err,
+      );
+    }
+  })();
 }
