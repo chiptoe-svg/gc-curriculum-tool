@@ -638,9 +638,27 @@ function validateWikiUpdateOutput(raw: unknown): WikiUpdateOutput {
 // ---------------------------------------------------------------------------
 
 /**
+ * Max affected wiki pages emitted per LLM call. A single wiki-update call must
+ * return EVERY affected page as one strict-mode JSON response; at full target
+ * coverage that set can exceed 30 pages (course + index + one page per
+ * sub-competency + one per target), whose combined output overruns the model's
+ * practical response size and silently stalls the request (no timeout, no
+ * streaming progress — the call just never returns). Splitting the affected
+ * pages into bounded batches keeps every call small and reliable.
+ */
+const WIKI_PAGES_PER_CALL = 6;
+
+function chunkPages<T>(items: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+  return out;
+}
+
+/**
  * Main entry point. Loads the snapshot, builds raw-layer writes, assembles
- * wiki-page substrate, calls the LLM, validates the output, and returns the
- * full page map + log entry.
+ * wiki-page substrate, calls the LLM (in bounded batches so a full-coverage
+ * page set can't overrun the response size), validates the output, and returns
+ * the full page map + log entry.
  *
  * The caller (Task A3/A4) is responsible for writing files and committing.
  */
@@ -697,48 +715,62 @@ export async function updateWikiForSnapshot(snapshotId: string): Promise<WikiUpd
     }),
   );
 
-  // (d) Assemble the LLM user message.
-  const userMessage = JSON.stringify({
-    snapshot: {
-      id: snapshot.id,
-      courseCode: snapshot.courseCode,
-      courseSlug,
-      courseTitle: courseInfo.title,
-      courseLevel: courseInfo.level,
-      coursePrerequisites: courseInfo.prerequisites,
-      caption: snapshot.caption,
-      reviewerNote: snapshot.reviewerNote,
-      createdAt: snapshot.createdAt.toISOString(),
-      profile: snapshot.profile,
-    },
-    rawPaths,
-    allSnapshotsForCourse: allSnapshots,
-    affectedWikiPages: pagesWithSubstrate,
-  });
-
-  // (e) Call the LLM.
+  // (d) Load the prompt + provider once.
   const [provider, systemPrompt] = await Promise.all([
     getProviderForFunction('wiki-update'),
     loadPrompt('wiki-update'),
   ]);
 
-  const { data } = await provider.complete<WikiUpdateOutput>({
-    systemPrompt,
-    userMessage,
-    schemaName: 'wiki_update',
-    jsonSchema: wikiUpdateJsonSchema,
-    validate: validateWikiUpdateOutput,
-  });
+  // (e) Generate pages in bounded batches (see WIKI_PAGES_PER_CALL). Each batch
+  //     is its own LLM call over the SAME snapshot context but only its slice of
+  //     affected pages, so no single response can overrun and stall. When the
+  //     affected set fits in one batch this is identical to the old one-shot
+  //     path. computeAffectedPages orders course + index first, so they ride in
+  //     the first batch together.
+  const batches = chunkPages(pagesWithSubstrate, WIKI_PAGES_PER_CALL);
+  const generatedPages: WikiUpdateOutput['pages'] = [];
+  const logEntries: string[] = [];
+
+  for (const batch of batches) {
+    const userMessage = JSON.stringify({
+      snapshot: {
+        id: snapshot.id,
+        courseCode: snapshot.courseCode,
+        courseSlug,
+        courseTitle: courseInfo.title,
+        courseLevel: courseInfo.level,
+        coursePrerequisites: courseInfo.prerequisites,
+        caption: snapshot.caption,
+        reviewerNote: snapshot.reviewerNote,
+        createdAt: snapshot.createdAt.toISOString(),
+        profile: snapshot.profile,
+      },
+      rawPaths,
+      allSnapshotsForCourse: allSnapshots,
+      affectedWikiPages: batch,
+    });
+
+    const { data } = await provider.complete<WikiUpdateOutput>({
+      systemPrompt,
+      userMessage,
+      schemaName: 'wiki_update',
+      jsonSchema: wikiUpdateJsonSchema,
+      validate: validateWikiUpdateOutput,
+    });
+
+    generatedPages.push(...data.pages);
+    if (data.log_entry) logEntries.push(data.log_entry);
+  }
 
   // (f) Build the final wiki write list (filter out 'unchanged' pages).
-  const wiki: WikiPageWrite[] = data.pages
+  const wiki: WikiPageWrite[] = generatedPages
     .filter(p => p.operation !== 'unchanged')
     .map(p => ({ path: p.path, content: p.content }));
 
   return {
     raw,
     wiki,
-    logEntry: data.log_entry,
+    logEntry: logEntries.join(' · ') || `wiki-update: ${snapshot.courseCode} (${snapshot.id.slice(0, 8)})`,
   };
 }
 
