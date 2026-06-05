@@ -227,11 +227,9 @@ Anything not listed here that a wiki would want — edits with rationale, concep
 
 > Consolidated 2026-06-05 so nothing drops. Status: ✅ shipped · 📋 spec'd, ready to build · ◻ not spec'd. The detailed catalog is the "Spec'd, not yet implemented" table below; this is the *order* + dependencies.
 
-**Arc A — Employer demand → curriculum-sufficiency loop (vision Q1 spine; current priority)**
-1. ◻ **Diagnose why the CC v1 employer trial failed** (UX confusion vs functional bug). Cheap; **gates A2** since Position Capture v1 reuses ~80% of CC v1's machinery. ← *recommended immediate next.*
-2. 📋 **Build Position Capture v1 — data-collection core** (thin slice: `position_captures` schema **with the pre-build amendments baked in** + the interview + a correctly-shaped `PositionProfile` synthesis). Goal: start collecting **keepable** employer data on a shape-correct backend; iterate the flow later. Depends on (1). [plan + amendments both spec'd]
-3. 📋 **Grow PC v1 to the full 6-page flow** (JD ingest via Docling, uniqueness, AI-rated experiences, aggregate view) — iterate from real testing.
-4. ◻ **Step 4 — demand half (unified demand/coverage layer):** numeric `k/u/d_demand` on `sub_competencies` keyed by `sub_competency_id`, populated from the PC aggregate and differenced against course attainment → **Q1 *sufficiency* computable.** Depends on (2) (the join key + keyed demand data).
+**Arc A — Employer demand → curriculum-sufficiency loop (vision Q1 spine; current priority — IN PROGRESS)**
+1. 📋 **Build Position Capture v1 — the full planned 6-page flow** (target → JD ingest via Docling → uniqueness → interview Qs → trajectory → AI-rated experiences → agent interview), with the **pre-build amendments folded into the schema + synthesis** so the data collected is keepable. **Deploy for live user testing** — the workflow gets refined from real employer use (that's the point of the test). *CC v1's failure was the **workflow**, not the backend, so no diagnosis is needed — the 6-page redesign IS the fix.* Plan + amendments both spec'd. **← current build.**
+2. ◻ **Step 4 — demand half (unified demand/coverage layer):** numeric `k/u/d_demand` on `sub_competencies` keyed by `sub_competency_id`, populated from the PC aggregate and differenced against course attainment → **Q1 *sufficiency* computable.** Depends on (1) (the join key + keyed demand data).
 
 **Arc B — Prerequisite support (Q2); independent of the employer side, can run in parallel**
 5. ◻ **Step 4 — prereq-edges half:** parse `courses.prerequisites` → FK `course_prerequisites` table + persisted `incoming_expectation → prereq-competency` alignment → **Q2 computable program-wide** (subsumes Phase 1C).
@@ -253,7 +251,7 @@ Anything not listed here that a wiki would want — edits with rationale, concep
 13. ◻ Deep-dive `.html` re-export (new identity + competence/framing sections live in `.md` only — no md→html generator in repo).
 14. ◻ Tighten the validation plan (`graduate-outcome-validation.html`; review #9 — hypotheses / indicators / controls / threats table).
 
-**Single most-next thing:** (1) diagnose the CC v1 failure → (2) PC v1 data-collection core. Arc B (5) can run alongside for parallel Q2 progress.
+**Single most-next thing:** build Position Capture v1 — the full 6-page flow (amendments folded into schema/synthesis) — and deploy it for live user testing. Arc B (5, Q2/prereq edges) can run alongside since it's course-side and independent of the employer build.
 
 ---
 
