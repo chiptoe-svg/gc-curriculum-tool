@@ -2,9 +2,12 @@
 
 import Link from 'next/link';
 import type { CourseStatusRow, CaptureStatus } from '@/lib/db/capture-status-queries';
+import type { CourseRosterRow, CourseDataState } from '@/lib/db/courses-queries';
+import { CourseRosterControls } from './CourseRosterControls';
 
 interface Props {
   rows: CourseStatusRow[];
+  rosterRows: CourseRosterRow[];
   slug: string;
 }
 
@@ -22,6 +25,40 @@ const STATUS_CONFIG: Record<CaptureStatus, PillConfig> = {
   'in-audit':   { label: 'In audit',    className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' },
   'not-started':{ label: 'Not started', className: 'bg-stone-100 text-stone-600 dark:bg-stone-800/40 dark:text-stone-400' },
 };
+
+// ─── Data-state badge config ───────────────────────────────────────────────
+
+type DataStateBadgeConfig = {
+  label: string;
+  className: string;
+};
+
+const DATA_STATE_CONFIG: Record<CourseDataState, DataStateBadgeConfig> = {
+  measured: {
+    label: 'Measured',
+    className: 'bg-violet-100 text-violet-800 border border-violet-200 dark:bg-violet-900/30 dark:text-violet-300 dark:border-violet-700',
+  },
+  intended: {
+    // Reserved for rough-pass increment — amber/syllabus style
+    label: 'Syllabus',
+    className: 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-700',
+  },
+  'no-data': {
+    label: 'No data',
+    className: 'bg-transparent text-muted-foreground/50 border border-border/50',
+  },
+};
+
+function DataStateBadge({ state }: { state: CourseDataState }) {
+  const { label, className } = DATA_STATE_CONFIG[state];
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2 py-0.5 font-body-sans text-[9px] uppercase tracking-[0.18em] font-medium ${className}`}
+    >
+      {label}
+    </span>
+  );
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
 
@@ -99,13 +136,17 @@ function CourseRow({
   row,
   slug,
   index,
+  dataState,
 }: {
   row: CourseStatusRow;
   slug: string;
   index: number;
+  dataState?: CourseDataState;
 }) {
   const captureHref = `/capture/${encodeURIComponent(row.code)}?slug=${encodeURIComponent(slug)}`;
   const askHref = `/explore/${encodeURIComponent(row.code)}?slug=${encodeURIComponent(slug)}&tab=ask`;
+  // Task 8 will build the course detail page — link target is /courses/[code]
+  const prereqHref = `/courses/${encodeURIComponent(row.code)}?slug=${encodeURIComponent(slug)}`;
   const delay = Math.min(index * 30, 600); // cap stagger at 600ms
 
   return (
@@ -125,6 +166,13 @@ function CourseRow({
           {row.title}
         </span>
 
+        {/* Data-state badge (prereq analysis context) */}
+        {dataState && (
+          <span className="shrink-0">
+            <DataStateBadge state={dataState} />
+          </span>
+        )}
+
         {/* Status pill */}
         <span className="shrink-0">
           <StatusPill status={row.status} />
@@ -139,6 +187,15 @@ function CourseRow({
         <span className="shrink-0 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5">
           →
         </span>
+      </Link>
+
+      {/* Prereq view link — Task 8 builds the actual view at /courses/[code] */}
+      <Link
+        href={prereqHref}
+        className="shrink-0 text-xs text-muted-foreground/50 transition-colors hover:text-foreground"
+        title="View prerequisite edges for this course"
+      >
+        Prereqs
       </Link>
 
       {/* Ask affordance — separate Link so the chat tab deep-links cleanly */}
@@ -160,11 +217,13 @@ function LevelGroup({
   rows,
   slug,
   startIndex,
+  dataStateByCode,
 }: {
   level: number | null;
   rows: CourseStatusRow[];
   slug: string;
   startIndex: number;
+  dataStateByCode: Map<string, CourseDataState>;
 }) {
   return (
     <div className="mb-6">
@@ -182,7 +241,13 @@ function LevelGroup({
       {/* Rows */}
       <div className="divide-y divide-border/20">
         {rows.map((row, i) => (
-          <CourseRow key={row.code} row={row} slug={slug} index={startIndex + i} />
+          <CourseRow
+            key={row.code}
+            row={row}
+            slug={slug}
+            index={startIndex + i}
+            dataState={dataStateByCode.get(row.code)}
+          />
         ))}
       </div>
     </div>
@@ -191,7 +256,12 @@ function LevelGroup({
 
 // ─── Main component ───────────────────────────────────────────────────────
 
-export function CoursesIndex({ rows, slug }: Props) {
+export function CoursesIndex({ rows, rosterRows, slug }: Props) {
+  // Build a lookup map: code → dataState from the roster query
+  const dataStateByCode = new Map<string, CourseDataState>(
+    rosterRows.map((r) => [r.code, r.dataState]),
+  );
+
   const groups = groupByLevel(rows);
 
   let globalIndex = 0;
@@ -199,6 +269,9 @@ export function CoursesIndex({ rows, slug }: Props) {
 
   return (
     <div>
+      {/* Roster controls (preload + add-a-course) */}
+      <CourseRosterControls slug={slug} />
+
       {/* Status counters */}
       <StatusCounters rows={rows} />
 
@@ -211,12 +284,15 @@ export function CoursesIndex({ rows, slug }: Props) {
           Title
         </span>
         <span className="shrink-0 font-body-sans text-[10px] uppercase tracking-[0.18em] text-muted-foreground/50">
+          Data
+        </span>
+        <span className="shrink-0 font-body-sans text-[10px] uppercase tracking-[0.18em] text-muted-foreground/50">
           Status
         </span>
         <span className="w-32 shrink-0 text-right font-body-sans text-[10px] uppercase tracking-[0.18em] text-muted-foreground/50">
           Last captured
         </span>
-        {/* arrow spacer */}
+        {/* prereqs + ask + arrow spacer */}
         <span className="shrink-0 w-4" />
       </div>
 
@@ -231,6 +307,7 @@ export function CoursesIndex({ rows, slug }: Props) {
             rows={levelRows}
             slug={slug}
             startIndex={start}
+            dataStateByCode={dataStateByCode}
           />
         );
       })}
@@ -239,6 +316,9 @@ export function CoursesIndex({ rows, slug }: Props) {
       {rows.length === 0 && (
         <div className="py-16 text-center text-muted-foreground">
           <p className="font-body-sans text-sm">No courses in the catalog yet.</p>
+          <p className="mt-2 font-body-sans text-xs text-muted-foreground/60">
+            Use &ldquo;Preload courses&rdquo; above to add your roster.
+          </p>
         </div>
       )}
     </div>

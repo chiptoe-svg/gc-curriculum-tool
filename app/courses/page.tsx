@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { isValidSlug } from '@/lib/slug';
 import { listCoursesWithStatus } from '@/lib/db/capture-status-queries';
+import { getCourseDataStates } from '@/lib/db/courses-queries';
 import { CoursesIndex } from './CoursesIndex';
 import { FeedbackLink } from '@/app/FeedbackLink';
 
@@ -24,7 +25,10 @@ export default async function CoursesPage({ searchParams }: Props) {
     );
   }
 
-  const rows = await listCoursesWithStatus();
+  const [rows, rosterRows] = await Promise.all([
+    listCoursesWithStatus(),
+    getCourseDataStates(),
+  ]);
   rows.sort((a, b) => (a.level ?? 9999) - (b.level ?? 9999) || a.code.localeCompare(b.code));
 
   return (
@@ -67,7 +71,7 @@ export default async function CoursesPage({ searchParams }: Props) {
         </div>
       </header>
       <main className="mx-auto max-w-5xl px-6 py-8">
-        <CoursesIndex rows={rows} slug={slug} />
+        <CoursesIndex rows={rows} rosterRows={rosterRows} slug={slug} />
       </main>
     </div>
   );
