@@ -6,6 +6,43 @@
 
 ---
 
+## What this tool is — and is not (read this first)
+
+**This is, unapologetically, a curriculum-conversation engine — not yet a measurement instrument.** It turns scattered course evidence into a structured, shared picture that a curriculum committee can argue over productively. Its inputs are faculty testimony plus document interpretation; its outputs are *legible maps*, not validated measurements. The measurement and evidence layers can be added as data accumulates (see "the evidence ladder" below and the [graduate-outcome validation](./graduate-outcome-validation.html) plan), but the tool earns its keep today by making the conversation better, not by scoring the program. We state this up front because the rest of this document builds a serious case, and a serious case deserves an honest frame: **the framework is stronger as a conversation engine than as a measurement instrument, and it should be read that way until the evidence ladder, artifact checks, and longitudinal validation are in place.**
+
+### One-page version (for the curriculum committee)
+
+- **Claim.** Problem-solving develops when students repeatedly apply domain knowledge to novel problems, experience informative failure, and reflect/revise with feedback. It is a program-level emergent property, not a course you can add.
+- **What the tool captures.** Per-competency K/U/D depth, productive-failure conditions, structured reflection, and program sequence — surfaced as maps.
+- **What it does NOT produce.** A single "problem-solving score," and (today) artifact-verified measurement. Depth maps show *opportunity*, not confirmed formation.
+- **What would change a curriculum decision.** Missing upper-depth opportunities for a target; high-performance courses with absent productive-failure scaffolding ("unproductive success"); absent reflection in capstone/upper-division courses; a depth progression that expects mastery before it is built.
+
+### The evidence ladder (claimed vs. verified)
+
+Every claim the tool records sits on a credibility ladder. The tool's job is to **make the level visible**, not to adjudicate the score:
+
+| Level | Meaning |
+|---|---|
+| 0 | Instructor claim only |
+| 1 | An assignment prompt supports the claim |
+| 2 | A rubric explicitly assesses the condition |
+| 3 | Student-work artifacts show the condition occurred |
+| 4 | Pre/post, revision history, or external review confirms a learning effect |
+
+A program diagnostic should distinguish **claimed** scaffolding from **artifact-verified** scaffolding. Today most inputs sit at Level 0–2; the recently-added discipline that a *credited* structured post-mortem must cite a graded artifact pushes that one signal toward Level 2–3. Surfacing the level per claim — not gating the score — is the design direction (spec'd separately). This is the concrete answer to the sharpest critique of the framework: that a tool like this can produce *beautifully structured maps from weak input evidence*. The defense is not to pretend the evidence is strong; it is to make its strength visible.
+
+### Falsification conditions
+
+The framework is a working hypothesis, and it should be able to be wrong. It would be **materially weakened** if programs with high upper-depth distribution, strong productive-failure scaffolding, and structured reflection show **no advantage** on externally-rated workplace problem-solving after controlling for incoming student profile, internship exposure, and GPA. "Refinement" is not an acceptable response to every disconfirmation; the [validation plan](./graduate-outcome-validation.html) must pre-commit to the effect sizes and controls that would count as a genuine failure rather than a call for adjustment.
+
+### What we claim, and how strongly
+
+- **Claims we make strongly (well-supported):** problem-solving is domain-bound; expertise is schema-mediated; far transfer needs explicit scaffolding; structured debriefs improve performance; productive failure improves conceptual understanding and near transfer under PS-I conditions.
+- **Claims we treat as design hypotheses (plausible, not established):** that curriculum snapshots + K/U/D depths + audit probes can *diagnose* program-level problem-solving formation; that cumulative exposure across four years produces better problem-solvers.
+- **Claims we do NOT make:** that the tool *measures* graduate problem-solving today; that a high map equals a strong program; that "covered" equals "developed."
+
+---
+
 ## Why this document exists
 
 Employers consistently rate problem-solving among the most desirable graduate competencies. The National Association of Colleges and Employers' annual Job Outlook surveys have placed problem-solving at or near the top of the competencies list for years running. Yet faculty conversations about how to develop problem-solving regularly stall: the natural moves — add a "Problem-Solving" course, list it as a generic outcome, ask each instructor to teach it — produce graduates who do not, in the employer signal, solve problems any better than before.
@@ -53,7 +90,7 @@ Sinha and Kapur's 2021 review in *Review of Educational Research* aggregates the
 
 The same meta-analysis finds no significant advantage for procedural-knowledge outcomes, and the effect is moderated by design fidelity. Generalization beyond conceptual learning and near-transfer outcomes requires its own evidence.
 
-The framework treats this as informative rather than disqualifying. The GC curriculum's core (press operations, ink, plates, prepress, color management, finishing) is exactly the design space Kapur's PS-I framework was built around — canonical solutions and concrete failure modes. Productive failure in the Kapur sense applies directly. A smaller portion of the program reaches design-judgment territory where multiple defensible solutions coexist (typography, layout, brand identity); for those modules *productive struggle* — critique, iteration, revision, reflective practice in the Schön tradition — is the more defensible framing.
+The framework treats this as informative rather than disqualifying. The GC curriculum's core (press operations, ink, plates, prepress, color management, finishing) is *substantially closer to the PS-I evidence base* than open-ended design judgment — it has canonical principles and concrete failure modes — though it is not a mathematics-style canonical-solution domain: production work also involves machine variability, tacit operator judgment, vendor-specific workflows, and time/waste/safety constraints, so the fit requires local validation rather than direct transplant. In particular, GC's most characteristic industry problem-solving is often *diagnostic troubleshooting under production constraints* (noisy symptoms, interacting causes, costly interventions, expert heuristics) — which Kapur-style "attempt before instruction" does not cleanly cover, and which may warrant its own audit condition (provisionally, *diagnostic constraint modeling*: does the course require students to identify likely causes, rule out alternatives, justify tests, and choose interventions under constraints of time, waste, safety, and production impact?). A smaller portion of the program reaches design-judgment territory where multiple defensible solutions coexist (typography, layout, brand identity); for those modules *productive struggle* — critique, iteration, revision, reflective practice in the Schön tradition — is the more defensible framing.
 
 Program-level cumulative claims (that exposure to productive-failure cycles over a four-year program builds a generalized problem-solving disposition) remain framework hypotheses. Validation path: graduate-outcome study (see [graduate-outcome-validation.html](./graduate-outcome-validation.html)). The audit area surfaces the conditions in either zone; the program-level reading interprets the scaffolding with the warrant strength appropriate to where the course sits.
 
@@ -103,7 +140,7 @@ Third, the metacognition question — whether some general habits of mind transf
 
 Fourth, the failure-confidence connection is theoretically appealing but thin in direct evidence. The faculty intuition that productive-failure experiences build confidence and self-efficacy as a consequence is plausible and consistent with the productive-failure literature, but the mechanism is not well-studied independently. Albert Bandura's self-efficacy framework actually suggests that *mastery experiences* — succeeding after effort — build self-efficacy more reliably than failure does, and the productive-failure literature is best read as saying that productive failure works by producing understanding that emerges from struggle, which is then followed by mastery experiences, which then build confidence. The chain is more indirect than "failure builds confidence."
 
-Fifth, generalizing across disciplinary cultures requires care. The productive-failure paradigm has been most extensively studied in mathematics and science contexts where canonical solutions exist and failure modes are unambiguous. For Graphic Communications, this caveat applies narrowly: the program's core (press, ink, plates, prepress, color management, finishing) is settled technical knowledge under exactly those conditions. The smaller portion of horizontal-knowledge work (typography, layout, brand judgment) does need the softer framing of productive struggle rather than productive failure, but it is adjunct, not the curriculum's character. The framework should be applied with humility about empirical reach; the reach covers the bulk of what GC students actually do.
+Fifth, generalizing across disciplinary cultures requires care. The productive-failure paradigm has been most extensively studied in mathematics and science contexts where canonical solutions exist and failure modes are relatively well-defined. For Graphic Communications, this caveat applies but should not be overstated: the program's core (press, ink, plates, prepress, color management, finishing) is settled technical knowledge that approximates those conditions — closely enough that the evidence base is informative, but with enough equipment-specific, tacit, and constraint-driven decision making that direct transplant of mathematics-classroom findings would overclaim. The smaller portion of horizontal-knowledge work (typography, layout, brand judgment) does need the softer framing of productive struggle rather than productive failure, but it is adjunct, not the curriculum's character. The framework should be applied with humility about empirical reach; the reach covers the bulk of what GC students actually do.
 
 ## Part II — The framework's response
 
@@ -125,11 +162,11 @@ These descriptors map directly onto the transferable-capability targets of the c
 
 U-4 and U-5 describe the metacognitive capacity to operate principles under novelty and to know where they break down. This is the moderate-generalist position made operational: the cross-domain habit of mind that can transfer is the habit of reasoning through novelty and critiquing principles, and it is observable at the upper depths of the Understand dimension within each technical competency the program develops.
 
-The operational consequence is that the framework does not need a separate "Problem-Solving" measurement. The depth scales already encode the problem-solving surface — at the right scale, which is depth-within-domain rather than free-floating-skill. The Program Coverage Matrix, which shows confirmed snapshots × career-target sub-competencies with K/U/D depth values, can be read as a problem-solving-capacity diagnostic when filtered to the upper-range depths. The matrix shows where the program reaches D-4 and D-5; it shows where it does not. The problem-solving lens in the matrix view (shipped today) makes this surface visible by emphasizing the upper depths and de-emphasizing the lower depths in a graded rather than binary way.
+The operational consequence is that the framework does not need a separate "Problem-Solving" measurement. The depth scales already encode the problem-solving surface — at the right scale, which is depth-within-domain rather than free-floating-skill. The Program Coverage Matrix, which shows confirmed snapshots × career-target sub-competencies with K/U/D depth values, can be read as a problem-solving-capacity diagnostic when filtered to the upper-range depths. The matrix shows where the program reaches D-4 and D-5; it shows where it does not. The matrix's **upper-depth opportunity map** (the lens labeled "Upper-depth", shipped today — deliberately *not* called a "problem-solving lens" because it reads depth alone) makes this surface visible by emphasizing the upper depths and de-emphasizing the lower depths in a graded rather than binary way. It shows where problem-solving *can* form — the opportunity — not whether it *does*; the latter requires the productive-failure and reflection layer (Phase 1B).
 
 ### Claim 2 — The CourseCapture audit surfaces productive-failure and reflection conditions per course
 
-Depth alone is not sufficient. A course can reach D-5 through repetitive practice on familiar problems and never develop transferable problem-solving capacity in students; graduates of such a course can perform on known problems but freeze when novelty arrives. The literature on transfer is unambiguous about this: depth-without-pedagogy produces in-domain competence without the conditions that make it transferable.
+Depth alone is not sufficient. A course can reach D-5 through repetitive practice on familiar problems and never develop transferable problem-solving capacity in students; graduates of such a course can perform on known problems but freeze when novelty arrives. The literature on transfer is broadly consistent on this point: depth-without-pedagogy produces in-domain competence without the conditions that make it transferable.
 
 The audit area added to CourseCapture today probes for the conditions that make the depth productive. The probes are structured around the five conditions the research identifies as the productive-failure-and-reflection mechanism:
 
@@ -147,7 +184,7 @@ No single course produces a problem-solver. The temptation to ask "does GC 3460 
 
 The program-level diagnostic the framework produces is read across three structural questions:
 
-- **Does the curriculum reach the upper-range depths in the right domains?** The Program Coverage Matrix's problem-solving lens (shipped today) shows the U/D upper-depth distribution across the program. A career target whose sub-competencies require D-4 and D-5 development but the curriculum tops out at D-2 is a problem-solving gap, even if every cell is "covered" at some depth. The lens highlights this immediately.
+- **Does the curriculum reach the upper-range depths in the right domains?** The Program Coverage Matrix's **upper-depth opportunity map** (labeled "Upper-depth", shipped today) shows the U/D upper-depth distribution across the program — the *opportunity* surface, read from depth alone. A career target whose sub-competencies require D-4 and D-5 development but the curriculum tops out at D-2 is a problem-solving gap, even if every cell is "covered" at some depth. The lens highlights this immediately.
 - **Are productive-failure conditions placed where the depth progression makes them productive?** The Phase 1B Scaffolding Analysis (Stage 1 shipped 2026-05-28 — the per-target scaffolding strip; the AI-narrative, brittle-scaffold-list, and course-contribution views are Stage 2, pending) reads the sequence of productive-failure conditions across courses ordered by program position. The diagnostic asks whether the conditions are introduced in courses where prior coursework has built enough depth for the failure to be productive — graded by depth weight rather than gated by threshold.
 - **Is reflection scaffolding present in the courses where the cumulative pattern should consolidate?** Upper-division courses, capstones, and integrating projects are where the developmental pattern should bring the cumulative productive-failure exposure into transferable habit. The Phase 1B analysis flags upper-division courses without structured-post-mortem conditions as a load-bearing absence.
 
@@ -163,7 +200,7 @@ The operational chain that produces a program-level problem-solving diagnostic, 
 
 3. **Per-target scoring.** The Phase 1A Program Coverage Matrix scorer runs (on demand) against each (snapshot × career target) pair, producing per-sub-competency K/U/D depth values. The conservative scoring discipline established in the Manning-encoded scorer ensures depths are not inflated by topic overlap or aspirational language.
 
-4. **Program-level reading.** The Program Coverage Matrix's problem-solving lens (shipped today) reads the resulting coverage cells and produces the upper-depth distribution: across all snapshots that contribute to each sub-competency, where does the program reach D-4 or D-5? Per target, the rollup is visible at a glance.
+4. **Program-level reading.** The Program Coverage Matrix's **upper-depth opportunity map** (labeled "Upper-depth", shipped today) reads the resulting coverage cells and produces the upper-depth distribution: across all snapshots that contribute to each sub-competency, where does the program reach D-4 or D-5? Per target, the rollup is visible at a glance. (This reads depth alone; the problem-solving-*formation* diagnostic combines it with productive failure + reflection + sequence in Phase 1B.)
 
 5. **Scaffolding analysis (Phase 1B — Stage 1 shipped 2026-05-28).** The Scaffolding Analysis reads each snapshot's `productive_failure_conditions` together with its K/U/D depth values and aggregates across the program-sequence order. Stage 1 ships the per-target scaffolding strip (which courses contribute what, in what order), with a `no_data` band that keeps never-assessed courses visibly distinct from genuinely-empty ones rather than collapsing both to zero. The brittle-scaffold list (where the depth progression and pedagogical scaffolding fail to match) and the course-contribution summary (which courses are doing disproportionate problem-solving formation work), plus the AI-narrative generation, are Stage 2 (pending).
 

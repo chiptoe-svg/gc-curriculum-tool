@@ -53,7 +53,13 @@ function maxOf(c: MatrixCoverageCell | null): number | null {
   return Math.max(...vals);
 }
 
-// Problem-solving lens: U and D dimensions are where problem-solving lives.
+// "Upper-depth" lens (internal value 'problem-solving'; user-facing label is
+// "Upper-depth", renamed 2026-06-04). It is an UPPER-DEPTH OPPORTUNITY MAP: it
+// shows where problem-solving CAN form (U/D upper depths), reading depth ALONE.
+// It is NOT the problem-solving-formation diagnostic — that requires depth ×
+// productive-failure × reflection × sequence, which is the Phase 1B Scaffolding
+// view. Labeling this view "problem-solving" overclaimed; see the deep-dive's
+// "upper-depth opportunity map" framing.
 // The U-4/5 anchors ("reasons through novel cases / critiques the principle")
 // and D-4/5 anchors ("adapts to new conditions / performs creatively with
 // critical judgment") are the depth surface that defines problem-solving
@@ -277,9 +283,9 @@ export function ProgramCoverageClient({ slug, initialData }: Props) {
               type="button"
               onClick={() => setLens('problem-solving')}
               className={'px-3 py-1.5 border-l ' + (lens === 'problem-solving' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted/50 text-foreground')}
-              title="Emphasize the U/D upper-range depths where problem-solving competence lives. Per docs/background.html §8."
+              title="Upper-depth opportunity map: emphasizes the U/D upper-range depths where problem-solving CAN form. Reads depth alone — whether the program actually builds problem-solving (productive failure × reflection × sequence) is the Scaffolding view (Phase 1B). Per docs/background.html §8."
             >
-              Problem-solving
+              Upper-depth
             </button>
           </div>
         </div>
@@ -434,7 +440,7 @@ export function ProgramCoverageClient({ slug, initialData }: Props) {
               ))}
             </div>
             <p className="mt-2 text-[10px] text-muted-foreground">
-              The problem-solving lens emphasizes the U/D upper-range depths where problem-solving competence lives. U-4/5 = reasons through and critiques principles in novel cases; D-4/5 = adapts to new conditions, performs with creative judgment. Lower depths are de-emphasized but not hidden — they contribute to problem-solving development in degrees, per <a href="https://chiptoe-svg.github.io/gc-curriculum-tool/docs/background.html#problem-solving" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">background.html §8</a>. K is excluded from this view (recall alone doesn&rsquo;t indicate problem-solving).
+              This <strong>upper-depth opportunity map</strong> emphasizes the U/D upper-range depths — where the <em>opportunity</em> for problem-solving formation appears. It reads <strong>depth alone</strong>; whether a course actually builds transferable problem-solving (productive failure × structured reflection × sequence) is the Scaffolding view (Phase 1B), not this map. U-4/5 = reasons through and critiques principles in novel cases; D-4/5 = adapts to new conditions, performs with creative judgment. Lower depths are de-emphasized but not hidden — they contribute in degrees, per <a href="https://chiptoe-svg.github.io/gc-curriculum-tool/docs/background.html#problem-solving" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">background.html §8</a>. K is excluded (recall alone doesn&rsquo;t indicate problem-solving).
             </p>
             <p className="mt-1 text-[10px] text-muted-foreground italic">
               v2 (planned): weight the contribution of each contributing snapshot by its productive-failure conditions (Audit Area 7 of CourseCapture) so this view also reflects whether the courses that reach upper depths do so through the kind of pedagogy that produces transferable problem-solving rather than memorization at depth.
