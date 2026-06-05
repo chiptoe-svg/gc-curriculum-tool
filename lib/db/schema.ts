@@ -596,6 +596,27 @@ export const prerequisiteEdges = pgTable('prerequisite_edges', {
 }));
 
 /**
+ * Syllabus-rough INTENDED coverage — "what the course says it teaches", a
+ * different quantity from measured attainment. Evidence-ladder band: claimed.
+ * NEVER merged into snapshot_target_coverage. Migration 0031.
+ * Design: docs/superpowers/specs/2026-06-05-intended-skills-rough-pass-design.md
+ */
+export const courseIntendedCoverage = pgTable('course_intended_coverage', {
+  courseCode: text('course_code').notNull().references(() => courses.code, { onDelete: 'cascade' }),
+  subCompetencyId: text('sub_competency_id').notNull().references(() => subCompetencies.id, { onDelete: 'cascade' }),
+  intendedK: integer('intended_k'),
+  intendedU: integer('intended_u'),
+  intendedD: integer('intended_d'),
+  confidence: text('confidence').notNull(),
+  rationale: text('rationale').notNull().default(''),
+  model: text('model').notNull(),
+  generatedAt: timestamp('generated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.courseCode, t.subCompetencyId] }),
+  courseIdx: index('idx_course_intended_coverage_course').on(t.courseCode),
+}));
+
+/**
  * Derived: per-career-target KUD+ aggregate, recomputed from non-superseded
  * position_captures with status='submitted' and completeness='interviewed'.
  * v1 aggregate function is deterministic Markdown side-by-side (no AI);
