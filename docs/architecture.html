@@ -337,7 +337,7 @@
     <div class="surface-card">
       <div class="surface-card-label">Partner Survey</div>
       <div class="surface-card-access">HTTPS · Magic-link · /partners/&lt;token&gt;</div>
-      <p>Industry-partner input surface served by the same Mac via Tailscale Funnel (was on Vercel until 2026-06-04). Partners receive a magic-link invitation, match themselves to career targets, and submit position descriptions. AI synthesis on /admin/synthesis aggregates submissions into proposed KUD+ edits for faculty to review and adopt or reject. As of CareerCapture v1 (2026-06-04) partners can also do a 20-45 minute AI-conducted interview anchored to one career target; the synthesis is read back on /admin/synthesis as "Employer interviews".</p>
+      <p>Industry-partner input surface served by the same Mac via Tailscale Funnel (was on Vercel until 2026-06-04). Partners receive a magic-link invitation, match themselves to career targets, and walk through the <strong>Position Capture v1</strong> 6-page flow: career-target picker → JD ingest (Docling + LLM extraction) → uniqueness → interview questions → trajectory → AI-rated experiences → agent interview. Each completed position produces an immutable <code>position_captures</code> row; multiple positions per target roll up into a <code>career_target_kud_aggregate</code>. AI synthesis on /admin/synthesis aggregates captured positions into proposed KUD+ edits for faculty to review and adopt or reject. (CareerCapture v1 — a non-functional prototype at <code>/partners/[token]/interview/[targetId]</code> — was retired and its tables renamed in schema 0029.)</p>
     </div>
   </div>
 
