@@ -10,6 +10,26 @@ import { FACULTY_ROSTER, DEPARTMENT_CANONICAL } from '@/lib/faculty';
 // Re-export so existing imports from this module keep working.
 export type { ChatMessage } from '@/lib/ai/analyze/capture-chat';
 
+// Heuristic: did the audit cover problem-solving (Audit Area 7)? The agent's
+// readiness `covered` topics are free-form prose, so we substring-match a small
+// token set. A soft nudge only — a false negative just shows an extra prompt,
+// a false positive just skips it; neither corrupts data (the profile records PF
+// honestly regardless).
+const PROBLEM_SOLVING_TOKENS = [
+  'productive failure', 'problem-solving', 'problem solving',
+  'post-mortem', 'post mortem',
+  // 'reflection' is intentionally broad — coveredEver entries are agent-authored
+  // topic labels (noun phrases), so this almost always means reflective practice,
+  // not e.g. optical reflection. A stray match only skips a soft nudge.
+  'reflection', 'area 7',
+];
+export function coveredIncludesProblemSolving(topics: string[]): boolean {
+  return topics.some(t => {
+    const s = t.toLowerCase();
+    return PROBLEM_SOLVING_TOKENS.some(tok => s.includes(tok));
+  });
+}
+
 export interface SessionBriefingView {
   sessionId: string;
   startedAt: string; // ISO — Date is not passed across the RSC boundary here
@@ -182,7 +202,15 @@ export function CaptureChatPanel({
   // conversation together server-side. v1 responses leave this null.
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [drawerTarget, setDrawerTarget] = useState<CitationTarget | null>(null);
+  const [pendingGenerate, setPendingGenerate] = useState(false);
   const transcriptRef = useRef<HTMLDivElement>(null);
+
+  // Auto-dismiss the soft nudge if problem-solving gets covered while it's open.
+  useEffect(() => {
+    if (pendingGenerate && coveredIncludesProblemSolving(coveredEver)) {
+      setPendingGenerate(false);
+    }
+  }, [pendingGenerate, coveredEver]);
 
   useEffect(() => {
     transcriptRef.current?.scrollTo({ top: transcriptRef.current.scrollHeight, behavior: 'smooth' });
@@ -327,6 +355,14 @@ export function CaptureChatPanel({
   }
 
   const canGenerate = messages.some(m => m.role === 'assistant');
+
+  function handleGenerateClick() {
+    if (!coveredIncludesProblemSolving(coveredEver)) {
+      setPendingGenerate(true);
+      return;
+    }
+    onGenerate();
+  }
 
   return (
     <section className="rounded-md border bg-card shadow-sm">
@@ -568,12 +604,35 @@ export function CaptureChatPanel({
             placeholder="Type a reply, or use voice. Enter to send, Shift+Enter for a new line."
             className="w-full resize-y rounded border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
           />
+          {pendingGenerate && (
+            <div className="mb-2 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+              <p className="mb-2">
+                Problem-solving (productive failure, Audit Area 7) wasn&rsquo;t probed &mdash; the profile will record it as <strong>&ldquo;not assessed&rdquo;</strong>. You can generate anyway, or keep auditing to capture it.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setPendingGenerate(false); onGenerate(); }}
+                  className="rounded border border-amber-400 bg-white px-2 py-1 font-medium hover:bg-amber-100"
+                >
+                  Generate anyway
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPendingGenerate(false)}
+                  className="rounded border border-stone-300 bg-white px-2 py-1 font-medium text-stone-700 hover:bg-stone-50"
+                >
+                  Keep auditing
+                </button>
+              </div>
+            </div>
+          )}
           <div className="flex items-center justify-between gap-3">
             <VoiceRecorder slug={slug} onTranscript={appendTranscript} disabled={busy} />
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={onGenerate}
+                onClick={handleGenerateClick}
                 disabled={!canGenerate || busy}
                 className={
                   'rounded-md border px-3 py-1.5 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed '
