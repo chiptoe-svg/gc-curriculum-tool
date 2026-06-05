@@ -12,6 +12,18 @@ export const maxDuration = 60;
 interface RouteContext { params: Promise<{ token: string; id: string }> }
 
 /**
+ * True when the error is a Postgres unique-constraint violation on the
+ * per-session turn-index uniqueness — i.e. a concurrent POST (partner
+ * double-clicked Send) raced this one to the same (session_id, turn_index).
+ * The first write wins; the loser should retry, not see a 500.
+ */
+function isDuplicateTurn(e: unknown): boolean {
+  const code = (e as { code?: string })?.code;
+  const msg = e instanceof Error ? e.message : '';
+  return code === '23505' || msg.includes('uq_position_capture_messages_session_turn');
+}
+
+/**
  * GET /api/partners/[token]/positions/[id]/chat?sessionId=<sid>
  * Loads the stored transcript for an existing session so Page6Section
  * can rehydrate after a remount / refresh.
@@ -134,6 +146,13 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
       telemetry: { costUsdCents: result.costUsdCents, durationMs: result.durationMs, model: result.model },
     });
   } catch (e) {
+    if (isDuplicateTurn(e)) {
+      // Concurrent POST already recorded this turn; first write wins.
+      return NextResponse.json(
+        { error: 'duplicate turn', detail: 'a concurrent request already recorded this turn — please retry' },
+        { status: 409 },
+      );
+    }
     const msg = e instanceof Error ? e.message : 'turn failed';
     console.error('[chat turn]', msg);
     return NextResponse.json({ error: 'turn failed', detail: msg.slice(0, 300) }, { status: 500 });

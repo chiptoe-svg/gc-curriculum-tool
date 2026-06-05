@@ -242,6 +242,19 @@ export function Page1Section({ token, captureId, structuredInputs, positionTitle
 
   return (
     <div className="space-y-6">
+      {/* Single hidden file input shared by the upload + re-upload buttons.
+          Mounted once at the top level so the two buttons (in mutually
+          exclusive branches below) don't each declare their own input on the
+          same ref. */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+        className="sr-only"
+        onChange={handleFileChange}
+        disabled={extracting}
+      />
+
       {/* --- JD ingest zone --- */}
       {!extracted && (
         <section className="rounded-lg border border-slate-200 bg-slate-50 p-5">
@@ -253,14 +266,6 @@ export function Page1Section({ token, captureId, structuredInputs, positionTitle
 
           {/* File upload */}
           <div className="mb-4">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
-              className="sr-only"
-              onChange={handleFileChange}
-              disabled={extracting}
-            />
             <button
               type="button"
               disabled={extracting}
@@ -317,14 +322,6 @@ export function Page1Section({ token, captureId, structuredInputs, positionTitle
             >
               Re-upload JD
             </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
-              className="sr-only"
-              onChange={handleFileChange}
-              disabled={extracting}
-            />
           </div>
         </div>
       )}
