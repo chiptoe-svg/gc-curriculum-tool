@@ -127,6 +127,11 @@ function GapList({
                     syllabus-promise — not verified
                   </p>
                 )}
+                {g.basis === 'mixed' && (
+                  <p className="mt-0.5 font-body-sans text-[10px] italic text-amber-700 dark:text-amber-400">
+                    partial — some prereqs unverified
+                  </p>
+                )}
                 {g.contributingPrereqs.length > 0 && (
                   <p className="mt-0.5 font-mono-plex text-[9px] text-muted-foreground/60">
                     via {g.contributingPrereqs.join(', ')}
@@ -311,9 +316,11 @@ export default async function CourseDetailPage({ params, searchParams }: Props) 
             <p className="mt-0.5 text-sm text-muted-foreground">
               For each confirmed edge, compares what this course expects students to arrive with
               against what the prerequisite course's latest captured snapshot actually delivers.
-              Only confirmed edges are included. <strong>Basis: measured</strong> uses the captured
-              snapshot; <strong>syllabus-promise</strong> means the prerequisite has not been
-              captured yet and intended coverage was used instead.
+              Only confirmed edges are included. <strong>Basis: measured</strong> uses the
+              captured snapshot; <strong>partial</strong> means measured data exists but an
+              unverified syllabus value raised the delivered figure on at least one dimension —
+              treat as a caution; <strong>syllabus-promise</strong> means the prerequisite has
+              not been captured at all and only intended coverage is available.
             </p>
           </div>
 

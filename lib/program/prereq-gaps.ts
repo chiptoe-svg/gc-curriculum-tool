@@ -15,6 +15,18 @@
  * measured attainment if it has one, else its intended attainment. A measured
  * row for prereq B does NOT suppress an intended row for a different prereq C.
  *
+ * Basis derivation (precise):
+ *   measured — every delivered value is backed by measured attainment only;
+ *              an intended row never raised the delivered figure above what
+ *              measured alone would have provided.
+ *   mixed    — at least one measured row is present, BUT an intended (syllabus)
+ *              value raised the delivered figure on ≥1 KUD dimension above what
+ *              measured rows alone provide. The gap may appear "met" only because
+ *              of an unverified syllabus promise — must be flagged in the UI.
+ *   intended — no measured rows at all; the entire delivered figure rests on
+ *              syllabus promises.
+ *   none     — no delivered data whatsoever (pool is empty).
+ *
  * Chain traversal (transitivity) is NOT performed here. Direct edges only.
  * Program-wide transitive diagnostics belong to the deferred scaffolding-
  * analysis increment; this function is a per-course building block.
@@ -34,7 +46,7 @@ import { getIntendedCoverageForCourses } from '@/lib/db/courses-queries';
 // Types (exported for callers + tests)
 // ---------------------------------------------------------------------------
 
-export type GapBasis = 'measured' | 'intended' | 'none';
+export type GapBasis = 'measured' | 'mixed' | 'intended' | 'none';
 export type GapStatus = 'met' | 'gap' | 'no_data';
 
 /**
@@ -150,7 +162,7 @@ export function computeGapsFromInputs(
       return rcMeasured.length > 0 ? rcMeasured : rcRows;
     });
 
-    // (d) delivered = MAX across pool
+    // (d) delivered = MAX across pool; basis derived precisely
     let basis: GapBasis;
     let delivD: { k: number | null; u: number | null; d: number | null };
 
@@ -158,12 +170,31 @@ export function computeGapsFromInputs(
       basis = 'none';
       delivD = { k: null, u: null, d: null };
     } else {
-      basis = pool.some((d) => d.basis === 'measured') ? 'measured' : 'intended';
       delivD = {
         k: pool.reduce<number | null>((m, d) => maxN(m, d.k), null),
         u: pool.reduce<number | null>((m, d) => maxN(m, d.u), null),
         d: pool.reduce<number | null>((m, d) => maxN(m, d.d), null),
       };
+
+      const measuredRows = pool.filter((d) => d.basis === 'measured');
+      if (measuredRows.length === 0) {
+        basis = 'intended';
+      } else {
+        // Measure-only delivered — what measured alone would have provided
+        const measDeliv = {
+          k: measuredRows.reduce<number | null>((m, d) => maxN(m, d.k), null),
+          u: measuredRows.reduce<number | null>((m, d) => maxN(m, d.u), null),
+          d: measuredRows.reduce<number | null>((m, d) => maxN(m, d.d), null),
+        };
+        // raised(full, meas): an intended row pushed this dim above what measured alone provides
+        const raised = (full: number | null, meas: number | null) =>
+          (full ?? -1) > (meas ?? -1);
+        const intendedRaised =
+          raised(delivD.k, measDeliv.k) ||
+          raised(delivD.u, measDeliv.u) ||
+          raised(delivD.d, measDeliv.d);
+        basis = intendedRaised ? 'mixed' : 'measured';
+      }
     }
 
     // (e) gap per dim
@@ -274,18 +305,7 @@ export async function computePrereqGaps(
       .limit(1);
 
     if (!subComp) {
-      // sub-comp not found — still emit intended if available
-      const intRow = intendedLookup.get(`${prereqCourseCode}::${subCompetencyId}`);
-      if (intRow) {
-        deliveredAttainments.push({
-          prereqCourseCode,
-          subCompetencyId,
-          k: intRow.intendedK,
-          u: intRow.intendedU,
-          d: intRow.intendedD,
-          basis: 'intended',
-        });
-      }
+      // sub-comp deleted → its edges + intended rows are cascade-deleted; unreachable.
       continue;
     }
 

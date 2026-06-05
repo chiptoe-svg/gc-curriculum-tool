@@ -296,8 +296,9 @@ describe('per-prereq measured-vs-intended pool', () => {
   // Case 1: B has measured d2; C has intended d5.
   // C's intended must NOT be dropped just because B has measured data.
   // Pool = [B measured d2, C intended d5] → MAX = 5.
-  // basis = 'measured' (pool contains at least one measured row).
-  it('B measured d2 + C intended d5 → delivered.d=5, basis=measured (C not suppressed)', () => {
+  // C's intended raised delivered above what measured alone (d2) provides →
+  // basis = 'mixed' (not 'measured' — the gap is closed only by an unverified value).
+  it('B measured d2 + C intended d5 → delivered.d=5, basis=mixed (intended raised above measured-only)', () => {
     const edges: RelyEdge[] = [
       edge('B', 'X', null, null, 3),
       edge('C', 'X', null, null, 3),
@@ -309,12 +310,13 @@ describe('per-prereq measured-vs-intended pool', () => {
     const gaps = computeGapsFromInputs(edges, del);
     const g = gapFor(gaps, 'X');
     expect(g.delivered.d).toBe(5); // C's intended d5 is NOT suppressed by B's measured
-    expect(g.basis).toBe('measured'); // pool has B's measured row
+    expect(g.basis).toBe('mixed'); // C's intended raised delivered above measured-only d2
     expect(g.gap.d).toBe(0); // needed 3, delivered 5 → met
     expect(g.status).toBe('met');
   });
 
-  // Case 2: B measured d2; C intended d1 → MAX = 2, basis = measured.
+  // Case 2: B measured d2; C intended d1 → MAX = 2, intended did NOT raise above measured.
+  // basis = 'measured' (measured alone wins; intended never exceeded it).
   it('B measured d2 + C intended d1 → delivered.d=2, basis=measured', () => {
     const edges: RelyEdge[] = [
       edge('B', 'X', null, null, 3),
@@ -343,6 +345,26 @@ describe('per-prereq measured-vs-intended pool', () => {
     expect(g.delivered.d).toBe(4);
     expect(g.basis).toBe('intended');
     expect(g.gap.d).toBe(0);
+    expect(g.status).toBe('met');
+  });
+
+  // Case 4: explicit 'mixed' basis test.
+  // B measured d2, C intended d4. Needed d4.
+  // Measured alone only covers d2; intended raised delivered to d4 → status met, basis=mixed.
+  it('mixed: measured d2 + intended d4, needed d4 → status=met, basis=mixed (gap closed only by intended)', () => {
+    const edges: RelyEdge[] = [
+      edge('B', 'X', null, null, 4),
+      edge('C', 'X', null, null, 4),
+    ];
+    const del: DeliveredAttainment[] = [
+      delivered('B', 'X', null, null, 2, 'measured'),
+      delivered('C', 'X', null, null, 4, 'intended'),
+    ];
+    const gaps = computeGapsFromInputs(edges, del);
+    const g = gapFor(gaps, 'X');
+    expect(g.delivered.d).toBe(4);   // MAX(2, 4)
+    expect(g.basis).toBe('mixed');    // intended raised above measured-only d2
+    expect(g.gap.d).toBe(0);         // needed 4, delivered 4 → met
     expect(g.status).toBe('met');
   });
 });
