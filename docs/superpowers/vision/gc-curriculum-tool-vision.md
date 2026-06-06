@@ -60,6 +60,8 @@ KUD+ scores are *course-opportunity scores* — what the course is designed and 
 
 The framework fits a professional field like Graphic Communications naturally. *Knowing* color theory, *understanding* why it drives brand perception, being able to *color-grade* a project to brand spec are three real, separable things — and exactly the kind of distinction the program needs to track across courses and career destinations. The depth dimension then captures the difference between a course that briefly mentions color theory in a lecture and a course that assesses students on color-managed production files against a rubric.
 
+Stepping back, the shape this produces is a familiar one: a graph of competencies in which prerequisites gate what each course can expect, and every node carries a depth level. That is, in effect, an **evidence-gated skill tree** — the same prerequisite-and-depth structure that adaptive-learning systems formalize as a *knowledge space* (the object behind tools like ALEKS), except every edge here must be **earned by evidence, not authored**. The framing, and the three places the metaphor misleads, are in the [Background document](../../background.html#grounding).
+
 **Further reading:** the [KUD+ Background document](../../background.html) is the academic companion to this vision; ASCD's *Understanding by Design* white paper at https://files.ascd.org/staticfiles/ascd/pdf/siteASCD/publications/UbD_WhitePaper0312.pdf remains the standard reference for the backward-design tradition the framework builds on.
 
 ### References
