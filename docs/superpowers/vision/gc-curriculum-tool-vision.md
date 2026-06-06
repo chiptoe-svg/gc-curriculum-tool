@@ -82,9 +82,9 @@ When the full tool is in production, it is the department's shared, versioned wo
 
 - **A coverage matrix.** For every course × every career target, the system generates an AI-drafted, evidence-cited coverage judgment from confirmed snapshots; faculty can review, dispute, and override the judgment. [LIVE (faculty trial)]
 
-- **Scaffolding analysis.** [Specified, not built] The planned scaffolding analysis will use confirmed course snapshots to generate evidence-cited scaffold judgments for faculty review — introduced in earlier courses, developed in middle courses, applied in capstones. It will flag the cases that look fine cell-by-cell but fail program-wide: a senior-level course that expects mastery of something never taught before.
+- **Scaffolding analysis.** [LIVE — Stage 1] The scaffolding analysis uses confirmed course snapshots to generate scaffold judgments for faculty review — introduced in earlier courses, developed in middle courses, applied in capstones — and flags the cases that look fine cell-by-cell but fail program-wide: a senior-level course that expects mastery of something never taught before. (Deterministic Stage 1 is live at `/program/scaffolding`; the AI-narrative Stage 2 is the next build.)
 
-- **Prerequisite-gap analysis.** For any course, the tool reports whether the prior coursework students actually take supports what this course expects. Not what the registrar says is required — what the *competencies* require.
+- **Prerequisite-gap analysis.** [LIVE] For any course, the tool reports whether the prior coursework students actually take supports what this course expects. Not what the registrar says is required — what the *competencies* require. (Shipped as skill-tagged prerequisite edges with a per-course gap view at `/courses/[code]`.)
 
 - **A flag/dispute trail.** Every AI judgment can be flagged with a faculty note. Flags get reviewed; the prompts and rubrics improve over time; the curriculum's understanding of itself sharpens.
 
@@ -123,7 +123,7 @@ The framework's intended day-to-day workflow runs across four surfaces. A fifth 
 
 - **`/preview/<slug>` — M-trial prototype.** The original three-tool slice (Course Builder · Prereq Analyzer · Career Target Alignment) that demonstrated the AI's analysis quality on real GC courses. Superseded by CourseCapture + Explore + Program for new captures; kept accessible because the existing M-trial flags and runs remain useful institutional memory.
 
-The point of the trial period is unchanged: confirm that *the analysis is good enough to be useful*. If faculty find the readings credible, defensible, and worth disputing on the merits, the remaining Phase 1 views (scaffolding, prerequisite gaps, advising) become the next implementation work.
+The point of the trial period is unchanged: confirm that *the analysis is good enough to be useful*. If faculty find the readings credible, defensible, and worth disputing on the merits, the remaining Phase 1 view — the advising view — becomes the next implementation work (scaffolding and prerequisite-gap analysis have since shipped).
 
 ## Operational realities
 
@@ -159,8 +159,8 @@ Two channels — both visible to other faculty so feedback compounds instead of 
 - **M-trial** — ✅ Done. The original faculty-facing analysis prototype at `/preview/<slug>` remains live and exposes three tools (Course Builder, Prereq Analyzer, Career Target Alignment). The shared sheet of standardized course records has since been replaced by a catalog seed (120 courses).
 - **CourseCapture v1** — ✅ Done. The per-course audit workflow at `/capture/<code>` produces a confirmed Course Outcome Profile from catalog + Canvas + uploads + voice/chat audit. Snapshots are immutable; drafts remain mutable; multiple snapshots per course supported.
 - **Explore module v1** — ✅ Done. Custom-target and downstream-target alignment modes at `/explore`, plus what-if scenarios.
-- **Phase 1A — Program Coverage Matrix** — ✅ Done (2026-05-25). The end-state coverage matrix described above is live at `/program`: confirmed snapshots × career-target sub-competencies, heat-map rendering, on-demand AI scoring, cell drawer with evidence and rationale. The other Phase 1 views (scaffolding, prerequisite gaps, advising) are spec'd but not yet implemented.
-- **Phase 1B–D** — In progress. Scaffolding analysis, prerequisite-gap analysis, and the advising view. Specs are in [`docs/superpowers/specs/`](https://github.com/chiptoe-svg/gc-curriculum-tool/tree/main/docs/superpowers/specs); implementation order will follow Phase 1A's reception.
+- **Phase 1A — Program Coverage Matrix** — ✅ Done (2026-05-25). The end-state coverage matrix described above is live at `/program`: confirmed snapshots × career-target sub-competencies, heat-map rendering, on-demand AI scoring, cell drawer with evidence and rationale. Scaffolding analysis (Stage 1) and the prerequisite-gap view have since shipped (2026-05-28 and 2026-06-05); the advising view remains spec'd.
+- **Phase 1B–D** — In progress. Scaffolding analysis (Stage 1 live; AI-narrative Stage 2 next), prerequisite-gap analysis (live), and the advising view (spec'd). Specs are in [`docs/superpowers/specs/`](https://github.com/chiptoe-svg/gc-curriculum-tool/tree/main/docs/superpowers/specs); implementation order will follow Phase 1A's reception.
 - **Phase 2** — Program-wide cross-snapshot diff, rescore-on-edit machinery, conversational agents, accreditation and advisory-board views.
 - **Phase 3** — Public/employer-facing views (CareerCapture), alumni/industry feedback integration, and program-level analytics.
 

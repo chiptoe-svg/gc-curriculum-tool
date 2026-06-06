@@ -1360,20 +1360,23 @@
       </div>
     </div>
     <div class="cap">
-      <div class="cap-title">Scaffolding analysis <span class="status-tag status-specified">Specified, not built</span></div>
+      <div class="cap-title">Scaffolding analysis <span class="status-tag status-live">Live (Stage 1)</span></div>
       <div class="cap-body">
-        The planned scaffolding analysis will use confirmed course snapshots to
-        generate evidence-cited scaffold judgments for faculty review — introduced
-        in earlier courses, developed in middle courses, applied in capstones.
-        Flags cases that look fine cell-by-cell but fail program-wide.
+        The scaffolding analysis uses confirmed course snapshots to generate
+        scaffold judgments for faculty review — introduced in earlier courses,
+        developed in middle courses, applied in capstones — and flags cases that
+        look fine cell-by-cell but fail program-wide. Deterministic Stage 1 is
+        live at <code>/program/scaffolding</code>; the AI-narrative Stage 2 is next.
       </div>
     </div>
     <div class="cap">
-      <div class="cap-title">Prerequisite-gap analysis <span class="status-tag status-specified">Specified, not built</span></div>
+      <div class="cap-title">Prerequisite-gap analysis <span class="status-tag status-live">Live</span></div>
       <div class="cap-body">
         For any course, the tool reports whether the prior coursework students
         actually take supports what this course expects. Not what the registrar
-        says is required — what the <em>competencies</em> require.
+        says is required — what the <em>competencies</em> require. Shipped as
+        skill-tagged prerequisite edges with a per-course gap view at
+        <code>/courses/[code]</code>.
       </div>
     </div>
     <div class="cap">
@@ -1698,7 +1701,7 @@
 <section id="viz-scaffold">
   <h2><span class="num">§</span>Scaffolding analysis <span class="viz-mock-tag">Illustrative · Data Fabricated</span></h2>
   <p>
-    <span class="status-tag status-specified">Specified, not built</span> For each sub-competency of a career target, the planned scaffolding analysis will generate evidence-cited scaffold judgments from confirmed course snapshots for faculty review — introducing it in early courses, building through middle courses, applying in capstones. This view surfaces <strong>brittle</strong> scaffolds: places where an upper-division course expects mastery of something nothing earlier teaches.
+    <span class="status-tag status-live">Live (Stage 1)</span> For each sub-competency of a career target, the scaffolding analysis generates evidence-cited scaffold judgments from confirmed course snapshots for faculty review — introducing it in early courses, building through middle courses, applying in capstones. This view surfaces <strong>brittle</strong> scaffolds: places where an upper-division course expects mastery of something nothing earlier teaches. (Deterministic Stage 1 is live at <code>/program/scaffolding</code>; the richer visualization shown here is illustrative.)
   </p>
 
   <figure>
@@ -2386,7 +2389,7 @@
   <div class="callout">
     <div class="callout-title">What the trial is for</div>
     <p>
-      The point is unchanged: confirm <strong>the analysis is good enough to be useful</strong>. If faculty find the readings credible, defensible, and worth disputing on the merits, the remaining Phase 1 views (scaffolding, prerequisite gaps, advising) become the next implementation work. If they don't, those views would be misleading at scale and the analysis layer needs more work first.
+      The point is unchanged: confirm <strong>the analysis is good enough to be useful</strong>. If faculty find the readings credible, defensible, and worth disputing on the merits, the remaining Phase 1 view — the advising view — becomes the next implementation work (scaffolding and prerequisite-gap analysis have since shipped). If they don't, those views would be misleading at scale and the analysis layer needs more work first.
     </p>
   </div>
 

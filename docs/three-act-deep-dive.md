@@ -8,7 +8,7 @@
 
 ## Why this document exists
 
-The Vision document proposes organizing the GC program in three acts: *Learn the field* (Foundations & Agency), *Integrate the field* (Integration & Mastery), *Apply a focus* (Specialty & Application). The framework treats act boundaries as analytical waypoints — the planned Phase 1B Scaffolding Analysis uses them to surface "brittle scaffolds," where an Act 3 course expects mastery of a competency no Act 1 or Act 2 course actually introduces.
+The Vision document proposes organizing the GC program in three acts: *Learn the field* (Foundations & Agency), *Integrate the field* (Integration & Mastery), *Apply a focus* (Specialty & Application). The framework treats act boundaries as analytical waypoints — the Phase 1B Scaffolding Analysis (Stage 1 live) uses them to surface "brittle scaffolds," where an Act 3 course expects mastery of a competency no Act 1 or Act 2 course actually introduces.
 
 The 3-Act structure is a proposal, not an existing institutional policy. It is load-bearing for the scaffolding diagnostic, and it makes substantive claims about how undergraduate professional education should be organized. Both deserve careful treatment.
 
