@@ -8,7 +8,10 @@ export interface AdminPartnerRow {
   company: string;
   weight: number;
   invitedAt: string | null;
+  firstOpenedAt: string | null;
   lastActiveAt: string | null;
+  draftCount: number;
+  submittedCount: number;
   active: boolean;
   magicLinkUrl: string;
 }
@@ -41,6 +44,8 @@ export function PartnersTable({ partners }: { partners: AdminPartnerRow[]; slug:
       `Your personal link:`,
       magicLink,
       '',
+      `If you hire for more than one kind of role, you can describe each through this same link — after you finish one, just start another.`,
+      '',
       `Let me know if you have any trouble accessing it.`,
       '',
       `— Chip`,
@@ -71,6 +76,9 @@ export function PartnersTable({ partners }: { partners: AdminPartnerRow[]; slug:
           <th>Company</th>
           <th>Weight</th>
           <th>Invited</th>
+          <th>Opened</th>
+          <th title="Started but not yet submitted">Drafts</th>
+          <th title="Completed positions">Submitted</th>
           <th>Last active</th>
           <th>Status</th>
           <th></th>
@@ -83,6 +91,9 @@ export function PartnersTable({ partners }: { partners: AdminPartnerRow[]; slug:
             <td>{p.company}</td>
             <td>{p.weight}</td>
             <td className="text-xs">{p.invitedAt ? new Date(p.invitedAt).toLocaleDateString() : '—'}</td>
+            <td className="text-xs">{p.firstOpenedAt ? new Date(p.firstOpenedAt).toLocaleDateString() : '—'}</td>
+            <td className="text-xs">{p.draftCount > 0 ? <span className="text-amber-700">{p.draftCount}</span> : <span className="text-slate-400">—</span>}</td>
+            <td className="text-xs">{p.submittedCount > 0 ? <span className="font-medium text-green-700">{p.submittedCount}</span> : <span className="text-slate-400">—</span>}</td>
             <td className="text-xs">{p.lastActiveAt ? new Date(p.lastActiveAt).toLocaleDateString() : '—'}</td>
             <td>{p.active ? <span className="text-green-700">active</span> : <span className="text-slate-500">off</span>}</td>
             <td>

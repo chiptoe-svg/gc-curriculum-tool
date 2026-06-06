@@ -28,7 +28,7 @@ One Mac, one DB, one Next.js process. Faculty surfaces gated by HTTP Basic Auth 
 | `/ask` | **Standalone curriculum chat** — program-level Q&A over the wiki, no course anchor. Pre-loads `index.md` as orientation context so the agent saves one obvious `read_wiki` call. Same `<AskTab />` as the Explore "Ask" tab and the `/wiki` chat panel. | live | 2026-06-02 |
 | `/wiki/[type]/[slug]` | **Wiki per-page** — reads `<type>/<slug>.md`; renders markdown with GFM + wikilink resolution; frontmatter-gated title + breadcrumb; 404 when file is absent; `type` ∈ `{courses,competencies,targets,concepts}` | live | 2026-06-01 |
 | `/settings` | Per-function AI model tier + override | live | 2026-05-24 |
-| `/admin/partners` | Partner CSV import, invites, status | live | 2026-05-19 (Plan 1) |
+| `/admin/partners` | Partner roster — single-partner **Add** form (`POST /api/admin/partners/create`, slug-gated) + CSV import; Copy-link / Compose-email invites (one link per employer, reusable across multiple positions); per-partner status now incl. invited / opened / **draft & submitted position counts** (`countPositionsByPartner`) | live | 2026-05-19 (Plan 1); add-form + status counts 2026-06-06 |
 | `/admin/synthesis?slug=…` | Per-target AI synthesis dashboard (themes, salaries, partner quotes, proposed KUD edits) | live | 2026-05-19 (Plan 3) |
 | `/` | Home (slug-gated) | live | — |
 

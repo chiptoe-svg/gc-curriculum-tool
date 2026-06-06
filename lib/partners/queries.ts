@@ -1,6 +1,6 @@
 import { eq, desc, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
-import { partners, partnerEvents } from '@/lib/db/schema';
+import { partners, partnerEvents, positionCaptures } from '@/lib/db/schema';
 import { generateMagicToken } from './tokens';
 
 export interface CreatePartnerInput {
@@ -79,4 +79,28 @@ export async function markFirstOpenedIfNull(partnerId: string) {
 
 export async function bumpLastActive(partnerId: string) {
   await db.update(partners).set({ lastActiveAt: sql`now()` }).where(eq(partners.id, partnerId));
+}
+
+/**
+ * Per-partner counts of position captures by status, for the admin roster.
+ * Returns a Map keyed by partnerId; partners with no positions are absent
+ * (callers default to {draft: 0, submitted: 0}).
+ */
+export async function countPositionsByPartner(): Promise<Map<string, { draft: number; submitted: number }>> {
+  const rows = await db
+    .select({
+      partnerId: positionCaptures.partnerId,
+      status: positionCaptures.status,
+      n: sql<number>`count(*)::int`,
+    })
+    .from(positionCaptures)
+    .groupBy(positionCaptures.partnerId, positionCaptures.status);
+  const map = new Map<string, { draft: number; submitted: number }>();
+  for (const r of rows) {
+    const entry = map.get(r.partnerId) ?? { draft: 0, submitted: 0 };
+    if (r.status === 'submitted') entry.submitted = r.n;
+    else if (r.status === 'draft') entry.draft = r.n;
+    map.set(r.partnerId, entry);
+  }
+  return map;
 }
