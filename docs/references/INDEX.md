@@ -1,6 +1,6 @@
 # References — Audit Index
 
-Audit of the 28 references in `/docs/background.html` §14. Each row links to a reference file containing: full citation, accessibility status, what the background doc claims the source says, a substantive synthesis based on what was fetched or found, and a verdict on consistency.
+Audit of the 31 references in `/docs/background.html` §15 (rows 29–31 added 2026-06-05 for the §2 "Knowledge spaces" subsection; verified + adversarially reviewed). Each row links to a reference file containing: full citation, accessibility status, what the background doc claims the source says, a substantive synthesis based on what was fetched or found, and a verdict on consistency.
 
 **Audit conducted:** 2026-06-01  
 **Auditor:** Claude (Sonnet 4.6), working from WebSearch + WebFetch + GitHub CLI
@@ -11,13 +11,13 @@ Audit of the 28 references in `/docs/background.html` §14. Each row links to a 
 
 | Status | Count |
 |---|---|
-| Verified accessible (full text fetched or open access) | 10 (incl. npj 2023 and Macnamara 2014, both verified from source PDFs 2026-06-01) |
-| Partially accessible (abstract / secondary descriptions / publisher pages / ERIC / Wikipedia) | 18 |
+| Verified accessible (full text fetched or open access) | 11 (incl. npj 2023 and Macnamara 2014, verified from source PDFs 2026-06-01; + Kingston & Broaddus 2017, open access, 2026-06-05) |
+| Partially accessible (abstract / secondary descriptions / publisher pages / ERIC / Wikipedia) | 20 (incl. Doignon & Falmagne 1985 and Falmagne et al. 2006, DOI + secondary confirmed, 2026-06-05) |
 | Inaccessible (citation only, no secondary found) | 0 |
 
 | Verdict | Count |
 |---|---|
-| Consistent | 23 → 25 (npj 2023 resolved 2026-06-01 via source-PDF; Macnamara 2014 resolved 2026-06-01 via source-PDF — agent's "~18%" flag was a false positive, the paper's headline figure is precisely 12%) |
+| Consistent | 23 → 28 (npj 2023 + Macnamara 2014 resolved 2026-06-01 via source-PDF; +3 added 2026-06-05 — doignon-1985, aleks-2006, dlm-2017 — of which doignon-1985 and dlm-2017 were corrected after an adversarial review, see their files) |
 | Partially inconsistent (minor discrepancy flagged) | 2 → 0 |
 | Unverifiable | 0 |
 | Questionable | 0 |
@@ -56,6 +56,9 @@ Audit of the 28 references in `/docs/background.html` §14. Each row links to a 
 | 26 | Ericsson, Krampe & Tesch-Römer 1993 — Deliberate Practice | [ericsson-1993.md](ericsson-1993.md) | §4 | Partial (APA paywall; open Royal Society revisit; secondary) | Consistent |
 | 27 | Macnamara, Hambrick & Oswald 2014 — Deliberate Practice Meta-Analysis | [macnamara-2014.md](macnamara-2014.md) | §4 | **Verified via source PDF** (paywall; full text fetched via Clemson library) | Consistent (after 2026-06-01 source-PDF verification — see note below) |
 | 28 | NACE — Job Outlook (annual) | [nace.md](nace.md) | §4, §8 | Partial (member paywall; public press releases freely available) | Consistent |
+| 29 | Doignon & Falmagne 1985 — Spaces for the Assessment of Knowledge (KST) | [doignon-1985.md](doignon-1985.md) | §2 | Partial (Elsevier paywall; DOI + secondary confirmed) | Corrected (2026-06-05; surmise-relation gloss softened after adversarial review) |
+| 30 | Falmagne, Cosyn, Doignon & Thiéry 2006 — KST in Theory & Practice (ALEKS) | [aleks-2006.md](aleks-2006.md) | §2 | Partial (Springer/Elsevier paywall; DBLP + product pages confirmed) | Consistent |
+| 31 | Kingston & Broaddus 2017 — Learning Map Systems (DLM) | [dlm-2017.md](dlm-2017.md) | §2 | **Open** (MDPI Education Sciences) | Corrected (2026-06-05; DAG/prerequisite framing removed after adversarial review) |
 
 ---
 
