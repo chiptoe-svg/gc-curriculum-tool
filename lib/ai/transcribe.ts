@@ -66,6 +66,18 @@ export interface TranscribeOptions {
 export interface TranscribeResult {
   text: string;
   model: string;
+  /** Which backend served the request. Only 'openai' incurs paid spend. */
+  backend: 'omlx' | 'mlx' | 'openai';
+}
+
+/**
+ * Estimate paid Whisper cost from audio byte size. OpenAI Whisper is ~$0.006/min
+ * and ~1 MB of opus voice ≈ 1 min. Returned in 1/100-of-a-cent units to match
+ * recordSpend ($0.006/min = 0.6 cents/min = 60 units/min).
+ */
+export function estimateWhisperCostCents(bytes: number): number {
+  const minutes = bytes / (1024 * 1024);
+  return Math.ceil(minutes * 60);
 }
 
 function fileNameForMime(mime: string): string {
@@ -175,7 +187,7 @@ async function transcribeAudioOmlx(
   }
   const json = await res.json() as { text?: string };
   if (!json.text) throw new Error('omlx returned no text');
-  return { text: json.text.trim(), model: `omlx:${OMLX_WHISPER_MODEL}` };
+  return { text: json.text.trim(), model: `omlx:${OMLX_WHISPER_MODEL}`, backend: 'omlx' };
 }
 
 async function transcribeAudioMlx(
@@ -201,7 +213,7 @@ async function transcribeAudioMlx(
       throw new Error(`mlx_whisper failed (exit ${tx.code}): ${tx.stderr.slice(0, 300)}`);
     }
     const text = (await fs.readFile(path.join(workDir, `${stem}.txt`), 'utf8')).trim();
-    return { text, model: `mlx:${MLX_WHISPER_MODEL}` };
+    return { text, model: `mlx:${MLX_WHISPER_MODEL}`, backend: 'mlx' };
   } finally {
     await fs.rm(workDir, { recursive: true, force: true }).catch(() => {});
   }
@@ -230,7 +242,7 @@ async function transcribeAudioOpenAI(
     ...(opts.language ? { language: opts.language } : {}),
   });
 
-  return { text: response.text, model };
+  return { text: response.text, model, backend: 'openai' };
 }
 
 export async function transcribeAudio(

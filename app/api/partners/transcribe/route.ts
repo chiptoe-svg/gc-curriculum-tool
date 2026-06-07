@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { findPartnerByToken } from '@/lib/partners/queries';
-import { transcribeAudio, isSupportedAudioMime } from '@/lib/ai/transcribe';
+import { transcribeAudio, isSupportedAudioMime, estimateWhisperCostCents } from '@/lib/ai/transcribe';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
+import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
 import { hashIp } from '@/lib/ip-hash';
 
 const MAX_AUDIO_BYTES = 5 * 1024 * 1024;
@@ -19,11 +20,20 @@ export async function POST(req: Request): Promise<Response> {
   if (!token) return NextResponse.json({ error: 'missing token' }, { status: 401 });
 
   const partner = await findPartnerByToken(token);
-  if (!partner) return NextResponse.json({ error: 'invalid token' }, { status: 401 });
+  // Reject revoked (inactive) partners — matches every other partner route and
+  // the "inactive partners always resolve to null" revocation invariant. A
+  // revoked magic link must not be able to spend transcription budget.
+  if (!partner || !partner.active) return NextResponse.json({ error: 'invalid token' }, { status: 401 });
 
   const ipHash = hashIp(req);
   const { allowed } = await checkIpRateLimit(ipHash);
   if (!allowed) return NextResponse.json({ error: 'rate limit exceeded (ip)' }, { status: 429 });
+
+  // Daily cost cap. This route is internet-facing (magic-link, not Basic Auth)
+  // and on a host without the local Whisper binary it ALWAYS takes the paid
+  // OpenAI path — so the cap matters most here.
+  const cap = await checkDailyCap();
+  if (!cap.ok) return NextResponse.json({ error: 'daily cost cap reached' }, { status: 503 });
 
   let form: FormData;
   try {
@@ -54,6 +64,9 @@ export async function POST(req: Request): Promise<Response> {
   try {
     const bytes = new Uint8Array(await audio.arrayBuffer());
     const result = await transcribeAudio(bytes, mime);
+    if (result.backend === 'openai') {
+      await recordSpend(estimateWhisperCostCents(audio.size));
+    }
     return NextResponse.json({ text: result.text, model: result.model });
   } catch (e) {
     const message = e instanceof Error ? e.message : 'transcription failed';
