@@ -56,41 +56,24 @@ export async function upsertCourseProfile({
   result,
   runId,
 }: UpsertCourseProfileInput): Promise<void> {
-  const existing = await db
-    .select()
-    .from(courseProfiles)
-    .where(eq(courseProfiles.courseCode, courseCode));
-
-  if (existing.length === 0) {
-    await db
-      .insert(courseProfiles)
-      .values({
-        courseCode,
-        summary: result.summary,
-        learningObjectives: result.learningObjectives,
-        skills: result.skills,
-        competencies: result.competencies,
-        catalogDivergence: result.catalogDivergence,
-        sourceRunId: runId,
-        manuallyEdited: false,
-        updatedAt: new Date(),
-      })
-      .returning();
-  } else {
-    await db
-      .update(courseProfiles)
-      .set({
-        summary: result.summary,
-        learningObjectives: result.learningObjectives,
-        skills: result.skills,
-        competencies: result.competencies,
-        catalogDivergence: result.catalogDivergence,
-        sourceRunId: runId,
-        manuallyEdited: false,
-        updatedAt: new Date(),
-      })
-      .where(eq(courseProfiles.courseCode, courseCode));
-  }
+  // Atomic upsert on the courseCode PK. The previous select-then-insert/update
+  // had a TOCTOU window: two concurrent profile runs for the same course both
+  // saw zero rows and both INSERTed, the second throwing a 23505 → unhandled
+  // 500. onConflictDoUpdate closes the window.
+  const fields = {
+    summary: result.summary,
+    learningObjectives: result.learningObjectives,
+    skills: result.skills,
+    competencies: result.competencies,
+    catalogDivergence: result.catalogDivergence,
+    sourceRunId: runId,
+    manuallyEdited: false,
+    updatedAt: new Date(),
+  };
+  await db
+    .insert(courseProfiles)
+    .values({ courseCode, ...fields })
+    .onConflictDoUpdate({ target: courseProfiles.courseCode, set: fields });
 }
 
 export async function getLatestRunForCourse(courseCode: string) {

@@ -43,24 +43,15 @@ export async function upsertCaptureConversation({
   readiness,
 }: UpsertCaptureConversationInput): Promise<void> {
   const now = new Date();
-  const existing = await db
-    .select({ courseCode: captureConversations.courseCode })
-    .from(captureConversations)
-    .where(eq(captureConversations.courseCode, courseCode))
-    .limit(1);
-  if (existing.length === 0) {
-    await db.insert(captureConversations).values({
-      courseCode,
-      messages,
-      readiness,
-      updatedAt: now,
+  // Atomic upsert on the courseCode key — closes the TOCTOU window where two
+  // concurrent capture writes both saw no row and both INSERTed (23505 → 500).
+  await db
+    .insert(captureConversations)
+    .values({ courseCode, messages, readiness, updatedAt: now })
+    .onConflictDoUpdate({
+      target: captureConversations.courseCode,
+      set: { messages, readiness, updatedAt: now },
     });
-  } else {
-    await db
-      .update(captureConversations)
-      .set({ messages, readiness, updatedAt: now })
-      .where(eq(captureConversations.courseCode, courseCode));
-  }
 }
 
 export async function deleteCaptureConversation(courseCode: string): Promise<boolean> {
