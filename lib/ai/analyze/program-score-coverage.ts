@@ -93,6 +93,8 @@ export interface ScoreCoverageInput {
 export interface ScoreCoverageResult {
   result: ProgramCoverageResult;
   model: string;
+  /** Paid-provider cost for this scoring call, in 1/100-of-a-cent units (0 on campus/local). */
+  costUsdCents: number;
 }
 
 export async function scoreSnapshotAgainstTarget(input: ScoreCoverageInput): Promise<ScoreCoverageResult> {
@@ -144,5 +146,5 @@ export async function scoreSnapshotAgainstTarget(input: ScoreCoverageInput): Pro
     validate: (raw: unknown) => coverageResultSchema.parse(raw),
   });
 
-  return { result: result.data, model: provider.model };
+  return { result: result.data, model: provider.model, costUsdCents: result.costUsdCents };
 }

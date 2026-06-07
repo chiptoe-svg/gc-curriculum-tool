@@ -8,6 +8,7 @@ import { upsertCoverageCell } from '@/lib/db/program-coverage-queries';
 import { scoreSnapshotAgainstTarget } from '@/lib/ai/analyze/program-score-coverage';
 import { regenerateWikiInBackground } from '@/lib/ai/wiki/update';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
+import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
 import { hashIp } from '@/lib/ip-hash';
 
 export const maxDuration = 60;
@@ -37,8 +38,12 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
 
   const subs = await db.select().from(subCompetencies).where(eq(subCompetencies.careerTargetId, targetId));
 
+  // Gate the paid scoring call on the daily cost cap.
+  const cap = await checkDailyCap();
+  if (!cap.ok) return NextResponse.json({ error: 'daily cost cap reached' }, { status: 429 });
+
   try {
-    const { result, model } = await scoreSnapshotAgainstTarget({
+    const { result, model, costUsdCents } = await scoreSnapshotAgainstTarget({
       snapshotId,
       courseCode: snapshot.courseCode,
       snapshotProfile: snapshot.profile,
@@ -77,6 +82,8 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         model,
       });
     }
+
+    await recordSpend(costUsdCents);
 
     // Re-fire wiki-update for this snapshot now that coverage exists — lets the
     // competency/target pages generate (they derive from snapshot_target_coverage).
