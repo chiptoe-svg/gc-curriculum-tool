@@ -77,6 +77,23 @@ function maxAttainment(contribs: AttainmentContribution[], dim: Dim): number | n
   return max;
 }
 
+/** Per-sub-competency partner-weighted demand averages (k/u/d), reused by the
+ *  demand-rollup that persists career_target_demand. Null per dim = no_demand. */
+export function aggregateDemandBySubCompetency(
+  demand: DemandContribution[],
+): Array<{ subCompetencyId: string; k: number | null; u: number | null; d: number | null }> {
+  const ids = [...new Set(demand.map(d => d.subCompetencyId))].sort();
+  return ids.map(id => {
+    const c = demand.filter(d => d.subCompetencyId === id);
+    return {
+      subCompetencyId: id,
+      k: weightedDemand(c, 'k'),
+      u: weightedDemand(c, 'u'),
+      d: weightedDemand(c, 'd'),
+    };
+  });
+}
+
 function dimSufficiency(demand: number | null, attainment: number | null): DimSufficiency {
   if (demand == null) return { demand: null, attainment, gap: null, status: 'no_demand' };
   if (attainment == null) return { demand, attainment: null, gap: null, status: 'no_coverage' };

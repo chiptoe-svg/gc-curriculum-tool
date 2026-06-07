@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   computeSufficiency,
+  aggregateDemandBySubCompetency,
   type DemandContribution,
   type AttainmentContribution,
 } from '@/lib/program/sufficiency';
@@ -78,5 +79,21 @@ describe('computeSufficiency', () => {
     const rows = computeSufficiency([dem('A', 1, null, null, 3)], [att('B', null, null, 2)]);
     expect(rows.map(r => r.subCompetencyId).sort()).toEqual(['A', 'B']);
     expect(forSub(rows, 'B').status).toBe('no_demand'); // attainment only, nothing demanded
+  });
+});
+
+describe('aggregateDemandBySubCompetency', () => {
+  it('weighted-averages each dimension per sub-competency, null when no data', () => {
+    const rows = aggregateDemandBySubCompetency([
+      dem('A', 1, 2, null, 3),
+      dem('A', 3, 4, null, 5),
+      dem('B', 1, null, null, 1),
+    ]);
+    const a = rows.find(r => r.subCompetencyId === 'A')!;
+    expect(a.k).toBeCloseTo((1 * 2 + 3 * 4) / 4, 5); // 3.5
+    expect(a.u).toBeNull(); // no U data
+    expect(a.d).toBeCloseTo((1 * 3 + 3 * 5) / 4, 5); // 4.5
+    const b = rows.find(r => r.subCompetencyId === 'B')!;
+    expect(b.d).toBe(1);
   });
 });
