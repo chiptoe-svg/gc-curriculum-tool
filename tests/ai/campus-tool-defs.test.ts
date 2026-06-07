@@ -23,6 +23,7 @@ describe('toOpenAiToolDefs', () => {
 
   it('produces JSON Schema parameters with properties (not Zod internals)', () => {
     const [def] = toOpenAiToolDefs([tool]);
+    if (!def || def.type !== 'function') throw new Error('expected a function tool');
     const params = def.function.parameters as Record<string, unknown>;
     expect(params).toBeDefined();
     expect(params.type).toBe('object');
@@ -36,7 +37,7 @@ describe('toOpenAiToolDefs', () => {
 
   it('carries the tool name and rendered description', () => {
     const [def] = toOpenAiToolDefs([tool]);
-    expect(def.type).toBe('function');
+    if (!def || def.type !== 'function') throw new Error('expected a function tool');
     expect(def.function.name).toBe('search_materials');
     expect(def.function.description).toContain('Search course materials');
   });
