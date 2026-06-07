@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, jsonb, timestamp, integer, boolean, primaryKey, index, unique, foreignKey } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, text, jsonb, timestamp, integer, real, boolean, primaryKey, index, unique, foreignKey } from 'drizzle-orm/pg-core';
 import type { CaptureProfile, CaptureReadiness, CaptureReviewerStatus } from '@/lib/ai/capture/schema';
 
 export const careerTargets = pgTable('career_targets', {
@@ -629,3 +629,20 @@ export const careerTargetKudAggregate = pgTable('career_target_kud_aggregate', {
   stale: boolean('stale').notNull().default(false),
   generatedAt: timestamp('generated_at', { withTimezone: true }).defaultNow().notNull(),
 });
+
+// Numeric, per-sub-competency employer DEMAND for a career target — the
+// demand-measurement side of the Q1 sufficiency seam. Partner-weighted average
+// of position required_for_success depths, keyed to the target's structured
+// sub-competencies via each position competency's sub_competency_id. Fractional
+// (weighted), nullable per dimension (null = no_demand, NOT zero). Distinct from
+// careerTargetKudAggregate (markdown narrative) and from proposedKUDEdits
+// (definition-refinement). Spec: docs/superpowers/specs/2026-06-07-demand-coverage-sufficiency-seam-design.md
+export const careerTargetDemand = pgTable('career_target_demand', {
+  careerTargetId: text('career_target_id').notNull().references(() => careerTargets.id, { onDelete: 'cascade' }),
+  subCompetencyId: text('sub_competency_id').notNull().references(() => subCompetencies.id, { onDelete: 'cascade' }),
+  kDemand: real('k_demand'),
+  uDemand: real('u_demand'),
+  dDemand: real('d_demand'),
+  contributingPositionIds: jsonb('contributing_position_ids').$type<string[]>().notNull(),
+  generatedAt: timestamp('generated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [primaryKey({ columns: [t.careerTargetId, t.subCompetencyId] })]);
