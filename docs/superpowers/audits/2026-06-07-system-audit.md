@@ -17,20 +17,19 @@ Source: 8-area adversarial multi-agent audit (20 agents, refute-by-default verif
 **All 11 confirmed high/critical FIXED** (each its own commit, tsc + full suite green; suite grew 760→~800 tests):
 - F1 admin slug gates · F2 campus Zod→JSON · F3 FERPA enforcement · F4 FERPA patterns · F5 /view redaction · F6 scaffolding brittle · F7 wiki git-race serialization · F8 wiki path allowlist · F9 transcribe cap · F10 coverage cap · F11 (partial) provider fail-closed + kuds model.
 
-**Mediums/lows fixed:** superseder-retired filter, count-positions-retired, stale-preview-prefixes (+ middleware comment), prereq-gap null-vs-zero phantom gap, partner transcribe active-check.
+**Mediums/lows fixed:** superseder-retired filter, count-positions-retired, stale-preview-prefixes (+ middleware comment), prereq-gap null-vs-zero phantom gap, partner transcribe active-check, **TOCTOU upserts → onConflictDoUpdate (3 fns)**, **whisper-openai-fallback now opt-in (FERPA)**, **partner-supersedes cross-owner validation**, **openai completeWithTools cost metering**, **raw-error-detail-leak on partner chat**, **CLAUDE.md Vercel→local-only drift**.
 
 **Notable correction to the audit's severity math:** `.env.local` sets `AI_PROVIDER=openai` — the deployed provider is **paid OpenAI, not campus**. So the cost findings (F9/F10/F11) were *live*, not latent. F9/F10 cap the two largest paid fan-outs.
 
-**Deferred (need the user's eyes / a design decision — NOT done):**
-- F11 broad rollout: cap+spend across the ~10 unguarded faculty AI routes. Cleanest as centralized accounting inside `provider.complete`, but that double-counts the ~6 routes that already `recordSpend` — needs a coordinated refactor.
+**Still deferred (need the user's eyes / a design decision — NOT done):**
+- F11 broad rollout: cap+spend across the ~10 unguarded faculty AI routes. Cleanest as centralized accounting inside `provider.complete`, but that double-counts the ~6 routes that already `recordSpend` — needs a coordinated refactor. (The two biggest paid fan-outs, transcribe + coverage, ARE now capped.)
 - scaffolding practice+integration-no-intro → `coverage_only` mislabel: needs a new status value / UI+spec alignment.
-- toctou select-then-insert upserts (3 fns) → `onConflictDoUpdate`.
-- legacy `getProvider()` scorers ignore per-function model settings (~13 sites).
-- wiki: batch-pages-silently-dropped, index-stale-in-first-batch, prompt-injection fencing.
-- whisper-openai-fallback FERPA gate (make external fallback opt-in).
-- doc drift: STATE.md dead-prompt list (kud-chat mislabeled), CLAUDE.md Vercel paragraph — run `/refresh-state`.
+- legacy `getProvider()` scorers ignore per-function model settings (~13 sites): mechanical migration to `getProviderForFunction` + functionId additions.
+- wiki: batch-pages-silently-dropped reconciliation, index-stale-in-first-batch, prompt-injection fencing.
+- doc drift: STATE.md dead-prompt list (kud-chat mislabeled, count 33→37) — run `/refresh-state`.
 - raw-snapshot-pushed-to-git: add a private-repo startup assertion.
-- timing-safe compares (fold into the HELD auth-hardening work).
+- low/cosmetic: daily-cap UTC-vs-CURRENT_DATE window, spreadsheet base64 strip breadth, getSessionInstructor limit-50, evidence-ladder source='materials'.
+- timing-safe Basic-Auth/slug compares (fold into the HELD auth-hardening work).
 
 ---
 
