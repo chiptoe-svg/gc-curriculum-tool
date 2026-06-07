@@ -103,11 +103,24 @@ For trivial fixes (typos, copy edits, single-line bugfixes, internal refactors t
 
 ## Update protocol — keeping STATE.md honest
 
-If your commit touches **routes, schema, AI function IDs, env vars, deployment surface, plan/spec status, or "What's live"** — update [`docs/STATE.md`](./docs/STATE.md) in the same commit. The list of triggers is canonicalized at the bottom of STATE.md under "What this file tracks."
+If your commit touches **routes, schema, AI function IDs, env vars, deployment surface, plan/spec status, or "What's live"** — update [`docs/STATE.md`](./docs/STATE.md) in the same commit. The list of triggers is canonicalized at the bottom of STATE.md under "What this file tracks." A non-blocking `pre-commit` hook (`.githooks/`, self-installs via `pnpm install`) nags when you change one of those diff-shaped surfaces without staging STATE.md.
+
+**Decisions aren't diffs.** The hook and the trigger list catch *changes* (a new route, a schema edit) because those leave a diff. They are blind to the highest-loss category: a decision to **defer / hold / skip / not-fix** something, which leaves no diff at all. Whenever you consciously choose not to do something, write it into STATE.md **Deferred / debt** in that same commit — a review/audit report counts only as the backing detail; the one-line pointer in Deferred/debt is what a maintainer actually finds. (`Deferred work / debt` is now an explicit trigger in STATE.md.)
 
 For a periodic full reconciliation (e.g., after a sprint or a stretch of merges), run **`/refresh-state`**. It walks git log since the last-verified hash, re-derives what's live from the repo, and rewrites STATE.md.
 
 Trivial commits do not update STATE.md.
+
+### Session-end reconciliation ritual
+
+The pre-implementation ritual guards the *start* of work; this guards the *end*, when context is freshest and most about to be lost. Before wrapping any substantive session (and before a long task ends or context compacts), sweep:
+
+1. **Decisions / deferrals** — did you defer, hold, skip, or choose-A-over-B anything? → STATE.md **Deferred / debt** (the no-diff category; nothing else will catch it).
+2. **Tracked surfaces** — did any route / schema / migration / AI function / env var / deployment surface / "What's live" change land without its STATE.md update? → reconcile now.
+3. **In-flight state** — if work is mid-stream or on an unmerged branch, is the "what's done / what's next / what's blocked / actions needed" written somewhere durable (STATE.md, a committed report), not just in this conversation?
+4. **Rationale worth keeping** — any "why we did it this way" that a future reader would need and can't reconstruct from the diff? → write it next to the change (spec, code comment, or Deferred/debt note).
+
+This is a checklist, not automation — it works because it fires at the moment the threads are in hand, the way checklists prevent invisible-omission errors everywhere else.
 
 ---
 
