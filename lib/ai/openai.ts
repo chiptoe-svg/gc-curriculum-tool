@@ -232,13 +232,22 @@ export class OpenAIProvider implements AIProvider {
     const cachedTokens = usage?.inputTokenDetails?.cacheReadTokens ?? 0;
     const uncachedPromptTokens = Math.max(0, inputTokens - cachedTokens);
 
+    // Per-token cost, mirroring complete()/streamWithTools(). The non-streaming
+    // tool path previously reported 0, so any tool-using OpenAI call (e.g. the
+    // partner position interview via position-capture/run.ts) recorded no spend
+    // and under-counted the daily cap. Compute it for real.
+    const pricing = MODEL_PRICING[this.model] ?? FALLBACK_PRICING;
+    const costUsdCents =
+      toCents((uncachedPromptTokens / 1_000_000) * pricing.input) +
+      toCents((cachedTokens / 1_000_000) * pricing.input * 0.1) +
+      toCents((outputTokens / 1_000_000) * pricing.output);
+
     return {
       kind: 'response',
       value,
       toolCallsUsed,
       telemetry: {
-        // Stage 1: cost estimation is a placeholder — Stage 3 will wire per-token pricing.
-        costUsdCents: 0,
+        costUsdCents,
         durationMs: Date.now() - start,
         cachedTokens,
         uncachedPromptTokens,

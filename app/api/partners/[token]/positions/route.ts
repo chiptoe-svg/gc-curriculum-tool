@@ -1,7 +1,7 @@
 // app/api/partners/[token]/positions/route.ts
 import { NextResponse } from 'next/server';
 import { findPartnerByToken } from '@/lib/partners/queries';
-import { createPositionDraft, listPositionsByPartner } from '@/lib/db/position-capture-queries';
+import { createPositionDraft, listPositionsByPartner, getPositionCaptureById } from '@/lib/db/position-capture-queries';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { hashIp } from '@/lib/ip-hash';
 
@@ -19,7 +19,17 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   if (typeof body.careerTargetId !== 'string' || body.careerTargetId.length === 0) {
     return NextResponse.json({ error: 'careerTargetId required' }, { status: 400 });
   }
-  const supersedes = typeof body.supersedes === 'string' && body.supersedes.length > 0 ? body.supersedes : null;
+  // Verify the supersedes target (if any) belongs to THIS partner — every other
+  // position route guards existing.partnerId === partner.id; the create path
+  // must too, so a partner can't reference another partner's position id.
+  let supersedes: string | null = null;
+  if (typeof body.supersedes === 'string' && body.supersedes.length > 0) {
+    const target = await getPositionCaptureById(body.supersedes);
+    if (!target || target.partnerId !== partner.id) {
+      return NextResponse.json({ error: 'invalid supersedes target' }, { status: 403 });
+    }
+    supersedes = body.supersedes;
+  }
 
   const draft = await createPositionDraft({
     partnerId: partner.id,
