@@ -12,6 +12,28 @@ Source: 8-area adversarial multi-agent audit (20 agents, refute-by-default verif
 
 ---
 
+## Remediation status (updated 2026-06-07, branch `audit-remediation-2026-06-07`)
+
+**All 11 confirmed high/critical FIXED** (each its own commit, tsc + full suite green; suite grew 760→~800 tests):
+- F1 admin slug gates · F2 campus Zod→JSON · F3 FERPA enforcement · F4 FERPA patterns · F5 /view redaction · F6 scaffolding brittle · F7 wiki git-race serialization · F8 wiki path allowlist · F9 transcribe cap · F10 coverage cap · F11 (partial) provider fail-closed + kuds model.
+
+**Mediums/lows fixed:** superseder-retired filter, count-positions-retired, stale-preview-prefixes (+ middleware comment), prereq-gap null-vs-zero phantom gap, partner transcribe active-check.
+
+**Notable correction to the audit's severity math:** `.env.local` sets `AI_PROVIDER=openai` — the deployed provider is **paid OpenAI, not campus**. So the cost findings (F9/F10/F11) were *live*, not latent. F9/F10 cap the two largest paid fan-outs.
+
+**Deferred (need the user's eyes / a design decision — NOT done):**
+- F11 broad rollout: cap+spend across the ~10 unguarded faculty AI routes. Cleanest as centralized accounting inside `provider.complete`, but that double-counts the ~6 routes that already `recordSpend` — needs a coordinated refactor.
+- scaffolding practice+integration-no-intro → `coverage_only` mislabel: needs a new status value / UI+spec alignment.
+- toctou select-then-insert upserts (3 fns) → `onConflictDoUpdate`.
+- legacy `getProvider()` scorers ignore per-function model settings (~13 sites).
+- wiki: batch-pages-silently-dropped, index-stale-in-first-batch, prompt-injection fencing.
+- whisper-openai-fallback FERPA gate (make external fallback opt-in).
+- doc drift: STATE.md dead-prompt list (kud-chat mislabeled), CLAUDE.md Vercel paragraph — run `/refresh-state`.
+- raw-snapshot-pushed-to-git: add a private-repo startup assertion.
+- timing-safe compares (fold into the HELD auth-hardening work).
+
+---
+
 ## Confirmed high / critical — fix these (Phase 1)
 
 - [ ] **F1 · admin-routes-missing-slug-gate** (high, security) — `app/api/admin/partners/[partnerId]/mark-invited/route.ts`, `app/api/admin/v2-reset/route.ts`, `app/api/admin/v2-backfill/route.ts`. Three admin POST routes lack the `isValidSlug()` second factor every other admin route has; `v2-reset` is one-request data-loss (deletes the snapshot system-of-record). Fix: add the body-slug gate; factor a shared `requireAdmin(req)` helper; mark-invited currently takes no body and its client caller (`PartnersTable.tsx markInvited`) sends no slug — update the client to POST `{slug}`. Add a test asserting every `app/api/admin/**/route.ts` gates.
