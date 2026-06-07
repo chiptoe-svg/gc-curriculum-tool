@@ -1,8 +1,27 @@
 import OpenAI from 'openai';
+import { z } from 'zod';
 import type { ChatCompletionMessageParam, ChatCompletionTool } from 'openai/resources/chat/completions';
 import type { AIProvider, CompletionTelemetry, TranscribeDocumentArgs, TranscribeDocumentResult } from './provider';
 import type { ToolDefinition, Message, CompleteWithToolsResult, ToolCall, StreamEvent } from './tool-use-types';
 import { renderToolDescription } from './tool-use-types';
+
+/**
+ * Convert our ToolDefinitions into OpenAI tool-call format. `parameters` MUST
+ * be a real JSON Schema — `inputSchema` is a Zod schema, so it is converted via
+ * z.toJSONSchema, never cast. A raw cast ships Zod's internal serialization
+ * ({ def, type }) with no `properties`, leaving the model blind to argument
+ * names/types. Exported for testing.
+ */
+export function toOpenAiToolDefs(tools: ToolDefinition[]): ChatCompletionTool[] {
+  return tools.map(t => ({
+    type: 'function',
+    function: {
+      name: t.name,
+      description: renderToolDescription(t),
+      parameters: z.toJSONSchema(t.inputSchema) as Record<string, unknown>,
+    },
+  }));
+}
 
 /**
  * Campus-hosted LLM provider (Clemson RCD). Speaks the OpenAI-compatible
@@ -110,17 +129,11 @@ export class CampusProvider implements AIProvider {
     // json_object call for the structured response. Same pattern as `complete()`.
 
     // --- Phase 1: tool-call loop ---
-    // Convert schema into OpenAI tool format. `parameters` must be a JSON
-    // Schema object (Record<string, unknown>); the ToolDefinition's
-    // `inputSchema` is a Zod schema, so cast to satisfy the SDK type.
-    const oaiTools: ChatCompletionTool[] = args.tools.map(t => ({
-      type: 'function',
-      function: {
-        name: t.name,
-        description: renderToolDescription(t),
-        parameters: t.inputSchema as unknown as Record<string, unknown>,
-      },
-    }));
+    // Convert schema into OpenAI tool format (Zod → JSON Schema; see
+    // toOpenAiToolDefs). The OpenAI/Local providers avoid this conversion by
+    // handing inputSchema to the AI SDK, which converts internally; the campus
+    // path uses the raw OpenAI client and must do it here.
+    const oaiTools: ChatCompletionTool[] = toOpenAiToolDefs(args.tools);
 
     // Convert our Message[] into OpenAI messages. The system prompt is
     // passed separately.
