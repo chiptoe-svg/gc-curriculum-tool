@@ -96,10 +96,23 @@ function resolvePagePath(relPath: string): string {
 // writeAndPush
 // ---------------------------------------------------------------------------
 
+// In-process serialization queue. Multiple concurrent regenerations — the
+// common case after a program-wide coverage refresh fires one background regen
+// per scored snapshot — would otherwise race on ONE git working tree: one run's
+// `git add -A` stages another run's half-written files, `git commit` fails with
+// "nothing to commit" or commits the wrong file set, and concurrent
+// `pull --rebase` aborts mid-rebase. The push-retry below handles only a REMOTE
+// race, not this LOCAL same-tree race. Chaining every writeAndPush off a single
+// module-level promise guarantees one write→commit→push completes before the
+// next begins. The chain pointer swallows rejections so one failure doesn't
+// poison subsequent calls, but each call's own promise still rejects normally.
+let writeQueue: Promise<unknown> = Promise.resolve();
+
 /**
  * Write each page to the wiki repo, append the log entry, commit, and push.
+ * Serialized: concurrent calls run one-at-a-time on the shared working tree.
  *
- * Order of operations:
+ * Order of operations (per call):
  *   1. git pull --ff-only  (minimise conflict surface)
  *   2. Write each page (mkdir -p parent as needed)
  *   3. Append log entry to log.md
@@ -111,7 +124,16 @@ function resolvePagePath(relPath: string): string {
  * On total failure, throws — the caller decides whether to flag the snapshot
  * as "wiki out of sync" or simply log and continue.
  */
-export async function writeAndPush(commit: WikiCommit): Promise<{ sha: string }> {
+export function writeAndPush(commit: WikiCommit): Promise<{ sha: string }> {
+  const run = writeQueue.then(
+    () => writeAndPushSerial(commit),
+    () => writeAndPushSerial(commit),
+  );
+  writeQueue = run.then(() => undefined, () => undefined);
+  return run;
+}
+
+async function writeAndPushSerial(commit: WikiCommit): Promise<{ sha: string }> {
   const fs = fsPromises();
 
   // 1. Pull latest to minimise conflict surface.

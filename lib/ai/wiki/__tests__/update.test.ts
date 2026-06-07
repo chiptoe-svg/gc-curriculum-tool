@@ -438,6 +438,35 @@ describe('updateWikiForSnapshot', () => {
     expect(wiki.map(p => p.path)).not.toContain('competencies/brand-strategy.md');
   });
 
+  it('drops model-returned page paths that were not requested (F8)', async () => {
+    const responseWithRoguePaths = {
+      ...mockLLMResponse,
+      pages: [
+        ...mockLLMResponse.pages, // 3 legit, requested paths
+        // A steered/hallucinating model trying to write outside this run's scope:
+        { path: 'log.md', content: 'overwrite the append-only log', operation: 'create' as const },
+        { path: 'competencies/not-in-this-run.md', content: 'rogue', operation: 'create' as const },
+        { path: '.git/hooks/post-checkout', content: '#!/bin/sh\necho pwned', operation: 'create' as const },
+      ],
+    };
+    const provider = {
+      model: 'gpt-5.5',
+      complete: vi.fn().mockResolvedValue({ data: responseWithRoguePaths, costUsdCents: 200, durationMs: 3500, cachedTokens: 0, uncachedPromptTokens: 6000, completionTokens: 1800 }),
+    };
+    (getProviderForFunction as ReturnType<typeof vi.fn>).mockResolvedValue(provider);
+
+    const { wiki } = await updateWikiForSnapshot(SNAPSHOT_ID);
+    const paths = wiki.map(p => p.path);
+    // Only the requested narrative pages survive.
+    expect(paths).toEqual(
+      expect.arrayContaining(['courses/gc-4800.md', 'concepts/productive-failure.md', 'index.md']),
+    );
+    expect(paths).not.toContain('log.md');
+    expect(paths).not.toContain('competencies/not-in-this-run.md');
+    expect(paths).not.toContain('.git/hooks/post-checkout');
+    expect(wiki).toHaveLength(3);
+  });
+
   it('logEntry is taken from the LLM response', async () => {
     const { logEntry } = await updateWikiForSnapshot(SNAPSHOT_ID);
     expect(logEntry).toBe(mockLLMResponse.log_entry);
