@@ -95,9 +95,17 @@ export interface SubCompetencyGap {
 const maxN = (a: number | null, b: number | null): number | null =>
   a == null ? b : b == null ? a : Math.max(a, b);
 
-/** Gap on a single dimension: max(0, need - got); 0 when need is null. */
+/**
+ * Gap on a single dimension: max(0, need - got).
+ *   - need == null  → 0 (nothing expected on this dim).
+ *   - got  == null  → 0 (NO DATA on this dim — not the same as a scored 0).
+ *     Treating null-delivered as 0 would fabricate a full phantom gap against a
+ *     prereq that was simply never measured on this dimension (e.g. foundational
+ *     competencies store K/U as null by design). A genuine scored 0 (got === 0)
+ *     still yields the real gap.
+ */
 const gapDim = (need: number | null, got: number | null): number =>
-  need == null ? 0 : Math.max(0, need - (got ?? 0));
+  need == null || got == null ? 0 : Math.max(0, need - got);
 
 // ---------------------------------------------------------------------------
 // Pure core (exported for unit tests — no DB dependency)
