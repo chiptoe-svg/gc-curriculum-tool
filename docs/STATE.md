@@ -344,6 +344,7 @@ Update STATE.md as part of any commit that touches:
 - **Deployment surface** — middleware behavior, what runs where, launchd plists
 - **Plan / spec status** — when a plan ships, a spec is superseded, or a new plan/spec file lands in `docs/superpowers/{plans,specs}/`
 - **"What's live"** — adding / removing / renaming a user-visible surface
+- **Deferred work / debt decisions** — whenever you *consciously choose not to do* something (defer a fix, skip a finding, leave a known bug, hold an item for sign-off), add it to **Deferred / debt** in the same commit. This is the one trigger that leaves no code diff to trip over, so it relies entirely on this rule: a decision-not-to-change is invisible unless written down. An audit/review report counts only as the backing detail — its deferred items still need a one-line pointer in Deferred / debt, which is where maintainers look.
 
 Trivial commits (typos, copy edits, single-line bugfixes, internal refactors that change nothing above) do **not** update this file.
 
