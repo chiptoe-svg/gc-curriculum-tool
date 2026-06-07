@@ -184,16 +184,23 @@ export function depthScaffoldingStatus(cells: SnapshotCellInput[]): DepthScaffol
     return { phases, status: 'not_addressed' };
   }
 
-  // Brittle: integration appears in the course sequence before any
-  // introduction OR practice cell — the upper-division course expects
-  // mastery of something never set up.
-  const firstIntegrationIdx = ordered.findIndex(isIntegration);
-  const firstIntroIdx = ordered.findIndex(isIntroduction);
-  const firstPracticeIdx = ordered.findIndex(isPractice);
-  if (firstIntegrationIdx !== -1) {
-    const introBefore = firstIntroIdx !== -1 && firstIntroIdx < firstIntegrationIdx;
-    const practiceBefore = firstPracticeIdx !== -1 && firstPracticeIdx < firstIntegrationIdx;
-    if (!introBefore && !practiceBefore) {
+  // Brittle: integration appears in the course sequence with NO introduction
+  // or practice cell at an earlier-or-equal sequence position — the
+  // upper-division course expects mastery of something never set up.
+  //
+  // Compare by sequenceIndex, NOT array index. A single course that both
+  // introduces a concept and works it at integration depth (e.g. K=2 intro +
+  // D=4 integration in one cell) is "introduce + do at depth", a legitimate
+  // pattern — its intro and integration share a sequenceIndex, so setup is
+  // present (<=) and it must NOT be flagged brittle. The old findIndex/`<`
+  // form returned equal indices for such a cell and mislabeled it brittle.
+  const integrationCells = ordered.filter(isIntegration);
+  if (integrationCells.length > 0) {
+    const minIntegrationSeq = Math.min(...integrationCells.map(c => c.sequenceIndex));
+    const setupBeforeOrWith = ordered.some(c =>
+      (isIntroduction(c) || isPractice(c)) && c.sequenceIndex <= minIntegrationSeq,
+    );
+    if (!setupBeforeOrWith) {
       return { phases, status: 'brittle_scaffold' };
     }
   }

@@ -121,4 +121,21 @@ describe('depthScaffoldingStatus', () => {
       cell(1, 1, 0, 1),  // introduction AFTER
     ]).status).toBe('brittle_scaffold');
   });
+
+  it('does NOT flag a single course that both introduces and integrates as brittle', () => {
+    // K=2 (introduction) + D=4 (integration) in ONE cell, same sequenceIndex —
+    // "introduce + do at depth" is legitimate, not a missing-setup defect.
+    const result = depthScaffoldingStatus([cell(4, 2, 1, 0)]);
+    expect(result.phases).toEqual({ introduction: true, practice: false, integration: true });
+    expect(result.status).not.toBe('brittle_scaffold');
+    expect(result.status).toBe('top_heavy'); // intro + integration, no practice
+  });
+
+  it('flags integration with setup only at a LATER sequence position as brittle', () => {
+    // intro at seq 2, integration at seq 1 → no setup at-or-before integration.
+    expect(depthScaffoldingStatus([
+      cell(4, 4, 4, 1),  // integration
+      cell(1, 1, 0, 2),  // introduction comes later in sequence
+    ]).status).toBe('brittle_scaffold');
+  });
 });
