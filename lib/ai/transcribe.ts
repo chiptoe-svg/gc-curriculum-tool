@@ -278,11 +278,22 @@ export async function transcribeAudio(
     return await transcribeAudioMlx(audio, mimeType);
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    // Binary-missing → fall back to OpenAI so the feature degrades gracefully
-    // (e.g., on a dev machine without mlx-whisper installed).
+    // Binary-missing → only fall back to the EXTERNAL OpenAI Whisper API when
+    // explicitly opted in. Mic audio can contain identifiable student voices
+    // (FERPA), so a missing local binary must NOT silently ship it off-box.
+    // Set WHISPER_OPENAI_FALLBACK=1 to allow graceful degradation (e.g. a dev
+    // machine without mlx-whisper); otherwise fail loudly. (WHISPER_BACKEND=
+    // openai above remains the explicit always-external lever.)
     if (msg.startsWith('binary not found:')) {
-      console.warn(`[transcribe] ${msg} — falling back to OpenAI Whisper API`);
-      return transcribeAudioOpenAI(audio, mimeType, opts);
+      if (process.env.WHISPER_OPENAI_FALLBACK === '1') {
+        console.warn(`[transcribe] ${msg} — falling back to OpenAI Whisper API (WHISPER_OPENAI_FALLBACK=1)`);
+        return transcribeAudioOpenAI(audio, mimeType, opts);
+      }
+      throw new Error(
+        `${msg}. Local Whisper binary unavailable and WHISPER_OPENAI_FALLBACK is not set — ` +
+        `refusing to send audio to an external provider (FERPA). Install mlx-whisper/omlx or ` +
+        `set WHISPER_OPENAI_FALLBACK=1 to allow the external fallback.`,
+      );
     }
     throw e;
   }
