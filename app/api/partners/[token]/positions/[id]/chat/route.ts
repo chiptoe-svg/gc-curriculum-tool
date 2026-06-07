@@ -115,7 +115,9 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'synthesis failed';
       console.error('[chat finalize]', msg);
-      return NextResponse.json({ error: 'synthesis failed', detail: msg.slice(0, 300) }, { status: 500 });
+      // Internet-facing route: log the raw error server-side, return a generic
+      // message (don't forward upstream provider/DB exception text to clients).
+      return NextResponse.json({ error: 'synthesis failed, please retry' }, { status: 500 });
     }
   }
 
@@ -155,6 +157,6 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     }
     const msg = e instanceof Error ? e.message : 'turn failed';
     console.error('[chat turn]', msg);
-    return NextResponse.json({ error: 'turn failed', detail: msg.slice(0, 300) }, { status: 500 });
+    return NextResponse.json({ error: 'turn failed, please retry' }, { status: 500 });
   }
 }
