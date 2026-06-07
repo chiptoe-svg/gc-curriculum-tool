@@ -21,8 +21,14 @@ import { SynthesizedInsightsPanel } from './SynthesizedInsightsPanel';
 import { ProposedKUDEditsPanel } from './ProposedKUDEditsPanel';
 import { ReRunButton } from './ReRunButton';
 import { AggregatePanel } from './AggregatePanel';
+import { SufficiencyPanel } from './SufficiencyPanel';
 
 export const dynamic = 'force-dynamic';
+
+// Demand→coverage sufficiency seam (Q1). Off by default; the career_target_demand
+// migration is unapplied, so only flip this on once it's applied. Spec:
+// docs/superpowers/specs/2026-06-07-demand-coverage-sufficiency-seam-design.md
+const DEMAND_COVERAGE_SEAM = process.env.DEMAND_COVERAGE_SEAM === '1';
 
 interface Props {
   params: Promise<{ targetId: string }>;
@@ -119,6 +125,8 @@ export default async function SynthesisTargetPage({ params, searchParams }: Prop
         initialStale={aggregate?.stale ?? false}
         initialGeneratedAt={aggregate?.generatedAt ?? null}
       />
+
+      {DEMAND_COVERAGE_SEAM && <SufficiencyPanel targetId={targetId} />}
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">Positions in this target ({positions.length})</h2>
