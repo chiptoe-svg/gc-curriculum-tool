@@ -38,4 +38,32 @@ describe('detectFerpaRisk', () => {
     expect(detectFerpaRisk(null).level).toBe('low');
     expect(detectFerpaRisk(undefined).level).toBe('low');
   });
+
+  it('flags non-literal gradebook headers (Student | Score) as high', () => {
+    expect(detectFerpaRisk('Student | Score\nAlex K | 92\nJamie L | 78').level).toBe('high');
+  });
+
+  it('flags split-name gradebook headers (First Name | Last Name | Final) as high', () => {
+    expect(detectFerpaRisk('First Name | Last Name | Final\nAlex | Kim | 92').level).toBe('high');
+  });
+
+  it('flags two or more distinct emails (roster) as high', () => {
+    const r = detectFerpaRisk('alex.kim@clemson.edu\njamie.lee@clemson.edu');
+    expect(r.level).toBe('high');
+  });
+
+  it('does NOT escalate on a single (likely instructor) email', () => {
+    expect(detectFerpaRisk('Contact: profsmith@clemson.edu for office hours.').level).toBe('low');
+  });
+
+  it('flags a roster-shaped table of person names as at least medium', () => {
+    const r = detectFerpaRisk(
+      'Roster | Section\nJane Smith | 01\nAlex Kim | 01\nJamie Lee | 02\nPat Cho | 02',
+    );
+    expect(r.level === 'medium' || r.level === 'high').toBe(true);
+  });
+
+  it('leaves a benign prose syllabus low', () => {
+    expect(detectFerpaRisk('Week 1: Color Theory. Week 2: Halftone screening and dot gain.').level).toBe('low');
+  });
 });
