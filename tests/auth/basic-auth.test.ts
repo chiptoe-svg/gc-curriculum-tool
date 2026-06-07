@@ -28,12 +28,8 @@ describe('requiresBasicAuth', () => {
     '/partners',
     '/partners/some-token',
     '/partners/some-token/survey',
-    '/preview',
-    '/preview/abc/courses/GC-4800',
     '/api/partners/foo',
     '/api/partners',
-    '/api/preview',
-    '/api/preview/bar',
   ])('does NOT gate public path %s', (path) => {
     expect(requiresBasicAuth(path)).toBe(false);
   });
@@ -42,6 +38,15 @@ describe('requiresBasicAuth', () => {
     // Guard against accidental prefix bleed: /partnerships is not /partners
     expect(requiresBasicAuth('/partnerships')).toBe(true);
     expect(requiresBasicAuth('/previewer')).toBe(true);
+  });
+
+  it('gates the removed /preview surface (no longer in PUBLIC_PREFIXES)', () => {
+    // The /preview M-trial surface was removed 2026-06-02. Its allowlist
+    // entries were dropped so a future re-add can't be silently public.
+    expect(requiresBasicAuth('/preview')).toBe(true);
+    expect(requiresBasicAuth('/preview/abc')).toBe(true);
+    expect(requiresBasicAuth('/api/preview')).toBe(true);
+    expect(requiresBasicAuth('/api/preview/bar')).toBe(true);
   });
 });
 

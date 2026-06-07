@@ -1,4 +1,4 @@
-import { eq, desc, sql } from 'drizzle-orm';
+import { eq, desc, sql, isNull } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { partners, partnerEvents, positionCaptures } from '@/lib/db/schema';
 import { generateMagicToken } from './tokens';
@@ -94,6 +94,9 @@ export async function countPositionsByPartner(): Promise<Map<string, { draft: nu
       n: sql<number>`count(*)::int`,
     })
     .from(positionCaptures)
+    // Exclude retired positions so the roster count agrees with the
+    // retired-aware target aggregate (listSubmittedPositionsForTarget).
+    .where(isNull(positionCaptures.retiredAt))
     .groupBy(positionCaptures.partnerId, positionCaptures.status);
   const map = new Map<string, { draft: number; submitted: number }>();
   for (const r of rows) {
