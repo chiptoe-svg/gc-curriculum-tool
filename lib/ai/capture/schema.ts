@@ -233,6 +233,51 @@ export const courseOverviewSchema = z.object({
 });
 export type CaptureCourseOverview = z.infer<typeof courseOverviewSchema>;
 
+// ---------------------------------------------------------------------------
+// Class structure — weekly rhythm, topic list, grading overview
+// Added 2026-06-08. Nullable/optional for backward-compat: pre-2026-06-08
+// snapshots won't have it. Populated by v3+ synthesis; null means "not yet
+// captured" — falls back to sheet/catalog data at wiki-render time.
+// ---------------------------------------------------------------------------
+export const classStructureSchema = z.object({
+  /** Ordered list of the units / topic areas / lab subjects covered. */
+  topics: z.array(z.string().min(1)).min(1),
+  /**
+   * The weekly rhythm / meeting format, e.g.
+   * "weekly 2-hour lab + 1-hour lecture" or "twice-weekly studio sessions".
+   */
+  cadence: z.string().min(5),
+  /**
+   * Plain-prose grading overview, e.g.
+   * "Three tests, two major projects, a cumulative final, plus weekly graded labs."
+   * Prose only — no numeric sub-object. Emit "Graded; breakdown not documented."
+   * rather than null when the course is clearly graded but breakdown is absent.
+   */
+  assessment: z.string().min(10),
+  source: CaptureProfileSource.optional(),
+  citations: z.array(CaptureProfileCitation).optional(),
+});
+export type CaptureClassStructure = z.infer<typeof classStructureSchema>;
+
+// ---------------------------------------------------------------------------
+// Major project item — one major graded project in the course
+// ---------------------------------------------------------------------------
+export const majorProjectItemSchema = z.object({
+  /** Short human-readable title, e.g. "Brand Color Report" or "Prepress Packaging Spec". */
+  title: z.string().min(1),
+  /** 1-3 sentences describing what students produce and what they decide. */
+  description: z.string().min(10),
+  /**
+   * The competency statements this project develops.
+   * Must match or paraphrase entries in the profile's `competencies` array.
+   * Projects ARE the evidence for K/U/D scores; linking them closes the loop.
+   */
+  competencies: z.array(z.string().min(1)).min(1),
+  source: CaptureProfileSource.optional(),
+  citations: z.array(CaptureProfileCitation).optional(),
+});
+export type CaptureProjectItem = z.infer<typeof majorProjectItemSchema>;
+
 export const captureProfileSchema = z.object({
   course_code: z.string().min(1),
   scale_version: z.literal(captureScaleVersion),
@@ -257,6 +302,20 @@ export const captureProfileSchema = z.object({
    * be empty.
    */
   course_emphasis: z.array(courseEmphasisItemSchema).nullable(),
+  /**
+   * Weekly rhythm, topic list, and grading overview.
+   * Nullable: pre-2026-06-08 snapshots won't have it.
+   * Populated by v3+ synthesis; null means "not yet captured" — falls back to
+   * sheet/catalog data at wiki-render time.
+   */
+  class_structure: classStructureSchema.nullable().optional(),
+  /**
+   * Major graded projects in the course.
+   * Nullable: pre-2026-06-08 snapshots won't have it.
+   * When null at wiki-render time, falls back to sheet `majorProjects[]` list
+   * labeled "from the course sheet — not yet captured."
+   */
+  major_projects: z.array(majorProjectItemSchema).nullable().optional(),
 });
 export type CaptureProfile = z.infer<typeof captureProfileSchema>;
 
