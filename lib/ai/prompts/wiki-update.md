@@ -26,7 +26,13 @@ The user message is a JSON object with these fields:
     "caption": "Spring 2026",
     "reviewerNote": "...",
     "createdAt": "2026-05-25T14:00:00Z",
-    "profile": { /* full CaptureProfile JSON */ }
+    "profile": { /* full CaptureProfile JSON */ },
+    "courseDescription": "<from the Google Sheet, or null>",
+    "courseLearningObjectives": ["<objective>", "..."],
+    "courseMajorProjects": ["<project title from sheet>", "..."],
+    "courseSkillsRequired": ["<skill>", "..."],
+    "syllabusUrl": "<url or null>",
+    "sheetSourceUrl": "<Google Sheet URL or null>"
   },
   "rawPaths": {
     "snapshotJson": "raw/snapshots/gc-4800/2026-05-25_def456.json",
@@ -186,8 +192,78 @@ Body sections in order:
 5. **The arc** — semester trajectory from `profile.overview.arc`. If null, omit.
 6. **Competencies developed** — list with K/U/D depth chips, each linking to `[[competency-slug]]`. Group technical and foundational separately. For foundationals, show D-depth only.
 7. **Audit notes** — surface the most reader-useful items from `audit_notes`: downstream connections, prereq gaps, productive-failure conditions if present, cross-source contradictions worth flagging. Do NOT dump the whole `audit_notes` object — pick what matters. Keep this section short (3–8 bullets or a short paragraph).
-8. **Source snapshots** — links to the JSON files in `raw/snapshots/<course-slug>/`. Most recent first. Use the provided `allSnapshotsForCourse` list. Rendered as: `- [2026-05-25 — Spring 2026](raw/snapshots/gc-4800/2026-05-25_def456.json)`.
-9. **Cross-references** — small "See also" section. Link outward to the targets this course contributes to, the concept pages that frame it, and any closely related courses.
+8. **Class structure** (new — see §8a below)
+9. **Major projects** (new — see §8b below)
+10. **Syllabus** (new — see §8c below)
+11. **Source snapshots** — links to the JSON files in `raw/snapshots/<course-slug>/`. Most recent first. Use the provided `allSnapshotsForCourse` list. Rendered as: `- [2026-05-25 — Spring 2026](raw/snapshots/gc-4800/2026-05-25_def456.json)`.
+12. **Cross-references** — small "See also" section. Link outward to the targets this course contributes to, the concept pages that frame it, and any closely related courses.
+
+#### §8a — Class structure
+
+Render this section **only** when `snapshot.profile.class_structure` is non-null.
+
+```markdown
+## Class structure
+
+- **Topics covered:** {comma-separated ordered list from `profile.class_structure.topics`}
+- **Cadence:** {`profile.class_structure.cadence`}
+- **Assessment:** {`profile.class_structure.assessment`}
+```
+
+When `profile.class_structure` is null or absent, **omit the section entirely** (do not render a "not yet captured" placeholder — the absence is silent on the wiki page). There is no sheet fallback for class structure.
+
+#### §8b — Major projects
+
+Render from `profile.major_projects` when non-null and non-empty.
+
+```markdown
+## Major projects
+
+- **{project.title}** — {project.description} Develops {competency references, one per listed competency in project.competencies}.
+```
+
+**Wikilink rule for competency references:** For each string in `project.competencies`, attempt to match it against the `sub_competencies` names you know from this snapshot's coverage substrate. If the string closely matches a sub-competency name that has a slug in the wiki (e.g., `"color-management"`), render `[[color-management|competency statement]]`. If no clear match exists, render the statement as plain text. Do NOT guess slugs; plain text is always the safe fallback.
+
+**Sheet fallback:** If `profile.major_projects` is null or empty AND `snapshot.courseMajorProjects[]` is non-empty, render:
+
+```markdown
+## Major projects
+
+*The following project list comes from the course sheet — not yet captured in a profile audit.*
+
+- {project title from snapshot.courseMajorProjects}
+```
+
+If both `profile.major_projects` and `snapshot.courseMajorProjects` are null/empty, **omit the section**.
+
+#### §8c — Syllabus
+
+Render this section **only** when at least one of `snapshot.courseDescription`, `snapshot.courseLearningObjectives[]` (non-empty), `snapshot.courseSkillsRequired[]` (non-empty), `snapshot.syllabusUrl`, or `snapshot.sheetSourceUrl` is non-null/non-empty.
+
+```markdown
+## Syllabus
+
+{snapshot.courseDescription — 1-3 sentences. Omit this paragraph if courseDescription is null.}
+
+**Learning objectives:**
+
+- {objective from snapshot.courseLearningObjectives}
+
+**Skills students should arrive with:**
+
+- {skill from snapshot.courseSkillsRequired}
+
+**Major projects:** see [Major projects](#major-projects) above.
+
+**Links:** [Syllabus PDF]({syllabusUrl}) · [Course sheet]({sheetSourceUrl})
+```
+
+Rules:
+- The **Learning objectives** sublist is omitted when `snapshot.courseLearningObjectives` is empty.
+- The **Skills students should arrive with** sublist is omitted when `snapshot.courseSkillsRequired` is empty.
+- The **Major projects** cross-reference line is omitted when the Major projects section (§8b) is also absent.
+- The **Links** line is omitted when both `snapshot.syllabusUrl` and `snapshot.sheetSourceUrl` are null.
+- When none of these conditions are met, omit the entire section.
 
 ### Competency page (`competencies/{slug}.md`)
 
