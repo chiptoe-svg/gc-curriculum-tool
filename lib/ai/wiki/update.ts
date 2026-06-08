@@ -30,6 +30,8 @@ import {
 import type { CaptureProfile, ProductiveFailureConditions } from '@/lib/ai/capture/schema';
 import { loadPrompt } from '@/lib/ai/prompts/load';
 import { getProviderForFunction } from '@/lib/ai/provider';
+import { fetchLiveCourseFromSheet } from '@/lib/sheets/fetchLiveCourse';
+import type { ParsedCourse } from '@/lib/sheets/parseCourseTab';
 import { writeAndPush } from '@/lib/wiki/git-ops';
 
 // ---------------------------------------------------------------------------
@@ -540,16 +542,69 @@ async function loadAllSnapshotsForCourse(courseCode: string): Promise<SnapshotSu
 }
 
 // ---------------------------------------------------------------------------
-// Course info loader (for course-page frontmatter fields)
+// Course-info loader (extended 2026-06-08: sheet merge)
 // ---------------------------------------------------------------------------
+
+/** Shape of the DB columns we select from `courses`. */
+export interface CourseDbRow {
+  title: string | null;
+  level: number | null;
+  prerequisites: string | string[] | null;
+}
 
 interface CourseInfo {
   title: string;
   level: number;
   prerequisites: string[];
+  sheetDescription: string | null;
+  sheetLearningObjectives: string[];
+  sheetMajorProjects: string[];
+  sheetSkillsRequired: string[];
+  syllabusUrl: string | null;
+  sheetSourceUrl: string | null;
+}
+
+// Exported for unit tests — no I/O.
+export type CourseInfoExtended = CourseInfo;
+
+/**
+ * Pure merge function — exported for tests.
+ * Merges live sheet data (may be null) onto the DB row.
+ * Sheet fields take precedence for live content.
+ */
+export function mergeCourseInfo(
+  row: CourseDbRow,
+  sheet: ParsedCourse | null,
+): CourseInfo {
+  const prereqRaw = row.prerequisites;
+  const prerequisites: string[] = Array.isArray(prereqRaw)
+    ? (prereqRaw as string[]).map(p => courseCodeToSlug(String(p)))
+    : typeof prereqRaw === 'string' && prereqRaw.trim().length > 0
+      ? prereqRaw.split(',').map(p => courseCodeToSlug(p.trim())).filter(Boolean)
+      : [];
+
+  const sheetId = process.env.GOOGLE_SHEET_ID?.trim() ?? null;
+
+  return {
+    title: sheet?.title ?? row.title ?? '',
+    level: sheet?.level ?? row.level ?? 0,
+    prerequisites,
+    sheetDescription: sheet?.description ?? null,
+    sheetLearningObjectives: sheet?.learningObjectives ?? [],
+    sheetMajorProjects: sheet?.majorProjects ?? [],
+    sheetSkillsRequired: sheet?.skillsRequired ?? [],
+    syllabusUrl: sheet?.syllabusUrl ?? null,
+    sheetSourceUrl: sheet && sheetId
+      ? `https://docs.google.com/spreadsheets/d/${sheetId}`
+      : null,
+  };
 }
 
 async function loadCourseInfo(courseCode: string): Promise<CourseInfo> {
+  // 1. Try the live sheet first (5s timeout, 60s in-process cache, fails silently).
+  const sheetData = await fetchLiveCourseFromSheet(courseCode);
+
+  // 2. Fall back to the DB courses row for fields the sheet didn't return.
   const rows = await db
     .select({
       title: courses.title,
@@ -560,23 +615,8 @@ async function loadCourseInfo(courseCode: string): Promise<CourseInfo> {
     .where(eq(courses.code, courseCode))
     .limit(1);
 
-  const row = rows[0];
-  if (!row) return { title: courseCode, level: 0, prerequisites: [] };
-
-  // prerequisites may be a string (legacy) or an array depending on schema shape.
-  // Use whatever is in the courses table.
-  const prereqRaw = row.prerequisites;
-  const prerequisites: string[] = Array.isArray(prereqRaw)
-    ? (prereqRaw as string[]).map(p => courseCodeToSlug(String(p)))
-    : typeof prereqRaw === 'string' && prereqRaw.trim().length > 0
-      ? prereqRaw.split(',').map(p => courseCodeToSlug(p.trim())).filter(Boolean)
-      : [];
-
-  return {
-    title: row.title ?? courseCode,
-    level: row.level ?? 0,
-    prerequisites,
-  };
+  const row = rows[0] ?? { title: courseCode, level: 0, prerequisites: null };
+  return mergeCourseInfo(row, sheetData);
 }
 
 // ---------------------------------------------------------------------------
@@ -744,6 +784,13 @@ export async function updateWikiForSnapshot(snapshotId: string): Promise<WikiUpd
         reviewerNote: snapshot.reviewerNote,
         createdAt: snapshot.createdAt.toISOString(),
         profile: snapshot.profile,
+        // New fields (2026-06-08): live sheet data — null/empty when sheet unavailable.
+        courseDescription: courseInfo.sheetDescription,
+        courseLearningObjectives: courseInfo.sheetLearningObjectives,
+        courseMajorProjects: courseInfo.sheetMajorProjects,
+        courseSkillsRequired: courseInfo.sheetSkillsRequired,
+        syllabusUrl: courseInfo.syllabusUrl,
+        sheetSourceUrl: courseInfo.sheetSourceUrl,
       },
       rawPaths,
       allSnapshotsForCourse: allSnapshots,
