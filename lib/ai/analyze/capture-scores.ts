@@ -315,18 +315,63 @@ type CaptureMessageRow = InferSelectModel<typeof captureMessages>;
 // null when Area 7 was not probed.
 export const captureProfileJsonSchemaV2 = (() => {
   const cloned = JSON.parse(JSON.stringify(captureProfileJsonSchema)) as {
-    properties: {
+    required: string[];
+    properties: Record<string, unknown> & {
       audit_notes: {
         properties: { productive_failure_conditions: { type?: string | string[] } };
       };
     };
   };
+
+  // Widen PF block to nullable (safety net — v1 already has this).
   const pf = cloned.properties.audit_notes.properties.productive_failure_conditions;
-  // v1 already carries type: ['object', 'null'] (unified in Task 4), so this is
-  // now a no-op on the clone — retained as a safety net in case v1 is ever
-  // narrowed back to object-only. The nested properties / required apply when
-  // the value IS an object.
   pf.type = ['object', 'null'];
+
+  // -------------------------------------------------------------------------
+  // New fields: class_structure + major_projects (2026-06-08).
+  // Only in V2 — v1 schema is frozen for legacy-snapshot compatibility.
+  // Strict-mode discipline: every property in `properties` must be in
+  // `required`; optional fields use type: ['T', 'null'].
+  // -------------------------------------------------------------------------
+  cloned.required.push('class_structure', 'major_projects');
+
+  (cloned.properties as Record<string, unknown>).class_structure = {
+    type: ['object', 'null'],
+    additionalProperties: false,
+    required: ['topics', 'cadence', 'assessment', 'source', 'citations'],
+    properties: {
+      topics: {
+        type: 'array',
+        minItems: 1,
+        items: { type: 'string', minLength: 1 },
+      },
+      cadence: { type: 'string', minLength: 5 },
+      assessment: { type: 'string', minLength: 10 },
+      source: { type: ['string', 'null'], enum: ['instructor', 'materials', 'inferred', null] },
+      citations: CITATIONS_ARRAY,
+    },
+  };
+
+  (cloned.properties as Record<string, unknown>).major_projects = {
+    type: ['array', 'null'],
+    items: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['title', 'description', 'competencies', 'source', 'citations'],
+      properties: {
+        title: { type: 'string', minLength: 1 },
+        description: { type: 'string', minLength: 10 },
+        competencies: {
+          type: 'array',
+          minItems: 1,
+          items: { type: 'string', minLength: 1 },
+        },
+        source: { type: ['string', 'null'], enum: ['instructor', 'materials', 'inferred', null] },
+        citations: CITATIONS_ARRAY,
+      },
+    },
+  };
+
   return cloned;
 })();
 
