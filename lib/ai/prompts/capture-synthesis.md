@@ -116,7 +116,23 @@ Conform exactly to the JSON schema provided in the structured-output request. Th
   "course_emphasis": [
     { "competency": "<one of the competency statements above>", "points": <int>, "share_pct": <int 0-100>, "centrality": "central" | "supporting" | "peripheral" },
     ...
-  ] or null
+  ] or null,
+  "class_structure": {
+    "topics": ["<ordered unit/lab titles>", ...],
+    "cadence": "<weekly rhythm, e.g. two 75-min sessions per week>",
+    "assessment": "<plain prose, e.g. Three tests, two major projects, and weekly labs.>",
+    "source": "materials" | "instructor" | "inferred" | null,
+    "citations": [ { "type": "chunk", "chunkId": "...", "messageId": null, "excerpt": "≤200 chars" }, ... ]
+  } | null,
+  "major_projects": [
+    {
+      "title": "<project title>",
+      "description": "<1-3 sentences on what students produce and decide>",
+      "competencies": ["<competency statement matching profile.competencies[].statement>", ...],
+      "source": "materials" | "instructor" | "inferred" | null,
+      "citations": [ { "type": "chunk", "chunkId": "...", "messageId": null, "excerpt": "≤200 chars" }, ... ]
+    }
+  ] | null
 }
 ```
 
@@ -194,6 +210,34 @@ fields are mostly `absent`, this is Kapur's "unproductive success" pattern —
 surface it explicitly in `notes`.
 
 `structured_post_mortem` may be `present` or `partial` ONLY when you can cite a specific graded post-mortem / debrief artifact in `structured_post_mortem_evidence` (a real chunk or instructor-turn citation, same provenance rules as competency citations). A generic "reflect on your learning" prompt with no graded artifact is `absent` — do not credit reflection you cannot ground. Emit `null` for `structured_post_mortem_evidence` when `structured_post_mortem` is `absent`.
+
+# Class structure and major projects
+
+## Extraction rules
+
+Extract `class_structure` and `major_projects` from syllabus, Canvas module list, schedule/calendar, and assignment headers.
+
+### `class_structure`
+
+- **`topics`**: Ordered list of units / topic areas / lab subjects as they appear in the course schedule or Canvas module list. Preserve the order they are taught, not alphabetical. Each entry is a short phrase (e.g., "Color theory fundamentals", "ICC profile creation", "Flexographic press operations"). Extract from the schedule table, weekly topics column, or Canvas modules listing.
+- **`cadence`**: The weekly meeting pattern from the course header or schedule (e.g., "Two 75-minute studio sessions per week" or "Weekly 2-hour lab plus 1-hour lecture"). If not stated, derive from the contact hours listed on the syllabus.
+- **`assessment`**: A single plain-prose sentence summarising the graded components — e.g., "Three tests, two major projects, a cumulative final, and ten weekly graded labs." Read from the grading breakdown table or syllabus overview section. **Do NOT produce a numeric sub-object.** When a course is clearly graded (rubrics exist, point totals are stated) but the breakdown prose is absent, emit the stub: "Graded; breakdown not documented." Reserve `null` for when no graded structure is in evidence at all.
+- `source` and `citations` follow the same derivation rules as competency citations (carry forward chunk IDs from the materials the extraction drew on; derive `source` mechanically from the citation set per the rule in `# How to derive source`).
+- When materials are too thin to support `class_structure` reliably, emit `class_structure: null`. Do NOT invent a schedule from stated objectives alone.
+
+### `major_projects`
+
+- Identify major graded projects from assignment headers and rubric documents. Each must have a point value OR be explicitly labeled "major project", "project", "assignment" with a rubric and meaningful scope. Small in-class exercises, weekly practice labs, and quizzes are NOT major projects.
+- Cap at **8 entries**. More than 8 signals the filter is too loose — re-apply the "rubric + meaningful scope" gate.
+- **`title`**: Short human-readable title from the assignment header (e.g., "Brand Color Report", "Prepress Packaging Specification").
+- **`description`**: 1-3 sentences describing what students produce and what decisions they make. Use source voice from the materials (rubric language preferred).
+- **`competencies`**: The competency *statements* from the `competencies` array above that this project develops. Must match or closely paraphrase entries already emitted in `competencies`. These are the provenance link between projects and K/U/D scores — a project that evidences D=4 color measurement should list the color-measurement competency statement.
+- `source` and `citations` follow the same rules as competency citations.
+- When materials are too thin to identify major projects reliably, emit `major_projects: null`. Do NOT fabricate project titles from learning objectives.
+
+### Null behavior (OpenAI strict mode)
+
+Under OpenAI strict mode the model CANNOT omit a required field. Emit `class_structure: null` (not absent) and `major_projects: null` (not absent) when thin materials prevent reliable extraction. The schema requires both fields to be present.
 
 # Hard rules (the structured-output schema will reject violations)
 
