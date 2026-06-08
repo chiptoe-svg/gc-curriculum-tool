@@ -14,6 +14,8 @@ import { LegacyBanner } from './LegacyBanner';
 import { CitationDrawer, type CitationTarget } from './CitationDrawer';
 import { describeDepth, type Dimension } from '@/lib/ai/capture/depth-anchors';
 import { CourseOverview } from './CourseOverview';
+import { ClassStructureSection } from './ClassStructureSection';
+import { MajorProjectsSection } from './MajorProjectsSection';
 import { StressTestPanel } from './StressTestPanel';
 import { StressTestBadge } from './StressTestBadge';
 import type { StressTestResultType } from '@/lib/ai/stress-test/schema';
@@ -858,6 +860,28 @@ export function ProfileReviewPanel({
           onCitationClick={handleCitationClick}
         />
       </div>
+
+      {/* ── Class structure — editable structured section ── */}
+      <ClassStructureSection
+        classStructure={working.class_structure ?? null}
+        editable={true}
+        onChange={(next) => {
+          setWorking({ ...working, class_structure: next ?? undefined });
+          setStressTestResult(null);
+        }}
+        onCitationClick={handleCitationClick}
+      />
+
+      {/* ── Major projects — editable project cards ── */}
+      <MajorProjectsSection
+        majorProjects={working.major_projects ?? null}
+        editable={true}
+        onChange={(next) => {
+          setWorking({ ...working, major_projects: next ?? undefined });
+          setStressTestResult(null);
+        }}
+        onCitationClick={handleCitationClick}
+      />
 
       {legacy && <LegacyBanner onReaudit={onResumeChat} />}
       <header className="flex items-center justify-between gap-3 rounded-md border bg-card px-4 py-3">
