@@ -52,6 +52,7 @@ function formatInput(args: GenerateCourseKudArgs): string {
 
 export async function generateCourseKud(args: GenerateCourseKudArgs): Promise<{
   data: CourseKudResult;
+  model: string;
   telemetry: CallTelemetry;
 }> {
   const systemPrompt = await loadPrompt('extract-course-kud');
@@ -65,6 +66,7 @@ export async function generateCourseKud(args: GenerateCourseKudArgs): Promise<{
   });
   return {
     data: result.data,
+    model: provider.model,
     telemetry: {
       costUsdCents: result.costUsdCents,
       cachedTokens: result.cachedTokens,

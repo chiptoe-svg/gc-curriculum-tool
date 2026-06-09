@@ -38,6 +38,13 @@ Design documents — the architectural rationale and decisions before implementa
 | 2026-06-04 | [`specs/2026-06-04-wiki-update-compile-loop-design.md`](./specs/2026-06-04-wiki-update-compile-loop-design.md) | `wiki-update` compile-loop design: compiles immutable raw layer into the regenerated wiki narrative layer. Needs review before writing-plans pass. |
 | 2026-06-04 | [`specs/2026-06-04-position-capture-v1-prebuild-amendments.md`](./specs/2026-06-04-position-capture-v1-prebuild-amendments.md) | Position Capture v1 pre-build amendments (A1–A5): sub-competency join key on qualifying competencies + Page-5 ratings, day-one entry-level anchor, demand-side evidenced_by/confidence discipline, and the A5 demand→snapshot_target_coverage seam spec (keyed demand captured, sufficiency scoring deferred to unified-coverage-layer). Applied to schema 0029 + synthesis. |
 | 2026-06-05 | [`specs/2026-06-05-prerequisite-edges-design.md`](./specs/2026-06-05-prerequisite-edges-design.md) | Persisted skill-tagged prerequisite edges — Q2 half of the unified demand/coverage layer: `prerequisite_edges` table, `prereq-edge-seed` LLM seeding, `computePrereqGaps` ordinal-MAX engine, `basis: measured|intended|none` stamping, `no_data` honesty for uncaptured prereqs. Shipped 2026-06-05. |
+| 2026-06-07 | [`specs/2026-06-07-demand-coverage-sufficiency-seam-design.md`](./specs/2026-06-07-demand-coverage-sufficiency-seam-design.md) | Demand→coverage sufficiency seam (Q1 demand half): partner-weighted demand vs ordinal-MAX attainment, `career_target_demand` table (migration 0032), no-data discipline (`no_demand`/`no_coverage`), flag-gated UI. **Build-ahead on branch `audit-remediation-2026-06-07`** — built end-to-end, dormant (migration unapplied, `DEMAND_COVERAGE_SEAM` off). |
+
+## Audits
+
+| Date | Audit | Summary |
+| ---- | ----- | ------- |
+| 2026-06-07 | [`audits/2026-06-07-system-audit.md`](./audits/2026-06-07-system-audit.md) | 8-area adversarial system audit (security/auth, FERPA, AI strict-schema, correctness, data-integrity, cost, dead-code, test-gaps) with refute-by-default verification. 11 confirmed high/critical + 27 mediums/lows. Remediation status tracked inline; fixes on branch `audit-remediation-2026-06-07`. |
 
 ## Plans
 

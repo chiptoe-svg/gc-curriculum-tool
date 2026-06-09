@@ -152,35 +152,20 @@ export async function loadSnapshotAsDraft(snapshotId: string): Promise<boolean> 
   const snapshot = await getSnapshotById(snapshotId);
   if (!snapshot) return false;
 
-  const existing = await db
-    .select({ courseCode: courseCaptureProfiles.courseCode })
-    .from(courseCaptureProfiles)
-    .where(eq(courseCaptureProfiles.courseCode, snapshot.courseCode))
-    .limit(1);
-
   const now = new Date();
-  if (existing.length === 0) {
-    await db.insert(courseCaptureProfiles).values({
-      courseCode: snapshot.courseCode,
-      profile: snapshot.profile,
-      reviewerStatus: 'edited',  // forking from a snapshot — treat as edited draft
-      reviewerNote: `Loaded from snapshot ${snapshotId}`,
-      scaleVersion: snapshot.profile.scale_version,
-      createdAt: now,
-      updatedAt: now,
-    });
-  } else {
-    await db
-      .update(courseCaptureProfiles)
-      .set({
-        profile: snapshot.profile,
-        reviewerStatus: 'edited',
-        reviewerNote: `Loaded from snapshot ${snapshotId}`,
-        scaleVersion: snapshot.profile.scale_version,
-        updatedAt: now,
-      })
-      .where(eq(courseCaptureProfiles.courseCode, snapshot.courseCode));
-  }
+  // Atomic upsert on the courseCode PK (closes the TOCTOU select-then-write
+  // window). reviewerStatus 'edited' = forking from a snapshot is a draft edit.
+  const fields = {
+    profile: snapshot.profile,
+    reviewerStatus: 'edited' as const,
+    reviewerNote: `Loaded from snapshot ${snapshotId}`,
+    scaleVersion: snapshot.profile.scale_version,
+    updatedAt: now,
+  };
+  await db
+    .insert(courseCaptureProfiles)
+    .values({ courseCode: snapshot.courseCode, createdAt: now, ...fields })
+    .onConflictDoUpdate({ target: courseCaptureProfiles.courseCode, set: fields });
   return true;
 }
 

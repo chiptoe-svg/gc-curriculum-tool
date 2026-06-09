@@ -20,9 +20,7 @@
 /** Paths whose prefixes are intentionally public or self-authenticating. */
 const PUBLIC_PREFIXES = [
   '/partners',
-  '/preview',
   '/api/partners',
-  '/api/preview',
   // Public read-only surfaces. The HTTP landing at "/" lists every
   // course; "/view/[code]" renders the latest captured profile read-only.
   // Both are intentionally reachable by anyone on the LAN — the value

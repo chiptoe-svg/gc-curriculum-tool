@@ -140,7 +140,18 @@ export async function getProviderForFunction(
 function buildProvider(modelOverride: string | undefined): AIProvider {
   // Trim every env var defensively — Vercel sometimes preserves trailing
   // newlines from pasted values, and OpenAI rejects an API key with CR/LF.
-  const which = process.env.AI_PROVIDER?.trim() || 'openai';
+  //
+  // Fail closed: an unset/empty AI_PROVIDER must NOT silently default to the
+  // paid 'openai' provider (a misconfiguration footgun — see audit F11). Require
+  // it to be set explicitly. Deployed envs set AI_PROVIDER (.env.local), so this
+  // only catches accidental omission.
+  const which = process.env.AI_PROVIDER?.trim();
+  if (!which) {
+    throw new Error(
+      'AI_PROVIDER is not set — refusing to default to a paid provider. ' +
+      'Set AI_PROVIDER to one of: openai | anthropic | local | campus.',
+    );
+  }
   if (which === 'openai') {
     const key = process.env.OPENAI_API_KEY?.trim();
     if (!key) throw new Error('OPENAI_API_KEY not set');

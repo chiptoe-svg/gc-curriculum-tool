@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "prepare": "git config core.hooksPath .githooks || true",
     "dev": "next dev --turbopack",
     "dev:lan": "next dev --turbopack --hostname 0.0.0.0",
     "dev:lan-https": "next dev --turbopack --hostname 0.0.0.0 --experimental-https --experimental-https-key ./certs/localhost+2-key.pem --experimental-https-cert ./certs/localhost+2.pem",

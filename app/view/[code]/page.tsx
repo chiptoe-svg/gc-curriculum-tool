@@ -6,6 +6,7 @@ import { courses, courseCaptureSnapshots } from '@/lib/db/schema';
 import { CapturedView } from './CapturedView';
 import { CatalogFallbackView } from './CatalogFallbackView';
 import { fetchLiveCourseFromSheet } from '@/lib/sheets/fetchLiveCourse';
+import { redactPiiDeep } from '@/lib/capture/redact-pii';
 
 export const dynamic = 'force-dynamic';
 
@@ -164,7 +165,10 @@ export default async function ViewCoursePage({ params }: Props) {
       </header>
       <main className="mx-auto max-w-4xl px-6 py-8">
         {snapshot ? (
-          <CapturedView profile={snapshot.profile} capturedAt={snapshot.createdAt} />
+          // Defense-in-depth: scrub any PII the model may have echoed into the
+          // generated profile before it reaches this anonymous public surface.
+          // (Faculty/authenticated views render the un-redacted profile.)
+          <CapturedView profile={redactPiiDeep(snapshot.profile)} capturedAt={snapshot.createdAt} />
         ) : (
           <CatalogFallbackView course={fallbackCourse} editHref={editHref} catalogSource={catalogSource} />
         )}

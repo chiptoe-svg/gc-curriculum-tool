@@ -83,9 +83,29 @@ async function runV2Pipeline(input: FinalizeExtractionInput): Promise<void> {
   const { id, courseCode, fileName, extractedText } = input;
   if (!extractedText) return;
 
-  // 1. FERPA detection
+  // 1. FERPA detection — ENFORCED, not merely advisory. High content-risk
+  //    material (CUIDs, gradebook/roster tables, multiple student emails,
+  //    multiple "Submitted by" names) is auto-set-aside BEFORE any external
+  //    LLM digest or embedding call, so student PII never leaves the box.
+  //    This is the CONTENT gate; the filename-based materials policy below is
+  //    the complementary shape gate. Faculty can override from the Review panel.
+  //    Medium/low risk continues to the policy step (medium surfaces a warning
+  //    badge but is not blocked, since a single "Submitted by" name is often
+  //    benign and the one-click include remains available).
   const ferpa = detectFerpaRisk(extractedText);
   await updateFerpaRisk({ id, risk: ferpa.level });
+
+  if (ferpa.level === 'high') {
+    const rules = [...new Set(ferpa.matches.map(m => m.rule))].join(', ') || 'content';
+    await updateAutoSetAside({
+      id,
+      autoSetAside: true,
+      setAsideReason: `FERPA risk detected (${rules}) — set aside automatically so student data is not sent to the AI provider. Review and override to include.`,
+      ignored: true,
+    });
+    await updateIndexingStatus({ id, status: 'skipped' });
+    return;
+  }
 
   // 2. Materials policy → set aside if not included
   const policy = evaluateMaterialsPolicy({

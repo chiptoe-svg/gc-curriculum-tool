@@ -143,7 +143,7 @@ export function CaptureClient({
       const res = await fetch('/api/admin/v2-reset', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ courseCode, scope: 'session' }),
+        body: JSON.stringify({ courseCode, scope: 'session', slug }),
       });
       if (!res.ok) throw new Error(`v2-reset ${res.status}`);
       // Also drop the legacy v1 conversation row so they stay in sync.

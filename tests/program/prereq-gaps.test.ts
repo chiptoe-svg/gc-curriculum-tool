@@ -462,3 +462,26 @@ describe('edge cases', () => {
     expect(g.contributingPrereqs.sort()).toEqual(['B', 'C']);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Regression: null delivered dimension (no data) must NOT fabricate a phantom
+// gap, but a genuine scored 0 still must. (audit: prereq-gap-null-kud)
+// ---------------------------------------------------------------------------
+describe('null-delivered vs scored-zero gap semantics', () => {
+  it('null delivered K against an expected K is NO DATA, not a full phantom gap', () => {
+    const edges = [edge('P', 'X', 3, null, 2)]; // expects K3, D2
+    const dlv = [delivered('P', 'X', null, null, 2, 'measured')]; // K not measured, D2 met
+    const g = gapFor(computeGapsFromInputs(edges, dlv), 'X');
+    expect(g.gap.k).toBe(0); // no phantom K gap from missing data
+    expect(g.gap.d).toBe(0); // D met
+    expect(g.status).toBe('met');
+  });
+
+  it('a genuine scored 0 on K still produces a real gap', () => {
+    const edges = [edge('P', 'X', 3, null, 2)];
+    const dlv = [delivered('P', 'X', 0, null, 2, 'measured')]; // K scored 0 (tried, failed)
+    const g = gapFor(computeGapsFromInputs(edges, dlv), 'X');
+    expect(g.gap.k).toBe(3); // 3 - 0 = real gap
+    expect(g.status).toBe('gap');
+  });
+});

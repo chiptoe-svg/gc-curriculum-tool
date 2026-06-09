@@ -232,7 +232,7 @@
   <p class="doc-subtitle">A system-level view: the framework, the two sides of capture (what our courses develop and what careers demand), the agentic pipeline that produces the records, and every infrastructure piece that runs it — plus an honest account of how the framework matches the research it draws on.</p>
   <div class="doc-meta">
     <span><strong>Audience</strong> Technical reviewers, faculty curious about the AI, future maintainers</span>
-    <span><strong>Date</strong> 2026-06-05</span>
+    <span><strong>Date</strong> 2026-06-07</span>
   </div>
 </header>
 
@@ -263,7 +263,7 @@
 
   <p>Q1 operates at program scale: it requires knowing what each course actually develops (not what its syllabus claims) <em>and</em> what the careers actually demand, then comparing the two. Q2 operates at course scale: it requires comparing a course's incoming-expectations profile against the confirmed output of its declared prerequisites. Both questions are unanswerable without structured, evidence-grounded records of what courses do — which is what the capture pipeline produces.</p>
 
-  <p>A distinction that runs through the whole architecture: Q1 has two halves. <strong>Breadth</strong> — "is this competency developed anywhere in the program?" — is computable today. <strong>Sufficiency</strong> — "is it developed <em>deeply enough</em> for what the career requires?" — depends on measuring career demand on the same depth scale and subtracting. The tool captures both sides of that subtraction now; the final differencing is the next major increment (§4).</p>
+  <p>A distinction that runs through the whole architecture: Q1 has two halves. <strong>Breadth</strong> — "is this competency developed anywhere in the program?" — is computable today. <strong>Sufficiency</strong> — "is it developed <em>deeply enough</em> for what the career requires?" — depends on measuring career demand on the same depth scale and subtracting. The tool captures both sides of that subtraction now, and the differencing layer is built behind a feature flag (dormant, awaiting activation and the first employer data — §4).</p>
 
   <p>The tool does not claim to answer these questions definitively. It produces AI-drafted, evidence-cited readings that faculty can review, dispute, and refine. The commitment is that those readings are disputable — backed by specific evidence, not syllabus aspiration — and that faculty disagreements are persistent rather than silently overwritten.</p>
 </section>
@@ -380,12 +380,12 @@
 
   <h3>The sufficiency seam — where the two sides meet</h3>
 
-  <p>Because both sides emit K/U/D on the same rubric and both now carry <code>sub_competency_id</code>, a career's required depth for a competency and the program's evidenced depth for that same competency become unit-for-unit comparable. The planned <strong>unified demand/coverage layer</strong> (the "audit step 4" increment) is where they are actually differenced: it adds numeric per-dimension <code>k/u/d_demand</code> to the catalog, populated from the Position Capture aggregate, against which the existing keyed course-attainment depths are subtracted. The result, per competency, is a signed gap — where a career needs a 4 and graduates evidence a 2, that gap of 2 is precisely where the curriculum falls short.</p>
+  <p>Because both sides emit K/U/D on the same rubric and both now carry <code>sub_competency_id</code>, a career's required depth for a competency and the program's evidenced depth for that same competency become unit-for-unit comparable. The <strong>unified demand/coverage layer</strong> (the "audit step 4" increment) is where they are actually differenced: it stores numeric per-dimension demand in a <code>career_target_demand</code> table — a <em>partner-weighted average</em> of position depths (the most-representative employers, by faculty-set weight, set the bar), against which the existing keyed course-attainment depths (ordinal <em>MAX</em> — the deepest any course reached) are subtracted. The result, per competency, is a signed gap — where a career needs a 4 and graduates evidence a 2, that gap of 2 is precisely where the curriculum falls short.</p>
 
   <div class="callout note">
-    <div class="callout-title">Built vs. not-yet-built</div>
+    <div class="callout-title">Built vs. not-yet-activated</div>
     <p><strong>Built and deployed:</strong> both capture engines. The full CourseCapture v2 pipeline and the <code>/program</code> coverage map on the attainment side; Position Capture v1 (the full six-page flow, immutable position records, the roll-up stub) on the demand side, with the join key, day-one anchoring, and demand-evidence discipline all enforced in the shipped schema.</p>
-    <p><strong>Not yet built:</strong> the numeric <code>k/u/d_demand</code> columns and the actual demand-minus-attainment <em>difference</em>. Today demand is captured-and-keyed but never compared. The consequence: Q1 <em>breadth</em> ("is the competency touched anywhere?") is computable now; Q1 <em>sufficiency</em> ("is it touched deeply enough for the career?") is blocked precisely on wiring this seam — which now has a defined join key to build against. Position Capture v1's only obligation toward the seam was to populate that key, so the demand data never ships orphaned.</p>
+    <p><strong>Built-ahead, dormant (branch <code>audit-remediation-2026-06-07</code>, behind the <code>DEMAND_COVERAGE_SEAM</code> flag):</strong> the sufficiency seam now exists end-to-end — a pure engine (partner-weighted demand vs ordinal-MAX attainment, with an explicit <em>no-data discipline</em>: a sub-competency with no employer demand reads <code>no_demand</code>, and one that is demanded but has no coverage data reads <code>no_coverage</code>, never a fabricated gap), the <code>career_target_demand</code> table (migration <code>0032</code>, written but not applied), a deterministic demand rollup, and a read-only sufficiency panel on the per-target page. It is unit-tested and dormant: nothing runs until the migration is applied and the flag is flipped. So Q1 <em>sufficiency</em> is now <em>computable</em> (the join is built and tested), pending activation and the first employer data — it is no longer a missing seam, just an un-flipped switch.</p>
   </div>
 </section>
 
@@ -460,7 +460,7 @@
       </li>
       <li>
         <strong>FERPA screening + materials policy</strong>
-        <p>An automated policy layer flags materials likely to be gradebook or roster data (by filename pattern) as high FERPA risk and auto-sets them aside with a dismissible warning. Other materials proceed. The policy is always overridable by the faculty reviewer.</p>
+        <p>Two complementary gates. A filename-based policy layer flags materials likely to be gradebook or roster data and sets them aside; and (branch <code>audit-remediation-2026-06-07</code>) a <em>content</em>-based detector scans the extracted text for student identifiers — Clemson CUIDs, gradebook/roster table shapes, multiple student emails, "Submitted by &lt;Name&gt;" attributions — and, when risk is high, <strong>auto-sets the material aside before any external digest or embedding call</strong>, so student PII never leaves the box. Previously the content detector was advisory only (it set a warning badge but did not block); it now enforces. Both gates remain overridable by the faculty reviewer. As defense-in-depth, generated profile text is also PII-redacted before it renders on the public <code>/view</code> surface.</p>
       </li>
       <li>
         <strong>Chunk + contextualize + embed</strong>
@@ -764,7 +764,7 @@
 
   <h3>Position Capture → Q1 Sufficiency (the demand seam)</h3>
 
-  <p>The demand side (§4) connects here. Position Capture records employer-required KUD+ depth keyed to <code>sub_competency_id</code>; positions roll up into a per-target aggregate. The planned unified demand/coverage layer will difference that demand against the matrix's evidenced attainment — turning Q1 from "is the competency covered?" (breadth, computable now) into "is it covered <em>deeply enough</em>?" (sufficiency). This is the one major seam not yet wired; it is unblocked now that both sides share the join key.</p>
+  <p>The demand side (§4) connects here. Position Capture records employer-required KUD+ depth keyed to <code>sub_competency_id</code>; positions roll up into a per-target aggregate. The unified demand/coverage layer differences that demand (partner-weighted) against the matrix's evidenced attainment (ordinal-MAX) — turning Q1 from "is the competency covered?" (breadth, computable now) into "is it covered <em>deeply enough</em>?" (sufficiency). That layer is now built end-to-end behind the <code>DEMAND_COVERAGE_SEAM</code> flag (dormant pending activation); the seam is no longer missing, just switched off.</p>
 
   <h3>Snapshots → Curriculum Wiki</h3>
 
@@ -795,7 +795,7 @@
 
   <div class="callout warn">
     <div class="callout-title">The honest headline</div>
-    <p>Roughly <strong>a third of the aspiration is genuinely enforced in code.</strong> The course-capture schema guards (foundational null-K/U, the asymmetric evidence thresholds, depth bounds, the structured-post-mortem evidence gate) and the prerequisite-gap engine (ordinal-MAX, basis stamp, direct-edges-only) are real structural guarantees, reached by <code>.parse()</code> on the production path and pinned by tests. The remaining two-thirds splits into <em>prompt-guided</em> rules that depend on model discretion, <em>stipulated</em> framework choices invented by design, and <em>unbuilt</em> end-state aspirations. The single most consequential gap: the tool's headline question — <em>does the curriculum build students toward the careers it claims?</em> — has <strong>both halves built (course-attainment scoring and employer-demand capture) but the join between them wired nowhere</strong>, so Q1 <em>sufficiency</em> remains aspirational even though the coverage matrix looks live.</p>
+    <p>Roughly <strong>a third of the aspiration is genuinely enforced in code.</strong> The course-capture schema guards (foundational null-K/U, the asymmetric evidence thresholds, depth bounds, the structured-post-mortem evidence gate) and the prerequisite-gap engine (ordinal-MAX, basis stamp, direct-edges-only) are real structural guarantees, reached by <code>.parse()</code> on the production path and pinned by tests. The remaining two-thirds splits into <em>prompt-guided</em> rules that depend on model discretion, <em>stipulated</em> framework choices invented by design, and <em>unbuilt</em> end-state aspirations. The tool's headline question — <em>does the curriculum build students toward the careers it claims?</em> — had, until recently, <strong>both halves built (course-attainment scoring and employer-demand capture) but the join between them wired nowhere.</strong> That join — the demand−attainment sufficiency layer — is now built end-to-end behind the <code>DEMAND_COVERAGE_SEAM</code> flag (engine, <code>career_target_demand</code> table, rollup, per-target panel; unit-tested; dormant on branch <code>audit-remediation-2026-06-07</code>). So Q1 <em>sufficiency</em> is now computable in code, pending activation (apply migration <code>0032</code> + flip the flag) and the first employer data — a flipped switch away rather than an unwritten increment.</p>
   </div>
 
   <h3>A. The KUD+ scoring contract (course capture)</h3>
@@ -940,8 +940,8 @@
       </tr>
       <tr>
         <td><strong>Q1 sufficiency = demand − attainment</strong>, differenced at program scale <span class="src">(vision)</span></td>
-        <td>The headline gap. <code>ScoreCoverageInput</code> has <em>no demand parameter</em>; the demand aggregate is read only by the admin synthesis page, never by any scoring code. Both halves exist; the join is wired nowhere.</td>
-        <td><span class="st st-unbuilt">unbuilt</span></td>
+        <td>The headline seam — now <strong>built behind a flag</strong> (<code>DEMAND_COVERAGE_SEAM</code>, branch <code>audit-remediation-2026-06-07</code>): pure engine <code>computeSufficiency</code> (partner-weighted demand vs ordinal-MAX attainment, no-data discipline), <code>career_target_demand</code> table (migration <code>0032</code>, not applied), deterministic rollup, per-target panel. Unit-tested, dormant; activate with <code>db:migrate</code> + the flag. Not yet enforced/visible by default, hence partial.</td>
+        <td><span class="st st-partial">partial</span></td>
       </tr>
       <tr>
         <td><strong>Q2 prerequisite support</strong>: do the prereqs students take support what a course expects? <span class="src">(vision)</span></td>
@@ -983,7 +983,7 @@
 
   <div class="callout note">
     <div class="callout-title">Reconciling docs and code</div>
-    <p>Two inversions surfaced while tracing. (1) <strong>Now reconciled:</strong> the prerequisite-gap and scaffolding views were live, but several companion docs (<code>background.html</code> §11, the vision) still tagged them "Specified, not built" — corrected 2026-06-05, with the label now applying only to scaffolding's <em>Stage 2</em> diagnostics (AI narrative, cross-tabs, act-true ordering), which genuinely remain unbuilt. (2) <strong>Still open:</strong> the partner survey feeds two pipelines with <em>different</em> jobs (see §11) — Position Capture does <strong>demand-measurement</strong> (how deep each sub-competency is required, keyed to <code>sub_competency_id</code>) and the synthesis pipeline does <strong>definition-refinement</strong> (proposed edits to the descriptors themselves). They are complementary, not redundant — but the genuine gap is that the demand-measurement output currently dead-ends in a Markdown aggregate and does not yet feed the coverage score, so Q1 <em>sufficiency</em> stays uncomputable. Closing that one seam is the unified demand/coverage layer (§4).</p>
+    <p>Two inversions surfaced while tracing. (1) <strong>Now reconciled:</strong> the prerequisite-gap and scaffolding views were live, but several companion docs (<code>background.html</code> §11, the vision) still tagged them "Specified, not built" — corrected 2026-06-05, with the label now applying only to scaffolding's <em>Stage 2</em> diagnostics (AI narrative, cross-tabs, act-true ordering), which genuinely remain unbuilt. (2) <strong>Still open:</strong> the partner survey feeds two pipelines with <em>different</em> jobs (see §11) — Position Capture does <strong>demand-measurement</strong> (how deep each sub-competency is required, keyed to <code>sub_competency_id</code>) and the synthesis pipeline does <strong>definition-refinement</strong> (proposed edits to the descriptors themselves). They are complementary, not redundant. The demand-measurement output used to dead-end in a Markdown aggregate; the unified demand/coverage layer (§4) now consumes it into numeric <code>career_target_demand</code> and differences it against attainment — built behind the <code>DEMAND_COVERAGE_SEAM</code> flag, dormant pending activation. So Q1 <em>sufficiency</em> is computable in code now, not yet switched on.</p>
   </div>
 </section>
 

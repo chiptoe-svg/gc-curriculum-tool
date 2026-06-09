@@ -16,7 +16,7 @@ export interface AdminPartnerRow {
   magicLinkUrl: string;
 }
 
-export function PartnersTable({ partners }: { partners: AdminPartnerRow[]; slug: string }) {
+export function PartnersTable({ partners, slug }: { partners: AdminPartnerRow[]; slug: string }) {
   async function copyLink(url: string) {
     try {
       await navigator.clipboard.writeText(url);
@@ -56,6 +56,8 @@ export function PartnersTable({ partners }: { partners: AdminPartnerRow[]; slug:
   async function markInvited(partnerId: string) {
     const res = await fetch(`/api/admin/partners/${partnerId}/mark-invited`, {
       method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ slug }),
     });
     if (!res.ok) {
       alert(`Mark-invited failed: ${res.status}`);

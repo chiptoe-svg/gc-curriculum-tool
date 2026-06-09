@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { isValidSlug } from '@/lib/slug';
 import { regenerateAggregate } from '@/lib/ai/position-capture/aggregate';
+import { regenerateTargetDemand } from '@/lib/ai/position-capture/demand-rollup';
 
 interface RouteContext { params: Promise<{ targetId: string }> }
 
@@ -13,6 +14,12 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
 
   try {
     const result = await regenerateAggregate(targetId);
+    // Demand→coverage seam: recompute the numeric weighted demand alongside the
+    // markdown aggregate. Gated — career_target_demand's migration is unapplied,
+    // so this only runs once the seam is activated.
+    if (process.env.DEMAND_COVERAGE_SEAM === '1') {
+      await regenerateTargetDemand(targetId);
+    }
     return NextResponse.json({ ok: true, positionIds: result.positionIds, markdown: result.markdown });
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'regenerate failed';

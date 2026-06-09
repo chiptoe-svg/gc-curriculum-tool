@@ -8,6 +8,7 @@ import { listStalePairs, upsertCoverageCell } from '@/lib/db/program-coverage-qu
 import { scoreSnapshotAgainstTarget } from '@/lib/ai/analyze/program-score-coverage';
 import { regenerateWikiInBackground } from '@/lib/ai/wiki/update';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
+import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
 import { hashIp } from '@/lib/ip-hash';
 
 export const maxDuration = 300;
@@ -59,7 +60,14 @@ export async function POST(req: Request): Promise<Response> {
       : a.careerTargetId.localeCompare(b.careerTargetId)
   );
 
+  // This is the app's largest fan-out of paid AI calls (one provider.complete
+  // per stale pair). Re-check the daily cost cap before each call and stop early
+  // when it trips, so a large catalog can't run an unbounded paid batch.
+  let stoppedAtCap = false;
   for (const pair of stale) {
+    const cap = await checkDailyCap();
+    if (!cap.ok) { stoppedAtCap = true; break; }
+
     const snap = await getSnapshotById(pair.snapshotId);
     if (!snap) {
       results.push({ ...pair, status: 'failed', errorReason: 'snapshot not found' });
@@ -71,7 +79,7 @@ export async function POST(req: Request): Promise<Response> {
       continue;
     }
     try {
-      const { result, model } = await scoreSnapshotAgainstTarget({
+      const { result, model, costUsdCents } = await scoreSnapshotAgainstTarget({
         snapshotId: pair.snapshotId,
         courseCode: pair.courseCode,
         snapshotProfile: snap.profile,
@@ -111,6 +119,7 @@ export async function POST(req: Request): Promise<Response> {
           model,
         });
       }
+      await recordSpend(costUsdCents);
       results.push({ ...pair, status: 'ok', cellCount: result.cells.length });
     } catch (e) {
       results.push({
@@ -139,6 +148,7 @@ export async function POST(req: Request): Promise<Response> {
   return NextResponse.json({
     scored: okCount,
     failed: failedCount,
+    stoppedAtCap,
     pairs: results,
   });
 }

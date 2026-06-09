@@ -473,3 +473,51 @@ describe('readWikiPage', () => {
     );
   });
 });
+
+describe('writeAndPush — serialization (F7)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockMkdir().mockResolvedValue(undefined);
+    mockWriteFile().mockResolvedValue(undefined);
+    mockAppendFile().mockResolvedValue(undefined);
+  });
+
+  it('does not start a second concurrent call until the first completes', async () => {
+    // Gate the very first git exec so the first writeAndPush is mid-flight.
+    let release!: () => void;
+    const gate = new Promise<void>(r => { release = r; });
+    let firstStarted = false;
+
+    mockExecFile().mockImplementation((...callArgs: unknown[]) => {
+      const args = callArgs[1] as string[];
+      const cb = callArgs[callArgs.length - 1] as ExecFileCb;
+      const stdout = args[args.length - 1] === 'HEAD' ? FAKE_SHA + '\n' : '';
+      if (!firstStarted) {
+        firstStarted = true;
+        // Hold the first exec open until released; the second writeAndPush must
+        // NOT issue any git command while we wait.
+        gate.then(() => cb(null, stdout, ''));
+        return;
+      }
+      setImmediate(() => cb(null, stdout, ''));
+    });
+
+    const p1 = writeAndPush(COMMIT);
+    const p2 = writeAndPush(COMMIT);
+
+    // Flush microtasks so the first call's serial body reaches its first exec.
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    // If the calls raced on the working tree, p2's git pull would already have
+    // fired. With serialization, exactly one exec (p1's pull) has been issued.
+    expect(mockExecFile().mock.calls.length).toBe(1);
+
+    release();
+    await Promise.all([p1, p2]);
+
+    // Both calls fully ran: 2 × (pull, add, commit, rev-parse, push) = 10.
+    expect(mockExecFile().mock.calls.length).toBe(10);
+  });
+});

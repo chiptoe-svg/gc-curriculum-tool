@@ -171,6 +171,7 @@ export async function listSubmittedPositionsForTarget(targetId: string): Promise
         SELECT 1 FROM position_captures sup
         WHERE sup.supersedes = pc.id
           AND sup.status = 'submitted'
+          AND sup.retired_at IS NULL
       )
     ORDER BY pc.submitted_at DESC NULLS LAST, pc.created_at DESC
   `);

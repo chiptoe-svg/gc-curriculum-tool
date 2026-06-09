@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { isValidSlug } from '@/lib/slug';
 import { markInvited, logPartnerEvent } from '@/lib/partners/queries';
 
 interface RouteContext {
@@ -19,7 +20,14 @@ interface RouteContext {
  * the table can show "invited 3 days ago" and the admin knows who
  * still needs a nudge.
  */
-export async function POST(_req: Request, { params }: RouteContext): Promise<Response> {
+export async function POST(req: Request, { params }: RouteContext): Promise<Response> {
+  // Defense-in-depth slug gate (second factor behind faculty Basic Auth),
+  // matching every other admin route.
+  const body = await req.json().catch(() => ({})) as Record<string, unknown>;
+  if (!isValidSlug(typeof body.slug === 'string' ? body.slug : '')) {
+    return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
+  }
+
   const { partnerId } = await params;
   if (!partnerId) return NextResponse.json({ error: 'partnerId required' }, { status: 400 });
 

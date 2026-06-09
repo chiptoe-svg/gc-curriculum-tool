@@ -1,12 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const dbInsertReturning = vi.fn();
+const dbOnConflict = vi.fn();
 const dbUpdateWhere = vi.fn();
 const dbSelectFromWhere = vi.fn();
 
 vi.mock('@/lib/db/client', () => ({
   db: {
-    insert: () => ({ values: () => ({ returning: dbInsertReturning }) }),
+    insert: () => ({ values: () => ({ returning: dbInsertReturning, onConflictDoUpdate: dbOnConflict }) }),
     update: () => ({ set: () => ({ where: dbUpdateWhere }) }),
     select: () => ({
       from: () => ({
@@ -89,28 +90,18 @@ describe('insertProfileRun', () => {
 });
 
 describe('upsertCourseProfile', () => {
-  it('calls insert on first-analysis (no existing row)', async () => {
-    dbSelectFromWhere.mockResolvedValue([]);
-    dbInsertReturning.mockResolvedValue([{}]);
+  // Atomic onConflictDoUpdate (no select-then-branch) — closes the TOCTOU race.
+  it('issues a single atomic insert...onConflictDoUpdate (no select branch)', async () => {
+    dbOnConflict.mockResolvedValue(undefined);
     await upsertCourseProfile({
       courseCode: 'GC 4060',
       result: fakeProfile,
       runId: 'run-uuid-1',
     });
-    expect(dbInsertReturning).toHaveBeenCalledTimes(1);
+    expect(dbOnConflict).toHaveBeenCalledTimes(1);
+    // No pre-read select, no separate update branch.
+    expect(dbSelectFromWhere).not.toHaveBeenCalled();
     expect(dbUpdateWhere).not.toHaveBeenCalled();
-  });
-
-  it('calls update on re-analysis (existing row found)', async () => {
-    dbSelectFromWhere.mockResolvedValue([{ courseCode: 'GC 4060' }]);
-    dbUpdateWhere.mockResolvedValue(undefined);
-    await upsertCourseProfile({
-      courseCode: 'GC 4060',
-      result: fakeProfile,
-      runId: 'run-uuid-2',
-    });
-    expect(dbUpdateWhere).toHaveBeenCalledTimes(1);
-    expect(dbInsertReturning).not.toHaveBeenCalled();
   });
 });
 

@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { isValidSlug } from '@/lib/slug';
-import { transcribeAudio, isSupportedAudioMime } from '@/lib/ai/transcribe';
+import { transcribeAudio, isSupportedAudioMime, estimateWhisperCostCents } from '@/lib/ai/transcribe';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
+import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
 import { hashIp } from '@/lib/ip-hash';
 
 // 5 MB ≈ 5 minutes of webm/opus voice at typical browser settings. Tuned
@@ -26,6 +27,12 @@ export async function POST(req: Request): Promise<Response> {
   const ipHash = hashIp(req);
   const { allowed } = await checkIpRateLimit(ipHash);
   if (!allowed) return NextResponse.json({ error: 'rate limit exceeded (ip)' }, { status: 429 });
+
+  // Daily cost cap — transcription can hit the paid OpenAI Whisper backend
+  // (WHISPER_BACKEND=openai, or the local-binary-missing fallback), which was
+  // previously invisible to the cap. Gate before spending.
+  const cap = await checkDailyCap();
+  if (!cap.ok) return NextResponse.json({ error: 'daily cost cap reached' }, { status: 503 });
 
   let form: FormData;
   try {
@@ -56,6 +63,10 @@ export async function POST(req: Request): Promise<Response> {
   try {
     const bytes = new Uint8Array(await audio.arrayBuffer());
     const result = await transcribeAudio(bytes, mime);
+    // Record spend only for the paid path so the daily ledger stays accurate.
+    if (result.backend === 'openai') {
+      await recordSpend(estimateWhisperCostCents(audio.size));
+    }
     return NextResponse.json({ text: result.text, model: result.model });
   } catch (e) {
     const message = e instanceof Error ? e.message : 'transcription failed';

@@ -34,7 +34,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     .join('\n\n');
 
   try {
-    const { data, telemetry } = await generateCourseKud({
+    const { data, model, telemetry } = await generateCourseKud({
       title: course.title,
       description: course.description,
       learningObjectives: course.learningObjectives as string[],
@@ -54,7 +54,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
       courseCode,
       result: data,
       profileSnapshot,
-      model: 'claude-sonnet-4-6',
+      model,
       costUsdCents: telemetry.costUsdCents,
     });
 

@@ -103,6 +103,35 @@ describe('finalizeExtraction (v2 pipeline)', () => {
     expect(updateIndexingStatus).toHaveBeenCalledWith(expect.objectContaining({ status: 'skipped' }));
   });
 
+  it('auto-sets-aside high-FERPA CONTENT (benign filename) before any LLM/embed call', async () => {
+    process.env.COURSECAPTURE_V2_INGESTION = '1';
+    const { generateMaterialDigest } = await import('@/lib/ai/analyze/material-digest');
+    const { embedBatch } = await import('@/lib/ai/embeddings');
+    vi.mocked(generateMaterialDigest).mockClear();
+    vi.mocked(embedBatch).mockClear();
+    const store = createInMemoryVectorStore();
+    await finalizeExtraction({
+      id: 'm-ferpa',
+      courseCode: 'GC 4800',
+      // Filename the materials policy would happily INCLUDE — the only signal
+      // is the student data in the body (a Clemson CUID).
+      fileName: 'Canvas File: final-projects.pdf',
+      extractionStatus: 'ok',
+      extractedText: 'Final project rubric.\nStudent C12345678 submitted on time.',
+      vectorStore: store,
+      courseHasLearningObjectives: false,
+    });
+    expect(updateFerpaRisk).toHaveBeenCalledWith(expect.objectContaining({ risk: 'high' }));
+    expect(updateAutoSetAside).toHaveBeenCalledWith(expect.objectContaining({
+      autoSetAside: true,
+      ignored: true,
+    }));
+    expect(updateIndexingStatus).toHaveBeenCalledWith(expect.objectContaining({ status: 'skipped' }));
+    // The whole point: student data must NOT reach the external provider.
+    expect(generateMaterialDigest).not.toHaveBeenCalled();
+    expect(embedBatch).not.toHaveBeenCalled();
+  });
+
   it('marks indexing_status: failed when chunk embedding fails', async () => {
     process.env.COURSECAPTURE_V2_INGESTION = '1';
     const { embedBatch } = await import('@/lib/ai/embeddings');

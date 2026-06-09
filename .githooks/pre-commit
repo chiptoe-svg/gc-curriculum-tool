@@ -1,0 +1,30 @@
+#!/bin/sh
+# STATE.md drift guard — NON-BLOCKING.
+#
+# Warns when a commit changes a STATE-tracked surface (schema / migration / route
+# / page / env / AI function-settings / middleware) but does NOT also stage
+# docs/STATE.md. This catches the *diff-shaped* misses only — it can see a
+# changed file, so it can nudge. It CANNOT see decision/deferral misses (those
+# leave no diff); the session-end reconciliation ritual in CLAUDE.md covers those.
+#
+# It never blocks: the protocol exempts trivial commits and a hook can't tell a
+# trivial change from a real one. It only prints. See docs/STATE.md
+# "What this file tracks".
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -z "$staged" ] && exit 0
+
+# STATE.md already updated in this commit → nothing to nag about.
+echo "$staged" | grep -q '^docs/STATE\.md$' && exit 0
+
+tracked=$(echo "$staged" | grep -E '^(lib/db/schema\.ts|drizzle/.*\.sql|\.env\.example|lib/ai/function-settings\.ts|middleware\.ts|app/.*/route\.ts|app/.*/page\.tsx)$')
+
+if [ -n "$tracked" ]; then
+  printf '\n\033[33m⚠️  STATE.md drift guard\033[0m — this commit touches STATE-tracked surfaces:\n' >&2
+  echo "$tracked" | sed 's/^/      /' >&2
+  printf '   …but does not update \033[1mdocs/STATE.md\033[0m.\n' >&2
+  printf '   Non-trivial (route/schema/AI-fn/env/deploy/what'"'"'s-live)? Update STATE.md.\n' >&2
+  printf '   Also: did you DEFER/HOLD/skip anything? → add it to STATE.md Deferred/debt (no diff will catch that).\n' >&2
+  printf '   Trivial? Ignore — this never blocks.\n\n' >&2
+fi
+exit 0

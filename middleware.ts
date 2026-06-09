@@ -11,12 +11,13 @@ import { requiresBasicAuth, authorizedForBasicAuth } from '@/lib/auth/basic-auth
  *   1. `/partners/*` — issues the partner session cookie for the
  *      magic-link survey (see handlePartnerSession).
  *
- *   2. Faculty surfaces (everything not under /partners, /preview, or
+ *   2. Faculty surfaces (everything not under /partners, /view, or
  *      their /api/* equivalents) — gated by HTTP Basic Auth when
- *      FACULTY_BASIC_AUTH env var is set. This is the Phase 2 hybrid-
- *      deploy stopgap that protects the local Mac LAN deploy; the
- *      Vercel deploy doesn't set the env var, so the gate no-ops
- *      there. See docs/superpowers/plans/2026-05-25-phase2-hybrid-deploy.md
+ *      FACULTY_BASIC_AUTH env var is set. This is the stopgap that
+ *      protects the local Mac deploy (the only deploy now — Vercel was
+ *      retired 2026-06-04). The HTTPS Tailscale Funnel serves it; if
+ *      FACULTY_BASIC_AUTH is ever unset the gate no-ops, so it must stay
+ *      set. See docs/superpowers/plans/2026-05-25-phase2-hybrid-deploy.md
  */
 export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;

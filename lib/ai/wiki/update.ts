@@ -810,9 +810,27 @@ export async function updateWikiForSnapshot(snapshotId: string): Promise<WikiUpd
   }
 
   // (f) Build the final wiki write list (filter out 'unchanged' pages).
-  const wiki: WikiPageWrite[] = generatedPages
-    .filter(p => p.operation !== 'unchanged')
-    .map(p => ({ path: p.path, content: p.content }));
+  //     SECURITY (F8): the model returns page paths as free-form strings. The
+  //     traversal guard in git-ops only stops paths escaping the repo — it still
+  //     permits ANY in-repo path (log.md, .git-adjacent files, pages outside
+  //     this run's scope). So trust a returned path only if it is in the
+  //     caller-owned, deterministic requested set (affectedWikiPages, built by
+  //     computeAffectedPages). Anything else is a steered/hallucinating model
+  //     and is dropped with a hard log rather than written. The raw/ layer is
+  //     written by the caller, not the model, so it isn't in this set by design.
+  const requestedPaths = new Set(pagesWithSubstrate.map(p => p.path));
+  const wiki: WikiPageWrite[] = [];
+  for (const p of generatedPages) {
+    if (p.operation === 'unchanged') continue;
+    if (!requestedPaths.has(p.path)) {
+      console.error(
+        `[wiki-update] dropping unrequested page path from model output: "${p.path}" ` +
+        `(course ${snapshot.courseCode}, snapshot ${snapshot.id.slice(0, 8)})`,
+      );
+      continue;
+    }
+    wiki.push({ path: p.path, content: p.content });
+  }
 
   return {
     raw,
