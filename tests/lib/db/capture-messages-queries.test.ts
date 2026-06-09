@@ -1,4 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { PgDialect } from 'drizzle-orm/pg-core';
+import type { SQL } from 'drizzle-orm';
 
 const insertMock = vi.fn();
 const selectMock = vi.fn();
@@ -15,6 +17,7 @@ vi.mock('@/lib/db/client', () => ({
 import {
   appendMessage,
   getSessionMessages,
+  listPriorSessionSummaries,
   startNewSession,
 } from '@/lib/db/capture-messages-queries';
 
@@ -79,5 +82,33 @@ describe('capture-messages-queries', () => {
       expect(rows.length).toBe(2);
       expect(selectMock).toHaveBeenCalledOnce();
     });
+  });
+});
+
+describe('listPriorSessionSummaries — session_id is uuid, never bind ""', () => {
+  const dialect = new PgDialect();
+  const lastWhereSql = (): string => {
+    const arg = selectMock.mock.calls.at(-1)![0] as { w: SQL };
+    return dialect.sqlToQuery(arg.w).sql;
+  };
+
+  beforeEach(() => {
+    selectMock.mockReset().mockResolvedValue([]);
+  });
+
+  it('omits the session-exclusion (<>) when excludeSessionId is empty', async () => {
+    // The capture page passes `currentSessionId ?? ''` — an empty string. Since
+    // session_id is a uuid column, `session_id <> ''` would throw at Postgres
+    // ("invalid input syntax for type uuid"). The empty case must filter by
+    // course alone, with no `<>` comparison.
+    await listPriorSessionSummaries('GC 3400', '', 3);
+    const sql = lastWhereSql();
+    expect(sql).toContain('course_code');
+    expect(sql).not.toContain('<>');
+  });
+
+  it('applies the session-exclusion (<>) when a real session id is given', async () => {
+    await listPriorSessionSummaries('GC 3400', '11111111-1111-1111-1111-111111111111', 3);
+    expect(lastWhereSql()).toContain('<>');
   });
 });

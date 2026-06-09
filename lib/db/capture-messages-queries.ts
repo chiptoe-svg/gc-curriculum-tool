@@ -219,11 +219,19 @@ export async function listPriorSessionSummaries(
   excludeSessionId: string,
   limit: number = 3,
 ): Promise<PriorSessionSummary[]> {
-  // Get all sessions for the course, newest first.
+  // Get all sessions for the course, newest first. `session_id` is a uuid
+  // column, so comparing it against an empty string — which is exactly what
+  // the capture page passes when there is no in-flight session
+  // (`currentSessionId ?? ''`) — throws Postgres "invalid input syntax for
+  // type uuid: \"\"" and crashes the page. When there's no session to exclude,
+  // filter by course alone (there are no prior sessions to drop anyway).
+  const whereClause = excludeSessionId
+    ? and(eq(captureMessages.courseCode, courseCode), ne(captureMessages.sessionId, excludeSessionId))
+    : eq(captureMessages.courseCode, courseCode);
   const rows = await db
     .select()
     .from(captureMessages)
-    .where(and(eq(captureMessages.courseCode, courseCode), ne(captureMessages.sessionId, excludeSessionId)))
+    .where(whereClause)
     .orderBy(desc(captureMessages.createdAt));
 
   if (rows.length === 0) return [];
