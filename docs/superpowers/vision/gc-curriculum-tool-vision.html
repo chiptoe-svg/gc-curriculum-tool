@@ -2306,6 +2306,19 @@
       When a new industry partner submits an AI Workflow position, the
       recommendation sharpens.
     </li>
+    <li>
+      <strong>A living, navigable record of the curriculum.</strong> Confirmed
+      snapshots don't just sit in a database — they are compiled into a
+      cross-linked <strong>knowledge base</strong>: course, competency,
+      career-target, and concept pages that faculty, the curriculum committee, or
+      a newly-hired instructor can browse or simply ask plain-language questions
+      of, with every claim citing back to the snapshot evidence behind it. This is
+      the program's institutional memory made legible — the "living record" a
+      department otherwise keeps only in scattered syllabi and the heads of the
+      people who happen to still be around. It is the thing that makes the
+      accumulation pay off: as more courses are captured, the record gets richer
+      and more answerable, not just larger.
+    </li>
   </ul>
 </section>
 
@@ -2328,10 +2341,11 @@
   <p>
     The survey runs continuously, not as a one-time advisory board event. When a
     new employer partner submits, target definitions can update; coverage scores for
-    the affected targets rescore automatically. The partner-facing interface is
-    already live in a lightweight form — the Advisory Survey is the formalized
-    structure that routes employer signal directly into the career target framework
-    rather than sitting in a spreadsheet.
+    the affected targets rescore automatically. The partner-facing interface is now
+    live as <strong>Position Capture</strong> (see <em>What's live now</em>) — a
+    structured, role-at-a-time flow that routes employer signal directly into the
+    career-target framework, keyed to sub-competencies, rather than sitting in a
+    spreadsheet.
   </p>
 
   <h3>Course content ingestion</h3>
@@ -2373,18 +2387,17 @@
 <section id="prototype">
   <h2><span class="num">§</span>What's live now</h2>
   <p>
-    The framework's intended day-to-day workflow runs across four surfaces. A fifth — the original M-trial prototype — is still accessible but superseded for new work.
+    The framework's day-to-day workflow now spans several faculty surfaces — capturing courses, the course catalog and prerequisite view, exploration and what-ifs, the program-level coverage and scaffolding views, the demand side, and the knowledge base — plus per-function model tuning. (The original M-trial prototype was retired on 2026-06-02; everything it did is now covered by CourseCapture, Explore, and Program.)
   </p>
   <p><strong>The current workflow:</strong></p>
   <ul>
     <li><code>/capture/&lt;code&gt;</code> — <strong>CourseCapture.</strong> <span class="status-tag status-live">Live (faculty trial)</span> The instructor-facing audit conversation that produces a Course Outcome Profile. Pulls catalog values, Canvas sources, linked materials, and direct uploads. Full ingestion surface documented in the <a class="inline-link" href="../../background.html">Background document</a>. Voice input via Whisper. Snapshots are immutable and versioned; the draft remains mutable.</li>
     <li><code>/explore/&lt;code&gt;</code> — <strong>Explore module.</strong> <span class="status-tag status-live">Live (faculty trial)</span> Alignment analyses (custom target / downstream target) and what-if scenarios run against any saved snapshot. Custom-target authoring; downstream-target auto-detection from captured prereq courses.</li>
-    <li><code>/program</code> — <strong>Program Coverage Matrix.</strong> <span class="status-tag status-live">Live (faculty trial)</span> Confirmed snapshots × career-target sub-competencies, rendered as a depth-aware heat map with a problem-solving lens. On-demand AI scoring per cell; full rationale and evidence excerpt visible in a drawer. The coverage-matrix view from the end state, in a snapshot-grid form — the self-updating machinery and the cross-snapshot diff that would make it a true "living" view are Phase 2 work.</li>
+    <li><code>/courses</code> + <code>/courses/&lt;code&gt;</code> — <strong>Course catalog &amp; prerequisite view.</strong> <span class="status-tag status-live">Live (faculty trial)</span> A typeset index of every catalog course with its capture status and click-through to capture, plus a per-course prerequisite view that seeds skill-tagged prerequisite edges and reads a computed gap report — does what each course expects on day one actually get built upstream, and at what depth? Uncaptured prerequisites show as no-data, never an assumed gap.</li>
+    <li><code>/program</code> — <strong>Program Coverage Matrix.</strong> <span class="status-tag status-live">Live (faculty trial)</span> Confirmed snapshots × career-target sub-competencies, rendered as a depth-aware heat map with a problem-solving lens. On-demand AI scoring per cell; full rationale and evidence excerpt visible in a drawer. The coverage-matrix view from the end state, in a snapshot-grid form — the self-updating machinery and the cross-snapshot diff that would make it a true "living" view are Phase 2 work. A companion <code>/program/scaffolding</code> Scaffolding Strip (live) reads the same snapshots for introduce / practice / integrate sequencing and flags brittle scaffolds — a downstream course expecting mastery of a competency no upstream course introduces.</li>
     <li><code>/settings</code> — <strong>Per-function AI model tuning.</strong> <span class="status-tag status-live">Live (faculty trial)</span> Tier-based selection (Light / Default / Heavy) plus per-function model dropdowns sourced from the OpenAI provider's available models.</li>
-  </ul>
-  <p style="margin-top: 18px;"><strong>Legacy (still accessible, no new work):</strong></p>
-  <ul>
-    <li><code>/preview/&lt;slug&gt;</code> — <strong>M-trial prototype.</strong> The original three-tool slice (Course Builder · Prereq Analyzer · Career Target Alignment) that demonstrated the AI's analysis quality on real GC courses. Superseded by CourseCapture + Explore + Program for new captures; kept accessible because the existing M-trial flags and runs remain useful institutional memory.</li>
+    <li><code>/wiki</code> + <code>/ask</code> — <strong>Curriculum knowledge base.</strong> <span class="status-tag status-live">Live (faculty trial)</span> A self-maintaining markdown knowledge base (the <code>gc-curriculum-wiki</code> sibling repo) that regenerates course, competency, career-target, and concept pages from confirmed snapshots — browsable at <code>/wiki</code> and answerable in plain language at <code>/ask</code>, where a chat agent navigates the pages and cites verbatim excerpts. It fills in as captures accumulate. This is v1; the self-reconciling compile loop (concept promotion, broken-link/staleness lint, a scheduled reconcile) is Phase 2.</li>
+    <li><code>/partners/&lt;token&gt;</code> — <strong>Position Capture (the demand side).</strong> <span class="status-tag status-live">Live</span> The employer-facing counterpart to CourseCapture: a magic-linked, multi-page flow where an industry partner captures one role at a time — job-description ingest, an AI-led interview, and AI-rated "experiences worth having" — keyed to career-target sub-competencies. This is what makes the career-target definitions empirical rather than hypothetical. Faculty distribute the links from the partner admin; the survey runs on the same Mac. <em>Captured</em> demand is live; the sufficiency comparison that differences employer-required depth against the matrix's evidenced attainment is built end-to-end but switched off behind a flag pending activation.</li>
   </ul>
   <div class="callout">
     <div class="callout-title">What the trial is for</div>
@@ -2535,7 +2548,7 @@
       <div class="phase-tag">Done · M-trial</div>
       <div class="phase-name">Original three-tool analysis prototype</div>
       <div class="phase-body">
-        Course Builder, Prereq Analyzer, Career Target Alignment — still live at <code>/preview/&lt;slug&gt;</code>. The shared course-record sheet that originally seeded it has been retired in favor of a catalog seed (120 courses).
+        Course Builder, Prereq Analyzer, Career Target Alignment — the original <code>/preview/&lt;slug&gt;</code> slice that proved the analysis quality on real GC courses. Retired 2026-06-02; everything it did is now covered by CourseCapture, Explore, and Program. The shared course-record sheet that originally seeded it has been retired in favor of a catalog seed (120 courses).
       </div>
     </div>
     <div class="phase">

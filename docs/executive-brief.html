@@ -214,7 +214,7 @@
 
 <h2>How it functions</h2>
 
-<p>Faculty work happens across three connected surfaces. Each is useful on its own; together they form the per-course-to-program-wide pipeline.</p>
+<p>Faculty work happens across several connected surfaces. Each is useful on its own; together they form the per-course-to-program-wide pipeline.</p>
 
 <div class="surfaces">
 
@@ -231,6 +231,11 @@
   <div class="surface">
     <div class="surface-title">Program Coverage Matrix · /program</div>
     <div class="surface-desc">The end-state view in snapshot form: every confirmed snapshot crossed with every career-target sub-competency, rendered as a depth-aware heat map. Click any cell to see which snapshot competency contributed, the evidence excerpt that justifies the depth, the AI's confidence, and the full rationale. On-demand AI scoring with prompt-cache batching keeps cost bounded.</div>
+  </div>
+
+  <div class="surface">
+    <div class="surface-title">Curriculum knowledge base · /wiki · /ask</div>
+    <div class="surface-desc">A self-maintaining, browsable record of the curriculum. Confirmed snapshots are compiled into cross-linked course, competency, career-target, and concept pages — readable at <code>/wiki</code> and answerable in plain language at <code>/ask</code>, where an AI assistant navigates the pages and cites the evidence behind every claim. This is the program's institutional memory: it gets richer and more answerable as more courses are captured, rather than living in scattered syllabi and the heads of whoever is still around.</div>
   </div>
 
 </div>
@@ -253,7 +258,7 @@
 
 <h2>Where it stands today</h2>
 
-<p>The faculty trial period is underway. CourseCapture, Explore, the Program Coverage Matrix (Phase 1A), and the Prerequisite Gap Analysis (Phase 1C — shipped as skill-tagged prerequisite edges with a per-course gap view at <code>/courses/[code]</code>) are live. Scaffolding analysis (Phase 1B Stage 1) is also live; Stage 2's AI narrative layer is next. The advising view (Phase 1D) is specified and queued. Industry Partner Input is live: the magic-link survey, the AI synthesis layer, and Position Capture v1 (full 6-page flow) are all shipped; the demand→coverage sufficiency seam (linking partner-captured demand depths to course attainment) is the next build.</p>
+<p>The faculty trial period is underway. CourseCapture, Explore, the Program Coverage Matrix (Phase 1A), and the Prerequisite Gap Analysis (Phase 1C — shipped as skill-tagged prerequisite edges with a per-course gap view at <code>/courses/[code]</code>) are live. Scaffolding analysis (Phase 1B Stage 1) is also live; Stage 2's AI narrative layer is next. The curriculum knowledge base (the self-maintaining wiki at <code>/wiki</code> and the plain-language assistant at <code>/ask</code>) is live and regenerates from confirmed snapshots; its self-reconciling compile loop is the next increment. The advising view (Phase 1D) is specified and queued. Industry Partner Input is live: the magic-link survey, the AI synthesis layer, and Position Capture v1 (full 6-page flow) are all shipped; the demand→coverage sufficiency seam (linking partner-captured demand depths to course attainment) is the next build.</p>
 
 <p>The honest list of what's <em>not</em> yet in place is also worth naming: per-user authentication for faculty is currently a stopgap; the snapshot dispute pipeline is informal; the program-wide cross-snapshot diff that operationalizes "honest defense against curricular drift" is Phase 2 work. The framework expects to refine these as the trial period reveals what matters.</p>
 
