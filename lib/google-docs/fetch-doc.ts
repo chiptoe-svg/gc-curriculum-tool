@@ -45,6 +45,43 @@ function deriveTitle(text: string, kind: GoogleWorkspaceKind, fileId: string): s
   return `${kindLabel(kind)} (${fileId.slice(0, 12)})`;
 }
 
+/**
+ * Pull the file's REAL Google Workspace title out of the export response's
+ * `Content-Disposition` header, which Google sets to the document's name, e.g.
+ * `attachment; filename="My Syllabus.txt"; filename*=UTF-8''My%20Syllabus.txt`.
+ *
+ * This is the actual title (not the first body line), and it costs nothing
+ * extra — it's already on the export response we fetch, no Drive API / OAuth.
+ * Prefers the RFC 5987 `filename*` form (handles non-ASCII) over the plain
+ * `filename="..."`. Strips the export extension (.txt / .csv). Returns null
+ * when the header is absent/unparseable so the caller can fall back to the
+ * first-line derivation.
+ */
+export function titleFromContentDisposition(headerValue: string | null): string | null {
+  if (!headerValue) return null;
+  let name: string | null = null;
+
+  // RFC 5987: filename*=UTF-8''percent%20encoded
+  const ext = headerValue.match(/filename\*\s*=\s*[^']*'[^']*'([^;]+)/i);
+  if (ext?.[1]) {
+    const raw = ext[1].trim();
+    try {
+      name = decodeURIComponent(raw);
+    } catch {
+      name = raw;
+    }
+  } else {
+    // Plain: filename="..."  (or unquoted filename=...)
+    const quoted = headerValue.match(/filename\s*=\s*"([^"]*)"/i);
+    const bare = headerValue.match(/filename\s*=\s*([^;]+)/i);
+    name = (quoted?.[1] ?? bare?.[1])?.trim() ?? null;
+  }
+
+  if (!name) return null;
+  name = name.replace(/\.(txt|csv)$/i, '').trim();
+  return name.length > 0 ? name.slice(0, 100) : null;
+}
+
 export async function fetchGoogleFileText(ref: GoogleWorkspaceReference): Promise<FetchedGoogleFile> {
   const { kind, fileId } = ref;
   if (!fileId || !/^[a-zA-Z0-9_-]{10,}$/.test(fileId)) {
@@ -87,11 +124,16 @@ export async function fetchGoogleFileText(ref: GoogleWorkspaceReference): Promis
     return { kind, fileId, text: '', title: '', status: 'inaccessible', errorReason: 'empty file' };
   }
 
+  // Prefer the real document title from the export response's
+  // Content-Disposition filename; fall back to the first content line only
+  // when that header is missing (deriveTitle).
+  const headerTitle = titleFromContentDisposition(res.headers.get('content-disposition'));
+
   return {
     kind,
     fileId,
     text,
-    title: deriveTitle(text, kind, fileId),
+    title: headerTitle ?? deriveTitle(text, kind, fileId),
     status: 'ok',
   };
 }
