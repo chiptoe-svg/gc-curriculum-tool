@@ -623,9 +623,70 @@
 
   <h3>The curriculum wiki (a sibling repo)</h3>
 
-  <p>A separate Git repository, <strong>gc-curriculum-wiki</strong> (cloned alongside the app), is an LLM-maintained markdown knowledge base in the Karpathy pattern. It has two layers: a <code>raw/</code> layer (immutable snapshot JSON + transcripts) and a regeneratable narrative layer (<code>courses/</code>, <code>competencies/</code>, <code>targets/</code>, <code>concepts/</code> pages). It gives the curriculum-chat agent a navigable, citable knowledge base without dumping the whole database into context, and being git-backed makes every edit auditable and reversible.</p>
+  <p>A separate Git repository, <strong>gc-curriculum-wiki</strong> (cloned alongside the app at <code>WIKI_REPO_PATH</code>), is an LLM-maintained markdown knowledge base in the lineage of Karpathy's <em>raw → compile → query</em> LLM-wiki and Monteiro's "AI second brain" writing. The insight those sources press is that the <strong>compile</strong> stage — turning immutable raw material into structured, navigable, cross-linked pages — is the one almost every "second brain" skips, and skipping it leaves a query UI over an empty shelf (or a chat agent that confabulates to fill the void). This wiki exists to be that compile stage. It has two physical layers: a <code>raw/</code> layer (immutable snapshot JSON + audit transcripts, ground truth) and a regeneratable narrative layer (<code>courses/</code>, <code>competencies/</code>, <code>targets/</code>, <code>concepts/</code> pages + <code>index.md</code>). Being git-backed makes every regeneration an auditable, reversible diff, and gives the curriculum-chat agent a navigable, citable corpus without dumping the database into context.</p>
 
-  <p>This is a <strong>shipped v1, not a plan</strong>: <code>updateWikiForSnapshot</code> (<code>lib/ai/wiki/update.ts</code>) generates prose with the heavy-tier <code>wiki-update</code> function, and <code>writeAndPush</code> (<code>lib/wiki/git-ops.ts</code>) handles the git pull/write/commit/push with one retry on conflict. It fires fire-and-forget on snapshot creation, writing course + concept pages and <code>index.md</code>. Competency and target pages derive from coverage scores, so they regenerate after the coverage refresh routes re-fire wiki generation (fixed 2026-06-05). The planned <strong>v2 compile-loop</strong> — a watermark/diff trigger, a ≥2-source concept-promotion gate, a deterministic lint pass, and a <code>/refresh-wiki</code> reconcile that is idempotent and resilient to interrupted background jobs — is the next increment, not a from-scratch build.</p>
+  <p>This is a <strong>shipped v1, not a plan</strong>: <code>updateWikiForSnapshot</code> (<code>lib/ai/wiki/update.ts</code>) generates prose with the heavy-tier <code>wiki-update</code> function, and <code>writeAndPush</code> (<code>lib/wiki/git-ops.ts</code>) — the only module that writes the repo — handles the git pull/write/commit/push, serialized through an in-process queue (concurrent regenerations would otherwise race on one working tree) with one pull-rebase retry on a remote race. It fires <strong>fire-and-forget</strong> via <code>regenerateWikiInBackground</code> at two moments: on snapshot creation (course + concept pages + index), and again <em>after</em> coverage scoring writes <code>snapshot_target_coverage</code> — which is what lets competency and target pages exist at all, since those are derived from coverage rows that don't yet exist at creation time. Pages are emitted in bounded batches (<code>WIKI_PAGES_PER_CALL = 6</code>) because a full-coverage set can exceed thirty pages, whose combined output overruns the model's practical response size and silently stalls the call. A failure here is logged and swallowed — it must never break capture or scoring.</p>
+
+  <h4>The determinism boundary (the load-bearing decision)</h4>
+
+  <p>Every page is split into a <strong>deterministic skeleton</strong> and an <strong>LLM-written narrative</strong>, and the skeleton is deliberately the larger part. Deterministic, no model call: which pages a snapshot touches (<code>computeAffectedPages</code> resolves the fan-out straight from <code>snapshot_target_coverage</code>), every K/U/D depth table, the "which courses build this / which competencies feed this target" lists, and the link <em>targets</em>. Model-generated: only the synthesis paragraphs and cross-course observations — the part that genuinely needs judgment. The reasoning: keep the deterministic seam wide so there is minimal new hallucination surface, and regeneration is <em>structurally</em> idempotent even though prose drifts slightly run-to-run (low temperature; accept prose drift, never structural drift). A security consequence falls out of this too — the model returns page paths as free strings, but the orchestrator writes a returned path only if it is in the deterministic requested set, dropping anything else with a hard log (an in-repo path guard against a steered or hallucinating model; <code>update.ts</code>, finding F8).</p>
+
+  <h4>How cross-page links are made — and kept current</h4>
+
+  <p>This is the part most surprising from the code, and the reason the wiki needs no link bookkeeping. Links are authored two ways by the model: inline <code>[[wikilink]]</code> / <code>[[slug|label]]</code> spans in the prose (the prompt instructs aggressive use — every competency, target, course, and concept mention becomes a link), and structured slug arrays in each page's YAML frontmatter (<code>contributing_courses</code>, <code>develops_competencies</code>, <code>contributes_to_targets</code>, …), which are recomputed from the Postgres substrate on every regeneration. Crucially, entity slugs are <strong>human-readable text primary keys</strong> — a course is <code>gc-4800</code> (deterministic from its code), a sub-competency is <code>brand-strategy</code>, a target is <code>brand-strategist</code> — so the model can author a correct link <em>without</em> being told the target page exists.</p>
+
+  <p>Links are <strong>never stored as edges</strong>. They resolve <strong>late, at read time</strong>: <code>resolveWikilinks</code> (<code>lib/wiki/markdown-helpers.ts</code>) rewrites each <code>[[slug]]</code> by scanning the four type directories for a matching <code>&lt;slug&gt;.md</code> — found ⇒ a real link to <code>/wiki/&lt;type&gt;/&lt;slug&gt;</code>; not found ⇒ a visible broken-link code-span. Two behaviors follow, and both are intended:</p>
+  <ul>
+    <li><strong>Late binding / self-healing.</strong> A page may link <code>[[scaffolding-analysis]]</code> before that page exists; it renders broken, and the prompt treats a broken link as a <em>signal</em> that the next pass should create the page. The moment the target file lands in a later regeneration, every existing link to it heals — with no rewrite of the linking pages.</li>
+    <li><strong>Bidirectionality is emergent, not maintained.</strong> A course page lists its competencies and each competency page lists its contributing courses, but there is no backlink index. Both sides are regenerated from the <em>same</em> coverage substrate, so they stay consistent by shared source rather than by a synchronized edge table — and can briefly drift if one side regenerates a pass before the other.</li>
+  </ul>
+
+  <h4>Why this shape, and what was rejected</h4>
+
+  <p>Each of the load-bearing choices was made against a named alternative (full rationale in the <code>2026-06-04-wiki-update-compile-loop-design.md</code> spec):</p>
+
+  <table class="ref">
+    <thead>
+      <tr><th>Decision</th><th>Chosen approach</th><th>Alternative considered</th><th>Why the chosen approach won</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Link model</strong></td>
+        <td>Late-bound text <code>[[wikilinks]]</code> resolved against the filesystem at read time</td>
+        <td>A stored edge/graph table (FK rows linking pages)</td>
+        <td>Slugs are deterministic text PKs, so links need no lookup to author and the corpus can be built incrementally and out of order; broken links self-heal and signal missing pages. An edge table would double-bookkeep relationships the prose already encodes and rot the instant table and prose disagree.</td>
+      </tr>
+      <tr>
+        <td><strong>Retrieval</strong></td>
+        <td>Plain markdown navigation (the agent's <code>read</code>/<code>list</code>/<code>search</code> tools over files)</td>
+        <td>A vector index over the wiki corpus</td>
+        <td>The corpus is far below the ~100-article / 400K-word ceiling where markdown navigation stops scaling; a vector index here is overhead pretending to be sophistication. Vectors stay scoped to per-course material lookup at capture time — two retrieval systems with an explicit, defended boundary (vectors for known-fact lookup against a fixed per-course corpus; the markdown graph for cross-program synthesis and discovery).</td>
+      </tr>
+      <tr>
+        <td><strong>Storage</strong></td>
+        <td>A sibling Git repo of markdown files</td>
+        <td>Pages stored in Postgres / a CMS</td>
+        <td>Git gives free history, diffs, auditability, reversibility, and off-box portability; markdown is human-legible and the agent's native format. The DB already holds the immutable substrate, so the wiki is a <em>projection</em> and needs no transactional storage of its own.</td>
+      </tr>
+      <tr>
+        <td><strong>Trigger</strong></td>
+        <td>Async fire-and-forget, on snapshot creation and after coverage scoring</td>
+        <td>Inline, synchronous inside "Capture this profile"</td>
+        <td>A wiki-gen failure must never block or slow a capture or a scoring run, and generation cost must not land in capture latency. The narrative layer is allowed to lag the substrate by seconds; the substrate is the source of truth.</td>
+      </tr>
+      <tr>
+        <td><strong>Generation</strong></td>
+        <td>LLM prose over a deterministic skeleton</td>
+        <td>Fully templated pages, or fully free-form LLM pages</td>
+        <td>Templates can't synthesize the cross-course narrative that is the wiki's actual value; fully free-form generation invites structural drift and hallucinated links. The split puts judgment where it helps and determinism everywhere else.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout note">
+    <div class="callout-title">v1 shipped vs. v2 compile-loop (be honest about the gap)</div>
+    <p>The mechanism above is live. Several disciplines from the design spec are <em>not</em> yet built and are the next increment, so the doc doesn't overclaim: a <strong>≥2-source concept-promotion gate</strong> (today concept pages generate on first qualifying signal — <code>productive-failure</code> when present, <code>three-act-structure</code> always — rather than waiting for a second appearance, which the spec calls the anti-graveyard rule); a <strong>deterministic <code>index.md</code> rebuild</strong> (today the index is LLM-regenerated in the first batch, so it can lag pages produced in later batches); a <strong>lint pass</strong> reporting broken links / orphaned concepts / stale pages as a tracked work item; a <strong>FERPA pre-write scan</strong> of generated prose; a <strong>watermark/diff trigger + <code>/refresh-wiki</code> reconcile</strong> (paralleling <code>/refresh-state</code>) that is idempotent and resilient to interrupted background jobs; and a <strong>no-silent-missing-page check</strong> (the batch path drops <em>unrequested</em> pages but does not yet detect a <em>requested</em> page the model omitted). These are tracked in STATE.md's Deferred/debt.</p>
+  </div>
 
   <h3>Process management</h3>
 
