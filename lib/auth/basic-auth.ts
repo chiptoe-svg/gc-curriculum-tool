@@ -28,6 +28,11 @@ const PUBLIC_PREFIXES = [
   // Edit pages link to the HTTPS Tailscale Funnel where Basic Auth
   // gates them.
   '/view',
+  // The wiki MCP server is self-authenticating via a bearer token
+  // (WIKI_MCP_TOKEN, checked in app/api/mcp/route.ts) — agents present a
+  // machine token, not the faculty Basic Auth credential. Skip the Basic
+  // Auth gate here; the route owns its auth.
+  '/api/mcp',
 ] as const;
 
 /**

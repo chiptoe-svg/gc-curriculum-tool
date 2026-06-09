@@ -30,6 +30,10 @@ describe('requiresBasicAuth', () => {
     '/partners/some-token/survey',
     '/api/partners/foo',
     '/api/partners',
+    // /api/mcp is self-authenticating via a bearer token (WIKI_MCP_TOKEN),
+    // so the faculty Basic Auth middleware skips it.
+    '/api/mcp',
+    '/api/mcp/anything',
   ])('does NOT gate public path %s', (path) => {
     expect(requiresBasicAuth(path)).toBe(false);
   });

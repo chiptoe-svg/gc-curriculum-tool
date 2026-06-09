@@ -72,6 +72,12 @@ The static GitHub-Pages preview at `chiptoe-svg.github.io/gc-curriculum-tool/` s
 
 The `/preview/*` M-trial surface (Course Builder · Prereq Analyzer · Career-Target Alignment) was removed 2026-06-02; everything it did is now covered by `/capture`, `/explore`, and `/program`. Two orphaned components (`TargetChainForm`, `TargetKUDPreview`) and their tests were swept at the same time.
 
+### Agent-facing surfaces — Clemson LAN, bearer-gated
+
+| Route | Surface | Status | Shipped |
+| ----- | ------- | ------ | ------- |
+| `/api/mcp` | **Wiki MCP server** — exposes `read_wiki` / `list_wiki` / `search_wiki` (wraps `buildCurriculumChatTools()`) over MCP Streamable HTTP so any MCP-capable agent on the Clemson internal network can answer class/curriculum questions grounded in the narrative wiki. Read-only (`raw/` excluded). **Stateless** transport (`WebStandardStreamableHTTPServerTransport`, fresh server+transport per request). Auth: shared bearer token `WIKI_MCP_TOKEN`, **fail-closed** (unset ⇒ 401 on every request); `/api/mcp` is in `PUBLIC_PREFIXES` so it skips faculty Basic Auth and owns its own auth. Served on `0.0.0.0:3000` (LAN) — **NOT** mapped onto the public Funnel (wiki is private internal analysis). Agents connect with `{ url: "http://<mac-lan-ip>:3000/api/mcp", headers: { Authorization: "Bearer <token>" } }`. Design: [`2026-06-09-wiki-mcp-server-design.md`](./superpowers/specs/2026-06-09-wiki-mcp-server-design.md). Build: `lib/ai/wiki/mcp-server.ts`, `lib/auth/bearer.ts`, `app/api/mcp/route.ts`. | live | 2026-06-09 |
+
 ### Cross-cutting
 
 | Surface | What it does | Status | Shipped |
@@ -202,7 +208,7 @@ Tables defined in [`lib/db/schema.ts`](../lib/db/schema.ts):
 - **AI:** `AI_PROVIDER`, `OPENAI_API_KEY`, `OPENAI_MODEL`, `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL`, `LOCAL_BASE_URL`, `LOCAL_API_KEY`, `LOCAL_MODEL`, `CAMPUS_LLM_BASE_URL`, `CAMPUS_LLM_API_KEY`, `CAMPUS_LLM_DEFAULT_MODEL`, `COURSECAPTURE_V2_INGESTION`
 - **Vector store:** `VECTOR_STORE` (`'in-memory'` default | `'weaviate'` — selects the backend for the v2 ingestion pipeline's chunk storage), `WEAVIATE_URL`, `WEAVIATE_GRPC_URL`, `WEAVIATE_API_KEY`, `WEAVIATE_TENANT_PREFIX`
 - **PDF:** `PDF_PARSER`, `DOCLING_URL`, `DOCLING_VLM_*`
-- **Auth / slug:** `FACULTY_BASIC_AUTH` (faculty gate on local), `PROTOTYPE_SLUG` (single-user slug-gated session)
+- **Auth / slug:** `FACULTY_BASIC_AUTH` (faculty gate on local), `WIKI_MCP_TOKEN` (shared bearer token for the `/api/mcp` agent endpoint — fail-closed: unset ⇒ 401), `PROTOTYPE_SLUG` (single-user slug-gated session)
 - **Feedback intake:** `GITHUB_TOKEN`, `GITHUB_FEEDBACK_REPO` (set on the local Mac; when unset, `/api/feedback` returns 503)
 - **Transcription (branch):** `WHISPER_BACKEND` (`openai` forces the paid hop), `WHISPER_OPENAI_FALLBACK` (must be `1` to allow the missing-local-binary → OpenAI fallback; otherwise transcription fails closed rather than shipping mic audio off-box — FERPA)
 - **Demand→coverage seam (branch):** `DEMAND_COVERAGE_SEAM` (`1` shows the per-target sufficiency panel + populates `career_target_demand`; requires migration `0032` applied first; off by default)
