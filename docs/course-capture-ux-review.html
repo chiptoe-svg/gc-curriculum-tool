@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GC Curriculum Tool — Course Capture UX Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Mono:wght@300;400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F7F5F0;
+    --bg-card: #FFFFFF;
+    --text: #1C1C18;
+    --text-muted: #6B6860;
+    --text-faint: #9E9B94;
+    --accent: #C8682A;
+    --accent-light: #F5E6D8;
+    --border: #E2DDD4;
+    --border-strong: #C8C4BA;
+    --good: #3E7D5A;
+    --good-light: #E4F0E8;
+    --crit: #B23B2E;
+    --crit-light: #F6E2DE;
+    --major: #B8791E;
+    --major-light: #F6EAD2;
+    --mono: 'DM Mono', monospace;
+    --serif: 'Source Serif 4', Georgia, serif;
+    --display: 'Playfair Display', Georgia, serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--serif);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 64px 32px;
+    font-size: 16.5px;
+    line-height: 1.7;
+  }
+  main { max-width: 760px; margin: 0 auto; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+  h1 {
+    font-family: var(--display);
+    font-size: 42px;
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 16px;
+    letter-spacing: -0.01em;
+  }
+  .lede {
+    font-size: 19px;
+    color: var(--text-muted);
+    font-style: italic;
+    font-weight: 300;
+    margin-bottom: 28px;
+    max-width: 640px;
+  }
+  .meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--text-faint);
+    margin-bottom: 56px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  h2 {
+    font-family: var(--display);
+    font-size: 26px;
+    font-weight: 600;
+    margin: 52px 0 16px;
+    letter-spacing: -0.005em;
+  }
+  h3 {
+    font-family: var(--display);
+    font-size: 19px;
+    font-weight: 600;
+    margin: 30px 0 8px;
+  }
+  p { margin-bottom: 16px; }
+  p + p { margin-top: -2px; }
+  strong { font-weight: 600; }
+  a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 120ms; }
+  a:hover { border-bottom-color: var(--accent); }
+  ul, ol { padding-left: 22px; margin: 12px 0 18px; }
+  li { margin-bottom: 8px; }
+  code { font-family: var(--mono); font-size: 0.88em; background: var(--accent-light); padding: 1px 5px; border-radius: 3px; color: #8a4516; }
+  blockquote {
+    border-left: 3px solid var(--accent);
+    padding: 6px 0 6px 22px;
+    margin: 18px 0;
+    font-style: italic;
+    font-size: 17.5px;
+  }
+  blockquote .q-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-style: normal;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  /* figures / screenshots */
+  figure { margin: 24px 0 28px; }
+  figure img {
+    width: 100%;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    display: block;
+  }
+  figcaption {
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: 0.04em;
+    color: var(--text-faint);
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+  .tall img { max-height: 560px; object-fit: cover; object-position: top; }
+
+  /* persona cards */
+  .personas { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 20px 0 8px; }
+  .persona { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; }
+  .persona h4 { font-family: var(--display); font-size: 17px; font-weight: 600; margin-bottom: 6px; }
+  .persona .who { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+  .persona p { font-size: 14.5px; color: var(--text-muted); margin-bottom: 0; }
+
+  /* finding cards */
+  .finding { background: var(--bg-card); border: 1px solid var(--border); border-left-width: 4px; border-radius: 6px; padding: 16px 20px; margin-bottom: 14px; }
+  .finding.crit { border-left-color: var(--crit); }
+  .finding.major { border-left-color: var(--major); }
+  .finding.win { border-left-color: var(--good); }
+  .finding .ftitle { font-family: var(--display); font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+  .finding .fmeta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+  .badge { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; font-weight: 500; }
+  .badge.crit { background: var(--crit-light); color: var(--crit); }
+  .badge.major { background: var(--major-light); color: var(--major); }
+  .badge.win { background: var(--good-light); color: var(--good); }
+  .badge.both { background: #ECE7DC; color: var(--text-muted); }
+  .finding p { font-size: 15px; margin-bottom: 8px; }
+  .finding .fix { font-size: 15px; }
+  .finding .fix b { color: var(--accent); }
+
+  /* path-forward table */
+  table { width: 100%; border-collapse: collapse; margin: 18px 0 24px; font-size: 14.5px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-faint); font-weight: 500; }
+  td.effort { font-family: var(--mono); font-size: 12px; white-space: nowrap; }
+
+  .callout { background: var(--accent-light); border: 1px solid #E8C9A8; border-radius: 8px; padding: 18px 22px; margin: 24px 0; font-size: 15.5px; }
+  .callout .clabel { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: #8a4516; margin-bottom: 6px; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 48px 0; }
+  footer { margin-top: 56px; padding-top: 22px; border-top: 1px solid var(--border); font-size: 13.5px; color: var(--text-faint); }
+  footer p { font-size: 13.5px; color: var(--text-faint); }
+  @media (max-width: 640px) { .personas { grid-template-columns: 1fr; } body { padding: 40px 20px; } h1 { font-size: 34px; } }
+</style>
+</head>
+<body>
+<main>
+
+<div class="eyebrow">Clemson · Graphic Communications · UX Review</div>
+<h1>Course Capture — a two-persona walkthrough</h1>
+<p class="lede">An enthusiastic instructor and an adversarial critic walked the live Course Capture interface end to end. The interview at its heart is the part faculty will love. The packaging around it is where they stall.</p>
+<div class="meta">Method: live interactive walkthrough + two AI evaluation personas · Course: GC 1010 · 2026-06-10</div>
+
+<h2>How this review was run</h2>
+<p>This was not a heuristic read of the code. The interface was driven the way a faculty member would drive it — a real browser navigating the running application, clicking through the actual workflow, with one genuine round-trip of the AI interview exchanged. Every screen below is a real screenshot from that session.</p>
+
+<p>The evidence from that walkthrough was then evaluated independently by two personas, each with a deliberately different lens:</p>
+
+<div class="personas">
+  <div class="persona">
+    <div class="who">🎓 Persona A</div>
+    <h4>The enthusiastic instructor</h4>
+    <p>A motivated, non-technical Graphic Communications professor who lives in InDesign, Canvas, and Google Sheets — the kind of early adopter who champions a tool that clicks and quietly abandons one that feels like work. Lens: first impressions, delight, "do I know what to do next," would I actually adopt this.</p>
+  </div>
+  <div class="persona">
+    <div class="who">🗡️ Persona B</div>
+    <h4>The adversarial critic</h4>
+    <p>A senior UX evaluator running Nielsen's heuristics hard, specializing in cognitive load, error and empty states, and accessibility. Lens: friction, dead-ends, jargon, screen-reader and keyboard operability, and the exact moment a busy user quits.</p>
+  </div>
+</div>
+<p>Where the two <em>independently agree</em>, confidence is highest — those findings lead the list below. Where they <em>diverge</em> is the most interesting signal of all.</p>
+
+<h2>What we walked through</h2>
+<p>The journey a faculty member actually takes: open the course catalog, find their course, land on the capture page, run the AI "audit" interview, and review the resulting Know / Understand / Do profile.</p>
+
+<figure>
+  <img src="assets/course-capture-ux/01-courses-catalog.png" alt="Course catalog table grouped by level">
+  <figcaption>1 — The catalog (<code>/courses</code>). Clean and legible: status pills, summary chips ("4 captured · 2 drafted · 40 not started"), one row per course. The entry point that works.</figcaption>
+</figure>
+
+<figure class="tall">
+  <img src="assets/course-capture-ux/02-capture-gc1010-landing.png" alt="Course Capture landing page, dense with panels">
+  <figcaption>2 — The capture landing. Everything at once: a developer-style status line, two collapsibles, a materials panel with token budgets and an "Audit mode" selector, the read-only catalog, and — below the fold — the actual interview. No single "start here."</figcaption>
+</figure>
+
+<h2>What is genuinely working</h2>
+<p>Both personas, including the skeptic, singled out the same thing: <strong>the interview is the product, and it is good.</strong> It read the instructor's <em>actual</em> Canvas assignment and asked a question sharper than most curriculum-committee discussions:</p>
+
+<blockquote>
+  <span class="q-label">The AI, unprompted</span>
+  "When you grade that 114-point Courselineup assignment, what tells you a student's plan is actually realistic and correct rather than just completed?"
+</blockquote>
+
+<p>Answering it once moved a live <strong>readiness meter from 72% to 84%</strong>, reclassified the topic from "still probing" to "covered," and surfaced the next gap to chase — progress visibly pegged to the instructor's own words.</p>
+
+<figure>
+  <img src="assets/course-capture-ux/05-audit-chat-live.png" alt="Live AI interview with readiness meter and citations">
+  <figcaption>3 — The live interview. Specific, evidence-seeking questions; citations to the exact source material; a "what this material does <em>not</em> answer" callout; a readiness meter; and a soft, non-preachy nudge about uncovered areas.</figcaption>
+</figure>
+
+<ul>
+  <li><strong>Grounded &amp; cited.</strong> Questions reference real materials, with citation chips — "it actually looked at my course," not a generic survey.</li>
+  <li><strong>Visible progress.</strong> The readiness meter makes the conversation feel cumulative and earned.</li>
+  <li><strong>Transparency.</strong> Per-material "why ignored" reasons, in-chat citations, and evidence provenance. The <em>concept</em> is right — the <em>labeling</em> is where it slips (below).</li>
+</ul>
+
+<div class="callout">
+  <div class="clabel">The headline — where the personas diverged</div>
+  The enthusiast's favorite moment and the critic's "credit where due" were the <strong>same screen</strong> — the interview. And both, working separately, named the <strong>same two places faculty abandon</strong>: the dense landing page, and the review panel. Protect the interview; fix what wraps it.
+</div>
+
+<h2>Where faculty stall</h2>
+<p>Ordered by agreement — both personas flagged the top items independently.</p>
+
+<div class="finding crit">
+  <div class="ftitle">The landing page has no "start here"</div>
+  <div class="fmeta"><span class="badge crit">Critical</span><span class="badge both">Both personas</span><span class="badge crit">Abandon point #1</span></div>
+  <p>A returning user lands on a status line that reads like a system log, two collapsibles, a materials panel, a token budget, an "Audit mode" dropdown, and four buttons — with the actual interview below the fold and no hierarchy telling them what to do first.</p>
+  <p class="fix"><b>Fix →</b> A goal-first entry: one primary call to action ("GC 1010 has 3 materials loaded — Start the interview"), with materials and settings collapsed behind "Advanced." Collapse the status line to a single expandable row.</p>
+</div>
+
+<div class="finding crit">
+  <div class="ftitle">29 K/U/D sliders, with no "accept most, adjust a few"</div>
+  <div class="fmeta"><span class="badge crit">Critical</span><span class="badge both">Both personas</span><span class="badge crit">Abandon point #2</span></div>
+  <p>The review panel presents ~29 sliders, each equally demanding of attention. The instructor's honest reaction: <em>"the AI just did this — why am I redoing it?"</em> Every score looks equally weighted, so the panel reads as a second job rather than a quick confirmation.</p>
+  <p class="fix"><b>Fix →</b> Collapse each competency to its name + overall band, expanding on click. Surface the AI's <em>top three suggested adjustments</em> and trust the rest by default — let faculty do the 20% of review that carries 80% of the value.</p>
+</div>
+
+<figure class="tall">
+  <img src="assets/course-capture-ux/07-review-panel.png" alt="K/U/D review panel with many sliders and evidence tags">
+  <figcaption>4 — The review / edit panel. 29 depth sliders plus evidence-source tags (INFERRED · MATERIALS · INSTRUCTOR). Powerful for institutional memory; overwhelming as a first encounter, and the most likely place a time-pressed instructor saves-for-later and never returns.</figcaption>
+</figure>
+
+<div class="finding major">
+  <div class="ftitle">"Audit" — and the jargon around it — fights the user's mental model</div>
+  <div class="fmeta"><span class="badge major">Major</span><span class="badge both">Both personas</span></div>
+  <p>To faculty, "audit" means a financial review or a no-credit enrollment — neither primes the right mindset. Add "auditor readiness," "at-rest context," raw token counts, and "Audit mode: Full," and the user is translating on every encounter. The evidence tags <code>INFERRED ×8</code> read like an <em>error count</em>, not a transparency feature.</p>
+  <p class="fix"><b>Fix →</b> Rename: <em>audit → interview</em>, <em>auditor readiness → topics covered</em>, and the tags → <em>"AI inferred / Found in materials / You said."</em> Replace token counts with plain-language signals ("Large — may slow the interview").</p>
+</div>
+
+<div class="finding major">
+  <div class="ftitle">Expert metrics sit at primary visual hierarchy</div>
+  <div class="fmeta"><span class="badge major">Major</span><span class="badge both">Both personas</span></div>
+  <p>"~3.5k tok," red/amber token coloring, and the "Audit mode" selector appear before the user needs them, with no plain-language meaning — and the token figure even reads as though something might be billed.</p>
+  <p class="fix"><b>Fix →</b> Demote these behind a "why?" tooltip; expose interview depth at the moment the interview starts, not on the landing.</p>
+</div>
+
+<h3>Accessibility — the critic read the source</h3>
+<p>Concrete, code-grounded, and several of these overlap items already on the project's known-debt list:</p>
+<div class="finding crit">
+  <div class="ftitle">The slider-heavy review is not screen-reader operable</div>
+  <div class="fmeta"><span class="badge crit">Critical</span><span class="badge major">A11y</span></div>
+  <p>The 29 range inputs have no programmatic label — a screen reader announces a bare "slider" with no competency or dimension name. The evidence chips render as non-focusable <code>&lt;span&gt;</code>s with a hover-only tooltip, so keyboard users can't reach what the tags mean. Validation errors surface raw schema paths (<code>competencies › 3 › evidence_k</code>) instead of human labels.</p>
+  <p class="fix"><b>Fix →</b> Add <code>aria-label</code> per slider (competency + dimension + value); make the evidence chips focusable; map validation errors to plain labels ("Competency #4 — Know evidence is required"). Add a "skip to Save."</p>
+</div>
+
+<h2>Path forward</h2>
+<p>Split into changes that are small and high-leverage versus ones that warrant a design pass.</p>
+
+<table>
+  <thead><tr><th>Change</th><th>Why</th><th class="effort">Effort</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Rename the worst jargon</strong> (audit → interview; the three evidence tags; token counts → plain language)</td><td>Removes the single largest source of friction for non-technical faculty; pure copy change</td><td class="effort">Quick</td></tr>
+    <tr><td><strong>Goal-first landing</strong> — one CTA, collapse density behind "Advanced"</td><td>Closes abandon point #1; the first-impression that decides adoption</td><td class="effort">Quick–Med</td></tr>
+    <tr><td><strong>Slider <code>aria-label</code>s + focusable chips + humanized validation errors</strong></td><td>Real accessibility; clears existing known debt in one pass</td><td class="effort">Quick</td></tr>
+    <tr><td><strong>"Thinking…" indicator</strong> during the 9–12s AI turns</td><td>The interview is loved; a live working signal keeps it feeling responsive (also on the known-debt list)</td><td class="effort">Quick</td></tr>
+    <tr><td><strong>"Quick review" mode</strong> — surface the AI's top-N suggested score adjustments; trust the rest</td><td>Closes abandon point #2; turns the 29-slider wall into a confirm-a-few flow</td><td class="effort">Medium</td></tr>
+    <tr><td><strong>Step separation</strong> — Materials → Interview → Review, instead of one long scroll</td><td>Reduces cognitive load structurally; relevant content near the top of each stage</td><td class="effort">Larger</td></tr>
+  </tbody>
+</table>
+
+<div class="callout">
+  <div class="clabel">The one-line takeaway</div>
+  Keep the interview exactly as sharp as it is. Spend the effort on the <strong>first screen</strong> (give it a single clear "start") and the <strong>last screen</strong> (let faculty confirm a few scores instead of adjudicating 29). Those two moves address both points where motivated faculty were observed to quit.
+</div>
+
+<footer>
+  <p><strong>Method &amp; caveats.</strong> Driven through the running application on a local instance of the production code; one course (GC 1010, already captured) and one live interview turn. Findings are from two AI evaluation personas reasoning over real screenshots and a step log; the adversarial persona additionally inspected component source. A single-course, single-session walkthrough surfaces interaction and comprehension issues well, but is not a substitute for observed sessions with real faculty. The interactive run's working draft was discarded afterward; the course's prior confirmed profile was left untouched.</p>
+  <p>Screenshots: <code>docs/assets/course-capture-ux/</code> · Full persona write-ups available on request.</p>
+</footer>
+
+</main>
+</body>
+</html>
