@@ -264,14 +264,16 @@ describe('bulkCreateCourses', () => {
     ]);
     expect(result.created).toEqual(['GC 1010', 'GC 1020']);
     expect(result.skipped).toEqual([]);
-    expect(insertMock).toHaveBeenCalledTimes(2);
+    // Single batched insert with both rows (was a per-row loop).
+    expect(insertMock).toHaveBeenCalledOnce();
+    expect(insertMock.mock.calls[0]![0] as unknown[]).toHaveLength(2);
   });
 
   it('applies defaults for omitted optional fields (level, track, prerequisites)', async () => {
     selectWhereMock.mockResolvedValue([]);
     await bulkCreateCourses([{ code: 'GC 9999', title: 'Test Course' }]);
     expect(insertMock).toHaveBeenCalledOnce();
-    const inserted = insertMock.mock.calls[0]![0] as Record<string, unknown>;
+    const inserted = (insertMock.mock.calls[0]![0] as Array<Record<string, unknown>>)[0]!;
     expect(inserted['level']).toBe(0);
     expect(inserted['track']).toBe('unspecified');
     expect(inserted['prerequisites']).toBe('');

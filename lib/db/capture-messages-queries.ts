@@ -9,7 +9,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import { and, asc, desc, eq, ne, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, isNotNull, ne, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { captureMessages } from '@/lib/db/schema';
 import { parseAssistantContent, type ParsedAssistantTurn } from '@/lib/ai/agent/session-briefing';
@@ -95,16 +95,20 @@ export async function getSessionInstructor(
   courseCode: string,
   sessionId: string,
 ): Promise<string | null> {
+  // Most-recent-wins: the latest turn that carries a stamped instructor. Query
+  // for it directly (NOT NULL filter + LIMIT 1) so a long session can't push
+  // the stamp past a fixed row cap.
   const rows = await db
     .select({ instructorName: captureMessages.instructorName })
     .from(captureMessages)
-    .where(and(eq(captureMessages.courseCode, courseCode), eq(captureMessages.sessionId, sessionId)))
+    .where(and(
+      eq(captureMessages.courseCode, courseCode),
+      eq(captureMessages.sessionId, sessionId),
+      isNotNull(captureMessages.instructorName),
+    ))
     .orderBy(desc(captureMessages.turnIndex))
-    .limit(50);
-  for (const r of rows) {
-    if (r.instructorName) return r.instructorName;
-  }
-  return null;
+    .limit(1);
+  return rows[0]?.instructorName ?? null;
 }
 
 /**
