@@ -337,16 +337,19 @@ export async function bulkCreateCourses(
   const have = new Set(existing.map((e) => e.code));
 
   const toCreate = uniqueItems.filter((i) => !have.has(i.code));
-  for (const i of toCreate) {
+  if (toCreate.length > 0) {
+    // Single batched insert (was a per-row loop). onConflictDoNothing keeps it
+    // safe against a race that inserts a code between the existence check above
+    // and this write.
     await db
       .insert(courses)
-      .values({
+      .values(toCreate.map((i) => ({
         code: i.code,
         title: (i.title ?? i.code).trim(),
         level: i.level ?? 0,
         track: i.track ?? 'unspecified',
         prerequisites: i.prerequisites ?? '',
-      })
+      })))
       .onConflictDoNothing();
   }
 

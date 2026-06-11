@@ -73,6 +73,15 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   if (!existing) return NextResponse.json({ error: 'not found' }, { status: 404 });
   if (existing.partnerId !== partner.id) return NextResponse.json({ error: 'forbidden' }, { status: 403 });
   if (existing.status !== 'draft') return NextResponse.json({ error: 'not editable' }, { status: 409 });
+  // Page 6 (interview + synthesis) depends on Page-5 experience ratings. Guard
+  // against entering it before completeness reaches 'rated' — the agent's
+  // bundle relies on ratedSkills, and synthesis over an unrated draft is junk.
+  if (existing.completeness !== 'rated' && existing.completeness !== 'interviewed') {
+    return NextResponse.json(
+      { error: 'complete the experience ratings (page 5) before starting the interview' },
+      { status: 409 },
+    );
+  }
 
   const target = await getTargetById(existing.careerTargetId);
   if (!target) return NextResponse.json({ error: 'career target not found' }, { status: 404 });
