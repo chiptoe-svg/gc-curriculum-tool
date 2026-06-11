@@ -25,10 +25,10 @@ describe('COURSE_CLASSIFICATION_SEED', () => {
 
   it('flags every GC Core course true and every Specialty course false', () => {
     for (const c of codesForCategory('gc_core')) {
-      expect(COURSE_CLASSIFICATION_SEED[c].buildsToCareer).toBe(true);
+      expect(COURSE_CLASSIFICATION_SEED[c]!.buildsToCareer).toBe(true);
     }
     for (const c of codesForCategory('specialty')) {
-      expect(COURSE_CLASSIFICATION_SEED[c].buildsToCareer).toBe(false);
+      expect(COURSE_CLASSIFICATION_SEED[c]!.buildsToCareer).toBe(false);
     }
   });
 

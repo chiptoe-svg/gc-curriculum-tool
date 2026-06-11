@@ -15,15 +15,15 @@ const sql = migrationFile ? readFileSync(join(drizzleDir, migrationFile), 'utf8'
 /** Pull the IN-list codes from the first UPDATE that sets the given category. */
 function codesInCategoryUpdate(category: CourseCategory): string[] {
   const re = new RegExp(`SET "category" = '${category}' WHERE "code" IN \\(([^)]*)\\)`);
-  const m = sql.match(re);
-  if (!m) return [];
-  return [...m[1].matchAll(/'([^']+)'/g)].map((x) => x[1]);
+  const inner = sql.match(re)?.[1];
+  if (!inner) return [];
+  return [...inner.matchAll(/'([^']+)'/g)].map((x) => x[1]!);
 }
 
 function codesInBuildsUpdate(): string[] {
-  const m = sql.match(/SET "builds_to_career" = true WHERE "code" IN \(([^)]*)\)/);
-  if (!m) return [];
-  return [...m[1].matchAll(/'([^']+)'/g)].map((x) => x[1]);
+  const inner = sql.match(/SET "builds_to_career" = true WHERE "code" IN \(([^)]*)\)/)?.[1];
+  if (!inner) return [];
+  return [...inner.matchAll(/'([^']+)'/g)].map((x) => x[1]!);
 }
 
 describe('0033 migration backfill matches the seed map', () => {
