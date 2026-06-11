@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, jsonb, timestamp, integer, real, boolean, primaryKey, index, unique, foreignKey } from 'drizzle-orm/pg-core';
+import { pgTable, pgEnum, uuid, text, jsonb, timestamp, integer, real, boolean, primaryKey, index, unique, foreignKey } from 'drizzle-orm/pg-core';
 import type { CaptureProfile, CaptureReadiness, CaptureReviewerStatus } from '@/lib/ai/capture/schema';
 
 export const careerTargets = pgTable('career_targets', {
@@ -78,6 +78,8 @@ export const ipHourly = pgTable('ip_hourly', {
   pk: primaryKey({ columns: [t.ipHash, t.hourKey] }),
 }));
 
+export const courseCategory = pgEnum('course_category', ['gc_core', 'specialty', 'major_req', 'other']);
+
 export const courses = pgTable('courses', {
   code: text('code').primaryKey(),                                // 'GC 3460', 'GC 4900ap'
   title: text('title').notNull(),
@@ -92,6 +94,9 @@ export const courses = pgTable('courses', {
   lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }).defaultNow().notNull(),
   builderStatus: text('builder_status').notNull().default('draft'),
   auditMode: text('audit_mode').notNull().default('full'),  // 'full' | 'simple'
+  category: courseCategory('category').notNull().default('other'),
+  buildsToCareer: boolean('builds_to_career').notNull().default(false),
+  catalogUrl: text('catalog_url'),                                // nullable — Clemson catalog link
 });
 
 export const sheetSyncState = pgTable('sheet_sync_state', {

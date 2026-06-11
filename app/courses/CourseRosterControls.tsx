@@ -26,6 +26,7 @@ export function CourseRosterControls({ slug }: Props) {
   const [addTitle, setAddTitle] = useState('');
   const [addLevel, setAddLevel] = useState('');
   const [addTrack, setAddTrack] = useState('');
+  const [addCatalogUrl, setAddCatalogUrl] = useState('');
   const [addResult, setAddResult] = useState<OneResult | ApiError | null>(null);
   const [addPending, startAdd] = useTransition();
 
@@ -52,6 +53,7 @@ export function CourseRosterControls({ slug }: Props) {
       const level = parseInt(addLevel, 10);
       if (!isNaN(level)) body.level = level;
       if (addTrack.trim()) body.track = addTrack.trim();
+      if (addCatalogUrl.trim()) body.catalogUrl = addCatalogUrl.trim();
 
       const res = await fetch(`/api/admin/courses/roster?slug=${encodeURIComponent(slug)}`, {
         method: 'POST',
@@ -65,6 +67,7 @@ export function CourseRosterControls({ slug }: Props) {
         setAddTitle('');
         setAddLevel('');
         setAddTrack('');
+        setAddCatalogUrl('');
         router.refresh();
       }
     });
@@ -155,7 +158,7 @@ export function CourseRosterControls({ slug }: Props) {
               Add a course
             </span>
             <button
-              onClick={() => { setAddOpen(false); setAddCode(''); setAddTitle(''); setAddLevel(''); setAddTrack(''); setAddResult(null); }}
+              onClick={() => { setAddOpen(false); setAddCode(''); setAddTitle(''); setAddLevel(''); setAddTrack(''); setAddCatalogUrl(''); setAddResult(null); }}
               className="text-xs text-muted-foreground hover:text-foreground"
             >
               ✕
@@ -193,6 +196,13 @@ export function CourseRosterControls({ slug }: Props) {
                 className="flex-1 rounded-md border border-border bg-background px-3 py-1.5 font-body-sans text-[12px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring"
               />
             </div>
+            <input
+              type="url"
+              value={addCatalogUrl}
+              onChange={(e) => { setAddCatalogUrl(e.target.value); setAddResult(null); }}
+              placeholder="Clemson catalog URL (optional)"
+              className="w-full rounded-md border border-border bg-background px-3 py-1.5 font-body-sans text-[12px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring"
+            />
           </div>
 
           {hasAddSuccess && (

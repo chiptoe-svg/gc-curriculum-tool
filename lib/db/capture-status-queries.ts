@@ -1,6 +1,7 @@
 import { isNull, desc } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { courses, courseCaptureProfiles, courseCaptureSnapshots, captureMessages } from '@/lib/db/schema';
+import type { CourseCategory } from '@/lib/db/course-category-seed';
 
 export type CaptureStatus = 'not-started' | 'in-audit' | 'ai-drafted' | 'reviewed' | 'captured';
 
@@ -8,6 +9,9 @@ export interface CourseStatusRow {
   code: string;
   title: string;
   level: number | null;
+  category: CourseCategory;
+  buildsToCareer: boolean;
+  catalogUrl: string | null;
   status: CaptureStatus;
   lastCapturedAt: Date | null;   // most-recent non-retired snapshot createdAt
   /** Auditor identity on the most-recent non-retired snapshot. Null when no snapshot or pre-backfill row had nothing. */
@@ -82,6 +86,9 @@ export async function listCoursesWithStatus(): Promise<CourseStatusRow[]> {
       code: c.code,
       title: c.title,
       level: c.level ?? null,
+      category: c.category,
+      buildsToCareer: c.buildsToCareer,
+      catalogUrl: c.catalogUrl ?? null,
       status,
       lastCapturedAt: snapshot?.createdAt ?? null,
       lastCapturedBy: snapshot?.instructorName ?? null,

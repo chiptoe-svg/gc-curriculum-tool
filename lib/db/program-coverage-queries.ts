@@ -101,13 +101,14 @@ export interface PairToScore {
 }
 
 export async function listStalePairs(): Promise<PairToScore[]> {
-  // Pick the latest non-retired snapshot per course.
+  // Pick the latest non-retired snapshot per course (only courses flagged builds_to_career).
   const latestSnapshots = await db.execute(sql`
-    SELECT DISTINCT ON (course_code)
-      id, course_code, created_at
-    FROM ${courseCaptureSnapshots}
-    WHERE retired_at IS NULL
-    ORDER BY course_code, created_at DESC
+    SELECT DISTINCT ON (s.course_code)
+      s.id, s.course_code, s.created_at
+    FROM ${courseCaptureSnapshots} s
+    JOIN courses c ON c.code = s.course_code
+    WHERE s.retired_at IS NULL AND c.builds_to_career = true
+    ORDER BY s.course_code, s.created_at DESC
   `);
   const latestSnaps = (latestSnapshots.rows as Array<{ id: string; course_code: string }>);
 
@@ -218,7 +219,7 @@ export async function getMatrixData(): Promise<MatrixData> {
       c.level       AS level
     FROM ${courseCaptureSnapshots} s
     JOIN courses c ON c.code = s.course_code
-    WHERE s.retired_at IS NULL
+    WHERE s.retired_at IS NULL AND c.builds_to_career = true
     ORDER BY s.course_code, s.created_at DESC
   `);
   const courses: MatrixCourse[] = (latestSnapshotsRaw.rows as Array<{
