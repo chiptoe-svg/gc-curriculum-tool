@@ -24,7 +24,8 @@ const {
   synthesisInsertReturning: vi.fn(),
 }));
 
-vi.mock('@/lib/ai/provider', () => ({ getProvider }));
+// orchestrator now resolves its model via getProviderForFunction('synthesize-target').
+vi.mock('@/lib/ai/provider', () => ({ getProviderForFunction: getProvider }));
 
 vi.mock('@/lib/rate-limit/daily-cap', () => ({ checkDailyCap, recordSpend }));
 
@@ -93,7 +94,7 @@ function mockSubmissions(rows: object[]) {
   submissionsSelect.mockResolvedValue(rows);
 }
 function mockProvider(data: object, costUsdCents: number) {
-  getProvider.mockReturnValue({
+  getProvider.mockResolvedValue({
     name: 'openai',
     model: 'gpt-5.4-mini',
     complete: vi.fn().mockResolvedValue({

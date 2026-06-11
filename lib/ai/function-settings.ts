@@ -37,6 +37,9 @@ export const AI_FUNCTION_IDS = [
   'position-synthesis',
   'prereq-edge-seed',
   'intended-skills-extract',
+  'parse-profile-fields',
+  'extract-course-kud',
+  'synthesize-target',
 ] as const;
 export type AIFunctionId = (typeof AI_FUNCTION_IDS)[number];
 
@@ -151,6 +154,13 @@ export const DEFAULT_TIERS: Record<AIFunctionId, Exclude<ModelTier, 'custom'>> =
   // against the full sub-comp catalog and emit exact catalog ids —
   // same reasoning load as prereq-edge-seed; light would risk id errors.
   'intended-skills-extract': 'default',
+  // The following three were migrated off the legacy env-default `getProvider()`
+  // to honor the /settings per-function tiers (2026-06-11). Default tier
+  // preserves their prior effective model (env default = gpt-5.4 = 'default'),
+  // so the migration makes settings effective without silently changing models.
+  'parse-profile-fields': 'default',
+  'extract-course-kud': 'default',
+  'synthesize-target': 'default',
 };
 
 export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
@@ -175,6 +185,9 @@ export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
   'position-synthesis': 'Position interview synthesis',
   'prereq-edge-seed': 'Prerequisite edge seeder',
   'intended-skills-extract': 'Intended skills extractor',
+  'parse-profile-fields': 'Parse pasted profile text into fields',
+  'extract-course-kud': 'Course KUD generator (Generate KUDs)',
+  'synthesize-target': 'Career-target synthesis (admin)',
 };
 
 export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
@@ -199,6 +212,9 @@ export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
   'position-synthesis': 'Synthesis over a completed page 6 interview transcript + upstream page inputs; produces a structured PositionProfile.',
   'prereq-edge-seed': 'Reads a focal course\'s free-text prerequisites + incoming-expectation statements + the catalog sub-competencies and proposes direct, skill-tagged prerequisite edges with expected K/U/D depths.',
   'intended-skills-extract': 'Reads a course\'s catalog text (description, learning objectives, major projects, skills required) + the sub-competency catalog and emits INTENDED (syllabus-asserted, NOT verified student attainment) K/U/D per sub-competency the catalog plausibly implies.',
+  'parse-profile-fields': 'Parses pasted free-text profile prose into structured CaptureProfile fields (the /parse-profile route).',
+  'extract-course-kud': 'Generates a course KUD result from catalog text (the Generate KUDs action / kuds/generate route).',
+  'synthesize-target': 'Synthesizes a career target\'s sub-competencies + descriptors from industry/partner input (admin synthesis run).',
 };
 
 interface CachedSetting {
