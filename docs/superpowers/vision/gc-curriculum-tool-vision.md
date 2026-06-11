@@ -30,6 +30,18 @@ Beneath the curriculum sits a clear picture of what every GC graduate should be:
 
 The tool maps both layers. Clusters get explicit coverage analysis; foundational competencies show up implicitly inside every reasoned judgment. A course developing Quality Control at Do level may create strong conditions for Attention to Detail, but the disposition should be scored only when assignments or rubrics require accuracy, error-catching, revision, or similar observable behaviors.
 
+## The through-line: course → curriculum → career
+
+The surfaces in this document — the audit, the coverage matrix, the wiki, the partner side — are one continuous chain of evidence at three zoom levels, not separate tools. The chain is what makes Q1 answerable.
+
+**Course.** A single capture produces an immutable Course Outcome Profile: what *this* course is evidenced to develop, scored K/U/D at graduated depth, with every finding tagged by provenance (instructor claim / course materials / cited student work) and citations back to the source. This is the atom.
+
+**Curriculum.** As confirmed snapshots accumulate, they aggregate with no further capture work into the cross-course picture: the program coverage matrix (snapshots × career-target sub-competencies), the scaffolding analysis (does a competency get *introduced*, then *practiced*, then *integrated* across the sequence — or land at depth with no setup?), the prerequisite graph (do courses actually hand off what their successors expect?), and the self-maintaining wiki (a cross-linked, queryable narrative *and* typed-graph of the whole program). This is where "what does the program build?" stops being oral tradition.
+
+**Career.** The career targets name the destinations the program claims to prepare students for. **Position Capture** turns real job postings into structured demand — what each destination *actually requires*, per competency, at depth — and the partner survey + AI synthesis keep the target definitions honest against industry.
+
+**The join is Q1.** "Does the curriculum build students toward the careers we claim?" is precisely the comparison of the program's measured coverage against the careers' captured demand — surfaced as a sufficiency read per target. Because every level is the same KUD+ evidence-scored data zoomed in or out, a course-level audit, a program-level gap, and a career-readiness claim are one chain of evidence — defensible end to end, never a marketing assertion. *(The sufficiency computation is built and flag-gated, awaiting activation and the first employer captures; everything it draws on is live.)*
+
 ## The 3-Act program (proposed)
 
 The framework proposes a three-act organizing structure for the GC program: students learn the field, integrate the field, then apply a focus. The tool would read each course in light of where it sits in this proposed progression. Like every other commitment in this framework, the 3-Act structure is a proposal — a working organizing model offered for faculty deliberation, not an existing institutional policy.
