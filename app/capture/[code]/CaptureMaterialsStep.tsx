@@ -1,7 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type { CaptureMaterial, CourseCatalogView } from './MaterialsPanel';
+import { MaterialsPanel, type CaptureMaterial, type CourseCatalogView } from './MaterialsPanel';
 import { SyllabusBox } from './boxes/SyllabusBox';
 import { CanvasBox } from './boxes/CanvasBox';
 import { OtherMaterialsBox } from './boxes/OtherMaterialsBox';
@@ -23,6 +24,7 @@ function estimateTokens(text: string): number {
 
 export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt, onMaterialsChange, onCourseChange, onContinue }: Props) {
   useRouter();
+  const [showManager, setShowManager] = useState(false);
 
   const active = materials.filter((m) => !m.ignored && !m.autoSetAside);
   const ignored = materials.length - active.length;
@@ -68,6 +70,30 @@ export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt,
       <p className="mt-4 text-[11px] text-muted-foreground">
         {active.length} active · {ignored} ignored · ~{tokK}k tok
       </p>
+
+      {/* Low-emphasis escape hatch to the full materials manager (compress, FERPA,
+          digest toggles, per-material detail) — the boxes cover the common cases. */}
+      <div className="mt-3 border-t pt-3">
+        <button
+          type="button"
+          onClick={() => setShowManager((v) => !v)}
+          className="text-xs text-muted-foreground/70 underline-offset-2 hover:text-foreground hover:underline"
+        >
+          {showManager ? 'Hide the full materials manager' : '⚙ Manage all materials in detail'}
+        </button>
+        {showManager && (
+          <div className="mt-3">
+            <MaterialsPanel
+              course={course}
+              initialMaterials={materials}
+              slug={slug}
+              onMaterialsChange={onMaterialsChange}
+              onCourseChange={onCourseChange}
+              initiallyExpanded
+            />
+          </div>
+        )}
+      </div>
 
       <div className="mt-6 flex items-center justify-end gap-4">
         {isEmpty ? (

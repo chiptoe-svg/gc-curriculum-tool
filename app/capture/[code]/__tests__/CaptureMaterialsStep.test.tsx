@@ -11,6 +11,9 @@ vi.mock('@/app/capture/[code]/boxes/CanvasBox', () => ({
 vi.mock('@/app/capture/[code]/boxes/OtherMaterialsBox', () => ({
   OtherMaterialsBox: () => <div data-testid="other-box">other</div>,
 }));
+vi.mock('@/app/capture/[code]/MaterialsPanel', () => ({
+  MaterialsPanel: () => <div data-testid="materials-manager">manager</div>,
+}));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 
 import { CaptureMaterialsStep } from '@/app/capture/[code]/CaptureMaterialsStep';
@@ -47,5 +50,12 @@ describe('CaptureMaterialsStep — three source-boxes', () => {
     render(<CaptureMaterialsStep course={course} materials={[]} slug="s" catalogSyncedAt={null} onMaterialsChange={noop} onCourseChange={noop} onContinue={onContinue} />);
     fireEvent.click(screen.getByRole('button', { name: /start without/i }));
     expect(onContinue).toHaveBeenCalled();
+  });
+
+  it('reveals the full materials manager from the bottom disclosure', () => {
+    render(<CaptureMaterialsStep course={course} materials={[mat({})]} slug="s" catalogSyncedAt={null} onMaterialsChange={noop} onCourseChange={noop} onContinue={noop} />);
+    expect(screen.queryByTestId('materials-manager')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /manage all materials/i }));
+    expect(screen.getByTestId('materials-manager')).toBeTruthy();
   });
 });
