@@ -88,6 +88,7 @@ export function SourceBadge({
   return (
     <span
       title={count > 0 ? `${count} citation${count === 1 ? '' : 's'}` : source}
+      aria-label={`Evidence source: ${label}${count > 0 ? `, ${count} citation${count === 1 ? '' : 's'}` : ''}`}
       className={className}
     >
       {label}
@@ -132,11 +133,55 @@ export function EvidenceBandChip({ claim }: { claim: EvidenceClaim }) {
   return (
     <span
       title={tooltip}
-      className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider ${palette}`}
+      tabIndex={0}
+      role="note"
+      aria-label={`Evidence band — ${tooltip}`}
+      className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider focus:outline-none focus:ring-1 focus:ring-ring ${palette}`}
     >
       {label}
     </span>
   );
+}
+
+const VALIDATION_FIELD_LABELS: Record<string, string> = {
+  evidence_k: 'Know evidence',
+  evidence_u: 'Understand evidence',
+  evidence_d: 'Do evidence',
+  k_depth: 'Know depth',
+  u_depth: 'Understand depth',
+  d_depth: 'Do depth',
+  statement: 'statement',
+};
+
+/**
+ * Turn a Zod validation issue (path + message) into something a faculty
+ * reviewer can act on — "Competency #4 ("Production file prep") — Know
+ * evidence: …" instead of leaking the schema path
+ * "competencies › 3 › evidence_k: …". Exported for unit testing.
+ */
+export function humanizeValidationIssue(
+  path: ReadonlyArray<PropertyKey>,
+  message: string,
+  competencies: ReadonlyArray<{ statement?: string }>,
+): string {
+  if (path[0] === 'competencies' && typeof path[1] === 'number') {
+    const idx = path[1];
+    const name = competencies[idx]?.statement?.trim();
+    const namePart = name ? ` ("${name.length > 50 ? `${name.slice(0, 50)}…` : name}")` : '';
+    const fieldKey = typeof path[2] === 'string' ? path[2] : undefined;
+    const field = fieldKey ? (VALIDATION_FIELD_LABELS[fieldKey] ?? fieldKey) : null;
+    return `Competency #${idx + 1}${namePart}${field ? ` — ${field}` : ''}: ${message}`;
+  }
+  const pretty = path
+    .map(p =>
+      typeof p === 'number'
+        ? `#${p + 1}`
+        : typeof p === 'symbol'
+          ? String(p)
+          : VALIDATION_FIELD_LABELS[p] ?? p,
+    )
+    .join(' › ');
+  return pretty ? `${pretty}: ${message}` : message;
 }
 
 interface Telemetry {
@@ -173,12 +218,17 @@ function DepthSlider({
   value,
   onChange,
   disabled,
+  context,
 }: {
   label: string;
   dimension: Dimension;
   value: number | null;
   onChange: (v: number) => void;
   disabled?: boolean;
+  /** Competency statement, woven into the slider's accessible name so a
+   *  screen reader announces which competency + dimension is being scored
+   *  (the visual <p> label is not programmatically associated with the input). */
+  context?: string;
 }) {
   if (value === null) {
     return (
@@ -207,6 +257,8 @@ function DepthSlider({
         disabled={disabled}
         onChange={e => onChange(parseInt(e.target.value, 10))}
         className="w-full"
+        aria-label={`${label} depth${context ? ` for "${context}"` : ''}`}
+        aria-valuetext={`${value} of 5 — ${describeDepth(dimension, value)}`}
       />
       <p className="text-[10px] leading-snug text-muted-foreground">
         {describeDepth(dimension, value)}
@@ -283,6 +335,7 @@ function CompetencyCard({
           value={competency.k_depth}
           onChange={v => onChange({ ...competency, k_depth: v })}
           disabled={!isTechnical}
+          context={competency.statement}
         />
         <DepthSlider
           label="Understand"
@@ -290,12 +343,14 @@ function CompetencyCard({
           value={competency.u_depth}
           onChange={v => onChange({ ...competency, u_depth: v })}
           disabled={!isTechnical}
+          context={competency.statement}
         />
         <DepthSlider
           label="Do"
           dimension="d"
           value={competency.d_depth}
           onChange={v => onChange({ ...competency, d_depth: v })}
+          context={competency.statement}
         />
       </div>
 
@@ -767,8 +822,7 @@ export function ProfileReviewPanel({
     // faculty can map back to a row in the review panel.
     const issue = result.error.issues[0];
     if (!issue) return null;
-    const path = issue.path.join(' › ');
-    return `${path}: ${issue.message}`;
+    return humanizeValidationIssue(issue.path, issue.message, working.competencies ?? []);
   }, [working]);
 
   async function persist(status: 'confirmed' | 'edited') {
