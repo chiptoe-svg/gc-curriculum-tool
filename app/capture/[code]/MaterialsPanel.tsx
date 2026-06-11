@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from 'react';
 import { CanvasImportZone } from '@/components/CanvasImportZone';
 import { parseCanvasBlob, isCanvasListMaterial } from '@/lib/canvas/parseCanvasBlob';
 import { fetchCourseMaterials } from '@/lib/capture/fetch-course-materials';
+import { CatalogOverview } from './CatalogOverview';
 
 export type IndexingStatus = 'pending' | 'indexing' | 'ready' | 'failed' | 'skipped';
 export type FerpaRisk = 'low' | 'medium' | 'high';
@@ -227,51 +228,14 @@ function StatusChip({ status }: { status: string }) {
 }
 
 function CatalogSummary({ course }: { course: CourseCatalogView }) {
-  function listOrNone(items: string[]) {
-    if (items.length === 0) return <p className="text-xs italic text-muted-foreground">(none)</p>;
-    return (
-      <ol className="list-decimal space-y-0.5 pl-4 text-xs leading-snug">
-        {items.map((it, i) => <li key={i}>{it}</li>)}
-      </ol>
-    );
-  }
   return (
-    <div className="space-y-3 rounded-md border bg-card px-4 py-3">
-      <header>
-        <h3 className="text-sm font-semibold">Catalog (from the course sheet)</h3>
-        <p className="text-xs text-muted-foreground">
-          Read-only here. Edit objectives/projects/skills in the Course Builder if you want them changed.
-        </p>
-      </header>
-      <div>
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Description</p>
-        <p className="mt-1 text-xs leading-snug">{course.description || <span className="italic text-muted-foreground">(none)</span>}</p>
-      </div>
-      <div>
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Prerequisites</p>
-        <p className="mt-1 text-xs leading-snug">{course.prerequisites || <span className="italic text-muted-foreground">(none listed)</span>}</p>
-      </div>
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-            Learning objectives ({course.learningObjectives.length})
-          </p>
-          <div className="mt-1">{listOrNone(course.learningObjectives)}</div>
-        </div>
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-            Major projects ({course.majorProjects.length})
-          </p>
-          <div className="mt-1">{listOrNone(course.majorProjects)}</div>
-        </div>
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-            Required incoming skills ({course.skillsRequired.length})
-          </p>
-          <div className="mt-1">{listOrNone(course.skillsRequired)}</div>
-        </div>
-      </div>
-    </div>
+    <CatalogOverview
+      description={course.description}
+      prerequisites={course.prerequisites}
+      learningObjectives={course.learningObjectives}
+      majorProjects={course.majorProjects}
+      skillsRequired={course.skillsRequired}
+    />
   );
 }
 

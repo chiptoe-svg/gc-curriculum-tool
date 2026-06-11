@@ -14,6 +14,26 @@ export function materialProvenance(m: { fileName: string }): MaterialProvenance 
   return 'uploaded';
 }
 
+/** The Canvas syllabus list, distinctly named by the importer. */
+export function isSyllabusCanvasMaterial(m: { fileName: string }): boolean {
+  return m.fileName.startsWith('Canvas: Syllabus');
+}
+
+export interface BoxedMaterials<T> { canvas: T[]; other: T[]; }
+
+/**
+ * Bucket materials into the Canvas box (anything Canvas-provenance, incl. the
+ * labeled syllabus) and the Other box (uploads + linked docs). The Syllabus box
+ * is the GC-sheet catalog (course fields) + attached syllabi — not derived here.
+ */
+export function materialsByBox<T extends { fileName: string }>(materials: T[]): BoxedMaterials<T> {
+  const canvas: T[] = []; const other: T[] = [];
+  for (const m of materials) {
+    (materialProvenance(m) === 'canvas' ? canvas : other).push(m);
+  }
+  return { canvas, other };
+}
+
 export const PROVENANCE_LABEL: Record<MaterialProvenance, string> = {
   canvas: 'Canvas',
   uploaded: 'uploaded',
