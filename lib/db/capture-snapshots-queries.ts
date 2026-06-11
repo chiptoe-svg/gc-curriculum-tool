@@ -65,6 +65,10 @@ export interface CreateSnapshotInput {
   model: string;
   /** Inherited from the producing session's capture_messages.instructor_name. */
   instructorName?: string | null;
+  /** The v2 capture session that produced this snapshot. Links the immutable
+   *  audit transcript (capture_messages) to the snapshot so the wiki raw layer
+   *  can render it. Null for genuine v1 captures (no session). */
+  transcriptSessionId?: string | null;
 }
 
 export async function createSnapshot(input: CreateSnapshotInput): Promise<SnapshotRow> {
@@ -79,6 +83,7 @@ export async function createSnapshot(input: CreateSnapshotInput): Promise<Snapsh
     scaleVersion: input.profile.scale_version,
     model: input.model,
     instructorName: input.instructorName ?? null,
+    transcriptSessionId: input.transcriptSessionId ?? null,
   }).returning();
   if (!row) throw new Error('createSnapshot: no row returned');
   return rowToSnapshot(row);
