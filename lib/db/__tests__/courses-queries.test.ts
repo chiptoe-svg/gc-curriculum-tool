@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 
 const noopInsert = { onConflictDoUpdate: () => Promise.resolve(), onConflictDoNothing: () => Promise.resolve() };
 const capturedValues: unknown[] = [];
+let updateReturning: unknown[] = [];
 
 vi.mock('@/lib/db/client', () => ({
   db: {
@@ -12,10 +13,17 @@ vi.mock('@/lib/db/client', () => ({
         return noopInsert;
       },
     }),
+    update: () => ({
+      set: () => ({
+        where: () => ({
+          returning: () => Promise.resolve(updateReturning),
+        }),
+      }),
+    }),
   },
 }));
 
-import { listCourses, getCourseByCode, upsertCourses, recordSyncResult, getSyncState, updateBuilderStatus, listApprovedCourses, createCourse } from '@/lib/db/courses-queries';
+import { listCourses, getCourseByCode, upsertCourses, recordSyncResult, getSyncState, updateBuilderStatus, listApprovedCourses, createCourse, updateCourseClassification } from '@/lib/db/courses-queries';
 
 describe('courses-queries module', () => {
   it('exports the expected functions', () => {
@@ -50,5 +58,19 @@ describe('createCourse', () => {
     expect(capturedValues).toHaveLength(1);
     const payload = capturedValues[0] as Record<string, unknown>;
     expect(payload.catalogUrl).toBe('https://catalog.clemson.edu/gc1000');
+  });
+});
+
+describe('updateCourseClassification', () => {
+  it('returns true when the mocked .returning() yields one row', async () => {
+    updateReturning = [{ code: 'GC 1010' }];
+    const result = await updateCourseClassification('GC 1010', { buildsToCareer: true });
+    expect(result).toBe(true);
+  });
+
+  it('returns false when the mocked .returning() yields []', async () => {
+    updateReturning = [];
+    const result = await updateCourseClassification('GC 1010', { buildsToCareer: true });
+    expect(result).toBe(false);
   });
 });

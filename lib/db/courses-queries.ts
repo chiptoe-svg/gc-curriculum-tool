@@ -2,6 +2,7 @@ import { db } from './client';
 import { courses, sheetSyncState, courseProfiles, courseMaterials, courseCaptureSnapshots, courseIntendedCoverage } from './schema';
 import type { ParsedCourse } from '@/lib/sheets/parseCourseTab';
 import { eq, asc, sql, count, inArray } from 'drizzle-orm';
+import type { CourseCategory } from '@/lib/db/course-category-seed';
 
 export interface CourseListItem {
   code: string;
@@ -378,6 +379,34 @@ export async function createCourse(input: NewCourseInput): Promise<void> {
       catalogUrl: input.catalogUrl?.trim() || null,
     })
     .onConflictDoNothing();
+}
+
+export interface CourseClassificationPatch {
+  category?: CourseCategory;
+  buildsToCareer?: boolean;
+  catalogUrl?: string | null;
+}
+
+/**
+ * Update a course's classification fields. Each field is independently
+ * optional; only provided keys are written. Returns true if the course exists.
+ */
+export async function updateCourseClassification(
+  code: string,
+  patch: CourseClassificationPatch,
+): Promise<boolean> {
+  const set: Record<string, unknown> = {};
+  if (patch.category !== undefined) set.category = patch.category;
+  if (patch.buildsToCareer !== undefined) set.buildsToCareer = patch.buildsToCareer;
+  if (patch.catalogUrl !== undefined) set.catalogUrl = patch.catalogUrl;
+  if (Object.keys(set).length === 0) return courseExists(code);
+
+  const updated = await db
+    .update(courses)
+    .set(set)
+    .where(eq(courses.code, code))
+    .returning({ code: courses.code });
+  return updated.length > 0;
 }
 
 /** Returns true if a course with the given code exists in the courses table. */
