@@ -376,7 +376,7 @@ Trivial commits (typos, copy edits, single-line bugfixes, internal refactors tha
 
 - **Specs and plans** are created via `superpowers:brainstorming` and `superpowers:writing-plans`. One dated file per increment; never edit historical specs/plans (write a new one that supersedes).
 - **Plans executed** via `superpowers:subagent-driven-development` (fresh subagent per task + spec/quality review).
-- **`docs/`** is published to GitHub Pages from `main`; the source `.md` files are the source of truth, the `.html` siblings are styled exports.
+- **`docs/`** is published to GitHub Pages from `main`. **Pages serves from the repo ROOT (`source.path = /`), not `/docs`** — so a doc at `docs/foo.html` is reached at `chiptoe-svg.github.io/gc-curriculum-tool/docs/foo.html` (the `/docs/` segment is required; a bare `…/foo.html` 404s). The source `.md` files are the source of truth, the `.html` siblings are styled exports.
 - **`pnpm`** is the package manager. `pnpm dev` for solo dev (localhost); `pnpm dev:lan` for the launchd 0.0.0.0 binding.
 - **Migrations** via `pnpm db:generate` + `pnpm db:migrate` (drizzle-kit). Never rename a generated migration file.
 
