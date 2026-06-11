@@ -2,9 +2,15 @@ import { db } from '@/lib/db/client';
 import { dailyCost } from '@/lib/db/schema';
 import { sql } from 'drizzle-orm';
 
+// Local-date day key — matches Postgres `CURRENT_DATE` (server-local) used by
+// getDailyCostHistory, so the cap window resets at LOCAL midnight, not UTC
+// midnight (which on the US-East box fell at ~8pm local and split the day).
+function dayKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 function currentDayKey(): string {
-  const d = new Date();
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+  return dayKey(new Date());
 }
 
 function capCents(): number {
@@ -57,9 +63,8 @@ export async function getDailyCostHistory(days: number = 7): Promise<DailyCostRo
   const out: DailyCostRow[] = [];
   for (let i = days - 1; i >= 0; i--) {
     const d = new Date();
-    d.setUTCDate(d.getUTCDate() - i);
-    const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
-    out.push({ day: key, spentCents: byDay.get(key) ?? 0 });
+    d.setDate(d.getDate() - i);
+    out.push({ day: dayKey(d), spentCents: byDay.get(dayKey(d)) ?? 0 });
   }
   return out;
 }

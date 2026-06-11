@@ -73,6 +73,13 @@ export function deriveEvidenceBand(claim: EvidenceClaim): EvidenceBand {
     // c.type === 'instructor' → still a claim; keep looking for a chunk.
   }
 
+  // The synthesizer attributed the claim to course materials. Honor that even
+  // when no chunk citation resolved — `source` is itself an L1 signal, so a
+  // materials-sourced claim is materials_supported, not a bare claim.
+  if (source === 'materials') {
+    return 'materials_supported';
+  }
+
   // Nothing elevated the band: no citations, only instructor citations,
   // source undefined / null / 'instructor' with no material evidence.
   return 'claimed';

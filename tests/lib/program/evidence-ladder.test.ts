@@ -72,4 +72,16 @@ describe('deriveEvidenceBand', () => {
     };
     expect(deriveEvidenceBand(claim)).toBe('materials_supported');
   });
+
+  it('returns materials_supported when source is materials, even with no chunk citation', () => {
+    // The synthesizer attributed the claim to course materials; `source` is
+    // itself an L1 signal, so it's materials_supported, not a bare claim —
+    // even if no chunk citation resolved (or only an instructor citation did).
+    expect(deriveEvidenceBand({ source: 'materials', citations: [] })).toBe('materials_supported');
+    expect(deriveEvidenceBand({ source: 'materials', citations: undefined })).toBe('materials_supported');
+    expect(deriveEvidenceBand({
+      source: 'materials',
+      citations: [{ type: 'instructor', messageId: 'a1b2c3d4', excerpt: 'faculty note' }],
+    })).toBe('materials_supported');
+  });
 });

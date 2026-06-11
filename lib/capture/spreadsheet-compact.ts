@@ -32,11 +32,13 @@
  * logos even with image_export_mode=placeholder set upstream.
  */
 function stripInlineBase64Images(markdown: string): string {
-  // Match the full markdown-image form first (greedy on `]`, narrow on
-  // `(data:...)`), then any bare unparenthesized data URIs as a fallback.
+  // Match the full markdown-image form first, then any bare parenthesized data
+  // URI as a fallback. Matches ANY `data:` MIME (not just image/* — Docling can
+  // also emit data:application/*, data:font/*, etc. for embedded objects), so a
+  // non-image blob can't slip through and re-inflate the token count.
   return markdown
-    .replace(/!\[[^\]]*\]\(data:image\/[^)]+\)/gi, '(image)')
-    .replace(/\(data:image\/[^)]+\)/gi, '(image)');
+    .replace(/!\[[^\]]*\]\(data:[^)]+\)/gi, '(image)')
+    .replace(/\(data:[^)]+\)/gi, '(image)');
 }
 
 export function compactSpreadsheetMarkdown(markdown: string): string {
