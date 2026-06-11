@@ -146,6 +146,18 @@ export default async function ViewCoursePage({ params }: Props) {
                 )}
               </p>
             )}
+            {course.catalogUrl && (
+              <p className="mt-1 text-xs">
+                <a
+                  href={course.catalogUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                >
+                  Clemson catalog ↗
+                </a>
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-4">
             <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">
