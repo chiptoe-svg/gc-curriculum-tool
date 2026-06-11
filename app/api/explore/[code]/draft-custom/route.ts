@@ -4,6 +4,7 @@ import { getCourseByCode } from '@/lib/db/courses-queries';
 import { getSnapshotById, getLatestSnapshotByCourse } from '@/lib/db/capture-snapshots-queries';
 import { draftCustomTarget } from '@/lib/ai/analyze/explore-draft-target';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
+import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
 import { hashIp } from '@/lib/ip-hash';
 
 interface RouteContext { params: Promise<{ code: string }> }
@@ -43,11 +44,15 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     return NextResponse.json({ error: 'snapshot does not belong to this course' }, { status: 403 });
   }
 
+  const cap = await checkDailyCap();
+  if (!cap.ok) return NextResponse.json({ error: 'daily cost cap reached — service paused for today' }, { status: 503 });
+
   try {
-    const { target, model } = await draftCustomTarget({
+    const { target, model, costUsdCents } = await draftCustomTarget({
       prose,
       snapshotProfile: snapshot.profile,
     });
+    await recordSpend(costUsdCents);
     return NextResponse.json({
       target,
       snapshotId: snapshot.id,

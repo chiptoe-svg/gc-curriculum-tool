@@ -13,6 +13,10 @@ vi.mock('@/lib/ai/analyze/kud-generate', () => ({ generateCourseKud: vi.fn() }))
 vi.mock('@/lib/rate-limit/ip-rate-limit', () => ({
   checkIpRateLimit: vi.fn().mockResolvedValue({ allowed: true }),
 }));
+vi.mock('@/lib/rate-limit/daily-cap', () => ({
+  checkDailyCap: vi.fn().mockResolvedValue({ ok: true, spentCents: 0 }),
+  recordSpend: vi.fn().mockResolvedValue(undefined),
+}));
 vi.mock('@/lib/ip-hash', () => ({ hashIp: vi.fn().mockReturnValue('testhash') }));
 
 import { POST } from '@/app/api/courses/[code]/kuds/generate/route';
@@ -21,6 +25,7 @@ import { getCourseByCode, updateBuilderStatus } from '@/lib/db/courses-queries';
 import { insertKudRun, upsertCourseKud } from '@/lib/db/course-kud-queries';
 import { generateCourseKud } from '@/lib/ai/analyze/kud-generate';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
+import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
 import { hashIp } from '@/lib/ip-hash';
 
 const mockIsValidSlug = isValidSlug as ReturnType<typeof vi.fn>;
@@ -30,6 +35,8 @@ const mockInsertKudRun = insertKudRun as ReturnType<typeof vi.fn>;
 const mockUpsertCourseKud = upsertCourseKud as ReturnType<typeof vi.fn>;
 const mockGenerateCourseKud = generateCourseKud as ReturnType<typeof vi.fn>;
 const mockCheckIpRateLimit = checkIpRateLimit as ReturnType<typeof vi.fn>;
+const mockCheckDailyCap = checkDailyCap as ReturnType<typeof vi.fn>;
+const mockRecordSpend = recordSpend as ReturnType<typeof vi.fn>;
 const mockHashIp = hashIp as ReturnType<typeof vi.fn>;
 
 const FAKE_COURSE = {
@@ -71,6 +78,8 @@ beforeEach(() => {
   mockUpsertCourseKud.mockResolvedValue(undefined);
   mockUpdateBuilderStatus.mockResolvedValue(undefined);
   mockCheckIpRateLimit.mockResolvedValue({ allowed: true });
+  mockCheckDailyCap.mockResolvedValue({ ok: true, spentCents: 0 });
+  mockRecordSpend.mockResolvedValue(undefined);
   mockHashIp.mockReturnValue('testhash');
 });
 

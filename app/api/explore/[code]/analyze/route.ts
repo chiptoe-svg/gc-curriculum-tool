@@ -5,6 +5,7 @@ import { getSnapshotById } from '@/lib/db/capture-snapshots-queries';
 import { getTargetById, createAnalysis } from '@/lib/db/explore-queries';
 import { compareSnapshotToTarget } from '@/lib/ai/analyze/explore-compare';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
+import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
 import { hashIp } from '@/lib/ip-hash';
 
 interface RouteContext { params: Promise<{ code: string }> }
@@ -22,6 +23,8 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   const ipHash = hashIp(req);
   const { allowed } = await checkIpRateLimit(ipHash);
   if (!allowed) return NextResponse.json({ error: 'rate limit exceeded' }, { status: 429 });
+  const cap = await checkDailyCap();
+  if (!cap.ok) return NextResponse.json({ error: 'daily cost cap reached — service paused for today' }, { status: 503 });
 
   const { code: rawCode } = await params;
   const courseCode = decodeURIComponent(rawCode);
@@ -47,12 +50,13 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   }
 
   try {
-    const { analysis, model } = await compareSnapshotToTarget({
+    const { analysis, model, costUsdCents } = await compareSnapshotToTarget({
       snapshotId,
       targetId,
       snapshotProfile: snapshot.profile,
       targetSpec: target.spec,
     });
+    await recordSpend(costUsdCents);
     const row = await createAnalysis({
       courseCode,
       snapshotId,

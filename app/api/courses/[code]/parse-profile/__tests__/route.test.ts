@@ -6,17 +6,24 @@ vi.mock('@/lib/ai/analyze/parse-profile-fields', () => ({ parseProfileFields: vi
 vi.mock('@/lib/rate-limit/ip-rate-limit', () => ({
   checkIpRateLimit: vi.fn().mockResolvedValue({ allowed: true, remaining: 100 }),
 }));
+vi.mock('@/lib/rate-limit/daily-cap', () => ({
+  checkDailyCap: vi.fn().mockResolvedValue({ ok: true, spentCents: 0 }),
+  recordSpend: vi.fn().mockResolvedValue(undefined),
+}));
 vi.mock('@/lib/ip-hash', () => ({ hashIp: vi.fn().mockReturnValue('testhash') }));
 
 import { POST } from '@/app/api/courses/[code]/parse-profile/route';
 import { extractText } from '@/lib/courses/extract-text';
 import { parseProfileFields } from '@/lib/ai/analyze/parse-profile-fields';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
+import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
 import { hashIp } from '@/lib/ip-hash';
 
 const mockExtract = extractText as ReturnType<typeof vi.fn>;
 const mockParse = parseProfileFields as ReturnType<typeof vi.fn>;
 const mockRateLimit = checkIpRateLimit as ReturnType<typeof vi.fn>;
+const mockCap = checkDailyCap as ReturnType<typeof vi.fn>;
+const mockRecordSpend = recordSpend as ReturnType<typeof vi.fn>;
 const mockHashIp = hashIp as ReturnType<typeof vi.fn>;
 
 const FAKE_FIELDS = {
@@ -40,6 +47,8 @@ function makeReq(slug: string, hasFile: boolean, mimeType = 'application/pdf', c
 beforeEach(() => {
   vi.resetAllMocks();
   mockRateLimit.mockResolvedValue({ allowed: true, remaining: 100 });
+  mockCap.mockResolvedValue({ ok: true, spentCents: 0 });
+  mockRecordSpend.mockResolvedValue(undefined);
   mockHashIp.mockReturnValue('testhash');
 });
 
@@ -69,9 +78,19 @@ describe('POST /api/courses/[code]/parse-profile', () => {
     expect(res.status).toBe(422);
   });
 
-  it('returns structured fields on success', async () => {
+  it('returns 503 and skips the AI call when the daily cost cap is reached', async () => {
+    mockCap.mockResolvedValue({ ok: false, spentCents: 99999 });
     mockExtract.mockResolvedValue({ status: 'ok', text: 'Syllabus content here.' });
-    mockParse.mockResolvedValue(FAKE_FIELDS);
+    const [req, ctx] = makeReq('valid-slug', true);
+    const res = await POST(req, ctx);
+    expect(res.status).toBe(503);
+    expect(mockParse).not.toHaveBeenCalled();
+    expect(mockRecordSpend).not.toHaveBeenCalled();
+  });
+
+  it('returns structured fields on success and records spend', async () => {
+    mockExtract.mockResolvedValue({ status: 'ok', text: 'Syllabus content here.' });
+    mockParse.mockResolvedValue({ fields: FAKE_FIELDS, costUsdCents: 7 });
     const [req, ctx] = makeReq('valid-slug', true);
     const res = await POST(req, ctx);
     expect(res.status).toBe(200);
@@ -79,5 +98,6 @@ describe('POST /api/courses/[code]/parse-profile', () => {
     expect(json.learningObjectives).toEqual(['Operate a press', 'Mix ink']);
     expect(json.majorProjects).toEqual(['Final press run']);
     expect(json.skillsRequired).toEqual(['Basic color theory']);
+    expect(mockRecordSpend).toHaveBeenCalledWith(7);
   });
 });

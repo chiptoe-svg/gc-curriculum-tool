@@ -4,6 +4,7 @@ import { getCourseByCode, updateBuilderStatus } from '@/lib/db/courses-queries';
 import { insertKudRun, upsertCourseKud } from '@/lib/db/course-kud-queries';
 import { generateCourseKud } from '@/lib/ai/analyze/kud-generate';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
+import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
 import { hashIp } from '@/lib/ip-hash';
 
 interface RouteContext { params: Promise<{ code: string }> }
@@ -16,6 +17,8 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   const ipHash = hashIp(req);
   const { allowed } = await checkIpRateLimit(ipHash);
   if (!allowed) return NextResponse.json({ error: 'rate limit exceeded' }, { status: 429 });
+  const cap = await checkDailyCap();
+  if (!cap.ok) return NextResponse.json({ error: 'daily cost cap reached — service paused for today' }, { status: 503 });
 
   const { code: rawCode } = await params;
   const courseCode = decodeURIComponent(rawCode);
@@ -43,6 +46,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
       notes,
       conversationContext: conversationContext || undefined,
     });
+    await recordSpend(telemetry.costUsdCents);
 
     const profileSnapshot = {
       learningObjectives: course.learningObjectives as string[],

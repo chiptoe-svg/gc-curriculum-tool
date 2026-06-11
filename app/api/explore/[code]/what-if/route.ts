@@ -5,6 +5,7 @@ import { getSnapshotById } from '@/lib/db/capture-snapshots-queries';
 import { getTargetById, getAnalysisById, createWhatIf, listWhatIfsByTarget } from '@/lib/db/explore-queries';
 import { simulateWhatIf } from '@/lib/ai/analyze/explore-what-if';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
+import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
 import { hashIp } from '@/lib/ip-hash';
 
 interface RouteContext { params: Promise<{ code: string }> }
@@ -56,8 +57,11 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     if (a && a.courseCode === courseCode) priorAnalysis = a.analysis;
   }
 
+  const cap = await checkDailyCap();
+  if (!cap.ok) return NextResponse.json({ error: 'daily cost cap reached — service paused for today' }, { status: 503 });
+
   try {
-    const { result, model } = await simulateWhatIf({
+    const { result, model, costUsdCents } = await simulateWhatIf({
       snapshotId,
       targetId,
       snapshotProfile: snapshot.profile,
@@ -65,6 +69,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
       priorAnalysis,
       changeProse,
     });
+    await recordSpend(costUsdCents);
     const row = await createWhatIf({
       courseCode,
       snapshotId,
