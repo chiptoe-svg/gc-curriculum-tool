@@ -4,6 +4,7 @@ import Link from 'next/link';
 import type { CourseStatusRow, CaptureStatus } from '@/lib/db/capture-status-queries';
 import type { CourseRosterRow, CourseDataState } from '@/lib/db/courses-queries';
 import { CourseRosterControls } from './CourseRosterControls';
+import { CourseClassControls } from './CourseClassControls';
 
 interface Props {
   rows: CourseStatusRow[];
@@ -151,7 +152,7 @@ function CourseRow({
 
   return (
     <div
-      className="group flex items-center gap-4 rounded-md transition-colors hover:bg-muted/40 animate-in fade-in slide-in-from-bottom-1"
+      className="group relative flex items-center gap-4 rounded-md transition-colors hover:bg-muted/40 animate-in fade-in slide-in-from-bottom-1"
       style={{ animationDelay: `${delay}ms`, animationFillMode: 'both' }}
     >
       {/* Main row link — capture is the primary action */}
@@ -206,6 +207,13 @@ function CourseRow({
       >
         💬 Ask
       </Link>
+      <CourseClassControls
+        code={row.code}
+        slug={slug}
+        category={row.category}
+        buildsToCareer={row.buildsToCareer}
+        catalogUrl={row.catalogUrl}
+      />
     </div>
   );
 }
