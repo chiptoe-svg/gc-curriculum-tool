@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { CanvasImportZone } from '@/components/CanvasImportZone';
 import { parseCanvasBlob, isCanvasListMaterial } from '@/lib/canvas/parseCanvasBlob';
+import { fetchCourseMaterials } from '@/lib/capture/fetch-course-materials';
 
 export type IndexingStatus = 'pending' | 'indexing' | 'ready' | 'failed' | 'skipped';
 export type FerpaRisk = 'low' | 'medium' | 'high';
@@ -736,37 +737,9 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
   }
 
   async function refetchMaterialsFromContext(): Promise<void> {
-    try {
-      const res = await fetch(
-        `/api/capture/${encodeURIComponent(course.code)}/context?slug=${encodeURIComponent(slug)}`,
-      );
-      if (!res.ok) return;
-      const json = await res.json() as {
-        materials: Array<{
-          id: string;
-          fileName: string;
-          mimeType: string;
-          sizeBytes: number;
-          pageCount: number | null;
-          extractionStatus: string;
-          extractionMethod: string | null;
-          extractedText: string | null;
-          ignored: boolean;
-          digest: string | null;
-          digestGeneratedAt: string | null;
-          useDigest: boolean;
-          indexingStatus: IndexingStatus;
-          indexedAt: string | null;
-          ferpaRisk: FerpaRisk;
-          autoSetAside: boolean;
-          setAsideReason: string | null;
-          blobUrl: string;
-        }>;
-      };
-      pushMaterials(json.materials);
-    } catch {
-      // best-effort refresh; user can always reload the page
-    }
+    const fresh = await fetchCourseMaterials(course.code, slug);
+    if (fresh) pushMaterials(fresh);
+    // best-effort refresh; user can always reload the page on null
   }
 
   function handleCanvasImported() {
