@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import { isValidSlug } from '@/lib/slug';
+import { checkAdminAuth } from '@/lib/auth/admin-auth';
 import { listPartners } from '@/lib/partners/queries';
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const slug = url.searchParams.get('slug') ?? '';
-  if (!isValidSlug(slug)) {
+  if (!checkAdminAuth(req, { slug })) {
     return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
   }
   const rows = await listPartners();

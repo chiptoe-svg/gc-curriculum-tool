@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { isValidSlug } from '@/lib/slug';
+import { checkAdminAuth } from '@/lib/auth/admin-auth';
 import { markInvited, logPartnerEvent } from '@/lib/partners/queries';
 
 interface RouteContext {
@@ -24,7 +24,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   // Defense-in-depth slug gate (second factor behind faculty Basic Auth),
   // matching every other admin route.
   const body = await req.json().catch(() => ({})) as Record<string, unknown>;
-  if (!isValidSlug(typeof body.slug === 'string' ? body.slug : '')) {
+  if (!checkAdminAuth(req, { slug: typeof body.slug === 'string' ? body.slug : '' })) {
     return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
   }
 

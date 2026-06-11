@@ -11,7 +11,7 @@ import {
   courseExploreWhatIfs,
   snapshotTargetCoverage,
 } from '@/lib/db/schema';
-import { isValidSlug } from '@/lib/slug';
+import { checkAdminAuth } from '@/lib/auth/admin-auth';
 import { getWeaviateClient } from '@/lib/capture/weaviate-client';
 import {
   MATERIAL_CHUNK_CLASS,
@@ -68,7 +68,7 @@ export async function POST(req: Request): Promise<Response> {
   // Slug gate (second factor behind Basic Auth). This is a one-request,
   // irrecoverable data-loss endpoint (it can delete the snapshot system of
   // record), so it must not rely on middleware Basic Auth alone.
-  if (!isValidSlug(typeof body.slug === 'string' ? body.slug : '')) {
+  if (!checkAdminAuth(req, { slug: typeof body.slug === 'string' ? body.slug : '' })) {
     return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
   }
   const courseCode = typeof body.courseCode === 'string' ? body.courseCode.trim() : '';

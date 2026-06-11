@@ -15,7 +15,7 @@
 // recorded once the AI call succeeds, even if the DB write fails.
 
 import { NextResponse } from 'next/server';
-import { isValidSlug } from '@/lib/slug';
+import { checkAdminAuth } from '@/lib/auth/admin-auth';
 import { getCourseByCode, listUncapturedCourseCodes, replaceIntendedCoverage } from '@/lib/db/courses-queries';
 import type { NewIntendedRow } from '@/lib/db/courses-queries';
 import { listTargets } from '@/lib/db/career-targets-queries';
@@ -32,7 +32,7 @@ export async function POST(req: Request): Promise<Response> {
   // Slug auth — mirrors the prereq-edges pattern exactly.
   const url = new URL(req.url);
   const slug = url.searchParams.get('slug') ?? '';
-  if (!isValidSlug(slug)) {
+  if (!checkAdminAuth(req, { slug })) {
     return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
   }
 

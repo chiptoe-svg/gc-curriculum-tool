@@ -1,6 +1,6 @@
 // app/api/admin/courses/roster/route.ts
 import { NextResponse } from 'next/server';
-import { isValidSlug } from '@/lib/slug';
+import { checkAdminAuth } from '@/lib/auth/admin-auth';
 import {
   bulkCreateCourses,
   createCourse,
@@ -20,7 +20,7 @@ import {
 //     Insert a single course (no-op if code already exists).
 //     Returns { ok: true }.
 //
-// Auth: slug from query string (isValidSlug → 401 on miss).
+// Auth: checkAdminAuth (Bearer ADMIN_TOKEN / slug-in-header, or legacy ?slug=).
 // ---------------------------------------------------------------------------
 
 /** Light parser: `GC 1234` / `GC1234` / `GC 1234L` etc. */
@@ -44,7 +44,7 @@ function parseCourseLines(text: string): NewCourseInput[] {
 export async function POST(req: Request): Promise<Response> {
   const url = new URL(req.url);
   const slug = url.searchParams.get('slug') ?? '';
-  if (!isValidSlug(slug)) {
+  if (!checkAdminAuth(req, { slug })) {
     return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
   }
 
