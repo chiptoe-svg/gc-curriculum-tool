@@ -1,44 +1,30 @@
 import Link from 'next/link';
-import { listCoursesWithStatus, type CaptureStatus, type CourseStatusRow } from '@/lib/db/capture-status-queries';
+import { Target } from 'lucide-react';
+import { listCoursesWithStatus, type CaptureStatus } from '@/lib/db/capture-status-queries';
+import { groupByCategory } from '@/lib/courses/group-by-category';
+import { CATEGORY_LABELS } from '@/lib/db/course-category-seed';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * Public HTTP landing page. No slug, no Basic Auth.
  *
+ * Courses are grouped by `category` (GC Core -> Specialty -> Major Req -> Other).
+ * Courses that build toward the career mapping carry a Target icon.
+ *
  * Two link types per course:
- *   - View → /view/[code] (HTTP, read-only, public)
- *   - Edit → https://<funnel>/capture/[code]?slug=<PROTOTYPE_SLUG>
- *            (Basic Auth challenge on the HTTPS funnel)
+ *   - View -> /view/[code] (HTTP, read-only, public)
+ *   - Edit -> https://<funnel>/capture/[code]?slug=<PROTOTYPE_SLUG> (Basic Auth)
  *
- * Faculty visit once, click Edit, enter Basic Auth, and the browser
- * caches credentials for the HTTPS origin for the rest of the session.
- *
- * The slug is baked into Edit links server-side from PROTOTYPE_SLUG
- * (the same slug acting as the deeper-layer access gate); faculty
- * don't need to know or type it.
+ * "+ Add a course" links to the authenticated roster page on the funnel -
+ * the public surface never hosts a write path.
  */
 export default async function HomePage() {
   const slug = process.env.PROTOTYPE_SLUG ?? '';
   const funnelOrigin = process.env.TAILSCALE_FUNNEL_ORIGIN ?? '';
 
   const rows = await listCoursesWithStatus();
-  rows.sort((a, b) => (a.level ?? Number.POSITIVE_INFINITY) - (b.level ?? Number.POSITIVE_INFINITY)
-    || a.code.localeCompare(b.code));
-
-  // Group by 1000/2000/3000/4000-level. Null level → "Other" (matches /courses).
-  const groups = new Map<number | null, CourseStatusRow[]>();
-  for (const r of rows) {
-    const key = r.level ?? null;
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key)!.push(r);
-  }
-  // Numeric levels ascending, then null ("Other") last.
-  const orderedKeys = Array.from(groups.keys()).sort((a, b) => {
-    if (a === null) return 1;
-    if (b === null) return -1;
-    return a - b;
-  });
+  const groups = groupByCategory(rows);
 
   const facultyHubHref = funnelOrigin && slug
     ? `${funnelOrigin}/courses?slug=${encodeURIComponent(slug)}`
@@ -69,19 +55,34 @@ export default async function HomePage() {
       </header>
 
       <main className="mx-auto max-w-5xl px-6 py-8">
-        <p className="mb-8 max-w-3xl text-sm text-muted-foreground">
-          What every course in the Graphic Communications curriculum builds.
-          Anyone can read profiles; faculty edit via the HTTPS hub.
-        </p>
+        <div className="mb-8 flex items-start justify-between gap-4">
+          <p className="max-w-3xl text-sm text-muted-foreground">
+            What every course in the Graphic Communications curriculum builds.
+            Anyone can read profiles; faculty edit via the HTTPS hub. The{' '}
+            <span title="Builds toward career outcomes" className="inline-flex">
+              <Target className="inline h-3.5 w-3.5 -translate-y-px text-muted-foreground" aria-hidden />
+            </span>{' '}marks
+            courses that build toward our career outcomes.
+          </p>
+          {facultyHubHref && (
+            <a
+              href={facultyHubHref}
+              className="shrink-0 rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
+              title="Add a course (requires login)"
+            >
+              + Add a course
+            </a>
+          )}
+        </div>
 
         <div className="space-y-10">
-          {orderedKeys.map((key) => (
-            <section key={key ?? 'other'}>
+          {groups.map(({ category, rows: catRows }) => (
+            <section key={category}>
               <h2 className="mb-3 font-mono-plex text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                {levelLabel(key)}
+                {CATEGORY_LABELS[category]}
               </h2>
               <ul className="divide-y border-y">
-                {groups.get(key)!.map((row) => {
+                {catRows.map((row) => {
                   const editHref = funnelOrigin && slug
                     ? `${funnelOrigin}/capture/${encodeURIComponent(row.code)}?slug=${encodeURIComponent(slug)}`
                     : null;
@@ -98,9 +99,17 @@ export default async function HomePage() {
                       </Link>
                       <Link
                         href={`/view/${encodeURIComponent(row.code)}`}
-                        className="font-display text-base text-foreground hover:text-muted-foreground"
+                        className="flex items-baseline gap-1.5 font-display text-base text-foreground hover:text-muted-foreground"
                       >
-                        {row.title ?? '—'}
+                        <span>{row.title ?? '—'}</span>
+                        {row.buildsToCareer && (
+                          <span title="Builds toward career outcomes" className="inline-flex">
+                            <Target
+                              className="h-3.5 w-3.5 shrink-0 translate-y-px text-emerald-600/70 dark:text-emerald-400/70"
+                              aria-label="Builds toward career outcomes"
+                            />
+                          </span>
+                        )}
                       </Link>
                       <StatusPill status={row.status} />
                       <span className="font-mono-plex text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
@@ -154,11 +163,6 @@ function StatusPill({ status }: { status: CaptureStatus }) {
       {label}
     </span>
   );
-}
-
-function levelLabel(key: number | null): string {
-  if (key === null) return 'Other';
-  return `${key}000-level`;
 }
 
 function formatDate(d: Date | string): string {
