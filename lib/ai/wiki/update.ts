@@ -10,6 +10,7 @@
  */
 
 import { readFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 
 import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
@@ -33,6 +34,7 @@ import { getProviderForFunction } from '@/lib/ai/provider';
 import { fetchLiveCourseFromSheet } from '@/lib/sheets/fetchLiveCourse';
 import type { ParsedCourse } from '@/lib/sheets/parseCourseTab';
 import { writeAndPush } from '@/lib/wiki/git-ops';
+import { deriveEvidenceBand, type EvidenceBand } from '@/lib/program/evidence-ladder';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -542,6 +544,47 @@ async function loadAllSnapshotsForCourse(courseCode: string): Promise<SnapshotSu
 }
 
 // ---------------------------------------------------------------------------
+// Competency → sub-competency slug links (fixes the broken-wikilink namespace)
+// ---------------------------------------------------------------------------
+
+/**
+ * Map each snapshot competency statement to the sub-competency slug(s) it
+ * matched during coverage scoring. The course page uses this to link its
+ * "Competencies developed" list to the EXISTING competency pages
+ * (`competencies/{subCompetencyId}.md`) instead of minting slugs from the
+ * statement text — that parallel, page-less namespace was the source of the
+ * 153 broken wikilinks `gc-wiki-lint` surfaced.
+ *
+ * `matched_competency` is a close paraphrase of a `profile.competencies[].statement`
+ * (the scorer is told to match/paraphrase one), so the prompt fuzzy-matches the
+ * two. Empty before coverage scoring has run for this snapshot — the course
+ * page then renders competencies as plain text (no broken links), and the
+ * post-scoring regeneration fills the links in.
+ */
+async function loadCompetencyLinksForSnapshot(
+  snapshotId: string,
+): Promise<Array<{ statement: string; slug: string }>> {
+  const rows = await db
+    .select({
+      matchedCompetency: snapshotTargetCoverage.matchedCompetency,
+      subCompetencyId: snapshotTargetCoverage.subCompetencyId,
+    })
+    .from(snapshotTargetCoverage)
+    .where(eq(snapshotTargetCoverage.snapshotId, snapshotId));
+
+  const seen = new Set<string>();
+  const out: Array<{ statement: string; slug: string }> = [];
+  for (const r of rows) {
+    if (!r.matchedCompetency) continue;
+    const key = `${r.matchedCompetency}::${r.subCompetencyId}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ statement: r.matchedCompetency, slug: r.subCompetencyId });
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------------------
 // Course-info loader (extended 2026-06-08: sheet merge)
 // ---------------------------------------------------------------------------
 
@@ -694,6 +737,91 @@ function chunkPages<T>(items: T[], size: number): T[][] {
   return out;
 }
 
+// ---------------------------------------------------------------------------
+// Reconcile + watermark (increment C — loud-not-silent omission + staleness)
+// ---------------------------------------------------------------------------
+
+/**
+ * Pure: which REQUESTED page paths did the model NOT return in its output?
+ * A batch where the model silently omits a requested page is myKG's "loses
+ * things" failure mode; the caller re-requests these once and then logs a hard
+ * reconcile warning rather than letting them vanish. 'unchanged' counts as
+ * produced — the model explicitly accounted for the page.
+ */
+export function missingPagePaths(
+  requested: ReadonlyArray<{ path: string }>,
+  produced: ReadonlyArray<{ path: string }>,
+): string[] {
+  const got = new Set(produced.map(p => p.path));
+  return requested.filter(p => !got.has(p.path)).map(p => p.path);
+}
+
+/**
+ * Pure: a deterministic short watermark over the inputs that produced a page —
+ * the immutable snapshot id plus a hash of the page's input substrate. Stored
+ * in page frontmatter (`input_hash`) so a reconcile pass can detect a page
+ * whose inputs have since changed (stale) or that was never written (missing)
+ * without re-running the LLM. Stable across runs given the same inputs because
+ * the substrate is built from deterministically-ordered queries.
+ */
+export function computeInputHash(
+  snapshotId: string,
+  page: { type: AffectedWikiPage['type']; slug: string; substrate?: unknown },
+): string {
+  const payload = JSON.stringify({
+    snapshotId,
+    type: page.type,
+    slug: page.slug,
+    substrate: page.substrate ?? null,
+  });
+  return createHash('sha256').update(payload).digest('hex').slice(0, 12);
+}
+
+/** One competency's derived evidence band, keyed by statement for the prompt. */
+export interface CompetencyBand {
+  statement: string;
+  band: EvidenceBand;
+}
+
+/**
+ * Pure: derive each competency's evidence band (claimed / materials_supported /
+ * artifact_verified) from the provenance already on the profile (source +
+ * citations). Passed into the wiki-update prompt so the course page can render
+ * a band marker per competency line instead of flattening every claim to
+ * settled fact. Keyed by `statement` — the prompt matches competencies by
+ * statement when rendering the "Competencies developed" list.
+ */
+export function deriveCompetencyBands(
+  competencies: ReadonlyArray<{ statement: string; source?: unknown; citations?: unknown }>,
+): CompetencyBand[] {
+  return competencies.map(c => ({
+    statement: c.statement,
+    band: deriveEvidenceBand({
+      source: c.source as Parameters<typeof deriveEvidenceBand>[0]['source'],
+      citations: c.citations as Parameters<typeof deriveEvidenceBand>[0]['citations'],
+    }),
+  }));
+}
+
+const FRONTMATTER_RE = /^---\n([\s\S]*?)\n---\n?/;
+
+/**
+ * Pure: stamp `input_hash: <hash>` into a page's YAML frontmatter, replacing an
+ * existing value or appending into the block. If the page has no frontmatter,
+ * one is prepended carrying just the watermark.
+ */
+export function stampInputHash(content: string, inputHash: string): string {
+  const line = `input_hash: ${inputHash}`;
+  const m = content.match(FRONTMATTER_RE);
+  if (m) {
+    const body = /^input_hash:\s*.*$/m.test(m[1]!)
+      ? m[1]!.replace(/^input_hash:\s*.*$/m, line)
+      : `${m[1]!}\n${line}`;
+    return content.replace(FRONTMATTER_RE, `---\n${body}\n---\n`);
+  }
+  return `---\n${line}\n---\n\n${content}`;
+}
+
 /**
  * Main entry point. Loads the snapshot, builds raw-layer writes, assembles
  * wiki-page substrate, calls the LLM (in bounded batches so a full-coverage
@@ -724,6 +852,7 @@ export async function updateWikiForSnapshot(snapshotId: string): Promise<WikiUpd
   // (c) For each affected wiki page: load existing markdown + substrate.
   const courseInfo = await loadCourseInfo(snapshot.courseCode);
   const allSnapshots = await loadAllSnapshotsForCourse(snapshot.courseCode);
+  const competencyLinks = await loadCompetencyLinksForSnapshot(snapshot.id);
 
   const rawPaths = {
     snapshotJson: raw.find(p => p.path.startsWith('raw/snapshots/'))?.path ?? null,
@@ -771,7 +900,16 @@ export async function updateWikiForSnapshot(snapshotId: string): Promise<WikiUpd
   const generatedPages: WikiUpdateOutput['pages'] = [];
   const logEntries: string[] = [];
 
-  for (const batch of batches) {
+  // Evidence band per competency (increment A): derived deterministically from
+  // the profile's source + citations so the course page renders a credibility
+  // marker per competency line rather than flattening every claim to fact.
+  const competencyBands = deriveCompetencyBands(snapshot.profile.competencies);
+
+  // One LLM call over the SAME snapshot context but only the given slice of
+  // affected pages. Used for the primary batch pass and the reconcile retry.
+  const generateBatch = async (
+    batch: Array<AffectedWikiPage & { substrate?: unknown }>,
+  ): Promise<WikiUpdateOutput> => {
     const userMessage = JSON.stringify({
       snapshot: {
         id: snapshot.id,
@@ -794,6 +932,8 @@ export async function updateWikiForSnapshot(snapshotId: string): Promise<WikiUpd
       },
       rawPaths,
       allSnapshotsForCourse: allSnapshots,
+      competencyBands,
+      competencyLinks,
       affectedWikiPages: batch,
     });
 
@@ -804,9 +944,36 @@ export async function updateWikiForSnapshot(snapshotId: string): Promise<WikiUpd
       jsonSchema: wikiUpdateJsonSchema,
       validate: validateWikiUpdateOutput,
     });
+    return data;
+  };
 
+  for (const batch of batches) {
+    const data = await generateBatch(batch);
     generatedPages.push(...data.pages);
     if (data.log_entry) logEntries.push(data.log_entry);
+
+    // Reconcile: a batch where the model silently dropped a requested page is
+    // the known `batch-page-dropped` debt (myKG's "loses things"). Diff
+    // requested vs produced, re-request the missing pages ONCE, and if any are
+    // still absent, log a hard reconcile failure rather than let them vanish.
+    const missing = missingPagePaths(batch, data.pages);
+    if (missing.length > 0) {
+      const tag = `course ${snapshot.courseCode}, snapshot ${snapshot.id.slice(0, 8)}`;
+      console.error(
+        `[wiki-update] batch omitted ${missing.length} requested page(s); re-requesting once (${tag}): ${missing.join(', ')}`,
+      );
+      const retryBatch = batch.filter(p => missing.includes(p.path));
+      const retry = await generateBatch(retryBatch);
+      generatedPages.push(...retry.pages);
+      if (retry.log_entry) logEntries.push(retry.log_entry);
+
+      const stillMissing = missingPagePaths(retryBatch, retry.pages);
+      if (stillMissing.length > 0) {
+        console.error(
+          `[wiki-update] RECONCILE FAILURE: ${stillMissing.length} page(s) still missing after retry (${tag}): ${stillMissing.join(', ')}`,
+        );
+      }
+    }
   }
 
   // (f) Build the final wiki write list (filter out 'unchanged' pages).
@@ -819,8 +986,19 @@ export async function updateWikiForSnapshot(snapshotId: string): Promise<WikiUpd
   //     and is dropped with a hard log rather than written. The raw/ layer is
   //     written by the caller, not the model, so it isn't in this set by design.
   const requestedPaths = new Set(pagesWithSubstrate.map(p => p.path));
+  // Per-page input watermark: hash of the (immutable snapshot id + page
+  // substrate) that produced each requested page. Stamped into frontmatter so a
+  // later reconcile pass can detect stale/missing pages deterministically.
+  const inputHashByPath = new Map(
+    pagesWithSubstrate.map(p => [p.path, computeInputHash(snapshot.id, p)]),
+  );
+  // Dedup by path keeping the LAST occurrence — a reconcile retry can re-emit a
+  // page the first pass also returned; the retry is the authoritative copy.
+  const latestByPath = new Map<string, WikiUpdateOutput['pages'][number]>();
+  for (const p of generatedPages) latestByPath.set(p.path, p);
+
   const wiki: WikiPageWrite[] = [];
-  for (const p of generatedPages) {
+  for (const p of latestByPath.values()) {
     if (p.operation === 'unchanged') continue;
     if (!requestedPaths.has(p.path)) {
       console.error(
@@ -829,7 +1007,8 @@ export async function updateWikiForSnapshot(snapshotId: string): Promise<WikiUpd
       );
       continue;
     }
-    wiki.push({ path: p.path, content: p.content });
+    const content = stampInputHash(p.content, inputHashByPath.get(p.path) ?? '');
+    wiki.push({ path: p.path, content });
   }
 
   return {

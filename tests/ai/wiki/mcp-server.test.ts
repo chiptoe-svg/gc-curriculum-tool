@@ -52,9 +52,15 @@ describe('buildWikiMcpServer', () => {
     expect(JSON.parse(text.text)).toEqual({ content: 'read:courses/gc-3460.md' });
   });
 
-  it('exposes the real wiki tools by default (read_wiki/list_wiki/search_wiki)', async () => {
+  it('exposes the real wiki + typed-graph tools by default', async () => {
     const { client } = await connectedClient();
     const { tools } = await client.listTools();
-    expect(tools.map((t) => t.name).sort()).toEqual(['list_wiki', 'read_wiki', 'search_wiki']);
+    expect(tools.map((t) => t.name).sort()).toEqual([
+      'coverage_for_target',
+      'list_wiki',
+      'prereq_chain',
+      'read_wiki',
+      'search_wiki',
+    ]);
   });
 });

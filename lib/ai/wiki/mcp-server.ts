@@ -1,12 +1,15 @@
 /**
  * Wiki MCP server — the agent-facing "explain the curriculum" surface.
  *
- * Wraps the SAME three read tools the in-app /ask agent uses
- * (`buildCurriculumChatTools()` → read_wiki / list_wiki / search_wiki) as an
- * MCP server, so any MCP-capable agent can answer class/curriculum questions
- * grounded in the narrative wiki. Read-only by construction; inherits the
- * tools' path-traversal guard and `raw/` exclusion (no snapshot JSON, no
- * transcripts). Served over Streamable HTTP from `app/api/mcp/route.ts`.
+ * Wraps the SAME tools the in-app /ask agent uses — the three narrative read
+ * tools (`buildCurriculumChatTools()` → read_wiki / list_wiki / search_wiki)
+ * plus the typed-graph query tools (`buildCurriculumGraphTools()` →
+ * coverage_for_target / prereq_chain) — as an MCP server, so any MCP-capable
+ * agent can answer class/curriculum questions grounded in the narrative wiki
+ * and the typed coverage/prerequisite graph. Read-only by construction; the
+ * narrative tools inherit their path-traversal guard and `raw/` exclusion (no
+ * snapshot JSON, no transcripts) and the graph tools are read-only DB queries.
+ * Served over Streamable HTTP from `app/api/mcp/route.ts`.
  *
  * The builder takes the tool list as a parameter (defaulting to the real
  * tools) so it can be exercised with fakes in tests without touching the
@@ -16,6 +19,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { z } from 'zod';
 import { buildCurriculumChatTools } from '@/lib/ai/wiki/tools';
+import { buildCurriculumGraphTools } from '@/lib/ai/wiki/graph-tools';
 import { renderToolDescription, type ToolDefinition } from '@/lib/ai/tool-use-types';
 
 const SERVER_INFO = { name: 'gc-curriculum-wiki', version: '1.0.0' } as const;
@@ -31,7 +35,7 @@ function rawShape(schema: ToolDefinition['inputSchema']): z.ZodRawShape {
 }
 
 export function buildWikiMcpServer(
-  tools: ToolDefinition[] = buildCurriculumChatTools(),
+  tools: ToolDefinition[] = [...buildCurriculumChatTools(), ...buildCurriculumGraphTools()],
 ): McpServer {
   const server = new McpServer(SERVER_INFO);
 

@@ -18,6 +18,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import type { ToolDefinition } from '@/lib/ai/tool-use-types';
 import { readWikiPage, wikiRepoPath } from '@/lib/wiki/git-ops';
+import { detectBands, pagePassesBandFloor, BAND_ORDER } from '@/lib/ai/wiki/evidence-band-markers';
 
 const ALLOWED_TYPES = ['courses', 'competencies', 'targets', 'concepts'] as const;
 type WikiType = (typeof ALLOWED_TYPES)[number];
@@ -109,7 +110,9 @@ export const wikiReadTool: ToolDefinition = {
     if (!guard.ok) return { error: guard.error };
     const content = await readWikiPage(guard.path);
     if (content === null) return { error: `page not found: ${guard.path}` };
-    return { content, path: guard.path };
+    // Annotate which evidence bands the page carries (increment A). Empty for
+    // legacy pages not yet recompiled with band markers.
+    return { content, path: guard.path, evidenceBands: detectBands(content) };
   },
 };
 
@@ -141,20 +144,27 @@ export const wikiListTool: ToolDefinition = {
 export const wikiSearchTool: ToolDefinition = {
   name: 'search_wiki',
   description:
-    'Full-text search across all narrative wiki pages. Returns matching pages with a short snippet around the first hit. Case-insensitive. Cap 20 hits.',
+    'Full-text search across all narrative wiki pages. Returns matching pages with a short snippet around the first hit, and the evidence bands each page carries (claimed / materials_supported / artifact_verified). Case-insensitive. Cap 20 hits. Pass an optional `bandFloor` to keep only pages whose evidence reaches that credibility level (e.g. "only artifact-verified") — pages carrying no band markers are kept (legacy).',
   usagePolicy:
-    'Use when the user names a topic but you don\'t know which page covers it ("does anyone teach spot color matching?", "what does the program say about deliberate practice?"). Pass a single term or short phrase — full-text matching is literal, not semantic.',
-  inputSchema: z.object({ query: z.string().min(1) }),
+    'Use when the user names a topic but you don\'t know which page covers it ("does anyone teach spot color matching?", "what does the program say about deliberate practice?"). Pass a single term or short phrase — full-text matching is literal, not semantic. Use `bandFloor` only when the user asks for evidence-grounded results ("which courses can actually demonstrate X", "only artifact-verified").',
+  inputSchema: z.object({
+    query: z.string().min(1),
+    bandFloor: z.enum(BAND_ORDER as unknown as [string, ...string[]]).optional(),
+  }),
   async execute(args) {
-    const a = args as { query: string };
+    const a = args as { query: string; bandFloor?: (typeof BAND_ORDER)[number] };
     const q = a.query.toLowerCase();
     const paths = await listNarrativePages();
-    const hits: Array<{ path: string; title: string; snippet: string }> = [];
+    const hits: Array<{ path: string; title: string; snippet: string; evidenceBands: string[] }> = [];
     for (const p of paths) {
       const content = await readWikiPage(p);
       if (!content) continue;
       const idx = content.toLowerCase().indexOf(q);
       if (idx < 0) continue;
+      const bands = detectBands(content);
+      // Band floor (increment A): drop pages whose evidence is entirely below
+      // the requested level. Pages with no markers pass through (annotated []).
+      if (a.bandFloor && !pagePassesBandFloor(bands, a.bandFloor)) continue;
       const start = Math.max(0, idx - 60);
       const end = Math.min(content.length, idx + a.query.length + 100);
       const raw = content.slice(start, end).replace(/\s+/g, ' ').trim();
@@ -162,10 +172,11 @@ export const wikiSearchTool: ToolDefinition = {
         path: p,
         title: extractTitle(content, p.replace(/\.md$/, '')),
         snippet: (start > 0 ? '…' : '') + raw + (end < content.length ? '…' : ''),
+        evidenceBands: bands,
       });
       if (hits.length >= 20) break;
     }
-    return { hits, query: a.query };
+    return { hits, query: a.query, bandFloor: a.bandFloor ?? null };
   },
 };
 

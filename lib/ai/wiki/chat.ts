@@ -22,6 +22,7 @@ import { getProviderForFunction } from '@/lib/ai/provider';
 import { loadPrompt } from '@/lib/ai/prompts/load';
 import type { Message, StreamEvent } from '@/lib/ai/tool-use-types';
 import { buildCurriculumChatTools } from './tools';
+import { buildCurriculumGraphTools } from './graph-tools';
 import {
   CurriculumChatResponseSchema,
   CurriculumChatResponseJsonSchema,
@@ -65,7 +66,7 @@ export async function* streamCurriculumChat(
     ? prependAnchorContext(input.messages, input.anchorContext)
     : input.messages;
 
-  const tools = buildCurriculumChatTools();
+  const tools = [...buildCurriculumChatTools(), ...buildCurriculumGraphTools()];
   const provider = await getProviderForFunction('curriculum-chat');
 
   let finalValue: CurriculumChatResponse | null = null;
@@ -79,7 +80,7 @@ export async function* streamCurriculumChat(
       schemaName: 'curriculum_chat_response',
       jsonSchema: CurriculumChatResponseJsonSchema as unknown as object,
       validate: raw => CurriculumChatResponseSchema.parse(raw),
-      maxToolCalls: 4,
+      maxToolCalls: 6,
     });
 
     for await (const ev of stream as AsyncIterable<StreamEvent<CurriculumChatResponse>>) {
