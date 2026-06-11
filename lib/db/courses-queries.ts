@@ -306,6 +306,7 @@ export interface NewCourseInput {
   level?: number;
   track?: string;
   prerequisites?: string;
+  catalogUrl?: string | null;
 }
 
 /**
@@ -349,6 +350,7 @@ export async function bulkCreateCourses(
         level: i.level ?? 0,
         track: i.track ?? 'unspecified',
         prerequisites: i.prerequisites ?? '',
+        catalogUrl: i.catalogUrl?.trim() || null,
       })))
       .onConflictDoNothing();
   }
@@ -373,6 +375,7 @@ export async function createCourse(input: NewCourseInput): Promise<void> {
       level: input.level ?? 0,
       track: input.track ?? 'unspecified',
       prerequisites: input.prerequisites ?? '',
+      catalogUrl: input.catalogUrl?.trim() || null,
     })
     .onConflictDoNothing();
 }

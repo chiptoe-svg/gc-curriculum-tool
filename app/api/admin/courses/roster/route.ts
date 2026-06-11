@@ -6,6 +6,7 @@ import {
   createCourse,
   type NewCourseInput,
 } from '@/lib/db/courses-queries';
+import { isHttpUrl } from '@/lib/http/is-http-url';
 
 // ---------------------------------------------------------------------------
 // POST /api/admin/courses/roster?slug=<slug>
@@ -79,7 +80,11 @@ export async function POST(req: Request): Promise<Response> {
     }
     const level = typeof body.level === 'number' ? body.level : undefined;
     const track = typeof body.track === 'string' ? body.track : undefined;
-    await createCourse({ code, title, level, track });
+    const catalogUrlRaw = typeof body.catalogUrl === 'string' ? body.catalogUrl.trim() : '';
+    if (catalogUrlRaw && !isHttpUrl(catalogUrlRaw)) {
+      return NextResponse.json({ error: 'catalogUrl must be an http(s) URL' }, { status: 400 });
+    }
+    await createCourse({ code, title, level, track, catalogUrl: catalogUrlRaw || null });
     return NextResponse.json({ ok: true });
   }
 
