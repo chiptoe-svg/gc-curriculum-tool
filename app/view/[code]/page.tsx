@@ -146,7 +146,7 @@ export default async function ViewCoursePage({ params }: Props) {
                 )}
               </p>
             )}
-            {course.catalogUrl && (
+            {course.catalogUrl && /^https?:\/\//i.test(course.catalogUrl) && (
               <p className="mt-1 text-xs">
                 <a
                   href={course.catalogUrl}
