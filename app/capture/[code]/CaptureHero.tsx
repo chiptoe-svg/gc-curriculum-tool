@@ -2,21 +2,35 @@
  * Goal-first landing hero for Course Capture's first-run (empty-conversation)
  * state. Answers, in plain GC-faculty language, the three questions a busy
  * instructor has on arrival: what am I doing here, am I ready, and what do I do
- * next. The actual pre-start chooser + "Start audit" button live in the
- * CaptureChatPanel directly below this hero (the hero points down to them);
- * materials / help / snapshots collapse into a disclosure further down.
+ * next. It now also owns the pre-start chooser (who's auditing + build-on vs.
+ * fresh) — the controlled state lives in CaptureClient (single source) and is
+ * shared with the chat panel's mid-session auditor badge + the start request.
+ * The "Start audit" button itself stays in CaptureChatPanel directly below
+ * (it owns postChat); this hero is the decision surface above it.
  *
  * Design: docs/superpowers/specs/2026-06-10-capture-ux-redesigns-design.md
  */
+
+import { FACULTY_ROSTER } from '@/lib/faculty';
 
 export function CaptureHero({
   courseCode,
   courseTitle,
   materialsCount,
+  instructor,
+  onInstructorChange,
+  mode,
+  onModeChange,
+  priorSnapshotInfo,
 }: {
   courseCode: string;
   courseTitle: string;
   materialsCount: number;
+  instructor: string;
+  onInstructorChange: (v: string) => void;
+  mode: 'fresh' | 'continue';
+  onModeChange: (v: 'fresh' | 'continue') => void;
+  priorSnapshotInfo: { instructorName: string | null; createdAt: string } | null;
 }) {
   const ready = materialsCount > 0;
   return (
@@ -42,9 +56,80 @@ export function CaptureHero({
           ? `Ready to capture — ${materialsCount} material${materialsCount === 1 ? '' : 's'} loaded`
           : 'No materials yet — you can still start from the catalog (add materials below for a richer interview)'}
       </p>
-      <p className="mt-4 text-xs text-muted-foreground">
-        Choose who&apos;s auditing and start the interview just below ↓
-      </p>
+
+      {/* Pre-start chooser (controlled by CaptureClient). The Start button is in
+          the chat panel just below. */}
+      <div className="mt-5 grid gap-4 sm:grid-cols-2">
+        <div className="space-y-1">
+          <label
+            htmlFor="hero-chooser-instructor"
+            className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground"
+          >
+            I&apos;m the auditor
+          </label>
+          <select
+            id="hero-chooser-instructor"
+            value={instructor}
+            onChange={e => onInstructorChange(e.target.value)}
+            className="w-full rounded border border-input bg-background px-2 py-1.5 text-sm"
+          >
+            {FACULTY_ROSTER.map(name => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {priorSnapshotInfo && (
+          <fieldset className="space-y-1">
+            <legend className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              Start mode
+            </legend>
+            <label className="flex items-start gap-2 rounded border border-transparent px-1 py-1 text-xs hover:bg-muted/40">
+              <input
+                type="radio"
+                name="hero-chooser-mode"
+                value="continue"
+                checked={mode === 'continue'}
+                onChange={() => onModeChange('continue')}
+                className="mt-0.5"
+              />
+              <span>
+                <span className="font-medium">Build on prior capture</span>
+                <span className="block text-[11px] text-muted-foreground">
+                  {priorSnapshotInfo.instructorName ?? 'Unknown'}
+                  {' · '}
+                  {new Date(priorSnapshotInfo.createdAt).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
+                </span>
+              </span>
+            </label>
+            <label className="flex items-start gap-2 rounded border border-transparent px-1 py-1 text-xs hover:bg-muted/40">
+              <input
+                type="radio"
+                name="hero-chooser-mode"
+                value="fresh"
+                checked={mode === 'fresh'}
+                onChange={() => onModeChange('fresh')}
+                className="mt-0.5"
+              />
+              <span>
+                <span className="font-medium">Fresh capture</span>
+                <span className="block text-[11px] text-muted-foreground">
+                  Don&apos;t anchor on what previous instructors found — start from materials +
+                  catalog only.
+                </span>
+              </span>
+            </label>
+          </fieldset>
+        )}
+      </div>
+
+      <p className="mt-4 text-xs text-muted-foreground">Start the interview just below ↓</p>
     </section>
   );
 }

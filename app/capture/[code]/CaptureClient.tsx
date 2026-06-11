@@ -10,6 +10,7 @@ import { IngestionCheckIn } from './IngestionCheckIn';
 import { CaptureHelpPanel } from './HelpPanel';
 import { CanvasImportSummary } from './CanvasImportSummary';
 import { CaptureHero } from './CaptureHero';
+import { FACULTY_ROSTER, DEPARTMENT_CANONICAL } from '@/lib/faculty';
 
 interface Props {
   course: CourseCatalogView;
@@ -70,6 +71,18 @@ export function CaptureClient({
   const [materials, setMaterials] = useState<CaptureMaterial[]>(initialMaterials);
   // Bumped each time a new snapshot is created so the history panel reloads.
   const [snapshotsRefreshKey, setSnapshotsRefreshKey] = useState(0);
+  // Session-start chooser state — single source of truth, shared by the landing
+  // hero's chooser controls and the chat panel's mid-session auditor badge +
+  // start request. Pre-fills from a resumed session's stamped instructor, else
+  // the first real faculty in the roster.
+  const [chooserInstructor, setChooserInstructor] = useState<string>(
+    initialInstructor && FACULTY_ROSTER.includes(initialInstructor)
+      ? initialInstructor
+      : (FACULTY_ROSTER.find(n => n !== DEPARTMENT_CANONICAL) ?? DEPARTMENT_CANONICAL),
+  );
+  const [chooserMode, setChooserMode] = useState<'fresh' | 'continue'>(
+    priorSnapshotInfo ? 'continue' : 'fresh',
+  );
 
   const handleSnapshotCreated = useCallback(() => {
     setSnapshotsRefreshKey(k => k + 1);
@@ -261,6 +274,11 @@ export function CaptureClient({
               courseCode={courseCode}
               courseTitle={course.title}
               materialsCount={materials.length}
+              instructor={chooserInstructor}
+              onInstructorChange={setChooserInstructor}
+              mode={chooserMode}
+              onModeChange={setChooserMode}
+              priorSnapshotInfo={priorSnapshotInfo}
             />
           )}
           {savedConversationAt && initialMessages.length > 0 && (
@@ -289,8 +307,10 @@ export function CaptureClient({
             onGenerate={handleGenerate}
             initialReadiness={initialReadiness}
             onConversationChange={handleConversationChange}
-            priorSnapshotInfo={priorSnapshotInfo}
-            initialInstructor={initialInstructor}
+            chooserInstructor={chooserInstructor}
+            onInstructorChange={setChooserInstructor}
+            chooserMode={chooserMode}
+            onModeChange={setChooserMode}
             priorBriefings={priorBriefings}
           />
           <div className="flex items-center justify-end gap-3 text-xs text-muted-foreground">

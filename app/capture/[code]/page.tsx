@@ -2,7 +2,6 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { isValidSlug } from '@/lib/slug';
 import { getCourseByCode } from '@/lib/db/courses-queries';
-import { getCourseProfile } from '@/lib/db/course-profile-queries';
 import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
 import { getCaptureProfileByCourse } from '@/lib/db/course-capture-profiles-queries';
 import { getCaptureConversation } from '@/lib/db/capture-conversations-queries';
@@ -42,8 +41,7 @@ export default async function CapturePage({ params, searchParams }: Props) {
   const course = await getCourseByCode(code);
   if (!course) notFound();
 
-  const [builderProfile, materials, priorCapture, savedConversation, latestSnapshot] = await Promise.all([
-    getCourseProfile(code),
+  const [materials, priorCapture, savedConversation, latestSnapshot] = await Promise.all([
     listMaterialsByCourse(code),
     getCaptureProfileByCourse(code),
     getCaptureConversation(code),

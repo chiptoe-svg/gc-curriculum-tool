@@ -605,7 +605,11 @@ function MaterialRow({
 export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChange, onCourseChange }: Props) {
   const [materials, setMaterials] = useState<CaptureMaterial[]>(initialMaterials);
   const [busy, setBusy] = useState<string | null>(null);
-  const [collapsed, setCollapsed] = useState(false);
+  // Collapsed by default — the header summary (counts + token size + a
+  // plain-language "large" chip) stays visible, so faculty see status at a
+  // glance without the full materials list adding to page density. They open
+  // it with "Show" when they actually need to manage materials.
+  const [collapsed, setCollapsed] = useState(true);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploading, setUploading] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
@@ -1101,7 +1105,20 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
     <section className="rounded-md border bg-card shadow-sm">
       <header className="flex items-center justify-between gap-3 border-b px-4 py-2">
         <div>
-          <h2 className="text-sm font-semibold">Materials &amp; catalog context</h2>
+          <h2 className="flex items-center gap-2 text-sm font-semibold">
+            Materials &amp; catalog context
+            {totalAuditTokens >= 150_000 && (
+              <span
+                className={
+                  'rounded-full px-2 py-0.5 text-[10px] font-medium ' +
+                  (totalAuditTokens >= 220_000 ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800')
+                }
+                title="The active materials are large for the audit prompt — open this panel and compress/ignore some before starting."
+              >
+                {totalAuditTokens >= 220_000 ? 'Very large — review before starting' : 'Large — review before starting'}
+              </span>
+            )}
+          </h2>
           <p className="text-[11px] text-muted-foreground">
             {activeCount} active material{activeCount === 1 ? '' : 's'}
             {ignoredCount > 0 && ` · ${ignoredCount} ignored`} ·{' '}

@@ -5,7 +5,7 @@ import { VoiceRecorder } from '@/components/VoiceRecorder';
 import type { CaptureReadiness } from '@/lib/ai/capture/schema';
 import type { ChatMessage } from '@/lib/ai/analyze/capture-chat';
 import { CitationDrawer, type CitationTarget } from './CitationDrawer';
-import { FACULTY_ROSTER, DEPARTMENT_CANONICAL } from '@/lib/faculty';
+import { FACULTY_ROSTER } from '@/lib/faculty';
 
 // Re-export so existing imports from this module keep working.
 export type { ChatMessage } from '@/lib/ai/analyze/capture-chat';
@@ -149,10 +149,12 @@ interface Props {
   initialReadiness?: CaptureReadiness | null;
   /** Called after each successful turn so the parent can persist progress. */
   onConversationChange?: (messages: ChatMessage[], readiness: CaptureReadiness | null) => void;
-  /** Latest non-retired snapshot's instructor + date — drives the "build on prior" option in the session-start chooser. Null when no prior snapshot. */
-  priorSnapshotInfo?: { instructorName: string | null; createdAt: string } | null;
-  /** Instructor stamped on the in-flight session (resumed audit). Pre-fills the badge so mid-session change preserves the prior selection. */
-  initialInstructor?: string | null;
+  /** Auditor identity — controlled by CaptureClient (single source; shared with the landing hero's chooser + the start request). */
+  chooserInstructor: string;
+  onInstructorChange: (v: string) => void;
+  /** Build-on-prior vs. fresh — controlled by CaptureClient. */
+  chooserMode: 'fresh' | 'continue';
+  onModeChange: (v: 'fresh' | 'continue') => void;
   /** Distilled recap of prior sessions for the "Where we left off" card. Empty/omitted hides the card. */
   priorBriefings?: SessionBriefingView[];
 }
@@ -169,26 +171,20 @@ export function CaptureChatPanel({
   onGenerate,
   initialReadiness,
   onConversationChange,
-  priorSnapshotInfo,
-  initialInstructor,
+  chooserInstructor,
+  onInstructorChange,
+  chooserMode,
+  onModeChange,
   priorBriefings,
 }: Props) {
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [readiness, setReadiness] = useState<CaptureReadiness | null>(initialReadiness ?? null);
-  // Auditor identity for this session. Pre-fills from a resumed session's
-  // stamped instructor, or falls back to the first real faculty in the
-  // roster. Drives BOTH the session-start chooser (empty state) and the
-  // always-visible "Auditor: X · change" badge.
-  const [chooserInstructor, setChooserInstructor] = useState<string>(
-    initialInstructor && FACULTY_ROSTER.includes(initialInstructor)
-      ? initialInstructor
-      : (FACULTY_ROSTER.find(n => n !== DEPARTMENT_CANONICAL) ?? DEPARTMENT_CANONICAL),
-  );
-  const [chooserMode, setChooserMode] = useState<'fresh' | 'continue'>(
-    priorSnapshotInfo ? 'continue' : 'fresh',
-  );
+  // `chooserInstructor` / `chooserMode` are controlled by CaptureClient now —
+  // the landing hero is the chooser surface, this panel's always-visible
+  // "Auditor: X · change" badge is the mid-session surface, and both read/write
+  // the same single source.
   // Toggles the inline dropdown next to the always-visible badge — lets
   // faculty change identity mid-session without leaving the audit page.
   const [editingInstructor, setEditingInstructor] = useState(false);
@@ -377,7 +373,7 @@ export function CaptureChatPanel({
               <select
                 id="badge-instructor"
                 value={chooserInstructor}
-                onChange={e => setChooserInstructor(e.target.value)}
+                onChange={e => onInstructorChange(e.target.value)}
                 className="rounded border border-input bg-background px-2 py-1 text-xs"
               >
                 {FACULTY_ROSTER.map(name => (
@@ -457,73 +453,16 @@ export function CaptureChatPanel({
               you can steer it any time.
             </p>
 
-            <div className="mt-6 grid w-full max-w-md gap-4 rounded-md border bg-card px-4 py-4 text-left shadow-sm">
-              <div className="space-y-1">
-                <label htmlFor="chooser-instructor" className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                  I&apos;m the auditor:
-                </label>
-                <select
-                  id="chooser-instructor"
-                  value={chooserInstructor}
-                  onChange={e => setChooserInstructor(e.target.value)}
-                  className="w-full rounded border border-input bg-background px-2 py-1.5 text-sm"
-                >
-                  {FACULTY_ROSTER.map(name => (
-                    <option key={name} value={name}>{name}</option>
-                  ))}
-                </select>
-              </div>
-
-              {priorSnapshotInfo && (
-                <fieldset className="space-y-1">
-                  <legend className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Start mode:
-                  </legend>
-                  <label className="flex items-start gap-2 rounded border border-transparent px-2 py-1.5 text-xs hover:bg-muted/40">
-                    <input
-                      type="radio"
-                      name="chooser-mode"
-                      value="continue"
-                      checked={chooserMode === 'continue'}
-                      onChange={() => setChooserMode('continue')}
-                      className="mt-0.5"
-                    />
-                    <span>
-                      <span className="font-medium">Build on prior capture</span>
-                      <span className="block text-[11px] text-muted-foreground">
-                        {priorSnapshotInfo.instructorName ?? 'Unknown'}
-                        {' · '}
-                        {new Date(priorSnapshotInfo.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                      </span>
-                    </span>
-                  </label>
-                  <label className="flex items-start gap-2 rounded border border-transparent px-2 py-1.5 text-xs hover:bg-muted/40">
-                    <input
-                      type="radio"
-                      name="chooser-mode"
-                      value="fresh"
-                      checked={chooserMode === 'fresh'}
-                      onChange={() => setChooserMode('fresh')}
-                      className="mt-0.5"
-                    />
-                    <span>
-                      <span className="font-medium">Fresh capture</span>
-                      <span className="block text-[11px] text-muted-foreground">
-                        Don&apos;t anchor on what previous instructors found — start from materials + catalog only.
-                      </span>
-                    </span>
-                  </label>
-                </fieldset>
-              )}
-            </div>
-
+            <p className="mt-3 text-xs text-muted-foreground">
+              Pick who&apos;s auditing (and build-on vs. fresh) in the panel above, then:
+            </p>
             <button
               type="button"
               onClick={handleStart}
               disabled={busy}
-              className="mt-4 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50"
+              className="mt-3 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50"
             >
-              {busy ? 'Starting…' : 'Start audit'}
+              {busy ? 'Starting…' : 'Start the interview'}
             </button>
           </div>
         ) : (
