@@ -116,12 +116,19 @@ export default async function CapturePage({ params, searchParams }: Props) {
       <header className="border-b">
         <div className="mx-auto flex max-w-5xl items-baseline justify-between gap-4 px-6 py-4">
           <div>
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">CourseCapture · v1</p>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">CourseCapture</p>
             <h1 className="mt-0.5 text-xl font-semibold">
               {course.code} <span className="text-muted-foreground">— {course.title}</span>
             </h1>
           </div>
           <div className="flex items-center gap-4">
+            <Link
+              href={`/courses?slug=${encodeURIComponent(slug)}`}
+              className="text-sm text-muted-foreground hover:text-foreground"
+              title="Back to the course list"
+            >
+              Course List
+            </Link>
             <a
               href="https://chiptoe-svg.github.io/gc-curriculum-tool/docs/using-coursecapture-and-explore.html"
               target="_blank"
@@ -131,33 +138,6 @@ export default async function CapturePage({ params, searchParams }: Props) {
             >
               Guide ↗
             </a>
-            <Link
-              href={`/program?slug=${encodeURIComponent(slug)}`}
-              className="text-sm text-muted-foreground hover:text-foreground"
-              title="Program-level coverage matrix"
-            >
-              Program
-            </Link>
-            <Link
-              href={`/settings?slug=${encodeURIComponent(slug)}`}
-              className="text-sm text-muted-foreground hover:text-foreground"
-              title="AI model selection per function"
-            >
-              Settings
-            </Link>
-            <Link
-              href={`/ask?slug=${encodeURIComponent(slug)}`}
-              className="text-sm text-muted-foreground hover:text-foreground"
-              title="Curriculum chat — program-level questions"
-            >
-              💬 Ask
-            </Link>
-            <Link
-              href={`/explore/${encodeURIComponent(code)}?slug=${encodeURIComponent(slug)}`}
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
-              Explore →
-            </Link>
             <FeedbackLink />
           </div>
         </div>
