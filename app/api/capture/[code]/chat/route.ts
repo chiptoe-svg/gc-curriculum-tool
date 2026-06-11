@@ -7,6 +7,7 @@ import { getCaptureProfileByCourse } from '@/lib/db/course-capture-profiles-quer
 import { getLatestSnapshotByCourse } from '@/lib/db/capture-snapshots-queries';
 import { captureChatTurn, ChatMessage, CaptureChatContext } from '@/lib/ai/analyze/capture-chat';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
+import { checkDailyCap } from '@/lib/rate-limit/daily-cap';
 import { hashIp } from '@/lib/ip-hash';
 import { runAuditAgent } from '@/lib/ai/agent/audit-agent';
 import { streamAuditAgent } from '@/lib/ai/agent/audit-agent-stream';
@@ -40,6 +41,11 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   const ipHash = hashIp(req);
   const { allowed } = await checkIpRateLimit(ipHash);
   if (!allowed) return NextResponse.json({ error: 'rate limit exceeded' }, { status: 429 });
+  // Daily-cap gate (the cost ceiling). NOTE: per-turn spend is NOT yet recorded
+  // for this streaming route — cost isn't forwarded through streamAuditAgent /
+  // runAuditAgent yet (tracked in STATE.md Deferred/debt).
+  const cap = await checkDailyCap();
+  if (!cap.ok) return NextResponse.json({ error: 'daily cost cap reached — service paused for today' }, { status: 503 });
 
   const { code: rawCode } = await params;
   const courseCode = decodeURIComponent(rawCode);

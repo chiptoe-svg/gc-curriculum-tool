@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { isValidSlug } from '@/lib/slug';
+import { checkAdminAuth } from '@/lib/auth/admin-auth';
 import { fetchIndexCourseCodes, fetchCourseTabCsv } from '@/lib/sheets/fetchSheet';
 import { parseCourseTab } from '@/lib/sheets/parseCourseTab';
 import { upsertCourses, recordSyncResult } from '@/lib/db/courses-queries';
@@ -7,7 +7,7 @@ import { upsertCourses, recordSyncResult } from '@/lib/db/courses-queries';
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
   const slug = typeof body.slug === 'string' ? body.slug : '';
-  if (!isValidSlug(slug)) {
+  if (!checkAdminAuth(req, { slug })) {
     return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
   }
 

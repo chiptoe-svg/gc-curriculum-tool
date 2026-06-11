@@ -1,4 +1,4 @@
-import { getProvider } from '@/lib/ai/provider';
+import { getProviderForFunction } from '@/lib/ai/provider';
 import { loadPrompt } from '@/lib/ai/prompts/load';
 import { courseKudResultSchema, courseKudResultJsonSchema } from '@/lib/ai/schemas';
 import type { CourseKudResult } from '@/lib/domain/types';
@@ -56,7 +56,7 @@ export async function generateCourseKud(args: GenerateCourseKudArgs): Promise<{
   telemetry: CallTelemetry;
 }> {
   const systemPrompt = await loadPrompt('extract-course-kud');
-  const provider = getProvider();
+  const provider = await getProviderForFunction('extract-course-kud');
   const result = await provider.complete({
     systemPrompt,
     userMessage: formatInput(args),

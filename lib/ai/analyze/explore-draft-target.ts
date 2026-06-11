@@ -48,6 +48,7 @@ export interface DraftCustomTargetInput {
 export interface DraftCustomTargetResult {
   target: CustomTargetSpec;
   model: string;
+  costUsdCents: number;
 }
 
 export async function draftCustomTarget(input: DraftCustomTargetInput): Promise<DraftCustomTargetResult> {
@@ -80,5 +81,5 @@ export async function draftCustomTarget(input: DraftCustomTargetInput): Promise<
     validate: (raw: unknown) => customTargetSpecSchema.parse(raw),
   });
 
-  return { target: result.data, model: provider.model };
+  return { target: result.data, model: provider.model, costUsdCents: result.costUsdCents };
 }

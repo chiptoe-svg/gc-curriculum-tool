@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { isValidSlug } from '@/lib/slug';
+import { checkAdminAuth } from '@/lib/auth/admin-auth';
 import { parsePartnersCsv } from '@/lib/partners/csv';
 import { createPartner, findPartnerByEmail, magicLinkUrl, logPartnerEvent } from '@/lib/partners/queries';
 
@@ -8,7 +8,7 @@ export const maxDuration = 120;
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
   const slug = typeof body.slug === 'string' ? body.slug : '';
-  if (!isValidSlug(slug)) {
+  if (!checkAdminAuth(req, { slug })) {
     return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
   }
   const csv = typeof body.csv === 'string' ? body.csv : '';

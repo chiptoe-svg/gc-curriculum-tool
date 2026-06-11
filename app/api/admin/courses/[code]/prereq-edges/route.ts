@@ -1,6 +1,6 @@
 // app/api/admin/courses/[code]/prereq-edges/route.ts
 import { NextResponse } from 'next/server';
-import { isValidSlug } from '@/lib/slug';
+import { checkAdminAuth } from '@/lib/auth/admin-auth';
 import {
   listEdgesForFocal,
   upsertSeededEdges,
@@ -44,7 +44,7 @@ function extractCodesFromProse(text: string): string[] {
 export async function GET(req: Request, { params }: RouteContext): Promise<Response> {
   const url = new URL(req.url);
   const slug = url.searchParams.get('slug') ?? '';
-  if (!isValidSlug(slug)) {
+  if (!checkAdminAuth(req, { slug })) {
     return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
   }
 
@@ -92,7 +92,7 @@ export async function GET(req: Request, { params }: RouteContext): Promise<Respo
 export async function POST(req: Request, { params }: RouteContext): Promise<Response> {
   const url = new URL(req.url);
   const slug = url.searchParams.get('slug') ?? '';
-  if (!isValidSlug(slug)) {
+  if (!checkAdminAuth(req, { slug })) {
     return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
   }
 
@@ -265,7 +265,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
 export async function PATCH(req: Request, { params }: RouteContext): Promise<Response> {
   const url = new URL(req.url);
   const slug = url.searchParams.get('slug') ?? '';
-  if (!isValidSlug(slug)) {
+  if (!checkAdminAuth(req, { slug })) {
     return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
   }
 
@@ -324,7 +324,7 @@ export async function PATCH(req: Request, { params }: RouteContext): Promise<Res
 export async function DELETE(req: Request, { params }: RouteContext): Promise<Response> {
   const url = new URL(req.url);
   const slug = url.searchParams.get('slug') ?? '';
-  if (!isValidSlug(slug)) {
+  if (!checkAdminAuth(req, { slug })) {
     return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
   }
 

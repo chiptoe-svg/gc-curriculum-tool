@@ -11,7 +11,7 @@ import {
   upsertCourseProfile,
 } from '@/lib/db/course-profile-queries';
 import { recordSpend } from '@/lib/rate-limit/daily-cap';
-import { getProvider } from '@/lib/ai/provider';
+import { getProviderForFunction } from '@/lib/ai/provider';
 
 export const maxDuration = 120;
 
@@ -62,7 +62,7 @@ export async function POST(req: Request, { params }: Ctx): Promise<Response> {
   const cachedMaterials = readableMaterials.filter((m) => m.analysisFinding !== null);
 
   // 5. Resolve native document bytes for Anthropic provider (PDF only)
-  const provider = getProvider();
+  const provider = await getProviderForFunction('materials-analysis');
   const useNativePdf = provider.name === 'anthropic';
 
   const nativeBytes = new Map<string, { bytes: Buffer; mimeType: string }>();

@@ -4,6 +4,7 @@ import { extractText } from '@/lib/courses/extract-text';
 import { parseProfileFields } from '@/lib/ai/analyze/parse-profile-fields';
 import type { ExtractedMimeType } from '@/lib/courses/extract-text';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
+import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
 import { hashIp } from '@/lib/ip-hash';
 
 export const maxDuration = 60;
@@ -38,6 +39,10 @@ export async function POST(req: Request, { params: _params }: Ctx): Promise<Resp
   if (!allowed) {
     return NextResponse.json({ error: 'rate limit exceeded' }, { status: 429 });
   }
+  const cap = await checkDailyCap();
+  if (!cap.ok) {
+    return NextResponse.json({ error: 'daily cost cap reached — service paused for today' }, { status: 503 });
+  }
 
   const file = form.get('file') as File | null;
   if (!file || typeof file !== 'object' || typeof (file as File).arrayBuffer !== 'function') {
@@ -60,6 +65,7 @@ export async function POST(req: Request, { params: _params }: Ctx): Promise<Resp
     return NextResponse.json({ error: 'could not extract text from this file' }, { status: 422 });
   }
 
-  const fields = await parseProfileFields(extracted.text);
+  const { fields, costUsdCents } = await parseProfileFields(extracted.text);
+  await recordSpend(costUsdCents);
   return NextResponse.json(fields);
 }

@@ -75,6 +75,7 @@ export interface SimulateWhatIfInput {
 export interface SimulateWhatIfResult {
   result: WhatIfResult;
   model: string;
+  costUsdCents: number;
 }
 
 export async function simulateWhatIf(input: SimulateWhatIfInput): Promise<SimulateWhatIfResult> {
@@ -120,5 +121,5 @@ export async function simulateWhatIf(input: SimulateWhatIfInput): Promise<Simula
     validate: (raw: unknown) => whatIfResultSchema.parse(raw),
   });
 
-  return { result: result.data, model: provider.model };
+  return { result: result.data, model: provider.model, costUsdCents: result.costUsdCents };
 }

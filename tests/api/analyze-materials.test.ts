@@ -41,7 +41,8 @@ vi.mock('@/lib/db/course-profile-queries', () => ({
 }));
 
 const { getProvider } = vi.hoisted(() => ({ getProvider: vi.fn() }));
-vi.mock('@/lib/ai/provider', () => ({ getProvider }));
+// route now resolves its model via getProviderForFunction('materials-analysis').
+vi.mock('@/lib/ai/provider', () => ({ getProviderForFunction: getProvider }));
 
 // ── Import under test ─────────────────────────────────────────────────────────
 
@@ -112,7 +113,7 @@ beforeEach(() => {
   insertProfileRun.mockResolvedValue('run-uuid-1');
   upsertCourseProfile.mockResolvedValue(undefined);
   cacheAnalysisFinding.mockResolvedValue(undefined);
-  getProvider.mockReturnValue({ name: 'openai', model: 'gpt-5.4-mini' });
+  getProvider.mockResolvedValue({ name: 'openai', model: 'gpt-5.4-mini' });
 });
 
 describe('POST /api/courses/[code]/analyze-materials', () => {

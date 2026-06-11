@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { isValidSlug } from '@/lib/slug';
+import { checkAdminAuth } from '@/lib/auth/admin-auth';
 import { synthesizeTarget } from '@/lib/ai/synthesis/orchestrator';
 
 export const maxDuration = 120;
@@ -9,7 +9,7 @@ interface Ctx { params: Promise<{ targetId: string }>; }
 export async function POST(req: Request, { params }: Ctx) {
   const body = await req.json().catch(() => ({}));
   const slug = typeof body.slug === 'string' ? body.slug : '';
-  if (!isValidSlug(slug)) {
+  if (!checkAdminAuth(req, { slug })) {
     return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
   }
   const { targetId } = await params;

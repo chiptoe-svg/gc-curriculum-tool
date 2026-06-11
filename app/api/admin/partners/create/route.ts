@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { isValidSlug } from '@/lib/slug';
+import { checkAdminAuth } from '@/lib/auth/admin-auth';
 import { createPartner, findPartnerByEmail, magicLinkUrl, logPartnerEvent } from '@/lib/partners/queries';
 
 // POST /api/admin/partners/create — add a single partner from the admin UI's
@@ -7,7 +7,7 @@ import { createPartner, findPartnerByEmail, magicLinkUrl, logPartnerEvent } from
 // Slug-gated behind faculty Basic Auth, mirroring the CSV import route.
 export async function POST(req: Request): Promise<Response> {
   const body = await req.json().catch(() => ({})) as Record<string, unknown>;
-  if (!isValidSlug(typeof body.slug === 'string' ? body.slug : '')) {
+  if (!checkAdminAuth(req, { slug: typeof body.slug === 'string' ? body.slug : '' })) {
     return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
   }
 

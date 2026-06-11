@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { eq, and, not } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
-import { isValidSlug } from '@/lib/slug';
+import { checkAdminAuth } from '@/lib/auth/admin-auth';
 import { courseMaterials, courses } from '@/lib/db/schema';
 import { finalizeExtraction } from '@/lib/capture/finalize-extraction';
 import { createVectorStore } from '@/lib/capture/vector-store';
@@ -23,7 +23,7 @@ import { createVectorStore } from '@/lib/capture/vector-store';
  */
 export async function POST(req: Request): Promise<Response> {
   const body = await req.json().catch(() => ({})) as { courseCode?: unknown; slug?: unknown };
-  if (!isValidSlug(typeof body.slug === 'string' ? body.slug : '')) {
+  if (!checkAdminAuth(req, { slug: typeof body.slug === 'string' ? body.slug : '' })) {
     return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
   }
   const courseCode = typeof body.courseCode === 'string' ? body.courseCode.trim() : '';

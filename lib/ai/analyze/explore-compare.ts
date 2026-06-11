@@ -102,6 +102,7 @@ export interface CompareInput {
 export interface CompareResult {
   analysis: ExploreAnalysis;
   model: string;
+  costUsdCents: number;
 }
 
 export async function compareSnapshotToTarget(input: CompareInput): Promise<CompareResult> {
@@ -136,5 +137,5 @@ export async function compareSnapshotToTarget(input: CompareInput): Promise<Comp
     validate: (raw: unknown) => exploreAnalysisSchema.parse(raw),
   });
 
-  return { analysis: result.data, model: provider.model };
+  return { analysis: result.data, model: provider.model, costUsdCents: result.costUsdCents };
 }

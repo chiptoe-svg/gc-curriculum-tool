@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { isValidSlug } from '@/lib/slug';
 import { hashIp } from '@/lib/ip-hash';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
+import { checkDailyCap } from '@/lib/rate-limit/daily-cap';
 import { readWikiPage } from '@/lib/wiki/git-ops';
 import { streamCurriculumChat } from '@/lib/ai/wiki/chat';
 import type { Message } from '@/lib/ai/tool-use-types';
@@ -28,6 +29,13 @@ export async function POST(req: Request): Promise<Response> {
   const { allowed } = await checkIpRateLimit(ipHash);
   if (!allowed) {
     return NextResponse.json({ error: 'rate limit exceeded' }, { status: 429 });
+  }
+  // Daily-cap gate (the cost ceiling). NOTE: per-turn spend is NOT yet recorded
+  // for this streaming route — the stream's final telemetry isn't forwarded
+  // through streamCurriculumChat yet (tracked in STATE.md Deferred/debt).
+  const cap = await checkDailyCap();
+  if (!cap.ok) {
+    return NextResponse.json({ error: 'daily cost cap reached — service paused for today' }, { status: 503 });
   }
 
   const body = await req.json().catch(() => ({})) as Record<string, unknown>;

@@ -6,7 +6,7 @@ import {
   partners,
   synthesisRuns,
 } from '@/lib/db/schema';
-import { getProvider } from '@/lib/ai/provider';
+import { getProviderForFunction } from '@/lib/ai/provider';
 import { loadPrompt } from '@/lib/ai/prompts/load';
 import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
 import {
@@ -96,7 +96,7 @@ export async function synthesizeTarget(targetId: string): Promise<PersistedRun> 
   });
 
   // 6. Call provider with structured-outputs JSON schema
-  const provider = getProvider();
+  const provider = await getProviderForFunction('synthesize-target');
   const completion = await provider.complete({
     systemPrompt,
     userMessage,
