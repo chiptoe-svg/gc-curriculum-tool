@@ -30,6 +30,7 @@ interface Props {
   initialInstructor: string | null;
   /** Distilled recap of prior sessions for the "Where we left off" card. Empty/omitted hides the card. */
   priorBriefings?: SessionBriefingView[];
+  catalogSyncedAt: string | null;
 }
 
 type Stage = 'chat' | 'generating' | 'review';
@@ -56,6 +57,7 @@ export function CaptureClient({
   priorSnapshotInfo,
   initialInstructor,
   priorBriefings,
+  catalogSyncedAt,
 }: Props) {
   const [course, setCourse] = useState<CourseCatalogView>(initialCourse);
   const courseCode = course.code;
@@ -275,6 +277,7 @@ export function CaptureClient({
           course={course}
           materials={materials}
           slug={slug}
+          catalogSyncedAt={catalogSyncedAt}
           onMaterialsChange={setMaterials}
           onCourseChange={setCourse}
           onContinue={() => setLandingStep('interview')}
