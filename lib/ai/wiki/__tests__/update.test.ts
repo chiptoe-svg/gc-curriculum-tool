@@ -467,12 +467,15 @@ describe('updateWikiForSnapshot', () => {
     expect(wiki).toHaveLength(3);
   });
 
-  it('logEntry is taken from the LLM response', async () => {
+  it('logEntry is derived from the LLM response', async () => {
+    // The reconcile pass (increment C) re-requests pages the mock omits, so the
+    // returned log_entry can appear more than once joined by ' · '; the entry
+    // must still come from the LLM response, never be fabricated.
     const { logEntry } = await updateWikiForSnapshot(SNAPSHOT_ID);
-    expect(logEntry).toBe(mockLLMResponse.log_entry);
+    expect(logEntry).toContain(mockLLMResponse.log_entry);
   });
 
-  it('passes snapshot profile to the provider', async () => {
+  it('passes snapshot profile + derived competency bands to the provider', async () => {
     const provider = {
       model: 'gpt-5.5',
       complete: vi.fn().mockResolvedValue({ data: mockLLMResponse, costUsdCents: 150, durationMs: 3000, cachedTokens: 0, uncachedPromptTokens: 5000, completionTokens: 1500 }),
@@ -481,13 +484,20 @@ describe('updateWikiForSnapshot', () => {
 
     await updateWikiForSnapshot(SNAPSHOT_ID);
 
-    expect(provider.complete).toHaveBeenCalledOnce();
+    // The mock omits some requested pages, so the reconcile retry (increment C)
+    // calls the provider more than once; assert on the FIRST (primary) call.
+    expect(provider.complete).toHaveBeenCalled();
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const callArgs = (provider.complete as ReturnType<typeof vi.fn>).mock.calls[0]![0]!;
     const userMsg = JSON.parse(callArgs.userMessage as string);
     expect(userMsg.snapshot.id).toBe(SNAPSHOT_ID);
     expect(userMsg.snapshot.courseCode).toBe('GC 4800');
     expect(userMsg.snapshot.profile).toEqual(mockProfile);
+    // Increment A: a band per competency, keyed by statement.
+    expect(Array.isArray(userMsg.competencyBands)).toBe(true);
+    expect(userMsg.competencyBands).toHaveLength(mockProfile.competencies.length);
+    expect(userMsg.competencyBands[0]).toHaveProperty('band');
+    expect(userMsg.competencyBands[0]).toHaveProperty('statement');
   });
 
   it('passes rawPaths to the provider so LLM can link them', async () => {

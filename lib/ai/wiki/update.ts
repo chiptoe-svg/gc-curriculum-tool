@@ -34,6 +34,7 @@ import { getProviderForFunction } from '@/lib/ai/provider';
 import { fetchLiveCourseFromSheet } from '@/lib/sheets/fetchLiveCourse';
 import type { ParsedCourse } from '@/lib/sheets/parseCourseTab';
 import { writeAndPush } from '@/lib/wiki/git-ops';
+import { deriveEvidenceBand, type EvidenceBand } from '@/lib/program/evidence-ladder';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -735,6 +736,32 @@ export function computeInputHash(
   return createHash('sha256').update(payload).digest('hex').slice(0, 12);
 }
 
+/** One competency's derived evidence band, keyed by statement for the prompt. */
+export interface CompetencyBand {
+  statement: string;
+  band: EvidenceBand;
+}
+
+/**
+ * Pure: derive each competency's evidence band (claimed / materials_supported /
+ * artifact_verified) from the provenance already on the profile (source +
+ * citations). Passed into the wiki-update prompt so the course page can render
+ * a band marker per competency line instead of flattening every claim to
+ * settled fact. Keyed by `statement` — the prompt matches competencies by
+ * statement when rendering the "Competencies developed" list.
+ */
+export function deriveCompetencyBands(
+  competencies: ReadonlyArray<{ statement: string; source?: unknown; citations?: unknown }>,
+): CompetencyBand[] {
+  return competencies.map(c => ({
+    statement: c.statement,
+    band: deriveEvidenceBand({
+      source: c.source as Parameters<typeof deriveEvidenceBand>[0]['source'],
+      citations: c.citations as Parameters<typeof deriveEvidenceBand>[0]['citations'],
+    }),
+  }));
+}
+
 const FRONTMATTER_RE = /^---\n([\s\S]*?)\n---\n?/;
 
 /**
@@ -831,6 +858,11 @@ export async function updateWikiForSnapshot(snapshotId: string): Promise<WikiUpd
   const generatedPages: WikiUpdateOutput['pages'] = [];
   const logEntries: string[] = [];
 
+  // Evidence band per competency (increment A): derived deterministically from
+  // the profile's source + citations so the course page renders a credibility
+  // marker per competency line rather than flattening every claim to fact.
+  const competencyBands = deriveCompetencyBands(snapshot.profile.competencies);
+
   // One LLM call over the SAME snapshot context but only the given slice of
   // affected pages. Used for the primary batch pass and the reconcile retry.
   const generateBatch = async (
@@ -858,6 +890,7 @@ export async function updateWikiForSnapshot(snapshotId: string): Promise<WikiUpd
       },
       rawPaths,
       allSnapshotsForCourse: allSnapshots,
+      competencyBands,
       affectedWikiPages: batch,
     });
 
