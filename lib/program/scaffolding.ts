@@ -126,6 +126,10 @@ export type ScaffoldingStatus =
   | 'top_heavy'
   | 'bottom_heavy'
   | 'coverage_only'
+  // Practiced and/or integrated but never formally introduced — distinct from
+  // brittle (integration with NO setup; practice counts as setup) and from
+  // coverage_only (introduction-only). Was previously mislabeled coverage_only.
+  | 'no_introduction'
   | 'brittle_scaffold'
   | 'not_addressed';
 
@@ -214,6 +218,14 @@ export function depthScaffoldingStatus(cells: SnapshotCellInput[]): DepthScaffol
   if (phases.introduction && phases.practice && !phases.integration) {
     return { phases, status: 'bottom_heavy' };
   }
+  // Practiced and/or integrated but never formally introduced. Not brittle
+  // (practice provides setup, so integration isn't unsupported) and not
+  // coverage_only (it clearly has development) — its own diagnostic: students
+  // are worked at depth on something the curriculum never sets up.
+  if (!phases.introduction && (phases.practice || phases.integration)) {
+    return { phases, status: 'no_introduction' };
+  }
+
   // Only introduction (possibly stacked across multiple courses).
   return { phases, status: 'coverage_only' };
 }

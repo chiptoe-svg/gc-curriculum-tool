@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type KeyboardEvent } from 'react';
 import type { CaptureClassStructure, CaptureProfileCitationType } from '@/lib/ai/capture/schema';
 import { SourceBadge } from './ProfileReviewPanel';
 
@@ -103,9 +103,24 @@ export function ClassStructureSection({
               ) : (
                 <span
                   onClick={() => editable && setEditingTopicIndex(i)}
+                  {...(editable
+                    ? {
+                        role: 'button' as const,
+                        tabIndex: 0,
+                        'aria-label': `Edit topic ${i + 1}: ${topic}`,
+                        onKeyDown: (e: KeyboardEvent) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setEditingTopicIndex(i);
+                          }
+                        },
+                      }
+                    : {})}
                   className={
                     'flex-1 text-xs leading-snug' +
-                    (editable ? ' cursor-text hover:bg-muted/40 rounded-sm px-1' : '')
+                    (editable
+                      ? ' cursor-text hover:bg-muted/40 rounded-sm px-1 focus:outline-none focus:ring-1 focus:ring-ring'
+                      : '')
                   }
                 >
                   {topic}
