@@ -80,14 +80,6 @@ export default async function CapturePage({ params, searchParams }: Props) {
     lastFacultyTurn: b.lastFacultyTurn,
   }));
 
-  const materialCounts = {
-    total: materials.length,
-    canvas: materials.filter(m => m.fileName.startsWith('Canvas:')).length,
-    uploaded: materials.filter(m => !m.fileName.startsWith('Canvas:')).length,
-    extractedOk: materials.filter(m => m.extractionStatus === 'ok').length,
-    ignored: materials.filter(m => m.ignored).length,
-  };
-
   const courseView = {
     code: course.code,
     title: course.title,
@@ -174,19 +166,6 @@ export default async function CapturePage({ params, searchParams }: Props) {
       </header>
 
       <main className="mx-auto max-w-5xl px-6 py-6">
-        <section className="mb-5 rounded-md border bg-muted/30 px-4 py-3">
-          <p className="text-sm text-muted-foreground">
-            <span className="font-medium text-foreground">Loaded:</span>{' '}
-            catalog entry · {course.learningObjectives.length} stated objectives ·{' '}
-            {course.majorProjects.length} major projects ·{' '}
-            {materialCounts.total} materials ({materialCounts.canvas} Canvas-imported,{' '}
-            {materialCounts.uploaded} uploaded; {materialCounts.extractedOk} with extracted text
-            {materialCounts.ignored > 0 && `; ${materialCounts.ignored} ignored`}) ·{' '}
-            builder profile {builderProfile ? '✓' : '—'} ·{' '}
-            prior capture {priorCapture ? '✓' : '—'}
-          </p>
-        </section>
-
         <CaptureClient
           course={courseView}
           initialMaterials={materialsView}

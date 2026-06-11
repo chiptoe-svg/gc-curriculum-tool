@@ -9,6 +9,7 @@ import { SnapshotHistoryPanel } from './SnapshotHistoryPanel';
 import { IngestionCheckIn } from './IngestionCheckIn';
 import { CaptureHelpPanel } from './HelpPanel';
 import { CanvasImportSummary } from './CanvasImportSummary';
+import { CaptureHero } from './CaptureHero';
 
 interface Props {
   course: CourseCatalogView;
@@ -225,8 +226,12 @@ export function CaptureClient({
     setReviewerStatus(savedStatus);
   }
 
-  return (
-    <div className="space-y-6">
+  // First-run landing = the audit chat with no conversation yet. There the
+  // goal-first hero + the chooser/Start (inside CaptureChatPanel) lead, and the
+  // setup trays collapse below. Every other state keeps the trays up top.
+  const isLanding = stage === 'chat' && messages.length === 0;
+  const trays = (
+    <>
       <CaptureHelpPanel />
       <CanvasImportSummary materials={materials} />
       <MaterialsPanel
@@ -236,16 +241,28 @@ export function CaptureClient({
         onMaterialsChange={setMaterials}
         onCourseChange={setCourse}
       />
-
       <SnapshotHistoryPanel
         courseCode={courseCode}
         slug={slug}
         onUseAsDraft={handleUseSnapshotAsDraft}
         refreshKey={snapshotsRefreshKey}
       />
+    </>
+  );
+
+  return (
+    <div className="space-y-6">
+      {!isLanding && trays}
 
       {stage === 'chat' && (
         <>
+          {isLanding && (
+            <CaptureHero
+              courseCode={courseCode}
+              courseTitle={course.title}
+              materialsCount={materials.length}
+            />
+          )}
           {savedConversationAt && initialMessages.length > 0 && (
             <div className="flex items-center justify-between gap-3 rounded-md border bg-amber-50 px-4 py-2 text-xs">
               <p className="text-amber-800">
@@ -313,6 +330,14 @@ export function CaptureClient({
                 or generate a new one once the audit conversation has the evidence it needs.
               </p>
             </div>
+          )}
+          {isLanding && (
+            <details className="rounded-md border bg-card text-sm">
+              <summary className="cursor-pointer list-none px-4 py-2.5 font-medium text-muted-foreground hover:text-foreground">
+                ⚙ Materials, Canvas import, help &amp; snapshot history
+              </summary>
+              <div className="space-y-6 border-t px-4 py-4">{trays}</div>
+            </details>
           )}
         </>
       )}
