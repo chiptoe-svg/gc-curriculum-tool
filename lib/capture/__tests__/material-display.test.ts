@@ -9,6 +9,30 @@ import {
 import {
   catalogContributionSummary, materialReadability, relativeTimeFromNow, hasFixablyUnindexed,
 } from '@/lib/capture/material-display';
+import { materialsByBox, isSyllabusCanvasMaterial } from '@/lib/capture/material-display';
+
+const M = (fileName: string, over: Record<string, unknown> = {}) => ({ id: fileName, fileName, indexingStatus: 'ready', ignored: false, ...over } as { id: string; fileName: string; indexingStatus: string; ignored: boolean });
+
+describe('isSyllabusCanvasMaterial', () => {
+  it('matches only the Canvas syllabus list', () => {
+    expect(isSyllabusCanvasMaterial({ fileName: 'Canvas: Syllabus' })).toBe(true);
+    expect(isSyllabusCanvasMaterial({ fileName: 'Canvas: Assignments' })).toBe(false);
+    expect(isSyllabusCanvasMaterial({ fileName: 'syllabus.pdf' })).toBe(false);
+  });
+});
+
+describe('materialsByBox', () => {
+  const mats = [
+    M('Canvas: Syllabus'), M('Canvas: Assignments'), M('Canvas File: rubric.pdf'),
+    M('YouTube: Lecture'), M('Drive PDF: Spec'), M('handout.pdf'),
+  ];
+  it('puts the Canvas syllabus in canvas (not other), and buckets the rest', () => {
+    const b = materialsByBox(mats);
+    expect(b.canvas.map(m => m.fileName)).toEqual(expect.arrayContaining(['Canvas: Syllabus','Canvas: Assignments','Canvas File: rubric.pdf']));
+    expect(b.other.map(m => m.fileName)).toEqual(expect.arrayContaining(['YouTube: Lecture','Drive PDF: Spec','handout.pdf']));
+    expect(b.other.some(m => m.fileName.startsWith('Canvas'))).toBe(false);
+  });
+});
 
 describe('materialProvenance', () => {
   it('classifies Canvas list + Canvas File as canvas', () => {
