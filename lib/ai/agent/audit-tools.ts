@@ -3,14 +3,22 @@ import type { ToolDefinition } from '@/lib/ai/tool-use-types';
 import { embedText } from '@/lib/ai/embeddings';
 import { createVectorStore, tenantForCourse } from '@/lib/capture/vector-store';
 import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
+import { wikiReadTool, wikiSearchTool } from '@/lib/ai/wiki/tools';
+import { buildCurriculumGraphTools } from '@/lib/ai/wiki/graph-tools';
 
 /**
- * Build the three retrieval tools the audit-chat agent can invoke per turn.
- * The courseCode is closed over so the model cannot route tool calls to a
- * different course's tenant by passing a different courseCode argument.
+ * Build the audit-chat agent's per-turn tools. Three course-local retrieval
+ * tools (closed over courseCode so the model can't route to a different
+ * course's tenant) PLUS four read-only PROGRAM-MEMORY tools — the same
+ * cross-instructor program-query surface the /ask + MCP agents use:
+ *   - search_wiki / read_wiki      — narrative (what the program already says)
+ *   - coverage_for_target / prereq_chain — structural (who covers it, at what
+ *                                    depth, the prereq chain)
+ * Program memory is REFERENCE, never evidence — see capture-chat-agent.md.
+ * All four are read-only + FERPA-safe (wiki excludes raw/; graph is aggregate).
  *
- * Spec: docs/superpowers/specs/2026-05-26-coursecapture-agentic-retrieval-design.md
- *       § Phase B — Tool surface.
+ * Spec: docs/superpowers/specs/2026-05-26-coursecapture-agentic-retrieval-design.md § Phase B,
+ *       and docs/superpowers/specs/2026-06-11-program-memory-for-capture-agent-design.md.
  */
 export function buildAuditTools(courseCode: string): ToolDefinition[] {
   const tenant = tenantForCourse(courseCode);
@@ -120,5 +128,15 @@ export function buildAuditTools(courseCode: string): ToolDefinition[] {
     },
   };
 
-  return [list_materials, fetch_material_section, search_materials];
+  return [
+    list_materials,
+    fetch_material_section,
+    search_materials,
+    // Program memory (cross-instructor, read-only): the established program-wide
+    // picture, for probing handoffs / avoiding re-establishing / calibrating —
+    // never as evidence of THIS course's attainment (see capture-chat-agent.md).
+    wikiSearchTool,
+    wikiReadTool,
+    ...buildCurriculumGraphTools(),
+  ];
 }

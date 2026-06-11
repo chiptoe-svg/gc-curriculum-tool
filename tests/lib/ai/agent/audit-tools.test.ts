@@ -256,4 +256,23 @@ describe('buildAuditTools', () => {
       ).not.toThrow();
     });
   });
+
+  // -------------------------------------------------------------------------
+  // program-memory tools (cross-instructor, read-only) — added 2026-06-11
+  // -------------------------------------------------------------------------
+
+  describe('program-memory tools', () => {
+    it('includes the 4 read-only program tools alongside the 3 material tools', () => {
+      const names = buildAuditTools(COURSE).map(t => t.name).sort();
+      expect(names).toEqual([
+        'coverage_for_target',
+        'fetch_material_section',
+        'list_materials',
+        'prereq_chain',
+        'read_wiki',
+        'search_materials',
+        'search_wiki',
+      ]);
+    });
+  });
 });
