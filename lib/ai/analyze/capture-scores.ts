@@ -6,7 +6,7 @@ import {
   captureScaleVersion,
   type CaptureProfile,
 } from '@/lib/ai/capture/schema';
-import type { ChatMessage, CaptureChatContext } from '@/lib/ai/analyze/capture-chat';
+import type { CaptureChatContext } from '@/lib/ai/analyze/capture-chat';
 import { buildCaptureChatUserMessage } from '@/lib/ai/analyze/capture-chat';
 import type { captureMessages } from '@/lib/db/schema';
 import type { InferSelectModel } from 'drizzle-orm';
@@ -232,73 +232,10 @@ export const captureProfileJsonSchema = {
   },
 } as const;
 
-function formatTranscript(history: ChatMessage[]): string {
-  if (history.length === 0) return '**Transcript:** (no conversation; scoring from materials only)';
-  const lines = history.map(m =>
-    `[${m.role === 'user' ? 'Instructor' : 'Auditor'}] ${m.content}`,
-  );
-  return ['**Transcript:**', ...lines].join('\n\n');
-}
-
 export interface GenerateCaptureProfileResult {
   profile: CaptureProfile;
   telemetry: CompletionTelemetry;
   model: string;
-}
-
-/**
- * Run the scoring call: given the course context and the audit transcript,
- * produce a structured Course Outcome Profile that satisfies the v1 depth
- * scale rules.
- *
- * Throws if the provider returns content that fails the Zod refinements
- * (foundational with non-null K/U, above-zero score without evidence, etc.).
- * The caller can show that error to the reviewer — the scoring layer is
- * deterministic and tight by design.
- */
-export async function generateCaptureProfile(
-  context: CaptureChatContext,
-  history: ChatMessage[],
-): Promise<GenerateCaptureProfileResult> {
-  const provider = await getProviderForFunction('capture-scores');
-  const systemPrompt = await loadPrompt('capture-scores');
-
-  const userMessage = [
-    buildCaptureChatUserMessage(context),
-    '',
-    '---',
-    '',
-    formatTranscript(history),
-    '',
-    '---',
-    '',
-    'Produce the Course Outcome Profile JSON now. Conform exactly to the',
-    'schema. Score all five baseline foundational competencies (Agency,',
-    'Attention to Detail, Resilience, Curiosity, Communication) plus any',
-    'additional foundationals the materials evidence. Keep technical',
-    'competencies in the 5–15 range. Above-zero scores require an evidence',
-    'excerpt; foundationals must have null k_depth and u_depth.',
-  ].join('\n');
-
-  const result = await provider.complete<CaptureProfile>({
-    systemPrompt,
-    userMessage,
-    schemaName: 'course_capture_profile_v1',
-    jsonSchema: captureProfileJsonSchema as unknown as object,
-    validate: (raw: unknown) => captureProfileSchema.parse(raw),
-  });
-
-  return {
-    profile: result.data,
-    telemetry: {
-      costUsdCents: result.costUsdCents,
-      durationMs: result.durationMs,
-      cachedTokens: result.cachedTokens,
-      uncachedPromptTokens: result.uncachedPromptTokens,
-      completionTokens: result.completionTokens,
-    },
-    model: provider.model,
-  };
 }
 
 // ---------------------------------------------------------------------------
