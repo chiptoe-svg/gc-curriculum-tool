@@ -57,3 +57,6 @@ drizzle/meta/
 
 # Self-signed certs for LAN HTTPS (mkcert; regenerate with mkcert in scripts/setup-lan-https.sh)
 /certs/
+
+# Visual brainstorm companion (local mockups, not source)
+/.superpowers/
