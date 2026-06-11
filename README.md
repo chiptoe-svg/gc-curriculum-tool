@@ -16,17 +16,17 @@ Two questions drive everything:
 
 ## Status
 
-**Hybrid deploy shipped (Phase 2).** Same codebase, two runtime personalities. Faculty surfaces (`/capture`, `/explore`, `/program`, `/admin`, `/settings`, `/wiki`, `/ask`, `/courses`) run on a local Mac on the Clemson LAN behind HTTP Basic Auth, using local omlx (Qwen3.6 family) for LLM calls and Docling for PDF extraction. The partner-facing `/partners/*` magic-link survey runs on Vercel against OpenAI. Same Neon Postgres backs both. (The legacy `/preview/*` M-trial was removed 2026-06-02.)
+**Local-only deploy (2026-06-04).** Vercel + Neon + Resend were retired; a single Mac now runs the whole app. Faculty surfaces (`/capture`, `/explore`, `/program`, `/admin`, `/settings`, `/wiki`, `/ask`, `/courses`) are bound to the Clemson LAN behind HTTP Basic Auth; the public read-only `/` + `/view/*` and the partner-facing `/partners/*` magic-link survey are exposed over HTTPS via a Tailscale Funnel. LLM provider is selected by `AI_PROVIDER` (currently `openai`; `anthropic`, local omlx-Qwen3.6, and campus Qwen also supported); embeddings always use the campus Qwen endpoint; Docling does PDF extraction; data lives in local Postgres 17. (The legacy `/preview/*` M-trial was removed 2026-06-02.)
 
-**CourseCapture v1 live.** Audit-conversation workflow at `/capture/<course-code>` that combines catalog values, Canvas imports, uploaded materials, linked Google Docs/Sheets/Slides + Drive PDFs, and voice/chat audit, then produces an immutable Course Outcome Profile snapshot. Faculty are actively running audits.
+**CourseCapture v2 live.** Tool-using audit-conversation workflow at `/capture/<course-code>`: a retrieval agent reads the course's chunked materials (Weaviate) + an append-only audit transcript, then synthesizes an immutable Course Outcome Profile snapshot where every finding carries provenance (instructor / materials / inferred) + citations. The audit agent is **program-aware** — it can query the curriculum wiki + coverage graph for cross-instructor context (reference, never evidence). Faculty are actively running audits. (The v1 single-context pipeline was retired 2026-06-11.)
 
 **Explore v1 live.** Prescriptive alignment + what-if scenarios at `/explore/<course-code>`: custom-target authoring, downstream-target auto-detection, and counterfactual comparisons.
 
-**Program Coverage Matrix (Phase 1A) live.** `/program` renders snapshots × career-target sub-competencies as a depth-aware heat map with on-demand AI scoring.
+**Program analysis live.** `/program` renders snapshots × career-target sub-competencies as a depth-aware coverage heat map with on-demand AI scoring; `/program/scaffolding` adds the Phase 1B depth-sequence + productive-failure scaffolding diagnostics.
 
-**Industry Partner Input — Plans 1 + 3 shipped.** Magic-link survey for industry partners (CSV import, invites, draft/submit/delete flow) plus AI synthesis layer at `/admin/synthesis` that aggregates per-target themes, salary distributions, partner quotes, and proposed KUD edits. **[Pilot writeup →](https://chiptoe-svg.github.io/gc-curriculum-tool/docs/superpowers/pilot/2026-05-19-industry-partner-input-pilot.html)** Plan 2 (admin views + project ratings) still ahead.
+**Position Capture v1 + Industry Partner Input live.** The employer-demand side of Q1: a 6-page partner flow under `/partners/*` ingests a real job posting → an immutable Position Profile of demand per career target. Alongside it, the magic-link partner survey + AI synthesis at `/admin/synthesis` (per-target themes, salary distributions, quotes, proposed KUD edits). The **demand→coverage sufficiency seam** (employer demand vs. measured course attainment) is built end-to-end but flag-gated/dormant pending activation. **[Partner pilot writeup →](https://chiptoe-svg.github.io/gc-curriculum-tool/docs/superpowers/pilot/2026-05-19-industry-partner-input-pilot.html)** Industry Partner Plan 2 (project-rating views) still ahead.
 
-**CourseCapture v2 Stage 1 (Foundation) shipped.** Append-only `capture_messages` log keyed by session, provider abstraction extended with `completeWithTools` across OpenAI / Anthropic / Local / Fake (Vercel AI SDK v6), and per-course `audit_mode` toggle. Stage 2 (Ingestion: per-material chunker + Weaviate-backed retrieval) waits on the local Weaviate instance.
+**Curriculum wiki + agent access.** A compiled markdown knowledge base (sibling repo `gc-curriculum-wiki`) regenerates from snapshots — browsable in-app at `/wiki` + queryable via the `/ask` chat, and exposed over MCP at `/api/mcp` (5 read-only tools: narrative `read/list/search_wiki` + typed-graph `coverage_for_target`/`prereq_chain`) to any Clemson-internal agent. `gc-wiki-lint` gives the compile loop a deterministic structural check.
 
 For the current snapshot — what's live, what's blocked, what's next — see [`docs/STATE.md`](./docs/STATE.md).
 
@@ -59,14 +59,14 @@ For the current snapshot — what's live, what's blocked, what's next — see [`
 ## Stack
 
 - **Next.js 15** (App Router, Turbopack, TypeScript strict)
-- **Neon Postgres** via **Drizzle ORM**
+- **Postgres 17** (local, Postgres.app on `127.0.0.1:5433`) via **Drizzle ORM**
 - **Tailwind CSS** + **shadcn/ui** + **base-ui**
 - **Vitest** for unit + integration tests
-- **AI providers** (`lib/ai/provider.ts`): OpenAI / Anthropic / Local omlx / Fake — pick via env. Tool-using path via Vercel AI SDK v6 (`completeWithTools`).
-- **Docling-serve** for PDF extraction on the local Mac (CPU mode); **unpdf** fallback on Vercel.
-- **Weaviate** (planned, Stage 2) — multi-tenant hybrid retrieval over per-course materials.
-- **launchd** manages the local Next.js + Docling-serve processes; restart on crash.
-- **Vercel** hosts the partner / preview side.
+- **AI providers** (`lib/ai/provider.ts`): OpenAI / Anthropic / local omlx (Qwen3.6) / campus Qwen / Fake — selected by `AI_PROVIDER` (currently `openai`). Tool-using + streaming paths via Vercel AI SDK v6; embeddings always via the campus Qwen endpoint.
+- **Docling-serve** for PDF extraction on the local Mac.
+- **Weaviate** — multi-tenant hybrid retrieval over per-course materials (live; powers CourseCapture v2 retrieval).
+- **launchd** manages the local Next.js + Docling-serve + Postgres + Weaviate processes (restart on crash); a watchdog probes `:3000` health.
+- **Tailscale Funnel** exposes the public + partner surfaces over HTTPS; the rest is LAN-only.
 
 ## Repo origin
 
