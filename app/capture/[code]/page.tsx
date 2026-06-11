@@ -148,6 +148,7 @@ export default async function CapturePage({ params, searchParams }: Props) {
           course={courseView}
           initialMaterials={materialsView}
           slug={slug}
+          catalogSyncedAt={course.lastSyncedAt ? course.lastSyncedAt.toISOString() : null}
           existingProfile={priorCapture?.profile ?? null}
           existingReviewerStatus={priorCapture?.reviewerStatus ?? null}
           existingReviewerNote={priorCapture?.reviewerNote ?? null}
