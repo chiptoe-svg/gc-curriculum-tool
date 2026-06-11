@@ -118,3 +118,14 @@ Given the size, the build will be a multi-task plan: (1) a `materialsByBox` grou
 
 - Active arc / What's live: Step 1 redesigned into **three source-boxes** (Syllabus [sheet/attach/Canvas] · Canvas · Other materials), each an accordion with honest depth + inline management; the separate `MaterialsPanel` reveal on the capture screen is retired (panel may live on in Course Builder).
 - Deferred/debt: anything from the Open Questions deferred; the `MaterialsPanel`'s remaining home; whether a `syllabus` role marker was added.
+
+---
+
+## Resolved in review (operator, 2026-06-11)
+
+1. **Multiple syllabus sources allowed, default = the synced sheet.** Box 1 treats the GC-sheet catalog as the syllabus by default (free). A faculty member may *also* attach a syllabus doc. **If more than one syllabus source is present and they differ, surface the discrepancy** (a small "⚠ a different syllabus is also attached — review" note), never silently merge. Exclusivity is NOT forced.
+2. **The Canvas syllabus page lives in ONE place — the Canvas box, distinctly labeled.** It is *not* duplicated into Box 1. (It's already distinctly named `Canvas: Syllabus` / `classifyCanvas → 'syllabus'`.) Box 1 stays the **sheet catalog + optional attached syllabus**; when a Canvas syllabus exists, Box 1 may note "(a Canvas syllabus is also available — see Canvas)" but does not list it. **Canvas import is the likely source of a syllabus for non-sheet courses, so the Canvas box / its import action is presented prominently.**
+3. **No schema change.** "Which material is the syllabus" is **inferred from the distinct Canvas label** (`Canvas: Syllabus`) plus, for uploads, a lightweight client convention — no `course_materials.role` column. (Revisit only if inference proves ambiguous.)
+4. **Do not throw away `MaterialsPanel`.** It is *kept* — its mutation handlers are reused by the three-box surface (extracted into a shared hook/module), and the panel itself remains reachable as the deep manager (e.g. from Course Builder). The redesign replaces the Step-1 *reveal* of it, not the component.
+
+**Net effect on the boxes:** Box 1 = sheet catalog (default syllabus) + attach-a-syllabus, with a differ-warning when applicable. Box 2 = all Canvas materials incl. the labeled syllabus, import/reimport prominent. Box 3 = uploads + linked docs. Build it (multi-task plan), reusing existing handlers; keep `MaterialsPanel`.
