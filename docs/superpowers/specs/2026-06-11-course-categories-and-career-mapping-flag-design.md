@@ -117,37 +117,43 @@ to `true` without moving it out of the Specialty display bucket.
 ## Categorization (the 46 existing courses)
 
 Cross-checked against the live DB — these 46 codes are exactly what exists, and the assignment
-partitions them with no overlaps and no leftovers (16 + 14 + 16 + 0 = 46).
+partitions them with no overlaps and no leftovers (16 + 14 + 16 + 0 = 46). **`category` is the
+display bucket; `builds_to_career` is set per-course and is shown explicitly below** (the two are
+decoupled — e.g. Major Requirements splits 11 included / 5 excluded).
 
-### GC Core (16) — `category='gc_core'`, `builds_to_career=true`
+Final tallies: **27 courses `builds_to_career=true`** (16 GC Core + 11 Major Req), 19 `false`.
+
+### GC Core (16) — `category='gc_core'` · all `builds_to_career=true`
 GC 1010, GC 1020, GC 1040, GC 1050, GC 2070, GC 2400, GC 3400, GC 3460, GC 3500, GC 3800,
 GC 4060, GC 4400, GC 4440, GC 4480, GC 4500, GC 4800
 
-### Specialty Area / GC Tech (14) — `category='specialty'`, `builds_to_career=false`
+### Specialty Area / GC Tech (14) — `category='specialty'` · all `builds_to_career=false`
 GC 3620, GC 3700, GC 3710, GC 3720, GC 3730, GC 3740, GC 3760, GC 3780, GC 3790, GC 4070,
 GC 4900ap, GC 4900bl, GC 4900or, GC 4990ta
 
-### Major Requirements + GenEds (16) — `category='major_req'`, `builds_to_career=false`
-ACCT 2010, ACCT 2020, MGT 2010, MKT 3010, PKSC 1020, STAT 2220, STAT 2300, STAT 3090, STAT 3300,
-ENGL 1030, ENSP 2000, PSYC 2010, ECON 2000, ECON 2110, PCID 3040, PCID 3140
+### Major Requirements + GenEds (16) — `category='major_req'` · split
+**`builds_to_career=true` (11)** — the courses nearly all students take:
+ACCT 2010, ACCT 2020, MGT 2010, MKT 3010, PKSC 1020, STAT 2300, ENGL 1030, ENSP 2000,
+PSYC 2010, ECON 2110, PCID 3040
 
-### Other courses (0) — `category='other'`, `builds_to_career=false`
+**`builds_to_career=false` (5)** — the unselected sides of choose-one clusters:
+STAT 2220, STAT 3090, STAT 3300, ECON 2000, PCID 3140
+
+### Other courses (0) — `category='other'` · `builds_to_career=false`
 Empty at seed time. Newly-added courses land here by default.
 
 ---
 
-## Career-mapping exclusion — design decision (FLAG FOR REVIEW)
+## Career-mapping exclusion — design decision (RESOLVED)
 
-**Decision Ⓑ (my stated assumption):** the career-coverage analysis includes a course's snapshot
-**iff `builds_to_career = true`**. Near-term that is exactly the 16 GC Core courses. Specialty,
-Major Requirements, and Other are all excluded.
+The career-coverage analysis includes a course's snapshot **iff `builds_to_career = true`**.
+Near-term that is the **27 courses** listed above (16 GC Core + 11 high-enrollment Major Req).
+Excluded: all 14 Specialty / GC Tech, the 5 unselected choose-one Major Req sides, and Other.
 
-This is the user's stated near-term intent ("lets just assume the GC core classes map"). I'm
-flagging it explicitly because it has a visible consequence: **the `/program` coverage matrix will
-drop from 46 potential course-columns to the GC Core snapshots only.** Major Requirements courses
-(STAT, ACCT, etc.) that may currently carry coverage cells will no longer contribute. If you want
-Major Requirements *included* in the near-term mapping, that's a one-line change to the backfill
-(set their flag `true`) — say so and I'll adjust before implementing.
+Consequence: the `/program` coverage matrix is scoped to those 27 courses' snapshots. The excluded
+courses (and any coverage cells they already accumulated) stop appearing in the matrix but are
+**retained, not deleted** — flipping a course's flag back to `true` later restores its cells with
+no rescoring.
 
 ---
 
@@ -188,9 +194,16 @@ header shows the human label ("GC Core", "Specialty Area / GC Tech", "Major Requ
 GenEds", "Other courses"). Within a section, sort by code. Empty categories render nothing (so
 "Other courses" is hidden until a course is added). The per-row View/Edit links are unchanged.
 
-`listCoursesWithStatus()` (`lib/db/capture-status-queries.ts`) must return `category` so the page
-can group on it. Add `category: courses.category` to its select + groupBy and to the
-`CourseStatusRow`/`CourseWithStatus` type.
+`listCoursesWithStatus()` (`lib/db/capture-status-queries.ts`) must return `category` **and
+`buildsToCareer`** so the page can group on the former and badge on the latter. Add
+`category: courses.category` and `buildsToCareer: courses.buildsToCareer` to its select + groupBy,
+and to the `CourseStatusRow`/`CourseWithStatus` type.
+
+**Career-path icon.** Each course row with `builds_to_career = true` shows a small marker
+signifying it counts toward the career mapping — a muted lucide `Target` icon (the codebase already
+uses lucide-react), placed just after the course title, with `title`/`aria-label` "Builds toward
+career outcomes." Courses with `false` show nothing (absence is the signal; no negative badge).
+This makes the included set legible at a glance across all categories, not just within GC Core.
 
 ### 4. Add-a-course affordance on the landing page
 A "+ Add a course" control near the top of `/`. Because `/` is a public, unauthenticated,
@@ -229,19 +242,16 @@ excluded courses simply stop appearing — no cell deletion needed. The cells be
 course is later flipped back to `true` they reappear without rescoring. (Document this in STATE.md
 Deferred/debt: "coverage cells for `builds_to_career=false` courses are retained but hidden.")
 
-### 6. Minimal category/flag editing (RECOMMENDED — flag for review)
+### 6. Minimal category/flag editing (CONFIRMED — included)
 Without any edit path, a newly-added course is stranded in "Other" forever and can never be
-flagged to build toward the career. The minimum to avoid that dead-end:
+flagged to build toward the career. Included:
 
 - A `PATCH /api/admin/courses/[code]` route (auth via `checkAdminAuth`) accepting
-  `{ category?, buildsToCareer?, catalogUrl? }`.
+  `{ category?, buildsToCareer?, catalogUrl? }` (each independently optional).
 - A small control on the authenticated `/courses` roster page: per course, a category `<select>`,
   a `builds_to_career` checkbox, and a catalog-URL input, independently settable.
 
-This is the smallest thing that makes the two new fields *editable* rather than *seed-only*.
-**Alternative (more YAGNI):** ship seed + defaults only, no editing UI, and defer editing until
-tracks are built — accepting that added courses stay in "Other"/excluded until then. I recommend
-the minimal PATCH + control; flag if you'd rather defer it.
+This is the smallest thing that makes the new fields *editable* rather than *seed-only*.
 
 ---
 
@@ -249,12 +259,14 @@ the minimal PATCH + control; flag if you'd rather defer it.
 
 - **Schema/migration:** a test asserting the 46 courses have the expected `category` +
   `builds_to_career` after backfill (counts per category: 16/14/16/0; `builds_to_career` true
-  count = 16).
+  count = 27 — the 16 GC Core plus the 11 named Major Req; the 5 excluded Major Req
+  (STAT 2220, STAT 3090, STAT 3300, ECON 2000, PCID 3140) are `false`).
 - **`getMatrixData` / `listStalePairs`:** with a fixture of courses spanning all four categories +
   both flag values, assert only `builds_to_career=true` courses appear in matrix courses / stale
   pairs.
 - **Landing page:** render test asserting sections appear in the fixed order and a course lands in
-  the right section; empty "Other" section is not rendered.
+  the right section; empty "Other" section is not rendered; a `builds_to_career=true` course shows
+  the career-path icon and a `false` course does not.
 - **PATCH route (if included):** auth rejection without slug/token; successful category + flag
   update; flag and category settable independently.
 - Run the full suite — this touches `courses` schema, capture-status query shape, and program
