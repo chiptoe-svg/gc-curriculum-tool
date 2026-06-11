@@ -33,6 +33,10 @@ function summarize(others: CaptureMaterial[]): string {
 
 export function OtherMaterialsBox({ course, materials, slug, onMaterialsChange }: Props) {
   const others = useMemo(() => materialsByBox(materials).other, [materials]);
+  // Linked docs only ever arrive via "Scan linked docs", so any present means
+  // the scan has run — gray the button (still clickable to chase new links).
+  const linkedCount = others.filter((m) => materialProvenance(m) === 'linked').length;
+  const scanned = linkedCount > 0;
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
@@ -167,9 +171,17 @@ export function OtherMaterialsBox({ course, materials, slug, onMaterialsChange }
             type="button"
             onClick={scanLinkedDocs}
             disabled={scanning}
-            className="rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium hover:bg-muted disabled:opacity-50"
+            title={scanned
+              ? 'Already scanned — click to re-scan for newly added links'
+              : 'Find Google Docs / Drive PDFs / YouTube referenced in your materials and pull them in'}
+            className={
+              'rounded-md border px-2.5 py-1 text-xs font-medium disabled:opacity-50 ' +
+              (scanned
+                ? 'border-transparent bg-muted text-muted-foreground/70 hover:bg-muted'
+                : 'border-input bg-background hover:bg-muted')
+            }
           >
-            {scanning ? 'Scanning…' : 'Scan linked docs'}
+            {scanning ? 'Scanning…' : scanned ? `✓ Linked docs scanned (${linkedCount})` : 'Scan linked docs'}
           </button>
         </div>
         <input
