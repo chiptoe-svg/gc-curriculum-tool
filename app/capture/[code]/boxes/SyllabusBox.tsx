@@ -141,7 +141,7 @@ export function SyllabusBox({
   }
 
   return (
-    <section className="rounded-md border bg-card shadow-sm">
+    <section className="rounded-md border bg-card">
       <div className="flex items-center gap-3 px-4 py-3">
         <button
           type="button"
