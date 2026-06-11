@@ -232,7 +232,9 @@ export async function runAuditAgent(input: AuditAgentInput): Promise<AuditAgentR
     schemaName: 'audit_response',
     jsonSchema: AuditResponseJsonSchema,
     validate: (raw) => AuditResponseSchema.parse(raw),
-    maxToolCalls: 2,
+    // Bumped 2→4 (2026-06-11): full-mode turns can now query course materials
+    // AND program memory (wiki/graph) in the same turn.
+    maxToolCalls: 4,
   });
   if (result.kind !== 'response') {
     throw new Error('agent loop did not converge — completeWithTools returned mid-loop tool_calls');
