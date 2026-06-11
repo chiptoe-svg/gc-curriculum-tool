@@ -10,6 +10,8 @@ import { IngestionCheckIn } from './IngestionCheckIn';
 import { CaptureHelpPanel } from './HelpPanel';
 import { CanvasImportSummary } from './CanvasImportSummary';
 import { CaptureHero } from './CaptureHero';
+import { CaptureMaterialsStep } from './CaptureMaterialsStep';
+import { shouldShowMaterialsStep } from '@/lib/capture/material-display';
 import { FACULTY_ROSTER, DEPARTMENT_CANONICAL } from '@/lib/faculty';
 
 interface Props {
@@ -83,6 +85,8 @@ export function CaptureClient({
   const [chooserMode, setChooserMode] = useState<'fresh' | 'continue'>(
     priorSnapshotInfo ? 'continue' : 'fresh',
   );
+  // Fresh-audit landing sub-step: confirm materials before the interview opens.
+  const [landingStep, setLandingStep] = useState<'materials' | 'interview'>('materials');
 
   const handleSnapshotCreated = useCallback(() => {
     setSnapshotsRefreshKey(k => k + 1);
@@ -243,6 +247,7 @@ export function CaptureClient({
   // goal-first hero + the chooser/Start (inside CaptureChatPanel) lead, and the
   // setup trays collapse below. Every other state keeps the trays up top.
   const isLanding = stage === 'chat' && messages.length === 0;
+  const showMaterialsStep = shouldShowMaterialsStep({ stage, messagesCount: messages.length, landingStep });
   const trays = (
     <>
       <CaptureHelpPanel />
@@ -265,6 +270,17 @@ export function CaptureClient({
 
   return (
     <div className="space-y-6">
+      {showMaterialsStep ? (
+        <CaptureMaterialsStep
+          course={course}
+          materials={materials}
+          slug={slug}
+          onMaterialsChange={setMaterials}
+          onCourseChange={setCourse}
+          onContinue={() => setLandingStep('interview')}
+        />
+      ) : (
+        <>
       {!isLanding && trays}
 
       {stage === 'chat' && (
@@ -397,6 +413,8 @@ export function CaptureClient({
           slug={slug}
           onSnapshotCreated={handleSnapshotCreated}
         />
+      )}
+        </>
       )}
     </div>
   );
