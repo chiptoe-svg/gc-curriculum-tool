@@ -96,7 +96,8 @@ The user message is a JSON object with these fields:
             "snapshotId": "<uuid>",
             "kDepth": 2, "uDepth": 2, "dDepth": 1,
             "matchedCompetency": "Brand identity fundamentals",
-            "evidenceExcerpt": "..."
+            "evidenceExcerpt": "...",
+            "band": "materials_supported"  /* claimed | materials_supported | artifact_verified | null — render as ·claimed/·materials/·artifact */
           }
         ]
       }
@@ -144,7 +145,16 @@ The user message is a JSON object with these fields:
       "type": "index",
       "slug": "index",
       "path": "index.md",
-      "existingContent": "..."
+      "existingContent": "...",
+      "substrate": {
+        /* Manifest of EVERY other page regenerated in this run. Use it to build
+           the index navigation so it stays complete even when the run is split
+           into multiple batches (the index is always generated last). */
+        "affectedPages": [
+          { "type": "course", "slug": "gc-4800", "path": "courses/gc-4800.md" },
+          { "type": "competency", "slug": "brand-strategy", "path": "competencies/brand-strategy.md" }
+        ]
+      }
     }
   ]
 }
@@ -313,7 +323,7 @@ Body sections in order:
 
 1. **H1** — competency name
 2. **Definition** — what this competency means in the context of the career target. Ground it in the sub-competency's `knowDescriptor` / `understandDescriptor` / `doDescriptor` from the substrate. Write 2–3 sentences; editorial not bureaucratic.
-3. **Across the program** — ranked list of contributing courses by dDepth (highest first). For each: `[[course-slug|Course Title]]` — K{k}/U{u}/D{d} — one-line evidence excerpt from `evidenceExcerpt`. Courses with dDepth 0 may be mentioned briefly as "surveyed but not developed."
+3. **Across the program** — ranked list of contributing courses by dDepth (highest first). For each: `[[course-slug|Course Title]]` — K{k}/U{u}/D{d} {band marker} — one-line evidence excerpt from `evidenceExcerpt`. **Append the band marker** from each cell's `band` field, same vocabulary as the course page: ` ·claimed` / ` ·materials` / ` ·artifact` (omit it only when `band` is null). Courses with dDepth 0 may be mentioned briefly as "surveyed but not developed."
 4. **Dissociation patterns** — if any contributing course shows K-high/U-low (jargon without rationale), U-high/D-low (theory without craft), or D-high/U-low (craft without articulation), call it out explicitly. This is where the depth matrix earns its keep. Omit this section if the pattern is clean.
 5. **Scaffolding** — if any contributing course has Phase 1B scaffolding data (evaluate-course-scaffolding result), surface the introduce/practice/integration sequence. If no scaffolding data exists yet, omit this section.
 6. **Concepts** — links to relevant `[[concept-pages]]`. Include `[[productive-failure]]` if any contributing course has `productive_failure_conditions` populated.
@@ -414,6 +424,8 @@ total_courses_with_snapshots: 2
 ```
 
 Body:
+
+> **Navigation completeness:** build the Courses / Career Targets / Competencies / Concepts lists below from `substrate.affectedPages` (the manifest of every page regenerated this run) UNIONed with whatever already exists in `existingContent` — never drop a link that's in either source. This is what keeps the index complete when a large run is split across batches.
 
 1. **H1** — `# GC Curriculum Knowledge Base`
 2. One-paragraph orientation: what this wiki is and how to navigate it.

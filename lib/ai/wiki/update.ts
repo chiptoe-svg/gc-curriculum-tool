@@ -290,13 +290,19 @@ interface ContributingCell {
   dDepth: number;
   matchedCompetency: string | null;
   evidenceExcerpt: string | null;
+  /** Evidence band for this contribution, derived from the producing snapshot's
+   *  matched competency (source + citations). Lets the competency page carry
+   *  the same ·claimed/·materials/·artifact markers as the course page. Null
+   *  when the cell's matchedCompetency can't be resolved in the profile. */
+  band: EvidenceBand | null;
 }
 
 async function loadCompetencySubstrate(subCompetencyId: string): Promise<{
   contributingCells: ContributingCell[];
 }> {
   // Get all non-retired snapshots' cells for this sub-competency. Join to get
-  // the course code from the snapshot.
+  // the course code + profile from the snapshot (the profile carries the
+  // per-competency provenance the evidence band derives from).
   const rows = await db
     .select({
       courseCode: courseCaptureSnapshots.courseCode,
@@ -306,6 +312,7 @@ async function loadCompetencySubstrate(subCompetencyId: string): Promise<{
       dDepth: snapshotTargetCoverage.dDepth,
       matchedCompetency: snapshotTargetCoverage.matchedCompetency,
       evidenceExcerpt: snapshotTargetCoverage.evidenceExcerpt,
+      profile: courseCaptureSnapshots.profile,
     })
     .from(snapshotTargetCoverage)
     .innerJoin(
@@ -317,16 +324,28 @@ async function loadCompetencySubstrate(subCompetencyId: string): Promise<{
     )
     .where(eq(snapshotTargetCoverage.subCompetencyId, subCompetencyId));
 
-  const contributingCells: ContributingCell[] = rows.map(r => ({
-    courseCode: r.courseCode,
-    courseSlug: courseCodeToSlug(r.courseCode),
-    snapshotId: r.snapshotId,
-    kDepth: r.kDepth,
-    uDepth: r.uDepth,
-    dDepth: r.dDepth,
-    matchedCompetency: r.matchedCompetency,
-    evidenceExcerpt: r.evidenceExcerpt,
-  }));
+  const contributingCells: ContributingCell[] = rows.map(r => {
+    // Resolve the band from the producing snapshot's competency that this cell
+    // matched (matched_competency ≈ the competency statement). Null if unmatched.
+    const profile = r.profile as CaptureProfile;
+    const comp = r.matchedCompetency
+      ? profile.competencies?.find(c => c.statement === r.matchedCompetency)
+      : undefined;
+    const band = comp
+      ? deriveEvidenceBand({ source: comp.source, citations: comp.citations })
+      : null;
+    return {
+      courseCode: r.courseCode,
+      courseSlug: courseCodeToSlug(r.courseCode),
+      snapshotId: r.snapshotId,
+      kDepth: r.kDepth,
+      uDepth: r.uDepth,
+      dDepth: r.dDepth,
+      matchedCompetency: r.matchedCompetency,
+      evidenceExcerpt: r.evidenceExcerpt,
+      band,
+    };
+  });
 
   // Sort highest dDepth first.
   contributingCells.sort((a, b) => b.dDepth - a.dDepth);
@@ -884,6 +903,21 @@ export async function updateWikiForSnapshot(snapshotId: string): Promise<WikiUpd
     }),
   );
 
+  // (c.1) Index ordering (fixes index-stale-in-first-batch): the index lists
+  //     every page in the run, so in a multi-batch compile it must NOT ride the
+  //     first batch (it would miss pages generated in later batches). Move it to
+  //     the END so it lands in the final batch, and hand it a manifest of every
+  //     other affected page so its navigation is complete regardless of how the
+  //     batches split.
+  const indexIdx = pagesWithSubstrate.findIndex(p => p.type === 'index');
+  if (indexIdx >= 0) {
+    const [indexPage] = pagesWithSubstrate.splice(indexIdx, 1);
+    indexPage!.substrate = {
+      affectedPages: pagesWithSubstrate.map(p => ({ type: p.type, slug: p.slug, path: p.path })),
+    };
+    pagesWithSubstrate.push(indexPage!);
+  }
+
   // (d) Load the prompt + provider once.
   const [provider, systemPrompt] = await Promise.all([
     getProviderForFunction('wiki-update'),
@@ -894,8 +928,8 @@ export async function updateWikiForSnapshot(snapshotId: string): Promise<WikiUpd
   //     is its own LLM call over the SAME snapshot context but only its slice of
   //     affected pages, so no single response can overrun and stall. When the
   //     affected set fits in one batch this is identical to the old one-shot
-  //     path. computeAffectedPages orders course + index first, so they ride in
-  //     the first batch together.
+  //     path. The index is forced into the LAST batch (see c.1) with a manifest
+  //     of all affected pages so its navigation is never stale.
   const batches = chunkPages(pagesWithSubstrate, WIKI_PAGES_PER_CALL);
   const generatedPages: WikiUpdateOutput['pages'] = [];
   const logEntries: string[] = [];

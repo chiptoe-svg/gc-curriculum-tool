@@ -2,12 +2,11 @@ import { describe, it, expect } from 'vitest';
 import { loadPrompt } from '@/lib/ai/prompts/load';
 
 describe('prompt loader', () => {
-  // (draft-outcomes + score-coverage prompts were removed 2026-06-11 with their
-  //  dead scorer chains — kud-draft.ts / coverage-score.ts had no live callers.)
-
-  it('composes shared rubric into analyze-prerequisite-gaps', async () => {
-    const composed = await loadPrompt('analyze-prerequisite-gaps');
+  // Several M-trial prompts (draft-outcomes, score-coverage, analyze-prerequisite-gaps,
+  // etc.) were removed 2026-06-11 with their dead scorer chains. This exercises
+  // the shared-partial composition against a still-live prompt.
+  it('composes the shared KUD rubric into a live prompt (extract-course-kud)', async () => {
+    const composed = await loadPrompt('extract-course-kud');
     expect(composed).toContain('KUD Scoring Rubric');
-    expect(composed).toContain('met, underdeveloped, or missing');
   });
 });

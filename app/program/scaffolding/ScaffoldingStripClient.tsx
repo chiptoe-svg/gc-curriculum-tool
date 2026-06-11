@@ -23,7 +23,7 @@ interface Cell {
 interface Row {
   subCompetency: { id: string; name: string; descriptorD: string | null };
   cells: Cell[];
-  scaffoldingStatus: 'well_scaffolded' | 'top_heavy' | 'bottom_heavy' | 'coverage_only' | 'brittle_scaffold' | 'not_addressed';
+  scaffoldingStatus: 'well_scaffolded' | 'top_heavy' | 'bottom_heavy' | 'coverage_only' | 'no_introduction' | 'brittle_scaffold' | 'not_addressed';
   phases: { introduction: boolean; practice: boolean; integration: boolean };
   cumulativePfScore: number;
   pfStatus: 'well_developed' | 'developing' | 'thin' | 'absent' | 'no_data';
@@ -63,6 +63,7 @@ function statusChip(s: Row['scaffoldingStatus']): { label: string; cls: string }
     case 'top_heavy':        return { label: 'top-heavy',       cls: 'bg-amber-100 text-amber-900' };
     case 'bottom_heavy':     return { label: 'bottom-heavy',    cls: 'bg-amber-100 text-amber-900' };
     case 'coverage_only':    return { label: 'coverage-only',   cls: 'bg-orange-100 text-orange-900' };
+    case 'no_introduction':  return { label: 'no intro',        cls: 'bg-orange-200 text-orange-900' };
     case 'brittle_scaffold': return { label: 'brittle',         cls: 'bg-rose-100 text-rose-900' };
     case 'not_addressed':    return { label: 'not addressed',   cls: 'bg-stone-100 text-stone-700' };
   }
