@@ -65,6 +65,15 @@ The user message is a JSON object with these fields:
        Render the band marker on the course-page competency line (see §6). */
     { "statement": "Color management across devices", "band": "materials_supported" }
   ],
+  "competencyLinks": [
+    /* Statement → sub-competency slug map, from this snapshot's coverage cells.
+       `slug` is a REAL competency page (competencies/{slug}.md). `statement` is
+       a close paraphrase of a profile.competencies[].statement. Use ONLY these
+       slugs when linking a competency on the course page (see §6) — do NOT
+       invent a slug from the statement text. EMPTY before coverage scoring has
+       run for this snapshot; then render competencies as plain text. */
+    { "statement": "Color management across devices", "slug": "color-management" }
+  ],
   "affectedWikiPages": [
     /* array of objects describing each page to regenerate */
     {
@@ -208,7 +217,11 @@ Body sections in order:
 3. **At a glance** — bulleted list from `profile.overview.at_a_glance` with em-dash leaders. If `overview` is null, synthesize 3–5 bullets from the profile.
 4. **Who it's for** — one short paragraph from `profile.overview.who_for`. If null, omit this section.
 5. **The arc** — semester trajectory from `profile.overview.arc`. If null, omit.
-6. **Competencies developed** — list with K/U/D depth chips, each linking to `[[competency-slug]]`. Group technical and foundational separately. For foundationals, show D-depth only. **Append the evidence-band marker** after each competency's depth chip, looked up from `competencyBands` by matching `statement`: ` ·claimed` (instructor claim only), ` ·materials` (backed by course-material chunk), or ` ·artifact` (backed by cited student work). Example: `[[color-management|Color management]] — K4/U3/D3 ·materials — <evidence excerpt>`. The marker is not optional — it is how a reader tells a claimed competency from a verified one; never drop it, and never upgrade a band beyond what `competencyBands` provides. If a competency has no matching entry in `competencyBands`, omit the marker for that line (do not invent one).
+6. **Competencies developed** — list with K/U/D depth chips. Group technical and foundational separately. For foundationals, show D-depth only.
+
+   **Wikilink resolution (load-bearing — this is how the course page joins the competency pages):** Link a competency to `[[slug|statement]]` **only** when its statement matches an entry in `competencyLinks` (fuzzy-match the competency statement against `competencyLinks[].statement`; use that entry's `slug`). The `slug` values in `competencyLinks` are the ONLY valid competency page slugs. **Never slugify the statement text yourself** to build a link — that mints a slug with no page behind it (the cause of the broken-wikilink debt). If a competency has no match in `competencyLinks` (e.g. coverage scoring hasn't run yet — `competencyLinks` is empty), render its name as **plain text**, no `[[ ]]`. Plain text is always the safe fallback.
+
+   **Evidence-band marker:** Append the band after each competency's depth chip, looked up from `competencyBands` by matching `statement`: ` ·claimed` (instructor claim only), ` ·materials` (backed by course-material chunk), or ` ·artifact` (backed by cited student work). Example: `[[color-management|Color management]] — K4/U3/D3 ·materials — <evidence excerpt>`. The marker is not optional — it is how a reader tells a claimed competency from a verified one; never drop it, and never upgrade a band beyond what `competencyBands` provides. If a competency has no matching entry in `competencyBands`, omit the marker for that line (do not invent one).
 7. **Audit notes** — surface the most reader-useful items from `audit_notes`: downstream connections, prereq gaps, productive-failure conditions if present, cross-source contradictions worth flagging. Do NOT dump the whole `audit_notes` object — pick what matters. Keep this section short (3–8 bullets or a short paragraph).
 8. **Class structure** (new — see §8a below)
 9. **Major projects** (new — see §8b below)
@@ -421,7 +434,7 @@ Body:
 - `[[gc-4800#competencies-developed]]` → anchor link within a page
 - `[[gc-4800|Senior Capstone]]` → custom display text
 
-Slugs not yet backed by a page render as broken links — that is intentional. They signal to the next `wiki-update` pass that a page is needed.
+A slug not yet backed by a page renders as a broken link. This is tolerable **only** for forward references the next `wiki-update` pass will create (e.g. a target page linking a competency page that's regenerating in the same batch set). It is NOT acceptable to invent a competency slug by slugifying a statement: on the **course page**, competency links must come from `competencyLinks` (see §6) and otherwise render as plain text. Minting statement-derived slugs created a parallel, page-less competency namespace and 153 dangling links — don't reintroduce it.
 
 ---
 

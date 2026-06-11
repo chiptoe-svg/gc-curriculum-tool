@@ -498,6 +498,8 @@ describe('updateWikiForSnapshot', () => {
     expect(userMsg.competencyBands).toHaveLength(mockProfile.competencies.length);
     expect(userMsg.competencyBands[0]).toHaveProperty('band');
     expect(userMsg.competencyBands[0]).toHaveProperty('statement');
+    // Broken-wikilink fix: statement→sub-competency slug map for course-page links.
+    expect(Array.isArray(userMsg.competencyLinks)).toBe(true);
   });
 
   it('passes rawPaths to the provider so LLM can link them', async () => {

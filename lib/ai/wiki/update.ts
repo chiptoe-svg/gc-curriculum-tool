@@ -544,6 +544,47 @@ async function loadAllSnapshotsForCourse(courseCode: string): Promise<SnapshotSu
 }
 
 // ---------------------------------------------------------------------------
+// Competency → sub-competency slug links (fixes the broken-wikilink namespace)
+// ---------------------------------------------------------------------------
+
+/**
+ * Map each snapshot competency statement to the sub-competency slug(s) it
+ * matched during coverage scoring. The course page uses this to link its
+ * "Competencies developed" list to the EXISTING competency pages
+ * (`competencies/{subCompetencyId}.md`) instead of minting slugs from the
+ * statement text — that parallel, page-less namespace was the source of the
+ * 153 broken wikilinks `gc-wiki-lint` surfaced.
+ *
+ * `matched_competency` is a close paraphrase of a `profile.competencies[].statement`
+ * (the scorer is told to match/paraphrase one), so the prompt fuzzy-matches the
+ * two. Empty before coverage scoring has run for this snapshot — the course
+ * page then renders competencies as plain text (no broken links), and the
+ * post-scoring regeneration fills the links in.
+ */
+async function loadCompetencyLinksForSnapshot(
+  snapshotId: string,
+): Promise<Array<{ statement: string; slug: string }>> {
+  const rows = await db
+    .select({
+      matchedCompetency: snapshotTargetCoverage.matchedCompetency,
+      subCompetencyId: snapshotTargetCoverage.subCompetencyId,
+    })
+    .from(snapshotTargetCoverage)
+    .where(eq(snapshotTargetCoverage.snapshotId, snapshotId));
+
+  const seen = new Set<string>();
+  const out: Array<{ statement: string; slug: string }> = [];
+  for (const r of rows) {
+    if (!r.matchedCompetency) continue;
+    const key = `${r.matchedCompetency}::${r.subCompetencyId}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ statement: r.matchedCompetency, slug: r.subCompetencyId });
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------------------
 // Course-info loader (extended 2026-06-08: sheet merge)
 // ---------------------------------------------------------------------------
 
@@ -811,6 +852,7 @@ export async function updateWikiForSnapshot(snapshotId: string): Promise<WikiUpd
   // (c) For each affected wiki page: load existing markdown + substrate.
   const courseInfo = await loadCourseInfo(snapshot.courseCode);
   const allSnapshots = await loadAllSnapshotsForCourse(snapshot.courseCode);
+  const competencyLinks = await loadCompetencyLinksForSnapshot(snapshot.id);
 
   const rawPaths = {
     snapshotJson: raw.find(p => p.path.startsWith('raw/snapshots/'))?.path ?? null,
@@ -891,6 +933,7 @@ export async function updateWikiForSnapshot(snapshotId: string): Promise<WikiUpd
       rawPaths,
       allSnapshotsForCourse: allSnapshots,
       competencyBands,
+      competencyLinks,
       affectedWikiPages: batch,
     });
 
