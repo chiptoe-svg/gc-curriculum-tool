@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { humanizeValidationIssue } from '@/app/capture/[code]/ProfileReviewPanel';
+import {
+  humanizeValidationIssue,
+  triageCompetency,
+  humanizeSource,
+} from '@/app/capture/[code]/ProfileReviewPanel';
+
+const chunkCite = [{ type: 'chunk' }] as never; // deriveEvidenceBand reads only .type
+
 
 describe('humanizeValidationIssue', () => {
   const comps = [
@@ -39,5 +46,69 @@ describe('humanizeValidationIssue', () => {
 
   it('returns just the message for an empty path', () => {
     expect(humanizeValidationIssue([], 'invalid', comps)).toBe('invalid');
+  });
+});
+
+describe('triageCompetency', () => {
+  it('(a) flags a high score resting on the instructor word (claimed band)', () => {
+    const t = triageCompetency(
+      { statement: 'X', u_depth: 2, d_depth: 4, source: 'instructor', citations: [] },
+      null,
+    );
+    expect(t.flagged).toBe(true);
+    expect(t.reason).toMatch(/your word/i);
+  });
+
+  it('(b) flags theory-without-craft (U high, D low) even when materials-cited', () => {
+    const t = triageCompetency(
+      { statement: 'X', u_depth: 4, d_depth: 1, source: 'materials', citations: chunkCite },
+      null,
+    );
+    expect(t.flagged).toBe(true);
+    expect(t.reason).toMatch(/theory without craft/i);
+  });
+
+  it('(b) flags craft-without-articulation (D high, U low)', () => {
+    const t = triageCompetency(
+      { statement: 'X', u_depth: 1, d_depth: 4, source: 'materials', citations: chunkCite },
+      null,
+    );
+    expect(t.reason).toMatch(/craft without articulation/i);
+  });
+
+  it('(c) flags an AI-inferred competency', () => {
+    const t = triageCompetency(
+      { statement: 'X', u_depth: 2, d_depth: 2, source: 'inferred', citations: [] },
+      null,
+    );
+    expect(t.flagged).toBe(true);
+    expect(t.reason).toMatch(/inferred/i);
+  });
+
+  it('(d) flags a competency that carries central graded weight', () => {
+    const t = triageCompetency(
+      { statement: 'Color management', u_depth: 2, d_depth: 2, source: 'materials', citations: chunkCite },
+      [{ competency: 'Color management', centrality: 'central' }],
+    );
+    expect(t.flagged).toBe(true);
+    expect(t.reason).toMatch(/graded weight/i);
+  });
+
+  it('does NOT flag a well-evidenced, mid-scored, non-central competency', () => {
+    const t = triageCompetency(
+      { statement: 'X', u_depth: 2, d_depth: 2, source: 'materials', citations: chunkCite },
+      [{ competency: 'Other', centrality: 'central' }],
+    );
+    expect(t.flagged).toBe(false);
+    expect(t.reason).toBeNull();
+  });
+});
+
+describe('humanizeSource', () => {
+  it('maps sources to plain language', () => {
+    expect(humanizeSource('instructor')).toBe('you said');
+    expect(humanizeSource('materials')).toBe('found in materials');
+    expect(humanizeSource('inferred')).toBe('AI inferred');
+    expect(humanizeSource(undefined)).toBe('AI inferred');
   });
 });

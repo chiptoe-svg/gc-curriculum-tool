@@ -184,6 +184,48 @@ export function humanizeValidationIssue(
   return pretty ? `${pretty}: ${message}` : message;
 }
 
+/**
+ * Quick-review triage: decide whether a competency is "worth a look" (needs a
+ * human eye) vs. one the AI is confident about (collapsible). Pure + exported
+ * for unit testing. Uses only existing profile data — never gates a score.
+ *
+ * Flag reasons (in priority order):
+ *  (a) high K/U/D resting on the instructor's word with no material cited
+ *  (b) dissociation cases (CLAUDE.md rule 3): theory-without-craft (U high, D
+ *      low) or craft-without-articulation (D high, U low)
+ *  (c) AI-inferred (no direct source)
+ *  (d) carries most graded weight (central in course_emphasis)
+ */
+export function triageCompetency(
+  c: Pick<CaptureCompetency, 'statement' | 'u_depth' | 'd_depth' | 'source' | 'citations'>,
+  emphasis: ReadonlyArray<{ competency: string; centrality: 'central' | 'supporting' | 'peripheral' }> | null | undefined,
+): { flagged: boolean; reason: string | null } {
+  const band = deriveEvidenceBand({ source: c.source, citations: c.citations });
+  const u = c.u_depth;
+  const d = c.d_depth;
+  if (band === 'claimed' && ((u !== null && u >= 3) || d >= 3)) {
+    return { flagged: true, reason: 'High score resting on your word — no rubric/material cited yet.' };
+  }
+  if (u !== null && u >= 3 && d <= 1) {
+    return { flagged: true, reason: 'Theory without craft — high Understand, low Do.' };
+  }
+  if (d >= 3 && u !== null && u <= 1) {
+    return { flagged: true, reason: 'Craft without articulation — high Do, low Understand.' };
+  }
+  if (c.source === 'inferred') {
+    return { flagged: true, reason: 'The AI inferred this — no direct source.' };
+  }
+  if (emphasis?.some(e => e.centrality === 'central' && e.competency.trim() === c.statement.trim())) {
+    return { flagged: true, reason: 'Carries most of the graded weight in this course.' };
+  }
+  return { flagged: false, reason: null };
+}
+
+/** Plain-language source label for the collapsed quick-review rows. */
+export function humanizeSource(source: CaptureProfileSourceType | undefined): string {
+  return source === 'instructor' ? 'you said' : source === 'materials' ? 'found in materials' : 'AI inferred';
+}
+
 interface Telemetry {
   costUsdCents: number;
   durationMs: number;
@@ -264,6 +306,38 @@ function DepthSlider({
         {describeDepth(dimension, value)}
       </p>
     </div>
+  );
+}
+
+/**
+ * Collapsed one-line row for the quick-review "AI is confident" zone. Shows the
+ * statement, a plain-language source label, and read-only depths. Click (or
+ * keyboard-activate) to expand it into the full editable CompetencyCard.
+ */
+function CompetencyRow({
+  competency,
+  onExpand,
+}: {
+  competency: CaptureCompetency;
+  onExpand: () => void;
+}) {
+  const isTechnical = competency.type === 'technical';
+  return (
+    <button
+      type="button"
+      onClick={onExpand}
+      aria-label={`Edit "${competency.statement}" — ${humanizeSource(competency.source)}`}
+      className="flex w-full items-center gap-2 rounded border bg-background px-2.5 py-1.5 text-left text-xs hover:bg-muted focus:outline-none focus:ring-1 focus:ring-ring"
+    >
+      <span aria-hidden className="text-muted-foreground">▸</span>
+      <span className="flex-1 truncate font-medium">{competency.statement}</span>
+      <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+        {humanizeSource(competency.source)}
+      </span>
+      <span className="shrink-0 font-mono text-[11px] text-muted-foreground">
+        {isTechnical ? `K${competency.k_depth ?? '–'} U${competency.u_depth ?? '–'} ` : ''}D{competency.d_depth}
+      </span>
+    </button>
   );
 }
 
@@ -744,6 +818,11 @@ export function ProfileReviewPanel({
   // edits the profile (mutating `working` via setWorking), so stale
   // annotations don't linger after the underlying scores change.
   const [stressTestResult, setStressTestResult] = useState<StressTestResultType | null>(null);
+  // Quick-review triage: which "worth a look" rows the faculty has eyeballed,
+  // and which "confident" rows they've expanded to full edit. Advisory only —
+  // never gates save/approve.
+  const [reviewed, setReviewed] = useState<Set<number>>(new Set());
+  const [expanded, setExpanded] = useState<Set<number>>(new Set());
 
   function handleCitationClick(c: CaptureProfileCitationType) {
     setDrawerTarget({
@@ -808,6 +887,21 @@ export function ProfileReviewPanel({
     setStressTestResult(null);
   }
 
+  function markReviewed(i: number) {
+    setReviewed(prev => {
+      const n = new Set(prev);
+      n.add(i);
+      return n;
+    });
+  }
+  function expandRow(i: number) {
+    setExpanded(prev => {
+      const n = new Set(prev);
+      n.add(i);
+      return n;
+    });
+  }
+
   // Client-side validation against the same Zod schema the server uses.
   // Memoized so it runs on every working-state change without re-parsing
   // unnecessarily. If the working profile would fail server-side
@@ -824,6 +918,27 @@ export function ProfileReviewPanel({
     if (!issue) return null;
     return humanizeValidationIssue(issue.path, issue.message, working.competencies ?? []);
   }, [working]);
+
+  // Quick-review partition: "worth a look" (triage-flagged, capped at 6, ranked
+  // by Do depth) vs. "the AI is confident about" (the rest). Both reuse
+  // CompetencyCard; the confident zone collapses to one-line CompetencyRows.
+  const { worthLook, confident } = useMemo(() => {
+    const triaged = working.competencies.map((c, i) => ({
+      c,
+      i,
+      ...triageCompetency(c, working.course_emphasis),
+    }));
+    const flagged = triaged
+      .filter(t => t.flagged)
+      .sort((a, b) => b.c.d_depth - a.c.d_depth)
+      .slice(0, 6);
+    const flaggedIdx = new Set(flagged.map(t => t.i));
+    return {
+      worthLook: triaged.filter(t => flaggedIdx.has(t.i)),
+      confident: triaged.filter(t => !flaggedIdx.has(t.i)),
+    };
+  }, [working.competencies, working.course_emphasis]);
+  const unreviewedCount = worthLook.filter(t => !reviewed.has(t.i)).length;
 
   async function persist(status: 'confirmed' | 'edited') {
     if (validationError) {
@@ -891,7 +1006,10 @@ export function ProfileReviewPanel({
         <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm">
           <p className="font-semibold tracking-wide">DRAFT — pending your approval</p>
           <p className="mt-0.5 text-xs leading-snug">
-            This profile was generated from your audit. Review, edit if needed, then approve at the bottom to capture it as the official record.
+            The AI scored {technicalCount} technical + {foundationalCount} foundational competencies from your
+            interview. Most look well-evidenced — we flagged{' '}
+            <strong>{worthLook.length} worth a look</strong> below. Review those (or skim the rest), then approve at
+            the bottom to capture the official record.
           </p>
         </div>
       )}
@@ -1070,14 +1188,83 @@ export function ProfileReviewPanel({
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
         <div className="space-y-3">
-          {working.competencies.map((c, i) => (
-            <div key={i} className="space-y-1">
-              <CompetencyCard competency={c} index={i} onChange={next => updateCompetency(i, next)} onCitationClick={handleCitationClick} />
-              <StressTestBadge
-                annotation={stressTestResult?.per_competency.find(a => a.competency_index === i) ?? null}
-              />
-            </div>
-          ))}
+          {/* ── WORTH A LOOK — triage-flagged, full editable cards ── */}
+          {worthLook.length > 0 && (
+            <section className="space-y-3 rounded-md border border-amber-300 bg-amber-50/40 p-3">
+              <div className="flex items-baseline justify-between gap-2">
+                <h3 className="text-sm font-semibold text-amber-900">Worth a look ({worthLook.length})</h3>
+                <span className="text-[11px] text-amber-800">
+                  {unreviewedCount === 0 ? 'all confirmed ✓' : `${unreviewedCount} still to confirm`}
+                </span>
+              </div>
+              <p className="text-xs text-amber-800">
+                These rest on your word, sit high on the scale, were AI-inferred, or carry the most
+                graded weight. Adjust a slider, or confirm each.
+              </p>
+              {worthLook.map(({ c, i, reason }) => (
+                <div key={i} className={'space-y-1' + (reviewed.has(i) ? ' opacity-60' : '')}>
+                  {reason && <p className="text-[11px] font-medium text-amber-800">⚑ {reason}</p>}
+                  <CompetencyCard
+                    competency={c}
+                    index={i}
+                    onChange={next => {
+                      updateCompetency(i, next);
+                      markReviewed(i);
+                    }}
+                    onCitationClick={handleCitationClick}
+                  />
+                  <StressTestBadge
+                    annotation={stressTestResult?.per_competency.find(a => a.competency_index === i) ?? null}
+                  />
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => markReviewed(i)}
+                      className="rounded border border-amber-300 bg-white px-2 py-0.5 text-[11px] font-medium text-amber-900 hover:bg-amber-100"
+                    >
+                      {reviewed.has(i) ? '✓ looks right' : 'Looks right ✓'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </section>
+          )}
+
+          {/* ── THE AI IS CONFIDENT — collapsed rows, expand to edit ── */}
+          {confident.length > 0 && (
+            <section className="space-y-2 rounded-md border bg-card p-3">
+              <div className="flex items-baseline justify-between gap-2">
+                <h3 className="text-sm font-semibold">The AI is confident about these ({confident.length})</h3>
+                <button
+                  type="button"
+                  onClick={() => setExpanded(new Set(confident.map(t => t.i)))}
+                  className="text-[11px] text-muted-foreground underline hover:text-foreground"
+                >
+                  Open all ▾
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Each cited to your materials or scored low. Click any row to edit.
+              </p>
+              {confident.map(({ c, i }) =>
+                expanded.has(i) ? (
+                  <div key={i} className="space-y-1">
+                    <CompetencyCard
+                      competency={c}
+                      index={i}
+                      onChange={next => updateCompetency(i, next)}
+                      onCitationClick={handleCitationClick}
+                    />
+                    <StressTestBadge
+                      annotation={stressTestResult?.per_competency.find(a => a.competency_index === i) ?? null}
+                    />
+                  </div>
+                ) : (
+                  <CompetencyRow key={i} competency={c} onExpand={() => expandRow(i)} />
+                ),
+              )}
+            </section>
+          )}
         </div>
 
         <aside className="space-y-5 rounded-md border bg-card px-4 py-3">
