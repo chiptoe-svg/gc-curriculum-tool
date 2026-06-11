@@ -10,6 +10,7 @@
  */
 
 import { readFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 
 import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
@@ -694,6 +695,65 @@ function chunkPages<T>(items: T[], size: number): T[][] {
   return out;
 }
 
+// ---------------------------------------------------------------------------
+// Reconcile + watermark (increment C — loud-not-silent omission + staleness)
+// ---------------------------------------------------------------------------
+
+/**
+ * Pure: which REQUESTED page paths did the model NOT return in its output?
+ * A batch where the model silently omits a requested page is myKG's "loses
+ * things" failure mode; the caller re-requests these once and then logs a hard
+ * reconcile warning rather than letting them vanish. 'unchanged' counts as
+ * produced — the model explicitly accounted for the page.
+ */
+export function missingPagePaths(
+  requested: ReadonlyArray<{ path: string }>,
+  produced: ReadonlyArray<{ path: string }>,
+): string[] {
+  const got = new Set(produced.map(p => p.path));
+  return requested.filter(p => !got.has(p.path)).map(p => p.path);
+}
+
+/**
+ * Pure: a deterministic short watermark over the inputs that produced a page —
+ * the immutable snapshot id plus a hash of the page's input substrate. Stored
+ * in page frontmatter (`input_hash`) so a reconcile pass can detect a page
+ * whose inputs have since changed (stale) or that was never written (missing)
+ * without re-running the LLM. Stable across runs given the same inputs because
+ * the substrate is built from deterministically-ordered queries.
+ */
+export function computeInputHash(
+  snapshotId: string,
+  page: { type: AffectedWikiPage['type']; slug: string; substrate?: unknown },
+): string {
+  const payload = JSON.stringify({
+    snapshotId,
+    type: page.type,
+    slug: page.slug,
+    substrate: page.substrate ?? null,
+  });
+  return createHash('sha256').update(payload).digest('hex').slice(0, 12);
+}
+
+const FRONTMATTER_RE = /^---\n([\s\S]*?)\n---\n?/;
+
+/**
+ * Pure: stamp `input_hash: <hash>` into a page's YAML frontmatter, replacing an
+ * existing value or appending into the block. If the page has no frontmatter,
+ * one is prepended carrying just the watermark.
+ */
+export function stampInputHash(content: string, inputHash: string): string {
+  const line = `input_hash: ${inputHash}`;
+  const m = content.match(FRONTMATTER_RE);
+  if (m) {
+    const body = /^input_hash:\s*.*$/m.test(m[1]!)
+      ? m[1]!.replace(/^input_hash:\s*.*$/m, line)
+      : `${m[1]!}\n${line}`;
+    return content.replace(FRONTMATTER_RE, `---\n${body}\n---\n`);
+  }
+  return `---\n${line}\n---\n\n${content}`;
+}
+
 /**
  * Main entry point. Loads the snapshot, builds raw-layer writes, assembles
  * wiki-page substrate, calls the LLM (in bounded batches so a full-coverage
@@ -771,7 +831,11 @@ export async function updateWikiForSnapshot(snapshotId: string): Promise<WikiUpd
   const generatedPages: WikiUpdateOutput['pages'] = [];
   const logEntries: string[] = [];
 
-  for (const batch of batches) {
+  // One LLM call over the SAME snapshot context but only the given slice of
+  // affected pages. Used for the primary batch pass and the reconcile retry.
+  const generateBatch = async (
+    batch: Array<AffectedWikiPage & { substrate?: unknown }>,
+  ): Promise<WikiUpdateOutput> => {
     const userMessage = JSON.stringify({
       snapshot: {
         id: snapshot.id,
@@ -804,9 +868,36 @@ export async function updateWikiForSnapshot(snapshotId: string): Promise<WikiUpd
       jsonSchema: wikiUpdateJsonSchema,
       validate: validateWikiUpdateOutput,
     });
+    return data;
+  };
 
+  for (const batch of batches) {
+    const data = await generateBatch(batch);
     generatedPages.push(...data.pages);
     if (data.log_entry) logEntries.push(data.log_entry);
+
+    // Reconcile: a batch where the model silently dropped a requested page is
+    // the known `batch-page-dropped` debt (myKG's "loses things"). Diff
+    // requested vs produced, re-request the missing pages ONCE, and if any are
+    // still absent, log a hard reconcile failure rather than let them vanish.
+    const missing = missingPagePaths(batch, data.pages);
+    if (missing.length > 0) {
+      const tag = `course ${snapshot.courseCode}, snapshot ${snapshot.id.slice(0, 8)}`;
+      console.error(
+        `[wiki-update] batch omitted ${missing.length} requested page(s); re-requesting once (${tag}): ${missing.join(', ')}`,
+      );
+      const retryBatch = batch.filter(p => missing.includes(p.path));
+      const retry = await generateBatch(retryBatch);
+      generatedPages.push(...retry.pages);
+      if (retry.log_entry) logEntries.push(retry.log_entry);
+
+      const stillMissing = missingPagePaths(retryBatch, retry.pages);
+      if (stillMissing.length > 0) {
+        console.error(
+          `[wiki-update] RECONCILE FAILURE: ${stillMissing.length} page(s) still missing after retry (${tag}): ${stillMissing.join(', ')}`,
+        );
+      }
+    }
   }
 
   // (f) Build the final wiki write list (filter out 'unchanged' pages).
@@ -819,8 +910,19 @@ export async function updateWikiForSnapshot(snapshotId: string): Promise<WikiUpd
   //     and is dropped with a hard log rather than written. The raw/ layer is
   //     written by the caller, not the model, so it isn't in this set by design.
   const requestedPaths = new Set(pagesWithSubstrate.map(p => p.path));
+  // Per-page input watermark: hash of the (immutable snapshot id + page
+  // substrate) that produced each requested page. Stamped into frontmatter so a
+  // later reconcile pass can detect stale/missing pages deterministically.
+  const inputHashByPath = new Map(
+    pagesWithSubstrate.map(p => [p.path, computeInputHash(snapshot.id, p)]),
+  );
+  // Dedup by path keeping the LAST occurrence — a reconcile retry can re-emit a
+  // page the first pass also returned; the retry is the authoritative copy.
+  const latestByPath = new Map<string, WikiUpdateOutput['pages'][number]>();
+  for (const p of generatedPages) latestByPath.set(p.path, p);
+
   const wiki: WikiPageWrite[] = [];
-  for (const p of generatedPages) {
+  for (const p of latestByPath.values()) {
     if (p.operation === 'unchanged') continue;
     if (!requestedPaths.has(p.path)) {
       console.error(
@@ -829,7 +931,8 @@ export async function updateWikiForSnapshot(snapshotId: string): Promise<WikiUpd
       );
       continue;
     }
-    wiki.push({ path: p.path, content: p.content });
+    const content = stampInputHash(p.content, inputHashByPath.get(p.path) ?? '');
+    wiki.push({ path: p.path, content });
   }
 
   return {
