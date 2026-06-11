@@ -1,12 +1,7 @@
-import OpenAI from 'openai';
-import { loadPrompt } from '@/lib/ai/prompts/load';
-import { resolveModelForFunction } from '@/lib/ai/function-settings';
 import { effectiveAuditText } from '@/lib/capture/material-compression';
 import {
   baselineFoundationalCompetencies,
-  captureChatReplySchema,
   type CaptureProfile,
-  type CaptureReadiness,
 } from '@/lib/ai/capture/schema';
 
 /**
@@ -209,89 +204,4 @@ export function buildCaptureChatUserMessage(context: CaptureChatContext): string
     ...baselineFoundationalCompetencies.map((c, i) => `${i + 1}. ${c}`),
   ];
   return parts.join('\n');
-}
-
-// JSON Schema for OpenAI strict structured-output. Mirrors
-// captureChatReplySchema in lib/ai/capture/schema.ts. Every property is in
-// `required` and `additionalProperties: false` everywhere, per OpenAI strict
-// mode requirements.
-const chatReplyJsonSchema = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['reply', 'readiness'],
-  properties: {
-    reply: { type: 'string', minLength: 1 },
-    readiness: {
-      type: 'object',
-      additionalProperties: false,
-      required: ['score', 'covered', 'remaining', 'good_enough_to_generate'],
-      properties: {
-        score: { type: 'integer', minimum: 0, maximum: 100 },
-        covered: { type: 'array', items: { type: 'string' } },
-        remaining: { type: 'array', items: { type: 'string' } },
-        good_enough_to_generate: { type: 'boolean' },
-      },
-    },
-  },
-} as const;
-
-export interface CaptureTurnResult {
-  reply: string;
-  readiness: CaptureReadiness;
-}
-
-export async function captureChatTurn(
-  context: CaptureChatContext,
-  history: ChatMessage[],
-): Promise<CaptureTurnResult> {
-  const apiKey = process.env.OPENAI_API_KEY?.trim();
-  if (!apiKey) throw new Error('OPENAI_API_KEY not set');
-  const client = new OpenAI({ apiKey });
-
-  const model = await resolveModelForFunction('capture-chat');
-  const systemPrompt = await loadPrompt('capture-chat');
-
-  const openaiMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
-    { role: 'system', content: systemPrompt },
-    ...(history.length === 0
-      ? [{ role: 'user' as const, content: buildCaptureChatUserMessage(context) }]
-      : [
-          // First user message is always the full context bundle, even on
-          // continuation turns. Subsequent history rides on top.
-          { role: 'user' as const, content: buildCaptureChatUserMessage(context) },
-          ...history.map(m => ({ role: m.role, content: m.content })),
-        ]),
-  ];
-
-  const response = await client.chat.completions.create({
-    model,
-    max_completion_tokens: 2048,
-    // Lower temperature + frequency penalty to suppress the self-duplication
-    // we saw in early sessions where the model would emit the same 3-sentence
-    // turn twice back-to-back. Audit work doesn't need creative randomness.
-    temperature: 0.3,
-    frequency_penalty: 0.3,
-    messages: openaiMessages,
-    // Structured output: every reply also carries a readiness signal so the
-    // UI can show a progress strip and the instructor can decide when to stop.
-    response_format: {
-      type: 'json_schema',
-      json_schema: {
-        name: 'capture_chat_reply_v1',
-        schema: chatReplyJsonSchema as unknown as Record<string, unknown>,
-        strict: true,
-      },
-    },
-  });
-
-  const content = response.choices[0]?.message?.content;
-  if (!content) throw new Error('No content in OpenAI chat response');
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(content);
-  } catch {
-    throw new Error(`OpenAI chat returned non-JSON: ${content.slice(0, 200)}`);
-  }
-  const validated = captureChatReplySchema.parse(parsed);
-  return { reply: validated.reply, readiness: validated.readiness };
 }

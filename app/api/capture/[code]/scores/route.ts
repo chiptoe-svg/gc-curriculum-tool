@@ -8,8 +8,8 @@ import {
   upsertCaptureProfile,
   setCaptureProfileStatus,
 } from '@/lib/db/course-capture-profiles-queries';
-import { generateCaptureProfile, generateCaptureProfileV2 } from '@/lib/ai/analyze/capture-scores';
-import type { ChatMessage, CaptureChatContext } from '@/lib/ai/analyze/capture-chat';
+import { generateCaptureProfileV2 } from '@/lib/ai/analyze/capture-scores';
+import type { CaptureChatContext } from '@/lib/ai/analyze/capture-chat';
 import { getLatestSnapshotByCourse } from '@/lib/db/capture-snapshots-queries';
 import { getLatestSessionId, getSessionMessages } from '@/lib/db/capture-messages-queries';
 
@@ -83,16 +83,6 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     );
   }
 
-  const history: ChatMessage[] = (body.messages as unknown[])
-    .filter(
-      (m): m is { role: 'user' | 'assistant'; content: string } =>
-        typeof m === 'object' &&
-        m !== null &&
-        ((m as { role?: unknown }).role === 'user' || (m as { role?: unknown }).role === 'assistant') &&
-        typeof (m as { content?: unknown }).content === 'string',
-    )
-    .map(m => ({ role: m.role, content: m.content }));
-
   const [builderProfile, materials, priorCapture] = await Promise.all([
     getCourseProfile(courseCode),
     listMaterialsByCourse(courseCode),
@@ -151,42 +141,24 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     prerequisiteCaptureProfiles,
   };
 
-  const v2Enabled =
-    process.env.COURSECAPTURE_V2_INGESTION === '1' &&
-    (course.auditMode === 'full' || course.auditMode === 'simple');
-
   try {
-    let profile: CaptureProfile;
-    let telemetry: Awaited<ReturnType<typeof generateCaptureProfile>>['telemetry'];
-    let model: string;
-
-    if (v2Enabled) {
-      // v2: synthesize from the append-only capture_messages transcript.
-      // The agent persists each turn there during the chat phase; here we
-      // hand the full session log + materials/digests to the synthesis prompt.
-      const sessionId = await getLatestSessionId(courseCode);
-      const transcript = sessionId ? await getSessionMessages(courseCode, sessionId) : [];
-      const result = await generateCaptureProfileV2({
-        chatContext: context,
-        sessionId: sessionId ?? '',
-        transcript,
-      });
-      profile = result.profile;
-      telemetry = result.telemetry;
-      model = result.model;
-    } else {
-      const result = await generateCaptureProfile(context, history);
-      profile = result.profile;
-      telemetry = result.telemetry;
-      model = result.model;
-    }
+    // Synthesize from the append-only capture_messages transcript. The agent
+    // persists each turn during the chat phase; here we hand the full session
+    // log + materials/digests to the synthesis prompt. (v1 retired 2026-06-11.)
+    const sessionId = await getLatestSessionId(courseCode);
+    const transcript = sessionId ? await getSessionMessages(courseCode, sessionId) : [];
+    const { profile: rawProfile, telemetry, model } = await generateCaptureProfileV2({
+      chatContext: context,
+      sessionId: sessionId ?? '',
+      transcript,
+    });
 
     // Server-stamp generated_at — the model occasionally echoes a stale
     // timestamp from earlier context (e.g., the prior profile's value
     // leaking back in via transcript text), which makes the "generated"
     // line in the header lie about when synthesis actually ran. The
     // server's clock is the source of truth.
-    profile = { ...profile, generated_at: new Date().toISOString() };
+    const profile = { ...rawProfile, generated_at: new Date().toISOString() };
 
     await upsertCaptureProfile({ courseCode, profile, reviewerStatus: 'ai_drafted' });
     return NextResponse.json({
