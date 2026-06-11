@@ -60,6 +60,8 @@ interface Props {
   slug: string;
   onMaterialsChange?: (next: CaptureMaterial[]) => void;
   onCourseChange?: (next: CourseCatalogView) => void;
+  /** When true, the panel mounts expanded instead of collapsed. Defaults to collapsed elsewhere. */
+  initiallyExpanded?: boolean;
 }
 
 const ALLOWED_UPLOAD_TYPES = new Set([
@@ -182,7 +184,7 @@ function formatRelativeTime(iso: string | null): string {
   return `${diffDay}d ago`;
 }
 
-function IndexingStatusDot({ status, indexedAt }: { status: IndexingStatus; indexedAt: string | null }) {
+export function IndexingStatusDot({ status, indexedAt }: { status: IndexingStatus; indexedAt: string | null }) {
   const color =
     status === 'ready' ? '#10B981'
       : status === 'indexing' ? '#F59E0B'
@@ -602,14 +604,14 @@ function MaterialRow({
   );
 }
 
-export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChange, onCourseChange }: Props) {
+export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChange, onCourseChange, initiallyExpanded }: Props) {
   const [materials, setMaterials] = useState<CaptureMaterial[]>(initialMaterials);
   const [busy, setBusy] = useState<string | null>(null);
   // Collapsed by default — the header summary (counts + token size + a
   // plain-language "large" chip) stays visible, so faculty see status at a
   // glance without the full materials list adding to page density. They open
   // it with "Show" when they actually need to manage materials.
-  const [collapsed, setCollapsed] = useState(true);
+  const [collapsed, setCollapsed] = useState(!initiallyExpanded);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploading, setUploading] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
