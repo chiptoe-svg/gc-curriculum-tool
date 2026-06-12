@@ -166,7 +166,7 @@
 <div class="eyebrow">Clemson · Graphic Communications · Executive Brief</div>
 <h1>The GC Curriculum Tool</h1>
 <p class="lede">A versioned, evidence-backed working view of captured GC courses — designed to grow into a program-wide view as faculty-confirmed snapshots accumulate.</p>
-<div class="meta">Three-minute read · Last updated 2026-06-11</div>
+<div class="meta">Three-minute read · Last updated 2026-06-12</div>
 
 <h2>What the tool does</h2>
 
@@ -220,7 +220,7 @@
 
   <div class="surface">
     <div class="surface-title">CourseCapture · /capture/&lt;code&gt;</div>
-    <div class="surface-desc">An instructor-facing audit conversation that produces a <em>Course Outcome Profile</em> for one course. The system pulls in catalog data, Canvas materials (assignments, rubrics, pages, quizzes, file attachments), Google Docs/Slides/Sheets, Drive PDFs, YouTube transcripts, and any uploaded files. Voice or text input, one focused question per turn. A retrieval agent reads the course's chunked materials on demand and can consult the program-wide picture for cross-instructor context (as reference, never as evidence for this course); every finding in the resulting profile carries its provenance — instructor claim, course materials, or inferred — plus citations. When the instructor confirms, an immutable, versioned snapshot is written — the historical record. Drafts remain mutable for further iteration.</div>
+    <div class="surface-desc">An instructor-facing audit conversation that produces a <em>Course Outcome Profile</em> for one course. Before the audit begins, the instructor sees and confirms the evidence corpus the auditor will read: the syllabus/catalog entry (synced from the GC curriculum Google Sheet), everything imported from Canvas, and any other uploaded or linked materials — each shown honestly, with what's inside and whether it's actually readable. Only after that confirmation does the audit proceed, so ratings rest on a corpus the faculty member has reviewed. Voice or text input, one focused question per turn. A retrieval agent reads the course's chunked materials on demand and can consult the program-wide picture for cross-instructor context (as reference, never as evidence for this course); every finding in the resulting profile carries its provenance — instructor claim, course materials, or inferred — plus citations. When the instructor confirms, an immutable, versioned snapshot is written — the historical record. Drafts remain mutable for further iteration.</div>
   </div>
 
   <div class="surface">
@@ -230,7 +230,7 @@
 
   <div class="surface">
     <div class="surface-title">Program Coverage Matrix · /program</div>
-    <div class="surface-desc">The end-state view in snapshot form: every confirmed snapshot crossed with every career-target sub-competency, rendered as a depth-aware heat map. Click any cell to see which snapshot competency contributed, the evidence excerpt that justifies the depth, the AI's confidence, and the full rationale. On-demand AI scoring with prompt-cache batching keeps cost bounded.</div>
+    <div class="surface-desc">The end-state view in snapshot form: every confirmed snapshot crossed with every career-target sub-competency, rendered as a depth-aware heat map. The curriculum is organized into four categories — GC Core, Specialty Area / GC Tech, Major Requirements + GenEds, and Other — and each course carries a flag for whether it builds toward the career. Coverage is measured against the flagged subset (near-term: the 16 GC Core courses plus 11 high-enrollment major requirements), so optional electives don't dilute the picture of what the program is actually building toward. Click any cell to see which snapshot competency contributed, the evidence excerpt that justifies the depth, the AI's confidence, and the full rationale. On-demand AI scoring with prompt-cache batching keeps cost bounded.</div>
   </div>
 
   <div class="surface">
@@ -257,7 +257,7 @@
   <li><strong>Career.</strong> The career targets name the destinations; Position Capture and partner input turn real job postings into a structured picture of <em>what those destinations actually demand.</em></li>
 </ul>
 
-<p>Q1 — <em>does the curriculum build students toward the careers we claim to prepare them for?</em> — is precisely the join of the last two: the program's measured coverage compared against the careers' captured demand. Because every level is built from the same KUD+ evidence-scored records, that comparison is a real computation over real data, not a narrative assertion — a course audit, the program view, and a career-readiness claim are one continuous chain of evidence, zoomed in or out. (The sufficiency computation is built and awaiting activation; everything it draws on is live.)</p>
+<p>Q1 — <em>does the curriculum build students toward the careers we claim to prepare them for?</em> — is precisely the join of the last two: the program's measured coverage compared against the careers' captured demand. That coverage is scoped to the courses that actually build toward the career (a per-course flag; near-term the 27 GC Core and high-enrollment major-requirement courses), so the answer reflects the intentional curriculum, not the full transcript. Because every level is built from the same KUD+ evidence-scored records, the comparison is a real computation over real data, not a narrative assertion — a course audit, the program view, and a career-readiness claim are one continuous chain of evidence, zoomed in or out. (The sufficiency computation is built and awaiting activation; everything it draws on is live.)</p>
 
 <p>Faculty walkthrough of the day-to-day workflow: <a href="./using-coursecapture-and-explore.html">Using CourseCapture &amp; Explore</a>.</p>
 

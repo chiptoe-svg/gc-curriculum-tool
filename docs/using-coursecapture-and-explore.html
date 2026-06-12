@@ -158,7 +158,7 @@
     <a class="nav-link" href="#access">How you reach the tool</a>
     <a class="nav-link" href="#before">Before you start</a>
     <div class="nav-group-label" style="margin-top: 10px;">CourseCapture</div>
-    <a class="nav-link" href="#cc-materials">1 · Loading materials</a>
+    <a class="nav-link" href="#cc-materials">1 · Confirming materials</a>
     <a class="nav-link" href="#cc-instructor">2 · Identifying yourself</a>
     <a class="nav-link" href="#cc-audit">3 · The audit chat</a>
     <a class="nav-link" href="#cc-generate">4 · Generate &amp; confirm</a>
@@ -195,7 +195,7 @@
   <div class="doc-meta">
     <span><strong>Audience</strong> GC faculty using the tool on their own courses</span>
     <span><strong>Time per course</strong> 20–45 minutes for a first capture</span>
-    <span><strong>Date</strong> 2026-06-03</span>
+    <span><strong>Date</strong> 2026-06-12</span>
   </div>
 </header>
 
@@ -242,111 +242,87 @@
   <p>The 120-course GC catalog is seeded into the tool. If you're capturing a course that isn't in the catalog (a new course, a renamed special-topics section), contact the administrator before you start — the capture page expects a catalog row to attach the snapshot to.</p>
 
   <h3>Have your materials handy</h3>
-  <p>The richer the materials the auditor can read, the less work the audit chat has to do. Three categories of inputs the system can ingest <em>without</em> you uploading anything:</p>
+  <p>The richer the materials the auditor can read, the less work the audit chat has to do. When you open <code>/capture/&lt;course-code&gt;</code>, the first thing you see is <strong>Step 1: "Confirm materials"</strong> — a review screen showing exactly what evidence the auditor will read before the interview begins. Three source boxes are presented, each a collapsible accordion:</p>
   <ul>
-    <li><strong>Catalog values</strong> (description, prerequisites, objectives, projects, required incoming skills) — sourced from the shared GC course sheet; click <strong>Sync from Sheet</strong> on the Materials panel to pull the latest.</li>
-    <li><strong>Canvas content</strong> (syllabus body, assignments + rubrics + point values, modules, pages, discussions, quizzes — Classic and New Quizzes, file metadata) — connect Canvas once per course; the capture page imports on demand.</li>
-    <li><strong>Linked content</strong> referenced from any of the above — Google Docs, Sheets, Slides (must be shared "Anyone with the link"), and Drive PDFs are fetched automatically when their URLs appear in materials.</li>
+    <li><strong>Syllabus &amp; course info</strong> — catalog values synced from the shared GC Google Sheet (description, objectives, projects, prerequisites, required skills). Shows how long ago it was last synced with a Re-sync button; you can also attach a syllabus PDF if your course doesn't have a sheet tab.</li>
+    <li><strong>Canvas</strong> — everything imported from Canvas (assignments, quizzes, modules, the Canvas syllabus page, Canvas Files). Use Import from Canvas / Reimport (requires a Canvas API token). <strong>Scan linked docs</strong> chases Google Docs, Drive PDFs, and YouTube links <em>inside</em> your Canvas content and pulls in their text (captions or Whisper audio-transcription for video).</li>
+    <li><strong>Other materials</strong> — uploaded PDFs, DOCX files, and any linked documents the scan found.</li>
   </ul>
-  <p>Materials you <em>do</em> upload yourself live alongside the rest: rubrics-as-PDFs, project briefs, lab handouts, anything the auditor needs to read that isn't in Canvas or behind the catalog row.</p>
+  <p>Each item shows a readiness status — <em>ready</em>, <em>not indexed yet</em>, or <em>not readable</em> (with a reason, such as a Google Doc that isn't shared or a video with no captions) — and an <strong>Index now</strong> action where fixable. When the sources look complete, <strong>Continue to interview →</strong> starts the audit conversation.</p>
 </section>
 
 <section id="cc-materials">
-  <h2><span class="num">§ 4</span>CourseCapture · Loading materials</h2>
+  <h2><span class="num">§ 4</span>CourseCapture · Confirming materials</h2>
 
-  <p>Open <code>/capture/&lt;course-code&gt;</code>. The page splits into a Materials &amp; catalog panel (top) and the audit chat (below). Spend a couple of minutes on the materials panel <em>before</em> talking to the auditor — every item you load is evidence the auditor can read directly instead of asking you to recall.</p>
+  <p>Open <code>/capture/&lt;course-code&gt;</code>. The page opens on <strong>Step 1: "Confirm materials — here's what the auditor will read."</strong> This is the evidence-review screen: confirm the sources are complete before the interview starts. Every item loaded here is evidence the auditor reads directly, rather than asking you to recall.</p>
 
-  <h3>The Materials panel, item by item</h3>
+  <h3>The three source boxes</h3>
+
+  <p>Three collapsible accordion boxes each represent a source of evidence. Collapsed, each shows a one-line summary; expand it to see and manage everything inside.</p>
 
   <div class="step">
     <div class="step-num">1</div>
     <div class="step-body">
-      <strong>Sync from Sheet.</strong> The top of the panel shows the catalog values currently in the system (description, prereqs, objectives, projects, incoming skills). If you've edited your course's tab on the shared sheet since the last sync, click <strong>Sync from Sheet</strong> to pull the latest. The button only touches this course's row.
+      <strong>Syllabus &amp; course info.</strong> Course catalog values synced from the shared GC curriculum Google Sheet — description, learning objectives, major projects, prerequisites, and required incoming skills. Shows <em>synced X ago</em> with a <strong>Re-sync</strong> button to pull the latest from the sheet. If your course doesn't have a sheet tab, use <strong>Attach a syllabus</strong> to upload a PDF instead.
     </div>
   </div>
 
   <div class="step">
     <div class="step-num">2</div>
     <div class="step-body">
-      <strong>Connect &amp; Import from Canvas.</strong> The first time, you'll paste a Canvas access token and the course's Canvas course ID; that pair is stored per-course. Subsequent visits just need an <strong>Import from Canvas</strong> click. The import pulls the syllabus body, every assignment with its rubric and point value, every page, every discussion topic, every quiz (both Classic and New Quizzes APIs), and file metadata. Each item appears as a row in the Materials list with its kind and source labeled.
+      <strong>Canvas.</strong> Everything imported from Canvas: assignments (with rubrics and point values), quizzes (Classic and New Quizzes), modules, the Canvas syllabus page, and Canvas Files. Click <strong>Import from Canvas</strong> (or <strong>Reimport</strong>) to pull the latest — you'll need a Canvas API token the first time. Expand the box to see the individual items imported; any you don't want to count as evidence can be unchecked.
       <br><br>
-      The dialog has a <strong>Skip unpublished items</strong> checkbox that's <em>on by default</em>. Most Canvas courses carry a graveyard of half-built draft assignments, pages, and quizzes that the auditor would otherwise read as real coverage. With the box checked, those drafts are filtered server-side; the import summary tells you how many were skipped. Uncheck if you specifically want the drafts included — they'll arrive tagged <code>[unpublished]</code> in the imported text so the auditor knows what it's looking at.
+      <strong>Scan linked docs</strong> chases Google Docs, Drive PDFs, and YouTube links that appear <em>inside</em> your Canvas content and pulls in their text — YouTube videos are handled via captions or Whisper audio-transcription. Run the scan after importing to pick up any linked content you haven't loaded directly.
+      <br><br>
+      By default, unpublished Canvas items are skipped. Uncheck <strong>Skip unpublished items</strong> in the import dialog to include drafts — they'll arrive tagged <code>[unpublished]</code> so the auditor scores them accordingly.
     </div>
   </div>
 
   <div class="step">
     <div class="step-num">3</div>
     <div class="step-body">
-      <strong>Upload anything else.</strong> Drag-and-drop rubrics, project briefs, lab handouts, exam keys, syllabus PDFs. Supported: PDF, DOCX, PPTX, XLSX, CSV, HTML, images (PNG/JPG, OCR'd), TXT, MD. Legacy Office formats (<code>.doc</code>, <code>.ppt</code>, <code>.xls</code>) are auto-converted via LibreOffice headless on upload. The auditor reads the extracted text and uses it as direct evidence.
+      <strong>Other materials.</strong> Uploaded files (PDFs, DOCX, PPTX, XLSX, CSV, HTML, images, TXT, MD) plus any linked documents the scan found. Drag-and-drop rubrics, project briefs, lab handouts, exam keys — anything the auditor needs that isn't in Canvas or the catalog. Legacy Office formats (<code>.doc</code>, <code>.ppt</code>, <code>.xls</code>) are auto-converted via LibreOffice on upload.
     </div>
   </div>
 
-  <div class="step">
-    <div class="step-num">4</div>
-    <div class="step-body">
-      <strong>Linked Google/Drive content is fetched automatically.</strong> If any of your loaded materials reference a Google Doc, Sheet, or Slides URL, or a Drive PDF link, the system follows the link and fetches the content — provided the file is shared with "Anyone with the link" view access. Each fetched file shows up as its own row in Materials, tagged with what it is. The audit chat will treat the fetched content as readable evidence; if a link can't be fetched (permissions, deleted file), it appears as an inaccessible reference instead.
-    </div>
-  </div>
+  <h3>Readiness status per item</h3>
+  <p>Each material shows an honest readiness status:</p>
+  <ul>
+    <li><strong>Ready</strong> — extracted and indexed; the auditor can read it.</li>
+    <li><strong>Not indexed yet</strong> — uploaded or imported but extraction is still running. An <strong>Index now</strong> action is shown.</li>
+    <li><strong>Not readable</strong> — with a reason (e.g., a Google Doc that isn't shared with "Anyone with the link," or a video with no captions available). Fix the underlying issue and use <strong>Index now</strong> to retry.</li>
+  </ul>
 
-  <div class="step">
-    <div class="step-num">5</div>
-    <div class="step-body">
-      <strong>Re-extract Canvas files (optional).</strong> If the extraction pipeline has been upgraded since your last import — for example, after the LAN deploy turned on figure descriptions, or after legacy Office support was added — click <strong>Re-extract Canvas files</strong> on the Materials panel. Paste your Canvas token when prompted; every Canvas file attachment for this course is re-run through the current extractor in place, so existing rows pick up the better text without you having to re-import.
-    </div>
-  </div>
+  <h3>Proceeding to the interview</h3>
+  <p>When the sources look complete, click <strong>Continue to interview →</strong>. This starts the tool-using audit conversation (described in §6). You don't need every possible material loaded before continuing — the auditor will surface what's missing as the conversation progresses. A reasonable minimum before starting:</p>
+  <ul>
+    <li>Catalog row up to date (Re-sync if you've edited the sheet recently).</li>
+    <li>Canvas imported if the course uses Canvas substantively.</li>
+    <li>Major project briefs and rubrics uploaded (the highest-stakes assignments).</li>
+    <li>The syllabus PDF attached if your course doesn't have a sheet tab.</li>
+  </ul>
+
+  <h3>Manage all materials in detail</h3>
+  <p>A low-key <strong>Manage all materials in detail</strong> link at the bottom of the screen opens the full materials manager — compression controls, FERPA options, digest settings, and per-material detail. This is a power-user surface for large or complex courses. The three source boxes above cover everything most captures need.</p>
+
+  <h4>Material compression (full panel)</h4>
+  <p>The auditor's prompt has a hard upper size limit. For courses with many or lengthy materials, the system automatically generates a structured summary of long reference-style materials at upload time — so the auditor retains a faithful view of every piece of content even for the largest courses. In the full panel:</p>
+  <ul>
+    <li>Each row shows an estimated token count. Rows at or above 20,000 tokens are marked in amber; rows at or above 50,000 in red.</li>
+    <li>A <code>summary (~Xk tok)</code> chip shows how much a summarised row was compressed.</li>
+    <li>A per-row <strong>summarize</strong> checkbox lets you fall back to verbatim text for any material when the auditor needs to read every word — e.g., a course reader with rubric language embedded in prose.</li>
+    <li>The panel header shows a running total: <code>Audit prompt: ~Xk from materials</code>. Grey = under 150k (plenty of headroom); amber = 150k–220k (consider compressing); red = 220k+ (approaching the 272k cap, compress or ignore materials).</li>
+  </ul>
+  <p>The <strong>Compress existing materials</strong> button summarises all eligible long rows in one pass. The <strong>ignore</strong> checkbox on any row excludes it from the audit prompt entirely (keeps it in the database, reversible). For Canvas-list materials, expand the row to uncheck individual items rather than ignoring the whole list.</p>
 
   <div class="callout warn">
-    <div class="callout-title">Heads up — content the system can't read</div>
-    <p>The Canvas import pulls the syllabus body, assignment descriptions and rubrics, module item titles, Canvas Pages content, Canvas file attachments (PDF/DOCX/PPTX/XLSX/CSV/HTML/image are extracted server-side; legacy Office formats are auto-converted first), discussion prompts and graded-status flags, and quiz content from both Classic and New Quizzes (questions, answer choices, points, correct-answer marks). It also pulls YouTube captions when available for linked videos. By default, unpublished assignments, pages, discussions, quizzes, modules, and module items are skipped (see step 2 above); if you choose to include them, they arrive tagged <code>[unpublished]</code> so the auditor scores them accordingly. The import does <em>not</em> read: video content on platforms other than YouTube (Vimeo, Panopto, Canvas Studio, Loom, Kaltura), discussion replies, or external LTI tool content. The auditor will notice references to these in the materials it <em>can</em> read and surface each one with its title or URL — but the scoring will stay conservative until you tell it what's in the inaccessible content. The full source-coverage table is in the <a href="./background.html#course-impl">Background document</a>.</p>
+    <div class="callout-title">Content the system can't read</div>
+    <p>Canvas imports pull the syllabus body, assignment descriptions and rubrics, module item titles, Canvas Pages, file attachments (PDF/DOCX/PPTX/XLSX/CSV/HTML/images; legacy Office formats are auto-converted), discussion prompts, quiz content from both Classic and New Quizzes, and YouTube captions for linked videos. The system does <em>not</em> read: video content on non-YouTube platforms (Vimeo, Panopto, Canvas Studio, Loom, Kaltura), discussion replies, or external LTI tool content. The auditor will notice references to these in the materials it <em>can</em> read and surface each one with its title or URL — but scoring stays conservative until you tell it what's in the inaccessible content. The full source-coverage table is in the <a href="./background.html#course-impl">Background document</a>.</p>
   </div>
 
   <div class="callout note">
     <div class="callout-title">Figure descriptions on the LAN deploy</div>
     <p>The PDF extractor (Docling) is paired with a local vision-language model that writes a one- or two-sentence description for each chart, diagram, or figure into the extracted markdown. This closes a real evidence gap on lecture slides and research papers, where meaning often lives in the figure rather than the prose.</p>
-  </div>
-
-  <h3>What "good enough" looks like at this stage</h3>
-  <p>You don't need every possible material loaded before starting the audit chat. The auditor will surface what's missing as the conversation progresses. A reasonable starting set:</p>
-  <ul>
-    <li>Catalog row up to date (Sync from Sheet just before starting).</li>
-    <li>Canvas imported if the course uses Canvas substantively.</li>
-    <li>Major project briefs and rubrics uploaded (the highest-stakes assignments).</li>
-    <li>The syllabus PDF uploaded if it's not in Canvas.</li>
-  </ul>
-
-  <h3>How material compression works</h3>
-  <p>The auditor's prompt has a hard upper size limit. For courses with many or lengthy materials, keeping every file verbatim would push past that limit and drop some materials from the auditor's view entirely. To avoid that, the system automatically generates a structured summary of long reference-style materials at upload time — so the auditor retains a faithful view of every piece of content even for the largest courses.</p>
-
-  <h4>What gets summarised</h4>
-  <p>Compression applies to materials that exceed roughly 15,000 tokens: textbook PDFs, reading PDFs fetched from Drive, YouTube transcripts, and plain PDF or DOCX uploads. These tend to be reference-dense and compress well without losing the signal the auditor needs.</p>
-
-  <h4>What is always kept verbatim</h4>
-  <p>Canvas pages, the syllabus, assignments, modules, quizzes, discussions, and Google Docs/Slides/Sheets are never summarised — the auditor needs the exact assignment language, rubric criteria, and point values to score competency evidence accurately. These items carry the assignment-grade detail the audit depends on.</p>
-
-  <h4>How it looks in the Materials list</h4>
-  <p>Each row in the Materials list shows an estimated token count. Rows at or above 20,000 tokens are marked in amber; rows at or above 50,000 are marked in red. For a material that has been summarised, the row displays a <code>summary (~Xk tok)</code> chip alongside an <code>audit sends ~Xk tok</code> note so you can see how much the prompt footprint was reduced. A per-row <strong>summarize</strong> checkbox lets you fall back to the full verbatim text for any specific material when you need the auditor to read every word — for example, if a course reader contains assessment-critical rubric language embedded in prose.</p>
-
-  <h4>The total-prompt indicator</h4>
-  <p>The Materials &amp; catalog panel header shows a running total of the audit prompt: <code>Audit prompt: ~Xk from materials</code>. This is the sum of what the auditor will actually see, accounting for summaries on rows where <strong>summarize</strong> is on. The total is colored:</p>
-  <ul>
-    <li><strong>Grey</strong> — under 150k tokens. Plenty of headroom.</li>
-    <li><strong>Amber</strong> — 150k to 220k tokens. Getting large. The indicator suggests running <strong>Compress existing materials</strong> to shrink it.</li>
-    <li><strong>Red</strong> — 220k tokens or more. Approaching the audit-prompt cap (272k). At this point the prompt may be rejected by the model. The indicator advises compressing reference materials and then ignoring uploads you don't need (an <code>ignore</code> checkbox sits next to each row's <code>summarize</code>).</li>
-  </ul>
-  <p>The thresholds are conservative — the cap is 272k tokens on the smaller model and larger on others, but staying well under gives the auditor room for the conversation transcript that builds up over the session.</p>
-
-  <h4>If the total is too high</h4>
-  <p>Two levers, in order of preference:</p>
-  <ol>
-    <li><strong>Compress existing materials.</strong> One click. Eligible long reference rows get a summary; the audit prompt switches to using those summaries automatically. This is reversible per-row via the <strong>summarize</strong> checkbox if you ever need verbatim text on a specific material.</li>
-    <li><strong>Ignore unused uploads.</strong> The <strong>ignore</strong> checkbox on a row keeps the material in the database but excludes it from the audit prompt entirely. Use this for materials that don't actually belong to this course (e.g., a stray file from another section that landed here by mistake).</li>
-    <li><strong>Ignore specific Canvas items.</strong> Canvas-list materials (Assignments, Discussions, Quizzes, Pages, Module List) carry a disclosure beneath the row showing every item the auditor will see. Click the <strong>▸ N items — click to manage</strong> link to expand the checklist; uncheck any item to drop it from the audit while leaving the rest of the material active. Useful when one specific assignment is irrelevant or misleading but the other ten on the list are fine. Re-check to bring it back.</li>
-  </ol>
-  <p>Deleting a material is fine too, but irreversible — it removes the row and the blob storage. Ignore is the safer first move.</p>
-
-  <div class="callout note">
-    <div class="callout-title">Backfilling materials uploaded before compression shipped</div>
-    <p>Materials already in the system before this feature was deployed won't have summaries yet. Click <strong>Compress existing materials</strong> once per course to generate summaries for those rows in place. New uploads are summarised automatically on the way in.</p>
   </div>
 </section>
 
@@ -356,7 +332,7 @@
   <p>Because the same course code can be taught very differently by different faculty members, depth scores are now recorded per instructor. A GC 3550 taught by one person with a heavy press-lab emphasis produces a different profile than a GC 3550 taught another way — averaging those together would erase information worth preserving. The instructor identity is captured at the start of every session and stamped on every snapshot and audit message.</p>
 
   <h3>The session-start chooser</h3>
-  <p>When you open <code>/capture/&lt;course-code&gt;</code>, a modal appears before the audit panel loads. It presents two choices:</p>
+  <p>After you click <strong>Continue to interview →</strong> on the materials screen, a modal appears before the audit panel loads. It presents two choices:</p>
   <ul>
     <li><strong>Instructor dropdown.</strong> Select your name from the list of faculty associated with this course. If your name isn't there, ask the administrator to add it — the list comes from the course's instructor roster in the system.</li>
     <li><strong>Fresh start vs. Build on prior session.</strong> <em>Fresh start</em> opens a clean audit chat with no prior transcript. <em>Build on prior session</em> loads the most recent audit session for this instructor on this course, so you can pick up where you left off without replaying the whole conversation. Choose Build on prior session when you're returning to a course you've already partially audited; choose Fresh start for a new semester's capture or a major revision where the prior session's context would mislead the auditor.</li>
@@ -375,7 +351,7 @@
 <section id="cc-audit">
   <h2><span class="num">§ 6</span>CourseCapture · The audit chat</h2>
 
-  <p>The chat panel sits below the Materials &amp; catalog panel. The auditor opens by reading everything in the materials and writing three short paragraphs:</p>
+  <p>Once you've confirmed materials and identified yourself, the audit chat panel opens. The auditor opens by reading everything in the materials and writing three short paragraphs:</p>
 
   <ol>
     <li><strong>A one-sentence summary</strong> of what the materials show overall.</li>
@@ -726,7 +702,7 @@
 
   <h3>For CourseCapture</h3>
   <ul>
-    <li><strong>Load Canvas before talking to the auditor.</strong> The auditor's opening turn is much sharper when it can see actual assignment text and point values. Doing a Canvas import after a few audit turns sometimes triggers the auditor to revise earlier findings, which can be confusing.</li>
+    <li><strong>Complete Step 1 before continuing to the interview.</strong> The "Confirm materials" screen exists precisely to prevent a thin-evidence audit. Import Canvas and check readiness statuses before clicking <strong>Continue to interview →</strong> — the auditor's opening turn is much sharper when it can see actual assignment text and point values. Loading materials mid-interview sometimes triggers the auditor to revise earlier findings, which can be confusing.</li>
     <li><strong>Trust the readiness signal — but verify the verification summary.</strong> A score of 80+ usually means the profile will be solid, but the verification summary is the last fidelity check. Read it before clicking Save Snapshot.</li>
     <li><strong>Don't pad foundational competencies.</strong> A foundational with D=0 is a real finding — it means the course doesn't develop that disposition. Inflating it to D=2 because "every course teaches communication a little" undercuts the signal. The point of scoring is to surface where dispositions actually live in the program.</li>
     <li><strong>Inaccessible content gets flagged conservatively.</strong> When the auditor sees a YouTube link or Canvas Page it can't read, it surfaces the reference and asks what's in it. If you don't tell it, the score stays low — the auditor explicitly avoids over-scoring on inaccessible content.</li>
@@ -781,7 +757,7 @@
 </section>
 
 <div class="doc-foot">
-  Faculty guide · 2026-06-03 · GC Curriculum Tool · <a href="https://github.com/chiptoe-svg/gc-curriculum-tool" target="_blank" rel="noopener noreferrer">source</a>
+  Faculty guide · 2026-06-12 · GC Curriculum Tool · <a href="https://github.com/chiptoe-svg/gc-curriculum-tool" target="_blank" rel="noopener noreferrer">source</a>
 </div>
 
 </main>
