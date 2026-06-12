@@ -1,13 +1,6 @@
 // Career target definition (hardcoded for M-trial; becomes DB row in M1)
 export type KUDLevel = 'know' | 'understand' | 'do' | 'not_addressed';
 
-// Minimal display frame (no active consumers after M-trial dead-code sweep).
-// CareerTarget satisfies this shape; so does a course-derived prereq frame.
-export interface AnalysisFrame {
-  name: string;
-  subCompetencies: Array<{ id: string; name: string }>;
-}
-
 // Course-level entry requirement, AI-derived from the focal course's KUDs.
 // Replaces career-target sub-competencies in the prereq analyzer pipeline.
 export interface CoursePrereqCompetency {
