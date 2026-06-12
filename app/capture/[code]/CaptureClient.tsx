@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { CaptureProfile, CaptureReadiness, CaptureReviewerStatus } from '@/lib/ai/capture/schema';
 import { CaptureChatPanel, type ChatMessage, type SessionBriefingView } from './CaptureChatPanel';
 import { ProfileReviewPanel } from './ProfileReviewPanel';
@@ -71,6 +71,14 @@ export function CaptureClient({
   const [profile, setProfile] = useState<CaptureProfile | null>(existingProfile);
   const [reviewerStatus, setReviewerStatus] = useState<CaptureReviewerStatus | null>(existingReviewerStatus);
   const [generationError, setGenerationError] = useState<string | null>(null);
+  // Live elapsed counter while synthesis runs — the "it's working" signal
+  // on the generating card (same pattern as the matrix scorer's counter).
+  const [genElapsed, setGenElapsed] = useState(0);
+  useEffect(() => {
+    if (stage !== 'generating') { setGenElapsed(0); return; }
+    const t = setInterval(() => setGenElapsed(s => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [stage]);
   const [telemetry, setTelemetry] = useState<Telemetry | null>(null);
   const [materials, setMaterials] = useState<CaptureMaterial[]>(initialMaterials);
   // Bumped each time a new snapshot is created so the history panel reloads.
@@ -284,7 +292,10 @@ export function CaptureClient({
         />
       ) : (
         <>
-      {!isLanding && trays}
+      {/* Hide the setup trays while generating (2026-06-12 walkthrough):
+          they're irrelevant mid-synthesis, and the generating card below
+          explains what's actually happening instead. */}
+      {!isLanding && stage !== 'generating' && trays}
 
       {stage === 'chat' && (
         <>
@@ -382,22 +393,26 @@ export function CaptureClient({
       )}
 
       {stage === 'generating' && (
-        <div className="rounded-md border bg-muted/20 px-4 py-6 text-center">
-          <div className="mx-auto mb-3 flex items-center justify-center gap-3">
-            {/* Animated spinner — gives visible "I'm working" feedback during
-                the ~15-60s synthesis call. animate-spin is Tailwind's built-in
-                360° rotation; pairs with a pulsing label below so the page
-                doesn't read as frozen. */}
+        <div className="rounded-md border bg-muted/20 px-6 py-6">
+          <div className="mb-4 flex items-center justify-center gap-3">
             <span
               aria-hidden="true"
               className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-foreground"
             />
-            <p className="text-sm font-medium animate-pulse">Generating KUD+ profile…</p>
+            <p className="text-sm font-medium animate-pulse">Generating the Course Outcome Profile… {genElapsed}s</p>
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Scoring K/U/D depth (0–5) on each competency, citing evidence, and assessing productive-failure conditions.
-          </p>
-          <p className="mt-2 text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70">
+          {/* Behind-the-scenes account (2026-06-12 walkthrough request) — what
+              the synthesis call is actually doing, in order. Keep faithful to
+              generateCaptureProfileV2: transcript+materials bundle → one heavy
+              scoring pass → schema/citation validation → editable draft. */}
+          <ol className="mx-auto max-w-xl space-y-2 text-xs text-muted-foreground">
+            <li><span className="font-medium text-foreground">1 · Gathering the evidence.</span> Your full interview transcript (every answer, with citations) is bundled with the Google-Sheet catalog and the active course materials.</li>
+            <li><span className="font-medium text-foreground">2 · Scoring against the depth rubric.</span> One synthesis pass discovers the course&apos;s technical competencies (typically 5–15) and scores each on Know / Understand / Do, 0–5 — plus the five foundational dispositions (Do only).</li>
+            <li><span className="font-medium text-foreground">3 · Enforcing the evidence rules.</span> Any score above the floor must carry an evidence excerpt, and every finding needs a source plus citations that resolve to a real material chunk or interview turn — results that don&apos;t validate are rejected and retried.</li>
+            <li><span className="font-medium text-foreground">4 · Filling out the record.</span> Incoming expectations, course emphasis (where the graded points actually go), class structure, major projects, and a verification summary.</li>
+            <li><span className="font-medium text-foreground">5 · Returning a draft — not a record.</span> Everything lands as an editable draft for your review. Nothing becomes an immutable snapshot until you confirm it.</li>
+          </ol>
+          <p className="mt-4 text-center text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70">
             Usually 15–60 seconds — please don&apos;t close this tab
           </p>
         </div>
