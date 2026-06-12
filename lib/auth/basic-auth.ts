@@ -38,8 +38,10 @@ const PUBLIC_PREFIXES = [
   // it is a high-level overview with no faculty data.
   '/procurement.html',
   // Static public questionnaire for procurement SMEs (sibling ask_procurement
-  // project). No faculty data; collects answers via mailto/clipboard.
+  // project), plus its intake endpoint that stores the submitted answers +
+  // uploaded files to disk. No faculty data; public on purpose.
   '/sme-questions.html',
+  '/api/procurement-intake',
 ] as const;
 
 /**

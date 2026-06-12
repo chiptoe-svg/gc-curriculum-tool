@@ -54,6 +54,12 @@
   .ghost{background:transparent;color:var(--ink)} .ghost:hover{background:var(--ink);color:var(--paper)}
   .status{font-size:14px;color:var(--muted)}
   .partial{font-size:14px;color:var(--muted);margin-top:6px}
+  .upload{display:flex;align-items:center;gap:10px;margin-top:10px;padding:12px 16px;background:#fff;border:1px dashed var(--line-strong);border-radius:6px;cursor:pointer;font-size:14.5px;color:var(--ink-soft)}
+  .upload:hover{border-color:var(--accent)}
+  .upload input{font-family:var(--sans);font-size:14px}
+  .thanks{padding:50px 0;text-align:center}
+  .thanks h2{font-family:var(--serif);font-weight:600;font-size:30px;color:var(--good);margin-bottom:12px}
+  .thanks p{color:var(--ink-soft);max-width:48ch;margin:0 auto}
   footer{border-top:1px solid var(--line);padding:24px 0;font-size:13px;color:var(--muted)}
 </style>
 </head>
@@ -82,7 +88,10 @@
       <div class="hint">We pulled lots of Clemson detail but little SC-code detail and nothing federal. Point us at the authoritative documents (a page or PDF name is perfect):</div>
       <div class="found"><div class="lbl">We have</div>clemson.edu/procurement ✓ &nbsp;·&nbsp; procurement.sc.gov ✓</div>
       <textarea data-q="Missing sources (SC Consolidated Procurement Code / threshold tables; federal grant / Uniform Guidance guidance)" placeholder="e.g. the SC Consolidated Procurement Code PDF, the small-purchase threshold table, Clemson's grant/sponsored-programs purchasing page…"></textarea>
-      <p class="partial">Have a PDF? Easiest is to <b>attach it to the email</b> the button below opens.</p>
+      <label class="upload">
+        <input type="file" id="files" multiple accept=".pdf,.doc,.docx,.txt">
+        <span>📎 Or attach the PDF(s) directly — they upload with your answers (no email needed)</span>
+      </label>
     </div>
 
     <div class="q">
@@ -164,11 +173,11 @@ Catering — under $1,000 small engagement; Aramark is the exclusive provider (w
     </div>
 
     <div class="actions">
-      <button type="button" class="primary" id="email">Email my answers</button>
-      <button type="button" class="ghost" id="copy">Copy my answers</button>
+      <button type="button" class="primary" id="submit">Submit answers</button>
+      <button type="button" class="ghost" id="copy">Copy instead</button>
       <span class="status" id="status"></span>
     </div>
-    <p class="partial">"Email" opens your mail app pre-filled (attach any PDFs there); "Copy" puts your answers on the clipboard.</p>
+    <p class="partial">Your answers (and any attached files) go straight to the project team from this page — nothing routes through your email.</p>
   </form>
 </div>
 
@@ -188,8 +197,24 @@ Catering — under $1,000 small engagement; Aramark is the exclusive provider (w
     return parts.join('\n');
   }
   const set=m=>document.getElementById('status').textContent=m;
-  document.getElementById('email').addEventListener('click',()=>{ const b=assemble(); window.location.href=`mailto:${TO}?subject=${encodeURIComponent(SUBJECT)}&body=${encodeURIComponent(b)}`; });
-  document.getElementById('copy').addEventListener('click',async()=>{ const b=assemble(); try{ await navigator.clipboard.writeText(b); set('Copied — paste it into an email or message to the team.'); }catch{ set('Copy unavailable; select the text manually.'); } });
+  const submitBtn=document.getElementById('submit');
+  submitBtn.addEventListener('click',async()=>{
+    const answers=assemble();
+    if(!answers.trim()){ set('Nothing filled in yet.'); return; }
+    submitBtn.disabled=true; set('Sending…');
+    try{
+      const fd=new FormData();
+      fd.append('answers',answers);
+      const fi=document.getElementById('files');
+      if(fi&&fi.files){ for(const f of fi.files) fd.append('file',f); }
+      const res=await fetch('/api/procurement-intake',{method:'POST',body:fd});
+      const j=await res.json().catch(()=>({}));
+      if(res.ok&&j.ok){
+        document.getElementById('f').innerHTML='<div class="thanks"><h2>Thank you — received.</h2><p>Your answers'+(j.filesSaved?` and ${j.filesSaved} file(s)`:'')+' are with the project team. You can close this tab.</p></div>';
+      } else { set('Submit failed ('+(j.error||res.status)+'). Use "Copy instead" and send it to '+TO+'.'); submitBtn.disabled=false; }
+    }catch(e){ set('Submit failed (network). Use "Copy instead" and send it to '+TO+'.'); submitBtn.disabled=false; }
+  });
+  document.getElementById('copy').addEventListener('click',async()=>{ const b=assemble(); try{ await navigator.clipboard.writeText(b); set('Copied — paste it into an email to '+TO+'.'); }catch{ set('Copy unavailable; select the text manually.'); } });
 </script>
 </body>
 </html>
