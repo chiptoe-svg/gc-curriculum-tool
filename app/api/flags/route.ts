@@ -54,15 +54,23 @@ export async function GET(req: Request): Promise<Response> {
   const status = statusParam === 'open' || statusParam === 'resolved' ? statusParam : undefined;
   const flags = await listFlags({ status });
 
-  // Annotate cell flags with read-time drift vs the LIVE matrix (newest
-  // snapshot per career-building course) and whether the cell still exists.
+  // Annotate cell flags with read-time drift vs the LIVE matrix and whether
+  // the cell still exists. The matrix now carries one row per (course,
+  // instructor) — A8 decision 2026-06-12 — but flags are course-level (the
+  // stable key deliberately ignores instructor), so drift anchors to the
+  // NEWEST snapshot for the course across instructors.
   const matrix = await getMatrixData();
-  const snapByCourse = new Map(matrix.courses.map(c => [c.courseCode, c.snapshotId]));
+  const snapByCourse = new Map<string, { snapshotId: string; createdAt: number }>();
+  for (const c of matrix.courses) {
+    const t = new Date(c.snapshotCreatedAt).getTime();
+    const prev = snapByCourse.get(c.courseCode);
+    if (!prev || t > prev.createdAt) snapByCourse.set(c.courseCode, { snapshotId: c.snapshotId, createdAt: t });
+  }
   const cellByKey = new Map(matrix.cells.map(c => [`${c.snapshotId}:${c.careerTargetId}:${c.subCompetencyId}`, c]));
 
   const annotated = flags.map(f => {
     if (f.targetKind !== 'coverage_cell') return { ...f, drift: null, stillInMatrix: null };
-    const snapId = snapByCourse.get(f.courseCode);
+    const snapId = snapByCourse.get(f.courseCode)?.snapshotId;
     const cell = snapId ? cellByKey.get(`${snapId}:${f.careerTargetId}:${f.subCompetencyId}`) ?? null : null;
     return {
       ...f,

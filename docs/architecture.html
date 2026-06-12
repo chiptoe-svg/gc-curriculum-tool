@@ -572,7 +572,7 @@
 
   <h3>Instructor variance as signal</h3>
 
-  <p>When multiple instructors have captured the same code, the system surfaces the variance. The matrix uses the newest snapshot per course (which may be by a different instructor than an older one); future phase work will expose cross-snapshot diffs and instructor-variance analysis explicitly. For now, per-snapshot attribution and the "N other captures on file" hint are the variance-visibility mechanism.</p>
+  <p>When multiple instructors have captured the same code, the system surfaces the variance directly: the Program Coverage Matrix shows <strong>one row per (course, instructor)</strong> — each row the latest non-retired snapshot for that instructor, labeled "by [instructor]" (the A8 aggregation-policy decision, 2026-06-12; previously newest-capture-wins). Variance between instructors is visible side by side rather than hidden behind whichever capture happened last. Future phase work will add cross-snapshot diffs; per-snapshot attribution and the "N other captures on file" hint remain on the read-only views.</p>
 </section>
 
 <section id="infrastructure">

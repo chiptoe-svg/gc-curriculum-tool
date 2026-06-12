@@ -407,6 +407,9 @@ export function ProgramCoverageClient({ slug, initialData, initialFlags }: Props
                     <th className="text-left px-3 py-2 sticky left-0 bg-card border-r" style={{ minWidth: '120px' }}>
                       <div className="font-mono text-[11px] text-foreground">{course.courseCode}</div>
                       <div className="text-[10px] text-muted-foreground truncate" style={{ maxWidth: '140px' }} title={course.courseTitle}>{course.courseTitle}</div>
+                      {course.instructorName && (
+                        <div className="text-[10px] italic text-muted-foreground truncate" style={{ maxWidth: '140px' }} title={`Captured by ${course.instructorName}`}>by {course.instructorName}</div>
+                      )}
                     </th>
                     {visibleSubs.map(s => {
                       const key = `${course.snapshotId}:${activeTargetId}:${s.id}`;
@@ -600,6 +603,7 @@ function CellDetailDrawer({
           <p className="mt-0.5 text-sm">{course.courseTitle}</p>
           <p className="mt-0.5 text-[11px] text-muted-foreground">
             Snapshot {course.snapshotCaption || ''} · {fmtDate(course.snapshotCreatedAt)}
+            {course.instructorName ? ` · by ${course.instructorName}` : ''}
           </p>
         </div>
 

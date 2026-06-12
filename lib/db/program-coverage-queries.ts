@@ -101,14 +101,19 @@ export interface PairToScore {
 }
 
 export async function listStalePairs(): Promise<PairToScore[]> {
-  // Pick the latest non-retired snapshot per course (only courses flagged builds_to_career).
+  // Pick the latest non-retired snapshot per (course, instructor) — only
+  // courses flagged builds_to_career. Per-instructor rows (A8 decision,
+  // 2026-06-12): the same code taught by different faculty is scored as
+  // separate matrix rows rather than newest-capture-wins, so variance stays
+  // visible. NULL instructor_name groups as its own row (pre-0027 snapshots
+  // were backfilled to 'Department canonical').
   const latestSnapshots = await db.execute(sql`
-    SELECT DISTINCT ON (s.course_code)
+    SELECT DISTINCT ON (s.course_code, s.instructor_name)
       s.id, s.course_code, s.created_at
     FROM ${courseCaptureSnapshots} s
     JOIN courses c ON c.code = s.course_code
     WHERE s.retired_at IS NULL AND c.builds_to_career = true
-    ORDER BY s.course_code, s.created_at DESC
+    ORDER BY s.course_code, s.instructor_name, s.created_at DESC
   `);
   const latestSnaps = (latestSnapshots.rows as Array<{ id: string; course_code: string }>);
 
@@ -152,6 +157,8 @@ export interface MatrixCourse {
   snapshotId: string;
   snapshotCaption: string | null;
   snapshotCreatedAt: Date;
+  /** Whose capture this row represents — one matrix row per (course, instructor). */
+  instructorName: string | null;
 }
 
 export interface MatrixSubCompetency {
@@ -209,24 +216,29 @@ export async function invalidateCoverageForSubCompetency(
  * and every scored cell currently in the table.
  */
 export async function getMatrixData(): Promise<MatrixData> {
+  // One row per (course, instructor): the latest non-retired snapshot for
+  // each instructor who has captured the course (A8 decision, 2026-06-12 —
+  // per-instructor rows surface variance instead of newest-capture-wins).
   const latestSnapshotsRaw = await db.execute(sql`
-    SELECT DISTINCT ON (s.course_code)
-      s.id          AS snapshot_id,
-      s.course_code AS course_code,
-      s.caption     AS caption,
-      s.created_at  AS created_at,
-      c.title       AS title,
-      c.level       AS level
+    SELECT DISTINCT ON (s.course_code, s.instructor_name)
+      s.id              AS snapshot_id,
+      s.course_code     AS course_code,
+      s.caption         AS caption,
+      s.created_at      AS created_at,
+      s.instructor_name AS instructor_name,
+      c.title           AS title,
+      c.level           AS level
     FROM ${courseCaptureSnapshots} s
     JOIN courses c ON c.code = s.course_code
     WHERE s.retired_at IS NULL AND c.builds_to_career = true
-    ORDER BY s.course_code, s.created_at DESC
+    ORDER BY s.course_code, s.instructor_name, s.created_at DESC
   `);
   const courses: MatrixCourse[] = (latestSnapshotsRaw.rows as Array<{
     snapshot_id: string;
     course_code: string;
     caption: string | null;
     created_at: Date;
+    instructor_name: string | null;
     title: string;
     level: number;
   }>).map(r => ({
@@ -236,6 +248,7 @@ export async function getMatrixData(): Promise<MatrixData> {
     snapshotId: r.snapshot_id,
     snapshotCaption: r.caption,
     snapshotCreatedAt: r.created_at instanceof Date ? r.created_at : new Date(r.created_at),
+    instructorName: r.instructor_name,
   }));
 
   const targets = await db
@@ -266,7 +279,10 @@ export async function getMatrixData(): Promise<MatrixData> {
   const cells = await getAllCells();
 
   return {
-    courses: courses.sort((a, b) => a.courseCode.localeCompare(b.courseCode)),
+    courses: courses.sort((a, b) =>
+      a.courseCode === b.courseCode
+        ? (a.instructorName ?? '').localeCompare(b.instructorName ?? '')
+        : a.courseCode.localeCompare(b.courseCode)),
     targets: targets.sort((a, b) => a.displayOrder - b.displayOrder),
     subCompetencies: subCompetenciesOut.sort((a, b) =>
       a.careerTargetId === b.careerTargetId
