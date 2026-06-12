@@ -319,6 +319,32 @@ export const captureProfileSchema = z.object({
 });
 export type CaptureProfile = z.infer<typeof captureProfileSchema>;
 
+// ---------------------------------------------------------------------------
+// V2 synthesis variant (A9, 2026-06-12): provenance is REQUIRED on every
+// competency. The base schema keeps source/citations optional for legacy
+// snapshots (pre-Stage-4 captures have neither); the v2 synthesis path —
+// the only live path — must not produce new findings without them. A v2
+// result missing either fails validation and retries, turning a silent
+// provenance gap into a visible one. `citations` may be EMPTY (a genuinely
+// inferred finding has none); post-parse, `withDerivedCompetencySources`
+// re-derives `source` from the citation set so the flag can't be misclaimed.
+// ---------------------------------------------------------------------------
+export const captureCompetencySchemaV2 = captureCompetencySchema.superRefine((c, ctx) => {
+  if (c.source === undefined) {
+    ctx.addIssue({ code: 'custom', message: 'v2 findings must carry a source flag (instructor | materials | inferred)' });
+  }
+  if (c.citations === undefined) {
+    ctx.addIssue({ code: 'custom', message: 'v2 findings must carry a citations array (empty is allowed only for inferred findings)' });
+  }
+  if (c.source !== undefined && c.source !== 'inferred' && (c.citations === undefined || c.citations.length === 0)) {
+    ctx.addIssue({ code: 'custom', message: `source '${c.source}' requires at least one resolvable citation — with none, the finding is 'inferred'` });
+  }
+});
+
+export const captureProfileSchemaV2 = captureProfileSchema.extend({
+  competencies: z.array(captureCompetencySchemaV2).min(1),
+});
+
 export type CaptureReviewerStatus = 'ai_drafted' | 'confirmed' | 'edited';
 
 /**

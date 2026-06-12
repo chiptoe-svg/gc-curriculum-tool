@@ -39,12 +39,12 @@ function fixture(): MatrixData {
     ],
     cells: [
       // two courses cover s1 under t1, at different depths
-      { snapshotId: 'snap-a', careerTargetId: 't1', subCompetencyId: 's1', kDepth: 2, uDepth: 1, dDepth: 1, matchedCompetency: null, evidenceExcerpt: 'intro press', confidence: 'low', rationale: 'r' },
-      { snapshotId: 'snap-b', careerTargetId: 't1', subCompetencyId: 's1', kDepth: 4, uDepth: 3, dDepth: 4, matchedCompetency: null, evidenceExcerpt: 'runs the press', confidence: 'high', rationale: 'r' },
+      { snapshotId: 'snap-a', careerTargetId: 't1', subCompetencyId: 's1', kDepth: 2, uDepth: 1, dDepth: 1, matchedCompetency: null, evidenceExcerpt: 'intro press', confidence: 'low', rationale: 'r', model: 'test-model' },
+      { snapshotId: 'snap-b', careerTargetId: 't1', subCompetencyId: 's1', kDepth: 4, uDepth: 3, dDepth: 4, matchedCompetency: null, evidenceExcerpt: 'runs the press', confidence: 'high', rationale: 'r', model: 'test-model' },
       // a zero-everywhere cell that must be filtered out
-      { snapshotId: 'snap-a', careerTargetId: 't1', subCompetencyId: 's1', kDepth: 0, uDepth: 0, dDepth: 0, matchedCompetency: null, evidenceExcerpt: null, confidence: 'low', rationale: 'r' },
+      { snapshotId: 'snap-a', careerTargetId: 't1', subCompetencyId: 's1', kDepth: 0, uDepth: 0, dDepth: 0, matchedCompetency: null, evidenceExcerpt: null, confidence: 'low', rationale: 'r', model: 'test-model' },
       // a cell for the OTHER target — must not leak in
-      { snapshotId: 'snap-a', careerTargetId: 't2', subCompetencyId: 's2', kDepth: 1, uDepth: 1, dDepth: 2, matchedCompetency: null, evidenceExcerpt: 'emails', confidence: 'medium', rationale: 'r' },
+      { snapshotId: 'snap-a', careerTargetId: 't2', subCompetencyId: 's2', kDepth: 1, uDepth: 1, dDepth: 2, matchedCompetency: null, evidenceExcerpt: 'emails', confidence: 'medium', rationale: 'r', model: 'test-model' },
     ],
   };
 }

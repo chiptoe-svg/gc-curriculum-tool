@@ -180,6 +180,8 @@ export interface MatrixCoverageCell {
   evidenceExcerpt: string | null;
   confidence: 'high' | 'medium' | 'low';
   rationale: string;
+  /** Which model produced this cell's scores (A10 — provider/model flips must be visible in longitudinal claims). */
+  model: string;
 }
 
 export interface MatrixData {
@@ -300,6 +302,7 @@ export async function getMatrixData(): Promise<MatrixData> {
       evidenceExcerpt: c.evidenceExcerpt,
       confidence: c.confidence,
       rationale: c.rationale,
+      model: c.model,
     })),
   };
 }

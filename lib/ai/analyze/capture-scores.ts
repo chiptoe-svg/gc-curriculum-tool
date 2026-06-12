@@ -2,10 +2,11 @@ import { loadPrompt } from '@/lib/ai/prompts/load';
 import { getProviderForFunction } from '@/lib/ai/provider';
 import type { CompletionTelemetry } from '@/lib/ai/provider';
 import {
-  captureProfileSchema,
+  captureProfileSchemaV2,
   captureScaleVersion,
   type CaptureProfile,
 } from '@/lib/ai/capture/schema';
+import { withDerivedCompetencySources } from '@/lib/ai/synthesis/source-derivation';
 import type { CaptureChatContext } from '@/lib/ai/analyze/capture-chat';
 import { buildCaptureChatUserMessage } from '@/lib/ai/analyze/capture-chat';
 import type { captureMessages } from '@/lib/db/schema';
@@ -416,12 +417,19 @@ export async function generateCaptureProfileV2(
     systemPrompt,
     userMessage,
     schemaName: 'course_capture_profile_v2',
+    // A9 (2026-06-12): v2 validation REQUIRES source + citations on every
+    // competency (legacy schema stays loose for old snapshots) — a missing
+    // provenance field fails validation and retries instead of slipping
+    // through silently.
     jsonSchema: captureProfileJsonSchemaV2 as unknown as object,
-    validate: (raw: unknown) => captureProfileSchema.parse(raw),
+    validate: (raw: unknown) => captureProfileSchemaV2.parse(raw),
   });
 
   return {
-    profile: result.data,
+    // Provenance is derived, not self-reported: re-derive each competency's
+    // `source` from its citation set so a "materials" claim with no
+    // resolvable citations is honestly downgraded to 'inferred'.
+    profile: withDerivedCompetencySources(result.data),
     telemetry: {
       costUsdCents: result.costUsdCents,
       durationMs: result.durationMs,

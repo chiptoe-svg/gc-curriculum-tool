@@ -663,9 +663,15 @@ function CellDetailDrawer({
               <DepthCell label="Do" value={cell.dDepth} />
             </div>
 
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Confidence</p>
-              <p className="mt-0.5">{cell.confidence}</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Confidence</p>
+                <p className="mt-0.5">{cell.confidence}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Scored by</p>
+                <p className="mt-0.5 font-mono text-[11px]" title="The model that produced this cell's scores. Provider/model changes alter scoring behavior — comparisons across cells scored by different models carry that caveat.">{cell.model}</p>
+              </div>
             </div>
 
             {cell.matchedCompetency && (
