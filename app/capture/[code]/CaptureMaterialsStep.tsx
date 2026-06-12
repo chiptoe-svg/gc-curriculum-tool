@@ -99,16 +99,18 @@ export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt,
         </p>
       )}
 
-      {/* Escape hatch to the full materials manager (compress, FERPA, digest
-          toggles, per-material detail) — promoted to a real button 2026-06-12
-          (operator walkthrough: was too easy to miss). */}
+      {/* Bulk-operations panel: Regenerate AI summaries / Scan linked files /
+          Import from Canvas — the per-material row list is hidden here because
+          ignore, preview, AI summary, delete, and FERPA include-anyway all live
+          in the three source boxes above. hideRows avoids duplicating that parity
+          surface while keeping the bulk-op affordances available. */}
       <div className="mt-4 border-t pt-4">
         <button
           type="button"
           onClick={() => setShowManager((v) => !v)}
           className="rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-muted"
         >
-          {showManager ? 'Hide the full materials manager' : '⚙ Manage all materials in detail'}
+          {showManager ? '⚙ Hide bulk material operations' : '⚙ Bulk material operations'}
         </button>
         {showManager && (
           <div className="mt-3">
@@ -119,6 +121,7 @@ export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt,
               onMaterialsChange={onMaterialsChange}
               onCourseChange={onCourseChange}
               initiallyExpanded
+              hideRows
             />
           </div>
         )}

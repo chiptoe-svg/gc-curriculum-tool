@@ -230,6 +230,29 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
     }
   }
 
+  // FERPA include-anyway for Canvas materials — mirrors MaterialsPanel's includeAutoSetAside.
+  // Optimistic local update; revert on failure. Only shown for autoSetAside rows.
+  async function includeAnyway(m: CaptureMaterial) {
+    const previous = materials;
+    onMaterialsChange(materials.map(x => (x.id === m.id ? { ...x, ignored: false } : x)));
+    setBusy(m.id);
+    try {
+      const res = await fetch(
+        `/api/courses/${encodeURIComponent(course.code)}/materials/${encodeURIComponent(m.id)}?slug=${encodeURIComponent(slug)}`,
+        {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ ignored: false }),
+        },
+      );
+      if (!res.ok) onMaterialsChange(previous);
+    } catch {
+      onMaterialsChange(previous);
+    } finally {
+      setBusy(null);
+    }
+  }
+
   const importedDateLabel = course.canvasImportedAt
     ? new Date(course.canvasImportedAt).toLocaleDateString(undefined, { month: 'numeric', day: 'numeric', year: '2-digit' })
     : null;
@@ -337,11 +360,13 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
             const ignoredSet = new Set(m.ignoredItems ?? []);
             const items = isList ? parseCanvasBlob(m.extractedText ?? '') : [];
             const rubricNames = rubricsByMaterialId.get(m.id);
-            // Canvas-syllabus why-not-used note (Item 2)
+            // Canvas-syllabus why-not-used note (Item 2 — syllabus-specific wording)
             const syllabusWhyNote = isSyllabus && (m.ignored || m.autoSetAside)
               ? (m.setAsideReason?.trim() ||
                   "not used — the Google Sheet catalog already provides this course's objectives and projects (see the Syllabus & course info box above)")
               : null;
+            // Generic why-ignored for non-syllabus auto-set-aside rows (FERPA, etc.)
+            const showGenericWhyIgnored = !isSyllabus && (m.ignored || m.autoSetAside);
             return (
               <div key={m.id} className="border-b px-3 py-2 last:border-b-0">
                 <div className="flex items-center gap-2">
@@ -363,6 +388,30 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
                 </div>
                 {syllabusWhyNote && (
                   <p className="mt-0.5 pl-5 text-[10px] italic text-muted-foreground">{syllabusWhyNote}</p>
+                )}
+                {/* Why-ignored reason + FERPA Include anyway for non-syllabus rows */}
+                {showGenericWhyIgnored && (
+                  <div className="mt-0.5 flex items-start justify-between gap-2 rounded border border-amber-200 bg-amber-50/50 px-2 py-1">
+                    <p className="text-[11px] leading-snug italic text-amber-800">
+                      {m.setAsideReason
+                        ?? (m.autoSetAside
+                              ? 'set aside automatically'
+                              : 'manually toggled off by the faculty reviewer')}
+                      {m.autoSetAside && !m.ignored && (
+                        <span className="ml-1 not-italic text-amber-700">(overridden — included in audit)</span>
+                      )}
+                    </p>
+                    {m.autoSetAside && m.ignored && (
+                      <button
+                        type="button"
+                        onClick={() => void includeAnyway(m)}
+                        disabled={busy === m.id}
+                        className="shrink-0 text-[11px] font-medium text-amber-900 underline hover:text-amber-700 disabled:opacity-50"
+                      >
+                        {busy === m.id ? 'Including…' : 'Include anyway'}
+                      </button>
+                    )}
+                  </div>
                 )}
                 {isList && items.length > 0 && (
                   <ul className="mt-1.5 space-y-1 pl-5">

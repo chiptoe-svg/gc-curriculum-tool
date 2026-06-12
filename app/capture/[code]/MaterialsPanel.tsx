@@ -68,6 +68,17 @@ interface Props {
   onCourseChange?: (next: CourseCatalogView) => void;
   /** When true, the panel mounts expanded instead of collapsed. Defaults to collapsed elsewhere. */
   initiallyExpanded?: boolean;
+  /**
+   * When true, hide the per-material row list and show a one-line note pointing
+   * faculty to the source boxes above. The header, bulk-op buttons, and token
+   * chip remain visible. Default false (chat stage keeps the full panel).
+   *
+   * Step 1 (CaptureMaterialsStep) sets this to true — per-material controls
+   * (ignore, preview, AI summary, delete, FERPA include-anyway) live in the
+   * three source boxes there, so duplicating them in the manager creates a
+   * confusing parity surface.
+   */
+  hideRows?: boolean;
 }
 
 const ALLOWED_UPLOAD_TYPES = new Set([
@@ -573,7 +584,7 @@ function MaterialRow({
   );
 }
 
-export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChange, onCourseChange, initiallyExpanded }: Props) {
+export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChange, onCourseChange, initiallyExpanded, hideRows }: Props) {
   const [materials, setMaterials] = useState<CaptureMaterial[]>(initialMaterials);
   const [busy, setBusy] = useState<string | null>(null);
   // Collapsed by default — the header summary (counts + token size + a
@@ -1215,7 +1226,13 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
                 </button>
               </div>
             </header>
-            {!materialsCollapsed && (
+            {/* hideRows: per-row controls live in the three source boxes above (Step 1).
+                The chat stage (CaptureClient trays) never sets hideRows, so it keeps full rows. */}
+            {hideRows ? (
+              <p className="px-3 py-2.5 text-[11px] text-muted-foreground italic">
+                Per-material controls (ignore, preview, AI summary, delete) live in the three source boxes above.
+              </p>
+            ) : !materialsCollapsed && (
               <>
                 {scanMessage && (
                   <p className={'border-b px-3 py-1.5 text-[11px] ' + (scanMessage.kind === 'ok' ? 'text-green-700 bg-green-50' : 'text-destructive bg-red-50')}>
@@ -1290,34 +1307,36 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
             onOpenChange={setCanvasImportOpen}
           />
 
-          <div className="rounded-md border border-dashed bg-muted/20 px-4 py-3">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-sm font-medium">Add a material</p>
-                <p className="text-xs text-muted-foreground">PDF or DOCX, up to 15 MB.</p>
+          {!hideRows && (
+            <div className="rounded-md border border-dashed bg-muted/20 px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium">Add a material</p>
+                  <p className="text-xs text-muted-foreground">PDF or DOCX, up to 15 MB.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => inputRef.current?.click()}
+                  disabled={uploading !== null}
+                  className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted disabled:opacity-50"
+                >
+                  {uploading ? `Uploading ${uploading}…` : 'Choose file'}
+                </button>
+                <input
+                  ref={inputRef}
+                  type="file"
+                  accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  onChange={e => handleFiles(e.target.files)}
+                  className="hidden"
+                />
               </div>
-              <button
-                type="button"
-                onClick={() => inputRef.current?.click()}
-                disabled={uploading !== null}
-                className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted disabled:opacity-50"
-              >
-                {uploading ? `Uploading ${uploading}…` : 'Choose file'}
-              </button>
-              <input
-                ref={inputRef}
-                type="file"
-                accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                onChange={e => handleFiles(e.target.files)}
-                className="hidden"
-              />
+              {uploadError && <p className="mt-2 text-xs text-destructive">{uploadError}</p>}
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                To pull from Canvas (syllabus, assignments, modules), use the Course Builder Materials tab.
+                Imports land here automatically.
+              </p>
             </div>
-            {uploadError && <p className="mt-2 text-xs text-destructive">{uploadError}</p>}
-            <p className="mt-2 text-[11px] text-muted-foreground">
-              To pull from Canvas (syllabus, assignments, modules), use the Course Builder Materials tab.
-              Imports land here automatically.
-            </p>
-          </div>
+          )}
         </div>
       )}
     </section>

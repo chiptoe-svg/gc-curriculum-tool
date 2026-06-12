@@ -152,4 +152,59 @@ describe('OtherMaterialsBox', () => {
     expect(next.find((x) => x.id === 'del1')).toBeUndefined();
     expect(next.find((x) => x.id === 'keep')).toBeTruthy();
   });
+
+  // ── FERPA include-anyway + why-ignored (Item B, Round 8) ────────────────
+
+  it('autoSetAside row shows why-ignored reason and Include anyway button', () => {
+    const m = mat({
+      id: 'ferpa1',
+      fileName: 'gradebook.xlsx',
+      autoSetAside: true,
+      ignored: true,
+      setAsideReason: 'Contains student IDs — FERPA risk',
+    });
+    render(<OtherMaterialsBox course={course} materials={[m]} slug="s" onMaterialsChange={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: /other materials/i }));
+
+    // Reason text visible
+    expect(screen.getByText(/contains student ids/i)).toBeTruthy();
+    // Include anyway button visible
+    expect(screen.getByRole('button', { name: /include anyway/i })).toBeTruthy();
+  });
+
+  it('autoSetAside row without setAsideReason falls back to default text', () => {
+    const m = mat({
+      id: 'ferpa2',
+      fileName: 'roster.pdf',
+      autoSetAside: true,
+      ignored: true,
+      setAsideReason: null,
+    });
+    render(<OtherMaterialsBox course={course} materials={[m]} slug="s" onMaterialsChange={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: /other materials/i }));
+    expect(screen.getByText(/set aside automatically/i)).toBeTruthy();
+  });
+
+  it('Include anyway PATCHes {ignored:false} and updates materials list optimistically', async () => {
+    const onMaterialsChange = vi.fn();
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+    vi.stubGlobal('fetch', fetchMock);
+    const m = mat({ id: 'ferpa3', fileName: 'attendance.pdf', autoSetAside: true, ignored: true });
+    render(<OtherMaterialsBox course={course} materials={[m]} slug="s" onMaterialsChange={onMaterialsChange} />);
+    fireEvent.click(screen.getByRole('button', { name: /other materials/i }));
+
+    const btn = screen.getByRole('button', { name: /include anyway/i });
+    fireEvent.click(btn);
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(url).toContain('/materials/ferpa3');
+    expect((init as RequestInit).method).toBe('PATCH');
+    expect(JSON.parse((init as RequestInit).body as string)).toMatchObject({ ignored: false });
+
+    // onMaterialsChange called with ignored:false optimistically
+    await waitFor(() => expect(onMaterialsChange).toHaveBeenCalled());
+    const next = (onMaterialsChange.mock.calls[0] as [CaptureMaterial[]])[0];
+    expect(next.find((x) => x.id === 'ferpa3')?.ignored).toBe(false);
+  });
 });

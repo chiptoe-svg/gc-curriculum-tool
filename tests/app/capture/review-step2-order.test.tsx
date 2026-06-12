@@ -12,8 +12,9 @@
  */
 
 import React from 'react';
+import { act } from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import type { CaptureProfile } from '@/lib/ai/capture/schema';
 
 /* ── Heavy children mocked at module level ──────────────────────────────── */
@@ -174,5 +175,111 @@ describe('Review Step 2 — document order', () => {
   it('"Done reviewing?" footer card no longer exists', () => {
     renderPanel();
     expect(screen.queryByText(/done reviewing/i)).toBeNull();
+  });
+});
+
+/* ── A15 Approve rubber-stamp guard ─────────────────────────────────────── */
+
+/**
+ * A15 guard tests — vision-alignment review 2026-06-12.
+ * Approval is disabled until at least one of:
+ *   (a) an edit was made (dirty), OR
+ *   (b) every "Worth a look" item is in the reviewed set, OR
+ *   (c) departmental-context note has ≥ 20 non-whitespace chars.
+ */
+
+function makeProfileWithWorthLook(): CaptureProfile {
+  // source:'inferred' always flags — so these competencies land in worthLook.
+  const inferred = (statement: string) => ({
+    statement,
+    type: 'technical' as const,
+    k_depth: 2,
+    u_depth: 2,
+    d_depth: 2,
+    evidence_k: 'k evidence',
+    evidence_u: 'u evidence',
+    evidence_d: 'd evidence',
+    rationale: 'rationale',
+    source: 'inferred' as const,
+    citations: [],
+  });
+
+  return {
+    competencies: [inferred('Print production'), inferred('Color management')],
+    incoming_expectations: [],
+    verification_summary: {
+      overall_shape: 'Technical course',
+      strongest_evidence: 'Rubric',
+      dimensional_patterns: 'Aligned',
+      catalog_vs_evidence: 'Consistent',
+      foundationals_at_a_glance: 'Agency present',
+      source: 'materials' as const,
+      citations: [],
+    },
+    audit_notes: {
+      prereq_gaps: [],
+      objective_misalignments: [],
+      cross_source_conflicts: [],
+      suggested_objective_revisions: [],
+      source: 'inferred' as const,
+      citations: [],
+    },
+    course_emphasis: [],
+    generated_at: new Date().toISOString(),
+    // captureProfileSchema requires scale_version 'v1' (captureScaleVersion const)
+    // and course_code. Omitting either produces a validationError that keeps the
+    // approve button disabled regardless of the review guard under test.
+    scale_version: 'v1',
+    course_code: 'GC 3800',
+    overview: null,
+    class_structure: null,
+    major_projects: null,
+    revised_objectives_draft: [],
+  } as unknown as CaptureProfile;
+}
+
+function renderPanelWithWorthLook() {
+  return render(
+    <ProfileReviewPanel
+      profile={makeProfileWithWorthLook()}
+      reviewerStatus="ai_drafted"
+      initialReviewerNote={null}
+      telemetry={null}
+      onSave={async () => {}}
+      onResumeChat={() => {}}
+      courseCode="GC 3800"
+      courseTitle="Junior Seminar"
+      slug="test-slug"
+      onSnapshotCreated={() => {}}
+    />,
+  );
+}
+
+describe('A15 — approve rubber-stamp guard', () => {
+  it('locked hint shows when worth-a-look items exist and nothing has been reviewed', () => {
+    renderPanelWithWorthLook();
+
+    // The guard locks approval — the muted hint should be visible.
+    expect(screen.getByText(/locked until reviewed/i)).toBeTruthy();
+  });
+
+  it('locked hint disappears after all worth-a-look items are marked Looks right', async () => {
+    renderPanelWithWorthLook();
+
+    // Locked hint visible initially
+    expect(screen.getByText(/locked until reviewed/i)).toBeTruthy();
+
+    // Click every "Looks right ✓" button — each maps to a worthLook item.
+    const looksRightBtns = screen.getAllByRole('button', { name: /looks right/i });
+    expect(looksRightBtns.length).toBeGreaterThan(0);
+    for (const btn of looksRightBtns) {
+      await act(async () => { fireEvent.click(btn); });
+    }
+
+    // After all items marked reviewed, allWorthLookReviewed=true → approveUnlocked=true
+    // → the locked hint should no longer render.
+    await waitFor(() => {
+      expect(screen.queryByText(/locked until reviewed/i)).toBeNull();
+    });
   });
 });

@@ -60,9 +60,9 @@ describe('CaptureMaterialsStep — three source-boxes', () => {
     expect(screen.getByText(/large; consider ignoring or summarizing/i)).toBeTruthy();
   });
 
-  it('renders the materials-manager disclosure as a prominent button', () => {
+  it('renders the materials-manager disclosure as a prominent "Bulk material operations" button', () => {
     render(<CaptureMaterialsStep course={course} materials={[mat({})]} slug="s" catalogSyncedAt={null} onMaterialsChange={noop} onCourseChange={noop} onContinue={noop} instructor={defaultInstructor} onInstructorChange={noop} />);
-    expect(screen.getByRole('button', { name: /manage all materials in detail/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /bulk material operations/i })).toBeTruthy();
   });
 
   it('offers a start-anyway path when there are no materials and no synced syllabus', () => {
@@ -72,10 +72,10 @@ describe('CaptureMaterialsStep — three source-boxes', () => {
     expect(onContinue).toHaveBeenCalled();
   });
 
-  it('reveals the full materials manager from the bottom disclosure', () => {
+  it('reveals the bulk-ops panel from the bottom disclosure', () => {
     render(<CaptureMaterialsStep course={course} materials={[mat({})]} slug="s" catalogSyncedAt={null} onMaterialsChange={noop} onCourseChange={noop} onContinue={noop} instructor={defaultInstructor} onInstructorChange={noop} />);
     expect(screen.queryByTestId('materials-manager')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /manage all materials/i }));
+    fireEvent.click(screen.getByRole('button', { name: /bulk material operations/i }));
     expect(screen.getByTestId('materials-manager')).toBeTruthy();
   });
 

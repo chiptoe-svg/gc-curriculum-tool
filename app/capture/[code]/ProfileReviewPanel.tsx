@@ -1046,6 +1046,19 @@ export function ProfileReviewPanel({
   }, [working.competencies, working.course_emphasis]);
   const unreviewedCount = worthLook.filter(t => !reviewed.has(t.i)).length;
 
+  // A15 — Approve rubber-stamp guard (vision-alignment review 2026-06-12).
+  // Approval is an epistemic act, not a click-through. The documented decay
+  // mode of human-in-the-loop scoring is confirm-step rubber-stamping under
+  // cognitive load. The guard requires at least ONE of:
+  //   (a) any edit was made this session (dirty), OR
+  //   (b) every "Worth a look" item is in the reviewed set
+  //       (worthLook.length === 0 counts as trivially satisfied), OR
+  //   (c) the departmental-context note has ≥ 20 non-whitespace characters.
+  const allWorthLookReviewed = worthLook.length === 0 || worthLook.every(t => reviewed.has(t.i));
+  const noteSubstantive = reviewerNote.replace(/\s/g, '').length >= 20;
+  const approveUnlocked = dirty || allWorthLookReviewed || noteSubstantive;
+  const approveLockTitle = "Review before approving — adjust at least one score, mark each 'Worth a look' item Looks right ✓, or add a departmental-context note. (Approval is an epistemic act, not a click-through.)";
+
   async function persist(status: 'confirmed' | 'edited') {
     if (validationError) {
       setSaveError(`Can't save — ${validationError}. Fix the offending row above, then try again.`);
@@ -1225,8 +1238,9 @@ export function ProfileReviewPanel({
             <button
               type="button"
               onClick={handleConfirmAndSnapshot}
-              disabled={snapshotting}
-              className="rounded-md bg-foreground px-4 py-1.5 text-sm font-semibold text-background shadow-sm hover:bg-foreground/85 disabled:opacity-50"
+              disabled={snapshotting || !approveUnlocked}
+              title={!approveUnlocked ? approveLockTitle : undefined}
+              className="rounded-md bg-foreground px-4 py-1.5 text-sm font-semibold text-background shadow-sm hover:bg-foreground/85 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {snapshotting ? 'Capturing…' : 'Approve & capture'}
             </button>
@@ -1539,12 +1553,23 @@ export function ProfileReviewPanel({
               {saving ? 'Saving…' : 'Save edits'}
             </button>
 
-            {/* Approve */}
+            {/* Approve — guard prevents rubber-stamping (A15) */}
+            {!approveUnlocked && (
+              <span className="text-[11px] text-muted-foreground">
+                Locked until reviewed — hover for what counts.
+              </span>
+            )}
             <button
               type="button"
               onClick={openSnapshotPanel}
-              disabled={saving || snapshotting || validationError !== null}
-              title={validationError ? `Fix validation issue first: ${validationError}` : undefined}
+              disabled={saving || snapshotting || validationError !== null || !approveUnlocked}
+              title={
+                validationError
+                  ? `Fix validation issue first: ${validationError}`
+                  : !approveUnlocked
+                  ? approveLockTitle
+                  : undefined
+              }
               className="rounded-md bg-amber-700 px-4 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-amber-800 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isCaptured ? 'Approve update' : 'Approve the profile'}

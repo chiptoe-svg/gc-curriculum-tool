@@ -51,6 +51,8 @@ function OtherRow({ m, courseCode, slug, indexing, onIndexNow, onMaterialsChange
   const [busy, setBusy] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [rowError, setRowError] = useState<string | null>(null);
+  const [includeAnywayBusy, setIncludeAnywayBusy] = useState(false);
+  const [includeAnywayError, setIncludeAnywayError] = useState<string | null>(null);
 
   const prov = materialProvenance(m);
   const read = materialReadability(m);
@@ -115,6 +117,35 @@ function OtherRow({ m, courseCode, slug, indexing, onIndexNow, onMaterialsChange
       onMaterialsChange(allMaterials.filter((x) => x.id !== m.id));
     } finally {
       setBusy(false);
+    }
+  }
+
+  // FERPA include-anyway: mirrors MaterialsPanel's includeAutoSetAside handler.
+  // Optimistic local update first; revert + surface error on failure.
+  async function handleIncludeAnyway(): Promise<void> {
+    setIncludeAnywayBusy(true);
+    setIncludeAnywayError(null);
+    const previous = allMaterials;
+    onMaterialsChange(allMaterials.map((x) => (x.id === m.id ? { ...x, ignored: false } : x)));
+    try {
+      const res = await fetch(
+        `/api/courses/${encodeURIComponent(courseCode)}/materials/${encodeURIComponent(m.id)}?slug=${encodeURIComponent(slug)}`,
+        {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ ignored: false }),
+        },
+      );
+      if (!res.ok) {
+        onMaterialsChange(previous);
+        const body = await res.json().catch(() => ({})) as { error?: string };
+        setIncludeAnywayError(body.error ?? `Failed (${res.status})`);
+      }
+    } catch (e) {
+      onMaterialsChange(previous);
+      setIncludeAnywayError(e instanceof Error ? e.message : 'Failed to include');
+    } finally {
+      setIncludeAnywayBusy(false);
     }
   }
 
@@ -207,6 +238,36 @@ function OtherRow({ m, courseCode, slug, indexing, onIndexNow, onMaterialsChange
       )}
 
       {rowError && <p className="pl-6 text-[11px] text-destructive">{rowError}</p>}
+
+      {/* Why-ignored reason + FERPA include-anyway — parity with MaterialsPanel's
+          MaterialRow. Shows for any ignored or auto-set-aside row, not just Canvas
+          syllabus (generalizing beyond the original Canvas-only display). */}
+      {(m.ignored || m.autoSetAside) && (
+        <div className="mt-0.5 flex items-start justify-between gap-2 rounded border border-amber-200 bg-amber-50/50 px-2 py-1">
+          <p className="text-[11px] leading-snug italic text-amber-800">
+            {m.setAsideReason
+              ?? (m.autoSetAside
+                    ? 'set aside automatically'
+                    : 'manually toggled off by the faculty reviewer')}
+            {m.autoSetAside && !m.ignored && (
+              <span className="ml-1 not-italic text-amber-700">(overridden — included in audit)</span>
+            )}
+          </p>
+          {m.autoSetAside && m.ignored && (
+            <button
+              type="button"
+              onClick={() => void handleIncludeAnyway()}
+              disabled={includeAnywayBusy}
+              className="shrink-0 text-[11px] font-medium text-amber-900 underline hover:text-amber-700 disabled:opacity-50"
+            >
+              {includeAnywayBusy ? 'Including…' : 'Include anyway'}
+            </button>
+          )}
+        </div>
+      )}
+      {includeAnywayError && (
+        <p className="pl-2 text-[11px] text-destructive">{includeAnywayError}</p>
+      )}
 
       {expanded && m.extractedText && (
         <pre className="max-h-72 overflow-auto rounded border bg-muted/40 p-2 text-[11px] leading-snug whitespace-pre-wrap">
