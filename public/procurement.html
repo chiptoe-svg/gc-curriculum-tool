@@ -237,6 +237,22 @@
   .ex-us .ex-k{color:var(--accent-deep)}
   .ex-why{font-size:15px;line-height:1.55;color:var(--ink);border-top:1px dashed var(--line-strong);padding-top:13px}
   .ex-why b{color:var(--accent-deep)}
+  /* flow diagram (closes §07) */
+  .flow{max-width:580px;margin:8px auto 0;display:flex;flex-direction:column}
+  .flow-cap{font-family:var(--mono);font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);text-align:center;margin-bottom:18px}
+  .fnode{background:#fff;border:1px solid var(--line-strong);border-radius:8px;padding:13px 16px;text-align:center;display:flex;flex-direction:column;gap:5px}
+  .fnode b{font-family:var(--serif);font-weight:600;font-size:17px;color:var(--ink)}
+  .fnote{font-family:var(--sans);font-size:12.5px;color:var(--muted);line-height:1.45}
+  .fnode-in{border-color:var(--ink);background:var(--paper-2)}
+  .farrow{display:flex;align-items:center;justify-content:center;gap:9px;color:var(--line-strong);font-family:var(--mono);font-size:18px;padding:7px 0}
+  .farrow span{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  .fsplit{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .fbranch{background:#fff;border:1px solid var(--line-strong);border-radius:8px;padding:13px 15px;text-align:left;display:flex;flex-direction:column;gap:5px}
+  .fbranch .fb-k{font-family:var(--mono);font-weight:500;font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--accent-deep)}
+  .fbranch b{font-family:var(--serif);font-weight:600;font-size:16px;color:var(--ink)}
+  .fnode-ok{border-color:var(--good);background:#f1f7f2} .fnode-ok b{color:var(--good)}
+  .fnode-refuse{border-color:var(--line-strong);background:var(--paper-2)} .fnode-refuse b{font-size:15px;color:var(--ink-soft)}
+  @media(max-width:560px){.fsplit{grid-template-columns:1fr}}
   .build{list-style:none;padding:18px 20px 8px;display:flex;flex-direction:column;gap:13px}
   .build li{display:flex;gap:13px;align-items:flex-start}
   .build li div{font-size:14px;color:var(--ink-soft);line-height:1.5}
@@ -561,7 +577,29 @@
       </div>
     </div>
 
-    <p class="ledger-foot reveal" style="margin-top:46px">The documents come in clean, the model translates instead of inventing, similarity is used only where it helps, and the rules are connected — so the system can follow, and show, the actual path to an answer.</p>
+    <div class="flow reveal" style="margin-top:48px">
+      <div class="flow-cap">Put together — the path one question takes</div>
+
+      <div class="fnode fnode-in"><b>Your question</b><span class="fnote">“Can I buy a $300 table on my grant?”</span></div>
+      <div class="farrow">↓</div>
+
+      <div class="fnode"><b>Understand it</b><span class="fnote">the model turns your words into facts — amount, item, funding source — but never the answer</span></div>
+      <div class="farrow">↓ <span>then it picks a path</span></div>
+
+      <div class="fsplit">
+        <div class="fbranch"><span class="fb-k">A dollar / rule question</span><b>Look up the rule</b><span class="fnote">walk the connected rules; the figure is looked up, not written</span></div>
+        <div class="fbranch"><span class="fb-k">A “how do I…” question</span><b>Find &amp; explain</b><span class="fnote">similarity search over the policy text, then explain the passage</span></div>
+      </div>
+      <div class="farrow">↓</div>
+
+      <div class="fnode"><b>Check every claim</b><span class="fnote">each figure and statement must trace back to a real source — or the answer is held back</span></div>
+      <div class="farrow">↓</div>
+
+      <div class="fsplit">
+        <div class="fnode fnode-ok"><b>Answer — with citations</b><span class="fnote">the bottom line plus the source on every line</span></div>
+        <div class="fnode fnode-refuse"><b>“I can't confirm that”</b><span class="fnote">points you to the closest policy and a person who can help</span></div>
+      </div>
+    </div>
   </div>
 </section>
 
