@@ -1,7 +1,7 @@
 // Career target definition (hardcoded for M-trial; becomes DB row in M1)
 export type KUDLevel = 'know' | 'understand' | 'do' | 'not_addressed';
 
-// Minimal display frame used by CoverageHeatMap and PrerequisiteGapPanel.
+// Minimal display frame (no active consumers after M-trial dead-code sweep).
 // CareerTarget satisfies this shape; so does a course-derived prereq frame.
 export interface AnalysisFrame {
   name: string;
