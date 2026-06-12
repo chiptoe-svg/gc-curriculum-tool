@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
   openFlagsForCell,
-  openFlagsForStatement,
   flagDrift,
   type FlagLike,
 } from '@/lib/program/flags';
@@ -30,18 +29,6 @@ describe('openFlagsForCell', () => {
     ];
     const hits = openFlagsForCell(flags, 'GC 1010', 'brand-strategist', 'color-management');
     expect(hits.map(h => h.id)).toEqual(['a']);
-  });
-});
-
-describe('openFlagsForStatement', () => {
-  it('matches open profile flags on exact (courseCode, statement)', () => {
-    const flags = [
-      f({ id: 'p1', targetKind: 'profile_competency', careerTargetId: null, subCompetencyId: null, competencyStatement: 'Mixes spot-color inks' }),
-      f({ id: 'p2', targetKind: 'profile_competency', careerTargetId: null, subCompetencyId: null, competencyStatement: 'Mixes spot-color inks', courseCode: 'GC 3800' }),
-      f({ id: 'p3', targetKind: 'profile_competency', careerTargetId: null, subCompetencyId: null, competencyStatement: 'Different statement' }),
-    ];
-    const hits = openFlagsForStatement(flags, 'GC 1010', 'Mixes spot-color inks');
-    expect(hits.map(h => h.id)).toEqual(['p1']);
   });
 });
 

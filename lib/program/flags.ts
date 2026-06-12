@@ -44,20 +44,6 @@ export function openFlagsForCell<T extends FlagLike>(
   );
 }
 
-/** Open flags matching one profile competency by exact statement. */
-export function openFlagsForStatement<T extends FlagLike>(
-  flags: T[],
-  courseCode: string,
-  statement: string,
-): T[] {
-  return flags.filter(f =>
-    f.status === 'open'
-    && f.targetKind === 'profile_competency'
-    && f.courseCode === courseCode
-    && f.competencyStatement === statement,
-  );
-}
-
 /**
  * Per-dimension deltas between the reading as flagged and the live reading.
  * Null when either side is missing (annotate "(no longer in matrix)" /
