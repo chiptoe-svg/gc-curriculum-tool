@@ -6,6 +6,7 @@ import { fetchCourseMaterials } from '@/lib/capture/fetch-course-materials';
 import {
   materialsByBox, materialProvenance, PROVENANCE_LABEL,
   materialReadability, hasFixablyUnindexed,
+  estimateMaterialTokens, formatMaterialTokens, formatMaterialBytes,
 } from '@/lib/capture/material-display';
 
 interface Props {
@@ -31,10 +32,199 @@ function summarize(others: CaptureMaterial[]): string {
   return parts.join(' · ');
 }
 
+// ---------------------------------------------------------------------------
+// Per-row sub-component — mirrors the manager's MaterialRow semantics.
+// ---------------------------------------------------------------------------
+
+interface RowProps {
+  m: CaptureMaterial;
+  courseCode: string;
+  slug: string;
+  /** Whether *any* row in the box is currently busy (used for Index-now). */
+  indexing: boolean;
+  onIndexNow: () => void;
+  onMaterialsChange: (next: CaptureMaterial[]) => void;
+  allMaterials: CaptureMaterial[];
+}
+
+function OtherRow({ m, courseCode, slug, indexing, onIndexNow, onMaterialsChange, allMaterials }: RowProps) {
+  const [busy, setBusy] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [rowError, setRowError] = useState<string | null>(null);
+
+  const prov = materialProvenance(m);
+  const read = materialReadability(m);
+  const dimmed = m.ignored || m.autoSetAside;
+  const fixable = hasFixablyUnindexed([m]);
+  const showLink = prov === 'linked' && m.blobUrl;
+
+  const wordCount = m.extractedText
+    ? m.extractedText.split(/\s+/).filter(Boolean).length
+    : 0;
+  const tokenEst = m.extractedText ? estimateMaterialTokens(m.extractedText) : 0;
+  const digestTokenEst = m.digest ? estimateMaterialTokens(m.digest) : 0;
+  const usingDigest = m.useDigest && m.digest !== null;
+
+  async function toggleIgnored(ignored: boolean): Promise<void> {
+    setBusy(true);
+    setRowError(null);
+    try {
+      const res = await fetch(
+        `/api/courses/${encodeURIComponent(courseCode)}/materials/${encodeURIComponent(m.id)}?slug=${encodeURIComponent(slug)}`,
+        {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ ignored }),
+        },
+      );
+      if (!res.ok) { setRowError(`Failed (${res.status})`); return; }
+      onMaterialsChange(allMaterials.map((x) => (x.id === m.id ? { ...x, ignored } : x)));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function toggleUseDigest(useDigest: boolean): Promise<void> {
+    setBusy(true);
+    setRowError(null);
+    try {
+      const res = await fetch(
+        `/api/courses/${encodeURIComponent(courseCode)}/materials/${encodeURIComponent(m.id)}?slug=${encodeURIComponent(slug)}`,
+        {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ useDigest }),
+        },
+      );
+      if (!res.ok) { setRowError(`Failed (${res.status})`); return; }
+      onMaterialsChange(allMaterials.map((x) => (x.id === m.id ? { ...x, useDigest } : x)));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDelete(): Promise<void> {
+    setBusy(true);
+    setRowError(null);
+    try {
+      const res = await fetch(
+        `/api/courses/${encodeURIComponent(courseCode)}/materials/${encodeURIComponent(m.id)}?slug=${encodeURIComponent(slug)}`,
+        { method: 'DELETE' },
+      );
+      if (!res.ok) { setRowError(`Failed (${res.status})`); return; }
+      onMaterialsChange(allMaterials.filter((x) => x.id !== m.id));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <li className={'flex flex-col gap-1 px-3 py-2.5 ' + (dimmed ? 'opacity-50' : '')}>
+      <div className="flex items-center gap-2">
+        <span aria-hidden className="w-4 shrink-0 text-center text-sm">📄</span>
+        <span className="min-w-0 flex-1 truncate text-sm">{m.fileName}</span>
+        <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          {PROVENANCE_LABEL[prov]}
+        </span>
+        <span
+          className={'flex shrink-0 items-center gap-1 text-[11px] ' + (read.readable ? 'text-muted-foreground' : 'text-amber-700 dark:text-amber-400')}
+          title={read.reason ?? ''}
+        >
+          <IndexingStatusDot status={m.indexingStatus} indexedAt={m.indexedAt} />
+          {read.label}
+        </span>
+        {fixable && (
+          <button
+            type="button"
+            onClick={onIndexNow}
+            disabled={indexing}
+            className="shrink-0 rounded-md border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-50 dark:bg-amber-900/20 dark:text-amber-200"
+          >
+            {indexing ? 'Indexing…' : 'Index now'}
+          </button>
+        )}
+        {showLink && (
+          <a
+            href={m.blobUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="shrink-0 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+          >
+            source ↗
+          </a>
+        )}
+        {/* Per-row controls — mirror the manager */}
+        {m.digest !== null && (
+          <label className="flex shrink-0 cursor-pointer items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground">
+            <input
+              type="checkbox"
+              checked={m.useDigest}
+              disabled={busy}
+              onChange={(e) => void toggleUseDigest(e.target.checked)}
+              className="h-3 w-3"
+            />
+            AI summary
+          </label>
+        )}
+        <button
+          type="button"
+          onClick={() => void toggleIgnored(!m.ignored)}
+          disabled={busy}
+          className="shrink-0 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline disabled:opacity-50"
+        >
+          {m.ignored ? 're-include' : 'ignore'}
+        </button>
+        <button
+          type="button"
+          onClick={() => setExpanded((e) => !e)}
+          disabled={!m.extractedText}
+          className="shrink-0 text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-30"
+        >
+          {expanded ? 'hide' : 'preview'}
+        </button>
+        <button
+          type="button"
+          onClick={() => void handleDelete()}
+          disabled={busy}
+          className="shrink-0 text-[11px] text-muted-foreground hover:text-destructive disabled:opacity-30"
+        >
+          delete
+        </button>
+      </div>
+
+      {/* Meta line: words · ~tok · size · [audit sends ~N tok when using digest] */}
+      {(wordCount > 0 || tokenEst > 0) && (
+        <p className="pl-6 text-[11px] text-muted-foreground">
+          {wordCount > 0 && <span>{wordCount.toLocaleString()} words · </span>}
+          {tokenEst > 0 && <span>~{formatMaterialTokens(tokenEst)} · </span>}
+          {usingDigest && digestTokenEst > 0 && (
+            <span className="text-teal-700" title="Tokens the AI summary contributes to the audit prompt.">
+              audit sends ~{formatMaterialTokens(digestTokenEst)} ·{' '}
+            </span>
+          )}
+          <span>{formatMaterialBytes(m.sizeBytes)}</span>
+        </p>
+      )}
+
+      {rowError && <p className="pl-6 text-[11px] text-destructive">{rowError}</p>}
+
+      {expanded && m.extractedText && (
+        <pre className="max-h-72 overflow-auto rounded border bg-muted/40 p-2 text-[11px] leading-snug whitespace-pre-wrap">
+          {m.extractedText.slice(0, 8000)}
+          {m.extractedText.length > 8000 && '\n\n…(truncated)'}
+        </pre>
+      )}
+    </li>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Box component
+// ---------------------------------------------------------------------------
+
 export function OtherMaterialsBox({ course, materials, slug, onMaterialsChange }: Props) {
   const others = useMemo(() => materialsByBox(materials).other, [materials]);
   const [open, setOpen] = useState(false);
-  const [busy, setBusy] = useState<string | null>(null);
   const [indexing, setIndexing] = useState(false);
   const [uploading, setUploading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -73,28 +263,6 @@ export function OtherMaterialsBox({ course, materials, slug, onMaterialsChange }
     } finally {
       setUploading(null);
       if (inputRef.current) inputRef.current.value = '';
-    }
-  }
-
-  async function toggleIgnored(id: string, ignored: boolean): Promise<void> {
-    setBusy(id);
-    setError(null);
-    try {
-      const res = await fetch(
-        `/api/courses/${encodeURIComponent(course.code)}/materials/${encodeURIComponent(id)}?slug=${encodeURIComponent(slug)}`,
-        {
-          method: 'PATCH',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ ignored }),
-        },
-      );
-      if (!res.ok) {
-        setError(`Failed (${res.status})`);
-        return;
-      }
-      onMaterialsChange(materials.map((m) => (m.id === id ? { ...m, ignored } : m)));
-    } finally {
-      setBusy(null);
     }
   }
 
@@ -161,57 +329,18 @@ export function OtherMaterialsBox({ course, materials, slug, onMaterialsChange }
             </p>
           ) : (
             <ul className="divide-y">
-              {others.map((m) => {
-                const prov = materialProvenance(m);
-                const read = materialReadability(m);
-                const dimmed = m.ignored || m.autoSetAside;
-                const fixable = hasFixablyUnindexed([m]);
-                const showLink = prov === 'linked' && m.blobUrl;
-                return (
-                  <li key={m.id} className={'flex items-center gap-3 px-3 py-2.5 ' + (dimmed ? 'opacity-50' : '')}>
-                    <span aria-hidden className="w-4 text-center">📄</span>
-                    <span className="min-w-0 flex-1 truncate text-sm">{m.fileName}</span>
-                    <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                      {PROVENANCE_LABEL[prov]}
-                    </span>
-                    <span
-                      className={'flex items-center gap-1 text-[11px] ' + (read.readable ? 'text-muted-foreground' : 'text-amber-700 dark:text-amber-400')}
-                      title={read.reason ?? ''}
-                    >
-                      <IndexingStatusDot status={m.indexingStatus} indexedAt={m.indexedAt} />
-                      {read.label}
-                    </span>
-                    {fixable && (
-                      <button
-                        type="button"
-                        onClick={indexNow}
-                        disabled={indexing}
-                        className="shrink-0 rounded-md border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-50 dark:bg-amber-900/20 dark:text-amber-200"
-                      >
-                        {indexing ? 'Indexing…' : 'Index now'}
-                      </button>
-                    )}
-                    {showLink && (
-                      <a
-                        href={m.blobUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="shrink-0 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-                      >
-                        source ↗
-                      </a>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => void toggleIgnored(m.id, !m.ignored)}
-                      disabled={busy === m.id}
-                      className="shrink-0 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline disabled:opacity-50"
-                    >
-                      {m.ignored ? 're-include' : 'ignore'}
-                    </button>
-                  </li>
-                );
-              })}
+              {others.map((m) => (
+                <OtherRow
+                  key={m.id}
+                  m={m}
+                  courseCode={course.code}
+                  slug={slug}
+                  indexing={indexing}
+                  onIndexNow={() => void indexNow()}
+                  onMaterialsChange={onMaterialsChange}
+                  allMaterials={materials}
+                />
+              ))}
             </ul>
           )}
         </div>

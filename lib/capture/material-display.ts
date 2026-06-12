@@ -122,3 +122,25 @@ export function relativeTimeFromNow(iso: string | null, now: number): string {
 export function hasFixablyUnindexed(materials: { indexingStatus: string; ignored?: boolean }[]): boolean {
   return materials.some((m) => !m.ignored && (m.indexingStatus === 'pending' || m.indexingStatus === 'failed'));
 }
+
+// ---------------------------------------------------------------------------
+// Display helpers shared between OtherMaterialsBox and the manager.
+// ---------------------------------------------------------------------------
+
+/** Rough estimate: ~4 chars per token (OpenAI rule of thumb for English). */
+export function estimateMaterialTokens(text: string): number {
+  return Math.ceil(text.length / 4);
+}
+
+/** Format a token count as "42 tok" or "12.3k tok" or "102k tok". */
+export function formatMaterialTokens(tokens: number): string {
+  if (tokens < 1000) return `${tokens} tok`;
+  return `${(tokens / 1000).toFixed(tokens >= 10_000 ? 0 : 1)}k tok`;
+}
+
+/** Human-readable file size. */
+export function formatMaterialBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}

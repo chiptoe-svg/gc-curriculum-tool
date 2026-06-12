@@ -13,13 +13,14 @@ import { OtherMaterialsBox } from '@/app/capture/[code]/boxes/OtherMaterialsBox'
 const course = {
   code: 'GC 3800', title: 'Junior Seminar', description: 'A course', prerequisites: '',
   learningObjectives: ['x', 'y'], majorProjects: [], skillsRequired: [], auditMode: 'full',
+  canvasCourseName: null, canvasImportedAt: null,
 } as unknown as CourseCatalogView;
 
 function mat(o: Partial<CaptureMaterial>): CaptureMaterial {
   return {
-    id: o.id ?? 'm', fileName: o.fileName ?? 'f.pdf', mimeType: 'application/pdf', sizeBytes: 1,
-    pageCount: null, extractionStatus: 'ok', extractionMethod: null, extractedText: o.extractedText ?? 'x',
-    ignored: o.ignored ?? false, digest: null, digestGeneratedAt: null, useDigest: false,
+    id: o.id ?? 'm', fileName: o.fileName ?? 'f.pdf', mimeType: 'application/pdf', sizeBytes: 1024,
+    pageCount: null, extractionStatus: 'ok', extractionMethod: null, extractedText: o.extractedText ?? 'hello world',
+    ignored: o.ignored ?? false, digest: o.digest ?? null, digestGeneratedAt: null, useDigest: o.useDigest ?? false,
     indexingStatus: o.indexingStatus ?? 'ready', indexedAt: null, ferpaRisk: 'low', autoSetAside: false,
     setAsideReason: o.setAsideReason ?? null, blobUrl: o.blobUrl ?? '', ignoredItems: o.ignoredItems, ...o,
   } as CaptureMaterial;
@@ -70,7 +71,7 @@ describe('OtherMaterialsBox', () => {
     render(<OtherMaterialsBox course={course} materials={others} slug="s" onMaterialsChange={onMaterialsChange} />);
     fireEvent.click(screen.getByRole('button', { name: /other materials/i }));
     // ignore the first upload row
-    const ignoreButtons = screen.getAllByRole('button', { name: /ignore/i });
+    const ignoreButtons = screen.getAllByRole('button', { name: /^ignore$/i });
     fireEvent.click(ignoreButtons[0]!);
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
     const [url, init] = fetchMock.mock.calls[0]!;
@@ -91,5 +92,64 @@ describe('OtherMaterialsBox', () => {
     fireEvent.click(screen.getByRole('button', { name: /index now/i }));
     await waitFor(() => expect(fetchMock.mock.calls[0]![0]).toContain('/v2-backfill'));
     await waitFor(() => expect(onMaterialsChange).toHaveBeenCalled());
+  });
+
+  // ── New parity tests (Round 3) ──────────────────────────────────────────
+
+  it('AI-summary checkbox PATCHes {useDigest:true} for a row that has a digest', async () => {
+    const onMaterialsChange = vi.fn();
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+    vi.stubGlobal('fetch', fetchMock);
+    const withDigest = [mat({ id: 'd1', fileName: 'report.pdf', digest: 'summarized text', useDigest: false })];
+    render(<OtherMaterialsBox course={course} materials={withDigest} slug="s" onMaterialsChange={onMaterialsChange} />);
+    fireEvent.click(screen.getByRole('button', { name: /other materials/i }));
+    // AI summary checkbox must be rendered
+    const cb = screen.getByRole('checkbox', { name: /ai summary/i });
+    expect(cb).toBeTruthy();
+    fireEvent.click(cb);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(url).toContain('/materials/d1');
+    expect(JSON.parse(init.body as string)).toMatchObject({ useDigest: true });
+    await waitFor(() => expect(onMaterialsChange).toHaveBeenCalled());
+  });
+
+  it('"audit sends ~N tok" note shows when useDigest && digest', () => {
+    const withDigest = [mat({ id: 'd2', fileName: 'notes.pdf', digest: 'x'.repeat(400), useDigest: true })];
+    render(<OtherMaterialsBox course={course} materials={withDigest} slug="s" onMaterialsChange={noop} />);
+    fireEvent.click(screen.getByRole('button', { name: /other materials/i }));
+    expect(screen.getByText(/audit sends ~/i)).toBeTruthy();
+  });
+
+  it('preview button expands extractedText and hide collapses it', () => {
+    const m = mat({ id: 'p2', fileName: 'hand.pdf', extractedText: 'visible content here' });
+    render(<OtherMaterialsBox course={course} materials={[m]} slug="s" onMaterialsChange={noop} />);
+    fireEvent.click(screen.getByRole('button', { name: /other materials/i }));
+    // text hidden before expand
+    expect(screen.queryByText(/visible content here/)).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /^preview$/i }));
+    expect(screen.getByText(/visible content here/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /^hide$/i }));
+    expect(screen.queryByText(/visible content here/)).toBeNull();
+  });
+
+  it('delete button DELETEs the material and removes it from the list', async () => {
+    const onMaterialsChange = vi.fn();
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+    vi.stubGlobal('fetch', fetchMock);
+    const mats = [mat({ id: 'del1', fileName: 'toDelete.pdf' }), mat({ id: 'keep', fileName: 'keep.pdf' })];
+    render(<OtherMaterialsBox course={course} materials={mats} slug="s" onMaterialsChange={onMaterialsChange} />);
+    fireEvent.click(screen.getByRole('button', { name: /other materials/i }));
+    const deleteButtons = screen.getAllByRole('button', { name: /^delete$/i });
+    fireEvent.click(deleteButtons[0]!);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(url).toContain('/materials/del1');
+    expect((init as RequestInit).method).toBe('DELETE');
+    await waitFor(() => expect(onMaterialsChange).toHaveBeenCalled());
+    // The callback should filter out del1
+    const next = (onMaterialsChange.mock.calls[0] as [CaptureMaterial[]])[0];
+    expect(next.find((x) => x.id === 'del1')).toBeUndefined();
+    expect(next.find((x) => x.id === 'keep')).toBeTruthy();
   });
 });
