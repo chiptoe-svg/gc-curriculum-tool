@@ -7,6 +7,9 @@ import type {
   MatrixSubCompetency,
   MatrixCoverageCell,
 } from '@/lib/db/program-coverage-queries';
+import { FlagDialog } from '@/components/FlagDialog';
+import { FlagsPanel, type AnnotatedFlag } from './FlagsPanel';
+import { openFlagsForCell } from '@/lib/program/flags';
 
 interface MatrixData {
   courses: MatrixCourse[];
@@ -18,6 +21,7 @@ interface MatrixData {
 interface Props {
   slug: string;
   initialData: MatrixData;
+  initialFlags: AnnotatedFlag[];
 }
 
 interface SelectedCell {
@@ -103,7 +107,7 @@ function fmtDate(d: string | Date): string {
 
 type Lens = 'coverage' | 'problem-solving';
 
-export function ProgramCoverageClient({ slug, initialData }: Props) {
+export function ProgramCoverageClient({ slug, initialData, initialFlags }: Props) {
   const [data, setData] = useState<MatrixData>(initialData);
   const [activeTargetId, setActiveTargetId] = useState<string>(
     initialData.targets[0]?.id ?? '',
@@ -114,6 +118,15 @@ export function ProgramCoverageClient({ slug, initialData }: Props) {
   const [scoringCell, setScoringCell] = useState<string | null>(null);
   const [scoringError, setScoringError] = useState<string | null>(null);
   const [lens, setLens] = useState<Lens>('coverage');
+  const [flags, setFlags] = useState<AnnotatedFlag[]>(initialFlags);
+  const [flagsOpen, setFlagsOpen] = useState(false);
+  const [flagDialogOpen, setFlagDialogOpen] = useState(false);
+
+  const refetchFlags = useCallback(async () => {
+    const res = await fetch(`/api/flags?slug=${encodeURIComponent(slug)}`);
+    if (res.ok) setFlags(((await res.json()) as { flags: AnnotatedFlag[] }).flags);
+  }, [slug]);
+  const openFlags = useMemo(() => flags.filter(f => f.status === 'open'), [flags]);
   // Live elapsed counter while the batch scorer runs. The route scores pairs
   // sequentially and only returns at the end (no per-pair stream yet), so this
   // is the "it's working" signal — heavy-tier, ~3–8s per pair.
@@ -272,15 +285,31 @@ export function ProgramCoverageClient({ slug, initialData }: Props) {
             <p className="mt-1 text-muted-foreground">{refreshStatus}</p>
           ) : null}
         </div>
-        <button
-          type="button"
-          onClick={handleRefresh}
-          disabled={refreshing || scoredCount === totalPairs}
-          className="rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50"
-        >
-          {refreshing ? 'Scoring…' : scoredCount === totalPairs ? 'Up to date' : `Score ${totalPairs - scoredCount} stale pair${totalPairs - scoredCount === 1 ? '' : 's'}`}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleRefresh}
+            disabled={refreshing || scoredCount === totalPairs}
+            className="rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50"
+          >
+            {refreshing ? 'Scoring…' : scoredCount === totalPairs ? 'Up to date' : `Score ${totalPairs - scoredCount} stale pair${totalPairs - scoredCount === 1 ? '' : 's'}`}
+          </button>
+          <button
+            type="button"
+            onClick={() => setFlagsOpen(o => !o)}
+            className="ml-3 rounded-md border border-input bg-background px-3 py-1.5 text-xs hover:bg-muted"
+          >
+            ⚑ {openFlags.length} open {openFlags.length === 1 ? 'flag' : 'flags'}
+          </button>
+        </div>
       </section>
+
+      {flagsOpen && (
+        <section className="rounded-md border bg-card">
+          <header className="border-b px-4 py-2 text-xs font-semibold">Dispute flags</header>
+          <FlagsPanel flags={flags} slug={slug} onChanged={() => void refetchFlags()} />
+        </section>
+      )}
 
       {/* Lens toggle */}
       <section className="rounded-md border bg-card px-4 py-3 flex items-center justify-between gap-4 flex-wrap">
@@ -388,6 +417,7 @@ export function ProgramCoverageClient({ slug, initialData }: Props) {
                       const colorClass = lens === 'problem-solving'
                         ? psColor(psDepthOf(cell)) + ' ' + psText(psDepthOf(cell))
                         : depthColor(maxOf(cell)) + ' ' + depthText(maxOf(cell));
+                      const cellFlags = openFlagsForCell(openFlags, course.courseCode, activeTargetId, s.id);
                       return (
                         <td
                           key={s.id}
@@ -405,6 +435,9 @@ export function ProgramCoverageClient({ slug, initialData }: Props) {
                             </div>
                           ) : (
                             <div className="text-[10px] italic text-muted-foreground">—</div>
+                          )}
+                          {cellFlags.length > 0 && (
+                            <div className="text-[9px]" title={`${cellFlags.length} open flag${cellFlags.length === 1 ? '' : 's'}`} aria-label="open flags">⚑{cellFlags.length > 1 ? cellFlags.length : ''}</div>
                           )}
                         </td>
                       );
@@ -482,6 +515,38 @@ export function ProgramCoverageClient({ slug, initialData }: Props) {
           scoring={scoringCell === `${selected.course.snapshotId}:${activeTargetId}`}
           onClose={() => setSelected(null)}
           onScore={() => handleScoreCell(selected.course.snapshotId, activeTargetId)}
+          onFlag={() => setFlagDialogOpen(true)}
+          openFlagCount={openFlagsForCell(openFlags, selected.course.courseCode, activeTargetId, selected.subCompetency.id).length}
+        />
+      )}
+      {selected && (
+        <FlagDialog
+          open={flagDialogOpen}
+          onOpenChange={setFlagDialogOpen}
+          context={`${selected.course.courseCode} × ${selected.subCompetency.name} — flag this coverage reading`}
+          onSubmit={async (note, flaggedBy) => {
+            const res = await fetch(`/api/flags?slug=${encodeURIComponent(slug)}`, {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({
+                targetKind: 'coverage_cell',
+                courseCode: selected.course.courseCode,
+                careerTargetId: activeTargetId,
+                subCompetencyId: selected.subCompetency.id,
+                competencyStatement: null,
+                note,
+                flaggedBy,
+                flaggedContext: selected.cell
+                  ? { k: selected.cell.kDepth, u: selected.cell.uDepth, d: selected.cell.dDepth, matchedCompetency: selected.cell.matchedCompetency, rationale: selected.cell.rationale }
+                  : null,
+              }),
+            });
+            if (!res.ok) {
+              const json = await res.json().catch(() => ({}));
+              throw new Error((json as { error?: string }).error ?? `flag failed (${res.status})`);
+            }
+            await refetchFlags();
+          }}
         />
       )}
       {scoringError && (
@@ -498,6 +563,8 @@ function CellDetailDrawer({
   scoring,
   onClose,
   onScore,
+  onFlag,
+  openFlagCount,
 }: {
   selected: SelectedCell;
   targetName: string;
@@ -505,6 +572,8 @@ function CellDetailDrawer({
   scoring: boolean;
   onClose: () => void;
   onScore: () => void;
+  onFlag: () => void;
+  openFlagCount: number;
 }) {
   const { course, subCompetency, cell } = selected;
   return (
@@ -576,6 +645,13 @@ function CellDetailDrawer({
               </Link>
               <button
                 type="button"
+                onClick={onFlag}
+                className="rounded-md border border-input bg-background px-2.5 py-1 text-xs hover:bg-muted"
+              >
+                ⚑ Flag this reading{openFlagCount > 0 ? ` (${openFlagCount} open)` : ''}
+              </button>
+              <button
+                type="button"
                 onClick={onScore}
                 disabled={scoring}
                 className="ml-auto rounded-md border border-input bg-background px-2.5 py-1 text-xs hover:bg-muted disabled:opacity-50"
@@ -594,6 +670,13 @@ function CellDetailDrawer({
               className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
             >
               {scoring ? 'Scoring…' : 'Score this pair'}
+            </button>
+            <button
+              type="button"
+              onClick={onFlag}
+              className="rounded-md border border-input bg-background px-2.5 py-1 text-xs hover:bg-muted"
+            >
+              ⚑ Flag this reading{openFlagCount > 0 ? ` (${openFlagCount} open)` : ''}
             </button>
           </div>
         )}

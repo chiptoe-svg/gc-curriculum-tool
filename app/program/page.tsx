@@ -3,6 +3,7 @@ import { isValidSlug } from '@/lib/slug';
 import { getMatrixData } from '@/lib/db/program-coverage-queries';
 import { ProgramCoverageClient } from './ProgramCoverageClient';
 import { FeedbackLink } from '@/app/FeedbackLink';
+import { listFlags } from '@/lib/db/flag-queries';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,6 +24,21 @@ export default async function ProgramPage({ searchParams }: Props) {
   }
 
   const data = await getMatrixData();
+  const flagRows = await listFlags({});
+  // Server-side: no drift annotation needed for first paint (the client
+  // refetches via /api/flags after any mutation, which annotates).
+  const initialFlags = flagRows.map(f => ({
+    ...f,
+    createdAt: f.createdAt.toISOString(),
+    resolvedAt: f.resolvedAt ? f.resolvedAt.toISOString() : null,
+    drift: null,
+    stillInMatrix: null,
+    // flaggedContext from DB is FlaggedContext | null | undefined; cast to the
+    // narrower AnnotatedFlag shape (k/u/d only) since FlaggedContext is a superset.
+    flaggedContext: f.flaggedContext
+      ? { k: f.flaggedContext.k ?? null, u: f.flaggedContext.u ?? null, d: f.flaggedContext.d ?? null }
+      : null,
+  }));
 
   return (
     <div className="min-h-screen bg-background">
@@ -45,7 +61,7 @@ export default async function ProgramPage({ searchParams }: Props) {
       </header>
 
       <main className="mx-auto max-w-6xl px-6 py-6">
-        <ProgramCoverageClient slug={slug} initialData={data} />
+        <ProgramCoverageClient slug={slug} initialData={data} initialFlags={initialFlags} />
       </main>
     </div>
   );
