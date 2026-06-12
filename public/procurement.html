@@ -204,6 +204,33 @@
   .why .item h3 .num{font-family:var(--mono);font-size:12px;color:var(--accent-deep)}
   .why .item p{font-size:15px;color:var(--ink-soft);line-height:1.55}
 
+  /* ---------- how is it done (technical) ---------- */
+  .boundary{display:grid;grid-template-columns:1fr auto 1.18fr auto 1fr;align-items:stretch;border:1px solid var(--line-strong);border-radius:8px;overflow:hidden;background:#fff}
+  @media(max-width:860px){.boundary{grid-template-columns:1fr}}
+  .bstage{padding:18px 20px;display:flex;flex-direction:column;gap:5px;background:var(--paper-2)}
+  .bstage.hot{background:var(--ink);color:var(--paper)}
+  .bstage .bk{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .bstage.hot .bk{color:var(--gold)}
+  .bstage b{font-family:var(--serif);font-size:20px;font-weight:600}
+  .bstage .bd{font-size:12.5px;color:var(--ink-soft);line-height:1.4}
+  .bstage.hot .bd{color:#cfc6b4}
+  .barrow{display:grid;place-items:center;padding:0 10px;color:var(--accent);font-size:15px;background:#fff}
+  @media(max-width:860px){.barrow{transform:rotate(90deg);padding:8px 0}}
+  .bcap{margin:16px 0 0;font-size:14px;color:var(--ink-soft);text-align:center}
+  .bcap b{color:var(--accent-deep)}
+  .phases{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:44px;align-items:start}
+  @media(max-width:860px){.phases{grid-template-columns:1fr}}
+  .phase{border:1px solid var(--line-strong);border-radius:6px;background:#fff;overflow:hidden;display:flex;flex-direction:column}
+  .phase-h{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:15px 20px;border-bottom:1px solid var(--line);color:var(--muted);background:var(--paper-2)}
+  .phase-h.ap{color:#fff;background:var(--accent);font-weight:600;border-bottom-color:var(--accent)}
+  .phase-note{padding:4px 20px 18px;font-size:13px;color:var(--muted);line-height:1.5;font-style:italic;margin-top:auto}
+  .build{list-style:none;padding:18px 20px 8px;display:flex;flex-direction:column;gap:13px}
+  .build li{display:flex;gap:13px;align-items:flex-start}
+  .build li div{font-size:14px;color:var(--ink-soft);line-height:1.5}
+  .build li b{color:var(--ink)}
+  .build .b-n{font-family:var(--mono);font-size:12px;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;flex:none;color:#fff;background:var(--accent-deep);font-weight:600}
+  code{font-family:var(--mono);font-size:.85em;background:var(--paper-2);border:1px solid var(--line);border-radius:3px;padding:1px 5px;color:var(--accent-deep);white-space:nowrap}
+
   /* ---------- footer ---------- */
   footer{background:var(--ink);color:#CFC6B4;padding:70px 0 40px;position:relative;z-index:2}
   footer .ft-top{display:flex;justify-content:space-between;flex-wrap:wrap;gap:30px;align-items:flex-start;border-bottom:1px solid #ffffff1f;padding-bottom:36px}
@@ -240,6 +267,7 @@
       <a href="#difference">The difference</a>
       <a href="#example">Example</a>
       <a href="#why">Why</a>
+      <a href="#work">How it's done</a>
     </nav>
     <span class="tag">Design preview</span>
   </div>
@@ -478,6 +506,64 @@
         <p>The same verified answers come through a web page, by voice, and through a connector other software and AI agents can call — one source of truth, not three.</p>
       </div>
     </div>
+  </div>
+</section>
+
+<!-- ===================== HOW IS IT DONE ===================== -->
+<section id="work">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="sec-no">07</span>
+      <h2 class="sec-title">How is it done?</h2>
+    </div>
+    <p class="reveal" style="max-width:65ch;margin-bottom:38px;color:var(--ink-soft)">The reliability comes from <em>where the work happens</em>. A doc-chatbot does everything the moment you ask and lets the model generate the number. ask_procurement moves the hard work to <b>build time</b> — a human verifies it, code resolves it — and confines the model to translating between language and structure. The technical core is one boundary:</p>
+
+    <div class="boundary reveal d1">
+      <div class="bstage"><span class="bk">Stage 1 · LLM</span><b>Ground</b><span class="bd">parse amount · commodity · funding; classify to a category (correctable)</span></div>
+      <div class="barrow">▸</div>
+      <div class="bstage hot"><span class="bk">Stage 2 · pure code · no LLM</span><b>Resolve</b><span class="bd">match &amp; chain the governing rules → an explained, cited decision path</span></div>
+      <div class="barrow">▸</div>
+      <div class="bstage"><span class="bk">Stage 3 · LLM, then checked</span><b>Explain + verify</b><span class="bd">phrase for the role · enforce citations · refuse if unsure</span></div>
+    </div>
+    <p class="bcap reveal">The dollar figure lives in <b>Stage 2</b> — a table lookup, never a generated token. The model never authors a threshold.</p>
+
+    <div class="phases">
+      <div class="phase reveal d1">
+        <div class="phase-h">Build time — compile policy into a verified model</div>
+        <ol class="build">
+          <li><span class="b-n">1</span><div><b>Crawl</b> per-jurisdiction allowlists → content-hashed <b>snapshots</b> (change detection) + a captured <code>doc_links</code> graph of hyperlinks &amp; cross-references.</div></li>
+          <li><span class="b-n">2</span><div><b>Extract</b> with Docling's layout model — threshold tables survive as <b>cells</b>, fed to the extractor verbatim; OCR/vision fallback for scans.</div></li>
+          <li><span class="b-n">3</span><div><b>Compile</b> — a schema-first agent emits typed candidate rules <code>{jurisdiction, commodity, funding, amount-range, flags}</code> + a <code>rule_relations</code> graph <code>{excepts, overrides, requires_also, see_also}</code>, each with provenance + confidence.</div></li>
+          <li><span class="b-n">4</span><div><b>Human gate</b> — an SME confirms each draft → <b>immutable, versioned, effective-dated</b> rows in normalized Postgres.</div></li>
+        </ol>
+        <p class="phase-note">The vector/RAG layer (contextual embeddings + BM25 + rerank) is built only for the open-ended how-to tail — never for rule values.</p>
+      </div>
+      <div class="phase reveal d2">
+        <div class="phase-h ap">Query time — resolve, then phrase</div>
+        <ol class="build">
+          <li><span class="b-n">1</span><div><b>Ground</b> — extract the facts the rules need; classify the commodity to a BuyWays category (shown, correctable).</div></li>
+          <li><span class="b-n">2</span><div><b>Resolve</b> — a <b>pure function</b> over rules + relations: match predicates, walk exceptions/overrides, apply <b>most-restrictive jurisdiction</b> → a cited decision path.</div></li>
+          <li><span class="b-n">3</span><div><b>Generate + verify</b> — phrase in the role's voice; reject unresolvable citations; a verifier confirms the prose <b>matches the decision path</b> and carries no uncited figure, else <b>refuse</b>.</div></li>
+        </ol>
+        <p class="phase-note">Open-ended "how do I…" questions branch to agentic multi-step retrieval over the narrative layer instead of the resolver.</p>
+      </div>
+    </div>
+
+    <div class="ledger reveal" style="margin-top:50px">
+      <div class="ledger-top">
+        <div class="lt-a">Attach-a-PDF chatbot</div>
+        <div class="lt-b">ask_procurement</div>
+      </div>
+      <div class="lrow"><div class="c-a">Knowledge = an unstructured vector cloud</div><div class="c-b">Normalized relational tables + a typed rule-relations graph</div></div>
+      <div class="lrow"><div class="c-a">The LLM generates the threshold (next-token)</div><div class="c-b">Deterministic code looks the threshold up</div></div>
+      <div class="lrow"><div class="c-a">Tables flattened to prose on ingest</div><div class="c-b">Docling preserves table cells; handed to the extractor verbatim</div></div>
+      <div class="lrow"><div class="c-a">Top-k similarity → one generate call</div><div class="c-b">Predicate match + graph walk → resolver → phrase → verify</div></div>
+      <div class="lrow"><div class="c-a">No grounding; citations often post-rationalized</div><div class="c-b">Resolvable citations enforced by schema; chain-alignment check</div></div>
+      <div class="lrow"><div class="c-a">Answers even when it shouldn't</div><div class="c-b">Safe-refusal on low confidence / no matching rule</div></div>
+      <div class="lrow"><div class="c-a">Stale the moment the PDF is uploaded</div><div class="c-b">Re-crawl + change detection flag affected rules for re-review</div></div>
+    </div>
+
+    <p class="ledger-foot reveal" style="margin-top:42px">Empirically, vector-only RAG approaches <b>~0%</b> on schema-bound threshold lookups and legal RAG tools hallucinate <b>17–33%</b>; the rule-plus-graph approach reaches <b>~82%</b> with an auditable trace. The engineering buys <b>determinism where a wrong number has consequences.</b></p>
   </div>
 </section>
 
