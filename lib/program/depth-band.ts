@@ -30,3 +30,16 @@ export function depthBand(n: number | null): DepthBand | null {
   if (n === 3) return { key: 'working', short: 'W', word: 'working (3)' };
   return { key: 'high', short: 'H', word: 'high (4–5)' };
 }
+
+/**
+ * The K1-only dissociation case (A16, vision-alignment review): K=1 with no
+ * Understand or Do evidence means the topic was *mentioned* (delivery
+ * occurred) but students never engaged with it — exposure, not coverage.
+ * Program views badge these distinctly so the softest-evidence cells can't
+ * visually read as the program developing the competency.
+ * (Null U is treated as 0 here: a technical cell with K1/U-null/D0 carries
+ * no engagement evidence either way.)
+ */
+export function isMentionOnly(k: number | null, u: number | null, d: number): boolean {
+  return k === 1 && (u ?? 0) === 0 && d === 0;
+}

@@ -10,7 +10,7 @@ import type {
 import { FlagDialog } from '@/components/FlagDialog';
 import { FlagsPanel, type AnnotatedFlag } from './FlagsPanel';
 import { openFlagsForCell } from '@/lib/program/flags';
-import { depthBand } from '@/lib/program/depth-band';
+import { depthBand, isMentionOnly } from '@/lib/program/depth-band';
 
 interface MatrixData {
   courses: MatrixCourse[];
@@ -468,6 +468,15 @@ export function ProgramCoverageClient({ slug, initialData, initialFlags }: Props
                           ) : (
                             <div className="text-[10px] italic text-muted-foreground">—</div>
                           )}
+                          {/* A16: K1-only dissociation badge — exposure, not coverage. */}
+                          {cell && isMentionOnly(cell.kDepth, cell.uDepth, cell.dDepth) && (
+                            <div
+                              className="text-[9px] italic leading-tight opacity-80"
+                              title="Mentioned, never engaged — K=1 with no Understand or Do evidence. The topic was delivered (e.g. appeared in a lecture or module) but students never reasoned about it or performed it. Counts as exposure, not coverage."
+                            >
+                              mention only
+                            </div>
+                          )}
                           {cellFlags.length > 0 && (
                             <div className="text-[9px]" title={`${cellFlags.length} open flag${cellFlags.length === 1 ? '' : 's'}`} aria-label="open flags">⚑{cellFlags.length > 1 ? cellFlags.length : ''}</div>
                           )}
@@ -500,7 +509,7 @@ export function ProgramCoverageClient({ slug, initialData, initialFlags }: Props
                 </span>
               </div>
               <p className="mt-2 text-[10px] text-muted-foreground">
-                Bands are the display default because the 0–5 depth instrument has no published reliability data yet — exact integers are point estimates with unknown error bars (the calibration study is queued). Click any cell for the exact scores, evidence, and rationale, or switch &ldquo;Scores: Exact&rdquo; above. Cell color = max(K, U, D).
+                Bands are the display default because the 0–5 depth instrument has no published reliability data yet — exact integers are point estimates with unknown error bars (the calibration study is queued). Click any cell for the exact scores, evidence, and rationale, or switch &ldquo;Scores: Exact&rdquo; above. Cell color = max(K, U, D). Cells marked <span className="italic">mention only</span> are K=1 with no Understand/Do evidence — the topic was delivered but never engaged; treat as exposure, not coverage.
               </p>
             </>
           ) : (
@@ -526,7 +535,7 @@ export function ProgramCoverageClient({ slug, initialData, initialFlags }: Props
               </span>
             </div>
             <p className="mt-2 text-[10px] text-muted-foreground">
-              Each cell shows K/U/D scores — treat them as point estimates with unknown error bars until the reliability study lands. Click a cell for details and evidence. Click &ldquo;Score&rdquo; to run the AI scorer on missing pairs.
+              Each cell shows K/U/D scores — treat them as point estimates with unknown error bars until the reliability study lands. Click a cell for details and evidence. Click &ldquo;Score&rdquo; to run the AI scorer on missing pairs. Cells marked <span className="italic">mention only</span> are K=1 with no Understand/Do evidence — delivered but never engaged; exposure, not coverage.
             </p>
           </>
           )
@@ -662,6 +671,12 @@ function CellDetailDrawer({
               <DepthCell label="Understand" value={cell.uDepth} />
               <DepthCell label="Do" value={cell.dDepth} />
             </div>
+
+            {isMentionOnly(cell.kDepth, cell.uDepth, cell.dDepth) && (
+              <p className="rounded border border-amber-300 bg-amber-50 px-2 py-1.5 text-[11px] text-amber-900 dark:bg-amber-900/20 dark:text-amber-200">
+                <span className="font-semibold">Mention only.</span> K=1 with no Understand or Do evidence — the topic was delivered but students never reasoned about it or performed it. This is the K1-only dissociation case: exposure, not coverage.
+              </p>
+            )}
 
             <div className="grid grid-cols-2 gap-3">
               <div>

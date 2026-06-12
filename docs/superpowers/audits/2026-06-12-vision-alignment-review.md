@@ -89,7 +89,7 @@ Ordered by priority. Each is independently shippable. Check off + date when done
 
 - [ ] **A14. Define the action loop, one page:** gap threshold → who reviews → how it reaches a committee agenda → what gets re-captured when. Wire `/ask`/wiki to answer "what gaps opened since last review?" Without this, the literature says the most likely outcome of everything above is a beautiful map in a drawer.
 - [ ] **A15. Rubber-stamp guard on profile confirm:** require at least one substantive faculty edit/annotation (or an explicit per-section "reviewed" act) before "Capture this profile," so confirmation stays an epistemic act under cognitive load.
-- [ ] **A16. K=1 floor visibility:** badge K=1-only cells (K1/U0/D0 = "mentioned, never engaged") distinctly in program views so soft-evidence cells can't read as coverage.
+- [x] **A16. K=1 floor visibility** ✅ **2026-06-12** — `isMentionOnly` in `lib/program/depth-band.ts` (K=1, U=0-or-null, D=0; unit-tested incl. the dissociation edges); matrix cells get an italic *"mention only"* badge with explanatory tooltip in both Bands and Exact display, both legends explain it ("exposure, not coverage"), and the cell drawer shows an amber callout naming the K1-only dissociation case.
 
 ---
 

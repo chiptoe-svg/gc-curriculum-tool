@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { depthBand } from '@/lib/program/depth-band';
+import { depthBand, isMentionOnly } from '@/lib/program/depth-band';
 
 describe('depthBand', () => {
   it('maps the 0-5 scale into the four bands', () => {
@@ -18,5 +18,20 @@ describe('depthBand', () => {
   it('clamps out-of-range values rather than throwing', () => {
     expect(depthBand(-1)!.key).toBe('none');
     expect(depthBand(7)!.key).toBe('high');
+  });
+});
+
+describe('isMentionOnly (A16 — K1-only dissociation case)', () => {
+  it('flags K1 with no engagement (U0/D0, or U null)', () => {
+    expect(isMentionOnly(1, 0, 0)).toBe(true);
+    expect(isMentionOnly(1, null, 0)).toBe(true);
+  });
+
+  it('does not flag engaged or absent cells', () => {
+    expect(isMentionOnly(1, 1, 0)).toBe(false); // some Understand evidence
+    expect(isMentionOnly(1, 0, 1)).toBe(false); // some Do evidence
+    expect(isMentionOnly(2, 0, 0)).toBe(false); // K2 is recognition, not mere mention
+    expect(isMentionOnly(0, 0, 0)).toBe(false); // not present at all
+    expect(isMentionOnly(null, null, 2)).toBe(false); // foundational with real D
   });
 });
