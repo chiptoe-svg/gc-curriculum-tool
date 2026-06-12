@@ -289,6 +289,8 @@ export function CaptureClient({
           onMaterialsChange={setMaterials}
           onCourseChange={setCourse}
           onContinue={() => setLandingStep('interview')}
+          instructor={chooserInstructor}
+          onInstructorChange={setChooserInstructor}
         />
       ) : (
         <>

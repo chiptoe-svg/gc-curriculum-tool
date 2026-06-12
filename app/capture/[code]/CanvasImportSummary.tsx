@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import type { CaptureMaterial } from './MaterialsPanel';
+import { parseAssignmentSummaries } from '@/lib/canvas/parseCanvasBlob';
 
 /**
  * Inspector panel for Canvas-imported content. Two purposes:
@@ -18,12 +19,6 @@ import type { CaptureMaterial } from './MaterialsPanel';
  * The text format is defined by app/api/courses/[code]/canvas-import/route.ts.
  */
 
-interface AssignmentRow {
-  name: string;
-  points: number | null;
-  hasRubric: boolean;
-}
-
 interface CanvasCategory {
   fileName: string;
   label: string;
@@ -38,43 +33,6 @@ const CANVAS_CATEGORIES: CanvasCategory[] = [
   { fileName: 'Canvas: Discussions', label: 'Discussions', description: 'Discussion topics, including graded ones.' },
   { fileName: 'Canvas: Quizzes', label: 'Quizzes', description: 'Quizzes with questions, answers, and point values.' },
 ];
-
-/**
- * Parse the Canvas: Assignments extractedText into a row per assignment.
- *
- * The text format is determined by canvas-import/route.ts:118-148. Each
- * assignment renders as:
- *
- *   ## Assignment Name (N pts)
- *   <description body, HTML-stripped>
- *   <blank line>
- *   Rubric — Title:           (or "Rubric:" if no title)
- *   - Criterion (N pts) — long description
- *     ratings: N pts: label / N pts: label / ...
- *
- * Blocks are separated by `\n\n`. We split on `\n## ` (handling the
- * first block which doesn't have a leading newline) and pick off the
- * title line + rubric-presence marker.
- */
-function parseAssignments(extractedText: string): AssignmentRow[] {
-  const text = extractedText.startsWith('## ') ? extractedText.slice(3) : extractedText;
-  const blocks = text.split(/\n## /);
-  const rows: AssignmentRow[] = [];
-  for (const block of blocks) {
-    const trimmed = block.trim();
-    if (!trimmed) continue;
-    const lines = trimmed.split('\n');
-    const firstLine = lines[0] ?? '';
-    const titleMatch = firstLine.match(/^(.*?)(?:\s*\((\d+(?:\.\d+)?)\s*pts\))?\s*$/);
-    if (!titleMatch) continue;
-    const name = (titleMatch[1] ?? firstLine).trim();
-    const points = titleMatch[2] ? parseFloat(titleMatch[2]) : null;
-    const body = lines.slice(1).join('\n');
-    const hasRubric = /(^|\n)Rubric(?:\s+—\s+[^:]+)?:/.test(body);
-    rows.push({ name, points, hasRubric });
-  }
-  return rows;
-}
 
 interface Props {
   materials: CaptureMaterial[];
@@ -91,7 +49,7 @@ export function CanvasImportSummary({ materials }: Props) {
   );
   const assignmentsMaterial = byName.get('Canvas: Assignments');
   const assignmentRows = useMemo(
-    () => assignmentsMaterial?.extractedText ? parseAssignments(assignmentsMaterial.extractedText) : [],
+    () => assignmentsMaterial?.extractedText ? parseAssignmentSummaries(assignmentsMaterial.extractedText) : [],
     [assignmentsMaterial?.extractedText],
   );
   const rubricCount = assignmentRows.filter(r => r.hasRubric).length;

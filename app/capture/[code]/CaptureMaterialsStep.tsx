@@ -6,6 +6,7 @@ import { MaterialsPanel, type CaptureMaterial, type CourseCatalogView } from './
 import { SyllabusBox } from './boxes/SyllabusBox';
 import { CanvasBox } from './boxes/CanvasBox';
 import { OtherMaterialsBox } from './boxes/OtherMaterialsBox';
+import { FACULTY_ROSTER } from '@/lib/faculty';
 
 interface Props {
   course: CourseCatalogView;
@@ -15,6 +16,8 @@ interface Props {
   onMaterialsChange: (next: CaptureMaterial[]) => void;
   onCourseChange: (next: CourseCatalogView) => void;
   onContinue: () => void;
+  instructor: string;
+  onInstructorChange: (v: string) => void;
 }
 
 /** ~4 chars/token rule of thumb (matches MaterialsPanel.estimateTokens). */
@@ -22,7 +25,7 @@ function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4);
 }
 
-export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt, onMaterialsChange, onCourseChange, onContinue }: Props) {
+export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt, onMaterialsChange, onCourseChange, onContinue, instructor, onInstructorChange }: Props) {
   useRouter();
   const [showManager, setShowManager] = useState(false);
 
@@ -42,6 +45,25 @@ export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt,
       </div>
       <h2 className="font-display text-xl font-semibold tracking-tight">Here&apos;s what the auditor will read.</h2>
       <p className="mt-1 text-sm text-muted-foreground">Three sources — syllabus, Canvas, and anything else. Unroll each to see what&apos;s inside and add what&apos;s missing before you start.</p>
+
+      <div className="mt-3 flex items-center gap-3">
+        <label
+          htmlFor="step1-auditor"
+          className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"
+        >
+          I&apos;m the auditor
+        </label>
+        <select
+          id="step1-auditor"
+          value={instructor}
+          onChange={e => onInstructorChange(e.target.value)}
+          className="rounded border border-input bg-background px-2 py-1 text-sm"
+        >
+          {FACULTY_ROSTER.map(name => (
+            <option key={name} value={name}>{name}</option>
+          ))}
+        </select>
+      </div>
 
       <div className="mt-4 space-y-3">
         <SyllabusBox

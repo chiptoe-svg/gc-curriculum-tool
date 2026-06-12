@@ -130,4 +130,68 @@ describe('CanvasBox', () => {
     await waitFor(() => expect(fetchMock.mock.calls[0]![0]).toContain('/scan-linked-docs'));
     await waitFor(() => expect(onMaterialsChange).toHaveBeenCalled());
   });
+
+  it('ignored Canvas: Syllabus row shows the why-not-used line', () => {
+    const syllabus = mat({
+      id: 'syl',
+      fileName: 'Canvas: Syllabus',
+      extractedText: 'Syllabus content here.',
+      ignored: true,
+      autoSetAside: true,
+      setAsideReason: null,
+    });
+    render(<CanvasBox course={course} materials={[syllabus]} slug="s" onMaterialsChange={noop} />);
+    fireEvent.click(screen.getByRole('button', { name: /canvas/i }));
+    expect(screen.getByText(/not used — the Google Sheet catalog already provides/i)).toBeTruthy();
+  });
+
+  it('canvas header shows total points when assignments have point values', () => {
+    // Two assignments: 100 pts + 50 pts = 150 total pts
+    const blob = '## Assignment One (100 pts)\ndescription one\n## Assignment Two (50 pts)\ndescription two';
+    render(<CanvasBox course={course} materials={[mat({ id: 'a', fileName: 'Canvas: Assignments', extractedText: blob, indexingStatus: 'ready' })]} slug="s" onMaterialsChange={noop} />);
+    expect(screen.getByText(/150 total pts/)).toBeTruthy();
+  });
+
+  it('unrolled assignment item with a rubric shows a rubric ✓ chip', () => {
+    const blob = '## Assignment One (100 pts)\ndescription\n\nRubric — Main:\n- Criterion A (10 pts)\n\n## Assignment Two (50 pts)\ndescription only';
+    render(<CanvasBox course={course} materials={[mat({ id: 'a', fileName: 'Canvas: Assignments', extractedText: blob })]} slug="s" onMaterialsChange={noop} />);
+    fireEvent.click(screen.getByRole('button', { name: /canvas/i }));
+    // Assignment One has rubric — chip visible
+    expect(screen.getByText(/rubric ✓/i)).toBeTruthy();
+    // Only one chip (Assignment Two has no rubric)
+    expect(screen.getAllByText(/rubric ✓/i)).toHaveLength(1);
+  });
+
+  it('auto-scan checkbox is checked by default and triggers scan-linked-docs after import', async () => {
+    const onMaterialsChange = vi.fn();
+    const { fetchCourseMaterials } = await import('@/lib/capture/fetch-course-materials');
+    (fetchCourseMaterials as ReturnType<typeof vi.fn>).mockResolvedValue([mat({})]);
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        headers: { get: () => 'application/json' },
+        json: async () => ({ updated: 2, skipped: 0 }),
+      })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({}) });
+    vi.stubGlobal('fetch', fetchMock);
+    render(<CanvasBox course={course} materials={[mat({ id: 'a', fileName: 'Canvas: Assignments', extractedText: '## One\nb' })]} slug="s" onMaterialsChange={onMaterialsChange} />);
+    // Open token field
+    fireEvent.click(screen.getByRole('button', { name: /reimport|import from canvas/i }));
+    // Confirm checkbox is checked by default
+    const checkbox = screen.getByRole('checkbox', { name: /scan linked/i });
+    expect((checkbox as HTMLInputElement).checked).toBe(true);
+    // Fill token and submit
+    const tokenField = screen.getByLabelText(/canvas api token/i);
+    fireEvent.change(tokenField, { target: { value: 'tok_abc' } });
+    const { within: withinFn } = await import('@testing-library/react');
+    fireEvent.click(withinFn(tokenField.closest('div')!.parentElement!).getAllByRole('button').find(b => /import|reimport/i.test(b.textContent ?? ''))!);
+    // Both canvas-reextract and scan-linked-docs should be called
+    await waitFor(() => expect(fetchMock.mock.calls.length).toBeGreaterThanOrEqual(2));
+    const urls = fetchMock.mock.calls.map((c: unknown[]) => String(c[0]));
+    expect(urls.some(u => u.includes('/canvas-reextract'))).toBe(true);
+    expect(urls.some(u => u.includes('/scan-linked-docs'))).toBe(true);
+    // Assert order: canvas-reextract first
+    expect(urls.indexOf(urls.find(u => u.includes('/canvas-reextract'))!))
+      .toBeLessThan(urls.indexOf(urls.find(u => u.includes('/scan-linked-docs'))!));
+  });
 });

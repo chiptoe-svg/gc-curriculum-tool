@@ -74,3 +74,48 @@ export function isCanvasListMaterial(fileName: string): boolean {
   if (fileName.startsWith('Canvas File:')) return false;
   return true;
 }
+
+export interface AssignmentSummary {
+  name: string;
+  points: number | null;
+  hasRubric: boolean;
+}
+
+/**
+ * Parse the Canvas: Assignments extractedText into a row per assignment.
+ *
+ * The text format is determined by canvas-import/route.ts. Each assignment
+ * renders as:
+ *
+ *   ## Assignment Name (N pts)
+ *   <description body, HTML-stripped>
+ *   <blank line>
+ *   Rubric — Title:           (or "Rubric:" if no title)
+ *   - Criterion (N pts) — long description
+ *
+ * Blocks are separated by `\n\n`. We split on `\n## ` (handling the first
+ * block which doesn't have a leading newline) and pick off the title line
+ * plus rubric-presence marker.
+ *
+ * Shared between CanvasBox (inline) and CanvasImportSummary (panel) so the
+ * parsing logic lives in exactly one place.
+ */
+export function parseAssignmentSummaries(extractedText: string): AssignmentSummary[] {
+  const text = extractedText.startsWith('## ') ? extractedText.slice(3) : extractedText;
+  const blocks = text.split(/\n## /);
+  const rows: AssignmentSummary[] = [];
+  for (const block of blocks) {
+    const trimmed = block.trim();
+    if (!trimmed) continue;
+    const lines = trimmed.split('\n');
+    const firstLine = lines[0] ?? '';
+    const titleMatch = firstLine.match(/^(.*?)(?:\s*\((\d+(?:\.\d+)?)\s*pts\))?\s*$/);
+    if (!titleMatch) continue;
+    const name = (titleMatch[1] ?? firstLine).trim();
+    const points = titleMatch[2] ? parseFloat(titleMatch[2]) : null;
+    const body = lines.slice(1).join('\n');
+    const hasRubric = /(^|\n)Rubric(?:\s+—\s+[^:]+)?:/.test(body);
+    rows.push({ name, points, hasRubric });
+  }
+  return rows;
+}

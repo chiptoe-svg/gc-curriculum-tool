@@ -15,6 +15,10 @@ vi.mock('@/app/capture/[code]/MaterialsPanel', () => ({
   MaterialsPanel: () => <div data-testid="materials-manager">manager</div>,
 }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+vi.mock('@/lib/faculty', () => ({
+  FACULTY_ROSTER: ['Alice Appleton', 'Bob Brennan', 'Department canonical'],
+  DEPARTMENT_CANONICAL: 'Department canonical',
+}));
 
 import { CaptureMaterialsStep } from '@/app/capture/[code]/CaptureMaterialsStep';
 
@@ -24,9 +28,11 @@ function mat(o: Partial<CaptureMaterial>): CaptureMaterial {
 }
 const noop = () => {};
 
+const defaultInstructor = 'Alice Appleton';
+
 describe('CaptureMaterialsStep — three source-boxes', () => {
   it('renders the Syllabus, Canvas, and Other boxes', () => {
-    render(<CaptureMaterialsStep course={course} materials={[mat({})]} slug="s" catalogSyncedAt={null} onMaterialsChange={noop} onCourseChange={noop} onContinue={noop} />);
+    render(<CaptureMaterialsStep course={course} materials={[mat({})]} slug="s" catalogSyncedAt={null} onMaterialsChange={noop} onCourseChange={noop} onContinue={noop} instructor={defaultInstructor} onInstructorChange={noop} />);
     expect(screen.getByTestId('syllabus-box')).toBeTruthy();
     expect(screen.getByTestId('canvas-box')).toBeTruthy();
     expect(screen.getByTestId('other-box')).toBeTruthy();
@@ -34,7 +40,7 @@ describe('CaptureMaterialsStep — three source-boxes', () => {
 
   it('Continue calls onContinue', () => {
     const onContinue = vi.fn();
-    render(<CaptureMaterialsStep course={course} materials={[mat({})]} slug="s" catalogSyncedAt={null} onMaterialsChange={noop} onCourseChange={noop} onContinue={onContinue} />);
+    render(<CaptureMaterialsStep course={course} materials={[mat({})]} slug="s" catalogSyncedAt={null} onMaterialsChange={noop} onCourseChange={noop} onContinue={onContinue} instructor={defaultInstructor} onInstructorChange={noop} />);
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
     expect(onContinue).toHaveBeenCalled();
   });
@@ -43,33 +49,42 @@ describe('CaptureMaterialsStep — three source-boxes', () => {
   // walkthrough) — the boxes summarize themselves. The token figure survives
   // only as a large-corpus warning at the 150k threshold.
   it('shows no aggregate counter line for a small corpus', () => {
-    render(<CaptureMaterialsStep course={course} materials={[mat({ id: 'a' }), mat({ id: 'b', ignored: true })]} slug="s" catalogSyncedAt={null} onMaterialsChange={noop} onCourseChange={noop} onContinue={noop} />);
+    render(<CaptureMaterialsStep course={course} materials={[mat({ id: 'a' }), mat({ id: 'b', ignored: true })]} slug="s" catalogSyncedAt={null} onMaterialsChange={noop} onCourseChange={noop} onContinue={noop} instructor={defaultInstructor} onInstructorChange={noop} />);
     expect(screen.queryByText(/active ·/)).toBeNull();
     expect(screen.queryByText(/k tok/)).toBeNull();
   });
 
   it('warns when the active corpus exceeds the large threshold (150k tokens)', () => {
     const big = mat({ id: 'big', extractedText: 'x'.repeat(700_000) }); // ~175k tokens at 4 chars/tok
-    render(<CaptureMaterialsStep course={course} materials={[big]} slug="s" catalogSyncedAt={null} onMaterialsChange={noop} onCourseChange={noop} onContinue={noop} />);
+    render(<CaptureMaterialsStep course={course} materials={[big]} slug="s" catalogSyncedAt={null} onMaterialsChange={noop} onCourseChange={noop} onContinue={noop} instructor={defaultInstructor} onInstructorChange={noop} />);
     expect(screen.getByText(/large; consider ignoring or summarizing/i)).toBeTruthy();
   });
 
   it('renders the materials-manager disclosure as a prominent button', () => {
-    render(<CaptureMaterialsStep course={course} materials={[mat({})]} slug="s" catalogSyncedAt={null} onMaterialsChange={noop} onCourseChange={noop} onContinue={noop} />);
+    render(<CaptureMaterialsStep course={course} materials={[mat({})]} slug="s" catalogSyncedAt={null} onMaterialsChange={noop} onCourseChange={noop} onContinue={noop} instructor={defaultInstructor} onInstructorChange={noop} />);
     expect(screen.getByRole('button', { name: /manage all materials in detail/i })).toBeTruthy();
   });
 
   it('offers a start-anyway path when there are no materials and no synced syllabus', () => {
     const onContinue = vi.fn();
-    render(<CaptureMaterialsStep course={course} materials={[]} slug="s" catalogSyncedAt={null} onMaterialsChange={noop} onCourseChange={noop} onContinue={onContinue} />);
+    render(<CaptureMaterialsStep course={course} materials={[]} slug="s" catalogSyncedAt={null} onMaterialsChange={noop} onCourseChange={noop} onContinue={onContinue} instructor={defaultInstructor} onInstructorChange={noop} />);
     fireEvent.click(screen.getByRole('button', { name: /start without/i }));
     expect(onContinue).toHaveBeenCalled();
   });
 
   it('reveals the full materials manager from the bottom disclosure', () => {
-    render(<CaptureMaterialsStep course={course} materials={[mat({})]} slug="s" catalogSyncedAt={null} onMaterialsChange={noop} onCourseChange={noop} onContinue={noop} />);
+    render(<CaptureMaterialsStep course={course} materials={[mat({})]} slug="s" catalogSyncedAt={null} onMaterialsChange={noop} onCourseChange={noop} onContinue={noop} instructor={defaultInstructor} onInstructorChange={noop} />);
     expect(screen.queryByTestId('materials-manager')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: /manage all materials/i }));
     expect(screen.getByTestId('materials-manager')).toBeTruthy();
+  });
+
+  it('auditor picker renders with the passed instructor value and fires onInstructorChange', () => {
+    const onInstructorChange = vi.fn();
+    render(<CaptureMaterialsStep course={course} materials={[mat({})]} slug="s" catalogSyncedAt={null} onMaterialsChange={noop} onCourseChange={noop} onContinue={noop} instructor="Bob Brennan" onInstructorChange={onInstructorChange} />);
+    const select = screen.getByRole('combobox', { name: /auditor/i }) as HTMLSelectElement;
+    expect(select.value).toBe('Bob Brennan');
+    fireEvent.change(select, { target: { value: 'Alice Appleton' } });
+    expect(onInstructorChange).toHaveBeenCalledWith('Alice Appleton');
   });
 });

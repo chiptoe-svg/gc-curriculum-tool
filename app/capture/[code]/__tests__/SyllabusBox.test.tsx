@@ -153,4 +153,14 @@ describe('SyllabusBox', () => {
     fireEvent.click(screen.getByRole('button', { name: /Syllabus & course info/i }));
     expect(screen.getByText(/a Canvas syllabus is also available/i)).toBeTruthy();
   });
+
+  it('button label is "Replace syllabus" when sheet catalog is synced with content', () => {
+    render(<Harness catalogSyncedAt={new Date().toISOString()} />);
+    expect(screen.getByRole('button', { name: /replace syllabus/i })).toBeTruthy();
+  });
+
+  it('button label is "Attach a syllabus" when no sheet catalog', () => {
+    render(<Harness />);
+    expect(screen.getByRole('button', { name: /attach a syllabus/i })).toBeTruthy();
+  });
 });

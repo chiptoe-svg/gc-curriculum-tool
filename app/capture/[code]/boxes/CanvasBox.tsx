@@ -11,7 +11,7 @@ import {
   hasFixablyUnindexed,
   isSyllabusCanvasMaterial,
 } from '@/lib/capture/material-display';
-import { parseCanvasBlob, isCanvasListMaterial } from '@/lib/canvas/parseCanvasBlob';
+import { parseCanvasBlob, isCanvasListMaterial, parseAssignmentSummaries } from '@/lib/canvas/parseCanvasBlob';
 import { fetchCourseMaterials } from '@/lib/capture/fetch-course-materials';
 
 interface Props {
@@ -46,6 +46,7 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
   const [busy, setBusy] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
   const [scanMsg, setScanMsg] = useState<string | null>(null);
+  const [autoScanAfterImport, setAutoScanAfterImport] = useState(true);
 
   const canvas = useMemo(() => materialsByBox(materials).canvas, [materials]);
 
@@ -64,6 +65,27 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
       else n += 1; // Canvas File (or any non-list Canvas material) counts as one
     }
     return n;
+  }, [canvas]);
+
+  // Total points across Canvas: Assignments (for the header summary).
+  const totalPoints = useMemo(() => {
+    const assignmentsMat = canvas.find(m => m.fileName === 'Canvas: Assignments');
+    if (!assignmentsMat?.extractedText) return null;
+    const rows = parseAssignmentSummaries(assignmentsMat.extractedText);
+    const pts = rows.reduce((sum, r) => (r.points !== null ? sum + r.points : sum), 0);
+    return rows.some(r => r.points !== null) ? pts : null;
+  }, [canvas]);
+
+  // Per-material rubric map: materialId → Set of assignment names that have rubrics.
+  const rubricsByMaterialId = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    for (const m of canvas) {
+      if (m.fileName === 'Canvas: Assignments' && m.extractedText) {
+        const rows = parseAssignmentSummaries(m.extractedText);
+        map.set(m.id, new Set(rows.filter(r => r.hasRubric).map(r => r.name)));
+      }
+    }
+    return map;
   }, [canvas]);
 
   // Readiness = worst-of across the Canvas materials.
@@ -108,6 +130,10 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
       setTokenOpen(false);
       const fresh = await fetchCourseMaterials(course.code, slug);
       if (fresh) onMaterialsChange(fresh);
+      if (autoScanAfterImport) {
+        setReextractMsg(`re-extracted ${upd} file${upd === 1 ? '' : 's'} — scanning linked docs…`);
+        await scanLinkedDocs();
+      }
     } catch (e) {
       setReextractMsg(e instanceof Error ? e.message : 'Import failed');
     } finally {
@@ -211,7 +237,7 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
     : '';
   const summary = empty
     ? 'not imported yet'
-    : `${importedPrefix}${itemCount} item${itemCount === 1 ? '' : 's'} · ${readinessLabel}`;
+    : `${importedPrefix}${itemCount} item${itemCount === 1 ? '' : 's'}${totalPoints !== null ? ` · ${totalPoints} total pts` : ''} · ${readinessLabel}`;
 
   return (
     <div className="rounded-md border bg-card">
@@ -288,6 +314,15 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
               {reextracting ? 'Importing…' : (empty ? 'Import' : 'Reimport')}
             </button>
           </div>
+          <label className="mt-1.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={autoScanAfterImport}
+              onChange={e => setAutoScanAfterImport(e.target.checked)}
+              className="h-3 w-3"
+            />
+            Scan linked Google/YouTube files automatically after import
+          </label>
           {reextractMsg && <p className="mt-1 text-[11px] text-muted-foreground">{reextractMsg}</p>}
         </div>
       )}
@@ -300,6 +335,12 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
             const isSyllabus = isSyllabusCanvasMaterial(m);
             const ignoredSet = new Set(m.ignoredItems ?? []);
             const items = isList ? parseCanvasBlob(m.extractedText ?? '') : [];
+            const rubricNames = rubricsByMaterialId.get(m.id);
+            // Canvas-syllabus why-not-used note (Item 2)
+            const syllabusWhyNote = isSyllabus && (m.ignored || m.autoSetAside)
+              ? (m.setAsideReason?.trim() ||
+                  "not used — the Google Sheet catalog already provides this course's objectives and projects (see the Syllabus & course info box above)")
+              : null;
             return (
               <div key={m.id} className="border-b px-3 py-2 last:border-b-0">
                 <div className="flex items-center gap-2">
@@ -319,22 +360,42 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
                     </label>
                   )}
                 </div>
+                {syllabusWhyNote && (
+                  <p className="mt-0.5 pl-5 text-[10px] italic text-muted-foreground">{syllabusWhyNote}</p>
+                )}
                 {isList && items.length > 0 && (
                   <ul className="mt-1.5 space-y-1 pl-5">
-                    {items.map(it => (
-                      <li key={it.ordinalIndex} className="flex items-center gap-2 text-[11px]">
-                        <input
-                          type="checkbox"
-                          aria-label={`ignore ${it.title}`}
-                          checked={ignoredSet.has(it.title)}
-                          disabled={busy === m.id}
-                          onChange={e => toggleItemIgnore(m, it.title, e.target.checked)}
-                        />
-                        <span className={ignoredSet.has(it.title) ? 'text-muted-foreground line-through' : ''}>
-                          {it.title}
-                        </span>
-                      </li>
-                    ))}
+                    {items.map(it => {
+                      // rubricNames keys are the parsed assignment name (pts stripped).
+                      // it.title is the raw h2 text which may include "(N pts)".
+                      // Check both exact match and pts-stripped match.
+                      const titleStripped = it.title.replace(/\s*\(\d+(?:\.\d+)?\s*pts\)\s*$/, '').trim();
+                      const hasRubric = rubricNames
+                        ? (rubricNames.has(it.title) || rubricNames.has(titleStripped))
+                        : false;
+                      return (
+                        <li key={it.ordinalIndex} className="flex items-center gap-2 text-[11px]">
+                          <input
+                            type="checkbox"
+                            aria-label={`ignore ${it.title}`}
+                            checked={ignoredSet.has(it.title)}
+                            disabled={busy === m.id}
+                            onChange={e => toggleItemIgnore(m, it.title, e.target.checked)}
+                          />
+                          <span className={ignoredSet.has(it.title) ? 'text-muted-foreground line-through' : ''}>
+                            {it.title}
+                          </span>
+                          {hasRubric && (
+                            <span
+                              className="rounded bg-muted px-1 py-0.5 text-[9px] font-medium text-muted-foreground"
+                              title="This assignment has a rubric — rubric criteria feed the depth evidence"
+                            >
+                              rubric ✓
+                            </span>
+                          )}
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
               </div>
