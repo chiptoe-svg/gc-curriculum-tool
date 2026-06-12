@@ -37,6 +37,9 @@ const PUBLIC_PREFIXES = [
   // served from public/procurement.html. Intentionally reachable by anyone —
   // it is a high-level overview with no faculty data.
   '/procurement.html',
+  // Static public questionnaire for procurement SMEs (sibling ask_procurement
+  // project). No faculty data; collects answers via mailto/clipboard.
+  '/sme-questions.html',
 ] as const;
 
 /**

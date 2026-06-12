@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ask_procurement — questions for Procurement Services</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231B1813'/%3E%3Ccircle cx='16' cy='16' r='7' fill='none' stroke='%23E1581F' stroke-width='2.5'/%3E%3Ccircle cx='16' cy='16' r='2.5' fill='%23E1581F'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Public+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F7F3E9; --paper-2:#F1EBDB; --ink:#1B1813; --ink-soft:#4A4438;
+    --muted:#7A715C; --line:#D9CFB8; --line-strong:#C3B795; --accent:#E1581F; --accent-deep:#B23F12;
+    --serif:"Fraunces",Georgia,serif; --sans:"Public Sans",-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:780px;margin:0 auto;padding:0 24px}
+  header{border-bottom:1px solid var(--line);background:var(--paper-2)}
+  header .wrap{padding:18px 24px;display:flex;align-items:center;gap:10px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--accent)}
+  header b{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
+  .hero{padding:54px 0 18px}
+  .eyebrow{font-family:var(--sans);font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent-deep);font-weight:600;margin-bottom:18px}
+  h1{font-family:var(--serif);font-weight:600;font-size:clamp(30px,5vw,46px);line-height:1.05;letter-spacing:-.01em}
+  .lede{margin-top:20px;font-size:18px;color:var(--ink-soft);max-width:62ch}
+  .lede b{color:var(--ink)}
+  .note{margin-top:18px;padding:14px 18px;background:var(--paper-2);border-left:3px solid var(--accent);border-radius:0 4px 4px 0;font-size:15px;color:var(--ink-soft)}
+  form{padding:30px 0 60px}
+  .q{margin:30px 0;padding-top:26px;border-top:1px solid var(--line)}
+  .q .num{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--accent-deep);font-weight:600}
+  .q h2{font-family:var(--serif);font-weight:600;font-size:21px;line-height:1.25;margin:6px 0 6px}
+  .q .hint{font-size:14.5px;color:var(--muted);margin-bottom:12px}
+  textarea{width:100%;min-height:96px;padding:12px 14px;font-family:var(--sans);font-size:16px;line-height:1.5;color:var(--ink);background:#fff;border:1px solid var(--line-strong);border-radius:6px;resize:vertical}
+  textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
+  .who{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:8px}
+  .who input{padding:11px 13px;font-family:var(--sans);font-size:15px;border:1px solid var(--line-strong);border-radius:6px;background:#fff}
+  @media(max-width:560px){.who{grid-template-columns:1fr}}
+  .actions{position:sticky;bottom:0;background:color-mix(in srgb,var(--paper) 92%,transparent);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:16px 0;margin-top:30px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  button{font-family:var(--sans);font-size:15px;font-weight:600;padding:12px 20px;border-radius:6px;border:1px solid var(--ink);cursor:pointer;transition:background .2s,color .2s}
+  .primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .primary:hover{background:var(--accent-deep);border-color:var(--accent-deep)}
+  .ghost{background:transparent;color:var(--ink)}
+  .ghost:hover{background:var(--ink);color:var(--paper)}
+  .status{font-size:14px;color:var(--muted)}
+  footer{border-top:1px solid var(--line);padding:24px 0;font-size:13px;color:var(--muted)}
+  .partial{font-size:14px;color:var(--muted);margin-top:6px}
+</style>
+</head>
+<body>
+<header><div class="wrap"><span class="dot"></span><b>ask_procurement</b></div></header>
+
+<div class="wrap">
+  <section class="hero">
+    <div class="eyebrow">A few questions from the team building a procurement assistant</div>
+    <h1>Help us get the rules right.</h1>
+    <p class="lede">We're building a tool that answers "how do I buy this compliantly?" for Clemson faculty and staff — and it must use <b>real, current rules with citations</b>, never guesses. We're developers, not procurement experts, so we need you to confirm a handful of specifics. <b>Answer whatever you can; skip the rest.</b> Even partial answers help a lot.</p>
+    <div class="note">No wrong answers, and you don't need to be exhaustive — a sentence, a link, or "see this PDF" is perfect. Where you can, point us at the <b>authoritative source</b> (a page or document) so the tool can cite it.</div>
+  </section>
+
+  <form id="f">
+    <div class="q">
+      <div class="num">Q1 — most useful</div>
+      <h2>What are the authoritative sources we should read?</h2>
+      <div class="hint">The exact web pages / PDFs that are the real rulebook — Clemson procurement policy, the SC state procurement code/manual, and anything for grant-funded (federal) purchases. Links or document names.</div>
+      <textarea data-q="Authoritative sources (URLs/docs)"></textarea>
+    </div>
+
+    <div class="q">
+      <div class="num">Q2</div>
+      <h2>How are purchases categorized?</h2>
+      <div class="hint">In BuyWays (or however you classify), what are the main categories of things people buy? Especially: which categories follow <em>special</em> rules (e.g. IT, construction, professional/consulting services, furniture, equipment)?</div>
+      <textarea data-q="Purchase categories + which have special rules"></textarea>
+    </div>
+
+    <div class="q">
+      <div class="num">Q3 — the core</div>
+      <h2>What are the dollar thresholds, and what method does each require?</h2>
+      <div class="hint">The bands that change what someone must do — e.g. "under $X → P-Card", "$X–$Y → get N quotes", "over $Z → formal bid/RFP". Please give the current numbers for Clemson and for SC state if they differ. If there's a table somewhere, a link is great.</div>
+      <textarea data-q="Dollar thresholds + required method per band"></textarea>
+    </div>
+
+    <div class="q">
+      <div class="num">Q4</div>
+      <h2>Who has to approve, and what documents are required, at each level?</h2>
+      <div class="hint">e.g. department head vs. business officer vs. CPO; and what must be on file (quotes summary, sole-source justification, scope of work, etc.).</div>
+      <textarea data-q="Approval chain + required documents per band"></textarea>
+    </div>
+
+    <div class="q">
+      <div class="num">Q5</div>
+      <h2>Exceptions — sole source and emergency.</h2>
+      <div class="hint">When do the normal rules NOT apply? What qualifies as sole-source or emergency, and what justification/paperwork is needed?</div>
+      <textarea data-q="Sole-source / emergency exceptions"></textarea>
+    </div>
+
+    <div class="q">
+      <div class="num">Q6</div>
+      <h2>Grant / federal money — what changes?</h2>
+      <div class="hint">When a purchase is on a federal grant (Uniform Guidance / 2 CFR 200), how do the rules differ? Do you apply the stricter of state vs. federal? Any thresholds specific to grants?</div>
+      <textarea data-q="Federal grant (Uniform Guidance) overlays"></textarea>
+    </div>
+
+    <div class="q">
+      <div class="num">Q7</div>
+      <h2>What does the tool absolutely have to get right?</h2>
+      <div class="hint">The mistakes you see people make, or the questions you answer over and over. This tells us where accuracy matters most.</div>
+      <textarea data-q="Must-get-right / common mistakes"></textarea>
+    </div>
+
+    <div class="q">
+      <div class="num">You</div>
+      <h2>So we can follow up (optional)</h2>
+      <div class="who">
+        <input id="name" placeholder="Name (optional)">
+        <input id="role" placeholder="Role / office (optional)">
+      </div>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="primary" id="email">Email my answers</button>
+      <button type="button" class="ghost" id="copy">Copy my answers</button>
+      <span class="status" id="status"></span>
+    </div>
+    <p class="partial">Either button works — "Email" opens your mail app pre-filled to the project team; "Copy" puts your answers on the clipboard to paste wherever's easy.</p>
+  </form>
+</div>
+
+<footer><div class="wrap">Clemson University · Procurement &amp; Business Services — assisting a tool that cites every answer and refuses when unsure.</div></footer>
+
+<script>
+  const TO = 'chiptoe@mac.com';
+  const SUBJECT = 'ask_procurement — Procurement Services answers';
+  function assemble() {
+    const parts = [];
+    const name = document.getElementById('name').value.trim();
+    const role = document.getElementById('role').value.trim();
+    if (name || role) parts.push(`From: ${name}${role ? ' (' + role + ')' : ''}\n`);
+    document.querySelectorAll('textarea[data-q]').forEach(t => {
+      const a = t.value.trim();
+      if (a) parts.push(`Q: ${t.dataset.q}\nA: ${a}\n`);
+    });
+    return parts.join('\n');
+  }
+  function setStatus(msg) { document.getElementById('status').textContent = msg; }
+  document.getElementById('email').addEventListener('click', () => {
+    const body = assemble();
+    if (!body) { setStatus('Nothing filled in yet.'); return; }
+    window.location.href = `mailto:${TO}?subject=${encodeURIComponent(SUBJECT)}&body=${encodeURIComponent(body)}`;
+  });
+  document.getElementById('copy').addEventListener('click', async () => {
+    const body = assemble();
+    if (!body) { setStatus('Nothing filled in yet.'); return; }
+    try { await navigator.clipboard.writeText(body); setStatus('Copied — paste it into an email or message to the team.'); }
+    catch { setStatus('Copy not available; select the text manually.'); }
+  });
+</script>
+</body>
+</html>
