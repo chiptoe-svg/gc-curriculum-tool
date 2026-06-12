@@ -104,4 +104,16 @@ describe('CanvasBox', () => {
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
     expect(String(fetchMock.mock.calls[0]![0])).toContain('/canvas-reextract');
   });
+
+  it('Scan linked docs POSTs to scan-linked-docs and refetches', async () => {
+    const onMaterialsChange = vi.fn();
+    const { fetchCourseMaterials } = await import('@/lib/capture/fetch-course-materials');
+    (fetchCourseMaterials as ReturnType<typeof vi.fn>).mockResolvedValue([mat({})]);
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+    vi.stubGlobal('fetch', fetchMock);
+    render(<CanvasBox course={course} materials={[mat({ id: 'a', fileName: 'Canvas: Assignments', extractedText: '## One\nb' })]} slug="s" onMaterialsChange={onMaterialsChange} />);
+    fireEvent.click(screen.getByRole('button', { name: /scan linked docs/i }));
+    await waitFor(() => expect(fetchMock.mock.calls[0]![0]).toContain('/scan-linked-docs'));
+    await waitFor(() => expect(onMaterialsChange).toHaveBeenCalled());
+  });
 });

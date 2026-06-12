@@ -6,6 +6,7 @@ import type { CaptureMaterial, CourseCatalogView } from '../MaterialsPanel';
 import { IndexingStatusDot } from '../MaterialsPanel';
 import {
   materialsByBox,
+  materialProvenance,
   materialReadability,
   hasFixablyUnindexed,
   isSyllabusCanvasMaterial,
@@ -43,8 +44,16 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
   const [indexing, setIndexing] = useState(false);
   const [indexError, setIndexError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [scanning, setScanning] = useState(false);
+  const [scanMsg, setScanMsg] = useState<string | null>(null);
 
   const canvas = useMemo(() => materialsByBox(materials).canvas, [materials]);
+
+  // "Scan linked docs" chases Google/Drive/YouTube links inside the (mostly
+  // Canvas) materials; the fetched content lands in the Other box. Any linked
+  // material present means the scan has run → gray the button (still clickable).
+  const linkedCount = materials.filter((m) => materialProvenance(m) === 'linked').length;
+  const scanned = linkedCount > 0;
 
   // Honest depth: every parsed item across Canvas-list materials, plus each
   // Canvas File (a single document, no internal structure).
@@ -103,6 +112,28 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
       setReextractMsg(e instanceof Error ? e.message : 'Import failed');
     } finally {
       setReextracting(false);
+    }
+  }
+
+  async function scanLinkedDocs() {
+    setScanning(true);
+    setScanMsg(null);
+    try {
+      const res = await fetch(
+        `/api/courses/${encodeURIComponent(course.code)}/scan-linked-docs?slug=${encodeURIComponent(slug)}`,
+        { method: 'POST' },
+      );
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({})) as { error?: string };
+        setScanMsg(json.error ?? `Scan failed (${res.status})`);
+        return;
+      }
+      const fresh = await fetchCourseMaterials(course.code, slug);
+      if (fresh) onMaterialsChange(fresh);
+    } catch {
+      setScanMsg('Scan failed');
+    } finally {
+      setScanning(false);
     }
   }
 
@@ -197,6 +228,22 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
         >
           {empty ? 'Import from Canvas' : 'Reimport'}
         </button>
+        <button
+          type="button"
+          onClick={scanLinkedDocs}
+          disabled={scanning}
+          title={scanned
+            ? 'Already scanned — click to re-scan for newly added links'
+            : 'Find Google Docs / Drive PDFs / YouTube linked inside your Canvas content and pull them in (they appear under Other materials)'}
+          className={
+            'shrink-0 rounded-md border px-2.5 py-1 text-xs font-medium disabled:opacity-50 ' +
+            (scanned
+              ? 'border-transparent bg-muted text-muted-foreground/70 hover:bg-muted'
+              : 'border-input bg-background hover:bg-muted')
+          }
+        >
+          {scanning ? 'Scanning…' : scanned ? `✓ Linked docs scanned (${linkedCount})` : 'Scan linked docs'}
+        </button>
         {canIndex && (
           <button
             type="button"
@@ -210,6 +257,7 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
       </div>
 
       {indexError && <p className="px-3 pb-2 text-[11px] text-amber-700 dark:text-amber-400">{indexError}</p>}
+      {scanMsg && <p className="px-3 pb-2 text-[11px] text-amber-700 dark:text-amber-400">{scanMsg}</p>}
 
       {tokenOpen && (
         <div className="border-t bg-muted/20 px-3 py-2.5">

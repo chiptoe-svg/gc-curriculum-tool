@@ -58,25 +58,9 @@ describe('OtherMaterialsBox', () => {
     expect(links[0]!.getAttribute('href')).toBe('https://youtu.be/abc');
   });
 
-  it('Scan re-scan POSTs to scan-linked-docs and refreshes (linked docs already present → grayed/“scanned” state, still clickable)', async () => {
-    const onMaterialsChange = vi.fn();
-    const { fetchCourseMaterials } = await import('@/lib/capture/fetch-course-materials');
-    (fetchCourseMaterials as ReturnType<typeof vi.fn>).mockResolvedValue([mat({})]);
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ referenced: [] }) });
-    vi.stubGlobal('fetch', fetchMock);
-    render(<OtherMaterialsBox course={course} materials={others} slug="s" onMaterialsChange={onMaterialsChange} />);
-    // `others` already contains linked docs, so the button shows the scanned state.
-    fireEvent.click(screen.getByRole('button', { name: /linked docs scanned/i }));
-    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
-    expect(fetchMock.mock.calls[0]![0]).toContain('/scan-linked-docs');
-    expect(fetchMock.mock.calls[0]![1]).toMatchObject({ method: 'POST' });
-    await waitFor(() => expect(onMaterialsChange).toHaveBeenCalled());
-  });
-
-  it('shows the plain "Scan linked docs" label when nothing has been scanned yet', () => {
-    render(<OtherMaterialsBox course={course} materials={[mat({ fileName: 'handout.pdf' })]} slug="s" onMaterialsChange={noop} />);
-    expect(screen.getByRole('button', { name: /^scan linked docs$/i })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: /linked docs scanned/i })).toBeNull();
+  it('has no scan button — scan linked docs lives in the Canvas box now', () => {
+    render(<OtherMaterialsBox course={course} materials={others} slug="s" onMaterialsChange={noop} />);
+    expect(screen.queryByRole('button', { name: /scan/i })).toBeNull();
   });
 
   it('ignore on a row PATCHes the material with {ignored:true}', async () => {
