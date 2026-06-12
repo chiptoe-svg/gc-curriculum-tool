@@ -41,6 +41,7 @@
   .found{font-size:14.5px;background:#fff;border:1px solid var(--line-strong);border-left:3px solid var(--good);border-radius:0 5px 5px 0;padding:12px 16px;margin-bottom:12px}
   .found .lbl{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--good);margin-bottom:6px}
   .found code{font-family:var(--mono);font-size:.86em;background:var(--paper-2);padding:1px 5px;border-radius:3px}
+  .found.warn{border-left-color:var(--accent)} .found.warn .lbl{color:var(--accent-deep)}
   textarea{width:100%;min-height:84px;padding:12px 14px;font-family:var(--sans);font-size:16px;line-height:1.5;color:var(--ink);background:#fff;border:1px solid var(--line-strong);border-radius:6px;resize:vertical}
   textarea.tall{min-height:150px;font-family:var(--mono);font-size:14px}
   textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
@@ -126,6 +127,12 @@
       <div class="num confirm">Q3 · confirm &amp; correct</div>
       <h2>Is this Clemson threshold ladder right?</h2>
       <div class="hint">This is what we extracted. <b>Edit anything that's wrong</b> — wrong number, wrong method, missing band.</div>
+      <div class="found warn"><div class="lbl">⚠ The one thing the sources actually contradict</div>Some Clemson pages cap the <b>P-Card at $2,500</b>; others describe P-Card purchases running up to <b>$10,000</b>. We genuinely can't tell which governs — please settle it:</div>
+      <div class="checks" id="pcard">
+        <label class="chk"><input type="radio" name="pcard" value="$2,500 — increasable to $10,000 by one-time request">$2,500, increasable to $10k on request</label>
+        <label class="chk"><input type="radio" name="pcard" value="$10,000 standard P-Card limit">$10,000 standard</label>
+        <label class="chk"><input type="radio" name="pcard" value="Something else — explained in the ladder">Something else (note it below)</label>
+      </div>
       <textarea class="tall" data-q="Clemson threshold ladder (corrected)">≤ $150 — direct purchase (small dollar)
 ≤ $2,500 — P-Card / small purchase, no quotes required
 $2,500.01–$10,000 — P-Card with one-time limit increase; competitive quotes?
@@ -217,6 +224,8 @@ Catering — under $1,000 small engagement; Aramark is the exclusive provider (w
     const name=document.getElementById('name').value.trim(), role=document.getElementById('role').value.trim();
     if(name||role) parts.push(`From: ${name}${role?' ('+role+')':''}\n`);
     parts.push(`Q2 categories with special rules: ${checks('cats').join('; ')||'(none checked)'}\n`);
+    const pc=document.querySelector('#pcard input:checked');
+    parts.push(`Q3 P-Card cap (the contradiction we flagged): ${pc?pc.value:'(not answered)'}\n`);
     parts.push(`Q6 exceptions that apply: ${checks('exceptions').join('; ')||'(none checked)'}\n`);
     parts.push(`Q7 real traps: ${checks('traps').join('; ')||'(none checked)'}\n`);
     document.querySelectorAll('textarea[data-q]').forEach(t=>{ const a=t.value.trim(); if(a) parts.push(`Q: ${t.dataset.q}\nA: ${a}\n`); });
