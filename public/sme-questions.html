@@ -3,158 +3,276 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ask_procurement — questions for Procurement Services</title>
+<title>ask_procurement — confirm what we found</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231B1813'/%3E%3Ccircle cx='16' cy='16' r='7' fill='none' stroke='%23E1581F' stroke-width='2.5'/%3E%3Ccircle cx='16' cy='16' r='2.5' fill='%23E1581F'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Public+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Public+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
     --paper:#F7F3E9; --paper-2:#F1EBDB; --ink:#1B1813; --ink-soft:#4A4438;
-    --muted:#7A715C; --line:#D9CFB8; --line-strong:#C3B795; --accent:#E1581F; --accent-deep:#B23F12;
-    --serif:"Fraunces",Georgia,serif; --sans:"Public Sans",-apple-system,sans-serif;
+    --muted:#7A715C; --line:#D9CFB8; --line-strong:#C3B795; --accent:#E1581F; --accent-deep:#B23F12; --good:#2F6B45;
+    --serif:"Fraunces",Georgia,serif; --sans:"Public Sans",-apple-system,sans-serif; --mono:"IBM Plex Mono",monospace;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased}
-  .wrap{max-width:780px;margin:0 auto;padding:0 24px}
+  .wrap{max-width:800px;margin:0 auto;padding:0 24px}
   header{border-bottom:1px solid var(--line);background:var(--paper-2)}
-  header .wrap{padding:18px 24px;display:flex;align-items:center;gap:10px}
+  header .wrap{padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .brand{display:flex;align-items:center;gap:10px}
+  .about{font-size:14px;font-weight:600;color:var(--accent-deep);text-decoration:none;white-space:nowrap}
+  .about:hover{text-decoration:underline}
   .dot{width:9px;height:9px;border-radius:50%;background:var(--accent)}
-  header b{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:15px}
-  .hero{padding:54px 0 18px}
-  .eyebrow{font-family:var(--sans);font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent-deep);font-weight:600;margin-bottom:18px}
-  h1{font-family:var(--serif);font-weight:600;font-size:clamp(30px,5vw,46px);line-height:1.05;letter-spacing:-.01em}
-  .lede{margin-top:20px;font-size:18px;color:var(--ink-soft);max-width:62ch}
+  header b{font-family:var(--mono);font-weight:500;font-size:15px}
+  .hero{padding:52px 0 14px}
+  .eyebrow{font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent-deep);font-weight:600;margin-bottom:16px}
+  h1{font-family:var(--serif);font-weight:600;font-size:clamp(30px,5vw,44px);line-height:1.05;letter-spacing:-.01em}
+  .lede{margin-top:18px;font-size:18px;color:var(--ink-soft);max-width:64ch}
   .lede b{color:var(--ink)}
-  .note{margin-top:18px;padding:14px 18px;background:var(--paper-2);border-left:3px solid var(--accent);border-radius:0 4px 4px 0;font-size:15px;color:var(--ink-soft)}
-  form{padding:30px 0 60px}
-  .q{margin:30px 0;padding-top:26px;border-top:1px solid var(--line)}
-  .q .num{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--accent-deep);font-weight:600}
+  .did{margin-top:20px;padding:16px 20px;background:var(--paper-2);border:1px solid var(--line-strong);border-radius:6px;font-size:15px}
+  .did .t{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--good);margin-bottom:8px}
+  .did ul{margin:6px 0 0 18px} .did li{margin:3px 0;color:var(--ink-soft)}
+  form{padding:26px 0 70px}
+  .q{margin:26px 0;padding-top:24px;border-top:1px solid var(--line)}
+  .q .num{font-family:var(--mono);font-size:13px;color:var(--accent-deep);font-weight:500}
+  .q .num.gap{color:#9a5a18} .q .num.confirm{color:var(--good)}
   .q h2{font-family:var(--serif);font-weight:600;font-size:21px;line-height:1.25;margin:6px 0 6px}
   .q .hint{font-size:14.5px;color:var(--muted);margin-bottom:12px}
-  textarea{width:100%;min-height:96px;padding:12px 14px;font-family:var(--sans);font-size:16px;line-height:1.5;color:var(--ink);background:#fff;border:1px solid var(--line-strong);border-radius:6px;resize:vertical}
+  .found{font-size:14.5px;background:#fff;border:1px solid var(--line-strong);border-left:3px solid var(--good);border-radius:0 5px 5px 0;padding:12px 16px;margin-bottom:12px}
+  .found .lbl{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--good);margin-bottom:6px}
+  .found code{font-family:var(--mono);font-size:.86em;background:var(--paper-2);padding:1px 5px;border-radius:3px}
+  textarea{width:100%;min-height:84px;padding:12px 14px;font-family:var(--sans);font-size:16px;line-height:1.5;color:var(--ink);background:#fff;border:1px solid var(--line-strong);border-radius:6px;resize:vertical}
+  textarea.tall{min-height:150px;font-family:var(--mono);font-size:14px}
   textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
+  .micbar{display:flex;align-items:center;gap:10px;margin-top:6px}
+  .mic{font-size:13px;font-weight:600;padding:6px 13px;border-radius:20px;border:1px solid var(--line-strong);background:#fff;color:var(--ink-soft);cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .15s,border-color .15s,color .15s}
+  .mic:hover{border-color:var(--accent);color:var(--accent-deep)}
+  .mic.listening{background:var(--accent);border-color:var(--accent);color:#fff;animation:micpulse 1.3s infinite}
+  @keyframes micpulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 45%,transparent)}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
+  .micstate{font-size:13px;color:var(--muted)}
+  .checks{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+  .chk{display:inline-flex;align-items:center;gap:7px;font-size:14.5px;background:#fff;border:1px solid var(--line-strong);border-radius:20px;padding:7px 13px;cursor:pointer;user-select:none}
+  .chk input{accent-color:var(--accent);width:15px;height:15px}
+  .chk:has(input:checked){background:#fff3ec;border-color:var(--accent)}
   .who{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:8px}
   .who input{padding:11px 13px;font-family:var(--sans);font-size:15px;border:1px solid var(--line-strong);border-radius:6px;background:#fff}
   @media(max-width:560px){.who{grid-template-columns:1fr}}
-  .actions{position:sticky;bottom:0;background:color-mix(in srgb,var(--paper) 92%,transparent);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:16px 0;margin-top:30px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .actions{position:sticky;bottom:0;background:color-mix(in srgb,var(--paper) 92%,transparent);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:16px 0;margin-top:28px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
   button{font-family:var(--sans);font-size:15px;font-weight:600;padding:12px 20px;border-radius:6px;border:1px solid var(--ink);cursor:pointer;transition:background .2s,color .2s}
-  .primary{background:var(--accent);color:#fff;border-color:var(--accent)}
-  .primary:hover{background:var(--accent-deep);border-color:var(--accent-deep)}
-  .ghost{background:transparent;color:var(--ink)}
-  .ghost:hover{background:var(--ink);color:var(--paper)}
+  .primary{background:var(--accent);color:#fff;border-color:var(--accent)} .primary:hover{background:var(--accent-deep);border-color:var(--accent-deep)}
+  .ghost{background:transparent;color:var(--ink)} .ghost:hover{background:var(--ink);color:var(--paper)}
   .status{font-size:14px;color:var(--muted)}
-  footer{border-top:1px solid var(--line);padding:24px 0;font-size:13px;color:var(--muted)}
   .partial{font-size:14px;color:var(--muted);margin-top:6px}
+  .upload{display:flex;align-items:center;gap:10px;margin-top:10px;padding:12px 16px;background:#fff;border:1px dashed var(--line-strong);border-radius:6px;cursor:pointer;font-size:14.5px;color:var(--ink-soft)}
+  .upload:hover{border-color:var(--accent)}
+  .upload input{font-family:var(--sans);font-size:14px}
+  .thanks{padding:50px 0;text-align:center}
+  .thanks h2{font-family:var(--serif);font-weight:600;font-size:30px;color:var(--good);margin-bottom:12px}
+  .thanks p{color:var(--ink-soft);max-width:48ch;margin:0 auto}
+  footer{border-top:1px solid var(--line);padding:24px 0;font-size:13px;color:var(--muted)}
 </style>
 </head>
 <body>
-<header><div class="wrap"><span class="dot"></span><b>ask_procurement</b></div></header>
+<header><div class="wrap"><span class="brand"><span class="dot"></span><b>ask_procurement</b></span><a class="about" href="/procurement.html" target="_blank">What is this? →</a></div></header>
 
 <div class="wrap">
   <section class="hero">
-    <div class="eyebrow">A few questions from the team building a procurement assistant</div>
-    <h1>Help us get the rules right.</h1>
-    <p class="lede">We're building a tool that answers "how do I buy this compliantly?" for Clemson faculty and staff — and it must use <b>real, current rules with citations</b>, never guesses. We're developers, not procurement experts, so we need you to confirm a handful of specifics. <b>Answer whatever you can; skip the rest.</b> Even partial answers help a lot.</p>
-    <div class="note">No wrong answers, and you don't need to be exhaustive — a sentence, a link, or "see this PDF" is perfect. Where you can, point us at the <b>authoritative source</b> (a page or document) so the tool can cite it.</div>
+    <div class="eyebrow">A quick confirmation for Procurement Services</div>
+    <h1>We did the homework — please check it.</h1>
+    <p class="lede">We're building a tool that answers "how do I buy this compliantly?" for Clemson faculty and staff, citing real policy and never guessing. <b>We've already read and digested both of your sites</b> and auto-extracted a first draft of the rules. We just need you to <b>confirm what we found</b> and fill a couple of gaps. ~5 minutes — skip anything you're unsure of.</p>
+    <div class="did">
+      <div class="t">What we've already done</div>
+      <ul>
+        <li>Ingested <b>clemson.edu/procurement</b> (39 pages) and <b>procurement.sc.gov</b> (40 pages).</li>
+        <li>Extracted <b>~200 candidate rules</b> — including Clemson's $2,500 P-Card line, the $10k competition threshold, the $25k–$50k IFB band, and $50k+ sole-source.</li>
+        <li>Found the <b>SC side only at a high level</b> (agency authority to $50k, SCBO advertising at $25k) and <b>nothing federal/grant</b> yet — those are the main gaps below.</li>
+      </ul>
+    </div>
   </section>
 
   <form id="f">
     <div class="q">
-      <div class="num">Q1 — most useful</div>
-      <h2>What are the authoritative sources we should read?</h2>
-      <div class="hint">The exact web pages / PDFs that are the real rulebook — Clemson procurement policy, the SC state procurement code/manual, and anything for grant-funded (federal) purchases. Links or document names.</div>
-      <textarea data-q="Authoritative sources (URLs/docs)"></textarea>
+      <div class="num gap">Q1 · gap</div>
+      <h2>Where do the missing rulebooks live?</h2>
+      <div class="hint">We pulled lots of Clemson detail but little SC-code detail and nothing federal. Point us at the authoritative documents (a page or PDF name is perfect):</div>
+      <div class="found"><div class="lbl">We have</div>clemson.edu/procurement ✓ &nbsp;·&nbsp; procurement.sc.gov ✓</div>
+      <textarea data-q="Missing sources (SC Consolidated Procurement Code / threshold tables; federal grant / Uniform Guidance guidance)" placeholder="e.g. the SC Consolidated Procurement Code PDF, the small-purchase threshold table, Clemson's grant/sponsored-programs purchasing page…"></textarea>
+      <label class="upload">
+        <input type="file" id="files" multiple accept=".pdf,.doc,.docx,.txt">
+        <span>📎 Or attach the PDF(s) directly — they upload with your answers (no email needed)</span>
+      </label>
     </div>
 
     <div class="q">
-      <div class="num">Q2</div>
-      <h2>How are purchases categorized?</h2>
-      <div class="hint">In BuyWays (or however you classify), what are the main categories of things people buy? Especially: which categories follow <em>special</em> rules (e.g. IT, construction, professional/consulting services, furniture, equipment)?</div>
-      <textarea data-q="Purchase categories + which have special rules"></textarea>
+      <div class="num confirm">Q2 · confirm</div>
+      <h2>Which purchase categories have their own special rules?</h2>
+      <div class="hint"><b>Just check the ones that carry special rules</b> — we pre-checked what we found; uncheck any that don't. No need to explain <em>how</em> they differ — we already have that from the documents.</div>
+      <div class="checks" id="cats">
+        <label class="chk"><input type="checkbox" value="Information technology (IT)" checked>Information technology (IT)</label>
+        <label class="chk"><input type="checkbox" value="Catering / food / beverage" checked>Catering / food / beverage</label>
+        <label class="chk"><input type="checkbox" value="Alcohol at events" checked>Alcohol at events</label>
+        <label class="chk"><input type="checkbox" value="Professional / consulting services" checked>Professional / consulting services</label>
+        <label class="chk"><input type="checkbox" value="Advertising">Advertising</label>
+        <label class="chk"><input type="checkbox" value="Books / copyrighted educational materials">Books / copyrighted materials</label>
+        <label class="chk"><input type="checkbox" value="Lab furniture / supplies">Lab furniture / supplies</label>
+        <label class="chk"><input type="checkbox" value="Air travel">Air travel</label>
+        <label class="chk"><input type="checkbox" value="General goods / office supplies">General goods / office supplies</label>
+        <label class="chk"><input type="checkbox" value="Construction">Construction</label>
+      </div>
+      <textarea data-q="Categories — corrections / additions" placeholder="Optional — only if we missed a category or flagged one wrong. You don't need to describe the rules."></textarea>
     </div>
 
     <div class="q">
-      <div class="num">Q3 — the core</div>
-      <h2>What are the dollar thresholds, and what method does each require?</h2>
-      <div class="hint">The bands that change what someone must do — e.g. "under $X → P-Card", "$X–$Y → get N quotes", "over $Z → formal bid/RFP". Please give the current numbers for Clemson and for SC state if they differ. If there's a table somewhere, a link is great.</div>
-      <textarea data-q="Dollar thresholds + required method per band"></textarea>
+      <div class="num confirm">Q3 · confirm &amp; correct</div>
+      <h2>Is this Clemson threshold ladder right?</h2>
+      <div class="hint">This is what we extracted. <b>Edit anything that's wrong</b> — wrong number, wrong method, missing band.</div>
+      <textarea class="tall" data-q="Clemson threshold ladder (corrected)">≤ $150 — direct purchase (small dollar)
+≤ $2,500 — P-Card / small purchase, no quotes required
+$2,500.01–$10,000 — P-Card with one-time limit increase; competitive quotes?
+> $10,000 — competitive bid threshold (formal competition required)
+$25,000.01–$49,999.99 — Invitation for Bid (IFB)
+≥ $50,000 — sole-source "intent" / formal solicitation (RFP)
+IT purchases — routed through a special office?
+Catering — under $1,000 small engagement; Aramark is the exclusive provider (waiver for outside caterer)</textarea>
     </div>
 
     <div class="q">
-      <div class="num">Q4</div>
-      <h2>Who has to approve, and what documents are required, at each level?</h2>
-      <div class="hint">e.g. department head vs. business officer vs. CPO; and what must be on file (quotes summary, sole-source justification, scope of work, etc.).</div>
-      <textarea data-q="Approval chain + required documents per band"></textarea>
+      <div class="num gap">Q4 · gap</div>
+      <h2>SC state &amp; federal thresholds we couldn't find.</h2>
+      <div class="hint">We found SC only at a high level (below). We're missing the SC <b>small-purchase / quote ladder</b> (the equivalent of Clemson's $2,500 / $10,000 lines) and any <b>federal grant</b> limits. <b>You don't have to type the numbers</b> — just point us at the right document or section and we'll pull them (or paste the key figures if they're handy).</div>
+      <div class="found"><div class="lbl">We have (SC, high level)</div>Agency base authority to <code>$50,000</code> · SCBO advertisement at <code>$25,000</code> · SFAA certification above <code>$50,000</code> · statewide term contracts mandatory</div>
+      <textarea data-q="SC small-purchase/quote thresholds + federal grant limits (or where to find them)" placeholder="e.g. &quot;see SC Procurement Code §11-35, Article 5 — small-purchase table&quot;  ·  or  &quot;SC: under $2,500 no quotes, $2,500–$10k = 3 quotes, sealed bid over $10k; federal micro-purchase = $10,000&quot;"></textarea>
     </div>
 
     <div class="q">
-      <div class="num">Q5</div>
-      <h2>Exceptions — sole source and emergency.</h2>
-      <div class="hint">When do the normal rules NOT apply? What qualifies as sole-source or emergency, and what justification/paperwork is needed?</div>
-      <textarea data-q="Sole-source / emergency exceptions"></textarea>
+      <div class="num confirm">Q5 · confirm</div>
+      <h2>Who approves, and what documents are required?</h2>
+      <div class="hint">We pulled these from the policies — <b>confirm/correct them</b>, and fill the one piece we couldn't cleanly map: <b>who signs off at each dollar band</b>.</div>
+      <div class="found"><div class="lbl">Approvers we saw</div>department business officer · budget approver · Procurement Director (&amp; Assistant Director) · President / Executive &amp; Audit Committee (large buys) · CCIT CheckIT (IT) · Aramark waiver (catering) · State Auditor (audit services)</div>
+      <div class="found"><div class="lbl">Required documents we saw</div>buyWays requisition · purchase order · Sole Source Form / Intent to Sole Source · written determination/justification · Scope of Work · Statement/Intent-to-Award · Special Event Permit · signed waiver</div>
+      <textarea data-q="Approval chain by dollar band + corrections to approvers/documents" placeholder="Mainly: who signs off at each band — e.g. ≤ $2,500, $2,500–$10k, $10k–$50k, $50k+? And anything above that's wrong or missing."></textarea>
     </div>
 
     <div class="q">
-      <div class="num">Q6</div>
-      <h2>Grant / federal money — what changes?</h2>
-      <div class="hint">When a purchase is on a federal grant (Uniform Guidance / 2 CFR 200), how do the rules differ? Do you apply the stricter of state vs. federal? Any thresholds specific to grants?</div>
-      <textarea data-q="Federal grant (Uniform Guidance) overlays"></textarea>
+      <div class="num confirm">Q6 · confirm</div>
+      <h2>Exceptions — which are real, and is the paperwork right?</h2>
+      <div class="hint"><b>Check the exceptions that genuinely apply</b> (uncheck any we got wrong). Below is the justification we <em>think</em> each needs — use the note only to fix a wrong mapping or add an exception we missed.</div>
+      <div class="checks" id="exceptions">
+        <label class="chk"><input type="checkbox" value="Sole-source" checked>Sole-source</label>
+        <label class="chk"><input type="checkbox" value="Emergency" checked>Emergency</label>
+        <label class="chk"><input type="checkbox" value="State / NASPO term contracts" checked>State / NASPO term contracts</label>
+        <label class="chk"><input type="checkbox" value="P-Card one-time limit increase" checked>P-Card one-time limit increase</label>
+        <label class="chk"><input type="checkbox" value="Catering waiver (Aramark)" checked>Catering waiver (Aramark)</label>
+      </div>
+      <div class="found"><div class="lbl">Paperwork we believe each needs</div><b>Sole-source</b> → Sole Source Form / Intent to Sole Source + written determination &nbsp;·&nbsp; <b>Emergency</b> → after-the-fact written justification &nbsp;·&nbsp; <b>Term contracts</b> → none (already competed) &nbsp;·&nbsp; <b>P-Card increase</b> → one-time limit-increase request &nbsp;·&nbsp; <b>Catering waiver</b> → signed Aramark waiver</div>
+      <textarea data-q="Exceptions — wrong paperwork above, or an exception we missed" placeholder="Optional — only if a mapping above is wrong, or there's an exception we didn't list."></textarea>
     </div>
 
     <div class="q">
-      <div class="num">Q7</div>
-      <h2>What does the tool absolutely have to get right?</h2>
-      <div class="hint">The mistakes you see people make, or the questions you answer over and over. This tells us where accuracy matters most.</div>
-      <textarea data-q="Must-get-right / common mistakes"></textarea>
+      <div class="num confirm">Q7 · the traps</div>
+      <h2>Which of these are the real traps people hit?</h2>
+      <div class="hint">Instead of asking "what must it get right," here are the specific edge cases the documents implied. <b>Check the ones that genuinely trip people up</b>, and add the ones we haven't seen.</div>
+      <div class="checks" id="traps">
+        <label class="chk"><input type="checkbox" value="Splitting a purchase to stay under $2,500 / $10,000" checked>Splitting purchases to dodge a threshold</label>
+        <label class="chk"><input type="checkbox" value="Using an outside caterer without an Aramark waiver" checked>Outside caterer without Aramark waiver</label>
+        <label class="chk"><input type="checkbox" value="Buying IT without routing through the required office" checked>IT not routed through the right office</label>
+        <label class="chk"><input type="checkbox" value="Serving alcohol at an event without the special permit">Alcohol at events without a permit</label>
+        <label class="chk"><input type="checkbox" value="Not checking mandatory state/NASPO term contracts first">Skipping mandatory term contracts</label>
+        <label class="chk"><input type="checkbox" value="Grant purchases: Fly America Act / micro-purchase rules">Grant purchases (Fly America, micro-purchase)</label>
+        <label class="chk"><input type="checkbox" value="Sole-source without proper justification">Sole-source without justification</label>
+      </div>
+      <textarea data-q="Other traps / the questions you answer over and over"></textarea>
+    </div>
+
+    <div class="q">
+      <div class="num">Q8 · open</div>
+      <h2>Anything else this has to get right?</h2>
+      <div class="hint">Last one, and the most important: what concerns you about a tool like this, or what does it <b>absolutely</b> have to get right to actually be useful to you and the people you help? Be blunt.</div>
+      <textarea data-q="What this system must get right / concerns to be genuinely useful" placeholder="e.g. &quot;it can never guess a threshold,&quot; &quot;it must cite the exact policy section,&quot; &quot;it has to say 'I don't know — call us' instead of inventing an answer,&quot; &quot;grant rules change and it can't be stale&quot;…"></textarea>
     </div>
 
     <div class="q">
       <div class="num">You</div>
       <h2>So we can follow up (optional)</h2>
-      <div class="who">
-        <input id="name" placeholder="Name (optional)">
-        <input id="role" placeholder="Role / office (optional)">
-      </div>
+      <div class="who"><input id="name" placeholder="Name (optional)"><input id="role" placeholder="Role / office (optional)"></div>
     </div>
 
     <div class="actions">
-      <button type="button" class="primary" id="email">Email my answers</button>
-      <button type="button" class="ghost" id="copy">Copy my answers</button>
+      <button type="button" class="primary" id="submit">Submit answers</button>
+      <button type="button" class="ghost" id="copy">Copy instead</button>
       <span class="status" id="status"></span>
     </div>
-    <p class="partial">Either button works — "Email" opens your mail app pre-filled to the project team; "Copy" puts your answers on the clipboard to paste wherever's easy.</p>
+    <p class="partial">Your answers (and any attached files) go straight to the project team from this page — nothing routes through your email.</p>
   </form>
 </div>
 
-<footer><div class="wrap">Clemson University · Procurement &amp; Business Services — assisting a tool that cites every answer and refuses when unsure.</div></footer>
+<footer><div class="wrap">Clemson University · Procurement &amp; Business Services — building a tool that cites every answer and refuses when unsure.</div></footer>
 
 <script>
   const TO = 'chiptoe@mac.com';
   const SUBJECT = 'ask_procurement — Procurement Services answers';
-  function assemble() {
-    const parts = [];
-    const name = document.getElementById('name').value.trim();
-    const role = document.getElementById('role').value.trim();
-    if (name || role) parts.push(`From: ${name}${role ? ' (' + role + ')' : ''}\n`);
-    document.querySelectorAll('textarea[data-q]').forEach(t => {
-      const a = t.value.trim();
-      if (a) parts.push(`Q: ${t.dataset.q}\nA: ${a}\n`);
-    });
+  function checks(id){ return [...document.querySelectorAll('#'+id+' input:checked')].map(c=>c.value); }
+  function assemble(){
+    const parts=[];
+    const name=document.getElementById('name').value.trim(), role=document.getElementById('role').value.trim();
+    if(name||role) parts.push(`From: ${name}${role?' ('+role+')':''}\n`);
+    parts.push(`Q2 categories with special rules: ${checks('cats').join('; ')||'(none checked)'}\n`);
+    parts.push(`Q6 exceptions that apply: ${checks('exceptions').join('; ')||'(none checked)'}\n`);
+    parts.push(`Q7 real traps: ${checks('traps').join('; ')||'(none checked)'}\n`);
+    document.querySelectorAll('textarea[data-q]').forEach(t=>{ const a=t.value.trim(); if(a) parts.push(`Q: ${t.dataset.q}\nA: ${a}\n`); });
     return parts.join('\n');
   }
-  function setStatus(msg) { document.getElementById('status').textContent = msg; }
-  document.getElementById('email').addEventListener('click', () => {
-    const body = assemble();
-    if (!body) { setStatus('Nothing filled in yet.'); return; }
-    window.location.href = `mailto:${TO}?subject=${encodeURIComponent(SUBJECT)}&body=${encodeURIComponent(body)}`;
+  const set=m=>document.getElementById('status').textContent=m;
+  const submitBtn=document.getElementById('submit');
+  submitBtn.addEventListener('click',async()=>{
+    const answers=assemble();
+    if(!answers.trim()){ set('Nothing filled in yet.'); return; }
+    submitBtn.disabled=true; set('Sending…');
+    try{
+      const fd=new FormData();
+      fd.append('answers',answers);
+      const fi=document.getElementById('files');
+      if(fi&&fi.files){ for(const f of fi.files) fd.append('file',f); }
+      const res=await fetch('/api/procurement-intake',{method:'POST',body:fd});
+      const j=await res.json().catch(()=>({}));
+      if(res.ok&&j.ok){
+        document.getElementById('f').innerHTML='<div class="thanks"><h2>Thank you — received.</h2><p>Your answers'+(j.filesSaved?` and ${j.filesSaved} file(s)`:'')+' are with the project team. You can close this tab.</p></div>';
+      } else { set('Submit failed ('+(j.error||res.status)+'). Use "Copy instead" and send it to '+TO+'.'); submitBtn.disabled=false; }
+    }catch(e){ set('Submit failed (network). Use "Copy instead" and send it to '+TO+'.'); submitBtn.disabled=false; }
   });
-  document.getElementById('copy').addEventListener('click', async () => {
-    const body = assemble();
-    if (!body) { setStatus('Nothing filled in yet.'); return; }
-    try { await navigator.clipboard.writeText(body); setStatus('Copied — paste it into an email or message to the team.'); }
-    catch { setStatus('Copy not available; select the text manually.'); }
-  });
+  document.getElementById('copy').addEventListener('click',async()=>{ const b=assemble(); try{ await navigator.clipboard.writeText(b); set('Copied — paste it into an email to '+TO+'.'); }catch{ set('Copy unavailable; select the text manually.'); } });
+
+  /* Voice input — Web Speech API. Adds a "Dictate" button under every text field.
+     Feature-detected: in browsers without support (e.g. Firefox) no buttons appear
+     and the form works as plain text entry. */
+  (function(){
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if(!SR) return;
+    let active = null; // {rec, btn, label}
+    document.querySelectorAll('textarea[data-q]').forEach(ta=>{
+      const bar=document.createElement('div'); bar.className='micbar';
+      const btn=document.createElement('button'); btn.type='button'; btn.className='mic';
+      btn.innerHTML='🎙 <span>Dictate</span>';
+      const state=document.createElement('span'); state.className='micstate';
+      bar.append(btn,state); ta.after(bar);
+      btn.addEventListener('click',()=>{
+        if(active && active.btn===btn){ active.rec.stop(); return; } // toggle off
+        if(active) active.rec.stop();                                 // switch fields
+        start(ta,btn,state);
+      });
+    });
+    function start(ta,btn,state){
+      const rec=new SR(); rec.lang='en-US'; rec.interimResults=true; rec.continuous=true;
+      const base = ta.value ? ta.value.replace(/\s+$/,'')+' ' : '';
+      const label=btn.querySelector('span');
+      active={rec,btn,label};
+      btn.classList.add('listening'); label.textContent='Stop'; state.textContent='listening…'; ta.focus();
+      rec.onresult=e=>{ let txt=''; for(let i=0;i<e.results.length;i++) txt+=e.results[i][0].transcript; ta.value=base+txt; };
+      rec.onerror=e=>{ state.textContent = e.error==='not-allowed' ? 'microphone blocked' : 'mic error — try again'; };
+      rec.onend=()=>{ btn.classList.remove('listening'); label.textContent='Dictate'; if(state.textContent==='listening…') state.textContent=''; if(active&&active.btn===btn) active=null; };
+      try{ rec.start(); }catch(err){ state.textContent='mic error — try again'; btn.classList.remove('listening'); label.textContent='Dictate'; active=null; }
+    }
+  })();
 </script>
 </body>
 </html>
