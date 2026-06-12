@@ -60,3 +60,7 @@ drizzle/meta/
 
 # Visual brainstorm companion (local mockups, not source)
 /.superpowers/
+
+# Playwright MCP session artifacts (screenshots, snapshots, console logs)
+/.playwright-mcp/
+/review-*.jpeg
