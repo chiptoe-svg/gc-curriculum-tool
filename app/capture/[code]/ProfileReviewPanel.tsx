@@ -1269,26 +1269,36 @@ export function ProfileReviewPanel({
         hideTrigger={true}
       />
 
-      {/* ── 4. AUDIT NOTES — full-width collapsible ── */}
+      {/* ── 4. AUDIT NOTES — full-width collapsible ──
+          The SourceBadge can render as a <button> (citation click-through),
+          so it must sit BESIDE the toggle button, not inside it — nested
+          buttons are invalid HTML and caused a hydration error. */}
       <div className="rounded-md border bg-card">
-        <button
-          type="button"
-          aria-expanded={auditNotesOpen}
-          onClick={() => setAuditNotesOpen(v => !v)}
-          className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
-        >
+        <div className="flex w-full items-center justify-between gap-3 px-4 py-3">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold">Auditor&apos;s margin notes</h3>
+            <button
+              type="button"
+              aria-expanded={auditNotesOpen}
+              onClick={() => setAuditNotesOpen(v => !v)}
+              className="text-left"
+            >
+              <h3 className="text-sm font-semibold">Auditor&apos;s margin notes</h3>
+            </button>
             <SourceBadge
               source={working.audit_notes.source}
               citations={working.audit_notes.citations}
               onCitationClick={handleCitationClick}
             />
           </div>
-          <span className="text-xs text-muted-foreground" aria-hidden="true">
+          <button
+            type="button"
+            aria-expanded={auditNotesOpen}
+            onClick={() => setAuditNotesOpen(v => !v)}
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
             {auditNotesOpen ? '▲ collapse' : '▼ expand'}
-          </span>
-        </button>
+          </button>
+        </div>
         {auditNotesOpen && (
           <div className="border-t px-4 py-4 space-y-5">
             <p className="text-xs text-muted-foreground">
