@@ -968,11 +968,15 @@ export function ProfileReviewPanel({
         return;
       }
       setSnapshotMessage({ kind: 'ok', text: 'Snapshot recorded.' });
-      setSnapshotOpen(false);
       setSnapshotCaption('');
       setSnapshotNote('');
       setLastSavedStatus('confirmed');
       onSnapshotCreated();
+      // Approval is the END of the job (2026-06-12 walkthrough: "after the
+      // approve snapshot, it should drop out of the page"). Show the green
+      // completion card just long enough to register, then return to the
+      // canonical course list. snapshotOpen stays true so the card renders.
+      setTimeout(() => { window.location.href = 'http://130.127.162.180:3000/'; }, 2000);
     } catch (e) {
       setSnapshotMessage({ kind: 'error', text: e instanceof Error ? e.message : 'Snapshot failed' });
     } finally {
@@ -1157,10 +1161,9 @@ export function ProfileReviewPanel({
             ✓ Captured — {courseCode} is now part of the program record.
           </h3>
           <p className="mt-1 text-xs text-green-900/80 dark:text-green-200/80">
-            An immutable, dated snapshot was recorded. You&apos;re done here — nothing else is required.
-            The program coverage matrix will score it on its next refresh, and the curriculum wiki
-            regenerates from it automatically. The draft below stays editable; future edits create a
-            new draft you can approve again as an update.
+            An immutable, dated snapshot was recorded. The program coverage matrix will score it on
+            its next refresh, and the curriculum wiki regenerates from it automatically.
+            {' '}<span className="font-medium">Returning you to the course list…</span>
           </p>
           <div className="mt-3 flex flex-wrap items-center gap-3 text-xs">
             <a
