@@ -1144,7 +1144,48 @@ export function ProfileReviewPanel({
         </div>
       )}
 
-      {snapshotOpen && (
+      {/* Completion state (2026-06-12 walkthrough: after approving, the page
+          "stays" with only a small green line — faculty wondered if more was
+          required). A successful capture replaces the approve form with an
+          explicit you're-done card + where the record went + next steps. */}
+      {snapshotOpen && snapshotMessage?.kind === 'ok' && (
+        <div
+          ref={snapshotPanelRef}
+          className="scroll-mt-4 rounded-md border-2 border-green-600 bg-green-50 px-5 py-4 dark:bg-green-950/30"
+        >
+          <h3 className="text-sm font-semibold text-green-900 dark:text-green-200">
+            ✓ Captured — {courseCode} is now part of the program record.
+          </h3>
+          <p className="mt-1 text-xs text-green-900/80 dark:text-green-200/80">
+            An immutable, dated snapshot was recorded. You&apos;re done here — nothing else is required.
+            The program coverage matrix will score it on its next refresh, and the curriculum wiki
+            regenerates from it automatically. The draft below stays editable; future edits create a
+            new draft you can approve again as an update.
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-3 text-xs">
+            <a
+              href={`http://130.127.162.180:3000/view/${encodeURIComponent(courseCode)}`}
+              className="rounded-md border border-green-700 bg-white px-3 py-1.5 font-medium text-green-900 hover:bg-green-100 dark:bg-transparent dark:text-green-200"
+            >
+              View the public profile →
+            </a>
+            <a
+              href={`/program?slug=${encodeURIComponent(slug)}`}
+              className="rounded-md border border-input bg-background px-3 py-1.5 font-medium hover:bg-muted"
+            >
+              See the program matrix
+            </a>
+            <a
+              href="http://130.127.162.180:3000/"
+              className="rounded-md border border-input bg-background px-3 py-1.5 font-medium hover:bg-muted"
+            >
+              Back to the course list
+            </a>
+          </div>
+        </div>
+      )}
+
+      {snapshotOpen && snapshotMessage?.kind !== 'ok' && (
         <div
           ref={snapshotPanelRef}
           className="scroll-mt-4 rounded-md border-2 border-amber-400 bg-card px-4 py-4 space-y-3 shadow-md"
@@ -1187,8 +1228,10 @@ export function ProfileReviewPanel({
               {snapshotting ? 'Capturing…' : 'Approve & capture'}
             </button>
           </div>
+          {/* kind is already narrowed to 'error' here — the 'ok' case renders
+              the completion card above instead of this form. */}
           {snapshotMessage && (
-            <p className={'text-xs ' + (snapshotMessage.kind === 'ok' ? 'text-green-700' : 'text-destructive')}>
+            <p className="text-xs text-destructive">
               {snapshotMessage.text}
             </p>
           )}
