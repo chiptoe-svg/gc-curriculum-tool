@@ -60,6 +60,21 @@ export async function setCourseAuditMode(
   return rows.length > 0;
 }
 
+/**
+ * Stamp the Canvas course name + import timestamp on the course row after a
+ * successful canvas-import. Called by the canvas-import route.
+ */
+export async function updateCourseCanvasImport(
+  code: string,
+  canvasCourseName: string,
+  canvasImportedAt: Date,
+): Promise<void> {
+  await db
+    .update(courses)
+    .set({ canvasCourseName, canvasImportedAt })
+    .where(eq(courses.code, code));
+}
+
 export async function upsertCourses(parsed: ParsedCourse[]): Promise<number> {
   if (parsed.length === 0) return 0;
   const rows = parsed.map(p => ({

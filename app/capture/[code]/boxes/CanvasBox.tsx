@@ -203,9 +203,15 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
     }
   }
 
+  const importedDateLabel = course.canvasImportedAt
+    ? new Date(course.canvasImportedAt).toLocaleDateString(undefined, { month: 'numeric', day: 'numeric', year: '2-digit' })
+    : null;
+  const importedPrefix = importedDateLabel
+    ? (course.canvasCourseName ? `${course.canvasCourseName} · ` : '') + `imported ${importedDateLabel} · `
+    : '';
   const summary = empty
     ? 'not imported yet'
-    : `${itemCount} item${itemCount === 1 ? '' : 's'} · ${readinessLabel}`;
+    : `${importedPrefix}${itemCount} item${itemCount === 1 ? '' : 's'} · ${readinessLabel}`;
 
   return (
     <div className="rounded-md border bg-card">

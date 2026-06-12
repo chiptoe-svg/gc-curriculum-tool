@@ -87,6 +87,8 @@ export default async function CapturePage({ params, searchParams }: Props) {
     majorProjects: course.majorProjects as string[],
     skillsRequired: course.skillsRequired as string[],
     auditMode: (course.auditMode === 'simple' ? 'simple' : 'full') as 'full' | 'simple',
+    canvasCourseName: course.canvasCourseName ?? null,
+    canvasImportedAt: course.canvasImportedAt ? course.canvasImportedAt.toISOString() : null,
   };
 
   const materialsView = materials.map(m => ({

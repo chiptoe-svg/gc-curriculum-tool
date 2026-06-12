@@ -13,6 +13,7 @@ import { CanvasBox } from '@/app/capture/[code]/boxes/CanvasBox';
 const course = {
   code: 'GC 3800', title: 'Junior Seminar', description: '', prerequisites: '',
   learningObjectives: [], majorProjects: [], skillsRequired: [], auditMode: 'full',
+  canvasCourseName: null, canvasImportedAt: null,
 } as unknown as CourseCatalogView;
 
 function mat(o: Partial<CaptureMaterial>): CaptureMaterial {
@@ -103,6 +104,19 @@ describe('CanvasBox', () => {
     fireEvent.click(within(region).getByRole('button', { name: /import|reimport|go|submit/i }));
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
     expect(String(fetchMock.mock.calls[0]![0])).toContain('/canvas-reextract');
+  });
+
+  it('Canvas box header shows course name and import datestamp when canvasImportedAt is set', () => {
+    const courseWithImport = {
+      ...course,
+      canvasCourseName: 'S2405-GC-3800 Junior Seminar',
+      canvasImportedAt: '2026-06-03T18:00:00Z',
+    } as unknown as CourseCatalogView;
+    render(<CanvasBox course={courseWithImport} materials={[mat({ id: 'a', fileName: 'Canvas: Assignments', extractedText: '## One\nb', indexingStatus: 'ready' })]} slug="s" onMaterialsChange={noop} />);
+    expect(screen.getByText(/S2405-GC-3800 Junior Seminar/)).toBeTruthy();
+    // The date portion is locale-formatted; just assert the word "imported" appears
+    // and the course name is present — exact date string depends on the test TZ.
+    expect(screen.getByText(/imported \d+\/\d+\/\d+/)).toBeTruthy();
   });
 
   it('Scan linked docs POSTs to scan-linked-docs and refetches', async () => {

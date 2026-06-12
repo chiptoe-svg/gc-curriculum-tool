@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { isValidSlug } from '@/lib/slug';
 import { hashIp } from '@/lib/ip-hash';
-import { getCourseByCode } from '@/lib/db/courses-queries';
+import { getCourseByCode, updateCourseCanvasImport } from '@/lib/db/courses-queries';
 import { insertMaterial, findMaterialByFileName, updateMaterialMetadata } from '@/lib/db/course-materials-queries';
 import { finalizeExtraction } from '@/lib/capture/finalize-extraction';
 import { createVectorStore } from '@/lib/capture/vector-store';
@@ -379,6 +379,10 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
       insertedCount++;
     }
   }
+
+  // Stamp the Canvas course name + import timestamp so the Step-1 Canvas box
+  // header can show provenance (name·imported M/D/YY) without a live API call.
+  await updateCourseCanvasImport(code, data.course.name, new Date());
 
   const details = {
     syllabusFound: !!syllabusText,

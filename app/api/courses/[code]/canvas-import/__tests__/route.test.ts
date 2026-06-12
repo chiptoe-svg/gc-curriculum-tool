@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('@/lib/slug', () => ({ isValidSlug: (s: string) => s === 'valid-slug' }));
 vi.mock('@/lib/ip-hash', () => ({ hashIp: () => 'test-hash' }));
-vi.mock('@/lib/db/courses-queries', () => ({ getCourseByCode: vi.fn() }));
+vi.mock('@/lib/db/courses-queries', () => ({ getCourseByCode: vi.fn(), updateCourseCanvasImport: vi.fn() }));
 vi.mock('@/lib/db/course-materials-queries', () => ({
   insertMaterial: vi.fn(),
   findMaterialByFileName: vi.fn(),

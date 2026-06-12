@@ -16,6 +16,8 @@ const COURSE: CourseCatalogView = {
   majorProjects: ['Poster'],
   skillsRequired: ['typing'],
   auditMode: 'full',
+  canvasCourseName: null,
+  canvasImportedAt: null,
 };
 
 const M = (fileName: string, over: Partial<CaptureMaterial> = {}): CaptureMaterial =>

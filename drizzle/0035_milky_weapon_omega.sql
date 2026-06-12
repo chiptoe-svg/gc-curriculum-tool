@@ -1,0 +1,3 @@
+ALTER TABLE "courses" ADD COLUMN "canvas_course_name" text;--> statement-breakpoint
+ALTER TABLE "courses" ADD COLUMN "canvas_imported_at" timestamp with time zone;--> statement-breakpoint
+UPDATE "courses" SET "canvas_imported_at" = sub.max_uploaded FROM (SELECT course_code, MAX(uploaded_at) AS max_uploaded FROM course_materials WHERE file_name LIKE 'Canvas%' GROUP BY course_code) sub WHERE "courses"."code" = sub.course_code;

@@ -97,6 +97,10 @@ export const courses = pgTable('courses', {
   category: courseCategory('category').notNull().default('other'),
   buildsToCareer: boolean('builds_to_career').notNull().default(false),
   catalogUrl: text('catalog_url'),                                // nullable — Clemson catalog link
+  // Set by the canvas-import route on each successful import; provenance display
+  // on the capture Step-1 Canvas box header.
+  canvasCourseName: text('canvas_course_name'),                   // nullable — e.g. "S2405-GC-3800 Junior Seminar"
+  canvasImportedAt: timestamp('canvas_imported_at', { withTimezone: true }), // nullable
 });
 
 export const sheetSyncState = pgTable('sheet_sync_state', {

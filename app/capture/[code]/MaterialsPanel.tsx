@@ -54,6 +54,10 @@ export interface CourseCatalogView {
   majorProjects: string[];
   skillsRequired: string[];
   auditMode: AuditMode;
+  /** Canvas course name — set by the canvas-import route; null until first import. */
+  canvasCourseName: string | null;
+  /** ISO timestamp of the most recent Canvas import; null until first import. */
+  canvasImportedAt: string | null;
 }
 
 interface Props {
@@ -736,6 +740,8 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
         majorProjects: updated.majorProjects ?? [],
         skillsRequired: updated.skillsRequired ?? [],
         auditMode: updated.auditMode ?? course.auditMode,
+        canvasCourseName: course.canvasCourseName,
+        canvasImportedAt: course.canvasImportedAt,
       };
       onCourseChange?.(merged);
       setSyncMessage({ kind: 'ok', text: 'Catalog synced from Google Sheet.' });
