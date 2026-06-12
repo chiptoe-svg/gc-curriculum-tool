@@ -1,5 +1,4 @@
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
 import { isValidSlug } from '@/lib/slug';
 import { getCourseByCode } from '@/lib/db/courses-queries';
 import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
@@ -124,13 +123,17 @@ export default async function CapturePage({ params, searchParams }: Props) {
             </h1>
           </div>
           <div className="flex items-center gap-4">
-            <Link
-              href={`/?slug=${encodeURIComponent(slug)}`}
+            {/* The LAN landing is the canonical public course list — the
+                faculty guide's published entry point. A relative link would
+                keep users on the funnel origin instead of sending them to
+                the shared course list. No slug: the landing is public, and
+                appending the faculty slug to a shareable URL leaks it. */}
+            <a
+              href="http://130.127.162.180:3000/"
               className="text-sm text-muted-foreground hover:text-foreground"
-              title="Back to the course list (the landing page you came from)"
             >
               Course List
-            </Link>
+            </a>
             <a
               href="https://chiptoe-svg.github.io/gc-curriculum-tool/docs/using-coursecapture-and-explore.html"
               target="_blank"

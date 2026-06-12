@@ -8,6 +8,7 @@ import { fetchCourseMaterials } from '@/lib/capture/fetch-course-materials';
 import {
   isSyllabusCanvasMaterial,
   materialProvenance,
+  catalogContributionSummary,
 } from '@/lib/capture/material-display';
 
 interface Props {
@@ -60,7 +61,12 @@ export function SyllabusBox({
       /syllab/i.test(m.fileName) &&
       !isSyllabusCanvasMaterial(m),
   );
-  const hasSheetCatalog = syncedAt !== null;
+  // A stamp alone isn't enough — Google returns non-errors for missing tabs,
+  // so the sync-from-sheet route may have written a blank row in the past.
+  // Require real catalog content (non-empty summary) in addition to a syncedAt
+  // timestamp so legacy wrongly-stamped rows don't show as "synced".
+  const hasCatalogContent = catalogContributionSummary(course) !== 'no catalog details synced yet';
+  const hasSheetCatalog = syncedAt !== null && hasCatalogContent;
   const hasCanvasSyllabus = materials.some(isSyllabusCanvasMaterial);
 
   // Differ-warning: a sheet catalog AND a separately-attached syllabus are both
@@ -69,9 +75,11 @@ export function SyllabusBox({
 
   const statusText = hasSheetCatalog
     ? `synced to Google Sheet on ${new Date(syncedAt!).toLocaleDateString(undefined, { month: 'numeric', day: 'numeric', year: '2-digit' })}`
-    : attachedSyllabus
-      ? `${attachedSyllabus.fileName} attached`
-      : 'add a syllabus';
+    : syncedAt !== null && !hasCatalogContent
+      ? 'not in the Google Sheet — attach a syllabus'
+      : attachedSyllabus
+        ? `${attachedSyllabus.fileName} attached`
+        : 'add a syllabus';
 
   async function resync() {
     setResyncing(true);
@@ -159,7 +167,7 @@ export function SyllabusBox({
           <span className="truncate text-xs text-muted-foreground">{statusText}</span>
         </button>
         <div className="flex shrink-0 items-center gap-2">
-          {hasSheetCatalog && (
+          {(hasSheetCatalog || (syncedAt !== null && !hasCatalogContent)) && (
             <button
               type="button"
               onClick={resync}

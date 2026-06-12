@@ -30,6 +30,13 @@ export default async function HomePage() {
     ? `${funnelOrigin}/courses?slug=${encodeURIComponent(slug)}`
     : null;
 
+  // Dedicated add-a-course page: focuses on code / title / catalog URL → straight
+  // into CourseCapture.  Uses the funnel origin (HTTPS, Basic Auth) because it
+  // is a write path; same slug forwarding mechanism as other faculty links here.
+  const addCourseHref = funnelOrigin && slug
+    ? `${funnelOrigin}/courses/new?slug=${encodeURIComponent(slug)}`
+    : null;
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
@@ -64,9 +71,9 @@ export default async function HomePage() {
             </span>{' '}marks
             courses that build toward our career outcomes.
           </p>
-          {facultyHubHref && (
+          {addCourseHref && (
             <a
-              href={facultyHubHref}
+              href={addCourseHref}
               className="shrink-0 rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
               title="Add a course (requires login)"
             >

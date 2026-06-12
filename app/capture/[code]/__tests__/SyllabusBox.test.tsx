@@ -120,6 +120,29 @@ describe('SyllabusBox', () => {
     expect(screen.getByText(/a different syllabus is also attached/i)).toBeTruthy();
   });
 
+  it('shows not-in-sheet status when catalogSyncedAt is set but all catalog fields are empty', () => {
+    const emptyCourse: CourseCatalogView = {
+      ...COURSE,
+      description: '',
+      prerequisites: '',
+      learningObjectives: [],
+      majorProjects: [],
+      skillsRequired: [],
+    };
+    render(
+      <Harness
+        course={emptyCourse}
+        catalogSyncedAt={new Date().toISOString()}
+      />,
+    );
+    // Must NOT show "synced" — that would be the false-stamp bug
+    expect(screen.queryByText(/synced/i)).toBeNull();
+    // Must show the correct not-in-sheet message
+    expect(screen.getByText(/not in the Google Sheet/i)).toBeTruthy();
+    // Re-sync button stays available so faculty can try again
+    expect(screen.getByText(/Re-sync/i)).toBeTruthy();
+  });
+
   it('notes a Canvas syllabus is available when present', () => {
     render(
       <Harness

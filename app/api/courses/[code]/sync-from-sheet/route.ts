@@ -65,6 +65,22 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   // tab claims, so we don't accidentally rename a row.
   parsed.code = courseCode;
 
+  // Google returns a non-error (HTTP 200, first tab, or empty content) when a
+  // named tab is missing — so emptiness is the reliable signal that this course
+  // has no sheet tab.  Refuse to stamp lastSyncedAt with nothing usable.
+  const hasSubstance =
+    (parsed.description && parsed.description.trim()) ||
+    (parsed.learningObjectives && parsed.learningObjectives.length > 0) ||
+    (parsed.majorProjects && parsed.majorProjects.length > 0) ||
+    (parsed.skillsRequired && parsed.skillsRequired.length > 0);
+
+  if (!hasSubstance) {
+    return NextResponse.json(
+      { error: `no usable sheet tab for ${courseCode} — nothing was synced (the tab is missing or empty)` },
+      { status: 404 },
+    );
+  }
+
   await upsertCourses([parsed]);
   const updated = await getCourseByCode(courseCode);
   if (!updated) {
