@@ -57,7 +57,7 @@ Migration `0034` is additive and immediately appliable (the held-migration block
 
 All unit-testable, no DB:
 
-- `flagKeyForCell(courseCode, targetId, subCompetencyId)` / `flagKeyForCompetency(courseCode, statement)` — canonical match keys.
+- ~~`flagKeyForCell` / `flagKeyForCompetency` — canonical match keys.~~ **Resolved in implementation review (2026-06-12): dropped.** Nothing consumes string keys — the `openFlagsFor*` filters ARE the canonical matchers, and shipping unused exports would recreate the dead-code pattern this feature exists to fix (A3).
 - `openFlagsForCell(flags, courseCode, targetId, subCompetencyId)` and `openFlagsForStatement(flags, courseCode, statement)` — exact-match filters the UIs use for markers/counts.
 - `flagDrift(flaggedContext, currentCell)` → `null | {dim: 'k'|'u'|'d', was: number|null, now: number|null}[]` — the "score changed since flagged: was D=4 → now D=2" comparison, computed at read time. Null context or missing current cell → `null` (annotated "(no longer in matrix)" / "(context not recorded)").
 
