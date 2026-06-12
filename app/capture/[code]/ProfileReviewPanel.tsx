@@ -888,6 +888,9 @@ export function ProfileReviewPanel({
   // edits the profile (mutating `working` via setWorking), so stale
   // annotations don't linger after the underlying scores change.
   const [stressTestResult, setStressTestResult] = useState<StressTestResultType | null>(null);
+  // Mirrors StressTestPanel's running state so the sticky-bar trigger can
+  // be disabled and labelled while a run is in progress.
+  const [stressRunning, setStressRunning] = useState(false);
   // Quick-review triage: which "worth a look" rows the faculty has eyeballed,
   // and which "confident" rows they've expanded to full edit. Advisory only —
   // never gates save/approve.
@@ -1064,8 +1067,7 @@ export function ProfileReviewPanel({
       <div className="rounded-lg border bg-card p-6">
         <div className="mb-1 flex items-center gap-2 font-mono-plex text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
           <span>Step 2 of 2 · Review &amp; Approve</span>
-          <span aria-hidden className="text-muted-foreground">──</span>
-          <span aria-hidden className="text-foreground">●</span>
+          <span aria-hidden className="text-foreground">○</span><span aria-hidden>──</span><span aria-hidden className="text-foreground">●</span>
         </div>
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -1263,6 +1265,7 @@ export function ProfileReviewPanel({
         courseCode={courseCode}
         slug={slug}
         onResult={setStressTestResult}
+        onRunningChange={setStressRunning}
         hideTrigger={true}
       />
 
@@ -1412,9 +1415,10 @@ export function ProfileReviewPanel({
             <button
               type="button"
               onClick={() => stressTestRef.current?.run()}
-              className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
+              disabled={stressRunning}
+              className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Stress-test this profile
+              {stressRunning ? 'Stress-testing…' : 'Stress-test this profile'}
             </button>
 
             {/* Save edits */}

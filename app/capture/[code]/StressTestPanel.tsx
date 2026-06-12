@@ -24,6 +24,11 @@ interface Props {
    * Results (overall assessment, concerns, telemetry) still render here.
    */
   hideTrigger?: boolean;
+  /**
+   * Fires whenever the running state changes. Lets the parent disable its
+   * own trigger button while a run is in progress.
+   */
+  onRunningChange?: (running: boolean) => void;
 }
 
 /**
@@ -35,7 +40,7 @@ interface Props {
  * The result is ephemeral — held only in the parent's state, cleared
  * when the user edits the profile (parent clears via onResult(null)).
  */
-export const StressTestPanel = forwardRef<StressTestHandle, Props>(function StressTestPanel({ courseCode, slug, onResult, hideTrigger }, ref) {
+export const StressTestPanel = forwardRef<StressTestHandle, Props>(function StressTestPanel({ courseCode, slug, onResult, hideTrigger, onRunningChange }, ref) {
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<StressTestResultType | null>(null);
@@ -58,7 +63,9 @@ export const StressTestPanel = forwardRef<StressTestHandle, Props>(function Stre
   }));
 
   async function handleRun() {
+    if (running) return;
     setRunning(true);
+    onRunningChange?.(true);
     setError(null);
     try {
       const res = await fetch(
@@ -81,6 +88,7 @@ export const StressTestPanel = forwardRef<StressTestHandle, Props>(function Stre
       onResult(null);
     } finally {
       setRunning(false);
+      onRunningChange?.(false);
     }
   }
 

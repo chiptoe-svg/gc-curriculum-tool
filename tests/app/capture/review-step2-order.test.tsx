@@ -11,6 +11,7 @@
  *  4. The old "Done reviewing?" footer card no longer exists.
  */
 
+import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import type { CaptureProfile } from '@/lib/ai/capture/schema';
@@ -30,7 +31,7 @@ vi.mock('@/app/capture/[code]/MajorProjectsSection', () => ({
   MajorProjectsSection: () => <div data-testid="major-projects">major-projects</div>,
 }));
 vi.mock('@/app/capture/[code]/StressTestPanel', () => ({
-  StressTestPanel: vi.fn().mockImplementation(() => null),
+  StressTestPanel: React.forwardRef((_props: unknown, _ref: unknown) => null),
 }));
 vi.mock('@/app/capture/[code]/StressTestBadge', () => ({
   StressTestBadge: () => null,
