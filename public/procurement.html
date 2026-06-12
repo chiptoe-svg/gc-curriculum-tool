@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ask_procurement — an answer you can defend</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231B1813'/%3E%3Ccircle cx='16' cy='16' r='7' fill='none' stroke='%23E1581F' stroke-width='2.5'/%3E%3Ccircle cx='16' cy='16' r='2.5' fill='%23E1581F'/%3E%3C/svg%3E">
+<meta property="og:title" content="ask_procurement — an answer you can defend">
+<meta property="og:description" content="A Clemson procurement assistant that resolves the rules and proves its answer — not a chatbot that paraphrases policy and guesses the number.">
+<meta property="og:type" content="website">
+<meta name="description" content="A procurement assistant that resolves the rules and proves its answer — not a chatbot that paraphrases policy and guesses the number.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F7F3E9;
+    --paper-2:#F1EBDB;
+    --ink:#1B1813;
+    --ink-soft:#4A4438;
+    --muted:#7A715C;
+    --line:#D9CFB8;
+    --line-strong:#C3B795;
+    --accent:#E1581F;        /* warm, restrained Clemson-adjacent orange */
+    --accent-deep:#B23F12;
+    --regalia:#3A2A52;       /* deep regalia for the dark section */
+    --regalia-2:#241830;
+    --gold:#C99A3A;
+    --good:#2F6B45;
+    --serif:"Fraunces",Georgia,serif;
+    --sans:"Public Sans",-apple-system,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,monospace;
+    --maxw:1180px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:18px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+    overflow-x:hidden;
+  }
+  /* paper grain */
+  body::before{
+    content:"";position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.5;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+    mix-blend-mode:multiply;
+  }
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 32px;position:relative;z-index:2}
+  a{color:inherit}
+  ::selection{background:var(--accent);color:var(--paper)}
+
+  /* ---------- top bar ---------- */
+  header{
+    position:sticky;top:0;z-index:50;
+    background:color-mix(in srgb,var(--paper) 88%,transparent);
+    backdrop-filter:saturate(140%) blur(8px);
+    border-bottom:1px solid var(--line);
+  }
+  .bar{display:flex;align-items:center;justify-content:space-between;height:62px}
+  .mark{font-family:var(--mono);font-weight:600;font-size:15px;letter-spacing:.02em;display:flex;align-items:center;gap:10px}
+  .mark .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 22%,transparent)}
+  .mark b{color:var(--ink)} .mark span{color:var(--muted)}
+  nav.links{display:flex;gap:26px;font-size:14px;font-weight:500}
+  nav.links a{color:var(--ink-soft);text-decoration:none;position:relative;padding:4px 0}
+  nav.links a::after{content:"";position:absolute;left:0;bottom:0;width:0;height:1.5px;background:var(--accent);transition:width .28s ease}
+  nav.links a:hover{color:var(--ink)} nav.links a:hover::after{width:100%}
+  .tag{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:var(--accent-deep);border:1px solid var(--line-strong);border-radius:2px;padding:4px 8px;background:var(--paper-2)}
+  @media(max-width:740px){nav.links{display:none}}
+
+  /* ---------- hero ---------- */
+  .hero{padding:96px 0 72px;position:relative}
+  .eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--accent-deep);margin-bottom:26px}
+  .eyebrow .slash{color:var(--line-strong)}
+  h1{
+    font-family:var(--serif);
+    font-weight:600;
+    font-size:clamp(42px,7vw,86px);
+    line-height:.98;
+    letter-spacing:-.015em;
+    max-width:14ch;
+    font-optical-sizing:auto;
+  }
+  h1 em{font-style:italic;color:var(--accent-deep);font-weight:500}
+  .lede{margin-top:34px;font-size:clamp(19px,2.3vw,23px);line-height:1.5;max-width:54ch;color:var(--ink-soft)}
+  .lede b{color:var(--ink);font-weight:600}
+  .hero-meta{margin-top:46px;display:flex;flex-wrap:wrap;gap:14px 30px;align-items:center;font-family:var(--mono);font-size:13px;color:var(--muted)}
+  .hero-meta .pill{display:inline-flex;align-items:center;gap:8px}
+  .hero-meta .pill::before{content:"";width:6px;height:6px;background:var(--accent);transform:rotate(45deg)}
+
+  /* official stamp */
+  .stamp{
+    position:absolute;right:8px;top:84px;width:178px;height:178px;
+    display:grid;place-items:center;color:var(--accent-deep);
+    transform:rotate(-11deg);opacity:.92;
+  }
+  .stamp svg{width:100%;height:100%}
+  .stamp .core{position:absolute;text-align:center;font-family:var(--mono);text-transform:uppercase}
+  .stamp .core .big{display:block;font-size:13px;letter-spacing:.12em;font-weight:600;line-height:1.25}
+  .stamp .core .sm{display:block;font-size:8.5px;letter-spacing:.22em;margin-top:6px;color:var(--accent)}
+  @media(max-width:900px){.stamp{display:none}}
+
+  /* ---------- section scaffolding ---------- */
+  section{padding:84px 0;position:relative}
+  .sec-head{display:flex;gap:18px;align-items:baseline;margin-bottom:40px}
+  .sec-no{font-family:var(--mono);font-size:13px;color:var(--accent-deep);font-weight:600;letter-spacing:.1em;padding-top:6px}
+  .sec-title{font-family:var(--serif);font-weight:600;font-size:clamp(28px,4vw,44px);line-height:1.05;letter-spacing:-.01em}
+  .rule{height:1px;background:var(--line);width:100%;margin:0}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+
+  /* problem section: editorial columns */
+  .cols{display:grid;grid-template-columns:1.1fr 1fr;gap:54px;align-items:start}
+  @media(max-width:820px){.cols{grid-template-columns:1fr;gap:34px}}
+  .cols p{margin-bottom:18px;color:var(--ink-soft)}
+  .cols p.big{font-family:var(--serif);font-size:clamp(22px,2.6vw,27px);line-height:1.34;color:var(--ink);font-weight:400}
+  .drop::first-letter{font-family:var(--serif);font-weight:600;font-size:3.4em;float:left;line-height:.72;padding:8px 12px 0 0;color:var(--accent-deep)}
+  .aside{border-left:2px solid var(--accent);padding:6px 0 6px 22px;font-family:var(--serif);font-style:italic;font-size:20px;line-height:1.45;color:var(--ink)}
+  .aside small{display:block;font-family:var(--mono);font-style:normal;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:12px}
+
+  /* ---------- dark feature: the big idea ---------- */
+  .dark{background:linear-gradient(160deg,var(--regalia),var(--regalia-2));color:#EDE6F2;border-block:1px solid #0000}
+  .dark::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.4;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");mix-blend-mode:overlay}
+  .dark .sec-no{color:var(--gold)}
+  .dark .kicker{color:#B9A9CE}
+  .bigidea{font-family:var(--serif);font-weight:500;font-size:clamp(30px,5vw,56px);line-height:1.05;letter-spacing:-.01em;max-width:18ch}
+  .bigidea em{font-style:italic;color:var(--gold)}
+  .bigidea .strike{color:#9D8DB4;text-decoration:line-through;text-decoration-color:var(--accent);text-decoration-thickness:2px}
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:26px;margin-top:60px}
+  @media(max-width:820px){.steps{grid-template-columns:1fr;gap:18px}}
+  .step{border:1px solid #ffffff26;border-radius:4px;padding:26px 24px;background:#ffffff0a;position:relative;overflow:hidden}
+  .step .n{font-family:var(--mono);font-size:12px;color:var(--gold);letter-spacing:.14em}
+  .step h3{font-family:var(--serif);font-weight:600;font-size:23px;margin:14px 0 10px;color:#fff}
+  .step p{font-size:15.5px;color:#CFC3DD;line-height:1.55}
+  .step .glyph{position:absolute;right:-10px;bottom:-18px;font-family:var(--serif);font-size:120px;color:#ffffff0d;font-weight:700;line-height:1}
+
+  /* ---------- the ledger (difference) ---------- */
+  .ledger{border:1.5px solid var(--ink);border-radius:5px;overflow:hidden;background:var(--paper-2);box-shadow:8px 8px 0 var(--line-strong)}
+  .ledger-top{display:grid;grid-template-columns:1fr 1fr}
+  .ledger-top>div{padding:18px 26px;font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase}
+  .lt-a{background:var(--ink);color:var(--paper-2)}
+  .lt-b{background:var(--accent);color:#fff;font-weight:600}
+  .lrow{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line-strong)}
+  .lrow>div{padding:20px 26px}
+  .lrow .c-a{color:var(--muted);border-right:1px solid var(--line-strong);position:relative}
+  .lrow .c-a::before{content:"✕";position:absolute;left:8px;top:20px;color:#bdb398;font-size:12px}
+  .lrow .c-b{color:var(--ink);font-weight:500;position:relative}
+  .lrow .c-b::before{content:"✓";position:absolute;left:8px;top:20px;color:var(--good);font-size:12px;font-weight:700}
+  .lrow .c-a,.lrow .c-b{padding-left:34px}
+  .lrow:nth-child(even) .c-b{background:#ffffff55}
+  @media(max-width:760px){
+    .ledger-top,.lrow{grid-template-columns:1fr}
+    .lrow .c-a{border-right:none;border-bottom:1px solid var(--line-strong)}
+    .ledger-top .lt-a{display:none}
+  }
+  .ledger-foot{font-family:var(--serif);font-style:italic;font-size:clamp(20px,2.6vw,26px);line-height:1.4;text-align:center;margin-top:40px;color:var(--ink);max-width:30ch;margin-inline:auto}
+  .ledger-foot b{font-style:normal;color:var(--accent-deep);font-weight:600}
+
+  /* ---------- worked example ---------- */
+  .demo{display:grid;grid-template-columns:1fr 1.15fr;gap:48px;align-items:center}
+  @media(max-width:880px){.demo{grid-template-columns:1fr;gap:30px}}
+  .demo .lead p{color:var(--ink-soft);margin-bottom:16px}
+  .demo .ask{font-family:var(--serif);font-size:clamp(24px,3vw,32px);line-height:1.25;color:var(--ink);font-weight:500;border-left:3px solid var(--accent);padding-left:20px;margin-bottom:24px}
+  .card{background:#fff;border:1px solid var(--line-strong);border-radius:8px;box-shadow:0 24px 50px -28px #4a443855,0 2px 0 var(--line);overflow:hidden}
+  .card-h{padding:16px 22px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;background:var(--paper-2)}
+  .card-h .t{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  .card-h .verdict{font-family:var(--mono);font-size:11px;font-weight:600;color:#fff;background:var(--good);padding:4px 9px;border-radius:3px;letter-spacing:.08em}
+  .card-body{padding:22px}
+  .understood{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:22px}
+  .chip{font-family:var(--mono);font-size:12px;border:1px dashed var(--line-strong);background:var(--paper);padding:5px 10px;border-radius:20px;color:var(--ink-soft);display:inline-flex;gap:7px;align-items:center}
+  .chip b{color:var(--ink);font-weight:600}
+  .chip .edit{color:var(--accent-deep);font-size:10px;text-transform:uppercase;letter-spacing:.08em}
+  .chain{list-style:none;position:relative;margin-left:6px}
+  .chain::before{content:"";position:absolute;left:7px;top:6px;bottom:14px;width:2px;background:var(--line-strong)}
+  .chain li{position:relative;padding:0 0 18px 30px}
+  .chain li::before{content:"";position:absolute;left:0;top:3px;width:16px;height:16px;border-radius:50%;background:var(--paper);border:2px solid var(--accent);}
+  .chain li.last::before{background:var(--good);border-color:var(--good)}
+  .chain .lbl{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-deep);display:block;margin-bottom:3px}
+  .chain .txt{font-size:15px;color:var(--ink);line-height:1.5}
+  .chain .cite{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-top:4px;display:inline-block;border-bottom:1px dotted var(--line-strong)}
+  .card-foot{border-top:1px solid var(--line);padding:14px 22px;font-size:12.5px;color:var(--muted);display:flex;gap:10px;align-items:flex-start;background:var(--paper-2)}
+  .card-foot svg{flex:none;margin-top:2px}
+  .illus{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:14px;text-align:center}
+
+  /* ---------- roles ---------- */
+  .roles{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+  @media(max-width:900px){.roles{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:520px){.roles{grid-template-columns:1fr}}
+  .role{border:1px solid var(--line);border-radius:5px;padding:24px;background:var(--paper-2);transition:transform .3s ease,box-shadow .3s ease,border-color .3s ease}
+  .role:hover{transform:translateY(-4px);box-shadow:0 18px 30px -22px #4a443866;border-color:var(--line-strong)}
+  .role .ic{font-family:var(--serif);font-size:30px;font-weight:700;color:var(--accent-deep);line-height:1}
+  .role h3{font-family:var(--serif);font-size:21px;font-weight:600;margin:16px 0 8px}
+  .role .want{font-style:italic;color:var(--muted);font-size:14px;margin-bottom:12px}
+  .role p{font-size:14.5px;color:var(--ink-soft);line-height:1.5}
+
+  /* ---------- why / choices ---------- */
+  .why{display:grid;grid-template-columns:repeat(2,1fr);gap:2px;background:var(--line);border:1px solid var(--line);border-radius:5px;overflow:hidden}
+  @media(max-width:760px){.why{grid-template-columns:1fr}}
+  .why .item{background:var(--paper);padding:28px 28px}
+  .why .item h3{font-family:var(--serif);font-size:21px;font-weight:600;margin-bottom:8px;display:flex;gap:12px;align-items:baseline}
+  .why .item h3 .num{font-family:var(--mono);font-size:12px;color:var(--accent-deep)}
+  .why .item p{font-size:15px;color:var(--ink-soft);line-height:1.55}
+
+  /* ---------- footer ---------- */
+  footer{background:var(--ink);color:#CFC6B4;padding:70px 0 40px;position:relative;z-index:2}
+  footer .ft-top{display:flex;justify-content:space-between;flex-wrap:wrap;gap:30px;align-items:flex-start;border-bottom:1px solid #ffffff1f;padding-bottom:36px}
+  footer .ft-mark{font-family:var(--serif);font-size:clamp(30px,5vw,52px);font-weight:600;color:var(--paper);line-height:1;letter-spacing:-.01em}
+  footer .ft-mark em{font-style:italic;color:var(--accent)}
+  footer .ft-note{max-width:42ch;font-size:14.5px;color:#A9A08C;line-height:1.55}
+  footer .ft-links{display:flex;gap:14px;flex-wrap:wrap;margin-top:18px}
+  footer a.btn{font-family:var(--mono);font-size:13px;letter-spacing:.04em;text-decoration:none;border:1px solid #ffffff33;padding:11px 16px;border-radius:3px;color:var(--paper);transition:background .25s,border-color .25s}
+  footer a.btn:hover{background:var(--accent);border-color:var(--accent)}
+  footer a.btn.ghost:hover{background:#ffffff12;border-color:#ffffff55}
+  footer .ft-bottom{display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-top:26px;font-family:var(--mono);font-size:11.5px;color:#88806e;letter-spacing:.04em}
+  .status-flag{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:var(--gold);border:1px solid #ffffff2e;padding:5px 10px;border-radius:2px}
+  .status-flag .d{width:7px;height:7px;border-radius:50%;background:var(--gold);animation:pulse 2.4s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+  /* reveal — progressive enhancement: hidden only when JS is active, so the
+     page is fully readable with JS disabled or if the observer never fires */
+  .reveal{transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+  .js .reveal{opacity:0;transform:translateY(22px)}
+  .js .reveal.in{opacity:1;transform:none}
+  .reveal.d1{transition-delay:.08s}.reveal.d2{transition-delay:.16s}.reveal.d3{transition-delay:.24s}.reveal.d4{transition-delay:.32s}
+  @media(prefers-reduced-motion:reduce){.js .reveal{opacity:1!important;transform:none!important;transition:none}}
+</style>
+</head>
+<body>
+<script>document.documentElement.classList.add('js')</script>
+
+<header>
+  <div class="wrap bar">
+    <div class="mark"><span class="dot"></span><b>ask_procurement</b></div>
+    <nav class="links">
+      <a href="#problem">The problem</a>
+      <a href="#idea">The idea</a>
+      <a href="#difference">The difference</a>
+      <a href="#example">Example</a>
+      <a href="#why">Why</a>
+    </nav>
+    <span class="tag">Design preview</span>
+  </div>
+</header>
+
+<!-- ===================== HERO ===================== -->
+<section class="hero">
+  <div class="wrap">
+    <div class="stamp" aria-hidden="true">
+      <svg viewBox="0 0 200 200">
+        <circle cx="100" cy="100" r="94" fill="none" stroke="currentColor" stroke-width="2"/>
+        <circle cx="100" cy="100" r="78" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="2 4"/>
+        <path id="circ" d="M100,100 m-86,0 a86,86 0 1,1 172,0 a86,86 0 1,1 -172,0" fill="none"/>
+        <text font-family="IBM Plex Mono" font-size="11.5" letter-spacing="3.4" fill="currentColor">
+          <textPath href="#circ" startOffset="0%">CITES EVERY ANSWER · REFUSES WHEN UNSURE · </textPath>
+        </text>
+      </svg>
+      <span class="core"><span class="big">Shows<br>its work</span><span class="sm">verified</span></span>
+    </div>
+    <div class="eyebrow reveal in">Clemson Procurement <span class="slash">/</span> a different kind of assistant</div>
+    <h1 class="reveal in d1">Ask how to buy it. Get an answer you can <em>defend.</em></h1>
+    <p class="lede reveal in d2">Procurement questions have <b>right answers</b> — exact dollar thresholds, the method you're required to use, who has to approve it. ask_procurement looks the rule up, shows the reasoning, and cites the policy. <b>It never makes up a number.</b></p>
+    <div class="hero-meta reveal in d3">
+      <span class="pill">Clemson + SC state + federal rules</span>
+      <span class="pill">Built for buyers, business officers, pros &amp; the help desk</span>
+      <span class="pill">Web · voice · other software</span>
+    </div>
+  </div>
+</section>
+
+<div class="wrap"><div class="rule"></div></div>
+
+<!-- ===================== PROBLEM ===================== -->
+<section id="problem">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="sec-no">01</span>
+      <h2 class="sec-title">Why a regular chatbot gets procurement wrong</h2>
+    </div>
+    <div class="cols">
+      <div class="reveal">
+        <div class="kicker">The everyday tool</div>
+        <p class="big">You've seen the pattern: attach a PDF, ask a question, get a confident paragraph back.</p>
+        <p class="drop">For most things that's fine. For procurement it's a trap. These tools work by <b>similarity</b> — they pull the passages that <em>look</em> related to your question, then let a language model write a fluent answer. Along the way, the model is perfectly willing to state a dollar threshold that isn't quite right, blend a state rule with a federal one, or miss the exception that changes everything.</p>
+        <p>And the cost of "almost right" here isn't a typo. It's a split purchase that should have been bid, a missing quote, a grant expense that gets clawed back. The whole reason someone asks is <em>"I don't want to get in trouble."</em> A plausible wrong answer is worse than no answer.</p>
+      </div>
+      <div class="reveal d2">
+        <div class="kicker">What makes it hard</div>
+        <div class="aside">
+          "Three written quotes are required &mdash; <em>unless</em> it's on a state contract; <em>but</em> a federal grant imposes its own limit; <em>see also</em> the IT carve-out."
+          <small>— the shape of nearly every real procurement rule</small>
+        </div>
+        <p style="margin-top:24px">The rules live in long PDFs and sprawling websites, in tables of thresholds, across <b>three overlapping rulebooks</b> — Clemson policy, South Carolina state law, and federal Uniform Guidance for grants — that cross-reference and sometimes contradict each other. Reading is not the hard part. <b>Applying the right rule, and proving you did,</b> is.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== THE BIG IDEA (dark) ===================== -->
+<section id="idea" class="dark">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="sec-no">02</span>
+      <span class="kicker" style="align-self:center">The core idea</span>
+    </div>
+    <p class="bigidea reveal">It doesn't <span class="strike">read the rules and talk about them.</span> It <em>resolves</em> the rules and <em>proves</em> the answer.</p>
+    <div class="steps">
+      <div class="step reveal d1">
+        <span class="n">STEP 01</span>
+        <h3>Understand what you're buying</h3>
+        <p>It works out the three things the rule depends on — roughly how much, what kind of thing (in Clemson's own purchasing categories), and what's paying for it — and shows you, so you can correct it before it answers.</p>
+        <span class="glyph">?</span>
+      </div>
+      <div class="step reveal d2">
+        <h3>Look up the actual rule</h3>
+        <span class="n">STEP 02</span>
+        <p>Not a similar-sounding paragraph — the governing rule, from a <b>compiled rulebook every entry of which a procurement expert has confirmed.</b> When rules chain together, it follows the chain and keeps the receipts.</p>
+        <span class="glyph">§</span>
+      </div>
+      <div class="step reveal d3">
+        <h3>Explain it — and prove it</h3>
+        <span class="n">STEP 03</span>
+        <p>It answers in plain language for your role, with a citation on every claim and the reasoning shown. If it can't find a rule that fits, <b>it says so</b> instead of guessing.</p>
+        <span class="glyph">✓</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== THE DIFFERENCE (ledger) ===================== -->
+<section id="difference">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="sec-no">03</span>
+      <h2 class="sec-title">The difference, line by line</h2>
+    </div>
+    <div class="ledger reveal d1">
+      <div class="ledger-top">
+        <div class="lt-a">A typical chatbot you attach docs to</div>
+        <div class="lt-b">ask_procurement</div>
+      </div>
+      <div class="lrow"><div class="c-a">Paraphrases the document &mdash; and can confidently invent a dollar threshold</div><div class="c-b">Looks the rule up in a human-verified rulebook — it never makes up a number</div></div>
+      <div class="lrow"><div class="c-a">Finds passages that are "close enough" by similarity</div><div class="c-b">Resolves the actual governing rule and shows the cited chain of how it got there</div></div>
+      <div class="lrow"><div class="c-a">Confidently wrong at the edges</div><div class="c-b">Says "I can't confirm that" and points you to the source instead of guessing</div></div>
+      <div class="lrow"><div class="c-a">No audit trail — "trust me"</div><div class="c-b">Every answer carries citations and its reasoning — "verify me"</div></div>
+      <div class="lrow"><div class="c-a">One generic voice for everyone</div><div class="c-b">Speaks differently to a buyer, a business officer, a pro, and an outside vendor</div></div>
+      <div class="lrow"><div class="c-a">Goes stale the moment a policy PDF changes</div><div class="c-b">Re-checks the sources and flags affected rules for re-review</div></div>
+      <div class="lrow"><div class="c-a">Treats Clemson + state + federal as one blob</div><div class="c-b">Knows they overlap and conflict, and applies the stricter rule on purpose</div></div>
+    </div>
+    <p class="ledger-foot reveal">A typical chatbot <b>reads</b> the rules and talks about them.<br>This one <b>resolves</b> the rules and proves its answer.</p>
+  </div>
+</section>
+
+<!-- ===================== WORKED EXAMPLE ===================== -->
+<section id="example" style="background:var(--paper-2);border-block:1px solid var(--line)">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="sec-no">04</span>
+      <h2 class="sec-title">What an answer looks like</h2>
+    </div>
+    <div class="demo">
+      <div class="lead reveal">
+        <div class="ask">"Can I buy a $300 table on my NSF grant?"</div>
+        <p>A regular chatbot returns a paragraph. ask_procurement returns a <b>resolved card</b>: what it understood, the rule it applied, the chain when more than one rule interacts, and a citation on every line.</p>
+        <p>The dollar figures and methods are looked up — never generated. And because a federal grant is involved, it knows to check the <b>stricter</b> of the state and federal limits, not just one.</p>
+        <p style="color:var(--muted);font-size:15px">Every underlined citation opens the exact policy passage it came from. Get the category wrong? Fix the chip and it re-resolves.</p>
+      </div>
+      <div class="reveal d2">
+        <div class="card">
+          <div class="card-h">
+            <span class="t">Resolved · with sources</span>
+            <span class="verdict">ALLOWED</span>
+          </div>
+          <div class="card-body">
+            <div class="understood">
+              <span class="chip">Buying: <b>Furniture</b> <span class="edit">edit</span></span>
+              <span class="chip">Amount: <b>$300</b></span>
+              <span class="chip">Funds: <b>Federal grant (NSF)</b></span>
+            </div>
+            <ul class="chain">
+              <li>
+                <span class="lbl">Base rule · SC state</span>
+                <span class="txt">$300 is below the small-purchase quote threshold — competitive quotes are not required.</span>
+                <span class="cite">SC Consolidated Procurement Code §11-35 ▸</span>
+              </li>
+              <li>
+                <span class="lbl">Overlay · federal grant</span>
+                <span class="txt">On grant funds, the federal micro-purchase limit also applies — $300 is under it, so it holds.</span>
+                <span class="cite">2 CFR 200.320(a) ▸</span>
+              </li>
+              <li class="last">
+                <span class="lbl">Result</span>
+                <span class="txt"><b>P-Card is fine.</b> No competition, no extra approval. Keep the receipt and confirm the expense is allowable on the award.</span>
+                <span class="cite">Clemson Procurement — P-Card Policy ▸</span>
+              </li>
+            </ul>
+          </div>
+          <div class="card-foot">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M8 1l6 3v4c0 3.5-2.6 6.3-6 7-3.4-.7-6-3.5-6-7V4l6-3z" stroke="#2F6B45" stroke-width="1.3" fill="#2F6B4518"/><path d="M5.4 8l1.8 1.8L11 6" stroke="#2F6B45" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Had no confirmed rule matched, it would not guess — it would say so and link you to the closest policy and a person who can help.</span>
+          </div>
+        </div>
+        <p class="illus">Illustrative — real thresholds are confirmed by procurement staff before going live</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== ROLES ===================== -->
+<section>
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="sec-no">05</span>
+      <h2 class="sec-title">One brain, four voices</h2>
+    </div>
+    <p class="reveal" style="max-width:60ch;margin-bottom:36px;color:var(--ink-soft)">The same verified rules and the same proof underneath — but the answer is shaped for who's asking. Nothing is reworded into a different meaning; only the depth and the language change.</p>
+    <div class="roles">
+      <div class="role reveal d1">
+        <div class="ic">B</div>
+        <h3>Buyer</h3>
+        <div class="want">"Just don't get me in trouble."</div>
+        <p>The bottom line, the next two steps, and the guardrails — like a warning not to split an order to dodge a threshold.</p>
+      </div>
+      <div class="role reveal d2">
+        <div class="ic">O</div>
+        <h3>Business officer</h3>
+        <div class="want">"Did this follow the rules?"</div>
+        <p>The full obligation, the documents that must exist, and the reimbursement angle — framed for oversight.</p>
+      </div>
+      <div class="role reveal d3">
+        <div class="ic">P</div>
+        <h3>Procurement pro</h3>
+        <div class="want">"Give me the rule and the cite."</div>
+        <p>Dense and exact, the full decision chain always shown, every threshold sourced to its section.</p>
+      </div>
+      <div class="role reveal d4">
+        <div class="ic">H</div>
+        <h3>Help desk &amp; vendors</h3>
+        <div class="want">"Walk me through it."</div>
+        <p>Step-by-step guidance — with a vendor-facing mode that uses outside language and hides internal-only procedures.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== WHY THESE CHOICES ===================== -->
+<section id="why" style="background:var(--paper-2);border-block:1px solid var(--line)">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="sec-no">06</span>
+      <h2 class="sec-title">Why it's built this way</h2>
+    </div>
+    <div class="why reveal d1">
+      <div class="item">
+        <h3><span class="num">a.</span> A human signs off on every rule</h3>
+        <p>The system reads the policies and proposes rules, but nothing becomes an answer until a procurement expert confirms it. The AI drafts; a person decides. No extracted dollar figure goes live unreviewed.</p>
+      </div>
+      <div class="item">
+        <h3><span class="num">b.</span> It shows its work</h3>
+        <p>Every answer carries the chain of rules it applied and a citation for each one, so a buyer can act and an auditor can verify — from the same answer.</p>
+      </div>
+      <div class="item">
+        <h3><span class="num">c.</span> It refuses rather than guesses</h3>
+        <p>When no confirmed rule clearly applies, it says so and points to the source. In compliance, "I'm not sure — here's where to look" is the right answer, not a failure.</p>
+      </div>
+      <div class="item">
+        <h3><span class="num">d.</span> It respects overlapping jurisdictions</h3>
+        <p>Clemson, state, and federal rules are modeled as what they are — separate, interacting regimes — and when they conflict on grant money, it applies the stricter one on purpose.</p>
+      </div>
+      <div class="item">
+        <h3><span class="num">e.</span> It stays current</h3>
+        <p>It re-checks the source websites and documents on a schedule. When a policy changes, the rules built from it are flagged for re-review rather than silently trusted.</p>
+      </div>
+      <div class="item">
+        <h3><span class="num">f.</span> It's reachable everywhere</h3>
+        <p>The same verified answers come through a web page, by voice, and through a connector other software and AI agents can call — one source of truth, not three.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== FOOTER ===================== -->
+<footer>
+  <div class="wrap">
+    <div class="ft-top">
+      <div>
+        <div class="ft-mark">ask<em>_</em>procurement</div>
+        <p class="ft-note" style="margin-top:16px">A procurement assistant for Clemson that resolves the rules and proves its answer — across institutional, South Carolina state, and federal grant requirements.</p>
+        <div class="ft-links">
+          <a class="btn ghost" href="https://www.clemson.edu/procurement/">Clemson Procurement</a>
+          <a class="btn ghost" href="https://procurement.sc.gov">SC Procurement</a>
+        </div>
+        <p class="ft-note" style="margin-top:14px;font-size:13px;color:#8a8270">The full technical design specification is maintained privately and available on request.</p>
+      </div>
+      <div style="text-align:right">
+        <span class="status-flag"><span class="d"></span> Design stage</span>
+        <p class="ft-note" style="margin-top:16px;color:#8a8270;font-size:13px">This page explains the intended design.<br>Not yet a live system.</p>
+      </div>
+    </div>
+    <div class="ft-bottom">
+      <span>Clemson University · Procurement &amp; Business Services</span>
+      <span>Resolve the rule · cite the source · refuse when unsure</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  if(!('IntersectionObserver' in window)){
+    document.querySelectorAll('.reveal').forEach(el=>el.classList.add('in'));
+  } else {
+    const io = new IntersectionObserver((entries)=>{
+      for(const e of entries){ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} }
+    },{threshold:0.12, rootMargin:'0px 0px -8% 0px'});
+    document.querySelectorAll('.reveal:not(.in)').forEach(el=>io.observe(el));
+  }
+
+  // editable category chip — tiny touch of "you can correct it"
+  const chip = document.querySelector('.chip .edit');
+  if(chip){
+    chip.style.cursor='pointer';
+    chip.addEventListener('click',()=>{
+      const b = chip.parentElement.querySelector('b');
+      const opts=['Furniture','Equipment','IT'];
+      b.textContent = opts[(opts.indexOf(b.textContent)+1)%opts.length];
+      b.style.color='var(--accent-deep)';
+      setTimeout(()=>b.style.color='',600);
+    });
+  }
+</script>
+</body>
+</html>
