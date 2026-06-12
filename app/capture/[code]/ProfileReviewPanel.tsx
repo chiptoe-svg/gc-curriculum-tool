@@ -5,10 +5,12 @@ import {
   captureProfileSchema,
   type CaptureProfile,
   type CaptureCompetency,
+  type CaptureIncomingExpectation,
   type CaptureProfileSourceType,
   type CaptureProfileCitationType,
   type CaptureReviewerStatus,
 } from '@/lib/ai/capture/schema';
+import { formatIncomingRequirements } from '@/lib/capture/incoming-requirements';
 import { VerificationSummary } from './VerificationSummary';
 import { LegacyBanner } from './LegacyBanner';
 import { CitationDrawer, type CitationTarget } from './CitationDrawer';
@@ -651,6 +653,33 @@ function CourseEmphasis({ items }: { items: ReadonlyArray<{
  * section — this component just makes the copying frictionless.
  */
 function RevisedObjectivesDraft({ items }: { items: string[] }) {
+  return (
+    <PasteReadyList
+      title="Revised objectives — paste-ready"
+      items={items}
+      footnote="Consolidated from the existing catalog objectives + the audit's findings. Copy these into your syllabus if you want them; the catalog is not modified automatically."
+    />
+  );
+}
+
+/**
+ * Paste-ready incoming requirements (2026-06-12 walkthrough): the
+ * audit-confirmed incoming_expectations, formatted as syllabus lines via
+ * the pure formatIncomingRequirements helper — derived, never generated,
+ * so it's present on every profile that probed incoming skills.
+ */
+export function IncomingRequirementsDraft({ expectations }: { expectations: ReadonlyArray<CaptureIncomingExpectation> }) {
+  if (expectations.length === 0) return null;
+  return (
+    <PasteReadyList
+      title="Incoming requirements — paste-ready"
+      items={formatIncomingRequirements(expectations)}
+      footnote={'The audit-confirmed list of what students should arrive able to do — formatted for the syllabus or the sheet’s "Required incoming skills" cell. Derived from the incoming expectations above; nothing is written back automatically.'}
+    />
+  );
+}
+
+function PasteReadyList({ title, items, footnote }: { title: string; items: string[]; footnote: string }) {
   const [copiedIdx, setCopiedIdx] = useState<number | 'all' | null>(null);
   const [copyError, setCopyError] = useState<string | null>(null);
 
@@ -697,7 +726,7 @@ function RevisedObjectivesDraft({ items }: { items: string[] }) {
     <div className="border-t pt-3">
       <div className="flex items-baseline justify-between gap-2">
         <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Revised objectives — paste-ready
+          {title}
         </h4>
         <button
           type="button"
@@ -725,7 +754,7 @@ function RevisedObjectivesDraft({ items }: { items: string[] }) {
         ))}
       </ol>
       <p className="mt-2 text-[10px] italic text-muted-foreground">
-        Consolidated from the existing catalog objectives + the audit&apos;s findings. Copy these into your syllabus if you want them; the catalog is not modified automatically.
+        {footnote}
       </p>
       {copyError && (
         <p className="mt-1 text-[10px] text-destructive">{copyError}</p>
@@ -1338,6 +1367,7 @@ export function ProfileReviewPanel({
             {working.revised_objectives_draft && working.revised_objectives_draft.length > 0 && (
               <RevisedObjectivesDraft items={working.revised_objectives_draft} />
             )}
+            <IncomingRequirementsDraft expectations={working.incoming_expectations} />
           </div>
         )}
       </div>

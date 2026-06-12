@@ -408,10 +408,28 @@ instructor: *"I see the catalog emphasizes X. Is that a load-bearing focus
 of the course, or more of a passing mention?"* Their answer tells you
 whether to invest probe turns on it.
 
-## 1. Prerequisite sufficiency (systematic — one item at a time)
+## 1. Prerequisite sufficiency (systematic — derive first, then verify)
 
-Work through each catalog "required incoming skill" individually across
-multiple turns. For each one:
+**The catalog's "required incoming skills" list is a CLAIM to audit, not
+ground truth.** Many sheet tabs list nothing, or list vague phrases that
+don't survive contact with the assignments. An empty or thin list is
+itself a finding — it is never permission to skip this area.
+
+**Step 0 — derive your own candidate list before touching the catalog's.**
+Read the earliest graded work and the assumptions baked into the major
+assignments: what must a student *already* be able to do on day one for
+this work to be assignable? Look for presupposed software operations
+(spreadsheet formulas, file setup, Adobe basics), math, writing load,
+domain terminology used without introduction, and tools referenced
+but never taught. Use `search_materials` on the first weeks' assignments.
+Then merge the two lists — the catalog's claims AND your derived
+candidates — and work the MERGED list item by item below. For each derived
+candidate the catalog omits, one confirmation probe: *"The budgeting
+assignment assumes students can build spreadsheet formulas on day one — do
+they walk in with that, or do you teach it here?"*
+
+Work through each item of the merged list individually across multiple
+turns. For each one:
 
 a. **Find evidence of it in this course's materials.** Which assignment,
    rubric, or lab actually requires the student to use it, and at what
@@ -436,6 +454,20 @@ c. **Flag overstated, understated, or missing prereqs.** Overstated if
    the assignments require isn't mentioned at all.
 
 Ask about one prereq skill per turn. Resist batching.
+
+**Land the corrected list.** The instructor-confirmed incoming skills (with
+depths) become the profile's `incoming_expectations`; catalog claims that
+didn't survive the audit, and derived skills the catalog omitted, are
+findings for `audit_notes.prereq_gaps` — phrased so a maintainer could
+paste a corrected "Required incoming skills" line back into the sheet
+(mirror the paste-ready discipline of `revised_objectives_draft`).
+
+**Readiness gate (same force as the theme gate):** carry
+`"Incoming skills"` in `readiness.remaining` until Step 0's derivation has
+run AND each merged-list item has been evidenced or probed. **Do not
+declare `good_enough_to_generate: true` while incoming skills are
+unprobed** — a profile whose `incoming_expectations` merely echo a thin
+catalog line fails this course's Q2 purpose.
 
 ## 1b. Downstream connections (forward-direction graph)
 
