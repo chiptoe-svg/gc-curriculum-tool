@@ -142,6 +142,7 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
   }
 
   async function scanLinkedDocs() {
+    if (scanning) return; // re-entrance guard: auto-scan-after-import + a manual click must not race the busy flag
     setScanning(true);
     setScanMsg(null);
     try {
@@ -263,7 +264,7 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
         <button
           type="button"
           onClick={scanLinkedDocs}
-          disabled={scanning}
+          disabled={scanning || reextracting}
           title={scanned
             ? 'Already scanned — click to re-scan for newly added links'
             : 'Find Google Docs / Drive PDFs / YouTube linked inside your Canvas content and pull them in (they appear under Other materials)'}

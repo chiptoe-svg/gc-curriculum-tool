@@ -1227,10 +1227,16 @@ export function ProfileReviewPanel({
               <h3 className="text-sm font-semibold">The AI is confident about these ({confident.length})</h3>
               <button
                 type="button"
-                onClick={() => setExpanded(new Set(confident.map(t => t.i)))}
+                onClick={() =>
+                  setExpanded(
+                    expanded.size >= confident.length
+                      ? new Set()
+                      : new Set(confident.map(t => t.i)),
+                  )
+                }
                 className="text-[11px] text-muted-foreground underline hover:text-foreground"
               >
-                Open all ▾
+                {expanded.size >= confident.length ? 'Close all ▴' : 'Open all ▾'}
               </button>
             </div>
             <p className="text-xs text-muted-foreground">
@@ -1239,6 +1245,21 @@ export function ProfileReviewPanel({
             {confident.map(({ c, i }) =>
               expanded.has(i) ? (
                 <div key={i} className="space-y-1">
+                  {/* Collapse affordance — expansion was one-way before
+                      (2026-06-12 walkthrough: "unable to roll back up"). */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setExpanded(prev => {
+                        const next = new Set(prev);
+                        next.delete(i);
+                        return next;
+                      })
+                    }
+                    className="text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                  >
+                    ▴ collapse this one
+                  </button>
                   <CompetencyCard
                     competency={c}
                     index={i}
