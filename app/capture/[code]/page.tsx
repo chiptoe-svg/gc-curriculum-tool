@@ -123,9 +123,9 @@ export default async function CapturePage({ params, searchParams }: Props) {
           </div>
           <div className="flex items-center gap-4">
             <Link
-              href={`/courses?slug=${encodeURIComponent(slug)}`}
+              href={`/?slug=${encodeURIComponent(slug)}`}
               className="text-sm text-muted-foreground hover:text-foreground"
-              title="Back to the course list"
+              title="Back to the course list (the landing page you came from)"
             >
               Course List
             </Link>

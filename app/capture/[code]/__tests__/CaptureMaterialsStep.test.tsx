@@ -39,10 +39,24 @@ describe('CaptureMaterialsStep — three source-boxes', () => {
     expect(onContinue).toHaveBeenCalled();
   });
 
-  it('shows the aggregate footer with active / ignored counts', () => {
+  // Aggregate active/ignored/token counters were dropped 2026-06-12 (operator
+  // walkthrough) — the boxes summarize themselves. The token figure survives
+  // only as a large-corpus warning at the 150k threshold.
+  it('shows no aggregate counter line for a small corpus', () => {
     render(<CaptureMaterialsStep course={course} materials={[mat({ id: 'a' }), mat({ id: 'b', ignored: true })]} slug="s" catalogSyncedAt={null} onMaterialsChange={noop} onCourseChange={noop} onContinue={noop} />);
-    expect(screen.getByText(/1 active/)).toBeTruthy();
-    expect(screen.getByText(/1 ignored/)).toBeTruthy();
+    expect(screen.queryByText(/active ·/)).toBeNull();
+    expect(screen.queryByText(/k tok/)).toBeNull();
+  });
+
+  it('warns when the active corpus exceeds the large threshold (150k tokens)', () => {
+    const big = mat({ id: 'big', extractedText: 'x'.repeat(700_000) }); // ~175k tokens at 4 chars/tok
+    render(<CaptureMaterialsStep course={course} materials={[big]} slug="s" catalogSyncedAt={null} onMaterialsChange={noop} onCourseChange={noop} onContinue={noop} />);
+    expect(screen.getByText(/large; consider ignoring or summarizing/i)).toBeTruthy();
+  });
+
+  it('renders the materials-manager disclosure as a prominent button', () => {
+    render(<CaptureMaterialsStep course={course} materials={[mat({})]} slug="s" catalogSyncedAt={null} onMaterialsChange={noop} onCourseChange={noop} onContinue={noop} />);
+    expect(screen.getByRole('button', { name: /manage all materials in detail/i })).toBeTruthy();
   });
 
   it('offers a start-anyway path when there are no materials and no synced syllabus', () => {

@@ -27,7 +27,6 @@ export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt,
   const [showManager, setShowManager] = useState(false);
 
   const active = materials.filter((m) => !m.ignored && !m.autoSetAside);
-  const ignored = materials.length - active.length;
   const tokens = active.reduce((sum, m) => sum + (m.extractedText ? estimateTokens(m.extractedText) : 0), 0);
   const tokK = (tokens / 1000).toFixed(tokens >= 10_000 ? 0 : 1);
 
@@ -67,17 +66,25 @@ export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt,
         />
       </div>
 
-      <p className="mt-4 text-[11px] text-muted-foreground">
-        {active.length} active · {ignored} ignored · ~{tokK}k tok
-      </p>
+      {/* Aggregate counters dropped 2026-06-12 (operator walkthrough: "what is
+          this? not sure it is needed" — the boxes already summarize themselves,
+          and row-counts read confusingly against parsed item-counts). The token
+          figure returns ONLY as a warning when the corpus is genuinely large
+          (same 150k threshold as MaterialsPanel's review-before-starting chip). */}
+      {tokens >= 150_000 && (
+        <p className="mt-4 text-[11px] text-amber-700 dark:text-amber-400">
+          ~{tokK}k tokens of material — large; consider ignoring or summarizing items before starting (see the materials manager below).
+        </p>
+      )}
 
-      {/* Low-emphasis escape hatch to the full materials manager (compress, FERPA,
-          digest toggles, per-material detail) — the boxes cover the common cases. */}
-      <div className="mt-3 border-t pt-3">
+      {/* Escape hatch to the full materials manager (compress, FERPA, digest
+          toggles, per-material detail) — promoted to a real button 2026-06-12
+          (operator walkthrough: was too easy to miss). */}
+      <div className="mt-4 border-t pt-4">
         <button
           type="button"
           onClick={() => setShowManager((v) => !v)}
-          className="text-xs text-muted-foreground/70 underline-offset-2 hover:text-foreground hover:underline"
+          className="rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-muted"
         >
           {showManager ? 'Hide the full materials manager' : '⚙ Manage all materials in detail'}
         </button>

@@ -8,7 +8,6 @@ import { fetchCourseMaterials } from '@/lib/capture/fetch-course-materials';
 import {
   isSyllabusCanvasMaterial,
   materialProvenance,
-  relativeTimeFromNow,
 } from '@/lib/capture/material-display';
 
 interface Props {
@@ -69,7 +68,7 @@ export function SyllabusBox({
   const showDiffer = hasSheetCatalog && !!attachedSyllabus;
 
   const statusText = hasSheetCatalog
-    ? `synced ${relativeTimeFromNow(syncedAt, Date.now())}`
+    ? `synced to Google Sheet on ${new Date(syncedAt!).toLocaleDateString(undefined, { month: 'numeric', day: 'numeric', year: '2-digit' })}`
     : attachedSyllabus
       ? `${attachedSyllabus.fileName} attached`
       : 'add a syllabus';
