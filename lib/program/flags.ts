@@ -22,7 +22,13 @@ export interface DriftEntry {
   now: number | null;
 }
 
-/** Open flags matching one matrix cell's stable identity. */
+/**
+ * Open flags matching one matrix cell's stable identity.
+ * Cell flags are expected to have non-null `careerTargetId` and
+ * `subCompetencyId`; a flag row with either null will never match
+ * (silently) — that's correct behavior for malformed rows, stated here
+ * so it's deliberate.
+ */
 export function openFlagsForCell<T extends FlagLike>(
   flags: T[],
   courseCode: string,
@@ -63,6 +69,9 @@ export function flagDrift(
 ): DriftEntry[] | null {
   if (!flagged || !current) return null;
   const out: DriftEntry[] = [];
+  // `flagged[dim]` access is safe under noUncheckedIndexedAccess only because
+  // flagged/current are explicit struct types (property access), not
+  // Record<Dim, …> index signatures — a refactor to Record would change that.
   for (const dim of ['k', 'u', 'd'] as const) {
     if (flagged[dim] !== current[dim]) out.push({ dim, was: flagged[dim], now: current[dim] });
   }

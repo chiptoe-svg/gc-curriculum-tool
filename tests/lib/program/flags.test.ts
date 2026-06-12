@@ -16,7 +16,7 @@ function f(o: Partial<FlagLike>): FlagLike {
     competencyStatement: o.competencyStatement ?? null,
     status: o.status ?? 'open',
     flaggedContext: o.flaggedContext ?? null,
-    ...o,
+    ...o, // spread last so partial-key overrides in o always win
   };
 }
 
