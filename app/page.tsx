@@ -37,6 +37,13 @@ export default async function HomePage() {
     ? `${funnelOrigin}/courses/new?slug=${encodeURIComponent(slug)}`
     : null;
 
+  // Curriculum adviser chat (/ask — streaming Q&A over the wiki). Faculty
+  // surface (Basic Auth + slug on the funnel), same forwarding pattern as
+  // the Edit / Add links above.
+  const askHref = funnelOrigin && slug
+    ? `${funnelOrigin}/ask?slug=${encodeURIComponent(slug)}`
+    : null;
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
@@ -49,15 +56,26 @@ export default async function HomePage() {
               Curriculum
             </h1>
           </div>
-          {facultyHubHref && (
-            <a
-              href={facultyHubHref}
-              className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
-              title="Faculty hub (requires login)"
-            >
-              Faculty hub →
-            </a>
-          )}
+          <div className="flex shrink-0 items-center gap-2">
+            {askHref && (
+              <a
+                href={askHref}
+                className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
+                title="Ask the curriculum adviser — plain-language Q&A over the curriculum wiki (requires login)"
+              >
+                💬 Ask Curriculum Adviser
+              </a>
+            )}
+            {facultyHubHref && (
+              <a
+                href={facultyHubHref}
+                className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
+                title="Faculty hub (requires login)"
+              >
+                Faculty hub →
+              </a>
+            )}
+          </div>
         </div>
       </header>
 
