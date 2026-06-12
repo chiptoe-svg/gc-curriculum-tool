@@ -651,3 +651,48 @@ export const careerTargetDemand = pgTable('career_target_demand', {
   contributingPositionIds: jsonb('contributing_position_ids').$type<string[]>().notNull(),
   generatedAt: timestamp('generated_at', { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [primaryKey({ columns: [t.careerTargetId, t.subCompetencyId] })]);
+
+export const flagTargetKind = pgEnum('flag_target_kind', ['coverage_cell', 'profile_competency']);
+export const flagStatus = pgEnum('flag_status', ['open', 'resolved']);
+
+/** The reading as it stood when flagged (drift baseline). */
+export interface FlaggedContext {
+  k: number | null;
+  u: number | null;
+  d: number | null;
+  matchedCompetency?: string | null;
+  rationale?: string | null;
+  statement?: string | null;
+  source?: string | null;
+}
+
+/**
+ * Faculty dispute flags on AI readings. Keyed by STABLE identifiers — never
+ * by snapshot/cell rows (cells are upsert-overwritten on re-score and deleted
+ * on descriptor change; re-captures mint new snapshot ids):
+ *   coverage_cell       → (courseCode, careerTargetId, subCompetencyId)
+ *   profile_competency  → (courseCode, competencyStatement)
+ * `flaggedContext` freezes the reading AS DISPUTED so read-time drift
+ * ("was D=4 → now D=2") stays computable after re-scores. Flags never
+ * auto-clear; resolution is explicit (name + note + date) and kept forever.
+ * Migration 0034. Design: docs/superpowers/specs/2026-06-12-faculty-flag-mechanism-design.md
+ */
+export const facultyFlags = pgTable('faculty_flags', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  targetKind: flagTargetKind('target_kind').notNull(),
+  courseCode: text('course_code').notNull().references(() => courses.code, { onDelete: 'cascade' }),
+  careerTargetId: text('career_target_id').references(() => careerTargets.id, { onDelete: 'cascade' }),   // cell flags only
+  subCompetencyId: text('sub_competency_id').references(() => subCompetencies.id, { onDelete: 'cascade' }), // cell flags only
+  competencyStatement: text('competency_statement'),                                                        // profile flags only
+  note: text('note').notNull(),
+  flaggedBy: text('flagged_by').notNull(),
+  flaggedContext: jsonb('flagged_context').$type<FlaggedContext | null>(),
+  status: flagStatus('status').notNull().default('open'),
+  resolvedBy: text('resolved_by'),
+  resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+  resolutionNote: text('resolution_note'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => ({
+  cellIdx: index('idx_faculty_flags_cell').on(t.courseCode, t.careerTargetId, t.subCompetencyId),
+  statusIdx: index('idx_faculty_flags_status').on(t.status),
+}));

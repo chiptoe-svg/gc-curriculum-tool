@@ -57,13 +57,15 @@ Migration `0034` is additive and immediately appliable (the held-migration block
 
 All unit-testable, no DB:
 
-- `flagKeyForCell(courseCode, targetId, subCompetencyId)` / `flagKeyForCompetency(courseCode, statement)` — canonical match keys.
+- ~~`flagKeyForCell` / `flagKeyForCompetency` — canonical match keys.~~ **Resolved in implementation review (2026-06-12): dropped.** Nothing consumes string keys — the `openFlagsFor*` filters ARE the canonical matchers, and shipping unused exports would recreate the dead-code pattern this feature exists to fix (A3).
 - `openFlagsForCell(flags, courseCode, targetId, subCompetencyId)` and `openFlagsForStatement(flags, courseCode, statement)` — exact-match filters the UIs use for markers/counts.
 - `flagDrift(flaggedContext, currentCell)` → `null | {dim: 'k'|'u'|'d', was: number|null, now: number|null}[]` — the "score changed since flagged: was D=4 → now D=2" comparison, computed at read time. Null context or missing current cell → `null` (annotated "(no longer in matrix)" / "(context not recorded)").
 
+**Resolved in final review (2026-06-12):** `openFlagsForStatement` was deleted — the review panel files flags but renders no per-row marker (deliberate scope), leaving the helper consumer-less.
+
 ## Queries — `lib/db/flag-queries.ts`
 
-`createFlag(input)`, `listFlags({status?})`, `resolveFlag(id, {resolvedBy, resolutionNote})` (sets status/by/at; rejects an already-resolved id with a clean error), `listOpenFlagCounts()` (grouped counts for markers — one query feeding both matrix and review panel).
+`createFlag(input)`, `listFlags({status?})`, `resolveFlag(id, {resolvedBy, resolutionNote})` (sets status/by/at; rejects an already-resolved id with a clean error), `listOpenFlagCounts()` (grouped counts for markers — one query feeding both matrix and review panel). **Resolved in implementation review (2026-06-12): not built** — the page loader passes full flag rows and surfaces count client-side via `openFlagsForCell`; a dedicated grouped-count query was redundant at this scale.
 
 ## API — three faculty-tier routes
 

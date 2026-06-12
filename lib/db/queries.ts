@@ -1,6 +1,5 @@
 import { db } from './client';
-import { prototypeRuns, prototypeFlags } from './schema';
-import { eq, desc } from 'drizzle-orm';
+import { prototypeRuns } from './schema';
 import type { AnalysisResult, TargetChainAnalysisResult } from '@/lib/domain/types';
 
 export interface InsertRunInput {
@@ -35,19 +34,3 @@ export async function insertRun(input: InsertRunInput): Promise<{ id: string }> 
   return row;
 }
 
-export interface InsertFlagInput {
-  runId: string;
-  flagType: 'coverage' | 'prerequisite_gap' | 'kud_draft' | 'target_chain_coverage' | 'target_chain_scaffolding';
-  target: string;
-  note: string;
-}
-
-export async function insertFlag(input: InsertFlagInput): Promise<{ id: string }> {
-  const [row] = await db.insert(prototypeFlags).values(input).returning({ id: prototypeFlags.id });
-  if (!row) throw new Error('insertFlag: no row returned');
-  return row;
-}
-
-export async function listFlags(): Promise<Array<typeof prototypeFlags.$inferSelect>> {
-  return db.select().from(prototypeFlags).orderBy(desc(prototypeFlags.createdAt)).limit(100);
-}
