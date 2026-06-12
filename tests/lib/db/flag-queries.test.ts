@@ -1,4 +1,4 @@
-// Real-DB test (repo exception to the mock-client convention): requires DATABASE_URL — run with it set (see .env.local). Fixture rows under course 'ZZ 9999' are created in beforeAll and deleted in afterAll.
+// Real-DB test (repo exception to the mock-client convention): requires DATABASE_URL — run with it set (see .env.local). Fixture rows under course 'ZZ 9999' are created in beforeAll and deleted in afterAll. Skips (not fails) when DATABASE_URL is unset.
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { db } from '@/lib/db/client';
@@ -6,18 +6,20 @@ import { courses, facultyFlags } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { createFlag, listFlags, resolveFlag } from '@/lib/db/flag-queries';
 
+const HAS_DB = Boolean(process.env.DATABASE_URL);
+
 const TEST_CODE = 'ZZ 9999'; // never a real course
 
-beforeAll(async () => {
-  await db.insert(courses).values({ code: TEST_CODE, title: 'Flag test course', level: 9000, track: 'test' }).onConflictDoNothing();
-});
+describe.skipIf(!HAS_DB)('flag-queries round trip', () => {
+  beforeAll(async () => {
+    await db.insert(courses).values({ code: TEST_CODE, title: 'Flag test course', level: 9000, track: 'test' }).onConflictDoNothing();
+  });
 
-afterAll(async () => {
-  await db.delete(facultyFlags).where(eq(facultyFlags.courseCode, TEST_CODE));
-  await db.delete(courses).where(eq(courses.code, TEST_CODE));
-});
+  afterAll(async () => {
+    await db.delete(facultyFlags).where(eq(facultyFlags.courseCode, TEST_CODE));
+    await db.delete(courses).where(eq(courses.code, TEST_CODE));
+  });
 
-describe('flag-queries round trip', () => {
   it('creates, lists, and resolves a profile flag', async () => {
     const created = await createFlag({
       targetKind: 'profile_competency',
