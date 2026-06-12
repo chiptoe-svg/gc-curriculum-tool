@@ -44,6 +44,12 @@
   textarea{width:100%;min-height:84px;padding:12px 14px;font-family:var(--sans);font-size:16px;line-height:1.5;color:var(--ink);background:#fff;border:1px solid var(--line-strong);border-radius:6px;resize:vertical}
   textarea.tall{min-height:150px;font-family:var(--mono);font-size:14px}
   textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
+  .micbar{display:flex;align-items:center;gap:10px;margin-top:6px}
+  .mic{font-size:13px;font-weight:600;padding:6px 13px;border-radius:20px;border:1px solid var(--line-strong);background:#fff;color:var(--ink-soft);cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .15s,border-color .15s,color .15s}
+  .mic:hover{border-color:var(--accent);color:var(--accent-deep)}
+  .mic.listening{background:var(--accent);border-color:var(--accent);color:#fff;animation:micpulse 1.3s infinite}
+  @keyframes micpulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 45%,transparent)}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
+  .micstate{font-size:13px;color:var(--muted)}
   .checks{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
   .chk{display:inline-flex;align-items:center;gap:7px;font-size:14.5px;background:#fff;border:1px solid var(--line-strong);border-radius:20px;padding:7px 13px;cursor:pointer;user-select:none}
   .chk input{accent-color:var(--accent);width:15px;height:15px}
@@ -149,10 +155,17 @@ Catering — under $1,000 small engagement; Aramark is the exclusive provider (w
 
     <div class="q">
       <div class="num confirm">Q6 · confirm</div>
-      <h2>Exceptions — did we get the list right?</h2>
-      <div class="hint">We found these exception types. What justification/paperwork does each need, and what's missing?</div>
-      <div class="found"><div class="lbl">We found</div>sole-source · emergency · state &amp; NASPO term contracts · P-Card one-time limit increases · catering waiver (Aramark)</div>
-      <textarea data-q="Exceptions — justification required + anything missing"></textarea>
+      <h2>Exceptions — which are real, and is the paperwork right?</h2>
+      <div class="hint"><b>Check the exceptions that genuinely apply</b> (uncheck any we got wrong). Below is the justification we <em>think</em> each needs — use the note only to fix a wrong mapping or add an exception we missed.</div>
+      <div class="checks" id="exceptions">
+        <label class="chk"><input type="checkbox" value="Sole-source" checked>Sole-source</label>
+        <label class="chk"><input type="checkbox" value="Emergency" checked>Emergency</label>
+        <label class="chk"><input type="checkbox" value="State / NASPO term contracts" checked>State / NASPO term contracts</label>
+        <label class="chk"><input type="checkbox" value="P-Card one-time limit increase" checked>P-Card one-time limit increase</label>
+        <label class="chk"><input type="checkbox" value="Catering waiver (Aramark)" checked>Catering waiver (Aramark)</label>
+      </div>
+      <div class="found"><div class="lbl">Paperwork we believe each needs</div><b>Sole-source</b> → Sole Source Form / Intent to Sole Source + written determination &nbsp;·&nbsp; <b>Emergency</b> → after-the-fact written justification &nbsp;·&nbsp; <b>Term contracts</b> → none (already competed) &nbsp;·&nbsp; <b>P-Card increase</b> → one-time limit-increase request &nbsp;·&nbsp; <b>Catering waiver</b> → signed Aramark waiver</div>
+      <textarea data-q="Exceptions — wrong paperwork above, or an exception we missed" placeholder="Optional — only if a mapping above is wrong, or there's an exception we didn't list."></textarea>
     </div>
 
     <div class="q">
@@ -197,6 +210,7 @@ Catering — under $1,000 small engagement; Aramark is the exclusive provider (w
     const name=document.getElementById('name').value.trim(), role=document.getElementById('role').value.trim();
     if(name||role) parts.push(`From: ${name}${role?' ('+role+')':''}\n`);
     parts.push(`Q2 categories with special rules: ${checks('cats').join('; ')||'(none checked)'}\n`);
+    parts.push(`Q6 exceptions that apply: ${checks('exceptions').join('; ')||'(none checked)'}\n`);
     parts.push(`Q7 real traps: ${checks('traps').join('; ')||'(none checked)'}\n`);
     document.querySelectorAll('textarea[data-q]').forEach(t=>{ const a=t.value.trim(); if(a) parts.push(`Q: ${t.dataset.q}\nA: ${a}\n`); });
     return parts.join('\n');
@@ -220,6 +234,38 @@ Catering — under $1,000 small engagement; Aramark is the exclusive provider (w
     }catch(e){ set('Submit failed (network). Use "Copy instead" and send it to '+TO+'.'); submitBtn.disabled=false; }
   });
   document.getElementById('copy').addEventListener('click',async()=>{ const b=assemble(); try{ await navigator.clipboard.writeText(b); set('Copied — paste it into an email to '+TO+'.'); }catch{ set('Copy unavailable; select the text manually.'); } });
+
+  /* Voice input — Web Speech API. Adds a "Dictate" button under every text field.
+     Feature-detected: in browsers without support (e.g. Firefox) no buttons appear
+     and the form works as plain text entry. */
+  (function(){
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if(!SR) return;
+    let active = null; // {rec, btn, label}
+    document.querySelectorAll('textarea[data-q]').forEach(ta=>{
+      const bar=document.createElement('div'); bar.className='micbar';
+      const btn=document.createElement('button'); btn.type='button'; btn.className='mic';
+      btn.innerHTML='🎙 <span>Dictate</span>';
+      const state=document.createElement('span'); state.className='micstate';
+      bar.append(btn,state); ta.after(bar);
+      btn.addEventListener('click',()=>{
+        if(active && active.btn===btn){ active.rec.stop(); return; } // toggle off
+        if(active) active.rec.stop();                                 // switch fields
+        start(ta,btn,state);
+      });
+    });
+    function start(ta,btn,state){
+      const rec=new SR(); rec.lang='en-US'; rec.interimResults=true; rec.continuous=true;
+      const base = ta.value ? ta.value.replace(/\s+$/,'')+' ' : '';
+      const label=btn.querySelector('span');
+      active={rec,btn,label};
+      btn.classList.add('listening'); label.textContent='Stop'; state.textContent='listening…'; ta.focus();
+      rec.onresult=e=>{ let txt=''; for(let i=0;i<e.results.length;i++) txt+=e.results[i][0].transcript; ta.value=base+txt; };
+      rec.onerror=e=>{ state.textContent = e.error==='not-allowed' ? 'microphone blocked' : 'mic error — try again'; };
+      rec.onend=()=>{ btn.classList.remove('listening'); label.textContent='Dictate'; if(state.textContent==='listening…') state.textContent=''; if(active&&active.btn===btn) active=null; };
+      try{ rec.start(); }catch(err){ state.textContent='mic error — try again'; btn.classList.remove('listening'); label.textContent='Dictate'; active=null; }
+    }
+  })();
 </script>
 </body>
 </html>
