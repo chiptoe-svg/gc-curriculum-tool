@@ -51,6 +51,7 @@
   .mic.listening{background:var(--accent);border-color:var(--accent);color:#fff;animation:micpulse 1.3s infinite}
   @keyframes micpulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 45%,transparent)}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
   .micstate{font-size:13px;color:var(--muted)}
+  .voicenote{font-size:13.5px;color:var(--ink-soft);background:var(--paper-2);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:0 6px 6px 0;padding:10px 14px;margin-bottom:18px}
   .checks{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
   .chk{display:inline-flex;align-items:center;gap:7px;font-size:14.5px;background:#fff;border:1px solid var(--line-strong);border-radius:20px;padding:7px 13px;cursor:pointer;user-select:none}
   .chk input{accent-color:var(--accent);width:15px;height:15px}
@@ -251,16 +252,42 @@ Catering — under $1,000 small engagement; Aramark is the exclusive provider (w
   });
   document.getElementById('copy').addEventListener('click',async()=>{ const b=assemble(); try{ await navigator.clipboard.writeText(b); set('Copied — paste it into an email to '+TO+'.'); }catch{ set('Copy unavailable; select the text manually.'); } });
 
-  /* Voice input — Web Speech API. Adds a "Dictate" button under every text field.
-     Feature-detected: in browsers without support (e.g. Firefox) no buttons appear
-     and the form works as plain text entry. */
+  /* Voice input — Web Speech API "Dictate" button under every text field.
+     Feature-detected, with browser-specific guidance: an unsupported browser
+     (e.g. Firefox) or an insecure (http) context gets an explanatory note
+     instead of silent absence, and recognition errors map to actionable text. */
   (function(){
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if(!SR) return;
+    const form = document.getElementById('f');
+
+    // No live recognition available: explain why + what to do, then bail gracefully.
+    if(!SR || !window.isSecureContext){
+      const note=document.createElement('div'); note.className='voicenote';
+      note.innerHTML = !window.isSecureContext
+        ? '🎙 <b>Voice dictation needs a secure (https) connection.</b> Open this page via its https link to dictate — otherwise just type your answers.'
+        : "🎙 <b>Voice dictation isn't available in this browser.</b> To dictate, open this page in <b>Chrome, Edge, or Safari</b> (Firefox doesn't support it yet). You can always type your answers instead.";
+      form.insertBefore(note, form.firstChild);
+      return;
+    }
+
+    // Map a SpeechRecognition error code to a fix the person can act on.
+    function errMsg(code){
+      switch(code){
+        case 'not-allowed':
+        case 'service-not-allowed':
+          return 'Mic blocked — click the lock/🎙 icon in the address bar, allow the microphone, then reload and try again.';
+        case 'audio-capture': return 'No microphone found — check your device, then try again.';
+        case 'no-speech':      return "Didn't catch anything — click Dictate and speak again.";
+        case 'network':        return 'Voice service unreachable — check your connection, or type instead.';
+        default:               return 'Mic error — try again, or type your answer.';
+      }
+    }
+
     let active = null; // {rec, btn, label}
     document.querySelectorAll('textarea[data-q]').forEach(ta=>{
       const bar=document.createElement('div'); bar.className='micbar';
       const btn=document.createElement('button'); btn.type='button'; btn.className='mic';
+      btn.title='Dictate this answer (works in Chrome, Edge, or Safari)';
       btn.innerHTML='🎙 <span>Dictate</span>';
       const state=document.createElement('span'); state.className='micstate';
       bar.append(btn,state); ta.after(bar);
@@ -277,9 +304,9 @@ Catering — under $1,000 small engagement; Aramark is the exclusive provider (w
       active={rec,btn,label};
       btn.classList.add('listening'); label.textContent='Stop'; state.textContent='listening…'; ta.focus();
       rec.onresult=e=>{ let txt=''; for(let i=0;i<e.results.length;i++) txt+=e.results[i][0].transcript; ta.value=base+txt; };
-      rec.onerror=e=>{ state.textContent = e.error==='not-allowed' ? 'microphone blocked' : 'mic error — try again'; };
+      rec.onerror=e=>{ state.textContent=errMsg(e.error); };
       rec.onend=()=>{ btn.classList.remove('listening'); label.textContent='Dictate'; if(state.textContent==='listening…') state.textContent=''; if(active&&active.btn===btn) active=null; };
-      try{ rec.start(); }catch(err){ state.textContent='mic error — try again'; btn.classList.remove('listening'); label.textContent='Dictate'; active=null; }
+      try{ rec.start(); }catch(err){ state.textContent='Mic error — try again, or type your answer.'; btn.classList.remove('listening'); label.textContent='Dictate'; active=null; }
     }
   })();
 </script>
