@@ -20,6 +20,7 @@ import { StressTestPanel } from './StressTestPanel';
 import { StressTestBadge } from './StressTestBadge';
 import type { StressTestResultType } from '@/lib/ai/stress-test/schema';
 import { deriveEvidenceBand, type EvidenceBand, type EvidenceClaim } from '@/lib/program/evidence-ladder';
+import { FlagDialog } from '@/components/FlagDialog';
 
 /**
  * Returns true when NONE of the profile's findings carry a `source` flag.
@@ -310,6 +311,67 @@ function DepthSlider({
 }
 
 /**
+ * ⚑ dispute affordance on one competency. Files a profile_competency flag
+ * keyed (courseCode, statement) with the current depths frozen as context.
+ * Flags persist across re-captures (exact-statement match resurfaces them;
+ * the /program flags panel lists them regardless).
+ */
+export function CompetencyFlagButton({
+  courseCode,
+  slug,
+  competency,
+}: {
+  courseCode: string;
+  slug: string;
+  competency: CaptureCompetency;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        title="Dispute this AI reading — flags persist until explicitly resolved"
+        className="inline-flex items-center rounded border border-input bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted"
+      >
+        ⚑ flag
+      </button>
+      <FlagDialog
+        open={open}
+        onOpenChange={setOpen}
+        context={`${courseCode} — "${competency.statement}"`}
+        onSubmit={async (note, flaggedBy) => {
+          const res = await fetch(`/api/flags?slug=${encodeURIComponent(slug)}`, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+              targetKind: 'profile_competency',
+              courseCode,
+              careerTargetId: null,
+              subCompetencyId: null,
+              competencyStatement: competency.statement,
+              note,
+              flaggedBy,
+              flaggedContext: {
+                k: competency.k_depth,
+                u: competency.u_depth,
+                d: competency.d_depth,
+                statement: competency.statement,
+                source: competency.source ?? null,
+              },
+            }),
+          });
+          if (!res.ok) {
+            const json = await res.json().catch(() => ({}));
+            throw new Error((json as { error?: string }).error ?? `flag failed (${res.status})`);
+          }
+        }}
+      />
+    </>
+  );
+}
+
+/**
  * Collapsed one-line row for the quick-review "AI is confident" zone. Shows the
  * statement, a plain-language source label, and read-only depths. Click (or
  * keyboard-activate) to expand it into the full editable CompetencyCard.
@@ -346,11 +408,15 @@ function CompetencyCard({
   index,
   onChange,
   onCitationClick,
+  courseCode,
+  slug,
 }: {
   competency: CaptureCompetency;
   index: number;
   onChange: (next: CaptureCompetency) => void;
   onCitationClick?: (c: CaptureProfileCitationType) => void;
+  courseCode: string;
+  slug: string;
 }) {
   const isTechnical = competency.type === 'technical';
   const evidenceBand = deriveEvidenceBand({
@@ -383,6 +449,7 @@ function CompetencyCard({
             </span>
             <SourceBadge source={competency.source} citations={competency.citations} onCitationClick={onCitationClick} />
             <EvidenceBandChip claim={{ source: competency.source, citations: competency.citations }} />
+            <CompetencyFlagButton courseCode={courseCode} slug={slug} competency={competency} />
             {isUnverifiedHighScore && (
               <span
                 title="High score (D/U≥3) resting on instructor claim — no course material cited. Review whether assignment/rubric evidence could be added."
@@ -1212,6 +1279,8 @@ export function ProfileReviewPanel({
                       markReviewed(i);
                     }}
                     onCitationClick={handleCitationClick}
+                    courseCode={courseCode}
+                    slug={slug}
                   />
                   <StressTestBadge
                     annotation={stressTestResult?.per_competency.find(a => a.competency_index === i) ?? null}
@@ -1254,6 +1323,8 @@ export function ProfileReviewPanel({
                       index={i}
                       onChange={next => updateCompetency(i, next)}
                       onCitationClick={handleCitationClick}
+                      courseCode={courseCode}
+                      slug={slug}
                     />
                     <StressTestBadge
                       annotation={stressTestResult?.per_competency.find(a => a.competency_index === i) ?? null}
