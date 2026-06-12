@@ -224,6 +224,19 @@
   .phase-h{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:15px 20px;border-bottom:1px solid var(--line);color:var(--muted);background:var(--paper-2)}
   .phase-h.ap{color:#fff;background:var(--accent);font-weight:600;border-bottom-color:var(--accent)}
   .phase-note{padding:4px 20px 18px;font-size:13px;color:var(--muted);line-height:1.5;font-style:italic;margin-top:auto}
+  .explains{display:flex;flex-direction:column;gap:20px;margin-top:6px}
+  .explain{border:1px solid var(--line-strong);border-radius:10px;padding:22px 24px;background:#fff}
+  .explain h3{font-family:var(--serif);font-weight:600;font-size:20px;margin-bottom:4px}
+  .explain .lead-q{font-size:14.5px;color:var(--muted);margin-bottom:16px}
+  .ex-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+  @media(max-width:620px){.ex-row{grid-template-columns:1fr}}
+  .ex-col{border-radius:8px;padding:14px 16px;font-size:14.5px;line-height:1.55;color:var(--ink-soft)}
+  .ex-bot{background:var(--paper-2);border:1px solid var(--line)}
+  .ex-us{background:#fff6ef;border:1px solid var(--line-strong)}
+  .ex-k{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px;color:var(--muted)}
+  .ex-us .ex-k{color:var(--accent-deep)}
+  .ex-why{font-size:15px;line-height:1.55;color:var(--ink);border-top:1px dashed var(--line-strong);padding-top:13px}
+  .ex-why b{color:var(--accent-deep)}
   .build{list-style:none;padding:18px 20px 8px;display:flex;flex-direction:column;gap:13px}
   .build li{display:flex;gap:13px;align-items:flex-start}
   .build li div{font-size:14px;color:var(--ink-soft);line-height:1.5}
@@ -504,54 +517,51 @@
       <span class="sec-no">07</span>
       <h2 class="sec-title">How is it done?</h2>
     </div>
-    <p class="reveal" style="max-width:65ch;margin-bottom:38px;color:var(--ink-soft)">The reliability comes from <em>where the work happens</em>. A doc-chatbot does everything the moment you ask and lets the model generate the number. ask_procurement moves the hard work to <b>build time</b> — a human verifies it, code resolves it — and confines the model to translating between language and structure. The technical core is one boundary:</p>
+    <p class="reveal" style="max-width:66ch;margin-bottom:34px;color:var(--ink-soft)">Answering a procurement question well takes four steps: read the rules, understand the question, find the right passage, and know how the rules connect to each other. Here's how a normal AI chatbot handles each one — and what we do differently, and why it matters.</p>
 
-    <div class="boundary reveal d1">
-      <div class="bstage"><span class="bk">Stage 1 · LLM</span><b>Ground</b><span class="bd">parse amount · commodity · funding; classify to a category (correctable)</span></div>
-      <div class="barrow">▸</div>
-      <div class="bstage hot"><span class="bk">Stage 2 · pure code · no LLM</span><b>Resolve</b><span class="bd">match &amp; chain the governing rules → an explained, cited decision path</span></div>
-      <div class="barrow">▸</div>
-      <div class="bstage"><span class="bk">Stage 3 · LLM, then checked</span><b>Explain + verify</b><span class="bd">phrase for the role · enforce citations · refuse if unsure</span></div>
-    </div>
-    <p class="bcap reveal">The dollar figure lives in <b>Stage 2</b> — a table lookup, never a generated token. The model never authors a threshold.</p>
+    <div class="explains">
+      <div class="explain reveal d1">
+        <h3>1 · Reading the documents</h3>
+        <div class="lead-q">Getting the policy <em>into</em> the system.</div>
+        <div class="ex-row">
+          <div class="ex-col ex-bot"><span class="ex-k">A normal chatbot</span>You hand it a PDF and it flattens everything into one long stream of text. Tables get mangled in the process — a row that means "$25,000 to $50,000 → sealed bid" dissolves into loose, disconnected numbers and words. And it only knows the file you gave it, frozen at the moment you uploaded it.</div>
+          <div class="ex-col ex-us"><span class="ex-k">Here</span>We visit the real procurement websites and their linked PDFs, and pull tables in <em>as tables</em>, so "$25,000–$50,000 → sealed bid" stays one intact row. We also remember how pages link to each other, and we re-check the sources on a schedule — when a policy page changes, we notice and flag what it affects.</div>
+        </div>
+        <p class="ex-why"><b>Why it matters.</b> Almost every threshold lives in a table. If the table is scrambled on the way in, every answer built on it is shaky — and a policy that quietly changed last month shouldn't keep handing out last month's answer.</p>
+      </div>
 
-    <div class="phases">
-      <div class="phase reveal d1">
-        <div class="phase-h">Build time — compile policy into a verified model</div>
-        <ol class="build">
-          <li><span class="b-n">1</span><div><b>Crawl</b> per-jurisdiction allowlists → content-hashed <b>snapshots</b> (change detection) + a captured <code>doc_links</code> graph of hyperlinks &amp; cross-references.</div></li>
-          <li><span class="b-n">2</span><div><b>Extract</b> with Docling's layout model — threshold tables survive as <b>cells</b>, fed to the extractor verbatim; OCR/vision fallback for scans.</div></li>
-          <li><span class="b-n">3</span><div><b>Compile</b> — a schema-first agent emits typed candidate rules <code>{jurisdiction, commodity, funding, amount-range, flags}</code> + a <code>rule_relations</code> graph <code>{excepts, overrides, requires_also, see_also}</code>, each with provenance + confidence.</div></li>
-          <li><span class="b-n">4</span><div><b>Human gate</b> — an SME confirms each draft → <b>immutable, versioned, effective-dated</b> rows in normalized Postgres.</div></li>
-        </ol>
-        <p class="phase-note">The vector/RAG layer (contextual embeddings + BM25 + rerank) is built only for the open-ended how-to tail — never for rule values.</p>
+      <div class="explain reveal d1">
+        <h3>2 · What the AI is allowed to do</h3>
+        <div class="lead-q">The role of the language model (the "LLM").</div>
+        <div class="ex-row">
+          <div class="ex-col ex-bot"><span class="ex-k">A normal chatbot</span>The language model writes the entire answer — <em>including the dollar figure</em>. And it produces that number the same way it produces every word: by predicting what's statistically likely to come next. That's exactly why it can sound completely confident and still be off by a digit or a decimal.</div>
+          <div class="ex-col ex-us"><span class="ex-k">Here</span>The language model is never allowed to make up a number. It does two narrow jobs: at the start, turn your plain-English question into facts ("$300 · furniture · grant money"), and at the end, put an already-decided answer into readable language. The figure itself is <em>looked up</em>, not written.</div>
+        </div>
+        <p class="ex-why"><b>Why it matters.</b> On a threshold, "almost right" is a compliance failure, not a typo. Taking the number out of the model's hands removes the single most common way these tools go wrong.</p>
       </div>
-      <div class="phase reveal d2">
-        <div class="phase-h ap">Query time — resolve, then phrase</div>
-        <ol class="build">
-          <li><span class="b-n">1</span><div><b>Ground</b> — extract the facts the rules need; classify the commodity to a BuyWays category (shown, correctable).</div></li>
-          <li><span class="b-n">2</span><div><b>Resolve</b> — a <b>pure function</b> over rules + relations: match predicates, walk exceptions/overrides, apply <b>most-restrictive jurisdiction</b> → a cited decision path.</div></li>
-          <li><span class="b-n">3</span><div><b>Generate + verify</b> — phrase in the role's voice; reject unresolvable citations; a verifier confirms the prose <b>matches the decision path</b> and carries no uncited figure, else <b>refuse</b>.</div></li>
-        </ol>
-        <p class="phase-note">Open-ended "how do I…" questions branch to agentic multi-step retrieval over the narrative layer instead of the resolver.</p>
-      </div>
-    </div>
 
-    <div class="ledger reveal" style="margin-top:50px">
-      <div class="ledger-top">
-        <div class="lt-a">Attach-a-PDF chatbot</div>
-        <div class="lt-b">ask_procurement</div>
+      <div class="explain reveal d1">
+        <h3>3 · Finding the right passage</h3>
+        <div class="lead-q">"Vector search" — matching by meaning.</div>
+        <div class="ex-row">
+          <div class="ex-col ex-bot"><span class="ex-k">A normal chatbot</span>It searches for text that <em>looks similar</em> to your question — this is "vector search," matching on meaning rather than exact words — and feeds the closest-looking paragraphs to the model. But closest-looking isn't the same as correct: it can confidently grab a paragraph about the wrong program, or the wrong dollar band.</div>
+          <div class="ex-col ex-us"><span class="ex-k">Here</span>We use that same similarity search — but only for open-ended "how do I…" questions, where surfacing and explaining the right passage is the whole point. For anything that hinges on an exact rule or threshold, we don't trust "looks similar" at all; we look the rule up directly (next step).</div>
+        </div>
+        <p class="ex-why"><b>Why it matters.</b> Similarity is excellent for "explain this to me" and risky for "what's the limit." Using each tool only for what it's actually good at is the entire idea.</p>
       </div>
-      <div class="lrow"><div class="c-a">Knowledge = an unstructured vector cloud</div><div class="c-b">Normalized relational tables + a typed rule-relations graph</div></div>
-      <div class="lrow"><div class="c-a">The LLM generates the threshold (next-token)</div><div class="c-b">Deterministic code looks the threshold up</div></div>
-      <div class="lrow"><div class="c-a">Tables flattened to prose on ingest</div><div class="c-b">Docling preserves table cells; handed to the extractor verbatim</div></div>
-      <div class="lrow"><div class="c-a">Top-k similarity → one generate call</div><div class="c-b">Predicate match + graph walk → resolver → phrase → verify</div></div>
-      <div class="lrow"><div class="c-a">No grounding; citations often post-rationalized</div><div class="c-b">Resolvable citations enforced by schema; chain-alignment check</div></div>
-      <div class="lrow"><div class="c-a">Answers even when it shouldn't</div><div class="c-b">Safe-refusal on low confidence / no matching rule</div></div>
-      <div class="lrow"><div class="c-a">Stale the moment the PDF is uploaded</div><div class="c-b">Re-crawl + change detection flag affected rules for re-review</div></div>
+
+      <div class="explain reveal d1">
+        <h3>4 · Knowing how the rules connect</h3>
+        <div class="lead-q">The "graph" — rules that reference each other.</div>
+        <div class="ex-row">
+          <div class="ex-col ex-bot"><span class="ex-k">A normal chatbot</span>It treats every paragraph as an island. It has no built-in idea that one rule overrides another, that an exception cancels the usual requirement, or that paying with a federal grant swaps in a stricter limit. Each "unless" and "but" is just more text it hopes to recall.</div>
+          <div class="ex-col ex-us"><span class="ex-k">Here</span>We store the rules as a connected map — a "graph" — where each rule knows the others it depends on: <em>this is an exception to that</em>; <em>this state rule is overridden by a stricter federal one</em>; <em>this purchase also needs that approval</em>. When you ask, the system walks those connections and shows you the exact chain it followed.</div>
+        </div>
+        <p class="ex-why"><b>Why it matters.</b> Real procurement rules are built out of "unless," "but," and "see also." A pile of disconnected paragraphs can't follow that reliably; a connected map can — and can prove the path it took to the answer.</p>
+      </div>
     </div>
 
-    <p class="ledger-foot reveal" style="margin-top:42px">Empirically, vector-only RAG approaches <b>~0%</b> on schema-bound threshold lookups and legal RAG tools hallucinate <b>17–33%</b>; the rule-plus-graph approach reaches <b>~82%</b> with an auditable trace. The effect is <b>determinism where a wrong number has consequences.</b></p>
+    <p class="ledger-foot reveal" style="margin-top:46px">The documents come in clean, the model translates instead of inventing, similarity is used only where it helps, and the rules are connected — so the system can follow, and show, the actual path to an answer.</p>
   </div>
 </section>
 
