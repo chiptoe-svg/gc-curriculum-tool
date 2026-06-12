@@ -20,6 +20,22 @@ const MAX_AUDIO_BYTES = 5 * 1024 * 1024;
 // origin-pinning layer was needed when this route had to bypass Basic
 // Auth for cross-origin iframe access — no longer the architecture.
 export async function POST(req: Request): Promise<Response> {
+  // Top-level catch: the 2026-06-12 walkthrough hit a Next-level
+  // "Response body object should not be disturbed or locked" TypeError that
+  // escaped every inner catch and 500'd with NO log line. Everything below
+  // runs inside this so a failure always leaves a diagnosable trace.
+  try {
+    return await handleTranscribe(req);
+  } catch (e) {
+    console.error(
+      `[/api/transcribe] ${new Date().toISOString()} UNHANDLED:`,
+      e instanceof Error ? `${e.name}: ${e.message}\n${e.stack?.split('\n').slice(0, 4).join('\n')}` : e,
+    );
+    return NextResponse.json({ error: 'transcription failed (unhandled)' }, { status: 500 });
+  }
+}
+
+async function handleTranscribe(req: Request): Promise<Response> {
   const url = new URL(req.url);
   const slug = url.searchParams.get('slug') ?? '';
   if (!isValidSlug(slug)) return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
@@ -37,8 +53,15 @@ export async function POST(req: Request): Promise<Response> {
   let form: FormData;
   try {
     form = await req.formData();
-  } catch {
-    return NextResponse.json({ error: 'expected multipart/form-data' }, { status: 400 });
+  } catch (e) {
+    // Aborted/locked request bodies land here (e.g. a recorder upload cut
+    // mid-flight then retried). Log the real reason — "expected multipart"
+    // alone hid the 2026-06-12 disturbed-body failure mode.
+    console.warn(
+      `[/api/transcribe] ${new Date().toISOString()} formData() failed:`,
+      e instanceof Error ? `${e.name}: ${e.message}` : e,
+    );
+    return NextResponse.json({ error: 'could not read the upload — please retry' }, { status: 400 });
   }
 
   const audio = form.get('audio');
@@ -70,7 +93,7 @@ export async function POST(req: Request): Promise<Response> {
     return NextResponse.json({ text: result.text, model: result.model });
   } catch (e) {
     const message = e instanceof Error ? e.message : 'transcription failed';
-    console.error('[/api/transcribe] failed:', message);
+    console.error(`[/api/transcribe] ${new Date().toISOString()} failed (${mime}, ${audio.size}B):`, message);
     return NextResponse.json({ error: 'transcription failed' }, { status: 500 });
   }
 }
