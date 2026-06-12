@@ -1,0 +1,96 @@
+# Vision-Alignment Review — 2026-06-12
+
+> **What this is:** a full alignment audit of the project against its own published vision and background corpus. Method: read the executive brief + all seven linked docs (background, vision, problem-solving deep-dive, three-act deep-dive, graduate-outcome validation, architecture, faculty guide) via four parallel analysis agents; verified the load-bearing code directly (`lib/ai/capture/schema.ts`, `lib/program/sufficiency.ts`, `lib/program/prereq-gaps.ts`, `lib/program/scaffolding.ts`, `lib/db/program-coverage-queries.ts`, `lib/ai/prompts/shared/depth-scale.md`, `lib/ai/prompts/program-score-coverage.md`, the flag-UI chain); ran an outside-in literature check on the six theoretical positions the framework rests on.
+>
+> **Action items live at the bottom (§6) as a checklist.** Everything above them is the evidence.
+
+---
+
+## Verdict in one paragraph
+
+The engineering is better than the docs claim in places and worse in others — but the deeper finding is an **inversion**: a measurement-grade analytical apparatus sits on top of a data layer that is ~22% populated on the supply side (≈6 of 27 in-scope courses captured as of 2026-06-11) and ~0% populated on the demand side (`career_target_demand` empty; no target meets the project's own N≥3 triangulation rule). Meanwhile the docs' weakest claims are not about code at all — they're about **validity** (a novel psychometric instrument with zero reliability data, doubly AI-inferred) and **trust mechanisms** (the flag/dispute commitment in the executive brief is dead code). The highest-value next moves are not features: a reliability study, a capture-throughput campaign, and a small doc-honesty pass.
+
+---
+
+## 1. Where reality genuinely matches the vision (verified in code)
+
+- **Evidence discipline is schema-enforced, not just prompted.** `captureCompetencySchema` Zod-refines: foundationals must have `k_depth`/`u_depth` null; `k>1` / `u>0` / `d>0` require evidence excerpts (`lib/ai/capture/schema.ts:109-124`). The literature's "floor justification gate" recommendation is already structurally implemented.
+- **Citation provenance is genuinely hardened.** Excerpt-only citations rejected at validation; synthetic IDs (`user_3`) fail regex checks; faculty click through to the actual chunk (`CaptureProfileCitation.superRefine`). Closes a hallucinated-provenance class most LLM tools ignore.
+- **Null-discipline is consistent across every engine.** `prereq-gaps.ts` (null-delivered ≠ phantom gap; `basis: measured|mixed|intended|none`), `sufficiency.ts` (`no_demand`/`no_coverage` never collapse to zero), `scaffolding.ts` (PF `no_data` excluded from rollups). Ordinal-MAX, never sum. Matches the documented design exactly.
+- **The coverage-scoring prompt is state-of-the-art vs. the LLM-rubric-scoring literature**: anchored rubric + per-sub-competency calibration descriptors, Webb-style match tiers, "when in doubt, choose the weaker," never-above-matched-competency cap, calibrated confidence with named uncertainty (`program-score-coverage.md`). The RULERS-style "locked rubric + evidence-anchored scoring" the literature recommends is what this prompt already is.
+- **Also real:** descriptor-change staleness invalidation (`invalidateCoverageForSubCompetency`); snapshot immutability; the intended-never-merged binding rule; the acquiescence-bias guard (syllabus confirmation can't upgrade `claimed`); presence-as-sentinel PF capture; the per-cell `model` column.
+- The vision corpus's honest-limitations habit is real — most docs flag their own speculative claims. Preserve it.
+
+## 2. Where the docs claim things the code doesn't do
+
+1. **The flag/dispute mechanism is dead code — and the executive brief leads with it.** Brief, "Trust and governance," first commitment: *"Every AI reading is disputable. A 'Flag' button… Flags persist… Patterns of flagged disagreement update the prompts."* Verified: `FlagDialog` ← `ReasoningExpand` ← `PrerequisiteGapPanel`/`CoverageHeatMap` ← `TargetChainResults` ← **mounted nowhere**; `/api/flag` deleted 2026-06-03; nothing calls `insertPrototypeFlag`; the "flags update prompts" loop never existed. What faculty actually have (editable sliders, `reviewerNote`, stress-test) is arguably better — but it is not what the brief promises. Most exposed claim in the most stakeholder-facing document.
+2. **Per-instructor variance: faculty guide vs. matrix.** The guide promises the matrix "shows separate rows per instructor for the same course." `getMatrixData` is `DISTINCT ON (course_code) … ORDER BY created_at DESC` — **newest-snapshot-wins**, one row per course, whichever instructor captured last. The architecture doc describes this honestly; the guide doesn't. Underneath: an unresolved *policy* question (what is the program's claim when two instructors diverge?).
+3. **Q1 is structurally half-empty and the docs' tense slides.** Demand side empty, seam flag-off, no target meets N≥3. The brief's "built and awaiting activation" is true, but the through-line section reads as if course→curriculum→career is operating. Today the tool computes Q1 *breadth* over ≈6 captured courses, against demand data that doesn't exist.
+4. **"Graduate Outcome Validation" can't validate what its title claims.** KUD↔O*NET alignment shows the tool's language resembles occupational-database language — not student attainment, not causal curriculum impact. Body scopes it correctly ("criterion-relevance check"); title oversells. A hostile accreditor reads the title.
+5. **Original-spec drift is large and unacknowledged.** The 2025 spec's Proposal system (Official Record/Proposal dual-mode, Change/Impact summaries, accept/reject), three-mode Curriculum Map (Sankey/sequence), Assessment Gates 1–3, four-role model — all absent; the architecture pivoted to capture-and-explore. Probably the right pivot, but no document says "superseded, here's why," and CLAUDE.md still links the spec as if operative.
+
+## 3. Problems with the underlying logic
+
+- **A. Two-stage AI inference chain, zero reliability data at either stage.** Stage 1: synthesis scores course competencies 0–5×3 from materials+interview. Stage 2: `program-score-coverage` re-scores those onto sub-competencies — AI judgment on top of AI judgment. Literature: trained humans hit only κ≈0.68–0.70 on six-level Bloom judgments; LLMs degrade on fine-grained rubric work and show positivity bias; this scale has 216 combinations per competency. The background doc names "two captures of the same course producing divergent profiles" as the failure signal — **never tested**, despite being nearly free to test. Until then every matrix cell has unknown error bars; "the gap is 2" is not a defensible quantity.
+- **B. Course-opportunity scores do student-attainment work downstream.** The background doc is honest that a KUD+ score is a *course-opportunity* score; the prereq engine treats prereq MAX-attainment as "what the student walks in with," and scaffolding treats depth sequences as development arcs. Opportunity ≠ retention; passing ≠ competence. The docs make the distinction; the engines and program-level rhetoric quietly drop it.
+- **C. The demand side stays the weakest link even after activation.** Same model scoring both sides → correlated bias that cancels or compounds invisibly in the subtraction. JD-derived demand captures hiring-stage aspiration, not verified day-one requirement. Partner-weighted averaging across heterogeneous employers within a target destroys signal the literature says to keep separated (cluster by role type).
+- **D. Adoption physics unsolved — the documented #1 killer of curriculum-mapping initiatives.** Individual instructor value is modest; network value needs ~80% capture; the field's record is "maps produced, findings filed, teaching unchanged" absent a forced action loop. Nothing defines: gap found → who must look → by when → what happens next.
+- **E. Smaller notes.** K=1's "delivery evidence" floor is soft (module listing ⇒ non-zero cell feeding program views). `source`/`citations` are *optional* on competencies (backward-compat) — provenance discipline is prompt-enforced, not schema-enforced, for new captures. The 3-Act frame is "proposed, not policy" yet already operationalized in scaffolding diagnostics — it tests the framework's own stipulated course-to-act mapping, not an external property.
+
+## 4. Literature check (outside-in) — one-line verdicts
+
+| Position | Verdict |
+| --- | --- |
+| KUD (Tomlinson) + UbD compatibility | Sound; the 0–5×3 depth extension is the project's own **unvalidated instrument** |
+| Rejecting Bloom for cross-program mapping | Well-supported (empirical κ≈0.68–0.70 even with trained raters; K/U/D's separable D axis is the real added value) |
+| Problem-solving as domain-embedded | Supported; but Kapur effect sizes are math/physics-heavy — suggestive warrant for GC, not proof |
+| Evidence-discipline rule | Classical construct-validity doctrine applied correctly; the tool's strongest position |
+| AI rubric scoring + faculty confirm | Right architecture per the literature; fine-grained reliability is the known hazard; confirm-step rubber-stamping under cognitive load is the known decay mode |
+| One ruler for attainment & demand | Architecturally novel and elegant; demand side empirically fragile (aspiration inflation, extraction inconsistency, heterogeneous-employer averaging) |
+
+Key literature recommendations: inter-rater calibration (target α ≥ 0.70 per dimension) before treating scores as quantities; demand as directional signal with per-target confidence labels; ordinal bands in program-level displays; an intervention-trigger workflow so the map drives action.
+
+## 5. Data-volume snapshot (as of 2026-06-11, per STATE.md; DB recount pending)
+
+- Courses in scope (`builds_to_career`): **27** of 46
+- Non-retired snapshots: **≈6** distinct courses captured (24 v2 sessions logged)
+- `career_target_demand`: **0 rows** (seam dark); submitted position captures: ~0–low single digits
+- Career targets: 5; active sub-competencies: ≈30
+
+---
+
+## 6. Action items
+
+Ordered by priority. Each is independently shippable. Check off + date when done; deferrals go to STATE.md Deferred/debt per the update protocol.
+
+### P0 — Honesty debt (days, not weeks)
+
+- [ ] **A1. Fix the executive brief's flag claim.** Either (a) reword "Trust and governance" to describe the *real* dispute surface (editable depths + reviewer note + adversarial stress-test, persisted into the snapshot record), or (b) build a minimal per-cell flag (one table; flag button on matrix cells + review panel; flags resurface on re-score). Decide a/b first; do not leave the dead claim in print. Also remove or implement "patterns of flagged disagreement update the prompts."
+- [ ] **A2. Fix the faculty guide's per-instructor-matrix claim** ("separate rows per instructor") to match newest-snapshot-wins reality — or implement per-instructor rows (see A8 before choosing).
+- [ ] **A3. Sweep the dead flag chain** (`components/FlagDialog.tsx`, `ReasoningExpand.tsx`, `PrerequisiteGapPanel.tsx`, `CoverageHeatMap.tsx`, `TargetChainResults.tsx`, `insertPrototypeFlag`/`listFlags` in `lib/db/queries.ts`) — delete, or wire in under A1(b). Orphaned trust-UI is worse than none.
+- [ ] **A4. Retitle/reframe `graduate-outcome-validation.html`** as a criterion-relevance study (body already supports exactly that) and pre-commit falsification criteria, per the problem-solving deep-dive's own standard.
+- [ ] **A5. Add a "superseded" note for the original spec.** One paragraph at the top of `gc-curriculum-tool-spec.md` (or a pointer doc): the Proposal/Map/Gates architecture was superseded by capture-and-explore, link to what replaced each piece.
+
+### P1 — Validity debt (the single highest-value scientific move)
+
+- [ ] **A6. Run the reliability study.** (i) Re-run v2 synthesis 5× on 2–3 existing transcripts → per-dimension score variance; (ii) re-run `program-score-coverage` 5× on the same (snapshot, target) pairs → cell variance; (iii) have 2–3 faculty independently hand-score one course against `depth-scale.md` → human–AI agreement (Krippendorff's α, target ≥0.70/dimension). Publish results in `docs/`. This is the project's own named falsification test, currently unrun.
+- [ ] **A7. Display depth bands, not bare integers, at program level** until A6 numbers exist: 0 / low (1–2) / working (3) / high (4–5) with the integer + rationale behind a click (`/program`, gap views). Match the display resolution to the instrument's known resolution.
+- [ ] **A8. Decide the multi-instructor aggregation policy** (per-instructor rows / ordinal-MAX across instructors / newest-wins) and write the decision into the architecture doc. It's an accreditation-claim question, not a UI detail. Feeds A2.
+- [ ] **A9. Make `source` + `citations` required in the v2 synthesis schema variant** (legacy snapshots stay optional). Today provenance is prompt-enforced only.
+- [ ] **A10. Surface the per-cell `model` in the matrix UI** (column exists in `snapshot_target_coverage`) so provider/model drift across longitudinal claims is visible.
+
+### P2 — Inversion debt (data before engines)
+
+- [ ] **A11. Capture campaign for the 27.** Operator-scheduled capture sessions like advising appointments; target the GC Core 16 first. Track progress in STATE.md. No new analytics surfaces until supply-side coverage materially improves.
+- [ ] **A12. Run the intended-skills rough pass for all 27 in-scope courses** (`POST /api/admin/courses/intended-skills`, `mode:'all-uncaptured'`) so cold-start views are non-empty while A11 runs.
+- [ ] **A13. Demand-side activation gate:** keep `DEMAND_COVERAGE_SEAM` dark until ≥3 *submitted* positions exist for a target; then activate **target-by-target** with a per-target "N positions · confidence" label in the sufficiency panel. Do not average across heterogeneous employer clusters within a target without showing N.
+
+### P3 — Making it matter (the documented failure mode of every mapping initiative)
+
+- [ ] **A14. Define the action loop, one page:** gap threshold → who reviews → how it reaches a committee agenda → what gets re-captured when. Wire `/ask`/wiki to answer "what gaps opened since last review?" Without this, the literature says the most likely outcome of everything above is a beautiful map in a drawer.
+- [ ] **A15. Rubber-stamp guard on profile confirm:** require at least one substantive faculty edit/annotation (or an explicit per-section "reviewed" act) before "Capture this profile," so confirmation stays an epistemic act under cognitive load.
+- [ ] **A16. K=1 floor visibility:** badge K=1-only cells (K1/U0/D0 = "mentioned, never engaged") distinctly in program views so soft-evidence cells can't read as coverage.
+
+---
+
+*Produced 2026-06-12 by a multi-agent review session (4 doc/literature agents + direct code verification). DB recount (exact snapshot/position counts) was blocked by tooling during the session — figures in §5 are STATE.md-derived as of 2026-06-11; refresh them when convenient.*

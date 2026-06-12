@@ -297,6 +297,8 @@ Anything not listed here that a wiki would want — edits with rationale, concep
 
 ## Next-up
 
+> **Vision-alignment review (2026-06-12)** — full audit of docs-vs-code-vs-literature with a prioritized action checklist (A1–A16): [`docs/superpowers/audits/2026-06-12-vision-alignment-review.md`](./superpowers/audits/2026-06-12-vision-alignment-review.md). Headlines: the executive brief's flag/dispute commitment is **dead code** (P0 doc-honesty pass needed); the depth instrument has **zero reliability data** despite being the project's own named falsification test (P1: run the reliability study; show bands not integers at program level); supply side ≈6/27 captured + demand side empty (P2: capture campaign before more analytics); no defined action loop for gaps (P3). Work the checklist top-down.
+
 ### Next steps — ordered (the working sequence)
 
 > Consolidated 2026-06-05 so nothing drops. Status: ✅ shipped · 📋 spec'd, ready to build · ◻ not spec'd. The detailed catalog is the "Spec'd, not yet implemented" table below; this is the *order* + dependencies.
