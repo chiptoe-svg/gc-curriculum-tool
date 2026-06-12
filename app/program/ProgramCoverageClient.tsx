@@ -10,6 +10,7 @@ import type {
 import { FlagDialog } from '@/components/FlagDialog';
 import { FlagsPanel, type AnnotatedFlag } from './FlagsPanel';
 import { openFlagsForCell } from '@/lib/program/flags';
+import { depthBand } from '@/lib/program/depth-band';
 
 interface MatrixData {
   courses: MatrixCourse[];
@@ -106,6 +107,11 @@ function fmtDate(d: string | Date): string {
 }
 
 type Lens = 'coverage' | 'problem-solving';
+// A7 (2026-06-12): program-level cells default to depth BANDS — the
+// resolution the 0–5 instrument is known to support until the A6
+// reliability study produces error bars. Exact integers stay one toggle
+// (or one cell-click) away; nothing stored changes.
+type DepthDisplay = 'bands' | 'exact';
 
 export function ProgramCoverageClient({ slug, initialData, initialFlags }: Props) {
   const [data, setData] = useState<MatrixData>(initialData);
@@ -118,6 +124,7 @@ export function ProgramCoverageClient({ slug, initialData, initialFlags }: Props
   const [scoringCell, setScoringCell] = useState<string | null>(null);
   const [scoringError, setScoringError] = useState<string | null>(null);
   const [lens, setLens] = useState<Lens>('coverage');
+  const [depthDisplay, setDepthDisplay] = useState<DepthDisplay>('bands');
   const [flags, setFlags] = useState<AnnotatedFlag[]>(initialFlags);
   const [flagsOpen, setFlagsOpen] = useState(false);
   const [flagDialogOpen, setFlagDialogOpen] = useState(false);
@@ -334,6 +341,25 @@ export function ProgramCoverageClient({ slug, initialData, initialFlags }: Props
               Upper-depth
             </button>
           </div>
+          <span className="ml-3 text-xs text-muted-foreground">Scores:</span>
+          <div className="flex rounded-md border overflow-hidden text-xs">
+            <button
+              type="button"
+              onClick={() => setDepthDisplay('bands')}
+              className={'px-3 py-1.5 ' + (depthDisplay === 'bands' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted/50 text-foreground')}
+              title="Show depth bands (— / L / W / H) — the resolution the instrument is known to support; exact 0–5 integers are one click away in the cell detail. Rationale: no inter-rater reliability data exists yet for the depth scale (A6 study queued), so program-level displays don't present integers as if they were precise measurements."
+            >
+              Bands
+            </button>
+            <button
+              type="button"
+              onClick={() => setDepthDisplay('exact')}
+              className={'px-3 py-1.5 border-l ' + (depthDisplay === 'exact' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-muted/50 text-foreground')}
+              title="Show exact 0–5 integers per dimension. Treat as point estimates with unknown error bars until the reliability study lands."
+            >
+              Exact
+            </button>
+          </div>
         </div>
         {lens === 'problem-solving' && psRollup && (
           <div className="text-[11px] text-muted-foreground">
@@ -435,7 +461,9 @@ export function ProgramCoverageClient({ slug, initialData, initialFlags }: Props
                         >
                           {cell ? (
                             <div className="font-mono text-[11px]">
-                              {cell.kDepth ?? '—'}/{cell.uDepth ?? '—'}/{cell.dDepth}
+                              {depthDisplay === 'bands'
+                                ? `${depthBand(cell.kDepth)?.short ?? '·'}/${depthBand(cell.uDepth)?.short ?? '·'}/${depthBand(cell.dDepth)?.short ?? '·'}`
+                                : `${cell.kDepth ?? '—'}/${cell.uDepth ?? '—'}/${cell.dDepth}`}
                             </div>
                           ) : (
                             <div className="text-[10px] italic text-muted-foreground">—</div>
@@ -457,6 +485,25 @@ export function ProgramCoverageClient({ slug, initialData, initialFlags }: Props
       {/* Legend */}
       <section className="rounded-md border bg-muted/20 px-4 py-3">
         {lens === 'coverage' ? (
+          depthDisplay === 'bands' ? (
+            <>
+              <div className="flex items-center gap-4 flex-wrap text-[11px]">
+                <span className="text-muted-foreground">Cell text = K/U/D band:</span>
+                <span className="flex items-center gap-1"><span className="inline-block h-4 w-6 rounded bg-slate-50 text-slate-400 text-center font-mono leading-4">—</span><span className="text-muted-foreground">not present (0)</span></span>
+                <span className="flex items-center gap-1"><span className={`inline-block h-4 w-6 rounded ${depthColor(2)} ${depthText(2)} text-center font-mono leading-4`}>L</span><span className="text-muted-foreground">low (1–2)</span></span>
+                <span className="flex items-center gap-1"><span className={`inline-block h-4 w-6 rounded ${depthColor(3)} ${depthText(3)} text-center font-mono leading-4`}>W</span><span className="text-muted-foreground">working (3)</span></span>
+                <span className="flex items-center gap-1"><span className={`inline-block h-4 w-6 rounded ${depthColor(4)} ${depthText(4)} text-center font-mono leading-4`}>H</span><span className="text-muted-foreground">high (4–5)</span></span>
+                <span className="flex items-center gap-1"><span className="inline-block h-4 w-6 rounded bg-slate-100 text-slate-400 text-center font-mono leading-4">·</span><span className="text-muted-foreground">no data (foundational K/U)</span></span>
+                <span className="flex items-center gap-1 ml-auto">
+                  <span className={`inline-block h-4 w-6 rounded ${depthColor(null)}`}></span>
+                  <span className="text-muted-foreground">not scored</span>
+                </span>
+              </div>
+              <p className="mt-2 text-[10px] text-muted-foreground">
+                Bands are the display default because the 0–5 depth instrument has no published reliability data yet — exact integers are point estimates with unknown error bars (the calibration study is queued). Click any cell for the exact scores, evidence, and rationale, or switch &ldquo;Scores: Exact&rdquo; above. Cell color = max(K, U, D).
+              </p>
+            </>
+          ) : (
           <>
             <div className="flex items-center gap-4 flex-wrap text-[11px]">
               <span className="text-muted-foreground">Cell color = max(K, U, D):</span>
@@ -479,9 +526,10 @@ export function ProgramCoverageClient({ slug, initialData, initialFlags }: Props
               </span>
             </div>
             <p className="mt-2 text-[10px] text-muted-foreground">
-              Each cell shows K/U/D scores. Click a cell for details and evidence. Click &ldquo;Score&rdquo; to run the AI scorer on missing pairs.
+              Each cell shows K/U/D scores — treat them as point estimates with unknown error bars until the reliability study lands. Click a cell for details and evidence. Click &ldquo;Score&rdquo; to run the AI scorer on missing pairs.
             </p>
           </>
+          )
         ) : (
           <>
             <div className="flex items-center gap-4 flex-wrap text-[11px]">
@@ -702,7 +750,10 @@ function DepthCell({ label, value }: { label: string; value: number | null }) {
   return (
     <div>
       <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className={`mt-0.5 text-xl font-mono ${value >= 4 ? 'text-emerald-700' : value >= 2 ? 'text-amber-700' : 'text-slate-600'}`}>{value}</p>
+      <p className={`mt-0.5 text-xl font-mono ${value >= 4 ? 'text-emerald-700' : value >= 2 ? 'text-amber-700' : 'text-slate-600'}`}>
+        {value}
+        <span className="ml-1.5 align-middle text-[10px] font-sans text-muted-foreground">{depthBand(value)?.word}</span>
+      </p>
     </div>
   );
 }

@@ -15,6 +15,7 @@ import { listEdgesForFocal } from '@/lib/db/prerequisite-edge-queries';
 import { listTargets } from '@/lib/db/career-targets-queries';
 import { computePrereqGaps } from '@/lib/program/prereq-gaps';
 import type { SubCompetencyGap } from '@/lib/program/prereq-gaps';
+import { depthBand } from '@/lib/program/depth-band';
 import { PrereqEdgesClient } from './PrereqEdgesClient';
 import { FeedbackLink } from '@/app/FeedbackLink';
 
@@ -65,6 +66,9 @@ function KudCell({
 }) {
   if (needed == null) return null;
   const hasGap = gapVal > 0;
+  // A7 (2026-06-12): chip shows depth BANDS (— / L / W / H) — the resolution
+  // the instrument is known to support; the exact integers stay in the
+  // tooltip. See lib/program/depth-band.ts.
   return (
     <span
       className={`inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 font-mono-plex text-[11px]
@@ -72,10 +76,10 @@ function KudCell({
           ? 'bg-red-50 text-red-800 dark:bg-red-950/40 dark:text-red-300'
           : 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
         }`}
-      title={`${label}: needs ${needed}, delivered ${delivered ?? '?'}`}
+      title={`${label}: needs ${needed} (${depthBand(needed)?.word}), delivered ${delivered ?? '?'}${delivered != null ? ` (${depthBand(delivered)?.word})` : ''} — exact values; bands shown in chip`}
     >
       <span className="font-medium">{label}</span>
-      <span className="text-[9px] text-muted-foreground">{delivered ?? '?'}→{needed}</span>
+      <span className="text-[9px] text-muted-foreground">{depthBand(delivered)?.short ?? '?'}→{depthBand(needed)?.short}</span>
     </span>
   );
 }
