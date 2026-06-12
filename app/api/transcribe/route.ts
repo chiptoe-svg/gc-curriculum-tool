@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { isValidSlug } from '@/lib/slug';
+import { authorizedForBasicAuth } from '@/lib/auth/basic-auth';
 import { transcribeAudio, isSupportedAudioMime, estimateWhisperCostCents } from '@/lib/ai/transcribe';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
@@ -36,6 +37,18 @@ export async function POST(req: Request): Promise<Response> {
 }
 
 async function handleTranscribe(req: Request): Promise<Response> {
+  // Basic Auth enforced HERE because this route is excluded from the
+  // middleware matcher (see middleware.ts — the Node-middleware body
+  // buffering broke multipart uploads). Same gate, same env var, same
+  // no-op-when-unset semantics as the middleware.
+  const expectedAuth = process.env.FACULTY_BASIC_AUTH;
+  if (expectedAuth && !authorizedForBasicAuth(req.headers.get('authorization'), expectedAuth)) {
+    return new NextResponse('Authentication required', {
+      status: 401,
+      headers: { 'WWW-Authenticate': 'Basic realm="GC Curriculum Tool"' },
+    });
+  }
+
   const url = new URL(req.url);
   const slug = url.searchParams.get('slug') ?? '';
   if (!isValidSlug(slug)) return NextResponse.json({ error: 'invalid slug' }, { status: 401 });

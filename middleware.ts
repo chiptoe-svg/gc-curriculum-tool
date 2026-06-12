@@ -90,7 +90,15 @@ export const config = {
   // Broadened from /partners/:path* to cover faculty routes for Basic
   // Auth. Standard Next.js exclusion list keeps middleware off of
   // _next assets and the favicon.
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  //
+  // api/transcribe EXCLUDED (2026-06-12): Node-runtime middleware
+  // buffers/replays request bodies (middlewareClientMaxBodySize), and that
+  // replay deterministically breaks real-size multipart mic uploads with
+  // "Response body object should not be disturbed or locked" BEFORE the
+  // route runs (tiny clips pass; real recordings fail). The route enforces
+  // Basic Auth itself (authorizedForBasicAuth) + slug + rate/cost caps —
+  // same protection, no body proxying.
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/transcribe).*)'],
   // Run in Node runtime so we can import lib/db/client (node-postgres).
   // Edge runtime lacks Node builtins that `pg` needs.
   runtime: 'nodejs',
