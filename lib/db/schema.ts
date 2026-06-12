@@ -652,6 +652,9 @@ export const careerTargetDemand = pgTable('career_target_demand', {
   generatedAt: timestamp('generated_at', { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [primaryKey({ columns: [t.careerTargetId, t.subCompetencyId] })]);
 
+export const flagTargetKind = pgEnum('flag_target_kind', ['coverage_cell', 'profile_competency']);
+export const flagStatus = pgEnum('flag_status', ['open', 'resolved']);
+
 /** The reading as it stood when flagged (drift baseline). */
 export interface FlaggedContext {
   k: number | null;
@@ -662,9 +665,6 @@ export interface FlaggedContext {
   statement?: string | null;
   source?: string | null;
 }
-
-export const flagTargetKind = pgEnum('flag_target_kind', ['coverage_cell', 'profile_competency']);
-export const flagStatus = pgEnum('flag_status', ['open', 'resolved']);
 
 /**
  * Faculty dispute flags on AI readings. Keyed by STABLE identifiers — never
