@@ -82,7 +82,7 @@ Ordered by priority. Each is independently shippable. Check off + date when done
 ### P2 — Inversion debt (data before engines)
 
 - [ ] **A11. Capture campaign for the 27.** Operator-scheduled capture sessions like advising appointments; target the GC Core 16 first. Track progress in STATE.md. No new analytics surfaces until supply-side coverage materially improves.
-- [ ] **A12. Run the intended-skills rough pass for all 27 in-scope courses** (`POST /api/admin/courses/intended-skills`, `mode:'all-uncaptured'`) so cold-start views are non-empty while A11 runs.
+- [x] **A12. Run the intended-skills rough pass** ✅ **2026-06-12** — ran `mode:'all-uncaptured'` against prod: **243 intended K/U/D rows across 34 uncaptured courses** (superset of the 27 in-scope; e.g. GC 3720: 18, GC 3700/3710: 12 each; a few catalog-thin courses like ECON 2000/ENSP 2000 yielded 0 — source-side gaps, recorded by `droppedUnknown` counts). Banded `claimed`, never merged into measured attainment; feeds the prereq engine's `intended` basis + `/courses` badges. Cold-start views are non-empty for the A11 campaign.
 - [ ] **A13. Demand-side activation gate:** keep `DEMAND_COVERAGE_SEAM` dark until ≥3 *submitted* positions exist for a target; then activate **target-by-target** with a per-target "N positions · confidence" label in the sufficiency panel. Do not average across heterogeneous employer clusters within a target without showing N.
 
 ### P3 — Making it matter (the documented failure mode of every mapping initiative)
