@@ -121,6 +121,7 @@ export function ProgramCoverageClient({ slug, initialData, initialFlags }: Props
   const [flags, setFlags] = useState<AnnotatedFlag[]>(initialFlags);
   const [flagsOpen, setFlagsOpen] = useState(false);
   const [flagDialogOpen, setFlagDialogOpen] = useState(false);
+  const [flagTarget, setFlagTarget] = useState<{ sel: SelectedCell; targetId: string } | null>(null);
 
   const refetchFlags = useCallback(async () => {
     const res = await fetch(`/api/flags?slug=${encodeURIComponent(slug)}`);
@@ -515,29 +516,29 @@ export function ProgramCoverageClient({ slug, initialData, initialFlags }: Props
           scoring={scoringCell === `${selected.course.snapshotId}:${activeTargetId}`}
           onClose={() => setSelected(null)}
           onScore={() => handleScoreCell(selected.course.snapshotId, activeTargetId)}
-          onFlag={() => setFlagDialogOpen(true)}
+          onFlag={() => { setFlagTarget({ sel: selected, targetId: activeTargetId }); setFlagDialogOpen(true); }}
           openFlagCount={openFlagsForCell(openFlags, selected.course.courseCode, activeTargetId, selected.subCompetency.id).length}
         />
       )}
-      {selected && (
+      {flagTarget && (
         <FlagDialog
           open={flagDialogOpen}
-          onOpenChange={setFlagDialogOpen}
-          context={`${selected.course.courseCode} × ${selected.subCompetency.name} — flag this coverage reading`}
+          onOpenChange={(o) => { setFlagDialogOpen(o); if (!o) setFlagTarget(null); }}
+          context={`${flagTarget.sel.course.courseCode} × ${flagTarget.sel.subCompetency.name} — flag this coverage reading`}
           onSubmit={async (note, flaggedBy) => {
             const res = await fetch(`/api/flags?slug=${encodeURIComponent(slug)}`, {
               method: 'POST',
               headers: { 'content-type': 'application/json' },
               body: JSON.stringify({
                 targetKind: 'coverage_cell',
-                courseCode: selected.course.courseCode,
-                careerTargetId: activeTargetId,
-                subCompetencyId: selected.subCompetency.id,
+                courseCode: flagTarget.sel.course.courseCode,
+                careerTargetId: flagTarget.targetId,
+                subCompetencyId: flagTarget.sel.subCompetency.id,
                 competencyStatement: null,
                 note,
                 flaggedBy,
-                flaggedContext: selected.cell
-                  ? { k: selected.cell.kDepth, u: selected.cell.uDepth, d: selected.cell.dDepth, matchedCompetency: selected.cell.matchedCompetency, rationale: selected.cell.rationale }
+                flaggedContext: flagTarget.sel.cell
+                  ? { k: flagTarget.sel.cell.kDepth, u: flagTarget.sel.cell.uDepth, d: flagTarget.sel.cell.dDepth, matchedCompetency: flagTarget.sel.cell.matchedCompetency, rationale: flagTarget.sel.cell.rationale }
                   : null,
               }),
             });

@@ -124,7 +124,7 @@ export function FlagsPanel({ flags, slug, onChanged }: {
               </div>
             </div>
           ) : (
-            <button type="button" onClick={() => { setResolving(f.id); setError(null); }} className="text-[11px] underline-offset-2 hover:underline">
+            <button type="button" onClick={() => { setResolving(f.id); setError(null); setNote(''); }} className="text-[11px] underline-offset-2 hover:underline">
               Resolve…
             </button>
           )}
