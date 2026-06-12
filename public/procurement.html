@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ask_procurement — an answer you can defend</title>
+<title>ask_procurement — a rule-grounded procurement assistant</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231B1813'/%3E%3Ccircle cx='16' cy='16' r='7' fill='none' stroke='%23E1581F' stroke-width='2.5'/%3E%3Ccircle cx='16' cy='16' r='2.5' fill='%23E1581F'/%3E%3C/svg%3E">
-<meta property="og:title" content="ask_procurement — an answer you can defend">
-<meta property="og:description" content="A Clemson procurement assistant that resolves the rules and proves its answer — not a chatbot that paraphrases policy and guesses the number.">
+<meta property="og:title" content="ask_procurement — a rule-grounded procurement assistant">
+<meta property="og:description" content="A Clemson procurement assistant that looks up the governing rule in a human-verified rulebook and cites it, instead of generating answers from similar-looking text.">
 <meta property="og:type" content="website">
-<meta name="description" content="A procurement assistant that resolves the rules and proves its answer — not a chatbot that paraphrases policy and guesses the number.">
+<meta name="description" content="A procurement assistant that looks up the governing rule and cites it, across Clemson, South Carolina, and federal grant requirements.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -276,23 +276,12 @@
 <!-- ===================== HERO ===================== -->
 <section class="hero">
   <div class="wrap">
-    <div class="stamp" aria-hidden="true">
-      <svg viewBox="0 0 200 200">
-        <circle cx="100" cy="100" r="94" fill="none" stroke="currentColor" stroke-width="2"/>
-        <circle cx="100" cy="100" r="78" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="2 4"/>
-        <path id="circ" d="M100,100 m-86,0 a86,86 0 1,1 172,0 a86,86 0 1,1 -172,0" fill="none"/>
-        <text font-family="IBM Plex Mono" font-size="11.5" letter-spacing="3.4" fill="currentColor">
-          <textPath href="#circ" startOffset="0%">CITES EVERY ANSWER · REFUSES WHEN UNSURE · </textPath>
-        </text>
-      </svg>
-      <span class="core"><span class="big">Shows<br>its work</span><span class="sm">verified</span></span>
-    </div>
-    <div class="eyebrow reveal in">Clemson Procurement <span class="slash">/</span> a different kind of assistant</div>
-    <h1 class="reveal in d1">Ask how to buy it. Get an answer you can <em>defend.</em></h1>
-    <p class="lede reveal in d2">Procurement questions have <b>right answers</b> — exact dollar thresholds, the method you're required to use, who has to approve it. ask_procurement looks the rule up, shows the reasoning, and cites the policy. <b>It never makes up a number.</b></p>
+    <div class="eyebrow reveal in">Clemson Procurement <span class="slash">/</span> how it works</div>
+    <h1 class="reveal in d1">A procurement assistant grounded in the <em>actual rules.</em></h1>
+    <p class="lede reveal in d2">Procurement questions turn on exact dollar thresholds, required methods, and approvals. This assistant looks those up in a compiled, human-verified rulebook, shows the reasoning, and cites the policy — rather than generating an answer from similar-looking text. Dollar figures are looked up, not generated.</p>
     <div class="hero-meta reveal in d3">
       <span class="pill">Clemson + SC state + federal rules</span>
-      <span class="pill">Built for buyers, business officers, pros &amp; the help desk</span>
+      <span class="pill">For buyers, business officers, procurement staff, and the help desk</span>
       <span class="pill">Web · voice · other software</span>
     </div>
   </div>
@@ -305,14 +294,14 @@
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="sec-no">01</span>
-      <h2 class="sec-title">Why a regular chatbot gets procurement wrong</h2>
+      <h2 class="sec-title">Where a general chatbot falls short on procurement</h2>
     </div>
     <div class="cols">
       <div class="reveal">
         <div class="kicker">The everyday tool</div>
-        <p class="big">You've seen the pattern: attach a PDF, ask a question, get a confident paragraph back.</p>
-        <p class="drop">For most things that's fine. For procurement it's a trap. These tools work by <b>similarity</b> — they pull the passages that <em>look</em> related to your question, then let a language model write a fluent answer. Along the way, the model is perfectly willing to state a dollar threshold that isn't quite right, blend a state rule with a federal one, or miss the exception that changes everything.</p>
-        <p>And the cost of "almost right" here isn't a typo. It's a split purchase that should have been bid, a missing quote, a grant expense that gets clawed back. The whole reason someone asks is <em>"I don't want to get in trouble."</em> A plausible wrong answer is worse than no answer.</p>
+        <p class="big">The common pattern: attach a PDF, ask a question, get a paragraph back.</p>
+        <p class="drop">For many tasks that works well. For procurement it is risky. These tools work by <b>similarity</b> — they retrieve passages that <em>look</em> related to the question, then a language model writes a fluent answer. In the process, the model can state a dollar threshold that is slightly off, blend a state rule with a federal one, or miss an exception.</p>
+        <p>Here, "almost right" is not a typo. It can mean a split purchase that should have been bid, a missing quote, or a grant expense that is later disallowed. Because the point of asking is to stay compliant, a plausible but wrong answer is worse than no answer.</p>
       </div>
       <div class="reveal d2">
         <div class="kicker">What makes it hard</div>
@@ -333,7 +322,7 @@
       <span class="sec-no">02</span>
       <span class="kicker" style="align-self:center">The core idea</span>
     </div>
-    <p class="bigidea reveal">It doesn't <span class="strike">read the rules and talk about them.</span> It <em>resolves</em> the rules and <em>proves</em> the answer.</p>
+    <p class="bigidea reveal">It <em>resolves</em> the governing rule with code and shows the sources, rather than describing the rules from memory.</p>
     <div class="steps">
       <div class="step reveal d1">
         <span class="n">STEP 01</span>
@@ -344,13 +333,13 @@
       <div class="step reveal d2">
         <h3>Look up the actual rule</h3>
         <span class="n">STEP 02</span>
-        <p>Not a similar-sounding paragraph — the governing rule, from a <b>compiled rulebook every entry of which a procurement expert has confirmed.</b> When rules chain together, it follows the chain and keeps the receipts.</p>
+        <p>Not a similar-sounding paragraph — the governing rule, from a <b>compiled rulebook in which a procurement expert has confirmed each entry.</b> When rules depend on one another, it follows the chain and records each source.</p>
         <span class="glyph">§</span>
       </div>
       <div class="step reveal d3">
-        <h3>Explain it — and prove it</h3>
+        <h3>Explain it, with sources</h3>
         <span class="n">STEP 03</span>
-        <p>It answers in plain language for your role, with a citation on every claim and the reasoning shown. If it can't find a rule that fits, <b>it says so</b> instead of guessing.</p>
+        <p>It answers in plain language for the reader's role, with a citation on each claim and the reasoning shown. If no rule fits, <b>it says so</b> rather than guessing.</p>
         <span class="glyph">✓</span>
       </div>
     </div>
@@ -362,22 +351,21 @@
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="sec-no">03</span>
-      <h2 class="sec-title">The difference, line by line</h2>
+      <h2 class="sec-title">How it differs from a general chatbot</h2>
     </div>
     <div class="ledger reveal d1">
       <div class="ledger-top">
         <div class="lt-a">A typical chatbot you attach docs to</div>
         <div class="lt-b">ask_procurement</div>
       </div>
-      <div class="lrow"><div class="c-a">Paraphrases the document &mdash; and can confidently invent a dollar threshold</div><div class="c-b">Looks the rule up in a human-verified rulebook — it never makes up a number</div></div>
+      <div class="lrow"><div class="c-a">Paraphrases the document &mdash; and can confidently invent a dollar threshold</div><div class="c-b">Looks the rule up in a human-verified rulebook — the figure is looked up, not generated</div></div>
       <div class="lrow"><div class="c-a">Finds passages that are "close enough" by similarity</div><div class="c-b">Resolves the actual governing rule and shows the cited chain of how it got there</div></div>
       <div class="lrow"><div class="c-a">Confidently wrong at the edges</div><div class="c-b">Says "I can't confirm that" and points you to the source instead of guessing</div></div>
-      <div class="lrow"><div class="c-a">No audit trail — "trust me"</div><div class="c-b">Every answer carries citations and its reasoning — "verify me"</div></div>
+      <div class="lrow"><div class="c-a">No audit trail</div><div class="c-b">Each answer carries its citations and reasoning</div></div>
       <div class="lrow"><div class="c-a">One generic voice for everyone</div><div class="c-b">Speaks differently to a buyer, a business officer, a pro, and an outside vendor</div></div>
       <div class="lrow"><div class="c-a">Goes stale the moment a policy PDF changes</div><div class="c-b">Re-checks the sources and flags affected rules for re-review</div></div>
       <div class="lrow"><div class="c-a">Treats Clemson + state + federal as one blob</div><div class="c-b">Knows they overlap and conflict, and applies the stricter rule on purpose</div></div>
     </div>
-    <p class="ledger-foot reveal">A typical chatbot <b>reads</b> the rules and talks about them.<br>This one <b>resolves</b> the rules and proves its answer.</p>
   </div>
 </section>
 
@@ -393,7 +381,7 @@
         <div class="ask">"Can I buy a $300 table on my NSF grant?"</div>
         <p>A regular chatbot returns a paragraph. ask_procurement returns a <b>resolved card</b>: what it understood, the rule it applied, the chain when more than one rule interacts, and a citation on every line.</p>
         <p>The dollar figures and methods are looked up — never generated. And because a federal grant is involved, it knows to check the <b>stricter</b> of the state and federal limits, not just one.</p>
-        <p style="color:var(--muted);font-size:15px">Every underlined citation opens the exact policy passage it came from. Get the category wrong? Fix the chip and it re-resolves.</p>
+        <p style="color:var(--muted);font-size:15px">Each underlined citation opens the exact policy passage it came from. If the category is wrong, correcting the chip re-resolves the answer.</p>
       </div>
       <div class="reveal d2">
         <div class="card">
@@ -441,7 +429,7 @@
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="sec-no">05</span>
-      <h2 class="sec-title">One brain, four voices</h2>
+      <h2 class="sec-title">The same answer, shaped for four roles</h2>
     </div>
     <p class="reveal" style="max-width:60ch;margin-bottom:36px;color:var(--ink-soft)">The same verified rules and the same proof underneath — but the answer is shaped for who's asking. Nothing is reworded into a different meaning; only the depth and the language change.</p>
     <div class="roles">
@@ -486,7 +474,7 @@
         <p>The system reads the policies and proposes rules, but nothing becomes an answer until a procurement expert confirms it. The AI drafts; a person decides. No extracted dollar figure goes live unreviewed.</p>
       </div>
       <div class="item">
-        <h3><span class="num">b.</span> It shows its work</h3>
+        <h3><span class="num">b.</span> It shows its reasoning</h3>
         <p>Every answer carries the chain of rules it applied and a citation for each one, so a buyer can act and an auditor can verify — from the same answer.</p>
       </div>
       <div class="item">
@@ -563,7 +551,7 @@
       <div class="lrow"><div class="c-a">Stale the moment the PDF is uploaded</div><div class="c-b">Re-crawl + change detection flag affected rules for re-review</div></div>
     </div>
 
-    <p class="ledger-foot reveal" style="margin-top:42px">Empirically, vector-only RAG approaches <b>~0%</b> on schema-bound threshold lookups and legal RAG tools hallucinate <b>17–33%</b>; the rule-plus-graph approach reaches <b>~82%</b> with an auditable trace. The engineering buys <b>determinism where a wrong number has consequences.</b></p>
+    <p class="ledger-foot reveal" style="margin-top:42px">Empirically, vector-only RAG approaches <b>~0%</b> on schema-bound threshold lookups and legal RAG tools hallucinate <b>17–33%</b>; the rule-plus-graph approach reaches <b>~82%</b> with an auditable trace. The effect is <b>determinism where a wrong number has consequences.</b></p>
   </div>
 </section>
 
@@ -573,7 +561,7 @@
     <div class="ft-top">
       <div>
         <div class="ft-mark">ask<em>_</em>procurement</div>
-        <p class="ft-note" style="margin-top:16px">A procurement assistant for Clemson that resolves the rules and proves its answer — across institutional, South Carolina state, and federal grant requirements.</p>
+        <p class="ft-note" style="margin-top:16px">A procurement assistant for Clemson that looks up the governing rule and cites it — across institutional, South Carolina state, and federal grant requirements.</p>
         <div class="ft-links">
           <a class="btn ghost" href="https://www.clemson.edu/procurement/">Clemson Procurement</a>
           <a class="btn ghost" href="https://procurement.sc.gov">SC Procurement</a>
