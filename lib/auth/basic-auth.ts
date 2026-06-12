@@ -33,6 +33,10 @@ const PUBLIC_PREFIXES = [
   // machine token, not the faculty Basic Auth credential. Skip the Basic
   // Auth gate here; the route owns its auth.
   '/api/mcp',
+  // Static public explainer page for the sibling "ask_procurement" project,
+  // served from public/procurement.html. Intentionally reachable by anyone —
+  // it is a high-level overview with no faculty data.
+  '/procurement.html',
 ] as const;
 
 /**
