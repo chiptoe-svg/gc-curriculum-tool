@@ -1,0 +1,4272 @@
+{
+  "meta": {
+    "study": "A6 reliability study — parts i (synthesis) + ii (coverage)",
+    "startedAt": "2026-06-12T23:45:15.456Z",
+    "completedAt": "2026-06-12T23:57:49.412Z",
+    "totalCostUsdCents": 22016,
+    "totalCostUsd": 2.2016,
+    "truncatedAtCap": false,
+    "N": 5,
+    "synthesisCourses": [
+      "GC 3800",
+      "GC 4060",
+      "GC 3460"
+    ]
+  },
+  "part1": [
+    {
+      "courseCode": "GC 3800",
+      "model": "gpt-5.4",
+      "truncatedAtRun": null,
+      "runCosts": [
+        1623,
+        939,
+        983,
+        927,
+        945
+      ],
+      "runs": [
+        {
+          "technicalCompetencies": [
+            {
+              "statement": "Students build a professional LinkedIn profile with standard employer-facing sections and networking etiquette.",
+              "k_depth": 3,
+              "u_depth": 1,
+              "d_depth": 2
+            },
+            {
+              "statement": "Students engage employers at career events and capture accurate takeaways about company roles, business focus, and opportunities.",
+              "k_depth": 3,
+              "u_depth": 2,
+              "d_depth": 2
+            },
+            {
+              "statement": "Students participate in career-development services such as resume review, mock interviews, networking, and related career-center programming.",
+              "k_depth": 1,
+              "u_depth": 0,
+              "d_depth": 1
+            },
+            {
+              "statement": "Students calculate personal living costs and salary requirements using a budgeting spreadsheet with formulas and expense records.",
+              "k_depth": 3,
+              "u_depth": 2,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students verify degree progress and organize a forward-looking academic course plan in CourseLineup.",
+              "k_depth": 2,
+              "u_depth": 1,
+              "d_depth": 2
+            },
+            {
+              "statement": "Students investigate graphic communications career paths and connect employer information to possible roles in the field.",
+              "k_depth": 2,
+              "u_depth": 2,
+              "d_depth": 1
+            }
+          ],
+          "foundationalCompetencies": [
+            {
+              "statement": "Agency",
+              "d_depth": 2
+            },
+            {
+              "statement": "Attention to Detail",
+              "d_depth": 3
+            },
+            {
+              "statement": "Resilience",
+              "d_depth": 0
+            },
+            {
+              "statement": "Curiosity",
+              "d_depth": 1
+            },
+            {
+              "statement": "Communication",
+              "d_depth": 3
+            }
+          ],
+          "incomingExpectationsCount": 0
+        },
+        {
+          "technicalCompetencies": [
+            {
+              "statement": "Students build a professional LinkedIn profile with standard employer-facing sections and basic networking etiquette.",
+              "k_depth": 3,
+              "u_depth": 1,
+              "d_depth": 2
+            },
+            {
+              "statement": "Students engage employers at career events and capture accurate takeaways about company roles, business focus, and opportunities.",
+              "k_depth": 3,
+              "u_depth": 2,
+              "d_depth": 2
+            },
+            {
+              "statement": "Students participate in career-development services such as resume review, mock interviews, networking, and related career-center programming.",
+              "k_depth": 1,
+              "u_depth": 0,
+              "d_depth": 1
+            },
+            {
+              "statement": "Students calculate personal living costs and salary requirements using a budgeting spreadsheet with formulas and expense records.",
+              "k_depth": 3,
+              "u_depth": 2,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students verify degree progress and organize a forward-looking academic course plan in CourseLineup.",
+              "k_depth": 2,
+              "u_depth": 1,
+              "d_depth": 2
+            },
+            {
+              "statement": "Students investigate graphic communications career paths and connect employer information to possible roles in the field.",
+              "k_depth": 2,
+              "u_depth": 2,
+              "d_depth": 1
+            }
+          ],
+          "foundationalCompetencies": [
+            {
+              "statement": "Agency",
+              "d_depth": 2
+            },
+            {
+              "statement": "Attention to Detail",
+              "d_depth": 3
+            },
+            {
+              "statement": "Resilience",
+              "d_depth": 0
+            },
+            {
+              "statement": "Curiosity",
+              "d_depth": 1
+            },
+            {
+              "statement": "Communication",
+              "d_depth": 3
+            }
+          ],
+          "incomingExpectationsCount": 0
+        },
+        {
+          "technicalCompetencies": [
+            {
+              "statement": "Students build a professional LinkedIn profile with standard employer-facing sections and basic networking etiquette.",
+              "k_depth": 3,
+              "u_depth": 1,
+              "d_depth": 2
+            },
+            {
+              "statement": "Students engage employers at career events and capture accurate takeaways about company roles, business focus, and opportunities.",
+              "k_depth": 3,
+              "u_depth": 2,
+              "d_depth": 2
+            },
+            {
+              "statement": "Students participate in career-development services such as resume review, mock interviews, networking, and related career-center programming.",
+              "k_depth": 1,
+              "u_depth": 0,
+              "d_depth": 1
+            },
+            {
+              "statement": "Students calculate personal living costs and salary requirements using a budgeting spreadsheet with formulas and expense records.",
+              "k_depth": 3,
+              "u_depth": 2,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students verify degree progress and organize a forward-looking academic course plan in CourseLineup.",
+              "k_depth": 2,
+              "u_depth": 1,
+              "d_depth": 2
+            },
+            {
+              "statement": "Students investigate graphic communications career paths and connect employer information to possible roles in the field.",
+              "k_depth": 2,
+              "u_depth": 2,
+              "d_depth": 1
+            }
+          ],
+          "foundationalCompetencies": [
+            {
+              "statement": "Agency",
+              "d_depth": 2
+            },
+            {
+              "statement": "Attention to Detail",
+              "d_depth": 3
+            },
+            {
+              "statement": "Resilience",
+              "d_depth": 0
+            },
+            {
+              "statement": "Curiosity",
+              "d_depth": 1
+            },
+            {
+              "statement": "Communication",
+              "d_depth": 3
+            }
+          ],
+          "incomingExpectationsCount": 0
+        },
+        {
+          "technicalCompetencies": [
+            {
+              "statement": "Students build a professional LinkedIn profile with standard employer-facing sections and basic networking etiquette.",
+              "k_depth": 3,
+              "u_depth": 1,
+              "d_depth": 2
+            },
+            {
+              "statement": "Students engage employers at career events and capture accurate takeaways about company business, roles, and opportunities.",
+              "k_depth": 3,
+              "u_depth": 2,
+              "d_depth": 2
+            },
+            {
+              "statement": "Students participate in career-development services such as resume review, mock interviews, and related career-center programming.",
+              "k_depth": 1,
+              "u_depth": 0,
+              "d_depth": 1
+            },
+            {
+              "statement": "Students calculate personal living costs and salary requirements using a budgeting spreadsheet with formulas and expense records.",
+              "k_depth": 3,
+              "u_depth": 2,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students verify degree progress and organize a forward-looking academic course plan in CourseLineup.",
+              "k_depth": 2,
+              "u_depth": 1,
+              "d_depth": 2
+            },
+            {
+              "statement": "Students investigate graphic communications career paths and connect employer information to possible roles in the field.",
+              "k_depth": 2,
+              "u_depth": 2,
+              "d_depth": 1
+            }
+          ],
+          "foundationalCompetencies": [
+            {
+              "statement": "Agency",
+              "d_depth": 2
+            },
+            {
+              "statement": "Attention to Detail",
+              "d_depth": 3
+            },
+            {
+              "statement": "Resilience",
+              "d_depth": 0
+            },
+            {
+              "statement": "Curiosity",
+              "d_depth": 1
+            },
+            {
+              "statement": "Communication",
+              "d_depth": 3
+            }
+          ],
+          "incomingExpectationsCount": 0
+        },
+        {
+          "technicalCompetencies": [
+            {
+              "statement": "Students build a professional LinkedIn profile with standard employer-facing sections and basic networking etiquette.",
+              "k_depth": 3,
+              "u_depth": 1,
+              "d_depth": 2
+            },
+            {
+              "statement": "Students engage employers at career events and capture accurate takeaways about company work, roles, and opportunities.",
+              "k_depth": 3,
+              "u_depth": 2,
+              "d_depth": 2
+            },
+            {
+              "statement": "Students participate in career-development services such as resume review, mock interviews, networking, and related career-center programming.",
+              "k_depth": 1,
+              "u_depth": 0,
+              "d_depth": 1
+            },
+            {
+              "statement": "Students calculate personal living costs and salary requirements using a budgeting spreadsheet with formulas and expense records.",
+              "k_depth": 3,
+              "u_depth": 2,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students verify degree progress and organize a forward-looking academic course plan in CourseLineup.",
+              "k_depth": 2,
+              "u_depth": 1,
+              "d_depth": 2
+            },
+            {
+              "statement": "Students investigate graphic communications career paths and connect employer information to possible roles in the field.",
+              "k_depth": 2,
+              "u_depth": 2,
+              "d_depth": 1
+            }
+          ],
+          "foundationalCompetencies": [
+            {
+              "statement": "Agency",
+              "d_depth": 2
+            },
+            {
+              "statement": "Attention to Detail",
+              "d_depth": 3
+            },
+            {
+              "statement": "Resilience",
+              "d_depth": 0
+            },
+            {
+              "statement": "Curiosity",
+              "d_depth": 1
+            },
+            {
+              "statement": "Communication",
+              "d_depth": 3
+            }
+          ],
+          "incomingExpectationsCount": 0
+        }
+      ],
+      "metrics": {
+        "technicalCompetencyCount": {
+          "perRun": [
+            6,
+            6,
+            6,
+            6,
+            6
+          ],
+          "mean": 6,
+          "min": 6,
+          "max": 6
+        },
+        "foundationalDepths": {
+          "Agency": {
+            "dValues": [
+              2,
+              2,
+              2,
+              2,
+              2
+            ],
+            "mean": 2,
+            "sd": 0,
+            "min": 2,
+            "max": 2,
+            "bandAgreement": 1
+          },
+          "Attention to Detail": {
+            "dValues": [
+              3,
+              3,
+              3,
+              3,
+              3
+            ],
+            "mean": 3,
+            "sd": 0,
+            "min": 3,
+            "max": 3,
+            "bandAgreement": 1
+          },
+          "Resilience": {
+            "dValues": [
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "mean": 0,
+            "sd": 0,
+            "min": 0,
+            "max": 0,
+            "bandAgreement": 1
+          },
+          "Curiosity": {
+            "dValues": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "mean": 1,
+            "sd": 0,
+            "min": 1,
+            "max": 1,
+            "bandAgreement": 1
+          },
+          "Communication": {
+            "dValues": [
+              3,
+              3,
+              3,
+              3,
+              3
+            ],
+            "mean": 3,
+            "sd": 0,
+            "min": 3,
+            "max": 3,
+            "bandAgreement": 1
+          }
+        },
+        "dimensionDepthDistribution": {
+          "perRun": [
+            {
+              "meanK": 2.3333333333333335,
+              "meanU": 1.3333333333333333,
+              "meanD": 1.8333333333333333
+            },
+            {
+              "meanK": 2.3333333333333335,
+              "meanU": 1.3333333333333333,
+              "meanD": 1.8333333333333333
+            },
+            {
+              "meanK": 2.3333333333333335,
+              "meanU": 1.3333333333333333,
+              "meanD": 1.8333333333333333
+            },
+            {
+              "meanK": 2.3333333333333335,
+              "meanU": 1.3333333333333333,
+              "meanD": 1.8333333333333333
+            },
+            {
+              "meanK": 2.3333333333333335,
+              "meanU": 1.3333333333333333,
+              "meanD": 1.8333333333333333
+            }
+          ],
+          "sdMeanK": 0,
+          "sdMeanU": 0,
+          "sdMeanD": 0
+        },
+        "statementSetStability": {
+          "meanPairwiseJaccard": 0.21748973691827228,
+          "matchedPairs": [
+            {
+              "statement_a": "Students build a professional LinkedIn profile with standard employer-facing sections and networking etiquette.",
+              "statement_b": "Students build a professional LinkedIn profile with standard employer-facing sections and basic networking etiquette.",
+              "jaccard": 0.9285714285714286,
+              "runA": 0,
+              "runB": 1,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students engage employers at career events and capture accurate takeaways about company roles, business focus, and opportunities.",
+              "statement_b": "Students engage employers at career events and capture accurate takeaways about company roles, business focus, and opportunities.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 1,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students participate in career-development services such as resume review, mock interviews, networking, and related career-center programming.",
+              "statement_b": "Students participate in career-development services such as resume review, mock interviews, networking, and related career-center programming.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 1,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students calculate personal living costs and salary requirements using a budgeting spreadsheet with formulas and expense records.",
+              "statement_b": "Students calculate personal living costs and salary requirements using a budgeting spreadsheet with formulas and expense records.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 1,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students verify degree progress and organize a forward-looking academic course plan in CourseLineup.",
+              "statement_b": "Students verify degree progress and organize a forward-looking academic course plan in CourseLineup.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 1,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students investigate graphic communications career paths and connect employer information to possible roles in the field.",
+              "statement_b": "Students investigate graphic communications career paths and connect employer information to possible roles in the field.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 1,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students build a professional LinkedIn profile with standard employer-facing sections and networking etiquette.",
+              "statement_b": "Students build a professional LinkedIn profile with standard employer-facing sections and basic networking etiquette.",
+              "jaccard": 0.9285714285714286,
+              "runA": 0,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students engage employers at career events and capture accurate takeaways about company roles, business focus, and opportunities.",
+              "statement_b": "Students engage employers at career events and capture accurate takeaways about company roles, business focus, and opportunities.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students participate in career-development services such as resume review, mock interviews, networking, and related career-center programming.",
+              "statement_b": "Students participate in career-development services such as resume review, mock interviews, networking, and related career-center programming.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students calculate personal living costs and salary requirements using a budgeting spreadsheet with formulas and expense records.",
+              "statement_b": "Students calculate personal living costs and salary requirements using a budgeting spreadsheet with formulas and expense records.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students verify degree progress and organize a forward-looking academic course plan in CourseLineup.",
+              "statement_b": "Students verify degree progress and organize a forward-looking academic course plan in CourseLineup.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students investigate graphic communications career paths and connect employer information to possible roles in the field.",
+              "statement_b": "Students investigate graphic communications career paths and connect employer information to possible roles in the field.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students build a professional LinkedIn profile with standard employer-facing sections and networking etiquette.",
+              "statement_b": "Students build a professional LinkedIn profile with standard employer-facing sections and basic networking etiquette.",
+              "jaccard": 0.9285714285714286,
+              "runA": 0,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students engage employers at career events and capture accurate takeaways about company roles, business focus, and opportunities.",
+              "statement_b": "Students engage employers at career events and capture accurate takeaways about company business, roles, and opportunities.",
+              "jaccard": 0.9333333333333333,
+              "runA": 0,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students participate in career-development services such as resume review, mock interviews, networking, and related career-center programming.",
+              "statement_b": "Students participate in career-development services such as resume review, mock interviews, and related career-center programming.",
+              "jaccard": 0.9333333333333333,
+              "runA": 0,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students calculate personal living costs and salary requirements using a budgeting spreadsheet with formulas and expense records.",
+              "statement_b": "Students calculate personal living costs and salary requirements using a budgeting spreadsheet with formulas and expense records.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students verify degree progress and organize a forward-looking academic course plan in CourseLineup.",
+              "statement_b": "Students verify degree progress and organize a forward-looking academic course plan in CourseLineup.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students investigate graphic communications career paths and connect employer information to possible roles in the field.",
+              "statement_b": "Students investigate graphic communications career paths and connect employer information to possible roles in the field.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students build a professional LinkedIn profile with standard employer-facing sections and networking etiquette.",
+              "statement_b": "Students build a professional LinkedIn profile with standard employer-facing sections and basic networking etiquette.",
+              "jaccard": 0.9285714285714286,
+              "runA": 0,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students engage employers at career events and capture accurate takeaways about company roles, business focus, and opportunities.",
+              "statement_b": "Students engage employers at career events and capture accurate takeaways about company work, roles, and opportunities.",
+              "jaccard": 0.8125,
+              "runA": 0,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students participate in career-development services such as resume review, mock interviews, networking, and related career-center programming.",
+              "statement_b": "Students participate in career-development services such as resume review, mock interviews, networking, and related career-center programming.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students calculate personal living costs and salary requirements using a budgeting spreadsheet with formulas and expense records.",
+              "statement_b": "Students calculate personal living costs and salary requirements using a budgeting spreadsheet with formulas and expense records.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students verify degree progress and organize a forward-looking academic course plan in CourseLineup.",
+              "statement_b": "Students verify degree progress and organize a forward-looking academic course plan in CourseLineup.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students investigate graphic communications career paths and connect employer information to possible roles in the field.",
+              "statement_b": "Students investigate graphic communications career paths and connect employer information to possible roles in the field.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students build a professional LinkedIn profile with standard employer-facing sections and basic networking etiquette.",
+              "statement_b": "Students build a professional LinkedIn profile with standard employer-facing sections and basic networking etiquette.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students engage employers at career events and capture accurate takeaways about company roles, business focus, and opportunities.",
+              "statement_b": "Students engage employers at career events and capture accurate takeaways about company roles, business focus, and opportunities.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students participate in career-development services such as resume review, mock interviews, networking, and related career-center programming.",
+              "statement_b": "Students participate in career-development services such as resume review, mock interviews, networking, and related career-center programming.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students calculate personal living costs and salary requirements using a budgeting spreadsheet with formulas and expense records.",
+              "statement_b": "Students calculate personal living costs and salary requirements using a budgeting spreadsheet with formulas and expense records.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students verify degree progress and organize a forward-looking academic course plan in CourseLineup.",
+              "statement_b": "Students verify degree progress and organize a forward-looking academic course plan in CourseLineup.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students investigate graphic communications career paths and connect employer information to possible roles in the field.",
+              "statement_b": "Students investigate graphic communications career paths and connect employer information to possible roles in the field.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students build a professional LinkedIn profile with standard employer-facing sections and basic networking etiquette.",
+              "statement_b": "Students build a professional LinkedIn profile with standard employer-facing sections and basic networking etiquette.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students engage employers at career events and capture accurate takeaways about company roles, business focus, and opportunities.",
+              "statement_b": "Students engage employers at career events and capture accurate takeaways about company business, roles, and opportunities.",
+              "jaccard": 0.9333333333333333,
+              "runA": 1,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students participate in career-development services such as resume review, mock interviews, networking, and related career-center programming.",
+              "statement_b": "Students participate in career-development services such as resume review, mock interviews, and related career-center programming.",
+              "jaccard": 0.9333333333333333,
+              "runA": 1,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students calculate personal living costs and salary requirements using a budgeting spreadsheet with formulas and expense records.",
+              "statement_b": "Students calculate personal living costs and salary requirements using a budgeting spreadsheet with formulas and expense records.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students verify degree progress and organize a forward-looking academic course plan in CourseLineup.",
+              "statement_b": "Students verify degree progress and organize a forward-looking academic course plan in CourseLineup.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students investigate graphic communications career paths and connect employer information to possible roles in the field.",
+              "statement_b": "Students investigate graphic communications career paths and connect employer information to possible roles in the field.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students build a professional LinkedIn profile with standard employer-facing sections and basic networking etiquette.",
+              "statement_b": "Students build a professional LinkedIn profile with standard employer-facing sections and basic networking etiquette.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students engage employers at career events and capture accurate takeaways about company roles, business focus, and opportunities.",
+              "statement_b": "Students engage employers at career events and capture accurate takeaways about company work, roles, and opportunities.",
+              "jaccard": 0.8125,
+              "runA": 1,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students participate in career-development services such as resume review, mock interviews, networking, and related career-center programming.",
+              "statement_b": "Students participate in career-development services such as resume review, mock interviews, networking, and related career-center programming.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students calculate personal living costs and salary requirements using a budgeting spreadsheet with formulas and expense records.",
+              "statement_b": "Students calculate personal living costs and salary requirements using a budgeting spreadsheet with formulas and expense records.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students verify degree progress and organize a forward-looking academic course plan in CourseLineup.",
+              "statement_b": "Students verify degree progress and organize a forward-looking academic course plan in CourseLineup.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students investigate graphic communications career paths and connect employer information to possible roles in the field.",
+              "statement_b": "Students investigate graphic communications career paths and connect employer information to possible roles in the field.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students build a professional LinkedIn profile with standard employer-facing sections and basic networking etiquette.",
+              "statement_b": "Students build a professional LinkedIn profile with standard employer-facing sections and basic networking etiquette.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students engage employers at career events and capture accurate takeaways about company roles, business focus, and opportunities.",
+              "statement_b": "Students engage employers at career events and capture accurate takeaways about company business, roles, and opportunities.",
+              "jaccard": 0.9333333333333333,
+              "runA": 2,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students participate in career-development services such as resume review, mock interviews, networking, and related career-center programming.",
+              "statement_b": "Students participate in career-development services such as resume review, mock interviews, and related career-center programming.",
+              "jaccard": 0.9333333333333333,
+              "runA": 2,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students calculate personal living costs and salary requirements using a budgeting spreadsheet with formulas and expense records.",
+              "statement_b": "Students calculate personal living costs and salary requirements using a budgeting spreadsheet with formulas and expense records.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students verify degree progress and organize a forward-looking academic course plan in CourseLineup.",
+              "statement_b": "Students verify degree progress and organize a forward-looking academic course plan in CourseLineup.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students investigate graphic communications career paths and connect employer information to possible roles in the field.",
+              "statement_b": "Students investigate graphic communications career paths and connect employer information to possible roles in the field.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students build a professional LinkedIn profile with standard employer-facing sections and basic networking etiquette.",
+              "statement_b": "Students build a professional LinkedIn profile with standard employer-facing sections and basic networking etiquette.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students engage employers at career events and capture accurate takeaways about company roles, business focus, and opportunities.",
+              "statement_b": "Students engage employers at career events and capture accurate takeaways about company work, roles, and opportunities.",
+              "jaccard": 0.8125,
+              "runA": 2,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students participate in career-development services such as resume review, mock interviews, networking, and related career-center programming.",
+              "statement_b": "Students participate in career-development services such as resume review, mock interviews, networking, and related career-center programming.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students calculate personal living costs and salary requirements using a budgeting spreadsheet with formulas and expense records.",
+              "statement_b": "Students calculate personal living costs and salary requirements using a budgeting spreadsheet with formulas and expense records.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students verify degree progress and organize a forward-looking academic course plan in CourseLineup.",
+              "statement_b": "Students verify degree progress and organize a forward-looking academic course plan in CourseLineup.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students investigate graphic communications career paths and connect employer information to possible roles in the field.",
+              "statement_b": "Students investigate graphic communications career paths and connect employer information to possible roles in the field.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students build a professional LinkedIn profile with standard employer-facing sections and basic networking etiquette.",
+              "statement_b": "Students build a professional LinkedIn profile with standard employer-facing sections and basic networking etiquette.",
+              "jaccard": 1,
+              "runA": 3,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students engage employers at career events and capture accurate takeaways about company business, roles, and opportunities.",
+              "statement_b": "Students engage employers at career events and capture accurate takeaways about company work, roles, and opportunities.",
+              "jaccard": 0.8666666666666667,
+              "runA": 3,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students participate in career-development services such as resume review, mock interviews, and related career-center programming.",
+              "statement_b": "Students participate in career-development services such as resume review, mock interviews, networking, and related career-center programming.",
+              "jaccard": 0.9333333333333333,
+              "runA": 3,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students calculate personal living costs and salary requirements using a budgeting spreadsheet with formulas and expense records.",
+              "statement_b": "Students calculate personal living costs and salary requirements using a budgeting spreadsheet with formulas and expense records.",
+              "jaccard": 1,
+              "runA": 3,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students verify degree progress and organize a forward-looking academic course plan in CourseLineup.",
+              "statement_b": "Students verify degree progress and organize a forward-looking academic course plan in CourseLineup.",
+              "jaccard": 1,
+              "runA": 3,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students investigate graphic communications career paths and connect employer information to possible roles in the field.",
+              "statement_b": "Students investigate graphic communications career paths and connect employer information to possible roles in the field.",
+              "jaccard": 1,
+              "runA": 3,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            }
+          ],
+          "matchedPairDeltaMeanK": 0,
+          "matchedPairDeltaMeanU": 0,
+          "matchedPairDeltaMeanD": 0,
+          "matchedPairDeltaMaxK": 0,
+          "matchedPairDeltaMaxU": 0,
+          "matchedPairDeltaMaxD": 0
+        },
+        "incomingExpectationsCount": {
+          "perRun": [
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "mean": 0,
+          "min": 0,
+          "max": 0
+        }
+      }
+    },
+    {
+      "courseCode": "GC 4060",
+      "model": "gpt-5.4",
+      "truncatedAtRun": null,
+      "runCosts": [
+        2718,
+        1428,
+        1577,
+        1419
+      ],
+      "runs": [
+        {
+          "technicalCompetencies": [
+            {
+              "statement": "Students analyze packaging requirements and identify required information, package functions, and market-positioning features on real package examples.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students develop brand systems for package and specialty-print product lines using logos, colors, fonts, market research, and product positioning.",
+              "k_depth": 4,
+              "u_depth": 2,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students build and prepress flexographic test targets for process calibration and printability evaluation.",
+              "k_depth": 4,
+              "u_depth": 2,
+              "d_depth": 2
+            },
+            {
+              "statement": "Students prepare flexographic prepress files by making and checking trapping, separations, screening, angles, and barcode decisions for production.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students design and produce functional and promotional flexographic labels that align brand intent with production constraints.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students analyze flexographic print quality, defects, and process-control results using qualitative observation and quantitative data.",
+              "k_depth": 4,
+              "u_depth": 4,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students document packaging and print-production workflows in technical reports that explain decisions, methods, results, and improvements.",
+              "k_depth": 4,
+              "u_depth": 4,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students develop paperboard package structures and artwork that are shelf-ready, branded, and commercially usable.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students prepare and produce specialty-print products by selecting appropriate processes, artwork strategies, and production considerations for the chosen application.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 4
+            },
+            {
+              "statement": "Students communicate package and print-production work through organized technical writing and oral presentation using domain-specific language.",
+              "k_depth": 4,
+              "u_depth": 2,
+              "d_depth": 3
+            }
+          ],
+          "foundationalCompetencies": [
+            {
+              "statement": "Agency",
+              "d_depth": 2
+            },
+            {
+              "statement": "Attention to Detail",
+              "d_depth": 2
+            },
+            {
+              "statement": "Resilience",
+              "d_depth": 1
+            },
+            {
+              "statement": "Curiosity",
+              "d_depth": 1
+            },
+            {
+              "statement": "Communication",
+              "d_depth": 3
+            }
+          ],
+          "incomingExpectationsCount": 4
+        },
+        {
+          "technicalCompetencies": [
+            {
+              "statement": "Students analyze packaging requirements and identify required information, package functions, and market-positioning features on real package examples.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students develop brand systems for package and specialty-print product lines using logos, colors, fonts, market research, and product positioning.",
+              "k_depth": 4,
+              "u_depth": 2,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students prepare flexographic prepress files by making and checking trapping, separations, screening, angles, barcodes, and related press-file decisions.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students build and prepress flexographic test targets for process calibration and printability evaluation.",
+              "k_depth": 4,
+              "u_depth": 2,
+              "d_depth": 2
+            },
+            {
+              "statement": "Students design and produce functional and promotional flexographic labels that align brand intent with production constraints.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students analyze flexographic print quality, defects, and process-control results using qualitative observation and quantitative data.",
+              "k_depth": 4,
+              "u_depth": 4,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students document packaging and print-production workflows in technical reports that explain decisions, methods, results, and improvements.",
+              "k_depth": 4,
+              "u_depth": 4,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students develop paperboard package structures and artwork that are shelf-ready, branded, and commercially usable.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students prepare and produce specialty-print products by selecting appropriate processes, artwork strategies, and production considerations for the chosen application.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 4
+            },
+            {
+              "statement": "Students communicate package and print-production work through organized technical writing and oral presentation using domain-specific language.",
+              "k_depth": 4,
+              "u_depth": 2,
+              "d_depth": 3
+            }
+          ],
+          "foundationalCompetencies": [
+            {
+              "statement": "Agency",
+              "d_depth": 2
+            },
+            {
+              "statement": "Attention to Detail",
+              "d_depth": 2
+            },
+            {
+              "statement": "Resilience",
+              "d_depth": 1
+            },
+            {
+              "statement": "Curiosity",
+              "d_depth": 1
+            },
+            {
+              "statement": "Communication",
+              "d_depth": 3
+            }
+          ],
+          "incomingExpectationsCount": 4
+        },
+        {
+          "technicalCompetencies": [
+            {
+              "statement": "Students analyze packaging requirements and identify required information, package functions, and market-positioning features on real package examples.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students develop brand systems for package and specialty-print product lines using logos, colors, fonts, market research, and product positioning.",
+              "k_depth": 4,
+              "u_depth": 2,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students prepare flexographic prepress files by making and checking trapping, separations, screening, angle, and barcode decisions for production.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students build and prepress flexographic test targets for process calibration and printability evaluation.",
+              "k_depth": 4,
+              "u_depth": 2,
+              "d_depth": 2
+            },
+            {
+              "statement": "Students design and produce functional and promotional flexographic labels that align brand intent with production constraints.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students analyze flexographic print quality, defects, and process-control results using qualitative observation and quantitative data.",
+              "k_depth": 4,
+              "u_depth": 4,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students document packaging and print-production workflows in technical reports that explain decisions, methods, results, and improvements.",
+              "k_depth": 4,
+              "u_depth": 4,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students develop paperboard package structures and artwork that are shelf-ready, branded, and commercially usable.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students prepare and produce specialty-print products by selecting appropriate processes, artwork strategies, and production considerations for the chosen application.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students communicate package and print-production work through organized technical writing and oral presentation using domain-specific language.",
+              "k_depth": 4,
+              "u_depth": 2,
+              "d_depth": 3
+            }
+          ],
+          "foundationalCompetencies": [
+            {
+              "statement": "Agency",
+              "d_depth": 2
+            },
+            {
+              "statement": "Attention to Detail",
+              "d_depth": 2
+            },
+            {
+              "statement": "Resilience",
+              "d_depth": 1
+            },
+            {
+              "statement": "Curiosity",
+              "d_depth": 1
+            },
+            {
+              "statement": "Communication",
+              "d_depth": 3
+            }
+          ],
+          "incomingExpectationsCount": 5
+        },
+        {
+          "technicalCompetencies": [
+            {
+              "statement": "Students analyze packaging requirements and identify required information, package functions, and market-positioning features on real package examples.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students develop brand systems for package and specialty-print product lines using logos, colors, fonts, market research, and product positioning.",
+              "k_depth": 4,
+              "u_depth": 2,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students prepare flexographic prepress files by making and checking trapping, separations, screening, angle, and barcode decisions for production.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students build and prepress flexographic test targets for process calibration and printability evaluation.",
+              "k_depth": 4,
+              "u_depth": 2,
+              "d_depth": 2
+            },
+            {
+              "statement": "Students design and produce functional and promotional flexographic labels that align brand intent with production constraints.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students analyze flexographic print quality, defects, and process-control results using qualitative observation and quantitative data.",
+              "k_depth": 4,
+              "u_depth": 4,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students document packaging and print-production workflows in technical reports that explain decisions, methods, results, and improvements.",
+              "k_depth": 4,
+              "u_depth": 4,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students develop paperboard package structures and artwork that are shelf-ready, branded, and commercially usable.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students prepare and produce specialty-print products by selecting appropriate processes, artwork strategies, and production considerations for the chosen application.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 4
+            },
+            {
+              "statement": "Students communicate package and print-production work through organized technical writing and oral presentation using domain-specific language.",
+              "k_depth": 4,
+              "u_depth": 2,
+              "d_depth": 3
+            }
+          ],
+          "foundationalCompetencies": [
+            {
+              "statement": "Agency",
+              "d_depth": 2
+            },
+            {
+              "statement": "Attention to Detail",
+              "d_depth": 2
+            },
+            {
+              "statement": "Resilience",
+              "d_depth": 1
+            },
+            {
+              "statement": "Curiosity",
+              "d_depth": 1
+            },
+            {
+              "statement": "Communication",
+              "d_depth": 3
+            }
+          ],
+          "incomingExpectationsCount": 4
+        }
+      ],
+      "metrics": {
+        "technicalCompetencyCount": {
+          "perRun": [
+            10,
+            10,
+            10,
+            10
+          ],
+          "mean": 10,
+          "min": 10,
+          "max": 10
+        },
+        "foundationalDepths": {
+          "Agency": {
+            "dValues": [
+              2,
+              2,
+              2,
+              2
+            ],
+            "mean": 2,
+            "sd": 0,
+            "min": 2,
+            "max": 2,
+            "bandAgreement": 1
+          },
+          "Attention to Detail": {
+            "dValues": [
+              2,
+              2,
+              2,
+              2
+            ],
+            "mean": 2,
+            "sd": 0,
+            "min": 2,
+            "max": 2,
+            "bandAgreement": 1
+          },
+          "Resilience": {
+            "dValues": [
+              1,
+              1,
+              1,
+              1
+            ],
+            "mean": 1,
+            "sd": 0,
+            "min": 1,
+            "max": 1,
+            "bandAgreement": 1
+          },
+          "Curiosity": {
+            "dValues": [
+              1,
+              1,
+              1,
+              1
+            ],
+            "mean": 1,
+            "sd": 0,
+            "min": 1,
+            "max": 1,
+            "bandAgreement": 1
+          },
+          "Communication": {
+            "dValues": [
+              3,
+              3,
+              3,
+              3
+            ],
+            "mean": 3,
+            "sd": 0,
+            "min": 3,
+            "max": 3,
+            "bandAgreement": 1
+          }
+        },
+        "dimensionDepthDistribution": {
+          "perRun": [
+            {
+              "meanK": 4,
+              "meanU": 2.9,
+              "meanD": 3
+            },
+            {
+              "meanK": 4,
+              "meanU": 2.9,
+              "meanD": 3
+            },
+            {
+              "meanK": 4,
+              "meanU": 2.9,
+              "meanD": 2.9
+            },
+            {
+              "meanK": 4,
+              "meanU": 2.9,
+              "meanD": 3
+            }
+          ],
+          "sdMeanK": 0,
+          "sdMeanU": 0,
+          "sdMeanD": 0.050000000000000044
+        },
+        "statementSetStability": {
+          "meanPairwiseJaccard": 0.18434558413773608,
+          "matchedPairs": [
+            {
+              "statement_a": "Students analyze packaging requirements and identify required information, package functions, and market-positioning features on real package examples.",
+              "statement_b": "Students analyze packaging requirements and identify required information, package functions, and market-positioning features on real package examples.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 1,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students develop brand systems for package and specialty-print product lines using logos, colors, fonts, market research, and product positioning.",
+              "statement_b": "Students develop brand systems for package and specialty-print product lines using logos, colors, fonts, market research, and product positioning.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 1,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students build and prepress flexographic test targets for process calibration and printability evaluation.",
+              "statement_b": "Students build and prepress flexographic test targets for process calibration and printability evaluation.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 1,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students prepare flexographic prepress files by making and checking trapping, separations, screening, angles, and barcode decisions for production.",
+              "statement_b": "Students prepare flexographic prepress files by making and checking trapping, separations, screening, angles, barcodes, and related press-file decisions.",
+              "jaccard": 0.65,
+              "runA": 0,
+              "runB": 1,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students design and produce functional and promotional flexographic labels that align brand intent with production constraints.",
+              "statement_b": "Students design and produce functional and promotional flexographic labels that align brand intent with production constraints.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 1,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students analyze flexographic print quality, defects, and process-control results using qualitative observation and quantitative data.",
+              "statement_b": "Students analyze flexographic print quality, defects, and process-control results using qualitative observation and quantitative data.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 1,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students document packaging and print-production workflows in technical reports that explain decisions, methods, results, and improvements.",
+              "statement_b": "Students document packaging and print-production workflows in technical reports that explain decisions, methods, results, and improvements.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 1,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students develop paperboard package structures and artwork that are shelf-ready, branded, and commercially usable.",
+              "statement_b": "Students develop paperboard package structures and artwork that are shelf-ready, branded, and commercially usable.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 1,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students prepare and produce specialty-print products by selecting appropriate processes, artwork strategies, and production considerations for the chosen application.",
+              "statement_b": "Students prepare and produce specialty-print products by selecting appropriate processes, artwork strategies, and production considerations for the chosen application.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 1,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students communicate package and print-production work through organized technical writing and oral presentation using domain-specific language.",
+              "statement_b": "Students communicate package and print-production work through organized technical writing and oral presentation using domain-specific language.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 1,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students analyze packaging requirements and identify required information, package functions, and market-positioning features on real package examples.",
+              "statement_b": "Students analyze packaging requirements and identify required information, package functions, and market-positioning features on real package examples.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students develop brand systems for package and specialty-print product lines using logos, colors, fonts, market research, and product positioning.",
+              "statement_b": "Students develop brand systems for package and specialty-print product lines using logos, colors, fonts, market research, and product positioning.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students build and prepress flexographic test targets for process calibration and printability evaluation.",
+              "statement_b": "Students build and prepress flexographic test targets for process calibration and printability evaluation.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students prepare flexographic prepress files by making and checking trapping, separations, screening, angles, and barcode decisions for production.",
+              "statement_b": "Students prepare flexographic prepress files by making and checking trapping, separations, screening, angle, and barcode decisions for production.",
+              "jaccard": 0.8823529411764706,
+              "runA": 0,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students design and produce functional and promotional flexographic labels that align brand intent with production constraints.",
+              "statement_b": "Students design and produce functional and promotional flexographic labels that align brand intent with production constraints.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students analyze flexographic print quality, defects, and process-control results using qualitative observation and quantitative data.",
+              "statement_b": "Students analyze flexographic print quality, defects, and process-control results using qualitative observation and quantitative data.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students document packaging and print-production workflows in technical reports that explain decisions, methods, results, and improvements.",
+              "statement_b": "Students document packaging and print-production workflows in technical reports that explain decisions, methods, results, and improvements.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students develop paperboard package structures and artwork that are shelf-ready, branded, and commercially usable.",
+              "statement_b": "Students develop paperboard package structures and artwork that are shelf-ready, branded, and commercially usable.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students prepare and produce specialty-print products by selecting appropriate processes, artwork strategies, and production considerations for the chosen application.",
+              "statement_b": "Students prepare and produce specialty-print products by selecting appropriate processes, artwork strategies, and production considerations for the chosen application.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 1
+            },
+            {
+              "statement_a": "Students communicate package and print-production work through organized technical writing and oral presentation using domain-specific language.",
+              "statement_b": "Students communicate package and print-production work through organized technical writing and oral presentation using domain-specific language.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students analyze packaging requirements and identify required information, package functions, and market-positioning features on real package examples.",
+              "statement_b": "Students analyze packaging requirements and identify required information, package functions, and market-positioning features on real package examples.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students develop brand systems for package and specialty-print product lines using logos, colors, fonts, market research, and product positioning.",
+              "statement_b": "Students develop brand systems for package and specialty-print product lines using logos, colors, fonts, market research, and product positioning.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students build and prepress flexographic test targets for process calibration and printability evaluation.",
+              "statement_b": "Students build and prepress flexographic test targets for process calibration and printability evaluation.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students prepare flexographic prepress files by making and checking trapping, separations, screening, angles, and barcode decisions for production.",
+              "statement_b": "Students prepare flexographic prepress files by making and checking trapping, separations, screening, angle, and barcode decisions for production.",
+              "jaccard": 0.8823529411764706,
+              "runA": 0,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students design and produce functional and promotional flexographic labels that align brand intent with production constraints.",
+              "statement_b": "Students design and produce functional and promotional flexographic labels that align brand intent with production constraints.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students analyze flexographic print quality, defects, and process-control results using qualitative observation and quantitative data.",
+              "statement_b": "Students analyze flexographic print quality, defects, and process-control results using qualitative observation and quantitative data.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students document packaging and print-production workflows in technical reports that explain decisions, methods, results, and improvements.",
+              "statement_b": "Students document packaging and print-production workflows in technical reports that explain decisions, methods, results, and improvements.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students develop paperboard package structures and artwork that are shelf-ready, branded, and commercially usable.",
+              "statement_b": "Students develop paperboard package structures and artwork that are shelf-ready, branded, and commercially usable.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students prepare and produce specialty-print products by selecting appropriate processes, artwork strategies, and production considerations for the chosen application.",
+              "statement_b": "Students prepare and produce specialty-print products by selecting appropriate processes, artwork strategies, and production considerations for the chosen application.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students communicate package and print-production work through organized technical writing and oral presentation using domain-specific language.",
+              "statement_b": "Students communicate package and print-production work through organized technical writing and oral presentation using domain-specific language.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students analyze packaging requirements and identify required information, package functions, and market-positioning features on real package examples.",
+              "statement_b": "Students analyze packaging requirements and identify required information, package functions, and market-positioning features on real package examples.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students develop brand systems for package and specialty-print product lines using logos, colors, fonts, market research, and product positioning.",
+              "statement_b": "Students develop brand systems for package and specialty-print product lines using logos, colors, fonts, market research, and product positioning.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students build and prepress flexographic test targets for process calibration and printability evaluation.",
+              "statement_b": "Students build and prepress flexographic test targets for process calibration and printability evaluation.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students design and produce functional and promotional flexographic labels that align brand intent with production constraints.",
+              "statement_b": "Students design and produce functional and promotional flexographic labels that align brand intent with production constraints.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students analyze flexographic print quality, defects, and process-control results using qualitative observation and quantitative data.",
+              "statement_b": "Students analyze flexographic print quality, defects, and process-control results using qualitative observation and quantitative data.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students document packaging and print-production workflows in technical reports that explain decisions, methods, results, and improvements.",
+              "statement_b": "Students document packaging and print-production workflows in technical reports that explain decisions, methods, results, and improvements.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students develop paperboard package structures and artwork that are shelf-ready, branded, and commercially usable.",
+              "statement_b": "Students develop paperboard package structures and artwork that are shelf-ready, branded, and commercially usable.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students prepare and produce specialty-print products by selecting appropriate processes, artwork strategies, and production considerations for the chosen application.",
+              "statement_b": "Students prepare and produce specialty-print products by selecting appropriate processes, artwork strategies, and production considerations for the chosen application.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 1
+            },
+            {
+              "statement_a": "Students communicate package and print-production work through organized technical writing and oral presentation using domain-specific language.",
+              "statement_b": "Students communicate package and print-production work through organized technical writing and oral presentation using domain-specific language.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students analyze packaging requirements and identify required information, package functions, and market-positioning features on real package examples.",
+              "statement_b": "Students analyze packaging requirements and identify required information, package functions, and market-positioning features on real package examples.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students develop brand systems for package and specialty-print product lines using logos, colors, fonts, market research, and product positioning.",
+              "statement_b": "Students develop brand systems for package and specialty-print product lines using logos, colors, fonts, market research, and product positioning.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students build and prepress flexographic test targets for process calibration and printability evaluation.",
+              "statement_b": "Students build and prepress flexographic test targets for process calibration and printability evaluation.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students design and produce functional and promotional flexographic labels that align brand intent with production constraints.",
+              "statement_b": "Students design and produce functional and promotional flexographic labels that align brand intent with production constraints.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students analyze flexographic print quality, defects, and process-control results using qualitative observation and quantitative data.",
+              "statement_b": "Students analyze flexographic print quality, defects, and process-control results using qualitative observation and quantitative data.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students document packaging and print-production workflows in technical reports that explain decisions, methods, results, and improvements.",
+              "statement_b": "Students document packaging and print-production workflows in technical reports that explain decisions, methods, results, and improvements.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students develop paperboard package structures and artwork that are shelf-ready, branded, and commercially usable.",
+              "statement_b": "Students develop paperboard package structures and artwork that are shelf-ready, branded, and commercially usable.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students prepare and produce specialty-print products by selecting appropriate processes, artwork strategies, and production considerations for the chosen application.",
+              "statement_b": "Students prepare and produce specialty-print products by selecting appropriate processes, artwork strategies, and production considerations for the chosen application.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students communicate package and print-production work through organized technical writing and oral presentation using domain-specific language.",
+              "statement_b": "Students communicate package and print-production work through organized technical writing and oral presentation using domain-specific language.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students analyze packaging requirements and identify required information, package functions, and market-positioning features on real package examples.",
+              "statement_b": "Students analyze packaging requirements and identify required information, package functions, and market-positioning features on real package examples.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students develop brand systems for package and specialty-print product lines using logos, colors, fonts, market research, and product positioning.",
+              "statement_b": "Students develop brand systems for package and specialty-print product lines using logos, colors, fonts, market research, and product positioning.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students prepare flexographic prepress files by making and checking trapping, separations, screening, angle, and barcode decisions for production.",
+              "statement_b": "Students prepare flexographic prepress files by making and checking trapping, separations, screening, angle, and barcode decisions for production.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students build and prepress flexographic test targets for process calibration and printability evaluation.",
+              "statement_b": "Students build and prepress flexographic test targets for process calibration and printability evaluation.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students design and produce functional and promotional flexographic labels that align brand intent with production constraints.",
+              "statement_b": "Students design and produce functional and promotional flexographic labels that align brand intent with production constraints.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students analyze flexographic print quality, defects, and process-control results using qualitative observation and quantitative data.",
+              "statement_b": "Students analyze flexographic print quality, defects, and process-control results using qualitative observation and quantitative data.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students document packaging and print-production workflows in technical reports that explain decisions, methods, results, and improvements.",
+              "statement_b": "Students document packaging and print-production workflows in technical reports that explain decisions, methods, results, and improvements.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students develop paperboard package structures and artwork that are shelf-ready, branded, and commercially usable.",
+              "statement_b": "Students develop paperboard package structures and artwork that are shelf-ready, branded, and commercially usable.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students prepare and produce specialty-print products by selecting appropriate processes, artwork strategies, and production considerations for the chosen application.",
+              "statement_b": "Students prepare and produce specialty-print products by selecting appropriate processes, artwork strategies, and production considerations for the chosen application.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 1
+            },
+            {
+              "statement_a": "Students communicate package and print-production work through organized technical writing and oral presentation using domain-specific language.",
+              "statement_b": "Students communicate package and print-production work through organized technical writing and oral presentation using domain-specific language.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            }
+          ],
+          "matchedPairDeltaMeanK": 0,
+          "matchedPairDeltaMeanU": 0,
+          "matchedPairDeltaMeanD": 0.05172413793103448,
+          "matchedPairDeltaMaxK": 0,
+          "matchedPairDeltaMaxU": 0,
+          "matchedPairDeltaMaxD": 1
+        },
+        "incomingExpectationsCount": {
+          "perRun": [
+            4,
+            4,
+            5,
+            4
+          ],
+          "mean": 4.25,
+          "min": 4,
+          "max": 5
+        }
+      }
+    },
+    {
+      "courseCode": "GC 3460",
+      "model": "gpt-5.4",
+      "truncatedAtRun": null,
+      "runCosts": [
+        2484,
+        1668,
+        1618,
+        1558,
+        1585
+      ],
+      "runs": [
+        {
+          "technicalCompetencies": [
+            {
+              "statement": "Students measure printed color and material samples with spectrophotometers using correct industry settings and record Lab data accurately.",
+              "k_depth": 4,
+              "u_depth": 2,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students calculate and interpret color-difference values against standards using Delta E formulas and tolerances.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students formulate inks to target colors with software tools, measure results, and iteratively adjust formulations until tolerance is met.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 4
+            },
+            {
+              "statement": "Students test and analyze physical and optical properties of inks through drawdowns, measurement, and formal lab-report interpretation.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students test substrate properties, document observations and measured results, and compare characteristics across samples.",
+              "k_depth": 4,
+              "u_depth": 2,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students create and apply ICC-based color-management workflows to characterize device output and manage RGB-to-CMYK reproduction.",
+              "k_depth": 3,
+              "u_depth": 2,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students produce and evaluate proofs through visual comparison and standards-based control-wedge analysis against press output.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 4
+            },
+            {
+              "statement": "Students create and use CxF spectral data to support spot-color proofing workflows.",
+              "k_depth": 3,
+              "u_depth": 2,
+              "d_depth": 2
+            },
+            {
+              "statement": "Students document measurement procedures, settings, calculations, and findings in Excel templates, charts, graphs, and formal technical reports.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students analyze brand-color reproduction across inks, substrates, and output systems in a capstone technical report.",
+              "k_depth": 4,
+              "u_depth": 4,
+              "d_depth": 4
+            }
+          ],
+          "foundationalCompetencies": [
+            {
+              "statement": "Agency",
+              "d_depth": 2
+            },
+            {
+              "statement": "Attention to Detail",
+              "d_depth": 4
+            },
+            {
+              "statement": "Resilience",
+              "d_depth": 4
+            },
+            {
+              "statement": "Curiosity",
+              "d_depth": 1
+            },
+            {
+              "statement": "Communication",
+              "d_depth": 3
+            }
+          ],
+          "incomingExpectationsCount": 4
+        },
+        {
+          "technicalCompetencies": [
+            {
+              "statement": "Students measure printed color and material samples with spectrophotometers using correct industry settings and record Lab data accurately.",
+              "k_depth": 4,
+              "u_depth": 2,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students calculate and interpret color-difference values against standards using Delta E formulas and tolerances.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students formulate inks to target colors with software tools, measure results, and iteratively adjust formulations until tolerance is met.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 4
+            },
+            {
+              "statement": "Students test and analyze physical and optical properties of inks through drawdowns, measurement, and formal lab-report interpretation.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students test substrate properties, document observations and measured results, and compare characteristics across samples.",
+              "k_depth": 4,
+              "u_depth": 2,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students create and apply ICC-based color-management workflows to characterize device output and manage RGB-to-CMYK reproduction.",
+              "k_depth": 3,
+              "u_depth": 2,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students produce and evaluate proofs through visual comparison and standards-based control-wedge analysis against press output.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 4
+            },
+            {
+              "statement": "Students create and use CxF spectral data to support spot-color proofing workflows.",
+              "k_depth": 3,
+              "u_depth": 2,
+              "d_depth": 2
+            },
+            {
+              "statement": "Students document measurement procedures, settings, calculations, and findings in Excel templates, charts, graphs, and formal technical reports.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students analyze brand-color reproduction across inks, substrates, and output systems in a capstone technical report.",
+              "k_depth": 4,
+              "u_depth": 4,
+              "d_depth": 4
+            }
+          ],
+          "foundationalCompetencies": [
+            {
+              "statement": "Agency",
+              "d_depth": 2
+            },
+            {
+              "statement": "Attention to Detail",
+              "d_depth": 4
+            },
+            {
+              "statement": "Resilience",
+              "d_depth": 4
+            },
+            {
+              "statement": "Curiosity",
+              "d_depth": 1
+            },
+            {
+              "statement": "Communication",
+              "d_depth": 3
+            }
+          ],
+          "incomingExpectationsCount": 4
+        },
+        {
+          "technicalCompetencies": [
+            {
+              "statement": "Students measure printed color and material samples with spectrophotometers using correct industry settings and record Lab data accurately.",
+              "k_depth": 4,
+              "u_depth": 2,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students calculate and interpret color-difference values against standards using Delta E formulas and tolerances.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students formulate inks to target colors with software tools, measure results, and iteratively adjust formulations until tolerance is met.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 4
+            },
+            {
+              "statement": "Students test and analyze physical and optical properties of inks through drawdowns, measurement, and formal lab-report interpretation.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students test substrate properties, document observations and measured results, and compare characteristics across samples.",
+              "k_depth": 4,
+              "u_depth": 2,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students create and apply ICC-based color-management workflows to characterize device output and manage RGB-to-CMYK reproduction.",
+              "k_depth": 4,
+              "u_depth": 2,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students produce and evaluate proofs through visual comparison and standards-based control-wedge analysis against press output.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 4
+            },
+            {
+              "statement": "Students create and use CxF spectral data to support spot-color proofing workflows.",
+              "k_depth": 3,
+              "u_depth": 1,
+              "d_depth": 2
+            },
+            {
+              "statement": "Students document measurement procedures, settings, calculations, and findings in Excel templates, charts, graphs, and formal technical reports.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students analyze brand-color reproduction across inks, substrates, and output systems in a capstone technical report.",
+              "k_depth": 4,
+              "u_depth": 4,
+              "d_depth": 4
+            }
+          ],
+          "foundationalCompetencies": [
+            {
+              "statement": "Agency",
+              "d_depth": 2
+            },
+            {
+              "statement": "Attention to Detail",
+              "d_depth": 4
+            },
+            {
+              "statement": "Resilience",
+              "d_depth": 4
+            },
+            {
+              "statement": "Curiosity",
+              "d_depth": 1
+            },
+            {
+              "statement": "Communication",
+              "d_depth": 3
+            }
+          ],
+          "incomingExpectationsCount": 4
+        },
+        {
+          "technicalCompetencies": [
+            {
+              "statement": "Students measure printed color and material samples with spectrophotometers using correct industry settings and record Lab data accurately.",
+              "k_depth": 4,
+              "u_depth": 2,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students calculate and interpret color-difference values against standards using Delta E formulas and tolerances.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students formulate inks to target colors, measure results, and iteratively adjust formulations until tolerance is met.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 4
+            },
+            {
+              "statement": "Students test and analyze physical and optical properties of inks through drawdowns, measurement, and formal lab-report interpretation.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students test substrate properties, document observations and measured results, and compare characteristics across samples.",
+              "k_depth": 4,
+              "u_depth": 2,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students create and apply ICC-based color-management workflows to characterize device output and manage RGB-to-CMYK reproduction.",
+              "k_depth": 4,
+              "u_depth": 2,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students produce and evaluate proofs through visual comparison and standards-based control-wedge analysis against press output.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 4
+            },
+            {
+              "statement": "Students create and use CxF spectral data to support spot-color proofing workflows.",
+              "k_depth": 3,
+              "u_depth": 2,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students document measurement procedures, settings, calculations, and findings in Excel templates, charts, graphs, and formal technical reports.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students analyze brand-color reproduction across inks, substrates, and output systems in a capstone technical report.",
+              "k_depth": 4,
+              "u_depth": 4,
+              "d_depth": 4
+            }
+          ],
+          "foundationalCompetencies": [
+            {
+              "statement": "Agency",
+              "d_depth": 2
+            },
+            {
+              "statement": "Attention to Detail",
+              "d_depth": 4
+            },
+            {
+              "statement": "Resilience",
+              "d_depth": 4
+            },
+            {
+              "statement": "Curiosity",
+              "d_depth": 1
+            },
+            {
+              "statement": "Communication",
+              "d_depth": 3
+            }
+          ],
+          "incomingExpectationsCount": 3
+        },
+        {
+          "technicalCompetencies": [
+            {
+              "statement": "Students measure printed color and material samples with spectrophotometers using correct industry settings and record Lab data accurately.",
+              "k_depth": 4,
+              "u_depth": 2,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students calculate and interpret color-difference values against standards using Delta E formulas and tolerances.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students formulate inks to target colors with software tools, measure results, and iteratively adjust formulations until tolerance is met.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 4
+            },
+            {
+              "statement": "Students test and analyze physical and optical properties of inks through drawdowns, measurement, and formal lab-report interpretation.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students test substrate properties, document observations and measured results, and compare characteristics across samples.",
+              "k_depth": 4,
+              "u_depth": 2,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students create and apply ICC-based color-management workflows to characterize device output and manage RGB-to-CMYK reproduction.",
+              "k_depth": 4,
+              "u_depth": 2,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students produce and evaluate proofs through visual comparison and standards-based control-wedge analysis against press output.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 4
+            },
+            {
+              "statement": "Students create and use CxF spectral data to support spot-color proofing workflows.",
+              "k_depth": 3,
+              "u_depth": 1,
+              "d_depth": 2
+            },
+            {
+              "statement": "Students document measurement procedures, settings, calculations, and findings in Excel templates, charts, graphs, and formal technical reports.",
+              "k_depth": 4,
+              "u_depth": 3,
+              "d_depth": 3
+            },
+            {
+              "statement": "Students analyze brand-color reproduction across inks, substrates, and output systems in a capstone technical report.",
+              "k_depth": 4,
+              "u_depth": 4,
+              "d_depth": 4
+            }
+          ],
+          "foundationalCompetencies": [
+            {
+              "statement": "Agency",
+              "d_depth": 2
+            },
+            {
+              "statement": "Attention to Detail",
+              "d_depth": 4
+            },
+            {
+              "statement": "Resilience",
+              "d_depth": 4
+            },
+            {
+              "statement": "Curiosity",
+              "d_depth": 1
+            },
+            {
+              "statement": "Communication",
+              "d_depth": 3
+            }
+          ],
+          "incomingExpectationsCount": 3
+        }
+      ],
+      "metrics": {
+        "technicalCompetencyCount": {
+          "perRun": [
+            10,
+            10,
+            10,
+            10,
+            10
+          ],
+          "mean": 10,
+          "min": 10,
+          "max": 10
+        },
+        "foundationalDepths": {
+          "Agency": {
+            "dValues": [
+              2,
+              2,
+              2,
+              2,
+              2
+            ],
+            "mean": 2,
+            "sd": 0,
+            "min": 2,
+            "max": 2,
+            "bandAgreement": 1
+          },
+          "Attention to Detail": {
+            "dValues": [
+              4,
+              4,
+              4,
+              4,
+              4
+            ],
+            "mean": 4,
+            "sd": 0,
+            "min": 4,
+            "max": 4,
+            "bandAgreement": 1
+          },
+          "Resilience": {
+            "dValues": [
+              4,
+              4,
+              4,
+              4,
+              4
+            ],
+            "mean": 4,
+            "sd": 0,
+            "min": 4,
+            "max": 4,
+            "bandAgreement": 1
+          },
+          "Curiosity": {
+            "dValues": [
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "mean": 1,
+            "sd": 0,
+            "min": 1,
+            "max": 1,
+            "bandAgreement": 1
+          },
+          "Communication": {
+            "dValues": [
+              3,
+              3,
+              3,
+              3,
+              3
+            ],
+            "mean": 3,
+            "sd": 0,
+            "min": 3,
+            "max": 3,
+            "bandAgreement": 1
+          }
+        },
+        "dimensionDepthDistribution": {
+          "perRun": [
+            {
+              "meanK": 3.8,
+              "meanU": 2.7,
+              "meanD": 3.2
+            },
+            {
+              "meanK": 3.8,
+              "meanU": 2.7,
+              "meanD": 3.2
+            },
+            {
+              "meanK": 3.9,
+              "meanU": 2.6,
+              "meanD": 3.2
+            },
+            {
+              "meanK": 3.9,
+              "meanU": 2.7,
+              "meanD": 3.3
+            },
+            {
+              "meanK": 3.9,
+              "meanU": 2.6,
+              "meanD": 3.2
+            }
+          ],
+          "sdMeanK": 0.05477225575051666,
+          "sdMeanU": 0.05477225575051666,
+          "sdMeanD": 0.044721359549995635
+        },
+        "statementSetStability": {
+          "meanPairwiseJaccard": 0.18230297216743777,
+          "matchedPairs": [
+            {
+              "statement_a": "Students measure printed color and material samples with spectrophotometers using correct industry settings and record Lab data accurately.",
+              "statement_b": "Students measure printed color and material samples with spectrophotometers using correct industry settings and record Lab data accurately.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 1,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students calculate and interpret color-difference values against standards using Delta E formulas and tolerances.",
+              "statement_b": "Students calculate and interpret color-difference values against standards using Delta E formulas and tolerances.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 1,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students formulate inks to target colors with software tools, measure results, and iteratively adjust formulations until tolerance is met.",
+              "statement_b": "Students formulate inks to target colors with software tools, measure results, and iteratively adjust formulations until tolerance is met.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 1,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students test and analyze physical and optical properties of inks through drawdowns, measurement, and formal lab-report interpretation.",
+              "statement_b": "Students test and analyze physical and optical properties of inks through drawdowns, measurement, and formal lab-report interpretation.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 1,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students test substrate properties, document observations and measured results, and compare characteristics across samples.",
+              "statement_b": "Students test substrate properties, document observations and measured results, and compare characteristics across samples.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 1,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students create and apply ICC-based color-management workflows to characterize device output and manage RGB-to-CMYK reproduction.",
+              "statement_b": "Students create and apply ICC-based color-management workflows to characterize device output and manage RGB-to-CMYK reproduction.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 1,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students produce and evaluate proofs through visual comparison and standards-based control-wedge analysis against press output.",
+              "statement_b": "Students produce and evaluate proofs through visual comparison and standards-based control-wedge analysis against press output.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 1,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students create and use CxF spectral data to support spot-color proofing workflows.",
+              "statement_b": "Students create and use CxF spectral data to support spot-color proofing workflows.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 1,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students document measurement procedures, settings, calculations, and findings in Excel templates, charts, graphs, and formal technical reports.",
+              "statement_b": "Students document measurement procedures, settings, calculations, and findings in Excel templates, charts, graphs, and formal technical reports.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 1,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students analyze brand-color reproduction across inks, substrates, and output systems in a capstone technical report.",
+              "statement_b": "Students analyze brand-color reproduction across inks, substrates, and output systems in a capstone technical report.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 1,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students measure printed color and material samples with spectrophotometers using correct industry settings and record Lab data accurately.",
+              "statement_b": "Students measure printed color and material samples with spectrophotometers using correct industry settings and record Lab data accurately.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students calculate and interpret color-difference values against standards using Delta E formulas and tolerances.",
+              "statement_b": "Students calculate and interpret color-difference values against standards using Delta E formulas and tolerances.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students formulate inks to target colors with software tools, measure results, and iteratively adjust formulations until tolerance is met.",
+              "statement_b": "Students formulate inks to target colors with software tools, measure results, and iteratively adjust formulations until tolerance is met.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students test and analyze physical and optical properties of inks through drawdowns, measurement, and formal lab-report interpretation.",
+              "statement_b": "Students test and analyze physical and optical properties of inks through drawdowns, measurement, and formal lab-report interpretation.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students test substrate properties, document observations and measured results, and compare characteristics across samples.",
+              "statement_b": "Students test substrate properties, document observations and measured results, and compare characteristics across samples.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students create and apply ICC-based color-management workflows to characterize device output and manage RGB-to-CMYK reproduction.",
+              "statement_b": "Students create and apply ICC-based color-management workflows to characterize device output and manage RGB-to-CMYK reproduction.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 2,
+              "delta_k": 1,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students produce and evaluate proofs through visual comparison and standards-based control-wedge analysis against press output.",
+              "statement_b": "Students produce and evaluate proofs through visual comparison and standards-based control-wedge analysis against press output.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students create and use CxF spectral data to support spot-color proofing workflows.",
+              "statement_b": "Students create and use CxF spectral data to support spot-color proofing workflows.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 1,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students document measurement procedures, settings, calculations, and findings in Excel templates, charts, graphs, and formal technical reports.",
+              "statement_b": "Students document measurement procedures, settings, calculations, and findings in Excel templates, charts, graphs, and formal technical reports.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students analyze brand-color reproduction across inks, substrates, and output systems in a capstone technical report.",
+              "statement_b": "Students analyze brand-color reproduction across inks, substrates, and output systems in a capstone technical report.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students measure printed color and material samples with spectrophotometers using correct industry settings and record Lab data accurately.",
+              "statement_b": "Students measure printed color and material samples with spectrophotometers using correct industry settings and record Lab data accurately.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students calculate and interpret color-difference values against standards using Delta E formulas and tolerances.",
+              "statement_b": "Students calculate and interpret color-difference values against standards using Delta E formulas and tolerances.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students formulate inks to target colors with software tools, measure results, and iteratively adjust formulations until tolerance is met.",
+              "statement_b": "Students formulate inks to target colors, measure results, and iteratively adjust formulations until tolerance is met.",
+              "jaccard": 0.8235294117647058,
+              "runA": 0,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students test and analyze physical and optical properties of inks through drawdowns, measurement, and formal lab-report interpretation.",
+              "statement_b": "Students test and analyze physical and optical properties of inks through drawdowns, measurement, and formal lab-report interpretation.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students test substrate properties, document observations and measured results, and compare characteristics across samples.",
+              "statement_b": "Students test substrate properties, document observations and measured results, and compare characteristics across samples.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students create and apply ICC-based color-management workflows to characterize device output and manage RGB-to-CMYK reproduction.",
+              "statement_b": "Students create and apply ICC-based color-management workflows to characterize device output and manage RGB-to-CMYK reproduction.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 3,
+              "delta_k": 1,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students produce and evaluate proofs through visual comparison and standards-based control-wedge analysis against press output.",
+              "statement_b": "Students produce and evaluate proofs through visual comparison and standards-based control-wedge analysis against press output.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students create and use CxF spectral data to support spot-color proofing workflows.",
+              "statement_b": "Students create and use CxF spectral data to support spot-color proofing workflows.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 1
+            },
+            {
+              "statement_a": "Students document measurement procedures, settings, calculations, and findings in Excel templates, charts, graphs, and formal technical reports.",
+              "statement_b": "Students document measurement procedures, settings, calculations, and findings in Excel templates, charts, graphs, and formal technical reports.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students analyze brand-color reproduction across inks, substrates, and output systems in a capstone technical report.",
+              "statement_b": "Students analyze brand-color reproduction across inks, substrates, and output systems in a capstone technical report.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students measure printed color and material samples with spectrophotometers using correct industry settings and record Lab data accurately.",
+              "statement_b": "Students measure printed color and material samples with spectrophotometers using correct industry settings and record Lab data accurately.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students calculate and interpret color-difference values against standards using Delta E formulas and tolerances.",
+              "statement_b": "Students calculate and interpret color-difference values against standards using Delta E formulas and tolerances.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students formulate inks to target colors with software tools, measure results, and iteratively adjust formulations until tolerance is met.",
+              "statement_b": "Students formulate inks to target colors with software tools, measure results, and iteratively adjust formulations until tolerance is met.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students test and analyze physical and optical properties of inks through drawdowns, measurement, and formal lab-report interpretation.",
+              "statement_b": "Students test and analyze physical and optical properties of inks through drawdowns, measurement, and formal lab-report interpretation.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students test substrate properties, document observations and measured results, and compare characteristics across samples.",
+              "statement_b": "Students test substrate properties, document observations and measured results, and compare characteristics across samples.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students create and apply ICC-based color-management workflows to characterize device output and manage RGB-to-CMYK reproduction.",
+              "statement_b": "Students create and apply ICC-based color-management workflows to characterize device output and manage RGB-to-CMYK reproduction.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 4,
+              "delta_k": 1,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students produce and evaluate proofs through visual comparison and standards-based control-wedge analysis against press output.",
+              "statement_b": "Students produce and evaluate proofs through visual comparison and standards-based control-wedge analysis against press output.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students create and use CxF spectral data to support spot-color proofing workflows.",
+              "statement_b": "Students create and use CxF spectral data to support spot-color proofing workflows.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 1,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students document measurement procedures, settings, calculations, and findings in Excel templates, charts, graphs, and formal technical reports.",
+              "statement_b": "Students document measurement procedures, settings, calculations, and findings in Excel templates, charts, graphs, and formal technical reports.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students analyze brand-color reproduction across inks, substrates, and output systems in a capstone technical report.",
+              "statement_b": "Students analyze brand-color reproduction across inks, substrates, and output systems in a capstone technical report.",
+              "jaccard": 1,
+              "runA": 0,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students measure printed color and material samples with spectrophotometers using correct industry settings and record Lab data accurately.",
+              "statement_b": "Students measure printed color and material samples with spectrophotometers using correct industry settings and record Lab data accurately.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students calculate and interpret color-difference values against standards using Delta E formulas and tolerances.",
+              "statement_b": "Students calculate and interpret color-difference values against standards using Delta E formulas and tolerances.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students formulate inks to target colors with software tools, measure results, and iteratively adjust formulations until tolerance is met.",
+              "statement_b": "Students formulate inks to target colors with software tools, measure results, and iteratively adjust formulations until tolerance is met.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students test and analyze physical and optical properties of inks through drawdowns, measurement, and formal lab-report interpretation.",
+              "statement_b": "Students test and analyze physical and optical properties of inks through drawdowns, measurement, and formal lab-report interpretation.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students test substrate properties, document observations and measured results, and compare characteristics across samples.",
+              "statement_b": "Students test substrate properties, document observations and measured results, and compare characteristics across samples.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students create and apply ICC-based color-management workflows to characterize device output and manage RGB-to-CMYK reproduction.",
+              "statement_b": "Students create and apply ICC-based color-management workflows to characterize device output and manage RGB-to-CMYK reproduction.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 2,
+              "delta_k": 1,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students produce and evaluate proofs through visual comparison and standards-based control-wedge analysis against press output.",
+              "statement_b": "Students produce and evaluate proofs through visual comparison and standards-based control-wedge analysis against press output.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students create and use CxF spectral data to support spot-color proofing workflows.",
+              "statement_b": "Students create and use CxF spectral data to support spot-color proofing workflows.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 1,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students document measurement procedures, settings, calculations, and findings in Excel templates, charts, graphs, and formal technical reports.",
+              "statement_b": "Students document measurement procedures, settings, calculations, and findings in Excel templates, charts, graphs, and formal technical reports.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students analyze brand-color reproduction across inks, substrates, and output systems in a capstone technical report.",
+              "statement_b": "Students analyze brand-color reproduction across inks, substrates, and output systems in a capstone technical report.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 2,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students measure printed color and material samples with spectrophotometers using correct industry settings and record Lab data accurately.",
+              "statement_b": "Students measure printed color and material samples with spectrophotometers using correct industry settings and record Lab data accurately.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students calculate and interpret color-difference values against standards using Delta E formulas and tolerances.",
+              "statement_b": "Students calculate and interpret color-difference values against standards using Delta E formulas and tolerances.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students formulate inks to target colors with software tools, measure results, and iteratively adjust formulations until tolerance is met.",
+              "statement_b": "Students formulate inks to target colors, measure results, and iteratively adjust formulations until tolerance is met.",
+              "jaccard": 0.8235294117647058,
+              "runA": 1,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students test and analyze physical and optical properties of inks through drawdowns, measurement, and formal lab-report interpretation.",
+              "statement_b": "Students test and analyze physical and optical properties of inks through drawdowns, measurement, and formal lab-report interpretation.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students test substrate properties, document observations and measured results, and compare characteristics across samples.",
+              "statement_b": "Students test substrate properties, document observations and measured results, and compare characteristics across samples.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students create and apply ICC-based color-management workflows to characterize device output and manage RGB-to-CMYK reproduction.",
+              "statement_b": "Students create and apply ICC-based color-management workflows to characterize device output and manage RGB-to-CMYK reproduction.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 3,
+              "delta_k": 1,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students produce and evaluate proofs through visual comparison and standards-based control-wedge analysis against press output.",
+              "statement_b": "Students produce and evaluate proofs through visual comparison and standards-based control-wedge analysis against press output.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students create and use CxF spectral data to support spot-color proofing workflows.",
+              "statement_b": "Students create and use CxF spectral data to support spot-color proofing workflows.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 1
+            },
+            {
+              "statement_a": "Students document measurement procedures, settings, calculations, and findings in Excel templates, charts, graphs, and formal technical reports.",
+              "statement_b": "Students document measurement procedures, settings, calculations, and findings in Excel templates, charts, graphs, and formal technical reports.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students analyze brand-color reproduction across inks, substrates, and output systems in a capstone technical report.",
+              "statement_b": "Students analyze brand-color reproduction across inks, substrates, and output systems in a capstone technical report.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students measure printed color and material samples with spectrophotometers using correct industry settings and record Lab data accurately.",
+              "statement_b": "Students measure printed color and material samples with spectrophotometers using correct industry settings and record Lab data accurately.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students calculate and interpret color-difference values against standards using Delta E formulas and tolerances.",
+              "statement_b": "Students calculate and interpret color-difference values against standards using Delta E formulas and tolerances.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students formulate inks to target colors with software tools, measure results, and iteratively adjust formulations until tolerance is met.",
+              "statement_b": "Students formulate inks to target colors with software tools, measure results, and iteratively adjust formulations until tolerance is met.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students test and analyze physical and optical properties of inks through drawdowns, measurement, and formal lab-report interpretation.",
+              "statement_b": "Students test and analyze physical and optical properties of inks through drawdowns, measurement, and formal lab-report interpretation.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students test substrate properties, document observations and measured results, and compare characteristics across samples.",
+              "statement_b": "Students test substrate properties, document observations and measured results, and compare characteristics across samples.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students create and apply ICC-based color-management workflows to characterize device output and manage RGB-to-CMYK reproduction.",
+              "statement_b": "Students create and apply ICC-based color-management workflows to characterize device output and manage RGB-to-CMYK reproduction.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 4,
+              "delta_k": 1,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students produce and evaluate proofs through visual comparison and standards-based control-wedge analysis against press output.",
+              "statement_b": "Students produce and evaluate proofs through visual comparison and standards-based control-wedge analysis against press output.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students create and use CxF spectral data to support spot-color proofing workflows.",
+              "statement_b": "Students create and use CxF spectral data to support spot-color proofing workflows.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 1,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students document measurement procedures, settings, calculations, and findings in Excel templates, charts, graphs, and formal technical reports.",
+              "statement_b": "Students document measurement procedures, settings, calculations, and findings in Excel templates, charts, graphs, and formal technical reports.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students analyze brand-color reproduction across inks, substrates, and output systems in a capstone technical report.",
+              "statement_b": "Students analyze brand-color reproduction across inks, substrates, and output systems in a capstone technical report.",
+              "jaccard": 1,
+              "runA": 1,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students measure printed color and material samples with spectrophotometers using correct industry settings and record Lab data accurately.",
+              "statement_b": "Students measure printed color and material samples with spectrophotometers using correct industry settings and record Lab data accurately.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students calculate and interpret color-difference values against standards using Delta E formulas and tolerances.",
+              "statement_b": "Students calculate and interpret color-difference values against standards using Delta E formulas and tolerances.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students formulate inks to target colors with software tools, measure results, and iteratively adjust formulations until tolerance is met.",
+              "statement_b": "Students formulate inks to target colors, measure results, and iteratively adjust formulations until tolerance is met.",
+              "jaccard": 0.8235294117647058,
+              "runA": 2,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students test and analyze physical and optical properties of inks through drawdowns, measurement, and formal lab-report interpretation.",
+              "statement_b": "Students test and analyze physical and optical properties of inks through drawdowns, measurement, and formal lab-report interpretation.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students test substrate properties, document observations and measured results, and compare characteristics across samples.",
+              "statement_b": "Students test substrate properties, document observations and measured results, and compare characteristics across samples.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students create and apply ICC-based color-management workflows to characterize device output and manage RGB-to-CMYK reproduction.",
+              "statement_b": "Students create and apply ICC-based color-management workflows to characterize device output and manage RGB-to-CMYK reproduction.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students produce and evaluate proofs through visual comparison and standards-based control-wedge analysis against press output.",
+              "statement_b": "Students produce and evaluate proofs through visual comparison and standards-based control-wedge analysis against press output.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students create and use CxF spectral data to support spot-color proofing workflows.",
+              "statement_b": "Students create and use CxF spectral data to support spot-color proofing workflows.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 1,
+              "delta_d": 1
+            },
+            {
+              "statement_a": "Students document measurement procedures, settings, calculations, and findings in Excel templates, charts, graphs, and formal technical reports.",
+              "statement_b": "Students document measurement procedures, settings, calculations, and findings in Excel templates, charts, graphs, and formal technical reports.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students analyze brand-color reproduction across inks, substrates, and output systems in a capstone technical report.",
+              "statement_b": "Students analyze brand-color reproduction across inks, substrates, and output systems in a capstone technical report.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 3,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students measure printed color and material samples with spectrophotometers using correct industry settings and record Lab data accurately.",
+              "statement_b": "Students measure printed color and material samples with spectrophotometers using correct industry settings and record Lab data accurately.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students calculate and interpret color-difference values against standards using Delta E formulas and tolerances.",
+              "statement_b": "Students calculate and interpret color-difference values against standards using Delta E formulas and tolerances.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students formulate inks to target colors with software tools, measure results, and iteratively adjust formulations until tolerance is met.",
+              "statement_b": "Students formulate inks to target colors with software tools, measure results, and iteratively adjust formulations until tolerance is met.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students test and analyze physical and optical properties of inks through drawdowns, measurement, and formal lab-report interpretation.",
+              "statement_b": "Students test and analyze physical and optical properties of inks through drawdowns, measurement, and formal lab-report interpretation.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students test substrate properties, document observations and measured results, and compare characteristics across samples.",
+              "statement_b": "Students test substrate properties, document observations and measured results, and compare characteristics across samples.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students create and apply ICC-based color-management workflows to characterize device output and manage RGB-to-CMYK reproduction.",
+              "statement_b": "Students create and apply ICC-based color-management workflows to characterize device output and manage RGB-to-CMYK reproduction.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students produce and evaluate proofs through visual comparison and standards-based control-wedge analysis against press output.",
+              "statement_b": "Students produce and evaluate proofs through visual comparison and standards-based control-wedge analysis against press output.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students create and use CxF spectral data to support spot-color proofing workflows.",
+              "statement_b": "Students create and use CxF spectral data to support spot-color proofing workflows.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students document measurement procedures, settings, calculations, and findings in Excel templates, charts, graphs, and formal technical reports.",
+              "statement_b": "Students document measurement procedures, settings, calculations, and findings in Excel templates, charts, graphs, and formal technical reports.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students analyze brand-color reproduction across inks, substrates, and output systems in a capstone technical report.",
+              "statement_b": "Students analyze brand-color reproduction across inks, substrates, and output systems in a capstone technical report.",
+              "jaccard": 1,
+              "runA": 2,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students measure printed color and material samples with spectrophotometers using correct industry settings and record Lab data accurately.",
+              "statement_b": "Students measure printed color and material samples with spectrophotometers using correct industry settings and record Lab data accurately.",
+              "jaccard": 1,
+              "runA": 3,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students calculate and interpret color-difference values against standards using Delta E formulas and tolerances.",
+              "statement_b": "Students calculate and interpret color-difference values against standards using Delta E formulas and tolerances.",
+              "jaccard": 1,
+              "runA": 3,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students formulate inks to target colors, measure results, and iteratively adjust formulations until tolerance is met.",
+              "statement_b": "Students formulate inks to target colors with software tools, measure results, and iteratively adjust formulations until tolerance is met.",
+              "jaccard": 0.8235294117647058,
+              "runA": 3,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students test and analyze physical and optical properties of inks through drawdowns, measurement, and formal lab-report interpretation.",
+              "statement_b": "Students test and analyze physical and optical properties of inks through drawdowns, measurement, and formal lab-report interpretation.",
+              "jaccard": 1,
+              "runA": 3,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students test substrate properties, document observations and measured results, and compare characteristics across samples.",
+              "statement_b": "Students test substrate properties, document observations and measured results, and compare characteristics across samples.",
+              "jaccard": 1,
+              "runA": 3,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students create and apply ICC-based color-management workflows to characterize device output and manage RGB-to-CMYK reproduction.",
+              "statement_b": "Students create and apply ICC-based color-management workflows to characterize device output and manage RGB-to-CMYK reproduction.",
+              "jaccard": 1,
+              "runA": 3,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students produce and evaluate proofs through visual comparison and standards-based control-wedge analysis against press output.",
+              "statement_b": "Students produce and evaluate proofs through visual comparison and standards-based control-wedge analysis against press output.",
+              "jaccard": 1,
+              "runA": 3,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students create and use CxF spectral data to support spot-color proofing workflows.",
+              "statement_b": "Students create and use CxF spectral data to support spot-color proofing workflows.",
+              "jaccard": 1,
+              "runA": 3,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 1,
+              "delta_d": 1
+            },
+            {
+              "statement_a": "Students document measurement procedures, settings, calculations, and findings in Excel templates, charts, graphs, and formal technical reports.",
+              "statement_b": "Students document measurement procedures, settings, calculations, and findings in Excel templates, charts, graphs, and formal technical reports.",
+              "jaccard": 1,
+              "runA": 3,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            },
+            {
+              "statement_a": "Students analyze brand-color reproduction across inks, substrates, and output systems in a capstone technical report.",
+              "statement_b": "Students analyze brand-color reproduction across inks, substrates, and output systems in a capstone technical report.",
+              "jaccard": 1,
+              "runA": 3,
+              "runB": 4,
+              "delta_k": 0,
+              "delta_u": 0,
+              "delta_d": 0
+            }
+          ],
+          "matchedPairDeltaMeanK": 0.06,
+          "matchedPairDeltaMeanU": 0.06,
+          "matchedPairDeltaMeanD": 0.04,
+          "matchedPairDeltaMaxK": 1,
+          "matchedPairDeltaMaxU": 1,
+          "matchedPairDeltaMaxD": 1
+        },
+        "incomingExpectationsCount": {
+          "perRun": [
+            4,
+            4,
+            4,
+            3,
+            3
+          ],
+          "mean": 3.6,
+          "min": 3,
+          "max": 4
+        }
+      }
+    }
+  ],
+  "part2": [
+    {
+      "snapshotId": "126227e0-383e-4f4d-8370-eb0d1c80c78b",
+      "courseCode": "GC 3800",
+      "careerTargetId": "account-management",
+      "careerTargetName": "Account Management",
+      "model": "gpt-5.4-mini",
+      "truncatedAtRun": null,
+      "runCosts": [
+        122,
+        39,
+        48,
+        46,
+        47
+      ],
+      "subCompetencyIds": [
+        "client-needs-diagnosis",
+        "proposal-development",
+        "project-oversight",
+        "results-interpretation",
+        "gc-production-literacy"
+      ],
+      "runs": [
+        {
+          "client-needs-diagnosis": {
+            "k_depth": 2,
+            "u_depth": 1,
+            "d_depth": 1
+          },
+          "proposal-development": {
+            "k_depth": 1,
+            "u_depth": 0,
+            "d_depth": 1
+          },
+          "project-oversight": {
+            "k_depth": 0,
+            "u_depth": 0,
+            "d_depth": 1
+          },
+          "results-interpretation": {
+            "k_depth": 1,
+            "u_depth": 1,
+            "d_depth": 0
+          },
+          "gc-production-literacy": {
+            "k_depth": 2,
+            "u_depth": 1,
+            "d_depth": 1
+          }
+        },
+        {
+          "client-needs-diagnosis": {
+            "k_depth": 0,
+            "u_depth": 0,
+            "d_depth": 0
+          },
+          "proposal-development": {
+            "k_depth": 0,
+            "u_depth": 0,
+            "d_depth": 0
+          },
+          "project-oversight": {
+            "k_depth": 0,
+            "u_depth": 0,
+            "d_depth": 0
+          },
+          "results-interpretation": {
+            "k_depth": 0,
+            "u_depth": 0,
+            "d_depth": 0
+          },
+          "gc-production-literacy": {
+            "k_depth": 1,
+            "u_depth": 1,
+            "d_depth": 1
+          }
+        },
+        {
+          "client-needs-diagnosis": {
+            "k_depth": 2,
+            "u_depth": 1,
+            "d_depth": 1
+          },
+          "proposal-development": {
+            "k_depth": 2,
+            "u_depth": 1,
+            "d_depth": 1
+          },
+          "project-oversight": {
+            "k_depth": 1,
+            "u_depth": 1,
+            "d_depth": 1
+          },
+          "results-interpretation": {
+            "k_depth": 1,
+            "u_depth": 1,
+            "d_depth": 1
+          },
+          "gc-production-literacy": {
+            "k_depth": 2,
+            "u_depth": 1,
+            "d_depth": 1
+          }
+        },
+        {
+          "client-needs-diagnosis": {
+            "k_depth": 2,
+            "u_depth": 1,
+            "d_depth": 1
+          },
+          "proposal-development": {
+            "k_depth": 1,
+            "u_depth": 0,
+            "d_depth": 1
+          },
+          "project-oversight": {
+            "k_depth": 0,
+            "u_depth": 0,
+            "d_depth": 0
+          },
+          "results-interpretation": {
+            "k_depth": 1,
+            "u_depth": 1,
+            "d_depth": 1
+          },
+          "gc-production-literacy": {
+            "k_depth": 0,
+            "u_depth": 0,
+            "d_depth": 0
+          }
+        },
+        {
+          "client-needs-diagnosis": {
+            "k_depth": 2,
+            "u_depth": 1,
+            "d_depth": 1
+          },
+          "proposal-development": {
+            "k_depth": 2,
+            "u_depth": 1,
+            "d_depth": 1
+          },
+          "project-oversight": {
+            "k_depth": 0,
+            "u_depth": 0,
+            "d_depth": 0
+          },
+          "results-interpretation": {
+            "k_depth": 1,
+            "u_depth": 1,
+            "d_depth": 1
+          },
+          "gc-production-literacy": {
+            "k_depth": 1,
+            "u_depth": 1,
+            "d_depth": 1
+          }
+        }
+      ],
+      "metrics": {
+        "perCell": {
+          "client-needs-diagnosis": {
+            "kSd": 0.8944271909999161,
+            "uSd": 0.44721359549995804,
+            "dSd": 0.44721359549995804,
+            "kMeanAbsDelta": 0.4,
+            "uMeanAbsDelta": 0.2,
+            "dMeanAbsDelta": 0.2,
+            "kMaxSpread": 2,
+            "uMaxSpread": 1,
+            "dMaxSpread": 1,
+            "kBandAgreement": 0,
+            "uBandAgreement": 0,
+            "dBandAgreement": 0
+          },
+          "proposal-development": {
+            "kSd": 0.8366600265340756,
+            "uSd": 0.5477225575051662,
+            "dSd": 0.44721359549995804,
+            "kMeanAbsDelta": 0.6,
+            "uMeanAbsDelta": 0.4,
+            "dMeanAbsDelta": 0.2,
+            "kMaxSpread": 2,
+            "uMaxSpread": 1,
+            "dMaxSpread": 1,
+            "kBandAgreement": 0,
+            "uBandAgreement": 0,
+            "dBandAgreement": 0
+          },
+          "project-oversight": {
+            "kSd": 0.44721359549995804,
+            "uSd": 0.44721359549995804,
+            "dSd": 0.5477225575051662,
+            "kMeanAbsDelta": 0.2,
+            "uMeanAbsDelta": 0.2,
+            "dMeanAbsDelta": 0.4,
+            "kMaxSpread": 1,
+            "uMaxSpread": 1,
+            "dMaxSpread": 1,
+            "kBandAgreement": 0,
+            "uBandAgreement": 0,
+            "dBandAgreement": 0
+          },
+          "results-interpretation": {
+            "kSd": 0.44721359549995804,
+            "uSd": 0.44721359549995804,
+            "dSd": 0.5477225575051662,
+            "kMeanAbsDelta": 0.2,
+            "uMeanAbsDelta": 0.2,
+            "dMeanAbsDelta": 0.4,
+            "kMaxSpread": 1,
+            "uMaxSpread": 1,
+            "dMaxSpread": 1,
+            "kBandAgreement": 0,
+            "uBandAgreement": 0,
+            "dBandAgreement": 0
+          },
+          "gc-production-literacy": {
+            "kSd": 0.8366600265340756,
+            "uSd": 0.4472135954999579,
+            "dSd": 0.4472135954999579,
+            "kMeanAbsDelta": 0.6,
+            "uMeanAbsDelta": 0.2,
+            "dMeanAbsDelta": 0.2,
+            "kMaxSpread": 2,
+            "uMaxSpread": 1,
+            "dMaxSpread": 1,
+            "kBandAgreement": 0,
+            "uBandAgreement": 0,
+            "dBandAgreement": 0
+          }
+        },
+        "pairLevel": {
+          "kFullBandAgreementPct": 0,
+          "uFullBandAgreementPct": 0,
+          "dFullBandAgreementPct": 0,
+          "kWithin1IntPct": 0.4,
+          "uWithin1IntPct": 1,
+          "dWithin1IntPct": 1
+        }
+      }
+    },
+    {
+      "snapshotId": "126227e0-383e-4f4d-8370-eb0d1c80c78b",
+      "courseCode": "GC 3800",
+      "careerTargetId": "brand-strategy",
+      "careerTargetName": "Brand Strategy",
+      "model": "gpt-5.4-mini",
+      "truncatedAtRun": null,
+      "runCosts": [
+        53,
+        47,
+        48,
+        50,
+        44
+      ],
+      "subCompetencyIds": [
+        "consumer-research",
+        "competitive-analysis",
+        "brand-positioning",
+        "campaign-measurement",
+        "quantitative-literacy",
+        "cross-channel-translation"
+      ],
+      "runs": [
+        {
+          "consumer-research": {
+            "k_depth": 2,
+            "u_depth": 1,
+            "d_depth": 0
+          },
+          "competitive-analysis": {
+            "k_depth": 2,
+            "u_depth": 1,
+            "d_depth": 0
+          },
+          "brand-positioning": {
+            "k_depth": 1,
+            "u_depth": 1,
+            "d_depth": 0
+          },
+          "campaign-measurement": {
+            "k_depth": null,
+            "u_depth": null,
+            "d_depth": 0
+          },
+          "quantitative-literacy": {
+            "k_depth": 3,
+            "u_depth": 2,
+            "d_depth": 3
+          },
+          "cross-channel-translation": {
+            "k_depth": null,
+            "u_depth": null,
+            "d_depth": 0
+          }
+        },
+        {
+          "consumer-research": {
+            "k_depth": 2,
+            "u_depth": 1,
+            "d_depth": 1
+          },
+          "competitive-analysis": {
+            "k_depth": 1,
+            "u_depth": 1,
+            "d_depth": 0
+          },
+          "brand-positioning": {
+            "k_depth": 0,
+            "u_depth": 0,
+            "d_depth": 0
+          },
+          "campaign-measurement": {
+            "k_depth": 0,
+            "u_depth": 0,
+            "d_depth": 0
+          },
+          "quantitative-literacy": {
+            "k_depth": 2,
+            "u_depth": 1,
+            "d_depth": 1
+          },
+          "cross-channel-translation": {
+            "k_depth": 0,
+            "u_depth": 0,
+            "d_depth": 0
+          }
+        },
+        {
+          "consumer-research": {
+            "k_depth": 2,
+            "u_depth": 1,
+            "d_depth": 1
+          },
+          "competitive-analysis": {
+            "k_depth": 2,
+            "u_depth": 1,
+            "d_depth": 1
+          },
+          "brand-positioning": {
+            "k_depth": 1,
+            "u_depth": 1,
+            "d_depth": 0
+          },
+          "campaign-measurement": {
+            "k_depth": 0,
+            "u_depth": 0,
+            "d_depth": 0
+          },
+          "quantitative-literacy": {
+            "k_depth": 2,
+            "u_depth": 1,
+            "d_depth": 1
+          },
+          "cross-channel-translation": {
+            "k_depth": 1,
+            "u_depth": 0,
+            "d_depth": 0
+          }
+        },
+        {
+          "consumer-research": {
+            "k_depth": 2,
+            "u_depth": 1,
+            "d_depth": 1
+          },
+          "competitive-analysis": {
+            "k_depth": 2,
+            "u_depth": 1,
+            "d_depth": 1
+          },
+          "brand-positioning": {
+            "k_depth": 1,
+            "u_depth": 1,
+            "d_depth": 0
+          },
+          "campaign-measurement": {
+            "k_depth": 0,
+            "u_depth": 0,
+            "d_depth": 0
+          },
+          "quantitative-literacy": {
+            "k_depth": 2,
+            "u_depth": 2,
+            "d_depth": 1
+          },
+          "cross-channel-translation": {
+            "k_depth": 1,
+            "u_depth": 0,
+            "d_depth": 0
+          }
+        },
+        {
+          "consumer-research": {
+            "k_depth": 1,
+            "u_depth": 1,
+            "d_depth": 0
+          },
+          "competitive-analysis": {
+            "k_depth": 1,
+            "u_depth": 1,
+            "d_depth": 0
+          },
+          "brand-positioning": {
+            "k_depth": 0,
+            "u_depth": 0,
+            "d_depth": 0
+          },
+          "campaign-measurement": {
+            "k_depth": 0,
+            "u_depth": 0,
+            "d_depth": 0
+          },
+          "quantitative-literacy": {
+            "k_depth": 1,
+            "u_depth": 1,
+            "d_depth": 0
+          },
+          "cross-channel-translation": {
+            "k_depth": 0,
+            "u_depth": 0,
+            "d_depth": 0
+          }
+        }
+      ],
+      "metrics": {
+        "perCell": {
+          "consumer-research": {
+            "kSd": 0.4472135954999579,
+            "uSd": 0,
+            "dSd": 0.5477225575051662,
+            "kMeanAbsDelta": 0.2,
+            "uMeanAbsDelta": 0,
+            "dMeanAbsDelta": 0.4,
+            "kMaxSpread": 1,
+            "uMaxSpread": 0,
+            "dMaxSpread": 1,
+            "kBandAgreement": 1,
+            "uBandAgreement": 1,
+            "dBandAgreement": 0
+          },
+          "competitive-analysis": {
+            "kSd": 0.5477225575051661,
+            "uSd": 0,
+            "dSd": 0.5477225575051662,
+            "kMeanAbsDelta": 0.4,
+            "uMeanAbsDelta": 0,
+            "dMeanAbsDelta": 0.4,
+            "kMaxSpread": 1,
+            "uMaxSpread": 0,
+            "dMaxSpread": 1,
+            "kBandAgreement": 1,
+            "uBandAgreement": 1,
+            "dBandAgreement": 0
+          },
+          "brand-positioning": {
+            "kSd": 0.5477225575051662,
+            "uSd": 0.5477225575051662,
+            "dSd": 0,
+            "kMeanAbsDelta": 0.4,
+            "uMeanAbsDelta": 0.4,
+            "dMeanAbsDelta": 0,
+            "kMaxSpread": 1,
+            "uMaxSpread": 1,
+            "dMaxSpread": 0,
+            "kBandAgreement": 0,
+            "uBandAgreement": 0,
+            "dBandAgreement": 1
+          },
+          "campaign-measurement": {
+            "kSd": 0,
+            "uSd": 0,
+            "dSd": 0,
+            "kMeanAbsDelta": 0,
+            "uMeanAbsDelta": 0,
+            "dMeanAbsDelta": 0,
+            "kMaxSpread": 0,
+            "uMaxSpread": 0,
+            "dMaxSpread": 0,
+            "kBandAgreement": 1,
+            "uBandAgreement": 1,
+            "dBandAgreement": 1
+          },
+          "quantitative-literacy": {
+            "kSd": 0.7071067811865476,
+            "uSd": 0.5477225575051661,
+            "dSd": 1.0954451150103324,
+            "kMeanAbsDelta": 0.4,
+            "uMeanAbsDelta": 0.4,
+            "dMeanAbsDelta": 0.6,
+            "kMaxSpread": 2,
+            "uMaxSpread": 1,
+            "dMaxSpread": 3,
+            "kBandAgreement": 0,
+            "uBandAgreement": 1,
+            "dBandAgreement": 0
+          },
+          "cross-channel-translation": {
+            "kSd": 0.5773502691896257,
+            "uSd": 0,
+            "dSd": 0,
+            "kMeanAbsDelta": 0.5,
+            "uMeanAbsDelta": 0,
+            "dMeanAbsDelta": 0,
+            "kMaxSpread": 1,
+            "uMaxSpread": 0,
+            "dMaxSpread": 0,
+            "kBandAgreement": 0,
+            "uBandAgreement": 1,
+            "dBandAgreement": 1
+          }
+        },
+        "pairLevel": {
+          "kFullBandAgreementPct": 0.5,
+          "uFullBandAgreementPct": 0.8333333333333334,
+          "dFullBandAgreementPct": 0.5,
+          "kWithin1IntPct": 0.8333333333333334,
+          "uWithin1IntPct": 1,
+          "dWithin1IntPct": 0.8333333333333334
+        }
+      }
+    }
+  ]
+}
