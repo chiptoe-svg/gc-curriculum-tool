@@ -294,8 +294,10 @@ export function CaptureClient({
         <>
       {/* Hide the setup trays while generating (2026-06-12 walkthrough):
           they're irrelevant mid-synthesis, and the generating card below
-          explains what's actually happening instead. */}
-      {!isLanding && stage !== 'generating' && trays}
+          explains what's actually happening instead.
+          Also hidden in the review stage (2026-06-12 spec): Step 2 of 2 is a
+          focused review surface; the setup panels are for Step 1 / the chat. */}
+      {!isLanding && stage !== 'generating' && stage !== 'review' && trays}
 
       {stage === 'chat' && (
         <>

@@ -16,7 +16,7 @@ import { describeDepth, type Dimension } from '@/lib/ai/capture/depth-anchors';
 import { CourseOverview } from './CourseOverview';
 import { ClassStructureSection } from './ClassStructureSection';
 import { MajorProjectsSection } from './MajorProjectsSection';
-import { StressTestPanel } from './StressTestPanel';
+import { StressTestPanel, type StressTestHandle } from './StressTestPanel';
 import { StressTestBadge } from './StressTestBadge';
 import type { StressTestResultType } from '@/lib/ai/stress-test/schema';
 import { deriveEvidenceBand, type EvidenceBand, type EvidenceClaim } from '@/lib/program/evidence-ladder';
@@ -876,6 +876,9 @@ export function ProfileReviewPanel({
   // land you ON the snapshot caption/note inputs rather than at y=0
   // (which is above the modal, since the modal sits mid-page).
   const snapshotPanelRef = useRef<HTMLDivElement | null>(null);
+  const stressTestRef = useRef<StressTestHandle | null>(null);
+  const [auditNotesOpen, setAuditNotesOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [snapshotCaption, setSnapshotCaption] = useState('');
   const [snapshotNote, setSnapshotNote] = useState('');
   const [snapshotting, setSnapshotting] = useState(false);
@@ -1055,115 +1058,53 @@ export function ProfileReviewPanel({
   }
 
   return (
-    <section className="space-y-6">
-      {/* ── Approval-status banner — first thing the faculty sees ── */}
-      {isCaptured ? (
-        <div className="rounded-md border border-teal-300 bg-teal-50 px-4 py-3 text-sm text-teal-900 shadow-sm">
-          <p className="font-semibold tracking-wide">CAPTURED ✓ — approved</p>
-          <p className="mt-0.5 text-xs leading-snug">
-            This is the official record.
-            {dirty && (
-              <span className="ml-1 text-amber-700">
-                You have unsaved edits — Save them to update the draft, then re-approve to capture a new snapshot.
+    <section className="space-y-6 pb-24">
+
+      {/* ── STEP HEADER — Step 2 of 2 (mirrors Step 1's design language) ── */}
+      <div className="rounded-lg border bg-card p-6">
+        <div className="mb-1 flex items-center gap-2 font-mono-plex text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+          <span>Step 2 of 2 · Review &amp; Approve</span>
+          <span aria-hidden className="text-muted-foreground">──</span>
+          <span aria-hidden className="text-foreground">●</span>
+        </div>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="font-display text-xl font-semibold tracking-tight">
+              Here&apos;s what the auditor concluded.
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Check it, adjust it, approve it — nothing is recorded until you approve.
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            {/* Status chip — absorbs the standalone DRAFT/CAPTURED banner */}
+            {isCaptured ? (
+              <span className="rounded border border-teal-300 bg-teal-50 px-2 py-0.5 text-[11px] font-semibold text-teal-900">
+                CAPTURED ✓
+                {dirty && <span className="ml-1 font-normal text-amber-700">(unsaved edits)</span>}
+              </span>
+            ) : (
+              <span className="rounded border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-900">
+                DRAFT
               </span>
             )}
-          </p>
+            <button
+              type="button"
+              onClick={onResumeChat}
+              className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
+            >
+              ← Back to the interview
+            </button>
+          </div>
         </div>
-      ) : (
-        <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm">
-          <p className="font-semibold tracking-wide">DRAFT — pending your approval</p>
-          <p className="mt-0.5 text-xs leading-snug">
-            The AI scored {technicalCount} technical + {foundationalCount} foundational competencies from your
-            interview. Most look well-evidenced — we flagged{' '}
-            <strong>{worthLook.length} worth a look</strong> below. Review those (or skim the rest), then approve at
-            the bottom to capture the official record.
-          </p>
-        </div>
-      )}
-
-      {/* ── Adversarial reviewer — mounts between banner and overview ── */}
-      <StressTestPanel
-        courseCode={courseCode}
-        slug={slug}
-        onResult={setStressTestResult}
-      />
-
-      {/* ── Course overview — editable document front matter ── */}
-      <div className="rounded-md border bg-card px-6 py-8 shadow-sm">
-        <CourseOverview
-          courseCode={courseCode}
-          courseTitle={courseTitle}
-          overview={working.overview ?? null}
-          onOverviewChange={(next) => { setWorking({ ...working, overview: next }); setStressTestResult(null); }}
-          editable={true}
-          onCitationClick={handleCitationClick}
-        />
       </div>
 
-      {/* ── Class structure — editable structured section ── */}
-      <ClassStructureSection
-        classStructure={working.class_structure ?? null}
-        editable={true}
-        onChange={(next) => {
-          setWorking({ ...working, class_structure: next ?? undefined });
-          setStressTestResult(null);
-        }}
-        onCitationClick={handleCitationClick}
-      />
-
-      {/* ── Major projects — editable project cards ── */}
-      <MajorProjectsSection
-        majorProjects={working.major_projects ?? null}
-        editable={true}
-        onChange={(next) => {
-          setWorking({ ...working, major_projects: next ?? undefined });
-          setStressTestResult(null);
-        }}
-        onCitationClick={handleCitationClick}
-      />
+      {/* ── 1. VERIFICATION SUMMARY — the orienting question, first in content ── */}
+      {working.verification_summary && (
+        <VerificationSummary summary={working.verification_summary} isLegacy={legacy} onCitationClick={handleCitationClick} />
+      )}
 
       {legacy && <LegacyBanner onReaudit={onResumeChat} />}
-      <header className="flex items-center justify-between gap-3 rounded-md border bg-card px-4 py-3">
-        <div>
-          <h2 className="text-sm font-semibold">Course Outcome Profile</h2>
-          <p className="text-xs text-muted-foreground">
-            {technicalCount} technical · {foundationalCount} foundational · scale {working.scale_version} ·{' '}
-            generated {new Date(working.generated_at).toLocaleString()} · status{' '}
-            <span className="font-mono">{lastSavedStatus}</span>
-            {telemetry && (
-              <>
-                {' '}·{' '}
-                {telemetry.model} · ${(telemetry.costUsdCents / 10000).toFixed(4)} ·{' '}
-                {(telemetry.durationMs / 1000).toFixed(1)}s
-              </>
-            )}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onResumeChat}
-            className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
-          >
-            Back to chat
-          </button>
-          <button
-            type="button"
-            onClick={() => persist('edited')}
-            disabled={!dirty || saving || validationError !== null}
-            title={validationError ? `Fix validation issue first: ${validationError}` : undefined}
-            className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {saving ? 'Saving…' : 'Save edits'}
-          </button>
-          {/*
-            The third Approve button used to live here. Removed 2026-06-02:
-            the top DRAFT-banner CTA and the bottom "Done reviewing?" CTA
-            cover both entry-points (top-of-page action + scroll-to-bottom
-            action). Three buttons doing the same thing felt cluttered.
-          */}
-        </div>
-      </header>
 
       {validationError && (
         <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-2 text-xs text-amber-900">
@@ -1231,6 +1172,143 @@ export function ProfileReviewPanel({
 
       {saveError && <p className="text-sm text-destructive">{saveError}</p>}
 
+      {/* ── 2. THE WORK — competency triage ── */}
+      <div className="space-y-3">
+        {/* ── WORTH A LOOK — triage-flagged, full editable cards ── */}
+        {worthLook.length > 0 && (
+          <section className="space-y-3 rounded-md border border-amber-300 bg-amber-50/40 p-3">
+            <div className="flex items-baseline justify-between gap-2">
+              <h3 className="text-sm font-semibold text-amber-900">Worth a look ({worthLook.length})</h3>
+              <span className="text-[11px] text-amber-800">
+                {unreviewedCount === 0 ? 'all confirmed ✓' : `${unreviewedCount} still to confirm`}
+              </span>
+            </div>
+            <p className="text-xs text-amber-800">
+              These rest on your word, sit high on the scale, were AI-inferred, or carry the most
+              graded weight. Adjust a slider, or confirm each.
+            </p>
+            {worthLook.map(({ c, i, reason }) => (
+              <div key={i} className={'space-y-1' + (reviewed.has(i) ? ' opacity-60' : '')}>
+                {reason && <p className="text-[11px] font-medium text-amber-800">⚑ {reason}</p>}
+                <CompetencyCard
+                  competency={c}
+                  index={i}
+                  onChange={next => {
+                    updateCompetency(i, next);
+                    markReviewed(i);
+                  }}
+                  onCitationClick={handleCitationClick}
+                  courseCode={courseCode}
+                  slug={slug}
+                />
+                <StressTestBadge
+                  annotation={stressTestResult?.per_competency.find(a => a.competency_index === i) ?? null}
+                />
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => markReviewed(i)}
+                    className="rounded border border-amber-300 bg-white px-2 py-0.5 text-[11px] font-medium text-amber-900 hover:bg-amber-100"
+                  >
+                    {reviewed.has(i) ? '✓ looks right' : 'Looks right ✓'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </section>
+        )}
+
+        {/* ── THE AI IS CONFIDENT — collapsed rows, expand to edit ── */}
+        {confident.length > 0 && (
+          <section className="space-y-2 rounded-md border bg-card p-3">
+            <div className="flex items-baseline justify-between gap-2">
+              <h3 className="text-sm font-semibold">The AI is confident about these ({confident.length})</h3>
+              <button
+                type="button"
+                onClick={() => setExpanded(new Set(confident.map(t => t.i)))}
+                className="text-[11px] text-muted-foreground underline hover:text-foreground"
+              >
+                Open all ▾
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Each cited to your materials or scored low. Click any row to edit.
+            </p>
+            {confident.map(({ c, i }) =>
+              expanded.has(i) ? (
+                <div key={i} className="space-y-1">
+                  <CompetencyCard
+                    competency={c}
+                    index={i}
+                    onChange={next => updateCompetency(i, next)}
+                    onCitationClick={handleCitationClick}
+                    courseCode={courseCode}
+                    slug={slug}
+                  />
+                  <StressTestBadge
+                    annotation={stressTestResult?.per_competency.find(a => a.competency_index === i) ?? null}
+                  />
+                </div>
+              ) : (
+                <CompetencyRow key={i} competency={c} onExpand={() => expandRow(i)} />
+              ),
+            )}
+          </section>
+        )}
+      </div>
+
+      {/* ── 3. STRESS TEST RESULTS — trigger is in sticky bar; results render here ── */}
+      <StressTestPanel
+        ref={stressTestRef}
+        courseCode={courseCode}
+        slug={slug}
+        onResult={setStressTestResult}
+        hideTrigger={true}
+      />
+
+      {/* ── 4. AUDIT NOTES — full-width collapsible ── */}
+      <div className="rounded-md border bg-card">
+        <button
+          type="button"
+          aria-expanded={auditNotesOpen}
+          onClick={() => setAuditNotesOpen(v => !v)}
+          className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+        >
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold">Auditor&apos;s margin notes</h3>
+            <SourceBadge
+              source={working.audit_notes.source}
+              citations={working.audit_notes.citations}
+              onCitationClick={handleCitationClick}
+            />
+          </div>
+          <span className="text-xs text-muted-foreground" aria-hidden="true">
+            {auditNotesOpen ? '▲ collapse' : '▼ expand'}
+          </span>
+        </button>
+        {auditNotesOpen && (
+          <div className="border-t px-4 py-4 space-y-5">
+            <p className="text-xs text-muted-foreground">
+              Findings from the audit that don&apos;t fit into a competency cell.
+            </p>
+            <AuditNotesList
+              title="Prereq gaps"
+              items={working.audit_notes.prereq_gaps}
+              rowAction={(item) => (
+                <MergeGapIntoSkillsButton gapText={item} courseCode={courseCode} slug={slug} />
+              )}
+            />
+            <AuditNotesList title="Objective misalignments" items={working.audit_notes.objective_misalignments} />
+            <AuditNotesList title="Cross-source conflicts" items={working.audit_notes.cross_source_conflicts} />
+            <AuditNotesList title="Suggested objective revisions" items={working.audit_notes.suggested_objective_revisions} />
+            {working.revised_objectives_draft && working.revised_objectives_draft.length > 0 && (
+              <RevisedObjectivesDraft items={working.revised_objectives_draft} />
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── 5. DEPARTMENTAL CONTEXT ── */}
       <section className="rounded-md border bg-card px-4 py-3 shadow-sm">
         <label htmlFor="reviewer-note" className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Departmental context <span className="font-normal normal-case text-muted-foreground">— why these scores, what overrides you made, anything a future reader (or future audit) should know. Persisted with the profile and frozen into snapshots.</span>
@@ -1245,156 +1323,124 @@ export function ProfileReviewPanel({
         />
       </section>
 
-      {working.verification_summary && (
-        <VerificationSummary summary={working.verification_summary} isLegacy={legacy} onCitationClick={handleCitationClick} />
-      )}
-
-      {working.course_emphasis && working.course_emphasis.length > 0 && (
-        <CourseEmphasis items={working.course_emphasis} />
-      )}
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
-        <div className="space-y-3">
-          {/* ── WORTH A LOOK — triage-flagged, full editable cards ── */}
-          {worthLook.length > 0 && (
-            <section className="space-y-3 rounded-md border border-amber-300 bg-amber-50/40 p-3">
-              <div className="flex items-baseline justify-between gap-2">
-                <h3 className="text-sm font-semibold text-amber-900">Worth a look ({worthLook.length})</h3>
-                <span className="text-[11px] text-amber-800">
-                  {unreviewedCount === 0 ? 'all confirmed ✓' : `${unreviewedCount} still to confirm`}
-                </span>
-              </div>
-              <p className="text-xs text-amber-800">
-                These rest on your word, sit high on the scale, were AI-inferred, or carry the most
-                graded weight. Adjust a slider, or confirm each.
-              </p>
-              {worthLook.map(({ c, i, reason }) => (
-                <div key={i} className={'space-y-1' + (reviewed.has(i) ? ' opacity-60' : '')}>
-                  {reason && <p className="text-[11px] font-medium text-amber-800">⚑ {reason}</p>}
-                  <CompetencyCard
-                    competency={c}
-                    index={i}
-                    onChange={next => {
-                      updateCompetency(i, next);
-                      markReviewed(i);
-                    }}
-                    onCitationClick={handleCitationClick}
-                    courseCode={courseCode}
-                    slug={slug}
-                  />
-                  <StressTestBadge
-                    annotation={stressTestResult?.per_competency.find(a => a.competency_index === i) ?? null}
-                  />
-                  <div className="flex justify-end">
-                    <button
-                      type="button"
-                      onClick={() => markReviewed(i)}
-                      className="rounded border border-amber-300 bg-white px-2 py-0.5 text-[11px] font-medium text-amber-900 hover:bg-amber-100"
-                    >
-                      {reviewed.has(i) ? '✓ looks right' : 'Looks right ✓'}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </section>
-          )}
-
-          {/* ── THE AI IS CONFIDENT — collapsed rows, expand to edit ── */}
-          {confident.length > 0 && (
-            <section className="space-y-2 rounded-md border bg-card p-3">
-              <div className="flex items-baseline justify-between gap-2">
-                <h3 className="text-sm font-semibold">The AI is confident about these ({confident.length})</h3>
-                <button
-                  type="button"
-                  onClick={() => setExpanded(new Set(confident.map(t => t.i)))}
-                  className="text-[11px] text-muted-foreground underline hover:text-foreground"
-                >
-                  Open all ▾
-                </button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Each cited to your materials or scored low. Click any row to edit.
-              </p>
-              {confident.map(({ c, i }) =>
-                expanded.has(i) ? (
-                  <div key={i} className="space-y-1">
-                    <CompetencyCard
-                      competency={c}
-                      index={i}
-                      onChange={next => updateCompetency(i, next)}
-                      onCitationClick={handleCitationClick}
-                      courseCode={courseCode}
-                      slug={slug}
-                    />
-                    <StressTestBadge
-                      annotation={stressTestResult?.per_competency.find(a => a.competency_index === i) ?? null}
-                    />
-                  </div>
-                ) : (
-                  <CompetencyRow key={i} competency={c} onExpand={() => expandRow(i)} />
-                ),
-              )}
-            </section>
-          )}
-        </div>
-
-        <aside className="space-y-5 rounded-md border bg-card px-4 py-3">
+      {/* ── 6. PREVIEW THE RECORD — collapsed disclosure ── */}
+      <div className="rounded-md border bg-card">
+        <button
+          type="button"
+          aria-expanded={previewOpen}
+          onClick={() => setPreviewOpen(v => !v)}
+          className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+        >
           <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-semibold">Audit notes</h3>
-              <SourceBadge
-                source={working.audit_notes.source}
-                citations={working.audit_notes.citations}
+            <h3 className="text-sm font-semibold">Preview the record — what readers will see on the public page</h3>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Course overview, class structure, major projects, emphasis chart — still editable, just collapsed by default.
+            </p>
+          </div>
+          <span className="shrink-0 text-xs text-muted-foreground" aria-hidden="true">
+            {previewOpen ? '▲ collapse' : '▼ expand'}
+          </span>
+        </button>
+        {previewOpen && (
+          <div className="border-t px-6 py-6 space-y-6">
+            {/* Profile meta line */}
+            <p className="text-xs text-muted-foreground">
+              {technicalCount} technical · {foundationalCount} foundational · scale {working.scale_version} ·{' '}
+              generated {new Date(working.generated_at).toLocaleString()} · status{' '}
+              <span className="font-mono">{lastSavedStatus}</span>
+              {telemetry && (
+                <>
+                  {' '}·{' '}
+                  {telemetry.model} · ${(telemetry.costUsdCents / 10000).toFixed(4)} ·{' '}
+                  {(telemetry.durationMs / 1000).toFixed(1)}s
+                </>
+              )}
+            </p>
+
+            {/* ── Course overview — editable document front matter ── */}
+            <div className="rounded-md border bg-card px-6 py-8 shadow-sm">
+              <CourseOverview
+                courseCode={courseCode}
+                courseTitle={courseTitle}
+                overview={working.overview ?? null}
+                onOverviewChange={(next) => { setWorking({ ...working, overview: next }); setStressTestResult(null); }}
+                editable={true}
                 onCitationClick={handleCitationClick}
               />
             </div>
-            <p className="text-xs text-muted-foreground">
-              Findings from the audit that don&apos;t fit into a competency cell.
-            </p>
-          </div>
-          <AuditNotesList
-            title="Prereq gaps"
-            items={working.audit_notes.prereq_gaps}
-            rowAction={(item) => (
-              <MergeGapIntoSkillsButton gapText={item} courseCode={courseCode} slug={slug} />
+
+            {/* ── Class structure — editable structured section ── */}
+            <ClassStructureSection
+              classStructure={working.class_structure ?? null}
+              editable={true}
+              onChange={(next) => {
+                setWorking({ ...working, class_structure: next ?? undefined });
+                setStressTestResult(null);
+              }}
+              onCitationClick={handleCitationClick}
+            />
+
+            {/* ── Major projects — editable project cards ── */}
+            <MajorProjectsSection
+              majorProjects={working.major_projects ?? null}
+              editable={true}
+              onChange={(next) => {
+                setWorking({ ...working, major_projects: next ?? undefined });
+                setStressTestResult(null);
+              }}
+              onCitationClick={handleCitationClick}
+            />
+
+            {/* ── Course emphasis ── */}
+            {working.course_emphasis && working.course_emphasis.length > 0 && (
+              <CourseEmphasis items={working.course_emphasis} />
             )}
-          />
-          <AuditNotesList title="Objective misalignments" items={working.audit_notes.objective_misalignments} />
-          <AuditNotesList title="Cross-source conflicts" items={working.audit_notes.cross_source_conflicts} />
-          <AuditNotesList title="Suggested objective revisions" items={working.audit_notes.suggested_objective_revisions} />
-          {working.revised_objectives_draft && working.revised_objectives_draft.length > 0 && (
-            <RevisedObjectivesDraft items={working.revised_objectives_draft} />
-          )}
-        </aside>
+          </div>
+        )}
       </div>
-      {/*
-        Bottom Approve / Update CTA.
-          - Not yet captured → show as "Approve this profile" (first capture).
-          - Already captured AND faculty has edited since → show as
-            "Approve update" so faculty can roll a new snapshot.
-          - Captured AND no pending edits → hide entirely (nothing to do).
-      */}
-      {(!isCaptured || dirty) && (
-        <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-5 text-center shadow-sm">
-          <p className="text-sm text-amber-900">
-            {isCaptured ? 'You have unsaved edits to a captured profile.' : 'Done reviewing?'}
-          </p>
-          <p className="mt-0.5 text-xs text-amber-800/80">
-            {isCaptured
-              ? 'Approving captures these edits as a new dated snapshot. The prior snapshot stays in the historical record.'
-              : 'Approving captures the current draft as the official, dated record.'}
-          </p>
-          <button
-            type="button"
-            onClick={openSnapshotPanel}
-            disabled={saving || snapshotting || validationError !== null}
-            title={validationError ? `Fix validation issue first: ${validationError}` : undefined}
-            className="mt-3 rounded-md bg-amber-700 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-amber-800 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isCaptured ? 'Approve update' : 'Approve this profile'}
-          </button>
+
+      {/* ── 7. STICKY ACTION BAR ── */}
+      <div className="sticky bottom-0 z-10 border-t bg-card px-4 py-3 shadow-[0_-1px_4px_rgba(0,0,0,0.06)]">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          {/* Summary chip */}
+          <span className="rounded border border-muted bg-muted/40 px-2.5 py-1 text-[11px] font-mono text-muted-foreground">
+            {worthLook.length} worth a look · {confident.length} confident
+          </span>
+
+          <div className="flex items-center gap-2">
+            {/* Stress-test trigger */}
+            <button
+              type="button"
+              onClick={() => stressTestRef.current?.run()}
+              className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
+            >
+              Stress-test this profile
+            </button>
+
+            {/* Save edits */}
+            <button
+              type="button"
+              onClick={() => persist('edited')}
+              disabled={!dirty || saving || validationError !== null}
+              title={validationError ? `Fix validation issue first: ${validationError}` : undefined}
+              className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {saving ? 'Saving…' : 'Save edits'}
+            </button>
+
+            {/* Approve */}
+            <button
+              type="button"
+              onClick={openSnapshotPanel}
+              disabled={saving || snapshotting || validationError !== null}
+              title={validationError ? `Fix validation issue first: ${validationError}` : undefined}
+              className="rounded-md bg-amber-700 px-4 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-amber-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isCaptured ? 'Approve update' : 'Approve the profile'}
+            </button>
+          </div>
         </div>
-      )}
+      </div>
 
       <CitationDrawer
         courseCode={courseCode}

@@ -1,7 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useImperativeHandle, forwardRef, useState } from 'react';
 import type { StressTestResultType } from '@/lib/ai/stress-test/schema';
+
+export interface StressTestHandle {
+  /** Programmatically trigger a stress-test run (used by the sticky bar). */
+  run: () => void;
+  running: boolean;
+}
 
 interface Props {
   courseCode: string;
@@ -12,6 +18,12 @@ interface Props {
    * annotations down to each row.
    */
   onResult: (result: StressTestResultType | null) => void;
+  /**
+   * When true the built-in trigger button + description header are
+   * suppressed — the parent supplies the trigger via `StressTestHandle.run`.
+   * Results (overall assessment, concerns, telemetry) still render here.
+   */
+  hideTrigger?: boolean;
 }
 
 /**
@@ -23,7 +35,7 @@ interface Props {
  * The result is ephemeral — held only in the parent's state, cleared
  * when the user edits the profile (parent clears via onResult(null)).
  */
-export function StressTestPanel({ courseCode, slug, onResult }: Props) {
+export const StressTestPanel = forwardRef<StressTestHandle, Props>(function StressTestPanel({ courseCode, slug, onResult, hideTrigger }, ref) {
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<StressTestResultType | null>(null);
@@ -39,6 +51,11 @@ export function StressTestPanel({ courseCode, slug, onResult }: Props) {
     const id = setInterval(() => setElapsed(s => s + 1), 1000);
     return () => clearInterval(id);
   }, [running]);
+
+  useImperativeHandle(ref, () => ({
+    run: () => void handleRun(),
+    get running() { return running; },
+  }));
 
   async function handleRun() {
     setRunning(true);
@@ -73,29 +90,34 @@ export function StressTestPanel({ courseCode, slug, onResult }: Props) {
     questionable: 'bg-red-100 text-red-900 border-red-300 dark:bg-red-900/30 dark:text-red-200 dark:border-red-800',
   };
 
+  // When hideTrigger is true, only render results (the trigger is in the sticky bar).
+  if (hideTrigger && !running && !error && !result) return null;
+
   return (
     <section className="rounded-md border bg-card px-4 py-3 shadow-sm">
-      <div className="flex items-baseline justify-between gap-3">
-        <div>
-          <h3 className="text-sm font-semibold">Stress-test this profile</h3>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            Runs an adversarial reviewer agent over this profile. Heavy-tier
-            model; results are advisory and never modify the draft. One click
-            ≈ $0.05–0.20.
-          </p>
+      {!hideTrigger && (
+        <div className="flex items-baseline justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-semibold">Stress-test this profile</h3>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Runs an adversarial reviewer agent over this profile. Heavy-tier
+              model; results are advisory and never modify the draft. One click
+              ≈ $0.05–0.20.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => void handleRun()}
+            disabled={running}
+            className="shrink-0 rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted disabled:opacity-50"
+          >
+            {running ? 'Reviewing…' : result ? 'Re-run' : 'Stress-test'}
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => void handleRun()}
-          disabled={running}
-          className="shrink-0 rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted disabled:opacity-50"
-        >
-          {running ? 'Reviewing…' : result ? 'Re-run' : 'Stress-test'}
-        </button>
-      </div>
+      )}
 
       {running && (
-        <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+        <div className={`${hideTrigger ? '' : 'mt-3 '}flex items-center gap-2 text-xs text-muted-foreground`}>
           <span
             className="inline-block h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent"
             aria-hidden="true"
@@ -105,13 +127,13 @@ export function StressTestPanel({ courseCode, slug, onResult }: Props) {
       )}
 
       {error && (
-        <p className="mt-3 rounded border border-red-300 bg-red-50 px-2 py-1 text-xs text-red-800 dark:border-red-900/40 dark:bg-red-900/10 dark:text-red-200">
+        <p className={`${hideTrigger ? '' : 'mt-3 '}rounded border border-red-300 bg-red-50 px-2 py-1 text-xs text-red-800 dark:border-red-900/40 dark:bg-red-900/10 dark:text-red-200`}>
           {error}
         </p>
       )}
 
       {result && (
-        <div className="mt-3 space-y-3">
+        <div className={`${hideTrigger ? '' : 'mt-3 '}space-y-3`}>
           <div className={`rounded border px-3 py-2 text-xs ${toneByOverall[result.overall_assessment] ?? ''}`}>
             <p className="font-mono-plex text-[10px] uppercase tracking-[0.18em]">
               Overall: {result.overall_assessment}
@@ -141,7 +163,7 @@ export function StressTestPanel({ courseCode, slug, onResult }: Props) {
       )}
     </section>
   );
-}
+});
 
 function ProfileConcernList({ label, items }: { label: string; items: string[] }) {
   if (items.length === 0) {
