@@ -1,3 +1,5 @@
+// Real-DB test (repo exception to the mock-client convention): requires DATABASE_URL — run with it set (see .env.local). Fixture rows under course 'ZZ 9999' are created in beforeAll and deleted in afterAll.
+
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { db } from '@/lib/db/client';
 import { courses, facultyFlags } from '@/lib/db/schema';
