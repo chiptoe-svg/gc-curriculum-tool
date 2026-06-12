@@ -3,6 +3,17 @@
 **Powers College of Business**
 *Handoff document for Claude Code — May 2026*
 
+> **⚠️ STATUS (added 2026-06-12): architecturally superseded — preserved as origin history.** The tool that was actually built kept this spec's two driving questions and the KUD framework but replaced the architecture with a **capture-and-explore** model. What replaced what:
+> - **Course Page (Official Record / Proposal dual-mode)** → CourseCapture (`/capture/<code>`): an AI audit conversation producing immutable, versioned, per-instructor **snapshots** with evidence discipline + citations; Explore (`/explore/<code>`) carries the prescriptive what-should-change role.
+> - **Proposal system (Change/Impact summaries, accept/reject)** → not built; Explore recommendations + what-if scenarios are advisory, and curriculum changes go through the committee directly. A cross-snapshot diff view is Phase 2.
+> - **Curriculum Map (Coverage/Sequence/Sankey)** → Program Coverage Matrix (`/program`, per-instructor rows) + Scaffolding Strip (`/program/scaffolding`) + the prerequisite-edge graph (`/courses/<code>`).
+> - **AI Coverage Analysis on-save** → on-demand, prompt-cache-batched coverage scoring over confirmed snapshots; "rerun" is faculty-tier, with descriptor-change invalidation.
+> - **Assessment Framework (Gates 1–3) / Placement Dashboard** → not built; the external-evidence role is the [Graduate Outcome Criterion-Relevance Study](./docs/graduate-outcome-validation.html) (proposed) and Position Capture's employer-demand side (live).
+> - **Four user roles** → single faculty tier (HTTP Basic Auth) + partner magic links; per-user auth is deferred.
+> - **Career Target pages (panel-editable)** → admin-seeded targets + partner survey/synthesis (`/admin/synthesis`) proposing descriptor edits faculty adopt.
+>
+> Current truth lives in [`docs/STATE.md`](./docs/STATE.md); the system-as-built is described in [`docs/architecture.html`](./docs/architecture.html). Nothing below this banner has been edited.
+
 ---
 
 ## Overview

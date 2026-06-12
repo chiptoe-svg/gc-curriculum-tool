@@ -69,9 +69,9 @@ Next.js 15 (App Router, Turbopack) + TypeScript strict + Drizzle on local Postgr
 - [`docs/background.html`](./docs/background.html) — KUD+ academic companion.
 - [`docs/problem-solving-deep-dive.md`](./docs/problem-solving-deep-dive.md) — problem-solving research synthesis.
 - [`docs/three-act-deep-dive.md`](./docs/three-act-deep-dive.md) — 3-Act structure research synthesis.
-- [`docs/graduate-outcome-validation.html`](./docs/graduate-outcome-validation.html) — proposal to validate the analysis against 268 GC graduates' destinations.
+- [`docs/graduate-outcome-validation.html`](./docs/graduate-outcome-validation.html) — Graduate Outcome Criterion-Relevance Study: proposed external-alignment check against 268 GC graduates' destinations, with pre-committed failure criteria (retitled from "Validation" 2026-06-12 — the design establishes criterion relevance, not attainment or causal impact).
 - [`docs/using-coursecapture-and-explore.html`](./docs/using-coursecapture-and-explore.html) — faculty-facing walkthrough (linked from in-app headers).
-- [`gc-curriculum-tool-spec.md`](./gc-curriculum-tool-spec.md) — full original source spec.
+- [`gc-curriculum-tool-spec.md`](./gc-curriculum-tool-spec.md) — original source spec (May 2026; **architecturally superseded** — see its top banner for what replaced each piece).
 
 ---
 
