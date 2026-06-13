@@ -201,7 +201,24 @@
     </div>
 
     <div class="q">
-      <div class="num">6 · open (optional)</div>
+      <div class="num gap">6 · the one thing the policy text doesn't say</div>
+      <h2>Computers &amp; CCIT CheckIT — when is it required?</h2>
+      <div class="hint">The website tells us the <b>buying paths</b> but not when a <b>CCIT CheckIT</b> review is actually <em>required</em> — and we've heard there may be an <b>on-campus computer store</b> path that skips it. The policy text doesn't settle either, so the tool currently says "confirm with Procurement/CCIT." <b>Can you pin it down?</b></div>
+      <div class="found"><div class="lbl">Buying paths we found (from the website)</div>buyWays <b>Dell</b> punchout (PCs/laptops) · buyWays <b>Apple</b> punchout (Macs/iPads/accessories) · buyWays <b>Non-Catalog Form</b> (other suppliers) · "CCIT computer recommendations"</div>
+      <div class="band">
+        <div class="blabel">Is there an on-campus computer store that's a sanctioned buying path?</div>
+        <div class="checks" id="store">
+          <label class="chk"><input type="radio" name="store" value="yes, and it does NOT require CheckIT">Yes — and it skips CheckIT</label>
+          <label class="chk"><input type="radio" name="store" value="yes, but CheckIT still applies">Yes — but CheckIT still applies</label>
+          <label class="chk"><input type="radio" name="store" value="no on-campus store path">No such path</label>
+          <label class="chk"><input type="radio" name="store" value="not sure">Not sure</label>
+        </div>
+      </div>
+      <textarea data-q="CheckIT — what triggers a required CCIT CheckIT review (e.g. software, data-handling, all computers?), and the full list of sanctioned computer buying paths" placeholder="When is a CheckIT review required, and what are all the sanctioned ways to buy a computer?"></textarea>
+    </div>
+
+    <div class="q">
+      <div class="num">7 · open (optional)</div>
       <h2>Anything this still has to get right?</h2>
       <div class="hint">The one we left open last time — what concerns you, or what must this absolutely get right to be useful? Skip if nothing comes to mind.</div>
       <textarea data-q="What this must get right / concerns"></textarea>
@@ -240,7 +257,8 @@
     parts.push(`Q2 federal thresholds: ${radio('fed')}`);
     parts.push(`Q3 SC ladder matches Clemson?: ${radio('sc')}`);
     parts.push(`Q4 resolution order (contract→commodity/funding→amount): ${radio('logic')}`);
-    parts.push(`Q5 commodity category grouping: ${radio('cats')}\n`);
+    parts.push(`Q5 commodity category grouping: ${radio('cats')}`);
+    parts.push(`Q6 on-campus computer store path: ${radio('store')}\n`);
     document.querySelectorAll('textarea[data-q]').forEach(t=>{ const a=t.value.trim(); if(a) parts.push(`Q: ${t.dataset.q}\nA: ${a}\n`); });
     return parts.join('\n');
   }
