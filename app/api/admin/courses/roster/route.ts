@@ -84,7 +84,15 @@ export async function POST(req: Request): Promise<Response> {
     if (catalogUrlRaw && !isHttpUrl(catalogUrlRaw)) {
       return NextResponse.json({ error: 'catalogUrl must be an http(s) URL' }, { status: 400 });
     }
-    await createCourse({ code, title, level, track, catalogUrl: catalogUrlRaw || null });
+    const pairedCode = typeof body.pairedCode === 'string' ? body.pairedCode.trim() : '';
+    const pairedRole = typeof body.pairedRole === 'string' ? body.pairedRole : '';
+    if (pairedCode && !['lecture', 'lab', 'other'].includes(pairedRole)) {
+      return NextResponse.json({ error: 'pairedRole must be lecture | lab | other when pairedCode is set' }, { status: 400 });
+    }
+    await createCourse({
+      code, title, level, track, catalogUrl: catalogUrlRaw || null,
+      ...(pairedCode ? { pairedCode, pairedRole: pairedRole as 'lecture' | 'lab' | 'other' } : {}),
+    });
     return NextResponse.json({ ok: true });
   }
 

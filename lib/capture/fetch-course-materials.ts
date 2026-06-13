@@ -40,7 +40,8 @@ function mapContextToMaterials(json: {
     setAsideReason: string | null;
     blobUrl: string;
     ignoredItems?: readonly string[];
+    sourceCode?: string | null;
   }>;
 }): CaptureMaterial[] {
-  return json.materials;
+  return json.materials.map(m => ({ ...m, sourceCode: m.sourceCode ?? null }));
 }

@@ -3,6 +3,8 @@ import { Target } from 'lucide-react';
 import { listCoursesWithStatus, type CaptureStatus } from '@/lib/db/capture-status-queries';
 import { groupByCategory } from '@/lib/courses/group-by-category';
 import { CATEGORY_LABELS } from '@/lib/db/course-category-seed';
+import { listPairedCodesForCourses } from '@/lib/db/course-codes-queries';
+import { formatCourseLabel } from '@/lib/courses/parse-course-code';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,6 +26,13 @@ export default async function HomePage() {
   const funnelOrigin = process.env.TAILSCALE_FUNNEL_ORIGIN ?? '';
 
   const rows = await listCoursesWithStatus();
+  const pairedCodeRows = await listPairedCodesForCourses([...new Set(rows.map(r => r.code))]);
+  const pairedByCode = new Map<string, Array<{ pairedCode: string }>>();
+  for (const pc of pairedCodeRows) {
+    const arr = pairedByCode.get(pc.courseCode) ?? [];
+    arr.push({ pairedCode: pc.pairedCode });
+    pairedByCode.set(pc.courseCode, arr);
+  }
   const groups = groupByCategory(rows);
 
   const facultyHubHref = funnelOrigin && slug
@@ -120,7 +129,7 @@ export default async function HomePage() {
                         href={`/view/${encodeURIComponent(row.code)}`}
                         className="font-mono-plex text-sm text-foreground hover:text-muted-foreground"
                       >
-                        {row.code}
+                        {formatCourseLabel(row.code, pairedByCode.get(row.code) ?? [])}
                       </Link>
                       <Link
                         href={`/view/${encodeURIComponent(row.code)}`}

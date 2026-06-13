@@ -1,4 +1,4 @@
-import { eq, and, asc } from 'drizzle-orm';
+import { eq, and, asc, isNull } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { courseMaterials } from '@/lib/db/schema';
 
@@ -13,6 +13,7 @@ export interface InsertMaterialInput {
   mimeType: string;
   sizeBytes: number;
   ipHash: string;
+  sourceCode?: string | null;
 }
 
 export async function insertMaterial(input: InsertMaterialInput): Promise<CourseMaterialRow> {
@@ -62,19 +63,32 @@ export async function getMaterialById(id: string): Promise<CourseMaterialRow | n
 }
 
 /**
- * Returns the existing row for a (courseCode, fileName) pair, or null.
- * Used by canvas-import's upsert path: Canvas content has stable
+ * Returns the existing row for a (courseCode, fileName, sourceCode) triple,
+ * or null. Used by canvas-import's upsert path: Canvas content has stable
  * filenames per course (Canvas: Syllabus, Canvas File: X.pdf, etc.),
  * so re-imports refresh in place instead of creating duplicates.
+ *
+ * The optional `sourceCode` param scopes the lookup to a specific paired
+ * source course. When null (the default), the query matches rows where
+ * source_code IS NULL — i.e. primary/legacy rows. This ensures that
+ * bundled lecture+lab imports can't collide: each source gets its own rows.
+ *
+ * Back-compat: existing callers that pass only (courseCode, fileName)
+ * continue to match the legacy null-source rows unchanged.
  */
 export async function findMaterialByFileName(
   courseCode: string,
   fileName: string,
+  sourceCode: string | null = null,
 ): Promise<CourseMaterialRow | null> {
   const rows = await db
     .select()
     .from(courseMaterials)
-    .where(and(eq(courseMaterials.courseCode, courseCode), eq(courseMaterials.fileName, fileName)))
+    .where(and(
+      eq(courseMaterials.courseCode, courseCode),
+      eq(courseMaterials.fileName, fileName),
+      sourceCode === null ? isNull(courseMaterials.sourceCode) : eq(courseMaterials.sourceCode, sourceCode),
+    ))
     .limit(1);
   return rows[0] ?? null;
 }

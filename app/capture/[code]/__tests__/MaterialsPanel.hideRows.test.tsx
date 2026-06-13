@@ -38,6 +38,7 @@ const course: CourseCatalogView = {
   auditMode: 'full',
   canvasCourseName: null,
   canvasImportedAt: null,
+  pairedCodes: [],
 };
 
 function mat(o: Partial<CaptureMaterial> = {}): CaptureMaterial {
@@ -60,6 +61,7 @@ function mat(o: Partial<CaptureMaterial> = {}): CaptureMaterial {
     autoSetAside: false,
     setAsideReason: null,
     blobUrl: '',
+    sourceCode: null,
     ...o,
   } as CaptureMaterial;
 }

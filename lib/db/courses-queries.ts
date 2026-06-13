@@ -3,6 +3,8 @@ import { courses, sheetSyncState, courseProfiles, courseMaterials, courseCapture
 import type { ParsedCourse } from '@/lib/sheets/parseCourseTab';
 import { eq, asc, sql, count, inArray } from 'drizzle-orm';
 import type { CourseCategory } from '@/lib/db/course-category-seed';
+import { parseCourseCode, composeCourseCode } from '@/lib/courses/parse-course-code';
+export { formatCourseLabel } from '@/lib/courses/parse-course-code';
 
 export interface CourseListItem {
   code: string;
@@ -77,19 +79,25 @@ export async function updateCourseCanvasImport(
 
 export async function upsertCourses(parsed: ParsedCourse[]): Promise<number> {
   if (parsed.length === 0) return 0;
-  const rows = parsed.map(p => ({
-    code: p.code,
-    title: p.title,
-    level: p.level,
-    track: p.track,
-    description: p.description,
-    prerequisites: p.prerequisites,
-    syllabusUrl: p.syllabusUrl,
-    learningObjectives: p.learningObjectives,
-    majorProjects: p.majorProjects,
-    skillsRequired: p.skillsRequired,
-    lastSyncedAt: new Date(),
-  }));
+  const rows = parsed.map(p => {
+    const pc = parseCourseCode(p.code);
+    return {
+      code: p.code,
+      title: p.title,
+      level: p.level,
+      track: p.track,
+      description: p.description,
+      prerequisites: p.prerequisites,
+      syllabusUrl: p.syllabusUrl,
+      learningObjectives: p.learningObjectives,
+      majorProjects: p.majorProjects,
+      skillsRequired: p.skillsRequired,
+      lastSyncedAt: new Date(),
+      prefix: pc.prefix,
+      courseNumber: pc.number,
+      numberSuffix: pc.suffix,
+    };
+  });
   // Upsert by code primary key.
   await db.insert(courses).values(rows).onConflictDoUpdate({
     target: courses.code,
@@ -104,6 +112,9 @@ export async function upsertCourses(parsed: ParsedCourse[]): Promise<number> {
       majorProjects: sql`excluded.major_projects`,
       skillsRequired: sql`excluded.skills_required`,
       lastSyncedAt: sql`excluded.last_synced_at`,
+      prefix: sql`excluded.prefix`,
+      courseNumber: sql`excluded.course_number`,
+      numberSuffix: sql`excluded.number_suffix`,
     },
   });
   return rows.length;
@@ -376,6 +387,8 @@ export interface NewCourseInput {
   track?: string;
   prerequisites?: string;
   catalogUrl?: string | null;
+  pairedCode?: string;
+  pairedRole?: 'lecture' | 'lab' | 'other';
 }
 
 /**
@@ -413,14 +426,20 @@ export async function bulkCreateCourses(
     // and this write.
     await db
       .insert(courses)
-      .values(toCreate.map((i) => ({
-        code: i.code,
-        title: (i.title ?? i.code).trim(),
-        level: i.level ?? 0,
-        track: i.track ?? 'unspecified',
-        prerequisites: i.prerequisites ?? '',
-        catalogUrl: i.catalogUrl?.trim() || null,
-      })))
+      .values(toCreate.map((i) => {
+        const p = parseCourseCode(i.code);
+        return {
+          code: i.code,
+          title: (i.title ?? i.code).trim(),
+          level: i.level ?? 0,
+          track: i.track ?? 'unspecified',
+          prerequisites: i.prerequisites ?? '',
+          catalogUrl: i.catalogUrl?.trim() || null,
+          prefix: p.prefix,
+          courseNumber: p.number,
+          numberSuffix: p.suffix,
+        };
+      }))
       .onConflictDoNothing();
   }
 
@@ -434,19 +453,42 @@ export async function bulkCreateCourses(
  * Insert a single course (no-op if code already exists).
  * Required NOT-NULL cols without DB defaults: code, title, level, track.
  * Defaults: level=0, track='unspecified', prerequisites=''.
+ * Optionally creates a paired-code row when pairedCode + pairedRole are given.
  */
 export async function createCourse(input: NewCourseInput): Promise<void> {
+  const code = input.code.trim();
+  const parsed = parseCourseCode(code);
   await db
     .insert(courses)
     .values({
-      code: input.code.trim(),
-      title: (input.title ?? input.code.trim()).trim(),
+      code,
+      title: (input.title ?? code).trim(),
       level: input.level ?? 0,
       track: input.track ?? 'unspecified',
       prerequisites: input.prerequisites ?? '',
       catalogUrl: input.catalogUrl?.trim() || null,
+      prefix: parsed.prefix,
+      courseNumber: parsed.number,
+      numberSuffix: parsed.suffix,
     })
     .onConflictDoNothing();
+
+  if (input.pairedCode && input.pairedRole) {
+    const paired = composeCourseCode(parseCourseCode(input.pairedCode.trim()));
+    if (paired) {
+      const { addPairedCode } = await import('@/lib/db/course-codes-queries');
+      try {
+        await addPairedCode({ courseCode: code, pairedCode: paired, role: input.pairedRole });
+      } catch (e) {
+        // uq_course_codes_paired is on pairedCode ALONE — a 23505 here means the
+        // paired code is already registered (possibly under a DIFFERENT primary).
+        // Tolerate but LOG so a mis-assignment isn't silently dropped; rethrow anything else.
+        const code23505 = (e as { code?: string })?.code === '23505';
+        if (code23505) console.warn(`createCourse: paired code ${paired} already registered — not re-linked to ${code}`);
+        else throw e;
+      }
+    }
+  }
 }
 
 export interface CourseClassificationPatch {

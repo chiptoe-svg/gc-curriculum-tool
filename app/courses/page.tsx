@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { isValidSlug } from '@/lib/slug';
 import { listCoursesWithStatus } from '@/lib/db/capture-status-queries';
 import { getCourseDataStates } from '@/lib/db/courses-queries';
+import { listPairedCodesForCourses } from '@/lib/db/course-codes-queries';
 import { CoursesIndex } from './CoursesIndex';
 import { FeedbackLink } from '@/app/FeedbackLink';
 
@@ -30,6 +31,14 @@ export default async function CoursesPage({ searchParams }: Props) {
     getCourseDataStates(),
   ]);
   rows.sort((a, b) => (a.level ?? 9999) - (b.level ?? 9999) || a.code.localeCompare(b.code));
+
+  const pairedCodeRows = await listPairedCodesForCourses([...new Set(rows.map(r => r.code))]);
+  const pairedByCode: Record<string, Array<{ pairedCode: string }>> = {};
+  for (const pc of pairedCodeRows) {
+    const arr = pairedByCode[pc.courseCode] ?? [];
+    arr.push({ pairedCode: pc.pairedCode });
+    pairedByCode[pc.courseCode] = arr;
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -71,7 +80,7 @@ export default async function CoursesPage({ searchParams }: Props) {
         </div>
       </header>
       <main className="mx-auto max-w-5xl px-6 py-8">
-        <CoursesIndex rows={rows} rosterRows={rosterRows} slug={slug} />
+        <CoursesIndex rows={rows} rosterRows={rosterRows} slug={slug} pairedByCode={pairedByCode} />
       </main>
     </div>
   );

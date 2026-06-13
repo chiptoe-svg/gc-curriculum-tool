@@ -79,6 +79,7 @@ export const ipHourly = pgTable('ip_hourly', {
 }));
 
 export const courseCategory = pgEnum('course_category', ['gc_core', 'specialty', 'major_req', 'other']);
+export const courseCodeRole = pgEnum('course_code_role', ['lecture', 'lab', 'other']);
 
 export const courses = pgTable('courses', {
   code: text('code').primaryKey(),                                // 'GC 3460', 'GC 4900ap'
@@ -97,11 +98,36 @@ export const courses = pgTable('courses', {
   category: courseCategory('category').notNull().default('other'),
   buildsToCareer: boolean('builds_to_career').notNull().default(false),
   catalogUrl: text('catalog_url'),                                // nullable — Clemson catalog link
+  // Structured identity (migration 0037). `code` stays the canonical PK;
+  // these are the parsed parts — see lib/courses/parse-course-code.ts.
+  prefix: text('prefix').notNull().default(''),
+  courseNumber: integer('course_number'),                 // nullable; null only for an unparseable code
+  numberSuffix: text('number_suffix').notNull().default(''),
   // Set by the canvas-import route on each successful import; provenance display
   // on the capture Step-1 Canvas box header.
   canvasCourseName: text('canvas_course_name'),                   // nullable — e.g. "S2405-GC-3800 Junior Seminar"
   canvasImportedAt: timestamp('canvas_imported_at', { withTimezone: true }), // nullable
 });
+
+/**
+ * Paired (secondary) course codes bundled under a primary course — e.g. a lab
+ * (GC 3461) bundled under its lecture (GC 3460). The paired code is NOT a
+ * `courses` row; it has no independent capture/snapshot/tenant. A primary
+ * course with >=1 row here is a "bundle". Migration 0037.
+ * Spec: docs/superpowers/specs/2026-06-13-structured-course-identity-and-bundling-design.md
+ */
+export const courseCodes = pgTable('course_codes', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  courseCode: text('course_code').notNull().references(() => courses.code, { onDelete: 'cascade' }),
+  pairedCode: text('paired_code').notNull(),
+  role: courseCodeRole('role').notNull(),
+  canvasCourseName: text('canvas_course_name'),
+  canvasImportedAt: timestamp('canvas_imported_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => ({
+  pairedUniq: unique('uq_course_codes_paired').on(t.pairedCode),
+  primaryIdx: index('idx_course_codes_course').on(t.courseCode),
+}));
 
 export const sheetSyncState = pgTable('sheet_sync_state', {
   // Singleton row keyed by 'courses' — tracks the most recent successful resync.
@@ -228,6 +254,10 @@ export const courseMaterials = pgTable('course_materials', {
   // level still wins — if `ignored` is true the whole material is excluded
   // regardless of this field.
   ignoredItems: jsonb('ignored_items').$type<string[]>().notNull().default([]),
+  // The code this material was imported under (a bundle's primary or a paired
+  // code). null ⇒ the primary course. Provenance only — courseCode stays the
+  // primary so the tenant/retrieval/FK model is unchanged. Migration 0037.
+  sourceCode: text('source_code'),
 });
 
 export const courseProfiles = pgTable('course_profiles', {

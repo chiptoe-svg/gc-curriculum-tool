@@ -1,7 +1,9 @@
 import { notFound } from 'next/navigation';
 import { isValidSlug } from '@/lib/slug';
 import { getCourseByCode } from '@/lib/db/courses-queries';
+import { formatCourseLabel } from '@/lib/courses/parse-course-code';
 import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
+import { listPairedCodes } from '@/lib/db/course-codes-queries';
 import { getCaptureProfileByCourse } from '@/lib/db/course-capture-profiles-queries';
 import { getCaptureConversation } from '@/lib/db/capture-conversations-queries';
 import { getLatestSnapshotByCourse } from '@/lib/db/capture-snapshots-queries';
@@ -40,11 +42,12 @@ export default async function CapturePage({ params, searchParams }: Props) {
   const course = await getCourseByCode(code);
   if (!course) notFound();
 
-  const [materials, priorCapture, savedConversation, latestSnapshot] = await Promise.all([
+  const [materials, priorCapture, savedConversation, latestSnapshot, pairedCodeRows] = await Promise.all([
     listMaterialsByCourse(code),
     getCaptureProfileByCourse(code),
     getCaptureConversation(code),
     getLatestSnapshotByCourse(code),
+    listPairedCodes(code),
   ]);
 
   // Tells the chat panel's session-start chooser whether there's a prior
@@ -88,6 +91,7 @@ export default async function CapturePage({ params, searchParams }: Props) {
     auditMode: (course.auditMode === 'simple' ? 'simple' : 'full') as 'full' | 'simple',
     canvasCourseName: course.canvasCourseName ?? null,
     canvasImportedAt: course.canvasImportedAt ? course.canvasImportedAt.toISOString() : null,
+    pairedCodes: pairedCodeRows.map(r => ({ pairedCode: r.pairedCode, role: r.role as 'lecture' | 'lab' | 'other', canvasImportedAt: r.canvasImportedAt ? r.canvasImportedAt.toISOString() : null })),
   };
 
   const materialsView = materials.map(m => ({
@@ -110,6 +114,7 @@ export default async function CapturePage({ params, searchParams }: Props) {
     setAsideReason: m.setAsideReason ?? null,
     ignoredItems: m.ignoredItems,
     blobUrl: m.blobUrl,
+    sourceCode: m.sourceCode ?? null,
   }));
 
   return (
@@ -119,7 +124,7 @@ export default async function CapturePage({ params, searchParams }: Props) {
           <div>
             <p className="text-xs uppercase tracking-wide text-muted-foreground">CourseCapture</p>
             <h1 className="mt-0.5 text-xl font-semibold">
-              {course.code} <span className="text-muted-foreground">— {course.title}</span>
+              {formatCourseLabel(course.code, pairedCodeRows)} <span className="text-muted-foreground">— {course.title}</span>
             </h1>
           </div>
           <div className="flex items-center gap-4">
