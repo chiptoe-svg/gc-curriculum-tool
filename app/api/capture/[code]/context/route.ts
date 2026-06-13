@@ -81,6 +81,7 @@ export async function GET(req: Request, { params }: RouteContext): Promise<Respo
       setAsideReason: m.setAsideReason,
       ignoredItems: m.ignoredItems,
       blobUrl: m.blobUrl,
+      sourceCode: m.sourceCode,
     })),
     existingCaptureProfile: existingCaptureProfile
       ? {
