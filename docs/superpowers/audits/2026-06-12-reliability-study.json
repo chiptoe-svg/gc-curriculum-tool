@@ -4268,5 +4268,534 @@
         }
       }
     }
-  ]
+  ],
+  "part2b": {
+    "label": "Part 2b — heavy-tier re-run (post-promotion A/B)",
+    "startedAt": "2026-06-13T00:03:59.154Z",
+    "completedAt": "2026-06-13T00:09:26.375Z",
+    "totalCostUsdCents": 8155,
+    "totalCostUsd": 0.8155,
+    "truncatedAtCap": false,
+    "N": 5,
+    "pairs": [
+      {
+        "snapshotId": "126227e0-383e-4f4d-8370-eb0d1c80c78b",
+        "courseCode": "GC 3800",
+        "careerTargetId": "account-management",
+        "careerTargetName": "Account Management",
+        "model": "gpt-5.5",
+        "truncatedAtRun": null,
+        "runCosts": [
+          1097,
+          566,
+          717,
+          1049,
+          533
+        ],
+        "subCompetencyIds": [
+          "client-needs-diagnosis",
+          "proposal-development",
+          "project-oversight",
+          "results-interpretation",
+          "gc-production-literacy"
+        ],
+        "runs": [
+          {
+            "client-needs-diagnosis": {
+              "k_depth": 1,
+              "u_depth": 0,
+              "d_depth": 1
+            },
+            "proposal-development": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "project-oversight": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "results-interpretation": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "gc-production-literacy": {
+              "k_depth": 1,
+              "u_depth": 0,
+              "d_depth": 0
+            }
+          },
+          {
+            "client-needs-diagnosis": {
+              "k_depth": 1,
+              "u_depth": 0,
+              "d_depth": 1
+            },
+            "proposal-development": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "project-oversight": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "results-interpretation": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "gc-production-literacy": {
+              "k_depth": 1,
+              "u_depth": 0,
+              "d_depth": 1
+            }
+          },
+          {
+            "client-needs-diagnosis": {
+              "k_depth": 1,
+              "u_depth": 0,
+              "d_depth": 1
+            },
+            "proposal-development": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "project-oversight": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "results-interpretation": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "gc-production-literacy": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            }
+          },
+          {
+            "client-needs-diagnosis": {
+              "k_depth": 1,
+              "u_depth": 0,
+              "d_depth": 1
+            },
+            "proposal-development": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "project-oversight": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "results-interpretation": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "gc-production-literacy": {
+              "k_depth": 1,
+              "u_depth": 0,
+              "d_depth": 0
+            }
+          },
+          {
+            "client-needs-diagnosis": {
+              "k_depth": 1,
+              "u_depth": 0,
+              "d_depth": 1
+            },
+            "proposal-development": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "project-oversight": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "results-interpretation": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "gc-production-literacy": {
+              "k_depth": 1,
+              "u_depth": 0,
+              "d_depth": 1
+            }
+          }
+        ],
+        "metrics": {
+          "kFullBandAgreementPct": 0.8,
+          "uFullBandAgreementPct": 1,
+          "dFullBandAgreementPct": 0.8,
+          "kWithin1IntPct": 1,
+          "uWithin1IntPct": 1,
+          "dWithin1IntPct": 1,
+          "perCell": {
+            "client-needs-diagnosis": {
+              "kSd": 0,
+              "uSd": 0,
+              "dSd": 0,
+              "kMeanAbsDelta": 0,
+              "uMeanAbsDelta": 0,
+              "dMeanAbsDelta": 0,
+              "kMaxSpread": 0,
+              "uMaxSpread": 0,
+              "dMaxSpread": 0,
+              "kBandAgreement": 1,
+              "uBandAgreement": 1,
+              "dBandAgreement": 1
+            },
+            "proposal-development": {
+              "kSd": 0,
+              "uSd": 0,
+              "dSd": 0,
+              "kMeanAbsDelta": 0,
+              "uMeanAbsDelta": 0,
+              "dMeanAbsDelta": 0,
+              "kMaxSpread": 0,
+              "uMaxSpread": 0,
+              "dMaxSpread": 0,
+              "kBandAgreement": 1,
+              "uBandAgreement": 1,
+              "dBandAgreement": 1
+            },
+            "project-oversight": {
+              "kSd": 0,
+              "uSd": 0,
+              "dSd": 0,
+              "kMeanAbsDelta": 0,
+              "uMeanAbsDelta": 0,
+              "dMeanAbsDelta": 0,
+              "kMaxSpread": 0,
+              "uMaxSpread": 0,
+              "dMaxSpread": 0,
+              "kBandAgreement": 1,
+              "uBandAgreement": 1,
+              "dBandAgreement": 1
+            },
+            "results-interpretation": {
+              "kSd": 0,
+              "uSd": 0,
+              "dSd": 0,
+              "kMeanAbsDelta": 0,
+              "uMeanAbsDelta": 0,
+              "dMeanAbsDelta": 0,
+              "kMaxSpread": 0,
+              "uMaxSpread": 0,
+              "dMaxSpread": 0,
+              "kBandAgreement": 1,
+              "uBandAgreement": 1,
+              "dBandAgreement": 1
+            },
+            "gc-production-literacy": {
+              "kSd": 0.4472135954999579,
+              "uSd": 0,
+              "dSd": 0.5477225575051662,
+              "kMeanAbsDelta": 0.2,
+              "uMeanAbsDelta": 0,
+              "dMeanAbsDelta": 0.4,
+              "kMaxSpread": 1,
+              "uMaxSpread": 0,
+              "dMaxSpread": 1,
+              "kBandAgreement": 0,
+              "uBandAgreement": 1,
+              "dBandAgreement": 0
+            }
+          }
+        }
+      },
+      {
+        "snapshotId": "126227e0-383e-4f4d-8370-eb0d1c80c78b",
+        "courseCode": "GC 3800",
+        "careerTargetId": "brand-strategy",
+        "careerTargetName": "Brand Strategy",
+        "model": "gpt-5.5",
+        "truncatedAtRun": null,
+        "runCosts": [
+          1071,
+          737,
+          432,
+          707,
+          1246
+        ],
+        "subCompetencyIds": [
+          "consumer-research",
+          "competitive-analysis",
+          "brand-positioning",
+          "campaign-measurement",
+          "quantitative-literacy",
+          "cross-channel-translation"
+        ],
+        "runs": [
+          {
+            "consumer-research": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "competitive-analysis": {
+              "k_depth": 1,
+              "u_depth": 0,
+              "d_depth": 1
+            },
+            "brand-positioning": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "campaign-measurement": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "quantitative-literacy": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "cross-channel-translation": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            }
+          },
+          {
+            "consumer-research": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "competitive-analysis": {
+              "k_depth": 1,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "brand-positioning": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "campaign-measurement": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "quantitative-literacy": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "cross-channel-translation": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            }
+          },
+          {
+            "consumer-research": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "competitive-analysis": {
+              "k_depth": 1,
+              "u_depth": 0,
+              "d_depth": 1
+            },
+            "brand-positioning": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "campaign-measurement": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "quantitative-literacy": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "cross-channel-translation": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            }
+          },
+          {
+            "consumer-research": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "competitive-analysis": {
+              "k_depth": 1,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "brand-positioning": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "campaign-measurement": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "quantitative-literacy": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "cross-channel-translation": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            }
+          },
+          {
+            "consumer-research": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "competitive-analysis": {
+              "k_depth": 1,
+              "u_depth": 0,
+              "d_depth": 1
+            },
+            "brand-positioning": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "campaign-measurement": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            },
+            "quantitative-literacy": {
+              "k_depth": 1,
+              "u_depth": 0,
+              "d_depth": 1
+            },
+            "cross-channel-translation": {
+              "k_depth": 0,
+              "u_depth": 0,
+              "d_depth": 0
+            }
+          }
+        ],
+        "metrics": {
+          "kFullBandAgreementPct": 0.8333333333333334,
+          "uFullBandAgreementPct": 1,
+          "dFullBandAgreementPct": 0.6666666666666666,
+          "kWithin1IntPct": 1,
+          "uWithin1IntPct": 1,
+          "dWithin1IntPct": 1,
+          "perCell": {
+            "consumer-research": {
+              "kSd": 0,
+              "uSd": 0,
+              "dSd": 0,
+              "kMeanAbsDelta": 0,
+              "uMeanAbsDelta": 0,
+              "dMeanAbsDelta": 0,
+              "kMaxSpread": 0,
+              "uMaxSpread": 0,
+              "dMaxSpread": 0,
+              "kBandAgreement": 1,
+              "uBandAgreement": 1,
+              "dBandAgreement": 1
+            },
+            "competitive-analysis": {
+              "kSd": 0,
+              "uSd": 0,
+              "dSd": 0.5477225575051662,
+              "kMeanAbsDelta": 0,
+              "uMeanAbsDelta": 0,
+              "dMeanAbsDelta": 0.4,
+              "kMaxSpread": 0,
+              "uMaxSpread": 0,
+              "dMaxSpread": 1,
+              "kBandAgreement": 1,
+              "uBandAgreement": 1,
+              "dBandAgreement": 0
+            },
+            "brand-positioning": {
+              "kSd": 0,
+              "uSd": 0,
+              "dSd": 0,
+              "kMeanAbsDelta": 0,
+              "uMeanAbsDelta": 0,
+              "dMeanAbsDelta": 0,
+              "kMaxSpread": 0,
+              "uMaxSpread": 0,
+              "dMaxSpread": 0,
+              "kBandAgreement": 1,
+              "uBandAgreement": 1,
+              "dBandAgreement": 1
+            },
+            "campaign-measurement": {
+              "kSd": 0,
+              "uSd": 0,
+              "dSd": 0,
+              "kMeanAbsDelta": 0,
+              "uMeanAbsDelta": 0,
+              "dMeanAbsDelta": 0,
+              "kMaxSpread": 0,
+              "uMaxSpread": 0,
+              "dMaxSpread": 0,
+              "kBandAgreement": 1,
+              "uBandAgreement": 1,
+              "dBandAgreement": 1
+            },
+            "quantitative-literacy": {
+              "kSd": 0.447213595499958,
+              "uSd": 0,
+              "dSd": 0.447213595499958,
+              "kMeanAbsDelta": 0.2,
+              "uMeanAbsDelta": 0,
+              "dMeanAbsDelta": 0.2,
+              "kMaxSpread": 1,
+              "uMaxSpread": 0,
+              "dMaxSpread": 1,
+              "kBandAgreement": 0,
+              "uBandAgreement": 1,
+              "dBandAgreement": 0
+            },
+            "cross-channel-translation": {
+              "kSd": 0,
+              "uSd": 0,
+              "dSd": 0,
+              "kMeanAbsDelta": 0,
+              "uMeanAbsDelta": 0,
+              "dMeanAbsDelta": 0,
+              "kMaxSpread": 0,
+              "uMaxSpread": 0,
+              "dMaxSpread": 0,
+              "kBandAgreement": 1,
+              "uBandAgreement": 1,
+              "dBandAgreement": 1
+            }
+          }
+        }
+      }
+    ]
+  }
 }

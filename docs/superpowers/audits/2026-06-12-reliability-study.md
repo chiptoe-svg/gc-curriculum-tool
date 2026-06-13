@@ -238,16 +238,27 @@
 
 **Foundational band agreement** (D-depth, all five baseline foundationals matched by name): 100.0%
 
-### Part 2 — Coverage scorer stability
+### Part 2 — Coverage scorer stability (mini, gpt-5.4-mini)
 
 **Mean full-band-agreement across 2 pair(s):**
 - K: 25.0%
 - U: 41.7%
 - D: 25.0%
 
+### Part 2b — Coverage scorer stability (heavy, gpt-5.5) — A/B headline
+
+**Mean full-band-agreement across 2 pair(s) on heavy tier:**
+- K: 81.7% (+56.7pp vs mini)
+- U: 100.0% (+58.4pp vs mini)
+- D: 73.3% (+48.3pp vs mini)
+
+**D within-±1:** 100.0% (vs 91.7% on mini)
+
+**Verdict:** Heavy tier materially improves stability. D band-agreement 73.3% (mini: 25.0%). Re-scoring the 120 pre-promotion mini cells on heavy is RECOMMENDED (est. ~$3.60).
+
 ### A7 bands-default assessment
 
-**WARNING:** Band agreement is LOW (D: 25.0%). The instrument is more variable than the A7 default assumes. Flag for operator review before any program-level conclusions are drawn.
+**UPDATED after Part-2b A/B:** Heavy tier (gpt-5.5) achieves D band-agreement of 73.3% — above the 70% threshold — a large improvement over mini (25.0%). Band-level display remains the correct default: the instrument reliably supports band-level conclusions on heavy; bare-integer display would overstate precision. The original WARNING (low agreement) was model-dependent (mini), not instrument-dependent. The 120 pre-promotion mini cells should be re-scored on heavy before program-level conclusions are drawn from individual cells.
 
 ### Caveats
 
@@ -255,6 +266,81 @@
 - Same-model replications measure *stability*, not *validity*. A consistently wrong model looks stable.
 - All 3 courses used v1-era snapshots and confirmed profiles. The synthesis context may include legacy v1 material.
 - Faculty-rater Part iii (human–AI agreement, target α ≥ 0.70/dimension) remains the load-bearing validity test.
+- The 120 matrix cells scored prior to 2026-06-12 promotion used mini; they carry unknown band-agreement error until re-scored on heavy.
 
 ---
 *Generated 2026-06-12T23:57:49.412Z | Total cost: $2.2016*
+
+## Part 2b — Heavy-Tier Re-run (Post-Promotion A/B)
+*Run 2026-06-13 | Completed 2026-06-13 | Cost: $0.8155*
+
+**Context:** `program-score-coverage` was promoted light→heavy (gpt-5.5) in commit e7e9cd5 because the original Part-2 (mini, 25% D band-agreement) met the light pilot's own promote-criterion. This run re-scores the same 2 pairs on the heavy tier to measure whether stability improved.
+
+**Model verified:** gpt-5.5 (confirmed heavy before burn)
+
+### GC 3800 × Account Management
+
+**Snapshot:** `126227e0` | **Model:** gpt-5.5
+
+**Pair-level summary (5 sub-competencies)**
+| Metric | K | U | D |
+|--------|---|---|---|
+| Full band agreement (all 5 runs same band) | 80.0% | 100.0% | 80.0% |
+| Within ±1 integer | 100.0% | 100.0% | 100.0% |
+
+**Per sub-competency breakdown**
+| Sub-competency ID | K SD | U SD | D SD | K MeanΔ | U MeanΔ | D MeanΔ | K MaxSpread | U MaxSpread | D MaxSpread | K Band% | U Band% | D Band% |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| client-needs | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0 | 0 | 0 | 100.0% | 100.0% | 100.0% |
+| proposal-dev | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0 | 0 | 0 | 100.0% | 100.0% | 100.0% |
+| project-over | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0 | 0 | 0 | 100.0% | 100.0% | 100.0% |
+| results-inte | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0 | 0 | 0 | 100.0% | 100.0% | 100.0% |
+| gc-productio | 0.45 | 0.00 | 0.55 | 0.20 | 0.00 | 0.40 | 1 | 0 | 1 | 0.0% | 100.0% | 0.0% |
+
+### GC 3800 × Brand Strategy
+
+**Snapshot:** `126227e0` | **Model:** gpt-5.5
+
+**Pair-level summary (6 sub-competencies)**
+| Metric | K | U | D |
+|--------|---|---|---|
+| Full band agreement (all 5 runs same band) | 83.3% | 100.0% | 66.7% |
+| Within ±1 integer | 100.0% | 100.0% | 100.0% |
+
+**Per sub-competency breakdown**
+| Sub-competency ID | K SD | U SD | D SD | K MeanΔ | U MeanΔ | D MeanΔ | K MaxSpread | U MaxSpread | D MaxSpread | K Band% | U Band% | D Band% |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| consumer-res | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0 | 0 | 0 | 100.0% | 100.0% | 100.0% |
+| competitive- | 0.00 | 0.00 | 0.55 | 0.00 | 0.00 | 0.40 | 0 | 0 | 1 | 100.0% | 100.0% | 0.0% |
+| brand-positi | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0 | 0 | 0 | 100.0% | 100.0% | 100.0% |
+| campaign-mea | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0 | 0 | 0 | 100.0% | 100.0% | 100.0% |
+| quantitative | 0.45 | 0.00 | 0.45 | 0.20 | 0.00 | 0.20 | 1 | 0 | 1 | 0.0% | 100.0% | 0.0% |
+| cross-channe | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0 | 0 | 0 | 100.0% | 100.0% | 100.0% |
+
+### A/B Comparison: mini (Part 2) vs heavy (Part 2b)
+
+| Pair | Metric | mini (gpt-5.4-mini) | heavy (gpt-5.5) | Delta |
+|------|--------|---------------------|-----------------|-------|
+| Account Management | K band-agree | 0.0% | 80.0% | +80.0pp |
+| | U band-agree | 0.0% | 100.0% | +100.0pp |
+| | D band-agree | 0.0% | 80.0% | +80.0pp |
+| | D within-±1 | 100.0% | 100.0% | +0.0pp |
+| Brand Strategy | K band-agree | 50.0% | 83.3% | +33.3pp |
+| | U band-agree | 83.3% | 100.0% | +16.7pp |
+| | D band-agree | 50.0% | 66.7% | +16.7pp |
+| | D within-±1 | 83.3% | 100.0% | +16.7pp |
+
+**Mean across 2 pairs:**
+| Dimension | mini mean | heavy mean | Delta |
+|-----------|-----------|------------|-------|
+| K band-agree | 25.0% | 81.7% | +56.7pp |
+| U band-agree | 41.6% | 100.0% | +58.4pp |
+| D band-agree | 25.0% | 73.3% | +48.3pp |
+| D within-±1 | 91.7% | 100.0% | +8.3pp |
+
+### Verdict
+
+Heavy tier achieved high D band-agreement (73.3%), a material improvement over mini (25.0%). Re-scoring the 120 pre-promotion mini cells on heavy is RECOMMENDED. Estimated cost: 120 cells × ~$0.03/cell (heavy, ~5–6 sub-comps/cell) ≈ $3.60 total.
+
+---
+*Part-2b generated 2026-06-13T00:09:26.375Z | Cost: $0.8155*
