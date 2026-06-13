@@ -1,6 +1,7 @@
 // app/api/admin/courses/roster/route.ts
 import { NextResponse } from 'next/server';
 import { checkAdminAuth } from '@/lib/auth/admin-auth';
+import { resolveRole } from '@/lib/auth/basic-auth';
 import {
   bulkCreateCourses,
   createCourse,
@@ -51,6 +52,15 @@ export async function POST(req: Request): Promise<Response> {
 
   const body = await req.json().catch(() => ({})) as Record<string, unknown>;
   const mode = body.mode;
+
+  // Create-only role (CREATE_ONLY_AUTH) may add a single course but not bulk-preload.
+  const role = resolveRole(req.headers.get('authorization'), {
+    faculty: process.env.FACULTY_BASIC_AUTH,
+    creator: process.env.CREATE_ONLY_AUTH,
+  });
+  if (mode === 'bulk' && role === 'creator') {
+    return NextResponse.json({ error: 'create-only role cannot bulk-preload' }, { status: 403 });
+  }
 
   if (mode === 'bulk') {
     const MAX_LINES = 500;

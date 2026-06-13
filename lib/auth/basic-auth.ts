@@ -81,3 +81,48 @@ export function authorizedForBasicAuth(
     return false;
   }
 }
+
+export type FacultyRole = 'faculty' | 'creator';
+
+/**
+ * Resolve a Basic-Auth header to a role against the two expected
+ * credentials. Pure — env reads happen at the call site (middleware /
+ * route) and are passed in, mirroring `authorizedForBasicAuth`.
+ *
+ * `faculty` is checked first so the stronger role wins deterministically.
+ * A role whose expected credential is undefined never matches.
+ */
+export function resolveRole(
+  authorizationHeader: string | null | undefined,
+  expected: { faculty: string | undefined; creator: string | undefined },
+): FacultyRole | null {
+  const header = authorizationHeader ?? '';
+  if (!header.toLowerCase().startsWith('basic ')) return null;
+  const b64 = header.slice(6).trim();
+  if (!b64) return null;
+  let decoded: string;
+  try {
+    decoded = atob(b64);
+  } catch {
+    return null;
+  }
+  if (expected.faculty && decoded === expected.faculty) return 'faculty';
+  if (expected.creator && decoded === expected.creator) return 'creator';
+  return null;
+}
+
+/**
+ * Path/method allowlist for the create-only role. A creator may reach ONLY
+ * the add-course form and the create API; the route enforces single-add
+ * (no bulk). Default-deny: anything not listed here is forbidden, so future
+ * faculty routes are automatically off-limits to creators.
+ */
+const CREATOR_ALLOWED: ReadonlyArray<{ path: string; method: string }> = [
+  { path: '/courses/new', method: 'GET' },
+  { path: '/api/admin/courses/roster', method: 'POST' },
+];
+
+export function creatorAllowed(pathname: string, method: string): boolean {
+  const m = method.toUpperCase();
+  return CREATOR_ALLOWED.some((r) => r.path === pathname && r.method === m);
+}
