@@ -13,6 +13,7 @@ export interface InsertMaterialInput {
   mimeType: string;
   sizeBytes: number;
   ipHash: string;
+  sourceCode?: string | null;
 }
 
 export async function insertMaterial(input: InsertMaterialInput): Promise<CourseMaterialRow> {

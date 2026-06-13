@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { isValidSlug } from '@/lib/slug';
 import { hashIp } from '@/lib/ip-hash';
 import { getCourseByCode, updateCourseCanvasImport } from '@/lib/db/courses-queries';
+import { setPairedCanvasProvenance } from '@/lib/db/course-codes-queries';
 import { insertMaterial, findMaterialByFileName, updateMaterialMetadata } from '@/lib/db/course-materials-queries';
 import { finalizeExtraction } from '@/lib/capture/finalize-extraction';
 import { createVectorStore } from '@/lib/capture/vector-store';
@@ -65,6 +66,7 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
 
   const canvasUrl = typeof body.canvasUrl === 'string' ? body.canvasUrl.trim() : '';
   const canvasToken = typeof body.canvasToken === 'string' ? body.canvasToken.trim() : '';
+  const sourceCode = typeof body.sourceCode === 'string' && body.sourceCode.trim() ? body.sourceCode.trim() : null;
   // Default ON: most courses have a graveyard of draft assignments / pages
   // that the auditor reads as real coverage. Faculty can opt back in to
   // including unpublished items per import.
@@ -365,6 +367,7 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
         mimeType,
         sizeBytes: text.length,
         ipHash,
+        sourceCode,
       });
       await finalizeExtraction({
         id: mat.id,
@@ -382,7 +385,13 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
 
   // Stamp the Canvas course name + import timestamp so the Step-1 Canvas box
   // header can show provenance (name·imported M/D/YY) without a live API call.
-  await updateCourseCanvasImport(code, data.course.name, new Date());
+  // When sourceCode names a different (paired) code, write provenance to that
+  // paired row; otherwise stamp the primary course as before.
+  if (sourceCode && sourceCode !== code) {
+    await setPairedCanvasProvenance(sourceCode, data.course.name, new Date());
+  } else {
+    await updateCourseCanvasImport(code, data.course.name, new Date());
+  }
 
   const details = {
     syllabusFound: !!syllabusText,
