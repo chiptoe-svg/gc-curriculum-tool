@@ -18,6 +18,7 @@ const COURSE: CourseCatalogView = {
   auditMode: 'full',
   canvasCourseName: null,
   canvasImportedAt: null,
+  pairedCodes: [],
 };
 
 const M = (fileName: string, over: Partial<CaptureMaterial> = {}): CaptureMaterial =>
@@ -40,6 +41,7 @@ const M = (fileName: string, over: Partial<CaptureMaterial> = {}): CaptureMateri
     autoSetAside: false,
     setAsideReason: null,
     blobUrl: '',
+    sourceCode: null,
     ...over,
   }) as CaptureMaterial;
 

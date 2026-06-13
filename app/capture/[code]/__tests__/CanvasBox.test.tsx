@@ -13,7 +13,7 @@ import { CanvasBox } from '@/app/capture/[code]/boxes/CanvasBox';
 const course = {
   code: 'GC 3800', title: 'Junior Seminar', description: '', prerequisites: '',
   learningObjectives: [], majorProjects: [], skillsRequired: [], auditMode: 'full',
-  canvasCourseName: null, canvasImportedAt: null,
+  canvasCourseName: null, canvasImportedAt: null, pairedCodes: [],
 } as unknown as CourseCatalogView;
 
 function mat(o: Partial<CaptureMaterial>): CaptureMaterial {
@@ -22,7 +22,8 @@ function mat(o: Partial<CaptureMaterial>): CaptureMaterial {
     pageCount: null, extractionStatus: 'ok', extractionMethod: null, extractedText: o.extractedText ?? 'x',
     ignored: o.ignored ?? false, digest: null, digestGeneratedAt: null, useDigest: false,
     indexingStatus: o.indexingStatus ?? 'ready', indexedAt: null, ferpaRisk: 'low' as never,
-    autoSetAside: false, setAsideReason: o.setAsideReason ?? null, blobUrl: '', ignoredItems: o.ignoredItems, ...o,
+    autoSetAside: false, setAsideReason: o.setAsideReason ?? null, blobUrl: '', ignoredItems: o.ignoredItems,
+    sourceCode: null, ...o,
   } as CaptureMaterial;
 }
 
@@ -160,6 +161,24 @@ describe('CanvasBox', () => {
     expect(screen.getByText(/rubric ✓/i)).toBeTruthy();
     // Only one chip (Assignment Two has no rubric)
     expect(screen.getAllByText(/rubric ✓/i)).toHaveLength(1);
+  });
+
+  it('renders per-page import slots + groups items by source when paired codes exist', () => {
+    const courseB = { ...course, code: 'GC 3460', pairedCodes: [{ pairedCode: 'GC 3461', role: 'lab', canvasImportedAt: null }] } as unknown as CourseCatalogView;
+    render(<CanvasBox course={courseB} materials={[
+      mat({ id: 'a', fileName: 'Canvas: Assignments', extractedText: '## X (10 pts)', sourceCode: null }),
+      mat({ id: 'b', fileName: 'Canvas: Assignments', extractedText: '## Y (5 pts)', sourceCode: 'GC 3461' }),
+    ]} slug="s" onMaterialsChange={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: /canvas/i }));
+    expect(screen.getByText(/lab/i)).toBeTruthy();                 // the lab slot/subheader
+    expect(screen.getAllByRole('button', { name: /scan linked docs/i })).toHaveLength(1); // footer action once
+  });
+
+  it('renders today\'s single-import layout when there are no paired codes', () => {
+    const courseN = { ...course, pairedCodes: [] } as unknown as CourseCatalogView;
+    render(<CanvasBox course={courseN} materials={[mat({ fileName: 'Canvas: Assignments', extractedText: '## X', sourceCode: null })]} slug="s" onMaterialsChange={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: /canvas/i }));
+    expect(screen.queryByText(/lab page|lecture page/i)).toBeNull(); // no per-page slots
   });
 
   it('auto-scan checkbox is checked by default and triggers scan-linked-docs after import', async () => {

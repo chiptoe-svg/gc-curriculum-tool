@@ -43,6 +43,12 @@ export interface CaptureMaterial {
    * part of the title here).
    */
   ignoredItems?: readonly string[];
+  /**
+   * Which paired course code this material was imported from. Null for
+   * materials belonging to the primary course. Set when the Canvas import
+   * route ingests materials from a bundled lecture/lab pair.
+   */
+  sourceCode: string | null;
 }
 
 export interface CourseCatalogView {
@@ -58,6 +64,8 @@ export interface CourseCatalogView {
   canvasCourseName: string | null;
   /** ISO timestamp of the most recent Canvas import; null until first import. */
   canvasImportedAt: string | null;
+  /** Paired (lecture/lab) codes bundled under this course; [] when not bundled. */
+  pairedCodes: Array<{ pairedCode: string; role: 'lecture' | 'lab' | 'other'; canvasImportedAt: string | null }>;
 }
 
 interface Props {
@@ -753,6 +761,7 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
         auditMode: updated.auditMode ?? course.auditMode,
         canvasCourseName: course.canvasCourseName,
         canvasImportedAt: course.canvasImportedAt,
+        pairedCodes: course.pairedCodes,
       };
       onCourseChange?.(merged);
       setSyncMessage({ kind: 'ok', text: 'Catalog synced from Google Sheet.' });
@@ -1020,6 +1029,7 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
         autoSetAside: false,
         setAsideReason: null,
         blobUrl: data.blobUrl ?? '',  // for local uploads, the URL is internal; the link won't render anyway
+        sourceCode: null,
       };
       pushMaterials([...materials, newMaterial]);
     } catch (e) {

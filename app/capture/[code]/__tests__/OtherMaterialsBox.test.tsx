@@ -22,7 +22,8 @@ function mat(o: Partial<CaptureMaterial>): CaptureMaterial {
     pageCount: null, extractionStatus: 'ok', extractionMethod: null, extractedText: o.extractedText ?? 'hello world',
     ignored: o.ignored ?? false, digest: o.digest ?? null, digestGeneratedAt: null, useDigest: o.useDigest ?? false,
     indexingStatus: o.indexingStatus ?? 'ready', indexedAt: null, ferpaRisk: 'low', autoSetAside: false,
-    setAsideReason: o.setAsideReason ?? null, blobUrl: o.blobUrl ?? '', ignoredItems: o.ignoredItems, ...o,
+    setAsideReason: o.setAsideReason ?? null, blobUrl: o.blobUrl ?? '', ignoredItems: o.ignoredItems,
+    sourceCode: null, ...o,
   } as CaptureMaterial;
 }
 
