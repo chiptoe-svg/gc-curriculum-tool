@@ -1,4 +1,4 @@
-import { pgTable, pgEnum, uuid, text, jsonb, timestamp, integer, real, boolean, primaryKey, index, unique, foreignKey } from 'drizzle-orm/pg-core';
+import { pgTable, pgEnum, uuid, text, jsonb, timestamp, integer, bigint, real, boolean, primaryKey, index, unique, foreignKey } from 'drizzle-orm/pg-core';
 import type { CaptureProfile, CaptureReadiness, CaptureReviewerStatus } from '@/lib/ai/capture/schema';
 
 export const careerTargets = pgTable('career_targets', {
@@ -49,7 +49,7 @@ export const prototypeRuns = pgTable('prototype_runs', {
   result: jsonb('result').notNull(),                 // the full AnalysisResult object
   aiProvider: text('ai_provider').notNull(),
   aiModel: text('ai_model').notNull(),
-  costUsdCents: integer('cost_usd_cents').notNull(), // estimated cost in 1/100 of a cent
+  costUsdCents: bigint('cost_usd_cents', { mode: 'number' }).notNull(), // estimated cost in 1/100 of a cent
   durationMs: integer('duration_ms').notNull(),
   analysisKind: text('analysis_kind').notNull().default('course_prereqs'),
 });
@@ -66,7 +66,7 @@ export const prototypeFlags = pgTable('prototype_flags', {
 
 export const dailyCost = pgTable('daily_cost', {
   day: text('day').primaryKey(),               // 'YYYY-MM-DD' UTC
-  totalCostUsdCents: integer('total_cost_usd_cents').notNull().default(0),
+  totalCostUsdCents: bigint('total_cost_usd_cents', { mode: 'number' }).notNull().default(0),
   lastAlertSent: timestamp('last_alert_sent', { withTimezone: true }),
 });
 
@@ -172,7 +172,7 @@ export const synthesisRuns = pgTable('synthesis_runs', {
   submissionCount: integer('submission_count').notNull(),
   result: jsonb('result').notNull(),
   model: text('model').notNull(),
-  costUsdCents: integer('cost_usd_cents').notNull(),
+  costUsdCents: bigint('cost_usd_cents', { mode: 'number' }).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
@@ -194,7 +194,7 @@ export const courseMaterials = pgTable('course_materials', {
     notes: string;
   }>(),
   analysisModel: text('analysis_model'),
-  analysisCostUsdCents: integer('analysis_cost_usd_cents'),
+  analysisCostUsdCents: bigint('analysis_cost_usd_cents', { mode: 'number' }),
   uploadedAt: timestamp('uploaded_at', { withTimezone: true }).defaultNow().notNull(),
   ipHash: text('ip_hash').notNull(),
   digest: text('digest'),
@@ -268,7 +268,7 @@ export const courseProfileRuns = pgTable('course_profile_runs', {
   }>().notNull(),
   materialCount: integer('material_count').notNull(),
   model: text('model').notNull(),
-  costUsdCents: integer('cost_usd_cents').notNull(),
+  costUsdCents: bigint('cost_usd_cents', { mode: 'number' }).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
@@ -288,7 +288,7 @@ export const courseKudRuns = pgTable('course_kud_runs', {
     skillsRequired: string[];
   }>().notNull(),
   model: text('model').notNull(),
-  costUsdCents: integer('cost_usd_cents').notNull(),
+  costUsdCents: bigint('cost_usd_cents', { mode: 'number' }).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 

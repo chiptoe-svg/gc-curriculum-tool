@@ -252,9 +252,37 @@ export interface NewIntendedRow {
 }
 
 /**
+ * Sanitize a single intended K/U/D depth value.
+ * Valid values are integers 0–5 (inclusive).  Anything outside that range,
+ * non-finite, or non-integer is replaced with null so the row can still be
+ * inserted without triggering a constraint failure.
+ *
+ * Exported for unit tests; not intended for external callers.
+ */
+export function sanitizeIntendedDepth(v: number | null | undefined): number | null {
+  if (v === null || v === undefined) return null;
+  if (!isFinite(v)) return null;
+  const rounded = Math.round(v);
+  if (rounded < 0 || rounded > 5) return null;
+  return rounded;
+}
+
+/**
  * Replace a course's intended coverage atomically (delete-then-insert in a tx).
  * Idempotent: re-running with the same rows produces the same result.
  * No-op insert when rows is empty (delete still fires to clear stale data).
+ *
+ * Two-layer poison-row defence:
+ * 1. Each row's K/U/D depths are sanitized to 0–5 or null before insert.
+ *    Out-of-range values from the extractor are common (e.g., 6 from an
+ *    off-by-one LLM) and would overflow the integer constraint, aborting
+ *    the whole tx and rolling back the delete — leaving the course with
+ *    stale data AND no new data.
+ * 2. The insert runs inside a Drizzle nested transaction (Postgres SAVEPOINT).
+ *    If the cleaned batch still throws (e.g., FK violation on an unknown
+ *    sub_competency_id), we fall back to inserting each row individually in
+ *    its own SAVEPOINT; rows that fail are skipped (logged) so survivors
+ *    persist.  The outer delete is never rolled back.
  */
 export async function replaceIntendedCoverage(
   courseCode: string,
@@ -264,18 +292,43 @@ export async function replaceIntendedCoverage(
   await db.transaction(async (tx) => {
     await tx.delete(courseIntendedCoverage).where(eq(courseIntendedCoverage.courseCode, courseCode));
     if (rows.length === 0) return;
-    await tx.insert(courseIntendedCoverage).values(
-      rows.map((r) => ({
-        courseCode,
-        subCompetencyId: r.subCompetencyId,
-        intendedK: r.intendedK,
-        intendedU: r.intendedU,
-        intendedD: r.intendedD,
-        confidence: r.confidence,
-        rationale: r.rationale,
-        model,
-      })),
-    );
+
+    // Layer 1: sanitize every depth value.
+    const cleaned = rows.map((r) => ({
+      courseCode,
+      subCompetencyId: r.subCompetencyId,
+      intendedK: sanitizeIntendedDepth(r.intendedK),
+      intendedU: sanitizeIntendedDepth(r.intendedU),
+      intendedD: sanitizeIntendedDepth(r.intendedD),
+      confidence: r.confidence,
+      rationale: r.rationale,
+      model,
+    }));
+
+    // Layer 2: SAVEPOINT-protected bulk insert with per-row fallback.
+    // A plain pg transaction aborts on ANY error — there is no way to
+    // catch-and-continue inside the same tx without a SAVEPOINT.
+    // Drizzle's nested tx.transaction() maps to SAVEPOINT/ROLLBACK TO SAVEPOINT.
+    try {
+      await tx.transaction(async (b) => {
+        await b.insert(courseIntendedCoverage).values(cleaned);
+      });
+    } catch (bulkErr) {
+      console.warn(
+        `replaceIntendedCoverage: bulk insert failed for ${courseCode} (poison row?), falling back to row-by-row — ${String(bulkErr)}`,
+      );
+      for (const row of cleaned) {
+        try {
+          await tx.transaction(async (b) => {
+            await b.insert(courseIntendedCoverage).values(row);
+          });
+        } catch (rowErr) {
+          console.warn(
+            `replaceIntendedCoverage: skipping row ${row.subCompetencyId} for ${courseCode} — ${String(rowErr)}`,
+          );
+        }
+      }
+    }
   });
 }
 

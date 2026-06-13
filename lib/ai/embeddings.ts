@@ -22,6 +22,51 @@ export interface EmbedOptions {
 export const DEFAULT_EMBEDDING_MODEL = 'qwen3-embedding-4b';
 export const EMBEDDING_DIM = 2560;
 
+/**
+ * Campus endpoint caps a request at 32,000 tokens summed across all inputs.
+ * We use a conservative character budget (36,000 chars ≈ 24k tokens at ~1.5
+ * chars/tok) so even dense technical content (closer to 2 chars/tok) stays
+ * well under the cap.  Truncation per input is last-resort: it only fires
+ * when a single chunk exceeds the cap and must not block the whole batch.
+ */
+export const MAX_CHARS_PER_REQUEST = 36_000;
+export const MAX_CHARS_PER_INPUT   = 36_000;
+
+/**
+ * Pack texts into sub-batches so each batch's summed character count ≤
+ * MAX_CHARS_PER_REQUEST.  Any single input longer than MAX_CHARS_PER_INPUT is
+ * truncated first (last-resort: prevents one giant chunk from hard-400ing the
+ * whole batch).  Order is preserved; flattening the result array gives the
+ * same sequence as the input.
+ */
+export function packEmbeddingBatches(texts: string[]): string[][] {
+  const batches: string[][] = [];
+  let current: string[] = [];
+  let currentLen = 0;
+
+  for (const raw of texts) {
+    // Truncate individual inputs that exceed the per-input cap.
+    const text = raw.length > MAX_CHARS_PER_INPUT ? raw.slice(0, MAX_CHARS_PER_INPUT) : raw;
+    const len = text.length;
+
+    if (current.length > 0 && currentLen + len > MAX_CHARS_PER_REQUEST) {
+      // Flush current batch before adding this input.
+      batches.push(current);
+      current = [];
+      currentLen = 0;
+    }
+
+    current.push(text);
+    currentLen += len;
+  }
+
+  if (current.length > 0) {
+    batches.push(current);
+  }
+
+  return batches;
+}
+
 interface EmbeddingsResponse {
   data: Array<{ embedding: number[]; index: number }>;
   model: string;
@@ -37,18 +82,22 @@ function resolveConfig(opts: EmbedOptions = {}): { baseURL: string; apiKey: stri
   return { baseURL, apiKey, model };
 }
 
-/** Embed one or more strings. Returns one vector per input, in order. */
-export async function embedBatch(texts: string[], opts: EmbedOptions = {}): Promise<number[][]> {
-  if (texts.length === 0) return [];
-  const { baseURL, apiKey, model } = resolveConfig(opts);
-
-  const res = await fetch(`${baseURL.replace(/\/$/, '')}/embeddings`, {
+/**
+ * Send exactly one batch of (already-packed, already-truncated) texts to the
+ * endpoint.  Returns vectors in input order using the index-slot reconstruction
+ * pattern (the API may return rows in any order).
+ */
+async function embedOneRequest(
+  texts: string[],
+  cfg: { baseURL: string; apiKey: string; model: string },
+): Promise<number[][]> {
+  const res = await fetch(`${cfg.baseURL.replace(/\/$/, '')}/embeddings`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${apiKey}`,
+      'Authorization': `Bearer ${cfg.apiKey}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ model, input: texts }),
+    body: JSON.stringify({ model: cfg.model, input: texts }),
   });
 
   if (!res.ok) {
@@ -68,6 +117,27 @@ export async function embedBatch(texts: string[], opts: EmbedOptions = {}): Prom
     out.push(vec);
   }
   return out;
+}
+
+/**
+ * Embed one or more strings.  Returns one vector per input, in order.
+ *
+ * Large or numerous inputs are automatically split into sub-batches so that
+ * each request stays within the campus endpoint's 32k shared-token cap.
+ * Batches are issued sequentially (not concurrently) to avoid hammering the
+ * shared cluster.
+ */
+export async function embedBatch(texts: string[], opts: EmbedOptions = {}): Promise<number[][]> {
+  if (texts.length === 0) return [];
+  const cfg = resolveConfig(opts);
+
+  const batches = packEmbeddingBatches(texts);
+  const results: number[][] = [];
+  for (const batch of batches) {
+    const vecs = await embedOneRequest(batch, cfg);
+    for (const v of vecs) results.push(v);
+  }
+  return results;
 }
 
 /** Embed a single string. Returns a single vector. */

@@ -2,6 +2,27 @@ import { db } from '@/lib/db/client';
 import { dailyCost } from '@/lib/db/schema';
 import { sql } from 'drizzle-orm';
 
+/**
+ * Any single recordSpend above $10,000 (1_000_000_000 in 1/100-cent units) is
+ * a bug or sentinel, not a real charge — clamp it so a runaway extractor
+ * can't poison the accumulator or overflow the bigint column.
+ */
+export const MAX_SANE_CENTS = 100_000_000; // $10,000 in 1/100-cent units
+
+/**
+ * Sanitize a raw cost value before writing to daily_cost.
+ * - Non-finite (NaN / ±Infinity) → 0
+ * - Negative              → 0
+ * - Round to integer      (costs are always whole 1/100-cent units)
+ * - Clamp to MAX_SANE_CENTS
+ */
+export function sanitizeCents(n: number): number {
+  if (!isFinite(n)) return 0;
+  if (n < 0 || Object.is(n, -0)) return 0;
+  const rounded = Math.round(n);
+  return rounded > MAX_SANE_CENTS ? MAX_SANE_CENTS : rounded;
+}
+
 // Local-date day key — matches Postgres `CURRENT_DATE` (server-local) used by
 // getDailyCostHistory, so the cap window resets at LOCAL midnight, not UTC
 // midnight (which on the US-East box fell at ~8pm local and split the day).
@@ -70,11 +91,12 @@ export async function getDailyCostHistory(days: number = 7): Promise<DailyCostRo
 }
 
 export async function recordSpend(costCents: number): Promise<void> {
+  const safe = sanitizeCents(costCents);
   const day = currentDayKey();
   await db.execute(sql`
     INSERT INTO daily_cost (day, total_cost_usd_cents)
-    VALUES (${day}, ${costCents})
+    VALUES (${day}, ${safe})
     ON CONFLICT (day)
-    DO UPDATE SET total_cost_usd_cents = daily_cost.total_cost_usd_cents + ${costCents}
+    DO UPDATE SET total_cost_usd_cents = daily_cost.total_cost_usd_cents + ${safe}
   `);
 }

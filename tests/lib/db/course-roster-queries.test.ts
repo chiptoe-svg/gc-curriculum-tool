@@ -60,13 +60,20 @@ vi.mock('@/lib/db/client', () => ({
 
     // transaction: executes the callback with a tx object
     transaction: async (fn: (tx: unknown) => Promise<void>) => {
-      const tx = {
+      const tx: {
+        delete: (t: unknown) => { where: (arg: unknown) => unknown };
+        insert: (t: unknown) => { values: (rows: unknown) => unknown };
+        transaction: (fn2: (b: unknown) => Promise<void>) => Promise<void>;
+      } = {
         delete: () => ({
           where: (arg: unknown) => txDeleteWhereMock(arg),
         }),
         insert: () => ({
           values: (rows: unknown) => txInsertValuesMock(rows),
         }),
+        // Nested transaction (SAVEPOINT) — execute the inner callback with a
+        // sub-tx that shares the same mocks so insert/delete calls are captured.
+        transaction: async (fn2: (b: unknown) => Promise<void>) => fn2(tx),
       };
       return fn(tx);
     },
