@@ -75,9 +75,14 @@ export const TIER_TO_MODEL: Record<Exclude<ModelTier, 'custom'>, string> = {
  *   - explore-compare: default. Multi-step reasoning across snapshot + spec.
  *   - explore-what-if: heavy. Hypothetical cascade reasoning; exactly where
  *     bigger reasoning earns its keep.
- *   - program-score-coverage: light. Mapping snapshot competencies to
- *     canonical sub-competencies — pattern-matching plus modest reasoning.
- *     Pilot at light; promote if quality is insufficient.
+ *   - program-score-coverage: heavy. Was piloted at light ("promote if
+ *     quality is insufficient") — the 2026-06-12 reliability study supplied
+ *     the evidence: at light (gpt-5.4-mini), 5× re-runs on fixed pairs hit
+ *     only 25% D band-agreement (scores wander across band boundaries
+ *     between runs). All 120 then-existing matrix cells carried the mini
+ *     model. Promoted to heavy per the pilot's own criterion; STATE.md and
+ *     architecture.html had documented heavy all along (code drift).
+ *     Study: docs/superpowers/audits/2026-06-12-reliability-study.md
  */
 export const DEFAULT_TIERS: Record<AIFunctionId, Exclude<ModelTier, 'custom'>> = {
   'capture-chat': 'default',
@@ -86,7 +91,7 @@ export const DEFAULT_TIERS: Record<AIFunctionId, Exclude<ModelTier, 'custom'>> =
   'explore-draft-target': 'light',
   'explore-compare': 'default',
   'explore-what-if': 'heavy',
-  'program-score-coverage': 'light',
+  'program-score-coverage': 'heavy',
   // Small per-click transformation — one short gap → up to ~12 short
   // competency rows. Light tier handles this well; promote to default
   // if the decomposition quality is poor on long/aggregated gaps.
