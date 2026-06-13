@@ -1,4 +1,6 @@
+import { headers } from 'next/headers';
 import { isValidSlug } from '@/lib/slug';
+import { resolveRole } from '@/lib/auth/basic-auth';
 import { NewCourseForm } from './NewCourseForm';
 
 interface Props {
@@ -24,6 +26,14 @@ export default async function NewCoursePage({ searchParams }: Props) {
     );
   }
 
+  const role = resolveRole((await headers()).get('authorization'), {
+    faculty: process.env.FACULTY_BASIC_AUTH,
+    creator: process.env.CREATE_ONLY_AUTH,
+  });
+  // Faculty (or no gate configured → null) keep the capture redirect;
+  // the create-only role gets the confirmation flow.
+  const canCapture = role !== 'creator';
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
@@ -45,7 +55,7 @@ export default async function NewCoursePage({ searchParams }: Props) {
       </header>
 
       <main className="mx-auto max-w-2xl px-6 py-8">
-        <NewCourseForm slug={slug} />
+        <NewCourseForm slug={slug} canCapture={canCapture} />
       </main>
     </div>
   );
