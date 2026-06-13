@@ -107,4 +107,19 @@ describe('NewCourseForm', () => {
     // Should not have navigated
     expect(pushMock).not.toHaveBeenCalled();
   });
+
+  it('shows a "Course added" confirmation (no capture redirect) when canCapture is false', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true }) });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<NewCourseForm slug="s" canCapture={false} />);
+    fireEvent.change(screen.getByLabelText(/prefix/i), { target: { value: 'GC' } });
+    fireEvent.change(screen.getByLabelText(/course number/i), { target: { value: '3460' } });
+    fireEvent.change(screen.getByLabelText(/title/i), { target: { value: 'Junior Seminar' } });
+    fireEvent.click(screen.getByRole('button', { name: /^add course$/i }));
+
+    await waitFor(() => expect(screen.getByText(/course added/i)).toBeTruthy());
+    expect(screen.getByRole('link', { name: /view course/i }).getAttribute('href')).toContain('/view/GC%203460');
+    expect(pushMock).not.toHaveBeenCalled();
+  });
 });
