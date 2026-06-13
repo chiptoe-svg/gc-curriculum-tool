@@ -26,7 +26,7 @@ export default async function HomePage() {
   const funnelOrigin = process.env.TAILSCALE_FUNNEL_ORIGIN ?? '';
 
   const rows = await listCoursesWithStatus();
-  const pairedCodeRows = await listPairedCodesForCourses(rows.map(r => r.code));
+  const pairedCodeRows = await listPairedCodesForCourses([...new Set(rows.map(r => r.code))]);
   const pairedByCode = new Map<string, Array<{ pairedCode: string }>>();
   for (const pc of pairedCodeRows) {
     const arr = pairedByCode.get(pc.courseCode) ?? [];

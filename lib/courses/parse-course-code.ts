@@ -41,7 +41,7 @@ export function formatCourseLabel(
   if (pairedCodes.length === 0) return code;
   const base = parseCourseCode(code);
   const parsed = pairedCodes.map(p => ({ raw: p.pairedCode, pc: parseCourseCode(p.pairedCode) }));
-  const sameAll = parsed.every(p => p.pc.prefix === base.prefix && p.pc.number !== null);
+  const sameAll = base.number !== null && parsed.every(p => p.pc.prefix === base.prefix && p.pc.number !== null);
   if (sameAll) {
     // shared prefix → collapse to "GC 3460/3461[/...]"
     return `${code}/${parsed.map(p => `${p.pc.number}${p.pc.suffix}`).join('/')}`;

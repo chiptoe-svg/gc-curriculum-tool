@@ -32,7 +32,7 @@ export default async function CoursesPage({ searchParams }: Props) {
   ]);
   rows.sort((a, b) => (a.level ?? 9999) - (b.level ?? 9999) || a.code.localeCompare(b.code));
 
-  const pairedCodeRows = await listPairedCodesForCourses(rows.map(r => r.code));
+  const pairedCodeRows = await listPairedCodesForCourses([...new Set(rows.map(r => r.code))]);
   const pairedByCode: Record<string, Array<{ pairedCode: string }>> = {};
   for (const pc of pairedCodeRows) {
     const arr = pairedByCode[pc.courseCode] ?? [];

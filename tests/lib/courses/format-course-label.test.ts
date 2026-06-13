@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatCourseLabel } from '@/lib/db/courses-queries';
+import { formatCourseLabel } from '@/lib/courses/parse-course-code';
 
 describe('formatCourseLabel', () => {
   it('returns the bare code when there are no paired codes', () => {
