@@ -9,9 +9,13 @@ interface Props {
 
 export function NewCourseForm({ slug }: Props) {
   const router = useRouter();
-  const [code, setCode] = useState('');
+  const [prefix, setPrefix] = useState('GC');
+  const [courseNumber, setCourseNumber] = useState('');
   const [title, setTitle] = useState('');
   const [catalogUrl, setCatalogUrl] = useState('');
+  const [pairedOpen, setPairedOpen] = useState(false);
+  const [pairedNumber, setPairedNumber] = useState('');
+  const [pairedRole, setPairedRole] = useState<'lab' | 'lecture' | 'other'>('lab');
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -19,24 +23,31 @@ export function NewCourseForm({ slug }: Props) {
     e.preventDefault();
     setError(null);
 
-    const trimmedCode = code.trim();
+    const trimmedPrefix = prefix.trim();
+    const trimmedNumber = courseNumber.trim();
     const trimmedTitle = title.trim();
     const trimmedUrl = catalogUrl.trim();
 
-    if (!trimmedCode || !trimmedTitle) {
-      setError('Course code and title are required.');
+    if (!trimmedPrefix || !trimmedNumber || !trimmedTitle) {
+      setError('Prefix, course number, and title are required.');
       return;
     }
 
+    const code = `${trimmedPrefix} ${trimmedNumber}`;
+    const pairedIncluded = pairedOpen && pairedNumber.trim() !== '';
+    const pairedCode = pairedIncluded ? `${trimmedPrefix} ${pairedNumber.trim()}` : undefined;
+
     startTransition(async () => {
-      // Same body shape used by CourseRosterControls.submitOne():
-      //   { mode: 'one', code, title, catalogUrl? }
       const body: Record<string, unknown> = {
         mode: 'one',
-        code: trimmedCode,
+        code,
         title: trimmedTitle,
       };
       if (trimmedUrl) body.catalogUrl = trimmedUrl;
+      if (pairedIncluded) {
+        body.pairedCode = pairedCode;
+        body.pairedRole = pairedRole;
+      }
 
       const res = await fetch(
         `/api/admin/courses/roster?slug=${encodeURIComponent(slug)}`,
@@ -55,7 +66,7 @@ export function NewCourseForm({ slug }: Props) {
       }
 
       // Success — land directly on Step 1 of CourseCapture for this code
-      router.push(`/capture/${encodeURIComponent(trimmedCode)}?slug=${encodeURIComponent(slug)}`);
+      router.push(`/capture/${encodeURIComponent(code)}?slug=${encodeURIComponent(slug)}`);
     });
   }
 
@@ -69,20 +80,36 @@ export function NewCourseForm({ slug }: Props) {
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="mb-1 block text-sm font-medium" htmlFor="course-code">
-            Course code <span className="text-destructive">*</span>
-          </label>
-          <input
-            id="course-code"
-            type="text"
-            required
-            placeholder="GC 1234"
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            className={inputClass}
-            disabled={pending}
-          />
+        <div className="flex gap-3">
+          <div className="w-24">
+            <label className="mb-1 block text-sm font-medium" htmlFor="course-prefix">
+              Prefix <span className="text-destructive">*</span>
+            </label>
+            <input
+              id="course-prefix"
+              type="text"
+              placeholder="GC"
+              value={prefix}
+              onChange={(e) => setPrefix(e.target.value)}
+              className={inputClass}
+              disabled={pending}
+            />
+          </div>
+
+          <div className="flex-1">
+            <label className="mb-1 block text-sm font-medium" htmlFor="course-number">
+              Course number <span className="text-destructive">*</span>
+            </label>
+            <input
+              id="course-number"
+              type="text"
+              placeholder="3460"
+              value={courseNumber}
+              onChange={(e) => setCourseNumber(e.target.value)}
+              className={inputClass}
+              disabled={pending}
+            />
+          </div>
         </div>
 
         <div>
@@ -92,7 +119,6 @@ export function NewCourseForm({ slug }: Props) {
           <input
             id="course-title"
             type="text"
-            required
             placeholder="Introduction to Graphic Communications"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -116,6 +142,68 @@ export function NewCourseForm({ slug }: Props) {
           />
         </div>
 
+        {/* Paired course disclosure */}
+        {!pairedOpen && (
+          <button
+            type="button"
+            onClick={() => setPairedOpen(true)}
+            className="text-sm text-muted-foreground underline-offset-2 hover:underline"
+            disabled={pending}
+          >
+            + Add a paired course (e.g. lab)
+          </button>
+        )}
+
+        {pairedOpen && (
+          <div className="rounded-md border border-border p-4 space-y-3">
+            <p className="text-sm font-medium">Paired course</p>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium" htmlFor="paired-number">
+                Paired number
+              </label>
+              <input
+                id="paired-number"
+                type="text"
+                placeholder="3461"
+                value={pairedNumber}
+                onChange={(e) => setPairedNumber(e.target.value)}
+                className={inputClass}
+                disabled={pending}
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Uses the same prefix ({prefix.trim() || 'GC'}).
+              </p>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium" htmlFor="paired-role">
+                Paired role
+              </label>
+              <select
+                id="paired-role"
+                value={pairedRole}
+                onChange={(e) => setPairedRole(e.target.value as 'lab' | 'lecture' | 'other')}
+                className={inputClass}
+                disabled={pending}
+              >
+                <option value="lab">Lab</option>
+                <option value="lecture">Lecture</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => { setPairedOpen(false); setPairedNumber(''); setPairedRole('lab'); }}
+              className="text-xs text-muted-foreground underline-offset-2 hover:underline"
+              disabled={pending}
+            >
+              Remove paired course
+            </button>
+          </div>
+        )}
+
         {error && (
           <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
             {error}
@@ -127,7 +215,7 @@ export function NewCourseForm({ slug }: Props) {
           disabled={pending}
           className="w-full rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90 disabled:opacity-50"
         >
-          {pending ? 'Adding…' : 'Add course → open CourseCapture'}
+          {pending ? 'Adding…' : 'Add course & start capture'}
         </button>
       </form>
     </div>
