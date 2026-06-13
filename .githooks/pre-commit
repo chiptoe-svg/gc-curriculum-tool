@@ -27,4 +27,18 @@ if [ -n "$tracked" ]; then
   printf '   Also: did you DEFER/HOLD/skip anything? → add it to STATE.md Deferred/debt (no diff will catch that).\n' >&2
   printf '   Trivial? Ignore — this never blocks.\n\n' >&2
 fi
+
+# Reliability drift nag — NON-BLOCKING.
+# Warns when a scoring surface changes (model routing, coverage prompt,
+# or synthesis prompt) — those are exactly the changes that can cause
+# silent band-agreement regression (as seen in the A6 mini → heavy study).
+scoring_surface=$(echo "$staged" | grep -E '^(lib/ai/function-settings\.ts|lib/ai/prompts/program-score-coverage\.md|lib/ai/prompts/capture-synthesis\.md)$')
+
+if [ -n "$scoring_surface" ]; then
+  printf '\n\033[33m⚠️  Scoring surface changed\033[0m — run \033[1mpnpm reliability:check\033[0m before deploying\n' >&2
+  echo "$scoring_surface" | sed 's/^/      /' >&2
+  printf '   (catches model/tier/prompt drift; see 2026-06-12-reliability-study.md)\n' >&2
+  printf '   Trivial? Ignore — this never blocks.\n\n' >&2
+fi
+
 exit 0

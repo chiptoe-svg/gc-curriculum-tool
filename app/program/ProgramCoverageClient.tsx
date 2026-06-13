@@ -11,6 +11,7 @@ import { FlagDialog } from '@/components/FlagDialog';
 import { FlagsPanel, type AnnotatedFlag } from './FlagsPanel';
 import { openFlagsForCell } from '@/lib/program/flags';
 import { depthBand, isMentionOnly } from '@/lib/program/depth-band';
+import { reliabilityForModel } from '@/lib/program/reliability-summary';
 
 interface MatrixData {
   courses: MatrixCourse[];
@@ -688,6 +689,29 @@ function CellDetailDrawer({
                 <p className="mt-0.5 font-mono text-[11px]" title="The model that produced this cell's scores. Provider/model changes alter scoring behavior — comparisons across cells scored by different models carry that caveat.">{cell.model}</p>
               </div>
             </div>
+
+            {(() => {
+              const rel = reliabilityForModel(cell.model);
+              if (rel) {
+                return (
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Stability</p>
+                    <p
+                      className="mt-0.5 text-[11px] text-muted-foreground"
+                      title="Test-retest stability — the same model gave the same band this fraction of the time across N=5 re-runs on fixed inputs. Consistency, not correctness; human validation is separate (study part iii, pending)."
+                    >
+                      Re-run agreement ({rel.date}): D {Math.round(rel.d * 100)}% · U {Math.round(rel.u * 100)}% · K {Math.round(rel.k * 100)}%
+                    </p>
+                  </div>
+                );
+              }
+              return (
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Stability</p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground italic">Stability not yet measured for this model.</p>
+                </div>
+              );
+            })()}
 
             {cell.matchedCompetency && (
               <div>

@@ -18,7 +18,8 @@
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx scripts/seed-career-targets.ts",
     "db:seed-courses": "tsx scripts/seed-catalog-courses.ts",
-    "wiki:lint": "tsx scripts/wiki-lint.ts"
+    "wiki:lint": "tsx scripts/wiki-lint.ts",
+    "reliability:check": "tsx --env-file=.env.local scripts/reliability/check.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.79",
