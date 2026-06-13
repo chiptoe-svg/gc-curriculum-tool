@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { requiresBasicAuth, authorizedForBasicAuth } from '@/lib/auth/basic-auth';
+import { requiresBasicAuth, authorizedForBasicAuth, resolveRole, creatorAllowed } from '@/lib/auth/basic-auth';
 
 describe('requiresBasicAuth', () => {
   it.each([
@@ -101,5 +101,49 @@ describe('authorizedForBasicAuth', () => {
   it('rejects an empty payload after the scheme', () => {
     expect(authorizedForBasicAuth('Basic ', expected)).toBe(false);
     expect(authorizedForBasicAuth('Basic    ', expected)).toBe(false);
+  });
+});
+
+const basic = (cred: string) => 'Basic ' + Buffer.from(cred).toString('base64');
+const EXPECTED = { faculty: 'gcfaculty:godfrey', creator: 'cufaculty:tigers' };
+
+describe('resolveRole', () => {
+  it('maps the faculty credential to "faculty"', () => {
+    expect(resolveRole(basic('gcfaculty:godfrey'), EXPECTED)).toBe('faculty');
+  });
+  it('maps the creator credential to "creator"', () => {
+    expect(resolveRole(basic('cufaculty:tigers'), EXPECTED)).toBe('creator');
+  });
+  it('returns null for an unknown credential', () => {
+    expect(resolveRole(basic('someone:else'), EXPECTED)).toBeNull();
+  });
+  it('returns null for a missing or non-Basic header', () => {
+    expect(resolveRole(null, EXPECTED)).toBeNull();
+    expect(resolveRole('Bearer abc', EXPECTED)).toBeNull();
+    expect(resolveRole('Basic', EXPECTED)).toBeNull();
+  });
+  it('returns null for undecodable base64', () => {
+    expect(resolveRole('Basic !!!notb64!!!', EXPECTED)).toBeNull();
+  });
+  it('ignores a role whose expected credential is unset', () => {
+    expect(resolveRole(basic('cufaculty:tigers'), { faculty: 'gcfaculty:godfrey', creator: undefined })).toBeNull();
+    expect(resolveRole(basic('gcfaculty:godfrey'), { faculty: undefined, creator: 'cufaculty:tigers' })).toBeNull();
+  });
+});
+
+describe('creatorAllowed', () => {
+  it('allows GET /courses/new and POST /api/admin/courses/roster', () => {
+    expect(creatorAllowed('/courses/new', 'GET')).toBe(true);
+    expect(creatorAllowed('/api/admin/courses/roster', 'POST')).toBe(true);
+    expect(creatorAllowed('/api/admin/courses/roster', 'post')).toBe(true);
+  });
+  it('denies edit surfaces and wrong methods', () => {
+    expect(creatorAllowed('/capture/GC 1040', 'GET')).toBe(false);
+    expect(creatorAllowed('/program', 'GET')).toBe(false);
+    expect(creatorAllowed('/explore/GC 1040', 'GET')).toBe(false);
+    expect(creatorAllowed('/settings', 'GET')).toBe(false);
+    expect(creatorAllowed('/api/admin/courses/GC 1040', 'PATCH')).toBe(false);
+    expect(creatorAllowed('/courses/new', 'POST')).toBe(false);
+    expect(creatorAllowed('/api/admin/courses/roster', 'GET')).toBe(false);
   });
 });
