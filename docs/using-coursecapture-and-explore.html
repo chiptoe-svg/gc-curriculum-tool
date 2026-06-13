@@ -239,7 +239,7 @@
   <p>The tool is slug-gated: you open it through the access URL your administrator shared. The slug is part of the URL (<code>?slug=…</code>). All pages — CourseCapture, Explore, Program, Settings — pass the same slug forward; just keep the tab open and the navigation will preserve it.</p>
 
   <h3>The course must exist in the catalog</h3>
-  <p>The 120-course GC catalog is seeded into the tool. If you're capturing a course that isn't in the catalog (a new course, a renamed special-topics section), contact the administrator before you start — the capture page expects a catalog row to attach the snapshot to.</p>
+  <p>The 120-course GC catalog is seeded into the tool. If you're capturing a course that isn't in the catalog (a new course, a renamed special-topics section), contact the administrator before you start — the capture page expects a catalog row to attach the snapshot to. If your course is a lecture/lab pair (e.g. GC 3460 lecture + GC 3461 lab), it's set up as a single <em>bundled</em> course — one capture, one profile, one snapshot — with the lab imported alongside the lecture; mention both codes when you ask for it to be added.</p>
 
   <h3>Have your materials handy</h3>
   <p>The richer the materials the auditor can read, the less work the audit chat has to do. When you open <code>/capture/&lt;course-code&gt;</code>, the first thing you see is <strong>Step 1: "Confirm materials"</strong> — a review screen showing exactly what evidence the auditor will read before the interview begins. Three source boxes are presented, each a collapsible accordion:</p>
@@ -270,7 +270,7 @@
   <div class="step">
     <div class="step-num">2</div>
     <div class="step-body">
-      <strong>Canvas.</strong> Everything imported from Canvas: assignments (with rubrics and point values), quizzes (Classic and New Quizzes), modules, the Canvas syllabus page, and Canvas Files. Click <strong>Import from Canvas</strong> (or <strong>Reimport</strong>) to pull the latest — you'll need a Canvas API token the first time. Expand the box to see the individual items imported; any you don't want to count as evidence can be unchecked.
+      <strong>Canvas.</strong> Everything imported from Canvas: assignments (with rubrics and point values), quizzes (Classic and New Quizzes), modules, the Canvas syllabus page, and Canvas Files. Click <strong>Import from Canvas</strong> (or <strong>Reimport</strong>) to pull the latest — you'll need a Canvas API token the first time. Expand the box to see the individual items imported; any you don't want to count as evidence can be unchecked. If your course is a bundled lecture/lab, the Canvas box shows a separate <strong>import slot for each code</strong> (the lecture page and the lab page are different Canvas courses) — import each independently; both sets of materials feed the one shared audit, grouped by source so you can tell which page each item came from.
       <br><br>
       <strong>Scan linked docs</strong> chases Google Docs, Drive PDFs, and YouTube links that appear <em>inside</em> your Canvas content and pulls in their text — YouTube videos are handled via captions or Whisper audio-transcription. Run the scan after importing to pick up any linked content you haven't loaded directly.
       <br><br>
