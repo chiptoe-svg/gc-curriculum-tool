@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { partners } from '@/lib/db/schema';
 import { createSession, SESSION_COOKIE } from '@/lib/partners/sessions';
-import { requiresBasicAuth, authorizedForBasicAuth } from '@/lib/auth/basic-auth';
+import { requiresBasicAuth, resolveRole, creatorAllowed } from '@/lib/auth/basic-auth';
 
 /**
  * Middleware does two things, dispatched by path prefix:
@@ -26,17 +26,24 @@ export async function middleware(req: NextRequest) {
     return handlePartnerSession(req);
   }
 
-  const expected = process.env.FACULTY_BASIC_AUTH;
-  if (expected && requiresBasicAuth(path)) {
-    if (!authorizedForBasicAuth(req.headers.get('authorization'), expected)) {
+  const facultyExpected = process.env.FACULTY_BASIC_AUTH;
+  if (facultyExpected && requiresBasicAuth(path)) {
+    const role = resolveRole(req.headers.get('authorization'), {
+      faculty: facultyExpected,
+      creator: process.env.CREATE_ONLY_AUTH,
+    });
+    if (role === null) {
       return new NextResponse('Authentication required.', {
         status: 401,
         headers: {
           // Realm string must be ASCII (HTTP header = ByteString).
-          // Hyphen, not em-dash; verified after a 500 on first launchd boot.
           'WWW-Authenticate': 'Basic realm="GC Curriculum Tool - Faculty"',
         },
       });
+    }
+    // Create-only role: allowed on the add-course paths, forbidden elsewhere.
+    if (role === 'creator' && !creatorAllowed(path, req.method)) {
+      return new NextResponse('Forbidden.', { status: 403 });
     }
   }
 
