@@ -147,3 +147,38 @@ describe('creatorAllowed', () => {
     expect(creatorAllowed('/api/admin/courses/roster', 'GET')).toBe(false);
   });
 });
+
+// Final-review insurance (2026-06-13): routes excluded from the middleware
+// matcher (e.g. /api/transcribe) self-enforce with authorizedForBasicAuth
+// against FACULTY_BASIC_AUTH only — so a create-only credential must NOT pass
+// that check (no escalation via excluded routes).
+describe('full-faculty gate rejects the create-only credential', () => {
+  it('authorizedForBasicAuth accepts faculty but not the creator credential', () => {
+    expect(authorizedForBasicAuth(basic('gcfaculty:godfrey'), 'gcfaculty:godfrey')).toBe(true);
+    expect(authorizedForBasicAuth(basic('cufaculty:tigers'), 'gcfaculty:godfrey')).toBe(false);
+  });
+});
+
+// Growth guard: if a future change adds a creator-reachable path, this sweep
+// makes the widening a deliberate, reviewed diff rather than a silent opening.
+describe('creatorAllowed exposes ONLY the two create paths', () => {
+  it('denies a representative sweep of admin/edit surfaces', () => {
+    const denied: ReadonlyArray<readonly [string, string]> = [
+      ['/api/admin/courses/roster/extra', 'POST'],
+      ['/api/admin/synthesis', 'POST'],
+      ['/api/admin/courses/GC 1040', 'DELETE'],
+      ['/api/courses/GC 1040/materials', 'POST'],
+      ['/wiki', 'GET'],
+      ['/courses', 'GET'],
+      ['/admin', 'GET'],
+      ['/courses/new', 'POST'],
+    ];
+    for (const [p, m] of denied) {
+      expect(creatorAllowed(p, m)).toBe(false);
+    }
+  });
+  it('allows exactly the two create paths', () => {
+    expect(creatorAllowed('/courses/new', 'GET')).toBe(true);
+    expect(creatorAllowed('/api/admin/courses/roster', 'POST')).toBe(true);
+  });
+});
