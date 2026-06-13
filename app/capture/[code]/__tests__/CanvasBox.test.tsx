@@ -174,6 +174,73 @@ describe('CanvasBox', () => {
     expect(screen.getAllByRole('button', { name: /scan linked docs/i })).toHaveLength(1); // footer action once
   });
 
+  it('slot import in bundled mode POSTs to /canvas-import with canvasUrl + sourceCode', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      headers: { get: () => 'application/json' },
+      json: async () => ({ imported: 3, inserted: 3, updated: 0 }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const courseB = {
+      ...course, code: 'GC 3460',
+      pairedCodes: [{ pairedCode: 'GC 3461', role: 'lab', canvasImportedAt: null }],
+    } as unknown as CourseCatalogView;
+    render(<CanvasBox course={courseB} materials={[
+      mat({ id: 'a', fileName: 'Canvas: Assignments', extractedText: '## X', sourceCode: null }),
+      mat({ id: 'b', fileName: 'Canvas: Assignments', extractedText: '## Y', sourceCode: 'GC 3461' }),
+    ]} slug="s" onMaterialsChange={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: /canvas/i }));
+
+    // Open the Lab slot's form
+    const importButtons = screen.getAllByRole('button', { name: /^import$|^reimport$/i });
+    // The lab slot header Import button is the second one (primary is first)
+    const labImportBtn = importButtons[1]!;
+    fireEvent.click(labImportBtn);
+
+    // Fill in canvas URL for the lab slot
+    const urlField = screen.getByLabelText(/canvas course url/i);
+    fireEvent.change(urlField, { target: { value: 'https://clemson.instructure.com/courses/99999' } });
+
+    // Fill in token
+    const tokenField = screen.getByLabelText(/canvas api token/i);
+    fireEvent.change(tokenField, { target: { value: 'tok_lab' } });
+
+    // Submit — click the last Import/Reimport button rendered (the one inside the open form)
+    const allImportBtns = screen.getAllByRole('button', { name: /^import$|^reimport$/i });
+    fireEvent.click(allImportBtns[allImportBtns.length - 1]!);
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+
+    // Must hit canvas-import, not canvas-reextract
+    const calledUrl = String(fetchMock.mock.calls[0]![0]);
+    expect(calledUrl).toContain('/canvas-import');
+    expect(calledUrl).not.toContain('reextract');
+
+    // Body must include canvasUrl and sourceCode
+    const body = JSON.parse(String((fetchMock.mock.calls[0]![1] as RequestInit).body));
+    expect(body).toHaveProperty('canvasUrl');
+    expect(String(body.canvasUrl)).toContain('clemson.instructure.com');
+    expect(body).toHaveProperty('sourceCode', 'GC 3461');
+  });
+
+  it('materials with an unmatched sourceCode still render under an Unmatched source subheader', () => {
+    const courseB = {
+      ...course, code: 'GC 3460',
+      pairedCodes: [{ pairedCode: 'GC 3461', role: 'lab', canvasImportedAt: null }],
+    } as unknown as CourseCatalogView;
+    // GC 9999 is NOT in pairedCodes — it's an orphan
+    render(<CanvasBox course={courseB} materials={[
+      mat({ id: 'a', fileName: 'Canvas: Assignments', extractedText: '## X', sourceCode: null }),
+      mat({ id: 'b', fileName: 'Canvas: Assignments', extractedText: '## Y', sourceCode: 'GC 3461' }),
+      mat({ id: 'c', fileName: 'Canvas: Pages', extractedText: '## Orphan', sourceCode: 'GC 9999' }),
+    ]} slug="s" onMaterialsChange={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: /canvas/i }));
+    // The orphan subheader must appear
+    expect(screen.getByText(/unmatched source.*GC 9999/i)).toBeTruthy();
+    // The orphan material itself must render
+    expect(screen.getByText('Canvas: Pages')).toBeTruthy();
+  });
+
   it('renders today\'s single-import layout when there are no paired codes', () => {
     const courseN = { ...course, pairedCodes: [] } as unknown as CourseCatalogView;
     render(<CanvasBox course={courseN} materials={[mat({ fileName: 'Canvas: Assignments', extractedText: '## X', sourceCode: null })]} slug="s" onMaterialsChange={() => {}} />);

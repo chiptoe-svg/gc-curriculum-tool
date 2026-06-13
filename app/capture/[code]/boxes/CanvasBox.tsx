@@ -39,64 +39,87 @@ const STATUS_RANK: Record<string, number> = {
 /**
  * A combined group-header + import-slot for bundled mode. Renders the group
  * label (e.g. "Lab · GC 3461 · not yet imported") and an inline Import button.
- * The token field expands inline below the header row when the button is clicked.
+ * The Canvas URL + token fields expand inline below the header row when clicked.
  * This keeps the "lab"/"lecture" text in exactly ONE DOM element per group.
+ *
+ * CRITICAL: POSTs to canvas-import (not canvas-reextract), because each
+ * bundled slot is a different Canvas course. canvas-import parses the Canvas
+ * course ID from the provided URL and source-scopes the upsert via sourceCode.
  */
 function BundledGroupHeader({
   roleLabel,
   code,
   importedAt,
+  importedJustNow,
   sourceCode,
   courseCode,
   slug,
   onImported,
+  onImportStart,
+  onImportEnd,
 }: {
   roleLabel: string;
   code: string;
   importedAt: string | null;
+  importedJustNow?: boolean;
   sourceCode: string | null;  // null = primary
   courseCode: string;
   slug: string;
   onImported: (sourceCode: string | null) => Promise<void>;
+  onImportStart?: () => void;
+  onImportEnd?: () => void;
 }) {
-  const [tokenOpen, setTokenOpen] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
   const [token, setToken] = useState('');
-  const [reextracting, setReextracting] = useState(false);
-  const [reextractMsg, setReextractMsg] = useState<string | null>(null);
+  const [canvasUrl, setCanvasUrl] = useState('');
+  const [importing, setImporting] = useState(false);
+  const [importMsg, setImportMsg] = useState<string | null>(null);
 
-  const datePart = importedAt
-    ? `imported ${new Date(importedAt).toLocaleDateString(undefined, { month: 'numeric', day: 'numeric', year: '2-digit' })}`
-    : 'not yet imported';
+  const slotKey = sourceCode ?? 'primary';
+
+  const datePart = importedJustNow
+    ? 'imported just now'
+    : importedAt
+      ? `imported ${new Date(importedAt).toLocaleDateString(undefined, { month: 'numeric', day: 'numeric', year: '2-digit' })}`
+      : 'not yet imported';
 
   const label = `${roleLabel} · ${code} · ${datePart}`;
 
   async function handleImport() {
-    if (!token.trim()) { setReextractMsg('Canvas API token is required.'); return; }
-    setReextracting(true);
-    setReextractMsg(null);
+    if (!canvasUrl.trim()) { setImportMsg('Canvas course URL is required.'); return; }
+    if (!token.trim()) { setImportMsg('Canvas API token is required.'); return; }
+    setImporting(true);
+    setImportMsg(null);
+    onImportStart?.();
     try {
-      const body: Record<string, unknown> = { slug, canvasToken: token.trim() };
-      if (sourceCode !== null) body.sourceCode = sourceCode;
+      const body: Record<string, unknown> = {
+        slug,
+        canvasUrl: canvasUrl.trim(),
+        canvasToken: token.trim(),
+        sourceCode: sourceCode ?? null,
+      };
       const res = await fetch(
-        `/api/courses/${encodeURIComponent(courseCode)}/canvas-reextract`,
+        `/api/courses/${encodeURIComponent(courseCode)}/canvas-import`,
         { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) },
       );
       const contentType = res.headers.get('content-type') ?? '';
       if (!contentType.includes('application/json')) {
-        setReextractMsg(`Server returned ${res.status}.`);
+        setImportMsg(`Server returned ${res.status}.`);
         return;
       }
-      const json = await res.json() as { updated?: number; skipped?: number; error?: string };
-      if (!res.ok) { setReextractMsg(json.error ?? `Import failed (${res.status})`); return; }
-      const upd = json.updated ?? 0;
-      setReextractMsg(`re-extracted ${upd} file${upd === 1 ? '' : 's'}.`);
+      const json = await res.json() as { imported?: number; inserted?: number; updated?: number; error?: string };
+      if (!res.ok) { setImportMsg(json.error ?? `Import failed (${res.status})`); return; }
+      const imp = json.imported ?? 0;
+      setImportMsg(`imported ${imp} material${imp === 1 ? '' : 's'}.`);
       setToken('');
-      setTokenOpen(false);
+      setCanvasUrl('');
+      setFormOpen(false);
       await onImported(sourceCode);
     } catch (e) {
-      setReextractMsg(e instanceof Error ? e.message : 'Import failed');
+      setImportMsg(e instanceof Error ? e.message : 'Import failed');
     } finally {
-      setReextracting(false);
+      setImporting(false);
+      onImportEnd?.();
     }
   }
 
@@ -108,36 +131,51 @@ function BundledGroupHeader({
         </span>
         <button
           type="button"
-          onClick={() => setTokenOpen(o => !o)}
+          onClick={() => setFormOpen(o => !o)}
           className="shrink-0 rounded-md border border-input bg-background px-2 py-0.5 text-[11px] font-medium hover:bg-muted"
         >
-          {importedAt ? 'Reimport' : 'Import'}
+          {importedAt || importedJustNow ? 'Reimport' : 'Import'}
         </button>
       </div>
-      {tokenOpen && (
-        <div className="border-t bg-muted/20 px-3 py-2">
-          <label className="block text-[11px] font-medium text-muted-foreground" htmlFor={`canvas-token-${sourceCode ?? 'primary'}`}>
-            Canvas API token
-          </label>
-          <div className="mt-1 flex items-center gap-2">
+      {formOpen && (
+        <div className="border-t bg-muted/20 px-3 py-2 space-y-2">
+          <div>
+            <label className="block text-[11px] font-medium text-muted-foreground" htmlFor={`canvas-url-${slotKey}`}>
+              Canvas course URL
+            </label>
             <input
-              id={`canvas-token-${sourceCode ?? 'primary'}`}
-              type="password"
-              value={token}
-              onChange={e => setToken(e.target.value)}
-              placeholder="paste your Canvas API token"
-              className="min-w-0 flex-1 rounded-md border border-input bg-background px-2 py-1 text-xs"
+              id={`canvas-url-${slotKey}`}
+              type="url"
+              value={canvasUrl}
+              onChange={e => setCanvasUrl(e.target.value)}
+              placeholder="https://clemson.instructure.com/courses/12345"
+              className="mt-1 w-full rounded-md border border-input bg-background px-2 py-1 text-xs"
             />
-            <button
-              type="button"
-              onClick={handleImport}
-              disabled={reextracting}
-              className="shrink-0 rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium hover:bg-muted disabled:opacity-50"
-            >
-              {reextracting ? 'Importing…' : (importedAt ? 'Reimport' : 'Import')}
-            </button>
           </div>
-          {reextractMsg && <p className="mt-1 text-[11px] text-muted-foreground">{reextractMsg}</p>}
+          <div>
+            <label className="block text-[11px] font-medium text-muted-foreground" htmlFor={`canvas-token-${slotKey}`}>
+              Canvas API token
+            </label>
+            <div className="mt-1 flex items-center gap-2">
+              <input
+                id={`canvas-token-${slotKey}`}
+                type="password"
+                value={token}
+                onChange={e => setToken(e.target.value)}
+                placeholder="paste your Canvas API token"
+                className="min-w-0 flex-1 rounded-md border border-input bg-background px-2 py-1 text-xs"
+              />
+              <button
+                type="button"
+                onClick={handleImport}
+                disabled={importing}
+                className="shrink-0 rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium hover:bg-muted disabled:opacity-50"
+              >
+                {importing ? 'Importing…' : (importedAt || importedJustNow ? 'Reimport' : 'Import')}
+              </button>
+            </div>
+          </div>
+          {importMsg && <p className="text-[11px] text-muted-foreground">{importMsg}</p>}
         </div>
       )}
     </div>
@@ -159,6 +197,10 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
   const [scanning, setScanning] = useState(false);
   const [scanMsg, setScanMsg] = useState<string | null>(null);
   const [autoScanAfterImport, setAutoScanAfterImport] = useState(true);
+  // Optimistic "just now" provenance per slot: keyed by sourceCode ?? 'primary'
+  const [slotImportedJustNow, setSlotImportedJustNow] = useState<Record<string, true>>({});
+  // Whether any slot import is currently in flight (to disable scan button)
+  const [slotImporting, setSlotImporting] = useState(false);
 
   const paired = course.pairedCodes ?? [];
   const isBundled = paired.length > 0;
@@ -380,8 +422,10 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
 
   // ── Bundled-mode helpers ────────────────────────────────────────────────────
 
-  /** Callback after a per-slot import completes: refresh + optionally scan. */
-  async function handleSlotImported(_sourceCode: string | null) {
+  /** Callback after a per-slot import completes: set optimistic stamp, refresh + optionally scan. */
+  async function handleSlotImported(sourceCode: string | null) {
+    const key = sourceCode ?? 'primary';
+    setSlotImportedJustNow(prev => ({ ...prev, [key]: true }));
     const fresh = await fetchCourseMaterials(course.code, slug);
     if (fresh) onMaterialsChange(fresh);
     if (autoScanAfterImport) {
@@ -402,6 +446,25 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
     }
     return groups;
   }, [isBundled, canvas, paired]);
+
+  // Known slot keys (null + each paired code)
+  const knownSlotKeys = useMemo<Set<string | null>>(() => {
+    const s = new Set<string | null>([null]);
+    for (const p of paired) s.add(p.pairedCode);
+    return s;
+  }, [paired]);
+
+  // Orphan groups: canvas material sourceCode values that don't match any known slot
+  const orphanGroups = useMemo<Map<string, CaptureMaterial[]>>(() => {
+    if (!isBundled || !groupedCanvas) return new Map();
+    const orphans = new Map<string, CaptureMaterial[]>();
+    for (const [key, items] of groupedCanvas.entries()) {
+      if (key !== null && !knownSlotKeys.has(key)) {
+        orphans.set(key, items);
+      }
+    }
+    return orphans;
+  }, [isBundled, groupedCanvas, knownSlotKeys]);
 
   // ── Shared material-row renderer ────────────────────────────────────────────
 
@@ -509,7 +572,7 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
     <button
       type="button"
       onClick={scanLinkedDocs}
-      disabled={scanning || reextracting}
+      disabled={scanning || reextracting || slotImporting}
       title={scanned
         ? 'Already scanned — click to re-scan for newly added links'
         : 'Find Google Docs / Drive PDFs / YouTube linked inside your Canvas content and pull them in (they appear under Other materials)'}
@@ -616,13 +679,16 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
             <>
               {/* Primary group: combined header (with import slot) + item list */}
               <BundledGroupHeader
-                roleLabel="Lecture"
+                roleLabel={course.code}
                 code={course.code}
                 importedAt={course.canvasImportedAt}
+                importedJustNow={slotImportedJustNow['primary'] === true}
                 sourceCode={null}
                 courseCode={course.code}
                 slug={slug}
                 onImported={handleSlotImported}
+                onImportStart={() => setSlotImporting(true)}
+                onImportEnd={() => setSlotImporting(false)}
               />
               {(groupedCanvas.get(null) ?? []).length === 0 && (
                 <p className="px-3 py-2 text-[11px] text-muted-foreground">Nothing imported from Canvas yet.</p>
@@ -639,10 +705,13 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
                       roleLabel={roleLabel}
                       code={p.pairedCode}
                       importedAt={p.canvasImportedAt}
+                      importedJustNow={slotImportedJustNow[p.pairedCode] === true}
                       sourceCode={p.pairedCode}
                       courseCode={course.code}
                       slug={slug}
                       onImported={handleSlotImported}
+                      onImportStart={() => setSlotImporting(true)}
+                      onImportEnd={() => setSlotImporting(false)}
                     />
                     {groupItems.length === 0 && (
                       <p className="px-3 py-2 text-[11px] text-muted-foreground">Nothing imported from Canvas yet.</p>
@@ -651,6 +720,19 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
                   </div>
                 );
               })}
+
+              {/* Orphan groups: materials whose sourceCode no longer matches any paired slot */}
+              {orphanGroups.size > 0 && Array.from(orphanGroups.entries()).map(([orphanCode, items]) => (
+                <div key={orphanCode}>
+                  <div className="border-b border-t bg-muted/5 px-3 py-1.5">
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      Unmatched source ({orphanCode})
+                    </span>
+                    <p className="text-[10px] text-muted-foreground/70 italic">from a Canvas page no longer paired to this course</p>
+                  </div>
+                  {items.map(m => renderMaterialRow(m))}
+                </div>
+              ))}
 
               {/* Bundled mode footer: Reimport-all + Scan linked docs — once */}
               <div className="flex items-center gap-2 border-t px-3 py-2">
