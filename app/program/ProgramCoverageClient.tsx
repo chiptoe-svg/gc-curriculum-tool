@@ -7,6 +7,7 @@ import type {
   MatrixSubCompetency,
   MatrixCoverageCell,
 } from '@/lib/db/program-coverage-queries';
+import { formatCourseLabel } from '@/lib/courses/parse-course-code';
 import { FlagDialog } from '@/components/FlagDialog';
 import { FlagsPanel, type AnnotatedFlag } from './FlagsPanel';
 import { openFlagsForCell } from '@/lib/program/flags';
@@ -432,7 +433,7 @@ export function ProgramCoverageClient({ slug, initialData, initialFlags }: Props
                 {data.courses.map(course => (
                   <tr key={course.snapshotId} className="border-t">
                     <th className="text-left px-3 py-2 sticky left-0 bg-card border-r" style={{ minWidth: '120px' }}>
-                      <div className="font-mono text-[11px] text-foreground">{course.courseCode}</div>
+                      <div className="font-mono text-[11px] text-foreground">{formatCourseLabel(course.courseCode, course.pairedCodes)}</div>
                       <div className="text-[10px] text-muted-foreground truncate" style={{ maxWidth: '140px' }} title={course.courseTitle}>{course.courseTitle}</div>
                       {course.instructorName && (
                         <div className="text-[10px] italic text-muted-foreground truncate" style={{ maxWidth: '140px' }} title={`Captured by ${course.instructorName}`}>by {course.instructorName}</div>

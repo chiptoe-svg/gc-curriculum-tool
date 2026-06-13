@@ -1,6 +1,7 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { snapshotTargetCoverage, courseCaptureSnapshots, careerTargets, subCompetencies } from '@/lib/db/schema';
+import { listPairedCodesForCourses } from '@/lib/db/course-codes-queries';
 
 export interface CoverageCellRow {
   snapshotId: string;
@@ -159,6 +160,8 @@ export interface MatrixCourse {
   snapshotCreatedAt: Date;
   /** Whose capture this row represents — one matrix row per (course, instructor). */
   instructorName: string | null;
+  /** Paired lecture/lab codes for bundled display label. */
+  pairedCodes: Array<{ pairedCode: string }>;
 }
 
 export interface MatrixSubCompetency {
@@ -235,7 +238,7 @@ export async function getMatrixData(): Promise<MatrixData> {
     WHERE s.retired_at IS NULL AND c.builds_to_career = true
     ORDER BY s.course_code, s.instructor_name, s.created_at DESC
   `);
-  const courses: MatrixCourse[] = (latestSnapshotsRaw.rows as Array<{
+  const courseRows = (latestSnapshotsRaw.rows as Array<{
     snapshot_id: string;
     course_code: string;
     caption: string | null;
@@ -243,7 +246,19 @@ export async function getMatrixData(): Promise<MatrixData> {
     instructor_name: string | null;
     title: string;
     level: number;
-  }>).map(r => ({
+  }>);
+
+  // Batched paired-code lookup for bundled display labels.
+  const uniqueCodes = [...new Set(courseRows.map(r => r.course_code))];
+  const pairedCodeRows = await listPairedCodesForCourses(uniqueCodes);
+  const pairedByCode = new Map<string, Array<{ pairedCode: string }>>();
+  for (const pc of pairedCodeRows) {
+    const arr = pairedByCode.get(pc.courseCode) ?? [];
+    arr.push({ pairedCode: pc.pairedCode });
+    pairedByCode.set(pc.courseCode, arr);
+  }
+
+  const courses: MatrixCourse[] = courseRows.map(r => ({
     courseCode: r.course_code,
     courseTitle: r.title,
     level: r.level,
@@ -251,6 +266,7 @@ export async function getMatrixData(): Promise<MatrixData> {
     snapshotCaption: r.caption,
     snapshotCreatedAt: r.created_at instanceof Date ? r.created_at : new Date(r.created_at),
     instructorName: r.instructor_name,
+    pairedCodes: pairedByCode.get(r.course_code) ?? [],
   }));
 
   const targets = await db

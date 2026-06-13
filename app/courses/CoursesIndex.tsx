@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import type { CourseStatusRow, CaptureStatus } from '@/lib/db/capture-status-queries';
 import type { CourseRosterRow, CourseDataState } from '@/lib/db/courses-queries';
+import { formatCourseLabel } from '@/lib/courses/parse-course-code';
 import { CourseRosterControls } from './CourseRosterControls';
 import { CourseClassControls } from './CourseClassControls';
 
@@ -10,6 +11,7 @@ interface Props {
   rows: CourseStatusRow[];
   rosterRows: CourseRosterRow[];
   slug: string;
+  pairedByCode: Record<string, Array<{ pairedCode: string }>>;
 }
 
 // ─── Status pill config ────────────────────────────────────────────────────
@@ -138,11 +140,13 @@ function CourseRow({
   slug,
   index,
   dataState,
+  pairedCodes,
 }: {
   row: CourseStatusRow;
   slug: string;
   index: number;
   dataState?: CourseDataState;
+  pairedCodes: Array<{ pairedCode: string }>;
 }) {
   const captureHref = `/capture/${encodeURIComponent(row.code)}?slug=${encodeURIComponent(slug)}`;
   const askHref = `/explore/${encodeURIComponent(row.code)}?slug=${encodeURIComponent(slug)}&tab=ask`;
@@ -159,7 +163,7 @@ function CourseRow({
       <Link href={captureHref} className="flex flex-1 items-center gap-4 px-3 py-3">
         {/* Course code */}
         <span className="w-28 shrink-0 font-mono-plex text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-          {row.code}
+          {formatCourseLabel(row.code, pairedCodes)}
         </span>
 
         {/* Title */}
@@ -226,12 +230,14 @@ function LevelGroup({
   slug,
   startIndex,
   dataStateByCode,
+  pairedByCode,
 }: {
   level: number | null;
   rows: CourseStatusRow[];
   slug: string;
   startIndex: number;
   dataStateByCode: Map<string, CourseDataState>;
+  pairedByCode: Record<string, Array<{ pairedCode: string }>>;
 }) {
   return (
     <div className="mb-6">
@@ -255,6 +261,7 @@ function LevelGroup({
             slug={slug}
             index={startIndex + i}
             dataState={dataStateByCode.get(row.code)}
+            pairedCodes={pairedByCode[row.code] ?? []}
           />
         ))}
       </div>
@@ -264,7 +271,7 @@ function LevelGroup({
 
 // ─── Main component ───────────────────────────────────────────────────────
 
-export function CoursesIndex({ rows, rosterRows, slug }: Props) {
+export function CoursesIndex({ rows, rosterRows, slug, pairedByCode }: Props) {
   // Build a lookup map: code → dataState from the roster query
   const dataStateByCode = new Map<string, CourseDataState>(
     rosterRows.map((r) => [r.code, r.dataState]),
@@ -316,6 +323,7 @@ export function CoursesIndex({ rows, rosterRows, slug }: Props) {
             slug={slug}
             startIndex={start}
             dataStateByCode={dataStateByCode}
+            pairedByCode={pairedByCode}
           />
         );
       })}

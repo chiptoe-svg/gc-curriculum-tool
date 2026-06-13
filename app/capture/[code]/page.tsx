@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { isValidSlug } from '@/lib/slug';
 import { getCourseByCode } from '@/lib/db/courses-queries';
+import { formatCourseLabel } from '@/lib/courses/parse-course-code';
 import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
 import { listPairedCodes } from '@/lib/db/course-codes-queries';
 import { getCaptureProfileByCourse } from '@/lib/db/course-capture-profiles-queries';
@@ -123,7 +124,7 @@ export default async function CapturePage({ params, searchParams }: Props) {
           <div>
             <p className="text-xs uppercase tracking-wide text-muted-foreground">CourseCapture</p>
             <h1 className="mt-0.5 text-xl font-semibold">
-              {course.code} <span className="text-muted-foreground">— {course.title}</span>
+              {formatCourseLabel(course.code, pairedCodeRows)} <span className="text-muted-foreground">— {course.title}</span>
             </h1>
           </div>
           <div className="flex items-center gap-4">

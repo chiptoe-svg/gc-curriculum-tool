@@ -18,6 +18,7 @@ function fixture(): MatrixData {
         snapshotCaption: null,
         snapshotCreatedAt: new Date('2026-01-01'),
         instructorName: null,
+        pairedCodes: [],
       },
       {
         courseCode: 'GC 4400',
@@ -27,6 +28,7 @@ function fixture(): MatrixData {
         snapshotCaption: null,
         snapshotCreatedAt: new Date('2026-01-02'),
         instructorName: null,
+        pairedCodes: [],
       },
     ],
     targets: [

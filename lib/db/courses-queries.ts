@@ -4,6 +4,7 @@ import type { ParsedCourse } from '@/lib/sheets/parseCourseTab';
 import { eq, asc, sql, count, inArray } from 'drizzle-orm';
 import type { CourseCategory } from '@/lib/db/course-category-seed';
 import { parseCourseCode, composeCourseCode } from '@/lib/courses/parse-course-code';
+export { formatCourseLabel } from '@/lib/courses/parse-course-code';
 
 export interface CourseListItem {
   code: string;
@@ -388,27 +389,6 @@ export interface NewCourseInput {
   catalogUrl?: string | null;
   pairedCode?: string;
   pairedRole?: 'lecture' | 'lab' | 'other';
-}
-
-/**
- * Display label for a (possibly bundled) course. No paired codes → the bare
- * code. Paired codes sharing the prefix collapse to "GC 3460/3461"; differing
- * prefixes join with " + ". Spec 2026-06-13.
- */
-export function formatCourseLabel(
-  code: string,
-  pairedCodes: ReadonlyArray<{ pairedCode: string }>,
-): string {
-  if (pairedCodes.length === 0) return code;
-  const base = parseCourseCode(code);
-  const parsed = pairedCodes.map(p => ({ raw: p.pairedCode, pc: parseCourseCode(p.pairedCode) }));
-  const sameAll = parsed.every(p => p.pc.prefix === base.prefix && p.pc.number !== null);
-  if (sameAll) {
-    // shared prefix → collapse to "GC 3460/3461[/...]"
-    return `${code}/${parsed.map(p => `${p.pc.number}${p.pc.suffix}`).join('/')}`;
-  }
-  // any differing prefix → join full codes so no prefix is ever dropped
-  return `${code} + ${parsed.map(p => p.raw).join(' + ')}`;
 }
 
 /**

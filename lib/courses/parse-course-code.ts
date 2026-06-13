@@ -26,3 +26,26 @@ export function composeCourseCode(p: ParsedCode): string {
   if (p.number === null) return '';
   return `${p.prefix} ${p.number}${p.suffix}`;
 }
+
+/**
+ * Display label for a (possibly bundled) course. No paired codes → the bare
+ * code. Paired codes sharing the prefix collapse to "GC 3460/3461"; differing
+ * prefixes join with " + ". Spec 2026-06-13.
+ *
+ * Pure function — no db import. Client components import from here directly.
+ */
+export function formatCourseLabel(
+  code: string,
+  pairedCodes: ReadonlyArray<{ pairedCode: string }>,
+): string {
+  if (pairedCodes.length === 0) return code;
+  const base = parseCourseCode(code);
+  const parsed = pairedCodes.map(p => ({ raw: p.pairedCode, pc: parseCourseCode(p.pairedCode) }));
+  const sameAll = parsed.every(p => p.pc.prefix === base.prefix && p.pc.number !== null);
+  if (sameAll) {
+    // shared prefix → collapse to "GC 3460/3461[/...]"
+    return `${code}/${parsed.map(p => `${p.pc.number}${p.pc.suffix}`).join('/')}`;
+  }
+  // any differing prefix → join full codes so no prefix is ever dropped
+  return `${code} + ${parsed.map(p => p.raw).join(' + ')}`;
+}
