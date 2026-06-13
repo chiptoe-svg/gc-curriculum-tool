@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ask_procurement — round 2</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231B1813'/%3E%3Ccircle cx='16' cy='16' r='7' fill='none' stroke='%23E1581F' stroke-width='2.5'/%3E%3Ccircle cx='16' cy='16' r='2.5' fill='%23E1581F'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Public+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F7F3E9; --paper-2:#F1EBDB; --ink:#1B1813; --ink-soft:#4A4438;
+    --muted:#7A715C; --line:#D9CFB8; --line-strong:#C3B795; --accent:#E1581F; --accent-deep:#B23F12; --good:#2F6B45;
+    --serif:"Fraunces",Georgia,serif; --sans:"Public Sans",-apple-system,sans-serif; --mono:"IBM Plex Mono",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:800px;margin:0 auto;padding:0 24px}
+  header{border-bottom:1px solid var(--line);background:var(--paper-2)}
+  header .wrap{padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .brand{display:flex;align-items:center;gap:10px}
+  .about{font-size:14px;font-weight:600;color:var(--accent-deep);text-decoration:none;white-space:nowrap}
+  .about:hover{text-decoration:underline}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--accent)}
+  header b{font-family:var(--mono);font-weight:500;font-size:15px}
+  .hero{padding:52px 0 14px}
+  .eyebrow{font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent-deep);font-weight:600;margin-bottom:16px}
+  h1{font-family:var(--serif);font-weight:600;font-size:clamp(30px,5vw,44px);line-height:1.05;letter-spacing:-.01em}
+  .lede{margin-top:18px;font-size:18px;color:var(--ink-soft);max-width:64ch}
+  .lede b{color:var(--ink)}
+  .did{margin-top:20px;padding:16px 20px;background:var(--paper-2);border:1px solid var(--line-strong);border-radius:6px;font-size:15px}
+  .did .t{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--good);margin-bottom:8px}
+  .did ul{margin:6px 0 0 18px} .did li{margin:3px 0;color:var(--ink-soft)}
+  form{padding:26px 0 70px}
+  .q{margin:26px 0;padding-top:24px;border-top:1px solid var(--line)}
+  .q .num{font-family:var(--mono);font-size:13px;color:var(--accent-deep);font-weight:500}
+  .q .num.gap{color:#9a5a18} .q .num.confirm{color:var(--good)}
+  .q h2{font-family:var(--serif);font-weight:600;font-size:21px;line-height:1.25;margin:6px 0 6px}
+  .q .hint{font-size:14.5px;color:var(--muted);margin-bottom:12px}
+  .found{font-size:14.5px;background:#fff;border:1px solid var(--line-strong);border-left:3px solid var(--good);border-radius:0 5px 5px 0;padding:12px 16px;margin-bottom:12px}
+  .found .lbl{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--good);margin-bottom:6px}
+  .found code{font-family:var(--mono);font-size:.86em;background:var(--paper-2);padding:1px 5px;border-radius:3px}
+  .found.warn{border-left-color:var(--accent)} .found.warn .lbl{color:var(--accent-deep)}
+  .band{margin-bottom:14px}
+  .band .blabel{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--ink);margin-bottom:6px}
+  textarea{width:100%;min-height:70px;padding:12px 14px;font-family:var(--sans);font-size:16px;line-height:1.5;color:var(--ink);background:#fff;border:1px solid var(--line-strong);border-radius:6px;resize:vertical}
+  textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
+  .micbar{display:flex;align-items:center;gap:10px;margin-top:6px}
+  .mic{font-size:13px;font-weight:600;padding:6px 13px;border-radius:20px;border:1px solid var(--line-strong);background:#fff;color:var(--ink-soft);cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .15s,border-color .15s,color .15s}
+  .mic:hover{border-color:var(--accent);color:var(--accent-deep)}
+  .mic.listening{background:var(--accent);border-color:var(--accent);color:#fff;animation:micpulse 1.3s infinite}
+  @keyframes micpulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 45%,transparent)}70%{box-shadow:0 0 0 7px transparent}100%{box-shadow:0 0 0 0 transparent}}
+  .micstate{font-size:13px;color:var(--muted)}
+  .voicenote{font-size:13.5px;color:var(--ink-soft);background:var(--paper-2);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:0 6px 6px 0;padding:10px 14px;margin-bottom:18px}
+  .checks{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+  .chk{display:inline-flex;align-items:center;gap:7px;font-size:14px;background:#fff;border:1px solid var(--line-strong);border-radius:20px;padding:6px 12px;cursor:pointer;user-select:none}
+  .chk input{accent-color:var(--accent);width:15px;height:15px}
+  .chk:has(input:checked){background:#fff3ec;border-color:var(--accent)}
+  .who{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:8px}
+  .who input{padding:11px 13px;font-family:var(--sans);font-size:15px;border:1px solid var(--line-strong);border-radius:6px;background:#fff}
+  @media(max-width:560px){.who{grid-template-columns:1fr}}
+  .actions{position:sticky;bottom:0;background:color-mix(in srgb,var(--paper) 92%,transparent);backdrop-filter:blur(6px);border-top:1px solid var(--line);padding:16px 0;margin-top:28px;display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  button{font-family:var(--sans);font-size:15px;font-weight:600;padding:12px 20px;border-radius:6px;border:1px solid var(--ink);cursor:pointer;transition:background .2s,color .2s}
+  .primary{background:var(--accent);color:#fff;border-color:var(--accent)} .primary:hover{background:var(--accent-deep);border-color:var(--accent-deep)}
+  .ghost{background:transparent;color:var(--ink)} .ghost:hover{background:var(--ink);color:var(--paper)}
+  .status{font-size:14px;color:var(--muted)}
+  .partial{font-size:14px;color:var(--muted);margin-top:6px}
+  .thanks{padding:50px 0;text-align:center}
+  .thanks h2{font-family:var(--serif);font-weight:600;font-size:30px;color:var(--good);margin-bottom:12px}
+  .thanks p{color:var(--ink-soft);max-width:48ch;margin:0 auto}
+  footer{border-top:1px solid var(--line);padding:24px 0;font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+<header><div class="wrap"><span class="brand"><span class="dot"></span><b>ask_procurement</b></span><a class="about" href="/procurement.html" target="_blank">What is this? →</a></div></header>
+
+<div class="wrap">
+  <section class="hero">
+    <div class="eyebrow">Round 2 · a couple of follow-ups</div>
+    <h1>Thanks — three quick things.</h1>
+    <p class="lede">Your first round let us fill most of the gaps. Since then <b>we read the full SC Procurement Code and the federal Uniform Guidance ourselves</b> and built out the rules — so we're <b>not asking you to repeat anything</b>. We just need you to confirm the SC/federal picture and the one thing only you have: <b>who signs off at each dollar band</b>. ~2 minutes.</p>
+    <div class="did">
+      <div class="t">What we did since you last looked</div>
+      <ul>
+        <li>Ingested the <b>SC Consolidated Procurement Code (§11-35)</b> and the <b>federal Uniform Guidance (2 CFR Part 200)</b>.</li>
+        <li>Pulled the <b>SC small-purchase ladder</b> and the <b>federal micro-purchase / simplified-acquisition</b> framework.</li>
+        <li>Promoted <b>~49 confirmed rules</b> into the engine — it now answers, e.g., <em>"$30,000 on state funds → Invitation for Bid + SCBO posting,"</em> citing <code>§11-35-1550</code>.</li>
+      </ul>
+    </div>
+  </section>
+
+  <form id="f">
+    <div class="q">
+      <div class="num gap">1 · the one thing only you have</div>
+      <h2>Who signs off at each dollar band?</h2>
+      <div class="hint">We found the <b>approvers</b> (below) but not which one signs at which band. <b>Just check who must approve at each band</b> — check all that apply. Add anyone we missed in the note.</div>
+      <div class="found"><div class="lbl">Approvers we found</div>department business officer · budget approver · Procurement Director (&amp; Assistant Director) · President / Executive &amp; Audit Committee · CCIT (IT) · Aramark waiver (catering)</div>
+
+      <div class="band">
+        <div class="blabel">≤ $2,500</div>
+        <div class="checks" id="appr-a">
+          <label class="chk"><input type="checkbox" value="dept business officer">Dept business officer</label>
+          <label class="chk"><input type="checkbox" value="budget approver">Budget approver</label>
+          <label class="chk"><input type="checkbox" value="Procurement Director">Procurement Director</label>
+          <label class="chk"><input type="checkbox" value="Assistant Director">Assistant Director</label>
+          <label class="chk"><input type="checkbox" value="President / Audit Committee">President / Audit Committee</label>
+          <label class="chk"><input type="checkbox" value="no extra approval">No extra approval</label>
+        </div>
+      </div>
+      <div class="band">
+        <div class="blabel">$2,500 – $10,000</div>
+        <div class="checks" id="appr-b">
+          <label class="chk"><input type="checkbox" value="dept business officer">Dept business officer</label>
+          <label class="chk"><input type="checkbox" value="budget approver">Budget approver</label>
+          <label class="chk"><input type="checkbox" value="Procurement Director">Procurement Director</label>
+          <label class="chk"><input type="checkbox" value="Assistant Director">Assistant Director</label>
+          <label class="chk"><input type="checkbox" value="President / Audit Committee">President / Audit Committee</label>
+          <label class="chk"><input type="checkbox" value="no extra approval">No extra approval</label>
+        </div>
+      </div>
+      <div class="band">
+        <div class="blabel">$10,000 – $50,000</div>
+        <div class="checks" id="appr-c">
+          <label class="chk"><input type="checkbox" value="dept business officer">Dept business officer</label>
+          <label class="chk"><input type="checkbox" value="budget approver">Budget approver</label>
+          <label class="chk"><input type="checkbox" value="Procurement Director">Procurement Director</label>
+          <label class="chk"><input type="checkbox" value="Assistant Director">Assistant Director</label>
+          <label class="chk"><input type="checkbox" value="President / Audit Committee">President / Audit Committee</label>
+        </div>
+      </div>
+      <div class="band">
+        <div class="blabel">≥ $50,000</div>
+        <div class="checks" id="appr-d">
+          <label class="chk"><input type="checkbox" value="dept business officer">Dept business officer</label>
+          <label class="chk"><input type="checkbox" value="budget approver">Budget approver</label>
+          <label class="chk"><input type="checkbox" value="Procurement Director">Procurement Director</label>
+          <label class="chk"><input type="checkbox" value="Assistant Director">Assistant Director</label>
+          <label class="chk"><input type="checkbox" value="President / Audit Committee">President / Audit Committee</label>
+        </div>
+      </div>
+      <textarea data-q="Approvals — anyone we missed / corrections / extra sign-offs by category (IT, catering, etc.)" placeholder="Optional — anyone we missed, or special sign-offs (e.g. IT → CCIT, catering → Aramark waiver)."></textarea>
+    </div>
+
+    <div class="q">
+      <div class="num confirm">2 · confirm</div>
+      <h2>Federal grants — which thresholds does Clemson use?</h2>
+      <div class="hint">The federal Uniform Guidance sets a <b>micro-purchase</b> limit (buy with no quotes) and a <b>simplified-acquisition</b> limit, and it lets an institution <b>self-certify a higher micro-purchase limit</b>. Which applies at Clemson?</div>
+      <div class="found"><div class="lbl">Federal defaults</div>micro-purchase <code>$10,000</code> · simplified acquisition <code>$250,000</code> · self-certified micro-purchase allowed up to <code>$50,000</code></div>
+      <div class="checks" id="fed">
+        <label class="chk"><input type="radio" name="fed" value="standard $10k micro / $250k SAT">Standard — $10k micro / $250k</label>
+        <label class="chk"><input type="radio" name="fed" value="Clemson self-certified a higher micro-purchase (see note)">Clemson self-certified higher (note below)</label>
+        <label class="chk"><input type="radio" name="fed" value="grants not handled here / not sure">Not handled here / not sure</label>
+      </div>
+      <textarea data-q="Federal micro-purchase — self-certified amount, if any" placeholder="Only if self-certified: the micro-purchase amount Clemson uses (e.g. $50,000)."></textarea>
+    </div>
+
+    <div class="q">
+      <div class="num confirm">3 · confirm</div>
+      <h2>Does Clemson apply these SC thresholds as-is?</h2>
+      <div class="hint">This is the SC small-purchase ladder we pulled from the Code. Clemson runs under the SC code but has its own delegated authority — <b>does this match day-to-day practice?</b></div>
+      <div class="found"><div class="lbl">SC ladder we extracted</div>≤ <code>$10,000</code> — no competition · <code>$10k+</code> — three written quotes · ≥ <code>$25,000</code> — advertised in SCBO · ≥ <code>$50,000</code> — sealed bidding / SFAA certification · sole source <code>$5,000–$250,000</code></div>
+      <div class="checks" id="sc">
+        <label class="chk"><input type="radio" name="sc" value="yes, as-is">Yes — applies as-is</label>
+        <label class="chk"><input type="radio" name="sc" value="mostly, with exceptions (see note)">Mostly — a few exceptions (note)</label>
+        <label class="chk"><input type="radio" name="sc" value="no, Clemson's delegated authority differs (see note)">No — Clemson's differs (note)</label>
+      </div>
+      <textarea data-q="SC ladder — exceptions or where Clemson's delegated authority differs" placeholder="Optional — only if 'mostly' or 'no': which bands differ for Clemson."></textarea>
+    </div>
+
+    <div class="q">
+      <div class="num">4 · open (optional)</div>
+      <h2>Anything this still has to get right?</h2>
+      <div class="hint">The one we left open last time — what concerns you, or what must this absolutely get right to be useful? Skip if nothing comes to mind.</div>
+      <textarea data-q="What this must get right / concerns"></textarea>
+    </div>
+
+    <div class="q">
+      <div class="num">You</div>
+      <h2>So we can follow up (optional)</h2>
+      <div class="who"><input id="name" placeholder="Name (optional)"><input id="role" placeholder="Role / office (optional)"></div>
+    </div>
+
+    <div class="actions">
+      <button type="button" class="primary" id="submit">Submit answers</button>
+      <button type="button" class="ghost" id="copy">Copy instead</button>
+      <span class="status" id="status"></span>
+    </div>
+    <p class="partial">Your answers go straight to the project team from this page.</p>
+  </form>
+</div>
+
+<footer><div class="wrap">Clemson University · Procurement &amp; Business Services — building a tool that cites every answer and refuses when unsure.</div></footer>
+
+<script>
+  const TO = 'chiptoe@mac.com';
+  function checks(id){ return [...document.querySelectorAll('#'+id+' input:checked')].map(c=>c.value); }
+  function radio(id){ const r=document.querySelector('#'+id+' input:checked'); return r?r.value:'(not answered)'; }
+  function assemble(){
+    const parts=['ROUND 2 — follow-ups\n'];
+    const name=document.getElementById('name').value.trim(), role=document.getElementById('role').value.trim();
+    if(name||role) parts.push(`From: ${name}${role?' ('+role+')':''}\n`);
+    parts.push('Q1 approvals by band:');
+    parts.push(`  ≤ $2,500: ${checks('appr-a').join('; ')||'(none)'}`);
+    parts.push(`  $2,500–$10,000: ${checks('appr-b').join('; ')||'(none)'}`);
+    parts.push(`  $10,000–$50,000: ${checks('appr-c').join('; ')||'(none)'}`);
+    parts.push(`  ≥ $50,000: ${checks('appr-d').join('; ')||'(none)'}\n`);
+    parts.push(`Q2 federal thresholds: ${radio('fed')}`);
+    parts.push(`Q3 SC ladder matches Clemson?: ${radio('sc')}\n`);
+    document.querySelectorAll('textarea[data-q]').forEach(t=>{ const a=t.value.trim(); if(a) parts.push(`Q: ${t.dataset.q}\nA: ${a}\n`); });
+    return parts.join('\n');
+  }
+  const set=m=>document.getElementById('status').textContent=m;
+  const submitBtn=document.getElementById('submit');
+  submitBtn.addEventListener('click',async()=>{
+    const answers=assemble();
+    if(!answers.trim()){ set('Nothing filled in yet.'); return; }
+    submitBtn.disabled=true; set('Sending…');
+    try{
+      const fd=new FormData();
+      fd.append('answers',answers);
+      const res=await fetch('/api/procurement-intake',{method:'POST',body:fd});
+      const j=await res.json().catch(()=>({}));
+      if(res.ok&&j.ok){
+        document.getElementById('f').innerHTML='<div class="thanks"><h2>Thank you — received.</h2><p>That fills the last gaps. You can close this tab.</p></div>';
+      } else { set('Submit failed ('+(j.error||res.status)+'). Use "Copy instead" and send it to '+TO+'.'); submitBtn.disabled=false; }
+    }catch(e){ set('Submit failed (network). Use "Copy instead" and send it to '+TO+'.'); submitBtn.disabled=false; }
+  });
+  document.getElementById('copy').addEventListener('click',async()=>{ const b=assemble(); try{ await navigator.clipboard.writeText(b); set('Copied — paste it into an email to '+TO+'.'); }catch{ set('Copy unavailable; select the text manually.'); } });
+
+  /* Voice dictation — Web Speech API "Dictate" under each text field; feature-detected. */
+  (function(){
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const form = document.getElementById('f');
+    if(!SR || !window.isSecureContext){
+      const note=document.createElement('div'); note.className='voicenote';
+      note.innerHTML = !window.isSecureContext
+        ? '🎙 <b>Voice dictation needs a secure (https) connection.</b> Open this page via its https link to dictate — otherwise just type.'
+        : "🎙 <b>Voice dictation isn't available in this browser.</b> Open in <b>Chrome, Edge, or Safari</b> to dictate, or just type.";
+      form.insertBefore(note, form.firstChild);
+      return;
+    }
+    function errMsg(code){
+      switch(code){
+        case 'not-allowed': case 'service-not-allowed': return 'Mic blocked — click the lock icon in the address bar, allow the microphone, reload, and try again.';
+        case 'audio-capture': return 'No microphone found — check your device, then try again.';
+        case 'no-speech': return "Didn't catch anything — click Dictate and speak again.";
+        case 'network': return 'Voice service unreachable — check your connection, or type instead.';
+        default: return 'Mic error — try again, or type your answer.';
+      }
+    }
+    let active=null;
+    document.querySelectorAll('textarea[data-q]').forEach(ta=>{
+      const bar=document.createElement('div'); bar.className='micbar';
+      const btn=document.createElement('button'); btn.type='button'; btn.className='mic';
+      btn.title='Dictate this answer (Chrome, Edge, or Safari)';
+      btn.innerHTML='🎙 <span>Dictate</span>';
+      const state=document.createElement('span'); state.className='micstate';
+      bar.append(btn,state); ta.after(bar);
+      btn.addEventListener('click',()=>{ if(active&&active.btn===btn){active.rec.stop();return;} if(active)active.rec.stop(); start(ta,btn,state); });
+    });
+    function start(ta,btn,state){
+      const rec=new SR(); rec.lang='en-US'; rec.interimResults=true; rec.continuous=true;
+      const base=ta.value?ta.value.replace(/\s+$/,'')+' ':''; const label=btn.querySelector('span');
+      active={rec,btn,label};
+      btn.classList.add('listening'); label.textContent='Stop'; state.textContent='listening…'; ta.focus();
+      rec.onresult=e=>{ let txt=''; for(let i=0;i<e.results.length;i++) txt+=e.results[i][0].transcript; ta.value=base+txt; };
+      rec.onerror=e=>{ state.textContent=errMsg(e.error); };
+      rec.onend=()=>{ btn.classList.remove('listening'); label.textContent='Dictate'; if(state.textContent==='listening…') state.textContent=''; if(active&&active.btn===btn) active=null; };
+      try{ rec.start(); }catch(err){ state.textContent='Mic error — try again, or type your answer.'; btn.classList.remove('listening'); label.textContent='Dictate'; active=null; }
+    }
+  })();
+</script>
+</body>
+</html>

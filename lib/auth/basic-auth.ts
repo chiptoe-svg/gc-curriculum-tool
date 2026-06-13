@@ -41,6 +41,7 @@ const PUBLIC_PREFIXES = [
   // project), plus its intake endpoint that stores the submitted answers +
   // uploaded files to disk. No faculty data; public on purpose.
   '/sme-questions.html',
+  '/sme-questions-2.html',
   '/api/procurement-intake',
 ] as const;
 
