@@ -397,16 +397,18 @@ export interface NewCourseInput {
  */
 export function formatCourseLabel(
   code: string,
-  pairedCodes: ReadonlyArray<{ pairedCode: string; [key: string]: unknown }>,
+  pairedCodes: ReadonlyArray<{ pairedCode: string }>,
 ): string {
   if (pairedCodes.length === 0) return code;
   const base = parseCourseCode(code);
-  const parts = pairedCodes.map(p => {
-    const pc = parseCourseCode(p.pairedCode);
-    return pc.prefix === base.prefix && pc.number !== null ? `${pc.number}${pc.suffix}` : p.pairedCode;
-  });
-  const sameAll = pairedCodes.every(p => parseCourseCode(p.pairedCode).prefix === base.prefix);
-  return sameAll ? `${code}/${parts.join('/')}` : `${code} + ${parts.join(' + ')}`;
+  const parsed = pairedCodes.map(p => ({ raw: p.pairedCode, pc: parseCourseCode(p.pairedCode) }));
+  const sameAll = parsed.every(p => p.pc.prefix === base.prefix && p.pc.number !== null);
+  if (sameAll) {
+    // shared prefix → collapse to "GC 3460/3461[/...]"
+    return `${code}/${parsed.map(p => `${p.pc.number}${p.pc.suffix}`).join('/')}`;
+  }
+  // any differing prefix → join full codes so no prefix is ever dropped
+  return `${code} + ${parsed.map(p => p.raw).join(' + ')}`;
 }
 
 /**
@@ -495,7 +497,16 @@ export async function createCourse(input: NewCourseInput): Promise<void> {
     const paired = composeCourseCode(parseCourseCode(input.pairedCode.trim()));
     if (paired) {
       const { addPairedCode } = await import('@/lib/db/course-codes-queries');
-      await addPairedCode({ courseCode: code, pairedCode: paired, role: input.pairedRole }).catch(() => { /* paired-code uniqueness: ignore dup */ });
+      try {
+        await addPairedCode({ courseCode: code, pairedCode: paired, role: input.pairedRole });
+      } catch (e) {
+        // uq_course_codes_paired is on pairedCode ALONE — a 23505 here means the
+        // paired code is already registered (possibly under a DIFFERENT primary).
+        // Tolerate but LOG so a mis-assignment isn't silently dropped; rethrow anything else.
+        const code23505 = (e as { code?: string })?.code === '23505';
+        if (code23505) console.warn(`createCourse: paired code ${paired} already registered — not re-linked to ${code}`);
+        else throw e;
+      }
     }
   }
 }
