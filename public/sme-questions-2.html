@@ -77,9 +77,9 @@
 
 <div class="wrap">
   <section class="hero">
-    <div class="eyebrow">Round 2 · a couple of follow-ups</div>
-    <h1>Thanks — three quick things.</h1>
-    <p class="lede">Your first round let us fill most of the gaps. Since then <b>we read the full SC Procurement Code and the federal Uniform Guidance ourselves</b> and built out the rules — so we're <b>not asking you to repeat anything</b>. We just need you to confirm the SC/federal picture and the one thing only you have: <b>who signs off at each dollar band</b>. ~2 minutes.</p>
+    <div class="eyebrow">Round 2 · a few follow-ups</div>
+    <h1>Thanks — a few quick things.</h1>
+    <p class="lede">Your first round let us fill most of the gaps. Since then <b>we read the full SC Procurement Code and the federal Uniform Guidance ourselves</b> and built out the rules — so we're <b>not asking you to repeat anything</b>. We need you to confirm the SC/federal picture, the one thing only you have (<b>who signs off at each band</b>), and to sanity-check <b>how we think purchasing actually works</b>. ~4 minutes.</p>
     <div class="did">
       <div class="t">What we did since you last looked</div>
       <ul>
@@ -169,7 +169,56 @@
     </div>
 
     <div class="q">
-      <div class="num">4 · open (optional)</div>
+      <div class="num gap">4 · sanity-check our thinking</div>
+      <h2>Is the <em>order</em> we apply rules right?</h2>
+      <div class="hint">We started by treating the <b>dollar amount</b> as the first question for everything. Reading the rules, that looks wrong: for a lot of purchases the <b>commodity</b> decides the answer and price is a side issue. So we reordered it to three layers, top to bottom. <b>Does this match reality? Correct or add to it in the note.</b></div>
+      <div class="found"><div class="lbl">How we now think it resolves</div>
+        <b>1 · Mandatory contract / channel first.</b> If the item is on a <b>statewide term contract</b> or a required punchout (Staples, Dell/Apple/HP, Print Services, Aramark…), you buy from it — <em>regardless of price</em>. This can replace getting quotes/bids. <span style="color:var(--accent-deep)">e.g. $30k of office supplies → Staples contract, not a sealed bid.</span><br><br>
+        <b>2 · Then commodity &amp; funding requirements stack on top.</b> IT → CCIT CheckIT; alcohol → Aramark waiver; hazmat rules; federal grant → 2 CFR 200 clauses. These <em>add</em> steps; they don't replace the method.<br><br>
+        <b>3 · Dollar amount decides the competition method last</b> — micro-purchase vs. quotes vs. IFB vs. sole source — and only when no mandatory contract already settled it.
+      </div>
+      <div class="checks" id="logic">
+        <label class="chk"><input type="radio" name="logic" value="yes, that's the right order">Yes — that's the right order</label>
+        <label class="chk"><input type="radio" name="logic" value="mostly, with corrections (see note)">Mostly — corrections in note</label>
+        <label class="chk"><input type="radio" name="logic" value="no, dollar amount really does come first (see note)">No — amount really is first (note)</label>
+      </div>
+      <textarea data-q="Resolution order — corrections, exceptions, or cases where this is backwards"></textarea>
+    </div>
+
+    <div class="q">
+      <div class="num gap">5 · sanity-check our categories</div>
+      <h2>Did we group the commodity categories right?</h2>
+      <div class="hint">For "the commodity decides the answer" to work, the tool has to recognize <b>what</b> is being bought. We grouped the ~190 commodity terms in the rules into these families (each has finer sub-types underneath). <b>Anything mis-grouped, missing, or named wrong?</b> Don't re-list everything — just flag fixes.</div>
+      <div class="found"><div class="lbl">Families we propose</div>
+        <b>IT</b> (computers · software/cloud · telecom) · <b>Goods &amp; Supplies</b> (office · lab/scientific · equipment) · <b>Printing &amp; Promotional</b> (business cards · name badges · promo · books) · <b>Services</b> (consulting · legal · audit/accounting · advertising · architect-engineer) · <b>Construction &amp; Facilities</b> (capital projects · facility improvement · flooring · leases) · <b>Food, Catering &amp; Events</b> (catering · alcohol · event facilities) · <b>Travel</b> (airfare · lodging · car rental · charter · fuel) · <b>Shipping &amp; Logistics</b> · <b>Surplus property</b> · <b>Hazardous materials</b> · <b>Dues &amp; registrations</b> · <b>Non-procurement payments</b> (honoraria, stipends, refunds, utilities)
+      </div>
+      <div class="checks" id="cats">
+        <label class="chk"><input type="radio" name="cats" value="grouping looks right">Looks right</label>
+        <label class="chk"><input type="radio" name="cats" value="close, with fixes (see note)">Close — fixes in note</label>
+        <label class="chk"><input type="radio" name="cats" value="missing whole categories (see note)">Missing whole families (note)</label>
+      </div>
+      <textarea data-q="Categories — what's mis-grouped, missing, or named wrong"></textarea>
+    </div>
+
+    <div class="q">
+      <div class="num gap">6 · the one thing the policy text doesn't say</div>
+      <h2>Computers &amp; CCIT CheckIT — when is it required?</h2>
+      <div class="hint">The website tells us the <b>buying paths</b> but not when a <b>CCIT CheckIT</b> review is actually <em>required</em> — and we've heard there may be an <b>on-campus computer store</b> path that skips it. The policy text doesn't settle either, so the tool currently says "confirm with Procurement/CCIT." <b>Can you pin it down?</b></div>
+      <div class="found"><div class="lbl">Buying paths we found (from the website)</div>buyWays <b>Dell</b> punchout (PCs/laptops) · buyWays <b>Apple</b> punchout (Macs/iPads/accessories) · buyWays <b>Non-Catalog Form</b> (other suppliers) · "CCIT computer recommendations"</div>
+      <div class="band">
+        <div class="blabel">Is there an on-campus computer store that's a sanctioned buying path?</div>
+        <div class="checks" id="store">
+          <label class="chk"><input type="radio" name="store" value="yes, and it does NOT require CheckIT">Yes — and it skips CheckIT</label>
+          <label class="chk"><input type="radio" name="store" value="yes, but CheckIT still applies">Yes — but CheckIT still applies</label>
+          <label class="chk"><input type="radio" name="store" value="no on-campus store path">No such path</label>
+          <label class="chk"><input type="radio" name="store" value="not sure">Not sure</label>
+        </div>
+      </div>
+      <textarea data-q="CheckIT — what triggers a required CCIT CheckIT review (e.g. software, data-handling, all computers?), and the full list of sanctioned computer buying paths" placeholder="When is a CheckIT review required, and what are all the sanctioned ways to buy a computer?"></textarea>
+    </div>
+
+    <div class="q">
+      <div class="num">7 · open (optional)</div>
       <h2>Anything this still has to get right?</h2>
       <div class="hint">The one we left open last time — what concerns you, or what must this absolutely get right to be useful? Skip if nothing comes to mind.</div>
       <textarea data-q="What this must get right / concerns"></textarea>
@@ -206,7 +255,10 @@
     parts.push(`  $10,000–$50,000: ${checks('appr-c').join('; ')||'(none)'}`);
     parts.push(`  ≥ $50,000: ${checks('appr-d').join('; ')||'(none)'}\n`);
     parts.push(`Q2 federal thresholds: ${radio('fed')}`);
-    parts.push(`Q3 SC ladder matches Clemson?: ${radio('sc')}\n`);
+    parts.push(`Q3 SC ladder matches Clemson?: ${radio('sc')}`);
+    parts.push(`Q4 resolution order (contract→commodity/funding→amount): ${radio('logic')}`);
+    parts.push(`Q5 commodity category grouping: ${radio('cats')}`);
+    parts.push(`Q6 on-campus computer store path: ${radio('store')}\n`);
     document.querySelectorAll('textarea[data-q]').forEach(t=>{ const a=t.value.trim(); if(a) parts.push(`Q: ${t.dataset.q}\nA: ${a}\n`); });
     return parts.join('\n');
   }
