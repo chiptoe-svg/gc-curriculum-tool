@@ -340,7 +340,7 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
   let insertedCount = 0;
   let updatedCount = 0;
   for (const { fileName, text, mimeType } of toInsert) {
-    const existing = await findMaterialByFileName(code, fileName);
+    const existing = await findMaterialByFileName(code, fileName, sourceCode);
     if (existing) {
       await updateMaterialMetadata({
         id: existing.id,

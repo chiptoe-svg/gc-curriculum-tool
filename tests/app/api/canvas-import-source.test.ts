@@ -68,12 +68,12 @@ const insertMaterial = vi.fn(async (input: Record<string, unknown>) => ({
   id: 'mat-1',
   ...input,
 }));
-const findMaterialByFileName = vi.fn(async (_code: string, _name: string) => null);
+const findMaterialByFileName = vi.fn(async (_code: string, _name: string, _sourceCode?: string | null) => null);
 const updateMaterialMetadata = vi.fn(async (_input: unknown) => {});
 
 vi.mock('@/lib/db/course-materials-queries', () => ({
   insertMaterial: (input: Record<string, unknown>) => insertMaterial(input),
-  findMaterialByFileName: (code: string, name: string) => findMaterialByFileName(code, name),
+  findMaterialByFileName: (code: string, name: string, sourceCode?: string | null) => findMaterialByFileName(code, name, sourceCode),
   updateMaterialMetadata: (input: unknown) => updateMaterialMetadata(input),
   shouldDigestByDefault: () => false,
 }));
@@ -143,6 +143,15 @@ describe('canvas-import: sourceCode threading', () => {
       expect(call[0]).toMatchObject({ sourceCode: 'GC 3461' });
     }
 
+    // findMaterialByFileName must be called with sourceCode as the 3rd arg
+    // so the upsert lookup is source-scoped (never collides with lecture rows).
+    expect(findMaterialByFileName).toHaveBeenCalled();
+    for (const call of findMaterialByFileName.mock.calls) {
+      // 1st arg: primary code, 2nd: fileName, 3rd: sourceCode 'GC 3461'
+      expect(call[0]).toBe('GC 3460');
+      expect(call[2]).toBe('GC 3461');
+    }
+
     // Paired-code provenance written to the paired row
     expect(setPairedCanvasProvenance).toHaveBeenCalledWith(
       'GC 3461',
@@ -166,6 +175,14 @@ describe('canvas-import: sourceCode threading', () => {
       const arg = call[0] as Record<string, unknown>;
       const sc = arg['sourceCode'];
       expect(sc == null).toBe(true); // null or undefined both pass
+    }
+
+    // findMaterialByFileName must be called with null (or undefined) as the
+    // 3rd arg — so it matches only null-source (primary) rows.
+    expect(findMaterialByFileName).toHaveBeenCalled();
+    for (const call of findMaterialByFileName.mock.calls) {
+      expect(call[0]).toBe('GC 3460');
+      expect(call[2] == null).toBe(true); // null or undefined both pass
     }
 
     // Primary provenance written
