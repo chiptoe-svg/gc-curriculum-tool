@@ -16,10 +16,10 @@
 
 `courses` gains three structured-identity columns:
 - `prefix` text NOT NULL default `''` — e.g. `GC`, `ACCT`, `PCID`.
-- `course_number` text NOT NULL default `''` — e.g. `3460`. **Text, not int** — preserves the data as written and composes with the suffix.
-- `number_suffix` text NOT NULL default `''` — e.g. `` / `ap` / `ta` / `bl` (real values already in the roster: `GC 4900ap`, `GC 4990ta`, `GC 4900bl`, `GC 4900or`).
+- `course_number` **integer, nullable** — e.g. `3460`, `4900`. **Integer** (operator decision 2026-06-13) — the numeric part is a true number, giving correct numeric sort and range queries (no leading-zero course numbers exist in the roster to lose); the alpha part is split into `number_suffix`. Nullable: `null` only for an unparseable code (no digit group), never for a real course.
+- `number_suffix` text NOT NULL default `''` — the optional trailing alpha, e.g. `` / `ap` / `ta` / `bl` / `or` (real values in the roster: `GC 4900ap`, `GC 4990ta`, `GC 4900bl`, `GC 4900or`). Stored separately from the number so `code = prefix + ' ' + number + suffix` recomposes losslessly.
 
-Backfilled by parsing `code` (see Parser). `level` is left as-is (already stored; derivable but not worth churning).
+Backfilled by parsing `code` (see Parser). `level` is left as-is (already stored; now also derivable as `floor(course_number/1000)` but not worth churning the existing column).
 
 New child table `course_codes` (the lightweight "bundle"):
 ```
@@ -43,9 +43,9 @@ Migration is additive (new columns with defaults + new table). Anti-drift test p
 ## Parser — `lib/courses/parse-course-code.ts` (pure, unit-tested)
 
 ```
-parseCourseCode(code): { prefix: string; number: string; suffix: string }
+parseCourseCode(code): { prefix: string; number: number | null; suffix: string }
 ```
-Regex `^\s*([A-Za-z]+)\s*(\d+)\s*([A-Za-z]*)\s*$` → prefix (letters, upper-cased), number (digits), suffix (trailing letters, lower-cased). Non-matching input → `{ prefix: '', number: '', suffix: '' }` (and the row keeps empty structured fields; never throws). Unit tests cover the real roster incl. `GC 3460`, `GC 4900ap`, `ACCT 2010`, `PKSC 1020`, and the empty/garbage fallback. A backfill helper maps every existing `courses.code` through it; an anti-drift test asserts the migration's backfill matches the parser for the current roster.
+Regex `^\s*([A-Za-z]+)\s*(\d+)\s*([A-Za-z]*)\s*$` → prefix (letters, upper-cased), **number (digit group → `parseInt`, base 10)**, suffix (trailing letters, lower-cased). Non-matching input (no digit group) → `{ prefix: '', number: null, suffix: '' }` (the row keeps empty/null structured fields; never throws). Recompose for display/code: `prefix + ' ' + number + suffix` (skip when `number === null`). Unit tests cover the real roster incl. `GC 3460` → `{GC, 3460, ''}`, `GC 4900ap` → `{GC, 4900, 'ap'}`, `ACCT 2010`, `PKSC 1020`, and the empty/garbage fallback (`number: null`). A backfill helper maps every existing `courses.code` through it; an anti-drift test asserts the migration's backfill matches the parser for the current roster.
 
 ## Display — `formatCourseLabel(course, pairedCodes)` (pure, unit-tested)
 
