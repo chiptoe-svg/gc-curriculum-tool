@@ -12,7 +12,8 @@
 
 ### One-page version (for the curriculum committee)
 
-- **Claim.** Problem-solving develops when students repeatedly apply domain knowledge to novel problems, experience informative failure, and reflect/revise with feedback. It is a program-level emergent property, not a course you can add.
+- **Claim.** Problem-solving develops when students repeatedly apply domain knowledge to novel problems, experience informative failure, and reflect/revise with feedback. What eventually transfers is the *habit* of running that cycle — but the habit forms only after enough domain-specific repetitions, which is why it can't be front-loaded into a standalone course. It is a program-level emergent property, not a course you can add.
+- **What this is _not_ a claim about.** Not that problem-solving fails to transfer. A capable problem-solver in one domain does carry cross-domain habits — decomposing an ill-defined task, tolerating being stuck, abstracting the principle that survives a change of context. The framework's position is that those habits are *grown through* domain cycles, not taught generically. We reject generic problem-solving *courses*, not transfer itself.
 - **What the tool captures.** Per-competency K/U/D depth, productive-failure conditions, structured reflection, and program sequence — surfaced as maps.
 - **What it does NOT produce.** A single "problem-solving score," and (today) artifact-verified measurement. Depth maps show *opportunity*, not confirmed formation.
 - **What would change a curriculum decision.** Missing upper-depth opportunities for a target; high-performance courses with absent productive-failure scaffolding ("unproductive success"); absent reflection in capstone/upper-division courses; a depth progression that expects mastery before it is built.
@@ -39,7 +40,7 @@ The framework is a working hypothesis, and it should be able to be wrong. It wou
 
 - **Claims we make strongly (well-supported):** problem-solving is domain-bound; expertise is schema-mediated; far transfer needs explicit scaffolding; structured debriefs improve performance; productive failure improves conceptual understanding and near transfer under PS-I conditions.
 - **Claims we treat as design hypotheses (plausible, not established):** that curriculum snapshots + K/U/D depths + audit probes can *diagnose* program-level problem-solving formation; that cumulative exposure across four years produces better problem-solvers.
-- **Claims we do NOT make:** that the tool *measures* graduate problem-solving today; that a high map equals a strong program; that "covered" equals "developed."
+- **Claims we do NOT make:** that the tool *measures* graduate problem-solving today; that a high map equals a strong program; that "covered" equals "developed"; that problem-solving does not transfer — it does, via the cumulative cross-domain habit the moderate-generalist position describes, which is precisely why generic stand-alone courses (that skip the domain cycles) are the wrong delivery vehicle.
 
 ---
 
