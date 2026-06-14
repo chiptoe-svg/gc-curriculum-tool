@@ -423,7 +423,9 @@ The index is the entry-point document. Faculty hit it first.
 ```yaml
 ---
 type: index
-updated_at: 2026-05-25T14:00:00Z
+title: "GC Curriculum Knowledge Base"
+description: "<one-sentence summary of the wiki>"
+timestamp: 2026-05-25T14:00:00Z
 total_snapshots: 3
 total_courses_with_snapshots: 2
 ---
