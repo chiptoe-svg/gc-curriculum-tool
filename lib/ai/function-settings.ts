@@ -40,6 +40,7 @@ export const AI_FUNCTION_IDS = [
   'parse-profile-fields',
   'extract-course-kud',
   'synthesize-target',
+  'reconcile-feedback',
 ] as const;
 export type AIFunctionId = (typeof AI_FUNCTION_IDS)[number];
 
@@ -166,6 +167,11 @@ export const DEFAULT_TIERS: Record<AIFunctionId, Exclude<ModelTier, 'custom'>> =
   'parse-profile-fields': 'default',
   'extract-course-kud': 'default',
   'synthesize-target': 'default',
+  // Default tier. Structured reasoning over faculty prose feedback + the section's
+  // current items to produce edit proposals. Default (not light) because it must
+  // reason across item content + feedback nuance to propose calibrated K/U/D changes;
+  // promote to heavy if proposal quality is poor on longer feedback.
+  'reconcile-feedback': 'default',
 };
 
 export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
@@ -193,6 +199,7 @@ export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
   'parse-profile-fields': 'Parse pasted profile text into fields',
   'extract-course-kud': 'Course KUD generator (Generate KUDs)',
   'synthesize-target': 'Career-target synthesis (admin)',
+  'reconcile-feedback': 'Reconcile feedback (guided faculty review)',
 };
 
 export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
@@ -220,6 +227,7 @@ export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
   'parse-profile-fields': 'Parses pasted free-text profile prose into structured CaptureProfile fields (the /parse-profile route).',
   'extract-course-kud': 'Generates a course KUD result from catalog text (the Generate KUDs action / kuds/generate route).',
   'synthesize-target': 'Synthesizes a career target\'s sub-competencies + descriptors from industry/partner input (admin synthesis run).',
+  'reconcile-feedback': 'Proposes per-item edits (keep/modify/remove/add with revised K/U/D and rationale) from faculty prose feedback over a capture section. Proposals only — never sets provenance; the apply step does that.',
 };
 
 interface CachedSetting {

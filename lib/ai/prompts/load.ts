@@ -41,7 +41,8 @@ type PromptName =
   | 'wiki-update'
   | 'curriculum-chat'
   | 'prereq-edge-seed'
-  | 'intended-skills-extract';
+  | 'intended-skills-extract'
+  | 'reconcile-feedback';
 
 interface ParsedPrompt {
   frontmatter: Record<string, unknown>;
