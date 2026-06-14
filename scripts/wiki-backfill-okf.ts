@@ -22,7 +22,15 @@ export function deriveDescription(content: string): string {
     const t = para.trim();
     if (!t || t.startsWith('#') || t.startsWith('-') || t.startsWith('|') || t.startsWith('>')) continue;
     const sentence = t.split(/(?<=[.!?])\s/)[0]!.replace(/\s+/g, ' ').trim();
-    if (sentence) return sentence.replace(/"/g, "'");
+    if (sentence) {
+      // Strip wikilink markup ([[slug|label]] → label, [[slug]] → slug) so the
+      // OKF description reads as plain prose for external consumers; collapse "→ '".
+      return sentence
+        .replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, '$2')
+        .replace(/\[\[([^\]]+)\]\]/g, '$1')
+        .replace(/"/g, "'")
+        .trim();
+    }
   }
   return '';
 }

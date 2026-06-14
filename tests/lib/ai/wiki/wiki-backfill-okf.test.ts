@@ -20,6 +20,11 @@ describe('deriveDescription', () => {
   it('takes the first non-heading sentence of the body', () => {
     expect(deriveDescription(LEGACY)).toBe('The capacity to discriminate quality in visual work.');
   });
+
+  it('strips wikilink markup from the derived description', () => {
+    const withLinks = `---\ntype: competency\n---\n\n# X\n\n[[aesthetic-judgment|Aesthetic judgment]] is the ability to evaluate [[quality-control]] work.`;
+    expect(deriveDescription(withLinks)).toBe('Aesthetic judgment is the ability to evaluate quality-control work.');
+  });
 });
 
 describe('backfillOkf', () => {
