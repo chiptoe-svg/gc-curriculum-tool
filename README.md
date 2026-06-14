@@ -54,8 +54,8 @@ For the current snapshot — what's live, what's blocked, what's next — see [`
 - **Plans:** [`docs/superpowers/plans/`](./docs/superpowers/plans/) — TDD-style implementation plans, one per increment.
 - **Pilot writeups:** [`docs/superpowers/pilot/`](./docs/superpowers/pilot/) — milestone retrospectives and interactive previews.
 - **Local setup:** [`docs/superpowers/running-locally.md`](./docs/superpowers/running-locally.md) — local Mac runbook.
-- **Problem-solving deep-dive:** [`docs/problem-solving-deep-dive.md`](./docs/problem-solving-deep-dive.md) — research synthesis behind the Phase 1B Scaffolding Analysis.
-- **3-Act deep-dive:** [`docs/three-act-deep-dive.md`](./docs/three-act-deep-dive.md) — research synthesis for the proposed Act 1/2/3 program structure.
+- **Problem-solving deep-dive:** [`docs/problem-solving-deep-dive.html`](./docs/problem-solving-deep-dive.html) — research synthesis behind the Phase 1B Scaffolding Analysis.
+- **3-Act deep-dive:** [`docs/three-act-deep-dive.html`](./docs/three-act-deep-dive.html) — research synthesis for the proposed Act 1/2/3 program structure.
 - **Source spec:** [`gc-curriculum-tool-spec.md`](./gc-curriculum-tool-spec.md) — original full requirements.
 
 ## Stack

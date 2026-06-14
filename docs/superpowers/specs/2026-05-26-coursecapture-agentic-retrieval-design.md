@@ -596,7 +596,7 @@ Same flow. The snapshot row links to `transcript_session_id`. Anyone reviewing t
 - [`./2026-05-25-scaffolding-analysis-design.md`](./2026-05-25-scaffolding-analysis-design.md) — downstream consumer; its data dependency is satisfied by this spec.
 - [`./2026-05-23-kud-depth-scales-design.md`](./2026-05-23-kud-depth-scales-design.md) — KUD+ rubric unchanged.
 - [`../../background.html`](../../background.html) — KUD+ academic background.
-- [`../../problem-solving-deep-dive.md`](../../problem-solving-deep-dive.md) — productive-failure research synthesis (the framework Audit Area 7 implements).
+- [`../../problem-solving-deep-dive.html`](../../problem-solving-deep-dive.html) — productive-failure research synthesis (the framework Audit Area 7 implements).
 - Anthropic contextual retrieval: https://www.anthropic.com/news/contextual-retrieval (2024 pattern adopted in chunk-contextualize).
 
 ## Out-of-scope, captured for sequencing

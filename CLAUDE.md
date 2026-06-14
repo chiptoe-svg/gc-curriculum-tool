@@ -45,9 +45,9 @@ Authoritative rubric: `lib/ai/prompts/shared/depth-scale.md` (every scoring prom
 
 Academic background, theoretical justification, and the relationship to Bloom + Wiggins/McTighe: [`docs/background.html`](./docs/background.html). Why we don't use Bloom for curriculum mapping (it's the right tool for assessment design, wrong granularity for cross-program mapping): same doc.
 
-**Problem-solving as program-level emergent property.** Problem-solving is not a transferable generic skill; it's the operation of well-organized domain knowledge under conditions that require deployment, developed through repeated cycles of productive failure × structured reflection × depth. Full research synthesis: [`docs/problem-solving-deep-dive.md`](./docs/problem-solving-deep-dive.md). The Phase 1B Scaffolding Analysis ([spec](./docs/superpowers/specs/2026-05-25-scaffolding-analysis-design.md)) operationalizes this at program scale.
+**Problem-solving as program-level emergent property.** Problem-solving is not a transferable generic skill; it's the operation of well-organized domain knowledge under conditions that require deployment, developed through repeated cycles of productive failure × structured reflection × depth. Full research synthesis: [`docs/problem-solving-deep-dive.html`](./docs/problem-solving-deep-dive.html). The Phase 1B Scaffolding Analysis ([spec](./docs/superpowers/specs/2026-05-25-scaffolding-analysis-design.md)) operationalizes this at program scale.
 
-**3-Act program structure** (proposed, not institutional policy): Act 1 Foundations & Agency → Act 2 Integration & Mastery (the mid-Junior "aha" moment, GC 4400 / GC 4060) → Act 3 Specialty & Application. Used as analytical waypoints in scaffolding diagnostics. Research synthesis: [`docs/three-act-deep-dive.md`](./docs/three-act-deep-dive.md).
+**3-Act program structure** (proposed, not institutional policy): Act 1 Foundations & Agency → Act 2 Integration & Mastery (the mid-Junior "aha" moment, GC 4400 / GC 4060) → Act 3 Specialty & Application. Used as analytical waypoints in scaffolding diagnostics. Research synthesis: [`docs/three-act-deep-dive.html`](./docs/three-act-deep-dive.html).
 
 ---
 
@@ -67,11 +67,13 @@ Next.js 15 (App Router, Turbopack) + TypeScript strict + Drizzle on local Postgr
 - [`docs/superpowers/pilot/`](./docs/superpowers/pilot/) — milestone writeups and interactive previews.
 - [`docs/superpowers/running-locally.md`](./docs/superpowers/running-locally.md) — local Mac setup.
 - [`docs/background.html`](./docs/background.html) — KUD+ academic companion.
-- [`docs/problem-solving-deep-dive.md`](./docs/problem-solving-deep-dive.md) — problem-solving research synthesis.
-- [`docs/three-act-deep-dive.md`](./docs/three-act-deep-dive.md) — 3-Act structure research synthesis.
+- [`docs/problem-solving-deep-dive.html`](./docs/problem-solving-deep-dive.html) — problem-solving research synthesis.
+- [`docs/three-act-deep-dive.html`](./docs/three-act-deep-dive.html) — 3-Act structure research synthesis.
 - [`docs/graduate-outcome-validation.html`](./docs/graduate-outcome-validation.html) — Graduate Outcome Criterion-Relevance Study: proposed external-alignment check against 268 GC graduates' destinations, with pre-committed failure criteria (retitled from "Validation" 2026-06-12 — the design establishes criterion relevance, not attainment or causal impact).
 - [`docs/using-coursecapture-and-explore.html`](./docs/using-coursecapture-and-explore.html) — faculty-facing walkthrough (linked from in-app headers).
 - [`gc-curriculum-tool-spec.md`](./gc-curriculum-tool-spec.md) — original source spec (May 2026; **architecturally superseded** — see its top banner for what replaced each piece).
+
+**Doc format convention:** published docs in `docs/*.html` are authored **directly as HTML** — single source of truth, **no `.md` twins**. The problem-solving and 3-Act deep-dives used to be maintained as `.md` + hand-exported `.html` pairs; they drifted, so they were consolidated to HTML-only (2026-06-14). Edit the `.html` directly; do **not** reintroduce a `.md` copy of a published doc (that just recreates the drift). Markdown stays the format for repo-internal docs (`STATE.md`, `superpowers/specs|plans/*.md`, `README.md`), which have no HTML twin.
 
 ---
 
