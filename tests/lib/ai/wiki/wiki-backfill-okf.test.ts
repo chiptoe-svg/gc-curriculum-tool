@@ -45,4 +45,10 @@ describe('backfillOkf', () => {
     const twice = backfillOkf(once, 'aesthetic-judgment');
     expect(twice).toBe(once);
   });
+
+  it('falls back to title when the body has no prose sentence (never empty)', () => {
+    const allStructure = `---\ntype: target\nname: "Brand Strategy"\nupdated_at: 2026-06-02T00:00:00.000Z\n---\n\n# Brand Strategy\n\n## Sub-competencies\n\n- [[brand-strategy]]\n`;
+    const out = backfillOkf(allStructure, 'brand-strategy');
+    expect(readFrontmatterScalar(out, 'description')).toBe('Brand Strategy');
+  });
 });

@@ -39,7 +39,10 @@ export function deriveDescription(content: string): string {
 export function backfillOkf(content: string, slug: string): string {
   let out = stampOkfFrontmatter(content, { slug }); // no timestamp opt → preserve updated_at value
   if (readFrontmatterScalar(out, 'description') === null) {
-    out = setFrontmatterLine(out, 'description', `"${deriveDescription(content)}"`);
+    // Fall back to title → slug so an all-structure body (no prose sentence)
+    // never yields an empty description that would silently pass the lint.
+    const desc = deriveDescription(content) || readFrontmatterScalar(out, 'title') || slug;
+    out = setFrontmatterLine(out, 'description', `"${desc}"`);
   }
   return out;
 }
