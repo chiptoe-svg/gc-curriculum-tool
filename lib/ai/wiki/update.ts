@@ -35,7 +35,7 @@ import { fetchLiveCourseFromSheet } from '@/lib/sheets/fetchLiveCourse';
 import type { ParsedCourse } from '@/lib/sheets/parseCourseTab';
 import { writeAndPush } from '@/lib/wiki/git-ops';
 import { deriveEvidenceBand, type EvidenceBand } from '@/lib/program/evidence-ladder';
-import { BAND_ORDER, dedupeBands, stampEvidenceBands } from '@/lib/ai/wiki/evidence-band-markers';
+import { dedupeBands, stampEvidenceBands } from '@/lib/ai/wiki/evidence-band-markers';
 export { dedupeBands, stampEvidenceBands } from '@/lib/ai/wiki/evidence-band-markers';
 
 // ---------------------------------------------------------------------------
