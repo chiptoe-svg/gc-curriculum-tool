@@ -646,18 +646,16 @@ function CourseEmphasis({ items }: { items: ReadonlyArray<{
 }
 
 /**
- * Render the synthesized "what to paste" objectives list with per-item
- * copy buttons + a "Copy all" affordance. The prompt instructs the
- * agent to consolidate existing catalog objectives + audit suggestions
- * into a single 3–6 item list ready for the syllabus's outcomes
- * section — this component just makes the copying frictionless.
+ * Render the apparent-outcomes list inferred from materials + interview.
+ * Per-item copy buttons + a "Copy all" affordance make it frictionless
+ * to pull these into a syllabus; the catalog is never modified automatically.
  */
 function RevisedObjectivesDraft({ items }: { items: string[] }) {
   return (
     <PasteReadyList
-      title="Revised objectives — paste-ready"
+      title="Apparent outcomes"
       items={items}
-      footnote="Consolidated from the existing catalog objectives + the audit's findings. Copy these into your syllabus if you want them; the catalog is not modified automatically."
+      footnote="Based on the materials and interview, this is what the course appears to deliver. Copy these into your syllabus if useful; the catalog is not modified automatically."
     />
   );
 }

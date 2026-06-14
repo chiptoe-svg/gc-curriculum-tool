@@ -460,7 +460,7 @@ depths) become the profile's `incoming_expectations`; catalog claims that
 didn't survive the audit, and derived skills the catalog omitted, are
 findings for `audit_notes.prereq_gaps` — phrased so a maintainer could
 paste a corrected "Required incoming skills" line back into the sheet
-(mirror the paste-ready discipline of `revised_objectives_draft`).
+(keep each as one concise line).
 
 **Readiness gate (same force as the theme gate):** carry
 `"Incoming skills"` in `readiness.remaining` until Step 0's derivation has

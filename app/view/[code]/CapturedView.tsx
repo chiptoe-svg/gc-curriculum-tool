@@ -37,6 +37,7 @@ interface CompetencyShape {
 interface IncomingExpectationShape {
   statement?: string;
   confidence?: string;
+  expected_depth?: { k?: number | null; u?: number | null; d?: number | null };
 }
 
 interface OverviewShape {
@@ -58,6 +59,10 @@ interface CapturedProfile {
   competencies?: CompetencyShape[];
   incoming_expectations?: IncomingExpectationShape[];
   overview?: OverviewShape;
+  revised_objectives_draft?: string[] | null;
+  class_structure?: { topics?: string[]; cadence?: string; assessment?: string } | null;
+  major_projects?: { title?: string; description?: string; competencies?: string[] }[] | null;
+  course_emphasis?: { competency: string; points: number; share_pct: number; centrality: 'central' | 'supporting' | 'peripheral' }[] | null;
 }
 
 function isCapturedProfile(p: unknown): p is CapturedProfile {
@@ -130,6 +135,10 @@ export function CapturedView({ profile, capturedAt }: Props) {
   const suggestedRewrites = profile.audit_notes?.suggested_objective_revisions ?? [];
   const incoming = (profile.incoming_expectations ?? []).filter(e => e.statement);
   const strongest = profile.verification_summary?.strongest_evidence ?? [];
+  const apparentOutcomes = profile.revised_objectives_draft ?? [];
+  const classStructure = profile.class_structure ?? null;
+  const majorProjects = (profile.major_projects ?? []).filter(p => p.title);
+  const emphasis = (profile.course_emphasis ?? []).filter(e => e.competency);
 
   return (
     <article className="space-y-12">
@@ -224,6 +233,23 @@ export function CapturedView({ profile, capturedAt }: Props) {
         </section>
       )}
 
+      {/* Apparent outcomes — what the evidence says the course delivers */}
+      {apparentOutcomes.length > 0 && (
+        <section>
+          <h2 className="mb-2 font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            Apparent outcomes
+          </h2>
+          <p className="mb-4 text-sm text-muted-foreground">
+            Based on the materials and interview, this is what the course appears to deliver.
+          </p>
+          <ul className="space-y-2">
+            {apparentOutcomes.map((o, i) => (
+              <li key={i} className="text-sm leading-relaxed text-foreground">— {o}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {/* Catalog delta + proposed rewrites */}
       {(catalogDelta.length > 0 || suggestedRewrites.length > 0) && (
         <section>
@@ -260,7 +286,86 @@ export function CapturedView({ profile, capturedAt }: Props) {
           </h2>
           <ul className="space-y-2">
             {incoming.map((e, i) => (
-              <li key={i} className="text-sm leading-relaxed text-foreground">— {e.statement}</li>
+              <li key={i} className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm leading-relaxed text-foreground">
+                <span>— {e.statement}</span>
+                {e.expected_depth && (
+                  <span className="inline-flex flex-wrap items-center gap-1.5">
+                    {e.expected_depth.k != null && <DepthChip label="K" value={e.expected_depth.k} />}
+                    {e.expected_depth.u != null && <DepthChip label="U" value={e.expected_depth.u} />}
+                    <DepthChip label="D" value={e.expected_depth.d} />
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* Class structure */}
+      {classStructure && (classStructure.cadence || (classStructure.topics?.length ?? 0) > 0 || classStructure.assessment) && (
+        <section>
+          <h2 className="mb-3 font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            Class structure
+          </h2>
+          {classStructure.cadence && (
+            <p className="mb-2 text-sm leading-relaxed text-foreground">
+              <span className="font-mono-plex text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Cadence: </span>
+              {classStructure.cadence}
+            </p>
+          )}
+          {(classStructure.topics?.length ?? 0) > 0 && (
+            <ul className="mb-2 flex flex-wrap gap-1.5">
+              {classStructure.topics!.map((t, i) => (
+                <li key={i} className="rounded border border-stone-200 bg-stone-50 px-2 py-0.5 text-xs text-stone-700 dark:border-stone-700 dark:bg-stone-800/40 dark:text-stone-300">{t}</li>
+              ))}
+            </ul>
+          )}
+          {classStructure.assessment && (
+            <p className="text-sm leading-relaxed text-foreground">
+              <span className="font-mono-plex text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Assessment: </span>
+              {classStructure.assessment}
+            </p>
+          )}
+        </section>
+      )}
+
+      {/* Major projects */}
+      {majorProjects.length > 0 && (
+        <section>
+          <h2 className="mb-4 font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            Major projects
+          </h2>
+          <ul className="space-y-4">
+            {majorProjects.map((p, i) => (
+              <li key={i} className="border-l-2 border-stone-200 pl-4 dark:border-stone-700">
+                <p className="font-display text-base leading-snug text-foreground">{p.title}</p>
+                {p.description && <p className="mt-1 text-sm text-muted-foreground">{p.description}</p>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* Course emphasis — by point weight */}
+      {emphasis.length > 0 && (
+        <section>
+          <h2 className="mb-1 font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            Course emphasis — by point weight
+          </h2>
+          <p className="mb-3 text-xs text-muted-foreground">
+            What the course&apos;s graded work weights, independent of depth scoring.
+          </p>
+          <ul className="space-y-1.5">
+            {emphasis.map((it, i) => (
+              <li key={i} className="flex items-baseline gap-2">
+                <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.1em] text-muted-foreground">
+                  {it.centrality}
+                </span>
+                <span className="flex-1 text-sm leading-snug text-foreground">{it.competency}</span>
+                <span className="shrink-0 font-mono-plex text-[10px] tabular-nums text-muted-foreground">
+                  {it.points} pts · {it.share_pct}%
+                </span>
+              </li>
             ))}
           </ul>
         </section>
