@@ -276,6 +276,12 @@ export function ReconciliationStepper({ profile, slug, courseCode, onComplete }:
   // ── Apply accepted proposals ───────────────────────────────────────────────
 
   function handleApplyAccepted() {
+    const parseDepth = (raw: string, fallback: number | null): number | null => {
+      if (raw === '') return fallback;
+      const v = parseInt(raw, 10);
+      return Number.isNaN(v) ? fallback : v;
+    };
+
     const accepted: ReconcileProposal[] = decisions
       .filter(d => d.accepted)
       .map(d => ({
@@ -283,9 +289,9 @@ export function ReconciliationStepper({ profile, slug, courseCode, onComplete }:
         revised: (d.proposal.action === 'modify' || d.proposal.action === 'add')
           ? {
             statement: d.revisedStatement.trim() !== '' ? d.revisedStatement.trim() : (d.proposal.revised?.statement ?? null),
-            k: d.revisedK !== '' ? parseInt(d.revisedK, 10) : (d.proposal.revised?.k ?? null),
-            u: d.revisedU !== '' ? parseInt(d.revisedU, 10) : (d.proposal.revised?.u ?? null),
-            d: d.revisedD !== '' ? parseInt(d.revisedD, 10) : (d.proposal.revised?.d ?? null),
+            k: parseDepth(d.revisedK, d.proposal.revised?.k ?? null),
+            u: parseDepth(d.revisedU, d.proposal.revised?.u ?? null),
+            d: parseDepth(d.revisedD, d.proposal.revised?.d ?? null),
           }
           : d.proposal.revised,
       }));
@@ -362,7 +368,6 @@ export function ReconciliationStepper({ profile, slug, courseCode, onComplete }:
             </label>
             <textarea
               id="reconcile-feedback"
-              role="textbox"
               value={feedback}
               onChange={e => setFeedback(e.target.value)}
               rows={3}

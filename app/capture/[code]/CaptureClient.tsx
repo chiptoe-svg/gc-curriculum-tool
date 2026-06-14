@@ -233,6 +233,11 @@ export function CaptureClient({
     }
   }
 
+  const resumeChat = useCallback(() => {
+    setReconciliationLog([]);
+    setStage('chat');
+  }, []);
+
   async function handleSaveReview(
     edited: CaptureProfile,
     status: 'confirmed' | 'edited',
@@ -455,7 +460,7 @@ export function CaptureClient({
             initialReviewerNote={existingReviewerNote}
             telemetry={telemetry}
             onSave={handleSaveReview}
-            onResumeChat={() => setStage('chat')}
+            onResumeChat={resumeChat}
             courseCode={courseCode}
             courseTitle={course.title}
             slug={slug}

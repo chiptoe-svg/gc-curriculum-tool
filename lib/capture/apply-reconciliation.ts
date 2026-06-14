@@ -19,9 +19,10 @@ import type { ReconcileProposal, ReconcileSection } from '@/lib/ai/schemas';
 
 const FACULTY_NOTE = 'Asserted by faculty during reconciliation.';
 
-/** Clamp an integer to [0, 5]; returns null if input is null/undefined. */
+/** Clamp an integer to [0, 5]; returns null if input is null/undefined/NaN. */
 function clampDepth(n: number | null | undefined): number | null {
   if (n === null || n === undefined) return null;
+  if (Number.isNaN(n)) return null;
   return Math.max(0, Math.min(5, Math.trunc(n)));
 }
 

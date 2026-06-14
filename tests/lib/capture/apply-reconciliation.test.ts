@@ -80,3 +80,18 @@ describe('applyReconciliation — incoming + apparent outcomes', () => {
     expect(out.revised_objectives_draft).toEqual(['Only']);
   });
 });
+
+describe('clampDepth NaN safety', () => {
+  it('add proposal with NaN d produces schema-valid competency (d_depth is 0, not NaN)', () => {
+    const p = baseProfile({ competencies: [] });
+    const out = applyReconciliation(p, 'outgoing', [{
+      index: null,
+      action: 'add',
+      revised: { statement: 'NaN depth skill', k: null, u: null, d: NaN as unknown as number },
+      rationale: 'x',
+    }]);
+    const added = out.competencies.at(-1)!;
+    expect(Number.isNaN(added.d_depth)).toBe(false);
+    expect(() => captureCompetencySchema.parse(added)).not.toThrow();
+  });
+});
