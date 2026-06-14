@@ -35,6 +35,31 @@ export function deriveDescription(content: string): string {
   return '';
 }
 
+/** First `# ` heading of the body (wikilink-stripped); fallback for the root index. */
+export function deriveTitle(content: string): string {
+  const body = content.replace(/^---\n[\s\S]*?\n---\n?/, '');
+  const m = body.match(/^#\s+(.+)$/m);
+  if (!m) return 'GC Curriculum Knowledge Base';
+  return m[1]!
+    .replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, '$2')
+    .replace(/\[\[([^\]]+)\]\]/g, '$1')
+    .replace(/"/g, "'")
+    .trim();
+}
+
+/** Pure: migrate the root index.md to OKF (stamp + derive title/description if absent). */
+export function backfillRootIndex(content: string): string {
+  let out = stampOkfFrontmatter(content, { slug: 'index' }); // no timestamp opt → preserve updated_at
+  if (readFrontmatterScalar(out, 'title') === null) {
+    out = setFrontmatterLine(out, 'title', `"${deriveTitle(content)}"`);
+  }
+  if (readFrontmatterScalar(out, 'description') === null) {
+    const desc = deriveDescription(content) || readFrontmatterScalar(out, 'title') || 'index';
+    out = setFrontmatterLine(out, 'description', `"${desc}"`);
+  }
+  return out;
+}
+
 /** Pure: migrate one page's content to OKF (stamp + derive description if absent). */
 export function backfillOkf(content: string, slug: string): string {
   let out = stampOkfFrontmatter(content, { slug }); // no timestamp opt → preserve updated_at value
@@ -62,6 +87,15 @@ async function main(): Promise<void> {
       if (after !== before) { await writeFile(path, after); migrated++; console.log(`  migrated ${dir}/${f}`); }
     }
   }
+  // Root index.md (the LLM dashboard) — migrate it too.
+  const rootIndexPath = join(root, 'index.md');
+  try {
+    const before = await readFile(rootIndexPath, 'utf8');
+    scanned++;
+    const after = backfillRootIndex(before);
+    if (after !== before) { await writeFile(rootIndexPath, after); migrated++; console.log('  migrated index.md'); }
+  } catch { /* no root index — skip */ }
+
   await rebuildSectionIndexes(root);
   console.log(`wiki:backfill-okf — scanned ${scanned}, migrated ${migrated}, rebuilt section indexes`);
   process.exit(0);
