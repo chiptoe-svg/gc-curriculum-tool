@@ -87,6 +87,7 @@ export function deriveTags(type: string, contentOrBlock: string): string[] {
 }
 
 export function okfResource(type: string, slug: string, base: string = okfBase()): string {
+  if (type === 'index') return `${base}/wiki`; // root dashboard → wiki home
   const dir = TYPE_TO_DIR[type] ?? type;
   return `${base}/wiki/${dir}/${slug}`;
 }

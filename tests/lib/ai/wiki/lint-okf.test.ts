@@ -41,4 +41,21 @@ describe('lint — okf-frontmatter-missing', () => {
     expect(idxIssues.filter(i => i.kind === 'missing-section')).toEqual([]);
     expect(idxIssues.filter(i => i.kind === 'okf-frontmatter-missing')).toEqual([]);
   });
+
+  it('flags the root index.md when an OKF key is missing', async () => {
+    await writeFile(join(root, 'index.md'),
+      `---\ntype: index\ntitle: "GC Curriculum Knowledge Base"\nslug: index\ntimestamp: t\nresource: http://x/wiki\n---\n\n# GC Curriculum Knowledge Base\n`); // missing description + tags
+    const issues = await lintWiki(root);
+    const rootIssue = issues.find(i => i.kind === 'okf-frontmatter-missing' && i.page === 'index.md');
+    expect(rootIssue?.severity).toBe('error');
+    expect(rootIssue?.detail).toContain('description');
+    expect(rootIssue?.detail).toContain('tags');
+  });
+
+  it('is clean for a fully OKF-conformant root index.md', async () => {
+    await writeFile(join(root, 'index.md'),
+      `---\ntype: index\ntitle: "T"\ndescription: "d"\nslug: index\ntags: [index]\ntimestamp: t\nresource: http://x/wiki\n---\n\n# T\n`);
+    const issues = await lintWiki(root);
+    expect(issues.filter(i => i.page === 'index.md')).toEqual([]);
+  });
 });
