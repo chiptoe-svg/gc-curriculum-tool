@@ -1061,10 +1061,11 @@ export async function updateWikiForSnapshot(snapshotId: string): Promise<WikiUpd
     let content = stampInputHash(p.content, inputHashByPath.get(p.path) ?? '');
     const bands = evidenceBandsByPath.get(p.path);
     if (bands) content = stampEvidenceBands(content, bands);
-    // OKF machine-fields (title/timestamp/tags/resource/slug). The top-level
-    // index.md (LLM-authored dashboard with stats) is out of OKF scope; the
-    // per-section index.md files are built deterministically in git-ops.
-    if (p.path !== 'index.md') {
+    // OKF machine-fields (title/timestamp/tags/resource/slug) for every
+    // LLM-generated page, including the root index.md (the dashboard).
+    // Per-section index.md files are built deterministically in git-ops and
+    // never flow through this loop.
+    {
       const slug = p.path.replace(/^.*\//, '').replace(/\.md$/, '');
       const tsIso = typeof snapshot.createdAt === 'string'
         ? snapshot.createdAt : snapshot.createdAt.toISOString();
