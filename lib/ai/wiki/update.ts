@@ -1051,6 +1051,20 @@ export async function updateWikiForSnapshot(snapshotId: string): Promise<WikiUpd
   const inputHashByPath = new Map(
     pagesWithSubstrate.map(p => [p.path, computeInputHash(snapshot.id, p)]),
   );
+  // Per-page evidence-band set (structured counterpart to the prose markers):
+  //   course page    → the snapshot's own competency bands
+  //   competency page→ the bands of every cell contributing to that competency
+  // Stamped into frontmatter so search_wiki's bandFloor reads structured data
+  // instead of scraping ·markers (deterministic; mirrors input_hash).
+  const evidenceBandsByPath = new Map<string, EvidenceBand[]>();
+  for (const p of pagesWithSubstrate) {
+    if (p.type === 'course') {
+      evidenceBandsByPath.set(p.path, dedupeBands(competencyBands.map(b => b.band)));
+    } else if (p.type === 'competency') {
+      const cells = (p.substrate as { contributingCells?: Array<{ band: EvidenceBand | null }> })?.contributingCells ?? [];
+      evidenceBandsByPath.set(p.path, dedupeBands(cells.map(c => c.band)));
+    }
+  }
   // Dedup by path keeping the LAST occurrence — a reconcile retry can re-emit a
   // page the first pass also returned; the retry is the authoritative copy.
   const latestByPath = new Map<string, WikiUpdateOutput['pages'][number]>();
@@ -1066,7 +1080,9 @@ export async function updateWikiForSnapshot(snapshotId: string): Promise<WikiUpd
       );
       continue;
     }
-    const content = stampInputHash(p.content, inputHashByPath.get(p.path) ?? '');
+    let content = stampInputHash(p.content, inputHashByPath.get(p.path) ?? '');
+    const bands = evidenceBandsByPath.get(p.path);
+    if (bands) content = stampEvidenceBands(content, bands);
     wiki.push({ path: p.path, content });
   }
 
