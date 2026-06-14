@@ -35,6 +35,7 @@ import { fetchLiveCourseFromSheet } from '@/lib/sheets/fetchLiveCourse';
 import type { ParsedCourse } from '@/lib/sheets/parseCourseTab';
 import { writeAndPush } from '@/lib/wiki/git-ops';
 import { deriveEvidenceBand, type EvidenceBand } from '@/lib/program/evidence-ladder';
+import { BAND_ORDER } from '@/lib/ai/wiki/evidence-band-markers';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -835,6 +836,30 @@ export function stampInputHash(content: string, inputHash: string): string {
   if (m) {
     const body = /^input_hash:\s*.*$/m.test(m[1]!)
       ? m[1]!.replace(/^input_hash:\s*.*$/m, line)
+      : `${m[1]!}\n${line}`;
+    return content.replace(FRONTMATTER_RE, `---\n${body}\n---\n`);
+  }
+  return `---\n${line}\n---\n\n${content}`;
+}
+
+/** Pure: filter null, dedupe, and order an evidence-band list by the ladder. */
+export function dedupeBands(bands: ReadonlyArray<EvidenceBand | null>): EvidenceBand[] {
+  const present = new Set(bands.filter((b): b is EvidenceBand => b !== null));
+  return BAND_ORDER.filter(b => present.has(b));
+}
+
+/**
+ * Pure: stamp `evidence_bands: [a, b]` into a page's YAML frontmatter — the
+ * structured counterpart to the prose band markers. Replace-if-present,
+ * append-into-block if absent, prepend a block if the page has no frontmatter.
+ * Mirrors `stampInputHash`.
+ */
+export function stampEvidenceBands(content: string, bands: EvidenceBand[]): string {
+  const line = `evidence_bands: [${bands.join(', ')}]`;
+  const m = content.match(FRONTMATTER_RE);
+  if (m) {
+    const body = /^evidence_bands:\s*.*$/m.test(m[1]!)
+      ? m[1]!.replace(/^evidence_bands:\s*.*$/m, line)
       : `${m[1]!}\n${line}`;
     return content.replace(FRONTMATTER_RE, `---\n${body}\n---\n`);
   }
