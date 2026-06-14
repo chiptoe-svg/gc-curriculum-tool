@@ -37,6 +37,7 @@ interface CompetencyShape {
 interface IncomingExpectationShape {
   statement?: string;
   confidence?: string;
+  expected_depth?: { k?: number | null; u?: number | null; d?: number | null };
 }
 
 interface OverviewShape {
@@ -58,6 +59,7 @@ interface CapturedProfile {
   competencies?: CompetencyShape[];
   incoming_expectations?: IncomingExpectationShape[];
   overview?: OverviewShape;
+  revised_objectives_draft?: string[] | null;
 }
 
 function isCapturedProfile(p: unknown): p is CapturedProfile {
@@ -130,6 +132,7 @@ export function CapturedView({ profile, capturedAt }: Props) {
   const suggestedRewrites = profile.audit_notes?.suggested_objective_revisions ?? [];
   const incoming = (profile.incoming_expectations ?? []).filter(e => e.statement);
   const strongest = profile.verification_summary?.strongest_evidence ?? [];
+  const apparentOutcomes = profile.revised_objectives_draft ?? [];
 
   return (
     <article className="space-y-12">
@@ -224,6 +227,23 @@ export function CapturedView({ profile, capturedAt }: Props) {
         </section>
       )}
 
+      {/* Apparent outcomes — what the evidence says the course delivers */}
+      {apparentOutcomes.length > 0 && (
+        <section>
+          <h2 className="mb-2 font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            Apparent outcomes
+          </h2>
+          <p className="mb-4 text-sm text-muted-foreground">
+            Based on the materials and interview, this is what the course appears to deliver.
+          </p>
+          <ul className="space-y-2">
+            {apparentOutcomes.map((o, i) => (
+              <li key={i} className="text-sm leading-relaxed text-foreground">— {o}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {/* Catalog delta + proposed rewrites */}
       {(catalogDelta.length > 0 || suggestedRewrites.length > 0) && (
         <section>
@@ -260,7 +280,16 @@ export function CapturedView({ profile, capturedAt }: Props) {
           </h2>
           <ul className="space-y-2">
             {incoming.map((e, i) => (
-              <li key={i} className="text-sm leading-relaxed text-foreground">— {e.statement}</li>
+              <li key={i} className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm leading-relaxed text-foreground">
+                <span>— {e.statement}</span>
+                {e.expected_depth && (
+                  <span className="inline-flex flex-wrap items-center gap-1.5">
+                    {e.expected_depth.k != null && <DepthChip label="K" value={e.expected_depth.k} />}
+                    {e.expected_depth.u != null && <DepthChip label="U" value={e.expected_depth.u} />}
+                    <DepthChip label="D" value={e.expected_depth.d} />
+                  </span>
+                )}
+              </li>
             ))}
           </ul>
         </section>
