@@ -16,11 +16,12 @@ import path from 'node:path';
 import { wikiRepoPath } from '@/lib/wiki/git-ops';
 import { WIKI_PAGE_TYPES, WIKI_SCHEMA, type WikiPageType } from './schema';
 import { detectBands, readEvidenceBandsFrontmatter } from '@/lib/ai/wiki/evidence-band-markers';
+import { OKF_REQUIRED_KEYS } from '@/lib/ai/wiki/okf-frontmatter';
 
 export type LintSeverity = 'error' | 'warning';
 
 export interface LintIssue {
-  kind: 'broken-wikilink' | 'orphan' | 'missing-section' | 'ungated-concept' | 'evidence-bands-missing';
+  kind: 'broken-wikilink' | 'orphan' | 'missing-section' | 'ungated-concept' | 'evidence-bands-missing' | 'okf-frontmatter-missing';
   severity: LintSeverity;
   page: string; // repo-relative path
   detail: string;
@@ -35,9 +36,17 @@ interface ParsedPage {
   relatedCourses: string[]; // concepts only
   hasBandMarkers: boolean;
   hasBandFrontmatter: boolean;
+  isIndex: boolean;
+  missingOkfKeys: string[];
 }
 
 const WIKILINK_RE = /\[\[([a-z0-9-]+)(?:\|[^\]]*)?\]\]/gi;
+
+/** True when `field:` appears in the page's frontmatter block. */
+function hasFrontmatterKey(text: string, field: string): boolean {
+  const fm = text.match(/^---\n([\s\S]*?)\n---/);
+  return fm ? new RegExp(`^${field}:\\s*.+$`, 'm').test(fm[1]!) : false;
+}
 
 /** Read a `field: value` or `field: [a, b]` line from a page's frontmatter. */
 function frontmatterList(text: string, field: string): string[] {
@@ -55,15 +64,18 @@ function frontmatterList(text: string, field: string): string[] {
 }
 
 function parsePage(type: WikiPageType, file: string, text: string): ParsedPage {
+  const isIndex = file === 'index.md';
   return {
     relPath: `${type}/${file}`,
     type,
-    slug: file.replace(/\.md$/, ''),
+    slug: isIndex ? type : file.replace(/\.md$/, ''),
     headings: [...text.matchAll(/^#{1,6}\s+(.+?)\s*$/gm)].map(m => m[1]!.trim()),
     links: [...text.matchAll(WIKILINK_RE)].map(m => m[1]!.toLowerCase()),
-    relatedCourses: type === 'concepts' ? frontmatterList(text, 'related_courses') : [],
+    relatedCourses: type === 'concepts' && !isIndex ? frontmatterList(text, 'related_courses') : [],
     hasBandMarkers: detectBands(text).length > 0,
     hasBandFrontmatter: readEvidenceBandsFrontmatter(text) !== null,
+    isIndex,
+    missingOkfKeys: OKF_REQUIRED_KEYS.filter(k => !hasFrontmatterKey(text, k)),
   };
 }
 
@@ -103,43 +115,54 @@ export async function lintWiki(root: string = wikiRepoPath()): Promise<LintIssue
       }
     }
 
-    if (!linkedTo.has(p.slug)) {
+    if (p.missingOkfKeys.length > 0) {
       issues.push({
-        kind: 'orphan',
-        severity: 'warning',
-        page: p.relPath,
-        detail: `nothing links to [[${p.slug}]]`,
-      });
-    }
-
-    for (const sec of WIKI_SCHEMA[p.type].requiredSections) {
-      if (!p.headings.some(h => h.toLowerCase() === sec.toLowerCase())) {
-        issues.push({
-          kind: 'missing-section',
-          severity: 'warning',
-          page: p.relPath,
-          detail: `missing required section "${sec}"`,
-        });
-      }
-    }
-
-    const minRel = WIKI_SCHEMA[p.type].minRelatedForPromotion;
-    if (minRel !== undefined && p.relatedCourses.length < minRel) {
-      issues.push({
-        kind: 'ungated-concept',
+        kind: 'okf-frontmatter-missing',
         severity: 'error',
         page: p.relPath,
-        detail: `concept promoted from ${p.relatedCourses.length} source course(s); the ≥${minRel}-source gate requires more`,
+        detail: `missing OKF frontmatter key(s): ${p.missingOkfKeys.join(', ')}`,
       });
     }
 
-    if ((p.type === 'courses' || p.type === 'competencies') && p.hasBandMarkers && !p.hasBandFrontmatter) {
-      issues.push({
-        kind: 'evidence-bands-missing',
-        severity: 'warning',
-        page: p.relPath,
-        detail: 'carries evidence-band markers but no structured `evidence_bands` frontmatter — run `pnpm wiki:backfill-bands` or recompile',
-      });
+    if (!p.isIndex) {
+      if (!linkedTo.has(p.slug)) {
+        issues.push({
+          kind: 'orphan',
+          severity: 'warning',
+          page: p.relPath,
+          detail: `nothing links to [[${p.slug}]]`,
+        });
+      }
+
+      for (const sec of WIKI_SCHEMA[p.type].requiredSections) {
+        if (!p.headings.some(h => h.toLowerCase() === sec.toLowerCase())) {
+          issues.push({
+            kind: 'missing-section',
+            severity: 'warning',
+            page: p.relPath,
+            detail: `missing required section "${sec}"`,
+          });
+        }
+      }
+
+      const minRel = WIKI_SCHEMA[p.type].minRelatedForPromotion;
+      if (minRel !== undefined && p.relatedCourses.length < minRel) {
+        issues.push({
+          kind: 'ungated-concept',
+          severity: 'error',
+          page: p.relPath,
+          detail: `concept promoted from ${p.relatedCourses.length} source course(s); the ≥${minRel}-source gate requires more`,
+        });
+      }
+
+      if ((p.type === 'courses' || p.type === 'competencies') && p.hasBandMarkers && !p.hasBandFrontmatter) {
+        issues.push({
+          kind: 'evidence-bands-missing',
+          severity: 'warning',
+          page: p.relPath,
+          detail: 'carries evidence-band markers but no structured `evidence_bands` frontmatter — run `pnpm wiki:backfill-bands` or recompile',
+        });
+      }
     }
   }
   return issues;

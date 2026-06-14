@@ -37,6 +37,7 @@ import { writeAndPush } from '@/lib/wiki/git-ops';
 import { deriveEvidenceBand, type EvidenceBand } from '@/lib/program/evidence-ladder';
 import { dedupeBands, stampEvidenceBands } from '@/lib/ai/wiki/evidence-band-markers';
 export { dedupeBands, stampEvidenceBands } from '@/lib/ai/wiki/evidence-band-markers';
+import { stampOkfFrontmatter } from '@/lib/ai/wiki/okf-frontmatter';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -1060,6 +1061,15 @@ export async function updateWikiForSnapshot(snapshotId: string): Promise<WikiUpd
     let content = stampInputHash(p.content, inputHashByPath.get(p.path) ?? '');
     const bands = evidenceBandsByPath.get(p.path);
     if (bands) content = stampEvidenceBands(content, bands);
+    // OKF machine-fields (title/timestamp/tags/resource/slug). The top-level
+    // index.md (LLM-authored dashboard with stats) is out of OKF scope; the
+    // per-section index.md files are built deterministically in git-ops.
+    if (p.path !== 'index.md') {
+      const slug = p.path.replace(/^.*\//, '').replace(/\.md$/, '');
+      const tsIso = typeof snapshot.createdAt === 'string'
+        ? snapshot.createdAt : snapshot.createdAt.toISOString();
+      content = stampOkfFrontmatter(content, { slug, timestamp: tsIso });
+    }
     wiki.push({ path: p.path, content });
   }
 

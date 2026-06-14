@@ -210,9 +210,10 @@ The `log_entry` is a single line formatted as: `{ISO timestamp} — ingest {cour
 type: course
 slug: gc-4800
 title: "Senior Capstone"
+description: "<one-sentence summary of what this course delivers>"
 level: 4800
 prerequisites: [gc-3460, gc-4060]
-updated_at: 2026-05-25T14:00:00Z
+timestamp: 2026-05-25T14:00:00Z
 last_snapshot_id: <uuid>
 last_snapshot_path: raw/snapshots/gc-4800/2026-05-25_def456.json
 contributes_to_targets: [brand-strategist, account-management]
@@ -312,10 +313,11 @@ Rules:
 ---
 type: competency
 slug: brand-strategy
-name: "Brand Strategy"
+title: "Brand Strategy"
+description: "<one-sentence summary of this competency>"
 career_target: brand-strategist
 contributing_courses: [gc-4800, gc-3460, gc-1010]   # highest dDepth first
-updated_at: 2026-05-25T14:00:00Z
+timestamp: 2026-05-25T14:00:00Z
 ---
 ```
 
@@ -334,10 +336,11 @@ Body sections in order:
 ---
 type: target
 slug: brand-strategist
-name: "Brand Strategist"
+title: "Brand Strategist"
+description: "<one-sentence summary of this career target>"
 sub_competencies: [brand-strategy, audience-research, creative-direction, presentation-craft]
 contributing_courses: [gc-4800, gc-3460, gc-1010, gc-4900]
-updated_at: 2026-05-25T14:00:00Z
+timestamp: 2026-05-25T14:00:00Z
 ---
 ```
 
@@ -358,10 +361,11 @@ Body sections in order:
 ---
 type: concept
 slug: productive-failure
-name: "Productive Failure"
+title: "Productive Failure"
+description: "<one-sentence summary of this concept>"
 related_courses: [gc-3460, gc-4800]
 related_competencies: [brand-strategy, creative-direction]
-updated_at: 2026-05-25T14:00:00Z
+timestamp: 2026-05-25T14:00:00Z
 ---
 ```
 
@@ -378,9 +382,10 @@ Body sections:
 ---
 type: concept
 slug: three-act-structure
-name: "Three-Act Program Structure"
+title: "Three-Act Program Structure"
+description: "<one-sentence summary of this concept>"
 related_courses: [gc-1010, gc-3460, gc-4060, gc-4800]
-updated_at: 2026-05-25T14:00:00Z
+timestamp: 2026-05-25T14:00:00Z
 ---
 ```
 
@@ -397,9 +402,10 @@ Body sections:
 ---
 type: concept
 slug: scaffolding-analysis
-name: "Scaffolding Analysis"
+title: "Scaffolding Analysis"
+description: "<one-sentence summary of this concept>"
 related_courses: [gc-1010, gc-3460, gc-4800]
-updated_at: 2026-05-25T14:00:00Z
+timestamp: 2026-05-25T14:00:00Z
 ---
 ```
 
@@ -456,4 +462,5 @@ A slug not yet backed by a page renders as a broken link. This is tolerable **on
 - Do NOT invent facts not present in the inputs. If a field is missing or null, omit the section or write "not yet captured."
 - Do NOT copy the audit's internal scoring rationale verbatim into editorial sections. The `audit_notes` section of the course page is the one place for that voice.
 - Do NOT break frontmatter syntax. Every page must parse as valid YAML.
-- Do NOT omit the `updated_at` field — set it to the snapshot's `createdAt` timestamp.
+- Always author a `title:` (the human name) and a one-sentence `description:` on every page.
+- Do NOT author `tags:`, `timestamp:`, `resource:`, `slug:`, `input_hash:`, or `evidence_bands:` — those are stamped deterministically after you return. Set the other domain fields (level, prerequisites, relations) as before. Do NOT emit a `name:` field; use `title:`.

@@ -20,6 +20,7 @@
     "db:seed-courses": "tsx scripts/seed-catalog-courses.ts",
     "wiki:lint": "tsx scripts/wiki-lint.ts",
     "wiki:backfill-bands": "tsx scripts/wiki-backfill-bands.ts",
+    "wiki:backfill-okf": "tsx scripts/wiki-backfill-okf.ts",
     "reliability:check": "tsx --env-file=.env.local scripts/reliability/check.ts"
   },
   "dependencies": {
