@@ -15,11 +15,12 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { wikiRepoPath } from '@/lib/wiki/git-ops';
 import { WIKI_PAGE_TYPES, WIKI_SCHEMA, type WikiPageType } from './schema';
+import { detectBands, readEvidenceBandsFrontmatter } from '@/lib/ai/wiki/evidence-band-markers';
 
 export type LintSeverity = 'error' | 'warning';
 
 export interface LintIssue {
-  kind: 'broken-wikilink' | 'orphan' | 'missing-section' | 'ungated-concept';
+  kind: 'broken-wikilink' | 'orphan' | 'missing-section' | 'ungated-concept' | 'evidence-bands-missing';
   severity: LintSeverity;
   page: string; // repo-relative path
   detail: string;
@@ -32,6 +33,8 @@ interface ParsedPage {
   headings: string[];
   links: string[]; // wikilink target slugs (lowercased)
   relatedCourses: string[]; // concepts only
+  hasBandMarkers: boolean;
+  hasBandFrontmatter: boolean;
 }
 
 const WIKILINK_RE = /\[\[([a-z0-9-]+)(?:\|[^\]]*)?\]\]/gi;
@@ -59,6 +62,8 @@ function parsePage(type: WikiPageType, file: string, text: string): ParsedPage {
     headings: [...text.matchAll(/^#{1,6}\s+(.+?)\s*$/gm)].map(m => m[1]!.trim()),
     links: [...text.matchAll(WIKILINK_RE)].map(m => m[1]!.toLowerCase()),
     relatedCourses: type === 'concepts' ? frontmatterList(text, 'related_courses') : [],
+    hasBandMarkers: detectBands(text).length > 0,
+    hasBandFrontmatter: readEvidenceBandsFrontmatter(text) !== null,
   };
 }
 
@@ -125,6 +130,15 @@ export async function lintWiki(root: string = wikiRepoPath()): Promise<LintIssue
         severity: 'error',
         page: p.relPath,
         detail: `concept promoted from ${p.relatedCourses.length} source course(s); the ≥${minRel}-source gate requires more`,
+      });
+    }
+
+    if ((p.type === 'courses' || p.type === 'competencies') && p.hasBandMarkers && !p.hasBandFrontmatter) {
+      issues.push({
+        kind: 'evidence-bands-missing',
+        severity: 'warning',
+        page: p.relPath,
+        detail: 'carries evidence-band markers but no structured `evidence_bands` frontmatter — run `pnpm wiki:backfill-bands` or recompile',
       });
     }
   }
