@@ -163,6 +163,16 @@ export default async function ViewCoursePage({ params }: Props) {
             <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">
               ← Courses
             </Link>
+            {snapshot && (
+              <a
+                href={`/view/${encodeURIComponent(code)}/okf`}
+                download
+                className="text-sm text-muted-foreground hover:text-foreground"
+                title="Download this profile as a portable OKF Markdown file"
+              >
+                ↓ Markdown
+              </a>
+            )}
             {editHref && (
               <a
                 href={editHref}
