@@ -257,6 +257,13 @@ interface Props {
   slug: string;
   onSnapshotCreated: () => void;
   reconciliationLog?: ReconciliationLogEntry[];
+  /**
+   * True when a non-retired snapshot exists for this course (computed in
+   * page.tsx from getLatestSnapshotByCourse — the same query the
+   * /view/[code]/okf route uses, so it matches exactly when that route
+   * returns 200 vs 404). Gates the "↓ Markdown" OKF download link.
+   */
+  hasSnapshot?: boolean;
 }
 
 function DepthSlider({
@@ -894,6 +901,7 @@ export function ProfileReviewPanel({
   slug,
   onSnapshotCreated,
   reconciliationLog,
+  hasSnapshot,
 }: Props) {
   const [working, setWorking] = useState<CaptureProfile>(profile);
   const [reviewerNote, setReviewerNote] = useState<string>(initialReviewerNote ?? '');
@@ -1095,6 +1103,15 @@ export function ProfileReviewPanel({
   // `profile` prop asynchronously and working momentarily ≠ profile.
   const isCaptured = lastSavedStatus === 'confirmed';
 
+  // Portable OKF markdown of the last-saved snapshot. Absolute LAN origin
+  // matches this file's other /view links (so the downloaded file is the
+  // public LAN projection). The route sets Content-Disposition: attachment,
+  // so it downloads even cross-origin where the `download` attr is ignored.
+  const okfHref = `http://130.127.162.180:3000/view/${encodeURIComponent(courseCode)}/okf`;
+  // hasSnapshot: a snapshot existed at page load. snapshotMessage ok: one was
+  // just captured this session (exists now even though it didn't at load).
+  const showOkfDownload = Boolean(hasSnapshot) || snapshotMessage?.kind === 'ok';
+
   function openSnapshotPanel() {
     // Opens the caption/note modal and scrolls it INTO view. Previously
     // scrolled to y=0 (page top), which sat above the modal because the
@@ -1145,6 +1162,16 @@ export function ProfileReviewPanel({
             >
               ← Back to the interview
             </button>
+            {showOkfDownload && (
+              <a
+                href={okfHref}
+                download
+                className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
+                title="Download this course's saved profile as portable Markdown (OKF)"
+              >
+                ↓ Markdown
+              </a>
+            )}
           </div>
         </div>
       </div>
@@ -1186,6 +1213,15 @@ export function ProfileReviewPanel({
               className="rounded-md border border-green-700 bg-white px-3 py-1.5 font-medium text-green-900 hover:bg-green-100 dark:bg-transparent dark:text-green-200"
             >
               View the public profile →
+            </a>
+            {/* No showOkfDownload guard: this card only renders when a snapshot was just captured, so one provably exists. */}
+            <a
+              href={okfHref}
+              download
+              className="rounded-md border border-green-700 bg-white px-3 py-1.5 font-medium text-green-900 hover:bg-green-100 dark:bg-transparent dark:text-green-200"
+              title="Download this course's saved profile as portable Markdown (OKF)"
+            >
+              ↓ Markdown
             </a>
             <a
               href={`/program?slug=${encodeURIComponent(slug)}`}

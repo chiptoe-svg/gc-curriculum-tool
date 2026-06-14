@@ -166,6 +166,7 @@ export default async function CapturePage({ params, searchParams }: Props) {
           initialReadiness={savedConversation?.readiness ?? null}
           savedConversationAt={savedConversation?.updatedAt ?? null}
           priorSnapshotInfo={priorSnapshotInfo}
+          hasSnapshot={latestSnapshot != null}
           initialInstructor={initialInstructor}
           priorBriefings={priorBriefings}
         />
