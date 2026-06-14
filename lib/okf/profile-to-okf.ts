@@ -42,7 +42,7 @@ export function profileToOkfMarkdown(input: ProfileToOkfInput): string {
     `slug: ${slugify(course.code)}`,
     `tags: [${tags.join(', ')}]`,
     `timestamp: ${ts}`,
-    ...(resource ? [`resource: ${resource}`] : []),
+    ...(resource ? [`resource: ${yamlStr(resource)}`] : []),
     `instructor: ${yamlStr(snapshot.instructorName ?? 'Department canonical')}`,
     `snapshot_id: ${snapshot.id}`,
     `scale_version: ${profile.scale_version}`,
@@ -72,7 +72,7 @@ export function profileToOkfMarkdown(input: ProfileToOkfInput): string {
       const foundational = c.type === 'foundational';
       const chips = [foundational ? null : depthChip('K', c.k_depth), foundational ? null : depthChip('U', c.u_depth), depthChip('D', c.d_depth)].filter(Boolean).join(' ');
       const band = BAND_MARKER[deriveEvidenceBand({ source: c.source, citations: c.citations })];
-      push(`- **${c.statement}** — ${chips} ${band}`);
+      push(`- **${c.statement}** —${chips ? ` ${chips}` : ''} ${band}`);
       if (c.evidence_d) push(`  - Evidence: ${c.evidence_d}`);
     }
     push('');
