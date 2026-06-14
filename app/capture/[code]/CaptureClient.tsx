@@ -435,9 +435,21 @@ export function CaptureClient({
           profile={profile}
           slug={slug}
           courseCode={courseCode}
-          onComplete={(reconciled, log) => {
-            setProfile(reconciled);
+          onComplete={async (reconciled, log) => {
             setReconciliationLog(log);
+            try {
+              // Persist the reconciled profile to the DB draft BEFORE entering
+              // review. The snapshots route reads draft.profile directly, so
+              // without this the snapshot would store the pre-reconciliation
+              // profile even though the reconciliation_log says otherwise.
+              // handleSaveReview sets profile+reviewerStatus on success.
+              await handleSaveReview(reconciled, 'edited', existingReviewerNote ?? null);
+            } catch {
+              // If the persist fails, still advance so the user isn't stuck.
+              // The review panel's own Save path will re-attempt on the next
+              // explicit save.
+              setProfile(reconciled);
+            }
             setStage('review');
           }}
         />

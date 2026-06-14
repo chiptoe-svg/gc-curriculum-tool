@@ -11,19 +11,21 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   const slug = url.searchParams.get('slug') ?? '';
   if (!isValidSlug(slug)) return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
 
-  const dailyOk = await checkDailyCap();
-  if (!dailyOk.ok) return NextResponse.json({ error: 'daily cost cap reached' }, { status: 429 });
-
   const { code: rawCode } = await params;
   const courseCode = decodeURIComponent(rawCode);
   const body = await req.json().catch(() => ({})) as Record<string, unknown>;
   const section = body.section as ReconcileSection;
   const feedback = typeof body.feedback === 'string' ? body.feedback.trim() : '';
   const items = Array.isArray(body.items) ? body.items : [];
+  // Validate inputs before touching the rate-limit DB so malformed requests
+  // don't consume a cap read.
   if (!['apparent_outcomes', 'incoming', 'outgoing'].includes(section)) {
     return NextResponse.json({ error: 'invalid section' }, { status: 400 });
   }
   if (!feedback) return NextResponse.json({ error: 'feedback is required' }, { status: 400 });
+
+  const dailyOk = await checkDailyCap();
+  if (!dailyOk.ok) return NextResponse.json({ error: 'daily cost cap reached' }, { status: 429 });
 
   try {
     const out = await reconcileFeedback({ section, items, feedback, courseContext: { code: courseCode } });

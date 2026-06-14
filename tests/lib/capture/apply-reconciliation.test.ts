@@ -81,6 +81,26 @@ describe('applyReconciliation — incoming + apparent outcomes', () => {
   });
 });
 
+describe('applyReconciliation — input immutability', () => {
+  it('does not mutate the original profile (modify + remove + add)', () => {
+    const input = baseProfile({
+      competencies: [
+        comp({}),
+        comp({ statement: 'Second skill' }),
+      ] as unknown as CaptureProfile['competencies'],
+      revised_objectives_draft: ['Objective A', 'Objective B'],
+    });
+    const clone = structuredClone(input);
+    // modify first comp, remove second, add a new one
+    applyReconciliation(input, 'outgoing', [
+      { index: 0, action: 'modify', revised: { statement: 'Changed', k: 1, u: 1, d: 1 }, rationale: 'x' },
+      { index: 1, action: 'remove', revised: null, rationale: 'x' },
+      { index: null, action: 'add', revised: { statement: 'Brand new', k: null, u: null, d: 2 }, rationale: 'x' },
+    ]);
+    expect(input).toEqual(clone);
+  });
+});
+
 describe('clampDepth NaN safety', () => {
   it('add proposal with NaN d produces schema-valid competency (d_depth is 0, not NaN)', () => {
     const p = baseProfile({ competencies: [] });
