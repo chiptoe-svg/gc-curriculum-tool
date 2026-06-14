@@ -33,6 +33,8 @@ interface Props {
   /** Distilled recap of prior sessions for the "Where we left off" card. Empty/omitted hides the card. */
   priorBriefings?: SessionBriefingView[];
   catalogSyncedAt: string | null;
+  /** True when a non-retired snapshot exists — gates the OKF download link on the review panel. */
+  hasSnapshot?: boolean;
 }
 
 type Stage = 'chat' | 'generating' | 'reconcile' | 'review';
@@ -60,6 +62,7 @@ export function CaptureClient({
   initialInstructor,
   priorBriefings,
   catalogSyncedAt,
+  hasSnapshot,
 }: Props) {
   const [course, setCourse] = useState<CourseCatalogView>(initialCourse);
   const courseCode = course.code;
@@ -478,6 +481,7 @@ export function CaptureClient({
             slug={slug}
             onSnapshotCreated={handleSnapshotCreated}
             reconciliationLog={reconciliationLog}
+            hasSnapshot={hasSnapshot}
           />
         </div>
       )}
