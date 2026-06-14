@@ -54,6 +54,9 @@ describe('okfResource', () => {
   it('defaults base to the LAN origin', () => {
     expect(okfResource('course', 'gc-1010')).toBe('http://130.127.162.180:3000/wiki/courses/gc-1010');
   });
+  it('maps the root index type to the wiki home (not /wiki/index/index)', () => {
+    expect(okfResource('index', 'index', 'http://x')).toBe('http://x/wiki');
+  });
 });
 
 describe('stampOkfFrontmatter', () => {
