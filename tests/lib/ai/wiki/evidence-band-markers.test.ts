@@ -4,6 +4,8 @@ import {
   pagePassesBandFloor,
   bandRank,
   BAND_MARKER,
+  readEvidenceBandsFrontmatter,
+  resolvePageBands,
 } from '@/lib/ai/wiki/evidence-band-markers';
 
 describe('detectBands', () => {
@@ -42,5 +44,41 @@ describe('pagePassesBandFloor', () => {
   it('drops a page whose markers are all below the floor', () => {
     expect(pagePassesBandFloor(['claimed'], 'materials_supported')).toBe(false);
     expect(pagePassesBandFloor(['claimed', 'materials_supported'], 'artifact_verified')).toBe(false);
+  });
+});
+
+const fm = (line: string, body = 'x') => `---\ntype: course\n${line}\n---\n\n${body}`;
+
+describe('readEvidenceBandsFrontmatter', () => {
+  it('parses a valid list, deduped + in ladder order', () => {
+    expect(readEvidenceBandsFrontmatter(fm('evidence_bands: [artifact_verified, claimed, claimed]')))
+      .toEqual(['claimed', 'artifact_verified']);
+  });
+  it('returns [] for an explicitly empty list', () => {
+    expect(readEvidenceBandsFrontmatter(fm('evidence_bands: []'))).toEqual([]);
+  });
+  it('returns null when the field is absent', () => {
+    expect(readEvidenceBandsFrontmatter(fm('input_hash: abc123'))).toBeNull();
+  });
+  it('returns null when there is no frontmatter', () => {
+    expect(readEvidenceBandsFrontmatter('# Just a heading\nno frontmatter')).toBeNull();
+  });
+  it('drops unknown/garbage values', () => {
+    expect(readEvidenceBandsFrontmatter(fm('evidence_bands: [materials_supported, bogus, ALSO_BAD]')))
+      .toEqual(['materials_supported']);
+  });
+});
+
+describe('resolvePageBands', () => {
+  it('uses the frontmatter list when present (ignores prose markers)', () => {
+    const page = fm('evidence_bands: [materials_supported]', 'Color matching ·artifact here');
+    expect(resolvePageBands(page)).toEqual(['materials_supported']);
+  });
+  it('falls back to prose markers when the field is absent', () => {
+    const page = fm('input_hash: z', 'X ·claimed and Y ·artifact');
+    expect(resolvePageBands(page)).toEqual(['claimed', 'artifact_verified']);
+  });
+  it('returns [] for an empty frontmatter list even if prose has markers', () => {
+    expect(resolvePageBands(fm('evidence_bands: []', 'stray ·materials'))).toEqual([]);
   });
 });

@@ -52,3 +52,32 @@ export function pagePassesBandFloor(present: EvidenceBand[], floor: EvidenceBand
   const floorRank = bandRank(floor);
   return present.some(b => bandRank(b) >= floorRank);
 }
+
+/**
+ * Read the structured `evidence_bands: [...]` list from a page's YAML
+ * frontmatter — the machine-readable counterpart to the prose markers.
+ * Returns the deduped bands in ladder order, `[]` when the field is present
+ * but empty, and `null` when the field (or frontmatter) is ABSENT — so a
+ * caller can fall back to prose-scraping legacy pages.
+ */
+export function readEvidenceBandsFrontmatter(markdown: string): EvidenceBand[] | null {
+  const fm = markdown.match(/^---\n([\s\S]*?)\n---/);
+  if (!fm) return null;
+  const line = fm[1]!.match(/^evidence_bands:\s*(.*)$/m);
+  if (!line) return null;
+  const items = line[1]!
+    .replace(/^\[|\]$/g, '')
+    .split(',')
+    .map(s => s.trim().toLowerCase())
+    .filter(Boolean);
+  const present = new Set(items);
+  return BAND_ORDER.filter(b => present.has(b));
+}
+
+/**
+ * The single read-time accessor: structured frontmatter when stamped, prose
+ * markers as a graceful fallback for legacy / not-yet-backfilled pages.
+ */
+export function resolvePageBands(markdown: string): EvidenceBand[] {
+  return readEvidenceBandsFrontmatter(markdown) ?? detectBands(markdown);
+}
