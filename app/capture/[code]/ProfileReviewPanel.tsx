@@ -10,6 +10,7 @@ import {
   type CaptureProfileCitationType,
   type CaptureReviewerStatus,
 } from '@/lib/ai/capture/schema';
+import type { ReconciliationLogEntry } from '@/lib/ai/schemas';
 import { formatIncomingRequirements } from '@/lib/capture/incoming-requirements';
 import { VerificationSummary } from './VerificationSummary';
 import { LegacyBanner } from './LegacyBanner';
@@ -255,6 +256,7 @@ interface Props {
   courseTitle: string;
   slug: string;
   onSnapshotCreated: () => void;
+  reconciliationLog?: ReconciliationLogEntry[];
 }
 
 function DepthSlider({
@@ -891,6 +893,7 @@ export function ProfileReviewPanel({
   courseTitle,
   slug,
   onSnapshotCreated,
+  reconciliationLog,
 }: Props) {
   const [working, setWorking] = useState<CaptureProfile>(profile);
   const [reviewerNote, setReviewerNote] = useState<string>(initialReviewerNote ?? '');
@@ -957,6 +960,7 @@ export function ProfileReviewPanel({
           body: JSON.stringify({
             caption: snapshotCaption.trim() || null,
             captionNote: snapshotNote.trim() || null,
+            reconciliationLog: reconciliationLog ?? null,
           }),
         },
       );

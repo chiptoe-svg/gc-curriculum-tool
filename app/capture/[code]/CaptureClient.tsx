@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import type { CaptureProfile, CaptureReadiness, CaptureReviewerStatus } from '@/lib/ai/capture/schema';
+import type { ReconciliationLogEntry } from '@/lib/ai/schemas';
 import { CaptureChatPanel, type ChatMessage, type SessionBriefingView } from './CaptureChatPanel';
 import { ProfileReviewPanel } from './ProfileReviewPanel';
+import { ReconciliationStepper } from './ReconciliationStepper';
 import { MaterialsPanel, type CaptureMaterial, type CourseCatalogView } from './MaterialsPanel';
 import { SnapshotHistoryPanel } from './SnapshotHistoryPanel';
 import { IngestionCheckIn } from './IngestionCheckIn';
@@ -33,7 +35,7 @@ interface Props {
   catalogSyncedAt: string | null;
 }
 
-type Stage = 'chat' | 'generating' | 'review';
+type Stage = 'chat' | 'generating' | 'reconcile' | 'review';
 
 interface Telemetry {
   costUsdCents: number;
@@ -80,6 +82,7 @@ export function CaptureClient({
     return () => clearInterval(t);
   }, [stage]);
   const [telemetry, setTelemetry] = useState<Telemetry | null>(null);
+  const [reconciliationLog, setReconciliationLog] = useState<ReconciliationLogEntry[]>([]);
   const [materials, setMaterials] = useState<CaptureMaterial[]>(initialMaterials);
   // Bumped each time a new snapshot is created so the history panel reloads.
   const [snapshotsRefreshKey, setSnapshotsRefreshKey] = useState(0);
@@ -215,7 +218,7 @@ export function CaptureClient({
       setProfile(newProfile);
       setReviewerStatus(newStatus);
       if (t) setTelemetry(t);
-      setStage('review');
+      setStage('reconcile');
       // Generation succeeded — clear the persisted transcript so the next
       // visitor starts fresh. In-memory `messages` is intentionally kept so
       // "Back to chat" works for this session if the reviewer wants to add
@@ -299,7 +302,7 @@ export function CaptureClient({
           explains what's actually happening instead.
           Also hidden in the review stage (2026-06-12 spec): Step 2 of 2 is a
           focused review surface; the setup panels are for Step 1 / the chat. */}
-      {!isLanding && stage !== 'generating' && stage !== 'review' && trays}
+      {!isLanding && stage !== 'generating' && stage !== 'reconcile' && stage !== 'review' && trays}
 
       {stage === 'chat' && (
         <>
@@ -422,19 +425,44 @@ export function CaptureClient({
         </div>
       )}
 
-      {stage === 'review' && profile && (
-        <ProfileReviewPanel
+      {stage === 'reconcile' && profile && (
+        <ReconciliationStepper
           profile={profile}
-          reviewerStatus={reviewerStatus ?? 'ai_drafted'}
-          initialReviewerNote={existingReviewerNote}
-          telemetry={telemetry}
-          onSave={handleSaveReview}
-          onResumeChat={() => setStage('chat')}
-          courseCode={courseCode}
-          courseTitle={course.title}
           slug={slug}
-          onSnapshotCreated={handleSnapshotCreated}
+          courseCode={courseCode}
+          onComplete={(reconciled, log) => {
+            setProfile(reconciled);
+            setReconciliationLog(log);
+            setStage('review');
+          }}
         />
+      )}
+
+      {stage === 'review' && profile && (
+        <div className="space-y-3">
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => setStage('reconcile')}
+              className="rounded border border-stone-300 px-3 py-1 text-xs text-stone-700 hover:bg-stone-50"
+            >
+              Reconcile with the auditor
+            </button>
+          </div>
+          <ProfileReviewPanel
+            profile={profile}
+            reviewerStatus={reviewerStatus ?? 'ai_drafted'}
+            initialReviewerNote={existingReviewerNote}
+            telemetry={telemetry}
+            onSave={handleSaveReview}
+            onResumeChat={() => setStage('chat')}
+            courseCode={courseCode}
+            courseTitle={course.title}
+            slug={slug}
+            onSnapshotCreated={handleSnapshotCreated}
+            reconciliationLog={reconciliationLog}
+          />
+        </div>
       )}
         </>
       )}
