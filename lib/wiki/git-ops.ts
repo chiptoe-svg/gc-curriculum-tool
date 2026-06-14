@@ -24,6 +24,7 @@
 import * as childProcess from 'node:child_process';
 import * as nodeFs from 'node:fs';
 import path from 'node:path';
+import { rebuildSectionIndexes } from '@/lib/ai/wiki/section-index';
 
 const WIKI_REPO_PATH =
   process.env.WIKI_REPO_PATH ?? '/Users/admin/projects/gc-curriculum-wiki';
@@ -145,6 +146,10 @@ async function writeAndPushSerial(commit: WikiCommit): Promise<{ sha: string }> 
     await fs.mkdir(path.dirname(abs), { recursive: true });
     await fs.writeFile(abs, page.content);
   }
+
+  // 2b. Rebuild the per-section index.md hubs from the full on-disk page set
+  //     (the regen only touched the affected pages; indexes must reflect all).
+  await rebuildSectionIndexes(WIKI_REPO_PATH);
 
   // 3. Append log entry to log.md (never overwrite — append-only log).
   const logPath = path.join(WIKI_REPO_PATH, 'log.md');
