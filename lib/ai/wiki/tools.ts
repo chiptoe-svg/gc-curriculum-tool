@@ -18,7 +18,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import type { ToolDefinition } from '@/lib/ai/tool-use-types';
 import { readWikiPage, wikiRepoPath } from '@/lib/wiki/git-ops';
-import { detectBands, pagePassesBandFloor, BAND_ORDER } from '@/lib/ai/wiki/evidence-band-markers';
+import { resolvePageBands, pagePassesBandFloor, BAND_ORDER } from '@/lib/ai/wiki/evidence-band-markers';
 
 const ALLOWED_TYPES = ['courses', 'competencies', 'targets', 'concepts'] as const;
 type WikiType = (typeof ALLOWED_TYPES)[number];
@@ -112,7 +112,7 @@ export const wikiReadTool: ToolDefinition = {
     if (content === null) return { error: `page not found: ${guard.path}` };
     // Annotate which evidence bands the page carries (increment A). Empty for
     // legacy pages not yet recompiled with band markers.
-    return { content, path: guard.path, evidenceBands: detectBands(content) };
+    return { content, path: guard.path, evidenceBands: resolvePageBands(content) };
   },
 };
 
@@ -161,7 +161,7 @@ export const wikiSearchTool: ToolDefinition = {
       if (!content) continue;
       const idx = content.toLowerCase().indexOf(q);
       if (idx < 0) continue;
-      const bands = detectBands(content);
+      const bands = resolvePageBands(content);
       // Band floor (increment A): drop pages whose evidence is entirely below
       // the requested level. Pages with no markers pass through (annotated []).
       if (a.bandFloor && !pagePassesBandFloor(bands, a.bandFloor)) continue;
