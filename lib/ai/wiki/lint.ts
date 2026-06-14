@@ -165,6 +165,23 @@ export async function lintWiki(root: string = wikiRepoPath()): Promise<LintIssue
       }
     }
   }
+  // Root index.md (repo root, not in a type dir): OKF frontmatter only — it's
+  // the LLM dashboard, so skip orphan/missing-section like the section indexes.
+  try {
+    const rootIndex = await fs.readFile(path.join(root, 'index.md'), 'utf8');
+    const missing = OKF_REQUIRED_KEYS.filter(k => !hasFrontmatterKey(rootIndex, k));
+    if (missing.length > 0) {
+      issues.push({
+        kind: 'okf-frontmatter-missing',
+        severity: 'error',
+        page: 'index.md',
+        detail: `missing OKF frontmatter key(s): ${missing.join(', ')}`,
+      });
+    }
+  } catch {
+    // no root index.md — skip
+  }
+
   return issues;
 }
 
