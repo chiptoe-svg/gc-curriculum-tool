@@ -7,6 +7,7 @@ import { getCaptureProfileByCourse, setCaptureProfileStatus } from '@/lib/db/cou
 import { getCaptureConversation } from '@/lib/db/capture-conversations-queries';
 import { getLatestSessionId, getSessionInstructor } from '@/lib/db/capture-messages-queries';
 import { getLatestSnapshotByCourse, createSnapshot, listSnapshotsByCourse, type InputsMeta } from '@/lib/db/capture-snapshots-queries';
+import type { ReconciliationLogEntry } from '@/lib/ai/schemas';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { hashIp } from '@/lib/ip-hash';
 import { updateWikiForSnapshot } from '@/lib/ai/wiki/update';
@@ -50,6 +51,9 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     : null;
   const captionNote = typeof body.captionNote === 'string' && body.captionNote.trim().length > 0
     ? body.captionNote.trim()
+    : null;
+  const reconciliationLog = Array.isArray(body.reconciliationLog)
+    ? (body.reconciliationLog as ReconciliationLogEntry[])
     : null;
 
   const [builderProfile, materials, conversation] = await Promise.all([
@@ -118,6 +122,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     // Link the v2 audit session that produced this draft so the wiki raw layer
     // can render the transcript. Null when no v2 session exists (genuine v1).
     transcriptSessionId: latestSessionId,
+    reconciliationLog,
   });
 
   // Mark the working draft as confirmed (so edits since snapshot will move

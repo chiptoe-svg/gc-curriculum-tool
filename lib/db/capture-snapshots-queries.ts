@@ -2,6 +2,7 @@ import { and, desc, eq, isNull } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { courseCaptureSnapshots, courseCaptureProfiles } from '@/lib/db/schema';
 import type { CaptureProfile } from '@/lib/ai/capture/schema';
+import type { ReconciliationLogEntry } from '@/lib/ai/schemas';
 
 export interface ChatMessage {
   role: 'user' | 'assistant';
@@ -50,6 +51,7 @@ export interface SnapshotRow {
   model: string;
   /** Auditor identity at capture time. 'Department canonical' for backfilled rows. */
   instructorName: string | null;
+  reconciliationLog: ReconciliationLogEntry[] | null;
   retiredAt: Date | null;
   createdAt: Date;
 }
@@ -69,6 +71,7 @@ export interface CreateSnapshotInput {
    *  audit transcript (capture_messages) to the snapshot so the wiki raw layer
    *  can render it. Null for genuine v1 captures (no session). */
   transcriptSessionId?: string | null;
+  reconciliationLog?: ReconciliationLogEntry[] | null;
 }
 
 export async function createSnapshot(input: CreateSnapshotInput): Promise<SnapshotRow> {
@@ -84,6 +87,7 @@ export async function createSnapshot(input: CreateSnapshotInput): Promise<Snapsh
     model: input.model,
     instructorName: input.instructorName ?? null,
     transcriptSessionId: input.transcriptSessionId ?? null,
+    reconciliationLog: input.reconciliationLog ?? null,
   }).returning();
   if (!row) throw new Error('createSnapshot: no row returned');
   return rowToSnapshot(row);
@@ -188,6 +192,7 @@ function rowToSnapshot(row: typeof courseCaptureSnapshots.$inferSelect): Snapsho
     scaleVersion: row.scaleVersion,
     model: row.model,
     instructorName: row.instructorName ?? null,
+    reconciliationLog: row.reconciliationLog ?? null,
     retiredAt: row.retiredAt,
     createdAt: row.createdAt,
   };

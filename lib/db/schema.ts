@@ -1,5 +1,6 @@
 import { pgTable, pgEnum, uuid, text, jsonb, timestamp, integer, bigint, real, boolean, primaryKey, index, unique, foreignKey } from 'drizzle-orm/pg-core';
 import type { CaptureProfile, CaptureReadiness, CaptureReviewerStatus } from '@/lib/ai/capture/schema';
+import type { ReconciliationLogEntry } from '@/lib/ai/schemas';
 
 export const careerTargets = pgTable('career_targets', {
   id: text('id').primaryKey(),               // stable slug like 'production-operations'
@@ -410,6 +411,7 @@ export const courseCaptureSnapshots = pgTable('course_capture_snapshots', {
   // so the "why" behind overrides survives in the immutable record.
   // Substrate for the future curriculum-wiki layer.
   reviewerNote: text('reviewer_note'),
+  reconciliationLog: jsonb('reconciliation_log').$type<ReconciliationLogEntry[]>(),
   transcriptSessionId: uuid('transcript_session_id'),  // nullable; populated for snapshots produced by v2 captures
   scaleVersion: text('scale_version').notNull(),
   model: text('model').notNull(),

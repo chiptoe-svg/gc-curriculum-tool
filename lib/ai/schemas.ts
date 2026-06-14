@@ -263,3 +263,71 @@ export const skillsMergeJsonSchema = {
     },
   },
 } as const;
+
+// ─── Guided Faculty Reconciliation — proposal schema ──────────────────────────
+// AI proposes per-outcome actions (keep / modify / remove / add) with revised
+// text and rationale. Faculty accepts or rejects each proposal in the UI.
+// The log entry captures the full round-trip for audit purposes.
+
+export const reconcileActionSchema = z.enum(['keep', 'modify', 'remove', 'add']);
+export const reconcileRevisedSchema = z.object({
+  statement: z.string().nullable(),
+  k: z.number().int().nullable(),
+  u: z.number().int().nullable(),
+  d: z.number().int().nullable(),
+}).nullable();
+export const reconcileProposalSchema = z.object({
+  index: z.number().int().nullable(),
+  action: reconcileActionSchema,
+  revised: reconcileRevisedSchema,
+  rationale: z.string(),
+});
+export const reconcileProposalsSchema = z.object({
+  proposals: z.array(reconcileProposalSchema),
+});
+export type ReconcileProposal = z.infer<typeof reconcileProposalSchema>;
+export type ReconcileProposals = z.infer<typeof reconcileProposalsSchema>;
+export type ReconcileSection = 'apparent_outcomes' | 'incoming' | 'outgoing';
+
+/** Snapshot-stored transcript of one reconciliation feedback round. */
+export interface ReconciliationLogEntry {
+  section: ReconcileSection;
+  feedback: string;
+  proposals: ReconcileProposal[];
+  decisions: Array<{ index: number | null; accepted: boolean }>;
+  at: string;
+}
+
+/** OpenAI strict structured-output schema — every property in `required`,
+ *  optionals as nullable unions (mirrors skillsMergeJsonSchema discipline). */
+export const reconcileProposalsJsonSchema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['proposals'],
+  properties: {
+    proposals: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['index', 'action', 'revised', 'rationale'],
+        properties: {
+          index: { type: ['integer', 'null'] },
+          action: { type: 'string', enum: ['keep', 'modify', 'remove', 'add'] },
+          revised: {
+            type: ['object', 'null'],
+            additionalProperties: false,
+            required: ['statement', 'k', 'u', 'd'],
+            properties: {
+              statement: { type: ['string', 'null'] },
+              k: { type: ['integer', 'null'] },
+              u: { type: ['integer', 'null'] },
+              d: { type: ['integer', 'null'] },
+            },
+          },
+          rationale: { type: 'string' },
+        },
+      },
+    },
+  },
+} as const;

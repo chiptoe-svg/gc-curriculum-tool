@@ -152,6 +152,7 @@ const mockSnapshot: SnapshotRow = {
   scaleVersion: 'v1',
   model: 'gpt-5.4',
   instructorName: 'Department canonical',
+  reconciliationLog: null,
   retiredAt: null,
   createdAt: new Date('2026-05-25T14:00:00Z'),
 };
