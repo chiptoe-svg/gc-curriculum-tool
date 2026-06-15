@@ -1318,7 +1318,13 @@ export function ProfileReviewPanel({
           <section className="space-y-3 rounded-md border border-amber-300 bg-amber-50/40 p-3">
             <div className="flex items-baseline justify-between gap-2">
               <h3 className="text-sm font-semibold text-amber-900">The interviewer was less sure about these ({worthLook.length})</h3>
-              <span className="text-[11px] text-amber-800">
+              <span
+                className={
+                  unreviewedCount === 0
+                    ? 'rounded-full bg-green-100 px-3 py-1 text-sm font-bold text-green-800'
+                    : 'rounded-full bg-amber-200 px-3 py-1 text-sm font-bold text-amber-900'
+                }
+              >
                 {unreviewedCount === 0 ? 'all confirmed ✓' : `${unreviewedCount} still to confirm`}
               </span>
             </div>
