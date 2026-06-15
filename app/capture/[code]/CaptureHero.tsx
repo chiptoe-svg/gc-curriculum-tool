@@ -49,7 +49,7 @@ export function CaptureHero({
         strengthening the program for students. It can only see what you surface here, so the most valuable
         thing you can do is name, plainly, what your students actually do and how deeply they do
         it. Be candid: this maps the curriculum, and any gaps that may surface simply
-        show the program where to grow next, for this class and the ones after. Take as much time as you
+        show the program where to grow next, for the students here now and the ones still to come. Take as much time as you
         need to get it right; you can stop and pick up where you left off anytime.
       </p>
       <p
