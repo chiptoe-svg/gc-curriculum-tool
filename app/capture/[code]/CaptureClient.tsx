@@ -420,7 +420,9 @@ export function CaptureClient({
             <div className="rounded-md border bg-muted/20 px-4 py-3 text-sm">
               <p className="font-medium">A prior profile exists for this course.</p>
               <p className="mt-1 text-muted-foreground">
-                Reviewer status: <span className="font-mono">{reviewerStatus ?? 'ai_drafted'}</span>.{' '}
+                Reviewer status: <span className="font-mono">{
+                  ({ ai_drafted: 'in progress', confirmed: 'confirmed', edited: 'edited' } as const)[reviewerStatus ?? 'ai_drafted']
+                }</span>.{' '}
                 <button
                   type="button"
                   className="underline hover:text-foreground"

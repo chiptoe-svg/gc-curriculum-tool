@@ -4,7 +4,7 @@ import { listCoursesWithStatus, type CaptureStatus } from '@/lib/db/capture-stat
 import { groupByCategory } from '@/lib/courses/group-by-category';
 import { CATEGORY_LABELS } from '@/lib/db/course-category-seed';
 import { listPairedCodesForCourses } from '@/lib/db/course-codes-queries';
-import { formatCourseLabel } from '@/lib/courses/parse-course-code';
+import { formatCourseLabel, parseCourseCode } from '@/lib/courses/parse-course-code';
 
 export const dynamic = 'force-dynamic';
 
@@ -110,6 +110,13 @@ export default async function HomePage() {
                   const editHref = funnelOrigin && slug
                     ? `${funnelOrigin}/capture/${encodeURIComponent(row.code)}?slug=${encodeURIComponent(slug)}`
                     : null;
+                  // Drop the special-topics letter suffix for display (GC 4900ap → GC 4900):
+                  // the title disambiguates the section, so the bare number reads cleaner here.
+                  // row.code stays the canonical PK for every link/href below.
+                  const parsedCode = parseCourseCode(row.code);
+                  const displayCode = parsedCode.number !== null && parsedCode.suffix
+                    ? `${parsedCode.prefix} ${parsedCode.number}`
+                    : row.code;
                   return (
                     <li
                       key={row.code}
@@ -119,7 +126,7 @@ export default async function HomePage() {
                         href={`/view/${encodeURIComponent(row.code)}`}
                         className="font-mono-plex text-sm text-foreground hover:text-muted-foreground"
                       >
-                        {formatCourseLabel(row.code, pairedByCode.get(row.code) ?? [])}
+                        {formatCourseLabel(displayCode, pairedByCode.get(row.code) ?? [])}
                       </Link>
                       <Link
                         href={`/view/${encodeURIComponent(row.code)}`}
@@ -173,8 +180,8 @@ export default async function HomePage() {
 const STATUS_CONFIG: Record<CaptureStatus, { label: string; className: string }> = {
   captured:     { label: 'Captured',    className: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300' },
   reviewed:     { label: 'Reviewed',    className: 'bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300' },
-  'ai-drafted': { label: 'AI drafted',  className: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' },
-  'in-audit':   { label: 'In audit',    className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' },
+  'ai-drafted': { label: 'In progress',  className: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300' },
+  'in-audit':   { label: 'In interview', className: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' },
   'not-started':{ label: 'Not started', className: 'bg-stone-100 text-stone-600 dark:bg-stone-800/40 dark:text-stone-400' },
 };
 
