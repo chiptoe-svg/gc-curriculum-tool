@@ -14,6 +14,14 @@ const COURSE_API_ALLOWLIST = new Set([
  * The course a scoped session must be bound to for `pathname` to be allowed,
  * or null if the path is never scoped-accessible. PURE (no DB) — the security
  * allowlist. Course codes contain spaces, URL-encoded as %20.
+ *
+ * SECURITY NOTE: this is the FIRST of two gates — the destination route/page
+ * independently re-checks `authorizeCourseWrite(req, params.code, slug)` against
+ * its OWN normalized course code, so a path-parse trick that fools this function
+ * still can't grant access. That defense-in-depth holds ONLY while there is no
+ * catch-all route (`[...rest]/route.ts`) under /api/courses/[code] or
+ * /api/capture/[code]. If you ever add one, it MUST call `authorizeCourseWrite`
+ * itself — do not rely on this allowlist alone.
  */
 export function courseFromScopedPath(pathname: string): string | null {
   const segs = pathname.split('/').filter(Boolean);
