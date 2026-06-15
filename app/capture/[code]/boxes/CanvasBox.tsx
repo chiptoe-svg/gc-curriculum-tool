@@ -34,6 +34,30 @@ const STATUS_RANK: Record<string, number> = {
   failed: 4,
 };
 
+// ── Inline help: where to find the Canvas course URL + API token ─────────────
+
+/** Collapsible "where do I find these?" note, shown inside both Canvas import forms. */
+function CanvasCredsHelp() {
+  return (
+    <details className="mt-1 text-[11px] text-muted-foreground">
+      <summary className="cursor-pointer hover:text-foreground">Where do I find the URL and token?</summary>
+      <div className="mt-1 space-y-1.5 border-l-2 border-muted pl-2 leading-snug">
+        <p>
+          <span className="font-medium">Course URL:</span> the address bar while you&apos;re inside the
+          Canvas course, e.g. <code>clemson.instructure.com/courses/12345</code>.
+        </p>
+        <p>
+          <span className="font-medium">API token:</span> in Canvas, open <span className="font-medium">Account
+          &rarr; Settings</span>, scroll to <span className="font-medium">Approved Integrations</span>, and click
+          {' '}<span className="font-medium">+ New Access Token</span>. Add a purpose, leave the expiry blank, click
+          {' '}<span className="font-medium">Generate Token</span>, and paste it here. Treat it like a password (it
+          gives read access to your Canvas courses); you can delete it afterward.
+        </p>
+      </div>
+    </details>
+  );
+}
+
 // ── Group header with inline import button (bundled mode) ─────────────────────
 
 /**
@@ -175,6 +199,7 @@ function BundledGroupHeader({
               </button>
             </div>
           </div>
+          <CanvasCredsHelp />
           {importMsg && <p className="text-[11px] text-muted-foreground">{importMsg}</p>}
         </div>
       )}
@@ -688,6 +713,7 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
               {reextracting ? 'Importing…' : (empty ? 'Import' : 'Reimport')}
             </button>
           </div>
+          <CanvasCredsHelp />
           <label className="mt-1.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
             <input
               type="checkbox"
