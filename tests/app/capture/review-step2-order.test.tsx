@@ -126,8 +126,8 @@ describe('Review Step 2 — document order', () => {
     const summary = screen.getByTestId('verification-summary');
     // With the minimal profile both competencies are "confident" (materials-cited,
     // mid-scored, non-central) so there may be no "Worth a look" heading.
-    // Use the "The AI is confident about these" heading which is always present.
-    const confident = screen.getByText(/The AI is confident about these/i);
+    // Use the "The interviewer was confident about these" heading which is always present.
+    const confident = screen.getByText(/The interviewer was confident about these/i);
 
     // compareDocumentPosition: if summary is BEFORE confident, result has DOCUMENT_POSITION_FOLLOWING
     const position = summary.compareDocumentPosition(confident);

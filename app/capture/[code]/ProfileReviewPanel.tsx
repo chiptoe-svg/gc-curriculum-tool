@@ -480,6 +480,16 @@ function CompetencyCard({
         <span className="text-xs text-muted-foreground">#{index + 1}</span>
       </div>
 
+      {!isTechnical && (
+        <p className="rounded bg-amber-50/70 px-2.5 py-1.5 text-[11px] leading-snug text-amber-800">
+          <span className="font-semibold">Foundational competency — scored on Do only.</span>{' '}
+          Dispositions like this show up in what students <em>do</em>, not in what they can
+          recall or explain, so Know and Understand are left unscored (—). A zero there would
+          wrongly read as &ldquo;the course tried to build this and failed.&rdquo; The evidence
+          and rationale below say what this refers to and why the Do score landed where it did.
+        </p>
+      )}
+
       <div className="grid grid-cols-3 gap-4">
         <DepthSlider
           label="Know"
@@ -507,7 +517,7 @@ function CompetencyCard({
       </div>
 
       {(competency.evidence_k || competency.evidence_u || competency.evidence_d) && (
-        <details className="text-xs">
+        <details className="text-xs" open={!isTechnical}>
           <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
             Evidence
           </summary>
@@ -531,7 +541,7 @@ function CompetencyCard({
         </details>
       )}
 
-      <details className="text-xs">
+      <details className="text-xs" open={!isTechnical}>
         <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
           Rationale
         </summary>
@@ -1307,14 +1317,15 @@ export function ProfileReviewPanel({
         {worthLook.length > 0 && (
           <section className="space-y-3 rounded-md border border-amber-300 bg-amber-50/40 p-3">
             <div className="flex items-baseline justify-between gap-2">
-              <h3 className="text-sm font-semibold text-amber-900">Worth a look ({worthLook.length})</h3>
+              <h3 className="text-sm font-semibold text-amber-900">The interviewer was less sure about these ({worthLook.length})</h3>
               <span className="text-[11px] text-amber-800">
                 {unreviewedCount === 0 ? 'all confirmed ✓' : `${unreviewedCount} still to confirm`}
               </span>
             </div>
             <p className="text-xs text-amber-800">
-              These rest on your word, sit high on the scale, were AI-inferred, or carry the most
-              graded weight. Adjust a slider, or confirm each.
+              It was confident about the ones listed below — these it flagged for your eye
+              because they rest on your word, sit high on the scale, were inferred without a
+              direct source, or carry the most graded weight. Adjust a slider, or confirm each.
             </p>
             {worthLook.map(({ c, i, reason }) => (
               <div key={i} className={'space-y-1' + (reviewed.has(i) ? ' opacity-60' : '')}>
@@ -1337,9 +1348,13 @@ export function ProfileReviewPanel({
                   <button
                     type="button"
                     onClick={() => markReviewed(i)}
-                    className="rounded border border-amber-300 bg-white px-2 py-0.5 text-[11px] font-medium text-amber-900 hover:bg-amber-100"
+                    className={
+                      reviewed.has(i)
+                        ? 'inline-flex items-center gap-1.5 rounded-md border border-green-300 bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-800'
+                        : 'inline-flex items-center gap-1.5 rounded-md border border-amber-600 bg-amber-500 px-4 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-amber-600'
+                    }
                   >
-                    {reviewed.has(i) ? '✓ looks right' : 'Looks right ✓'}
+                    {reviewed.has(i) ? '✓ Confirmed' : 'Looks right ✓'}
                   </button>
                 </div>
               </div>
@@ -1351,7 +1366,7 @@ export function ProfileReviewPanel({
         {confident.length > 0 && (
           <section className="space-y-2 rounded-md border bg-card p-3">
             <div className="flex items-baseline justify-between gap-2">
-              <h3 className="text-sm font-semibold">The AI is confident about these ({confident.length})</h3>
+              <h3 className="text-sm font-semibold">The interviewer was confident about these ({confident.length})</h3>
               <button
                 type="button"
                 onClick={() =>
@@ -1444,7 +1459,7 @@ export function ProfileReviewPanel({
             onClick={() => setAuditNotesOpen(v => !v)}
             className="text-xs text-muted-foreground hover:text-foreground"
           >
-            {auditNotesOpen ? '▲ collapse' : '▼ expand'}
+            {auditNotesOpen ? '▾ collapse' : '▸ expand'}
           </button>
         </div>
         {auditNotesOpen && (
@@ -1500,7 +1515,7 @@ export function ProfileReviewPanel({
             </p>
           </div>
           <span className="shrink-0 text-xs text-muted-foreground" aria-hidden="true">
-            {previewOpen ? '▲ collapse' : '▼ expand'}
+            {previewOpen ? '▾ collapse' : '▸ expand'}
           </span>
         </button>
         {previewOpen && (
