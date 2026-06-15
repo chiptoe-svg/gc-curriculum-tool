@@ -35,6 +35,8 @@ vi.mock('@/lib/courses/extract-text', async (importOriginal) => {
     extractText: vi.fn().mockResolvedValue({ status: 'ok', text: 'Extracted PDF text content.' }),
   };
 });
+const mockResolveScoped = vi.fn();
+vi.mock('@/lib/sandbox/access', () => ({ resolveScopedSession: (...a: unknown[]) => mockResolveScoped(...a) }));
 
 import { POST } from '@/app/api/courses/[code]/imscc-import/route';
 import { getCourseByCode } from '@/lib/db/courses-queries';
@@ -108,6 +110,8 @@ beforeEach(() => {
   // extractText mock is reset by vi.resetAllMocks(); restore the default
   // return value so the PDF file extraction path succeeds in each test.
   mockExtractText.mockResolvedValue({ status: 'ok', text: 'Extracted PDF text content.' });
+  // Default to no scoped session — existing slug-based tests are unaffected.
+  mockResolveScoped.mockResolvedValue(null);
 });
 
 describe('POST /api/courses/[code]/imscc-import', () => {
@@ -236,5 +240,16 @@ describe('POST /api/courses/[code]/imscc-import', () => {
     expect(mockFinalize).toHaveBeenCalledWith(
       expect.objectContaining({ extractionStatus: 'ok', extractionMethod: 'text' }),
     );
+  });
+
+  it('authorizes via a bound scoped session (no Basic Auth, no slug)', async () => {
+    mockGetCourse.mockResolvedValue(FAKE_COURSE);
+    mockResolveScoped.mockResolvedValue({ courseCode: 'GC 1010', instructorName: 'Dr. Lee, UGA' });
+    // a request with NO slug field
+    const form = new FormData();
+    form.append('file', makeSampleFile());
+    const req = new Request('http://host/api/courses/GC%201010/imscc-import', { method: 'POST', body: form });
+    const res = await POST(req, { params: Promise.resolve({ code: 'GC 1010' }) });
+    expect(res.status).toBe(200);
   });
 });

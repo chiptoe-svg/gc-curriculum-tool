@@ -14,6 +14,7 @@ import { parseImscc } from '@/lib/canvas/parseImscc';
 import { assembleCanvasMaterials } from '@/lib/canvas/assemble-canvas-materials';
 import { extractText, SUPPORTED_MIME_TYPES, type ExtractedMimeType } from '@/lib/courses/extract-text';
 import { isLegacyOfficeMime } from '@/lib/courses/legacy-converter';
+import { resolveScopedSession } from '@/lib/sandbox/access';
 
 export const maxDuration = 120;
 
@@ -36,12 +37,18 @@ export async function POST(req: Request, { params }: Ctx) {
 async function runImport(req: Request, params: Ctx['params']): Promise<Response> {
   const { code } = await params;
 
+  // A scoped external-tester session bound to THIS course authorizes the
+  // import in place of faculty Basic-Auth + slug (this route is excluded
+  // from the middleware matcher, so middleware injection can't reach it).
+  const scoped = await resolveScopedSession(req);
+  const scopedOk = scoped?.courseCode === code;
+
   // Basic Auth enforced HERE because this route is excluded from the
   // middleware matcher (see middleware.ts — Node-middleware body buffering
   // broke real-size multipart .imscc uploads). Same gate, same env var,
   // same no-op-when-unset semantics as the middleware.
   const expectedAuth = process.env.FACULTY_BASIC_AUTH;
-  if (expectedAuth && !authorizedForBasicAuth(req.headers.get('authorization'), expectedAuth)) {
+  if (!scopedOk && expectedAuth && !authorizedForBasicAuth(req.headers.get('authorization'), expectedAuth)) {
     return new NextResponse('Authentication required', {
       status: 401,
       headers: { 'WWW-Authenticate': 'Basic realm="GC Curriculum Tool"' },
@@ -53,7 +60,7 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
   const slug = String(form.get('slug') ?? '');
   const sourceCode = form.get('sourceCode') ? String(form.get('sourceCode')) : null;
 
-  if (!isValidSlug(slug)) return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
+  if (!scopedOk && !isValidSlug(slug)) return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
   if (!file) return NextResponse.json({ error: 'No .imscc file uploaded' }, { status: 400 });
   if (file.size > 500 * 1024 * 1024) {
     return NextResponse.json({ error: 'Cartridge too large (>500MB)' }, { status: 413 });

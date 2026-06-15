@@ -12,6 +12,7 @@ import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { hashIp } from '@/lib/ip-hash';
 import { updateWikiForSnapshot } from '@/lib/ai/wiki/update';
 import { writeAndPush } from '@/lib/wiki/git-ops';
+import { resolveScopedSession } from '@/lib/sandbox/access';
 
 interface RouteContext { params: Promise<{ code: string }> }
 
@@ -107,6 +108,9 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     ? await getSessionInstructor(courseCode, latestSessionId)
     : null;
 
+  // An external scoped tester's self-entered name wins over the session-derived one.
+  const scopedForName = await resolveScopedSession(req);
+
   const snapshot = await createSnapshot({
     courseCode,
     profile: draft.profile,
@@ -118,7 +122,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     // departmental-context narrative survives in the immutable record.
     reviewerNote: draft.reviewerNote ?? null,
     model: process.env.OPENAI_MODEL?.trim() || 'gpt-4o',
-    instructorName: sessionInstructor,
+    instructorName: scopedForName?.instructorName ?? sessionInstructor,
     // Link the v2 audit session that produced this draft so the wiki raw layer
     // can render the transcript. Null when no v2 session exists (genuine v1).
     transcriptSessionId: latestSessionId,
