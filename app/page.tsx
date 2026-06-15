@@ -80,7 +80,7 @@ export default async function HomePage() {
           <p className="max-w-3xl text-sm text-muted-foreground">
             A living map of the Graphic Communications curriculum. The tool distills the
             essence of each course — the knowledge, understanding, and skills students
-            actually walk away with, and the evidence behind them — into a shared course
+            actually walk away with — scored at depth from evidence, not syllabus aspiration — into a shared course
             profile, then assembles those profiles into a program-wide picture of how the
             curriculum builds toward the careers it prepares students for. Anyone can read
             the profiles. The{' '}
