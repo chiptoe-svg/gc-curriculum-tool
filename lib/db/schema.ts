@@ -172,6 +172,26 @@ export const partnerSessions = pgTable('partner_sessions', {
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
 });
 
+export const sandboxGrants = pgTable('sandbox_grants', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  token: text('token').notNull().unique(),
+  courseCode: text('course_code').notNull().references(() => courses.code, { onDelete: 'cascade' }),
+  label: text('label'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  active: boolean('active').notNull().default(true),
+  revokedAt: timestamp('revoked_at', { withTimezone: true }),
+});
+
+export const sandboxSessions = pgTable('sandbox_sessions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  grantId: uuid('grant_id').notNull().references(() => sandboxGrants.id, { onDelete: 'cascade' }),
+  courseCode: text('course_code').notNull(),
+  instructorName: text('instructor_name').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+});
+
 export const partnerEvents = pgTable('partner_events', {
   id: uuid('id').primaryKey().defaultRandom(),
   partnerId: uuid('partner_id').references(() => partners.id, { onDelete: 'cascade' }),
