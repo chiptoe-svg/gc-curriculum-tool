@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Route } from 'lucide-react';
+import type { SVGProps } from 'react';
 import { listCoursesWithStatus, type CaptureStatus } from '@/lib/db/capture-status-queries';
 import { groupByCategory } from '@/lib/courses/group-by-category';
 import { CATEGORY_LABELS } from '@/lib/db/course-category-seed';
@@ -9,10 +9,34 @@ import { formatCourseLabel, parseCourseCode } from '@/lib/courses/parse-course-c
 export const dynamic = 'force-dynamic';
 
 /**
+ * "Current core curriculum path" marker: a dotted, jagged line with a point at
+ * each end. Custom glyph (no lucide equivalent). Uses currentColor; size via className.
+ */
+function CurriculumPathIcon({ className, ...rest }: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      {...rest}
+    >
+      <polyline points="4 18 9 11 13 16 20 6" strokeDasharray="2 3.5" />
+      <circle cx="4" cy="18" r="2.2" fill="currentColor" stroke="none" />
+      <circle cx="20" cy="6" r="2.2" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+/**
  * Public HTTP landing page. No slug, no Basic Auth.
  *
  * Courses are grouped by `category` (GC Core -> Specialty -> Major Req -> Other).
- * Courses on the current core curriculum path (build toward the career mapping) carry a Route (path) icon.
+ * Courses on the current core curriculum path (build toward the career mapping) carry a custom
+ * path marker (a dotted, jagged line with a point at each end).
  *
  * Two link types per course:
  *   - View -> /view/[code] (HTTP, read-only, public)
@@ -85,7 +109,7 @@ export default async function HomePage() {
             curriculum builds toward the careers it prepares students for. Anyone can read
             the profiles. The{' '}
             <span title="On the current core curriculum path" className="inline-flex">
-              <Route className="inline h-3.5 w-3.5 -translate-y-px text-muted-foreground" aria-hidden />
+              <CurriculumPathIcon className="inline h-3.5 w-3.5 -translate-y-px text-muted-foreground" aria-hidden />
             </span>{' '}marks the current core curriculum path: the courses that build toward our career outcomes.
           </p>
           {addCourseHref && (
@@ -135,7 +159,7 @@ export default async function HomePage() {
                         <span>{row.title ?? '—'}</span>
                         {row.buildsToCareer && (
                           <span title="On the current core curriculum path" className="inline-flex">
-                            <Route
+                            <CurriculumPathIcon
                               className="h-3.5 w-3.5 shrink-0 translate-y-px text-emerald-600/70 dark:text-emerald-400/70"
                               aria-label="On the current core curriculum path"
                             />
