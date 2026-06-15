@@ -13,7 +13,10 @@ interface Grant {
   revokedAt: string | null;
 }
 
-export function SandboxGrantsPanel() {
+export function SandboxGrantsPanel({ slug }: { slug: string }) {
+  // Admin second factor: present the slug as a Bearer token (the preferred
+  // path in lib/auth/admin-auth.ts — keeps the secret out of the query string).
+  const authHeaders = { Authorization: `Bearer ${slug}` };
   const [grants, setGrants] = useState<Grant[]>([]);
   const [courseCode, setCourseCode] = useState('');
   const [label, setLabel] = useState('');
@@ -23,7 +26,7 @@ export function SandboxGrantsPanel() {
   const [copied, setCopied] = useState(false);
 
   async function loadGrants() {
-    const res = await fetch('/api/admin/sandbox-grants');
+    const res = await fetch('/api/admin/sandbox-grants', { headers: authHeaders });
     if (res.ok) {
       const json = await res.json() as { grants: Grant[] };
       setGrants(json.grants);
@@ -42,7 +45,7 @@ export function SandboxGrantsPanel() {
     start(async () => {
       const res = await fetch('/api/admin/sandbox-grants', {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: { 'content-type': 'application/json', ...authHeaders },
         body: JSON.stringify({ courseCode: courseCode.trim(), label: label.trim() || null }),
       });
       if (!res.ok) {
@@ -60,7 +63,7 @@ export function SandboxGrantsPanel() {
   }
 
   async function revoke(id: string) {
-    const res = await fetch(`/api/admin/sandbox-grants?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+    const res = await fetch(`/api/admin/sandbox-grants?id=${encodeURIComponent(id)}`, { method: 'DELETE', headers: authHeaders });
     if (!res.ok) {
       alert(`Revoke failed: ${res.status}`);
       return;

@@ -5,24 +5,38 @@ vi.mock('@/lib/sandbox/grants', () => ({
   listGrants: (...a: unknown[]) => mockList(...a),
   revokeGrant: (...a: unknown[]) => mockRevoke(...a),
 }));
+// Admin second factor: gate it via the real helper so we can exercise both
+// authorized and unauthorized paths. Authorized = default true here.
+const mockAdminAuth = vi.fn();
+vi.mock('@/lib/auth/admin-auth', () => ({ checkAdminAuth: (...a: unknown[]) => mockAdminAuth(...a) }));
 import { POST, GET, DELETE } from '../route';
-beforeEach(() => { vi.clearAllMocks(); });
+beforeEach(() => { vi.clearAllMocks(); mockAdminAuth.mockReturnValue(true); });
+
+function req(path = 'http://h/api/admin/sandbox-grants', init?: RequestInit) { return new Request(path, init); }
 
 describe('admin sandbox-grants API', () => {
   it('POST mints a grant', async () => {
     mockCreate.mockResolvedValue({ id: 'g1', token: 'tok', courseCode: 'GC 2400', expiresAt: new Date() });
-    const res = await POST(new Request('http://h/api/admin/sandbox-grants', { method: 'POST', body: JSON.stringify({ courseCode: 'GC 2400', label: 'UGA' }), headers: { 'content-type': 'application/json' } }));
+    const res = await POST(req('http://h/api/admin/sandbox-grants', { method: 'POST', body: JSON.stringify({ courseCode: 'GC 2400', label: 'UGA' }), headers: { 'content-type': 'application/json' } }));
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({ token: 'tok' });
   });
   it('POST 400 without courseCode', async () => {
-    const res = await POST(new Request('http://h/api/admin/sandbox-grants', { method: 'POST', body: '{}', headers: { 'content-type': 'application/json' } }));
+    const res = await POST(req('http://h/api/admin/sandbox-grants', { method: 'POST', body: '{}', headers: { 'content-type': 'application/json' } }));
     expect(res.status).toBe(400);
   });
-  it('GET lists grants', async () => { mockList.mockResolvedValue([]); expect((await GET()).status).toBe(200); });
+  it('GET lists grants', async () => { mockList.mockResolvedValue([]); expect((await GET(req())).status).toBe(200); });
   it('DELETE revokes by id', async () => {
     mockRevoke.mockResolvedValue(undefined);
-    const res = await DELETE(new Request('http://h/api/admin/sandbox-grants?id=g1', { method: 'DELETE' }));
+    const res = await DELETE(req('http://h/api/admin/sandbox-grants?id=g1', { method: 'DELETE' }));
     expect(res.status).toBe(200); expect(mockRevoke).toHaveBeenCalledWith('g1');
+  });
+  it('401s every handler when the admin second factor fails', async () => {
+    mockAdminAuth.mockReturnValue(false);
+    expect((await POST(req('http://h/api/admin/sandbox-grants', { method: 'POST', body: '{}', headers: { 'content-type': 'application/json' } }))).status).toBe(401);
+    expect((await GET(req())).status).toBe(401);
+    expect((await DELETE(req('http://h/api/admin/sandbox-grants?id=g1', { method: 'DELETE' }))).status).toBe(401);
+    expect(mockCreate).not.toHaveBeenCalled();
+    expect(mockRevoke).not.toHaveBeenCalled();
   });
 });
