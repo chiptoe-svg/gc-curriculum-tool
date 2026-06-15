@@ -130,6 +130,11 @@
   }
   html {
     @apply font-sans;
+    /* Global type scale. Every Tailwind text-* / spacing value is rem-based, so
+       this one knob bumps body copy (mostly text-sm) up a touch across the whole
+       app without per-component edits. 106.25% = 17px base (text-sm ≈ 15px).
+       Dial to 112.5% for an 18px base if more is wanted. */
+    font-size: 106.25%;
   }
 }
 
