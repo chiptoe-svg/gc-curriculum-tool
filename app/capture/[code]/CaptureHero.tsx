@@ -48,7 +48,7 @@ export function CaptureHero({
         shows, and at what depth. This step is foundational for optimizing curriculum paths and
         strengthening the program for students. It can only see what you surface here, so the most valuable
         thing you can do is name, plainly, what your students actually do and how deeply they do
-        it. Be candid: this maps the curriculum, not you, and any gaps that may surface simply
+        it. Be candid: this maps the curriculum, and any gaps that may surface simply
         show the program where to grow next, for this class and the ones after. Take as much time as you
         need to get it right; you can stop and pick up where you left off anytime.
       </p>
