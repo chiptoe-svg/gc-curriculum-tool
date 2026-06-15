@@ -15,14 +15,16 @@ const nextConfig: NextConfig = {
     "/api/**/*": ["./lib/ai/prompts/**/*.md"],
   },
 
-  // Next.js 15's middleware caps multipart bodies at 10 MB by default.
-  // A faculty member's 13 MB lab PDF got rejected ("Request body exceeded
-  // 10MB for /api/courses/GC 4440/materials") even though our route's own
-  // MAX_SIZE_BYTES is 15 MB — middleware rejects before the route handler
-  // sees the body. Raising the middleware-side ceiling to 25 MB; the
-  // materials route still enforces its own 15 MB limit.
+  // Next.js 15's middleware caps multipart bodies at 10 MB by default and
+  // rejects oversized requests before the route handler sees them. Two
+  // callers need headroom: the materials upload (own 15 MB cap) and the
+  // IMSCC cartridge import (own 500 MB cap — real Canvas exports are
+  // hundreds of MB of bundled media). Set the middleware ceiling to 600 MB
+  // so the cartridge upload reaches its route; each route still enforces
+  // its own, tighter per-feature limit. (LAN/Funnel single-faculty tool
+  // behind Basic Auth, so the looser global floor is acceptable.)
   experimental: {
-    middlewareClientMaxBodySize: '25mb',
+    middlewareClientMaxBodySize: '600mb',
   },
 
   // Skip ESLint during `next build`. We run ESLint in dev (and can run it

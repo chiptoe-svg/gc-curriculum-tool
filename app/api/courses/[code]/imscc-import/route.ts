@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { writeFile, unlink } from 'node:fs/promises';
+import { unlink } from 'node:fs/promises';
+import { createWriteStream } from 'node:fs';
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 import { randomUUID } from 'node:crypto';
 import { isValidSlug } from '@/lib/slug';
 import { hashIp } from '@/lib/ip-hash';
@@ -52,7 +55,10 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
   const tmp = join(tmpdir(), `imscc-${randomUUID()}.imscc`);
   let parsed: Awaited<ReturnType<typeof parseImscc>>;
   try {
-    await writeFile(tmp, Buffer.from(await file.arrayBuffer()));
+    // Stream the upload to disk in chunks rather than buffering the whole
+    // file via arrayBuffer() — a multi-hundred-MB cartridge would otherwise
+    // allocate a single huge Buffer. yauzl then random-accesses the temp file.
+    await pipeline(Readable.fromWeb(file.stream() as Parameters<typeof Readable.fromWeb>[0]), createWriteStream(tmp));
     parsed = await parseImscc(tmp);
   } catch (e) {
     return NextResponse.json(
