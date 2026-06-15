@@ -1,10 +1,7 @@
 import { NextResponse } from 'next/server';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { unlink } from 'node:fs/promises';
-import { createWriteStream } from 'node:fs';
-import { Readable } from 'node:stream';
-import { pipeline } from 'node:stream/promises';
+import { writeFile, unlink } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { isValidSlug } from '@/lib/slug';
 import { hashIp } from '@/lib/ip-hash';
@@ -55,10 +52,13 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
   const tmp = join(tmpdir(), `imscc-${randomUUID()}.imscc`);
   let parsed: Awaited<ReturnType<typeof parseImscc>>;
   try {
-    // Stream the upload to disk in chunks rather than buffering the whole
-    // file via arrayBuffer() — a multi-hundred-MB cartridge would otherwise
-    // allocate a single huge Buffer. yauzl then random-accesses the temp file.
-    await pipeline(Readable.fromWeb(file.stream() as Parameters<typeof Readable.fromWeb>[0]), createWriteStream(tmp));
+    // Buffer the upload to disk via arrayBuffer(). NOTE: do NOT switch this to
+    // a streaming `file.stream()` pipeline — a File from req.formData() is
+    // backed by an already-consumed body, so .stream() throws undici's
+    // "Response body object should not be disturbed or locked" at runtime.
+    // arrayBuffer() is off-heap, so even a few-hundred-MB cartridge is fine;
+    // yauzl then random-accesses the temp file (the media bulk is never read).
+    await writeFile(tmp, Buffer.from(await file.arrayBuffer()));
     parsed = await parseImscc(tmp);
   } catch (e) {
     return NextResponse.json(
