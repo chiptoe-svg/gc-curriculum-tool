@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Target } from 'lucide-react';
+import { Route } from 'lucide-react';
 import { listCoursesWithStatus, type CaptureStatus } from '@/lib/db/capture-status-queries';
 import { groupByCategory } from '@/lib/courses/group-by-category';
 import { CATEGORY_LABELS } from '@/lib/db/course-category-seed';
@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
  * Public HTTP landing page. No slug, no Basic Auth.
  *
  * Courses are grouped by `category` (GC Core -> Specialty -> Major Req -> Other).
- * Courses that build toward the career mapping carry a Target icon.
+ * Courses on the current core curriculum path (build toward the career mapping) carry a Route (path) icon.
  *
  * Two link types per course:
  *   - View -> /view/[code] (HTTP, read-only, public)
@@ -84,9 +84,9 @@ export default async function HomePage() {
             than syllabus aspiration. It then assembles those profiles into a program-wide picture of how the
             curriculum builds toward the careers it prepares students for. Anyone can read
             the profiles. The{' '}
-            <span title="Builds toward career outcomes" className="inline-flex">
-              <Target className="inline h-3.5 w-3.5 -translate-y-px text-muted-foreground" aria-hidden />
-            </span>{' '}marks courses that build toward our career outcomes.
+            <span title="On the current core curriculum path" className="inline-flex">
+              <Route className="inline h-3.5 w-3.5 -translate-y-px text-muted-foreground" aria-hidden />
+            </span>{' '}marks the current core curriculum path: the courses that build toward our career outcomes.
           </p>
           {addCourseHref && (
             <a
@@ -134,10 +134,10 @@ export default async function HomePage() {
                       >
                         <span>{row.title ?? '—'}</span>
                         {row.buildsToCareer && (
-                          <span title="Builds toward career outcomes" className="inline-flex">
-                            <Target
+                          <span title="On the current core curriculum path" className="inline-flex">
+                            <Route
                               className="h-3.5 w-3.5 shrink-0 translate-y-px text-emerald-600/70 dark:text-emerald-400/70"
-                              aria-label="Builds toward career outcomes"
+                              aria-label="On the current core curriculum path"
                             />
                           </span>
                         )}
