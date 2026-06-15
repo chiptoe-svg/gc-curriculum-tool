@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { isValidSlug } from '@/lib/slug';
+import { authorizeCourseWrite } from '@/lib/sandbox/access';
 import { getCourseByCode } from '@/lib/db/courses-queries';
 import { mergePrereqGapWithSkills } from '@/lib/ai/analyze/decompose-prereq-gap';
 
@@ -38,7 +38,7 @@ async function run(req: Request, params: Ctx['params']): Promise<Response> {
   const { code } = await params;
   const body = await req.json().catch(() => ({}));
   const slug = typeof body.slug === 'string' ? body.slug : '';
-  if (!isValidSlug(slug)) {
+  if (!(await authorizeCourseWrite(req, code, slug))) {
     return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
   }
   const gapText = typeof body.gapText === 'string' ? body.gapText.trim() : '';

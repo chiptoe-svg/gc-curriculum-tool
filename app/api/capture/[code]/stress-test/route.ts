@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { isValidSlug } from '@/lib/slug';
+import { authorizeCourseWrite } from '@/lib/sandbox/access';
 import { getCourseByCode } from '@/lib/db/courses-queries';
 import { getCourseProfile } from '@/lib/db/course-profile-queries';
 import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
@@ -34,7 +34,9 @@ function extractPrereqCodes(prerequisites: string, selfCode: string): string[] {
 export async function POST(req: Request, { params }: RouteContext): Promise<Response> {
   const url = new URL(req.url);
   const slug = url.searchParams.get('slug') ?? '';
-  if (!isValidSlug(slug)) return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
+  const { code: rawCode } = await params;
+  const courseCode = decodeURIComponent(rawCode);
+  if (!(await authorizeCourseWrite(req, courseCode, slug))) return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
 
   const ipHash = hashIp(req);
   const { allowed } = await checkIpRateLimit(ipHash);
@@ -43,8 +45,6 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   const dailyOk = await checkDailyCap();
   if (!dailyOk.ok) return NextResponse.json({ error: 'daily cost cap reached' }, { status: 429 });
 
-  const { code: rawCode } = await params;
-  const courseCode = decodeURIComponent(rawCode);
 
   const course = await getCourseByCode(courseCode);
   if (!course) return NextResponse.json({ error: 'course not found' }, { status: 404 });

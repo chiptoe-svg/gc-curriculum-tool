@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { isValidSlug } from '@/lib/slug';
+import { authorizeCourseWrite } from '@/lib/sandbox/access';
 import { getCourseByCode, updateBuilderStatus } from '@/lib/db/courses-queries';
 import { insertKudRun, upsertCourseKud } from '@/lib/db/course-kud-queries';
 import { generateCourseKud } from '@/lib/ai/analyze/kud-generate';
@@ -12,7 +12,9 @@ interface RouteContext { params: Promise<{ code: string }> }
 export async function POST(req: Request, { params }: RouteContext): Promise<Response> {
   const url = new URL(req.url);
   const slug = url.searchParams.get('slug') ?? '';
-  if (!isValidSlug(slug)) return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
+  const { code: rawCode } = await params;
+  const courseCode = decodeURIComponent(rawCode);
+  if (!(await authorizeCourseWrite(req, courseCode, slug))) return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
 
   const ipHash = hashIp(req);
   const { allowed } = await checkIpRateLimit(ipHash);
@@ -20,8 +22,6 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   const cap = await checkDailyCap();
   if (!cap.ok) return NextResponse.json({ error: 'daily cost cap reached — service paused for today' }, { status: 503 });
 
-  const { code: rawCode } = await params;
-  const courseCode = decodeURIComponent(rawCode);
 
   const course = await getCourseByCode(courseCode);
   if (!course) return NextResponse.json({ error: 'not found' }, { status: 404 });

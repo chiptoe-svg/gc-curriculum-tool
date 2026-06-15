@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { isValidSlug } from '@/lib/slug';
+import { authorizeCourseWrite } from '@/lib/sandbox/access';
 import { extractText } from '@/lib/courses/extract-text';
 import { parseProfileFields } from '@/lib/ai/analyze/parse-profile-fields';
 import type { ExtractedMimeType } from '@/lib/courses/extract-text';
@@ -22,7 +22,7 @@ const ALLOWED_MIME_TYPES = new Set<string>([
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 ]);
 
-export async function POST(req: Request, { params: _params }: Ctx): Promise<Response> {
+export async function POST(req: Request, { params }: Ctx): Promise<Response> {
   let form: FormData;
   try {
     form = await req.formData();
@@ -31,7 +31,9 @@ export async function POST(req: Request, { params: _params }: Ctx): Promise<Resp
   }
 
   const slug = typeof form.get('slug') === 'string' ? (form.get('slug') as string) : '';
-  if (!isValidSlug(slug)) {
+  const { code: rawCode } = await params;
+  const courseCode = decodeURIComponent(rawCode);
+  if (!(await authorizeCourseWrite(req, courseCode, slug))) {
     return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
   }
 

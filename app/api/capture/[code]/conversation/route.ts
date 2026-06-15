@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { isValidSlug } from '@/lib/slug';
+import { authorizeCourseWrite } from '@/lib/sandbox/access';
 import { getCourseByCode } from '@/lib/db/courses-queries';
 import {
   getCaptureConversation,
@@ -13,15 +13,15 @@ import { hashIp } from '@/lib/ip-hash';
 
 interface RouteContext { params: Promise<{ code: string }> }
 
-// Slug check + course existence in one place.
+// Auth check + course existence in one place.
 async function authAndCourse(req: Request, codeParam: string): Promise<{ ok: true; courseCode: string } | { ok: false; res: Response }> {
   const url = new URL(req.url);
   const slug = url.searchParams.get('slug') ?? '';
-  if (!isValidSlug(slug)) return { ok: false, res: NextResponse.json({ error: 'invalid slug' }, { status: 401 }) };
+  const courseCode = decodeURIComponent(codeParam);
+  if (!(await authorizeCourseWrite(req, courseCode, slug))) return { ok: false, res: NextResponse.json({ error: 'invalid slug' }, { status: 401 }) };
   const ipHash = hashIp(req);
   const { allowed } = await checkIpRateLimit(ipHash);
   if (!allowed) return { ok: false, res: NextResponse.json({ error: 'rate limit exceeded' }, { status: 429 }) };
-  const courseCode = decodeURIComponent(codeParam);
   const course = await getCourseByCode(courseCode);
   if (!course) return { ok: false, res: NextResponse.json({ error: 'course not found' }, { status: 404 }) };
   return { ok: true, courseCode };

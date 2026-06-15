@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { isValidSlug } from '@/lib/slug';
+import { authorizeCourseWrite } from '@/lib/sandbox/access';
 import { getCourseByCode } from '@/lib/db/courses-queries';
 import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
 import { applyAnalyzeGuards } from '@/lib/ai/analyze/guards';
@@ -23,12 +23,12 @@ export async function POST(req: Request, { params }: Ctx): Promise<Response> {
   // 1. Slug gate
   const url = new URL(req.url);
   const slug = url.searchParams.get('slug') ?? '';
-  if (!isValidSlug(slug)) {
+  const { code } = await params;
+  const decoded = decodeURIComponent(code);
+  if (!(await authorizeCourseWrite(req, decoded, slug))) {
     return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
   }
 
-  const { code } = await params;
-  const decoded = decodeURIComponent(code);
 
   // 2. Course must exist
   const course = await getCourseByCode(decoded);

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { isValidSlug } from '@/lib/slug';
+import { authorizeCourseWrite } from '@/lib/sandbox/access';
 import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
 import { reconcileFeedback } from '@/lib/ai/analyze/reconcile-feedback';
 import type { ReconcileSection } from '@/lib/ai/schemas';
@@ -9,10 +9,10 @@ interface RouteContext { params: Promise<{ code: string }>; }
 export async function POST(req: Request, { params }: RouteContext): Promise<Response> {
   const url = new URL(req.url);
   const slug = url.searchParams.get('slug') ?? '';
-  if (!isValidSlug(slug)) return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
-
   const { code: rawCode } = await params;
   const courseCode = decodeURIComponent(rawCode);
+  if (!(await authorizeCourseWrite(req, courseCode, slug))) return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
+
   const body = await req.json().catch(() => ({})) as Record<string, unknown>;
   const section = body.section as ReconcileSection;
   const feedback = typeof body.feedback === 'string' ? body.feedback.trim() : '';

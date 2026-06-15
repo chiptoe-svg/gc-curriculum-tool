@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { isValidSlug } from '@/lib/slug';
+import { authorizeCourseWrite } from '@/lib/sandbox/access';
 import { putLocal, courseSlug, safeFilename, keyFromLocalUrl, deleteLocal } from '@/lib/storage/local-storage';
 import { getCourseByCode, clearCourseCanvasImport } from '@/lib/db/courses-queries';
 import { hashIp } from '@/lib/ip-hash';
@@ -43,7 +43,7 @@ export async function DELETE(req: Request, { params }: RouteContext): Promise<Re
   const { code } = await params;
   const url = new URL(req.url);
   const slug = url.searchParams.get('slug') ?? '';
-  if (!isValidSlug(slug)) {
+  if (!(await authorizeCourseWrite(req, code, slug))) {
     return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
   }
 
@@ -88,7 +88,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   }
 
   const slug = typeof form.get('slug') === 'string' ? (form.get('slug') as string) : '';
-  if (!isValidSlug(slug)) {
+  if (!(await authorizeCourseWrite(req, code, slug))) {
     return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
   }
 

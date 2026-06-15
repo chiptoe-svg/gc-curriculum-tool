@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { isValidSlug } from '@/lib/slug';
 import { getCourseByCode } from '@/lib/db/courses-queries';
 import { getCourseProfile } from '@/lib/db/course-profile-queries';
 import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
@@ -12,7 +11,7 @@ import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { hashIp } from '@/lib/ip-hash';
 import { updateWikiForSnapshot } from '@/lib/ai/wiki/update';
 import { writeAndPush } from '@/lib/wiki/git-ops';
-import { resolveScopedSession } from '@/lib/sandbox/access';
+import { resolveScopedSession, authorizeCourseWrite } from '@/lib/sandbox/access';
 
 interface RouteContext { params: Promise<{ code: string }> }
 
@@ -26,14 +25,14 @@ const COURSE_CODE_RE = /GC\s+\d{4}[a-z]{0,2}/gi;
 export async function POST(req: Request, { params }: RouteContext): Promise<Response> {
   const url = new URL(req.url);
   const slug = url.searchParams.get('slug') ?? '';
-  if (!isValidSlug(slug)) return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
+  const { code: rawCode } = await params;
+  const courseCode = decodeURIComponent(rawCode);
+  if (!(await authorizeCourseWrite(req, courseCode, slug))) return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
 
   const ipHash = hashIp(req);
   const { allowed } = await checkIpRateLimit(ipHash);
   if (!allowed) return NextResponse.json({ error: 'rate limit exceeded' }, { status: 429 });
 
-  const { code: rawCode } = await params;
-  const courseCode = decodeURIComponent(rawCode);
 
   const course = await getCourseByCode(courseCode);
   if (!course) return NextResponse.json({ error: 'course not found' }, { status: 404 });
@@ -172,14 +171,14 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
 export async function GET(req: Request, { params }: RouteContext): Promise<Response> {
   const url = new URL(req.url);
   const slug = url.searchParams.get('slug') ?? '';
-  if (!isValidSlug(slug)) return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
+  const { code: rawCode } = await params;
+  const courseCode = decodeURIComponent(rawCode);
+  if (!(await authorizeCourseWrite(req, courseCode, slug))) return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
 
   const ipHash = hashIp(req);
   const { allowed } = await checkIpRateLimit(ipHash);
   if (!allowed) return NextResponse.json({ error: 'rate limit exceeded' }, { status: 429 });
 
-  const { code: rawCode } = await params;
-  const courseCode = decodeURIComponent(rawCode);
   const includeRetired = url.searchParams.get('includeRetired') === 'true';
 
   const course = await getCourseByCode(courseCode);
