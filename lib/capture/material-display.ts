@@ -57,16 +57,18 @@ export function hasMaterials(count: number): boolean {
 }
 
 /**
- * The Step 1 materials gate shows only on a genuinely fresh audit: the chat
- * stage, no messages yet, and the landing sub-step still on 'materials'.
- * Resuming (messages exist) or any non-chat stage skips it.
+ * The Step 1 materials gate shows in the chat stage whenever the landing
+ * sub-step is on 'materials'. This makes the wizard reversible: the interview's
+ * "Back to materials" flips landingStep to 'materials' (the conversation in
+ * state is preserved), and "Continue to interview" returns to 'interview'. A
+ * resumed conversation defaults landingStep to 'interview' so it lands straight
+ * in the interview. Non-chat stages skip it.
  */
 export function shouldShowMaterialsStep(args: {
   stage: string;
-  messagesCount: number;
   landingStep: 'materials' | 'interview';
 }): boolean {
-  return args.stage === 'chat' && args.messagesCount === 0 && args.landingStep === 'materials';
+  return args.stage === 'chat' && args.landingStep === 'materials';
 }
 
 export interface CatalogCourseFields {

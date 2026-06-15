@@ -77,16 +77,20 @@ describe('hasMaterials', () => {
 });
 
 describe('shouldShowMaterialsStep', () => {
-  it('shows only on a fresh chat landing with landingStep=materials', () => {
-    expect(shouldShowMaterialsStep({ stage: 'chat', messagesCount: 0, landingStep: 'materials' })).toBe(true);
+  it('shows in the chat stage whenever landingStep=materials', () => {
+    expect(shouldShowMaterialsStep({ stage: 'chat', landingStep: 'materials' })).toBe(true);
   });
   it('hides once advanced to interview', () => {
-    expect(shouldShowMaterialsStep({ stage: 'chat', messagesCount: 0, landingStep: 'interview' })).toBe(false);
+    expect(shouldShowMaterialsStep({ stage: 'chat', landingStep: 'interview' })).toBe(false);
   });
-  it('hides when resuming (messages exist) or off the chat stage', () => {
-    expect(shouldShowMaterialsStep({ stage: 'chat', messagesCount: 3, landingStep: 'materials' })).toBe(false);
-    expect(shouldShowMaterialsStep({ stage: 'review', messagesCount: 0, landingStep: 'materials' })).toBe(false);
-    expect(shouldShowMaterialsStep({ stage: 'generating', messagesCount: 0, landingStep: 'materials' })).toBe(false);
+  it('is reversible: landingStep alone gates it, so "Back to materials" works mid-conversation', () => {
+    // messagesCount no longer gates the step — the conversation in state is preserved
+    // while the wizard shows Step 1, and Continue returns to the interview intact.
+    expect(shouldShowMaterialsStep({ stage: 'chat', landingStep: 'materials' })).toBe(true);
+  });
+  it('hides off the chat stage', () => {
+    expect(shouldShowMaterialsStep({ stage: 'review', landingStep: 'materials' })).toBe(false);
+    expect(shouldShowMaterialsStep({ stage: 'generating', landingStep: 'materials' })).toBe(false);
   });
 });
 

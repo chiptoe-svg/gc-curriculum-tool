@@ -101,8 +101,15 @@ export function CaptureClient({
   const [chooserMode, setChooserMode] = useState<'fresh' | 'continue'>(
     priorSnapshotInfo ? 'continue' : 'fresh',
   );
-  // Fresh-audit landing sub-step: confirm materials before the interview opens.
-  const [landingStep, setLandingStep] = useState<'materials' | 'interview'>('materials');
+  // Wizard sub-step: confirm materials (Step 1) before the interview (Step 2).
+  // Reversible via the interview's "Back to materials" button. A resumed
+  // conversation (messages already exist) starts on 'interview' so it lands
+  // straight in the chat rather than re-confirming materials first.
+  const [landingStep, setLandingStep] = useState<'materials' | 'interview'>(
+    initialMessages.length > 0 ? 'interview' : 'materials',
+  );
+  // Collapsed "Setup & history" disclosure on the interview step.
+  const [setupOpen, setSetupOpen] = useState(false);
 
   const handleSnapshotCreated = useCallback(() => {
     setSnapshotsRefreshKey(k => k + 1);
@@ -268,7 +275,7 @@ export function CaptureClient({
   // goal-first hero + the chooser/Start (inside CaptureChatPanel) lead, and the
   // setup trays collapse below. Every other state keeps the trays up top.
   const isLanding = stage === 'chat' && messages.length === 0;
-  const showMaterialsStep = shouldShowMaterialsStep({ stage, messagesCount: messages.length, landingStep });
+  const showMaterialsStep = shouldShowMaterialsStep({ stage, landingStep });
   const trays = (
     <>
       <CaptureHelpPanel />
@@ -305,15 +312,44 @@ export function CaptureClient({
         />
       ) : (
         <>
-      {/* Hide the setup trays while generating (2026-06-12 walkthrough):
-          they're irrelevant mid-synthesis, and the generating card below
-          explains what's actually happening instead.
-          Also hidden in the review stage (2026-06-12 spec): Step 2 of 2 is a
-          focused review surface; the setup panels are for Step 1 / the chat. */}
-      {!isLanding && stage !== 'generating' && stage !== 'reconcile' && stage !== 'review' && trays}
-
       {stage === 'chat' && (
         <>
+          {/* Step 2 wizard header — mirrors Step 1 (CaptureMaterialsStep). "Back
+              to materials" flips landingStep back to 'materials'; the conversation
+              in state is preserved, so Continue returns to it intact. */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 font-mono-plex text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+              <span>Step 2 of 2 · Interview</span>
+              <span aria-hidden>○</span><span aria-hidden>──</span><span aria-hidden className="text-foreground">●</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setLandingStep('materials')}
+              className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
+            >
+              ← Back to materials
+            </button>
+          </div>
+
+          {/* Setup &amp; history — per-interview context (help, Canvas import,
+              materials, snapshots) collapsed out of the way, one click away.
+              Hidden on the first-run landing where the hero leads. The trays
+              mount only when opened (lazy). */}
+          {!isLanding && (
+            <div className="rounded-lg border bg-card">
+              <button
+                type="button"
+                onClick={() => setSetupOpen(o => !o)}
+                className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm font-medium hover:bg-muted/50"
+              >
+                <span aria-hidden className={'inline-block text-muted-foreground transition-transform ' + (setupOpen ? '' : '-rotate-90')} style={{ fontSize: '10px', lineHeight: 1 }}>▼</span>
+                Setup &amp; history
+                <span className="font-normal text-muted-foreground">— materials, Canvas import, snapshots, help</span>
+              </button>
+              {setupOpen && <div className="space-y-6 border-t p-4">{trays}</div>}
+            </div>
+          )}
+
           {isLanding && (
             <CaptureHero
               courseCode={courseCode}
