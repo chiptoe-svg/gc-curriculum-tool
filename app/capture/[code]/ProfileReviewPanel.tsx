@@ -1200,108 +1200,6 @@ export function ProfileReviewPanel({
         </div>
       )}
 
-      {/* Completion state (2026-06-12 walkthrough: after approving, the page
-          "stays" with only a small green line — faculty wondered if more was
-          required). A successful capture replaces the approve form with an
-          explicit you're-done card + where the record went + next steps. */}
-      {snapshotOpen && snapshotMessage?.kind === 'ok' && (
-        <div
-          ref={snapshotPanelRef}
-          className="scroll-mt-4 rounded-md border-2 border-green-600 bg-green-50 px-5 py-4 dark:bg-green-950/30"
-        >
-          <h3 className="text-sm font-semibold text-green-900 dark:text-green-200">
-            ✓ Captured — {courseCode} is now part of the program record.
-          </h3>
-          <p className="mt-1 text-xs text-green-900/80 dark:text-green-200/80">
-            An immutable, dated snapshot was recorded. The program coverage matrix will score it on
-            its next refresh, and the curriculum wiki regenerates from it automatically.
-            {' '}<span className="font-medium">Returning you to the course list…</span>
-          </p>
-          <div className="mt-3 flex flex-wrap items-center gap-3 text-xs">
-            <a
-              href={`http://130.127.162.180:3000/view/${encodeURIComponent(courseCode)}`}
-              className="rounded-md border border-green-700 bg-white px-3 py-1.5 font-medium text-green-900 hover:bg-green-100 dark:bg-transparent dark:text-green-200"
-            >
-              View the public profile →
-            </a>
-            {/* No showOkfDownload guard: this card only renders when a snapshot was just captured, so one provably exists. */}
-            <a
-              href={okfHref}
-              download
-              className="rounded-md border border-green-700 bg-white px-3 py-1.5 font-medium text-green-900 hover:bg-green-100 dark:bg-transparent dark:text-green-200"
-              title="Download this course's saved profile as portable Markdown (OKF)"
-            >
-              ↓ Markdown
-            </a>
-            <a
-              href={`/program?slug=${encodeURIComponent(slug)}`}
-              className="rounded-md border border-input bg-background px-3 py-1.5 font-medium hover:bg-muted"
-            >
-              See the program matrix
-            </a>
-            <a
-              href="http://130.127.162.180:3000/"
-              className="rounded-md border border-input bg-background px-3 py-1.5 font-medium hover:bg-muted"
-            >
-              Back to the course list
-            </a>
-          </div>
-        </div>
-      )}
-
-      {snapshotOpen && snapshotMessage?.kind !== 'ok' && (
-        <div
-          ref={snapshotPanelRef}
-          className="scroll-mt-4 rounded-md border-2 border-amber-400 bg-card px-4 py-4 space-y-3 shadow-md"
-        >
-          <header>
-            <h3 className="text-sm font-semibold">Approve this profile</h3>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Captures the current draft as a permanent, dated, immutable record. The draft stays editable; later edits create a new draft you can approve again.
-            </p>
-          </header>
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground" htmlFor="snapshot-caption">Caption (optional)</label>
-            <input
-              id="snapshot-caption"
-              type="text"
-              value={snapshotCaption}
-              onChange={e => setSnapshotCaption(e.target.value)}
-              placeholder="Spring 2026 baseline"
-              className="w-full rounded border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground" htmlFor="snapshot-note">What changed since the last snapshot? (optional)</label>
-            <textarea
-              id="snapshot-note"
-              value={snapshotNote}
-              onChange={e => setSnapshotNote(e.target.value)}
-              rows={2}
-              placeholder="Adjusted the production-file-prep depth based on instructor reply"
-              className="w-full resize-y rounded border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-            />
-          </div>
-          <div className="flex items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={handleConfirmAndSnapshot}
-              disabled={snapshotting || !approveUnlocked}
-              title={!approveUnlocked ? approveLockTitle : undefined}
-              className="rounded-md bg-foreground px-4 py-1.5 text-sm font-semibold text-background shadow-sm hover:bg-foreground/85 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {snapshotting ? 'Capturing…' : 'Approve & capture'}
-            </button>
-          </div>
-          {/* kind is already narrowed to 'error' here — the 'ok' case renders
-              the completion card above instead of this form. */}
-          {snapshotMessage && (
-            <p className="text-xs text-destructive">
-              {snapshotMessage.text}
-            </p>
-          )}
-        </div>
-      )}
 
       {snapshotMessage && !snapshotOpen && (
         <p className={'text-xs ' + (snapshotMessage.kind === 'ok' ? 'text-green-700' : 'text-destructive')}>
@@ -1581,6 +1479,109 @@ export function ProfileReviewPanel({
           </div>
         )}
       </div>
+
+      {/* Completion state (2026-06-12 walkthrough: after approving, the page
+          "stays" with only a small green line — faculty wondered if more was
+          required). A successful capture replaces the approve form with an
+          explicit you're-done card + where the record went + next steps. */}
+      {snapshotOpen && snapshotMessage?.kind === 'ok' && (
+        <div
+          ref={snapshotPanelRef}
+          className="scroll-mt-4 rounded-md border-2 border-green-600 bg-green-50 px-5 py-4 dark:bg-green-950/30"
+        >
+          <h3 className="text-sm font-semibold text-green-900 dark:text-green-200">
+            ✓ Captured — {courseCode} is now part of the program record.
+          </h3>
+          <p className="mt-1 text-xs text-green-900/80 dark:text-green-200/80">
+            An immutable, dated snapshot was recorded. The program coverage matrix will score it on
+            its next refresh, and the curriculum wiki regenerates from it automatically.
+            {' '}<span className="font-medium">Returning you to the course list…</span>
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-3 text-xs">
+            <a
+              href={`http://130.127.162.180:3000/view/${encodeURIComponent(courseCode)}`}
+              className="rounded-md border border-green-700 bg-white px-3 py-1.5 font-medium text-green-900 hover:bg-green-100 dark:bg-transparent dark:text-green-200"
+            >
+              View the public profile →
+            </a>
+            {/* No showOkfDownload guard: this card only renders when a snapshot was just captured, so one provably exists. */}
+            <a
+              href={okfHref}
+              download
+              className="rounded-md border border-green-700 bg-white px-3 py-1.5 font-medium text-green-900 hover:bg-green-100 dark:bg-transparent dark:text-green-200"
+              title="Download this course's saved profile as portable Markdown (OKF)"
+            >
+              ↓ Markdown
+            </a>
+            <a
+              href={`/program?slug=${encodeURIComponent(slug)}`}
+              className="rounded-md border border-input bg-background px-3 py-1.5 font-medium hover:bg-muted"
+            >
+              See the program matrix
+            </a>
+            <a
+              href="http://130.127.162.180:3000/"
+              className="rounded-md border border-input bg-background px-3 py-1.5 font-medium hover:bg-muted"
+            >
+              Back to the course list
+            </a>
+          </div>
+        </div>
+      )}
+
+      {snapshotOpen && snapshotMessage?.kind !== 'ok' && (
+        <div
+          ref={snapshotPanelRef}
+          className="scroll-mt-4 rounded-md border-2 border-amber-400 bg-card px-4 py-4 space-y-3 shadow-md"
+        >
+          <header>
+            <h3 className="text-sm font-semibold">Approve this profile</h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Captures the current draft as a permanent, dated, immutable record. The draft stays editable; later edits create a new draft you can approve again.
+            </p>
+          </header>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground" htmlFor="snapshot-caption">Caption (optional)</label>
+            <input
+              id="snapshot-caption"
+              type="text"
+              value={snapshotCaption}
+              onChange={e => setSnapshotCaption(e.target.value)}
+              placeholder="Spring 2026 baseline"
+              className="w-full rounded border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground" htmlFor="snapshot-note">What changed since the last snapshot? (optional)</label>
+            <textarea
+              id="snapshot-note"
+              value={snapshotNote}
+              onChange={e => setSnapshotNote(e.target.value)}
+              rows={2}
+              placeholder="Adjusted the production-file-prep depth based on instructor reply"
+              className="w-full resize-y rounded border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+          </div>
+          <div className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={handleConfirmAndSnapshot}
+              disabled={snapshotting || !approveUnlocked}
+              title={!approveUnlocked ? approveLockTitle : undefined}
+              className="rounded-md bg-foreground px-4 py-1.5 text-sm font-semibold text-background shadow-sm hover:bg-foreground/85 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {snapshotting ? 'Capturing…' : 'Approve & capture'}
+            </button>
+          </div>
+          {/* kind is already narrowed to 'error' here — the 'ok' case renders
+              the completion card above instead of this form. */}
+          {snapshotMessage && (
+            <p className="text-xs text-destructive">
+              {snapshotMessage.text}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* ── 7. STICKY ACTION BAR ── */}
       <div className="sticky bottom-0 z-10 border-t bg-card px-4 py-3 shadow-[0_-1px_4px_rgba(0,0,0,0.06)]">
