@@ -77,10 +77,13 @@ describe('ProfileReviewPanel — OKF download link', () => {
       expect(link.getAttribute('href')).toBe('http://130.127.162.180:3000/view/GC%203800/okf');
       expect(link.getAttribute('download')).not.toBeNull();
     }
+    const bundle = screen.getByRole('link', { name: /Bundle/ });
+    expect(bundle).toHaveAttribute('href', expect.stringContaining('/okf-bundle'));
   });
 
   it('hides the download link when no snapshot exists', () => {
     renderPanel(false);
     expect(screen.queryByRole('link', { name: /markdown/i })).toBeNull();
+    expect(screen.queryByRole('link', { name: /Bundle/ })).toBeNull();
   });
 });

@@ -1117,6 +1117,7 @@ export function ProfileReviewPanel({
   // public LAN projection). The route sets Content-Disposition: attachment,
   // so it downloads even cross-origin where the `download` attr is ignored.
   const okfHref = `http://130.127.162.180:3000/view/${encodeURIComponent(courseCode)}/okf`;
+  const bundleHref = `http://130.127.162.180:3000/view/${encodeURIComponent(courseCode)}/okf-bundle`;
   // hasSnapshot: a snapshot existed at page load. snapshotMessage ok: one was
   // just captured this session (exists now even though it didn't at load).
   const showOkfDownload = Boolean(hasSnapshot) || snapshotMessage?.kind === 'ok';
@@ -1172,14 +1173,24 @@ export function ProfileReviewPanel({
               ← Back to the interview
             </button>
             {showOkfDownload && (
-              <a
-                href={okfHref}
-                download
-                className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
-                title="Download this course's saved profile as portable Markdown (OKF)"
-              >
-                ↓ Markdown
-              </a>
+              <>
+                <a
+                  href={okfHref}
+                  download
+                  className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
+                  title="Download this course's saved profile as portable Markdown (OKF)"
+                >
+                  ↓ Markdown
+                </a>
+                <a
+                  href={bundleHref}
+                  download
+                  className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
+                  title="Download the full course as a self-contained OKF bundle (.zip): profile, transcript, and all materials"
+                >
+                  ↓ Bundle (.zip)
+                </a>
+              </>
             )}
           </div>
         </div>
@@ -1511,6 +1522,14 @@ export function ProfileReviewPanel({
               title="Download this course's saved profile as portable Markdown (OKF)"
             >
               ↓ Markdown
+            </a>
+            <a
+              href={bundleHref}
+              download
+              className="rounded-md border border-green-700 bg-white px-3 py-1.5 font-medium text-green-900 hover:bg-green-100 dark:bg-transparent dark:text-green-200"
+              title="Download the full course as a self-contained OKF bundle (.zip): profile, transcript, and all materials"
+            >
+              ↓ Bundle (.zip)
             </a>
             <a
               href={`/program?slug=${encodeURIComponent(slug)}`}
