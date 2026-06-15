@@ -4,6 +4,7 @@ import Link from 'next/link';
 import type { CourseStatusRow, CaptureStatus } from '@/lib/db/capture-status-queries';
 import type { CourseRosterRow, CourseDataState } from '@/lib/db/courses-queries';
 import { formatCourseLabel } from '@/lib/courses/parse-course-code';
+import { partitionRosterRows } from '@/lib/courses/group-by-scope-status';
 import { CourseRosterControls } from './CourseRosterControls';
 import { CourseClassControls } from './CourseClassControls';
 
@@ -277,7 +278,10 @@ export function CoursesIndex({ rows, rosterRows, slug, pairedByCode }: Props) {
     rosterRows.map((r) => [r.code, r.dataState]),
   );
 
-  const groups = groupByLevel(rows);
+  // Segregate non-GC / non-offered courses out of the main level-grouped roster
+  // into their own sections (External/sandbox, Proposed). gc = scope gc + offered.
+  const partition = partitionRosterRows(rows);
+  const groups = groupByLevel(partition.gc);
 
   let globalIndex = 0;
   const groupEntries = Array.from(groups.entries());
@@ -287,8 +291,8 @@ export function CoursesIndex({ rows, rosterRows, slug, pairedByCode }: Props) {
       {/* Roster controls (preload + add-a-course) */}
       <CourseRosterControls slug={slug} />
 
-      {/* Status counters */}
-      <StatusCounters rows={rows} />
+      {/* Status counters — reflect the GC roster (the segregated sections are separate) */}
+      <StatusCounters rows={partition.gc} />
 
       {/* Column header */}
       <div className="mb-2 flex items-center gap-4 px-3">
@@ -327,6 +331,43 @@ export function CoursesIndex({ rows, rosterRows, slug, pairedByCode }: Props) {
           />
         );
       })}
+
+      {/* Segregated sections — shown only when non-empty (populated via the
+          external-access / proposed-course flows; both are separate plans). */}
+      {partition.proposed.length > 0 && (
+        <section className="mt-10">
+          <h2 className="mb-2 px-3 font-body-sans text-[10px] uppercase tracking-[0.18em] text-amber-700 dark:text-amber-400">
+            Proposed · test the waters
+          </h2>
+          {partition.proposed.map((row, i) => (
+            <CourseRow
+              key={row.code}
+              row={row}
+              slug={slug}
+              index={globalIndex + i}
+              dataState={dataStateByCode.get(row.code)}
+              pairedCodes={pairedByCode[row.code] ?? []}
+            />
+          ))}
+        </section>
+      )}
+      {partition.external.length > 0 && (
+        <section className="mt-10">
+          <h2 className="mb-2 px-3 font-body-sans text-[10px] uppercase tracking-[0.18em] text-blue-700 dark:text-blue-400">
+            External / sandbox
+          </h2>
+          {partition.external.map((row, i) => (
+            <CourseRow
+              key={row.code}
+              row={row}
+              slug={slug}
+              index={globalIndex + partition.proposed.length + i}
+              dataState={dataStateByCode.get(row.code)}
+              pairedCodes={pairedByCode[row.code] ?? []}
+            />
+          ))}
+        </section>
+      )}
 
       {/* Empty state */}
       {rows.length === 0 && (
