@@ -194,48 +194,6 @@
   </div>
 </header>
 
-<div class="callout" style="margin: 0 0 48px;">
-  <div class="callout-title">Currently in production</div>
-  <p>The framework described in this document is implemented as a working tool. The active build runs on a Mac on the Clemson LAN, gated by HTTP Basic Auth. A legacy three-tool prototype is preserved on Vercel as the public M-trial. <a href="./STATE.md">STATE.md</a> is the developer-facing source of truth for what's live; the table below is the current snapshot.</p>
-  <table style="width:100%; border-collapse: collapse; margin: 12px 0 12px;">
-    <thead>
-      <tr style="text-align: left; border-bottom: 1px solid currentColor;">
-        <th style="padding: 6px 10px 6px 0;">Surface</th>
-        <th style="padding: 6px 10px;">Status</th>
-        <th style="padding: 6px 10px;">Access</th>
-        <th style="padding: 6px 0 6px 10px;">Notes</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr style="border-bottom: 1px solid rgba(0,0,0,0.06);">
-        <td style="padding: 6px 10px 6px 0;"><code>/capture/&lt;course-code&gt;</code></td>
-        <td style="padding: 6px 10px;"><span class="status-tag status-live">Live (faculty trial)</span></td>
-        <td style="padding: 6px 10px;">Clemson LAN / Basic Auth</td>
-        <td style="padding: 6px 0 6px 10px;">Per-course audit conversation; supersedes the M-trial prototype for new captures.</td>
-      </tr>
-      <tr style="border-bottom: 1px solid rgba(0,0,0,0.06);">
-        <td style="padding: 6px 10px 6px 0;"><code>/program</code></td>
-        <td style="padding: 6px 10px;"><span class="status-tag status-live">Live (faculty trial)</span></td>
-        <td style="padding: 6px 10px;">Clemson LAN / Basic Auth</td>
-        <td style="padding: 6px 0 6px 10px;">Phase 1A coverage matrix; confirmed snapshots × career-target sub-competencies.</td>
-      </tr>
-      <tr style="border-bottom: 1px solid rgba(0,0,0,0.06);">
-        <td style="padding: 6px 10px 6px 0;"><code>/explore/&lt;course-code&gt;</code></td>
-        <td style="padding: 6px 10px;"><span class="status-tag status-live">Live (faculty trial)</span></td>
-        <td style="padding: 6px 10px;">Clemson LAN / Basic Auth</td>
-        <td style="padding: 6px 0 6px 10px;">Snapshot-based alignment analyses and what-if scenarios.</td>
-      </tr>
-      <tr style="border-bottom: 1px solid rgba(0,0,0,0.06);">
-        <td style="padding: 6px 10px 6px 0;"><code>/settings</code></td>
-        <td style="padding: 6px 10px;"><span class="status-tag status-live">Live (faculty trial)</span></td>
-        <td style="padding: 6px 10px;">Clemson LAN / Basic Auth</td>
-        <td style="padding: 6px 0 6px 10px;">Per-function AI model tuning. In the LAN deployment, dropdowns reflect the configured provider (OpenAI, Anthropic, local omlx, or Clemson RCD campus); the public prototype does not expose model configuration.</td>
-      </tr>
-    </tbody>
-  </table>
-  <p style="margin-bottom: 0;">For the day-to-day workflow and screen-by-screen description, see the <a href="./superpowers/vision/gc-curriculum-tool-vision.html#prototype">Vision's "What's live now"</a> section. For a how-to guide on CourseCapture and Explore, see the <a href="./using-coursecapture-and-explore.html">faculty guide</a>.</p>
-</div>
-
 <section id="problem">
   <h2><span class="num">§ 1</span>The problem this addresses</h2>
 
