@@ -25,7 +25,7 @@ describe('ReconciliationStepper', () => {
   it('submitting feedback fetches + renders proposals for accept', async () => {
     render(<ReconciliationStepper profile={profile} slug="s" courseCode="GC 1" onComplete={() => {}} />);
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'tighten this' } });
-    fireEvent.click(screen.getByRole('button', { name: /get suggestions/i }));
+    fireEvent.click(screen.getByRole('button', { name: /make suggested change/i }));
     await waitFor(() => expect(screen.getByText(/lower Do/i)).toBeTruthy());
   });
 });

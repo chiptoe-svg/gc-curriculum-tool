@@ -29,8 +29,12 @@ interface Props {
 // Helpers
 // ---------------------------------------------------------------------------
 
-const STEPS: ReconcileSection[] = ['apparent_outcomes', 'incoming', 'outgoing'];
-const STEP_TITLES = ['Apparent outcomes', 'Incoming expectations', 'Outgoing KUDs'];
+// The "Outgoing KUDs" step was removed 2026-06-15 (operator): it re-listed the
+// competency K/U/D table that the main review panel already shows under "Here's
+// what the interviewer concluded", so it was redundant. Reconciliation now
+// covers the two sections that the main panel does NOT let you converse about.
+const STEPS: ReconcileSection[] = ['apparent_outcomes', 'incoming'];
+const STEP_TITLES = ['Apparent outcomes', 'Incoming expectations'];
 
 function depthStr(n: number | null | undefined): string {
   return n !== null && n !== undefined ? String(n) : '–';
@@ -170,7 +174,7 @@ function ProposalCard({
 
 export function ReconciliationStepper({ profile, slug, courseCode, onComplete }: Props) {
   const [working, setWorking] = useState<CaptureProfile>(profile);
-  const [step, setStep] = useState<0 | 1 | 2>(0);
+  const [step, setStep] = useState<0 | 1>(0);
   const [feedback, setFeedback] = useState('');
   const [proposals, setProposals] = useState<ReconcileProposal[] | null>(null);
   const [decisions, setDecisions] = useState<Decision[]>([]);
@@ -321,7 +325,7 @@ export function ReconciliationStepper({ profile, slug, courseCode, onComplete }:
     setFeedback('');
     setDecisions([]);
     setError(null);
-    setStep(s => Math.max(0, Math.min(2, s + direction)) as 0 | 1 | 2);
+    setStep(s => Math.max(0, Math.min(STEPS.length - 1, s + direction)) as 0 | 1);
   }
 
   function handleContinueToReview() {
@@ -330,7 +334,7 @@ export function ReconciliationStepper({ profile, slug, courseCode, onComplete }:
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
-  const isLast = step === 2;
+  const isLast = step === STEPS.length - 1;
 
   return (
     <div className="space-y-6">
@@ -344,9 +348,9 @@ export function ReconciliationStepper({ profile, slug, courseCode, onComplete }:
                 i === step ? 'text-foreground font-semibold' : 'text-muted-foreground',
               ].join(' ')}
             >
-              Step {i + 1} of 3
+              Step {i + 1} of {STEPS.length}
             </span>
-            {i < 2 && <span className="text-muted-foreground/50">›</span>}
+            {i < STEPS.length - 1 && <span className="text-muted-foreground/50">›</span>}
           </span>
         ))}
       </div>
@@ -378,10 +382,11 @@ export function ReconciliationStepper({ profile, slug, courseCode, onComplete }:
               <button
                 type="button"
                 onClick={handleGetSuggestions}
-                disabled={pending}
-                className="rounded-md border border-stone-700 bg-stone-800 px-4 py-1.5 text-sm font-medium text-white hover:bg-stone-700 disabled:opacity-50"
+                disabled={pending || feedback.trim().length === 0}
+                title={feedback.trim().length === 0 ? 'Type what feels off first to enable suggestions' : undefined}
+                className="rounded-md border border-stone-700 bg-stone-800 px-4 py-1.5 text-sm font-medium text-white hover:bg-stone-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {pending ? 'Loading…' : 'Get suggestions'}
+                {pending ? 'Loading…' : 'Make Suggested Change'}
               </button>
               {error && <p className="text-xs text-destructive">{error}</p>}
             </div>
