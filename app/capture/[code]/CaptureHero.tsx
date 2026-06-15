@@ -45,9 +45,9 @@ export function CaptureHero({
       <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
         Grounded in your materials, the AI interviews you and builds a record of what your
         course develops in students: not what the syllabus aspires to do, but what the evidence
-        shows, and at what depth. Everything we use to make the program better for
-        students reads from it, including the curriculum map, prerequisite checks, and the line
-        from coursework to careers. It can only see what you surface here, so the most valuable
+        shows, and at what depth. This will become the foundation for everything that helps us
+        strengthen the program for students: the curriculum map, prerequisite checks, and the
+        line from coursework to careers. It can only see what you surface here, so the most valuable
         thing you can do is name, plainly, what your students actually do and how deeply they do
         it. A strength you leave unspoken is one the program can&apos;t build on, for this class
         or the ones who come after. Take as much time as you need to get it right; you can stop
