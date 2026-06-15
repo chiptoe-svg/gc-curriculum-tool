@@ -319,7 +319,7 @@ export function CapturedView({ profile, capturedAt }: Props) {
           {suggestedRewrites.length > 0 && (
             <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-900/40 dark:bg-amber-900/10">
               <p className="mb-2 font-mono-plex text-[10px] uppercase tracking-[0.16em] text-amber-900 dark:text-amber-300">
-                Proposed catalog rewrite
+                Proposed learning-objective rewrite
               </p>
               <ul className="space-y-1.5">
                 {suggestedRewrites.map((rev, i) => (
