@@ -46,9 +46,10 @@ export function CaptureHero({
         The AI interviews you about your course — grounded in your materials — and builds an
         evidence record: not what the syllabus hopes, but what students actually attain, at
         honest depth. Everything downstream reads from it — the curriculum map, prerequisite
-        checks, career alignment — and it can only see what you surface here, so capture
-        thoroughly, not thinly: a competency you don&apos;t make explicit is one nothing
-        downstream can map. A few minutes; you can stop and pick up where you left off anytime.
+        checks, career alignment — and it can only see what you surface here. So the single
+        most valuable thing you can do is let the interview surface, explicitly, what students
+        actually do and at what depth: a competency you don&apos;t make explicit is one
+        nothing downstream can map. A few minutes; you can stop and pick up where you left off anytime.
       </p>
       <p
         className={
