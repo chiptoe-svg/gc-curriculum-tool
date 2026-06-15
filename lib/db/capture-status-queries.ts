@@ -11,6 +11,8 @@ export interface CourseStatusRow {
   level: number | null;
   category: CourseCategory;
   buildsToCareer: boolean;
+  scope: 'gc' | 'external';
+  courseStatus: 'offered' | 'proposed' | 'sandbox' | 'retired';
   catalogUrl: string | null;
   status: CaptureStatus;
   lastCapturedAt: Date | null;   // most-recent non-retired snapshot createdAt
@@ -88,6 +90,8 @@ export async function listCoursesWithStatus(): Promise<CourseStatusRow[]> {
       level: c.level ?? null,
       category: c.category,
       buildsToCareer: c.buildsToCareer,
+      scope: c.scope,
+      courseStatus: c.status,
       catalogUrl: c.catalogUrl ?? null,
       status,
       lastCapturedAt: snapshot?.createdAt ?? null,

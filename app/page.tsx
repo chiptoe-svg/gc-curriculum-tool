@@ -5,6 +5,7 @@ import { groupByCategory } from '@/lib/courses/group-by-category';
 import { CATEGORY_LABELS } from '@/lib/db/course-category-seed';
 import { listPairedCodesForCourses } from '@/lib/db/course-codes-queries';
 import { formatCourseLabel, parseCourseCode } from '@/lib/courses/parse-course-code';
+import { isProgramVisible } from '@/lib/courses/program-visibility';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,7 +58,7 @@ export default async function HomePage() {
     arr.push({ pairedCode: pc.pairedCode });
     pairedByCode.set(pc.courseCode, arr);
   }
-  const groups = groupByCategory(rows);
+  const groups = groupByCategory(rows.filter(r => isProgramVisible({ scope: r.scope, status: r.courseStatus })));
 
   // Dedicated add-a-course page: focuses on code / title / catalog URL → straight
   // into CourseCapture.  Uses the funnel origin (HTTPS, Basic Auth) because it
