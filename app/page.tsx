@@ -35,10 +35,6 @@ export default async function HomePage() {
   }
   const groups = groupByCategory(rows);
 
-  const facultyHubHref = funnelOrigin && slug
-    ? `${funnelOrigin}/courses?slug=${encodeURIComponent(slug)}`
-    : null;
-
   // Dedicated add-a-course page: focuses on code / title / catalog URL → straight
   // into CourseCapture.  Uses the funnel origin (HTTPS, Basic Auth) because it
   // is a write path; same slug forwarding mechanism as other faculty links here.
@@ -75,15 +71,6 @@ export default async function HomePage() {
                 💬 Ask Curriculum Adviser
               </a>
             )}
-            {facultyHubHref && (
-              <a
-                href={facultyHubHref}
-                className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
-                title="Faculty hub (requires login)"
-              >
-                Faculty hub →
-              </a>
-            )}
           </div>
         </div>
       </header>
@@ -91,12 +78,15 @@ export default async function HomePage() {
       <main className="mx-auto max-w-5xl px-6 py-8">
         <div className="mb-8 flex items-start justify-between gap-4">
           <p className="max-w-3xl text-sm text-muted-foreground">
-            What every course in the Graphic Communications curriculum builds.
-            Anyone can read profiles; faculty edit via the HTTPS hub. The{' '}
+            A living map of the Graphic Communications curriculum. The tool distills the
+            essence of each course — the knowledge, understanding, and skills students
+            actually walk away with, and the evidence behind them — into a shared course
+            profile, then assembles those profiles into a program-wide picture of how the
+            curriculum builds toward the careers it prepares students for. Anyone can read
+            the profiles. The{' '}
             <span title="Builds toward career outcomes" className="inline-flex">
               <Target className="inline h-3.5 w-3.5 -translate-y-px text-muted-foreground" aria-hidden />
-            </span>{' '}marks
-            courses that build toward our career outcomes.
+            </span>{' '}marks courses that build toward our career outcomes.
           </p>
           {addCourseHref && (
             <a
