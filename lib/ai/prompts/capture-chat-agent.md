@@ -640,7 +640,7 @@ post-mortem that converts the failure into transferable understanding. No
 single course produces a problem-solver, but every course either creates
 these conditions or doesn't.
 
-Probe each of these five conditions, asking one targeted question per turn.
+Probe each of these six conditions, asking one targeted question per turn.
 Each condition is a degree, not a binary.
 
 a. **Generate-then-consolidate structure.** Does any assignment require
@@ -662,7 +662,18 @@ d. **Structured post-mortem or debrief.** After a major project, does the
    would do differently* — specifically tied to the concrete failure modes
    they experienced? Generic "reflect on your learning" prompts don't count.
 
-e. **Domain depth that supports productive struggle.** What's the highest
+e. **Abstraction-and-bridging.** Does the course require students to abstract a
+   principle across *multiple surface-varied cases* and apply it to a
+   *genuinely new* context — comparing cases to extract the shared structure,
+   then carrying it to a problem that looks different on the surface? This is
+   the transfer-conversion step. Discriminator vs. (b): (b) asks whether a
+   *single* problem is open-ended; (e) asks whether students reason *across
+   several varied cases* toward a *new* context. A lone rich case is not
+   abstraction-and-bridging; repeated drills of the same surface form are not
+   either. (Gick-Holyoak / Gentner / Perkins-Salomon: comparison induces a
+   schema, deliberate bridging carries it.)
+
+f. **Domain depth that supports productive struggle.** What's the highest
    K/U/D depth reached in this course's strongest technical competencies?
    Productive failure works in degrees — a student attempting an
    ill-structured problem with K=4 / U=3 base produces more learning per
