@@ -69,12 +69,20 @@ export async function authorizeCourseWrite(
   return sess?.courseCode === code;
 }
 
-/** Read gate for /view, /okf, /okf-bundle. */
+/**
+ * Read gate for /view, /okf, /okf-bundle. Readable if the course is program-
+ * visible, OR the operator presents a valid faculty `slug` (the operator HAS it
+ * and uses it on every faculty surface — this lets them open + bundle a sandbox
+ * course they're reviewing; testers never have the slug), OR the requester holds
+ * a scoped session bound to exactly this course.
+ */
 export async function isCourseReadableBy(
   req: { headers: { get(name: string): string | null } },
   course: CourseVisibilityFields & { code: string },
+  slug?: string,
 ): Promise<boolean> {
   if (isProgramVisible(course)) return true;
+  if (slug && isValidSlug(slug)) return true; // operator (faculty-slug) override
   const sess = await resolveScopedSession(req);
   return sess?.courseCode === course.code;
 }

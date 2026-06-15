@@ -11,10 +11,10 @@ import { checkAdminAuth } from '@/lib/auth/admin-auth';
 
 export async function POST(req: Request): Promise<Response> {
   if (!checkAdminAuth(req)) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
-  const body = await req.json().catch(() => ({})) as { courseCode?: string; label?: string };
-  if (!body.courseCode) return NextResponse.json({ error: 'courseCode required' }, { status: 400 });
-  const grant = await createGrant({ courseCode: body.courseCode, label: body.label ?? null });
-  return NextResponse.json({ id: grant.id, token: grant.token, courseCode: grant.courseCode, expiresAt: grant.expiresAt });
+  // Generic invite — no course at mint time; the tester defines their course at the link.
+  const body = await req.json().catch(() => ({})) as { label?: string };
+  const grant = await createGrant({ label: body.label ?? null });
+  return NextResponse.json({ id: grant.id, token: grant.token, expiresAt: grant.expiresAt });
 }
 
 export async function GET(req: Request): Promise<Response> {

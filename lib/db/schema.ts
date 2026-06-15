@@ -175,7 +175,10 @@ export const partnerSessions = pgTable('partner_sessions', {
 export const sandboxGrants = pgTable('sandbox_grants', {
   id: uuid('id').primaryKey().defaultRandom(),
   token: text('token').notNull().unique(),
-  courseCode: text('course_code').notNull().references(() => courses.code, { onDelete: 'cascade' }),
+  // Generic invite: a grant is course-LESS at mint time. The tester defines
+  // their course at the link, which CREATES a sandbox course (lib/sandbox).
+  // Nullable + no FK so a grant can pre-exist any course.
+  courseCode: text('course_code'),
   label: text('label'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),

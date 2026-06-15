@@ -15,15 +15,12 @@ beforeEach(() => { vi.clearAllMocks(); mockAdminAuth.mockReturnValue(true); });
 function req(path = 'http://h/api/admin/sandbox-grants', init?: RequestInit) { return new Request(path, init); }
 
 describe('admin sandbox-grants API', () => {
-  it('POST mints a grant', async () => {
-    mockCreate.mockResolvedValue({ id: 'g1', token: 'tok', courseCode: 'GC 2400', expiresAt: new Date() });
-    const res = await POST(req('http://h/api/admin/sandbox-grants', { method: 'POST', body: JSON.stringify({ courseCode: 'GC 2400', label: 'UGA' }), headers: { 'content-type': 'application/json' } }));
+  it('POST mints a generic (course-less) grant with just a label', async () => {
+    mockCreate.mockResolvedValue({ id: 'g1', token: 'tok', expiresAt: new Date() });
+    const res = await POST(req('http://h/api/admin/sandbox-grants', { method: 'POST', body: JSON.stringify({ label: 'UGA pilot' }), headers: { 'content-type': 'application/json' } }));
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({ token: 'tok' });
-  });
-  it('POST 400 without courseCode', async () => {
-    const res = await POST(req('http://h/api/admin/sandbox-grants', { method: 'POST', body: '{}', headers: { 'content-type': 'application/json' } }));
-    expect(res.status).toBe(400);
+    expect(mockCreate).toHaveBeenCalledWith({ label: 'UGA pilot' });
   });
   it('GET lists grants', async () => { mockList.mockResolvedValue([]); expect((await GET(req())).status).toBe(200); });
   it('DELETE revokes by id', async () => {

@@ -16,11 +16,12 @@ export function isGrantValid(g: GrantValidityFields): boolean {
   return g.active && g.revokedAt === null && g.expiresAt.getTime() > Date.now();
 }
 
-export async function createGrant(input: { courseCode: string; label?: string | null }) {
+/** Mint a generic, course-LESS invite (the tester defines their course at the link). */
+export async function createGrant(input: { label?: string | null } = {}) {
   const token = `${randomUUID()}${randomUUID()}`.replace(/-/g, '');
   const expiresAt = new Date(Date.now() + GRANT_TTL_MS);
   const [row] = await db.insert(sandboxGrants).values({
-    token, courseCode: input.courseCode, label: input.label ?? null, expiresAt,
+    token, courseCode: null, label: input.label ?? null, expiresAt,
   }).returning();
   if (!row) throw new Error('createGrant: insert returned no row');
   return row;

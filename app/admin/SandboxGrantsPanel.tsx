@@ -13,12 +13,13 @@ interface Grant {
   revokedAt: string | null;
 }
 
-export function SandboxGrantsPanel({ slug }: { slug: string }) {
+export interface SandboxCourse { code: string; title: string; }
+
+export function SandboxGrantsPanel({ slug, sandboxCourses }: { slug: string; sandboxCourses: SandboxCourse[] }) {
   // Admin second factor: present the slug as a Bearer token (the preferred
   // path in lib/auth/admin-auth.ts — keeps the secret out of the query string).
   const authHeaders = { Authorization: `Bearer ${slug}` };
   const [grants, setGrants] = useState<Grant[]>([]);
-  const [courseCode, setCourseCode] = useState('');
   const [label, setLabel] = useState('');
   const [minted, setMinted] = useState<{ url: string; token: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -38,15 +39,11 @@ export function SandboxGrantsPanel({ slug }: { slug: string }) {
   function mint() {
     setError(null);
     setMinted(null);
-    if (!courseCode.trim()) {
-      setError('Course code is required.');
-      return;
-    }
     start(async () => {
       const res = await fetch('/api/admin/sandbox-grants', {
         method: 'POST',
         headers: { 'content-type': 'application/json', ...authHeaders },
-        body: JSON.stringify({ courseCode: courseCode.trim(), label: label.trim() || null }),
+        body: JSON.stringify({ label: label.trim() || null }),
       });
       if (!res.ok) {
         const json = await res.json().catch(() => ({})) as { error?: string };
@@ -56,7 +53,6 @@ export function SandboxGrantsPanel({ slug }: { slug: string }) {
       const json = await res.json() as { token: string };
       const url = `${window.location.origin}/sandbox/${json.token}`;
       setMinted({ url, token: json.token });
-      setCourseCode('');
       setLabel('');
       await loadGrants();
     });
@@ -96,26 +92,17 @@ export function SandboxGrantsPanel({ slug }: { slug: string }) {
       <div>
         <h2 className="text-lg font-semibold">Sandbox access</h2>
         <p className="text-sm text-slate-600">
-          Mint scoped links for external testers. Each link opens a sandboxed session for one course
-          (valid 30 days). Revoke any time.
+          Mint a generic invite link for an external tester. They open it, enter their own course
+          (code + title) + name, and capture it in an isolated sandbox (link valid 30 days). Revoke any time.
         </p>
       </div>
 
       {/* Mint form */}
       <div className="space-y-3">
-        <h3 className="text-sm font-medium text-slate-700">Mint a link</h3>
+        <h3 className="text-sm font-medium text-slate-700">Mint an invite link</h3>
         <div className="flex flex-wrap items-end gap-2">
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-slate-500">Course code *</label>
-            <input
-              className="rounded border border-slate-300 px-2 py-1.5 text-sm"
-              placeholder="GC 2400"
-              value={courseCode}
-              onChange={e => setCourseCode(e.target.value)}
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs text-slate-500">Label (optional)</label>
+            <label className="text-xs text-slate-500">Label (optional — who it's for)</label>
             <input
               className="rounded border border-slate-300 px-2 py-1.5 text-sm"
               placeholder="UGA pilot"
@@ -220,6 +207,31 @@ export function SandboxGrantsPanel({ slug }: { slug: string }) {
       {grants.length === 0 && (
         <p className="text-sm text-slate-500">No grants yet. Mint the first one above.</p>
       )}
+
+      {/* Sandbox courses testers have created — the operator's review list. */}
+      <div className="space-y-2 border-t border-slate-200 pt-5">
+        <h3 className="text-sm font-medium text-slate-700">Sandbox courses created by testers ({sandboxCourses.length})</h3>
+        {sandboxCourses.length === 0 ? (
+          <p className="text-sm text-slate-500">None yet — they appear here once a tester opens a link and names their course.</p>
+        ) : (
+          <table className="w-full border-collapse text-sm">
+            <thead className="text-left text-xs uppercase text-slate-500">
+              <tr><th className="py-2">Course</th><th></th></tr>
+            </thead>
+            <tbody>
+              {sandboxCourses.map(c => (
+                <tr key={c.code} className="border-t border-slate-200">
+                  <td className="py-2 font-medium">{c.title}</td>
+                  <td className="flex gap-3 py-2">
+                    <a className="text-blue-700 underline" href={`/view/${encodeURIComponent(c.code)}?slug=${encodeURIComponent(slug)}`} target="_blank" rel="noopener noreferrer">View profile</a>
+                    <a className="text-blue-700 underline" href={`/capture/${encodeURIComponent(c.code)}?slug=${encodeURIComponent(slug)}`} target="_blank" rel="noopener noreferrer">Review in capture</a>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
     </section>
   );
 }
