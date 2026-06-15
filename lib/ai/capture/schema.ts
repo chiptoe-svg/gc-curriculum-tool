@@ -131,6 +131,10 @@ const productiveFailureConditionEnum = z.enum(['present', 'partial', 'absent']);
 // program-level problem-solving lens and scaffolding analysis can aggregate
 // across snapshots. Conditions are graded, not binary — see capture-scores.md
 // and docs/background.html §8 for the reasoning.
+// Conditions: generate_then_consolidate, open_ended_problems, revision_cycles,
+// structured_post_mortem (probe d), abstraction_bridging (probe e, added
+// 2026-06-14) — the transfer-conversion condition (can students apply a
+// principle across varied surface forms to a genuinely new context?).
 export const productiveFailureConditionsSchema = z.object({
   generate_then_consolidate: productiveFailureConditionEnum,
   open_ended_problems: productiveFailureConditionEnum,
@@ -140,6 +144,13 @@ export const productiveFailureConditionsSchema = z.object({
   // Nullable for OpenAI strict-mode; the model emits null when reflection is
   // 'absent'. Mirrors the evidence-above-zero discipline on K/U/D.
   structured_post_mortem_evidence: z.array(CaptureProfileCitation).nullable().optional(),
+  // Transfer-conversion condition (Audit Area 7 probe e, added 2026-06-14).
+  // OPTIONAL in Zod so pre-feature immutable snapshots (which lack the key)
+  // still parse — a missing field reads as "not assessed for this condition",
+  // never as 'absent'. New captures always emit it (the strict request schema
+  // marks it required). Evidence required when non-absent, mirroring post-mortem.
+  abstraction_bridging: productiveFailureConditionEnum.optional(),
+  abstraction_bridging_evidence: z.array(CaptureProfileCitation).nullable().optional(),
   max_supporting_depth: z.number().int().min(0).max(5),
   notes: z.array(z.string()),
 }).superRefine((pf, ctx) => {
@@ -150,6 +161,16 @@ export const productiveFailureConditionsSchema = z.object({
         code: 'custom',
         path: ['structured_post_mortem_evidence'],
         message: 'structured_post_mortem above "absent" requires at least one resolvable citation (mirrors the K/U/D evidence-above-zero rule). With no graded post-mortem artifact to cite, rate it "absent".',
+      });
+    }
+  }
+  if (pf.abstraction_bridging !== undefined && pf.abstraction_bridging !== 'absent') {
+    const ev = pf.abstraction_bridging_evidence;
+    if (!ev || ev.length === 0) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['abstraction_bridging_evidence'],
+        message: 'abstraction_bridging above "absent" requires at least one resolvable citation (mirrors the K/U/D evidence-above-zero rule). With no graded artifact showing abstraction across varied cases applied to a new context, rate it "absent".',
       });
     }
   }
