@@ -39,7 +39,7 @@ const STATUS_RANK: Record<string, number> = {
 /** Collapsible "where do I find these?" note, shown inside both Canvas import forms. */
 function CanvasCredsHelp() {
   return (
-    <details className="mt-1 text-[11px] text-muted-foreground">
+    <details className="mt-1 text-sm text-muted-foreground">
       <summary className="cursor-pointer hover:text-foreground">Where do I find the URL and token?</summary>
       <div className="mt-1 space-y-1.5 border-l-2 border-muted pl-2 leading-snug">
         <p>
@@ -185,13 +185,13 @@ function BundledGroupHeader({
   return (
     <div className="border-b bg-muted/5">
       <div className="flex items-center gap-2 px-3 py-1.5">
-        <span className="flex-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <span className="flex-1 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
           {label}
         </span>
         <button
           type="button"
           onClick={() => setFormOpen(o => !o)}
-          className="shrink-0 rounded-md border border-input bg-background px-2 py-0.5 text-[11px] font-medium hover:bg-muted"
+          className="shrink-0 rounded-md border border-input bg-background px-2 py-0.5 text-sm font-medium hover:bg-muted"
         >
           {importedAt || importedJustNow ? 'Reimport' : 'Import'}
         </button>
@@ -199,7 +199,7 @@ function BundledGroupHeader({
       {formOpen && (
         <div className="border-t bg-muted/20 px-3 py-2 space-y-2">
           <div>
-            <label className="block text-[11px] font-medium text-muted-foreground" htmlFor={`canvas-url-${slotKey}`}>
+            <label className="block text-sm font-medium text-muted-foreground" htmlFor={`canvas-url-${slotKey}`}>
               Canvas course URL
             </label>
             <input
@@ -208,11 +208,11 @@ function BundledGroupHeader({
               value={canvasUrl}
               onChange={e => setCanvasUrl(e.target.value)}
               placeholder="https://clemson.instructure.com/courses/12345"
-              className="mt-1 w-full rounded-md border border-input bg-background px-2 py-1 text-xs"
+              className="mt-1 w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
             />
           </div>
           <div>
-            <label className="block text-[11px] font-medium text-muted-foreground" htmlFor={`canvas-token-${slotKey}`}>
+            <label className="block text-sm font-medium text-muted-foreground" htmlFor={`canvas-token-${slotKey}`}>
               Canvas API token
             </label>
             <div className="mt-1 flex items-center gap-2">
@@ -222,13 +222,13 @@ function BundledGroupHeader({
                 value={token}
                 onChange={e => setToken(e.target.value)}
                 placeholder="paste your Canvas API token"
-                className="min-w-0 flex-1 rounded-md border border-input bg-background px-2 py-1 text-xs"
+                className="min-w-0 flex-1 rounded-md border border-input bg-background px-2 py-1 text-sm"
               />
               <button
                 type="button"
                 onClick={handleImport}
                 disabled={importing}
-                className="shrink-0 rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                className="shrink-0 rounded-md border border-input bg-background px-2.5 py-1 text-sm font-medium hover:bg-muted disabled:opacity-50"
               >
                 {importing ? 'Importing…' : (importedAt || importedJustNow ? 'Reimport' : 'Import')}
               </button>
@@ -236,7 +236,7 @@ function BundledGroupHeader({
           </div>
           <CanvasCredsHelp />
           <div className="mt-2 border-t pt-2">
-            <p className="mb-1 text-[11px] font-medium text-muted-foreground">Or upload a .imscc cartridge</p>
+            <p className="mb-1 text-sm font-medium text-muted-foreground">Or upload a .imscc cartridge</p>
             <input
               id={`imscc-file-${slotKey}`}
               type="file"
@@ -247,27 +247,27 @@ function BundledGroupHeader({
             <div className="flex items-center gap-2">
               <label
                 htmlFor={`imscc-file-${slotKey}`}
-                className="shrink-0 cursor-pointer rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium hover:bg-muted"
+                className="shrink-0 cursor-pointer rounded-md border border-input bg-background px-2.5 py-1 text-sm font-medium hover:bg-muted"
               >
                 Choose .imscc file
               </label>
-              <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+              <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
                 {imsccFile ? imsccFile.name : 'No file chosen'}
               </span>
               <button
                 type="button"
                 onClick={handleImsccUpload}
                 disabled={uploadingImscc || !imsccFile}
-                className="shrink-0 rounded-md border border-input bg-primary/10 px-2.5 py-1 text-xs font-semibold hover:bg-primary/20 disabled:opacity-50"
+                className="shrink-0 rounded-md border border-input bg-primary/10 px-2.5 py-1 text-sm font-semibold hover:bg-primary/20 disabled:opacity-50"
               >
                 {uploadingImscc ? 'Uploading…' : 'Upload .imscc'}
               </button>
             </div>
-            <p className="mt-0.5 text-[10px] text-muted-foreground">
+            <p className="mt-0.5 text-xs text-muted-foreground">
               Export from Canvas: Settings &rarr; Export Course Content.
             </p>
           </div>
-          {importMsg && <p className="text-[11px] text-muted-foreground">{importMsg}</p>}
+          {importMsg && <p className="text-sm text-muted-foreground">{importMsg}</p>}
         </div>
       )}
     </div>
@@ -628,11 +628,11 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
       <div key={m.id} className="border-b px-3 py-2 last:border-b-0">
         <div className="flex items-center gap-2">
           <IndexingStatusDot status={m.indexingStatus} indexedAt={m.indexedAt} />
-          <span className="truncate text-xs font-medium">{m.fileName}</span>
-          {isSyllabus && <span className="text-[10px] text-muted-foreground">(syllabus)</span>}
-          <span className="text-[10px] text-muted-foreground">{materialReadability(m).label}</span>
+          <span className="truncate text-sm font-medium">{m.fileName}</span>
+          {isSyllabus && <span className="text-xs text-muted-foreground">(syllabus)</span>}
+          <span className="text-xs text-muted-foreground">{materialReadability(m).label}</span>
           {isCanvasFile(m) && (
-            <label className="ml-auto flex shrink-0 items-center gap-1 text-[10px] text-muted-foreground">
+            <label className="ml-auto flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
               <input
                 type="checkbox"
                 checked={m.ignored}
@@ -644,12 +644,12 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
           )}
         </div>
         {syllabusWhyNote && (
-          <p className="mt-0.5 pl-5 text-[10px] italic text-muted-foreground">{syllabusWhyNote}</p>
+          <p className="mt-0.5 pl-5 text-xs italic text-muted-foreground">{syllabusWhyNote}</p>
         )}
         {/* Why-ignored reason + FERPA Include anyway for non-syllabus rows */}
         {showGenericWhyIgnored && (
           <div className="mt-0.5 flex items-start justify-between gap-2 rounded border border-amber-200 bg-amber-50/50 px-2 py-1">
-            <p className="text-[11px] leading-snug italic text-amber-800">
+            <p className="text-sm leading-snug italic text-amber-800">
               {m.setAsideReason
                 ?? (m.autoSetAside
                       ? 'set aside automatically'
@@ -663,7 +663,7 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
                 type="button"
                 onClick={() => void includeAnyway(m)}
                 disabled={busy === m.id}
-                className="shrink-0 text-[11px] font-medium text-amber-900 underline hover:text-amber-700 disabled:opacity-50"
+                className="shrink-0 text-sm font-medium text-amber-900 underline hover:text-amber-700 disabled:opacity-50"
               >
                 {busy === m.id ? 'Including…' : 'Include anyway'}
               </button>
@@ -681,7 +681,7 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
                 ? (rubricNames.has(it.title) || rubricNames.has(titleStripped))
                 : false;
               return (
-                <li key={it.ordinalIndex} className="flex items-center gap-2 text-[11px]">
+                <li key={it.ordinalIndex} className="flex items-center gap-2 text-sm">
                   <input
                     type="checkbox"
                     aria-label={`ignore ${it.title}`}
@@ -720,7 +720,7 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
         ? 'Already scanned — click to re-scan for newly added links'
         : 'Find Google Docs / Drive PDFs / YouTube linked inside your Canvas content and pull them in (they appear under Other materials)'}
       className={
-        'shrink-0 rounded-md border px-2.5 py-1 text-xs font-medium disabled:opacity-50 ' +
+        'shrink-0 rounded-md border px-2.5 py-1 text-sm font-medium disabled:opacity-50 ' +
         (scanned
           ? 'border-transparent bg-muted text-muted-foreground/70 hover:bg-muted'
           : 'border-input bg-background hover:bg-muted')
@@ -745,7 +745,7 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
           <span aria-hidden className="text-muted-foreground">{open ? '▾' : '▸'}</span>
           <span aria-hidden>🎨</span>
           <span className="text-sm font-medium">Canvas</span>
-          <span className="truncate text-[11px] text-muted-foreground">— {summary}</span>
+          <span className="truncate text-sm text-muted-foreground">— {summary}</span>
         </button>
 
         {/* Single-mode: global import + scan buttons in the header */}
@@ -754,7 +754,7 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
             <button
               type="button"
               onClick={() => setTokenOpen(o => !o)}
-              className="shrink-0 rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium hover:bg-muted"
+              className="shrink-0 rounded-md border border-input bg-background px-2.5 py-1 text-sm font-medium hover:bg-muted"
             >
               {empty ? 'Import from Canvas' : 'Reimport'}
             </button>
@@ -767,20 +767,20 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
             type="button"
             onClick={handleIndexNow}
             disabled={indexing}
-            className="shrink-0 rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium hover:bg-muted disabled:opacity-50"
+            className="shrink-0 rounded-md border border-input bg-background px-2.5 py-1 text-sm font-medium hover:bg-muted disabled:opacity-50"
           >
             {indexing ? 'Indexing…' : 'Index now'}
           </button>
         )}
       </div>
 
-      {indexError && <p className="px-3 pb-2 text-[11px] text-amber-700 dark:text-amber-400">{indexError}</p>}
-      {scanMsg && <p className="px-3 pb-2 text-[11px] text-amber-700 dark:text-amber-400">{scanMsg}</p>}
+      {indexError && <p className="px-3 pb-2 text-sm text-amber-700 dark:text-amber-400">{indexError}</p>}
+      {scanMsg && <p className="px-3 pb-2 text-sm text-amber-700 dark:text-amber-400">{scanMsg}</p>}
 
       {/* Single-mode: global token field */}
       {!isBundled && tokenOpen && (
         <div className="border-t bg-muted/20 px-3 py-2.5">
-          <label className="block text-[11px] font-medium text-muted-foreground" htmlFor="canvas-url">
+          <label className="block text-sm font-medium text-muted-foreground" htmlFor="canvas-url">
             Canvas course URL {empty ? '' : '(optional)'}
           </label>
           <input
@@ -789,15 +789,15 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
             value={reimportUrl}
             onChange={e => setReimportUrl(e.target.value)}
             placeholder="https://clemson.instructure.com/courses/12345"
-            className="mt-1 w-full rounded-md border border-input bg-background px-2 py-1 text-xs"
+            className="mt-1 w-full rounded-md border border-input bg-background px-2 py-1 text-sm"
           />
           {!empty && (
-            <p className="mt-1 text-[10px] leading-snug text-muted-foreground">
+            <p className="mt-1 text-xs leading-snug text-muted-foreground">
               {course.canvasCourseName ? `Currently linked: ${course.canvasCourseName}. ` : ''}
               Leave blank to refresh the current Canvas course, or paste a new URL to switch to a different one (e.g. a new semester&apos;s section).
             </p>
           )}
-          <label className="mt-2.5 block text-[11px] font-medium text-muted-foreground" htmlFor="canvas-token">
+          <label className="mt-2.5 block text-sm font-medium text-muted-foreground" htmlFor="canvas-token">
             Canvas API token
           </label>
           <div className="mt-1 flex items-center gap-2">
@@ -807,20 +807,20 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
               value={token}
               onChange={e => setToken(e.target.value)}
               placeholder="paste your Canvas API token"
-              className="min-w-0 flex-1 rounded-md border border-input bg-background px-2 py-1 text-xs"
+              className="min-w-0 flex-1 rounded-md border border-input bg-background px-2 py-1 text-sm"
             />
             <button
               type="button"
               onClick={handleReextract}
               disabled={reextracting}
-              className="shrink-0 rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium hover:bg-muted disabled:opacity-50"
+              className="shrink-0 rounded-md border border-input bg-background px-2.5 py-1 text-sm font-medium hover:bg-muted disabled:opacity-50"
             >
               {reextracting ? 'Importing…' : (empty ? 'Import' : 'Reimport')}
             </button>
           </div>
           <CanvasCredsHelp />
           <div className="mt-2 border-t pt-2">
-            <p className="mb-1 text-[11px] font-medium text-muted-foreground">Or upload a .imscc cartridge</p>
+            <p className="mb-1 text-sm font-medium text-muted-foreground">Or upload a .imscc cartridge</p>
             <input
               id="imscc-file-single"
               type="file"
@@ -831,27 +831,27 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
             <div className="flex items-center gap-2">
               <label
                 htmlFor="imscc-file-single"
-                className="shrink-0 cursor-pointer rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium hover:bg-muted"
+                className="shrink-0 cursor-pointer rounded-md border border-input bg-background px-2.5 py-1 text-sm font-medium hover:bg-muted"
               >
                 Choose .imscc file
               </label>
-              <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+              <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
                 {imsccFileSingle ? imsccFileSingle.name : 'No file chosen'}
               </span>
               <button
                 type="button"
                 onClick={handleImsccUploadSingle}
                 disabled={uploadingImscc || !imsccFileSingle}
-                className="shrink-0 rounded-md border border-input bg-primary/10 px-2.5 py-1 text-xs font-semibold hover:bg-primary/20 disabled:opacity-50"
+                className="shrink-0 rounded-md border border-input bg-primary/10 px-2.5 py-1 text-sm font-semibold hover:bg-primary/20 disabled:opacity-50"
               >
                 {uploadingImscc ? 'Uploading…' : 'Upload .imscc'}
               </button>
             </div>
-            <p className="mt-0.5 text-[10px] text-muted-foreground">
+            <p className="mt-0.5 text-xs text-muted-foreground">
               Export from Canvas: Settings &rarr; Export Course Content.
             </p>
           </div>
-          <label className="mt-1.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          <label className="mt-1.5 flex items-center gap-1.5 text-sm text-muted-foreground">
             <input
               type="checkbox"
               checked={autoScanAfterImport}
@@ -860,7 +860,7 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
             />
             Scan linked Google/YouTube files automatically after import
           </label>
-          {reextractMsg && <p className="mt-1 text-[11px] text-muted-foreground">{reextractMsg}</p>}
+          {reextractMsg && <p className="mt-1 text-sm text-muted-foreground">{reextractMsg}</p>}
         </div>
       )}
 
@@ -884,7 +884,7 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
                 onImportEnd={() => setSlotImporting(false)}
               />
               {(groupedCanvas.get(null) ?? []).length === 0 && (
-                <p className="px-3 py-2 text-[11px] text-muted-foreground">Nothing imported from Canvas yet.</p>
+                <p className="px-3 py-2 text-sm text-muted-foreground">Nothing imported from Canvas yet.</p>
               )}
               {(groupedCanvas.get(null) ?? []).map(m => renderMaterialRow(m))}
 
@@ -907,7 +907,7 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
                       onImportEnd={() => setSlotImporting(false)}
                     />
                     {groupItems.length === 0 && (
-                      <p className="px-3 py-2 text-[11px] text-muted-foreground">Nothing imported from Canvas yet.</p>
+                      <p className="px-3 py-2 text-sm text-muted-foreground">Nothing imported from Canvas yet.</p>
                     )}
                     {groupItems.map(m => renderMaterialRow(m))}
                   </div>
@@ -918,10 +918,10 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
               {orphanGroups.size > 0 && Array.from(orphanGroups.entries()).map(([orphanCode, items]) => (
                 <div key={orphanCode}>
                   <div className="border-b border-t bg-muted/5 px-3 py-1.5">
-                    <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    <span className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
                       Unmatched source ({orphanCode})
                     </span>
-                    <p className="text-[10px] text-muted-foreground/70 italic">from a Canvas page no longer paired to this course</p>
+                    <p className="text-xs text-muted-foreground/70 italic">from a Canvas page no longer paired to this course</p>
                   </div>
                   {items.map(m => renderMaterialRow(m))}
                 </div>
@@ -930,7 +930,7 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
               {/* Bundled mode footer: Reimport-all + Scan linked docs — once */}
               <div className="flex items-center gap-2 border-t px-3 py-2">
                 {scanButton}
-                <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <label className="flex items-center gap-1.5 text-sm text-muted-foreground">
                   <input
                     type="checkbox"
                     checked={autoScanAfterImport}
@@ -946,7 +946,7 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
           {/* ── SINGLE MODE (unchanged) ── */}
           {!isBundled && (
             <>
-              {empty && <p className="px-3 py-3 text-[11px] text-muted-foreground">Nothing imported from Canvas yet.</p>}
+              {empty && <p className="px-3 py-3 text-sm text-muted-foreground">Nothing imported from Canvas yet.</p>}
               {canvas.map(m => renderMaterialRow(m))}
             </>
           )}
