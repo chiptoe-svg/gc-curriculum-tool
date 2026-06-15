@@ -43,9 +43,9 @@ export function CaptureHero({
         {courseTitle}.
       </h2>
       <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-        The AI interviews you about your course, grounded in your materials, and builds an
-        honest record of what it develops in students: not what the syllabus hopes, but what
-        the evidence shows, at honest depth. Everything we use to make the program better for
+        Grounded in your materials, the AI interviews you and builds a record of what your
+        course develops in students: not what the syllabus hopes, but what the evidence shows,
+        and at what depth. Everything we use to make the program better for
         students reads from it, including the curriculum map, prerequisite checks, and the line
         from coursework to careers. It can only see what you surface here, so the most valuable
         thing you can do is name, plainly, what your students actually do and how deeply they do
