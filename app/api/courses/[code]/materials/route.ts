@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 import { isValidSlug } from '@/lib/slug';
-import { putLocal, courseSlug, safeFilename } from '@/lib/storage/local-storage';
-import { getCourseByCode } from '@/lib/db/courses-queries';
+import { putLocal, courseSlug, safeFilename, keyFromLocalUrl, deleteLocal } from '@/lib/storage/local-storage';
+import { getCourseByCode, clearCourseCanvasImport } from '@/lib/db/courses-queries';
 import { hashIp } from '@/lib/ip-hash';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
-import { insertMaterial } from '@/lib/db/course-materials-queries';
+import { insertMaterial, listMaterialsByCourse, deleteMaterial } from '@/lib/db/course-materials-queries';
 import { finalizeExtraction } from '@/lib/capture/finalize-extraction';
-import { createVectorStore } from '@/lib/capture/vector-store';
+import { createVectorStore, tenantForCourse } from '@/lib/capture/vector-store';
 import { extractText } from '@/lib/courses/extract-text';
 import type { ExtractedMimeType } from '@/lib/courses/extract-text';
 import { SUPPORTED_MIME_TYPES, LEGACY_OFFICE_MIME_TYPES } from '@/lib/courses/material-extractor';
@@ -29,6 +29,51 @@ const ALLOWED_MIME_TYPES = new Set<string>([
 
 interface RouteContext {
   params: Promise<{ code: string }>;
+}
+
+// DELETE /api/courses/[code]/materials?slug=...
+// Bulk wipe: removes EVERY material for the course — DB rows, local-disk
+// blobs, and the per-material chunks in the course's Weaviate tenant — then
+// clears the Canvas/cartridge import provenance stamp. The per-id DELETE
+// route only removes the row + file; this is the only path that also clears
+// the vector chunks, so a wiped course leaves no orphaned chunks behind for
+// the audit agent to retrieve. UI: "Clear all materials" in the Materials
+// manager, behind a typed confirmation.
+export async function DELETE(req: Request, { params }: RouteContext): Promise<Response> {
+  const { code } = await params;
+  const url = new URL(req.url);
+  const slug = url.searchParams.get('slug') ?? '';
+  if (!isValidSlug(slug)) {
+    return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
+  }
+
+  const course = await getCourseByCode(code);
+  if (!course) {
+    return NextResponse.json({ error: `course not found: ${code}` }, { status: 404 });
+  }
+
+  const materials = await listMaterialsByCourse(code);
+  const vectorStore = createVectorStore();
+  const tenant = tenantForCourse(code);
+
+  for (const m of materials) {
+    // Vector chunks first — a failure here must not orphan the row, but a
+    // failed chunk-delete shouldn't abort the whole wipe either.
+    try {
+      await vectorStore.deleteByMaterial(tenant, m.id);
+    } catch (err) {
+      console.error(`[materials wipe] vector delete failed for ${m.id}:`, err);
+    }
+    const localKey = keyFromLocalUrl(m.blobUrl);
+    if (localKey) {
+      await deleteLocal(localKey).catch(err => console.error('local delete failed', err));
+    }
+    await deleteMaterial(m.id);
+  }
+
+  await clearCourseCanvasImport(code);
+
+  return NextResponse.json({ deleted: materials.length });
 }
 
 export async function POST(req: Request, { params }: RouteContext): Promise<Response> {

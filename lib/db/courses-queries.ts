@@ -77,6 +77,15 @@ export async function updateCourseCanvasImport(
     .where(eq(courses.code, code));
 }
 
+/** Clear the Canvas/cartridge import provenance stamp — used when wiping a
+ *  course's materials so the Step-1 header no longer claims an import. */
+export async function clearCourseCanvasImport(code: string): Promise<void> {
+  await db
+    .update(courses)
+    .set({ canvasCourseName: null, canvasImportedAt: null })
+    .where(eq(courses.code, code));
+}
+
 export async function upsertCourses(parsed: ParsedCourse[]): Promise<number> {
   if (parsed.length === 0) return 0;
   const rows = parsed.map(p => {

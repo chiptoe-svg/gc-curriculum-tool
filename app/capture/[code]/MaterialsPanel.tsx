@@ -619,6 +619,9 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
   const [reextractOpen, setReextractOpen] = useState(false);
   const [reextractToken, setReextractToken] = useState('');
   const [reextracting, setReextracting] = useState(false);
+  const [confirmWipe, setConfirmWipe] = useState(false);
+  const [wiping, setWiping] = useState(false);
+  const [wipeError, setWipeError] = useState<string | null>(null);
   const [reextractMessage, setReextractMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -975,6 +978,31 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
     }
   }
 
+  // Bulk wipe: deletes every material for the course (rows + Weaviate chunks
+  // + import provenance) via the collection DELETE route. Gated behind a
+  // two-step confirmation since it's irreversible.
+  async function handleWipeAll() {
+    setWiping(true);
+    setWipeError(null);
+    try {
+      const res = await fetch(
+        `/api/courses/${encodeURIComponent(course.code)}/materials?slug=${encodeURIComponent(slug)}`,
+        { method: 'DELETE' },
+      );
+      if (res.ok) {
+        pushMaterials([]);
+        setConfirmWipe(false);
+      } else {
+        const json = await res.json().catch(() => ({})) as { error?: string };
+        setWipeError(json.error ?? `Wipe failed (${res.status})`);
+      }
+    } catch (e) {
+      setWipeError(e instanceof Error ? e.message : 'Wipe failed');
+    } finally {
+      setWiping(false);
+    }
+  }
+
   async function handleFiles(files: FileList | null) {
     setUploadError(null);
     if (!files || files.length === 0) return;
@@ -1234,8 +1262,44 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
                 >
                   {canvasImportOpen ? 'Hide Canvas import' : 'Import from Canvas'}
                 </button>
+                {materials.length > 0 && !confirmWipe && (
+                  <button
+                    type="button"
+                    onClick={() => { setWipeError(null); setConfirmWipe(true); }}
+                    title="Delete every material on this course — DB rows, files, and indexed chunks. Cannot be undone."
+                    className="rounded-md border border-destructive/40 bg-background px-2.5 py-1 text-xs font-medium text-destructive hover:bg-destructive/10"
+                  >
+                    Clear all materials
+                  </button>
+                )}
               </div>
             </header>
+            {confirmWipe && (
+              <div className="border-b border-destructive/30 bg-destructive/5 px-3 py-2.5">
+                <p className="text-xs font-medium text-destructive">
+                  Delete all {materials.length} material{materials.length === 1 ? '' : 's'} on {course.code}? This removes their files and indexed chunks too, and can&apos;t be undone.
+                </p>
+                {wipeError && <p className="mt-1 text-[11px] text-destructive">{wipeError}</p>}
+                <div className="mt-2 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleWipeAll}
+                    disabled={wiping}
+                    className="rounded-md bg-destructive px-2.5 py-1 text-xs font-semibold text-destructive-foreground shadow-sm hover:bg-destructive/90 disabled:opacity-50"
+                  >
+                    {wiping ? 'Deleting…' : `Yes, delete all ${materials.length}`}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmWipe(false)}
+                    disabled={wiping}
+                    className="rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
             {/* hideRows: per-row controls live in the three source boxes above (Step 1).
                 The chat stage (CaptureClient trays) never sets hideRows, so it keeps full rows. */}
             {hideRows ? (
