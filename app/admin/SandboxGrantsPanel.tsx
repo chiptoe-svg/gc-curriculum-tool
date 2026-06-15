@@ -16,9 +16,12 @@ interface Grant {
 export interface SandboxCourse { code: string; title: string; }
 
 export function SandboxGrantsPanel({ slug, sandboxCourses }: { slug: string; sandboxCourses: SandboxCourse[] }) {
-  // Admin second factor: present the slug as a Bearer token (the preferred
-  // path in lib/auth/admin-auth.ts — keeps the secret out of the query string).
-  const authHeaders = { Authorization: `Bearer ${slug}` };
+  // Admin /api second factor goes in the BODY/QUERY, NOT an Authorization
+  // header — a Bearer header would override the browser's automatic HTTP Basic
+  // Auth and break the middleware gate (every other admin UI does this too).
+  // The Bearer header is used ONLY for the public /view bundle fetch below,
+  // where there's no Basic Auth to clobber.
+  const bearerHeaders = { Authorization: `Bearer ${slug}` };
   const [grants, setGrants] = useState<Grant[]>([]);
   const [label, setLabel] = useState('');
   const [minted, setMinted] = useState<{ url: string; token: string } | null>(null);
@@ -27,7 +30,7 @@ export function SandboxGrantsPanel({ slug, sandboxCourses }: { slug: string; san
   const [copied, setCopied] = useState(false);
 
   async function loadGrants() {
-    const res = await fetch('/api/admin/sandbox-grants', { headers: authHeaders });
+    const res = await fetch(`/api/admin/sandbox-grants?slug=${encodeURIComponent(slug)}`);
     if (res.ok) {
       const json = await res.json() as { grants: Grant[] };
       setGrants(json.grants);
@@ -42,8 +45,8 @@ export function SandboxGrantsPanel({ slug, sandboxCourses }: { slug: string; san
     start(async () => {
       const res = await fetch('/api/admin/sandbox-grants', {
         method: 'POST',
-        headers: { 'content-type': 'application/json', ...authHeaders },
-        body: JSON.stringify({ label: label.trim() || null }),
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ label: label.trim() || null, slug }),
       });
       if (!res.ok) {
         const json = await res.json().catch(() => ({})) as { error?: string };
@@ -59,7 +62,7 @@ export function SandboxGrantsPanel({ slug, sandboxCourses }: { slug: string; san
   }
 
   async function revoke(id: string) {
-    const res = await fetch(`/api/admin/sandbox-grants?id=${encodeURIComponent(id)}`, { method: 'DELETE', headers: authHeaders });
+    const res = await fetch(`/api/admin/sandbox-grants?id=${encodeURIComponent(id)}&slug=${encodeURIComponent(slug)}`, { method: 'DELETE' });
     if (!res.ok) {
       alert(`Revoke failed: ${res.status}`);
       return;
@@ -70,7 +73,7 @@ export function SandboxGrantsPanel({ slug, sandboxCourses }: { slug: string; san
   // Download the OKF bundle for a sandbox course via a Bearer fetch — the
   // operator credential goes in the Authorization header, never the URL.
   async function downloadBundle(code: string) {
-    const res = await fetch(`/view/${encodeURIComponent(code)}/okf-bundle`, { headers: authHeaders });
+    const res = await fetch(`/view/${encodeURIComponent(code)}/okf-bundle`, { headers: bearerHeaders });
     if (!res.ok) { alert(`Bundle download failed: ${res.status}`); return; }
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
