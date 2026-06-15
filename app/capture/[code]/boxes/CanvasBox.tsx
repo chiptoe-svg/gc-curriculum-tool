@@ -98,6 +98,8 @@ function BundledGroupHeader({
   const [canvasUrl, setCanvasUrl] = useState('');
   const [importing, setImporting] = useState(false);
   const [importMsg, setImportMsg] = useState<string | null>(null);
+  const [imsccFile, setImsccFile] = useState<File | null>(null);
+  const [uploadingImscc, setUploadingImscc] = useState(false);
 
   const slotKey = sourceCode ?? 'primary';
 
@@ -143,6 +145,39 @@ function BundledGroupHeader({
       setImportMsg(e instanceof Error ? e.message : 'Import failed');
     } finally {
       setImporting(false);
+      onImportEnd?.();
+    }
+  }
+
+  async function handleImsccUpload() {
+    if (!imsccFile) return;
+    setUploadingImscc(true);
+    setImportMsg(null);
+    onImportStart?.();
+    try {
+      const form = new FormData();
+      form.append('file', imsccFile);
+      form.append('slug', slug);
+      form.append('sourceCode', sourceCode ?? '');
+      const res = await fetch(
+        `/api/courses/${encodeURIComponent(courseCode)}/imscc-import`,
+        { method: 'POST', body: form },
+      );
+      const contentType = res.headers.get('content-type') ?? '';
+      if (!contentType.includes('application/json')) {
+        setImportMsg(`Server returned ${res.status}.`);
+        return;
+      }
+      const json = await res.json() as { imported?: number; inserted?: number; updated?: number; error?: string };
+      if (!res.ok) { setImportMsg(json.error ?? `Upload failed (${res.status})`); return; }
+      const imp = json.imported ?? 0;
+      setImportMsg(`imported ${imp} material${imp === 1 ? '' : 's'} from the cartridge.`);
+      setImsccFile(null);
+      await onImported(sourceCode);
+    } catch (e) {
+      setImportMsg(e instanceof Error ? e.message : 'Upload failed');
+    } finally {
+      setUploadingImscc(false);
       onImportEnd?.();
     }
   }
@@ -200,6 +235,28 @@ function BundledGroupHeader({
             </div>
           </div>
           <CanvasCredsHelp />
+          <div className="mt-2 border-t pt-2">
+            <p className="mb-1 text-[11px] font-medium text-muted-foreground">Or upload a .imscc cartridge</p>
+            <div className="flex items-center gap-2">
+              <input
+                type="file"
+                accept=".imscc,application/zip"
+                onChange={e => setImsccFile(e.target.files?.[0] ?? null)}
+                className="min-w-0 flex-1 text-xs"
+              />
+              <button
+                type="button"
+                onClick={handleImsccUpload}
+                disabled={uploadingImscc || !imsccFile}
+                className="shrink-0 rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium hover:bg-muted disabled:opacity-50"
+              >
+                {uploadingImscc ? 'Uploading…' : 'Upload .imscc'}
+              </button>
+            </div>
+            <p className="mt-0.5 text-[10px] text-muted-foreground">
+              Export from Canvas: Settings &rarr; Export Course Content.
+            </p>
+          </div>
           {importMsg && <p className="text-[11px] text-muted-foreground">{importMsg}</p>}
         </div>
       )}
@@ -225,6 +282,8 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
   const [scanning, setScanning] = useState(false);
   const [scanMsg, setScanMsg] = useState<string | null>(null);
   const [autoScanAfterImport, setAutoScanAfterImport] = useState(true);
+  const [imsccFileSingle, setImsccFileSingle] = useState<File | null>(null);
+  const [uploadingImscc, setUploadingImscc] = useState(false);
   // Optimistic "just now" provenance per slot: keyed by sourceCode ?? 'primary'
   const [slotImportedJustNow, setSlotImportedJustNow] = useState<Record<string, true>>({});
   // Whether any slot import is currently in flight (to disable scan button)
@@ -333,6 +392,42 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
       setReextractMsg(e instanceof Error ? e.message : 'Import failed');
     } finally {
       setReextracting(false);
+    }
+  }
+
+  async function handleImsccUploadSingle() {
+    if (!imsccFileSingle) return;
+    setUploadingImscc(true);
+    setReextractMsg(null);
+    try {
+      const form = new FormData();
+      form.append('file', imsccFileSingle);
+      form.append('slug', slug);
+      const res = await fetch(
+        `/api/courses/${encodeURIComponent(course.code)}/imscc-import`,
+        { method: 'POST', body: form },
+      );
+      const contentType = res.headers.get('content-type') ?? '';
+      if (!contentType.includes('application/json')) {
+        setReextractMsg(`Server returned ${res.status}.`);
+        return;
+      }
+      const json = await res.json() as { imported?: number; inserted?: number; updated?: number; error?: string };
+      if (!res.ok) { setReextractMsg(json.error ?? `Upload failed (${res.status})`); return; }
+      const imp = json.imported ?? 0;
+      setReextractMsg(`imported ${imp} material${imp === 1 ? '' : 's'} from the cartridge.`);
+      setImsccFileSingle(null);
+      setTokenOpen(false);
+      const fresh = await fetchCourseMaterials(course.code, slug);
+      if (fresh) onMaterialsChange(fresh);
+      if (autoScanAfterImport) {
+        setReextractMsg(`imported ${imp} material${imp === 1 ? '' : 's'} from the cartridge; scanning linked docs…`);
+        await scanLinkedDocs();
+      }
+    } catch (e) {
+      setReextractMsg(e instanceof Error ? e.message : 'Upload failed');
+    } finally {
+      setUploadingImscc(false);
     }
   }
 
@@ -714,6 +809,28 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
             </button>
           </div>
           <CanvasCredsHelp />
+          <div className="mt-2 border-t pt-2">
+            <p className="mb-1 text-[11px] font-medium text-muted-foreground">Or upload a .imscc cartridge</p>
+            <div className="flex items-center gap-2">
+              <input
+                type="file"
+                accept=".imscc,application/zip"
+                onChange={e => setImsccFileSingle(e.target.files?.[0] ?? null)}
+                className="min-w-0 flex-1 text-xs"
+              />
+              <button
+                type="button"
+                onClick={handleImsccUploadSingle}
+                disabled={uploadingImscc || !imsccFileSingle}
+                className="shrink-0 rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium hover:bg-muted disabled:opacity-50"
+              >
+                {uploadingImscc ? 'Uploading…' : 'Upload .imscc'}
+              </button>
+            </div>
+            <p className="mt-0.5 text-[10px] text-muted-foreground">
+              Export from Canvas: Settings &rarr; Export Course Content.
+            </p>
+          </div>
           <label className="mt-1.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
             <input
               type="checkbox"
