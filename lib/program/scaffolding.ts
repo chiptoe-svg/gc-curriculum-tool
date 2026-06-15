@@ -15,6 +15,9 @@ export type PfConditionValue = 'present' | 'partial' | 'absent';
 // reads the citation provenance — only the four condition values + depth. Kept a
 // hand-written interface (not a re-export) to avoid an ai-layer dependency in this
 // pure program-scoring module; any value satisfying the schema type is assignable here.
+// (abstraction_bridging is intentionally NOT scored here yet — program-level aggregation
+// of the sixth Area-7 condition is deferred; see
+// docs/superpowers/specs/2026-06-14-abstraction-bridging-condition-design.md.)
 export interface ProductiveFailureConditions {
   generate_then_consolidate: PfConditionValue;
   open_ended_problems: PfConditionValue;
@@ -58,8 +61,8 @@ function conditionWeight(v: PfConditionValue): number {
 }
 
 /**
- * 0–1: fraction of the four conditions present (with partials at 0.5 weight).
- * Null/undefined PF blocks score 0 (no data).
+ * 0–1: fraction of the four currently-scored conditions (abstraction_bridging deferred)
+ * present (with partials at 0.5 weight). Null/undefined PF blocks score 0 (no data).
  */
 export function conditionsScore(pf: ProductiveFailureConditions | null): number {
   if (!pf) return 0;

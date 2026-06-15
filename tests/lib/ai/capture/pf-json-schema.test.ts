@@ -36,5 +36,6 @@ describe('productive_failure_conditions JSON schema', () => {
     const block = pf(captureProfileJsonSchemaV2);
     expect(block.required).toContain('abstraction_bridging');
     expect(block.properties.abstraction_bridging).toBeDefined();
+    expect(block.required).toContain('abstraction_bridging_evidence');
   });
 });

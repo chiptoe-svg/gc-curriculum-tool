@@ -193,22 +193,23 @@ disagrees with the rule, the system will overwrite it.
 Emit the `productive_failure_conditions` block ONLY IF Audit Area 7 was probed
 in the transcript — i.e., the transcript contains explicit discussion of
 generate-then-consolidate structure, ill-structured / open-ended problems,
-revision cycles with consequential feedback, structured post-mortem, or the
+revision cycles with consequential feedback, structured post-mortem,
+abstraction-and-bridging / transfer across varied cases, or the
 course's domain depth as it relates to problem-solving capacity. If the
 auditor never asked about these conditions, set `productive_failure_conditions`
 to `null` (do NOT omit the field — under OpenAI strict mode it must be present
 as `null`, not absent). Do NOT infer the conditions from absence — silence in
 the transcript means "unknown," not "absent."
 
-If you do emit the block: each of the four condition fields takes one of
+If you do emit the block: each of the **five condition fields** takes one of
 `present` / `partial` / `absent`, judged from the transcript and materials.
 `max_supporting_depth` is the highest D-depth among the course's technical
 competencies (the depth that supports productive failure being productive vs.
 unproductive — degrees, not a threshold). `notes` is a small list of one-line
 findings tying specific assignments to specific conditions ("the Brand Color
 Report's revision cycle responds to specific rubric critique on submission 1 —
-present"). When `max_supporting_depth` is high (≥4) but the four condition
-fields are mostly `absent`, this is Kapur's "unproductive success" pattern —
+present"). When `max_supporting_depth` is high (≥4) but the **five condition
+fields** are mostly `absent`, this is Kapur's "unproductive success" pattern —
 surface it explicitly in `notes`.
 
 `structured_post_mortem` may be `present` or `partial` ONLY when you can cite a specific graded post-mortem / debrief artifact in `structured_post_mortem_evidence` (a real chunk or instructor-turn citation, same provenance rules as competency citations). A generic "reflect on your learning" prompt with no graded artifact is `absent` — do not credit reflection you cannot ground. Emit `null` for `structured_post_mortem_evidence` when `structured_post_mortem` is `absent`.
