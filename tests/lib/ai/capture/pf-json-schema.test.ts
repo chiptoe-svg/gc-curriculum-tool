@@ -23,4 +23,18 @@ describe('productive_failure_conditions JSON schema', () => {
     expect(block.required).toContain('structured_post_mortem_evidence');
     expect(block.properties.structured_post_mortem_evidence).toBeDefined(); // clone is deep
   });
+
+  it('v1 PF block declares abstraction_bridging (enum) + evidence in properties and required', () => {
+    const block = pf(captureProfileJsonSchema);
+    expect(block.required).toContain('abstraction_bridging');
+    expect(block.required).toContain('abstraction_bridging_evidence');
+    expect(block.properties.abstraction_bridging.enum).toEqual(['present', 'partial', 'absent']);
+    expect(block.properties.abstraction_bridging_evidence.type).toEqual(['array', 'null']);
+  });
+
+  it('v2 inherits abstraction_bridging (deep clone)', () => {
+    const block = pf(captureProfileJsonSchemaV2);
+    expect(block.required).toContain('abstraction_bridging');
+    expect(block.properties.abstraction_bridging).toBeDefined();
+  });
 });
