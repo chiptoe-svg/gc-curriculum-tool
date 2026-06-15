@@ -1,3 +1,4 @@
+import { isValidSlug } from '@/lib/slug';
 import { getGrantById, isGrantValid } from '@/lib/sandbox/grants';
 import { lookupScopedSession, SCOPED_SESSION_COOKIE } from '@/lib/sandbox/sessions';
 import { isProgramVisible, type CourseVisibilityFields } from '@/lib/courses/program-visibility';
@@ -41,6 +42,23 @@ export async function resolveScopedSession(
   const grant = await getGrantById(sess.grantId);
   if (!grant || !isGrantValid(grant)) return null;
   return { courseCode: sess.courseCode, instructorName: sess.instructorName };
+}
+
+/**
+ * Write/capture authorization for a course-scoped route, used in place of the
+ * bare `isValidSlug(slug)` check. True if the faculty slug is valid OR a scoped
+ * session is bound to exactly this course. The scoped path NEVER materializes
+ * the faculty slug (it's a client-exposed credential), so a bound tester
+ * authorizes via their session cookie without the slug ever being injected.
+ */
+export async function authorizeCourseWrite(
+  req: { headers: { get(name: string): string | null } },
+  code: string,
+  slug: string,
+): Promise<boolean> {
+  if (isValidSlug(slug)) return true;
+  const sess = await resolveScopedSession(req);
+  return sess?.courseCode === code;
 }
 
 /** Read gate for /view, /okf, /okf-bundle. */

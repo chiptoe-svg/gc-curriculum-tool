@@ -8,7 +8,7 @@
 
 1. **Access scope:** full self-serve — the link opens the whole CourseCapture flow (`/capture/<course>` + its APIs: materials upload, `.imscc` import, interview, approve) **and** the read surfaces (`/view/<course>`, `/okf`, `/okf-bundle`) for the one sandbox course.
 2. **Identity:** anonymous link **bound to the course** (no per-tester pre-registration). On first use the tester enters **name + institution**, which becomes the capture snapshot's `instructor_name`.
-3. **Mechanism: a scoped session bound to one course** (the shipped partner-session pattern), authorized **centrally in middleware** — for the bound course's allowed paths, middleware skips Basic Auth **and** rewrites the request to inject the faculty `slug` so the existing capture page + APIs authorize unchanged (zero per-route edits). Rejected: per-route `authorizeCourseWrite` helper (~27 scattered edits, easy to miss one), per-course-slug (churns the faculty model, leaks tokens), and a separate `/sandbox/.../capture` app tree (duplicates routing).
+3. **Mechanism: a scoped session bound to one course** (the shipped partner-session pattern). Middleware **skips Basic Auth** for the bound course's allowed paths; each such route/page authorizes via **`authorizeCourseWrite`** (`isValidSlug(slug)` OR a scoped session bound to that course — the session cookie is the credential). **The faculty `slug` is NEVER injected/materialized for a scoped tester** — it's a *client-exposed* credential (the capture page serializes `slug` into `CaptureClient` props + fetch URLs), so injecting it would leak the faculty master secret to the tester and into request URLs/logs. (A middleware slug-injection variant was tried and **reverted during the security review** for exactly this leak + because it missed body-read slug routes.) Rejected alternatives: per-course-slug (churns the faculty model, leaks tokens) and a separate `/sandbox/.../capture` app tree (duplicates routing).
 4. **Mint location:** `/admin`.
 5. **Lifecycle:** grants are **reusable** (capture is multi-session) until a **30-day** expiry or operator **revoke**; scoped session TTL **24h** (re-opening the link re-mints).
 6. **Security posture (load-bearing) — least privilege.** A scoped session opens **only its one sandbox course's**:
@@ -39,12 +39,14 @@ The operator mints a **grant** (random token bound to one sandbox course) from `
 | `lib/sandbox/access.ts` | **new** | The security boundary, in one place: `resolveScopedSession(req)`, `courseFromScopedPath(pathname)` (extract `<c>` + decide whether the path is in the bound session's allowed set), and `isCourseReadableBy(req, course)`. |
 | `app/sandbox/[token]/page.tsx` | **new** | Public entry: validate grant → name form (first use) → mint session → redirect to `/capture/<course>`. |
 | `app/sandbox/[token]/start/route.ts` | **new** | `POST` handler the name form submits to (mints the session cookie, redirects). |
-| `middleware.ts` | **changed** | Add `/sandbox` to `PUBLIC_PREFIXES`; before the faculty Basic-Auth gate, for a bound scoped session on an **allowed** path (per `courseFromScopedPath`), `NextResponse.rewrite` the URL with `slug=<PROTOTYPE_SLUG>` injected (skips Basic Auth **and** satisfies the routes' `isValidSlug`). All blocked/other paths fall through to Basic Auth unchanged. |
+| `middleware.ts` | **changed** | Add `/sandbox` to `PUBLIC_PREFIXES`; before the faculty Basic-Auth gate, for a bound scoped session on an **allowed** path (per `courseFromScopedPath`), `NextResponse.next()` — skip Basic Auth (no slug injection). All blocked/other paths fall through to Basic Auth unchanged. |
+| `app/capture/[code]/page.tsx` | **changed** | Accept a bound scoped session as authorization (alternative to `isValidSlug`); pass an **empty** `slug` to `CaptureClient` for a scoped tester so the faculty secret is never serialized to their browser. |
+| ~22 course-scoped API routes (`/api/capture/<c>/*` + allowlisted `/api/courses/<c>/*`) | **changed (uniform)** | Replace the bare `isValidSlug(slug)` gate with `authorizeCourseWrite(req, code, slug)` — accepts the faculty slug OR a bound scoped session. Slug-location-independent (query or body), so uploads work and nothing leaks. |
 | `app/api/capture/[code]/snapshots/route.ts` | **changed (1 line)** | When a scoped session is present, use its `instructorName` for the snapshot (the only spot the tester's self-entered identity must reach). Faculty path unchanged. |
 | `app/api/courses/[code]/imscc-import/route.ts` | **changed** | **Exception:** this route is *excluded from the middleware matcher* (body-replay fix) and enforces its own Basic Auth, so middleware injection can't reach it. Add a direct check: accept a scoped session bound to `<code>` as an alternative to Basic-Auth+slug (via `resolveScopedSession`). The one allowlisted route that needs an in-route edit. |
 | `app/view/[code]/okf/route.ts`, `app/view/[code]/okf-bundle/route.ts`, `app/view/[code]/page.tsx` | **changed** | Read gate becomes `isCourseReadableBy(req, course)` (= `isProgramVisible(course)` OR a bound scoped session for `course.code`) — these are `/view` public-prefixed routes, so middleware doesn't gate them; the scope check lives in the route. |
 
-> **No edits to the capture page or the capture API routes** *except* `imscc-import` (the matcher-excluded exception above). The middleware slug-injection makes their existing `isValidSlug` checks pass for the bound course, so they authorize a scoped tester unchanged. The faculty (Basic-Auth + slug) path is entirely untouched.
+> Each allowlisted route + the capture page gains the `authorizeCourseWrite` gate (a uniform 2-line swap from the bare `isValidSlug` check). The faculty (Basic-Auth + slug) path is unchanged — `authorizeCourseWrite` returns true for a valid slug, so existing faculty tests stay green. `imscc-import` (matcher-excluded) accepts the session directly via the same `resolveScopedSession` check.
 | `/admin` grant UI + `app/api/admin/sandbox-grants/route.ts` | **new** | Operator mint/list/revoke; shows the shareable link; "create sandbox course + mint link" convenience. |
 
 ## Data model
@@ -79,20 +81,21 @@ A grant is **valid** iff `active && revoked_at IS NULL && expires_at > now()`. A
   - `/api/capture/<c>/…` (any sub-path — the whole capture engine)
   - `/api/courses/<c>/<seg>/…` where `<seg> ∈ { materials, imscc-import, kuds, scan-linked-docs, checkin, analyze-materials, parse-profile }`
   - **returns `null`** for `<seg> ∈ { canvas-import, canvas-reextract, sync-from-sheet }`, for the bare `/api/courses/<c>`, and for everything else.
+- **`authorizeCourseWrite(req, code, slug): boolean`** — `isValidSlug(slug) || resolveScopedSession(req)?.courseCode === code`. The per-route gate: faculty slug OR a session bound to exactly this course. Replaces the bare `isValidSlug` check in every allowlisted route + the capture page. Slug-location-independent.
 - **`isCourseReadableBy(req, course): boolean`** — `isProgramVisible(course) || resolveScopedSession(req)?.courseCode === course.code`. Used by `/view`, `/okf`, `/okf-bundle`.
 
 **Middleware**, before the Basic-Auth block:
 ```
 const scopedCourse = courseFromScopedPath(path);
-const sess = scopedCourse ? await resolveScopedSession(req) : null;
-if (scopedCourse && sess && sess.courseCode === scopedCourse) {
-  const url = req.nextUrl.clone();
-  url.searchParams.set('slug', getPrototypeSlug());   // inject faculty slug, server-side only
-  return NextResponse.rewrite(url);                    // skips Basic Auth + satisfies isValidSlug
+if (scopedCourse) {
+  const sess = await resolveScopedSession(req);
+  if (sess && sess.courseCode === scopedCourse) {
+    return NextResponse.next();   // skip Basic Auth; the route/page authorizes via authorizeCourseWrite
+  }
 }
 // else: existing faculty Basic-Auth gate runs unchanged
 ```
-The match is exact on both the path's allowed-ness **and** the course code — a session for `GC X` never opens `GC Y`, a blocked route, or a non-course path. The injected slug is added to the rewritten (server-internal) URL only; it is never sent to the client.
+The match is exact on both the path's allowed-ness **and** the course code — a session for `GC X` never opens `GC Y`, a blocked route, or a non-course path. **No slug is injected** — the session cookie is the credential, so the faculty secret is never placed in a URL (logs) or forwarded to the tester's client.
 
 ## Entry flow (`/sandbox/[token]`)
 

@@ -1,5 +1,7 @@
 import { notFound } from 'next/navigation';
+import { headers } from 'next/headers';
 import { isValidSlug } from '@/lib/slug';
+import { resolveScopedSession } from '@/lib/sandbox/access';
 import { getCourseByCode } from '@/lib/db/courses-queries';
 import { formatCourseLabel } from '@/lib/courses/parse-course-code';
 import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
@@ -27,7 +29,13 @@ export default async function CapturePage({ params, searchParams }: Props) {
   const { slug = '' } = await searchParams;
   const code = decodeURIComponent(rawCode);
 
-  if (!isValidSlug(slug)) {
+  // External-tester access: a scoped session bound to THIS course authorizes the
+  // page in place of the faculty slug (middleware already skipped Basic Auth).
+  const cookieHeader = (await headers()).get('cookie');
+  const scoped = await resolveScopedSession({ headers: { get: (n: string) => (n.toLowerCase() === 'cookie' ? cookieHeader : null) } });
+  const isScopedForThis = scoped?.courseCode === code;
+
+  if (!isValidSlug(slug) && !isScopedForThis) {
     return (
       <div className="mx-auto max-w-2xl px-6 py-16 text-center">
         <h1 className="text-2xl font-semibold">Access link required</h1>
@@ -38,6 +46,11 @@ export default async function CapturePage({ params, searchParams }: Props) {
       </div>
     );
   }
+
+  // NEVER forward the faculty slug to a scoped tester's client — CaptureClient
+  // serializes it into props + fetch URLs. Their API calls authorize via the
+  // session cookie (authorizeCourseWrite), so an empty slug client-side leaks nothing.
+  const clientSlug = isScopedForThis ? '' : slug;
 
   const course = await getCourseByCode(code);
   if (!course) notFound();
@@ -157,7 +170,7 @@ export default async function CapturePage({ params, searchParams }: Props) {
         <CaptureClient
           course={courseView}
           initialMaterials={materialsView}
-          slug={slug}
+          slug={clientSlug}
           catalogSyncedAt={course.lastSyncedAt ? course.lastSyncedAt.toISOString() : null}
           existingProfile={priorCapture?.profile ?? null}
           existingReviewerStatus={priorCapture?.reviewerStatus ?? null}

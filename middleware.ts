@@ -5,7 +5,6 @@ import { partners } from '@/lib/db/schema';
 import { createSession, SESSION_COOKIE } from '@/lib/partners/sessions';
 import { requiresBasicAuth, resolveRole, creatorAllowed } from '@/lib/auth/basic-auth';
 import { courseFromScopedPath, resolveScopedSession } from '@/lib/sandbox/access';
-import { getPrototypeSlug } from '@/lib/slug';
 
 /**
  * Middleware does two things, dispatched by path prefix:
@@ -29,15 +28,18 @@ export async function middleware(req: NextRequest) {
   }
 
   // Scoped external-tester access: a session bound to course <c> opens only
-  // <c>'s allowed capture surfaces. We inject the faculty slug so the existing
-  // routes authorize unchanged (see lib/sandbox/access.ts for the allowlist).
+  // <c>'s allowed capture surfaces (see lib/sandbox/access.ts for the
+  // allowlist). Skip faculty Basic Auth for it — the route/page then authorizes
+  // via authorizeCourseWrite (the session cookie). We deliberately do NOT inject
+  // the faculty slug: it's a client-exposed credential, so injecting it would
+  // leak it to the tester (capture-page client props / fetch URLs) and into
+  // request URLs + logs. The session cookie is the credential; the slug is never
+  // materialized for a scoped tester.
   const scopedCourse = courseFromScopedPath(path);
   if (scopedCourse) {
     const sess = await resolveScopedSession(req);
     if (sess && sess.courseCode === scopedCourse) {
-      const url = req.nextUrl.clone();
-      url.searchParams.set('slug', getPrototypeSlug());
-      return NextResponse.rewrite(url);
+      return NextResponse.next();
     }
   }
 
