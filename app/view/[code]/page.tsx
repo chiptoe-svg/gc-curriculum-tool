@@ -7,7 +7,9 @@ import { CapturedView } from './CapturedView';
 import { CatalogFallbackView } from './CatalogFallbackView';
 import { fetchLiveCourseFromSheet } from '@/lib/sheets/fetchLiveCourse';
 import { redactPiiDeep } from '@/lib/capture/redact-pii';
+import { headers } from 'next/headers';
 import { isProgramVisible } from '@/lib/courses/program-visibility';
+import { isCourseReadableBy } from '@/lib/sandbox/access';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,7 +46,9 @@ export default async function ViewCoursePage({ params }: Props) {
 
   // Non-GC / non-offered courses are not public. (External-sandbox courses are
   // reachable only via their scoped link — added in the external-access plan.)
-  if (!course || !isProgramVisible(course)) notFound();
+  const cookieHeader = (await headers()).get('cookie');
+  const reqLike = { headers: { get: (n: string) => (n.toLowerCase() === 'cookie' ? cookieHeader : null) } };
+  if (!course || !(await isCourseReadableBy(reqLike, course))) notFound();
 
   const [snapshot] = await db
     .select({

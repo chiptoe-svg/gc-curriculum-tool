@@ -9,6 +9,9 @@ vi.mock('@/lib/db/capture-snapshots-queries', () => ({ getLatestSnapshotByCourse
 vi.mock('@/lib/db/capture-messages-queries', () => ({ getSessionMessages: (...a: unknown[]) => mockGetMessages(...a) }));
 vi.mock('@/lib/db/course-materials-queries', () => ({ listMaterialsByCourse: (...a: unknown[]) => mockListMaterials(...a) }));
 
+const mockReadable = vi.fn();
+vi.mock('@/lib/sandbox/access', () => ({ isCourseReadableBy: (...a: unknown[]) => mockReadable(...a) }));
+
 import { GET } from '../route';
 
 function req(code = 'GC 2400') {
@@ -28,6 +31,7 @@ beforeEach(() => {
   mockGetSnapshot.mockResolvedValue(SNAPSHOT);
   mockGetMessages.mockResolvedValue([{ role: 'user', content: 'Hi from Dr. X' }]);
   mockListMaterials.mockResolvedValue([]);
+  mockReadable.mockResolvedValue(true);
 });
 
 describe('GET /view/[code]/okf-bundle', () => {
@@ -47,9 +51,19 @@ describe('GET /view/[code]/okf-bundle', () => {
     expect((await GET(r, ctx)).status).toBe(404);
   });
 
-  it('404s (opaque) for a non-visible sandbox course', async () => {
+  it('404s when the course is not readable (no scoped session)', async () => {
     mockGetCourse.mockResolvedValue(SANDBOX_COURSE);
+    mockReadable.mockResolvedValue(false);
     const [r, ctx] = req();
     expect((await GET(r, ctx)).status).toBe(404);
+  });
+
+  it('200s for a sandbox course with a bound scoped session', async () => {
+    mockGetCourse.mockResolvedValue(SANDBOX_COURSE);
+    mockReadable.mockResolvedValue(true);
+    const [r, ctx] = req();
+    const res = await GET(r, ctx);
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toBe('application/zip');
   });
 });

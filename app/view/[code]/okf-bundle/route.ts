@@ -4,6 +4,7 @@ import { getSessionMessages } from '@/lib/db/capture-messages-queries';
 import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
 import { redactPiiDeep } from '@/lib/capture/redact-pii';
 import { isProgramVisible } from '@/lib/courses/program-visibility';
+import { isCourseReadableBy } from '@/lib/sandbox/access';
 import { buildOkfBundle } from '@/lib/okf/bundle';
 
 interface RouteContext { params: Promise<{ code: string }>; }
@@ -15,7 +16,7 @@ export async function GET(req: Request, { params }: RouteContext): Promise<Respo
   const course = await getCourseByCode(code);
   // Opaque 404 for non-gc/non-offered, identical to /view/[code]/okf - a sandbox
   // course's bundle is reachable only via the scoped link (external-access plan).
-  if (!course || !isProgramVisible(course)) {
+  if (!course || !(await isCourseReadableBy(req, course))) {
     return new Response(`No such course: ${code}`, { status: 404, headers: { 'content-type': 'text/plain; charset=utf-8' } });
   }
   const snapshot = await getLatestSnapshotByCourse(code);
