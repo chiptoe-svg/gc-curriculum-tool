@@ -39,13 +39,13 @@ export function CaptureHero({
         {courseCode} · Course capture
       </p>
       <h2 className="mt-1 text-xl font-semibold leading-snug">
-        Capture what students actually walk away knowing, understanding, and being able to do in{' '}
+        Capture what students should actually walk away knowing, understanding, and being able to do in{' '}
         {courseTitle}.
       </h2>
       <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
         The AI interviews you about your course, grounded in your materials, and builds an
-        evidence record: not what the syllabus hopes, but what students actually attain, at
-        honest depth. Everything downstream reads from it (the curriculum map, prerequisite
+        evidence record: not what the syllabus hopes, but what your course is evidenced to
+        develop, at honest depth. Everything downstream reads from it (the curriculum map, prerequisite
         checks, career alignment), and it can only see what you surface here. So the single
         most valuable thing you can do is let the interview surface, explicitly, what students
         actually do and at what depth: a competency you don&apos;t make explicit is one
