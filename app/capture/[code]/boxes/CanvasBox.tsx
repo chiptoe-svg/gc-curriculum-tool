@@ -189,6 +189,9 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
   const [open, setOpen] = useState(false);
   const [tokenOpen, setTokenOpen] = useState(false);
   const [token, setToken] = useState('');
+  // Single-mode reimport may optionally switch to a different Canvas course URL
+  // (e.g. a new semester's section). Blank = refresh the currently-linked course.
+  const [reimportUrl, setReimportUrl] = useState('');
   const [reextracting, setReextracting] = useState(false);
   const [reextractMsg, setReextractMsg] = useState<string | null>(null);
   const [indexing, setIndexing] = useState(false);
@@ -266,12 +269,20 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
     setReextracting(true);
     setReextractMsg(null);
     try {
+      // A URL switches to a (possibly new) Canvas course via canvas-import, which
+      // parses the course ID and upserts materials by name. Blank re-extracts the
+      // currently-linked course in place (canvas-reextract).
+      const url = reimportUrl.trim();
       const res = await fetch(
-        `/api/courses/${encodeURIComponent(course.code)}/canvas-reextract`,
+        `/api/courses/${encodeURIComponent(course.code)}/${url ? 'canvas-import' : 'canvas-reextract'}`,
         {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ slug, canvasToken: token.trim() }),
+          body: JSON.stringify(
+            url
+              ? { slug, canvasUrl: url, canvasToken: token.trim(), sourceCode: null }
+              : { slug, canvasToken: token.trim() },
+          ),
         },
       );
       const contentType = res.headers.get('content-type') ?? '';
@@ -279,16 +290,18 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
         setReextractMsg(`Server returned ${res.status}.`);
         return;
       }
-      const json = await res.json() as { updated?: number; skipped?: number; error?: string };
+      const json = await res.json() as { updated?: number; imported?: number; skipped?: number; error?: string };
       if (!res.ok) { setReextractMsg(json.error ?? `Import failed (${res.status})`); return; }
-      const upd = json.updated ?? 0;
-      setReextractMsg(`re-extracted ${upd} file${upd === 1 ? '' : 's'}.`);
+      const n = url ? (json.imported ?? 0) : (json.updated ?? 0);
+      const verb = url ? 'imported' : 're-extracted';
+      setReextractMsg(`${verb} ${n} file${n === 1 ? '' : 's'}.`);
       setToken('');
+      setReimportUrl('');
       setTokenOpen(false);
       const fresh = await fetchCourseMaterials(course.code, slug);
       if (fresh) onMaterialsChange(fresh);
       if (autoScanAfterImport) {
-        setReextractMsg(`re-extracted ${upd} file${upd === 1 ? '' : 's'} — scanning linked docs…`);
+        setReextractMsg(`${verb} ${n} file${n === 1 ? '' : 's'}; scanning linked docs…`);
         await scanLinkedDocs();
       }
     } catch (e) {
@@ -637,7 +650,24 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
       {/* Single-mode: global token field */}
       {!isBundled && tokenOpen && (
         <div className="border-t bg-muted/20 px-3 py-2.5">
-          <label className="block text-[11px] font-medium text-muted-foreground" htmlFor="canvas-token">
+          <label className="block text-[11px] font-medium text-muted-foreground" htmlFor="canvas-url">
+            Canvas course URL {empty ? '' : '(optional)'}
+          </label>
+          <input
+            id="canvas-url"
+            type="url"
+            value={reimportUrl}
+            onChange={e => setReimportUrl(e.target.value)}
+            placeholder="https://clemson.instructure.com/courses/12345"
+            className="mt-1 w-full rounded-md border border-input bg-background px-2 py-1 text-xs"
+          />
+          {!empty && (
+            <p className="mt-1 text-[10px] leading-snug text-muted-foreground">
+              {course.canvasCourseName ? `Currently linked: ${course.canvasCourseName}. ` : ''}
+              Leave blank to refresh the current Canvas course, or paste a new URL to switch to a different one (e.g. a new semester&apos;s section).
+            </p>
+          )}
+          <label className="mt-2.5 block text-[11px] font-medium text-muted-foreground" htmlFor="canvas-token">
             Canvas API token
           </label>
           <div className="mt-1 flex items-center gap-2">
