@@ -404,8 +404,8 @@ function MaterialRow({
                 }
                 title={
                   usingDigest
-                    ? 'The audit prompt uses this material\'s structured AI summary instead of its full extracted text.'
-                    : 'An AI summary exists but is currently disabled — the audit uses the full extracted text.'
+                    ? 'The interview prompt uses this material\'s structured AI summary instead of its full extracted text.'
+                    : 'An AI summary exists but is currently disabled — the interview uses the full extracted text.'
                 }
               >
                 {usingDigest ? `AI summary (~${formatTokens(digestTokenEstimate)})` : 'AI summary off'}
@@ -434,13 +434,13 @@ function MaterialRow({
             {material.pageCount !== null && <span>{material.pageCount} pages · </span>}
             {wordCount > 0 && <span>{wordCount.toLocaleString()} words · </span>}
             {tokenEstimate > 0 && (
-              <span className={tokenTone} title="Approximate tokens this material contributes to the audit prompt (~4 chars/token). The audit input cap is 272k tokens total.">
+              <span className={tokenTone} title="Approximate tokens this material contributes to the interview prompt (~4 chars/token). The interview input cap is 272k tokens total.">
                 ~{formatTokens(tokenEstimate)} ·{' '}
               </span>
             )}
             {usingDigest && digestTokenEstimate > 0 && (
-              <span className="text-teal-700" title="Tokens the AI summary contributes to the audit prompt (replaces the full token count shown above).">
-                audit sends ~{formatTokens(digestTokenEstimate)} ·{' '}
+              <span className="text-teal-700" title="Tokens the AI summary contributes to the interview prompt (replaces the full token count shown above).">
+                interview sends ~{formatTokens(digestTokenEstimate)} ·{' '}
               </span>
             )}
             <span>{humanSize(material.sizeBytes)}</span>
@@ -457,7 +457,7 @@ function MaterialRow({
                           ? 'flagged by the materials policy'
                           : 'manually toggled off by the faculty reviewer')}
                 {material.autoSetAside && !material.ignored && (
-                  <span className="ml-1 italic text-amber-700">(overridden — included in audit)</span>
+                  <span className="ml-1 italic text-amber-700">(overridden — included in interview)</span>
                 )}
               </p>
               {material.autoSetAside && material.ignored && (
@@ -1062,7 +1062,7 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
       : 'text-muted-foreground';
   const compressionHint =
     totalAuditTokens >= 220_000
-      ? 'Approaching the audit-prompt cap. Compress reference materials below, then ignore uploads you don\'t need.'
+      ? 'Approaching the interview-prompt cap. Compress reference materials below, then ignore uploads you don\'t need.'
       : totalAuditTokens >= 150_000
       ? 'Getting large. Compressing reference materials below will shrink this.'
       : '';
@@ -1079,7 +1079,7 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
                   'rounded-full px-2 py-0.5 text-[10px] font-medium ' +
                   (totalAuditTokens >= 220_000 ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800')
                 }
-                title="The active materials are large for the audit prompt — open this panel and compress/ignore some before starting."
+                title="The active materials are large for the interview prompt — open this panel and compress/ignore some before starting."
               >
                 {totalAuditTokens >= 220_000 ? 'Very large — review before starting' : 'Large — review before starting'}
               </span>
@@ -1094,9 +1094,9 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
           {totalAuditTokens > 0 && (
             <p
               className={'text-[11px] ' + totalTone}
-              title="Estimated tokens the audit prompt will carry from your active materials. The audit input cap is 272k tokens; aim to stay well under it."
+              title="Estimated tokens the interview prompt will carry from your active materials. The interview input cap is 272k tokens; aim to stay well under it."
             >
-              Audit prompt: ~{formatTokens(totalAuditTokens)} from materials
+              Interview prompt: ~{formatTokens(totalAuditTokens)} from materials
               {compressionHint && <span className="ml-1 font-normal">— {compressionHint}</span>}
             </p>
           )}
@@ -1115,7 +1115,7 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
               title="Simple mode skips chunk indexing for this course; the agent runs against AI summaries inline. Switch to Full to enable retrieval."
               className="rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
             >
-              Audit mode: {course.auditMode === 'simple' ? 'Simple' : 'Full'} {auditModeOpen ? '▴' : '▾'}
+              Interview mode: {course.auditMode === 'simple' ? 'Simple' : 'Full'} {auditModeOpen ? '▴' : '▾'}
             </button>
             {auditModeOpen && (
               <div className="absolute right-0 top-full z-10 mt-1 w-56 rounded-md border bg-card shadow-md">
@@ -1188,10 +1188,10 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
                   style={{ fontSize: '10px', lineHeight: 1 }}
                 >▼</span>
                 <span>
-                  <h3 className="text-sm font-semibold">{hideRows ? `${materials.length} materials feed the audit` : `Materials (${materials.length})`}</h3>
+                  <h3 className="text-sm font-semibold">{hideRows ? `${materials.length} materials feed the interview` : `Materials (${materials.length})`}</h3>
                   {!materialsCollapsed && (
                     <p className="text-[11px] text-muted-foreground">
-                      Ignored items stay in the database but don&apos;t feed the audit.
+                      Ignored items stay in the database but don&apos;t feed the interview.
                     </p>
                   )}
                 </span>

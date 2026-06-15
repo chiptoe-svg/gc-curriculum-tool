@@ -14,7 +14,7 @@ export function LegacyBanner({ onReaudit }: { onReaudit?: () => void }) {
           <p className="mt-0.5 text-xs leading-snug">
             This profile was captured before per-finding source flags and clickable citations existed.
             The ratings remain valid; they just don&apos;t carry an evidence trail.
-            Start a fresh audit when you have time and the new version will replace this one.
+            Start a fresh interview when you have time and the new version will replace this one.
           </p>
         </div>
         {onReaudit && (
@@ -23,7 +23,7 @@ export function LegacyBanner({ onReaudit }: { onReaudit?: () => void }) {
             onClick={onReaudit}
             className="shrink-0 rounded border border-amber-400 bg-amber-100 px-2 py-1 text-xs font-medium hover:bg-amber-200"
           >
-            Start fresh audit
+            Start fresh interview
           </button>
         )}
       </div>

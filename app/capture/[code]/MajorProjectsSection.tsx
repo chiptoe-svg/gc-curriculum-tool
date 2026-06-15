@@ -132,7 +132,7 @@ export function MajorProjectsSection({
       <section className="rounded-md border bg-card px-4 py-3 text-sm">
         <h3 className="font-semibold text-sm">Major projects</h3>
         <p className="mt-1 text-xs italic text-muted-foreground">
-          Not yet captured — re-audit to extract major projects from course materials.
+          Not yet captured — re-interview to extract major projects from course materials.
         </p>
       </section>
     );

@@ -118,7 +118,7 @@ export function CanvasImportSummary({ materials }: Props) {
             </li>
           </ul>
           <p className="mt-3 text-xs text-muted-foreground">
-            A gray dot means that Canvas category was either not present or returned no content during the last import. If you have content there in Canvas and don&apos;t see it here, click <em>Import from Canvas</em> at the top of the Materials panel to re-sync. Amber dots mean the material was imported but is currently being skipped during the audit (see the &ldquo;why ignored&rdquo; note on that row).
+            A gray dot means that Canvas category was either not present or returned no content during the last import. If you have content there in Canvas and don&apos;t see it here, click <em>Import from Canvas</em> at the top of the Materials panel to re-sync. Amber dots mean the material was imported but is currently being skipped during the interview (see the &ldquo;why ignored&rdquo; note on that row).
           </p>
         </section>
 
@@ -152,7 +152,7 @@ export function CanvasImportSummary({ materials }: Props) {
               </table>
             </div>
             <p className="mt-2 text-xs text-muted-foreground">
-              The audit agent retrieves assignment descriptions and rubric criteria via its search tools. Rubric criteria are what faculty actually grade against — they ground the depth-rating questions the agent will ask. Assignments without rubrics get scored from their description text alone, which gives the agent less to work with.
+              The interview agent retrieves assignment descriptions and rubric criteria via its search tools. Rubric criteria are what faculty actually grade against — they ground the depth-rating questions the agent will ask. Assignments without rubrics get scored from their description text alone, which gives the agent less to work with.
             </p>
           </section>
         )}

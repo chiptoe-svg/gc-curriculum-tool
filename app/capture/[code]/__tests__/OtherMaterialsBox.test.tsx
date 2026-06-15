@@ -115,11 +115,11 @@ describe('OtherMaterialsBox', () => {
     await waitFor(() => expect(onMaterialsChange).toHaveBeenCalled());
   });
 
-  it('"audit sends ~N tok" note shows when useDigest && digest', () => {
+  it('"interview sends ~N tok" note shows when useDigest && digest', () => {
     const withDigest = [mat({ id: 'd2', fileName: 'notes.pdf', digest: 'x'.repeat(400), useDigest: true })];
     render(<OtherMaterialsBox course={course} materials={withDigest} slug="s" onMaterialsChange={noop} />);
     fireEvent.click(screen.getByRole('button', { name: /other materials/i }));
-    expect(screen.getByText(/audit sends ~/i)).toBeTruthy();
+    expect(screen.getByText(/interview sends ~/i)).toBeTruthy();
   });
 
   it('preview button expands extractedText and hide collapses it', () => {

@@ -297,7 +297,7 @@ function NullOverviewPlaceholder({
   return (
     <div className="rounded-md border border-dashed border-border bg-muted/20 px-6 py-8 text-center space-y-3 animate-in fade-in duration-300">
       <p className="font-body-sans text-sm text-muted-foreground">
-        No overview drafted yet. Re-audit this course to generate one — or write one from scratch.
+        No overview drafted yet. Re-interview this course to generate one — or write one from scratch.
       </p>
       <button
         type="button"
@@ -333,7 +333,7 @@ export function CourseOverview({
       return (
         <div className="rounded-md border border-dashed border-border bg-muted/20 px-6 py-5 animate-in fade-in duration-300">
           <p className="font-body-sans text-sm text-muted-foreground italic">
-            No overview available. This profile predates the overview feature — re-audit to generate one.
+            No overview available. This profile predates the overview feature — re-interview to generate one.
           </p>
         </div>
       );

@@ -357,7 +357,7 @@ export function CaptureChatPanel({
     <section className="rounded-md border bg-card shadow-sm">
       <div className="flex items-start justify-between gap-3 border-b px-4 py-2">
         <div>
-          <h2 className="text-sm font-semibold">Audit conversation</h2>
+          <h2 className="text-sm font-semibold">Interview conversation</h2>
           <p className="text-xs text-muted-foreground">
             The interviewer reads everything already in the system and asks clarifying questions about
             prereqs, stated vs. evidenced outcomes, and any contradictions across sources.
@@ -446,7 +446,7 @@ export function CaptureChatPanel({
       >
         {messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center py-12 text-center">
-            <p className="text-sm font-medium">Start the audit when you&apos;re ready.</p>
+            <p className="text-sm font-medium">Start the interview when you&apos;re ready.</p>
             <p className="mt-1 max-w-md text-xs text-muted-foreground">
               The interviewer opens with what it found in the materials and its first question.
               The conversation runs as long as it needs to ground every rating in evidence —
@@ -454,7 +454,7 @@ export function CaptureChatPanel({
             </p>
 
             <p className="mt-3 text-xs text-muted-foreground">
-              Pick who&apos;s auditing (and build-on vs. fresh) in the panel above, then:
+              Pick who&apos;s interviewing (and build-on vs. fresh) in the panel above, then:
             </p>
             <button
               type="button"
@@ -538,7 +538,7 @@ export function CaptureChatPanel({
           />
           {problemSolvingUnprobed && (
             <p className="mb-2 text-xs text-muted-foreground">
-              Heads up: this session didn&rsquo;t cover problem-solving (productive failure), so the profile will record it as <em>not assessed</em> — expected for many courses (a short seminar, for instance). Keep auditing if this course develops it; otherwise generate as usual.
+              Heads up: this session didn&rsquo;t cover problem-solving (productive failure), so the profile will record it as <em>not assessed</em> — expected for many courses (a short seminar, for instance). Keep interviewing if this course develops it; otherwise generate as usual.
             </p>
           )}
           <div className="flex items-center justify-between gap-3">

@@ -29,7 +29,7 @@ export function CaptureHelpPanel() {
           <ul className="space-y-1.5 pl-1">
             <li>
               <span className="inline-block w-4 text-center text-emerald-600">●</span>
-              <strong>Green dot</strong> — material is indexed and the audit agent can retrieve from it during the chat (search tools point here).
+              <strong>Green dot</strong> — material is indexed and the interview agent can retrieve from it during the chat (search tools point here).
             </li>
             <li>
               <span className="inline-block w-4 text-center text-muted-foreground">○</span>
@@ -39,7 +39,7 @@ export function CaptureHelpPanel() {
                   <em>Canvas: Syllabus</em> is auto-ignored when your Sheets catalog already lists learning objectives, projects, and skills — the syllabus content is redundant.
                 </li>
                 <li>
-                  Files with a red token count (e.g. <em>~131k tok</em>) are auto-set-aside because they exceed the summary size limit. Usually safe to leave ignored unless the file is genuinely audit-relevant.
+                  Files with a red token count (e.g. <em>~131k tok</em>) are auto-set-aside because they exceed the summary size limit. Usually safe to leave ignored unless the file is genuinely interview-relevant.
                 </li>
                 <li>
                   Gradebook / attendance / roster spreadsheets are auto-ignored as likely student data.
@@ -50,7 +50,7 @@ export function CaptureHelpPanel() {
               <strong>&ldquo;AI summary&rdquo; checkbox</strong> — when checked, the agent reads a ~700–900-token structured summary of this material in its at-rest context every turn. It can still pull the full chunked content via search tools when it needs precise wording. Leave checked unless the material is short enough that the agent can read it whole.
             </li>
             <li>
-              <strong>&ldquo;ignore&rdquo; checkbox</strong> — exclude entirely from the audit. The file stays in the database (you can un-ignore later) but the agent never sees it. Use to manually override an auto-included material the agent shouldn&apos;t reason about.
+              <strong>&ldquo;ignore&rdquo; checkbox</strong> — exclude entirely from the interview. The file stays in the database (you can un-ignore later) but the agent never sees it. Use to manually override an auto-included material the agent shouldn&apos;t reason about.
             </li>
           </ul>
         </section>
@@ -66,7 +66,7 @@ export function CaptureHelpPanel() {
             </div>
             <div className="flex gap-3">
               <dt className="w-44 shrink-0 font-medium">Regenerate AI summaries</dt>
-              <dd className="text-muted-foreground">Only if you&apos;ve materially changed how the AI summaries are generated. Skip on a normal audit.</dd>
+              <dd className="text-muted-foreground">Only if you&apos;ve materially changed how the AI summaries are generated. Skip on a normal interview.</dd>
             </div>
             <div className="flex gap-3">
               <dt className="w-44 shrink-0 font-medium">Scan linked files</dt>
@@ -81,19 +81,19 @@ export function CaptureHelpPanel() {
 
         <section>
           <h4 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Audit mode (toggle near the bottom of the Materials panel)
+            Interview mode (toggle near the bottom of the Materials panel)
           </h4>
           <p className="text-foreground">
             <strong>Full</strong> — agent has three retrieval tools and can search the indexed materials during the conversation. <em>Use this unless you have a specific reason not to.</em>
           </p>
           <p className="mt-1 text-muted-foreground">
-            <strong>Simple</strong> — agent skips tools and audits only from the at-rest AI summaries. Faster but less precise; the agent can&apos;t quote rubric language verbatim.
+            <strong>Simple</strong> — agent skips tools and interviews only from the at-rest AI summaries. Faster but less precise; the agent can&apos;t quote rubric language verbatim.
           </p>
         </section>
 
         <section>
           <h4 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            The audit conversation
+            The interview conversation
           </h4>
           <ol className="ml-5 list-decimal space-y-1 text-foreground">
             <li>
@@ -103,7 +103,7 @@ export function CaptureHelpPanel() {
               <strong>Push back when something&apos;s wrong.</strong> If the agent misses something — a non-text assessment, a studio critique, a graded artifact that lives outside the rubric — say so. It will incorporate the correction.
             </li>
             <li>
-              <strong>Watch the readiness strip.</strong> It climbs as the audit covers more ground. Around 75% the agent will signal it has enough to generate a Course Outcome Profile.
+              <strong>Watch the readiness strip.</strong> It climbs as the interview covers more ground. Around 75% the agent will signal it has enough to generate a Course Outcome Profile.
             </li>
             <li>
               <strong>Generate the profile when ready.</strong> Click &ldquo;Generate Course Outcome Profile&rdquo; — the synthesis call produces a structured profile with KUD+ depth ratings + citations to your materials and your replies. Review, edit, and snapshot it.

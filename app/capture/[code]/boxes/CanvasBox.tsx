@@ -512,7 +512,7 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
                       ? 'set aside automatically'
                       : 'manually toggled off by the faculty reviewer')}
               {m.autoSetAside && !m.ignored && (
-                <span className="ml-1 not-italic text-amber-700">(overridden — included in audit)</span>
+                <span className="ml-1 not-italic text-amber-700">(overridden — included in interview)</span>
               )}
             </p>
             {m.autoSetAside && m.ignored && (

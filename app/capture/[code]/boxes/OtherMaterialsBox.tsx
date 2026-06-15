@@ -229,8 +229,8 @@ function OtherRow({ m, courseCode, slug, indexing, onIndexNow, onMaterialsChange
           {wordCount > 0 && <span>{wordCount.toLocaleString()} words · </span>}
           {tokenEst > 0 && <span>~{formatMaterialTokens(tokenEst)} · </span>}
           {usingDigest && digestTokenEst > 0 && (
-            <span className="text-teal-700" title="Tokens the AI summary contributes to the audit prompt.">
-              audit sends ~{formatMaterialTokens(digestTokenEst)} ·{' '}
+            <span className="text-teal-700" title="Tokens the AI summary contributes to the interview prompt.">
+              interview sends ~{formatMaterialTokens(digestTokenEst)} ·{' '}
             </span>
           )}
           <span>{formatMaterialBytes(m.sizeBytes)}</span>
@@ -250,7 +250,7 @@ function OtherRow({ m, courseCode, slug, indexing, onIndexNow, onMaterialsChange
                     ? 'set aside automatically'
                     : 'manually toggled off by the faculty reviewer')}
             {m.autoSetAside && !m.ignored && (
-              <span className="ml-1 not-italic text-amber-700">(overridden — included in audit)</span>
+              <span className="ml-1 not-italic text-amber-700">(overridden — included in interview)</span>
             )}
           </p>
           {m.autoSetAside && m.ignored && (

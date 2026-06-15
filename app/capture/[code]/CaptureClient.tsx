@@ -165,7 +165,7 @@ export function CaptureClient({
   const handleResetAudit = useCallback(async () => {
     if (
       !window.confirm(
-        'Reset this course\'s audit chat?\n\n' +
+        'Reset this course\'s interview chat?\n\n' +
         'Clears the current working draft. Prior session transcripts, ' +
         'snapshots, and indexed materials are preserved. The agent on the ' +
         'next session will see the prior sessions as continuity context.\n\n' +
@@ -367,9 +367,9 @@ export function CaptureClient({
               onClick={handleResetAudit}
               disabled={resetState === 'resetting'}
               className="rounded border border-stone-300 bg-white px-2 py-1 font-medium text-stone-700 hover:bg-stone-50 disabled:opacity-50"
-              title="Clear the working draft for this course and start the audit chat fresh. Prior sessions and indexed materials stay."
+              title="Clear the working draft for this course and start the interview chat fresh. Prior sessions and indexed materials stay."
             >
-              {resetState === 'resetting' ? 'Resetting…' : 'Reset audit'}
+              {resetState === 'resetting' ? 'Resetting…' : 'Reset interview'}
             </button>
           </div>
           {generationError && (
@@ -392,7 +392,7 @@ export function CaptureClient({
                 >
                   View it
                 </button>{' '}
-                or generate a new one once the audit conversation has the evidence it needs.
+                or generate a new one once the interview conversation has the evidence it needs.
               </p>
             </div>
           )}

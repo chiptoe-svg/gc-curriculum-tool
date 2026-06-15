@@ -273,7 +273,7 @@ export function CanvasImportZone({ courseCode, slug, onImported, open: controlle
             />
             <span>
               <span className="font-medium text-foreground">Skip unpublished items</span>
-              <span className="ml-1 text-muted-foreground/80">— exclude draft assignments, quizzes, pages, and module items so they don&apos;t pollute the audit. Uncheck to import everything tagged <span className="font-mono">[unpublished]</span>.</span>
+              <span className="ml-1 text-muted-foreground/80">— exclude draft assignments, quizzes, pages, and module items so they don&apos;t pollute the interview. Uncheck to import everything tagged <span className="font-mono">[unpublished]</span>.</span>
             </span>
           </label>
           <label className="flex cursor-pointer items-start gap-2 text-xs text-muted-foreground">

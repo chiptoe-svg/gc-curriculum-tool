@@ -24,7 +24,7 @@ export function ClassStructureSection({
       <section className="rounded-md border bg-card px-4 py-3 text-sm">
         <h3 className="font-semibold text-sm">Class structure</h3>
         <p className="mt-1 text-xs italic text-muted-foreground">
-          Not yet captured — re-audit to extract class structure from course materials.
+          Not yet captured — re-interview to extract class structure from course materials.
         </p>
       </section>
     );
