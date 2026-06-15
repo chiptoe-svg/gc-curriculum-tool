@@ -114,6 +114,7 @@ export async function listStalePairs(): Promise<PairToScore[]> {
     FROM ${courseCaptureSnapshots} s
     JOIN courses c ON c.code = s.course_code
     WHERE s.retired_at IS NULL AND c.builds_to_career = true
+      AND c.scope = 'gc' AND c.status = 'offered'  -- scope/status: see lib/courses/program-visibility.ts
     ORDER BY s.course_code, s.instructor_name, s.created_at DESC
   `);
   const latestSnaps = (latestSnapshots.rows as Array<{ id: string; course_code: string }>);
@@ -236,6 +237,7 @@ export async function getMatrixData(): Promise<MatrixData> {
     FROM ${courseCaptureSnapshots} s
     JOIN courses c ON c.code = s.course_code
     WHERE s.retired_at IS NULL AND c.builds_to_career = true
+      AND c.scope = 'gc' AND c.status = 'offered'  -- scope/status: see lib/courses/program-visibility.ts
     ORDER BY s.course_code, s.instructor_name, s.created_at DESC
   `);
   const courseRows = (latestSnapshotsRaw.rows as Array<{
