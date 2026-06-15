@@ -106,6 +106,8 @@ Conform exactly to the JSON schema provided in the structured-output request. Th
       "revision_cycles": "present" | "partial" | "absent",
       "structured_post_mortem": "present" | "partial" | "absent",
       "structured_post_mortem_evidence": [ { "type": "chunk" | "instructor", "chunkId": "...", "messageId": null, "excerpt": "..." } ] | null,
+      "abstraction_bridging": "present" | "partial" | "absent",
+      "abstraction_bridging_evidence": [ { "type": "chunk" | "instructor", "chunkId": "...", "messageId": null, "excerpt": "..." } ] | null,
       "max_supporting_depth": 0-5,
       "notes": [ "<one-line finding tying a specific assignment to a condition>", ... ]
     },
@@ -191,25 +193,36 @@ disagrees with the rule, the system will overwrite it.
 Emit the `productive_failure_conditions` block ONLY IF Audit Area 7 was probed
 in the transcript — i.e., the transcript contains explicit discussion of
 generate-then-consolidate structure, ill-structured / open-ended problems,
-revision cycles with consequential feedback, structured post-mortem, or the
+revision cycles with consequential feedback, structured post-mortem,
+abstraction-and-bridging / transfer across varied cases, or the
 course's domain depth as it relates to problem-solving capacity. If the
 auditor never asked about these conditions, set `productive_failure_conditions`
 to `null` (do NOT omit the field — under OpenAI strict mode it must be present
 as `null`, not absent). Do NOT infer the conditions from absence — silence in
 the transcript means "unknown," not "absent."
 
-If you do emit the block: each of the four condition fields takes one of
+If you do emit the block: each of the **five condition fields** takes one of
 `present` / `partial` / `absent`, judged from the transcript and materials.
 `max_supporting_depth` is the highest D-depth among the course's technical
 competencies (the depth that supports productive failure being productive vs.
 unproductive — degrees, not a threshold). `notes` is a small list of one-line
 findings tying specific assignments to specific conditions ("the Brand Color
 Report's revision cycle responds to specific rubric critique on submission 1 —
-present"). When `max_supporting_depth` is high (≥4) but the four condition
-fields are mostly `absent`, this is Kapur's "unproductive success" pattern —
+present"). When `max_supporting_depth` is high (≥4) but the **five condition
+fields** are mostly `absent`, this is Kapur's "unproductive success" pattern —
 surface it explicitly in `notes`.
 
 `structured_post_mortem` may be `present` or `partial` ONLY when you can cite a specific graded post-mortem / debrief artifact in `structured_post_mortem_evidence` (a real chunk or instructor-turn citation, same provenance rules as competency citations). A generic "reflect on your learning" prompt with no graded artifact is `absent` — do not credit reflection you cannot ground. Emit `null` for `structured_post_mortem_evidence` when `structured_post_mortem` is `absent`.
+
+`abstraction_bridging` grades whether the course makes students abstract a
+principle across multiple surface-varied cases and apply it to a genuinely new
+context (Audit Area 7 probe e). Rate "present"/"partial"/"absent". When above
+"absent", `abstraction_bridging_evidence` MUST cite the specific graded artifact
+that requires the cross-case abstraction + transfer to a new context (same
+evidence-above-zero discipline as `structured_post_mortem`); with no such
+artifact to cite, rate it "absent". Do not conflate with `open_ended_problems`
+(that is about a single problem being open-ended; this is about reasoning across
+several varied cases toward a new context).
 
 # Class structure and major projects
 

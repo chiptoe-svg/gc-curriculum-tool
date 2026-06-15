@@ -193,6 +193,8 @@ export const captureProfileJsonSchema = {
             'revision_cycles',
             'structured_post_mortem',
             'structured_post_mortem_evidence',
+            'abstraction_bridging',
+            'abstraction_bridging_evidence',
             'max_supporting_depth',
             'notes',
           ],
@@ -204,6 +206,10 @@ export const captureProfileJsonSchema = {
             // Nullable array of citations; required-by-superRefine in Zod when
             // structured_post_mortem is above 'absent'. Model emits null otherwise.
             structured_post_mortem_evidence: { type: ['array', 'null'], items: CITATIONS_ARRAY.items },
+            abstraction_bridging: { type: 'string', enum: ['present', 'partial', 'absent'] },
+            // Nullable array; required-by-superRefine in Zod when abstraction_bridging
+            // is above 'absent'. Model emits null otherwise.
+            abstraction_bridging_evidence: { type: ['array', 'null'], items: CITATIONS_ARRAY.items },
             max_supporting_depth: { type: 'integer', minimum: 0, maximum: 5 },
             notes: { type: 'array', items: { type: 'string' } },
           },

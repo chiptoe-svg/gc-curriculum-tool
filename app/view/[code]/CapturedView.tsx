@@ -55,6 +55,7 @@ interface CapturedProfile {
   };
   audit_notes?: {
     suggested_objective_revisions?: string[];
+    productive_failure_conditions?: Area7Block | null;
   };
   competencies?: CompetencyShape[];
   incoming_expectations?: IncomingExpectationShape[];
@@ -87,6 +88,57 @@ function DepthChip({ label, value }: { label: 'K' | 'U' | 'D'; value: number | n
       <span className="font-semibold">{label}</span>
       <span>{isNull ? '—' : value}</span>
     </span>
+  );
+}
+
+type PfCond = 'present' | 'partial' | 'absent';
+export interface Area7Block {
+  generate_then_consolidate?: PfCond;
+  open_ended_problems?: PfCond;
+  revision_cycles?: PfCond;
+  structured_post_mortem?: PfCond;
+  abstraction_bridging?: PfCond;
+  max_supporting_depth?: number | null;
+}
+
+const AREA7_LABELS: { key: keyof Area7Block; label: string }[] = [
+  { key: 'generate_then_consolidate', label: 'Generate-then-consolidate' },
+  { key: 'open_ended_problems', label: 'Open-ended ill-structured problems' },
+  { key: 'revision_cycles', label: 'Revision cycles with consequential failure' },
+  { key: 'structured_post_mortem', label: 'Structured post-mortem' },
+  { key: 'abstraction_bridging', label: 'Abstraction-and-bridging (transfer)' },
+];
+
+function condTone(v: PfCond | undefined): { text: string; cls: string } {
+  if (v === undefined) return { text: 'not assessed', cls: 'text-muted-foreground/70 italic' };
+  if (v === 'present') return { text: 'present', cls: 'text-emerald-700' };
+  if (v === 'partial') return { text: 'partial', cls: 'text-amber-700' };
+  return { text: 'absent', cls: 'text-muted-foreground' };
+}
+
+/** Per-course Audit Area 7 conditions block. Renders nothing when not assessed (null). */
+export function Area7Conditions({ block }: { block: Area7Block | null | undefined }) {
+  if (!block) return null;
+  const depth = block.max_supporting_depth;
+  return (
+    <section>
+      <h2 className="font-display text-lg font-semibold tracking-tight">Productive-failure &amp; transfer conditions</h2>
+      <p className="mt-1 text-sm text-muted-foreground">What the course does to develop transferable problem-solving (Audit Area 7). A missing row means that condition was not assessed — not that it is absent.</p>
+      <ul className="mt-3 space-y-1.5">
+        {AREA7_LABELS.map(({ key, label }) => {
+          const tone = condTone(block[key] as PfCond | undefined);
+          return (
+            <li key={key} className="flex items-baseline justify-between gap-4 text-sm">
+              <span>{label}</span>
+              <span className={'shrink-0 font-medium ' + tone.cls}>{tone.text}</span>
+            </li>
+          );
+        })}
+      </ul>
+      {depth != null && (
+        <p className="mt-2 text-xs text-muted-foreground">Max supporting depth: <span className="font-medium text-foreground">D {depth}</span></p>
+      )}
+    </section>
   );
 }
 
@@ -139,6 +191,7 @@ export function CapturedView({ profile, capturedAt }: Props) {
   const classStructure = profile.class_structure ?? null;
   const majorProjects = (profile.major_projects ?? []).filter(p => p.title);
   const emphasis = (profile.course_emphasis ?? []).filter(e => e.competency);
+  const area7 = profile.audit_notes?.productive_failure_conditions ?? null;
 
   return (
     <article className="space-y-12">
@@ -370,6 +423,8 @@ export function CapturedView({ profile, capturedAt }: Props) {
           </ul>
         </section>
       )}
+
+      {area7 && <Area7Conditions block={area7} />}
 
       {/* Strongest evidence */}
       {strongest.length > 0 && (
