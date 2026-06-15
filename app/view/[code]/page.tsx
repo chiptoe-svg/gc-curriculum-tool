@@ -15,7 +15,6 @@ export const dynamic = 'force-dynamic';
 
 interface Props {
   params: Promise<{ code: string }>;
-  searchParams: Promise<{ slug?: string }>;
 }
 
 /**
@@ -35,10 +34,9 @@ interface Props {
  * Edit button (header) sends faculty to the HTTPS Tailscale Funnel where
  * Basic Auth gates the editor and mic works natively.
  */
-export default async function ViewCoursePage({ params, searchParams }: Props) {
+export default async function ViewCoursePage({ params }: Props) {
   const { code: rawCode } = await params;
   const code = decodeURIComponent(rawCode);
-  const { slug: querySlug } = await searchParams;
 
   const [course] = await db
     .select()
@@ -50,7 +48,7 @@ export default async function ViewCoursePage({ params, searchParams }: Props) {
   // reachable only via their scoped link — added in the external-access plan.)
   const cookieHeader = (await headers()).get('cookie');
   const reqLike = { headers: { get: (n: string) => (n.toLowerCase() === 'cookie' ? cookieHeader : null) } };
-  if (!course || !(await isCourseReadableBy(reqLike, course, querySlug))) notFound();
+  if (!course || !(await isCourseReadableBy(reqLike, course))) notFound();
 
   const [snapshot] = await db
     .select({

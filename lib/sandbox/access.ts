@@ -1,7 +1,23 @@
 import { isValidSlug } from '@/lib/slug';
+import { authorizedForBearer } from '@/lib/auth/bearer';
 import { getGrantById, isGrantValid } from '@/lib/sandbox/grants';
 import { lookupScopedSession, SCOPED_SESSION_COOKIE } from '@/lib/sandbox/sessions';
 import { isProgramVisible, type CourseVisibilityFields } from '@/lib/courses/program-visibility';
+
+/**
+ * Operator override credential — presented as `Authorization: Bearer <token>`
+ * (ADMIN_TOKEN or the faculty slug). NEVER read from the URL query: these are
+ * public routes, so a query secret would leak via access logs + the Referer
+ * header. Header-only, matching lib/auth/admin-auth.ts's Bearer transition.
+ */
+function operatorBearerOk(req: { headers: { get(name: string): string | null } }): boolean {
+  const header = req.headers.get('authorization');
+  if (authorizedForBearer(header, process.env.ADMIN_TOKEN?.trim())) return true;
+  if (header && header.toLowerCase().startsWith('bearer ')) {
+    return isValidSlug(header.slice(7).trim());
+  }
+  return false;
+}
 
 /** /api/courses/<c>/<seg> segments a scoped tester may use. Everything else
  *  under /api/courses (canvas-import, canvas-reextract, sync-from-sheet, the
@@ -71,18 +87,18 @@ export async function authorizeCourseWrite(
 
 /**
  * Read gate for /view, /okf, /okf-bundle. Readable if the course is program-
- * visible, OR the operator presents a valid faculty `slug` (the operator HAS it
- * and uses it on every faculty surface — this lets them open + bundle a sandbox
- * course they're reviewing; testers never have the slug), OR the requester holds
- * a scoped session bound to exactly this course.
+ * visible, OR the operator presents a valid `Authorization: Bearer` credential
+ * (header-only — never a URL query, since these are public routes where a query
+ * secret leaks via logs + Referer; lets the operator open/bundle a sandbox
+ * course via a Bearer fetch), OR the requester holds a scoped session bound to
+ * exactly this course (the tester reviewing their own).
  */
 export async function isCourseReadableBy(
   req: { headers: { get(name: string): string | null } },
   course: CourseVisibilityFields & { code: string },
-  slug?: string,
 ): Promise<boolean> {
   if (isProgramVisible(course)) return true;
-  if (slug && isValidSlug(slug)) return true; // operator (faculty-slug) override
+  if (operatorBearerOk(req)) return true; // operator override, header-only
   const sess = await resolveScopedSession(req);
   return sess?.courseCode === course.code;
 }

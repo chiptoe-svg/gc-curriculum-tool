@@ -16,7 +16,7 @@ export async function GET(req: Request, { params }: RouteContext): Promise<Respo
   const course = await getCourseByCode(code);
   // Opaque 404 for non-gc/non-offered, identical to /view/[code]/okf - a sandbox
   // course's bundle is reachable only via the scoped link (external-access plan).
-  if (!course || !(await isCourseReadableBy(req, course, new URL(req.url).searchParams.get('slug') ?? undefined))) {
+  if (!course || !(await isCourseReadableBy(req, course))) {
     return new Response(`No such course: ${code}`, { status: 404, headers: { 'content-type': 'text/plain; charset=utf-8' } });
   }
   const snapshot = await getLatestSnapshotByCourse(code);

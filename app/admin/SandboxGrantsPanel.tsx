@@ -67,6 +67,22 @@ export function SandboxGrantsPanel({ slug, sandboxCourses }: { slug: string; san
     await loadGrants();
   }
 
+  // Download the OKF bundle for a sandbox course via a Bearer fetch — the
+  // operator credential goes in the Authorization header, never the URL.
+  async function downloadBundle(code: string) {
+    const res = await fetch(`/view/${encodeURIComponent(code)}/okf-bundle`, { headers: authHeaders });
+    if (!res.ok) { alert(`Bundle download failed: ${res.status}`); return; }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${code.toLowerCase()}-okf-bundle.zip`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
   async function copyUrl(url: string) {
     try {
       await navigator.clipboard.writeText(url);
@@ -223,8 +239,11 @@ export function SandboxGrantsPanel({ slug, sandboxCourses }: { slug: string; san
                 <tr key={c.code} className="border-t border-slate-200">
                   <td className="py-2 font-medium">{c.title}</td>
                   <td className="flex gap-3 py-2">
-                    <a className="text-blue-700 underline" href={`/view/${encodeURIComponent(c.code)}?slug=${encodeURIComponent(slug)}`} target="_blank" rel="noopener noreferrer">View profile</a>
+                    {/* Review on the Basic-Auth-gated capture surface (the app's
+                        established faculty-nav pattern carries ?slug=). Bundle
+                        download goes via a header-only Bearer fetch — no URL secret. */}
                     <a className="text-blue-700 underline" href={`/capture/${encodeURIComponent(c.code)}?slug=${encodeURIComponent(slug)}`} target="_blank" rel="noopener noreferrer">Review in capture</a>
+                    <button type="button" className="text-blue-700 underline" onClick={() => downloadBundle(c.code)}>Download bundle</button>
                   </td>
                 </tr>
               ))}

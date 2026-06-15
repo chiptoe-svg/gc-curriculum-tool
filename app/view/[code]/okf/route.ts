@@ -15,7 +15,7 @@ export async function GET(req: Request, { params }: RouteContext): Promise<Respo
   // Non-GC / non-offered courses are not public (same opaque 404 to avoid leaking
   // existence). External-sandbox /okf is reachable only via the scoped link — added
   // in the external-access plan. See lib/courses/program-visibility.ts.
-  if (!course || !(await isCourseReadableBy(req, course, new URL(req.url).searchParams.get('slug') ?? undefined))) {
+  if (!course || !(await isCourseReadableBy(req, course))) {
     return new Response(`No such course: ${code}`, { status: 404, headers: { 'content-type': 'text/plain; charset=utf-8' } });
   }
   const snapshot = await getLatestSnapshotByCourse(code);
