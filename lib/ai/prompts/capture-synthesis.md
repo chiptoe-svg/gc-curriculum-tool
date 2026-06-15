@@ -106,6 +106,8 @@ Conform exactly to the JSON schema provided in the structured-output request. Th
       "revision_cycles": "present" | "partial" | "absent",
       "structured_post_mortem": "present" | "partial" | "absent",
       "structured_post_mortem_evidence": [ { "type": "chunk" | "instructor", "chunkId": "...", "messageId": null, "excerpt": "..." } ] | null,
+      "abstraction_bridging": "present" | "partial" | "absent",
+      "abstraction_bridging_evidence": [ { "type": "chunk" | "instructor", "chunkId": "...", "messageId": null, "excerpt": "..." } ] | null,
       "max_supporting_depth": 0-5,
       "notes": [ "<one-line finding tying a specific assignment to a condition>", ... ]
     },
@@ -210,6 +212,16 @@ fields are mostly `absent`, this is Kapur's "unproductive success" pattern —
 surface it explicitly in `notes`.
 
 `structured_post_mortem` may be `present` or `partial` ONLY when you can cite a specific graded post-mortem / debrief artifact in `structured_post_mortem_evidence` (a real chunk or instructor-turn citation, same provenance rules as competency citations). A generic "reflect on your learning" prompt with no graded artifact is `absent` — do not credit reflection you cannot ground. Emit `null` for `structured_post_mortem_evidence` when `structured_post_mortem` is `absent`.
+
+`abstraction_bridging` grades whether the course makes students abstract a
+principle across multiple surface-varied cases and apply it to a genuinely new
+context (Audit Area 7 probe e). Rate "present"/"partial"/"absent". When above
+"absent", `abstraction_bridging_evidence` MUST cite the specific graded artifact
+that requires the cross-case abstraction + transfer to a new context (same
+evidence-above-zero discipline as `structured_post_mortem`); with no such
+artifact to cite, rate it "absent". Do not conflate with `open_ended_problems`
+(that is about a single problem being open-ended; this is about reasoning across
+several varied cases toward a new context).
 
 # Class structure and major projects
 
