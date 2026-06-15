@@ -44,12 +44,13 @@ export function CaptureHero({
       </h2>
       <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
         The AI interviews you about your course, grounded in your materials, and builds an
-        evidence record: not what the syllabus hopes, but what your course is evidenced to
-        develop, at honest depth. Everything downstream reads from it (the curriculum map, prerequisite
-        checks, career alignment), and it can only see what you surface here. So the single
-        most valuable thing you can do is let the interview surface, explicitly, what students
-        actually do and at what depth: a competency you don&apos;t make explicit is one
-        nothing downstream can map. Take as much time as you need to get it right; you can stop
+        honest record of what it develops in students: not what the syllabus hopes, but what
+        the evidence shows, at honest depth. Everything we use to make the program better for
+        students reads from it, including the curriculum map, prerequisite checks, and the line
+        from coursework to careers. It can only see what you surface here, so the most valuable
+        thing you can do is name, plainly, what your students actually do and how deeply they do
+        it. A strength you leave unspoken is one the program can&apos;t build on, for this class
+        or the ones who come after. Take as much time as you need to get it right; you can stop
         and pick up where you left off anytime.
       </p>
       <p
