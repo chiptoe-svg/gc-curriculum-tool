@@ -45,11 +45,10 @@ export function CaptureHero({
       <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
         Grounded in your materials, the AI interviews you and builds a record of what your
         course develops in students: not what the syllabus aspires to do, but what the evidence
-        shows, and at what depth. It can only see what you surface here, so name plainly what
-        your students actually do and how deeply they do it. This is how the program can show,
-        honestly and concretely, what a degree here delivers and the career opportunities it
-        opens, which matters more than ever now that students and families are right to question
-        the value of college. Be candid: this
+        shows, and at what depth. This step is foundational for optimizing curriculum paths,
+        expanding career opportunities, and strengthening the program for students. It can only
+        see what you surface here, so name plainly what your students actually do and how deeply
+        they do it. Be candid: this
         maps the curriculum, and any gaps that may surface simply show where the program can grow
         next, for the students here now and the ones still to come. Take as much time as you need
         to get it right; you can stop and pick up where you left off anytime.
