@@ -105,7 +105,13 @@ export const config = {
   // route runs (tiny clips pass; real recordings fail). The route enforces
   // Basic Auth itself (authorizedForBasicAuth) + slug + rate/cost caps —
   // same protection, no body proxying.
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/transcribe).*)'],
+  //
+  // api/courses/<code>/imscc-import EXCLUDED (2026-06-15): identical issue —
+  // real .imscc cartridge uploads are tens of MB (e.g. a 65 MB Canvas
+  // export), and the body replay 500'd them with the same TypeError before
+  // the route ran. The route enforces Basic Auth itself (authorizedForBasicAuth)
+  // + slug, mirroring transcribe. (<code> may contain %20, so [^/]+.)
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/transcribe|api/courses/[^/]+/imscc-import).*)'],
   // Run in Node runtime so we can import lib/db/client (node-postgres).
   // Edge runtime lacks Node builtins that `pg` needs.
   runtime: 'nodejs',

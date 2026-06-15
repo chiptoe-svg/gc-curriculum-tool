@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { writeFile, unlink } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { isValidSlug } from '@/lib/slug';
+import { authorizedForBasicAuth } from '@/lib/auth/basic-auth';
 import { hashIp } from '@/lib/ip-hash';
 import { getCourseByCode, updateCourseCanvasImport } from '@/lib/db/courses-queries';
 import { insertMaterial, findMaterialByFileName, updateMaterialMetadata } from '@/lib/db/course-materials-queries';
@@ -34,6 +35,18 @@ export async function POST(req: Request, { params }: Ctx) {
 
 async function runImport(req: Request, params: Ctx['params']): Promise<Response> {
   const { code } = await params;
+
+  // Basic Auth enforced HERE because this route is excluded from the
+  // middleware matcher (see middleware.ts — Node-middleware body buffering
+  // broke real-size multipart .imscc uploads). Same gate, same env var,
+  // same no-op-when-unset semantics as the middleware.
+  const expectedAuth = process.env.FACULTY_BASIC_AUTH;
+  if (expectedAuth && !authorizedForBasicAuth(req.headers.get('authorization'), expectedAuth)) {
+    return new NextResponse('Authentication required', {
+      status: 401,
+      headers: { 'WWW-Authenticate': 'Basic realm="GC Curriculum Tool"' },
+    });
+  }
 
   const form = await req.formData();
   const file = form.get('file') as File | null;
