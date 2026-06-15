@@ -1188,7 +1188,7 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
                   style={{ fontSize: '10px', lineHeight: 1 }}
                 >▼</span>
                 <span>
-                  <h3 className="text-sm font-semibold">Materials ({materials.length})</h3>
+                  <h3 className="text-sm font-semibold">{hideRows ? `${materials.length} materials feed the audit` : `Materials (${materials.length})`}</h3>
                   {!materialsCollapsed && (
                     <p className="text-[11px] text-muted-foreground">
                       Ignored items stay in the database but don&apos;t feed the audit.
@@ -1240,7 +1240,7 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
                 The chat stage (CaptureClient trays) never sets hideRows, so it keeps full rows. */}
             {hideRows ? (
               <p className="px-3 py-2.5 text-[11px] text-muted-foreground italic">
-                Per-material controls (ignore, preview, AI summary, delete) live in the three source boxes above.
+The materials themselves — and their per-item controls (ignore, preview, AI summary, delete) — are listed in the three source boxes above. This panel is just for bulk actions.
               </p>
             ) : !materialsCollapsed && (
               <>

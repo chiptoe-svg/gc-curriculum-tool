@@ -110,7 +110,7 @@ export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt,
           onClick={() => setShowManager((v) => !v)}
           className="rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-muted"
         >
-          {showManager ? '⚙ Hide bulk material operations' : '⚙ Bulk material operations'}
+          {showManager ? '⚙ Hide material tools' : '⚙ Material tools (regenerate · scan · import)'}
         </button>
         {showManager && (
           <div className="mt-3">

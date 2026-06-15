@@ -83,7 +83,7 @@ describe('MaterialsPanel — hideRows', () => {
     expect(screen.getByText('syllabus.pdf')).toBeTruthy();
     expect(screen.getByText('rubric.pdf')).toBeTruthy();
     // The note should NOT appear
-    expect(screen.queryByText(/per-material controls/i)).toBeNull();
+    expect(screen.queryByText(/three source boxes above/i)).toBeNull();
   });
 
   it('hideRows=true: does not render per-material rows, shows the note', () => {
@@ -100,7 +100,7 @@ describe('MaterialsPanel — hideRows', () => {
     expect(screen.queryByText('syllabus.pdf')).toBeNull();
     expect(screen.queryByText('rubric.pdf')).toBeNull();
     // The explanatory note should appear
-    expect(screen.getByText(/per-material controls/i)).toBeTruthy();
+    expect(screen.getByText(/three source boxes above/i)).toBeTruthy();
   });
 
   it('hideRows=true: bulk-op buttons still render', () => {
