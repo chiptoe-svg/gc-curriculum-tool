@@ -49,7 +49,8 @@ export function CaptureHero({
         checks, career alignment), and it can only see what you surface here. So the single
         most valuable thing you can do is let the interview surface, explicitly, what students
         actually do and at what depth: a competency you don&apos;t make explicit is one
-        nothing downstream can map. A few minutes; you can stop and pick up where you left off anytime.
+        nothing downstream can map. Take as much time as you need to get it right; you can stop
+        and pick up where you left off anytime.
       </p>
       <p
         className={
