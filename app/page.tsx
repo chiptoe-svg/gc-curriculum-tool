@@ -79,9 +79,9 @@ export default async function HomePage() {
         <div className="mb-8 flex items-start justify-between gap-4">
           <p className="max-w-3xl text-sm text-muted-foreground">
             A living map of the Graphic Communications curriculum. The tool distills the
-            essence of each course — the knowledge, understanding, and skills students
-            actually walk away with — scored at depth from evidence, not syllabus aspiration — into a shared course
-            profile, then assembles those profiles into a program-wide picture of how the
+            essence of each course into a shared course profile: the knowledge, understanding,
+            and skills students actually walk away with, scored at depth from evidence rather
+            than syllabus aspiration. It then assembles those profiles into a program-wide picture of how the
             curriculum builds toward the careers it prepares students for. Anyone can read
             the profiles. The{' '}
             <span title="Builds toward career outcomes" className="inline-flex">
