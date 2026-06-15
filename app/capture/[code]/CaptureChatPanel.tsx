@@ -95,7 +95,7 @@ function ReadinessStrip({
     <div className="border-t bg-muted/20 px-4 py-2 space-y-1.5">
       <div className="flex items-center gap-2">
         <span className="text-[11px] font-medium text-muted-foreground">
-          Auditor readiness
+          Interviewer readiness
         </span>
         <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
           <div
@@ -117,7 +117,7 @@ function ReadinessStrip({
         {readiness.good_enough_to_generate && (
           <span
             className="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-800"
-            title="The auditor reports it has enough evidence to generate a defensible profile."
+            title="The interviewer reports it has enough evidence to generate a defensible profile."
           >
             ready
           </span>
@@ -359,7 +359,7 @@ export function CaptureChatPanel({
         <div>
           <h2 className="text-sm font-semibold">Audit conversation</h2>
           <p className="text-xs text-muted-foreground">
-            The auditor reads everything already in the system and asks clarifying questions about
+            The interviewer reads everything already in the system and asks clarifying questions about
             prereqs, stated vs. evidenced outcomes, and any contradictions across sources.
           </p>
         </div>
@@ -369,7 +369,7 @@ export function CaptureChatPanel({
         <div className="shrink-0 flex items-center gap-2 text-xs">
           {editingInstructor ? (
             <>
-              <label htmlFor="badge-instructor" className="font-mono-plex text-[9px] uppercase tracking-[0.16em] text-muted-foreground">Auditor:</label>
+              <label htmlFor="badge-instructor" className="font-mono-plex text-[9px] uppercase tracking-[0.16em] text-muted-foreground">Instructor:</label>
               <select
                 id="badge-instructor"
                 value={chooserInstructor}
@@ -390,13 +390,13 @@ export function CaptureChatPanel({
             </>
           ) : (
             <>
-              <span className="font-mono-plex text-[9px] uppercase tracking-[0.16em] text-muted-foreground">Auditor:</span>
+              <span className="font-mono-plex text-[9px] uppercase tracking-[0.16em] text-muted-foreground">Instructor:</span>
               <span className="font-medium">{chooserInstructor}</span>
               <button
                 type="button"
                 onClick={() => setEditingInstructor(true)}
                 className="text-[11px] text-muted-foreground underline-offset-2 hover:underline"
-                title="Change auditor — earlier turns keep their original tag; new turns and the snapshot use the new one."
+                title="Change instructor — earlier turns keep their original tag; new turns and the snapshot use the new one."
               >
                 change
               </button>
@@ -448,7 +448,7 @@ export function CaptureChatPanel({
           <div className="flex h-full flex-col items-center justify-center py-12 text-center">
             <p className="text-sm font-medium">Start the audit when you&apos;re ready.</p>
             <p className="mt-1 max-w-md text-xs text-muted-foreground">
-              The auditor opens with what it found in the materials and its first question.
+              The interviewer opens with what it found in the materials and its first question.
               The conversation runs as long as it needs to ground every rating in evidence —
               you can steer it any time.
             </p>
@@ -476,7 +476,7 @@ export function CaptureChatPanel({
               }
             >
               <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                {m.role === 'user' ? 'You' : 'Auditor'}
+                {m.role === 'user' ? 'You' : 'Interviewer'}
               </p>
               <p className="mt-1 whitespace-pre-wrap text-sm leading-snug">{m.content}</p>
               {m.role === 'assistant' && m.citations && m.citations.length > 0 && (
@@ -506,7 +506,7 @@ export function CaptureChatPanel({
           ))
         )}
         {busy && messages.length > 0 && messages[messages.length - 1]?.content === '' && (
-          <p className="text-xs italic text-muted-foreground">Auditor is thinking…</p>
+          <p className="text-xs italic text-muted-foreground">Interviewer is thinking…</p>
         )}
       </div>
 
@@ -560,9 +560,9 @@ export function CaptureChatPanel({
                   !canGenerate
                     ? 'Send at least one reply first'
                     : readiness?.good_enough_to_generate
-                    ? `Auditor reports ${readiness.score}% readiness — ready to generate.`
+                    ? `Interviewer reports ${readiness.score}% readiness — ready to generate.`
                     : readiness
-                    ? `Auditor reports ${readiness.score}% readiness — you can still generate, but more questions would tighten the profile.`
+                    ? `Interviewer reports ${readiness.score}% readiness — you can still generate, but more questions would tighten the profile.`
                     : 'Generate Course Outcome Profile from the current conversation'
                 }
               >

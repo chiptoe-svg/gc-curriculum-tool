@@ -65,7 +65,7 @@ export function CaptureHero({
             htmlFor="hero-chooser-instructor"
             className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground"
           >
-            I&apos;m the auditor
+            I&apos;m the instructor
           </label>
           <select
             id="hero-chooser-instructor"

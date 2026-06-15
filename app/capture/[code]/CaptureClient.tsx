@@ -331,7 +331,7 @@ export function CaptureClient({
               <p className="text-amber-800">
                 <span className="font-medium">Resuming saved conversation</span> from{' '}
                 {new Date(savedConversationAt).toLocaleString()}.{' '}
-                {initialReadiness && <>Auditor readiness was <span className="font-mono">{initialReadiness.score}%</span> when last saved.</>}
+                {initialReadiness && <>Interviewer readiness was <span className="font-mono">{initialReadiness.score}%</span> when last saved.</>}
               </p>
               <button
                 type="button"
@@ -466,7 +466,7 @@ export function CaptureClient({
               onClick={() => setStage('reconcile')}
               className="rounded border border-stone-300 px-3 py-1 text-xs text-stone-700 hover:bg-stone-50"
             >
-              Reconcile with the auditor
+              Reconcile with the interviewer
             </button>
           </div>
           <ProfileReviewPanel

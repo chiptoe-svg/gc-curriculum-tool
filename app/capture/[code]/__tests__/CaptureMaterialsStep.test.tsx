@@ -79,10 +79,10 @@ describe('CaptureMaterialsStep — three source-boxes', () => {
     expect(screen.getByTestId('materials-manager')).toBeTruthy();
   });
 
-  it('auditor picker renders with the passed instructor value and fires onInstructorChange', () => {
+  it('instructor picker renders with the passed instructor value and fires onInstructorChange', () => {
     const onInstructorChange = vi.fn();
     render(<CaptureMaterialsStep course={course} materials={[mat({})]} slug="s" catalogSyncedAt={null} onMaterialsChange={noop} onCourseChange={noop} onContinue={noop} instructor="Bob Brennan" onInstructorChange={onInstructorChange} />);
-    const select = screen.getByRole('combobox', { name: /auditor/i }) as HTMLSelectElement;
+    const select = screen.getByRole('combobox', { name: /instructor/i }) as HTMLSelectElement;
     expect(select.value).toBe('Bob Brennan');
     fireEvent.change(select, { target: { value: 'Alice Appleton' } });
     expect(onInstructorChange).toHaveBeenCalledWith('Alice Appleton');

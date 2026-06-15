@@ -128,7 +128,7 @@ export function CitationDrawer({ courseCode, slug, target, onClose }: Props) {
         {message && (
           <div className="space-y-2">
             <p className="text-xs text-muted-foreground">
-              {message.role === 'user' ? 'Instructor' : 'Auditor'} · turn {message.turnIndex}
+              {message.role === 'user' ? 'Instructor' : 'Interviewer'} · turn {message.turnIndex}
             </p>
             <pre className="whitespace-pre-wrap rounded bg-muted/40 p-3 text-sm leading-relaxed">{message.content}</pre>
           </div>

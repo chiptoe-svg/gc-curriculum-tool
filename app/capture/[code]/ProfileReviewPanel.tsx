@@ -1137,7 +1137,7 @@ export function ProfileReviewPanel({
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="font-display text-xl font-semibold tracking-tight">
-              Here&apos;s what the auditor concluded.
+              Here&apos;s what the interviewer concluded.
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Check it, adjust it, approve it — nothing is recorded until you approve.
@@ -1430,7 +1430,7 @@ export function ProfileReviewPanel({
               onClick={() => setAuditNotesOpen(v => !v)}
               className="text-left"
             >
-              <h3 className="text-sm font-semibold">Auditor&apos;s margin notes</h3>
+              <h3 className="text-sm font-semibold">Interviewer&apos;s margin notes</h3>
             </button>
             <SourceBadge
               source={working.audit_notes.source}

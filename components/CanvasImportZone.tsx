@@ -285,7 +285,7 @@ export function CanvasImportZone({ courseCode, slug, onImported, open: controlle
             />
             <span>
               <span className="font-medium text-foreground">Scan linked content after import</span>
-              <span className="ml-1 text-muted-foreground/80">— auto-fetch YouTube captions, Google Docs / Slides / Sheets, and Drive PDFs referenced in the imported material. Without this, links sit in the materials but their content is invisible to the auditor. Uncheck for a faster re-import when linked content hasn&apos;t changed.</span>
+              <span className="ml-1 text-muted-foreground/80">— auto-fetch YouTube captions, Google Docs / Slides / Sheets, and Drive PDFs referenced in the imported material. Without this, links sit in the materials but their content is invisible to the interviewer. Uncheck for a faster re-import when linked content hasn&apos;t changed.</span>
             </span>
           </label>
           <button

@@ -97,7 +97,7 @@ export function CaptureHelpPanel() {
           </h4>
           <ol className="ml-5 list-decimal space-y-1 text-foreground">
             <li>
-              <strong>Have a conversation with the auditor.</strong> It opens with a summary of what it sees in your materials, names the most consequential gap or question, and asks one focused follow-up. Reply in your own language — the agent translates internally.
+              <strong>Have a conversation with the interviewer.</strong> It opens with a summary of what it sees in your materials, names the most consequential gap or question, and asks one focused follow-up. Reply in your own language — the agent translates internally.
             </li>
             <li>
               <strong>Push back when something&apos;s wrong.</strong> If the agent misses something — a non-text assessment, a studio critique, a graded artifact that lives outside the rubric — say so. It will incorporate the correction.
@@ -113,7 +113,7 @@ export function CaptureHelpPanel() {
 
         <section>
           <h4 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            What the auditor will and will not do
+            What the interviewer will and will not do
           </h4>
           <ul className="space-y-1 text-muted-foreground">
             <li><strong className="text-foreground">Will:</strong> push back on aspirational syllabus language and ask for student-produced evidence (&ldquo;show me where students actually demonstrate X&rdquo;).</li>

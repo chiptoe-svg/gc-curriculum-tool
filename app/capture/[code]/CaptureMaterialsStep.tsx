@@ -43,7 +43,7 @@ export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt,
         <span>Step 1 of 2 · Confirm materials</span>
         <span aria-hidden className="text-foreground">●</span><span aria-hidden>──</span><span aria-hidden>○</span>
       </div>
-      <h2 className="font-display text-xl font-semibold tracking-tight">Here&apos;s what the auditor will read.</h2>
+      <h2 className="font-display text-xl font-semibold tracking-tight">Here&apos;s what we&apos;ll work from.</h2>
       <p className="mt-1 text-sm text-muted-foreground">Three sources — syllabus, Canvas, and anything else. Unroll each to see what&apos;s inside and add what&apos;s missing before you start.</p>
 
       <div className="mt-3 flex items-center gap-3">
@@ -51,7 +51,7 @@ export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt,
           htmlFor="step1-auditor"
           className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"
         >
-          I&apos;m the auditor
+          I&apos;m the instructor
         </label>
         <select
           id="step1-auditor"
