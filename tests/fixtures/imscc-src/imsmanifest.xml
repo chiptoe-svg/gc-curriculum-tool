@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<manifest identifier="g-test" xmlns="http://www.imsglobal.org/xsd/imsccv1p1/imscp_v1p1">
+  <organizations>
+    <organization>
+      <item identifier="root">
+        <item identifier="m1"><title>Module One</title>
+          <item identifier="i_page" identifierref="r_page"><title>Welcome</title></item>
+        </item>
+      </item>
+    </organization>
+  </organizations>
+  <resources>
+    <resource identifier="r_syllabus" type="webcontent" href="course_settings/syllabus.html">
+      <file href="course_settings/syllabus.html"/>
+    </resource>
+    <resource identifier="r_page" type="webcontent" href="wiki_content/welcome.html">
+      <file href="wiki_content/welcome.html"/>
+    </resource>
+    <resource identifier="r_asg" type="associatedcontent/imscc_xmlv1p1/learning-application-resource" href="assignment1/assignment.html">
+      <file href="assignment1/assignment.html"/>
+    </resource>
+    <resource identifier="r_quiz" type="imsqti_xmlv1p2/imscc_xmlv1p1/assessment" href="quiz1/assessment.xml">
+      <file href="quiz1/assessment.xml"/>
+    </resource>
+    <resource identifier="r_pdf" type="webcontent" href="web_resources/reading.pdf">
+      <file href="web_resources/reading.pdf"/>
+    </resource>
+    <resource identifier="r_img" type="webcontent" href="web_resources/diagram.png">
+      <file href="web_resources/diagram.png"/>
+    </resource>
+  </resources>
+</manifest>

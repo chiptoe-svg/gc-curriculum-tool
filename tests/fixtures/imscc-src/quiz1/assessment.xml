@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<questestinterop>
+  <assessment title="Quiz 1">
+    <section>
+      <item title="Q1"><presentation><material><mattext texttype="text/html">What is color management?</mattext></material>
+        <response_lid><render_choice>
+          <response_label ident="a"><material><mattext>ICC profiles</mattext></material></response_label>
+          <response_label ident="b"><material><mattext>A printer brand</mattext></material></response_label>
+        </render_choice></response_lid></presentation>
+        <resprocessing><respcondition><conditionvar><varequal respident="r">a</varequal></conditionvar><setvar varname="SCORE" action="Set">1</setvar></respcondition></resprocessing>
+      </item>
+      <item title="Q2"><presentation><material><mattext>Name one rendering intent.</mattext></material></presentation></item>
+    </section>
+  </assessment>
+</questestinterop>
