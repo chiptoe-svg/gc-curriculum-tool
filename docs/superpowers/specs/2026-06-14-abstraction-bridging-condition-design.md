@@ -6,7 +6,8 @@
 
 ## Decisions made in the brainstorm (2026-06-14)
 
-1. **Capture-first MVP.** This increment ships the probe + schema + per-course display so new snapshots carry the condition immediately. The program-level **Scaffolding Analysis aggregation is deferred** (no data to aggregate until snapshots are re-captured; mirrors how Area 7 originally shipped — capture first, scaffolding consumption in stages).
+1. **Capture-first MVP, with per-course display.** This increment ships the probe + schema + a per-course Area-7 conditions block on `/view` so new snapshots carry the condition and existing assessed courses surface their conditions immediately. The program-level **Scaffolding Analysis aggregation is deferred** (no abstraction-bridging data to aggregate until snapshots are re-captured; mirrors how Area 7 originally shipped — capture first, scaffolding consumption in stages).
+   - **Scope correction (mid-brainstorm):** `/view` (`CapturedView`) does **not** currently render any Area-7 conditions — they appear only in the faculty-facing program ScaffoldingStrip. So the "display" task is a **new Area-7 conditions block on `/view`** showing all conditions, not a one-line add. FERPA is **not** a concern: the Area-7 evidence cites assignment prompts/rubrics/course materials, not individual student records (and `/view` applies `redactPiiDeep` as defense-in-depth regardless).
 2. **Peer condition in the same block.** `abstraction_bridging` is a sixth graded condition inside `productiveFailureConditionsSchema` (Area 7), not a new sibling block — operationally it is an Area-7 condition; conceptually it is the transfer-conversion step the other conditions set up.
 3. **Evidence-citation discipline.** Non-`absent` requires ≥1 resolvable citation, mirroring `structured_post_mortem` (the evidence-above-zero rule).
 4. **Back-compat via optional-in-Zod + required-nullable-in-OpenAI.** The Zod parse schema makes the field optional (old `present` blocks lacking the key still parse → read as "not assessed for this condition," never fabricated as `absent`); the OpenAI strict request schema lists it required + nullable so new captures always emit a value or explicit null.
@@ -40,13 +41,19 @@ Add probe **(e) Abstraction-and-bridging**: *Does the course require students to
 ### 4. Synthesis prompt — `lib/ai/prompts/capture-synthesis.md` (and/or `synthesize-course-profile.md`)
 Instruct the model to emit `abstraction_bridging` (present/partial/absent) + `abstraction_bridging_evidence` for the PF block, with the same evidence discipline as `structured_post_mortem` (non-absent must cite a graded artifact; otherwise `absent`).
 
-### 5. Per-course display — `app/view/[code]/CapturedView.tsx`
-Render `abstraction_bridging` alongside the four existing conditions in the productive-failure section. Handle the **not-assessed** state (field missing/null on older snapshots) — omit or grey it, consistent with the existing block-level no-data treatment; never show a missing field as `absent`.
+### 5. Per-course display — `app/view/[code]/CapturedView.tsx` (new Area-7 block)
+`CapturedView` currently does not render Area-7 conditions at all (it reads `audit_notes` only for `suggested_objective_revisions`). Add a small **"Productive-failure & transfer conditions" block** that renders the full Area-7 set when `productive_failure_conditions` is present:
+- The five graded conditions — `generate_then_consolidate`, `open_ended_problems`, `revision_cycles`, `structured_post_mortem`, `abstraction_bridging` — each shown with its present / partial / absent / **not-assessed** state (a missing field, e.g. `abstraction_bridging` on a pre-feature snapshot, renders as *not assessed*, never as `absent`).
+- `max_supporting_depth` shown as a small depth chip.
+- When the whole block is null (Area 7 not assessed for the course), render nothing (or a single muted "Area 7 not assessed" line) — consistent with the block-level presence contract.
+- Evidence excerpts may be shown lightly (e.g. on the conditions that carry them) since they are not student-identifying; keep the rendering compact. Apply the existing `BAND_MARKER`/evidence styling only if it fits cleanly — otherwise plain.
+
+This is the **first** time Area 7 surfaces on the public `/view`; the existing four conditions on already-captured courses will display immediately, and `abstraction_bridging` fills in as courses are re-captured.
 
 ### 6. Testing
 - **Schema** (`tests/...` near the existing capture-schema tests): an old `present` block *without* `abstraction_bridging` parses successfully; a new block with `abstraction_bridging: 'present'` and no evidence **fails** the refine; with one citation **passes**; `abstraction_bridging: 'absent'` needs no evidence; `'partial'` requires evidence.
 - **Strict request schema**: a test asserting `abstraction_bridging` (+ evidence) is in `required` and nullable (mirror the existing audit-response-schema test pattern).
-- **Display**: a CapturedView render test showing the condition when present and not crashing when the field is absent (back-compat).
+- **Display**: a CapturedView render test — the Area-7 block renders the five conditions when the block is present; `abstraction_bridging` missing → shows "not assessed" (not `absent`); the block renders nothing/muted when `productive_failure_conditions` is null (back-compat with old snapshots).
 
 ## Data flow
 Interview (Area 7 probe e) → synthesis emits `abstraction_bridging` + evidence into the immutable snapshot's `productive_failure_conditions` block → CapturedView displays it. No DB migration (it's a JSON profile field). Snapshots created before this ships simply lack the key → read as not-assessed for this condition.
