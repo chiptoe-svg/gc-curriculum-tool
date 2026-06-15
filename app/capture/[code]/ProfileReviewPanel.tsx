@@ -992,11 +992,10 @@ export function ProfileReviewPanel({
       setSnapshotNote('');
       setLastSavedStatus('confirmed');
       onSnapshotCreated();
-      // Approval is the END of the job (2026-06-12 walkthrough: "after the
-      // approve snapshot, it should drop out of the page"). Show the green
-      // completion card just long enough to register, then return to the
-      // canonical course list. snapshotOpen stays true so the card renders.
-      setTimeout(() => { window.location.href = 'http://130.127.162.180:3000/'; }, 2000);
+      // Approval is the END of the job. Show the green completion card and LEAVE it
+      // up — the auto-return to the course list was disabled 2026-06-15 (operator: it
+      // flashed by before it could be read). The card has explicit links (view the
+      // public profile, the program matrix, back to the course list).
     } catch (e) {
       setSnapshotMessage({ kind: 'error', text: e instanceof Error ? e.message : 'Snapshot failed' });
     } finally {
@@ -1495,7 +1494,7 @@ export function ProfileReviewPanel({
           <p className="mt-1 text-xs text-green-900/80 dark:text-green-200/80">
             An immutable, dated snapshot was recorded. The program coverage matrix will score it on
             its next refresh, and the curriculum wiki regenerates from it automatically.
-            {' '}<span className="font-medium">Returning you to the course list…</span>
+            {' '}<span className="font-medium">You&apos;re done here — use the links below when you&apos;re ready.</span>
           </p>
           <div className="mt-3 flex flex-wrap items-center gap-3 text-xs">
             <a
