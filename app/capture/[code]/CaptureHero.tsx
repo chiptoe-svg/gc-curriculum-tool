@@ -12,7 +12,6 @@
  */
 
 import { FACULTY_ROSTER } from '@/lib/faculty';
-import { CaptureWhyBlurb } from './CaptureWhyBlurb';
 
 export function CaptureHero({
   courseCode,
@@ -43,7 +42,11 @@ export function CaptureHero({
         Capture what students should actually walk away knowing, understanding, and being able to do in{' '}
         {courseTitle}.
       </h2>
-      <CaptureWhyBlurb className="mt-2" />
+      <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+        Your materials are set. Now I&apos;ll interview you about the course and build the
+        evidence record from your answers, so reply in as much depth as you can. You can stop
+        and pick up where you left off anytime.
+      </p>
       <p
         className={
           'mt-4 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ' +
