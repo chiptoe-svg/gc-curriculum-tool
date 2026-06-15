@@ -50,8 +50,10 @@ export function CaptureHero({
         line from coursework to careers. It can only see what you surface here, so the most valuable
         thing you can do is name, plainly, what your students actually do and how deeply they do
         it. A strength you leave unspoken is one the program can&apos;t build on, for this class
-        or the ones who come after. Take as much time as you need to get it right; you can stop
-        and pick up where you left off anytime.
+        or the ones who come after. And you can be fully candid: this maps the curriculum, not
+        your performance, and an honest gap shows the program where to grow next, never a fault
+        to answer for. Take as much time as you need to get it right; you can stop and pick up
+        where you left off anytime.
       </p>
       <p
         className={
