@@ -12,6 +12,7 @@
  */
 
 import { FACULTY_ROSTER } from '@/lib/faculty';
+import { CaptureWhyBlurb } from './CaptureWhyBlurb';
 
 export function CaptureHero({
   courseCode,
@@ -42,16 +43,7 @@ export function CaptureHero({
         Capture what students should actually walk away knowing, understanding, and being able to do in{' '}
         {courseTitle}.
       </h2>
-      <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-        Grounded in your materials, the AI interviews you and builds a record of what your
-        course develops in students: not what the syllabus aspires to do, but what the evidence
-        shows, and at what depth. It can only see what you surface here, so name plainly what
-        your students actually do and how deeply they do it. This step is foundational for
-        optimizing curriculum paths, expanding career opportunities, and strengthening the
-        program for students. Be candid: this maps the curriculum, and any gaps that may surface
-        simply show where the program can grow next. Take as much time as you need to get it
-        right; you can stop and pick up where you left off anytime.
-      </p>
+      <CaptureWhyBlurb className="mt-2" />
       <p
         className={
           'mt-4 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ' +

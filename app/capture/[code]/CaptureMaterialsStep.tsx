@@ -7,6 +7,7 @@ import { SyllabusBox } from './boxes/SyllabusBox';
 import { CanvasBox } from './boxes/CanvasBox';
 import { OtherMaterialsBox } from './boxes/OtherMaterialsBox';
 import { FACULTY_ROSTER } from '@/lib/faculty';
+import { CaptureWhyBlurb } from './CaptureWhyBlurb';
 
 interface Props {
   course: CourseCatalogView;
@@ -44,7 +45,8 @@ export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt,
         <span aria-hidden className="text-foreground">●</span><span aria-hidden>──</span><span aria-hidden>○</span>
       </div>
       <h2 className="font-display text-xl font-semibold tracking-tight">Here&apos;s what we&apos;ll work from.</h2>
-      <p className="mt-1 text-sm text-muted-foreground">Three sources — syllabus, Canvas, and anything else. Unroll each to see what&apos;s inside and add what&apos;s missing before you start.</p>
+      <CaptureWhyBlurb className="mt-2" />
+      <p className="mt-3 text-sm text-muted-foreground">Three sources — syllabus, Canvas, and anything else. Unroll each to see what&apos;s inside and add what&apos;s missing before you start.</p>
 
       <div className="mt-3 flex items-center gap-3">
         <label
