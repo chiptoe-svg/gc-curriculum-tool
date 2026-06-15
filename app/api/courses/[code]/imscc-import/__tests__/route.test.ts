@@ -71,9 +71,13 @@ const SAMPLE_PARSE_RESULT = {
     quizzes: [{ id: 'r_quiz', title: 'Quiz 1', descriptionHtml: '', questionCount: 2, pointsPossible: null, questions: [], source: 'qti', published: true }],
   },
   // reading.pdf is an allowed extension; diagram.png is already filtered
-  // by parseImscc (png not in ALLOWED_EXTS) and never reaches the route.
+  // by parseImscc (png not in ALLOWED_EXTS) and never reaches the route —
+  // it shows up in `skipped` instead.
   files: [
     { name: 'reading.pdf', bytes: Buffer.from('%PDF-1.4 fake pdf content'), mimeType: 'application/pdf' },
+  ],
+  skipped: [
+    { name: 'diagram.png', reason: 'unsupported' as const, sizeBytes: 1024 },
   ],
 };
 

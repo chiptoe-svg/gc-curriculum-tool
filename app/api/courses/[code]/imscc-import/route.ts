@@ -82,22 +82,28 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
     await unlink(tmp).catch(() => {});
   }
 
-  const { data, files } = parsed;
+  const { data, files, skipped } = parsed;
 
   const sheetsHasCatalog = (course.learningObjectives ?? []).length > 0;
   const toInsert = assembleCanvasMaterials(data, { sheetsHasCatalog });
+  console.log(
+    `[imscc-import] parsed "${data.course.name}": ${toInsert.length} structured material(s), ${files.length} embedded file(s), ${skipped.length} skipped`,
+  );
 
   // Process binary file attachments from the cartridge (e.g. PDFs, DOCX).
-  // Images and unsupported types are silently skipped; extraction failures
-  // skip that file but do not abort the whole import.
+  // Unsupported types are skipped (already recorded in `skipped`); extraction
+  // failures skip that file but do not abort the whole import.
   for (const imsccFile of files) {
     const isSupported = (SUPPORTED_MIME_TYPES as readonly string[]).includes(imsccFile.mimeType);
     const isLegacy = isLegacyOfficeMime(imsccFile.mimeType);
     if (!isSupported && !isLegacy) {
       console.log(`[imscc-import] skipped (unsupported type): ${imsccFile.name} (${imsccFile.mimeType})`);
+      skipped.push({ name: imsccFile.name, reason: 'unsupported', sizeBytes: imsccFile.bytes.length });
       continue;
     }
     try {
+      const t0 = Date.now();
+      console.log(`[imscc-import] extracting file: ${imsccFile.name} (${imsccFile.mimeType})…`);
       const result = await extractText({
         fileBytes: imsccFile.bytes,
         mimeType: imsccFile.mimeType as ExtractedMimeType,
@@ -107,6 +113,7 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
         console.log(`[imscc-import] extraction ${result.status} for ${imsccFile.name}`);
         continue;
       }
+      console.log(`[imscc-import] extracted ${imsccFile.name} (${result.text.length} chars) in ${Date.now() - t0}ms`);
       toInsert.push({
         fileName: `Canvas File: ${imsccFile.name}`,
         text: result.text,
@@ -126,7 +133,11 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
   let updatedCount = 0;
   const blobUrl = `imscc:${data.course.name}`;
 
+  let matIdx = 0;
   for (const { fileName, text, mimeType } of toInsert) {
+    matIdx++;
+    const tMat = Date.now();
+    console.log(`[imscc-import] indexing ${matIdx}/${toInsert.length}: ${fileName} (${text.length} chars)…`);
     const existing = await findMaterialByFileName(code, fileName, sourceCode);
     if (existing) {
       await updateMaterialMetadata({
@@ -169,15 +180,19 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
       imported.push({ id: mat.id, fileName });
       insertedCount++;
     }
+    console.log(`[imscc-import] indexed ${matIdx}/${toInsert.length}: ${fileName} in ${Date.now() - tMat}ms`);
   }
 
   // Stamp provenance so the Step-1 header can show source name + import date
   // without a live API call.
   await updateCourseCanvasImport(code, `Common Cartridge: ${data.course.name}`, new Date());
 
+  console.log(`[imscc-import] done: ${imported.length} imported (${insertedCount} new, ${updatedCount} updated), ${skipped.length} skipped`);
+
   return NextResponse.json({
     imported: imported.length,
     inserted: insertedCount,
     updated: updatedCount,
+    skipped,
   });
 }

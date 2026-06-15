@@ -19,6 +19,16 @@ export interface ImsccFile {
   mimeType: string;
 }
 
+/** A web_resources file the parser deliberately did NOT extract, so the
+ *  route can surface it to the user (e.g. "too large — upload separately"). */
+export interface SkippedFile {
+  name: string;
+  /** 'too-large' = a readable type over the per-file cap (the "big stuff");
+   *  'unsupported' = a type we can't read at all (image/video/audio/etc.). */
+  reason: 'too-large' | 'unsupported';
+  sizeBytes: number;
+}
+
 // ─── Internal helpers ────────────────────────────────────────────────────────
 
 /** Coerce a value to a non-empty array, or return []. */
@@ -31,6 +41,12 @@ const MIME_MAP: Record<string, string> = {
   '.pdf': 'application/pdf',
   '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  // Legacy MS Office — the route's extractor converts these via Docling
+  // (isLegacyOfficeMime). They carry real content, so don't drop them.
+  '.doc': 'application/msword',
+  '.ppt': 'application/vnd.ms-powerpoint',
+  '.xls': 'application/vnd.ms-excel',
   '.txt': 'text/plain',
   '.html': 'text/html',
   '.htm': 'text/html',
@@ -119,7 +135,7 @@ function extractTitle(html: string, fallback: string): string {
 export async function parseImscc(
   zipPath: string,
   opts?: { maxFileBytes?: number },
-): Promise<{ data: CanvasCourseData; files: ImsccFile[] }> {
+): Promise<{ data: CanvasCourseData; files: ImsccFile[]; skipped: SkippedFile[] }> {
   const maxFileBytes = opts?.maxFileBytes ?? 25 * 1024 * 1024; // 25 MB default
 
   let zip: yauzl.ZipFile | undefined;
@@ -159,6 +175,7 @@ export async function parseImscc(
     const assignments: CanvasAssignment[] = [];
     const discussions: CanvasDiscussion[] = [];
     const files: ImsccFile[] = [];
+    const skipped: SkippedFile[] = [];
 
     // quizzes collected in order
     const quizzes: ReturnType<typeof parseQtiAssessment>[] = [];
@@ -241,12 +258,17 @@ export async function parseImscc(
         if (!entry) continue;
 
         if (!ALLOWED_EXTS.has(ext)) {
-          console.log('[parseImscc] skipped (media/over-cap):', href);
+          // A type we can't read (image/video/audio/etc.) — no capture value.
+          console.log(`[parseImscc] skipped (unsupported type): ${href}`);
+          skipped.push({ name: path.basename(href), reason: 'unsupported', sizeBytes: entry.uncompressedSize });
           continue;
         }
 
         if (entry.uncompressedSize > maxFileBytes) {
-          console.log('[parseImscc] skipped (media/over-cap):', href);
+          // A readable type but over the per-file cap — the "big stuff" we
+          // deliberately skip; surfaced so the user can upload it separately.
+          console.log(`[parseImscc] skipped (over ${Math.round(maxFileBytes / 1024 / 1024)}MB cap): ${href} (${Math.round(entry.uncompressedSize / 1024 / 1024)}MB)`);
+          skipped.push({ name: path.basename(href), reason: 'too-large', sizeBytes: entry.uncompressedSize });
           continue;
         }
 
@@ -303,7 +325,7 @@ export async function parseImscc(
       quizzes,
     };
 
-    return { data, files };
+    return { data, files, skipped };
   } finally {
     zip?.close();
   }

@@ -25,6 +25,29 @@ function isCanvasFile(m: CaptureMaterial): boolean {
   return m.fileName.startsWith('Canvas File:');
 }
 
+interface SkippedFile {
+  name: string;
+  reason: 'too-large' | 'unsupported';
+  sizeBytes: number;
+}
+
+/** Human-readable suffix listing files the cartridge import did NOT capture,
+ *  so the user can upload the large ones separately. Empty string if none. */
+function skippedSummary(skipped?: SkippedFile[]): string {
+  if (!skipped || skipped.length === 0) return '';
+  const big = skipped.filter(s => s.reason === 'too-large');
+  const unreadable = skipped.filter(s => s.reason === 'unsupported');
+  const parts: string[] = [];
+  if (big.length > 0) {
+    const names = big.map(s => `${s.name} (${Math.round(s.sizeBytes / 1024 / 1024)}MB)`).join(', ');
+    parts.push(`Skipped ${big.length} large file${big.length === 1 ? '' : 's'} — upload separately if needed: ${names}`);
+  }
+  if (unreadable.length > 0) {
+    parts.push(`${unreadable.length} unreadable file${unreadable.length === 1 ? '' : 's'} (images/media) ignored`);
+  }
+  return parts.length ? ` ${parts.join('. ')}.` : '';
+}
+
 /** Rank readiness so the collapsed summary can surface the worst (least ready). */
 const STATUS_RANK: Record<string, number> = {
   ready: 0,
@@ -168,10 +191,10 @@ function BundledGroupHeader({
         setImportMsg(`Server returned ${res.status}.`);
         return;
       }
-      const json = await res.json() as { imported?: number; inserted?: number; updated?: number; error?: string };
+      const json = await res.json() as { imported?: number; inserted?: number; updated?: number; skipped?: SkippedFile[]; error?: string };
       if (!res.ok) { setImportMsg(json.error ?? `Upload failed (${res.status})`); return; }
       const imp = json.imported ?? 0;
-      setImportMsg(`imported ${imp} material${imp === 1 ? '' : 's'} from the cartridge.`);
+      setImportMsg(`imported ${imp} material${imp === 1 ? '' : 's'} from the cartridge.${skippedSummary(json.skipped)}`);
       setImsccFile(null);
       await onImported(sourceCode);
     } catch (e) {
@@ -422,16 +445,17 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
         setReextractMsg(`Server returned ${res.status}.`);
         return;
       }
-      const json = await res.json() as { imported?: number; inserted?: number; updated?: number; error?: string };
+      const json = await res.json() as { imported?: number; inserted?: number; updated?: number; skipped?: SkippedFile[]; error?: string };
       if (!res.ok) { setReextractMsg(json.error ?? `Upload failed (${res.status})`); return; }
       const imp = json.imported ?? 0;
-      setReextractMsg(`imported ${imp} material${imp === 1 ? '' : 's'} from the cartridge.`);
+      const skipNote = skippedSummary(json.skipped);
+      setReextractMsg(`imported ${imp} material${imp === 1 ? '' : 's'} from the cartridge.${skipNote}`);
       setImsccFileSingle(null);
       setTokenOpen(false);
       const fresh = await fetchCourseMaterials(course.code, slug);
       if (fresh) onMaterialsChange(fresh);
       if (autoScanAfterImport) {
-        setReextractMsg(`imported ${imp} material${imp === 1 ? '' : 's'} from the cartridge; scanning linked docs…`);
+        setReextractMsg(`imported ${imp} material${imp === 1 ? '' : 's'} from the cartridge; scanning linked docs…${skipNote}`);
         await scanLinkedDocs();
       }
     } catch (e) {
