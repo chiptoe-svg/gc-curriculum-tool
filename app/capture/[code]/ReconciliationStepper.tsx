@@ -471,7 +471,7 @@ export function ReconciliationStepper({ profile, slug, courseCode, onComplete }:
             onClick={() => moveStep(1)}
             className="rounded-md bg-stone-800 px-4 py-1.5 text-sm font-medium text-white hover:bg-stone-700"
           >
-            Next →
+            Looks good — proceed →
           </button>
         )}
       </div>
