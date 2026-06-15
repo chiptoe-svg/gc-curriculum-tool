@@ -34,7 +34,17 @@ interface Props {
 // what the interviewer concluded", so it was redundant. Reconciliation now
 // covers the two sections that the main panel does NOT let you converse about.
 const STEPS: ReconcileSection[] = ['apparent_outcomes', 'incoming'];
-const STEP_TITLES = ['Apparent outcomes', 'Incoming expectations'];
+const STEP_TITLES = ['Apparent outcomes', 'Incoming skills / competencies'];
+
+// Short orienting blurb under each step's heading — what the section means and,
+// for incoming, how it differs from the formal catalog prerequisite list.
+const STEP_DESCRIPTIONS: Record<ReconcileSection, string> = {
+  apparent_outcomes:
+    'What students can actually do by the end, as the interview read it — the working outcomes, which may differ from the catalog wording.',
+  incoming:
+    'The skills and competencies this course assumes students already have walking in — what it builds on. Not the formal catalog prerequisite (e.g. “GC 1040”); these are the working capabilities the course expects, surfaced from the interview. Anything obvious that came up is pre-filled below; add what’s missing.',
+  outgoing: '',
+};
 
 function depthStr(n: number | null | undefined): string {
   return n !== null && n !== undefined ? String(n) : '–';
@@ -199,7 +209,7 @@ export function ReconciliationStepper({ profile, slug, courseCode, onComplete }:
     }
     if (section === 'incoming') {
       const items = working.incoming_expectations;
-      if (items.length === 0) return <p className="text-sm text-muted-foreground italic">No incoming expectations recorded.</p>;
+      if (items.length === 0) return <p className="text-sm text-muted-foreground italic">Nothing surfaced from the interview — if this course assumes specific incoming skills, describe them below; otherwise proceed.</p>;
       return (
         <ul className="space-y-1 text-sm">
           {items.map((e, i) => (
@@ -360,6 +370,12 @@ export function ReconciliationStepper({ profile, slug, courseCode, onComplete }:
         <h2 className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
           {title}
         </h2>
+
+        {STEP_DESCRIPTIONS[section] && (
+          <p className="-mt-2 text-xs leading-snug text-muted-foreground">
+            {STEP_DESCRIPTIONS[section]}
+          </p>
+        )}
 
         {/* Current items */}
         <div>{renderItems()}</div>
