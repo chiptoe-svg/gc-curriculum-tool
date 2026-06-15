@@ -8,10 +8,15 @@
 
 1. **Access scope:** full self-serve — the link opens the whole CourseCapture flow (`/capture/<course>` + its APIs: materials upload, `.imscc` import, interview, approve) **and** the read surfaces (`/view/<course>`, `/okf`, `/okf-bundle`) for the one sandbox course.
 2. **Identity:** anonymous link **bound to the course** (no per-tester pre-registration). On first use the tester enters **name + institution**, which becomes the capture snapshot's `instructor_name`.
-3. **Mechanism: a scoped session bound to one course** (the shipped partner-session pattern), authorized centrally. Rejected per-course-slug (churns the faculty auth model, leaks tokens in URLs) and a separate `/sandbox/.../capture` app tree (duplicates routing).
+3. **Mechanism: a scoped session bound to one course** (the shipped partner-session pattern), authorized **centrally in middleware** — for the bound course's allowed paths, middleware skips Basic Auth **and** rewrites the request to inject the faculty `slug` so the existing capture page + APIs authorize unchanged (zero per-route edits). Rejected: per-route `authorizeCourseWrite` helper (~27 scattered edits, easy to miss one), per-course-slug (churns the faculty model, leaks tokens), and a separate `/sandbox/.../capture` app tree (duplicates routing).
 4. **Mint location:** `/admin`.
 5. **Lifecycle:** grants are **reusable** (capture is multi-session) until a **30-day** expiry or operator **revoke**; scoped session TTL **24h** (re-opening the link re-mints).
-6. **Security posture (load-bearing):** a scoped session can reach **only its one sandbox course's** `/capture`, `/view`, `/okf`, `/okf-bundle`, and `/api/courses/<that-course>/*` — nothing else. Every other surface (`/program`, `/explore`, `/admin`, `/ask`, `/wiki`, `/settings`, any *other* course) stays Basic-Auth-gated → opaque 404/401 to the tester. Enforced centrally.
+6. **Security posture (load-bearing) — least privilege.** A scoped session opens **only its one sandbox course's**:
+   - `/capture/<c>` (the page) + `/view/<c>` + `/okf` + `/okf-bundle` (read);
+   - the **entire `/api/capture/<c>/*` namespace** (the capture engine — chat, scores, snapshots, context, conversation, reconcile, stress-test, messages, chunks, merge-prereq-gap — all course-scoped, none institution-bound);
+   - an **allowlist** under `/api/courses/<c>/`: `materials`, `imscc-import`, `kuds`, `scan-linked-docs`, `checkin`, `analyze-materials`, `parse-profile`.
+
+   **Explicitly blocked**, even for the bound course: `/api/courses/<c>/canvas-import` + `canvas-reextract` (authenticate against *Clemson's* Canvas — useless/inapplicable to an external tester; IMSCC is their content path), `/api/courses/<c>/sync-from-sheet` (GC Google-Sheet catalog — a sandbox course has no tab), and the **bare course resource** `/api/courses/<c>` (PATCH/DELETE — a tester must never edit the course's scope/status or delete it). Every other surface (`/program`, `/explore`, `/admin`, `/ask`, `/wiki`, `/settings`, any *other* course) stays Basic-Auth-gated → opaque 404/401.
 
 ## Background — how access works today
 
@@ -31,13 +36,15 @@ The operator mints a **grant** (random token bound to one sandbox course) from `
 | `lib/db/schema.ts` + migration | **changed** | `sandbox_grants` + `sandbox_sessions` tables (below). |
 | `lib/sandbox/grants.ts` | **new** | `createGrant`/`listGrants`/`getGrantByToken`/`revokeGrant`. Pure-ish DB. |
 | `lib/sandbox/sessions.ts` | **new** | `createScopedSession`/`lookupScopedSession`/`revokeScopedSession` (+ `SCOPED_SESSION_COOKIE`, 24h TTL) — mirror of `lib/partners/sessions.ts`. |
-| `lib/sandbox/access.ts` | **new** | The two authorization predicates (below): `resolveScopedSession(req)` and the path→course extractor. The single place the security boundary is decided. |
+| `lib/sandbox/access.ts` | **new** | The security boundary, in one place: `resolveScopedSession(req)`, `courseFromScopedPath(pathname)` (extract `<c>` + decide whether the path is in the bound session's allowed set), and `isCourseReadableBy(req, course)`. |
 | `app/sandbox/[token]/page.tsx` | **new** | Public entry: validate grant → name form (first use) → mint session → redirect to `/capture/<course>`. |
 | `app/sandbox/[token]/start/route.ts` | **new** | `POST` handler the name form submits to (mints the session cookie, redirects). |
-| `middleware.ts` | **changed** | Add `/sandbox` to `PUBLIC_PREFIXES`; before the faculty Basic-Auth gate, allow `/capture/<c>` + `/api/courses/<c>/*` when a scoped session bound to `<c>` is present. |
-| `app/capture/[code]/page.tsx` | **changed** | Accept a bound scoped session as authorization (alternative to `isValidSlug`); thread the session's `instructorName` into capture. |
-| course-scoped API routes | **changed (shared helper)** | Where they call `isValidSlug(slug)`, also accept a bound scoped session via a shared `authorizeCourseWrite(req, code, slug)` helper. |
-| `app/view/[code]/okf/route.ts`, `app/view/[code]/okf-bundle/route.ts`, `app/view/[code]/page.tsx` | **changed** | Read gate becomes the shared `isCourseReadableBy(req, course)` helper (= `isProgramVisible(course)` OR a bound scoped session for `course.code`). |
+| `middleware.ts` | **changed** | Add `/sandbox` to `PUBLIC_PREFIXES`; before the faculty Basic-Auth gate, for a bound scoped session on an **allowed** path (per `courseFromScopedPath`), `NextResponse.rewrite` the URL with `slug=<PROTOTYPE_SLUG>` injected (skips Basic Auth **and** satisfies the routes' `isValidSlug`). All blocked/other paths fall through to Basic Auth unchanged. |
+| `app/api/capture/[code]/snapshots/route.ts` | **changed (1 line)** | When a scoped session is present, use its `instructorName` for the snapshot (the only spot the tester's self-entered identity must reach). Faculty path unchanged. |
+| `app/api/courses/[code]/imscc-import/route.ts` | **changed** | **Exception:** this route is *excluded from the middleware matcher* (body-replay fix) and enforces its own Basic Auth, so middleware injection can't reach it. Add a direct check: accept a scoped session bound to `<code>` as an alternative to Basic-Auth+slug (via `resolveScopedSession`). The one allowlisted route that needs an in-route edit. |
+| `app/view/[code]/okf/route.ts`, `app/view/[code]/okf-bundle/route.ts`, `app/view/[code]/page.tsx` | **changed** | Read gate becomes `isCourseReadableBy(req, course)` (= `isProgramVisible(course)` OR a bound scoped session for `course.code`) — these are `/view` public-prefixed routes, so middleware doesn't gate them; the scope check lives in the route. |
+
+> **No edits to the capture page or the capture API routes** *except* `imscc-import` (the matcher-excluded exception above). The middleware slug-injection makes their existing `isValidSlug` checks pass for the bound course, so they authorize a scoped tester unchanged. The faculty (Basic-Auth + slug) path is entirely untouched.
 | `/admin` grant UI + `app/api/admin/sandbox-grants/route.ts` | **new** | Operator mint/list/revoke; shows the shareable link; "create sandbox course + mint link" convenience. |
 
 ## Data model
@@ -64,14 +71,28 @@ sandbox_sessions
 
 A grant is **valid** iff `active && revoked_at IS NULL && expires_at > now()`. A session is **valid** iff `expires_at > now()` and its grant is still valid.
 
-## Authorization — the two predicates (`lib/sandbox/access.ts`)
+## Authorization — `lib/sandbox/access.ts` (the one place the boundary lives)
 
-**`resolveScopedSession(req): { courseCode, instructorName } | null`** — read the `gc_sandbox_sess` cookie, `lookupScopedSession`, re-check the grant is still valid; return the bound course + name or null. Used by everything below; this is the *only* path that grants external access.
+- **`resolveScopedSession(req): { courseCode, instructorName } | null`** — read the `gc_sandbox_sess` cookie, `lookupScopedSession`, re-check the grant is still valid; return the bound course + name or null. The *only* path that grants external access.
+- **`courseFromScopedPath(pathname): string | null`** — returns the course code a scoped session would need to be bound to for this path to be allowed, or `null` if the path is never scoped-accessible. Allowed shapes (with `<c> = decodeURIComponent` of the segment):
+  - `/capture/<c>`
+  - `/api/capture/<c>/…` (any sub-path — the whole capture engine)
+  - `/api/courses/<c>/<seg>/…` where `<seg> ∈ { materials, imscc-import, kuds, scan-linked-docs, checkin, analyze-materials, parse-profile }`
+  - **returns `null`** for `<seg> ∈ { canvas-import, canvas-reextract, sync-from-sheet }`, for the bare `/api/courses/<c>`, and for everything else.
+- **`isCourseReadableBy(req, course): boolean`** — `isProgramVisible(course) || resolveScopedSession(req)?.courseCode === course.code`. Used by `/view`, `/okf`, `/okf-bundle`.
 
-1. **Write/capture access** — `authorizeCourseWrite(req, code, slug)`: returns true if `isValidSlug(slug)` (faculty; Basic Auth already enforced by middleware) **OR** a scoped session whose `courseCode === code`. Used by the capture page and every course-scoped API in place of the bare `isValidSlug` check.
-2. **Read access** — `isCourseReadableBy(req, course)`: `isProgramVisible(course) || resolveScopedSession(req)?.courseCode === course.code`. Used by `/view`, `/okf`, `/okf-bundle`.
-
-**Middleware** gains, before the Basic-Auth block: if the path is `/capture/<c>` or `/api/courses/<c>/*` (extract `<c>` = `decodeURIComponent` of the segment) **and** `resolveScopedSession(req)?.courseCode === c`, `return NextResponse.next()` (skip Basic Auth). Otherwise the existing gate runs unchanged. The course-segment match is exact — a session for `GC X` never opens `GC Y` or a non-course path.
+**Middleware**, before the Basic-Auth block:
+```
+const scopedCourse = courseFromScopedPath(path);
+const sess = scopedCourse ? await resolveScopedSession(req) : null;
+if (scopedCourse && sess && sess.courseCode === scopedCourse) {
+  const url = req.nextUrl.clone();
+  url.searchParams.set('slug', getPrototypeSlug());   // inject faculty slug, server-side only
+  return NextResponse.rewrite(url);                    // skips Basic Auth + satisfies isValidSlug
+}
+// else: existing faculty Basic-Auth gate runs unchanged
+```
+The match is exact on both the path's allowed-ness **and** the course code — a session for `GC X` never opens `GC Y`, a blocked route, or a non-course path. The injected slug is added to the rewritten (server-internal) URL only; it is never sent to the client.
 
 ## Entry flow (`/sandbox/[token]`)
 
@@ -105,8 +126,8 @@ The capture page reads the scoped session's `instructorName` and uses it as the 
 ## Testing
 
 - **`lib/sandbox/grants` + `sessions`:** create/lookup/expire/revoke; a session is invalid once its grant is revoked or expired.
-- **`access.ts` (the security core):** `authorizeCourseWrite` true for faculty slug, true for a session bound to the same course, **false** for a session bound to a *different* course and for no-auth; `isCourseReadableBy` true for program-visible, true for a bound session, false otherwise; the path→course extractor handles `%20`-encoded codes and rejects non-course paths.
-- **Middleware:** a bound scoped session skips Basic Auth for *its* `/capture/<c>` and `/api/courses/<c>/x`, but a request for `/capture/<other>`, `/program`, `/admin`, or `/api/courses/<other>/x` with that same session still demands Basic Auth (401). These are the load-bearing isolation assertions.
+- **`access.ts` (the security core):** `courseFromScopedPath` returns `<c>` for `/capture/<c>`, `/api/capture/<c>/snapshots`, and each allowlisted `/api/courses/<c>/<seg>`; returns **`null`** for `/api/courses/<c>/canvas-import`, `/canvas-reextract`, `/sync-from-sheet`, the bare `/api/courses/<c>`, `/program`, `/admin`, and any non-course path; handles `%20`-encoded codes. `isCourseReadableBy` true for program-visible, true for a bound session, false otherwise.
+- **Middleware (load-bearing isolation):** with a session bound to `GC X` — the request is rewritten (slug injected) for `/capture/GC%20X`, `/api/capture/GC%20X/scores`, `/api/courses/GC%20X/materials`; but **falls through to Basic Auth (401)** for `/api/courses/GC%20X/canvas-import` (blocked route), `/capture/GC%20Y` (other course), `/api/courses/GC%20Y/materials`, `/program`, and `/admin`.
 - **Entry route:** invalid token → friendly page; valid token + form POST → session cookie set + redirect to `/capture/<course>`.
 - **Read routes:** `/view/<sandbox>/okf-bundle` → 404 without a session, 200 with a bound session; `/view/<other-sandbox>/okf-bundle` → 404 even with a session bound to a different course.
 - **Admin API:** mint returns a token; revoke invalidates it (a session check then fails).
