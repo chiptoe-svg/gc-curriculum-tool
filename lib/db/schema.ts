@@ -81,6 +81,8 @@ export const ipHourly = pgTable('ip_hourly', {
 
 export const courseCategory = pgEnum('course_category', ['gc_core', 'specialty', 'major_req', 'other']);
 export const courseCodeRole = pgEnum('course_code_role', ['lecture', 'lab', 'other']);
+export const courseScope = pgEnum('course_scope', ['gc', 'external']);
+export const courseStatus = pgEnum('course_status', ['offered', 'proposed', 'sandbox', 'retired']);
 
 export const courses = pgTable('courses', {
   code: text('code').primaryKey(),                                // 'GC 3460', 'GC 4900ap'
@@ -98,6 +100,11 @@ export const courses = pgTable('courses', {
   auditMode: text('audit_mode').notNull().default('full'),  // 'full' | 'simple'
   category: courseCategory('category').notNull().default('other'),
   buildsToCareer: boolean('builds_to_career').notNull().default(false),
+  // Scope & lifecycle (2026-06-15). `scope` = owning curriculum ('gc' today;
+  // 'external' = sandbox/another-uni). `status` = lifecycle. The pair drives
+  // isProgramVisible — see lib/courses/program-visibility.ts (added in a later task).
+  scope: courseScope('scope').notNull().default('gc'),
+  status: courseStatus('status').notNull().default('offered'),
   catalogUrl: text('catalog_url'),                                // nullable — Clemson catalog link
   // Structured identity (migration 0037). `code` stays the canonical PK;
   // these are the parsed parts — see lib/courses/parse-course-code.ts.

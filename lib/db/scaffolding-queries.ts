@@ -9,7 +9,7 @@
  * Stage 2 if simple level-ordering proves coarse.
  */
 
-import { asc, eq, isNull } from 'drizzle-orm';
+import { and, asc, eq, isNull } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import {
   snapshotTargetCoverage,
@@ -94,7 +94,12 @@ export async function loadScaffoldingTarget(targetId: string): Promise<Scaffoldi
     })
     .from(courseCaptureSnapshots)
     .leftJoin(courses, eq(courses.code, courseCaptureSnapshots.courseCode))
-    .where(isNull(courseCaptureSnapshots.retiredAt))
+    // scope/status: exclude non-GC / non-offered courses — see lib/courses/program-visibility.ts
+    .where(and(
+      isNull(courseCaptureSnapshots.retiredAt),
+      eq(courses.scope, 'gc'),
+      eq(courses.status, 'offered'),
+    ))
     .orderBy(asc(courses.level), asc(courseCaptureSnapshots.courseCode));
 
   // Pick the LATEST snapshot per course (keep first occurrence when ordering

@@ -375,6 +375,7 @@ export async function listUncapturedCourseCodes(): Promise<string[]> {
   const rows = await db.execute(sql`
     SELECT c.code FROM courses c
     WHERE NOT EXISTS (SELECT 1 FROM course_capture_snapshots s WHERE s.course_code = c.code)
+      AND c.scope = 'gc' AND c.status = 'offered'  -- scope/status: see lib/courses/program-visibility.ts
     ORDER BY c.code
   `);
   return rows.rows.map((r: any) => r.code as string);

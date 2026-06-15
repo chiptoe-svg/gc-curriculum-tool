@@ -488,9 +488,13 @@ async function loadConceptSubstrate(
       profile: courseCaptureSnapshots.profile,
     })
     .from(courseCaptureSnapshots)
+    // scope/status: exclude non-GC / non-offered courses — see lib/courses/program-visibility.ts
+    .innerJoin(courses, eq(courses.code, courseCaptureSnapshots.courseCode))
     .where(
       and(
         isNull(courseCaptureSnapshots.retiredAt),
+        eq(courses.scope, 'gc'),
+        eq(courses.status, 'offered'),
         sql`${courseCaptureSnapshots.profile}->'audit_notes'->'productive_failure_conditions' IS NOT NULL`,
       ),
     )
