@@ -543,42 +543,46 @@ export function CaptureChatPanel({
           )}
           <div className="flex items-center justify-between gap-3">
             <VoiceRecorder slug={slug} onTranscript={appendTranscript} disabled={busy} />
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handleGenerateClick}
-                disabled={!canGenerate || busy}
-                className={
-                  'rounded-md border px-3 py-1.5 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed '
-                  + (readiness?.good_enough_to_generate
-                    ? 'border-green-300 bg-green-50 text-green-800 hover:bg-green-100'
-                    : (readiness?.score ?? 0) >= 50
-                    ? 'border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100'
-                    : 'border-input bg-background hover:bg-muted')
-                }
-                title={
-                  !canGenerate
-                    ? 'Send at least one reply first'
-                    : readiness?.good_enough_to_generate
-                    ? `Interviewer reports ${readiness.score}% readiness — ready to generate.`
-                    : readiness
-                    ? `Interviewer reports ${readiness.score}% readiness — you can still generate, but more questions would tighten the profile.`
-                    : 'Generate Course Outcome Profile from the current conversation'
-                }
-              >
-                Generate Course Outcome Profile
-              </button>
-              <button
-                type="button"
-                onClick={handleSend}
-                disabled={!input.trim() || busy}
-                className="rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {busy ? 'Sending…' : 'Send'}
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={handleSend}
+              disabled={!input.trim() || busy}
+              className="rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {busy ? 'Sending…' : 'Send'}
+            </button>
           </div>
           {error && <p className="text-xs text-destructive">{error}</p>}
+
+          {/* "I'm done" → generate. Pulled out of the Record/Send row and placed
+              full-width below the whole input area so it reads as finishing the
+              interview, not as another per-message action. */}
+          <div className="mt-1 border-t pt-3">
+            <button
+              type="button"
+              onClick={handleGenerateClick}
+              disabled={!canGenerate || busy}
+              className={
+                'w-full rounded-md border px-4 py-2.5 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed '
+                + (readiness?.good_enough_to_generate
+                  ? 'border-green-400 bg-green-50 text-green-800 hover:bg-green-100'
+                  : (readiness?.score ?? 0) >= 50
+                  ? 'border-amber-400 bg-amber-50 text-amber-800 hover:bg-amber-100'
+                  : 'border-input bg-background hover:bg-muted')
+              }
+              title={
+                !canGenerate
+                  ? 'Send at least one reply first'
+                  : readiness?.good_enough_to_generate
+                  ? `Interviewer reports ${readiness.score}% readiness — ready to generate.`
+                  : readiness
+                  ? `Interviewer reports ${readiness.score}% readiness — you can still generate, but more questions would tighten the profile.`
+                  : 'Generate the Course Outcome Profile from the current conversation'
+              }
+            >
+              I&rsquo;m done — Generate Profile
+            </button>
+          </div>
         </div>
       )}
       <CitationDrawer
