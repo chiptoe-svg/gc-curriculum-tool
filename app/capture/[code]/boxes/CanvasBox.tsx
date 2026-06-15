@@ -237,18 +237,28 @@ function BundledGroupHeader({
           <CanvasCredsHelp />
           <div className="mt-2 border-t pt-2">
             <p className="mb-1 text-[11px] font-medium text-muted-foreground">Or upload a .imscc cartridge</p>
+            <input
+              id={`imscc-file-${slotKey}`}
+              type="file"
+              accept=".imscc,application/zip"
+              onChange={e => setImsccFile(e.target.files?.[0] ?? null)}
+              className="sr-only"
+            />
             <div className="flex items-center gap-2">
-              <input
-                type="file"
-                accept=".imscc,application/zip"
-                onChange={e => setImsccFile(e.target.files?.[0] ?? null)}
-                className="min-w-0 flex-1 text-xs"
-              />
+              <label
+                htmlFor={`imscc-file-${slotKey}`}
+                className="shrink-0 cursor-pointer rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium hover:bg-muted"
+              >
+                Choose .imscc file
+              </label>
+              <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+                {imsccFile ? imsccFile.name : 'No file chosen'}
+              </span>
               <button
                 type="button"
                 onClick={handleImsccUpload}
                 disabled={uploadingImscc || !imsccFile}
-                className="shrink-0 rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                className="shrink-0 rounded-md border border-input bg-primary/10 px-2.5 py-1 text-xs font-semibold hover:bg-primary/20 disabled:opacity-50"
               >
                 {uploadingImscc ? 'Uploading…' : 'Upload .imscc'}
               </button>
@@ -811,18 +821,28 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
           <CanvasCredsHelp />
           <div className="mt-2 border-t pt-2">
             <p className="mb-1 text-[11px] font-medium text-muted-foreground">Or upload a .imscc cartridge</p>
+            <input
+              id="imscc-file-single"
+              type="file"
+              accept=".imscc,application/zip"
+              onChange={e => setImsccFileSingle(e.target.files?.[0] ?? null)}
+              className="sr-only"
+            />
             <div className="flex items-center gap-2">
-              <input
-                type="file"
-                accept=".imscc,application/zip"
-                onChange={e => setImsccFileSingle(e.target.files?.[0] ?? null)}
-                className="min-w-0 flex-1 text-xs"
-              />
+              <label
+                htmlFor="imscc-file-single"
+                className="shrink-0 cursor-pointer rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium hover:bg-muted"
+              >
+                Choose .imscc file
+              </label>
+              <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+                {imsccFileSingle ? imsccFileSingle.name : 'No file chosen'}
+              </span>
               <button
                 type="button"
                 onClick={handleImsccUploadSingle}
                 disabled={uploadingImscc || !imsccFileSingle}
-                className="shrink-0 rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium hover:bg-muted disabled:opacity-50"
+                className="shrink-0 rounded-md border border-input bg-primary/10 px-2.5 py-1 text-xs font-semibold hover:bg-primary/20 disabled:opacity-50"
               >
                 {uploadingImscc ? 'Uploading…' : 'Upload .imscc'}
               </button>
