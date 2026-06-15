@@ -4,6 +4,8 @@ import { db } from '@/lib/db/client';
 import { partners } from '@/lib/db/schema';
 import { createSession, SESSION_COOKIE } from '@/lib/partners/sessions';
 import { requiresBasicAuth, resolveRole, creatorAllowed } from '@/lib/auth/basic-auth';
+import { courseFromScopedPath, resolveScopedSession } from '@/lib/sandbox/access';
+import { getPrototypeSlug } from '@/lib/slug';
 
 /**
  * Middleware does two things, dispatched by path prefix:
@@ -24,6 +26,19 @@ export async function middleware(req: NextRequest) {
 
   if (path.startsWith('/partners/')) {
     return handlePartnerSession(req);
+  }
+
+  // Scoped external-tester access: a session bound to course <c> opens only
+  // <c>'s allowed capture surfaces. We inject the faculty slug so the existing
+  // routes authorize unchanged (see lib/sandbox/access.ts for the allowlist).
+  const scopedCourse = courseFromScopedPath(path);
+  if (scopedCourse) {
+    const sess = await resolveScopedSession(req);
+    if (sess && sess.courseCode === scopedCourse) {
+      const url = req.nextUrl.clone();
+      url.searchParams.set('slug', getPrototypeSlug());
+      return NextResponse.rewrite(url);
+    }
   }
 
   const facultyExpected = process.env.FACULTY_BASIC_AUTH;

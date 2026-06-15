@@ -21,6 +21,7 @@
 const PUBLIC_PREFIXES = [
   '/partners',
   '/api/partners',
+  '/sandbox',
   // Public read-only surfaces. The HTTP landing at "/" lists every
   // course; "/view/[code]" renders the latest captured profile read-only.
   // Both are intentionally reachable by anyone on the LAN — the value
