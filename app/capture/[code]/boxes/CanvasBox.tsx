@@ -696,6 +696,9 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
         )}
         {isList && items.length > 0 && (
           <ul className="mt-1.5 space-y-1 pl-5">
+            <li className="text-xs italic text-muted-foreground">
+              All items are included by default — check one only to ignore it.
+            </li>
             {items.map(it => {
               // rubricNames keys are the parsed assignment name (pts stripped).
               // it.title is the raw h2 text which may include "(N pts)".
