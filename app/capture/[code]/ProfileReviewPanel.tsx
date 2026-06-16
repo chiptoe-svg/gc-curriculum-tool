@@ -24,6 +24,7 @@ import { StressTestBadge } from './StressTestBadge';
 import type { StressTestResultType } from '@/lib/ai/stress-test/schema';
 import { deriveEvidenceBand, type EvidenceBand, type EvidenceClaim } from '@/lib/program/evidence-ladder';
 import { FlagDialog } from '@/components/FlagDialog';
+import { upwardBumps, assembleOverrides } from '@/lib/ai/capture/score-overrides';
 
 /**
  * Returns true when NONE of the profile's findings carry a `source` flag.
@@ -944,6 +945,20 @@ export function ProfileReviewPanel({
   // never gates save/approve.
   const [reviewed, setReviewed] = useState<Set<number>>(new Set());
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
+  const [overrideReasons, setOverrideReasons] = useState<Map<number, string>>(() => {
+    const seed = new Map<number, string>();
+    const existing = (profile.reviewer_overrides ?? []) as { statement: string; reason: string }[];
+    if (existing.length) {
+      profile.competencies.forEach((c, i) => {
+        const m = existing.find(o => o.statement === c.statement);
+        if (m) seed.set(i, m.reason);
+      });
+    }
+    return seed;
+  });
+  function setReason(i: number, text: string) {
+    setOverrideReasons(prev => { const n = new Map(prev); n.set(i, text); return n; });
+  }
 
   function handleCitationClick(c: CaptureProfileCitationType) {
     setDrawerTarget({
@@ -968,7 +983,8 @@ export function ProfileReviewPanel({
     try {
       // Save any pending edits first so the snapshot reflects current state.
       if (dirty) {
-        await onSave(working, 'edited', reviewerNote.trim() || null);
+        const toSave = { ...working, reviewer_overrides: assembleOverrides(profile.competencies, working.competencies, overrideReasons) };
+        await onSave(toSave, 'edited', reviewerNote.trim() || null);
       }
       const res = await fetch(
         `/api/capture/${encodeURIComponent(courseCode)}/snapshots?slug=${encodeURIComponent(slug)}`,
@@ -1082,7 +1098,14 @@ export function ProfileReviewPanel({
   //   (c) the departmental-context note has ≥ 20 non-whitespace characters.
   const allWorthLookReviewed = needsReview.size === 0 || [...needsReview].every(i => reviewed.has(i));
   const noteSubstantive = reviewerNote.replace(/\s/g, '').length >= 20;
-  const approveUnlocked = dirty || allWorthLookReviewed || noteSubstantive;
+  const bumps = useMemo(
+    () => upwardBumps(profile.competencies, working.competencies),
+    [profile.competencies, working.competencies],
+  );
+  const bumpByIndex = useMemo(() => new Map(bumps.map(b => [b.index, b])), [bumps]);
+  const unjustifiedBumpCount = bumps.filter(b => (overrideReasons.get(b.index) ?? '').trim().length === 0).length;
+  const allUpwardBumpsJustified = unjustifiedBumpCount === 0;
+  const approveUnlocked = (dirty || allWorthLookReviewed || noteSubstantive) && allUpwardBumpsJustified;
   const approveLockTitle = "Review before approving — adjust at least one score, mark each 'Worth a look' item Looks right ✓, or add a departmental-context note. (Approval is an epistemic act, not a click-through.)";
 
   async function persist(status: 'confirmed' | 'edited') {
@@ -1093,7 +1116,8 @@ export function ProfileReviewPanel({
     setSaving(true);
     setSaveError(null);
     try {
-      await onSave(working, status, reviewerNote.trim() || null);
+      const toSave = { ...working, reviewer_overrides: assembleOverrides(profile.competencies, working.competencies, overrideReasons) };
+      await onSave(toSave, status, reviewerNote.trim() || null);
       setLastSavedStatus(status);
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : 'Save failed');
@@ -1119,6 +1143,39 @@ export function ProfileReviewPanel({
       >
         {saving ? 'Saving…' : '💾 Save edits'}
       </button>
+    );
+  }
+
+  // Course level band parsed from the code (e.g. "GC 2400" → 2000). Used only
+  // to sharpen the hint when a lower-level course is pushed to high depth.
+  const courseLevelBand = (() => {
+    const m = (working.course_code ?? '').match(/\b(\d{4})\b/);
+    return m ? Math.floor(parseInt(m[1]!, 10) / 1000) * 1000 : null;
+  })();
+
+  /** Inline required reason for a row whose score(s) were bumped up. */
+  function renderOverrideReason(i: number) {
+    const bump = bumpByIndex.get(i);
+    if (!bump) return null;
+    const summary = bump.changes.map(c => `${c.dim.toUpperCase()} ${c.from} → ${c.to}`).join(' · ');
+    const high = bump.changes.some(c => c.to >= 3);
+    const hint = courseLevelBand !== null && courseLevelBand <= 2000 && high
+      ? `This is a ${courseLevelBand}-level course — a depth of 3+ is unusual here. Cite the assignment, rubric, or graded artifact that supports it.`
+      : 'Cite the student-side evidence that supports this higher depth.';
+    const missing = (overrideReasons.get(i) ?? '').trim().length === 0;
+    return (
+      <div className={'mt-1 rounded-md border p-2 ' + (missing ? 'border-amber-400 bg-amber-50' : 'border-muted bg-muted/30')}>
+        <label className="block text-[11px] font-medium text-amber-900">
+          ⚑ You raised a score ({summary}) — why? <span className="font-normal text-amber-700">{hint}</span>
+        </label>
+        <textarea
+          value={overrideReasons.get(i) ?? ''}
+          onChange={e => setReason(i, e.target.value)}
+          rows={2}
+          placeholder="Reason for the higher depth (required to approve)"
+          className="mt-1 w-full resize-none rounded border border-input bg-background px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+        />
+      </div>
     );
   }
 
@@ -1322,6 +1379,7 @@ export function ProfileReviewPanel({
                   <StressTestBadge
                     annotation={stressTestResult?.per_competency.find(a => a.competency_index === i) ?? null}
                   />
+                  {renderOverrideReason(i)}
                   <div className="flex justify-end gap-2">
                     {renderInlineSave()}
                     <button
@@ -1366,6 +1424,7 @@ export function ProfileReviewPanel({
                 <StressTestBadge
                   annotation={stressTestResult?.per_competency.find(a => a.competency_index === i) ?? null}
                 />
+                {renderOverrideReason(i)}
                 {dirty && <div className="flex justify-end">{renderInlineSave()}</div>}
               </div>
             ) : (
@@ -1673,7 +1732,9 @@ export function ProfileReviewPanel({
             {/* Approve — guard prevents rubber-stamping (A15) */}
             {!approveUnlocked && (
               <span className="text-[11px] text-muted-foreground">
-                Locked until reviewed — hover for what counts.
+                {unjustifiedBumpCount > 0
+                  ? `${unjustifiedBumpCount} raised score${unjustifiedBumpCount === 1 ? '' : 's'} need a reason before you can approve.`
+                  : 'Locked until reviewed — hover for what counts.'}
               </span>
             )}
             <button
