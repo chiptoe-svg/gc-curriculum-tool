@@ -1044,26 +1044,33 @@ export function ProfileReviewPanel({
     return humanizeValidationIssue(issue.path, issue.message, working.competencies ?? []);
   }, [working]);
 
-  // Quick-review partition: "worth a look" (triage-flagged, capped at 6, ranked
-  // by Do depth) vs. "the AI is confident about" (the rest). Both reuse
-  // CompetencyCard; the confident zone collapses to one-line CompetencyRows.
-  const { worthLook, confident } = useMemo(() => {
-    const triaged = working.competencies.map((c, i) => ({
+  // Triage is FROZEN at load: which competencies the interviewer was less sure
+  // about (flagged, capped at 6, ranked by Do depth). Computed ONCE from the
+  // profile as it arrived — editing a score must never reshuffle the list or
+  // migrate a row out from under you mid-review (2026-06-16 operator report: a
+  // row jumped sections on a Do 4→1→2 slider drag). The list always renders in
+  // course order; these frozen indices only decide which rows are highlighted +
+  // expanded vs. rolled up.
+  const [{ needsReview, reasonOf }] = useState(() => {
+    const triaged = profile.competencies.map((c, i) => ({
       c,
       i,
-      ...triageCompetency(c, working.course_emphasis),
+      ...triageCompetency(c, profile.course_emphasis),
     }));
     const flagged = triaged
       .filter(t => t.flagged)
       .sort((a, b) => b.c.d_depth - a.c.d_depth)
       .slice(0, 6);
-    const flaggedIdx = new Set(flagged.map(t => t.i));
     return {
-      worthLook: triaged.filter(t => flaggedIdx.has(t.i)),
-      confident: triaged.filter(t => !flaggedIdx.has(t.i)),
+      needsReview: new Set<number>(flagged.map(t => t.i)),
+      reasonOf: new Map<number, string | null>(flagged.map(t => [t.i, t.reason])),
     };
-  }, [working.competencies, working.course_emphasis]);
-  const unreviewedCount = worthLook.filter(t => !reviewed.has(t.i)).length;
+  });
+  const confidentIndices = useMemo(
+    () => working.competencies.map((_, i) => i).filter(i => !needsReview.has(i)),
+    [working.competencies, needsReview],
+  );
+  const unreviewedCount = [...needsReview].filter(i => !reviewed.has(i)).length;
 
   // A15 — Approve rubber-stamp guard (vision-alignment review 2026-06-12).
   // Approval is an epistemic act, not a click-through. The documented decay
@@ -1073,7 +1080,7 @@ export function ProfileReviewPanel({
   //   (b) every "Worth a look" item is in the reviewed set
   //       (worthLook.length === 0 counts as trivially satisfied), OR
   //   (c) the departmental-context note has ≥ 20 non-whitespace characters.
-  const allWorthLookReviewed = worthLook.length === 0 || worthLook.every(t => reviewed.has(t.i));
+  const allWorthLookReviewed = needsReview.size === 0 || [...needsReview].every(i => reviewed.has(i));
   const noteSubstantive = reviewerNote.replace(/\s/g, '').length >= 20;
   const approveUnlocked = dirty || allWorthLookReviewed || noteSubstantive;
   const approveLockTitle = "Review before approving — adjust at least one score, mark each 'Worth a look' item Looks right ✓, or add a departmental-context note. (Approval is an epistemic act, not a click-through.)";
@@ -1219,108 +1226,74 @@ export function ProfileReviewPanel({
 
       {saveError && <p className="text-sm text-destructive">{saveError}</p>}
 
-      {/* ── 2. THE WORK — competency triage ── */}
+      {/* ── 2. THE WORK — one ordered list. Questionable rows (frozen at load)
+              are highlighted + expanded; confident rows are rolled up. Editing
+              a score never reorders the list or moves a row between zones. ── */}
       <div className="space-y-3">
-        {/* ── WORTH A LOOK — triage-flagged, full editable cards ── */}
-        {worthLook.length > 0 && (
-          <section className="space-y-3 rounded-md border border-amber-300 bg-amber-50/40 p-3">
-            <div className="flex items-baseline justify-between gap-2">
-              <h3 className="text-sm font-semibold text-amber-900">The interviewer was less sure about these ({worthLook.length})</h3>
-              <span
-                className={
-                  unreviewedCount === 0
-                    ? 'rounded-full bg-green-100 px-3 py-1 text-sm font-bold text-green-800'
-                    : 'rounded-full bg-amber-200 px-3 py-1 text-sm font-bold text-amber-900'
-                }
-              >
-                {unreviewedCount === 0 ? 'all confirmed ✓' : `${unreviewedCount} still to confirm`}
-              </span>
+        <section className="space-y-2 rounded-md border bg-card p-3">
+          <div className="flex items-baseline justify-between gap-2">
+            <h3 className="text-sm font-semibold">Competencies ({working.competencies.length})</h3>
+            <div className="flex items-center gap-2">
+              {needsReview.size > 0 && (
+                <span
+                  className={
+                    unreviewedCount === 0
+                      ? 'rounded-full bg-green-100 px-3 py-1 text-sm font-bold text-green-800'
+                      : 'rounded-full bg-amber-200 px-3 py-1 text-sm font-bold text-amber-900'
+                  }
+                >
+                  {unreviewedCount === 0 ? 'all confirmed ✓' : `${unreviewedCount} still to confirm`}
+                </span>
+              )}
+              {confidentIndices.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setExpanded(
+                      confidentIndices.every(i => expanded.has(i))
+                        ? new Set()
+                        : new Set(confidentIndices),
+                    )
+                  }
+                  className="text-[11px] text-muted-foreground underline hover:text-foreground"
+                >
+                  {confidentIndices.every(i => expanded.has(i)) ? 'Roll up all ▴' : 'Open all ▾'}
+                </button>
+              )}
             </div>
-            <p className="text-xs text-amber-800">
-              It was confident about the ones listed below — these it flagged for your eye
-              because they rest on your word, sit high on the scale, were inferred without a
-              direct source, or carry the most graded weight. Adjust a score if it&apos;s off, then mark each Looks right ✓.
-            </p>
-            {worthLook.map(({ c, i, reason }) => (
-              <div key={i} className={'space-y-1' + (reviewed.has(i) ? ' opacity-60' : '')}>
-                {reason && <p className="text-[11px] font-medium text-amber-800">⚑ {reason}</p>}
-                <CompetencyCard
-                  competency={c}
-                  index={i}
-                  // Editing a score is NOT confirmation. Adjusting a slider (or
-                  // statement) only mutates the draft + unlocks approval via the
-                  // `dirty` guard; clearing the "Worth a look" flag requires the
-                  // explicit "Looks right ✓" click below. (A stray slider tick
-                  // used to auto-confirm the row — 2026-06-16 operator report.)
-                  onChange={next => updateCompetency(i, next)}
-                  onCitationClick={handleCitationClick}
-                  courseCode={courseCode}
-                  slug={slug}
-                />
-                <StressTestBadge
-                  annotation={stressTestResult?.per_competency.find(a => a.competency_index === i) ?? null}
-                />
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => markReviewed(i)}
-                    className={
-                      reviewed.has(i)
-                        ? 'inline-flex items-center gap-1.5 rounded-md border border-green-300 bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-800'
-                        : 'inline-flex items-center gap-1.5 rounded-md border border-amber-600 bg-amber-500 px-4 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-amber-600'
-                    }
-                  >
-                    {reviewed.has(i) ? '✓ Confirmed' : 'Looks right ✓'}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </section>
-        )}
-
-        {/* ── THE AI IS CONFIDENT — collapsed rows, expand to edit ── */}
-        {confident.length > 0 && (
-          <section className="space-y-2 rounded-md border bg-card p-3">
-            <div className="flex items-baseline justify-between gap-2">
-              <h3 className="text-sm font-semibold">The interviewer was confident about these ({confident.length})</h3>
-              <button
-                type="button"
-                onClick={() =>
-                  setExpanded(
-                    expanded.size >= confident.length
-                      ? new Set()
-                      : new Set(confident.map(t => t.i)),
-                  )
-                }
-                className="text-[11px] text-muted-foreground underline hover:text-foreground"
-              >
-                {expanded.size >= confident.length ? 'Close all ▴' : 'Open all ▾'}
-              </button>
-            </div>
+          </div>
+          {needsReview.size > 0 && (
             <p className="text-xs text-muted-foreground">
-              Each cited to your materials or scored low. Click any row to edit.
+              Listed in course order. The highlighted rows are the ones the interviewer was less
+              sure about — they rest on your word, sit high on the scale, were inferred without a
+              direct source, or carry the most graded weight. Adjust a score if it&apos;s off, then
+              mark each Looks right ✓. The confident rows are rolled up — click any to edit.
             </p>
-            {confident.map(({ c, i }) =>
-              expanded.has(i) ? (
-                <div key={i} className="space-y-1">
-                  {/* Collapse affordance — expansion was one-way before
-                      (2026-06-12 walkthrough: "unable to roll back up"). */}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setExpanded(prev => {
-                        const next = new Set(prev);
-                        next.delete(i);
-                        return next;
-                      })
-                    }
-                    className="text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-                  >
-                    ▴ collapse this one
-                  </button>
+          )}
+
+          {working.competencies.map((c, i) => {
+            // Questionable row (frozen membership): highlighted, expanded, with an
+            // explicit confirm button. Stays put even if an edit drops its score
+            // below the original flag threshold.
+            if (needsReview.has(i)) {
+              const reason = reasonOf.get(i) ?? null;
+              return (
+                <div
+                  key={i}
+                  className={
+                    'space-y-1 rounded-md border border-amber-300 bg-amber-50/40 p-2'
+                    + (reviewed.has(i) ? ' opacity-60' : '')
+                  }
+                >
+                  {reason && <p className="text-[11px] font-medium text-amber-800">⚑ {reason}</p>}
                   <CompetencyCard
                     competency={c}
                     index={i}
+                    // Editing a score is NOT confirmation. Adjusting a slider (or
+                    // statement) only mutates the draft + unlocks approval via the
+                    // `dirty` guard; clearing the row requires the explicit
+                    // "Looks right ✓" click below. (A stray slider tick used to
+                    // auto-confirm the row — 2026-06-16 operator report.)
                     onChange={next => updateCompetency(i, next)}
                     onCitationClick={handleCitationClick}
                     courseCode={courseCode}
@@ -1329,13 +1302,55 @@ export function ProfileReviewPanel({
                   <StressTestBadge
                     annotation={stressTestResult?.per_competency.find(a => a.competency_index === i) ?? null}
                   />
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => markReviewed(i)}
+                      className={
+                        reviewed.has(i)
+                          ? 'inline-flex items-center gap-1.5 rounded-md border border-green-300 bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-800'
+                          : 'inline-flex items-center gap-1.5 rounded-md border border-amber-600 bg-amber-500 px-4 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-amber-600'
+                      }
+                    >
+                      {reviewed.has(i) ? '✓ Confirmed' : 'Looks right ✓'}
+                    </button>
+                  </div>
                 </div>
-              ) : (
-                <CompetencyRow key={i} competency={c} onExpand={() => expandRow(i)} />
-              ),
-            )}
-          </section>
-        )}
+              );
+            }
+            // Confident row — rolled up by default; expand to edit.
+            return expanded.has(i) ? (
+              <div key={i} className="space-y-1">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setExpanded(prev => {
+                      const next = new Set(prev);
+                      next.delete(i);
+                      return next;
+                    })
+                  }
+                  className="text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                >
+                  ▴ roll this one up
+                </button>
+                <CompetencyCard
+                  competency={c}
+                  index={i}
+                  onChange={next => updateCompetency(i, next)}
+                  onCitationClick={handleCitationClick}
+                  courseCode={courseCode}
+                  slug={slug}
+                />
+                <StressTestBadge
+                  annotation={stressTestResult?.per_competency.find(a => a.competency_index === i) ?? null}
+                />
+              </div>
+            ) : (
+              <CompetencyRow key={i} competency={c} onExpand={() => expandRow(i)} />
+            );
+          })}
+        </section>
       </div>
 
       {/* ── 3. STRESS TEST RESULTS — trigger is in sticky bar; results render here ── */}
@@ -1608,7 +1623,7 @@ export function ProfileReviewPanel({
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Summary chip */}
           <span className="rounded border border-muted bg-muted/40 px-2.5 py-1 text-[11px] font-mono text-muted-foreground">
-            {worthLook.length} worth a look · {confident.length} confident
+            {needsReview.size} to review · {confidentIndices.length} confident
           </span>
 
           <div className="flex items-center gap-2">

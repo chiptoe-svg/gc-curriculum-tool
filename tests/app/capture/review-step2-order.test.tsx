@@ -120,14 +120,14 @@ function renderPanel(profileOverride?: Partial<CaptureProfile>) {
 /* ── Tests ──────────────────────────────────────────────────────────────── */
 
 describe('Review Step 2 — document order', () => {
-  it('VerificationSummary renders BEFORE the "Worth a look" heading in document order', () => {
+  it('VerificationSummary renders BEFORE the competency list heading in document order', () => {
     renderPanel();
 
     const summary = screen.getByTestId('verification-summary');
-    // With the minimal profile both competencies are "confident" (materials-cited,
-    // mid-scored, non-central) so there may be no "Worth a look" heading.
-    // Use the "The interviewer was confident about these" heading which is always present.
-    const confident = screen.getByText(/The interviewer was confident about these/i);
+    // The competency list is now one ordered section under a "Competencies (N)"
+    // heading (the old two-zone split was merged 2026-06-16). That heading is
+    // always present.
+    const confident = screen.getByText(/Competencies \(/i);
 
     // compareDocumentPosition: if summary is BEFORE confident, result has DOCUMENT_POSITION_FOLLOWING
     const position = summary.compareDocumentPosition(confident);

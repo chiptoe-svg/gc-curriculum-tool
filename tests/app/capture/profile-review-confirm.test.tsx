@@ -94,4 +94,21 @@ describe('ProfileReviewPanel — adjusting a KUD slider does not auto-confirm', 
     fireEvent.click(screen.getByRole('button', { name: /looks right/i }));
     expect(screen.getByRole('button', { name: /✓ Confirmed/i })).toBeTruthy();
   });
+
+  it('keeps a flagged row in place (does not migrate to confident) when a score drops below threshold', () => {
+    renderPanel();
+    // The flagged row starts expanded with a reason label + confirm button.
+    expect(screen.getByText(/resting on your word/i)).toBeTruthy();
+    expect(screen.getByRole('button', { name: /looks right/i })).toBeTruthy();
+    const doSlider = screen.getByLabelText(`Do depth for "${FLAGGED_STATEMENT}"`);
+
+    // Drop the Do score well below the original flag threshold, then nudge back.
+    fireEvent.change(doSlider, { target: { value: '1' } });
+    fireEvent.change(doSlider, { target: { value: '2' } });
+
+    // Membership is frozen at load — the row stays a full, confirmable card and
+    // never rolls up into the confident zone. Its slider is still present.
+    expect(screen.getByRole('button', { name: /looks right/i })).toBeTruthy();
+    expect(screen.getByLabelText(`Do depth for "${FLAGGED_STATEMENT}"`)).toBeTruthy();
+  });
 });
