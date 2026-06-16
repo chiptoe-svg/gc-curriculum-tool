@@ -99,8 +99,8 @@ describe('captureProfileJsonSchemaV2 strict-mode discipline', () => {
     expect(mp.items.properties.weight_pct.type).toEqual(['number', 'null']);
   });
 
-  it('duration_weeks is nullable number', () => {
+  it('duration_weeks is nullable integer', () => {
     const mp = (captureProfileJsonSchemaV2 as any).properties.major_projects;
-    expect(mp.items.properties.duration_weeks.type).toEqual(['number', 'null']);
+    expect(mp.items.properties.duration_weeks.type).toEqual(['integer', 'null']);
   });
 });

@@ -316,7 +316,7 @@ export const captureProfileJsonSchemaV2 = (() => {
         },
         what_it_develops: { type: 'string', minLength: 1, maxLength: 500 },
         weight_pct: { type: ['number', 'null'], minimum: 0, maximum: 100 },
-        duration_weeks: { type: ['number', 'null'], minimum: 1 },
+        duration_weeks: { type: ['integer', 'null'], minimum: 1 },
         source: { type: ['string', 'null'], enum: ['instructor', 'materials', 'inferred', null] },
         citations: CITATIONS_ARRAY,
       },
