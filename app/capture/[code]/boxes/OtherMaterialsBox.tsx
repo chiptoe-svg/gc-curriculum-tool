@@ -300,32 +300,51 @@ export function OtherMaterialsBox({ course, materials, slug, onMaterialsChange }
   async function handleFiles(files: FileList | null): Promise<void> {
     setError(null);
     if (!files || files.length === 0) return;
-    const file = files[0]!;
-    if (!ALLOWED_UPLOAD_TYPES.has(file.type)) {
+    const all = Array.from(files);
+    const accepted = all.filter((f) => ALLOWED_UPLOAD_TYPES.has(f.type));
+    const skipped = all.filter((f) => !ALLOWED_UPLOAD_TYPES.has(f.type)).map((f) => f.name);
+    if (accepted.length === 0) {
       setError('Only PDF or DOCX files are accepted.');
+      if (inputRef.current) inputRef.current.value = '';
       return;
     }
-    setUploading(file.name);
     setUploadBgMessage(null);
+    const failures: string[] = [];
+    let queuedCount = 0;
     try {
-      const form = new FormData();
-      form.set('slug', slug);
-      form.set('file', file);
-      const res = await fetch(`/api/courses/${encodeURIComponent(course.code)}/materials`, {
-        method: 'POST',
-        body: form,
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setError((json as { error?: string }).error ?? `Upload failed (${res.status})`);
-        return;
+      // Upload sequentially — each POST stores + enqueues and returns fast
+      // (background ingest), so a batch is cheap and we avoid a request burst.
+      for (let i = 0; i < accepted.length; i++) {
+        const file = accepted[i]!;
+        setUploading(accepted.length > 1 ? `${file.name} (${i + 1}/${accepted.length})` : file.name);
+        try {
+          const form = new FormData();
+          form.set('slug', slug);
+          form.set('file', file);
+          const res = await fetch(`/api/courses/${encodeURIComponent(course.code)}/materials`, {
+            method: 'POST',
+            body: form,
+          });
+          const json = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            failures.push(`${file.name}: ${(json as { error?: string }).error ?? `failed (${res.status})`}`);
+            continue;
+          }
+          if ((json as { indexingStatus?: string }).indexingStatus === 'queued') queuedCount++;
+        } catch (e) {
+          failures.push(`${file.name}: ${e instanceof Error ? e.message : 'upload failed'}`);
+        }
       }
-      if ((json as { indexingStatus?: string }).indexingStatus === 'queued') {
-        setUploadBgMessage('Uploaded — indexing in the background. You can keep working; status updates here when ready.');
+      if (queuedCount > 0) {
+        setUploadBgMessage(`${queuedCount} file${queuedCount === 1 ? '' : 's'} uploaded — indexing in the background. You can keep working; status updates here when ready.`);
+      }
+      if (failures.length > 0 || skipped.length > 0) {
+        const parts: string[] = [];
+        if (failures.length) parts.push(`${failures.length} failed — ${failures.join('; ')}`);
+        if (skipped.length) parts.push(`Skipped (only PDF/DOCX): ${skipped.join(', ')}`);
+        setError(parts.join(' · '));
       }
       await refresh();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Upload failed');
     } finally {
       setUploading(null);
       if (inputRef.current) inputRef.current.value = '';
@@ -373,13 +392,14 @@ export function OtherMaterialsBox({ course, materials, slug, onMaterialsChange }
             disabled={uploading !== null}
             className="rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium hover:bg-muted disabled:opacity-50"
           >
-            {uploading ? 'Uploading…' : 'Add file'}
+            {uploading ? 'Uploading…' : 'Add files'}
           </button>
         </div>
         <input
           ref={inputRef}
           type="file"
           accept=".pdf,.docx"
+          multiple
           className="hidden"
           onChange={(e) => void handleFiles(e.target.files)}
         />

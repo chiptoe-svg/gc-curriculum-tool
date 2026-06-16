@@ -1022,65 +1022,76 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
   async function handleFiles(files: FileList | null) {
     setUploadError(null);
     if (!files || files.length === 0) return;
-    const file = files[0]!;
-    if (!ALLOWED_UPLOAD_TYPES.has(file.type)) {
+    const all = Array.from(files);
+    const accepted = all.filter(f => ALLOWED_UPLOAD_TYPES.has(f.type));
+    const skipped = all.filter(f => !ALLOWED_UPLOAD_TYPES.has(f.type)).map(f => f.name);
+    if (accepted.length === 0) {
       setUploadError('Only PDF or DOCX files are accepted.');
+      if (inputRef.current) inputRef.current.value = '';
       return;
     }
-    setUploading(file.name);
+    const added: CaptureMaterial[] = [];
+    const failures: string[] = [];
+    let queuedCount = 0;
     try {
-      const form = new FormData();
-      form.set('slug', slug);
-      form.set('file', file);
-      const res = await fetch(`/api/courses/${encodeURIComponent(course.code)}/materials`, {
-        method: 'POST',
-        body: form,
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        setUploadError((json as { error?: string }).error ?? `Upload failed (${res.status})`);
-        return;
+      // Upload sequentially — each POST stores + enqueues and returns fast
+      // (background ingest), so a batch is cheap and avoids a request burst.
+      for (let i = 0; i < accepted.length; i++) {
+        const file = accepted[i]!;
+        setUploading(accepted.length > 1 ? `${file.name} (${i + 1}/${accepted.length})` : file.name);
+        try {
+          const form = new FormData();
+          form.set('slug', slug);
+          form.set('file', file);
+          const res = await fetch(`/api/courses/${encodeURIComponent(course.code)}/materials`, {
+            method: 'POST',
+            body: form,
+          });
+          const json = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            failures.push(`${file.name}: ${(json as { error?: string }).error ?? `failed (${res.status})`}`);
+            continue;
+          }
+          // The POST response is trimmed to {id, fileName, blobUrl, indexingStatus}
+          // (extraction now runs in the background worker), so build the optimistic
+          // row from the local File; the polling effect refreshes it to terminal.
+          const data = json as { id: string; fileName: string; blobUrl?: string; indexingStatus?: IndexingStatus };
+          added.push({
+            id: data.id,
+            fileName: data.fileName ?? file.name,
+            mimeType: file.type,
+            sizeBytes: file.size,
+            pageCount: null,
+            extractionStatus: 'pending',
+            extractionMethod: null,
+            extractedText: null,
+            ignored: false,
+            digest: null,
+            digestGeneratedAt: null,
+            useDigest: false,
+            indexingStatus: data.indexingStatus ?? 'queued',
+            indexedAt: null,
+            ferpaRisk: 'low',
+            autoSetAside: false,
+            setAsideReason: null,
+            blobUrl: data.blobUrl ?? '',
+            sourceCode: null,
+          });
+          if (data.indexingStatus === 'queued') queuedCount++;
+        } catch (e) {
+          failures.push(`${file.name}: ${e instanceof Error ? e.message : 'upload failed'}`);
+        }
       }
-      const data = json as {
-        id: string;
-        fileName: string;
-        mimeType: string;
-        sizeBytes: number;
-        pageCount: number | null;
-        extractionStatus: string;
-        extractionMethod: string | null;
-        blobUrl?: string;
-        indexingStatus?: IndexingStatus;
-      };
-      const newMaterial: CaptureMaterial = {
-        id: data.id,
-        fileName: data.fileName,
-        mimeType: data.mimeType,
-        sizeBytes: data.sizeBytes,
-        pageCount: data.pageCount,
-        extractionStatus: data.extractionStatus,
-        extractionMethod: data.extractionMethod,
-        extractedText: null,  // server returns full row, but the upload response trims it — capture page will reload from /context if needed
-        ignored: false,
-        digest: null,
-        digestGeneratedAt: null,
-        useDigest: false,
-        // Use the server-returned status (queued when background ingest is enabled);
-        // the polling effect will refresh rows until they reach a terminal state.
-        indexingStatus: data.indexingStatus ?? 'pending',
-        indexedAt: null,
-        ferpaRisk: 'low',
-        autoSetAside: false,
-        setAsideReason: null,
-        blobUrl: data.blobUrl ?? '',  // for local uploads, the URL is internal; the link won't render anyway
-        sourceCode: null,
-      };
-      pushMaterials([...materials, newMaterial]);
-      if (data.indexingStatus === 'queued') {
-        setUploadBgMessage('Uploaded — indexing in the background. You can keep working; status updates here when ready.');
+      if (added.length > 0) pushMaterials([...materials, ...added]);
+      if (queuedCount > 0) {
+        setUploadBgMessage(`${queuedCount} file${queuedCount === 1 ? '' : 's'} uploaded — indexing in the background. You can keep working; status updates here when ready.`);
       }
-    } catch (e) {
-      setUploadError(e instanceof Error ? e.message : 'Upload failed');
+      if (failures.length > 0 || skipped.length > 0) {
+        const parts: string[] = [];
+        if (failures.length) parts.push(`${failures.length} failed — ${failures.join('; ')}`);
+        if (skipped.length) parts.push(`Skipped (only PDF/DOCX): ${skipped.join(', ')}`);
+        setUploadError(parts.join(' · '));
+      }
     } finally {
       setUploading(null);
       if (inputRef.current) inputRef.current.value = '';
@@ -1413,12 +1424,13 @@ The materials themselves — and their per-item controls (ignore, preview, AI su
                   disabled={uploading !== null}
                   className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted disabled:opacity-50"
                 >
-                  {uploading ? `Uploading ${uploading}…` : 'Choose file'}
+                  {uploading ? `Uploading ${uploading}…` : 'Choose files'}
                 </button>
                 <input
                   ref={inputRef}
                   type="file"
                   accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  multiple
                   onChange={e => handleFiles(e.target.files)}
                   className="hidden"
                 />
