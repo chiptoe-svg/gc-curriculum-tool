@@ -19,6 +19,13 @@ const MAX_CONCURRENCY = 2;
 let workerRunning = false;
 let recovered = false;
 let inFlight = 0;
+// Wake signal: set by enqueue() AFTER the row is committed 'queued'. The drain
+// loop clears it before each claim and re-checks it before idling, so a row
+// enqueued during the loop's final (empty) claim isn't orphaned by a
+// just-about-to-exit worker. Residual: if an enqueue commits after the loop has
+// already exited, the row waits for the next enqueue / "Index now" / restart to
+// drain (self-healing, never lost).
+let wake = false;
 
 // Indirection so tests can swap the processor without fighting ESM live-binding.
 // processMaterial is a function declaration and is hoisted, so this assignment
@@ -31,6 +38,7 @@ export function __resetWorkerForTest(): void {
   workerRunning = false;
   recovered = false;
   inFlight = 0;
+  wake = false;
   _process = processMaterial;
 }
 
@@ -42,6 +50,7 @@ export function __setProcessForTest(fn: (row: CourseMaterialRow) => Promise<void
 /** Mark a material queued and ensure the worker is draining. Idempotent. */
 export async function enqueue(materialId: string): Promise<void> {
   await updateIndexingStatus({ id: materialId, status: 'queued' });
+  wake = true;
   ensureWorker();
 }
 
@@ -64,9 +73,11 @@ async function drainLoop(): Promise<void> {
         await new Promise(r => setTimeout(r, 25));
         continue;
       }
+      wake = false; // clear before claiming; an enqueue during the claim re-sets it
       const row = await claimNextQueued();
       if (!row) {
         if (inFlight > 0) { await new Promise(r => setTimeout(r, 25)); continue; }
+        if (wake) continue; // a row was enqueued during the (empty) claim — re-check
         break;
       }
       inFlight++;

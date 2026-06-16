@@ -58,4 +58,15 @@ describe('ingest worker', () => {
     await vi.waitFor(() => expect(processMaterial).toHaveBeenCalledTimes(5));
     expect(maxSeen).toBeLessThanOrEqual(2);
   });
+
+  it('re-drains when a new row is enqueued after the worker idled', async () => {
+    claimNextQueued.mockResolvedValueOnce(row('a')).mockResolvedValue(null);
+    await enqueue('a');
+    await vi.waitFor(() => expect(processMaterial).toHaveBeenCalledTimes(1));
+    // Queue has idled (worker exited). A fresh enqueue must restart draining.
+    claimNextQueued.mockReset();
+    claimNextQueued.mockResolvedValueOnce(row('b')).mockResolvedValue(null);
+    await enqueue('b');
+    await vi.waitFor(() => expect(processMaterial).toHaveBeenCalledTimes(2));
+  });
 });
