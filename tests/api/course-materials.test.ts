@@ -183,6 +183,41 @@ describe('POST /api/courses/[code]/materials', () => {
     const json = await res.json();
     expect(json.extractionStatus).toBe('failed');
   });
+
+  // The bare /materials path is excluded from the middleware matcher (the
+  // Node-runtime body-replay 500), so the route MUST self-enforce Basic Auth.
+  it('returns 401 when FACULTY_BASIC_AUTH is set and no Authorization header (route self-enforces)', async () => {
+    const prev = process.env.FACULTY_BASIC_AUTH;
+    process.env.FACULTY_BASIC_AUTH = 'faculty:secret';
+    try {
+      const [req, ctx] = makeUploadReq();
+      const res = await POST(req, ctx);
+      expect(res.status).toBe(401);
+      expect(res.headers.get('www-authenticate')).toMatch(/Basic/i);
+    } finally {
+      if (prev === undefined) delete process.env.FACULTY_BASIC_AUTH;
+      else process.env.FACULTY_BASIC_AUTH = prev;
+    }
+  });
+
+  it('passes the Basic-Auth gate with a correct Authorization header', async () => {
+    const prev = process.env.FACULTY_BASIC_AUTH;
+    process.env.FACULTY_BASIC_AUTH = 'faculty:secret';
+    try {
+      const [base] = makeUploadReq();
+      const form = await base.formData();
+      const req = new Request('http://test/api/courses/GC%203460/materials', {
+        method: 'POST',
+        body: form,
+        headers: { authorization: `Basic ${Buffer.from('faculty:secret').toString('base64')}` },
+      });
+      const res = await POST(req, { params: Promise.resolve({ code: CODE }) });
+      expect(res.status).toBe(200);
+    } finally {
+      if (prev === undefined) delete process.env.FACULTY_BASIC_AUTH;
+      else process.env.FACULTY_BASIC_AUTH = prev;
+    }
+  });
 });
 
 describe('DELETE /api/courses/[code]/materials/[id]', () => {

@@ -128,7 +128,16 @@ export const config = {
   // export), and the body replay 500'd them with the same TypeError before
   // the route ran. The route enforces Basic Auth itself (authorizedForBasicAuth)
   // + slug, mirroring transcribe. (<code> may contain %20, so [^/]+.)
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/transcribe|api/courses/[^/]+/imscc-import).*)'],
+  //
+  // api/courses/<code>/materials EXCLUDED (2026-06-16): same body-replay
+  // TypeError, hit intermittently on real PDF uploads (worsens under
+  // concurrent load — the GC 2400 500s). The route's POST + DELETE enforce
+  // Basic Auth themselves (authorizedForBasicAuth) + slug/scoped, mirroring
+  // imscc-import. The trailing (?!/) makes this EXACT-PATH ONLY: the bare
+  // /materials path is excluded, but its subpaths (/materials/<id>,
+  // /materials/compress) still pass through middleware Basic Auth — they have
+  // no large-body problem and do NOT self-auth, so they must stay gated.
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/transcribe|api/courses/[^/]+/imscc-import|api/courses/[^/]+/materials(?!/)).*)'],
   // Run in Node runtime so we can import lib/db/client (node-postgres).
   // Edge runtime lacks Node builtins that `pg` needs.
   runtime: 'nodejs',

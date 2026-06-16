@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { authorizeCourseWrite } from '@/lib/sandbox/access';
+import { authorizeCourseWrite, resolveScopedSession } from '@/lib/sandbox/access';
+import { authorizedForBasicAuth } from '@/lib/auth/basic-auth';
 import { putLocal, courseSlug, safeFilename, keyFromLocalUrl, deleteLocal } from '@/lib/storage/local-storage';
 import { getCourseByCode, clearCourseCanvasImport } from '@/lib/db/courses-queries';
 import { hashIp } from '@/lib/ip-hash';
@@ -31,6 +32,31 @@ interface RouteContext {
   params: Promise<{ code: string }>;
 }
 
+/**
+ * Basic-Auth gate, enforced HERE because the bare /materials path is EXCLUDED
+ * from the middleware matcher (see middleware.ts): Node-runtime middleware
+ * buffers/replays the request body, and on real-size multipart PDF uploads
+ * that replay throws "Response body object should not be disturbed or locked"
+ * before the route runs (intermittent, worsens under concurrent load — the
+ * GC 2400 500s). Same gate + FACULTY_BASIC_AUTH env var + no-op-when-unset
+ * semantics as the middleware. A scoped external-tester session bound to THIS
+ * course authorizes in place of faculty Basic Auth (this route is on the
+ * sandbox allowlist). The slug second factor is still checked separately by
+ * authorizeCourseWrite. Mirrors imscc-import + transcribe.
+ */
+async function gateBasicAuth(req: Request, code: string): Promise<Response | null> {
+  const scoped = await resolveScopedSession(req);
+  if (scoped?.courseCode === code) return null;
+  const expectedAuth = process.env.FACULTY_BASIC_AUTH;
+  if (expectedAuth && !authorizedForBasicAuth(req.headers.get('authorization'), expectedAuth)) {
+    return new NextResponse('Authentication required', {
+      status: 401,
+      headers: { 'WWW-Authenticate': 'Basic realm="GC Curriculum Tool - Faculty"' },
+    });
+  }
+  return null;
+}
+
 // DELETE /api/courses/[code]/materials?slug=...
 // Bulk wipe: removes EVERY material for the course — DB rows, local-disk
 // blobs, and the per-material chunks in the course's Weaviate tenant — then
@@ -41,6 +67,8 @@ interface RouteContext {
 // manager, behind a typed confirmation.
 export async function DELETE(req: Request, { params }: RouteContext): Promise<Response> {
   const { code } = await params;
+  const authFail = await gateBasicAuth(req, code);
+  if (authFail) return authFail;
   const url = new URL(req.url);
   const slug = url.searchParams.get('slug') ?? '';
   if (!(await authorizeCourseWrite(req, code, slug))) {
@@ -78,6 +106,8 @@ export async function DELETE(req: Request, { params }: RouteContext): Promise<Re
 
 export async function POST(req: Request, { params }: RouteContext): Promise<Response> {
   const { code } = await params;
+  const authFail = await gateBasicAuth(req, code);
+  if (authFail) return authFail;
 
   // Parse multipart form data.
   let form: FormData;
