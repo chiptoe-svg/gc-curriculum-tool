@@ -1,3 +1,5 @@
+import type { PfCond, Area7Block } from '@/lib/ai/capture/area7-types';
+
 /**
  * Public read-only render of a captured course profile. Editorial framing,
  * not auditor framing — surfaces what a reader (chair, accreditor, student,
@@ -91,15 +93,6 @@ function DepthChip({ label, value }: { label: 'K' | 'U' | 'D'; value: number | n
   );
 }
 
-type PfCond = 'present' | 'partial' | 'absent';
-export interface Area7Block {
-  generate_then_consolidate?: PfCond;
-  open_ended_problems?: PfCond;
-  revision_cycles?: PfCond;
-  structured_post_mortem?: PfCond;
-  abstraction_bridging?: PfCond;
-  max_supporting_depth?: number | null;
-}
 
 const AREA7_LABELS: { key: keyof Area7Block; label: string }[] = [
   { key: 'generate_then_consolidate', label: 'Generate-then-consolidate' },
