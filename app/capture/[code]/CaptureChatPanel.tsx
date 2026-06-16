@@ -5,7 +5,7 @@ import { VoiceRecorder } from '@/components/VoiceRecorder';
 import type { CaptureReadiness } from '@/lib/ai/capture/schema';
 import type { ChatMessage } from '@/lib/ai/analyze/capture-chat';
 import { CitationDrawer, type CitationTarget } from './CitationDrawer';
-import { FACULTY_ROSTER } from '@/lib/faculty';
+import { InstructorSelect } from './InstructorSelect';
 
 // Re-export so existing imports from this module keep working.
 export type { ChatMessage } from '@/lib/ai/analyze/capture-chat';
@@ -374,16 +374,12 @@ export function CaptureChatPanel({
           {editingInstructor ? (
             <>
               <label htmlFor="badge-instructor" className="font-mono-plex text-[9px] uppercase tracking-[0.16em] text-muted-foreground">Instructor:</label>
-              <select
+              <InstructorSelect
                 id="badge-instructor"
                 value={chooserInstructor}
-                onChange={e => onInstructorChange(e.target.value)}
+                onChange={onInstructorChange}
                 className="rounded border border-input bg-background px-2 py-1 text-xs"
-              >
-                {FACULTY_ROSTER.map(name => (
-                  <option key={name} value={name}>{name}</option>
-                ))}
-              </select>
+              />
               <button
                 type="button"
                 onClick={() => setEditingInstructor(false)}

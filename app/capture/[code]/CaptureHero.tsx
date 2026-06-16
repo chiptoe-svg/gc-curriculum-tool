@@ -11,7 +11,7 @@
  * Design: docs/superpowers/specs/2026-06-10-capture-ux-redesigns-design.md
  */
 
-import { FACULTY_ROSTER } from '@/lib/faculty';
+import { InstructorSelect } from './InstructorSelect';
 
 export function CaptureHero({
   courseCode,
@@ -68,18 +68,11 @@ export function CaptureHero({
           >
             I&apos;m the instructor
           </label>
-          <select
+          <InstructorSelect
             id="hero-chooser-instructor"
             value={instructor}
-            onChange={e => onInstructorChange(e.target.value)}
-            className="w-full rounded border border-input bg-background px-2 py-1.5 text-sm"
-          >
-            {FACULTY_ROSTER.map(name => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </select>
+            onChange={onInstructorChange}
+          />
         </div>
 
         {priorSnapshotInfo && (

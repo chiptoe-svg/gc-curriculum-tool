@@ -6,7 +6,7 @@ import { MaterialsPanel, type CaptureMaterial, type CourseCatalogView } from './
 import { SyllabusBox } from './boxes/SyllabusBox';
 import { CanvasBox } from './boxes/CanvasBox';
 import { OtherMaterialsBox } from './boxes/OtherMaterialsBox';
-import { FACULTY_ROSTER } from '@/lib/faculty';
+import { InstructorSelect } from './InstructorSelect';
 import { CaptureWhyBlurb } from './CaptureWhyBlurb';
 
 interface Props {
@@ -55,16 +55,12 @@ export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt,
         >
           I&apos;m the instructor
         </label>
-        <select
+        <InstructorSelect
           id="step1-auditor"
           value={instructor}
-          onChange={e => onInstructorChange(e.target.value)}
+          onChange={onInstructorChange}
           className="rounded border border-input bg-background px-2 py-1 text-sm"
-        >
-          {FACULTY_ROSTER.map(name => (
-            <option key={name} value={name}>{name}</option>
-          ))}
-        </select>
+        />
       </div>
 
       <div className="mt-4 space-y-3">
