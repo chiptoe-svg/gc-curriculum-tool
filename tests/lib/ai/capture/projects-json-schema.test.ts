@@ -74,4 +74,33 @@ describe('captureProfileJsonSchemaV2 strict-mode discipline', () => {
     expect(mp.items.required).toContain('source');
     expect(mp.items.required).toContain('citations');
   });
+
+  it('major_projects items include deliverables, what_it_develops, weight_pct, duration_weeks in required', () => {
+    const mp = (captureProfileJsonSchemaV2 as any).properties.major_projects;
+    const required: string[] = mp.items.required;
+    expect(required).toContain('deliverables');
+    expect(required).toContain('what_it_develops');
+    expect(required).toContain('weight_pct');
+    expect(required).toContain('duration_weeks');
+  });
+
+  it('deliverables is type array', () => {
+    const mp = (captureProfileJsonSchemaV2 as any).properties.major_projects;
+    expect(mp.items.properties.deliverables.type).toBe('array');
+  });
+
+  it('what_it_develops is type string', () => {
+    const mp = (captureProfileJsonSchemaV2 as any).properties.major_projects;
+    expect(mp.items.properties.what_it_develops.type).toBe('string');
+  });
+
+  it('weight_pct is nullable number', () => {
+    const mp = (captureProfileJsonSchemaV2 as any).properties.major_projects;
+    expect(mp.items.properties.weight_pct.type).toEqual(['number', 'null']);
+  });
+
+  it('duration_weeks is nullable number', () => {
+    const mp = (captureProfileJsonSchemaV2 as any).properties.major_projects;
+    expect(mp.items.properties.duration_weeks.type).toEqual(['number', 'null']);
+  });
 });

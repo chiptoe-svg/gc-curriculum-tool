@@ -176,3 +176,66 @@ describe('captureProfileSchema — new fields are nullable/optional', () => {
     expect(result.major_projects).toHaveLength(1);
   });
 });
+
+// ---------------------------------------------------------------------------
+// majorProjectItemSchema — new fields (2026-06-16)
+// ---------------------------------------------------------------------------
+describe('majorProjectItemSchema — new fields', () => {
+  const baseProject = {
+    title: 'Brand Identity Package',
+    description: 'Students develop a complete visual identity system for an assigned brand brief.',
+    competencies: ['Students manage a production job from brief to output'],
+  };
+
+  it('accepts a project with all new fields populated', () => {
+    expect(() =>
+      majorProjectItemSchema.parse({
+        ...baseProject,
+        deliverables: ['12-page InDesign brand standards manual', 'business card template'],
+        what_it_develops: 'First time students own a production decision from brief to output.',
+        weight_pct: 30,
+        duration_weeks: 6,
+      })
+    ).not.toThrow();
+  });
+
+  it('accepts a project with weight_pct and duration_weeks as null', () => {
+    expect(() =>
+      majorProjectItemSchema.parse({
+        ...baseProject,
+        deliverables: ['press-ready PDF'],
+        what_it_develops: 'Develops production-decision ownership.',
+        weight_pct: null,
+        duration_weeks: null,
+      })
+    ).not.toThrow();
+  });
+
+  it('accepts a legacy project without the new fields (backward compat)', () => {
+    expect(() => majorProjectItemSchema.parse(baseProject)).not.toThrow();
+  });
+
+  it('rejects deliverables containing an empty string', () => {
+    expect(() =>
+      majorProjectItemSchema.parse({ ...baseProject, deliverables: [''] })
+    ).toThrow();
+  });
+
+  it('rejects what_it_develops longer than 500 chars', () => {
+    expect(() =>
+      majorProjectItemSchema.parse({ ...baseProject, what_it_develops: 'x'.repeat(501) })
+    ).toThrow();
+  });
+
+  it('rejects weight_pct above 100', () => {
+    expect(() =>
+      majorProjectItemSchema.parse({ ...baseProject, weight_pct: 101 })
+    ).toThrow();
+  });
+
+  it('rejects duration_weeks of 0', () => {
+    expect(() =>
+      majorProjectItemSchema.parse({ ...baseProject, duration_weeks: 0 })
+    ).toThrow();
+  });
+});

@@ -294,6 +294,14 @@ export const majorProjectItemSchema = z.object({
    * Projects ARE the evidence for K/U/D scores; linking them closes the loop.
    */
   competencies: z.array(z.string().min(1)).min(1),
+  /** Concrete list of what students hand in (files, documents, artifacts). Optional on legacy snapshots. */
+  deliverables: z.array(z.string().min(1)).optional(),
+  /** 1-2 sentences on why this project is formative for students. Optional on legacy snapshots. */
+  what_it_develops: z.string().min(1).max(500).optional(),
+  /** Portion of course grade (0–100). Null when not determinable from materials. Optional on legacy snapshots. */
+  weight_pct: z.number().min(0).max(100).nullable().optional(),
+  /** Approximate span in whole weeks. Null when not determinable. Optional on legacy snapshots. */
+  duration_weeks: z.number().int().min(1).nullable().optional(),
   source: CaptureProfileSource.optional(),
   citations: z.array(CaptureProfileCitation).optional(),
 });

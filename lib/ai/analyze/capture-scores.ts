@@ -301,7 +301,7 @@ export const captureProfileJsonSchemaV2 = (() => {
     items: {
       type: 'object',
       additionalProperties: false,
-      required: ['title', 'description', 'competencies', 'source', 'citations'],
+      required: ['title', 'description', 'competencies', 'deliverables', 'what_it_develops', 'weight_pct', 'duration_weeks', 'source', 'citations'],
       properties: {
         title: { type: 'string', minLength: 1 },
         description: { type: 'string', minLength: 10 },
@@ -310,6 +310,13 @@ export const captureProfileJsonSchemaV2 = (() => {
           minItems: 1,
           items: { type: 'string', minLength: 1 },
         },
+        deliverables: {
+          type: 'array',
+          items: { type: 'string', minLength: 1 },
+        },
+        what_it_develops: { type: 'string', minLength: 1, maxLength: 500 },
+        weight_pct: { type: ['number', 'null'], minimum: 0, maximum: 100 },
+        duration_weeks: { type: ['number', 'null'], minimum: 1 },
         source: { type: ['string', 'null'], enum: ['instructor', 'materials', 'inferred', null] },
         citations: CITATIONS_ARRAY,
       },
