@@ -1239,7 +1239,7 @@ export function ProfileReviewPanel({
             <p className="text-xs text-amber-800">
               It was confident about the ones listed below — these it flagged for your eye
               because they rest on your word, sit high on the scale, were inferred without a
-              direct source, or carry the most graded weight. Adjust a slider, or confirm each.
+              direct source, or carry the most graded weight. Adjust a score if it&apos;s off, then mark each Looks right ✓.
             </p>
             {worthLook.map(({ c, i, reason }) => (
               <div key={i} className={'space-y-1' + (reviewed.has(i) ? ' opacity-60' : '')}>
@@ -1247,10 +1247,12 @@ export function ProfileReviewPanel({
                 <CompetencyCard
                   competency={c}
                   index={i}
-                  onChange={next => {
-                    updateCompetency(i, next);
-                    markReviewed(i);
-                  }}
+                  // Editing a score is NOT confirmation. Adjusting a slider (or
+                  // statement) only mutates the draft + unlocks approval via the
+                  // `dirty` guard; clearing the "Worth a look" flag requires the
+                  // explicit "Looks right ✓" click below. (A stray slider tick
+                  // used to auto-confirm the row — 2026-06-16 operator report.)
+                  onChange={next => updateCompetency(i, next)}
                   onCitationClick={handleCitationClick}
                   courseCode={courseCode}
                   slug={slug}
