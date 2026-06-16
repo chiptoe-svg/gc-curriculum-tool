@@ -98,6 +98,18 @@ function makeDeleteReq(slug: string, materialId: string): [Request, { params: Pr
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // The materials route self-enforces Basic Auth (the bare /materials path is
+  // excluded from the middleware matcher). These tests exercise slug / course /
+  // rate-limit logic, not the Basic-Auth gate, so neutralize the ambient env
+  // var (.env.local sets FACULTY_BASIC_AUTH) to keep the gate a no-op here. The
+  // two dedicated gate tests set + restore it themselves.
+  delete process.env.FACULTY_BASIC_AUTH;
+  // Likewise neutralize v2 ingestion: with it on, the route's (current,
+  // pre-Phase-A) synchronous finalizeExtraction runs the real v2 pipeline and
+  // reaches DB helpers this test only partially mocks. This test covers the
+  // route's store/insert/auth logic, not indexing. (Phase A removes the
+  // synchronous call entirely.)
+  delete process.env.COURSECAPTURE_V2_INGESTION;
   isValidSlug.mockImplementation((s: string) => s === SLUG);
   getCourseByCode.mockResolvedValue({ code: CODE, title: 'Digital Publishing' });
   putLocal.mockResolvedValue({ url: '/api/storage/materials/gc-3460/rubric.pdf', key: 'gc-3460/rubric.pdf' });
