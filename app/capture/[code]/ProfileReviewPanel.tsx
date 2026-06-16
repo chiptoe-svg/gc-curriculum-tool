@@ -1102,6 +1102,26 @@ export function ProfileReviewPanel({
     }
   }
 
+  // Inline "Save edits" rendered right under any expanded competency card once
+  // there are unsaved edits — so adjusting a slider on a rolled-up "confident"
+  // (e.g. found-in-materials) row has an obvious save at the point of editing,
+  // not just the global one in the sticky bar (operator: "after adjusting
+  // sliders, there is no save button"). Persists the whole working profile.
+  function renderInlineSave() {
+    if (!dirty) return null;
+    return (
+      <button
+        type="button"
+        onClick={() => persist('edited')}
+        disabled={saving || validationError !== null}
+        title={validationError ? `Fix validation issue first: ${validationError}` : 'Save your edits to this profile'}
+        className="inline-flex items-center gap-1.5 rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {saving ? 'Saving…' : '💾 Save edits'}
+      </button>
+    );
+  }
+
   const technicalCount = working.competencies.filter(c => c.type === 'technical').length;
   const foundationalCount = working.competencies.filter(c => c.type === 'foundational').length;
 
@@ -1302,7 +1322,8 @@ export function ProfileReviewPanel({
                   <StressTestBadge
                     annotation={stressTestResult?.per_competency.find(a => a.competency_index === i) ?? null}
                   />
-                  <div className="flex justify-end">
+                  <div className="flex justify-end gap-2">
+                    {renderInlineSave()}
                     <button
                       type="button"
                       onClick={() => markReviewed(i)}
@@ -1345,6 +1366,7 @@ export function ProfileReviewPanel({
                 <StressTestBadge
                   annotation={stressTestResult?.per_competency.find(a => a.competency_index === i) ?? null}
                 />
+                {dirty && <div className="flex justify-end">{renderInlineSave()}</div>}
               </div>
             ) : (
               <CompetencyRow key={i} competency={c} onExpand={() => expandRow(i)} />
