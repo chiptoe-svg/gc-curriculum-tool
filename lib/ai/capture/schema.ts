@@ -307,6 +307,23 @@ export const majorProjectItemSchema = z.object({
 });
 export type CaptureProjectItem = z.infer<typeof majorProjectItemSchema>;
 
+/**
+ * A faculty override of one competency's K/U/D scores recorded at review time:
+ * what changed (AI value → faculty value, per dimension) and why. Frozen into
+ * the snapshot as a permanent audit record. See
+ * docs/superpowers/specs/2026-06-16-kud-override-rationale-design.md.
+ */
+export const reviewerOverrideSchema = z.object({
+  statement: z.string(),
+  changes: z.array(z.object({
+    dim: z.enum(['k', 'u', 'd']),
+    from: z.number(),
+    to: z.number(),
+  })).min(1),
+  reason: z.string().min(1),
+});
+export type ReviewerOverride = z.infer<typeof reviewerOverrideSchema>;
+
 export const captureProfileSchema = z.object({
   course_code: z.string().min(1),
   scale_version: z.literal(captureScaleVersion),
@@ -338,6 +355,12 @@ export const captureProfileSchema = z.object({
    * sheet/catalog data at wiki-render time.
    */
   class_structure: classStructureSchema.nullable().optional(),
+  /**
+   * Faculty rationales for any upward K/U/D override made at review time.
+   * Nullable/optional: pre-2026-06-16 profiles + profiles with no upward edits
+   * won't have it. Populated by ProfileReviewPanel at save; frozen into snapshots.
+   */
+  reviewer_overrides: z.array(reviewerOverrideSchema).nullable().optional(),
   /**
    * Major graded projects in the course.
    * Nullable: pre-2026-06-08 snapshots won't have it.
