@@ -254,22 +254,43 @@ Render this section **only** when `snapshot.profile.class_structure` is non-null
 
 When `profile.class_structure` is null or absent, **omit the section entirely** (do not render a "not yet captured" placeholder — the absence is silent on the wiki page). There is no sheet fallback for class structure.
 
-#### §8b — Major projects
+#### §8b — Signature projects
 
 Render from `profile.major_projects` when non-null and non-empty.
 
+**Full-capture format** (when `project.deliverables` and `project.what_it_develops` are both present):
+
 ```markdown
-## Major projects
+## Signature projects
+
+**{project.title}**{weight_duration}
+{project.description}
+Deliverables: {project.deliverables joined with " · "}.
+*What it develops:* {project.what_it_develops}
+```
+
+Where `{weight_duration}` is:
+- ` ({weight_pct}% of grade · ~{duration_weeks} weeks)` when both `weight_pct` and `duration_weeks` are non-null
+- ` ({weight_pct}% of grade)` when only `weight_pct` is non-null
+- ` (~{duration_weeks} weeks)` when only `duration_weeks` is non-null
+- omitted when both are null
+
+Repeat the block for each project in `profile.major_projects`. The `## Signature projects` heading appears once.
+
+**Legacy format** (when `project.deliverables` or `project.what_it_develops` is absent — applies to snapshots captured before 2026-06-16):
+
+```markdown
+## Signature projects
 
 - **{project.title}** — {project.description} Develops {competency references, one per listed competency in project.competencies}.
 ```
 
-**Wikilink rule for competency references:** For each string in `project.competencies`, attempt to match it against the `sub_competencies` names you know from this snapshot's coverage substrate. If the string closely matches a sub-competency name that has a slug in the wiki (e.g., `"color-management"`), render `[[color-management|competency statement]]`. If no clear match exists, render the statement as plain text. Do NOT guess slugs; plain text is always the safe fallback.
+**Wikilink rule for competency references (legacy format):** For each string in `project.competencies`, attempt to match it against the `sub_competencies` names you know from this snapshot's coverage substrate. If the string closely matches a sub-competency name that has a slug in the wiki (e.g., `"color-management"`), render `[[color-management|competency statement]]`. If no clear match exists, render the statement as plain text. Do NOT guess slugs; plain text is always the safe fallback.
 
 **Sheet fallback:** If `profile.major_projects` is null or empty AND `snapshot.courseMajorProjects[]` is non-empty, render:
 
 ```markdown
-## Major projects
+## Signature projects
 
 *The following project list comes from the course sheet — not yet captured in a profile audit.*
 
@@ -295,7 +316,7 @@ Render this section **only** when at least one of `snapshot.courseDescription`, 
 
 - {skill from snapshot.courseSkillsRequired}
 
-**Major projects:** see [Major projects](#major-projects) above.
+**Signature projects:** see [Signature projects](#signature-projects) above.
 
 **Links:** [Syllabus PDF]({syllabusUrl}) · [Course sheet]({sheetSourceUrl})
 ```
@@ -303,7 +324,7 @@ Render this section **only** when at least one of `snapshot.courseDescription`, 
 Rules:
 - The **Learning objectives** sublist is omitted when `snapshot.courseLearningObjectives` is empty.
 - The **Skills students should arrive with** sublist is omitted when `snapshot.courseSkillsRequired` is empty.
-- The **Major projects** cross-reference line is omitted when the Major projects section (§8b) is also absent.
+- The **Signature projects** cross-reference line is omitted when the Signature projects section (§8b) is also absent.
 - The **Links** line is omitted when both `snapshot.syllabusUrl` and `snapshot.sheetSourceUrl` are null.
 - When none of these conditions are met, omit the entire section.
 
