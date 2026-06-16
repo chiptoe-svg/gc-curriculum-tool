@@ -131,6 +131,10 @@ Conform exactly to the JSON schema provided in the structured-output request. Th
       "title": "<project title>",
       "description": "<1-3 sentences on what students produce and decide>",
       "competencies": ["<competency statement matching profile.competencies[].statement>", ...],
+      "deliverables": ["<concrete thing students hand in, e.g. press-ready PDF>", ...],
+      "what_it_develops": "<1-2 sentences: the capability or gap this project closes for students>",
+      "weight_pct": <number 0-100 or null if not determinable>,
+      "duration_weeks": <integer ≥1 or null if not determinable>,
       "source": "materials" | "instructor" | "inferred" | null,
       "citations": [ { "type": "chunk", "chunkId": "...", "messageId": null, "excerpt": "≤200 chars" }, ... ]
     }
@@ -245,6 +249,10 @@ Extract `class_structure` and `major_projects` from syllabus, Canvas module list
 - **`title`**: Short human-readable title from the assignment header (e.g., "Brand Color Report", "Prepress Packaging Specification").
 - **`description`**: 1-3 sentences describing what students produce and what decisions they make. Use source voice from the materials (rubric language preferred).
 - **`competencies`**: The competency *statements* from the `competencies` array above that this project develops. Must match or closely paraphrase entries already emitted in `competencies`. These are the provenance link between projects and K/U/D scores — a project that evidences D=4 color measurement should list the color-measurement competency statement.
+- **`deliverables`**: Concrete list of what students hand in (files, documents, artifacts). Derive from rubric submission requirements, Canvas assignment instructions, or Area 9 interview answers. Examples: "press-ready PDF", "12-page InDesign document", "pre-press check report". Emit an empty array `[]` when not determinable — do NOT fabricate from objectives.
+- **`what_it_develops`**: 1-2 sentences on why this project is formative for students — the capability it builds or the conceptual gap it closes. Use source voice: if the transcript contains an Area 9 significance answer for this project, carry it verbatim or near-verbatim. If not, derive from rubric preambles or the project's position in the course arc.
+- **`weight_pct`**: Grade-weight share as a whole-number percentage (0–100). Derive from point totals and total course points documented in `class_structure.assessment` or the rubric. Null when not determinable.
+- **`duration_weeks`**: Approximate span from the assignment open date to the due date, in whole weeks. Null when not determinable from the schedule.
 - `source` and `citations` follow the same rules as competency citations.
 - When materials are too thin to identify major projects reliably, emit `major_projects: null`. Do NOT fabricate project titles from learning objectives.
 
