@@ -289,6 +289,7 @@ export function OtherMaterialsBox({ course, materials, slug, onMaterialsChange }
   const [indexing, setIndexing] = useState(false);
   const [uploading, setUploading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [uploadBgMessage, setUploadBgMessage] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function refresh(): Promise<void> {
@@ -305,6 +306,7 @@ export function OtherMaterialsBox({ course, materials, slug, onMaterialsChange }
       return;
     }
     setUploading(file.name);
+    setUploadBgMessage(null);
     try {
       const form = new FormData();
       form.set('slug', slug);
@@ -317,6 +319,9 @@ export function OtherMaterialsBox({ course, materials, slug, onMaterialsChange }
       if (!res.ok) {
         setError((json as { error?: string }).error ?? `Upload failed (${res.status})`);
         return;
+      }
+      if ((json as { indexingStatus?: string }).indexingStatus === 'queued') {
+        setUploadBgMessage('Uploaded — indexing in the background. You can keep working; status updates here when ready.');
       }
       await refresh();
     } catch (e) {
@@ -381,6 +386,9 @@ export function OtherMaterialsBox({ course, materials, slug, onMaterialsChange }
       </header>
 
       {error && <p className="px-3 pb-2 text-[11px] text-amber-700 dark:text-amber-400">{error}</p>}
+      {uploadBgMessage && (
+        <p className="px-3 pb-2 text-[11px] text-amber-700 dark:text-amber-400">{uploadBgMessage}</p>
+      )}
 
       {open && (
         <div className="border-t">

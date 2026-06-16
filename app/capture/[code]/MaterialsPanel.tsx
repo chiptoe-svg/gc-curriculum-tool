@@ -1,12 +1,12 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { CanvasImportZone } from '@/components/CanvasImportZone';
 import { parseCanvasBlob, isCanvasListMaterial } from '@/lib/canvas/parseCanvasBlob';
 import { fetchCourseMaterials } from '@/lib/capture/fetch-course-materials';
 import { CatalogOverview } from './CatalogOverview';
 
-export type IndexingStatus = 'pending' | 'indexing' | 'ready' | 'failed' | 'skipped';
+export type IndexingStatus = 'pending' | 'queued' | 'indexing' | 'ready' | 'failed' | 'skipped';
 export type FerpaRisk = 'low' | 'medium' | 'high';
 export type AuditMode = 'full' | 'simple';
 
@@ -213,12 +213,14 @@ export function IndexingStatusDot({ status, indexedAt }: { status: IndexingStatu
   const color =
     status === 'ready' ? '#10B981'
       : status === 'indexing' ? '#F59E0B'
+      : status === 'queued' ? '#F59E0B'
       : status === 'failed' ? '#EF4444'
       : '#9CA3AF';
   const tooltip = (() => {
     const base =
       status === 'ready' ? 'ready'
         : status === 'indexing' ? 'indexing'
+        : status === 'queued' ? 'queued — indexing in background'
         : status === 'failed' ? 'failed'
         : status === 'skipped' ? 'skipped'
         : 'pending';
@@ -231,7 +233,7 @@ export function IndexingStatusDot({ status, indexedAt }: { status: IndexingStatu
     <span
       aria-label={`indexing status: ${status}`}
       title={tooltip}
-      className={'inline-block shrink-0 rounded-full ' + (status === 'indexing' ? 'animate-pulse' : '')}
+      className={'inline-block shrink-0 rounded-full ' + (status === 'indexing' || status === 'queued' ? 'animate-pulse' : '')}
       style={{ width: '10px', height: '10px', backgroundColor: color }}
     />
   );
@@ -601,6 +603,7 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
   // it with "Show" when they actually need to manage materials.
   const [collapsed, setCollapsed] = useState(!initiallyExpanded);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadBgMessage, setUploadBgMessage] = useState<string | null>(null);
   const [uploading, setUploading] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
@@ -624,6 +627,19 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
   const [wipeError, setWipeError] = useState<string | null>(null);
   const [reextractMessage, setReextractMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Poll for status updates while any row is still in-flight (queued or indexing).
+  // The background worker drains queued → indexing → ready/failed/skipped; we keep
+  // refreshing until all rows reach a terminal state.
+  useEffect(() => {
+    const inFlight = materials.some(
+      (m) => m.indexingStatus === 'queued' || m.indexingStatus === 'indexing',
+    );
+    if (!inFlight) return;
+    const id = setInterval(() => { void refetchMaterialsFromContext(); }, 3000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [materials]);
 
   async function handleReextractCanvasFiles() {
     if (!reextractToken.trim()) {
@@ -1034,6 +1050,7 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
         extractionStatus: string;
         extractionMethod: string | null;
         blobUrl?: string;
+        indexingStatus?: IndexingStatus;
       };
       const newMaterial: CaptureMaterial = {
         id: data.id,
@@ -1048,10 +1065,9 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
         digest: null,
         digestGeneratedAt: null,
         useDigest: false,
-        // Newly-inserted rows start in the pre-pipeline state; the post-
-        // upload /context refetch picks up the real indexing + policy
-        // outcomes once the server side completes.
-        indexingStatus: 'pending',
+        // Use the server-returned status (queued when background ingest is enabled);
+        // the polling effect will refresh rows until they reach a terminal state.
+        indexingStatus: data.indexingStatus ?? 'pending',
         indexedAt: null,
         ferpaRisk: 'low',
         autoSetAside: false,
@@ -1060,6 +1076,9 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
         sourceCode: null,
       };
       pushMaterials([...materials, newMaterial]);
+      if (data.indexingStatus === 'queued') {
+        setUploadBgMessage('Uploaded — indexing in the background. You can keep working; status updates here when ready.');
+      }
     } catch (e) {
       setUploadError(e instanceof Error ? e.message : 'Upload failed');
     } finally {
@@ -1405,6 +1424,9 @@ The materials themselves — and their per-item controls (ignore, preview, AI su
                 />
               </div>
               {uploadError && <p className="mt-2 text-xs text-destructive">{uploadError}</p>}
+              {uploadBgMessage && (
+                <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">{uploadBgMessage}</p>
+              )}
               <p className="mt-2 text-[11px] text-muted-foreground">
                 To pull from Canvas (syllabus, assignments, modules), use the Course Builder Materials tab.
                 Imports land here automatically.

@@ -120,7 +120,7 @@ export default async function CapturePage({ params, searchParams }: Props) {
     digest: m.digest ?? null,
     digestGeneratedAt: m.digestGeneratedAt ? m.digestGeneratedAt.toISOString() : null,
     useDigest: m.useDigest,
-    indexingStatus: (m.indexingStatus ?? 'pending') as 'pending' | 'indexing' | 'ready' | 'failed' | 'skipped',
+    indexingStatus: (m.indexingStatus ?? 'pending') as 'pending' | 'queued' | 'indexing' | 'ready' | 'failed' | 'skipped',
     indexedAt: m.indexedAt ? m.indexedAt.toISOString() : null,
     ferpaRisk: (m.ferpaRisk ?? 'low') as 'low' | 'medium' | 'high',
     autoSetAside: m.autoSetAside,
