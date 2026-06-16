@@ -3,9 +3,8 @@ import { isValidSlug } from '@/lib/slug';
 import { hashIp } from '@/lib/ip-hash';
 import { getCourseByCode, updateCourseCanvasImport } from '@/lib/db/courses-queries';
 import { setPairedCanvasProvenance } from '@/lib/db/course-codes-queries';
-import { insertMaterial, findMaterialByFileName, updateMaterialMetadata } from '@/lib/db/course-materials-queries';
-import { finalizeExtraction } from '@/lib/capture/finalize-extraction';
-import { createVectorStore } from '@/lib/capture/vector-store';
+import { insertMaterial, findMaterialByFileName, updateMaterialMetadata, updateExtractionResult } from '@/lib/db/course-materials-queries';
+import { enqueue } from '@/lib/capture/ingest-queue';
 import { parseCanvasUrl } from '@/lib/canvas/parseCanvasUrl';
 import { fetchCanvasCourse, fetchCanvasFileMeta } from '@/lib/canvas/fetchCanvasCourse';
 import { assembleCanvasMaterials } from '@/lib/canvas/assemble-canvas-materials';
@@ -209,7 +208,6 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
   // (Canvas: Syllabus, Canvas File: X.pdf), so fileName is the natural key.
   // Returned `imported` includes both inserted and updated rows; callers
   // can tell them apart via `inserted`/`updated` counts.
-  const vectorStore = createVectorStore();
   const imported: Array<{ id: string; fileName: string }> = [];
   let insertedCount = 0;
   let updatedCount = 0;
@@ -222,15 +220,13 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
         mimeType,
         sizeBytes: text.length,
       });
-      await finalizeExtraction({
+      await updateExtractionResult({
         id: existing.id,
-        courseCode: code,
-        fileName,
         extractionStatus: 'ok',
         extractionMethod: 'text',
         extractedText: text,
-        vectorStore,
       });
+      await enqueue(existing.id);
       imported.push({ id: existing.id, fileName });
       updatedCount++;
     } else {
@@ -243,15 +239,13 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
         ipHash,
         sourceCode,
       });
-      await finalizeExtraction({
+      await updateExtractionResult({
         id: mat.id,
-        courseCode: code,
-        fileName,
         extractionStatus: 'ok',
         extractionMethod: 'text',
         extractedText: text,
-        vectorStore,
       });
+      await enqueue(mat.id);
       imported.push({ id: mat.id, fileName });
       insertedCount++;
     }

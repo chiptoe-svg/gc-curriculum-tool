@@ -4,9 +4,9 @@ import { getCourseByCode } from '@/lib/db/courses-queries';
 import {
   listMaterialsByCourse,
   insertMaterial,
+  updateExtractionResult,
 } from '@/lib/db/course-materials-queries';
-import { finalizeExtraction } from '@/lib/capture/finalize-extraction';
-import { createVectorStore } from '@/lib/capture/vector-store';
+import { enqueue } from '@/lib/capture/ingest-queue';
 import {
   extractGoogleWorkspaceReferences,
   type GoogleWorkspaceKind,
@@ -57,8 +57,6 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   const course = await getCourseByCode(courseCode);
   if (!course) return NextResponse.json({ error: 'course not found' }, { status: 404 });
 
-  const vectorStore = createVectorStore();
-
   const materials = await listMaterialsByCourse(courseCode);
 
   // Collect every distinct (kind, fileId) referenced across the course's
@@ -105,15 +103,13 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         sizeBytes: Buffer.byteLength(fetched.text, 'utf8'),
         ipHash,
       });
-      await finalizeExtraction({
+      await updateExtractionResult({
         id: row.id,
-        courseCode,
-        fileName,
         extractionStatus: 'ok',
         extractionMethod: 'text',
         extractedText: fetched.text,
-        vectorStore,
       });
+      await enqueue(row.id);
       results.push({ kind: ref.kind, fileId: ref.fileId, status: 'ok', fileName });
     } else {
       const fileName = `${prefix}: ${ref.fileId.slice(0, 12)}… (not shared)`;
@@ -125,14 +121,12 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         sizeBytes: 0,
         ipHash,
       });
-      await finalizeExtraction({
+      await updateExtractionResult({
         id: row.id,
-        courseCode,
-        fileName,
         extractionStatus: 'failed',
         extractionMethod: 'text',
-        vectorStore,
       });
+      await enqueue(row.id);
       results.push({ kind: ref.kind, fileId: ref.fileId, status: 'inaccessible', fileName, errorReason: fetched.errorReason });
     }
   }
@@ -208,15 +202,13 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         sizeBytes: Buffer.byteLength(text, 'utf8'),
         ipHash,
       });
-      await finalizeExtraction({
+      await updateExtractionResult({
         id: row.id,
-        courseCode,
-        fileName,
         extractionStatus: 'ok',
         extractionMethod: 'text',
         extractedText: text,
-        vectorStore,
       });
+      await enqueue(row.id);
       youtubeResults.push({ videoId, status: 'ok', source, fileName });
     } else {
       const fileName = `YouTube: ${videoId} (inaccessible)`;
@@ -228,14 +220,12 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         sizeBytes: 0,
         ipHash,
       });
-      await finalizeExtraction({
+      await updateExtractionResult({
         id: row.id,
-        courseCode,
-        fileName,
         extractionStatus: 'failed',
         extractionMethod: 'text',
-        vectorStore,
       });
+      await enqueue(row.id);
       youtubeResults.push({ videoId, status: 'inaccessible', fileName, errorReason: lastError });
     }
   }
@@ -279,15 +269,13 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         sizeBytes: Buffer.byteLength(fetched.text, 'utf8'),
         ipHash,
       });
-      await finalizeExtraction({
+      await updateExtractionResult({
         id: row.id,
-        courseCode,
-        fileName,
         extractionStatus: 'ok',
         extractionMethod: 'text',
         extractedText: fetched.text,
-        vectorStore,
       });
+      await enqueue(row.id);
       driveResults.push({ fileId, status: 'ok', fileName });
     } else {
       // Record the failed attempt so the materials panel surfaces what was
@@ -306,14 +294,12 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         sizeBytes: 0,
         ipHash,
       });
-      await finalizeExtraction({
+      await updateExtractionResult({
         id: row.id,
-        courseCode,
-        fileName,
         extractionStatus: 'failed',
         extractionMethod: 'text',
-        vectorStore,
       });
+      await enqueue(row.id);
       driveResults.push({ fileId, status: fetched.status, fileName, errorReason: fetched.errorReason });
     }
   }

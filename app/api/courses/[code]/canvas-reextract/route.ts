@@ -4,9 +4,8 @@ import { db } from '@/lib/db/client';
 import { courseMaterials } from '@/lib/db/schema';
 import { isValidSlug } from '@/lib/slug';
 import { getCourseByCode } from '@/lib/db/courses-queries';
-import { updateMaterialMetadata } from '@/lib/db/course-materials-queries';
-import { finalizeExtraction } from '@/lib/capture/finalize-extraction';
-import { createVectorStore } from '@/lib/capture/vector-store';
+import { updateMaterialMetadata, updateExtractionResult, type ExtractionMethod } from '@/lib/db/course-materials-queries';
+import { enqueue } from '@/lib/capture/ingest-queue';
 import { fetchCanvasFileMeta } from '@/lib/canvas/fetchCanvasCourse';
 import { extractText, SUPPORTED_MIME_TYPES, type ExtractedMimeType } from '@/lib/courses/extract-text';
 import { LEGACY_OFFICE_MIME_TYPES } from '@/lib/courses/material-extractor';
@@ -132,8 +131,6 @@ async function run(req: Request, params: Ctx['params']): Promise<Response> {
       ),
     );
 
-  const vectorStore = createVectorStore();
-
   interface Result {
     fileName: string;
     status: 'updated' | 'skipped';
@@ -186,16 +183,14 @@ async function run(req: Request, params: Ctx['params']): Promise<Response> {
         mimeType: resolvedMime,
         sizeBytes: buffer.length,
       });
-      await finalizeExtraction({
+      await updateExtractionResult({
         id: targetRow.id,
-        courseCode: code,
-        fileName: targetRow.fileName,
         extractionStatus: 'ok',
-        extractionMethod: extracted.method ?? 'text',
+        extractionMethod: (extracted.method ?? 'text') as ExtractionMethod,
         extractedText: extracted.text,
         ...(extracted.pageCount !== undefined && extracted.pageCount !== null && { pageCount: extracted.pageCount }),
-        vectorStore,
       });
+      await enqueue(targetRow.id);
       results.push({ fileName: meta.displayName, status: 'updated' });
     } catch (e) {
       results.push({ fileName: meta.displayName, status: 'skipped', reason: e instanceof Error ? e.message : 'fetch error' });

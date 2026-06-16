@@ -70,11 +70,13 @@ const insertMaterial = vi.fn(async (input: Record<string, unknown>) => ({
 }));
 const findMaterialByFileName = vi.fn(async (_code: string, _name: string, _sourceCode?: string | null) => null);
 const updateMaterialMetadata = vi.fn(async (_input: unknown) => {});
+const updateExtractionResult = vi.fn(async (_input: unknown) => {});
 
 vi.mock('@/lib/db/course-materials-queries', () => ({
   insertMaterial: (input: Record<string, unknown>) => insertMaterial(input),
   findMaterialByFileName: (code: string, name: string, sourceCode?: string | null) => findMaterialByFileName(code, name, sourceCode),
   updateMaterialMetadata: (input: unknown) => updateMaterialMetadata(input),
+  updateExtractionResult: (input: unknown) => updateExtractionResult(input),
   shouldDigestByDefault: () => false,
 }));
 
@@ -85,12 +87,9 @@ vi.mock('@/lib/db/course-codes-queries', () => ({
     setPairedCanvasProvenance(code, name, d),
 }));
 
-// ─── vector store + finalize-extraction (no-ops) ─────────────────────────
-vi.mock('@/lib/capture/vector-store', () => ({
-  createVectorStore: () => ({}),
-}));
-vi.mock('@/lib/capture/finalize-extraction', () => ({
-  finalizeExtraction: async () => {},
+// ─── ingest-queue (no-op enqueue) ────────────────────────────────────────
+vi.mock('@/lib/capture/ingest-queue', () => ({
+  enqueue: async () => {},
 }));
 
 // ─── extract-text (not needed — no file attachments in this test) ─────────

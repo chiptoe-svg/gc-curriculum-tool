@@ -7,9 +7,8 @@ import { isValidSlug } from '@/lib/slug';
 import { authorizedForBasicAuth } from '@/lib/auth/basic-auth';
 import { hashIp } from '@/lib/ip-hash';
 import { getCourseByCode, updateCourseCanvasImport } from '@/lib/db/courses-queries';
-import { insertMaterial, findMaterialByFileName, updateMaterialMetadata } from '@/lib/db/course-materials-queries';
-import { finalizeExtraction } from '@/lib/capture/finalize-extraction';
-import { createVectorStore } from '@/lib/capture/vector-store';
+import { insertMaterial, findMaterialByFileName, updateMaterialMetadata, updateExtractionResult } from '@/lib/db/course-materials-queries';
+import { enqueue } from '@/lib/capture/ingest-queue';
 import { parseImscc } from '@/lib/canvas/parseImscc';
 import { assembleCanvasMaterials } from '@/lib/canvas/assemble-canvas-materials';
 import { extractText, SUPPORTED_MIME_TYPES, type ExtractedMimeType } from '@/lib/courses/extract-text';
@@ -134,7 +133,6 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
   // Upsert by (courseCode, fileName). Re-imports refresh existing rows in
   // place — no duplicates. Material names are stable per-cartridge
   // (Canvas: Syllabus, Canvas File: X.pdf), so fileName is the natural key.
-  const vectorStore = createVectorStore();
   const imported: Array<{ id: string; fileName: string }> = [];
   let insertedCount = 0;
   let updatedCount = 0;
@@ -144,7 +142,7 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
   for (const { fileName, text, mimeType } of toInsert) {
     matIdx++;
     const tMat = Date.now();
-    console.log(`[imscc-import] indexing ${matIdx}/${toInsert.length}: ${fileName} (${text.length} chars)…`);
+    console.log(`[imscc-import] queuing ${matIdx}/${toInsert.length}: ${fileName} (${text.length} chars)…`);
     const existing = await findMaterialByFileName(code, fileName, sourceCode);
     if (existing) {
       await updateMaterialMetadata({
@@ -153,15 +151,13 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
         mimeType,
         sizeBytes: text.length,
       });
-      await finalizeExtraction({
+      await updateExtractionResult({
         id: existing.id,
-        courseCode: code,
-        fileName,
         extractionStatus: 'ok',
         extractionMethod: 'text',
         extractedText: text,
-        vectorStore,
       });
+      await enqueue(existing.id);
       imported.push({ id: existing.id, fileName });
       updatedCount++;
     } else {
@@ -175,26 +171,24 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
         ipHash,
         sourceCode,
       });
-      await finalizeExtraction({
+      await updateExtractionResult({
         id: mat.id,
-        courseCode: code,
-        fileName,
         extractionStatus: 'ok',
         extractionMethod: 'text',
         extractedText: text,
-        vectorStore,
       });
+      await enqueue(mat.id);
       imported.push({ id: mat.id, fileName });
       insertedCount++;
     }
-    console.log(`[imscc-import] indexed ${matIdx}/${toInsert.length}: ${fileName} in ${Date.now() - tMat}ms`);
+    console.log(`[imscc-import] queued ${matIdx}/${toInsert.length}: ${fileName} in ${Date.now() - tMat}ms`);
   }
 
   // Stamp provenance so the Step-1 header can show source name + import date
   // without a live API call.
   await updateCourseCanvasImport(code, `Common Cartridge: ${data.course.name}`, new Date());
 
-  console.log(`[imscc-import] done: ${imported.length} imported (${insertedCount} new, ${updatedCount} updated), ${skipped.length} skipped`);
+  console.log(`[imscc-import] done: ${imported.length} queued for indexing (${insertedCount} new, ${updatedCount} updated), ${skipped.length} skipped`);
 
   return NextResponse.json({
     imported: imported.length,

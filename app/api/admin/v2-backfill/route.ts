@@ -3,8 +3,7 @@ import { eq, and, not } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { checkAdminAuth } from '@/lib/auth/admin-auth';
 import { courseMaterials, courses } from '@/lib/db/schema';
-import { finalizeExtraction } from '@/lib/capture/finalize-extraction';
-import { createVectorStore } from '@/lib/capture/vector-store';
+import { enqueue } from '@/lib/capture/ingest-queue';
 
 /**
  * POST /api/admin/v2-backfill
@@ -31,12 +30,12 @@ export async function POST(req: Request): Promise<Response> {
     return NextResponse.json({ error: 'courseCode required' }, { status: 400 });
   }
 
-  const [course] = await db
-    .select()
+  const [courseRow] = await db
+    .select({ code: courses.code })
     .from(courses)
     .where(eq(courses.code, courseCode))
     .limit(1);
-  if (!course) {
+  if (!courseRow) {
     return NextResponse.json({ error: 'course not found' }, { status: 404 });
   }
 
@@ -45,7 +44,6 @@ export async function POST(req: Request): Promise<Response> {
     .from(courseMaterials)
     .where(and(eq(courseMaterials.courseCode, courseCode), not(eq(courseMaterials.ignored, true))));
 
-  const vectorStore = createVectorStore();
   const results: Array<{ id: string; fileName: string; status: string; error?: string }> = [];
 
   for (const m of materials) {
@@ -54,32 +52,8 @@ export async function POST(req: Request): Promise<Response> {
       continue;
     }
     try {
-      await finalizeExtraction({
-        id: m.id,
-        courseCode,
-        fileName: m.fileName,
-        extractionStatus: 'ok',
-        extractedText: m.extractedText,
-        vectorStore,
-        courseHasLearningObjectives: course.learningObjectives.length > 0,
-      });
-      // finalizeExtraction catches its own pipeline errors and sets
-      // indexing_status='failed' instead of throwing. Re-read the
-      // canonical status from the DB to know whether the material
-      // actually indexed.
-      const [updated] = await db
-        .select({ status: courseMaterials.indexingStatus })
-        .from(courseMaterials)
-        .where(eq(courseMaterials.id, m.id))
-        .limit(1);
-      const actual = updated?.status ?? 'unknown';
-      if (actual === 'ready') {
-        results.push({ id: m.id, fileName: m.fileName, status: 'ok' });
-      } else if (actual === 'skipped') {
-        results.push({ id: m.id, fileName: m.fileName, status: 'skipped' });
-      } else {
-        results.push({ id: m.id, fileName: m.fileName, status: 'failed', error: `indexing_status=${actual} after finalizeExtraction (see server log)` });
-      }
+      await enqueue(m.id);
+      results.push({ id: m.id, fileName: m.fileName, status: 'queued' });
     } catch (e) {
       results.push({ id: m.id, fileName: m.fileName, status: 'failed', error: String(e) });
     }
@@ -88,7 +62,7 @@ export async function POST(req: Request): Promise<Response> {
   return NextResponse.json({
     courseCode,
     count: results.length,
-    ok: results.filter(r => r.status === 'ok').length,
+    queued: results.filter(r => r.status === 'queued').length,
     skipped: results.filter(r => r.status === 'skipped').length,
     failed: results.filter(r => r.status === 'failed').length,
     results,
