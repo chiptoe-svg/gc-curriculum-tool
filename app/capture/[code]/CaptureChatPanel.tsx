@@ -328,13 +328,22 @@ export function CaptureChatPanel({
     await postChat([]);
   }
 
+  async function sendText(text: string) {
+    const t = text.trim();
+    if (!t || busy) return;
+    const next: ChatMessage[] = [...messages, { role: 'user', content: t }];
+    onMessagesChange(next);
+    await postChat(next);
+  }
   async function handleSend() {
     const text = input.trim();
     if (!text || busy) return;
-    const next: ChatMessage[] = [...messages, { role: 'user', content: text }];
-    onMessagesChange(next);
     setInput('');
-    await postChat(next);
+    await sendText(text);
+  }
+  const ONE_LAST_QUESTION = "I think I'm about ready to finish. Before I generate, look back over everything we've covered and ask me the single most important question still missing for an accurate profile. If we haven't explored how students struggle, fail, and revise — productive failure / problem-solving — that's a strong candidate. Ask just one question, in your own words.";
+  async function handleOneLastQuestion() {
+    await sendText(ONE_LAST_QUESTION);
   }
 
   function appendTranscript(text: string) {
@@ -343,11 +352,6 @@ export function CaptureChatPanel({
   }
 
   const canGenerate = messages.some(m => m.role === 'assistant');
-  // Non-blocking: generation always proceeds. When problem-solving / productive
-  // failure wasn't probed, the profile still records it honestly as "not assessed"
-  // (the no_data band) and we show a neutral heads-up below — no gate, no guilt.
-  // Many course types (a 1-hour seminar, say) legitimately don't develop it.
-  const problemSolvingUnprobed = canGenerate && !coveredIncludesProblemSolving(coveredEver);
 
   function handleGenerateClick() {
     onGenerate();
@@ -536,11 +540,6 @@ export function CaptureChatPanel({
             placeholder="Type a reply, or use voice. Enter to send, Shift+Enter for a new line."
             className="w-full resize-y rounded border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
           />
-          {problemSolvingUnprobed && (
-            <p className="mb-2 text-xs text-muted-foreground">
-              Heads up: this session didn&rsquo;t cover problem-solving (productive failure), so the profile will record it as <em>not assessed</em> — expected for many courses (a short seminar, for instance). Keep interviewing if this course develops it; otherwise generate as usual.
-            </p>
-          )}
           <div className="flex items-center justify-between gap-3">
             <VoiceRecorder slug={slug} onTranscript={appendTranscript} disabled={busy} />
             <button
@@ -558,6 +557,15 @@ export function CaptureChatPanel({
               full-width below the whole input area so it reads as finishing the
               interview, not as another per-message action. */}
           <div className="mt-1 border-t pt-3">
+            <button
+              type="button"
+              onClick={handleOneLastQuestion}
+              disabled={!canGenerate || busy}
+              className="mb-2 w-full rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Let the interviewer review what's been covered and ask one final, high-value question before you finish."
+            >
+              Ask me one more important question
+            </button>
             <button
               type="button"
               onClick={handleGenerateClick}
