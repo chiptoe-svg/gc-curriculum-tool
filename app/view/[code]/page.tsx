@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
+import { PrintButton } from './PrintButton';
 import { db } from '@/lib/db/client';
 import { eq, desc, and, isNull } from 'drizzle-orm';
 import { courses, courseCaptureSnapshots } from '@/lib/db/schema';
@@ -166,7 +167,7 @@ export default async function ViewCoursePage({ params }: Props) {
               </p>
             )}
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 print:hidden">
             <Link href="/" className="text-sm text-muted-foreground hover:text-foreground">
               ← Courses
             </Link>
@@ -180,6 +181,7 @@ export default async function ViewCoursePage({ params }: Props) {
                 ↓ Markdown
               </a>
             )}
+            {snapshot && <PrintButton />}
             {editHref && (
               <a
                 href={editHref}

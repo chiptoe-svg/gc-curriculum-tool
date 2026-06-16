@@ -291,3 +291,19 @@
   text-decoration: underline dotted;
   cursor: help;
 }
+
+/* Course-view PDF — browser "Save as PDF" (the ↓ PDF button on /view/<code>).
+   Page chrome (nav links, the PDF button) is hidden via Tailwind `print:hidden`;
+   here we keep the profile's card + KUD-band colors and set sane page margins so
+   the printed profile matches the on-screen view. */
+@media print {
+  *,
+  *::before,
+  *::after {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  @page {
+    margin: 0.6in;
+  }
+}
