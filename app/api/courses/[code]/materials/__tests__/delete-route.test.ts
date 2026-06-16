@@ -43,6 +43,11 @@ function req(slug = 'valid-slug') {
 
 beforeEach(() => {
   vi.resetAllMocks();
+  // The bulk-wipe DELETE self-enforces Basic Auth (bare /materials path is
+  // excluded from the middleware matcher). This suite tests wipe logic, not the
+  // gate; .env.local sets FACULTY_BASIC_AUTH, so neutralize it to keep the gate
+  // a no-op here.
+  delete process.env.FACULTY_BASIC_AUTH;
   mockGetCourse.mockResolvedValue({ code: 'GC 1010' });
   mockList.mockResolvedValue([
     { id: 'm1', blobUrl: 'local:key1' },

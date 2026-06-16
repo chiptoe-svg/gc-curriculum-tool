@@ -104,6 +104,10 @@ function makeSampleFile() {
 
 beforeEach(() => {
   vi.resetAllMocks();
+  // imscc-import self-enforces Basic Auth (matcher-excluded). This suite tests
+  // import/queue logic, not the gate; .env.local sets FACULTY_BASIC_AUTH, so
+  // neutralize it to keep the gate a no-op here.
+  delete process.env.FACULTY_BASIC_AUTH;
   mockParseImscc.mockResolvedValue(SAMPLE_PARSE_RESULT);
   mockInsert.mockResolvedValue({ id: 'mat-1' });
   mockEnqueue.mockResolvedValue(undefined);
