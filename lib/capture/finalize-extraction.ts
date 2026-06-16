@@ -130,9 +130,15 @@ async function runV2Pipeline(input: FinalizeExtractionInput): Promise<void> {
   //    Module List) keep useDigest OFF so the agent reads the structured
   //    original. Narrative documents (PDFs, faculty uploads) keep ON.
   //    Faculty can toggle from the Review panel's per-material checkbox.
+  // Stage timing (2026-06-16) — attribute indexing latency across digest /
+  // contextualize / embed / upsert. Logged as one summary line at the end so a
+  // slow real-PDF ingest shows exactly which stage dominates.
+  const tDigest = Date.now();
+  let digestMs = 0;
   let digestText = '';
   try {
     const { digest, model } = await generateMaterialDigest({ fileName, extractedText });
+    digestMs = Date.now() - tDigest;
     digestText = digest;
     await updateMaterialDigest({
       id, digest, digestModel: model,
@@ -159,6 +165,7 @@ async function runV2Pipeline(input: FinalizeExtractionInput): Promise<void> {
       return;
     }
 
+    const tCtx = Date.now();
     const blurbs = await Promise.all(
       details.map(d => contextualizeChunk({
         materialDigest: digestText,
@@ -166,9 +173,12 @@ async function runV2Pipeline(input: FinalizeExtractionInput): Promise<void> {
         chunkText: d.text,
       })),
     );
+    const ctxMs = Date.now() - tCtx;
 
     const toEmbed = details.map((d, i) => `${blurbs[i]!.blurb}\n\n${d.text}`);
+    const tEmbed = Date.now();
     const vectors = await embedBatch(toEmbed);
+    const embedMs = Date.now() - tEmbed;
 
     const tenant = tenantForCourse(courseCode);
     const sectionRecords: SectionRecord[] = sections.map(s => ({
@@ -191,10 +201,16 @@ async function runV2Pipeline(input: FinalizeExtractionInput): Promise<void> {
       contextBlurb: blurbs[i]!.blurb,
     }));
 
+    const tUpsert = Date.now();
     await input.vectorStore.deleteByMaterial(tenant, id);
     await input.vectorStore.upsertSections(tenant, sectionRecords);
     await input.vectorStore.upsert(tenant, chunkRecords);
+    const upsertMs = Date.now() - tUpsert;
 
+    console.log(
+      `[ingest] ${courseCode} "${fileName}": ${details.length} chunks — ` +
+      `digest ${digestMs}ms, contextualize ${ctxMs}ms, embed ${embedMs}ms, upsert ${upsertMs}ms`,
+    );
     await updateIndexingStatus({ id, status: 'ready', indexedAt: new Date() });
   } catch (err) {
     console.error(`finalizeExtraction (v2): indexing failed for ${id}`, err);

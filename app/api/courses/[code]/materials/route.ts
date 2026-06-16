@@ -189,11 +189,20 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   const vectorStore = createVectorStore();
 
   // Run extraction synchronously using the bytes we already read.
+  // Stage timing (2026-06-16): attribute ingest latency across extraction
+  // (Docling) vs. indexing (digest + per-chunk contextualize + embed + upsert,
+  // logged inside finalizeExtraction) so we can see where the seconds go on a
+  // real PDF.
+  const tExtract = Date.now();
   const extracted = await extractText({
     fileBytes,
     mimeType: file.type as ExtractedMimeType,
     fileName: file.name,
   });
+  console.log(
+    `[ingest] ${code} "${file.name}": extract(${extracted.method}) ${Date.now() - tExtract}ms` +
+    ` status=${extracted.status} pages=${extracted.pageCount ?? '?'} chars=${extracted.text?.length ?? 0}`,
+  );
 
   // Gate vision transcription cost.
   if (extracted.visionCostUsdCents !== undefined && extracted.visionCostUsdCents > 0) {
@@ -203,7 +212,9 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     }
   }
 
-  // Persist extraction result.
+  // Persist extraction result (digest + chunk + contextualize + embed + upsert;
+  // per-stage timing logged inside finalizeExtraction).
+  const tFinalize = Date.now();
   await finalizeExtraction({
     id: material.id,
     courseCode: code,
@@ -214,6 +225,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     pageCount: extracted.pageCount,
     vectorStore,
   });
+  console.log(`[ingest] ${code} "${file.name}": finalize ${Date.now() - tFinalize}ms`);
 
   return NextResponse.json({
     id: material.id,
