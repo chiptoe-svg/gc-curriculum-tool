@@ -57,9 +57,20 @@ export function courseSlug(courseCode: string): string {
  * Sanitize a filename so it's safe as a path segment. Keeps alphanumerics,
  * dot, hyphen, underscore; replaces everything else with underscore. Never
  * empty (collapses to '_' if input was all bad chars).
+ *
+ * Collapses runs of dots to a single dot and strips leading dots so the
+ * output can NEVER contain "..". A real-world filename like
+ * "Substrates v1..2.pdf" or "Lecture 3..pdf" would otherwise survive into
+ * the storage key and be rejected by assertSafeKey's path-traversal guard
+ * (it bans any "..") — surfacing as a 503 on upload. Fixing it here means
+ * the guard stays maximally strict while legitimate double-dot filenames
+ * still store cleanly. (GC 2400 PDF upload failure, 2026-06-16.)
  */
 export function safeFilename(fileName: string): string {
-  const cleaned = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const cleaned = fileName
+    .replace(/[^a-zA-Z0-9._-]/g, '_')
+    .replace(/\.{2,}/g, '.') // collapse ".." (and longer runs) → single dot
+    .replace(/^\.+/, ''); // drop any leading dot(s) — no hidden/relative segments
   return cleaned.length > 0 ? cleaned : '_';
 }
 
