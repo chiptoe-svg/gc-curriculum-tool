@@ -34,7 +34,7 @@ total_courses_with_snapshots: 5            # preserved domain key
 input_hash: bf940566b9d3                   # preserved
 ---
 ```
-`<BASE>` = `process.env.WIKI_PUBLIC_ORIGIN ?? 'http://130.127.162.180:3000'` (same as the rest).
+`<BASE>` = `process.env.WIKI_PUBLIC_ORIGIN ?? 'http://gcworkflow.clemson.edu:3000'` (same as the rest).
 
 ## Components
 

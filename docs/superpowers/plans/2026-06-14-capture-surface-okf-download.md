@@ -111,7 +111,7 @@ describe('ProfileReviewPanel — OKF download link', () => {
   it('shows a "↓ Markdown" download link to the OKF route when a snapshot exists', () => {
     renderPanel(true);
     const link = screen.getByRole('link', { name: /markdown/i });
-    expect(link.getAttribute('href')).toBe('http://130.127.162.180:3000/view/GC%203800/okf');
+    expect(link.getAttribute('href')).toBe('http://gcworkflow.clemson.edu:3000/view/GC%203800/okf');
     expect(link.getAttribute('download')).not.toBeNull();
   });
 
@@ -158,7 +158,7 @@ In the function body, immediately after the `isCaptured` definition (`const isCa
   // matches this file's other /view links (so the downloaded file is the
   // public LAN projection). The route sets Content-Disposition: attachment,
   // so it downloads even cross-origin where the `download` attr is ignored.
-  const okfHref = `http://130.127.162.180:3000/view/${encodeURIComponent(courseCode)}/okf`;
+  const okfHref = `http://gcworkflow.clemson.edu:3000/view/${encodeURIComponent(courseCode)}/okf`;
   // hasSnapshot: a snapshot existed at page load. snapshotMessage ok: one was
   // just captured this session (exists now even though it didn't at load).
   const showOkfDownload = Boolean(hasSnapshot) || snapshotMessage?.kind === 'ok';

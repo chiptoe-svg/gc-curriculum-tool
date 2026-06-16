@@ -9,7 +9,7 @@ for the faculty-facing side.
 
 Once the Mac is on and Clemson-network-connected:
 
-- URL: `http://<mac-lan-ip>:3000` (currently `http://130.127.162.180:3000`)
+- URL: `http://<mac-lan-ip>:3000` (currently `http://gcworkflow.clemson.edu:3000`)
 - Username: `gcfaculty`
 - Password: `godfrey`
 - Browser remembers credentials after first login. Bookmark the URL.

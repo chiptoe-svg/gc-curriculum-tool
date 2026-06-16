@@ -13,7 +13,7 @@ import { WIKI_PAGE_TYPES, type WikiPageType } from './schema';
 export const OKF_REQUIRED_KEYS = ['type', 'title', 'description', 'slug', 'tags', 'timestamp', 'resource'] as const;
 
 const FRONTMATTER_RE = /^---\n([\s\S]*?)\n---\n?/;
-const DEFAULT_BASE = 'http://130.127.162.180:3000';
+const DEFAULT_BASE = 'http://gcworkflow.clemson.edu:3000';
 
 /** Public origin used in `resource:` URLs. Env-overridable; LAN default. */
 export function okfBase(): string {

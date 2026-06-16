@@ -85,7 +85,7 @@ resource: <BASE>/wiki/<type>
 ```
 Body: a deterministic list, one bullet per page in the section — `- [[<slug>]] — <description>` — sorted (courses by slug; others alphabetically by title).
 
-**`<BASE>`** = `process.env.WIKI_PUBLIC_ORIGIN ?? 'http://130.127.162.180:3000'` (LAN-origin default, matching the app's existing convention; the `/wiki/*` route is faculty-gated, which is fine — `resource` points at where the live page lives for an authorized reader).
+**`<BASE>`** = `process.env.WIKI_PUBLIC_ORIGIN ?? 'http://gcworkflow.clemson.edu:3000'` (LAN-origin default, matching the app's existing convention; the `/wiki/*` route is faculty-gated, which is fine — `resource` points at where the live page lives for an authorized reader).
 
 ## Components
 

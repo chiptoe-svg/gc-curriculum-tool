@@ -147,7 +147,7 @@ export default async function CapturePage({ params, searchParams }: Props) {
                 the shared course list. No slug: the landing is public, and
                 appending the faculty slug to a shareable URL leaks it. */}
             <a
-              href="http://130.127.162.180:3000/"
+              href="http://gcworkflow.clemson.edu:3000/"
               className="text-sm text-muted-foreground hover:text-foreground"
             >
               Course List

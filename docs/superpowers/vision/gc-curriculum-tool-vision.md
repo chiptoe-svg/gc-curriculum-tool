@@ -1,6 +1,6 @@
 # The GC Curriculum Tool — Vision
 
-> **Where the tool runs.** The live tool runs locally on the Clemson LAN at [http://130.127.162.180:3000/](http://130.127.162.180:3000/) — per-course audit at `/capture/<code>` (CourseCapture), alignment + what-if scenarios at `/explore/<code>`, and the program-level coverage matrix at `/program`. It is gated by HTTP Basic Auth and reachable only from inside the Clemson network. For a quick orientation without LAN access, see the [executive brief](../../executive-brief.html).
+> **Where the tool runs.** The live tool runs locally on the Clemson LAN at [http://gcworkflow.clemson.edu:3000/](http://gcworkflow.clemson.edu:3000/) — per-course audit at `/capture/<code>` (CourseCapture), alignment + what-if scenarios at `/explore/<code>`, and the program-level coverage matrix at `/program`. It is gated by HTTP Basic Auth and reachable only from inside the Clemson network. For a quick orientation without LAN access, see the [executive brief](../../executive-brief.html).
 >
 > **How it's built.** For an architectural overview of how the surfaces, pipeline, and data substrate connect — the agentic-retrieval pipeline, KUD+ framework, provenance discipline, deployment split, and program-level connections — see the [architecture doc](../../architecture.html).
 >

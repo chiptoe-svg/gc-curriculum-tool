@@ -8,7 +8,7 @@
 
 ## Problem
 
-The public landing page (`/`, http://130.127.162.180:3000) lists every course in the GC
+The public landing page (`/`, http://gcworkflow.clemson.edu:3000) lists every course in the GC
 curriculum grouped by **course level** (1000/2000/3000/4000 + "Other"). Level is the wrong
 organizing axis for two reasons:
 

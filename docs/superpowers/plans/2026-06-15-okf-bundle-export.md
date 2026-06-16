@@ -758,7 +758,7 @@ Expected: FAIL — no link matching `/Bundle/`.
 
 In `app/capture/[code]/ProfileReviewPanel.tsx`, immediately after the `okfHref` const (line ~1119):
 ```tsx
-  const bundleHref = `http://130.127.162.180:3000/view/${encodeURIComponent(courseCode)}/okf-bundle`;
+  const bundleHref = `http://gcworkflow.clemson.edu:3000/view/${encodeURIComponent(courseCode)}/okf-bundle`;
 ```
 
 - [ ] **Step 4: Render the Bundle link in both spots (gated by `showOkfDownload`)**

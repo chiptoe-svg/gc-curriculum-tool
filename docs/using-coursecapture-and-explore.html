@@ -218,17 +218,17 @@
   <p>The tool lives on two surfaces that serve different purposes. Understanding which URL to use for which task will save you a frustrating moment the first time a browser blocks the microphone.</p>
 
   <h3>The public landing — browse without logging in</h3>
-  <p>Point any browser on the Clemson LAN (or VPN) to <code>http://130.127.162.180:3000/</code>. No username, no password. You land on a course listing that shows every course in the catalog with its current capture status and "by [instructor]" attribution. Each row has a <strong>View</strong> link that opens the read-only profile for that course — useful for quickly checking whether a course has been captured and what it says, or for sharing a profile link with a chair, colleague, or accreditor without giving anyone edit access. View links stay on HTTP and require no authentication.</p>
+  <p>Point any browser on the Clemson LAN (or VPN) to <code>http://gcworkflow.clemson.edu:3000/</code>. No username, no password. You land on a course listing that shows every course in the catalog with its current capture status and "by [instructor]" attribution. Each row has a <strong>View</strong> link that opens the read-only profile for that course — useful for quickly checking whether a course has been captured and what it says, or for sharing a profile link with a chair, colleague, or accreditor without giving anyone edit access. View links stay on HTTP and require no authentication.</p>
 
   <h3>Edit pages — HTTPS via Tailscale, Basic Auth once per browser</h3>
   <p>Edit links go to <code>https://admins-mac-studio-2.tailb723c1.ts.net/capture/&lt;code&gt;?slug=…</code>. This address uses Tailscale Funnel, which means it's a proper HTTPS secure context reachable from anywhere — off-campus, over VPN, or from a phone. The first time your browser visits this host it will prompt for a username and password (HTTP Basic Auth). Enter the credentials your administrator provided; the browser remembers them for subsequent visits, so this is a one-time prompt per browser. Edit pages cover CourseCapture, Explore, Program, Admin, and Settings — anything that writes data.</p>
 
   <h3>Why the split matters for the microphone</h3>
-  <p>Browsers enforce a rule: microphone access is only permitted on secure contexts (HTTPS). The <code>http://130.127.162.180…</code> address is plain HTTP, so the mic button on that surface will always be blocked by the browser. If you want to use voice input during the audit chat, use the edit-surface URL (<code>https://admins-mac-studio-2…</code>) — the mic works there because it's a top-level HTTPS context. This replaces an earlier approach that tried to proxy mic access through an iframe, which browser security rules ultimately blocked.</p>
+  <p>Browsers enforce a rule: microphone access is only permitted on secure contexts (HTTPS). The <code>http://gcworkflow.clemson.edu…</code> address is plain HTTP, so the mic button on that surface will always be blocked by the browser. If you want to use voice input during the audit chat, use the edit-surface URL (<code>https://admins-mac-studio-2…</code>) — the mic works there because it's a top-level HTTPS context. This replaces an earlier approach that tried to proxy mic access through an iframe, which browser security rules ultimately blocked.</p>
 
   <div class="callout note">
     <div class="callout-title">Bookmark the edit address</div>
-    <p>The slug is part of the edit URL — keep that link handy. If you lose it, ask your administrator to regenerate it or look it up on the Admin page. The public landing (<code>http://130.127.162.180:3000/</code>) never needs a slug; the edit surface always does.</p>
+    <p>The slug is part of the edit URL — keep that link handy. If you lose it, ask your administrator to regenerate it or look it up on the Admin page. The public landing (<code>http://gcworkflow.clemson.edu:3000/</code>) never needs a slug; the edit surface always does.</p>
   </div>
 </section>
 
@@ -721,13 +721,13 @@
 <section id="readonly">
   <h2><span class="num">§ 18</span>Sharing the read-only view</h2>
 
-  <p>Every captured course has a public profile page at <code>/view/&lt;course-code&gt;</code>. This address requires no authentication and works over plain HTTP on the LAN — anyone who can reach <code>http://130.127.162.180:3000/</code> can open it. The page shows the course's captured essence, outcomes, and the "how it differs from the catalog" notes when a snapshot exists; if the course hasn't been captured yet, it falls back to the catalog description.</p>
+  <p>Every captured course has a public profile page at <code>/view/&lt;course-code&gt;</code>. This address requires no authentication and works over plain HTTP on the LAN — anyone who can reach <code>http://gcworkflow.clemson.edu:3000/</code> can open it. The page shows the course's captured essence, outcomes, and the "how it differs from the catalog" notes when a snapshot exists; if the course hasn't been captured yet, it falls back to the catalog description.</p>
 
   <h3>What the read-only view is for</h3>
   <p>Share <code>/view/&lt;course-code&gt;</code> links with people who need to read what a course is actually evidenced to do but shouldn't be in the edit flow:</p>
   <ul>
     <li><strong>Department chairs and associate deans</strong> reviewing the curriculum ahead of an accreditation visit. They can open every course's profile without needing a slug or credentials.</li>
-    <li><strong>Accreditation reviewers.</strong> A link to the public landing (<code>http://130.127.162.180:3000/</code>) gives auditors a live, browsable view of every captured course with its status. The catalog-vs-evidence notes in each profile speak directly to the kind of currency and alignment evidence accreditors typically request.</li>
+    <li><strong>Accreditation reviewers.</strong> A link to the public landing (<code>http://gcworkflow.clemson.edu:3000/</code>) gives auditors a live, browsable view of every captured course with its status. The catalog-vs-evidence notes in each profile speak directly to the kind of currency and alignment evidence accreditors typically request.</li>
     <li><strong>Students</strong> researching what a course actually develops, beyond the catalog blurb.</li>
     <li><strong>Colleagues at other institutions</strong> you'd like to share a profile with informally — point them to the view link; they don't need access to the full tool.</li>
   </ul>

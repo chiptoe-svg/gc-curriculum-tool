@@ -585,7 +585,7 @@
   <p>The application is <strong>Next.js 15 (App Router, Turbopack)</strong>, bound to <code>0.0.0.0:3000</code> via <code>pnpm dev:lan</code>. The same process serves two effective origins:</p>
 
   <ul>
-    <li><strong>The LAN HTTP origin</strong> (<code>http://130.127.162.180:3000</code>) — the public landing and read-only <code>/view/*</code> profiles. HTTP, no auth, browseable by anyone on the Clemson network.</li>
+    <li><strong>The LAN HTTP origin</strong> (<code>http://gcworkflow.clemson.edu:3000</code>) — the public landing and read-only <code>/view/*</code> profiles. HTTP, no auth, browseable by anyone on the Clemson network.</li>
     <li><strong>The Tailscale Funnel HTTPS origin</strong> (<code>https://admins-mac-studio-2.tailb723c1.ts.net</code>) — the full app, reachable from the public internet, gated by HTTP Basic Auth in middleware for every path outside <code>PUBLIC_PREFIXES</code> (which permit <code>/</code>, <code>/view/*</code>, <code>/partners/*</code>, <code>/api/partners/*</code>).</li>
   </ul>
 

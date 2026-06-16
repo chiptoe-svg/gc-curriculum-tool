@@ -1116,8 +1116,8 @@ export function ProfileReviewPanel({
   // matches this file's other /view links (so the downloaded file is the
   // public LAN projection). The route sets Content-Disposition: attachment,
   // so it downloads even cross-origin where the `download` attr is ignored.
-  const okfHref = `http://130.127.162.180:3000/view/${encodeURIComponent(courseCode)}/okf`;
-  const bundleHref = `http://130.127.162.180:3000/view/${encodeURIComponent(courseCode)}/okf-bundle`;
+  const okfHref = `http://gcworkflow.clemson.edu:3000/view/${encodeURIComponent(courseCode)}/okf`;
+  const bundleHref = `http://gcworkflow.clemson.edu:3000/view/${encodeURIComponent(courseCode)}/okf-bundle`;
   // hasSnapshot: a snapshot existed at page load. snapshotMessage ok: one was
   // just captured this session (exists now even though it didn't at load).
   const showOkfDownload = Boolean(hasSnapshot) || snapshotMessage?.kind === 'ok';
@@ -1509,7 +1509,7 @@ export function ProfileReviewPanel({
           </p>
           <div className="mt-3 flex flex-wrap items-center gap-3 text-xs">
             <a
-              href={`http://130.127.162.180:3000/view/${encodeURIComponent(courseCode)}`}
+              href={`http://gcworkflow.clemson.edu:3000/view/${encodeURIComponent(courseCode)}`}
               className="rounded-md border border-green-700 bg-white px-3 py-1.5 font-medium text-green-900 hover:bg-green-100 dark:bg-transparent dark:text-green-200"
             >
               View the public profile →
@@ -1538,7 +1538,7 @@ export function ProfileReviewPanel({
               See the program matrix
             </a>
             <a
-              href="http://130.127.162.180:3000/"
+              href="http://gcworkflow.clemson.edu:3000/"
               className="rounded-md border border-input bg-background px-3 py-1.5 font-medium hover:bg-muted"
             >
               Back to the course list

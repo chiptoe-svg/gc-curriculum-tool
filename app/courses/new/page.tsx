@@ -46,7 +46,7 @@ export default async function NewCoursePage({ searchParams }: Props) {
               guide's published entry point); a relative link would keep users
               on the funnel origin. */}
           <a
-            href="http://130.127.162.180:3000/"
+            href="http://gcworkflow.clemson.edu:3000/"
             className="text-sm text-muted-foreground hover:text-foreground"
           >
             ← Course List

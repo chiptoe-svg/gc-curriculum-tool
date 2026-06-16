@@ -96,7 +96,7 @@ describe('okfResource', () => {
     expect(okfResource('competency', 'aesthetic-judgment', 'http://x')).toBe('http://x/wiki/competencies/aesthetic-judgment');
   });
   it('defaults base to the LAN origin', () => {
-    expect(okfResource('course', 'gc-1010')).toBe('http://130.127.162.180:3000/wiki/courses/gc-1010');
+    expect(okfResource('course', 'gc-1010')).toBe('http://gcworkflow.clemson.edu:3000/wiki/courses/gc-1010');
   });
 });
 
@@ -165,7 +165,7 @@ import { WIKI_PAGE_TYPES, type WikiPageType } from './schema';
 export const OKF_REQUIRED_KEYS = ['type', 'title', 'description', 'slug', 'tags', 'timestamp', 'resource'] as const;
 
 const FRONTMATTER_RE = /^---\n([\s\S]*?)\n---\n?/;
-const DEFAULT_BASE = 'http://130.127.162.180:3000';
+const DEFAULT_BASE = 'http://gcworkflow.clemson.edu:3000';
 
 /** Public origin used in `resource:` URLs. Env-overridable; LAN default. */
 export function okfBase(): string {
@@ -677,7 +677,7 @@ tags: [course, level-4000, brand-strategist]   # machine-stamped
 level: 4000
 prerequisites: [gc-3460, gc-4060]
 timestamp: 2026-05-25T14:00:00Z                # machine-stamped
-resource: http://130.127.162.180:3000/wiki/courses/gc-4800   # machine-stamped
+resource: http://gcworkflow.clemson.edu:3000/wiki/courses/gc-4800   # machine-stamped
 last_snapshot_id: <uuid>
 last_snapshot_path: raw/snapshots/gc-4800/2026-05-25_def4567.json
 contributes_to_targets: [brand-strategist, account-management]
@@ -702,7 +702,7 @@ description: "Index of competency pages in the GC curriculum wiki."
 slug: competencies
 tags: [index, competencies]
 timestamp: <max member timestamp>
-resource: http://130.127.162.180:3000/wiki/competencies
+resource: http://gcworkflow.clemson.edu:3000/wiki/competencies
 ---
 ```
 

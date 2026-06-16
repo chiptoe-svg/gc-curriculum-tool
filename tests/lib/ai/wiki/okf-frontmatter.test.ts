@@ -52,7 +52,7 @@ describe('okfResource', () => {
     expect(okfResource('competency', 'aesthetic-judgment', 'http://x')).toBe('http://x/wiki/competencies/aesthetic-judgment');
   });
   it('defaults base to the LAN origin', () => {
-    expect(okfResource('course', 'gc-1010')).toBe('http://130.127.162.180:3000/wiki/courses/gc-1010');
+    expect(okfResource('course', 'gc-1010')).toBe('http://gcworkflow.clemson.edu:3000/wiki/courses/gc-1010');
   });
   it('maps the root index type to the wiki home (not /wiki/index/index)', () => {
     expect(okfResource('index', 'index', 'http://x')).toBe('http://x/wiki');

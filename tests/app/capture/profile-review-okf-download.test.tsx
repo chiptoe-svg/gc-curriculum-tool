@@ -74,7 +74,7 @@ describe('ProfileReviewPanel — OKF download link', () => {
     const links = screen.getAllByRole('link', { name: /markdown/i });
     expect(links.length).toBeGreaterThanOrEqual(1);
     for (const link of links) {
-      expect(link.getAttribute('href')).toBe('http://130.127.162.180:3000/view/GC%203800/okf');
+      expect(link.getAttribute('href')).toBe('http://gcworkflow.clemson.edu:3000/view/GC%203800/okf');
       expect(link.getAttribute('download')).not.toBeNull();
     }
     const bundle = screen.getByRole('link', { name: /Bundle/ });

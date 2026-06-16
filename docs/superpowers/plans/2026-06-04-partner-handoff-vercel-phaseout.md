@@ -1048,7 +1048,7 @@ The Neon PITR + monthly-branch-checkpoint tiers are gone."
 - [ ] **Step 1: End-to-end smoke**
 
 In Safari:
-- Open `http://130.127.162.180:3000/` — public landing renders
+- Open `http://gcworkflow.clemson.edu:3000/` — public landing renders
 - Open `/view/GC%204800` — read-only profile renders (catalog or captured)
 - Open `https://admins-mac-studio-2.tailb723c1.ts.net/capture/GC%201010?slug=…` — Basic Auth prompt → editor renders → mic works
 - Open `https://admins-mac-studio-2.tailb723c1.ts.net/admin/partners?slug=…` — admin table renders, buttons present
