@@ -23,11 +23,12 @@ describe('CapturedView — full profile sections', () => {
     expect(screen.getByText(/Major projects/i)).toBeTruthy();
     expect(screen.getByText(/Brand Color Report/)).toBeTruthy();
   });
-  it('renders course emphasis with centrality + share', () => {
+  it('renders course emphasis with centrality band (not precise points/percent)', () => {
     render(<CapturedView profile={profile} {...base} />);
     expect(screen.getByText(/Course emphasis/i)).toBeTruthy();
     expect(screen.getByText(/central/i)).toBeTruthy();
-    expect(screen.getByText(/40%/)).toBeTruthy();
+    expect(screen.getByText(/Color management/)).toBeTruthy();
+    expect(screen.queryByText(/40%/)).toBeNull();
   });
   it('omits each section when its field is null/absent', () => {
     render(<CapturedView profile={{ competencies: [{ statement: 'x', d_depth: 3 }] }} {...base} />);

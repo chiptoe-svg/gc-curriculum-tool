@@ -403,23 +403,28 @@ export function CapturedView({ profile, capturedAt }: Props) {
       {emphasis.length > 0 && (
         <section>
           <h2 className="mb-1 font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-            Course emphasis — by point weight
+            Course emphasis — where the graded effort goes
           </h2>
           <p className="mb-3 text-xs text-muted-foreground">
-            What the course&apos;s graded work weights, independent of depth scoring.
+            Which competencies the course&apos;s graded work weights most, independent of depth scoring.
           </p>
           <ul className="space-y-1.5">
-            {emphasis.map((it, i) => (
-              <li key={i} className="flex items-baseline gap-2">
-                <span className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.1em] text-muted-foreground">
-                  {it.centrality}
-                </span>
-                <span className="flex-1 text-sm leading-snug text-foreground">{it.competency}</span>
-                <span className="shrink-0 font-mono-plex text-[10px] tabular-nums text-muted-foreground">
-                  {it.points} pts · {it.share_pct}%
-                </span>
-              </li>
-            ))}
+            {emphasis.map((it, i) => {
+              const band =
+                it.centrality === 'central'
+                  ? 'bg-foreground/10 text-foreground border-foreground/20'
+                  : it.centrality === 'supporting'
+                  ? 'bg-muted text-muted-foreground border-border'
+                  : 'bg-transparent text-muted-foreground/70 border-border';
+              return (
+                <li key={i} className="flex items-baseline gap-2">
+                  <span className={'shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.1em] ' + band}>
+                    {it.centrality}
+                  </span>
+                  <span className="flex-1 text-sm leading-snug text-foreground">{it.competency}</span>
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}
