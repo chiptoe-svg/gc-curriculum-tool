@@ -235,7 +235,7 @@ Body sections in order:
    **Evidence-band marker:** Append the band after each competency's depth chip, looked up from `competencyBands` by matching `statement`: ` ·claimed` (instructor claim only), ` ·materials` (backed by course-material chunk), or ` ·artifact` (backed by cited student work). Example: `[[color-management|Color management]] — K4/U3/D3 ·materials — <evidence excerpt>`. The marker is not optional — it is how a reader tells a claimed competency from a verified one; never drop it, and never upgrade a band beyond what `competencyBands` provides. If a competency has no matching entry in `competencyBands`, omit the marker for that line (do not invent one).
 7. **Audit notes** — surface the most reader-useful items from `audit_notes`: downstream connections, prereq gaps, productive-failure conditions if present, cross-source contradictions worth flagging. Do NOT dump the whole `audit_notes` object — pick what matters. Keep this section short (3–8 bullets or a short paragraph).
 8. **Class structure** (new — see §8a below)
-9. **Major projects** (new — see §8b below)
+9. **Signature projects** (see §8b below)
 10. **Syllabus** (new — see §8c below)
 11. **Source snapshots** — links to the JSON files in `raw/snapshots/<course-slug>/`. Most recent first. Use the provided `allSnapshotsForCourse` list. Rendered as: `- [2026-05-25 — Spring 2026](raw/snapshots/gc-4800/2026-05-25_def456.json)`.
 12. **Cross-references** — small "See also" section. Link outward to the targets this course contributes to, the concept pages that frame it, and any closely related courses.
@@ -265,6 +265,7 @@ Render from `profile.major_projects` when non-null and non-empty.
 
 **{project.title}**{weight_duration}
 {project.description}
+
 Deliverables: {project.deliverables joined with " · "}.
 *What it develops:* {project.what_it_develops}
 ```
@@ -274,6 +275,8 @@ Where `{weight_duration}` is:
 - ` ({weight_pct}% of grade)` when only `weight_pct` is non-null
 - ` (~{duration_weeks} weeks)` when only `duration_weeks` is non-null
 - omitted when both are null
+
+The `source` field is internal provenance metadata — do NOT render it in the wiki page.
 
 Repeat the block for each project in `profile.major_projects`. The `## Signature projects` heading appears once.
 
