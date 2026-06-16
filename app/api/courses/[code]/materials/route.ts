@@ -5,12 +5,9 @@ import { putLocal, courseSlug, safeFilename, keyFromLocalUrl, deleteLocal } from
 import { getCourseByCode, clearCourseCanvasImport } from '@/lib/db/courses-queries';
 import { hashIp } from '@/lib/ip-hash';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
-import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
 import { insertMaterial, listMaterialsByCourse, deleteMaterial } from '@/lib/db/course-materials-queries';
-import { finalizeExtraction } from '@/lib/capture/finalize-extraction';
 import { createVectorStore, tenantForCourse } from '@/lib/capture/vector-store';
-import { extractText } from '@/lib/courses/extract-text';
-import type { ExtractedMimeType } from '@/lib/courses/extract-text';
+import { enqueue } from '@/lib/capture/ingest-queue';
 import { SUPPORTED_MIME_TYPES, LEGACY_OFFICE_MIME_TYPES } from '@/lib/courses/material-extractor';
 
 export const maxDuration = 120;
@@ -160,9 +157,9 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     );
   }
 
-  // Store on local disk under ~/.local/share/gc-curriculum-tool/materials/...
-  // (was Vercel Blob; the local Mac deploy has no business reaching into Vercel).
-  // We read the bytes once and reuse them for both storage and extraction.
+  // Store on local disk; we do NOT extract/index on the request path — that
+  // happens in the background ingest worker so the upload returns immediately
+  // and a burst doesn't saturate the box (see lib/capture/ingest-queue.ts).
   const fileBytes = Buffer.from(await file.arrayBuffer());
   const storageKey = `${courseSlug(code)}/${Date.now()}-${safeFilename(file.name)}`;
   let stored;
@@ -170,13 +167,9 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     stored = await putLocal({ key: storageKey, bytes: fileBytes });
   } catch (err) {
     console.error('local storage write failed', err);
-    return NextResponse.json(
-      { error: 'failed to store uploaded file on disk' },
-      { status: 503 },
-    );
+    return NextResponse.json({ error: 'failed to store uploaded file on disk' }, { status: 503 });
   }
 
-  // Insert the row with extractionStatus='pending'.
   const material = await insertMaterial({
     courseCode: code,
     fileName: file.name,
@@ -186,53 +179,12 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     ipHash,
   });
 
-  const vectorStore = createVectorStore();
-
-  // Run extraction synchronously using the bytes we already read.
-  // Stage timing (2026-06-16): attribute ingest latency across extraction
-  // (Docling) vs. indexing (digest + per-chunk contextualize + embed + upsert,
-  // logged inside finalizeExtraction) so we can see where the seconds go on a
-  // real PDF.
-  const tExtract = Date.now();
-  const extracted = await extractText({
-    fileBytes,
-    mimeType: file.type as ExtractedMimeType,
-    fileName: file.name,
-  });
-  console.log(
-    `[ingest] ${code} "${file.name}": extract(${extracted.method}) ${Date.now() - tExtract}ms` +
-    ` status=${extracted.status} pages=${extracted.pageCount ?? '?'} chars=${extracted.text?.length ?? 0}`,
-  );
-
-  // Gate vision transcription cost.
-  if (extracted.visionCostUsdCents !== undefined && extracted.visionCostUsdCents > 0) {
-    const cap = await checkDailyCap();
-    if (cap.ok) {
-      await recordSpend(extracted.visionCostUsdCents);
-    }
-  }
-
-  // Persist extraction result (digest + chunk + contextualize + embed + upsert;
-  // per-stage timing logged inside finalizeExtraction).
-  const tFinalize = Date.now();
-  await finalizeExtraction({
-    id: material.id,
-    courseCode: code,
-    fileName: material.fileName,
-    extractionStatus: extracted.status,
-    extractionMethod: extracted.method,
-    extractedText: extracted.text,
-    pageCount: extracted.pageCount,
-    vectorStore,
-  });
-  console.log(`[ingest] ${code} "${file.name}": finalize ${Date.now() - tFinalize}ms`);
+  await enqueue(material.id);
 
   return NextResponse.json({
     id: material.id,
     fileName: material.fileName,
     blobUrl: material.blobUrl,
-    extractionStatus: extracted.status,
-    extractionMethod: extracted.method,
-    pageCount: extracted.pageCount,
+    indexingStatus: 'queued',
   });
 }

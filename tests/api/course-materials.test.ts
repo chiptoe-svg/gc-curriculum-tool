@@ -16,6 +16,7 @@ const {
   checkDailyCap,
   recordSpend,
   hashIp,
+  enqueue,
 } = vi.hoisted(() => ({
   isValidSlug: vi.fn(),
   getCourseByCode: vi.fn(),
@@ -32,6 +33,7 @@ const {
   checkDailyCap: vi.fn(),
   recordSpend: vi.fn(),
   hashIp: vi.fn(),
+  enqueue: vi.fn(),
 }));
 
 vi.mock('@/lib/slug', () => ({ isValidSlug }));
@@ -54,6 +56,7 @@ vi.mock('@/lib/courses/extract-text', () => ({ extractText }));
 vi.mock('@/lib/rate-limit/ip-rate-limit', () => ({ checkIpRateLimit }));
 vi.mock('@/lib/rate-limit/daily-cap', () => ({ checkDailyCap, recordSpend }));
 vi.mock('@/lib/ip-hash', () => ({ hashIp }));
+vi.mock('@/lib/capture/ingest-queue', () => ({ enqueue: vi.fn().mockResolvedValue(undefined) }));
 
 import { POST } from '@/app/api/courses/[code]/materials/route';
 import { DELETE } from '@/app/api/courses/[code]/materials/[id]/route';
@@ -121,6 +124,7 @@ beforeEach(() => {
   recordSpend.mockResolvedValue(undefined);
   hashIp.mockReturnValue('abc123hash');
   extractText.mockResolvedValue({ method: 'text', status: 'ok', text: 'Rubric content here.' });
+  enqueue.mockResolvedValue(undefined);
 });
 
 describe('POST /api/courses/[code]/materials', () => {
@@ -164,36 +168,16 @@ describe('POST /api/courses/[code]/materials', () => {
     expect(res.status).toBe(400);
   });
 
-  it('stores locally, inserts row, runs extraction, returns 200 with status', async () => {
+  it('stores locally, inserts row, enqueues, returns 200 with queued status', async () => {
     const [req, ctx] = makeUploadReq();
     const res = await POST(req, ctx);
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json.id).toBe('mat-1');
-    expect(json.extractionStatus).toBe('ok');
+    expect(json.indexingStatus).toBe('queued');
     expect(putLocal).toHaveBeenCalledOnce();
     expect(insertMaterial).toHaveBeenCalledOnce();
-    expect(extractText).toHaveBeenCalledOnce();
-    expect(updateExtractionResult).toHaveBeenCalledWith(
-      expect.objectContaining({ id: 'mat-1', extractionStatus: 'ok' }),
-    );
-  });
-
-  it('records vision spend when extraction uses vision', async () => {
-    extractText.mockResolvedValue({ method: 'vision', status: 'ok', text: 'Transcribed.', visionCostUsdCents: 30 });
-    const [req, ctx] = makeUploadReq();
-    const res = await POST(req, ctx);
-    expect(res.status).toBe(200);
-    expect(recordSpend).toHaveBeenCalledWith(30);
-  });
-
-  it('returns extractionStatus=failed without throwing when extraction fails', async () => {
-    extractText.mockResolvedValue({ status: 'failed' });
-    const [req, ctx] = makeUploadReq();
-    const res = await POST(req, ctx);
-    expect(res.status).toBe(200);
-    const json = await res.json();
-    expect(json.extractionStatus).toBe('failed');
+    expect(extractText).not.toHaveBeenCalled(); // extraction moved to the worker
   });
 
   // The bare /materials path is excluded from the middleware matcher (the
