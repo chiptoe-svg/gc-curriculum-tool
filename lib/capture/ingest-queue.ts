@@ -3,11 +3,83 @@ import { extractText, type ExtractedMimeType } from '@/lib/courses/extract-text'
 import { finalizeExtraction } from '@/lib/capture/finalize-extraction';
 import { createVectorStore } from '@/lib/capture/vector-store';
 import {
+  claimNextQueued,
+  resetStuckIndexing,
   updateIndexingStatus,
   type CourseMaterialRow,
   type ExtractionStatus,
   type ExtractionMethod,
 } from '@/lib/db/course-materials-queries';
+
+// ---------------------------------------------------------------------------
+// In-process worker — drains the indexing queue with bounded concurrency
+// ---------------------------------------------------------------------------
+
+const MAX_CONCURRENCY = 2;
+let workerRunning = false;
+let recovered = false;
+let inFlight = 0;
+
+// Indirection so tests can swap the processor without fighting ESM live-binding.
+// processMaterial is a function declaration and is hoisted, so this assignment
+// is valid even though processMaterial appears later in the file.
+// eslint-disable-next-line prefer-const
+let _process: (row: CourseMaterialRow) => Promise<void> = (...args) => processMaterial(...args);
+
+/** Test seam — reset module state between tests. */
+export function __resetWorkerForTest(): void {
+  workerRunning = false;
+  recovered = false;
+  inFlight = 0;
+  _process = processMaterial;
+}
+
+/** Test seam — override the processor used by the drain loop. */
+export function __setProcessForTest(fn: (row: CourseMaterialRow) => Promise<void>): void {
+  _process = fn;
+}
+
+/** Mark a material queued and ensure the worker is draining. Idempotent. */
+export async function enqueue(materialId: string): Promise<void> {
+  await updateIndexingStatus({ id: materialId, status: 'queued' });
+  ensureWorker();
+}
+
+/** Start the drain loop if it isn't already running. */
+export function ensureWorker(): void {
+  if (workerRunning) return;
+  workerRunning = true;
+  void drainLoop();
+}
+
+async function drainLoop(): Promise<void> {
+  try {
+    if (!recovered) {
+      recovered = true;
+      const n = await resetStuckIndexing();
+      if (n > 0) console.log(`[ingest] boot recovery re-queued ${n} stuck material(s)`);
+    }
+    while (true) {
+      if (inFlight >= MAX_CONCURRENCY) {
+        await new Promise(r => setTimeout(r, 25));
+        continue;
+      }
+      const row = await claimNextQueued();
+      if (!row) {
+        if (inFlight > 0) { await new Promise(r => setTimeout(r, 25)); continue; }
+        break;
+      }
+      inFlight++;
+      void _process(row).finally(() => { inFlight--; });
+    }
+  } finally {
+    workerRunning = false;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Material processor
+// ---------------------------------------------------------------------------
 
 /**
  * Run one queued material to completion. File-backed rows (a stored blob, no
