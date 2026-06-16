@@ -10,6 +10,8 @@ import {
   type ExtractionStatus,
   type ExtractionMethod,
 } from '@/lib/db/course-materials-queries';
+import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
+import { getCourseByCode } from '@/lib/db/courses-queries';
 
 // ---------------------------------------------------------------------------
 // In-process worker — drains the indexing queue with bounded concurrency
@@ -119,11 +121,21 @@ export async function processMaterial(row: CourseMaterialRow): Promise<void> {
         mimeType: row.mimeType as ExtractedMimeType,
         fileName: row.fileName,
       });
+      // Fix 2: meter vision OCR cost immediately after extraction
+      if (ex.visionCostUsdCents !== undefined && ex.visionCostUsdCents > 0) {
+        const cap = await checkDailyCap();
+        if (cap.ok) await recordSpend(ex.visionCostUsdCents);
+      }
       extractedText = ex.text;
       extractionStatus = ex.status;
       extractionMethod = ex.method as ExtractionMethod | undefined;
       pageCount = ex.pageCount;
     }
+
+    // Fix 3: fetch course to pass LO flag to finalizeExtraction so the
+    // Canvas: Syllabus set-aside heuristic fires when LOs are already captured.
+    const course = await getCourseByCode(row.courseCode);
+    const courseHasLearningObjectives = (course?.learningObjectives?.length ?? 0) > 0;
 
     await finalizeExtraction({
       id: row.id,
@@ -133,8 +145,20 @@ export async function processMaterial(row: CourseMaterialRow): Promise<void> {
       ...(extractionMethod !== undefined && { extractionMethod }),
       ...(extractedText !== undefined && { extractedText }),
       ...(pageCount !== undefined && { pageCount }),
+      courseHasLearningObjectives,
       vectorStore: createVectorStore(),
     });
+
+    // Fix 1: finalizeExtraction early-returns (without setting a terminal
+    // indexing_status) when extractionStatus !== 'ok' or text is absent,
+    // leaving the row stuck at 'indexing' (set by claimNextQueued). Set a
+    // terminal status so the UI stops spinning.
+    if (extractionStatus !== 'ok' || !extractedText) {
+      await updateIndexingStatus({
+        id: row.id,
+        status: extractionStatus === 'low_text' ? 'skipped' : 'failed',
+      });
+    }
   } catch (err) {
     console.error(`[ingest] ${row.courseCode} "${row.fileName}": processMaterial failed`, err);
     await updateIndexingStatus({ id: row.id, status: 'failed' });

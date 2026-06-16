@@ -5,6 +5,7 @@ import {
   listMaterialsByCourse,
   insertMaterial,
   updateExtractionResult,
+  updateIndexingStatus,
 } from '@/lib/db/course-materials-queries';
 import { enqueue } from '@/lib/capture/ingest-queue';
 import {
@@ -126,7 +127,9 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         extractionStatus: 'failed',
         extractionMethod: 'text',
       });
-      await enqueue(row.id);
+      // No blob and no extractedText — worker can only fail again. Set terminal
+      // status directly so the row doesn't queue up and log misleading errors.
+      await updateIndexingStatus({ id: row.id, status: 'skipped' });
       results.push({ kind: ref.kind, fileId: ref.fileId, status: 'inaccessible', fileName, errorReason: fetched.errorReason });
     }
   }
@@ -225,7 +228,8 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         extractionStatus: 'failed',
         extractionMethod: 'text',
       });
-      await enqueue(row.id);
+      // No text available — worker would only fail. Set terminal status directly.
+      await updateIndexingStatus({ id: row.id, status: 'skipped' });
       youtubeResults.push({ videoId, status: 'inaccessible', fileName, errorReason: lastError });
     }
   }
@@ -299,7 +303,9 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         extractionStatus: 'failed',
         extractionMethod: 'text',
       });
-      await enqueue(row.id);
+      // No blob and no extractedText — worker would only fail. Set terminal
+      // status directly so the row doesn't queue up and log misleading errors.
+      await updateIndexingStatus({ id: row.id, status: 'skipped' });
       driveResults.push({ fileId, status: fetched.status, fileName, errorReason: fetched.errorReason });
     }
   }

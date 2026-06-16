@@ -21,6 +21,8 @@ vi.mock('@/lib/courses/extract-text', () => ({ extractText }));
 vi.mock('@/lib/capture/finalize-extraction', () => ({ finalizeExtraction }));
 vi.mock('@/lib/capture/vector-store', () => ({ createVectorStore, tenantForCourse: (c: string) => c }));
 vi.mock('@/lib/db/course-materials-queries', () => ({ updateIndexingStatus }));
+vi.mock('@/lib/db/courses-queries', () => ({ getCourseByCode: vi.fn().mockResolvedValue({ learningObjectives: [] }) }));
+vi.mock('@/lib/rate-limit/daily-cap', () => ({ checkDailyCap: vi.fn().mockResolvedValue({ ok: true }), recordSpend: vi.fn() }));
 
 import { processMaterial } from '@/lib/capture/ingest-queue';
 
@@ -60,6 +62,18 @@ describe('processMaterial', () => {
     await processMaterial(baseRow);
     expect(extractText).not.toHaveBeenCalled();
     expect(finalizeExtraction).not.toHaveBeenCalled();
+    expect(updateIndexingStatus).toHaveBeenCalledWith(expect.objectContaining({ id: 'm1', status: 'failed' }));
+  });
+
+  it('marks skipped when a file-backed extraction returns low_text', async () => {
+    extractText.mockResolvedValue({ status: 'low_text', method: 'text', text: 'tiny', pageCount: 1 });
+    await processMaterial(baseRow);
+    expect(updateIndexingStatus).toHaveBeenCalledWith(expect.objectContaining({ id: 'm1', status: 'skipped' }));
+  });
+
+  it('marks failed when a file-backed extraction returns failed', async () => {
+    extractText.mockResolvedValue({ status: 'failed', method: 'text', text: '', pageCount: 0 });
+    await processMaterial(baseRow);
     expect(updateIndexingStatus).toHaveBeenCalledWith(expect.objectContaining({ id: 'm1', status: 'failed' }));
   });
 });
