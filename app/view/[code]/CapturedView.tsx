@@ -1,4 +1,5 @@
 import type { PfCond, Area7Block } from '@/lib/ai/capture/area7-types';
+import { problemSolvingBand } from '@/lib/program/problem-solving-band';
 
 /**
  * Public read-only render of a captured course profile. Editorial framing,
@@ -113,24 +114,37 @@ function condTone(v: PfCond | undefined): { text: string; cls: string } {
 export function Area7Conditions({ block }: { block: Area7Block | null | undefined }) {
   if (!block) return null;
   const depth = block.max_supporting_depth;
+  const { label } = problemSolvingBand(block);
   return (
     <section>
-      <h2 className="font-display text-lg font-semibold tracking-tight">Productive-failure &amp; transfer conditions</h2>
-      <p className="mt-1 text-sm text-muted-foreground">What the course does to develop transferable problem-solving (Audit Area 7). A missing row means that condition was not assessed — not that it is absent.</p>
-      <ul className="mt-3 space-y-1.5">
-        {AREA7_LABELS.map(({ key, label }) => {
-          const tone = condTone(block[key] as PfCond | undefined);
-          return (
-            <li key={key} className="flex items-baseline justify-between gap-4 text-sm">
-              <span>{label}</span>
-              <span className={'shrink-0 font-medium ' + tone.cls}>{tone.text}</span>
-            </li>
-          );
-        })}
-      </ul>
-      {depth != null && (
-        <p className="mt-2 text-xs text-muted-foreground">Max supporting depth: <span className="font-medium text-foreground">D {depth}</span></p>
-      )}
+      <h2 className="font-display text-lg font-semibold tracking-tight">Problem-solving &amp; critical-thinking habits</h2>
+      <p className="mt-2 text-sm text-foreground">
+        This course shows <span className="font-semibold">{label} evidence</span> toward building habits of
+        problem-solving and critical thinking.
+      </p>
+      <details className="mt-2 text-sm">
+        <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground">
+          Condition-by-condition detail
+        </summary>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Audit Area 7 — what the course does to develop transferable problem-solving. A missing row means that
+          condition was not assessed, not that it is absent.
+        </p>
+        <ul className="mt-2 space-y-1.5">
+          {AREA7_LABELS.map(({ key, label: condLabel }) => {
+            const tone = condTone(block[key] as PfCond | undefined);
+            return (
+              <li key={key} className="flex items-baseline justify-between gap-4 text-sm">
+                <span>{condLabel}</span>
+                <span className={'shrink-0 font-medium ' + tone.cls}>{tone.text}</span>
+              </li>
+            );
+          })}
+        </ul>
+        {depth != null && (
+          <p className="mt-2 text-xs text-muted-foreground">Max supporting depth: <span className="font-medium text-foreground">D {depth}</span></p>
+        )}
+      </details>
     </section>
   );
 }
