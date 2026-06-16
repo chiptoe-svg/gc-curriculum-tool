@@ -1,8 +1,44 @@
-import { eq, and, asc, isNull } from 'drizzle-orm';
+import { eq, and, asc, isNull, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { courseMaterials } from '@/lib/db/schema';
 
 export type CourseMaterialRow = typeof courseMaterials.$inferSelect;
+
+/**
+ * Maps a raw DB row (from db.execute) to a typed CourseMaterialRow. Used by
+ * getMaterialById and claimNextQueued to avoid duplicating field mapping.
+ */
+function mapMaterialRow(row: Record<string, unknown>): CourseMaterialRow {
+  return {
+    id: row['id'] as string,
+    courseCode: row['course_code'] as string,
+    fileName: row['file_name'] as string,
+    blobUrl: row['blob_url'] as string,
+    mimeType: row['mime_type'] as string,
+    sizeBytes: row['size_bytes'] as number,
+    pageCount: row['page_count'] as number | null,
+    extractionMethod: row['extraction_method'] as string | null,
+    extractionStatus: row['extraction_status'] as string,
+    extractedText: row['extracted_text'] as string | null,
+    analysisFinding: row['analysis_finding'] as CourseMaterialRow['analysisFinding'],
+    analysisModel: row['analysis_model'] as string | null,
+    analysisCostUsdCents: row['analysis_cost_usd_cents'] as number | null,
+    uploadedAt: row['uploaded_at'] as Date,
+    ipHash: row['ip_hash'] as string,
+    digest: row['digest'] as string | null,
+    digestModel: row['digest_model'] as string | null,
+    digestGeneratedAt: row['digest_generated_at'] as Date | null,
+    useDigest: row['use_digest'] as boolean,
+    ferpaRisk: row['ferpa_risk'] as string,
+    autoSetAside: row['auto_set_aside'] as boolean,
+    setAsideReason: row['set_aside_reason'] as string | null,
+    indexingStatus: row['indexing_status'] as string,
+    indexedAt: row['indexed_at'] as Date | null,
+    ignored: row['ignored'] as boolean,
+    ignoredItems: (row['ignored_items'] as string[] | null) ?? [],
+    sourceCode: row['source_code'] as string | null,
+  };
+}
 export type ExtractionStatus = 'pending' | 'ok' | 'low_text' | 'failed';
 export type ExtractionMethod = 'text' | 'vision';
 
@@ -209,7 +245,7 @@ export async function setMaterialUseDigest(id: string, useDigest: boolean): Prom
 
 export async function updateIndexingStatus(args: {
   id: string;
-  status: 'pending' | 'indexing' | 'ready' | 'failed' | 'skipped';
+  status: 'pending' | 'queued' | 'indexing' | 'ready' | 'failed' | 'skipped';
   indexedAt?: Date;
 }): Promise<void> {
   await db.update(courseMaterials)
@@ -242,4 +278,38 @@ export async function updateAutoSetAside(args: {
       ignored: args.ignored,
     })
     .where(eq(courseMaterials.id, args.id));
+}
+
+/**
+ * Atomically claim the oldest queued material for the background ingest
+ * worker, flipping it to 'indexing' in the same statement so two workers (or
+ * loop ticks) never grab the same row. FOR UPDATE SKIP LOCKED makes concurrent
+ * claims pick distinct rows. Returns null when nothing is queued.
+ */
+export async function claimNextQueued(): Promise<CourseMaterialRow | null> {
+  const res = await db.execute(sql`
+    UPDATE course_materials SET indexing_status = 'indexing'
+    WHERE id = (
+      SELECT id FROM course_materials
+      WHERE indexing_status = 'queued'
+      ORDER BY uploaded_at
+      LIMIT 1
+      FOR UPDATE SKIP LOCKED
+    )
+    RETURNING *;
+  `);
+  const row = (res.rows as Record<string, unknown>[])[0];
+  return row ? mapMaterialRow(row) : null;
+}
+
+/**
+ * Boot recovery: a row left 'indexing' is a crash/restart remnant (a live
+ * worker always moves it to ready/failed). Re-queue them. Returns the count.
+ */
+export async function resetStuckIndexing(): Promise<number> {
+  const res = await db.execute(sql`
+    UPDATE course_materials SET indexing_status = 'queued'
+    WHERE indexing_status = 'indexing';
+  `);
+  return res.rowCount ?? 0;
 }

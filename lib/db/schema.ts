@@ -270,7 +270,8 @@ export const courseMaterials = pgTable('course_materials', {
   autoSetAside: boolean('auto_set_aside').notNull().default(false),
   // Human-readable reason for the auto set-aside (e.g. "PII detected").
   setAsideReason: text('set_aside_reason'),
-  // Indexing pipeline status: 'pending' | 'indexing' | 'ready' | 'failed' | 'skipped'.
+  // Indexing pipeline status: 'pending' | 'queued' | 'indexing' | 'ready' | 'failed' | 'skipped'.
+  // 'queued' = enqueued for the background ingest worker; 'pending' = inserted but not yet enqueued.
   indexingStatus: text('indexing_status').notNull().default('pending'),
   indexedAt: timestamp('indexed_at', { withTimezone: true }),
   // Set true to keep the material in the system but exclude it from AI context
