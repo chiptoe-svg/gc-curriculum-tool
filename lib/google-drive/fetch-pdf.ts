@@ -61,18 +61,6 @@ export async function fetchDrivePdf(fileId: string): Promise<FetchedDriveFile> {
     };
   }
 
-  // Only PDFs are processed at this endpoint. Other content types are
-  // skipped — the audit gets a 'reference noted but not extracted' result
-  // rather than nothing.
-  if (!contentType.includes('pdf')) {
-    return {
-      fileId,
-      status: 'unsupported',
-      mimeType: contentType || 'unknown',
-      errorReason: `Drive file is ${contentType || 'unknown type'}, not a PDF`,
-    };
-  }
-
   // Sanity-check size from header before downloading the full body.
   const contentLength = parseInt(res.headers.get('content-length') ?? '0', 10);
   if (contentLength > MAX_BYTES) {
@@ -93,6 +81,33 @@ export async function fetchDrivePdf(fileId: string): Promise<FetchedDriveFile> {
 
   if (buffer.byteLength > MAX_BYTES) {
     return { fileId, status: 'too_large', mimeType: contentType, errorReason: `${buffer.byteLength} bytes` };
+  }
+
+  // Detect the PDF by its MAGIC BYTES, not the Content-Type header. Drive's
+  // uc?export=download routinely serves real PDFs as application/octet-stream
+  // (or another generic type), so the old header-only check
+  // (`contentType.includes('pdf')`) misclassified shared PDFs as
+  // 'unsupported' — the GC 2400 linked-PDF failures, 2026-06-16. A PDF always
+  // begins with "%PDF-".
+  const header = buffer.subarray(0, 5).toString('latin1');
+  if (header !== '%PDF-') {
+    // Not a PDF by content. Distinguish a private-file HTML page (a sharing
+    // problem, even if the Content-Type header lied) from a genuinely
+    // non-PDF Drive file (a Google-native Doc, an image, etc.).
+    const sniff = buffer.subarray(0, 64).toString('latin1').trimStart().toLowerCase();
+    if (sniff.startsWith('<!doctype') || sniff.startsWith('<html') || sniff.startsWith('<?xml')) {
+      return {
+        fileId,
+        status: 'inaccessible',
+        errorReason: "Drive returned an HTML page, not the file — it isn't shared as link-viewable. Enable 'Anyone with the link' sharing in Drive.",
+      };
+    }
+    return {
+      fileId,
+      status: 'unsupported',
+      mimeType: contentType || 'unknown',
+      errorReason: `Drive file isn't a PDF (no %PDF header; Content-Type ${contentType || 'unknown'})`,
+    };
   }
 
   let extraction;
