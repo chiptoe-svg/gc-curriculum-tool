@@ -17,6 +17,13 @@ const fakeTranscribe = vi.fn();
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // extractText routes through getExtractorFor (material-extractor), which is
+  // NOT mocked here — only mammoth/unpdf are. When .env.local is sourced it
+  // sets PDF_PARSER=docling + DOCLING_URL, so DOCX/PDF would hit the real
+  // DoclingExtractor (HTTP to :5001) and bypass these mocks entirely (8 tests
+  // time out at 5s each). Force the default `unpdf` path so the mocks apply.
+  delete process.env.PDF_PARSER;
+  delete process.env.DOCLING_URL;
   getProvider.mockReturnValue({
     name: 'fake',
     model: 'fake-model',
