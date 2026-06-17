@@ -1,5 +1,5 @@
 import { loadPrompt } from '@/lib/ai/prompts/load';
-import { getProviderForFunction } from '@/lib/ai/provider';
+import { chunkLlmComplete } from '@/lib/ai/analyze/chunk-llm-provider';
 
 export interface ContextualizeInput {
   materialDigest: string;
@@ -19,7 +19,6 @@ export interface ContextualizeResult {
  * contextual-retrieval pattern). Light-tier; one call per detail chunk.
  */
 export async function contextualizeChunk(input: ContextualizeInput): Promise<ContextualizeResult> {
-  const provider = await getProviderForFunction('chunk-contextualize');
   const systemPrompt = await loadPrompt('chunk-contextualize');
 
   const jsonSchema = {
@@ -42,7 +41,7 @@ export async function contextualizeChunk(input: ContextualizeInput): Promise<Con
     'Return JSON: { "blurb": "<one to two sentences>" }',
   ].join('\n');
 
-  const { data } = await provider.complete<{ blurb: string }>({
+  const { data, model } = await chunkLlmComplete<{ blurb: string }>('chunk-contextualize', {
     systemPrompt,
     userMessage,
     schemaName: 'chunk_context',
@@ -56,5 +55,5 @@ export async function contextualizeChunk(input: ContextualizeInput): Promise<Con
     },
   });
 
-  return { blurb: data.blurb, model: provider.model };
+  return { blurb: data.blurb, model };
 }

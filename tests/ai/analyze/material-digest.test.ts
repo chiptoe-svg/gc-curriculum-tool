@@ -29,6 +29,9 @@ const makeStub = (digest: string) => ({
 describe('generateMaterialDigest', () => {
   beforeEach(() => {
     vi.mocked(getProviderForFunction).mockReset();
+    // Force the OpenAI fallback path so the mocked provider is exercised
+    // regardless of whether campus env vars are present (.env.local).
+    process.env.CHUNK_LLM_SKIP_CAMPUS = '1';
   });
 
   it('returns the digest body and the model used', async () => {

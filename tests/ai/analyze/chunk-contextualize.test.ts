@@ -24,7 +24,12 @@ const makeStub = (blurb: string) => ({
 });
 
 describe('contextualizeChunk', () => {
-  beforeEach(() => vi.mocked(getProviderForFunction).mockReset());
+  beforeEach(() => {
+    vi.mocked(getProviderForFunction).mockReset();
+    // Force the OpenAI fallback path so the mocked provider is exercised
+    // regardless of whether campus env vars are present (.env.local).
+    process.env.CHUNK_LLM_SKIP_CAMPUS = '1';
+  });
 
   it('returns the blurb and model', async () => {
     const stub = makeStub('From Chapter 4 of the textbook; covers ΔE perceptibility.');

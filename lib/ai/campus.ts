@@ -44,11 +44,15 @@ export class CampusProvider implements AIProvider {
   private client: OpenAI;
   private baseURL: string;
   private apiKey: string;
+  /** gpt-oss reasoning effort. When set, isolates reasoning into a separate
+   *  response field so `content` stays clean JSON; 'low' keeps it fast. */
+  private reasoningEffort?: 'low' | 'medium' | 'high';
 
-  constructor(model: string, baseURL: string, apiKey: string) {
+  constructor(model: string, baseURL: string, apiKey: string, opts?: { reasoningEffort?: 'low' | 'medium' | 'high' }) {
     this.model = model;
     this.baseURL = baseURL;
     this.apiKey = apiKey;
+    this.reasoningEffort = opts?.reasoningEffort;
     this.client = new OpenAI({ apiKey, baseURL });
   }
 
@@ -74,7 +78,10 @@ export class CampusProvider implements AIProvider {
       ],
       response_format: { type: 'json_object' },
       temperature: 0.2,
-    });
+      // reasoning_effort is a gpt-oss/o-series param; cast because the SDK type
+      // may not include it for all models. Other campus models ignore it.
+      ...(this.reasoningEffort ? { reasoning_effort: this.reasoningEffort } : {}),
+    } as OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming);
     const durationMs = Date.now() - started;
 
     const content = response.choices[0]?.message?.content ?? '';

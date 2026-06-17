@@ -1,5 +1,5 @@
 import { loadPrompt } from '@/lib/ai/prompts/load';
-import { getProviderForFunction } from '@/lib/ai/provider';
+import { chunkLlmComplete } from '@/lib/ai/analyze/chunk-llm-provider';
 
 export interface DigestInput {
   fileName: string;
@@ -17,7 +17,6 @@ export interface DigestResult {
  * compression flow, generalized here). Light-tier; one call per material.
  */
 export async function generateMaterialDigest(input: DigestInput): Promise<DigestResult> {
-  const provider = await getProviderForFunction('material-digest');
   const systemPrompt = await loadPrompt('material-digest');
 
   const jsonSchema = {
@@ -39,7 +38,7 @@ export async function generateMaterialDigest(input: DigestInput): Promise<Digest
     'Return JSON: { "digest": "<the markdown digest>" }',
   ].join('\n');
 
-  const { data } = await provider.complete<{ digest: string }>({
+  const { data, model } = await chunkLlmComplete<{ digest: string }>('material-digest', {
     systemPrompt,
     userMessage,
     schemaName: 'material_digest',
@@ -53,5 +52,5 @@ export async function generateMaterialDigest(input: DigestInput): Promise<Digest
     },
   });
 
-  return { digest: data.digest, model: provider.model };
+  return { digest: data.digest, model };
 }

@@ -60,7 +60,13 @@ export async function enqueue(materialId: string): Promise<void> {
 export function ensureWorker(): void {
   if (workerRunning) return;
   workerRunning = true;
-  void drainLoop();
+  // .catch so a crash in boot-recovery/claim (e.g. a transient DB blip at
+  // startup) can't surface as an unhandled rejection — important now that
+  // instrumentation.ts calls this on every server boot.
+  void drainLoop().catch(err => {
+    console.error('[ingest] drain loop crashed:', err);
+    workerRunning = false;
+  });
 }
 
 async function drainLoop(): Promise<void> {
