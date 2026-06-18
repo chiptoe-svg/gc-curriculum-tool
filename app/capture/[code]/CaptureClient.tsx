@@ -13,7 +13,9 @@ import { CaptureHelpPanel } from './HelpPanel';
 import { CanvasImportSummary } from './CanvasImportSummary';
 import { CaptureHero } from './CaptureHero';
 import { CaptureMaterialsStep } from './CaptureMaterialsStep';
+import { TriageStep } from './TriageStep';
 import { shouldShowMaterialsStep } from '@/lib/capture/material-display';
+import { isTriageEnabled } from '@/lib/capture/triage-flag';
 import { FACULTY_ROSTER, DEPARTMENT_CANONICAL } from '@/lib/faculty';
 
 interface Props {
@@ -101,11 +103,11 @@ export function CaptureClient({
   const [chooserMode, setChooserMode] = useState<'fresh' | 'continue'>(
     priorSnapshotInfo ? 'continue' : 'fresh',
   );
-  // Wizard sub-step: confirm materials (Step 1) before the interview (Step 2).
-  // Reversible via the interview's "Back to materials" button. A resumed
-  // conversation (messages already exist) starts on 'interview' so it lands
-  // straight in the chat rather than re-confirming materials first.
-  const [landingStep, setLandingStep] = useState<'materials' | 'interview'>(
+  // Wizard sub-step: confirm materials (Step 1) → optional triage (Step 2, flag-gated)
+  // → interview (Step 3). Reversible via the interview's "Back to materials" button.
+  // A resumed conversation (messages already exist) starts on 'interview' so it
+  // lands straight in the chat rather than re-confirming materials first.
+  const [landingStep, setLandingStep] = useState<'materials' | 'ingest' | 'interview'>(
     initialMessages.length > 0 ? 'interview' : 'materials',
   );
   // Collapsed "Setup & history" disclosure on the interview step.
@@ -306,9 +308,16 @@ export function CaptureClient({
           catalogSyncedAt={catalogSyncedAt}
           onMaterialsChange={setMaterials}
           onCourseChange={setCourse}
-          onContinue={() => setLandingStep('interview')}
+          onContinue={() => setLandingStep(isTriageEnabled() ? 'ingest' : 'interview')}
           instructor={chooserInstructor}
           onInstructorChange={setChooserInstructor}
+        />
+      ) : isLanding && landingStep === 'ingest' ? (
+        <TriageStep
+          courseCode={courseCode}
+          slug={slug}
+          materials={materials}
+          onIngested={() => setLandingStep('interview')}
         />
       ) : (
         <>

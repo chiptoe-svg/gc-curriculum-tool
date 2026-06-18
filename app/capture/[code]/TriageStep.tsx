@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { ManifestRow, SkippedFile } from '@/app/api/courses/[code]/canvas-import/list-import';
+import type { CaptureMaterial } from './MaterialsPanel';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -10,11 +10,8 @@ import type { ManifestRow, SkippedFile } from '@/app/api/courses/[code]/canvas-i
 export interface TriageStepProps {
   courseCode: string;
   slug: string;
-  manifest: {
-    rows: ManifestRow[];
-    skipped: SkippedFile[];
-    decksPresent: boolean;
-  };
+  /** The course's live materials from CaptureClient state. */
+  materials: CaptureMaterial[];
   onIngested: () => void;
 }
 
@@ -39,34 +36,25 @@ function displayName(fileName: string): string {
   return fileName;
 }
 
-function sizeDescriptor(row: ManifestRow): string {
-  if (row.slideCount != null) return `${row.slideCount} slides`;
-  if (row.pageCount != null) return `${row.pageCount} pages`;
-  return row.kind;
+// ---------------------------------------------------------------------------
+// Per-row state — extends CaptureMaterial with local UI flags
+// ---------------------------------------------------------------------------
+
+interface RowState extends CaptureMaterial {
+  /** Resolved tier: null materials default to 'high'. */
+  tier: Tier;
+  pendingDelete: boolean;
 }
 
-function kindIcon(row: ManifestRow): string {
-  if (row.slideCount != null) return '🖼';
-  switch (row.kind) {
-    case 'syllabus': return '📋';
-    case 'assignments': return '📝';
-    case 'pages': return '📄';
-    case 'discussions': return '💬';
-    case 'quizzes': return '❓';
-    case 'modules': return '📦';
-    case 'file': return '📎';
-    default: return '📄';
-  }
+function sizeDescriptor(row: RowState): string {
+  if (row.pageCount != null) return `${row.pageCount} pages`;
+  if (row.indexingStatus && row.indexingStatus !== 'pending') return row.indexingStatus;
+  return row.mimeType.split('/')[1] ?? row.mimeType;
 }
 
 // ---------------------------------------------------------------------------
 // Per-row sub-component
 // ---------------------------------------------------------------------------
-
-interface RowState extends ManifestRow {
-  ignored: boolean;
-  pendingDelete: boolean;
-}
 
 interface TriageRowProps {
   row: RowState;
@@ -136,7 +124,12 @@ function TriageRow({ row, courseCode, slug, onUpdate, onRemove }: TriageRowProps
         `/api/courses/${encodeURIComponent(courseCode)}/materials/${encodeURIComponent(row.id)}?slug=${encodeURIComponent(slug)}`,
         { method: 'DELETE' },
       );
-      if (!res.ok) { setRowError(`Failed (${res.status})`); return; }
+      if (!res.ok) {
+        // Reset confirm state so the row isn't stuck — the error shows below.
+        onUpdate(row.id, { pendingDelete: false });
+        setRowError(`Failed (${res.status})`);
+        return;
+      }
       onRemove(row.id);
     } finally {
       setBusy(false);
@@ -146,7 +139,6 @@ function TriageRow({ row, courseCode, slug, onUpdate, onRemove }: TriageRowProps
   return (
     <li className={'flex flex-col gap-1 px-3 py-2.5 ' + (row.ignored ? 'opacity-50' : '')}>
       <div className="flex items-center gap-2">
-        <span aria-hidden className="w-4 shrink-0 text-center text-sm">{kindIcon(row)}</span>
         <span
           className={'min-w-0 flex-1 truncate text-sm ' + (row.ignored ? 'line-through text-muted-foreground' : '')}
         >
@@ -156,12 +148,12 @@ function TriageRow({ row, courseCode, slug, onUpdate, onRemove }: TriageRowProps
           {sizeDescriptor(row)}
         </span>
 
-        {/* Move up */}
+        {/* Move up — hidden in high tier */}
         {!isHigh && (
           <button
             type="button"
             aria-label="move up"
-            onClick={() => void moveTier(tierUp(row.tier as Tier))}
+            onClick={() => void moveTier(tierUp(row.tier))}
             disabled={busy}
             className="shrink-0 text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-30"
             title="Move to higher tier"
@@ -170,12 +162,12 @@ function TriageRow({ row, courseCode, slug, onUpdate, onRemove }: TriageRowProps
           </button>
         )}
 
-        {/* Move down */}
+        {/* Move down — hidden in background tier */}
         {!isBackground && (
           <button
             type="button"
             aria-label="move down"
-            onClick={() => void moveTier(tierDown(row.tier as Tier))}
+            onClick={() => void moveTier(tierDown(row.tier))}
             disabled={busy}
             className="shrink-0 text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-30"
             title="Move to lower tier"
@@ -194,7 +186,7 @@ function TriageRow({ row, courseCode, slug, onUpdate, onRemove }: TriageRowProps
           {row.ignored ? 'include' : 'ignore'}
         </button>
 
-        {/* Delete — inline confirm pattern from OtherMaterialsBox */}
+        {/* Delete — inline confirm pattern */}
         {row.pendingDelete ? (
           <button
             type="button"
@@ -274,10 +266,15 @@ function TierSection({ tier, rows, courseCode, slug, onUpdate, onRemove }: TierS
 // Main component
 // ---------------------------------------------------------------------------
 
-export function TriageStep({ courseCode, slug, manifest, onIngested }: TriageStepProps) {
-  // Initialise local row state from manifest; ignored defaults to false.
+export function TriageStep({ courseCode, slug, materials, onIngested }: TriageStepProps) {
+  // Initialise local row state from live materials.
+  // null-tier materials default to 'high' (full pipeline = current behavior).
   const [rows, setRows] = useState<RowState[]>(
-    manifest.rows.map((r) => ({ ...r, ignored: false, pendingDelete: false })),
+    materials.map((m) => ({
+      ...m,
+      tier: (m.tier ?? 'high') as Tier,
+      pendingDelete: false,
+    })),
   );
   const [ingesting, setIngesting] = useState(false);
   const [ingestError, setIngestError] = useState<string | null>(null);
@@ -294,15 +291,13 @@ export function TriageStep({ courseCode, slug, manifest, onIngested }: TriageSte
   const middleRows = rows.filter((r) => r.tier === 'middle');
   const backgroundRows = rows.filter((r) => r.tier === 'background');
 
-  const hasMiddleRows = middleRows.length > 0;
-  const showSlidesNudge = !hasMiddleRows && !manifest.decksPresent;
+  // Slides nudge: show when no material has tier==='middle'.
+  const showSlidesNudge = middleRows.length === 0;
 
   async function handleIngest(): Promise<void> {
     setIngesting(true);
     setIngestError(null);
     try {
-      // NOTE: v2-backfill enqueues all non-ignored materials; it does not yet
-      // honor `tier` for depth-differentiated extraction — that is Increment 3.
       const res = await fetch('/api/admin/v2-backfill', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -325,7 +320,7 @@ export function TriageStep({ courseCode, slug, manifest, onIngested }: TriageSte
     <div className="rounded-lg border bg-card p-6">
       {/* Mono-caps step header — matches CaptureMaterialsStep pattern */}
       <div className="mb-1 flex items-center gap-2 font-mono-plex text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-        <span>Step 1 of 2 · Triage materials</span>
+        <span>Step 2 of 3 · Triage materials</span>
         <span aria-hidden className="text-foreground">●</span>
         <span aria-hidden>──</span>
         <span aria-hidden>○</span>
@@ -366,20 +361,7 @@ export function TriageStep({ courseCode, slug, manifest, onIngested }: TriageSte
         />
       </div>
 
-      {/* Skipped files */}
-      {manifest.skipped.length > 0 && (
-        <div className="mt-4 space-y-1">
-          {manifest.skipped.map((s, i) => (
-            <p key={i} className="text-[11px] text-muted-foreground">
-              ⚠ Skipped (won&apos;t be pulled in):{' '}
-              <span className="font-medium">{s.fileName}</span>
-              {' '}— {s.reason}
-            </p>
-          ))}
-        </div>
-      )}
-
-      {/* Slides nudge — only when no middle-tier rows AND no decks detected */}
+      {/* Slides nudge — only when no middle-tier rows */}
       {showSlidesNudge && (
         <div className="mt-4 flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50/50 px-3 py-2">
           <span aria-hidden>💡</span>

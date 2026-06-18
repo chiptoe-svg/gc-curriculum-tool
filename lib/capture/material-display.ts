@@ -66,7 +66,7 @@ export function hasMaterials(count: number): boolean {
  */
 export function shouldShowMaterialsStep(args: {
   stage: string;
-  landingStep: 'materials' | 'interview';
+  landingStep: 'materials' | 'ingest' | 'interview';
 }): boolean {
   return args.stage === 'chat' && args.landingStep === 'materials';
 }
