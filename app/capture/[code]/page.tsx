@@ -13,6 +13,7 @@ import { getLatestSessionId, getSessionInstructor, listPriorSessionSummaries } f
 import { composeSessionBriefing } from '@/lib/ai/agent/session-briefing';
 import type { SessionBriefingView } from './CaptureChatPanel';
 import { CaptureClient } from './CaptureClient';
+import { isTriageEnabled } from '@/lib/capture/triage-flag';
 import { FeedbackLink } from '@/app/FeedbackLink';
 
 export const dynamic = 'force-dynamic';
@@ -183,6 +184,7 @@ export default async function CapturePage({ params, searchParams }: Props) {
           hasSnapshot={latestSnapshot != null}
           initialInstructor={initialInstructor}
           priorBriefings={priorBriefings}
+          triageEnabled={isTriageEnabled()}
         />
       </main>
     </div>

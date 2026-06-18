@@ -15,7 +15,6 @@ import { CaptureHero } from './CaptureHero';
 import { CaptureMaterialsStep } from './CaptureMaterialsStep';
 import { TriageStep } from './TriageStep';
 import { shouldShowMaterialsStep } from '@/lib/capture/material-display';
-import { isTriageEnabled } from '@/lib/capture/triage-flag';
 import { FACULTY_ROSTER, DEPARTMENT_CANONICAL } from '@/lib/faculty';
 
 interface Props {
@@ -37,6 +36,10 @@ interface Props {
   catalogSyncedAt: string | null;
   /** True when a non-retired snapshot exists — gates the OKF download link on the review panel. */
   hasSnapshot?: boolean;
+  /** Whether the tiered-ingestion triage flow is enabled. Resolved on the SERVER
+   *  (page.tsx) and passed down — process.env.COURSECAPTURE_TRIAGE is not visible
+   *  to this client component, so it must arrive as a prop. */
+  triageEnabled?: boolean;
 }
 
 type Stage = 'chat' | 'generating' | 'reconcile' | 'review';
@@ -65,6 +68,7 @@ export function CaptureClient({
   priorBriefings,
   catalogSyncedAt,
   hasSnapshot,
+  triageEnabled = false,
 }: Props) {
   const [course, setCourse] = useState<CourseCatalogView>(initialCourse);
   const courseCode = course.code;
@@ -308,7 +312,7 @@ export function CaptureClient({
           catalogSyncedAt={catalogSyncedAt}
           onMaterialsChange={setMaterials}
           onCourseChange={setCourse}
-          onContinue={() => setLandingStep(isTriageEnabled() ? 'ingest' : 'interview')}
+          onContinue={() => setLandingStep(triageEnabled ? 'ingest' : 'interview')}
           instructor={chooserInstructor}
           onInstructorChange={setChooserInstructor}
         />

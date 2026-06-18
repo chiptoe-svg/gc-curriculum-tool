@@ -2,11 +2,15 @@
  * CaptureClient triage-step wiring tests.
  *
  * These verify that:
- * 1. When isTriageEnabled() returns true, clicking Continue from the materials
+ * 1. With the `triageEnabled` prop true, clicking Continue from the materials
  *    step renders TriageStep (not the interview).
- * 2. When isTriageEnabled() returns false, clicking Continue goes directly to
- *    the interview step (unchanged flag-off behavior).
+ * 2. With `triageEnabled` false, clicking Continue goes directly to the
+ *    interview step (unchanged flag-off behavior).
  * 3. TriageStep's onIngested transitions to the interview.
+ *
+ * The flag is read server-side (page.tsx → isTriageEnabled) and passed as the
+ * `triageEnabled` prop; this client component never reads process.env directly
+ * (it can't — non-NEXT_PUBLIC env vars aren't in the browser bundle).
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
@@ -63,11 +67,10 @@ vi.mock('@/lib/faculty', () => ({
 }));
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 
-// Triage flag — default OFF; individual tests override.
-const triageFlagMock = vi.fn().mockReturnValue(false);
-vi.mock('@/lib/capture/triage-flag', () => ({
-  isTriageEnabled: () => triageFlagMock(),
-}));
+// Triage is gated by the `triageEnabled` PROP (resolved server-side in page.tsx
+// and passed down). It is NOT read from process.env in this client component —
+// so tests drive it via the prop, not a module mock. (A module mock here would
+// mask the real server→client boundary, which is exactly the bug this guards.)
 
 import { CaptureClient } from '@/app/capture/[code]/CaptureClient';
 import type { CaptureMaterial, CourseCatalogView } from '@/app/capture/[code]/MaterialsPanel';
@@ -132,7 +135,6 @@ const baseProps = {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  triageFlagMock.mockReturnValue(false);
 });
 
 // ---------------------------------------------------------------------------
@@ -141,8 +143,7 @@ beforeEach(() => {
 
 describe('CaptureClient triage wiring', () => {
   it('flag OFF: Continue from materials step goes directly to interview (no triage step)', () => {
-    triageFlagMock.mockReturnValue(false);
-    render(<CaptureClient {...baseProps} />);
+    render(<CaptureClient {...baseProps} triageEnabled={false} />);
 
     // Materials step is visible initially
     expect(screen.getByTestId('materials-step')).toBeTruthy();
@@ -159,8 +160,7 @@ describe('CaptureClient triage wiring', () => {
   });
 
   it('flag ON: Continue from materials step shows TriageStep', () => {
-    triageFlagMock.mockReturnValue(true);
-    render(<CaptureClient {...baseProps} />);
+    render(<CaptureClient {...baseProps} triageEnabled={true} />);
 
     // Materials step is visible initially
     expect(screen.getByTestId('materials-step')).toBeTruthy();
@@ -177,8 +177,7 @@ describe('CaptureClient triage wiring', () => {
   });
 
   it('flag ON: TriageStep onIngested transitions to the interview', async () => {
-    triageFlagMock.mockReturnValue(true);
-    render(<CaptureClient {...baseProps} />);
+    render(<CaptureClient {...baseProps} triageEnabled={true} />);
 
     // Advance to triage step
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
