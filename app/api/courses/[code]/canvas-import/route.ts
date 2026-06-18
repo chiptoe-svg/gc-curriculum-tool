@@ -13,24 +13,7 @@ import { assembleCanvasMaterials } from '@/lib/canvas/assemble-canvas-materials'
 import { htmlToText } from '@/lib/canvas/htmlToText';
 import { extractText, SUPPORTED_MIME_TYPES, type ExtractedMimeType } from '@/lib/courses/extract-text';
 import { isLegacyOfficeMime } from '@/lib/courses/legacy-converter';
-
-// Extension-to-MIME map used as a fallback when Canvas reports an empty or
-// generic content-type. Mirrors the one in scripts/backfill-canvas-file-mime-types.ts.
-const EXT_TO_MIME: Record<string, string> = {
-  pdf: 'application/pdf',
-  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  doc: 'application/msword',
-  pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  ppt: 'application/vnd.ms-powerpoint',
-  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  xls: 'application/vnd.ms-excel',
-  csv: 'text/csv',
-  html: 'text/html',
-  htm: 'text/html',
-  png: 'image/png',
-  jpg: 'image/jpeg',
-  jpeg: 'image/jpeg',
-};
+import { EXT_TO_MIME } from '@/lib/canvas/ext-to-mime';
 
 export const maxDuration = 120;
 

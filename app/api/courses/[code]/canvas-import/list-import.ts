@@ -30,24 +30,7 @@ import { probeSize } from '@/lib/capture/size-probe';
 import { putLocal, courseSlug, safeFilename } from '@/lib/storage/local-storage';
 import { SUPPORTED_MIME_TYPES } from '@/lib/courses/extract-text';
 import { isLegacyOfficeMime } from '@/lib/courses/legacy-converter';
-
-// Extension-to-MIME fallback — identical to the one in route.ts so both
-// paths resolve mimeTypes consistently.
-const EXT_TO_MIME: Record<string, string> = {
-  pdf: 'application/pdf',
-  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  doc: 'application/msword',
-  pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  ppt: 'application/vnd.ms-powerpoint',
-  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  xls: 'application/vnd.ms-excel',
-  csv: 'text/csv',
-  html: 'text/html',
-  htm: 'text/html',
-  png: 'image/png',
-  jpg: 'image/jpeg',
-  jpeg: 'image/jpeg',
-};
+import { EXT_TO_MIME } from '@/lib/canvas/ext-to-mime';
 
 const CANVAS_FILE_ID_RE = /\/files\/(\d+)(?:\/|\?|"|$)/g;
 const MAX_FILES_PER_IMPORT = 20;
