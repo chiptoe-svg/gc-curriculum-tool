@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { isValidSlug } from '@/lib/slug';
 import { hashIp } from '@/lib/ip-hash';
+import { isTriageEnabled } from '@/lib/capture/triage-flag';
+import { runListImport } from './list-import';
 import { getCourseByCode, updateCourseCanvasImport } from '@/lib/db/courses-queries';
 import { setPairedCanvasProvenance } from '@/lib/db/course-codes-queries';
 import { insertMaterial, findMaterialByFileName, updateMaterialMetadata, updateExtractionResult } from '@/lib/db/course-materials-queries';
@@ -46,7 +48,7 @@ export async function POST(req: Request, { params }: Ctx) {
   // is returned as a JSON error rather than Next.js's HTML 500 page —
   // the client parses the response as JSON and breaks on HTML.
   try {
-    return await runImport(req, params);
+    return await (isTriageEnabled() ? runListImport(req, params) : runImport(req, params));
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     const stack = e instanceof Error ? e.stack : undefined;
