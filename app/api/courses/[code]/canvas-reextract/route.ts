@@ -8,7 +8,8 @@ import { updateMaterialMetadata, updateExtractionResult, type ExtractionMethod }
 import { enqueue } from '@/lib/capture/ingest-queue';
 import { fetchCanvasFileMeta } from '@/lib/canvas/fetchCanvasCourse';
 import { extractText, SUPPORTED_MIME_TYPES, type ExtractedMimeType } from '@/lib/courses/extract-text';
-import { LEGACY_OFFICE_MIME_TYPES } from '@/lib/courses/material-extractor';
+import { isLegacyOfficeMime } from '@/lib/courses/legacy-converter';
+import { EXT_TO_MIME } from '@/lib/canvas/ext-to-mime';
 
 /**
  * Re-extract existing Canvas File attachments for a course IN PLACE,
@@ -30,19 +31,6 @@ export const maxDuration = 120;
 
 const CANVAS_FILE_ID_RE = /\/files\/(\d+)(?:\/|\?|"|$)/g;
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
-
-const EXT_TO_MIME: Record<string, string> = {
-  pdf: 'application/pdf',
-  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  csv: 'text/csv',
-  html: 'text/html',
-  htm: 'text/html',
-  png: 'image/png',
-  jpg: 'image/jpeg',
-  jpeg: 'image/jpeg',
-};
 
 function resolveMimeType(reported: string, displayName: string): string {
   if (reported && reported !== 'application/octet-stream') return reported;
@@ -150,11 +138,9 @@ async function run(req: Request, params: Ctx['params']): Promise<Response> {
       continue;
     }
     const resolvedMime = resolveMimeType(meta.mimeType, meta.displayName);
-    if (LEGACY_OFFICE_MIME_TYPES.has(resolvedMime)) {
-      results.push({ fileName: meta.displayName, status: 'skipped', reason: `legacy Office format ${resolvedMime} (re-save as modern)` });
-      continue;
-    }
-    if (!(SUPPORTED_MIME_TYPES as readonly string[]).includes(resolvedMime)) {
+    const isSupported = (SUPPORTED_MIME_TYPES as readonly string[]).includes(resolvedMime);
+    const isLegacy = isLegacyOfficeMime(resolvedMime);
+    if (!isSupported && !isLegacy) {
       results.push({ fileName: meta.displayName, status: 'skipped', reason: `unsupported type ${resolvedMime}` });
       continue;
     }

@@ -40,24 +40,9 @@ import { courseMaterials } from '@/lib/db/schema';
 import { eq, and, like } from 'drizzle-orm';
 import { fetchCanvasFileMeta } from '@/lib/canvas/fetchCanvasCourse';
 import { extractText, SUPPORTED_MIME_TYPES, type ExtractedMimeType } from '@/lib/courses/extract-text';
-import { LEGACY_OFFICE_MIME_TYPES } from '@/lib/courses/material-extractor';
+import { isLegacyOfficeMime } from '@/lib/courses/legacy-converter';
+import { EXT_TO_MIME } from '@/lib/canvas/ext-to-mime';
 import { parseCanvasUrl } from '@/lib/canvas/parseCanvasUrl';
-
-// Map filename extension → modern MIME type for cases where Canvas reports
-// an empty or missing content-type. Mirrors the EXT_TO_MIME table in the
-// backfill script.
-const EXT_TO_MIME: Record<string, string> = {
-  pdf: 'application/pdf',
-  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  csv: 'text/csv',
-  html: 'text/html',
-  htm: 'text/html',
-  png: 'image/png',
-  jpg: 'image/jpeg',
-  jpeg: 'image/jpeg',
-};
 
 function resolveMimeType(reported: string, displayName: string): string {
   if (reported && reported !== 'application/octet-stream') return reported;
@@ -161,12 +146,9 @@ async function main() {
       continue;
     }
     const resolvedMime = resolveMimeType(meta.mimeType, meta.displayName);
-    if (LEGACY_OFFICE_MIME_TYPES.has(resolvedMime)) {
-      console.log(`  [skip] ${meta.displayName} — legacy Office format (${resolvedMime}); re-save as modern format`);
-      skipped++;
-      continue;
-    }
-    if (!(SUPPORTED_MIME_TYPES as readonly string[]).includes(resolvedMime)) {
+    const isSupported = (SUPPORTED_MIME_TYPES as readonly string[]).includes(resolvedMime);
+    const isLegacy = isLegacyOfficeMime(resolvedMime);
+    if (!isSupported && !isLegacy) {
       console.log(`  [skip] ${meta.displayName} — unsupported type ${resolvedMime}`);
       skipped++;
       continue;

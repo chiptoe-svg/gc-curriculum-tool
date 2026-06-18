@@ -22,25 +22,7 @@
 import { db } from '@/lib/db/client';
 import { courseMaterials } from '@/lib/db/schema';
 import { eq, and, like } from 'drizzle-orm';
-
-const EXT_TO_MIME: Record<string, string> = {
-  pdf: 'application/pdf',
-  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  doc: 'application/msword',
-  pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  ppt: 'application/vnd.ms-powerpoint',
-  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  xls: 'application/vnd.ms-excel',
-  csv: 'text/csv',
-  txt: 'text/plain',
-  html: 'text/html',
-  htm: 'text/html',
-  png: 'image/png',
-  jpg: 'image/jpeg',
-  jpeg: 'image/jpeg',
-  gif: 'image/gif',
-  svg: 'image/svg+xml',
-};
+import { EXT_TO_MIME } from '@/lib/canvas/ext-to-mime';
 
 function inferMimeFromFileName(fileName: string): string | null {
   // Strip the "Canvas File: " prefix and look at extension.
