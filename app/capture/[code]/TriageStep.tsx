@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { CaptureMaterial } from './MaterialsPanel';
 import type { Tier } from '@/lib/capture/material-tier';
 import { estimateSeconds, estimateTotal, formatDuration } from '@/lib/capture/ingest-estimate';
+import { fetchCourseMaterials } from '@/lib/capture/fetch-course-materials';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -282,11 +283,37 @@ export function TriageStep({ courseCode, slug, materials, onIngested }: TriageSt
   const [ingesting, setIngesting] = useState(false);
   const [ingestError, setIngestError] = useState<string | null>(null);
 
+  // Tiers are classified in the background after upload (see the materials POST
+  // route's after()), so a file added moments before reaching this step may still
+  // have a null tier in the props snapshot (rendered as 'high'). Refetch on mount
+  // and poll briefly until every tier has settled, adopting the server's tiers —
+  // but stop the moment the faculty member moves/removes anything, so we never
+  // clobber a deliberate adjustment.
+  const userTouched = useRef(false);
+  useEffect(() => {
+    let cancelled = false;
+    let tries = 0;
+    const sync = async () => {
+      if (cancelled || userTouched.current) return;
+      const fresh = await fetchCourseMaterials(courseCode, slug);
+      if (cancelled || userTouched.current || !fresh) return;
+      setRows(fresh.map((m) => ({ ...m, tier: (m.tier ?? 'high') as Tier, pendingDelete: false })));
+      tries += 1;
+      if (fresh.some((m) => m.tier == null) && tries < 6) {
+        setTimeout(() => { void sync(); }, 1500);
+      }
+    };
+    void sync();
+    return () => { cancelled = true; };
+  }, [courseCode, slug]);
+
   function handleUpdate(id: string, patch: Partial<RowState>): void {
+    userTouched.current = true;
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
   }
 
   function handleRemove(id: string): void {
+    userTouched.current = true;
     setRows((prev) => prev.filter((r) => r.id !== id));
   }
 

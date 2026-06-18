@@ -146,6 +146,29 @@ describe('CanvasBox', () => {
     expect(screen.getByText(/not used — the Google Sheet catalog already provides/i)).toBeTruthy();
   });
 
+  it('overridden FERPA Canvas File (autoSetAside, not ignored) looks normal — no why-ignored band', () => {
+    const file = mat({
+      id: 'cf1',
+      fileName: 'Canvas File: gradebook.xlsx',
+      extractedText: 'data',
+      autoSetAside: true,
+      ignored: false,
+      setAsideReason: 'Contains student IDs — FERPA risk',
+    });
+    render(<CanvasBox course={course} materials={[file]} slug="s" onMaterialsChange={noop} />);
+    fireEvent.click(screen.getByRole('button', { name: /canvas/i }));
+    expect(screen.queryByText(/contains student ids/i)).toBeNull();
+    expect(screen.queryByRole('button', { name: /include anyway/i })).toBeNull();
+  });
+
+  it('triageEnabled hides per-row indexing label and the header Index now button', () => {
+    const m = mat({ id: 'p', fileName: 'Canvas: Pages', extractedText: '## Page\nwords', indexingStatus: 'pending' });
+    render(<CanvasBox course={course} materials={[m]} slug="s" onMaterialsChange={noop} triageEnabled />);
+    fireEvent.click(screen.getByRole('button', { name: /canvas/i }));
+    expect(screen.queryByText(/not indexed yet/i)).toBeNull();
+    expect(screen.queryByRole('button', { name: /^index now$/i })).toBeNull();
+  });
+
   it('canvas header shows total points when assignments have point values', () => {
     // Two assignments: 100 pts + 50 pts = 150 total pts
     const blob = '## Assignment One (100 pts)\ndescription one\n## Assignment Two (50 pts)\ndescription two';

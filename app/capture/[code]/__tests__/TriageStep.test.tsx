@@ -4,6 +4,9 @@ import type { CaptureMaterial } from '@/app/capture/[code]/MaterialsPanel';
 import { estimateTotal, estimateSeconds, formatDuration } from '@/lib/capture/ingest-estimate';
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+// The mount-time tier sync calls fetchCourseMaterials; stub it to null so it's a
+// no-op and doesn't consume the fetch mock these tests assert against.
+vi.mock('@/lib/capture/fetch-course-materials', () => ({ fetchCourseMaterials: vi.fn(async () => null) }));
 
 import { TriageStep } from '@/app/capture/[code]/TriageStep';
 

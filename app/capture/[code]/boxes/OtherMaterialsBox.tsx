@@ -3,6 +3,8 @@
 import { useMemo, useRef, useState } from 'react';
 import { IndexingStatusDot, type CaptureMaterial, type CourseCatalogView } from '../MaterialsPanel';
 import { fetchCourseMaterials } from '@/lib/capture/fetch-course-materials';
+import { uploadFileWithProgress } from '@/lib/capture/upload-with-progress';
+import { UploadProgressBar, type UploadProgressState } from '../UploadProgressBar';
 import {
   materialsByBox, materialProvenance, PROVENANCE_LABEL,
   materialReadability, hasFixablyUnindexed,
@@ -14,6 +16,13 @@ interface Props {
   materials: CaptureMaterial[];
   slug: string;
   onMaterialsChange: (next: CaptureMaterial[]) => void;
+  /**
+   * When true (two-phase triage flow), indexing is deferred to the Ingest step,
+   * so the per-row indexing status (dot + "not indexed yet") and the "Index now"
+   * button are hidden — pending isn't a problem here, it's the expected pre-ingest
+   * state. Default false keeps the legacy at-upload-index UI.
+   */
+  triageEnabled?: boolean;
 }
 
 const ALLOWED_UPLOAD_TYPES = new Set([
@@ -45,9 +54,11 @@ interface RowProps {
   onIndexNow: () => void;
   onMaterialsChange: (next: CaptureMaterial[]) => void;
   allMaterials: CaptureMaterial[];
+  /** Hide the indexing status + "Index now" affordance (triage flow). */
+  triageEnabled: boolean;
 }
 
-function OtherRow({ m, courseCode, slug, indexing, onIndexNow, onMaterialsChange, allMaterials }: RowProps) {
+function OtherRow({ m, courseCode, slug, indexing, onIndexNow, onMaterialsChange, allMaterials, triageEnabled }: RowProps) {
   const [busy, setBusy] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [rowError, setRowError] = useState<string | null>(null);
@@ -56,7 +67,9 @@ function OtherRow({ m, courseCode, slug, indexing, onIndexNow, onMaterialsChange
 
   const prov = materialProvenance(m);
   const read = materialReadability(m);
-  const dimmed = m.ignored || m.autoSetAside;
+  // Overridden FERPA/auto rows (autoSetAside but included) look normal — only
+  // currently-excluded rows are dimmed.
+  const dimmed = m.ignored;
   const fixable = hasFixablyUnindexed([m]);
   const showLink = prov === 'linked' && m.blobUrl;
 
@@ -157,14 +170,16 @@ function OtherRow({ m, courseCode, slug, indexing, onIndexNow, onMaterialsChange
         <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
           {PROVENANCE_LABEL[prov]}
         </span>
-        <span
-          className={'flex shrink-0 items-center gap-1 text-[11px] ' + (read.readable ? 'text-muted-foreground' : 'text-amber-700 dark:text-amber-400')}
-          title={read.reason ?? ''}
-        >
-          <IndexingStatusDot status={m.indexingStatus} indexedAt={m.indexedAt} />
-          {read.label}
-        </span>
-        {fixable && (
+        {!triageEnabled && (
+          <span
+            className={'flex shrink-0 items-center gap-1 text-[11px] ' + (read.readable ? 'text-muted-foreground' : 'text-amber-700 dark:text-amber-400')}
+            title={read.reason ?? ''}
+          >
+            <IndexingStatusDot status={m.indexingStatus} indexedAt={m.indexedAt} />
+            {read.label}
+          </span>
+        )}
+        {fixable && !triageEnabled && (
           <button
             type="button"
             onClick={onIndexNow}
@@ -242,16 +257,13 @@ function OtherRow({ m, courseCode, slug, indexing, onIndexNow, onMaterialsChange
       {/* Why-ignored reason + FERPA include-anyway — parity with MaterialsPanel's
           MaterialRow. Shows for any ignored or auto-set-aside row, not just Canvas
           syllabus (generalizing beyond the original Canvas-only display). */}
-      {(m.ignored || m.autoSetAside) && (
+      {m.ignored && (
         <div className="mt-0.5 flex items-start justify-between gap-2 rounded border border-amber-200 bg-amber-50/50 px-2 py-1">
           <p className="text-[11px] leading-snug italic text-amber-800">
             {m.setAsideReason
               ?? (m.autoSetAside
                     ? 'set aside automatically'
                     : 'manually toggled off by the faculty reviewer')}
-            {m.autoSetAside && !m.ignored && (
-              <span className="ml-1 not-italic text-amber-700">(overridden — included in interview)</span>
-            )}
           </p>
           {m.autoSetAside && m.ignored && (
             <button
@@ -283,11 +295,12 @@ function OtherRow({ m, courseCode, slug, indexing, onIndexNow, onMaterialsChange
 // Box component
 // ---------------------------------------------------------------------------
 
-export function OtherMaterialsBox({ course, materials, slug, onMaterialsChange }: Props) {
+export function OtherMaterialsBox({ course, materials, slug, onMaterialsChange, triageEnabled = false }: Props) {
   const others = useMemo(() => materialsByBox(materials).other, [materials]);
   const [open, setOpen] = useState(false);
   const [indexing, setIndexing] = useState(false);
   const [uploading, setUploading] = useState<string | null>(null);
+  const [progress, setProgress] = useState<UploadProgressState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [uploadBgMessage, setUploadBgMessage] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -312,25 +325,25 @@ export function OtherMaterialsBox({ course, materials, slug, onMaterialsChange }
     const failures: string[] = [];
     let queuedCount = 0;
     try {
-      // Upload sequentially — each POST stores + enqueues and returns fast
-      // (background ingest), so a batch is cheap and we avoid a request burst.
+      // Upload sequentially — each POST stores + returns fast (classification
+      // runs in the background server-side), so a batch is cheap and we avoid a
+      // request burst. One byte-level progress bar tracks the current file.
       for (let i = 0; i < accepted.length; i++) {
         const file = accepted[i]!;
         setUploading(accepted.length > 1 ? `${file.name} (${i + 1}/${accepted.length})` : file.name);
+        setProgress({ fileName: file.name, index: i + 1, total: accepted.length, pct: 0 });
         try {
-          const form = new FormData();
-          form.set('slug', slug);
-          form.set('file', file);
-          const res = await fetch(`/api/courses/${encodeURIComponent(course.code)}/materials`, {
-            method: 'POST',
-            body: form,
+          const res = await uploadFileWithProgress({
+            url: `/api/courses/${encodeURIComponent(course.code)}/materials`,
+            file,
+            slug,
+            onProgress: (p) => setProgress({ fileName: file.name, index: i + 1, total: accepted.length, pct: p.pct }),
           });
-          const json = await res.json().catch(() => ({}));
           if (!res.ok) {
-            failures.push(`${file.name}: ${(json as { error?: string }).error ?? `failed (${res.status})`}`);
+            failures.push(`${file.name}: ${(res.json as { error?: string }).error ?? `failed (${res.status})`}`);
             continue;
           }
-          if ((json as { indexingStatus?: string }).indexingStatus === 'queued') queuedCount++;
+          if ((res.json as { indexingStatus?: string }).indexingStatus === 'queued') queuedCount++;
         } catch (e) {
           failures.push(`${file.name}: ${e instanceof Error ? e.message : 'upload failed'}`);
         }
@@ -347,6 +360,7 @@ export function OtherMaterialsBox({ course, materials, slug, onMaterialsChange }
       await refresh();
     } finally {
       setUploading(null);
+      setProgress(null);
       if (inputRef.current) inputRef.current.value = '';
     }
   }
@@ -405,6 +419,11 @@ export function OtherMaterialsBox({ course, materials, slug, onMaterialsChange }
         />
       </header>
 
+      {progress && (
+        <div className="px-3 pb-2">
+          <UploadProgressBar state={progress} />
+        </div>
+      )}
       {error && <p className="px-3 pb-2 text-[11px] text-amber-700 dark:text-amber-400">{error}</p>}
       {uploadBgMessage && (
         <p className="px-3 pb-2 text-[11px] text-amber-700 dark:text-amber-400">{uploadBgMessage}</p>
@@ -428,6 +447,7 @@ export function OtherMaterialsBox({ course, materials, slug, onMaterialsChange }
                   onIndexNow={() => void indexNow()}
                   onMaterialsChange={onMaterialsChange}
                   allMaterials={materials}
+                  triageEnabled={triageEnabled}
                 />
               ))}
             </ul>

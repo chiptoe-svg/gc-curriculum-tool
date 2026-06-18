@@ -25,6 +25,7 @@ const {
   isTriageEnabled,
   probeSize,
   classifyManifestItem,
+  afterCallbacks,
 } = vi.hoisted(() => ({
   isValidSlug: vi.fn(),
   getCourseByCode: vi.fn(),
@@ -50,6 +51,9 @@ const {
   isTriageEnabled: vi.fn(),
   probeSize: vi.fn(),
   classifyManifestItem: vi.fn(),
+  // Captures callbacks scheduled via next/server's after() so tests can flush
+  // the background tier-classification work and assert on it.
+  afterCallbacks: [] as Array<() => unknown>,
 }));
 
 vi.mock('@/lib/slug', () => ({ isValidSlug }));
@@ -81,9 +85,21 @@ vi.mock('@/lib/capture/ingest-queue', () => ({ enqueue }));
 vi.mock('@/lib/capture/triage-flag', () => ({ isTriageEnabled }));
 vi.mock('@/lib/capture/size-probe', () => ({ probeSize }));
 vi.mock('@/lib/capture/material-tier', () => ({ classifyManifestItem }));
+// after() requires a Next request scope (absent in direct route invocation);
+// capture the scheduled callbacks so tests can run them explicitly.
+vi.mock('next/server', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('next/server')>();
+  return { ...actual, after: (cb: () => unknown) => { afterCallbacks.push(cb); } };
+});
 
 import { POST } from '@/app/api/courses/[code]/materials/route';
 import { DELETE, PATCH } from '@/app/api/courses/[code]/materials/[id]/route';
+
+/** Run + clear any after() callbacks the route scheduled (background work). */
+async function flushAfter(): Promise<void> {
+  const cbs = afterCallbacks.splice(0);
+  for (const cb of cbs) await cb();
+}
 
 const SLUG = 'valid-slug-12345';
 const CODE = 'GC 3460';
@@ -154,6 +170,7 @@ beforeEach(() => {
   enqueue.mockResolvedValue(undefined);
   probeSize.mockResolvedValue({ sizeBytes: 100_000, pageCount: 5 });
   classifyManifestItem.mockResolvedValue('background');
+  afterCallbacks.splice(0);
 });
 
 describe('POST /api/courses/[code]/materials', () => {
@@ -214,7 +231,7 @@ describe('POST /api/courses/[code]/materials', () => {
 
   // ── Triage-flag-aware defer (Fix A) ──────────────────────────────────────
 
-  it('[triage ON] does NOT call enqueue, sets tier, responds pending', async () => {
+  it('[triage ON] responds pending without enqueue; classifies tier in the background (after upload)', async () => {
     isTriageEnabled.mockReturnValue(true);
     probeSize.mockResolvedValue({ sizeBytes: 100_000, pageCount: 3 });
     classifyManifestItem.mockResolvedValue('background');
@@ -230,19 +247,25 @@ describe('POST /api/courses/[code]/materials', () => {
     // Must NOT enqueue
     expect(enqueue).not.toHaveBeenCalled();
 
-    // Must classify + persist tier
+    // Must still store + insert synchronously
+    expect(putLocal).toHaveBeenCalledOnce();
+    expect(insertMaterial).toHaveBeenCalledOnce();
+
+    // Classification is deferred off the request path — it has NOT run yet when
+    // the response returns; it's scheduled via after().
+    expect(classifyManifestItem).not.toHaveBeenCalled();
+    expect(updateMaterialTier).not.toHaveBeenCalled();
+
+    // Flush the background work and assert classification + persistence ran.
+    await flushAfter();
     expect(probeSize).toHaveBeenCalledOnce();
     expect(classifyManifestItem).toHaveBeenCalledWith(
       expect.objectContaining({ kind: 'file', mimeType: 'application/pdf', sizeBytes: 100_000 }),
     );
     expect(updateMaterialTier).toHaveBeenCalledWith('mat-1', 'background');
-
-    // Must still store + insert
-    expect(putLocal).toHaveBeenCalledOnce();
-    expect(insertMaterial).toHaveBeenCalledOnce();
   });
 
-  it('[triage ON] classifier error does not fail the upload', async () => {
+  it('[triage ON] a background classifier error never fails the upload', async () => {
     isTriageEnabled.mockReturnValue(true);
     probeSize.mockRejectedValue(new Error('probe kaboom'));
     classifyManifestItem.mockRejectedValue(new Error('classify kaboom'));
@@ -250,11 +273,15 @@ describe('POST /api/courses/[code]/materials', () => {
     const [req, ctx] = makeUploadReq();
     const res = await POST(req, ctx);
 
-    // Upload must still succeed even if classify/probe throws
+    // Upload must still succeed even if the deferred classify/probe throws.
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json.indexingStatus).toBe('pending');
     expect(enqueue).not.toHaveBeenCalled();
+
+    // Running the background work must not throw (errors are swallowed + logged).
+    await expect(flushAfter()).resolves.toBeUndefined();
+    expect(updateMaterialTier).not.toHaveBeenCalled();
   });
 
   it('[triage OFF] upload calls enqueue and responds queued (unchanged)', async () => {

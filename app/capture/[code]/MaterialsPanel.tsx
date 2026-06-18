@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { CanvasImportZone } from '@/components/CanvasImportZone';
 import { parseCanvasBlob, isCanvasListMaterial } from '@/lib/canvas/parseCanvasBlob';
 import { fetchCourseMaterials } from '@/lib/capture/fetch-course-materials';
+import { uploadFileWithProgress } from '@/lib/capture/upload-with-progress';
+import { UploadProgressBar, type UploadProgressState } from './UploadProgressBar';
 import { CatalogOverview } from './CatalogOverview';
 
 export type IndexingStatus = 'pending' | 'queued' | 'indexing' | 'ready' | 'failed' | 'skipped';
@@ -464,7 +466,7 @@ function MaterialRow({
               <span className="text-muted-foreground/60"> · original cleared after approval</span>
             )}
           </p>
-          {(material.ignored || material.autoSetAside) && (
+          {material.ignored && (
             <div className="mt-1 flex items-start justify-between gap-2 rounded border border-amber-200 bg-amber-50/50 px-2 py-1">
               <p className="text-[11px] leading-snug text-amber-800">
                 <span className="font-medium">Why ignored:</span>{' '}
@@ -474,9 +476,6 @@ function MaterialRow({
                         : material.autoSetAside
                           ? 'flagged by the materials policy'
                           : 'manually toggled off by the faculty reviewer')}
-                {material.autoSetAside && !material.ignored && (
-                  <span className="ml-1 italic text-amber-700">(overridden — included in interview)</span>
-                )}
               </p>
               {material.autoSetAside && material.ignored && (
                 <button
@@ -623,6 +622,7 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadBgMessage, setUploadBgMessage] = useState<string | null>(null);
   const [uploading, setUploading] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<UploadProgressState | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
   const [canvasImportOpen, setCanvasImportOpen] = useState(false);
@@ -1052,28 +1052,28 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
     const failures: string[] = [];
     let queuedCount = 0;
     try {
-      // Upload sequentially — each POST stores + enqueues and returns fast
-      // (background ingest), so a batch is cheap and avoids a request burst.
+      // Upload sequentially — each POST stores + returns fast (classification
+      // runs in the background server-side), so a batch is cheap and avoids a
+      // request burst. One byte-level progress bar tracks the current file.
       for (let i = 0; i < accepted.length; i++) {
         const file = accepted[i]!;
         setUploading(accepted.length > 1 ? `${file.name} (${i + 1}/${accepted.length})` : file.name);
+        setUploadProgress({ fileName: file.name, index: i + 1, total: accepted.length, pct: 0 });
         try {
-          const form = new FormData();
-          form.set('slug', slug);
-          form.set('file', file);
-          const res = await fetch(`/api/courses/${encodeURIComponent(course.code)}/materials`, {
-            method: 'POST',
-            body: form,
+          const res = await uploadFileWithProgress({
+            url: `/api/courses/${encodeURIComponent(course.code)}/materials`,
+            file,
+            slug,
+            onProgress: (p) => setUploadProgress({ fileName: file.name, index: i + 1, total: accepted.length, pct: p.pct }),
           });
-          const json = await res.json().catch(() => ({}));
           if (!res.ok) {
-            failures.push(`${file.name}: ${(json as { error?: string }).error ?? `failed (${res.status})`}`);
+            failures.push(`${file.name}: ${(res.json as { error?: string }).error ?? `failed (${res.status})`}`);
             continue;
           }
           // The POST response is trimmed to {id, fileName, blobUrl, indexingStatus}
           // (extraction now runs in the background worker), so build the optimistic
           // row from the local File; the polling effect refreshes it to terminal.
-          const data = json as { id: string; fileName: string; blobUrl?: string; indexingStatus?: IndexingStatus };
+          const data = res.json as { id: string; fileName: string; blobUrl?: string; indexingStatus?: IndexingStatus };
           added.push({
             id: data.id,
             fileName: data.fileName ?? file.name,
@@ -1114,6 +1114,7 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
       }
     } finally {
       setUploading(null);
+      setUploadProgress(null);
       if (inputRef.current) inputRef.current.value = '';
     }
   }
@@ -1455,6 +1456,11 @@ The materials themselves — and their per-item controls (ignore, preview, AI su
                   className="hidden"
                 />
               </div>
+              {uploadProgress && (
+                <div className="mt-2">
+                  <UploadProgressBar state={uploadProgress} />
+                </div>
+              )}
               {uploadError && <p className="mt-2 text-xs text-destructive">{uploadError}</p>}
               {uploadBgMessage && (
                 <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">{uploadBgMessage}</p>

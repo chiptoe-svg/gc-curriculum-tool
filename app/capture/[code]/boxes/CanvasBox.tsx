@@ -19,6 +19,14 @@ interface Props {
   materials: CaptureMaterial[];
   slug: string;
   onMaterialsChange: (next: CaptureMaterial[]) => void;
+  /**
+   * When true (the two-phase triage flow), indexing is deferred to the Ingest
+   * step, so the per-row indexing status (dot, "not indexed yet" label) and the
+   * "Index now" affordance are hidden here — they'd read as "something's wrong"
+   * when nothing is: indexing simply hasn't happened yet by design. Default
+   * false keeps the legacy at-upload-index UI unchanged.
+   */
+  triageEnabled?: boolean;
 }
 
 function isCanvasFile(m: CaptureMaterial): boolean {
@@ -299,7 +307,7 @@ function BundledGroupHeader({
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props) {
+export function CanvasBox({ course, materials, slug, onMaterialsChange, triageEnabled = false }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [tokenOpen, setTokenOpen] = useState(false);
@@ -585,7 +593,7 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
     : '';
   const summary = empty
     ? 'not imported yet'
-    : `${importedPrefix}${itemCount} item${itemCount === 1 ? '' : 's'}${totalPoints !== null ? ` · ${totalPoints} total pts` : ''} · ${readinessLabel}`;
+    : `${importedPrefix}${itemCount} item${itemCount === 1 ? '' : 's'}${totalPoints !== null ? ` · ${totalPoints} total pts` : ''}${triageEnabled ? '' : ` · ${readinessLabel}`}`;
 
   // ── Bundled-mode helpers ────────────────────────────────────────────────────
 
@@ -641,20 +649,22 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
     const ignoredSet = new Set(m.ignoredItems ?? []);
     const items = isList ? parseCanvasBlob(m.extractedText ?? '') : [];
     const rubricNames = rubricsByMaterialId.get(m.id);
-    // Canvas-syllabus why-not-used note (Item 2 — syllabus-specific wording)
-    const syllabusWhyNote = isSyllabus && (m.ignored || m.autoSetAside)
+    // Why-ignored notes show only for currently-excluded rows (m.ignored). A
+    // FERPA/auto row the faculty *overrode* (autoSetAside but included) looks
+    // normal — no warning band — since it's now a regular included material.
+    const syllabusWhyNote = isSyllabus && m.ignored
       ? (m.setAsideReason?.trim() ||
           "not used — the Google Sheet catalog already provides this course's objectives and projects (see the Syllabus & course info box above)")
       : null;
-    // Generic why-ignored for non-syllabus auto-set-aside rows (FERPA, etc.)
-    const showGenericWhyIgnored = !isSyllabus && (m.ignored || m.autoSetAside);
+    // Generic why-ignored for non-syllabus excluded rows (FERPA, etc.)
+    const showGenericWhyIgnored = !isSyllabus && m.ignored;
     return (
       <div key={m.id} className="border-b px-3 py-2 last:border-b-0">
         <div className="flex items-center gap-2">
-          <IndexingStatusDot status={m.indexingStatus} indexedAt={m.indexedAt} />
+          {!triageEnabled && <IndexingStatusDot status={m.indexingStatus} indexedAt={m.indexedAt} />}
           <span className="truncate text-sm font-medium">{m.fileName}</span>
           {isSyllabus && <span className="text-xs text-muted-foreground">(syllabus)</span>}
-          <span className="text-xs text-muted-foreground">{materialReadability(m).label}</span>
+          {!triageEnabled && <span className="text-xs text-muted-foreground">{materialReadability(m).label}</span>}
           {isCanvasFile(m) && (
             <label className="ml-auto flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
               <input
@@ -678,9 +688,6 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
                 ?? (m.autoSetAside
                       ? 'set aside automatically'
                       : 'manually toggled off by the faculty reviewer')}
-              {m.autoSetAside && !m.ignored && (
-                <span className="ml-1 not-italic text-amber-700">(overridden — included in interview)</span>
-              )}
             </p>
             {m.autoSetAside && m.ignored && (
               <button
@@ -789,7 +796,7 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
           </>
         )}
 
-        {canIndex && (
+        {canIndex && !triageEnabled && (
           <button
             type="button"
             onClick={handleIndexNow}

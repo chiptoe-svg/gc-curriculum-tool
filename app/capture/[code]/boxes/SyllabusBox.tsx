@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { CatalogOverview } from '../CatalogOverview';
 import type { CaptureMaterial, CourseCatalogView } from '../MaterialsPanel';
 import { fetchCourseMaterials } from '@/lib/capture/fetch-course-materials';
+import { uploadFileWithProgress } from '@/lib/capture/upload-with-progress';
+import { UploadProgressBar, type UploadProgressState } from '../UploadProgressBar';
 import {
   isSyllabusCanvasMaterial,
   materialProvenance,
@@ -49,6 +51,7 @@ export function SyllabusBox({
   const [resyncing, setResyncing] = useState(false);
   const [resyncError, setResyncError] = useState<string | null>(null);
   const [uploading, setUploading] = useState<string | null>(null);
+  const [progress, setProgress] = useState<UploadProgressState | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -124,17 +127,16 @@ export function SyllabusBox({
       return;
     }
     setUploading(file.name);
+    setProgress({ fileName: file.name, index: 1, total: 1, pct: 0 });
     try {
-      const form = new FormData();
-      form.set('slug', slug);
-      form.set('file', file);
-      const res = await fetch(`/api/courses/${encodeURIComponent(course.code)}/materials`, {
-        method: 'POST',
-        body: form,
+      const res = await uploadFileWithProgress({
+        url: `/api/courses/${encodeURIComponent(course.code)}/materials`,
+        file,
+        slug,
+        onProgress: (p) => setProgress({ fileName: file.name, index: 1, total: 1, pct: p.pct }),
       });
-      const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setUploadError((json as { error?: string }).error ?? `Upload failed (${res.status})`);
+        setUploadError((res.json as { error?: string }).error ?? `Upload failed (${res.status})`);
         return;
       }
       const fresh = await fetchCourseMaterials(course.code, slug);
@@ -143,6 +145,7 @@ export function SyllabusBox({
       setUploadError(e instanceof Error ? e.message : 'Upload failed');
     } finally {
       setUploading(null);
+      setProgress(null);
       if (inputRef.current) inputRef.current.value = '';
     }
   }
@@ -201,6 +204,11 @@ export function SyllabusBox({
         </p>
       )}
 
+      {progress && (
+        <div className="px-4 pb-2">
+          <UploadProgressBar state={progress} />
+        </div>
+      )}
       {resyncError && <p className="px-4 pb-1 text-[11px] text-amber-700 dark:text-amber-400">{resyncError}</p>}
       {uploadError && <p className="px-4 pb-1 text-[11px] text-amber-700 dark:text-amber-400">{uploadError}</p>}
 

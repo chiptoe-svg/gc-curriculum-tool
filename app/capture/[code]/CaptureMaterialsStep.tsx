@@ -33,7 +33,9 @@ export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt,
   useRouter();
   const [showManager, setShowManager] = useState(false);
 
-  const active = materials.filter((m) => !m.ignored && !m.autoSetAside);
+  // Overridden FERPA/auto rows (autoSetAside but no longer ignored) count as
+  // active — they're included in the interview.
+  const active = materials.filter((m) => !m.ignored);
   const tokens = active.reduce((sum, m) => sum + (m.extractedText ? estimateTokens(m.extractedText) : 0), 0);
   const tokK = (tokens / 1000).toFixed(tokens >= 10_000 ? 0 : 1);
 
@@ -81,6 +83,7 @@ export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt,
               materials={materials}
               slug={slug}
               onMaterialsChange={onMaterialsChange}
+              triageEnabled
             />
             <SyllabusBox
               course={course}
@@ -95,6 +98,7 @@ export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt,
               materials={materials}
               slug={slug}
               onMaterialsChange={onMaterialsChange}
+              triageEnabled
             />
           </>
         ) : (

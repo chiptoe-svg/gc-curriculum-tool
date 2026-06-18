@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { authorizeCourseWrite, resolveScopedSession } from '@/lib/sandbox/access';
 import { authorizedForBasicAuth } from '@/lib/auth/basic-auth';
 import { putLocal, courseSlug, safeFilename, keyFromLocalUrl, deleteLocal } from '@/lib/storage/local-storage';
@@ -187,24 +187,34 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   });
 
   if (isTriageEnabled()) {
-    // Phase-1 (list-mode) upload: store + classify the tier, but do NOT enqueue.
-    // Processing waits for the explicit Ingest step (Phase 2), mirroring the
-    // Canvas list-mode import pattern in list-import.ts. A classifier hiccup
-    // must never fail the upload — the tier defaults to 'background' on any error.
-    try {
-      const probe = await probeSize(fileBytes, file.type);
-      const tier = await classifyManifestItem({
-        kind: 'file',
-        fileName: file.name,
-        mimeType: file.type,
-        sizeBytes: probe.sizeBytes,
-        pageCount: probe.pageCount,
-        slideCount: probe.slideCount,
-      });
-      await updateMaterialTier(material.id, tier);
-    } catch (err) {
-      console.error('[materials upload] tier classification failed (non-fatal):', err);
-    }
+    // Phase-1 (list-mode) upload: store now, but do NOT enqueue and do NOT block
+    // the response on tier classification. Processing waits for the explicit
+    // Ingest step (Phase 2), mirroring the Canvas list-mode import pattern.
+    //
+    // Tier classification (probe + 'material-classify' LLM call) used to run
+    // synchronously here, which added seconds of fixed per-file latency to every
+    // upload — independent of file size. It now runs via after(): the response
+    // returns the instant the file is on disk, and probe/classify happen in the
+    // background using the bytes already in memory. Background classifications of
+    // sequential uploads pipeline (each runs while the next file transfers), and
+    // tiers are settled well before the user reaches the Ingest step. A classifier
+    // hiccup is logged and leaves tier null (TriageStep treats null as 'high').
+    after(async () => {
+      try {
+        const probe = await probeSize(fileBytes, file.type);
+        const tier = await classifyManifestItem({
+          kind: 'file',
+          fileName: file.name,
+          mimeType: file.type,
+          sizeBytes: probe.sizeBytes,
+          pageCount: probe.pageCount,
+          slideCount: probe.slideCount,
+        });
+        await updateMaterialTier(material.id, tier);
+      } catch (err) {
+        console.error('[materials upload] background tier classification failed (non-fatal):', err);
+      }
+    });
     return NextResponse.json({
       id: material.id,
       fileName: material.fileName,

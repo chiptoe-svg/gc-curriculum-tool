@@ -173,6 +173,29 @@ describe('OtherMaterialsBox', () => {
     expect(screen.getByRole('button', { name: /include anyway/i })).toBeTruthy();
   });
 
+  it('overridden FERPA row (autoSetAside, not ignored) looks normal — no why-ignored band', () => {
+    const m = mat({
+      id: 'ferpaOverridden',
+      fileName: 'gradebook.xlsx',
+      autoSetAside: true,
+      ignored: false,
+      setAsideReason: 'Contains student IDs — FERPA risk',
+    });
+    render(<OtherMaterialsBox course={course} materials={[m]} slug="s" onMaterialsChange={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: /other materials/i }));
+    // No FERPA reason band and no "Include anyway" once overridden.
+    expect(screen.queryByText(/contains student ids/i)).toBeNull();
+    expect(screen.queryByRole('button', { name: /include anyway/i })).toBeNull();
+  });
+
+  it('triageEnabled hides the indexing status + Index now affordance', () => {
+    const m = mat({ id: 'pending1', fileName: 'late.pdf', indexingStatus: 'pending' });
+    render(<OtherMaterialsBox course={course} materials={[m]} slug="s" onMaterialsChange={() => {}} triageEnabled />);
+    fireEvent.click(screen.getByRole('button', { name: /other materials/i }));
+    expect(screen.queryByText(/not indexed yet/i)).toBeNull();
+    expect(screen.queryByRole('button', { name: /^index now$/i })).toBeNull();
+  });
+
   it('autoSetAside row without setAsideReason falls back to default text', () => {
     const m = mat({
       id: 'ferpa2',
