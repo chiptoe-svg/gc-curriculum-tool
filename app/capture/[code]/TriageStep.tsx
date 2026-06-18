@@ -366,11 +366,13 @@ export function TriageStep({ courseCode, slug, materials, onIngested }: TriageSt
         <div className="mt-4 flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50/50 px-3 py-2">
           <span aria-hidden>💡</span>
           <p className="text-sm text-amber-800">
-            No lecture slides found — they&apos;re some of the best evidence of what you taught.{' '}
+            For the strongest, most complete capture, add your lecture slides — they&apos;re the richest
+            evidence of what you actually taught in class.{' '}
             <button
               type="button"
-              /* TODO: wire to file-upload flow (Increment N); stubbed for now */
-              title="Routes to file upload — not yet wired in this increment"
+              /* TODO (deferred to-do): wire to the real file-upload flow — reuse the
+                 Other-materials add-files handler. Stubbed (no-op) for now. */
+              title="Add-slides upload is a deferred to-do — not yet wired"
               className="font-medium underline underline-offset-2 hover:text-amber-700"
             >
               Add slides

@@ -120,7 +120,7 @@ describe('TriageStep', () => {
         onIngested={noop}
       />,
     );
-    expect(screen.getByText(/no lecture slides found/i)).toBeTruthy();
+    expect(screen.getByText(/add your lecture slides/i)).toBeTruthy();
     expect(screen.getByRole('button', { name: /add slides/i })).toBeTruthy();
   });
 
@@ -133,7 +133,7 @@ describe('TriageStep', () => {
         onIngested={noop}
       />,
     );
-    expect(screen.queryByText(/no lecture slides found/i)).toBeNull();
+    expect(screen.queryByText(/add your lecture slides/i)).toBeNull();
   });
 
   it('clicking Ingest & continue POSTs to /api/admin/v2-backfill and calls onIngested', async () => {
