@@ -234,9 +234,13 @@ export async function runListImport(
     let buffer: Buffer;
     try {
       const dl = await fetch(meta.url, { redirect: 'follow' });
-      if (!dl.ok) continue;
+      if (!dl.ok) {
+        skippedFiles.push({ fileName: meta.displayName, mimeType: resolvedMime, reason: `download failed (${dl.status})` });
+        continue;
+      }
       buffer = Buffer.from(await dl.arrayBuffer());
-    } catch {
+    } catch (e) {
+      skippedFiles.push({ fileName: meta.displayName, mimeType: resolvedMime, reason: `download error: ${e instanceof Error ? e.message : 'fetch failed'}` });
       continue;
     }
 
@@ -246,7 +250,8 @@ export async function runListImport(
     try {
       const result = await putLocal({ key, bytes: buffer });
       storedUrl = result.url;
-    } catch {
+    } catch (e) {
+      skippedFiles.push({ fileName: meta.displayName, mimeType: resolvedMime, reason: `storage error: ${e instanceof Error ? e.message : 'putLocal failed'}` });
       continue;
     }
 
