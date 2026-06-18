@@ -24,23 +24,30 @@ Canvas import currently does discovery, extraction, *and* the expensive per-file
 Pull the inventory from the source (Canvas API fetch + assemble; uploads; Drive/IMSCC) and produce a **manifest row per candidate material** — type, name, and a cheap size signal (bytes; PDF page count; PPTX slide count; HTML text length) obtained *without* extraction. The Phase-1 classifier may use **metadata + a light peek only** (filename, mime, size, optional first-page peek) — never full extraction. Faculty can **ignore** any row here. Nothing is downloaded-for-extraction, chunked, summarized, or embedded yet. (This is today's import route minus the file-download/extract loop and minus enqueue.)
 
 ### Phase 2 — Triage & tiered ingest
-A triage screen presents the manifest in **three tiers** (below), auto-classified, with a per-row **time estimate** and a **total** by the Ingest button. Faculty **move rows between tiers, downgrade, or ignore**, then click **Ingest**. Only then does extraction/indexing happen, at each row's confirmed tier depth.
+A triage screen presents the manifest in **three tiers** (below), auto-classified, with a per-row **time estimate** and a **total** by the Ingest button. Faculty **move rows up or down between tiers (upgrade and downgrade are equally first-class), or ignore**, then click **Ingest**. The time estimate re-computes live as rows change tier or ignore state, so the cost of an upgrade is visible before committing. Only then does extraction/indexing happen, at each row's confirmed tier depth.
 
-### Ignore semantics (reversible, carries forward)
-**Ignore is a flag, not a deletion.** Every discovered row — including ones ignored in Phase 1 — flows through to the Phase-2 triage screen. Phase-1-ignored rows appear there **pre-checked as ignored** (excluded from the ingest run and from the time total by default) but remain **visible and one uncheck away** from being included. Nothing leaves the manifest. So a faculty member who ignores early and changes their mind on the triage screen recovers the item with a single click; the time estimate updates when they do. (Ignored rows are excluded from the ingest run; they are not deleted from `course_materials` history.)
+**Tiers are depth levels with a type-aware mechanism.** Because upgrade/downgrade must work for *any* material, a tier names a depth, and the mechanism adapts to the material type — see the table's Depth column, and the per-type note under the Middle tier.
+
+### Ignore vs delete (two distinct actions)
+Both are available in Phase 1 and on the triage screen:
+
+- **Ignore — reversible, carries forward.** A flag, not a removal. Every discovered row — including ones ignored in Phase 1 — flows through to the Phase-2 triage screen. Phase-1-ignored rows appear there **pre-checked as ignored** (excluded from the ingest run and the time total by default) but remain **visible and one uncheck away** from inclusion. Nothing leaves the manifest; the time estimate updates when toggled. Use when "probably not, but maybe."
+- **Delete — eliminates it.** A hard removal: the row drops from the manifest and does **not** carry to Phase 2. For a newly-discovered row (not yet persisted) it's simply dropped. For a row backed by an existing material (re-import), delete removes the `course_materials` row + its file + indexed chunks (the existing per-row delete). Use when "this should not be here at all." *Caveat:* delete affects this run; a later fresh re-import from the same source can re-discover the item (delete is not a persistent source-level suppression — that's out of scope).
 
 ## The three tiers (evidence-strength ladder)
 
 | Tier | Material kinds | Depth | Reuses |
 |---|---|---|---|
 | **High value** | assignments, quizzes, rubrics, syllabus | full pipeline: extract → chunk → **contextualize** → embed → upsert | existing pipeline |
-| **Middle (instructional)** | lecture slides, decks, pages "directly explained to students" | per-slide **vision** note → embed per-slide → deck rollup (see below) | new vision path |
+| **Middle (instructional)** | lecture slides, decks, pages "directly explained to students" | per-**unit** summary, embedded per unit, cited at doc level. **v1 mechanism = slides** (render → vision note → deck rollup, below). | new vision path |
 | **Background** | readings, references, supplementary | one whole-material **digest**, embedded as a *single* unit (coarse retrieval), no per-page work | existing `generateMaterialDigest` |
+
+**Type-aware depth (so upgrade/downgrade work for any material).** A tier is a *depth level*; the mechanism adapts to type. Middle = "per-unit summary": the unit is a **slide** for decks (vision pass — built in v1) and would be a **section/heading** for prose (text summary — a deferred fast-follow, reuses the same summarize-then-embed-per-unit machinery). **v1 scope:** middle is offered for slide-like materials; a **prose** document triages between **high** and **background** only, with prose-middle added later. So upgrading a prose reading lands it in *high* (full pipeline) until per-section middle ships.
 
 ### Classifier (Phase-1, cheap)
 - **Structure-first, no LLM:** Canvas already types items — assignments/quizzes/rubrics → high; syllabus → high; pages/discussions → middle. These are authoritative.
 - **LLM only for the ambiguous *file* bucket:** classify each file on cheap signals (filename, mime, size, optional first-page peek) into deck→middle / reading→background. **Bias toward the cheaper tier when unsure** (under-ingest is one click to fix; over-ingest wastes the budget we're saving).
-- **Faculty override everything** on the triage screen (move/ignore/downgrade). Auto-classification exists to make defaults good enough that faculty mostly confirm, not sort from scratch.
+- **Faculty override everything** on the triage screen (move up/down between tiers, ignore, or delete). Auto-classification exists to make defaults good enough that faculty mostly confirm, not sort from scratch.
 
 ## Middle tier in detail (the design focus)
 
