@@ -22,6 +22,9 @@ const {
   updateFerpaRisk,
   setMaterialIgnoredItems,
   updateMaterialTier,
+  isTriageEnabled,
+  probeSize,
+  classifyManifestItem,
 } = vi.hoisted(() => ({
   isValidSlug: vi.fn(),
   getCourseByCode: vi.fn(),
@@ -44,6 +47,9 @@ const {
   updateFerpaRisk: vi.fn(),
   setMaterialIgnoredItems: vi.fn(),
   updateMaterialTier: vi.fn(),
+  isTriageEnabled: vi.fn(),
+  probeSize: vi.fn(),
+  classifyManifestItem: vi.fn(),
 }));
 
 vi.mock('@/lib/slug', () => ({ isValidSlug }));
@@ -71,7 +77,10 @@ vi.mock('@/lib/courses/extract-text', () => ({ extractText }));
 vi.mock('@/lib/rate-limit/ip-rate-limit', () => ({ checkIpRateLimit }));
 vi.mock('@/lib/rate-limit/daily-cap', () => ({ checkDailyCap, recordSpend }));
 vi.mock('@/lib/ip-hash', () => ({ hashIp }));
-vi.mock('@/lib/capture/ingest-queue', () => ({ enqueue: vi.fn().mockResolvedValue(undefined) }));
+vi.mock('@/lib/capture/ingest-queue', () => ({ enqueue }));
+vi.mock('@/lib/capture/triage-flag', () => ({ isTriageEnabled }));
+vi.mock('@/lib/capture/size-probe', () => ({ probeSize }));
+vi.mock('@/lib/capture/material-tier', () => ({ classifyManifestItem }));
 
 import { POST } from '@/app/api/courses/[code]/materials/route';
 import { DELETE, PATCH } from '@/app/api/courses/[code]/materials/[id]/route';
@@ -103,7 +112,7 @@ function makeUploadReq(overrides: {
     body: form,
   });
   // Override Content-Length header for size checks by adding it to the file's size
-  Object.defineProperty(file, 'size', { value: sizeBytes });
+  Object.defineProperty(file, 'size', { value: sizeBytes, configurable: true });
   return [req, { params: Promise.resolve({ code: overrides.code ?? CODE }) }];
 }
 
@@ -128,18 +137,23 @@ beforeEach(() => {
   // route's store/insert/auth logic, not indexing. (Phase A removes the
   // synchronous call entirely.)
   delete process.env.COURSECAPTURE_V2_INGESTION;
+  // Default: triage flag OFF (existing behavior baseline).
+  isTriageEnabled.mockReturnValue(false);
   isValidSlug.mockImplementation((s: string) => s === SLUG);
   getCourseByCode.mockResolvedValue({ code: CODE, title: 'Digital Publishing' });
   putLocal.mockResolvedValue({ url: '/api/storage/materials/gc-3460/rubric.pdf', key: 'gc-3460/rubric.pdf' });
   keyFromLocalUrl.mockImplementation((u: string) => u.replace('/api/storage/materials/', ''));
   insertMaterial.mockResolvedValue({ id: 'mat-1', courseCode: CODE, fileName: 'rubric.pdf', blobUrl: '/api/storage/materials/gc-3460/rubric.pdf', extractionStatus: 'pending' });
   updateExtractionResult.mockResolvedValue(undefined);
+  updateMaterialTier.mockResolvedValue(undefined);
   checkIpRateLimit.mockResolvedValue({ allowed: true, remaining: 9 });
   checkDailyCap.mockResolvedValue({ ok: true, spentCents: 0 });
   recordSpend.mockResolvedValue(undefined);
   hashIp.mockReturnValue('abc123hash');
   extractText.mockResolvedValue({ method: 'text', status: 'ok', text: 'Rubric content here.' });
   enqueue.mockResolvedValue(undefined);
+  probeSize.mockResolvedValue({ sizeBytes: 100_000, pageCount: 5 });
+  classifyManifestItem.mockResolvedValue('background');
 });
 
 describe('POST /api/courses/[code]/materials', () => {
@@ -184,6 +198,8 @@ describe('POST /api/courses/[code]/materials', () => {
   });
 
   it('stores locally, inserts row, enqueues, returns 200 with queued status', async () => {
+    // Flag OFF: existing behavior unchanged.
+    isTriageEnabled.mockReturnValue(false);
     const [req, ctx] = makeUploadReq();
     const res = await POST(req, ctx);
     expect(res.status).toBe(200);
@@ -192,7 +208,123 @@ describe('POST /api/courses/[code]/materials', () => {
     expect(json.indexingStatus).toBe('queued');
     expect(putLocal).toHaveBeenCalledOnce();
     expect(insertMaterial).toHaveBeenCalledOnce();
+    expect(enqueue).toHaveBeenCalledWith('mat-1');
     expect(extractText).not.toHaveBeenCalled(); // extraction moved to the worker
+  });
+
+  // ── Triage-flag-aware defer (Fix A) ──────────────────────────────────────
+
+  it('[triage ON] does NOT call enqueue, sets tier, responds pending', async () => {
+    isTriageEnabled.mockReturnValue(true);
+    probeSize.mockResolvedValue({ sizeBytes: 100_000, pageCount: 3 });
+    classifyManifestItem.mockResolvedValue('background');
+
+    const [req, ctx] = makeUploadReq();
+    const res = await POST(req, ctx);
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.indexingStatus).toBe('pending');
+    expect(json.id).toBe('mat-1');
+
+    // Must NOT enqueue
+    expect(enqueue).not.toHaveBeenCalled();
+
+    // Must classify + persist tier
+    expect(probeSize).toHaveBeenCalledOnce();
+    expect(classifyManifestItem).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: 'file', mimeType: 'application/pdf', sizeBytes: 100_000 }),
+    );
+    expect(updateMaterialTier).toHaveBeenCalledWith('mat-1', 'background');
+
+    // Must still store + insert
+    expect(putLocal).toHaveBeenCalledOnce();
+    expect(insertMaterial).toHaveBeenCalledOnce();
+  });
+
+  it('[triage ON] classifier error does not fail the upload', async () => {
+    isTriageEnabled.mockReturnValue(true);
+    probeSize.mockRejectedValue(new Error('probe kaboom'));
+    classifyManifestItem.mockRejectedValue(new Error('classify kaboom'));
+
+    const [req, ctx] = makeUploadReq();
+    const res = await POST(req, ctx);
+
+    // Upload must still succeed even if classify/probe throws
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.indexingStatus).toBe('pending');
+    expect(enqueue).not.toHaveBeenCalled();
+  });
+
+  it('[triage OFF] upload calls enqueue and responds queued (unchanged)', async () => {
+    isTriageEnabled.mockReturnValue(false);
+    const [req, ctx] = makeUploadReq();
+    const res = await POST(req, ctx);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.indexingStatus).toBe('queued');
+    expect(enqueue).toHaveBeenCalledWith('mat-1');
+    expect(classifyManifestItem).not.toHaveBeenCalled();
+  });
+
+  // ── Size cap (Fix B) ──────────────────────────────────────────────────────
+  // jsdom/undici re-parses the multipart body when formData() is called in the
+  // route, creating a *new* File object — so Object.defineProperty size overrides
+  // on the original File don't survive the round-trip. We work around this by
+  // patching req.formData() directly so the route sees a File with a controlled
+  // `size` value. This tests the route's cap check without requiring real large buffers.
+
+  function makeUploadReqWithMockedSize(sizeBytes: number): [Request, { params: Promise<{ code: string }> }] {
+    // Build a minimal real file to satisfy the MIME check and arrayBuffer() call.
+    const realFile = new File([new Uint8Array(100).buffer], 'lecture-deck.pdf', { type: 'application/pdf' });
+
+    // Construct a Proxy over the real File that intercepts the `size` getter
+    // only, forwarding all other property accesses (including arrayBuffer, name,
+    // type) to the real File. This survives jsdom's internal-slot checks because
+    // the proxy's target IS the real File.
+    const fakeLargeFile = new Proxy(realFile, {
+      get(target, prop, receiver) {
+        if (prop === 'size') return sizeBytes;
+        const val = Reflect.get(target, prop, receiver);
+        return typeof val === 'function' ? val.bind(target) : val;
+      },
+    });
+
+    const form = new FormData();
+    form.set('slug', SLUG);
+    form.set('file', realFile); // real file for body serialization
+
+    const req = new Request('http://test/api/courses/GC%203460/materials', {
+      method: 'POST',
+      body: form,
+    });
+
+    // Patch req.formData() to return our controlled file.
+    const origFormData = req.formData.bind(req);
+    vi.spyOn(req, 'formData').mockImplementation(async () => {
+      const fd = await origFormData();
+      fd.set('file', fakeLargeFile as unknown as File);
+      return fd;
+    });
+
+    return [req, { params: Promise.resolve({ code: CODE }) }];
+  }
+
+  it('accepts a file just over 15 MB (< 100 MB) — old cap raised', async () => {
+    const [req, ctx] = makeUploadReqWithMockedSize(16 * 1024 * 1024);
+    const res = await POST(req, ctx);
+    // Should NOT be rejected — 16 MB is under the new 100 MB cap.
+    expect(res.status).toBe(200);
+  });
+
+  it('rejects a file over 100 MB with the new cap in the error message', async () => {
+    const [req, ctx] = makeUploadReqWithMockedSize(101 * 1024 * 1024);
+    const res = await POST(req, ctx);
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    // Error message must reference the new cap (100 MB = 104857600 bytes).
+    expect(json.error).toMatch(/104857600|100 ?[Mm][Bb]/);
   });
 
   // The bare /materials path is excluded from the middleware matcher (the

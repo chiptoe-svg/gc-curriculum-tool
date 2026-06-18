@@ -5,14 +5,21 @@ import { putLocal, courseSlug, safeFilename, keyFromLocalUrl, deleteLocal } from
 import { getCourseByCode, clearCourseCanvasImport } from '@/lib/db/courses-queries';
 import { hashIp } from '@/lib/ip-hash';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
-import { insertMaterial, listMaterialsByCourse, deleteMaterial } from '@/lib/db/course-materials-queries';
+import { insertMaterial, listMaterialsByCourse, deleteMaterial, updateMaterialTier } from '@/lib/db/course-materials-queries';
 import { createVectorStore, tenantForCourse } from '@/lib/capture/vector-store';
 import { enqueue } from '@/lib/capture/ingest-queue';
+import { isTriageEnabled } from '@/lib/capture/triage-flag';
+import { probeSize } from '@/lib/capture/size-probe';
+import { classifyManifestItem } from '@/lib/capture/material-tier';
 import { SUPPORTED_MIME_TYPES, LEGACY_OFFICE_MIME_TYPES } from '@/lib/courses/material-extractor';
 
 export const maxDuration = 120;
 
-const MAX_SIZE_BYTES = 15 * 1024 * 1024; // 15 MB
+// The middleware body-limit was raised to 600 MB for IMSCC cartridge imports
+// (see middleware.ts). This route-level cap is therefore the binding constraint.
+// 100 MB covers image-heavy lecture decks (typical 25–31 MB PPTX with embedded
+// screenshots) without allowing arbitrary large uploads.
+const MAX_SIZE_BYTES = 100 * 1024 * 1024; // 100 MB
 // Allowlist combines modern formats (handled directly by the extractor)
 // with legacy Office formats (transparently converted via LibreOffice in
 // extract-text.ts when soffice is on PATH — local Mac only). Vercel can
@@ -179,6 +186,34 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     ipHash,
   });
 
+  if (isTriageEnabled()) {
+    // Phase-1 (list-mode) upload: store + classify the tier, but do NOT enqueue.
+    // Processing waits for the explicit Ingest step (Phase 2), mirroring the
+    // Canvas list-mode import pattern in list-import.ts. A classifier hiccup
+    // must never fail the upload — the tier defaults to 'background' on any error.
+    try {
+      const probe = await probeSize(fileBytes, file.type);
+      const tier = await classifyManifestItem({
+        kind: 'file',
+        fileName: file.name,
+        mimeType: file.type,
+        sizeBytes: probe.sizeBytes,
+        pageCount: probe.pageCount,
+        slideCount: probe.slideCount,
+      });
+      await updateMaterialTier(material.id, tier);
+    } catch (err) {
+      console.error('[materials upload] tier classification failed (non-fatal):', err);
+    }
+    return NextResponse.json({
+      id: material.id,
+      fileName: material.fileName,
+      blobUrl: material.blobUrl,
+      indexingStatus: 'pending',
+    });
+  }
+
+  // Flag off: existing behavior — enqueue immediately for background indexing.
   await enqueue(material.id);
 
   return NextResponse.json({
