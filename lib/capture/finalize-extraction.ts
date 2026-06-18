@@ -17,6 +17,7 @@ import { detectFerpaRisk } from '@/lib/capture/ferpa-detect';
 import { evaluateMaterialsPolicy } from '@/lib/capture/materials-policy';
 import { tenantForCourse } from '@/lib/capture/vector-store';
 import type { VectorStore, ChunkVectorRecord, SectionRecord } from '@/lib/capture/vector-store';
+import type { Tier } from '@/lib/capture/material-tier';
 
 export interface FinalizeExtractionInput {
   id: string;
@@ -29,6 +30,8 @@ export interface FinalizeExtractionInput {
   // Stage 2a additions:
   vectorStore?: VectorStore;
   courseHasLearningObjectives?: boolean;
+  // Tier routing (background → digest-only, high/middle/null → full pipeline):
+  tier?: Tier | null;
 }
 
 const v2Enabled = (): boolean => process.env.COURSECAPTURE_V2_INGESTION === '1';

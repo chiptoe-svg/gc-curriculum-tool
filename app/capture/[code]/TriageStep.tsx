@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { CaptureMaterial } from './MaterialsPanel';
+import type { Tier } from '@/lib/capture/material-tier';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -14,8 +15,6 @@ export interface TriageStepProps {
   materials: CaptureMaterial[];
   onIngested: () => void;
 }
-
-type Tier = 'high' | 'middle' | 'background';
 
 const TIER_ORDER: Tier[] = ['background', 'middle', 'high'];
 

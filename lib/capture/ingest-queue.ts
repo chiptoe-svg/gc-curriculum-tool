@@ -2,6 +2,7 @@ import { readLocal, keyFromLocalUrl } from '@/lib/storage/local-storage';
 import { extractText, type ExtractedMimeType } from '@/lib/courses/extract-text';
 import { finalizeExtraction } from '@/lib/capture/finalize-extraction';
 import { createVectorStore } from '@/lib/capture/vector-store';
+import type { Tier } from '@/lib/capture/material-tier';
 import {
   claimNextQueued,
   resetStuckIndexing,
@@ -153,6 +154,7 @@ export async function processMaterial(row: CourseMaterialRow): Promise<void> {
       ...(pageCount !== undefined && { pageCount }),
       courseHasLearningObjectives,
       vectorStore: createVectorStore(),
+      tier: row.tier as Tier | null,
     });
 
     // Fix 1: finalizeExtraction early-returns (without setting a terminal
