@@ -44,6 +44,27 @@ export interface FinalizeExtractionInput {
 const v2Enabled = (): boolean => process.env.COURSECAPTURE_V2_INGESTION === '1';
 
 /**
+ * Run `fn` over `items` with at most `limit` concurrent calls, preserving
+ * insertion order in the returned array.
+ */
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let next = 0;
+  async function worker() {
+    while (next < items.length) {
+      const i = next++;
+      results[i] = await fn(items[i]!, i);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return results;
+}
+
+/**
  * Persist the result of an extraction attempt. When COURSECAPTURE_V2_INGESTION
  * is set, run the v2 pipeline (FERPA → policy → digest → chunk + embed +
  * index). Otherwise run the legacy reference-compression-only path. Both
@@ -219,14 +240,13 @@ async function runV2Pipeline(input: FinalizeExtractionInput): Promise<void> {
         : [];
 
       if (images.length > 0) {
-        const allNotes = await Promise.all(images.map(describeSlide));
+        const allNotes = await mapWithConcurrency(images, 4, (img) => describeSlide(img));
         // Keep notes with original index for stable IDs before filtering.
         const substantive = allNotes
           .map((note, i) => ({ note, i }))
           .filter(({ note }) => note.contentLevel === 'substantive');
 
         if (substantive.length > 0) {
-          handledBySlide = true;
           await updateIndexingStatus({ id, status: 'indexing' });
 
           const texts = substantive.map(({ note }) =>
@@ -261,6 +281,9 @@ async function runV2Pipeline(input: FinalizeExtractionInput): Promise<void> {
           await input.vectorStore.upsertSections(tenant, [deckSection]);
           await input.vectorStore.upsert(tenant, chunkRecords);
 
+          // Only mark handled after all three upserts succeed.
+          handledBySlide = true;
+
           const skipped = allNotes.length - substantive.length;
           console.log(
             `[ingest] ${courseCode} "${fileName}": middle/slide tier — ${substantive.length} slide notes (${skipped} skipped)`,
@@ -270,7 +293,7 @@ async function runV2Pipeline(input: FinalizeExtractionInput): Promise<void> {
       }
     } catch (err) {
       console.error(`finalizeExtraction (middle/slide): failed for ${id} — falling through to chunk pipeline`, err);
-      handledBySlide = false;
+      // handledBySlide was never set on the throwing path — no reset needed.
     }
 
     if (handledBySlide) return;

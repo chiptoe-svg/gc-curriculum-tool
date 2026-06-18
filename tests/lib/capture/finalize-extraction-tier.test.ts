@@ -397,6 +397,30 @@ describe('finalizeExtraction — middle tier (slide-vision)', () => {
     expect(contextualizeChunk).toHaveBeenCalled();
   });
 
+  it('middle + 2 images (both low): falls through to full chunk pipeline (contextualizeChunk called)', async () => {
+    renderToImages.mockResolvedValue([Buffer.from('png1'), Buffer.from('png2')]);
+    describeSlide
+      .mockResolvedValueOnce({ topic: '', teaches: '', keyVisual: '', contentLevel: 'low' })
+      .mockResolvedValueOnce({ topic: '', teaches: '', keyVisual: '', contentLevel: 'low' });
+
+    const store = makeFakeStore();
+    await finalizeExtraction({
+      id: 'mat-slide-alllow',
+      courseCode: 'GC 3800',
+      fileName: SLIDE_FILE_NAME,
+      extractionStatus: 'ok',
+      extractedText: MULTI_SECTION_TEXT,
+      fileBytes: FAKE_BYTES,
+      mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      vectorStore: store,
+      courseHasLearningObjectives: false,
+      tier: 'middle',
+    });
+
+    // All slides scored low — no slide chunks upserted, full pipeline runs instead.
+    expect(contextualizeChunk).toHaveBeenCalled();
+  });
+
   it('high tier: renderToImages is NOT called (slide path skipped entirely)', async () => {
     renderToImages.mockResolvedValue(FAKE_IMAGES);
 
