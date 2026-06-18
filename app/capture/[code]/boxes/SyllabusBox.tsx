@@ -160,7 +160,7 @@ export function SyllabusBox({
             {open ? '▾' : '▸'}
           </span>
           <span aria-hidden>📋</span>
-          <span className="text-sm font-semibold">Syllabus &amp; course info</span>
+          <span className="text-sm font-medium">Syllabus &amp; course info</span>
           <span className="text-muted-foreground" aria-hidden>
             ——
           </span>
