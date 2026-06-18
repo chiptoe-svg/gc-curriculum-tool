@@ -76,6 +76,10 @@ const SLIDE_EXTENSIONS = new Set(['.pptx', '.ppt', '.key']);
 
 function isSlideFile(sig: FileSignals): boolean {
   if (SLIDE_MIME_TYPES.has(sig.mimeType)) return true;
+  // slideCount present at all means the probe found a slide structure.
+  // Contract: undefined = "unknown / not probed"; 0 = a degenerate deck (still
+  // a deck). Both >0 and 0 short-circuit to the slide path; only undefined
+  // falls through to mime/extension checks then the LLM.
   if (sig.slideCount !== undefined) return true;
   const ext = sig.fileName.slice(sig.fileName.lastIndexOf('.')).toLowerCase();
   return SLIDE_EXTENSIONS.has(ext);

@@ -20,7 +20,7 @@ vi.mock('@/lib/ai/provider', async () => {
   return { ...actual, getProviderForFunction: vi.fn() };
 });
 
-import { classifyFile } from '@/lib/capture/material-tier';
+import { classifyFile, classifyManifestItem } from '@/lib/capture/material-tier';
 import { getProviderForFunction } from '@/lib/ai/provider';
 
 const PPTX = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
@@ -67,5 +67,21 @@ describe('classifyFile', () => {
       transcribeDocument: vi.fn(),
     } as never);
     expect(await classifyFile({ fileName: 'r.pdf', mimeType: 'application/pdf', sizeBytes: 9 })).toBe('background');
+  });
+});
+
+describe('classifyManifestItem', () => {
+  it('structural kind wins over signals (no LLM call)', async () => {
+    // A graded item that happens to carry a slideCount must still be 'high' —
+    // structure beats file signals, and no classifier runs.
+    const t = await classifyManifestItem({ kind: 'assignments', mimeType: PPTX, sizeBytes: 1, slideCount: 5 });
+    expect(t).toBe('high');
+    expect(getProviderForFunction).not.toHaveBeenCalled();
+  });
+
+  it("delegates to the file classifier for kind 'file'", async () => {
+    const t = await classifyManifestItem({ kind: 'file', fileName: 'wk1.pptx', mimeType: PPTX, sizeBytes: 1 });
+    expect(t).toBe('middle'); // PPTX → deterministic middle, still no LLM
+    expect(getProviderForFunction).not.toHaveBeenCalled();
   });
 });
