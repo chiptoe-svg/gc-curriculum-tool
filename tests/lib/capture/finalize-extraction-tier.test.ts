@@ -4,6 +4,10 @@
  * background tier → digest-only: exactly ONE chunk upserted (text === digestText,
  *   contextBlurb === ''), chunkMaterial/contextualizeChunk NOT used, status → ready.
  * high / null tier → existing multi-chunk path unchanged.
+ * middle tier (slide-vision path):
+ *   - fileBytes + renderToImages → images → describeSlide per image → 2 substantive kept →
+ *     exactly 2 chunks upserted, no surfaced field contains "slide N", status → ready.
+ *   - renderToImages → [] → falls through to full chunk pipeline.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -56,6 +60,21 @@ vi.mock('@/lib/ai/embeddings', async () => {
 });
 
 // ---------------------------------------------------------------------------
+// Mocks for middle-tier slide-vision utils
+// ---------------------------------------------------------------------------
+
+const renderToImages = vi.fn<() => Promise<Buffer[]>>();
+const describeSlide = vi.fn<(png: Buffer) => Promise<import('@/lib/capture/slide-vision').SlideNote>>();
+
+vi.mock('@/lib/capture/render-pages', () => ({
+  renderToImages: (...a: unknown[]) => renderToImages(...(a as Parameters<typeof renderToImages>)),
+}));
+
+vi.mock('@/lib/capture/slide-vision', () => ({
+  describeSlide: (...a: unknown[]) => describeSlide(...(a as Parameters<typeof describeSlide>)),
+}));
+
+// ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
@@ -99,6 +118,8 @@ describe('finalizeExtraction — tier routing (v2 pipeline)', () => {
     updateFerpaRisk.mockReset().mockResolvedValue(undefined);
     updateAutoSetAside.mockReset().mockResolvedValue(undefined);
     contextualizeChunk.mockClear();
+    renderToImages.mockReset();
+    describeSlide.mockReset();
   });
 
   // -------------------------------------------------------------------------
@@ -250,5 +271,149 @@ describe('finalizeExtraction — tier routing (v2 pipeline)', () => {
 
     const allChunks = store.upsertedChunks.flat();
     expect(allChunks.length).toBeGreaterThanOrEqual(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// middle tier — slide-vision path
+// ---------------------------------------------------------------------------
+
+const SLIDE_FILE_NAME = 'lecture-01.pptx';
+const FAKE_BYTES = Buffer.from('fake-pptx-bytes');
+const FAKE_IMAGES = [Buffer.from('png1'), Buffer.from('png2'), Buffer.from('png3')];
+
+describe('finalizeExtraction — middle tier (slide-vision)', () => {
+  beforeEach(() => {
+    process.env.COURSECAPTURE_V2_INGESTION = '1';
+    updateExtractionResult.mockReset().mockResolvedValue(undefined);
+    updateMaterialDigest.mockReset().mockResolvedValue(undefined);
+    updateIndexingStatus.mockReset().mockResolvedValue(undefined);
+    updateFerpaRisk.mockReset().mockResolvedValue(undefined);
+    updateAutoSetAside.mockReset().mockResolvedValue(undefined);
+    contextualizeChunk.mockClear();
+    renderToImages.mockReset();
+    describeSlide.mockReset();
+  });
+
+  it('middle + 3 images (2 substantive, 1 low): upserts exactly 2 chunks', async () => {
+    renderToImages.mockResolvedValue(FAKE_IMAGES);
+    describeSlide
+      .mockResolvedValueOnce({ topic: 'Color theory', teaches: 'Hue relationships', keyVisual: 'color wheel', contentLevel: 'substantive' })
+      .mockResolvedValueOnce({ topic: 'Typography', teaches: 'Serif vs sans', keyVisual: 'type specimen', contentLevel: 'substantive' })
+      .mockResolvedValueOnce({ topic: '', teaches: '', keyVisual: '', contentLevel: 'low' });
+
+    const store = makeFakeStore();
+    await finalizeExtraction({
+      id: 'mat-slide-1',
+      courseCode: 'GC 3800',
+      fileName: SLIDE_FILE_NAME,
+      extractionStatus: 'ok',
+      extractedText: MULTI_SECTION_TEXT,
+      fileBytes: FAKE_BYTES,
+      mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      vectorStore: store,
+      courseHasLearningObjectives: false,
+      tier: 'middle',
+    });
+
+    const allChunks = store.upsertedChunks.flat();
+    expect(allChunks).toHaveLength(2);
+  });
+
+  it('middle + 3 images (2 substantive): no surfaced field contains a slide number', async () => {
+    renderToImages.mockResolvedValue(FAKE_IMAGES);
+    describeSlide
+      .mockResolvedValueOnce({ topic: 'Color theory', teaches: 'Hue relationships', keyVisual: 'color wheel', contentLevel: 'substantive' })
+      .mockResolvedValueOnce({ topic: 'Typography', teaches: 'Serif vs sans', keyVisual: 'type specimen', contentLevel: 'substantive' })
+      .mockResolvedValueOnce({ topic: '', teaches: '', keyVisual: '', contentLevel: 'low' });
+
+    const store = makeFakeStore();
+    await finalizeExtraction({
+      id: 'mat-slide-2',
+      courseCode: 'GC 3800',
+      fileName: SLIDE_FILE_NAME,
+      extractionStatus: 'ok',
+      extractedText: MULTI_SECTION_TEXT,
+      fileBytes: FAKE_BYTES,
+      mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      vectorStore: store,
+      courseHasLearningObjectives: false,
+      tier: 'middle',
+    });
+
+    const allChunks = store.upsertedChunks.flat();
+    const slideNumRe = /slide\s*\d/i;
+    for (const chunk of allChunks) {
+      expect(chunk.sectionTitle).toBe(SLIDE_FILE_NAME);
+      expect(slideNumRe.test(chunk.sectionTitle)).toBe(false);
+      expect(slideNumRe.test(chunk.text)).toBe(false);
+      expect(slideNumRe.test(chunk.contextBlurb)).toBe(false);
+    }
+  });
+
+  it('middle + 3 images (2 substantive): status ends ready', async () => {
+    renderToImages.mockResolvedValue(FAKE_IMAGES);
+    describeSlide
+      .mockResolvedValueOnce({ topic: 'Color theory', teaches: 'Hue relationships', keyVisual: 'color wheel', contentLevel: 'substantive' })
+      .mockResolvedValueOnce({ topic: 'Typography', teaches: 'Serif vs sans', keyVisual: 'type specimen', contentLevel: 'substantive' })
+      .mockResolvedValueOnce({ topic: '', teaches: '', keyVisual: '', contentLevel: 'low' });
+
+    const store = makeFakeStore();
+    await finalizeExtraction({
+      id: 'mat-slide-3',
+      courseCode: 'GC 3800',
+      fileName: SLIDE_FILE_NAME,
+      extractionStatus: 'ok',
+      extractedText: MULTI_SECTION_TEXT,
+      fileBytes: FAKE_BYTES,
+      mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      vectorStore: store,
+      courseHasLearningObjectives: false,
+      tier: 'middle',
+    });
+
+    const lastStatus = updateIndexingStatus.mock.calls.at(-1)?.[0] as { status: string };
+    expect(lastStatus?.status).toBe('ready');
+  });
+
+  it('middle + renderToImages returns []: falls through to full chunk pipeline (contextualizeChunk called)', async () => {
+    renderToImages.mockResolvedValue([]);
+
+    const store = makeFakeStore();
+    await finalizeExtraction({
+      id: 'mat-slide-fallthrough',
+      courseCode: 'GC 3800',
+      fileName: SLIDE_FILE_NAME,
+      extractionStatus: 'ok',
+      extractedText: MULTI_SECTION_TEXT,
+      fileBytes: FAKE_BYTES,
+      mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      vectorStore: store,
+      courseHasLearningObjectives: false,
+      tier: 'middle',
+    });
+
+    // The full pipeline runs contextualizeChunk — this is the distinguishing signal
+    expect(contextualizeChunk).toHaveBeenCalled();
+  });
+
+  it('high tier: renderToImages is NOT called (slide path skipped entirely)', async () => {
+    renderToImages.mockResolvedValue(FAKE_IMAGES);
+
+    const store = makeFakeStore();
+    await finalizeExtraction({
+      id: 'mat-high-norend',
+      courseCode: 'GC 3800',
+      fileName: SLIDE_FILE_NAME,
+      extractionStatus: 'ok',
+      extractedText: MULTI_SECTION_TEXT,
+      fileBytes: FAKE_BYTES,
+      mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      vectorStore: store,
+      courseHasLearningObjectives: false,
+      tier: 'high',
+    });
+
+    expect(renderToImages).not.toHaveBeenCalled();
   });
 });

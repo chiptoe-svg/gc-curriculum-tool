@@ -114,6 +114,9 @@ export async function processMaterial(row: CourseMaterialRow): Promise<void> {
     let extractionStatus = row.extractionStatus as ExtractionStatus;
     let extractionMethod: ExtractionMethod | undefined;
     let pageCount: number | undefined;
+    // File bytes are retained for middle-tier slide rendering; text-backed rows
+    // (Canvas HTML) have no blob and leave fileBytes undefined.
+    let fileBytes: Buffer | undefined;
 
     if (!extractedText) {
       const key = keyFromLocalUrl(row.blobUrl);
@@ -123,6 +126,7 @@ export async function processMaterial(row: CourseMaterialRow): Promise<void> {
         await updateIndexingStatus({ id: row.id, status: 'failed' });
         return;
       }
+      fileBytes = bytes;
       const ex = await extractText({
         fileBytes: bytes,
         mimeType: row.mimeType as ExtractedMimeType,
@@ -155,6 +159,9 @@ export async function processMaterial(row: CourseMaterialRow): Promise<void> {
       courseHasLearningObjectives,
       vectorStore: createVectorStore(),
       tier: row.tier as Tier | null,
+      // Thread file bytes for middle-tier slide rendering (undefined for text-backed rows)
+      ...(fileBytes !== undefined && { fileBytes }),
+      mimeType: row.mimeType ?? undefined,
     });
 
     // Fix 1: finalizeExtraction early-returns (without setting a terminal

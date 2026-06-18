@@ -18,6 +18,8 @@ import { evaluateMaterialsPolicy } from '@/lib/capture/materials-policy';
 import { tenantForCourse } from '@/lib/capture/vector-store';
 import type { VectorStore, ChunkVectorRecord, SectionRecord } from '@/lib/capture/vector-store';
 import type { Tier } from '@/lib/capture/material-tier';
+import { renderToImages } from '@/lib/capture/render-pages';
+import { describeSlide } from '@/lib/capture/slide-vision';
 
 export interface FinalizeExtractionInput {
   id: string;
@@ -30,8 +32,13 @@ export interface FinalizeExtractionInput {
   // Stage 2a additions:
   vectorStore?: VectorStore;
   courseHasLearningObjectives?: boolean;
-  // Tier routing (background → digest-only, high/middle/null → full pipeline):
+  // Tier routing (background → digest-only, middle → slide-vision, high/null → full pipeline):
   tier?: Tier | null;
+  // Middle-tier slide-vision: raw file bytes and MIME type for page rendering.
+  // File-backed materials pass bytes from the blob store; text-backed rows
+  // (Canvas HTML) leave these undefined and fall through to the full pipeline.
+  fileBytes?: Buffer;
+  mimeType?: string;
 }
 
 const v2Enabled = (): boolean => process.env.COURSECAPTURE_V2_INGESTION === '1';
@@ -194,6 +201,80 @@ async function runV2Pipeline(input: FinalizeExtractionInput): Promise<void> {
       await updateIndexingStatus({ id, status: 'failed' });
     }
     return;
+  }
+
+  // 4c. Middle tier — slide-vision path.
+  //     Renders pages to PNG, describes each via vision model, and upserts one
+  //     ChunkVectorRecord per substantive slide under a single doc-level section.
+  //     Falls through to the full chunk pipeline when:
+  //       • fileBytes are absent (text-backed Canvas row — no file to render), OR
+  //       • renderToImages returns [] (not a slide/PDF, or render error), OR
+  //       • all slides score 'low' contentLevel (nothing substantive to index).
+  //     The try/catch ensures a render or vision error never leaves the row stuck.
+  if (input.tier === 'middle') {
+    let handledBySlide = false;
+    try {
+      const images = input.fileBytes
+        ? await renderToImages(input.fileBytes, input.mimeType ?? '', fileName)
+        : [];
+
+      if (images.length > 0) {
+        const allNotes = await Promise.all(images.map(describeSlide));
+        // Keep notes with original index for stable IDs before filtering.
+        const substantive = allNotes
+          .map((note, i) => ({ note, i }))
+          .filter(({ note }) => note.contentLevel === 'substantive');
+
+        if (substantive.length > 0) {
+          handledBySlide = true;
+          await updateIndexingStatus({ id, status: 'indexing' });
+
+          const texts = substantive.map(({ note }) =>
+            [note.topic, note.teaches, note.keyVisual].filter(Boolean).join('\n'),
+          );
+          const vectors = await embedBatch(texts);
+
+          const tenant = tenantForCourse(courseCode);
+          const deckSectionId = `${id}-deck`;
+          const deckSection: SectionRecord = {
+            id: deckSectionId,
+            materialId: id,
+            title: fileName,
+            index: 0,
+            text: digestText || fileName,
+          };
+          const chunkRecords: ChunkVectorRecord[] = substantive.map(({ note: n, i }, batchIdx) => ({
+            id: `${id}-slide-${i}`,
+            vector: vectors[batchIdx]!,
+            materialId: id,
+            courseCode,
+            // sectionTitle MUST be the document name — no slide ordinals in any surfaced field
+            fileName,
+            sectionTitle: fileName,
+            sectionIndex: 0,
+            parentSectionId: deckSectionId,
+            text: [n.topic, n.teaches, n.keyVisual].filter(Boolean).join('\n'),
+            contextBlurb: '',
+          }));
+
+          await input.vectorStore.deleteByMaterial(tenant, id);
+          await input.vectorStore.upsertSections(tenant, [deckSection]);
+          await input.vectorStore.upsert(tenant, chunkRecords);
+
+          const skipped = allNotes.length - substantive.length;
+          console.log(
+            `[ingest] ${courseCode} "${fileName}": middle/slide tier — ${substantive.length} slide notes (${skipped} skipped)`,
+          );
+          await updateIndexingStatus({ id, status: 'ready', indexedAt: new Date() });
+        }
+      }
+    } catch (err) {
+      console.error(`finalizeExtraction (middle/slide): failed for ${id} — falling through to chunk pipeline`, err);
+      handledBySlide = false;
+    }
+
+    if (handledBySlide) return;
+    // Fall through to the full chunk pipeline below.
   }
 
   // 5–6. Chunk + contextualize + embed + upsert
