@@ -297,6 +297,80 @@ async function runV2Pipeline(input: FinalizeExtractionInput): Promise<void> {
     }
 
     if (handledBySlide) return;
+
+    // 4d. Middle tier — prose-section path.
+    //     When a material isn't slide-renderable, split it into heading-based
+    //     sections, generate a per-section digest, embed, and upsert.  This
+    //     produces doc-level citation (sectionTitle === fileName throughout) with
+    //     denser per-section summaries, avoiding the flat digest-unit of the
+    //     background tier and the expensive contextualize+chunk of the full pipeline.
+    //
+    //     Skip conditions (fall through to full pipeline):
+    //       • fewer than 2 sections meet the 200-char minimum (short / flat doc)
+    //       • any error in the block (try/catch)
+    let handledByProse = false;
+    if (extractedText) {
+      try {
+        const MIN_SECTION_CHARS = 200;
+        const { sections } = chunkMaterial({ fileName, text: extractedText });
+        const qualifying = sections.filter(s => s.text.trim().length >= MIN_SECTION_CHARS);
+
+        if (qualifying.length >= 2) {
+          await updateIndexingStatus({ id, status: 'indexing' });
+
+          const summaries = await mapWithConcurrency(
+            qualifying,
+            4,
+            (s) => generateMaterialDigest({ fileName: `${fileName} — ${s.title}`, extractedText: s.text }),
+          );
+
+          const vectors = await embedBatch(summaries.map(x => x.digest));
+
+          const tenant = tenantForCourse(courseCode);
+          const docSectionId = `${id}-doc`;
+
+          const rollupSection: SectionRecord = {
+            id: docSectionId,
+            materialId: id,
+            title: fileName,
+            index: 0,
+            text: digestText || fileName,
+          };
+
+          // sectionTitle MUST be the document name — section indices live only
+          // in the record `id`, never in any surfaced field.
+          const chunkRecords: ChunkVectorRecord[] = qualifying.map((_, i) => ({
+            id: `${id}-section-${i}`,
+            vector: vectors[i]!,
+            materialId: id,
+            courseCode,
+            fileName,
+            sectionTitle: fileName,
+            sectionIndex: 0,
+            parentSectionId: docSectionId,
+            text: summaries[i]!.digest,
+            contextBlurb: '',
+          }));
+
+          await input.vectorStore!.deleteByMaterial(tenant, id);
+          await input.vectorStore!.upsertSections(tenant, [rollupSection]);
+          await input.vectorStore!.upsert(tenant, chunkRecords);
+
+          // Only mark handled after all three upserts succeed.
+          handledByProse = true;
+
+          console.log(
+            `[ingest] ${courseCode} "${fileName}": middle/prose tier — ${qualifying.length} section summaries`,
+          );
+          await updateIndexingStatus({ id, status: 'ready', indexedAt: new Date() });
+        }
+      } catch (err) {
+        console.error(`finalizeExtraction (middle/prose): failed for ${id} — falling through to chunk pipeline`, err);
+        // handledByProse was never set on the throwing path — no reset needed.
+      }
+    }
+
+    if (handledByProse) return;
     // Fall through to the full chunk pipeline below.
   }
 

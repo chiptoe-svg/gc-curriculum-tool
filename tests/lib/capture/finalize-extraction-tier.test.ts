@@ -13,6 +13,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { finalizeExtraction } from '@/lib/capture/finalize-extraction';
 import type { VectorStore, ChunkVectorRecord, SectionRecord } from '@/lib/capture/vector-store';
+import type { ChunkResult } from '@/lib/capture/chunker';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -35,11 +36,13 @@ vi.mock('@/lib/db/course-materials-queries', () => ({
 
 const FIXED_DIGEST = 'digest: two chapters of sample text';
 
+const generateMaterialDigestMock = vi.fn(async () => ({
+  digest: FIXED_DIGEST,
+  model: 'test-model',
+}));
+
 vi.mock('@/lib/ai/analyze/material-digest', () => ({
-  generateMaterialDigest: vi.fn(async () => ({
-    digest: FIXED_DIGEST,
-    model: 'test-model',
-  })),
+  generateMaterialDigest: (...a: unknown[]) => generateMaterialDigestMock(...(a as [])),
 }));
 
 const contextualizeChunk = vi.fn(async (input: { chunkText: string }) => ({
@@ -58,6 +61,28 @@ vi.mock('@/lib/ai/embeddings', async () => {
     embedBatch: vi.fn(async (texts: string[]) => texts.map((_, i) => [i + 1, 0, 0])),
   };
 });
+
+// ---------------------------------------------------------------------------
+// Mock for chunker — controlled per-test; default returns 2 sections + 2 details
+// so the existing full-pipeline tests (high/null) still see contextualizeChunk called.
+// ---------------------------------------------------------------------------
+
+const DEFAULT_CHUNK_RESULT: ChunkResult = {
+  sections: [
+    { id: 'sec-0', title: 'Chapter 1', index: 0, text: 'Body of chapter one with plenty of content here.' },
+    { id: 'sec-1', title: 'Chapter 2', index: 1, text: 'Body of chapter two with plenty of content here.' },
+  ],
+  details: [
+    { id: 'det-0', parentSectionId: 'sec-0', sectionTitle: 'Chapter 1', sectionIndex: 0, index: 0, text: 'Body of chapter one with plenty of content here.' },
+    { id: 'det-1', parentSectionId: 'sec-1', sectionTitle: 'Chapter 2', sectionIndex: 1, index: 0, text: 'Body of chapter two with plenty of content here.' },
+  ],
+};
+
+const chunkMaterialMock = vi.fn<() => ChunkResult>();
+
+vi.mock('@/lib/capture/chunker', () => ({
+  chunkMaterial: (...a: unknown[]) => chunkMaterialMock(...(a as [])),
+}));
 
 // ---------------------------------------------------------------------------
 // Mocks for middle-tier slide-vision utils
@@ -120,6 +145,8 @@ describe('finalizeExtraction — tier routing (v2 pipeline)', () => {
     contextualizeChunk.mockClear();
     renderToImages.mockReset();
     describeSlide.mockReset();
+    chunkMaterialMock.mockReset().mockReturnValue(DEFAULT_CHUNK_RESULT);
+    generateMaterialDigestMock.mockReset().mockResolvedValue({ digest: FIXED_DIGEST, model: 'test-model' });
   });
 
   // -------------------------------------------------------------------------
@@ -293,6 +320,7 @@ describe('finalizeExtraction — middle tier (slide-vision)', () => {
     contextualizeChunk.mockClear();
     renderToImages.mockReset();
     describeSlide.mockReset();
+    chunkMaterialMock.mockReset().mockReturnValue(DEFAULT_CHUNK_RESULT);
   });
 
   it('middle + 3 images (2 substantive, 1 low): upserts exactly 2 chunks', async () => {
@@ -438,6 +466,225 @@ describe('finalizeExtraction — middle tier (slide-vision)', () => {
       tier: 'high',
     });
 
+    expect(renderToImages).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// middle tier — prose-section path (3c)
+// ---------------------------------------------------------------------------
+
+const PROSE_FILE_NAME = 'Canvas File: lecture-notes.pdf';
+
+/**
+ * Build a section text long enough to pass MIN_SECTION_CHARS (200).
+ */
+function longSectionText(label: string): string {
+  return `${label} — `.padEnd(210, 'x');
+}
+
+describe('finalizeExtraction — middle tier (prose-section)', () => {
+  beforeEach(() => {
+    process.env.COURSECAPTURE_V2_INGESTION = '1';
+    updateExtractionResult.mockReset().mockResolvedValue(undefined);
+    updateMaterialDigest.mockReset().mockResolvedValue(undefined);
+    updateIndexingStatus.mockReset().mockResolvedValue(undefined);
+    updateFerpaRisk.mockReset().mockResolvedValue(undefined);
+    updateAutoSetAside.mockReset().mockResolvedValue(undefined);
+    contextualizeChunk.mockClear();
+    renderToImages.mockReset().mockResolvedValue([]); // slide path → not handled
+    describeSlide.mockReset();
+    chunkMaterialMock.mockReset().mockReturnValue(DEFAULT_CHUNK_RESULT);
+    generateMaterialDigestMock.mockReset().mockResolvedValue({ digest: FIXED_DIGEST, model: 'test-model' });
+  });
+
+  // Case A: 3 qualifying sections → prose path runs → 3 chunks, doc-level citation
+  it('Case A: middle + renderToImages→[], 3 qualifying sections → upserts exactly 3 chunks', async () => {
+    const sections = [
+      { id: 'sec-0', title: 'Introduction', index: 0, text: longSectionText('Introduction') },
+      { id: 'sec-1', title: 'Body',         index: 1, text: longSectionText('Body') },
+      { id: 'sec-2', title: 'Conclusion',   index: 2, text: longSectionText('Conclusion') },
+    ];
+    chunkMaterialMock.mockReturnValue({ sections, details: [] });
+    generateMaterialDigestMock
+      .mockResolvedValueOnce({ digest: FIXED_DIGEST, model: 'test-model' }) // per-material digest (step 3)
+      .mockResolvedValueOnce({ digest: 'summary of introduction', model: 'test-model' })
+      .mockResolvedValueOnce({ digest: 'summary of body', model: 'test-model' })
+      .mockResolvedValueOnce({ digest: 'summary of conclusion', model: 'test-model' });
+
+    const store = makeFakeStore();
+    await finalizeExtraction({
+      id: 'mat-prose-a',
+      courseCode: 'GC 3800',
+      fileName: PROSE_FILE_NAME,
+      extractionStatus: 'ok',
+      extractedText: MULTI_SECTION_TEXT,
+      vectorStore: store,
+      courseHasLearningObjectives: false,
+      tier: 'middle',
+    });
+
+    const allChunks = store.upsertedChunks.flat();
+    expect(allChunks).toHaveLength(3);
+  });
+
+  it('Case A: every chunk.sectionTitle === fileName', async () => {
+    const sections = [
+      { id: 'sec-0', title: 'Introduction', index: 0, text: longSectionText('Introduction') },
+      { id: 'sec-1', title: 'Body',         index: 1, text: longSectionText('Body') },
+      { id: 'sec-2', title: 'Conclusion',   index: 2, text: longSectionText('Conclusion') },
+    ];
+    chunkMaterialMock.mockReturnValue({ sections, details: [] });
+    generateMaterialDigestMock
+      .mockResolvedValueOnce({ digest: FIXED_DIGEST, model: 'test-model' })
+      .mockResolvedValueOnce({ digest: 'summary of introduction', model: 'test-model' })
+      .mockResolvedValueOnce({ digest: 'summary of body', model: 'test-model' })
+      .mockResolvedValueOnce({ digest: 'summary of conclusion', model: 'test-model' });
+
+    const store = makeFakeStore();
+    await finalizeExtraction({
+      id: 'mat-prose-a2',
+      courseCode: 'GC 3800',
+      fileName: PROSE_FILE_NAME,
+      extractionStatus: 'ok',
+      extractedText: MULTI_SECTION_TEXT,
+      vectorStore: store,
+      courseHasLearningObjectives: false,
+      tier: 'middle',
+    });
+
+    const allChunks = store.upsertedChunks.flat();
+    for (const chunk of allChunks) {
+      expect(chunk.sectionTitle).toBe(PROSE_FILE_NAME);
+    }
+  });
+
+  it('Case A: no surfaced field (sectionTitle/text/contextBlurb) matches /section\\s*\\d/i or equals a section title', async () => {
+    const sections = [
+      { id: 'sec-0', title: 'Introduction', index: 0, text: longSectionText('Introduction') },
+      { id: 'sec-1', title: 'Body',         index: 1, text: longSectionText('Body') },
+      { id: 'sec-2', title: 'Conclusion',   index: 2, text: longSectionText('Conclusion') },
+    ];
+    const sectionTitles = sections.map(s => s.title);
+    chunkMaterialMock.mockReturnValue({ sections, details: [] });
+    generateMaterialDigestMock
+      .mockResolvedValueOnce({ digest: FIXED_DIGEST, model: 'test-model' })
+      .mockResolvedValueOnce({ digest: 'summary of introduction content', model: 'test-model' })
+      .mockResolvedValueOnce({ digest: 'summary of body content', model: 'test-model' })
+      .mockResolvedValueOnce({ digest: 'summary of conclusion content', model: 'test-model' });
+
+    const store = makeFakeStore();
+    await finalizeExtraction({
+      id: 'mat-prose-a3',
+      courseCode: 'GC 3800',
+      fileName: PROSE_FILE_NAME,
+      extractionStatus: 'ok',
+      extractedText: MULTI_SECTION_TEXT,
+      vectorStore: store,
+      courseHasLearningObjectives: false,
+      tier: 'middle',
+    });
+
+    const allChunks = store.upsertedChunks.flat();
+    const sectionIndexRe = /section\s*\d/i;
+    for (const chunk of allChunks) {
+      // No surfaced field may carry a section index
+      expect(sectionIndexRe.test(chunk.sectionTitle)).toBe(false);
+      expect(sectionIndexRe.test(chunk.contextBlurb)).toBe(false);
+      // sectionTitle must never be one of the section's own titles
+      expect(sectionTitles).not.toContain(chunk.sectionTitle);
+    }
+  });
+
+  it('Case A: status ends ready', async () => {
+    const sections = [
+      { id: 'sec-0', title: 'Introduction', index: 0, text: longSectionText('Introduction') },
+      { id: 'sec-1', title: 'Body',         index: 1, text: longSectionText('Body') },
+      { id: 'sec-2', title: 'Conclusion',   index: 2, text: longSectionText('Conclusion') },
+    ];
+    chunkMaterialMock.mockReturnValue({ sections, details: [] });
+    generateMaterialDigestMock
+      .mockResolvedValueOnce({ digest: FIXED_DIGEST, model: 'test-model' })
+      .mockResolvedValueOnce({ digest: 'summary of introduction', model: 'test-model' })
+      .mockResolvedValueOnce({ digest: 'summary of body', model: 'test-model' })
+      .mockResolvedValueOnce({ digest: 'summary of conclusion', model: 'test-model' });
+
+    const store = makeFakeStore();
+    await finalizeExtraction({
+      id: 'mat-prose-a4',
+      courseCode: 'GC 3800',
+      fileName: PROSE_FILE_NAME,
+      extractionStatus: 'ok',
+      extractedText: MULTI_SECTION_TEXT,
+      vectorStore: store,
+      courseHasLearningObjectives: false,
+      tier: 'middle',
+    });
+
+    const lastStatus = updateIndexingStatus.mock.calls.at(-1)?.[0] as { status: string };
+    expect(lastStatus?.status).toBe('ready');
+  });
+
+  // Case B: only 1 qualifying section → falls through to full chunk pipeline
+  it('Case B: middle + only 1 qualifying section → falls through to full pipeline (contextualizeChunk called)', async () => {
+    // 1 long section + 2 short ones (below 200 chars)
+    chunkMaterialMock.mockReturnValue({
+      sections: [
+        { id: 'sec-0', title: 'Long',    index: 0, text: longSectionText('Long') },
+        { id: 'sec-1', title: 'Short1',  index: 1, text: 'Too short.' },
+        { id: 'sec-2', title: 'Short2',  index: 2, text: 'Also too short.' },
+      ],
+      details: [
+        { id: 'det-0', parentSectionId: 'sec-0', sectionTitle: 'Long', sectionIndex: 0, index: 0, text: longSectionText('Long') },
+      ],
+    });
+
+    const store = makeFakeStore();
+    await finalizeExtraction({
+      id: 'mat-prose-b',
+      courseCode: 'GC 3800',
+      fileName: PROSE_FILE_NAME,
+      extractionStatus: 'ok',
+      extractedText: MULTI_SECTION_TEXT,
+      vectorStore: store,
+      courseHasLearningObjectives: false,
+      tier: 'middle',
+    });
+
+    // Full pipeline must run — contextualizeChunk is the distinguishing signal
+    expect(contextualizeChunk).toHaveBeenCalled();
+  });
+
+  // Case C: high tier → full pipeline unchanged (existing test coverage, just confirming invariant)
+  it('Case C: high tier still uses full pipeline regardless of chunkMaterial output', async () => {
+    // Give 3 qualifying sections — but high tier skips prose path entirely
+    const sections = [
+      { id: 'sec-0', title: 'Introduction', index: 0, text: longSectionText('Introduction') },
+      { id: 'sec-1', title: 'Body',         index: 1, text: longSectionText('Body') },
+      { id: 'sec-2', title: 'Conclusion',   index: 2, text: longSectionText('Conclusion') },
+    ];
+    chunkMaterialMock.mockReturnValue({
+      sections,
+      details: [
+        { id: 'det-0', parentSectionId: 'sec-0', sectionTitle: 'Introduction', sectionIndex: 0, index: 0, text: longSectionText('Introduction') },
+      ],
+    });
+
+    const store = makeFakeStore();
+    await finalizeExtraction({
+      id: 'mat-prose-c',
+      courseCode: 'GC 3800',
+      fileName: PROSE_FILE_NAME,
+      extractionStatus: 'ok',
+      extractedText: MULTI_SECTION_TEXT,
+      vectorStore: store,
+      courseHasLearningObjectives: false,
+      tier: 'high',
+    });
+
+    // Full pipeline (contextualizeChunk) must have run
+    expect(contextualizeChunk).toHaveBeenCalled();
+    // renderToImages must NOT have been called for high tier
     expect(renderToImages).not.toHaveBeenCalled();
   });
 });
