@@ -315,6 +315,7 @@ export function CaptureClient({
           onContinue={() => setLandingStep(triageEnabled ? 'ingest' : 'interview')}
           instructor={chooserInstructor}
           onInstructorChange={setChooserInstructor}
+          triageEnabled={triageEnabled}
         />
       ) : isLanding && landingStep === 'ingest' ? (
         <TriageStep

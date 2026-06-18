@@ -88,3 +88,66 @@ describe('CaptureMaterialsStep — three source-boxes', () => {
     expect(onInstructorChange).toHaveBeenCalledWith('Alice Appleton');
   });
 });
+
+describe('CaptureMaterialsStep — triageEnabled flag', () => {
+  const baseProps = {
+    course,
+    materials: [mat({})],
+    slug: 's',
+    catalogSyncedAt: null,
+    onMaterialsChange: noop,
+    onCourseChange: noop,
+    onContinue: noop,
+    instructor: defaultInstructor,
+    onInstructorChange: noop,
+  };
+
+  it('flag OFF (default): box order is Syllabus → Canvas → Other', () => {
+    render(<CaptureMaterialsStep {...baseProps} />);
+    const boxes = screen.getAllByTestId(/^(syllabus|canvas|other)-box$/);
+    expect(boxes.map((el) => el.dataset.testid)).toEqual([
+      'syllabus-box',
+      'canvas-box',
+      'other-box',
+    ]);
+  });
+
+  it('flag OFF: no INSTRUCTIONS label is rendered', () => {
+    render(<CaptureMaterialsStep {...baseProps} />);
+    expect(screen.queryByText(/^INSTRUCTIONS$/)).toBeNull();
+  });
+
+  it('flag OFF: continue button says "Continue to interview"', () => {
+    render(<CaptureMaterialsStep {...baseProps} />);
+    expect(screen.getByRole('button', { name: /continue to interview/i })).toBeTruthy();
+  });
+
+  it('flag ON: box order is Canvas → Syllabus → Other', () => {
+    render(<CaptureMaterialsStep {...baseProps} triageEnabled />);
+    const boxes = screen.getAllByTestId(/^(syllabus|canvas|other)-box$/);
+    expect(boxes.map((el) => el.dataset.testid)).toEqual([
+      'canvas-box',
+      'syllabus-box',
+      'other-box',
+    ]);
+  });
+
+  it('flag ON: INSTRUCTIONS label is present', () => {
+    render(<CaptureMaterialsStep {...baseProps} triageEnabled />);
+    expect(screen.getByText(/INSTRUCTIONS/)).toBeTruthy();
+  });
+
+  it('flag ON: continue button says "Continue →" (not "to interview")', () => {
+    render(<CaptureMaterialsStep {...baseProps} triageEnabled />);
+    // Should have a Continue button but NOT "Continue to interview"
+    expect(screen.queryByRole('button', { name: /continue to interview/i })).toBeNull();
+    expect(screen.getByRole('button', { name: /continue →/i })).toBeTruthy();
+  });
+
+  it('flag ON: calling onContinue still works', () => {
+    const onContinue = vi.fn();
+    render(<CaptureMaterialsStep {...baseProps} triageEnabled onContinue={onContinue} />);
+    fireEvent.click(screen.getByRole('button', { name: /continue →/i }));
+    expect(onContinue).toHaveBeenCalled();
+  });
+});

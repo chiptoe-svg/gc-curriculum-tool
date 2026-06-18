@@ -19,6 +19,9 @@ interface Props {
   onContinue: () => void;
   instructor: string;
   onInstructorChange: (v: string) => void;
+  /** When true: Canvas-first box order, wide blurb, INSTRUCTIONS paragraph,
+   *  and relabeled continue button. Default false = byte-for-byte legacy UI. */
+  triageEnabled?: boolean;
 }
 
 /** ~4 chars/token rule of thumb (matches MaterialsPanel.estimateTokens). */
@@ -26,7 +29,7 @@ function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4);
 }
 
-export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt, onMaterialsChange, onCourseChange, onContinue, instructor, onInstructorChange }: Props) {
+export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt, onMaterialsChange, onCourseChange, onContinue, instructor, onInstructorChange, triageEnabled = false }: Props) {
   useRouter();
   const [showManager, setShowManager] = useState(false);
 
@@ -45,8 +48,15 @@ export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt,
         <span aria-hidden className="text-foreground">●</span><span aria-hidden>──</span><span aria-hidden>○</span>
       </div>
       <h2 className="font-display text-xl font-semibold tracking-tight">Here&apos;s what we&apos;ll work from.</h2>
-      <CaptureWhyBlurb className="mt-2" />
+      <CaptureWhyBlurb className="mt-2" wide={triageEnabled} />
       <p className="mt-3 text-sm text-muted-foreground">Three sources — syllabus, Canvas, and anything else. Unroll each to see what&apos;s inside and add what&apos;s missing before you start.</p>
+      {triageEnabled && (
+        <p className="mt-3 text-sm text-muted-foreground">
+          <span className="font-mono-plex text-[11px] uppercase tracking-[0.18em] text-muted-foreground">INSTRUCTIONS</span>{' '}
+          Surface everything that surrounds this course — Canvas, syllabus, assignment sheets, rubrics, project briefs, slide decks, readings, exemplars — because the AI can only reason from what&apos;s here, and{' '}
+          <strong className="font-semibold text-foreground">more is better</strong>: thin input yields a thin record.
+        </p>
+      )}
 
       <div className="mt-3 flex items-center gap-3">
         <label
@@ -64,26 +74,53 @@ export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt,
       </div>
 
       <div className="mt-4 space-y-3">
-        <SyllabusBox
-          course={course}
-          catalogSyncedAt={catalogSyncedAt}
-          materials={materials}
-          slug={slug}
-          onCourseChange={onCourseChange}
-          onMaterialsChange={onMaterialsChange}
-        />
-        <CanvasBox
-          course={course}
-          materials={materials}
-          slug={slug}
-          onMaterialsChange={onMaterialsChange}
-        />
-        <OtherMaterialsBox
-          course={course}
-          materials={materials}
-          slug={slug}
-          onMaterialsChange={onMaterialsChange}
-        />
+        {triageEnabled ? (
+          <>
+            <CanvasBox
+              course={course}
+              materials={materials}
+              slug={slug}
+              onMaterialsChange={onMaterialsChange}
+            />
+            <SyllabusBox
+              course={course}
+              catalogSyncedAt={catalogSyncedAt}
+              materials={materials}
+              slug={slug}
+              onCourseChange={onCourseChange}
+              onMaterialsChange={onMaterialsChange}
+            />
+            <OtherMaterialsBox
+              course={course}
+              materials={materials}
+              slug={slug}
+              onMaterialsChange={onMaterialsChange}
+            />
+          </>
+        ) : (
+          <>
+            <SyllabusBox
+              course={course}
+              catalogSyncedAt={catalogSyncedAt}
+              materials={materials}
+              slug={slug}
+              onCourseChange={onCourseChange}
+              onMaterialsChange={onMaterialsChange}
+            />
+            <CanvasBox
+              course={course}
+              materials={materials}
+              slug={slug}
+              onMaterialsChange={onMaterialsChange}
+            />
+            <OtherMaterialsBox
+              course={course}
+              materials={materials}
+              slug={slug}
+              onMaterialsChange={onMaterialsChange}
+            />
+          </>
+        )}
       </div>
 
       {/* Aggregate counters dropped 2026-06-12 (operator walkthrough: "what is
@@ -131,7 +168,9 @@ export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt,
             className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">Start without materials anyway →</button>
         ) : (
           <button type="button" onClick={onContinue}
-            className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90">Continue to interview →</button>
+            className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90">
+            {triageEnabled ? 'Continue →' : 'Continue to interview →'}
+          </button>
         )}
       </div>
     </div>

@@ -3,9 +3,9 @@
  * Step 1 materials screen and the Step 2 interview hero so the framing is
  * authored once and stays consistent across the flow.
  */
-export function CaptureWhyBlurb({ className = '' }: { className?: string }) {
+export function CaptureWhyBlurb({ className = '', wide = false }: { className?: string; wide?: boolean }) {
   return (
-    <p className={`max-w-2xl text-sm text-muted-foreground ${className}`}>
+    <p className={`${wide ? '' : 'max-w-2xl '}text-sm text-muted-foreground ${className}`}>
       Grounded in your materials, the AI interviews you and builds a record of what your
       course develops in students: not what the syllabus aspires to do, but what the evidence
       shows, and at what depth. It can only see what you surface here, so name plainly what
