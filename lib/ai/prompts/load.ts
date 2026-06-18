@@ -42,7 +42,8 @@ type PromptName =
   | 'curriculum-chat'
   | 'prereq-edge-seed'
   | 'intended-skills-extract'
-  | 'reconcile-feedback';
+  | 'reconcile-feedback'
+  | 'material-classify';
 
 interface ParsedPrompt {
   frontmatter: Record<string, unknown>;

@@ -41,6 +41,7 @@ export const AI_FUNCTION_IDS = [
   'extract-course-kud',
   'synthesize-target',
   'reconcile-feedback',
+  'material-classify',
 ] as const;
 export type AIFunctionId = (typeof AI_FUNCTION_IDS)[number];
 
@@ -172,6 +173,10 @@ export const DEFAULT_TIERS: Record<AIFunctionId, Exclude<ModelTier, 'custom'>> =
   // reason across item content + feedback nuance to propose calibrated K/U/D changes;
   // promote to heavy if proposal quality is poor on longer feedback.
   'reconcile-feedback': 'default',
+  // Light tier. Single-call binary classifier: is this file a lecture deck/slides
+  // (→ middle) or a reading/reference (→ background)? Short input, two-value enum
+  // output; light is correct. Bias cheap — defaults to background on any error.
+  'material-classify': 'light',
 };
 
 export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
@@ -200,6 +205,7 @@ export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
   'extract-course-kud': 'Course KUD generator (Generate KUDs)',
   'synthesize-target': 'Career-target synthesis (admin)',
   'reconcile-feedback': 'Reconcile feedback (guided faculty review)',
+  'material-classify': 'Material tier classifier (deck vs reading)',
 };
 
 export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
@@ -228,6 +234,7 @@ export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
   'extract-course-kud': 'Generates a course KUD result from catalog text (the Generate KUDs action / kuds/generate route).',
   'synthesize-target': 'Synthesizes a career target\'s sub-competencies + descriptors from industry/partner input (admin synthesis run).',
   'reconcile-feedback': 'Proposes per-item edits (keep/modify/remove/add with revised K/U/D and rationale) from faculty prose feedback over a capture section. Proposals only — never sets provenance; the apply step does that.',
+  'material-classify': 'Classifies a file-bucket material as a lecture deck/slides (→ middle tier) or a reading/reference (→ background tier) from filename, MIME type, size, page count, and optional peek text.',
 };
 
 interface CachedSetting {
