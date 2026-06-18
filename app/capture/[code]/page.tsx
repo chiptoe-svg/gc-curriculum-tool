@@ -186,6 +186,7 @@ export default async function CapturePage({ params, searchParams }: Props) {
           initialInstructor={initialInstructor}
           priorBriefings={priorBriefings}
           triageEnabled={isTriageEnabled()}
+          isExternalTester={isScopedForThis}
         />
       </main>
     </div>

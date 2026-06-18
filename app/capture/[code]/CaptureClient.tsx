@@ -40,6 +40,11 @@ interface Props {
    *  (page.tsx) and passed down — process.env.COURSECAPTURE_TRIAGE is not visible
    *  to this client component, so it must arrive as a prop. */
   triageEnabled?: boolean;
+  /** True when the viewer is an external scoped tester (not Clemson faculty).
+   *  Gates the .imscc cartridge fallback: faculty have a Canvas API token and
+   *  don't need it; external testers without one keep it. Resolved on the
+   *  SERVER (page.tsx, from the scoped session) and passed down. */
+  isExternalTester?: boolean;
 }
 
 type Stage = 'chat' | 'generating' | 'reconcile' | 'review';
@@ -69,6 +74,7 @@ export function CaptureClient({
   catalogSyncedAt,
   hasSnapshot,
   triageEnabled = false,
+  isExternalTester = false,
 }: Props) {
   const [course, setCourse] = useState<CourseCatalogView>(initialCourse);
   const courseCode = course.code;
@@ -316,6 +322,7 @@ export function CaptureClient({
           instructor={chooserInstructor}
           onInstructorChange={setChooserInstructor}
           triageEnabled={triageEnabled}
+          showImscc={isExternalTester}
         />
       ) : isLanding && landingStep === 'ingest' ? (
         <TriageStep

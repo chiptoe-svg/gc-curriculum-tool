@@ -27,6 +27,12 @@ interface Props {
    * false keeps the legacy at-upload-index UI unchanged.
    */
   triageEnabled?: boolean;
+  /**
+   * Show the .imscc cartridge upload (the no-Canvas-token fallback). Clemson
+   * faculty have a Canvas API token, so it's hidden for them; external testers
+   * who lack one keep it. Default true (backward-compatible for direct callers).
+   */
+  showImscc?: boolean;
 }
 
 function isCanvasFile(m: CaptureMaterial): boolean {
@@ -112,6 +118,7 @@ function BundledGroupHeader({
   onImported,
   onImportStart,
   onImportEnd,
+  showImscc = true,
 }: {
   roleLabel: string;
   code: string;
@@ -123,6 +130,9 @@ function BundledGroupHeader({
   onImported: (sourceCode: string | null) => Promise<void>;
   onImportStart?: () => void;
   onImportEnd?: () => void;
+  /** Show the .imscc fallback. Hidden for Clemson faculty (they have a Canvas
+   *  API token); kept for external testers who lack one. */
+  showImscc?: boolean;
 }) {
   const [formOpen, setFormOpen] = useState(false);
   const [token, setToken] = useState('');
@@ -266,6 +276,7 @@ function BundledGroupHeader({
             </div>
           </div>
           <CanvasCredsHelp />
+          {showImscc && (
           <div className="mt-2 border-t pt-2">
             <p className="mb-1 text-sm font-medium text-muted-foreground">Or upload a .imscc cartridge</p>
             <input
@@ -298,6 +309,7 @@ function BundledGroupHeader({
               Export from Canvas: Settings &rarr; Export Course Content.
             </p>
           </div>
+          )}
           {importMsg && <p className="text-sm text-muted-foreground">{importMsg}</p>}
         </div>
       )}
@@ -307,7 +319,7 @@ function BundledGroupHeader({
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export function CanvasBox({ course, materials, slug, onMaterialsChange, triageEnabled = false }: Props) {
+export function CanvasBox({ course, materials, slug, onMaterialsChange, triageEnabled = false, showImscc = true }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [tokenOpen, setTokenOpen] = useState(false);
@@ -853,6 +865,7 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange, triageEn
             </button>
           </div>
           <CanvasCredsHelp />
+          {showImscc && (
           <div className="mt-2 border-t pt-2">
             <p className="mb-1 text-sm font-medium text-muted-foreground">Or upload a .imscc cartridge</p>
             <input
@@ -885,6 +898,7 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange, triageEn
               Export from Canvas: Settings &rarr; Export Course Content.
             </p>
           </div>
+          )}
           <label className="mt-1.5 flex items-center gap-1.5 text-sm text-muted-foreground">
             <input
               type="checkbox"
@@ -916,6 +930,7 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange, triageEn
                 onImported={handleSlotImported}
                 onImportStart={() => setSlotImporting(true)}
                 onImportEnd={() => setSlotImporting(false)}
+                showImscc={showImscc}
               />
               {(groupedCanvas.get(null) ?? []).length === 0 && (
                 <p className="px-3 py-2 text-sm text-muted-foreground">Nothing imported from Canvas yet.</p>
@@ -939,6 +954,7 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange, triageEn
                       onImported={handleSlotImported}
                       onImportStart={() => setSlotImporting(true)}
                       onImportEnd={() => setSlotImporting(false)}
+                      showImscc={showImscc}
                     />
                     {groupItems.length === 0 && (
                       <p className="px-3 py-2 text-sm text-muted-foreground">Nothing imported from Canvas yet.</p>

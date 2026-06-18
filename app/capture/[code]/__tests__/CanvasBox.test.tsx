@@ -146,6 +146,23 @@ describe('CanvasBox', () => {
     expect(screen.getByText(/not used — the Google Sheet catalog already provides/i)).toBeTruthy();
   });
 
+  it('shows the .imscc fallback by default (e.g. external testers) when the import form is open', () => {
+    render(<CanvasBox course={course} materials={[]} slug="s" onMaterialsChange={noop} />);
+    // Open the Canvas import form (empty → "Import from Canvas").
+    fireEvent.click(screen.getByRole('button', { name: /import from canvas/i }));
+    expect(screen.getByText(/upload a \.imscc cartridge/i)).toBeTruthy();
+  });
+
+  it('hides the .imscc fallback when showImscc=false (Clemson faculty)', () => {
+    render(<CanvasBox course={course} materials={[]} slug="s" onMaterialsChange={noop} showImscc={false} />);
+    fireEvent.click(screen.getByRole('button', { name: /import from canvas/i }));
+    // Canvas API token import still present…
+    expect(screen.getByText(/canvas api token/i)).toBeTruthy();
+    // …but the .imscc fallback is gone.
+    expect(screen.queryByText(/upload a \.imscc cartridge/i)).toBeNull();
+    expect(screen.queryByRole('button', { name: /upload \.imscc/i })).toBeNull();
+  });
+
   it('overridden FERPA Canvas File (autoSetAside, not ignored) looks normal — no why-ignored band', () => {
     const file = mat({
       id: 'cf1',

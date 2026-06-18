@@ -22,6 +22,9 @@ interface Props {
   /** When true: Canvas-first box order, wide blurb, INSTRUCTIONS paragraph,
    *  and relabeled continue button. Default false = byte-for-byte legacy UI. */
   triageEnabled?: boolean;
+  /** Show the .imscc cartridge fallback in the Canvas box. False for Clemson
+   *  faculty (they have a Canvas API token); true for external testers. */
+  showImscc?: boolean;
 }
 
 /** ~4 chars/token rule of thumb (matches MaterialsPanel.estimateTokens). */
@@ -29,7 +32,7 @@ function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4);
 }
 
-export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt, onMaterialsChange, onCourseChange, onContinue, instructor, onInstructorChange, triageEnabled = false }: Props) {
+export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt, onMaterialsChange, onCourseChange, onContinue, instructor, onInstructorChange, triageEnabled = false, showImscc = false }: Props) {
   useRouter();
   const [showManager, setShowManager] = useState(false);
 
@@ -84,6 +87,7 @@ export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt,
               slug={slug}
               onMaterialsChange={onMaterialsChange}
               triageEnabled
+              showImscc={showImscc}
             />
             <SyllabusBox
               course={course}
@@ -116,6 +120,7 @@ export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt,
               materials={materials}
               slug={slug}
               onMaterialsChange={onMaterialsChange}
+              showImscc={showImscc}
             />
             <OtherMaterialsBox
               course={course}
