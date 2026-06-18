@@ -42,7 +42,8 @@ function mapContextToMaterials(json: {
     ignoredItems?: readonly string[];
     sourceCode?: string | null;
     tier?: 'high' | 'middle' | 'background' | null;
+    rawCleared?: boolean;
   }>;
 }): CaptureMaterial[] {
-  return json.materials.map(m => ({ ...m, sourceCode: m.sourceCode ?? null, tier: m.tier ?? null }));
+  return json.materials.map(m => ({ ...m, sourceCode: m.sourceCode ?? null, tier: m.tier ?? null, rawCleared: m.rawCleared ?? false }));
 }

@@ -12,6 +12,8 @@ import { hashIp } from '@/lib/ip-hash';
 import { updateWikiForSnapshot } from '@/lib/ai/wiki/update';
 import { writeAndPush } from '@/lib/wiki/git-ops';
 import { resolveScopedSession, authorizeCourseWrite } from '@/lib/sandbox/access';
+import { isTriageEnabled } from '@/lib/capture/triage-flag';
+import { clearRawBlobsForCourse } from '@/lib/capture/clear-raw-blobs';
 
 interface RouteContext { params: Promise<{ code: string }> }
 
@@ -131,6 +133,16 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   // Mark the working draft as confirmed (so edits since snapshot will move
   // it back to 'edited' and signal "you have unsnapshotted changes").
   await setCaptureProfileStatus(courseCode, 'confirmed');
+
+  // Reclaim disk: delete raw uploaded blobs now that extractedText + digest
+  // are durable. Best-effort — a blob-delete failure must never fail the
+  // snapshot response. Gated behind isTriageEnabled() so it ships/reverts
+  // with the rest of the tiered flow.
+  if (isTriageEnabled()) {
+    await clearRawBlobsForCourse(courseCode).catch(err =>
+      console.error('[retention] clear raw blobs failed', err),
+    );
+  }
 
   // Fire wiki-update in the background. Snapshot is already persisted; if
   // wiki regen fails we log + continue. The next snapshot will catch up.

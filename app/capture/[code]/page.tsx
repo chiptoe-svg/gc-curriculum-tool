@@ -130,6 +130,7 @@ export default async function CapturePage({ params, searchParams }: Props) {
     blobUrl: m.blobUrl,
     sourceCode: m.sourceCode ?? null,
     tier: (m.tier as 'high' | 'middle' | 'background' | null) ?? null,
+    rawCleared: m.rawCleared ?? false,
   }));
 
   return (

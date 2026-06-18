@@ -34,6 +34,7 @@ function makeMaterial(overrides: Partial<CaptureMaterial>): CaptureMaterial {
     ignoredItems: overrides.ignoredItems,
     sourceCode: overrides.sourceCode ?? null,
     tier: overrides.tier ?? null,
+    rawCleared: overrides.rawCleared ?? false,
   };
 }
 

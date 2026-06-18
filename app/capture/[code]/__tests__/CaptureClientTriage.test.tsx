@@ -115,6 +115,7 @@ function mat(id: string): CaptureMaterial {
     blobUrl: 'blob://x',
     sourceCode: null,
     tier: 'high',
+    rawCleared: false,
   };
 }
 

@@ -56,6 +56,12 @@ export interface CaptureMaterial {
    * Canvas import route and the triage PATCH endpoint.
    */
   tier: 'high' | 'middle' | 'background' | null;
+  /**
+   * True after the raw blob file has been deleted on snapshot approval to
+   * reclaim disk. The durable record (extractedText, digest, vectors) is
+   * unaffected. Set by clearRawBlobsForCourse (isTriageEnabled flow).
+   */
+  rawCleared: boolean;
 }
 
 export interface CourseCatalogView {
@@ -454,6 +460,9 @@ function MaterialRow({
             )}
             <span>{humanSize(material.sizeBytes)}</span>
             {material.extractionMethod && <span> · via {material.extractionMethod}</span>}
+            {material.rawCleared && (
+              <span className="text-muted-foreground/60"> · original cleared after approval</span>
+            )}
           </p>
           {(material.ignored || material.autoSetAside) && (
             <div className="mt-1 flex items-start justify-between gap-2 rounded border border-amber-200 bg-amber-50/50 px-2 py-1">
@@ -537,14 +546,16 @@ function MaterialRow({
             />
             ignore
           </label>
-          <button
-            type="button"
-            onClick={() => setExpanded(e => !e)}
-            disabled={!material.extractedText}
-            className="text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-30"
-          >
-            {expanded ? 'hide' : 'preview'}
-          </button>
+          {!material.rawCleared && (
+            <button
+              type="button"
+              onClick={() => setExpanded(e => !e)}
+              disabled={!material.extractedText}
+              className="text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-30"
+            >
+              {expanded ? 'hide' : 'preview'}
+            </button>
+          )}
           <button
             type="button"
             onClick={onDelete}
@@ -1084,6 +1095,7 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
             blobUrl: data.blobUrl ?? '',
             sourceCode: null,
             tier: null,
+            rawCleared: false,
           });
           if (data.indexingStatus === 'queued') queuedCount++;
         } catch (e) {
