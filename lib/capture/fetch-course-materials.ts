@@ -41,7 +41,8 @@ function mapContextToMaterials(json: {
     blobUrl: string;
     ignoredItems?: readonly string[];
     sourceCode?: string | null;
+    tier?: 'high' | 'middle' | 'background' | null;
   }>;
 }): CaptureMaterial[] {
-  return json.materials.map(m => ({ ...m, sourceCode: m.sourceCode ?? null }));
+  return json.materials.map(m => ({ ...m, sourceCode: m.sourceCode ?? null, tier: m.tier ?? null }));
 }

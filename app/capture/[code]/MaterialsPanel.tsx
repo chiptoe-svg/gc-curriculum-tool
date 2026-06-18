@@ -49,6 +49,13 @@ export interface CaptureMaterial {
    * route ingests materials from a bundled lecture/lab pair.
    */
   sourceCode: string | null;
+  /**
+   * Triage tier assigned during the two-phase ingestion flow. null means
+   * not yet classified (treated as 'high' in TriageStep — full pipeline,
+   * current behavior; faculty can downgrade). Persisted in DB; set by the
+   * Canvas import route and the triage PATCH endpoint.
+   */
+  tier: 'high' | 'middle' | 'background' | null;
 }
 
 export interface CourseCatalogView {
@@ -1076,6 +1083,7 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
             setAsideReason: null,
             blobUrl: data.blobUrl ?? '',
             sourceCode: null,
+            tier: null,
           });
           if (data.indexingStatus === 'queued') queuedCount++;
         } catch (e) {

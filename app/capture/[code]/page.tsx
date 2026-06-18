@@ -128,6 +128,7 @@ export default async function CapturePage({ params, searchParams }: Props) {
     ignoredItems: m.ignoredItems,
     blobUrl: m.blobUrl,
     sourceCode: m.sourceCode ?? null,
+    tier: (m.tier as 'high' | 'middle' | 'background' | null) ?? null,
   }));
 
   return (
