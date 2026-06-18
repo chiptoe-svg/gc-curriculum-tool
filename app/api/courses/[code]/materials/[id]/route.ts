@@ -8,6 +8,7 @@ import {
   setMaterialIgnoredItems,
   setMaterialUseDigest,
   updateFerpaRisk,
+  updateMaterialTier,
 } from '@/lib/db/course-materials-queries';
 
 interface RouteContext {
@@ -43,7 +44,7 @@ export async function DELETE(req: Request, { params }: RouteContext): Promise<Re
 }
 
 // PATCH /api/courses/[code]/materials/[id]?slug=...
-// Body: { ignored?: boolean, useDigest?: boolean, ferpaRisk?: 'low' | 'medium' | 'high', ignoredItems?: string[] }
+// Body: { ignored?: boolean, useDigest?: boolean, ferpaRisk?: 'low' | 'medium' | 'high', ignoredItems?: string[], tier?: 'high' | 'middle' | 'background' }
 // At least one of the supported fields must be provided.
 // - `ignored`: toggles whether the material's extracted text feeds AI context.
 // - `useDigest`: switches between digest and raw text for AI context.
@@ -77,9 +78,11 @@ export async function PATCH(req: Request, { params }: RouteContext): Promise<Res
     body.ferpaRisk === 'low' || body.ferpaRisk === 'medium' || body.ferpaRisk === 'high';
   const hasIgnoredItems = Array.isArray(body.ignoredItems)
     && (body.ignoredItems as unknown[]).every(v => typeof v === 'string');
-  if (!hasIgnored && !hasUseDigest && !hasFerpaRisk && !hasIgnoredItems) {
+  const hasTier =
+    body.tier === 'high' || body.tier === 'middle' || body.tier === 'background';
+  if (!hasIgnored && !hasUseDigest && !hasFerpaRisk && !hasIgnoredItems && !hasTier) {
     return NextResponse.json(
-      { error: 'at least one of `ignored`, `useDigest`, `ferpaRisk`, or `ignoredItems` must be provided' },
+      { error: 'at least one of `ignored`, `useDigest`, `ferpaRisk`, `ignoredItems`, or `tier` must be provided' },
       { status: 400 },
     );
   }
@@ -92,6 +95,12 @@ export async function PATCH(req: Request, { params }: RouteContext): Promise<Res
   if (body.ignoredItems !== undefined && !hasIgnoredItems) {
     return NextResponse.json(
       { error: '`ignoredItems` must be an array of strings' },
+      { status: 400 },
+    );
+  }
+  if (body.tier !== undefined && !hasTier) {
+    return NextResponse.json(
+      { error: '`tier` must be one of "high", "middle", "background"' },
       { status: 400 },
     );
   }
@@ -110,6 +119,9 @@ export async function PATCH(req: Request, { params }: RouteContext): Promise<Res
   if (hasIgnoredItems) {
     const updated = await setMaterialIgnoredItems(id, body.ignoredItems as string[]);
     if (!updated) return NextResponse.json({ error: 'no row updated' }, { status: 404 });
+  }
+  if (hasTier) {
+    await updateMaterialTier(id, body.tier as string);
   }
 
   return NextResponse.json({ ok: true });

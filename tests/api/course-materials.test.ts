@@ -17,6 +17,11 @@ const {
   recordSpend,
   hashIp,
   enqueue,
+  setMaterialIgnored,
+  setMaterialUseDigest,
+  updateFerpaRisk,
+  setMaterialIgnoredItems,
+  updateMaterialTier,
 } = vi.hoisted(() => ({
   isValidSlug: vi.fn(),
   getCourseByCode: vi.fn(),
@@ -34,6 +39,11 @@ const {
   recordSpend: vi.fn(),
   hashIp: vi.fn(),
   enqueue: vi.fn(),
+  setMaterialIgnored: vi.fn(),
+  setMaterialUseDigest: vi.fn(),
+  updateFerpaRisk: vi.fn(),
+  setMaterialIgnoredItems: vi.fn(),
+  updateMaterialTier: vi.fn(),
 }));
 
 vi.mock('@/lib/slug', () => ({ isValidSlug }));
@@ -51,6 +61,11 @@ vi.mock('@/lib/db/course-materials-queries', () => ({
   getMaterialById,
   deleteMaterial,
   listMaterialsByCourse,
+  setMaterialIgnored,
+  setMaterialUseDigest,
+  updateFerpaRisk,
+  setMaterialIgnoredItems,
+  updateMaterialTier,
 }));
 vi.mock('@/lib/courses/extract-text', () => ({ extractText }));
 vi.mock('@/lib/rate-limit/ip-rate-limit', () => ({ checkIpRateLimit }));
@@ -59,7 +74,7 @@ vi.mock('@/lib/ip-hash', () => ({ hashIp }));
 vi.mock('@/lib/capture/ingest-queue', () => ({ enqueue: vi.fn().mockResolvedValue(undefined) }));
 
 import { POST } from '@/app/api/courses/[code]/materials/route';
-import { DELETE } from '@/app/api/courses/[code]/materials/[id]/route';
+import { DELETE, PATCH } from '@/app/api/courses/[code]/materials/[id]/route';
 
 const SLUG = 'valid-slug-12345';
 const CODE = 'GC 3460';
@@ -253,5 +268,109 @@ describe('DELETE /api/courses/[code]/materials/[id]', () => {
     expect(res.status).toBe(200);
     expect(deleteLocal).toHaveBeenCalledWith('gc-3460/rubric.pdf');
     expect(deleteMaterial).toHaveBeenCalledWith('mat-1');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Helpers for PATCH tests
+// ---------------------------------------------------------------------------
+
+function makePatchReq(
+  body: Record<string, unknown>,
+  materialId = 'mat-1',
+): [Request, { params: Promise<{ code: string; id: string }> }] {
+  const req = new Request(
+    `http://test/api/courses/GC%203460/materials/${materialId}?slug=${encodeURIComponent(SLUG)}`,
+    { method: 'PATCH', body: JSON.stringify(body), headers: { 'content-type': 'application/json' } },
+  );
+  return [req, { params: Promise.resolve({ code: CODE, id: materialId }) }];
+}
+
+describe('PATCH /api/courses/[code]/materials/[id]', () => {
+  beforeEach(() => {
+    getMaterialById.mockResolvedValue({ id: 'mat-1', courseCode: CODE });
+    setMaterialIgnored.mockResolvedValue(true);
+    setMaterialUseDigest.mockResolvedValue(true);
+    updateFerpaRisk.mockResolvedValue(undefined);
+    setMaterialIgnoredItems.mockResolvedValue(true);
+    updateMaterialTier.mockResolvedValue(undefined);
+  });
+
+  it('returns 401 on invalid slug', async () => {
+    const req = new Request(
+      'http://test/api/courses/GC%203460/materials/mat-1?slug=wrong',
+      { method: 'PATCH', body: JSON.stringify({ tier: 'high' }), headers: { 'content-type': 'application/json' } },
+    );
+    const res = await PATCH(req, { params: Promise.resolve({ code: CODE, id: 'mat-1' }) });
+    expect(res.status).toBe(401);
+  });
+
+  it('returns 404 when material not found', async () => {
+    getMaterialById.mockResolvedValue(null);
+    const [req, ctx] = makePatchReq({ tier: 'high' });
+    const res = await PATCH(req, ctx);
+    expect(res.status).toBe(404);
+  });
+
+  it('returns 400 when body has no recognised field', async () => {
+    const [req, ctx] = makePatchReq({ unknown: true });
+    const res = await PATCH(req, ctx);
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toMatch(/tier/);
+  });
+
+  it('returns 400 for an invalid tier value', async () => {
+    const [req, ctx] = makePatchReq({ tier: 'bogus' });
+    const res = await PATCH(req, ctx);
+    expect(res.status).toBe(400);
+    const json = await res.json();
+    expect(json.error).toMatch(/tier/i);
+  });
+
+  it('accepts tier:"background" → 200 and calls updateMaterialTier', async () => {
+    const [req, ctx] = makePatchReq({ tier: 'background' });
+    const res = await PATCH(req, ctx);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.ok).toBe(true);
+    expect(updateMaterialTier).toHaveBeenCalledWith('mat-1', 'background');
+  });
+
+  it('accepts tier:"high" → 200 and calls updateMaterialTier', async () => {
+    const [req, ctx] = makePatchReq({ tier: 'high' });
+    const res = await PATCH(req, ctx);
+    expect(res.status).toBe(200);
+    expect(updateMaterialTier).toHaveBeenCalledWith('mat-1', 'high');
+  });
+
+  it('accepts tier:"middle" → 200 and calls updateMaterialTier', async () => {
+    const [req, ctx] = makePatchReq({ tier: 'middle' });
+    const res = await PATCH(req, ctx);
+    expect(res.status).toBe(200);
+    expect(updateMaterialTier).toHaveBeenCalledWith('mat-1', 'middle');
+  });
+
+  it('tier-only body is sufficient (presence guard passes)', async () => {
+    const [req, ctx] = makePatchReq({ tier: 'high' });
+    const res = await PATCH(req, ctx);
+    // Must not hit the "at least one of" 400
+    expect(res.status).toBe(200);
+    expect(setMaterialIgnored).not.toHaveBeenCalled();
+  });
+
+  it('still accepts ignored:true as before', async () => {
+    const [req, ctx] = makePatchReq({ ignored: true });
+    const res = await PATCH(req, ctx);
+    expect(res.status).toBe(200);
+    expect(setMaterialIgnored).toHaveBeenCalledWith('mat-1', true);
+  });
+
+  it('still accepts ferpaRisk and tier together', async () => {
+    const [req, ctx] = makePatchReq({ ferpaRisk: 'low', tier: 'middle' });
+    const res = await PATCH(req, ctx);
+    expect(res.status).toBe(200);
+    expect(updateFerpaRisk).toHaveBeenCalledWith({ id: 'mat-1', risk: 'low' });
+    expect(updateMaterialTier).toHaveBeenCalledWith('mat-1', 'middle');
   });
 });
