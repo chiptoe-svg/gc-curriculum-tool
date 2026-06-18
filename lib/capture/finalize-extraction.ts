@@ -159,6 +159,43 @@ async function runV2Pipeline(input: FinalizeExtractionInput): Promise<void> {
     return;
   }
 
+  // 4b. Background tier: embed the digest as a single retrieval unit —
+  //     skip chunkMaterial/contextualizeChunk entirely.
+  if (input.tier === 'background') {
+    await updateIndexingStatus({ id, status: 'indexing' });
+    try {
+      const [vector] = await embedBatch([digestText]);
+      const tenant = tenantForCourse(courseCode);
+      const sectionId = `${id}-digest`;
+      await input.vectorStore.deleteByMaterial(tenant, id);
+      await input.vectorStore.upsertSections(tenant, [{
+        id: sectionId,
+        materialId: id,
+        title: fileName,
+        index: 0,
+        text: digestText,
+      }]);
+      await input.vectorStore.upsert(tenant, [{
+        id: `${id}-digest-0`,
+        vector: vector!,
+        materialId: id,
+        courseCode,
+        fileName,
+        sectionTitle: fileName,
+        sectionIndex: 0,
+        parentSectionId: sectionId,
+        text: digestText,
+        contextBlurb: '',
+      }]);
+      console.log(`[ingest] ${courseCode} "${fileName}": background tier — 1 digest unit`);
+      await updateIndexingStatus({ id, status: 'ready', indexedAt: new Date() });
+    } catch (err) {
+      console.error(`finalizeExtraction (background): failed for ${id}`, err);
+      await updateIndexingStatus({ id, status: 'failed' });
+    }
+    return;
+  }
+
   // 5–6. Chunk + contextualize + embed + upsert
   await updateIndexingStatus({ id, status: 'indexing' });
   try {
