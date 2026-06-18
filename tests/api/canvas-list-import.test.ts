@@ -305,6 +305,87 @@ describe('POST /api/courses/[code]/canvas-import (list-mode, COURSECAPTURE_TRIAG
     expect(updateCourseCanvasImport).toHaveBeenCalledWith(CODE, fakeCanvasData.course.name, expect.any(Date));
   });
 
+  // ── Unsupported MIME-type guard ───────────────────────────────────────────
+
+  it('skips unsupported files (no download, no DB row, appears in manifest.skipped)', async () => {
+    const unsupportedFileMeta = {
+      id: '9002',
+      displayName: 'lecture-video.mp4',
+      url: 'https://clemson.instructure.com/files/9002/download?token=xyz',
+      mimeType: 'video/mp4',
+      sizeBytes: 1_000_000,
+    };
+    const fakeCanvasDataWithVideo = {
+      ...fakeCanvasData,
+      course: {
+        ...fakeCanvasData.course,
+        syllabusHtml: '<p>Watch <a href="/courses/12345/files/9002/download">video</a>.</p>',
+      },
+    };
+    fetchCanvasCourse.mockResolvedValue(fakeCanvasDataWithVideo);
+    fetchCanvasFileMeta.mockResolvedValue(unsupportedFileMeta);
+
+    const [req, ctx] = makeReq();
+    const res = await POST(req, ctx);
+    expect(res.status).toBe(200);
+
+    const json = await res.json();
+
+    // putLocal must NOT have been called for the unsupported file
+    expect(putLocal).not.toHaveBeenCalled();
+
+    // The unsupported file must NOT appear in manifest.rows
+    const fileRows = json.manifest.rows.filter((r: { kind: string }) => r.kind === 'file');
+    expect(fileRows).toHaveLength(0);
+
+    // The unsupported file MUST appear in manifest.skipped with a reason
+    expect(Array.isArray(json.manifest.skipped)).toBe(true);
+    const skipped = json.manifest.skipped as Array<{ fileName: string; mimeType: string; reason: string }>;
+    expect(skipped).toHaveLength(1);
+    expect(skipped[0]?.fileName).toBe('lecture-video.mp4');
+    expect(skipped[0]?.mimeType).toBe('video/mp4');
+    expect(skipped[0]?.reason).toMatch(/unsupported type/i);
+  });
+
+  it('still skips oversized files and records them in manifest.skipped', async () => {
+    const bigFileMeta = {
+      id: '9003',
+      displayName: 'huge-document.pdf',
+      url: 'https://clemson.instructure.com/files/9003/download?token=abc',
+      mimeType: 'application/pdf',
+      sizeBytes: 10 * 1024 * 1024, // 10 MB — over the 5 MB cap
+    };
+    const fakeCanvasDataWithBigFile = {
+      ...fakeCanvasData,
+      course: {
+        ...fakeCanvasData.course,
+        syllabusHtml: '<p>See <a href="/courses/12345/files/9003/download">doc</a>.</p>',
+      },
+    };
+    fetchCanvasCourse.mockResolvedValue(fakeCanvasDataWithBigFile);
+    fetchCanvasFileMeta.mockResolvedValue(bigFileMeta);
+
+    const [req, ctx] = makeReq();
+    const res = await POST(req, ctx);
+    expect(res.status).toBe(200);
+
+    const json = await res.json();
+
+    // putLocal must NOT have been called for the oversized file
+    expect(putLocal).not.toHaveBeenCalled();
+
+    // The oversized file must NOT appear in manifest.rows
+    const fileRows = json.manifest.rows.filter((r: { kind: string }) => r.kind === 'file');
+    expect(fileRows).toHaveLength(0);
+
+    // The oversized file MUST appear in manifest.skipped with a reason
+    expect(Array.isArray(json.manifest.skipped)).toBe(true);
+    const skipped = json.manifest.skipped as Array<{ fileName: string; mimeType: string; reason: string }>;
+    expect(skipped).toHaveLength(1);
+    expect(skipped[0]?.fileName).toBe('huge-document.pdf');
+    expect(skipped[0]?.reason).toMatch(/file too large/i);
+  });
+
   it('decksPresent is true when a file row has slideCount set', async () => {
     fetchCanvasCourse.mockResolvedValue(fakeCanvasDataWithFile);
     fetchCanvasFileMeta.mockResolvedValue({

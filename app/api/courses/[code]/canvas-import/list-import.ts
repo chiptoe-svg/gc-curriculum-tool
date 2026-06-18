@@ -26,6 +26,8 @@ import { fetchCanvasCourse, fetchCanvasFileMeta } from '@/lib/canvas/fetchCanvas
 import { assembleCanvasMaterials } from '@/lib/canvas/assemble-canvas-materials';
 import { probeSize } from '@/lib/capture/size-probe';
 import { putLocal, courseSlug, safeFilename } from '@/lib/storage/local-storage';
+import { SUPPORTED_MIME_TYPES } from '@/lib/courses/extract-text';
+import { isLegacyOfficeMime } from '@/lib/courses/legacy-converter';
 
 // Extension-to-MIME fallback — identical to the one in route.ts so both
 // paths resolve mimeTypes consistently.
@@ -58,6 +60,12 @@ function kindFromFileName(fileName: string): ManifestRow['kind'] {
   if (fileName === 'Canvas: Quizzes') return 'quizzes';
   if (fileName === 'Canvas: Module List') return 'modules';
   return 'file';
+}
+
+export interface SkippedFile {
+  fileName: string;
+  mimeType: string;
+  reason: string;
 }
 
 export interface ManifestRow {
@@ -187,6 +195,7 @@ export async function runListImport(
   }
 
   // ── Download + store file attachments (no extraction, no enqueue) ─────────
+  const skippedFiles: SkippedFile[] = [];
   const fileIdList = Array.from(referencedFileIds).slice(0, MAX_FILES_PER_IMPORT);
   for (const fileId of fileIdList) {
     const meta = await fetchCanvasFileMeta(canvasBaseUrl, fileId, canvasToken);
@@ -199,7 +208,28 @@ export async function runListImport(
       ?? EXT_TO_MIME[ext]
       ?? reportedMime;
 
-    if (meta.sizeBytes > MAX_FILE_BYTES) continue;
+    // Skip files whose MIME type is neither supported nor legacy-office —
+    // they can't be text-extracted at any tier, so downloading and storing
+    // them wastes local storage and clutters the manifest.
+    const isSupported = (SUPPORTED_MIME_TYPES as readonly string[]).includes(resolvedMime);
+    const isLegacy = isLegacyOfficeMime(resolvedMime);
+    if (!isSupported && !isLegacy) {
+      skippedFiles.push({
+        fileName: meta.displayName,
+        mimeType: resolvedMime,
+        reason: `unsupported type: ${resolvedMime || ext}`,
+      });
+      continue;
+    }
+
+    if (meta.sizeBytes > MAX_FILE_BYTES) {
+      skippedFiles.push({
+        fileName: meta.displayName,
+        mimeType: resolvedMime,
+        reason: `file too large (${meta.sizeBytes} > ${MAX_FILE_BYTES})`,
+      });
+      continue;
+    }
 
     let buffer: Buffer;
     try {
@@ -276,6 +306,7 @@ export async function runListImport(
   return NextResponse.json({
     manifest: {
       rows: manifestRows,
+      skipped: skippedFiles,
       decksPresent,
     },
   });
