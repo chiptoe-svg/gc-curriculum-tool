@@ -20,7 +20,9 @@ import {
   findMaterialByFileName,
   updateMaterialMetadata,
   updateExtractionResult,
+  updateMaterialTier,
 } from '@/lib/db/course-materials-queries';
+import { classifyManifestItem } from '@/lib/capture/material-tier';
 import { parseCanvasUrl } from '@/lib/canvas/parseCanvasUrl';
 import { fetchCanvasCourse, fetchCanvasFileMeta } from '@/lib/canvas/fetchCanvasCourse';
 import { assembleCanvasMaterials } from '@/lib/canvas/assemble-canvas-materials';
@@ -77,6 +79,7 @@ export interface ManifestRow {
   pageCount?: number;
   slideCount?: number;
   indexingStatus: string;
+  tier: string;
 }
 
 export async function runListImport(
@@ -184,13 +187,20 @@ export async function runListImport(
       });
       matId = mat.id;
     }
+    const htmlKind = kindFromFileName(fileName);
+    let htmlTier = 'background';
+    try {
+      htmlTier = await classifyManifestItem({ kind: htmlKind });
+    } catch { /* bias background on any error */ }
+    await updateMaterialTier(matId, htmlTier).catch(() => { /* never fail the import */ });
     manifestRows.push({
       id: matId,
       fileName,
-      kind: kindFromFileName(fileName),
+      kind: htmlKind,
       mimeType,
       sizeBytes: text.length,
       indexingStatus: 'pending',
+      tier: htmlTier,
     });
   }
 
@@ -282,6 +292,18 @@ export async function runListImport(
       matId = mat.id;
     }
 
+    let fileTier = 'background';
+    try {
+      fileTier = await classifyManifestItem({
+        kind: 'file',
+        fileName,
+        mimeType: resolvedMime,
+        sizeBytes: probe.sizeBytes,
+        pageCount: probe.pageCount,
+        slideCount: probe.slideCount,
+      });
+    } catch { /* bias background on any error */ }
+    await updateMaterialTier(matId, fileTier).catch(() => { /* never fail the import */ });
     const row: ManifestRow = {
       id: matId,
       fileName,
@@ -289,6 +311,7 @@ export async function runListImport(
       mimeType: resolvedMime,
       sizeBytes: probe.sizeBytes,
       indexingStatus: 'pending',
+      tier: fileTier,
     };
     if (probe.pageCount !== undefined) row.pageCount = probe.pageCount;
     if (probe.slideCount !== undefined) row.slideCount = probe.slideCount;

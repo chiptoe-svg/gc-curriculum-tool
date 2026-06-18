@@ -157,6 +157,15 @@ export async function deleteMaterial(id: string): Promise<void> {
 }
 
 /**
+ * Persists the triage tier for a material. Called by list-mode Canvas import
+ * after classifyManifestItem resolves. Safe to call on both insert and update
+ * paths — the tier column is nullable and defaults to null until classified.
+ */
+export async function updateMaterialTier(id: string, tier: string): Promise<void> {
+  await db.update(courseMaterials).set({ tier }).where(eq(courseMaterials.id, id));
+}
+
+/**
  * Toggle the ignored flag for a material. When true, AI-facing context
  * loaders should exclude this material's extractedText. The row itself
  * stays in the database (set to false again to re-include).

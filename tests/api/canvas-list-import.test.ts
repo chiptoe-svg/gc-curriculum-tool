@@ -11,6 +11,7 @@ const {
   findMaterialByFileName,
   updateMaterialMetadata,
   updateExtractionResult,
+  updateMaterialTier,
   fetchCanvasCourse,
   fetchCanvasFileMeta,
   putLocal,
@@ -25,6 +26,7 @@ const {
   findMaterialByFileName: vi.fn(),
   updateMaterialMetadata: vi.fn(),
   updateExtractionResult: vi.fn(),
+  updateMaterialTier: vi.fn(),
   fetchCanvasCourse: vi.fn(),
   fetchCanvasFileMeta: vi.fn(),
   putLocal: vi.fn(),
@@ -40,6 +42,7 @@ vi.mock('@/lib/db/course-materials-queries', () => ({
   findMaterialByFileName,
   updateMaterialMetadata,
   updateExtractionResult,
+  updateMaterialTier,
 }));
 vi.mock('@/lib/canvas/fetchCanvasCourse', () => ({ fetchCanvasCourse, fetchCanvasFileMeta }));
 vi.mock('@/lib/storage/local-storage', () => ({
@@ -170,6 +173,7 @@ describe('POST /api/courses/[code]/canvas-import (list-mode, COURSECAPTURE_TRIAG
     }));
     updateExtractionResult.mockResolvedValue(undefined);
     updateMaterialMetadata.mockResolvedValue(undefined);
+    updateMaterialTier.mockResolvedValue(undefined);
     putLocal.mockResolvedValue({ url: '/api/storage/materials/gc-3460/syllabus.pdf', sizeBytes: 200_000 });
     probeSize.mockResolvedValue({ sizeBytes: 200_000 });
     fetchCanvasCourse.mockResolvedValue(fakeCanvasData);
@@ -403,5 +407,57 @@ describe('POST /api/courses/[code]/canvas-import (list-mode, COURSECAPTURE_TRIAG
     const res = await POST(req, ctx);
     const json = await res.json();
     expect(json.manifest.decksPresent).toBe(true);
+  });
+
+  // ── Tier classification ───────────────────────────────────────────────────
+
+  it('every manifest row has a tier in {high, middle, background}', async () => {
+    const [req, ctx] = makeReq();
+    const res = await POST(req, ctx);
+    const json = await res.json();
+    const VALID_TIERS = new Set(['high', 'middle', 'background']);
+    for (const row of json.manifest.rows) {
+      expect(VALID_TIERS.has(row.tier), `row "${row.fileName}" has unexpected tier "${row.tier}"`).toBe(true);
+    }
+  });
+
+  it('the assignments row is classified as tier "high" (deterministic)', async () => {
+    const [req, ctx] = makeReq();
+    const res = await POST(req, ctx);
+    const json = await res.json();
+    const assignmentsRow = json.manifest.rows.find((r: { fileName: string }) => r.fileName === 'Canvas: Assignments');
+    expect(assignmentsRow).toBeDefined();
+    expect(assignmentsRow.tier).toBe('high');
+  });
+
+  it('a .pptx Canvas file is classified as tier "middle" (deterministic, no LLM)', async () => {
+    const pptxFileMeta = {
+      id: '9005',
+      displayName: 'week1-lecture.pptx',
+      url: 'https://clemson.instructure.com/files/9005/download?token=abc',
+      mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      sizeBytes: 250_000,
+    };
+    const fakeCanvasDataWithPptx = {
+      ...fakeCanvasData,
+      course: {
+        ...fakeCanvasData.course,
+        syllabusHtml: '<p>See <a href="/courses/12345/files/9005/download">lecture</a>.</p>',
+      },
+    };
+    fetchCanvasCourse.mockResolvedValue(fakeCanvasDataWithPptx);
+    fetchCanvasFileMeta.mockResolvedValue(pptxFileMeta);
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      arrayBuffer: async () => Buffer.alloc(250_000).buffer,
+    } as unknown as Response);
+    probeSize.mockResolvedValue({ sizeBytes: 250_000, slideCount: 18 });
+
+    const [req, ctx] = makeReq();
+    const res = await POST(req, ctx);
+    const json = await res.json();
+    const pptxRow = json.manifest.rows.find((r: { kind: string; fileName: string }) => r.kind === 'file' && r.fileName.includes('week1-lecture.pptx'));
+    expect(pptxRow).toBeDefined();
+    expect(pptxRow.tier).toBe('middle');
   });
 });
