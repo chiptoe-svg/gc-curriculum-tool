@@ -294,6 +294,10 @@ export const courseMaterials = pgTable('course_materials', {
   // code). null ⇒ the primary course. Provenance only — courseCode stays the
   // primary so the tenant/retrieval/FK model is unchanged. Migration 0037.
   sourceCode: text('source_code'),
+  // Set true after the raw blob file is deleted on snapshot approval to reclaim
+  // disk. The durable record (extractedText, digest, vectors) is unaffected.
+  // Gated behind isTriageEnabled(). Migration 0043.
+  rawCleared: boolean('raw_cleared').notNull().default(false),
 });
 
 export const courseProfiles = pgTable('course_profiles', {

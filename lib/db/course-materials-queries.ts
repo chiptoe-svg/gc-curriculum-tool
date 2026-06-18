@@ -38,6 +38,7 @@ function mapMaterialRow(row: Record<string, unknown>): CourseMaterialRow {
     ignored: row['ignored'] as boolean,
     ignoredItems: (row['ignored_items'] as string[] | null) ?? [],
     sourceCode: row['source_code'] as string | null,
+    rawCleared: row['raw_cleared'] as boolean,
   };
 }
 export type ExtractionStatus = 'pending' | 'ok' | 'low_text' | 'failed';
@@ -288,6 +289,15 @@ export async function updateAutoSetAside(args: {
       ignored: args.ignored,
     })
     .where(eq(courseMaterials.id, args.id));
+}
+
+/**
+ * Mark a material's raw blob as cleared. Called after the local file has been
+ * deleted on snapshot approval (isTriageEnabled flow). The durable record
+ * (extractedText, digest, vectors) is unaffected — only raw_cleared flips.
+ */
+export async function setMaterialRawCleared(id: string): Promise<void> {
+  await db.update(courseMaterials).set({ rawCleared: true }).where(eq(courseMaterials.id, id));
 }
 
 /**

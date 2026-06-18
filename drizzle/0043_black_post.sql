@@ -1,0 +1,1 @@
+ALTER TABLE "course_materials" ADD COLUMN "raw_cleared" boolean DEFAULT false NOT NULL;
