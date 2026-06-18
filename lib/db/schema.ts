@@ -273,6 +273,10 @@ export const courseMaterials = pgTable('course_materials', {
   // Indexing pipeline status: 'pending' | 'queued' | 'indexing' | 'ready' | 'failed' | 'skipped'.
   // 'queued' = enqueued for the background ingest worker; 'pending' = inserted but not yet enqueued.
   indexingStatus: text('indexing_status').notNull().default('pending'),
+  // Ingestion depth tier assigned at discovery: 'high' (full pipeline) |
+  // 'middle' (per-unit summary) | 'background' (one digest). Null until the
+  // tiered-ingestion classifier runs. Faculty-overridable on the triage screen.
+  tier: text('tier'),  // 'high' | 'middle' | 'background' | null
   indexedAt: timestamp('indexed_at', { withTimezone: true }),
   // Set true to keep the material in the system but exclude it from AI context
   // (CourseCapture chat + scoring) — useful for Canvas imports that turn out

@@ -33,6 +33,7 @@ function mapMaterialRow(row: Record<string, unknown>): CourseMaterialRow {
     autoSetAside: row['auto_set_aside'] as boolean,
     setAsideReason: row['set_aside_reason'] as string | null,
     indexingStatus: row['indexing_status'] as string,
+    tier: row['tier'] as string | null,
     indexedAt: row['indexed_at'] as Date | null,
     ignored: row['ignored'] as boolean,
     ignoredItems: (row['ignored_items'] as string[] | null) ?? [],

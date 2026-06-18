@@ -1,0 +1,1 @@
+ALTER TABLE "course_materials" ADD COLUMN "tier" text;
