@@ -769,10 +769,10 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange }: Props)
           aria-expanded={open}
           className="flex min-w-0 flex-1 items-center gap-2 text-left"
         >
-          <span aria-hidden className="text-muted-foreground">{open ? '▾' : '▸'}</span>
-          <span aria-hidden>🎨</span>
+          <span aria-hidden className="w-4 text-muted-foreground">{open ? '▾' : '▸'}</span>
+          <span aria-hidden className="w-5 text-center">🎨</span>
           <span className="text-sm font-medium">Canvas</span>
-          <span className="truncate text-sm text-muted-foreground">— {summary}</span>
+          <span className="truncate text-xs text-muted-foreground">— {summary}</span>
         </button>
 
         {/* Single-mode: global import + scan buttons in the header */}

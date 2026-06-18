@@ -159,12 +159,9 @@ export function SyllabusBox({
           <span aria-hidden className="w-4 text-muted-foreground">
             {open ? '▾' : '▸'}
           </span>
-          <span aria-hidden>📋</span>
+          <span aria-hidden className="w-5 text-center">📋</span>
           <span className="text-sm font-medium">Syllabus &amp; course info</span>
-          <span className="text-muted-foreground" aria-hidden>
-            ——
-          </span>
-          <span className="truncate text-xs text-muted-foreground">{statusText}</span>
+          <span className="truncate text-xs text-muted-foreground">— {statusText}</span>
         </button>
         <div className="flex shrink-0 items-center gap-2">
           {(hasSheetCatalog || (syncedAt !== null && !hasCatalogContent)) && (

@@ -381,9 +381,9 @@ export function OtherMaterialsBox({ course, materials, slug, onMaterialsChange }
           className="flex min-w-0 flex-1 items-center gap-2 text-left"
         >
           <span aria-hidden className="w-4 text-muted-foreground">{open ? '▾' : '▸'}</span>
-          <span aria-hidden>📎</span>
+          <span aria-hidden className="w-5 text-center">📎</span>
           <span className="text-sm font-medium">Other materials</span>
-          <span className="truncate text-[11px] text-muted-foreground">— {summarize(others)}</span>
+          <span className="truncate text-xs text-muted-foreground">— {summarize(others)}</span>
         </button>
         <div className="flex shrink-0 items-center gap-2">
           <button
