@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { CaptureMaterial } from './MaterialsPanel';
 import type { Tier } from '@/lib/capture/material-tier';
+import { estimateSeconds, estimateTotal, formatDuration } from '@/lib/capture/ingest-estimate';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -145,6 +146,9 @@ function TriageRow({ row, courseCode, slug, onUpdate, onRemove }: TriageRowProps
         </span>
         <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
           {sizeDescriptor(row)}
+        </span>
+        <span className="rounded bg-muted/60 px-1.5 py-0.5 text-[10px] tabular-nums text-muted-foreground">
+          {formatDuration(estimateSeconds(row))}
         </span>
 
         {/* Move up — hidden in high tier */}
@@ -293,6 +297,9 @@ export function TriageStep({ courseCode, slug, materials, onIngested }: TriageSt
   // Slides nudge: show when no material has tier==='middle'.
   const showSlidesNudge = middleRows.length === 0;
 
+  // Total ingest estimate — derived inline from live row state, recomputes on every render.
+  const total = estimateTotal(rows);
+
   async function handleIngest(): Promise<void> {
     setIngesting(true);
     setIngestError(null);
@@ -385,8 +392,14 @@ export function TriageStep({ courseCode, slug, materials, onIngested }: TriageSt
         <p className="mt-3 text-sm text-destructive">{ingestError}</p>
       )}
 
-      {/* Primary action */}
-      <div className="mt-6 flex justify-end">
+      {/* Total estimate + primary action */}
+      <div className="mt-6 flex flex-col items-end gap-1.5">
+        <div className="text-right">
+          <p className="text-xs text-muted-foreground">
+            <span className="font-medium">Estimated:</span> {total.label} · 2 at a time
+          </p>
+          <p className="text-[10px] text-muted-foreground/70">rough estimate</p>
+        </div>
         <button
           type="button"
           onClick={() => void handleIngest()}

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import type { CaptureMaterial } from '@/app/capture/[code]/MaterialsPanel';
+import { estimateTotal, estimateSeconds, formatDuration } from '@/lib/capture/ingest-estimate';
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 
@@ -313,5 +314,155 @@ describe('TriageStep', () => {
     });
     // Error message shown
     expect(screen.getByText(/failed/i)).toBeTruthy();
+  });
+
+  // ---------------------------------------------------------------------------
+  // Time estimate chips (per-row and total)
+  // ---------------------------------------------------------------------------
+
+  describe('time estimate chips', () => {
+    it('renders the total estimate near the Ingest button', () => {
+      render(
+        <TriageStep
+          courseCode="GC 3800"
+          slug="test-slug"
+          materials={baseMaterials}
+          onIngested={noop}
+        />,
+      );
+      // Should show "Estimated:" label
+      expect(screen.getByText(/estimated:/i)).toBeTruthy();
+    });
+
+    it('total estimate contains a duration or "—"', () => {
+      render(
+        <TriageStep
+          courseCode="GC 3800"
+          slug="test-slug"
+          materials={baseMaterials}
+          onIngested={noop}
+        />,
+      );
+      const estimatedEl = screen.getByText(/estimated:/i).parentElement ?? screen.getByText(/estimated:/i);
+      const text = estimatedEl.textContent ?? '';
+      // Matches ~Xs, ~N min, ~N.M hr, or a range like ~30s–1 min, or '—'
+      expect(text).toMatch(/~\d|—/);
+    });
+
+    it('shows "rough estimate" caveat near the Ingest button', () => {
+      render(
+        <TriageStep
+          courseCode="GC 3800"
+          slug="test-slug"
+          materials={baseMaterials}
+          onIngested={noop}
+        />,
+      );
+      expect(screen.getByText(/rough estimate/i)).toBeTruthy();
+    });
+
+    it('shows "2 at a time" concurrency note near the Ingest button', () => {
+      render(
+        <TriageStep
+          courseCode="GC 3800"
+          slug="test-slug"
+          materials={baseMaterials}
+          onIngested={noop}
+        />,
+      );
+      expect(screen.getByText(/2 at a time/i)).toBeTruthy();
+    });
+
+    it('renders at least one per-row estimate chip using formatDuration format', () => {
+      render(
+        <TriageStep
+          courseCode="GC 3800"
+          slug="test-slug"
+          materials={baseMaterials}
+          onIngested={noop}
+        />,
+      );
+      // At least one chip should match a formatDuration pattern (~Xs, ~N min, ~N.M hr, or —)
+      // getAllByText with regex finds all matching text nodes
+      const chips = screen.getAllByText(/^(~\d+s|~\d+ min|~\d+\.\d+ hr|—)$/);
+      expect(chips.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('ignored row shows "—" chip (estimateSeconds returns 0 for ignored)', () => {
+      const ignoredMat = makeMaterial({ id: 'ig1', fileName: 'ignored.pdf', tier: 'high', pageCount: 20, ignored: true });
+      render(
+        <TriageStep
+          courseCode="GC 3800"
+          slug="test-slug"
+          materials={[ignoredMat]}
+          onIngested={noop}
+        />,
+      );
+      // The per-row chip for an ignored material should be '—'
+      const dashChips = screen.getAllByText('—');
+      expect(dashChips.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('high-tier fixture produces a larger total estimate than all-background fixture', () => {
+      // All-high fixture: 3 high-tier materials with many pages each
+      const highFixture = [
+        makeMaterial({ id: 'hh1', tier: 'high', pageCount: 30 }),
+        makeMaterial({ id: 'hh2', tier: 'high', pageCount: 30 }),
+        makeMaterial({ id: 'hh3', tier: 'high', pageCount: 30 }),
+      ];
+      // All-background fixture: same count, same pages
+      const bgFixture = [
+        makeMaterial({ id: 'bb1', tier: 'background', pageCount: 30 }),
+        makeMaterial({ id: 'bb2', tier: 'background', pageCount: 30 }),
+        makeMaterial({ id: 'bb3', tier: 'background', pageCount: 30 }),
+      ];
+
+      const highTotal = estimateTotal(highFixture);
+      const bgTotal = estimateTotal(bgFixture);
+
+      // High-tier materials are much more expensive — the totals should differ significantly
+      expect(highTotal.seconds).toBeGreaterThan(bgTotal.seconds);
+    });
+
+    it('total recomputes when a row is moved to a higher tier (per-row chip changes)', async () => {
+      // Start with a single middle-tier material with many pages.
+      // middle, pageCount=10 → 8s → '~5s'; high, pageCount=10 → 47s → '~45s'
+      // Using middle so that clicking ▲ patches to 'high' (tierUp('middle') = 'high').
+      const midOnlyMat = makeMaterial({ id: 'mid-only', tier: 'middle', pageCount: 10 });
+
+      // Compute expected per-row estimate chips before and after the move
+      const midEstimate = formatDuration(estimateSeconds({ tier: 'middle', pageCount: 10 }));
+      const highEstimate = formatDuration(estimateSeconds({ tier: 'high', pageCount: 10 }));
+
+      // They must differ for this test to be meaningful
+      expect(midEstimate).not.toBe(highEstimate);
+
+      const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+      vi.stubGlobal('fetch', fetchMock);
+
+      render(
+        <TriageStep
+          courseCode="GC 3800"
+          slug="test-slug"
+          materials={[midOnlyMat]}
+          onIngested={noop}
+        />,
+      );
+
+      // Initially shows middle-tier estimate chip
+      expect(screen.getByText(midEstimate)).toBeTruthy();
+
+      // Move up → high (middle has a ▲ button; tierUp('middle') = 'high')
+      const upBtn = screen.getByRole('button', { name: /move up/i });
+      fireEvent.click(upBtn);
+
+      await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+
+      // After the PATCH resolves, onUpdate fires and the row re-renders with high tier.
+      // The per-row chip should now show the high-tier estimate.
+      await waitFor(() => {
+        expect(screen.getByText(highEstimate)).toBeTruthy();
+      });
+    });
   });
 });
