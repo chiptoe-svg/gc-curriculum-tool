@@ -21,10 +21,13 @@ Canvas import currently does discovery, extraction, *and* the expensive per-file
 ## The two-phase model
 
 ### Phase 1 — Discover & list (cheap, no extraction)
-Pull the inventory from the source (Canvas API fetch + assemble; uploads; Drive/IMSCC) and produce a **manifest row per candidate material** — type, name, and a cheap size signal (bytes; PDF page count; PPTX slide count; HTML text length) obtained *without* extraction. Faculty can **ignore** any row here. Nothing is downloaded-for-extraction, chunked, summarized, or embedded yet. (This is today's import route minus the file-download/extract loop and minus enqueue.)
+Pull the inventory from the source (Canvas API fetch + assemble; uploads; Drive/IMSCC) and produce a **manifest row per candidate material** — type, name, and a cheap size signal (bytes; PDF page count; PPTX slide count; HTML text length) obtained *without* extraction. The Phase-1 classifier may use **metadata + a light peek only** (filename, mime, size, optional first-page peek) — never full extraction. Faculty can **ignore** any row here. Nothing is downloaded-for-extraction, chunked, summarized, or embedded yet. (This is today's import route minus the file-download/extract loop and minus enqueue.)
 
 ### Phase 2 — Triage & tiered ingest
 A triage screen presents the manifest in **three tiers** (below), auto-classified, with a per-row **time estimate** and a **total** by the Ingest button. Faculty **move rows between tiers, downgrade, or ignore**, then click **Ingest**. Only then does extraction/indexing happen, at each row's confirmed tier depth.
+
+### Ignore semantics (reversible, carries forward)
+**Ignore is a flag, not a deletion.** Every discovered row — including ones ignored in Phase 1 — flows through to the Phase-2 triage screen. Phase-1-ignored rows appear there **pre-checked as ignored** (excluded from the ingest run and from the time total by default) but remain **visible and one uncheck away** from being included. Nothing leaves the manifest. So a faculty member who ignores early and changes their mind on the triage screen recovers the item with a single click; the time estimate updates when they do. (Ignored rows are excluded from the ingest run; they are not deleted from `course_materials` history.)
 
 ## The three tiers (evidence-strength ladder)
 
