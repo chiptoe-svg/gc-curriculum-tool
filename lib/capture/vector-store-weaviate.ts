@@ -221,8 +221,8 @@ export function createWeaviateVectorStore(): VectorStore {
     },
 
     // -----------------------------------------------------------------------
-    // deleteByCourse / listChunksByCourse — Task-4 stubs (cross-course spine)
-    // The interface must be satisfied now; real Weaviate behavior ships in Task 4.
+    // deleteByCourse / listChunksByCourse — cross-course spine (the `program`
+    // tenant holds all courses' chunks; these clear/read one course's slice).
     // -----------------------------------------------------------------------
     async deleteByCourse(tenant, courseCode) {
       const client = await getWeaviateClient();
