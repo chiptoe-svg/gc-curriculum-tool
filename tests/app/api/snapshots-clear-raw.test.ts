@@ -97,6 +97,11 @@ vi.mock('@/lib/wiki/git-ops', () => ({
   writeAndPush: async () => {},
 }));
 
+// ── program-index (cross-course spine, fire-and-log) ────────────────────────
+vi.mock('@/lib/capture/program-index', () => ({
+  refreshProgramIndex: vi.fn(async () => {}),
+}));
+
 // ── clearRawBlobsForCourse ───────────────────────────────────────────────────
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const clearRawBlobsForCourse = vi.fn(async (_arg?: any) => ({ cleared: 1 }));

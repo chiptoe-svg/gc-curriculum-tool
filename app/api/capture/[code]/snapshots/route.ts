@@ -11,6 +11,7 @@ import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { hashIp } from '@/lib/ip-hash';
 import { updateWikiForSnapshot } from '@/lib/ai/wiki/update';
 import { writeAndPush } from '@/lib/wiki/git-ops';
+import { refreshProgramIndex } from '@/lib/capture/program-index';
 import { resolveScopedSession, authorizeCourseWrite } from '@/lib/sandbox/access';
 import { isTriageEnabled } from '@/lib/capture/triage-flag';
 import { clearRawBlobsForCourse } from '@/lib/capture/clear-raw-blobs';
@@ -155,6 +156,11 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
       const allPages = [...raw, ...wiki];
       const commitMessage = `feat(${snapshot.courseCode.toLowerCase().replace(/\s+/g, '-')}): snapshot ${new Date().toISOString().slice(0, 10)} — ${snapshot.caption ?? 'untitled'}`;
       await writeAndPush({ pages: allPages, logEntry, commitMessage });
+      // Refresh this course's slice of the cross-course spine from its current
+      // materials. Fire-and-log like the wiki update; the full rebuild recovers.
+      await refreshProgramIndex(snapshot.courseCode, { snapshotId: snapshot.id }).catch(err =>
+        console.error('[program-index] refresh failed for', snapshot.courseCode, err),
+      );
     } catch (err) {
       console.error(
         'wiki-update failed for snapshot',
