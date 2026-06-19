@@ -12,6 +12,7 @@
  *   this is just a safety pre-warm; the write itself would succeed without it.
  */
 
+import { Filters } from 'weaviate-client';
 import { getWeaviateClient } from './weaviate-client';
 import {
   ensureSchema,
@@ -72,6 +73,8 @@ export function createWeaviateVectorStore(): VectorStore {
             parentSectionId: r.parentSectionId,
             text: r.text,
             contextBlurb: r.contextBlurb,
+            uploadedAt: r.uploadedAt ?? '',
+            snapshotId: r.snapshotId ?? '',
           },
         })),
       );
@@ -132,14 +135,26 @@ export function createWeaviateVectorStore(): VectorStore {
         .use(MATERIAL_CHUNK_CLASS)
         .withTenant(tenant);
 
+      // Build a combined filter: collect present per-property filters and AND them.
+      const filterParts = [
+        input.materialId
+          ? chunks.filter.byProperty('materialId').equal(input.materialId)
+          : undefined,
+        input.courseCode
+          ? chunks.filter.byProperty('courseCode').equal(input.courseCode)
+          : undefined,
+      ].filter((f): f is NonNullable<typeof f> => f !== undefined);
+      const combinedFilter =
+        filterParts.length === 0
+          ? undefined
+          : filterParts.length === 1
+            ? filterParts[0]
+            : Filters.and(...filterParts);
+
       const result = await chunks.query.hybrid(input.queryText, {
         vector: input.queryVector,
         limit: input.k,
-        // TODO Task 4: also apply the input.courseCode filter here (AND with
-        // materialId) once the cross-course `program` tenant is queried.
-        filters: input.materialId
-          ? chunks.filter.byProperty('materialId').equal(input.materialId)
-          : undefined,
+        filters: combinedFilter,
         returnMetadata: ['score'],
         returnProperties: [
           'materialId',
@@ -150,6 +165,8 @@ export function createWeaviateVectorStore(): VectorStore {
           'parentSectionId',
           'text',
           'contextBlurb',
+          'uploadedAt',
+          'snapshotId',
         ],
       });
 
@@ -197,9 +214,8 @@ export function createWeaviateVectorStore(): VectorStore {
           parentSectionText: parentTextById.get(parentSectionId) ?? null,
           contextBlurb: String(o.properties['contextBlurb']),
           score: Number(o.metadata?.score ?? 0),
-          // TODO Task 4: read from Weaviate properties once schema is extended
-          uploadedAt: null,
-          snapshotId: null,
+          uploadedAt: (String(o.properties['uploadedAt'] ?? '') || null),
+          snapshotId: (String(o.properties['snapshotId'] ?? '') || null),
         };
       });
     },
@@ -208,14 +224,47 @@ export function createWeaviateVectorStore(): VectorStore {
     // deleteByCourse / listChunksByCourse — Task-4 stubs (cross-course spine)
     // The interface must be satisfied now; real Weaviate behavior ships in Task 4.
     // -----------------------------------------------------------------------
-    async deleteByCourse(_tenant, _courseCode) {
-      throw new Error('deleteByCourse: not implemented — Task 4');
+    async deleteByCourse(tenant, courseCode) {
+      const client = await getWeaviateClient();
+      const col = client.collections.use(MATERIAL_CHUNK_CLASS).withTenant(tenant);
+      try {
+        await col.data.deleteMany(col.filter.byProperty('courseCode').equal(courseCode));
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (msg.includes('tenant not found') || msg.includes('does not exist')) return;
+        throw e;
+      }
     },
 
-    async listChunksByCourse(_tenant, _courseCode) {
-      // Fail loud (symmetric with deleteByCourse) — a silent [] would let a
-      // caller mistake "not implemented" for "no chunks". Real behavior: Task 4.
-      throw new Error('listChunksByCourse: not implemented — Task 4');
+    async listChunksByCourse(tenant, courseCode) {
+      await ensureSchemaOnce();
+      const client = await getWeaviateClient();
+      const col = client.collections.use(MATERIAL_CHUNK_CLASS).withTenant(tenant);
+      try {
+        const res = await col.query.fetchObjects({
+          filters: col.filter.byProperty('courseCode').equal(courseCode),
+          includeVector: true,
+          limit: 10000, // course chunk counts are well under this
+        });
+        return res.objects.map((o) => ({
+          id: String(o.uuid),
+          vector: (o.vectors?.default ?? []) as number[],
+          materialId: String(o.properties['materialId']),
+          courseCode: String(o.properties['courseCode']),
+          fileName: String(o.properties['fileName']),
+          sectionTitle: String(o.properties['sectionTitle']),
+          sectionIndex: Number(o.properties['sectionIndex']),
+          parentSectionId: String(o.properties['parentSectionId'] ?? ''),
+          text: String(o.properties['text']),
+          contextBlurb: String(o.properties['contextBlurb'] ?? ''),
+          uploadedAt: (String(o.properties['uploadedAt'] ?? '') || null),
+          snapshotId: (String(o.properties['snapshotId'] ?? '') || null),
+        }));
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (msg.includes('tenant not found') || msg.includes('does not exist')) return [];
+        throw e;
+      }
     },
 
     // -----------------------------------------------------------------------

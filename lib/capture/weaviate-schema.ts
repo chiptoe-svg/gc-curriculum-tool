@@ -13,6 +13,8 @@ const chunkProps = [
   { name: 'parentSectionId', dataType: 'text' as const },
   { name: 'text', dataType: 'text' as const },
   { name: 'contextBlurb', dataType: 'text' as const },
+  { name: 'uploadedAt', dataType: 'text' as const },
+  { name: 'snapshotId', dataType: 'text' as const },
 ];
 
 const sectionProps = [
