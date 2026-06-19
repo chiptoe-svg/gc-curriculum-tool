@@ -44,6 +44,22 @@ async function ensureTenantOnce(tenant: string): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Weaviate v3 auto-parses text properties that look like ISO date strings into
+ * JS Date objects on read, even when the schema dataType is 'text'. When
+ * writing we store ISO strings and when reading we must handle both forms.
+ */
+function toISOStringOrNull(val: unknown): string | null {
+  if (!val) return null;
+  if (val instanceof Date) return val.toISOString();
+  const s = String(val);
+  return s || null;
+}
+
+// ---------------------------------------------------------------------------
 // Factory
 // ---------------------------------------------------------------------------
 
@@ -214,8 +230,8 @@ export function createWeaviateVectorStore(): VectorStore {
           parentSectionText: parentTextById.get(parentSectionId) ?? null,
           contextBlurb: String(o.properties['contextBlurb']),
           score: Number(o.metadata?.score ?? 0),
-          uploadedAt: (String(o.properties['uploadedAt'] ?? '') || null),
-          snapshotId: (String(o.properties['snapshotId'] ?? '') || null),
+          uploadedAt: toISOStringOrNull(o.properties['uploadedAt']),
+          snapshotId: toISOStringOrNull(o.properties['snapshotId']),
         };
       });
     },
@@ -257,8 +273,8 @@ export function createWeaviateVectorStore(): VectorStore {
           parentSectionId: String(o.properties['parentSectionId'] ?? ''),
           text: String(o.properties['text']),
           contextBlurb: String(o.properties['contextBlurb'] ?? ''),
-          uploadedAt: (String(o.properties['uploadedAt'] ?? '') || null),
-          snapshotId: (String(o.properties['snapshotId'] ?? '') || null),
+          uploadedAt: toISOStringOrNull(o.properties['uploadedAt']),
+          snapshotId: toISOStringOrNull(o.properties['snapshotId']),
         }));
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
