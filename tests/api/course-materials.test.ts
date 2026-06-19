@@ -22,6 +22,7 @@ const {
   updateFerpaRisk,
   setMaterialIgnoredItems,
   updateMaterialTier,
+  setMaterialRetired,
   isTriageEnabled,
   probeSize,
   classifyManifestItem,
@@ -48,6 +49,7 @@ const {
   updateFerpaRisk: vi.fn(),
   setMaterialIgnoredItems: vi.fn(),
   updateMaterialTier: vi.fn(),
+  setMaterialRetired: vi.fn(),
   isTriageEnabled: vi.fn(),
   probeSize: vi.fn(),
   classifyManifestItem: vi.fn(),
@@ -76,6 +78,7 @@ vi.mock('@/lib/db/course-materials-queries', () => ({
   updateFerpaRisk,
   setMaterialIgnoredItems,
   updateMaterialTier,
+  setMaterialRetired,
 }));
 vi.mock('@/lib/courses/extract-text', () => ({ extractText }));
 vi.mock('@/lib/rate-limit/ip-rate-limit', () => ({ checkIpRateLimit }));
@@ -453,6 +456,7 @@ describe('PATCH /api/courses/[code]/materials/[id]', () => {
     updateFerpaRisk.mockResolvedValue(undefined);
     setMaterialIgnoredItems.mockResolvedValue(true);
     updateMaterialTier.mockResolvedValue(undefined);
+    setMaterialRetired.mockResolvedValue(true);
   });
 
   it('returns 401 on invalid slug', async () => {
@@ -531,5 +535,38 @@ describe('PATCH /api/courses/[code]/materials/[id]', () => {
     expect(res.status).toBe(200);
     expect(updateFerpaRisk).toHaveBeenCalledWith({ id: 'mat-1', risk: 'low' });
     expect(updateMaterialTier).toHaveBeenCalledWith('mat-1', 'middle');
+  });
+
+  it('accepts retired:true → 200 and calls setMaterialRetired(id, true)', async () => {
+    const [req, ctx] = makePatchReq({ retired: true });
+    const res = await PATCH(req, ctx);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.ok).toBe(true);
+    expect(setMaterialRetired).toHaveBeenCalledWith('mat-1', true);
+  });
+
+  it('accepts retired:false → 200 and calls setMaterialRetired(id, false)', async () => {
+    const [req, ctx] = makePatchReq({ retired: false });
+    const res = await PATCH(req, ctx);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.ok).toBe(true);
+    expect(setMaterialRetired).toHaveBeenCalledWith('mat-1', false);
+  });
+
+  it('returns 404 when setMaterialRetired finds no row', async () => {
+    setMaterialRetired.mockResolvedValue(false);
+    const [req, ctx] = makePatchReq({ retired: true });
+    const res = await PATCH(req, ctx);
+    expect(res.status).toBe(404);
+  });
+
+  it('retired-only body is sufficient (presence guard passes)', async () => {
+    const [req, ctx] = makePatchReq({ retired: true });
+    const res = await PATCH(req, ctx);
+    expect(res.status).toBe(200);
+    expect(setMaterialIgnored).not.toHaveBeenCalled();
+    expect(updateMaterialTier).not.toHaveBeenCalled();
   });
 });

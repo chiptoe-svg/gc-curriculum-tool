@@ -131,6 +131,7 @@ export default async function CapturePage({ params, searchParams }: Props) {
     sourceCode: m.sourceCode ?? null,
     tier: (m.tier as 'high' | 'middle' | 'background' | null) ?? null,
     rawCleared: m.rawCleared ?? false,
+    retiredAt: m.retiredAt ? m.retiredAt.toISOString() : null,
   }));
 
   return (

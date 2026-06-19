@@ -38,6 +38,7 @@ function makeMaterial(overrides: Partial<CaptureMaterial>): CaptureMaterial {
     sourceCode: overrides.sourceCode ?? null,
     tier: overrides.tier ?? null,
     rawCleared: overrides.rawCleared ?? false,
+    retiredAt: overrides.retiredAt ?? null,
   };
 }
 

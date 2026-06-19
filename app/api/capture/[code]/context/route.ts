@@ -82,6 +82,9 @@ export async function GET(req: Request, { params }: RouteContext): Promise<Respo
       ignoredItems: m.ignoredItems,
       blobUrl: m.blobUrl,
       sourceCode: m.sourceCode,
+      tier: m.tier,
+      rawCleared: m.rawCleared,
+      retiredAt: m.retiredAt ? m.retiredAt.toISOString() : null,
     })),
     existingCaptureProfile: existingCaptureProfile
       ? {

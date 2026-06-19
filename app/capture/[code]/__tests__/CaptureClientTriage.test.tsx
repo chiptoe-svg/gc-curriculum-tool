@@ -116,6 +116,7 @@ function mat(id: string): CaptureMaterial {
     sourceCode: null,
     tier: 'high',
     rawCleared: false,
+    retiredAt: null,
   };
 }
 

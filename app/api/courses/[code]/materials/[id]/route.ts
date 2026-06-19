@@ -6,6 +6,7 @@ import {
   deleteMaterial,
   setMaterialIgnored,
   setMaterialIgnoredItems,
+  setMaterialRetired,
   setMaterialUseDigest,
   updateFerpaRisk,
   updateMaterialTier,
@@ -44,7 +45,7 @@ export async function DELETE(req: Request, { params }: RouteContext): Promise<Re
 }
 
 // PATCH /api/courses/[code]/materials/[id]?slug=...
-// Body: { ignored?: boolean, useDigest?: boolean, ferpaRisk?: 'low' | 'medium' | 'high', ignoredItems?: string[], tier?: 'high' | 'middle' | 'background' }
+// Body: { ignored?: boolean, useDigest?: boolean, ferpaRisk?: 'low' | 'medium' | 'high', ignoredItems?: string[], tier?: 'high' | 'middle' | 'background', retired?: boolean }
 // At least one of the supported fields must be provided.
 // - `ignored`: toggles whether the material's extracted text feeds AI context.
 // - `useDigest`: switches between digest and raw text for AI context.
@@ -57,6 +58,9 @@ export async function DELETE(req: Request, { params }: RouteContext): Promise<Re
 //   entry is the verbatim title of a parsed item (the text after `## `
 //   in the concatenated blob). Replaces the existing list; pass `[]` to
 //   re-include every item.
+// - `retired`: marks the material as no longer part of the course syllabus
+//   (true = retire, false = restore). The cross-course spine excludes
+//   retired materials. Distinct from `ignored` (which means "don't send to AI").
 export async function PATCH(req: Request, { params }: RouteContext): Promise<Response> {
   const { code, id } = await params;
   const url = new URL(req.url);
@@ -80,9 +84,10 @@ export async function PATCH(req: Request, { params }: RouteContext): Promise<Res
     && (body.ignoredItems as unknown[]).every(v => typeof v === 'string');
   const hasTier =
     body.tier === 'high' || body.tier === 'middle' || body.tier === 'background';
-  if (!hasIgnored && !hasUseDigest && !hasFerpaRisk && !hasIgnoredItems && !hasTier) {
+  const hasRetired = typeof body.retired === 'boolean';
+  if (!hasIgnored && !hasUseDigest && !hasFerpaRisk && !hasIgnoredItems && !hasTier && !hasRetired) {
     return NextResponse.json(
-      { error: 'at least one of `ignored`, `useDigest`, `ferpaRisk`, `ignoredItems`, or `tier` must be provided' },
+      { error: 'at least one of `ignored`, `useDigest`, `ferpaRisk`, `ignoredItems`, `tier`, or `retired` must be provided' },
       { status: 400 },
     );
   }
@@ -122,6 +127,10 @@ export async function PATCH(req: Request, { params }: RouteContext): Promise<Res
   }
   if (hasTier) {
     await updateMaterialTier(id, body.tier as string);
+  }
+  if (hasRetired) {
+    const updated = await setMaterialRetired(id, body.retired as boolean);
+    if (!updated) return NextResponse.json({ error: 'no row updated' }, { status: 404 });
   }
 
   return NextResponse.json({ ok: true });

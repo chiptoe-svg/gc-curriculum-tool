@@ -64,6 +64,12 @@ export interface CaptureMaterial {
    * unaffected. Set by clearRawBlobsForCourse (isTriageEnabled flow).
    */
   rawCleared: boolean;
+  /**
+   * ISO timestamp set when faculty mark the material as "no longer taught"
+   * via the Retire lever. Null when the material is active. The cross-course
+   * spine excludes retired materials from evidence queries.
+   */
+  retiredAt: string | null;
 }
 
 export interface CourseCatalogView {
@@ -287,6 +293,7 @@ function MaterialRow({
   onIncludeAnyway,
   onDowngradeFerpa,
   onSetIgnoredItems,
+  onToggleRetired,
   busy,
 }: {
   material: CaptureMaterial;
@@ -296,6 +303,7 @@ function MaterialRow({
   onIncludeAnyway: () => Promise<void>;
   onDowngradeFerpa: () => Promise<void>;
   onSetIgnoredItems: (next: string[]) => Promise<void>;
+  onToggleRetired: (next: boolean) => void;
   busy: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -545,6 +553,15 @@ function MaterialRow({
             />
             ignore
           </label>
+          <button
+            type="button"
+            onClick={() => onToggleRetired(!material.retiredAt)}
+            disabled={busy}
+            title={material.retiredAt ? 'Restore this material to the course — it will feed the cross-course spine again.' : 'Retire this material — marks it as no longer taught (distinct from ignored).'}
+            className="text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-30"
+          >
+            {material.retiredAt ? 'restore' : 'retire'}
+          </button>
           {!material.rawCleared && (
             <button
               type="button"
@@ -883,6 +900,26 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
     }
   }
 
+  async function toggleRetired(id: string, retired: boolean) {
+    setBusy(id);
+    try {
+      const res = await fetch(
+        `/api/courses/${encodeURIComponent(course.code)}/materials/${encodeURIComponent(id)}?slug=${encodeURIComponent(slug)}`,
+        {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ retired }),
+        },
+      );
+      if (res.ok) {
+        const retiredAt = retired ? new Date().toISOString() : null;
+        pushMaterials(materials.map(m => (m.id === id ? { ...m, retiredAt } : m)));
+      }
+    } finally {
+      setBusy(null);
+    }
+  }
+
   // Optimistic — local state first, revert on failure. Used by per-item
   // disclosure on Canvas-list materials. The audit-context builder filters
   // these titles out before sending text to the AI.
@@ -1096,6 +1133,7 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
             sourceCode: null,
             tier: null,
             rawCleared: false,
+            retiredAt: null,
           });
           if (data.indexingStatus === 'queued') queuedCount++;
         } catch (e) {
@@ -1415,6 +1453,7 @@ The materials themselves — and their per-item controls (ignore, preview, AI su
                         onIncludeAnyway={() => includeAutoSetAside(m.id)}
                         onDowngradeFerpa={() => downgradeFerpa(m.id)}
                         onSetIgnoredItems={next => setIgnoredItems(m.id, next)}
+                        onToggleRetired={next => toggleRetired(m.id, next)}
                         busy={busy === m.id}
                       />
                     ))}
