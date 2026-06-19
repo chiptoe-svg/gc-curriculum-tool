@@ -12,10 +12,15 @@ import { z } from 'zod';
  */
 
 const WikiCitation = z.object({
-  /** Repo-relative path to the wiki page (e.g. "courses/gc-4800.md"). */
-  path: z.string(),
+  /** Repo-relative path to the wiki page (e.g. "courses/gc-4800.md") — null for material-chunk citations. */
+  path: z.string().nullable(),
   /** Up-to-200-char verbatim excerpt the assistant relied on. */
   excerpt: z.string().max(200),
+  /** Material-chunk citation fields — null for wiki-page citations. */
+  courseCode: z.string().nullable(),
+  materialId: z.string().nullable(),
+  fileName: z.string().nullable(),
+  chunkId: z.string().nullable(),
 });
 
 export const CurriculumChatResponseSchema = z.object({
@@ -35,10 +40,14 @@ export const CurriculumChatResponseJsonSchema = {
       items: {
         type: 'object',
         properties: {
-          path: { type: 'string' },
+          path: { type: ['string', 'null'] },
           excerpt: { type: 'string', maxLength: 200 },
+          courseCode: { type: ['string', 'null'] },
+          materialId: { type: ['string', 'null'] },
+          fileName: { type: ['string', 'null'] },
+          chunkId: { type: ['string', 'null'] },
         },
-        required: ['path', 'excerpt'],
+        required: ['path', 'excerpt', 'courseCode', 'materialId', 'fileName', 'chunkId'],
         additionalProperties: false,
       },
     },

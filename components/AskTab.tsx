@@ -309,7 +309,9 @@ function MessageBubble({ message, slug }: { message: AskMessage; slug: string })
         <ul className="mt-1 space-y-0.5">
           {message.citations.map((c, i) => (
             <li key={i} className="text-[11px] text-muted-foreground">
-              <WikiLink path={c.path} slug={slug} />
+              {c.path != null
+                ? <WikiLink path={c.path} slug={slug} />
+                : <span>{c.courseCode} · {c.fileName}</span>}
               {' '}
               <span className="italic">"{c.excerpt}"</span>
             </li>
