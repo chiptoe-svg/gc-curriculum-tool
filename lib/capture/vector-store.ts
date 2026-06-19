@@ -24,6 +24,9 @@ export interface ChunkVectorRecord {
   parentSectionId: string;
   text: string;
   contextBlurb: string;
+  /** Provenance (set by the cross-course spine copy; empty for per-course writes). */
+  uploadedAt?: string | null;
+  snapshotId?: string | null;
 }
 
 export interface SectionRecord {
@@ -39,11 +42,13 @@ export interface SearchInput {
   queryText: string;        // used by Weaviate BM25 side; ignored by in-memory backend
   k: number;
   materialId?: string;
+  courseCode?: string;      // cross-course spine: drill-down to one course
 }
 
 export interface SearchHit {
   id: string;
   materialId: string;
+  courseCode: string;
   fileName: string;
   sectionTitle: string;
   sectionIndex: number;
@@ -52,6 +57,8 @@ export interface SearchHit {
   parentSectionText: string | null;
   contextBlurb: string;
   score: number;
+  uploadedAt: string | null;
+  snapshotId: string | null;
 }
 
 export interface VectorStore {
@@ -67,6 +74,8 @@ export interface VectorStore {
     materialId: string;
     parentSectionText: string | null;
   } | null>;
+  deleteByCourse(tenant: string, courseCode: string): Promise<void>;
+  listChunksByCourse(tenant: string, courseCode: string): Promise<ChunkVectorRecord[]>;
 }
 
 interface TenantState {
@@ -109,11 +118,12 @@ export function createInMemoryVectorStore(): VectorStore {
       const scored: SearchHit[] = [];
       for (const c of state.chunks.values()) {
         if (input.materialId && c.materialId !== input.materialId) continue;
-        const score = cosineSimilarity(input.queryVector, c.vector);
+        if (input.courseCode && c.courseCode !== input.courseCode) continue;
         const parent = state.sections.get(c.parentSectionId) ?? null;
         scored.push({
           id: c.id,
           materialId: c.materialId,
+          courseCode: c.courseCode,
           fileName: c.fileName,
           sectionTitle: c.sectionTitle,
           sectionIndex: c.sectionIndex,
@@ -121,11 +131,25 @@ export function createInMemoryVectorStore(): VectorStore {
           parentSectionId: c.parentSectionId,
           parentSectionText: parent?.text ?? null,
           contextBlurb: c.contextBlurb,
-          score,
+          score: cosineSimilarity(input.queryVector, c.vector),
+          uploadedAt: c.uploadedAt ?? null,
+          snapshotId: c.snapshotId ?? null,
         });
       }
       scored.sort((a, b) => b.score - a.score);
       return scored.slice(0, input.k);
+    },
+
+    async deleteByCourse(tenant, courseCode) {
+      const state = tenants.get(tenant);
+      if (!state) return;
+      for (const [id, c] of state.chunks) if (c.courseCode === courseCode) state.chunks.delete(id);
+    },
+
+    async listChunksByCourse(tenant, courseCode) {
+      const state = tenants.get(tenant);
+      if (!state) return [];
+      return [...state.chunks.values()].filter(c => c.courseCode === courseCode);
     },
 
     async fetchChunkById(tenant, chunkId) {
@@ -147,6 +171,12 @@ export function createInMemoryVectorStore(): VectorStore {
 
 export function tenantForCourse(courseCode: string): string {
   return `coursecapture-${courseCode.toLowerCase().replace(/\s+/g, '-')}`;
+}
+
+/** The single reserved tenant holding the union of all courses' chunks for
+ *  cross-course search. Namespaced like tenantForCourse so prefixes match. */
+export function tenantForProgram(): string {
+  return 'coursecapture-program';
 }
 
 /** Construct the configured vector-store backend. Selects between the

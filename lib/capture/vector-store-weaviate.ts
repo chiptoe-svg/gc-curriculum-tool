@@ -186,6 +186,7 @@ export function createWeaviateVectorStore(): VectorStore {
         return {
           id: String(o.uuid),
           materialId: String(o.properties['materialId']),
+          courseCode: String(o.properties['courseCode'] ?? ''),
           fileName: String(o.properties['fileName']),
           sectionTitle: String(o.properties['sectionTitle']),
           sectionIndex: Number(o.properties['sectionIndex']),
@@ -194,8 +195,23 @@ export function createWeaviateVectorStore(): VectorStore {
           parentSectionText: parentTextById.get(parentSectionId) ?? null,
           contextBlurb: String(o.properties['contextBlurb']),
           score: Number(o.metadata?.score ?? 0),
+          // TODO Task 4: read from Weaviate properties once schema is extended
+          uploadedAt: null,
+          snapshotId: null,
         };
       });
+    },
+
+    // -----------------------------------------------------------------------
+    // deleteByCourse / listChunksByCourse — Task-4 stubs (cross-course spine)
+    // The interface must be satisfied now; real Weaviate behavior ships in Task 4.
+    // -----------------------------------------------------------------------
+    async deleteByCourse(_tenant, _courseCode) {
+      throw new Error('deleteByCourse: not implemented — Task 4');
+    },
+
+    async listChunksByCourse(_tenant, _courseCode) {
+      return []; // Task-4 stub
     },
 
     // -----------------------------------------------------------------------

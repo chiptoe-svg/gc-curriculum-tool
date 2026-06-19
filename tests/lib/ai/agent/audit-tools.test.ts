@@ -54,6 +54,7 @@ function makeHit(overrides: Partial<SearchHit> = {}): SearchHit {
   return {
     id: 'hit-1',
     materialId: 'mat-1',
+    courseCode: 'GC 4800',
     fileName: 'syllabus.pdf',
     sectionTitle: 'Course Overview',
     sectionIndex: 0,
@@ -62,6 +63,8 @@ function makeHit(overrides: Partial<SearchHit> = {}): SearchHit {
     parentSectionText: null,
     contextBlurb: '',
     score: 0.9,
+    uploadedAt: null,
+    snapshotId: null,
     ...overrides,
   };
 }

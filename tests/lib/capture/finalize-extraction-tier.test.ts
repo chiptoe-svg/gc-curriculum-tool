@@ -123,6 +123,8 @@ function makeFakeStore(): VectorStore & {
     async deleteByMaterial() {},
     async hybridSearch() { return []; },
     async fetchChunkById() { return null; },
+    async deleteByCourse() {},
+    async listChunksByCourse() { return []; },
   };
 }
 
