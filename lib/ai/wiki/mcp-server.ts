@@ -20,6 +20,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { z } from 'zod';
 import { buildCurriculumChatTools } from '@/lib/ai/wiki/tools';
 import { buildCurriculumGraphTools } from '@/lib/ai/wiki/graph-tools';
+import { buildCurriculumSearchTools } from '@/lib/ai/wiki/curriculum-search-tool';
 import { renderToolDescription, type ToolDefinition } from '@/lib/ai/tool-use-types';
 
 const SERVER_INFO = { name: 'gc-curriculum-wiki', version: '1.0.0' } as const;
@@ -35,7 +36,7 @@ function rawShape(schema: ToolDefinition['inputSchema']): z.ZodRawShape {
 }
 
 export function buildWikiMcpServer(
-  tools: ToolDefinition[] = [...buildCurriculumChatTools(), ...buildCurriculumGraphTools()],
+  tools: ToolDefinition[] = [...buildCurriculumChatTools(), ...buildCurriculumGraphTools(), ...buildCurriculumSearchTools()],
 ): McpServer {
   const server = new McpServer(SERVER_INFO);
 

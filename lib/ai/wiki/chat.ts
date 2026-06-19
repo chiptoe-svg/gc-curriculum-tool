@@ -23,6 +23,7 @@ import { loadPrompt } from '@/lib/ai/prompts/load';
 import type { Message, StreamEvent } from '@/lib/ai/tool-use-types';
 import { buildCurriculumChatTools } from './tools';
 import { buildCurriculumGraphTools } from './graph-tools';
+import { buildCurriculumSearchTools } from './curriculum-search-tool';
 import {
   CurriculumChatResponseSchema,
   CurriculumChatResponseJsonSchema,
@@ -66,7 +67,7 @@ export async function* streamCurriculumChat(
     ? prependAnchorContext(input.messages, input.anchorContext)
     : input.messages;
 
-  const tools = [...buildCurriculumChatTools(), ...buildCurriculumGraphTools()];
+  const tools = [...buildCurriculumChatTools(), ...buildCurriculumGraphTools(), ...buildCurriculumSearchTools()];
   const provider = await getProviderForFunction('curriculum-chat');
 
   let finalValue: CurriculumChatResponse | null = null;
