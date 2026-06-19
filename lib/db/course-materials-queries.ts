@@ -39,6 +39,7 @@ function mapMaterialRow(row: Record<string, unknown>): CourseMaterialRow {
     ignoredItems: (row['ignored_items'] as string[] | null) ?? [],
     sourceCode: row['source_code'] as string | null,
     rawCleared: row['raw_cleared'] as boolean,
+    retiredAt: row['retired_at'] as Date | null,
   };
 }
 export type ExtractionStatus = 'pending' | 'ok' | 'low_text' | 'failed';
@@ -298,6 +299,34 @@ export async function updateAutoSetAside(args: {
  */
 export async function setMaterialRawCleared(id: string): Promise<void> {
   await db.update(courseMaterials).set({ rawCleared: true }).where(eq(courseMaterials.id, id));
+}
+
+/** The currency contract for the cross-course spine: a material contributes
+ *  chunks only when it is fully indexed, not ignored, and not retired. */
+export function buildIndexableMaterialsWhere(courseCode: string) {
+  return and(
+    eq(courseMaterials.courseCode, courseCode),
+    eq(courseMaterials.indexingStatus, 'ready'),
+    eq(courseMaterials.ignored, false),
+    isNull(courseMaterials.retiredAt),
+  );
+}
+
+/** Current, indexable materials for a course (spine currency set). */
+export async function listIndexableMaterialsForCourse(
+  courseCode: string,
+): Promise<CourseMaterialRow[]> {
+  return db.select().from(courseMaterials).where(buildIndexableMaterialsWhere(courseCode));
+}
+
+/** Set/clear a material's retired state. Returns true if a row was updated. */
+export async function setMaterialRetired(id: string, retired: boolean): Promise<boolean> {
+  const rows = await db
+    .update(courseMaterials)
+    .set({ retiredAt: retired ? new Date() : null })
+    .where(eq(courseMaterials.id, id))
+    .returning({ id: courseMaterials.id });
+  return rows.length > 0;
 }
 
 /**
