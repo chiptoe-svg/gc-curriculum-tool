@@ -59,7 +59,16 @@ export async function rebuildProgramIndex(
   const store = opts.store ?? createVectorStore();
   const courses = await listCourses();
   const codes = courses.map((c) => c.code);
-  for (const code of codes) await refreshProgramIndex(code, { store });
-  console.log(`[program-index] rebuild complete: ${codes.length} courses`);
+  let ok = 0;
+  for (const code of codes) {
+    // Isolate per-course failures so one bad course can't abort the whole backfill.
+    try {
+      await refreshProgramIndex(code, { store });
+      ok++;
+    } catch (err) {
+      console.error(`[program-index] rebuild: ${code} failed (continuing)`, err);
+    }
+  }
+  console.log(`[program-index] rebuild complete: ${ok}/${codes.length} courses`);
   return { courses: codes.length };
 }

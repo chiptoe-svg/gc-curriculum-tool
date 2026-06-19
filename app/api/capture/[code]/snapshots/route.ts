@@ -156,11 +156,6 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
       const allPages = [...raw, ...wiki];
       const commitMessage = `feat(${snapshot.courseCode.toLowerCase().replace(/\s+/g, '-')}): snapshot ${new Date().toISOString().slice(0, 10)} — ${snapshot.caption ?? 'untitled'}`;
       await writeAndPush({ pages: allPages, logEntry, commitMessage });
-      // Refresh this course's slice of the cross-course spine from its current
-      // materials. Fire-and-log like the wiki update; the full rebuild recovers.
-      await refreshProgramIndex(snapshot.courseCode, { snapshotId: snapshot.id }).catch(err =>
-        console.error('[program-index] refresh failed for', snapshot.courseCode, err),
-      );
     } catch (err) {
       console.error(
         'wiki-update failed for snapshot',
@@ -171,6 +166,14 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
       );
     }
   })();
+
+  // Refresh this course's slice of the cross-course spine from its current
+  // materials — INDEPENDENT of the wiki update above, so a wiki/git failure
+  // never skips the spine refresh (and vice-versa). Fire-and-log; the admin
+  // full rebuild is the recovery path and the next snapshot re-stamps.
+  void refreshProgramIndex(snapshot.courseCode, { snapshotId: snapshot.id }).catch(err =>
+    console.error('[program-index] refresh failed for', snapshot.courseCode, err),
+  );
 
   return NextResponse.json({
     snapshot: {
