@@ -282,6 +282,10 @@ export const courseMaterials = pgTable('course_materials', {
   // (CourseCapture chat + scoring) — useful for Canvas imports that turn out
   // to be duplicate, outdated, or irrelevant.
   ignored: boolean('ignored').notNull().default(false),
+  // Curriculum-currency state, distinct from `ignored` (which means "don't send
+  // to AI": FERPA/policy/noise). `retired_at` = "the course no longer does this";
+  // the cross-course spine excludes retired materials. Null = active.
+  retiredAt: timestamp('retired_at', { withTimezone: true }),
   // Per-item ignore for Canvas-list materials (Assignments, Discussions,
   // Quizzes, Pages, Module List). Array of item titles (the `## Title` text
   // that delimits each item in the concatenated extractedText). Audit
