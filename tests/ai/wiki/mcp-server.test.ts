@@ -60,6 +60,7 @@ describe('buildWikiMcpServer', () => {
       'list_wiki',
       'prereq_chain',
       'read_wiki',
+      'search_curriculum',
       'search_wiki',
     ]);
   });
