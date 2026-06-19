@@ -46,11 +46,13 @@ export async function refreshProgramIndex(
   await store.deleteByCourse(tenantForProgram(), courseCode);
   if (stamped.length > 0) await store.upsert(tenantForProgram(), stamped);
   console.log(
-    `[program-index] ${courseCode}: ${stamped.length} chunks (from ${sourceChunks.length} source)`,
+    `[program-index] ${courseCode}: ${stamped.length} chunks (from ${sourceChunks.length} source chunks)`,
   );
 }
 
-/** Full backfill / recovery: refresh every course. Batch-tolerable, run on demand. */
+/** Full backfill / recovery: refresh every course. Batch-tolerable, run on demand.
+ *  Note: a full rebuild is not tied to a single snapshot, so chunks are stamped
+ *  with snapshotId=null here; the per-course refresh on the next snapshot restamps. */
 export async function rebuildProgramIndex(
   opts: RefreshOptions = {},
 ): Promise<{ courses: number }> {
@@ -58,5 +60,6 @@ export async function rebuildProgramIndex(
   const courses = await listCourses();
   const codes = courses.map((c) => c.code);
   for (const code of codes) await refreshProgramIndex(code, { store });
+  console.log(`[program-index] rebuild complete: ${codes.length} courses`);
   return { courses: codes.length };
 }
