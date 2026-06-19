@@ -135,6 +135,8 @@ export function createWeaviateVectorStore(): VectorStore {
       const result = await chunks.query.hybrid(input.queryText, {
         vector: input.queryVector,
         limit: input.k,
+        // TODO Task 4: also apply the input.courseCode filter here (AND with
+        // materialId) once the cross-course `program` tenant is queried.
         filters: input.materialId
           ? chunks.filter.byProperty('materialId').equal(input.materialId)
           : undefined,
@@ -211,7 +213,9 @@ export function createWeaviateVectorStore(): VectorStore {
     },
 
     async listChunksByCourse(_tenant, _courseCode) {
-      return []; // Task-4 stub
+      // Fail loud (symmetric with deleteByCourse) — a silent [] would let a
+      // caller mistake "not implemented" for "no chunks". Real behavior: Task 4.
+      throw new Error('listChunksByCourse: not implemented — Task 4');
     },
 
     // -----------------------------------------------------------------------
