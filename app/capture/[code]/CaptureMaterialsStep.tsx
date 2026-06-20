@@ -46,6 +46,10 @@ export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt,
   const hasSyncedSyllabus = catalogSyncedAt != null;
   const isEmpty = materials.length === 0 && !hasSyncedSyllabus;
 
+  // An instructor must be chosen before continuing — captures are attributed
+  // per instructor, so an unselected (empty) name can't be allowed through.
+  const needsInstructor = instructor.trim() === '';
+
   return (
     <div className="rounded-lg border bg-card p-6">
       <div className="mb-1 flex items-center gap-2 font-mono-plex text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
@@ -172,12 +176,15 @@ export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt,
       </div>
 
       <div className="mt-6 flex items-center justify-end gap-4">
+        {needsInstructor && (
+          <span className="text-xs text-muted-foreground">Select an instructor to continue.</span>
+        )}
         {isEmpty ? (
-          <button type="button" onClick={onContinue}
-            className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline">Start without materials anyway →</button>
+          <button type="button" onClick={onContinue} disabled={needsInstructor}
+            className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:no-underline disabled:hover:text-muted-foreground">Start without materials anyway →</button>
         ) : (
-          <button type="button" onClick={onContinue}
-            className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90">
+          <button type="button" onClick={onContinue} disabled={needsInstructor}
+            className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed">
             {triageEnabled ? 'Continue →' : 'Continue to interview →'}
           </button>
         )}

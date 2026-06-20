@@ -66,7 +66,7 @@ export function InstructorSelect({
       }}
       className={cls}
     >
-      {value === '' && <option value="" disabled>Select an instructor…</option>}
+      {value === '' && <option value="" disabled>Instructor name</option>}
       {!known && value !== '' && <option value={value}>{value} (new)</option>}
       {FACULTY_ROSTER.map(name => (
         <option key={name} value={name}>{name}</option>

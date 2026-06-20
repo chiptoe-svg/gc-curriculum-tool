@@ -15,7 +15,7 @@ import { CaptureHero } from './CaptureHero';
 import { CaptureMaterialsStep } from './CaptureMaterialsStep';
 import { TriageStep } from './TriageStep';
 import { shouldShowMaterialsStep } from '@/lib/capture/material-display';
-import { FACULTY_ROSTER, DEPARTMENT_CANONICAL } from '@/lib/faculty';
+import { FACULTY_ROSTER } from '@/lib/faculty';
 
 interface Props {
   course: CourseCatalogView;
@@ -103,12 +103,14 @@ export function CaptureClient({
   const [snapshotsRefreshKey, setSnapshotsRefreshKey] = useState(0);
   // Session-start chooser state — single source of truth, shared by the landing
   // hero's chooser controls and the chat panel's mid-session auditor badge +
-  // start request. Pre-fills from a resumed session's stamped instructor, else
-  // the first real faculty in the roster.
+  // start request. Pre-fills from a resumed session's stamped instructor;
+  // otherwise starts EMPTY so the picker shows its "Instructor name" placeholder
+  // and the user must actively choose (no silent default to the first roster
+  // name — that mis-attributed captures to whoever sorted first).
   const [chooserInstructor, setChooserInstructor] = useState<string>(
     initialInstructor && FACULTY_ROSTER.includes(initialInstructor)
       ? initialInstructor
-      : (FACULTY_ROSTER.find(n => n !== DEPARTMENT_CANONICAL) ?? DEPARTMENT_CANONICAL),
+      : '',
   );
   const [chooserMode, setChooserMode] = useState<'fresh' | 'continue'>(
     priorSnapshotInfo ? 'continue' : 'fresh',
