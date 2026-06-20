@@ -1,0 +1,26 @@
+# Bransford & Schwartz (1999) — Rethinking Transfer (Preparation for Future Learning)
+
+**Full citation:** Bransford, J. D., & Schwartz, D. L. (1999). Rethinking transfer: A simple proposal with multiple implications. *Review of Research in Education*, 24(1), 61–100. Introduces "preparation for future learning" (PFL) as an alternative to direct-application transfer assessment, arguing that the quality of prior instruction is better detected by how efficiently learners acquire genuinely new material than by whether they can cold-apply learned procedures to novel problems.
+
+**Reference ID in background.html:** `ref-bransford-schwartz-1999`; cited in §4.
+
+**Where it lives:**
+- Publisher: SAGE / American Educational Research Association. DOI: https://doi.org/10.3102/0091732X024001061
+- AAA Lab (Stanford) open PDF: https://aaalab.stanford.edu/assets/papers/earlier/Rethinking_transfer_a_simple_proposal_with_multiple_implications.pdf
+- Semantic Scholar record: https://www.semanticscholar.org/paper/Chapter-3-Rethinking-Transfer-%3A-A-Simple-Proposal-Bransford-Schwartz/94b946403a60fc7490cd41243aeff2969036b9bf
+- SAGE journal page (paywalled): https://journals.sagepub.com/doi/abs/10.3102/0091732X024001061
+- Open-access status: The paper is paywalled at the SAGE/AERA journal. A PDF circulates openly through Schwartz's Stanford AAA Lab page; that URL was confirmed live and returned the paper.
+
+**Accessibility:** Partially accessible — the AAA Lab PDF is publicly hosted but was rendered as binary in WebFetch (large scan). The paper's constructs are precisely documented in multiple secondary sources and in the authors' own follow-on work (Schwartz et al. 2004, 2005), yielding high-confidence synthesis of the core proposal without full-text quotation.
+
+**What the background doc claims it says:** "Introduces 'preparation for future learning': transfer is better detected as accelerated new learning than as cold direct application."
+
+**What it actually says (synthesis):** Bransford and Schwartz open by diagnosing what they call the dominant "direct-application" theory of transfer assessment: the standard experimental paradigm teaches learners some content, then measures whether they can spontaneously apply it to a structurally similar but unfamiliar problem, entirely unaided and cut off from resources. They name this paradigm **sequestered problem solving (SPS)** — the jury-room metaphor is deliberate — because learners are isolated from the texts, tools, peers, and feedback that characterize real-world performance. The concern is not that SPS is wrong in principle; it is a reasonable test of mature, consolidated understanding. The problem is that SPS is blind to the most important educational outcome: whether prior learning equips a student to learn the *next* thing efficiently.
+
+Their proposal is the **preparation for future learning (PFL)** construct and the assessment design that operationalizes it. A PFL assessment includes resources for learning during the test itself — worked examples, expository texts, brief instruction — and asks how much learners benefit from those resources given their prior preparation. The key comparison is between a PFL condition and a control condition that lacked the initial instruction: the instructed group's advantage shows up not as solving a problem cold, but as learning a new problem faster or better. This shift reframes transfer from a one-shot performance measurement to a *learning rate* measurement. The claim is that instruction designed for deep understanding may show little advantage on a cold SPS test (because the test's surface features may not trigger retrieval) while showing a large advantage on a PFL test (because richer prior knowledge scaffolds interpretation of new information).
+
+The paper also critiques what would later be called the **"sequestered" assessment's false negative problem**: designs that build flexible, principled understanding may actually underperform rote-procedural training on SPS tests in the short run — the famous "hidden efficiency" finding later demonstrated empirically in Schwartz & Martin (2004). This is not a paradox; it is a measurement artifact. SPS tests reward immediate retrieval of the trained procedure; PFL tests reveal preparation to handle novelty and complexity. The 1999 paper lays out this logic theoretically and previews the empirical program.
+
+The "multiple implications" of the title refer to instructional design (teach for adaptability, not just execution), assessment design (include resources; measure learning, not just application), and curriculum alignment (sequence courses so that earlier learning prepares students for the conceptual demands of later courses, not just for direct application within the same course). This last implication — program-level sequencing — is directly relevant to the scaffolding-analysis use case in the GC curriculum tool.
+
+**Verdict:** Consistent — the background doc's gloss is accurate. PFL is precisely the claim that transfer is better detected as accelerated new learning than as cold direct application, and the SPS/PFL distinction is the paper's central structural contribution. The gloss is tight (one sentence) and omits the instructional-design and assessment-design implications, but everything it asserts is correct. No overclaim; no distortion.

@@ -1,9 +1,9 @@
 # References — Audit Index
 
-Audit of the 31 references in `/docs/background.html` §15 (rows 29–31 added 2026-06-05 for the §2 "Knowledge spaces" subsection; verified + adversarially reviewed). Each row links to a reference file containing: full citation, accessibility status, what the background doc claims the source says, a substantive synthesis based on what was fetched or found, and a verdict on consistency.
+Audit of the 42 references in `/docs/background.html` §15 (rows 29–31 added 2026-06-05 for the §2 "Knowledge spaces" subsection; **rows 32–42 added 2026-06-20** — the §4 transfer/problem-solving cluster that landed in `background.html` on 2026-06-14 but was never audited in, plus `xu-2026` added 2026-06-19). Each row links to a reference file containing: full citation, accessibility status, what the background doc claims the source says, a substantive synthesis based on what was fetched or found, and a verdict on consistency.
 
-**Audit conducted:** 2026-06-01  
-**Auditor:** Claude (Sonnet 4.6), working from WebSearch + WebFetch + GitHub CLI
+**Audit conducted:** 2026-06-01; extended 2026-06-05 and 2026-06-20  
+**Auditor:** Claude (Sonnet 4.6 / Opus 4.8), working from WebSearch + WebFetch + GitHub CLI
 
 ---
 
@@ -11,14 +11,14 @@ Audit of the 31 references in `/docs/background.html` §15 (rows 29–31 added 2
 
 | Status | Count |
 |---|---|
-| Verified accessible (full text fetched or open access) | 11 (incl. npj 2023 and Macnamara 2014, verified from source PDFs 2026-06-01; + Kingston & Broaddus 2017, open access, 2026-06-05) |
-| Partially accessible (abstract / secondary descriptions / publisher pages / ERIC / Wikipedia) | 20 (incl. Doignon & Falmagne 1985 and Falmagne et al. 2006, DOI + secondary confirmed, 2026-06-05) |
+| Verified accessible (full text fetched or open access) | 14 (the 11 prior + 2026-06-20: sala-gobet-2017 open access, salomon-perkins-1989 full PDF read, xu-2026 arXiv preprint) |
+| Partially accessible (abstract / secondary descriptions / publisher pages / ERIC / Wikipedia) | 28 (the 20 prior + 2026-06-20: barnett-ceci-2002, bransford-schwartz-1999, donker-2014, gentner-2003, gick-holyoak-1983, hatano-inagaki-1986, nisbett-wilson-1977, schwartz-martin-2004) |
 | Inaccessible (citation only, no secondary found) | 0 |
 
 | Verdict | Count |
 |---|---|
-| Consistent | 23 → 28 (npj 2023 + Macnamara 2014 resolved 2026-06-01 via source-PDF; +3 added 2026-06-05 — doignon-1985, aleks-2006, dlm-2017 — of which doignon-1985 and dlm-2017 were corrected after an adversarial review, see their files) |
-| Partially inconsistent (minor discrepancy flagged) | 2 → 0 |
+| Consistent | 28 → 38 (the 2026-06-20 batch added 10 Consistent: barnett-ceci-2002, bransford-schwartz-1999, donker-2014, gentner-2003, gick-holyoak-1983, hatano-inagaki-1986, nisbett-wilson-1977, sala-gobet-2017, salomon-perkins-1989, schwartz-martin-2004) |
+| Partially inconsistent (minor discrepancy flagged) | 0 → 1 (xu-2026 — background omitted that the low κ recovered to 0.92–0.94 after guideline refinement, and the JLA venue is unverified; **background.html corrected 2026-06-20**, see Findings #3) |
 | Unverifiable | 0 |
 | Questionable | 0 |
 
@@ -59,6 +59,17 @@ Audit of the 31 references in `/docs/background.html` §15 (rows 29–31 added 2
 | 29 | Doignon & Falmagne 1985 — Spaces for the Assessment of Knowledge (KST) | [doignon-1985.md](doignon-1985.md) | §2 | Partial (Elsevier paywall; DOI + secondary confirmed) | Corrected (2026-06-05; surmise-relation gloss softened after adversarial review) |
 | 30 | Falmagne, Cosyn, Doignon & Thiéry 2006 — KST in Theory & Practice (ALEKS) | [aleks-2006.md](aleks-2006.md) | §2 | Partial (Springer/Elsevier paywall; DBLP + product pages confirmed) | Consistent |
 | 31 | Kingston & Broaddus 2017 — Learning Map Systems (DLM) | [dlm-2017.md](dlm-2017.md) | §2 | **Open** (MDPI Education Sciences) | Corrected (2026-06-05; DAG/prerequisite framing removed after adversarial review) |
+| 32 | Salomon & Perkins 1989 — Rocky Roads to Transfer | [salomon-perkins-1989.md](salomon-perkins-1989.md) | §4 | **Open** (BCcampus PDF, full text read) | Consistent |
+| 33 | Bransford & Schwartz 1999 — Rethinking Transfer (PFL) | [bransford-schwartz-1999.md](bransford-schwartz-1999.md) | §4 | Partial (AAA Lab PDF binary; constructs in secondary) | Consistent |
+| 34 | Schwartz & Martin 2004 — Inventing to Prepare for Future Learning | [schwartz-martin-2004.md](schwartz-martin-2004.md) | §4 | Partial (AAA Lab PDF binary; abstract + ERIC + citing sources) | Consistent |
+| 35 | Gick & Holyoak 1980/1983 — Analogical Transfer & Schema Induction | [gick-holyoak-1983.md](gick-holyoak-1983.md) | §4 | Partial (PDFs binary; ~30%→~52% well-attested in secondary) | Consistent |
+| 36 | Gentner, Loewenstein & Thompson 2003 — Analogical Encoding | [gentner-2003.md](gentner-2003.md) | §4 | Partial (APA paywall; author PDF 403; secondary) | Consistent |
+| 37 | Barnett & Ceci 2002 — A Taxonomy for Far Transfer | [barnett-ceci-2002.md](barnett-ceci-2002.md) | §4 | Partial (abstract + secondary) | Consistent |
+| 38 | Hatano & Inagaki 1986 — Two Courses of Expertise (routine/adaptive) | [hatano-inagaki-1986.md](hatano-inagaki-1986.md) | §4 | Partial (book chapter; secondary syntheses) | Consistent |
+| 39 | Sala & Gobet 2017 — Does Far Transfer Exist? (+ Sala et al. 2019) | [sala-gobet-2017.md](sala-gobet-2017.md) | §4 | **Open** (PMC / LSE CC-BY) | Consistent |
+| 40 | Donker et al. 2014 — Learning-Strategy Instruction Meta-Analysis | [donker-2014.md](donker-2014.md) | §4 | Partial (Elsevier paywall; Groningen landing + Semantic Scholar) | Consistent |
+| 41 | Nisbett & Wilson 1977 — Telling More Than We Can Know | [nisbett-wilson-1977.md](nisbett-wilson-1977.md) | §4 | Partial (APA paywall; ResearchGate full text; 13k+ cites) | Consistent |
+| 42 | Xu et al. 2026 — Evaluating 21st-Century Competencies with LLMs | [xu-2026.md](xu-2026.md) | §7 | **Accessible** (arXiv:2601.10983 preprint, full text read) | **Partially inconsistent → background.html corrected 2026-06-20** (see Findings #3) |
 
 ---
 
@@ -81,6 +92,10 @@ estimate (games 26%, music 21%, sports 18%, education 4%, professions
 agent thought might apply is from Hambrick et al. 2014, a different
 paper. The background doc's "~12%" is exactly correct; no revision
 needed.
+
+### 3. Xu et al. 2026 — selective κ + unverified venue [file: xu-2026.md] — RESOLVED 2026-06-20
+
+**Discrepancy (two parts).** The §7 prose cited the inter-rater κ as "collapsed to 0.17–0.29" to motivate the evidence-above-zero rule. Reading the arXiv preprint (full text, arXiv:2601.10983) confirms those values are real — but they are the **initial calibration-round** disagreements (EU Key Competences κ=0.841, O*NET κ=0.288, ESDC κ=0.168); after the annotation guidelines were refined to separate "outside the course" from "potentially relevant but lacking textual evidence," the same annotators reached **κ ≈ 0.92–0.94**. The original prose acknowledged the refinement ("until the coding guidelines explicitly separated…") but omitted the recovered value — which actually *strengthens* the framework's argument (the very evidence/aspiration distinction the framework draws is what resolved the disagreement). Separately, the citation's venue ("Journal of Learning Analytics (to appear)") is **not stated on the preprint** and could not be verified. **Severity: Minor, and the framework's point is reinforced rather than weakened.** **Resolution:** `background.html` §7 + §15 corrected 2026-06-20 — added the κ≈0.92–0.94 recovery (reframing the disagreement as the absence of the evidence/aspiration line, not noise), the full paper title and annotation count (7,600), and softened the venue claim to "cited as forthcoming … venue unverified from the preprint."
 
 ### 2 (HISTORICAL, NOW RESOLVED). Macnamara 2014 — "~12% of expertise variance" figure [file: macnamara-2014.md]
 
