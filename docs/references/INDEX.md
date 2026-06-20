@@ -4,6 +4,8 @@ Audit of the 42 references in `/docs/background.html` §15 (rows 29–31 added 2
 
 **2026-06-20 reviewer expansion (rows 43–52 + staged).** A reviewer working from the held PDF set (`citations/load_bearing/` — **not committed to this repo**; the cards' "Local copy" lines point there) returned an expanded 56-card set. Its high-value additions were **wired into the live docs** (rows 43–52: Abrami 2015, the transfer-skepticism canon Thorndike-Woodworth / Detterman / Sala 2019, the metacognition pair Veenman / Schoenfeld, and the §11 competency-critique sources NRC-O*NET / Gonczi / Brockmann-Clarke-Winch / Dearden — now cited in `background.html` §4/§11). The Gentner and Gick & Holyoak cards were **renamed** (rows 35–36; the `background.html` anchors were renamed to match). Three cards remain **staged** — not yet cited in any live doc — because two carry "partially inconsistent" warnings about *how* they'd be cited (see "Staged cards" below). The reviewer's `_NEW_from_measurement_hypotheses_spec.md` triages which hypothesis-memo citations belong in the lit review (Tier 1 add-now / Tier 2 B2-methods appendix / Tier 3 architecture bibliography).
 
+**2026-06-20 adversarial-review corrections + hypothesis additions.** A subsequent adversarial review (+ addendum) caught four live errors, now fixed (see Findings #5): the **Abrami** §4 sentence/annotation overstated the source (the "immersion/mixed strongest" ranking is non-significant — corrected to content-specific g+≈0.57 vs generic 0.30); the **Belenky** claim in deep-dive §5 was *inverted* (now de-inverted — invention/PFL *reduces* dependence on mastery orientation; the card is therefore no longer "staged"); the **Gick & Holyoak** "~30% with a hint" mislabeled the condition (now: control / one-analog-no-hint / two-analog, in prose + Figure 2 of both docs); and **abstraction-and-bridging** was called "deferred" though it shipped (Area-7 condition e + schema). The same pass added the durability + uncertainty literature to the docs — **five new `background.html` §15 entries** (Arthur 1998, Bahrick 1984 for the depth-map durability caveat; Kim et al. 2025, Kohli 2025, Hüllermeier & Waegeman 2021 for the correlated-error / aleatoric-uncertainty additions in §7). **These five were verified in the 2026-06-19/20 B/C deep dive** (research-agent syntheses in `2026-06-19-curriculum-measurement-hypotheses.md`) but do **not yet have standalone audit cards here** — card backfill pending. (The addendum's §4.5 cited a "Tschirschwitz & Rodehorst 2024" for the label-reliability ceiling; that paper is unverifiable and absent from our library, so the docs use Hüllermeier & Waegeman 2021 instead.)
+
 **Audit conducted:** 2026-06-01; extended 2026-06-05 and 2026-06-20  
 **Auditor:** Claude (Sonnet 4.6 / Opus 4.8), working from WebSearch + WebFetch + GitHub CLI
 
@@ -93,7 +95,7 @@ Audit of the 42 references in `/docs/background.html` §15 (rows 29–31 added 2
 
 | Card | Would support | Accessibility | Why staged |
 |---|---|---|---|
-| [belenky-nokes-malach-2012.md](belenky-nokes-malach-2012.md) | §5/PFL (mastery-goals → preparation for future learning) | Accessible (PDF) | **Partially inconsistent** — a §5 citation as drafted would *invert* the study's central interaction; needs careful phrasing before wiring |
+| [belenky-nokes-malach-2012.md](belenky-nokes-malach-2012.md) | §5/PFL (mastery-goals → preparation for future learning) | Accessible (PDF) | **NO LONGER STAGED → corrected & cited** in deep-dive §5 (2026-06-20): the pre-existing inverted claim was de-inverted to match the card (invention/PFL *reduces* dependence on incoming mastery orientation). |
 | [bilalic-2009.md](bilalic-2009.md) | §5 (chess specialization / Einstellung) | Verified (PDF) | Consistent, but no natural anchor in the current docs yet |
 | [camerer-loewenstein-weber-1989.md](camerer-loewenstein-weber-1989.md) | §7 (curse of knowledge) | Verified (PDF) | **Partially inconsistent** (narrow: application context) — hold until the §7 use is pinned down |
 
@@ -102,6 +104,17 @@ Audit of the 42 references in `/docs/background.html` §15 (rows 29–31 added 2
 ---
 
 ## Findings requiring attention
+
+### 5. Adversarial-review corrections [Abrami, Belenky, Gick & Holyoak, abstraction-and-bridging] — RESOLVED 2026-06-20
+
+An adversarial review of the public pages (+ a hypothesis-driven addendum) caught four live errors, each verified against our own cards/code before fixing:
+
+- **Abrami (2015) overstated** (`background.html` §4 + §15): the wired sentence claimed CT gains are "largest under immersion/mixed … weakest under generic." Our own `abrami-2015.md` flags this — the four-approach Ennis comparison is **non-significant (Q-between p = .25)** and immersion was descriptively the *weakest*. Corrected to the licensed claim: content-specific CT g+ ≈ 0.57 vs generic 0.30; effective ingredients dialogue / authentic-problems / mentoring.
+- **Belenky & Nokes-Malach (2012) inverted** (deep-dive §5): the pre-existing prose said the PFL advantage is "largest for mastery-approach learners." The study found the opposite interaction (invention/PFL *reduces* dependence on incoming mastery orientation; the mastery payoff was concentrated in *tell-and-practice*). De-inverted to match the card; the card is no longer staged.
+- **Gick & Holyoak mislabeled** (both docs, prose + Figure 2): "~30% with a hint" conflated conditions — ~30% is the single-analog *no-hint* spontaneous rate; a hint lifts it to ~75–90%; two-analog comparison ~45–50%. Relabeled control / one-analog-no-hint / two-analog.
+- **abstraction-and-bridging status drift** (both docs): called "deferred / not yet probed" though it shipped as Area-7 condition *e* (`capture-chat-agent.md`) with `abstraction_bridging` fields in `schema.ts`. Corrected to "now built in, evidence-gated."
+
+**Severity: High for Abrami/Belenky** (live citation accuracy on public pages), **Medium for the others.** All fixed the same day; the durability (Arthur/Bahrick) and uncertainty (Kim/Kohli/Hüllermeier) literature was also added — see the header note.
 
 ### 1. npj 2023 (Kapur, Saba & Roll) — "degrees not thresholds" framing [file: npj-2023.md]
 
