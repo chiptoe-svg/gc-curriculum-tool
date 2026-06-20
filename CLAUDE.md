@@ -12,7 +12,7 @@ A curriculum-design and analysis tool for the Clemson Department of Graphic Comm
 >
 > **Q2.** For any individual course, do the prerequisites students walk in with actually support what the course expects?
 
-Vision in full: [`docs/superpowers/vision/gc-curriculum-tool-vision.md`](./docs/superpowers/vision/gc-curriculum-tool-vision.md). Today's deployment state and what's next: [`docs/STATE.md`](./docs/STATE.md).
+Vision in full: [`docs/superpowers/vision/gc-curriculum-tool-vision.html`](./docs/superpowers/vision/gc-curriculum-tool-vision.html). Today's deployment state and what's next: [`docs/STATE.md`](./docs/STATE.md).
 
 ---
 

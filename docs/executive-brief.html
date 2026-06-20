@@ -166,7 +166,18 @@
 <div class="eyebrow">Clemson · Graphic Communications · Executive Brief</div>
 <h1>The GC Curriculum Tool</h1>
 <p class="lede">A versioned, evidence-backed working view of captured GC courses — designed to grow into a program-wide view as faculty-confirmed snapshots accumulate.</p>
-<div class="meta">Three-minute read · Last updated 2026-06-12</div>
+<div class="meta">Overview · Last updated 2026-06-12</div>
+
+<nav style="margin-bottom: 40px; padding: 18px 22px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; font-size: 14px; line-height: 1.6;">
+  <div style="font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-faint); margin-bottom: 10px;">In this series</div>
+  <ul style="list-style: none; padding: 0; margin: 0;">
+    <li style="margin-bottom: 6px;"><strong>Executive Brief</strong> <span style="color: var(--text-faint); font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; margin-left: 6px;">you are here</span> — what/why/status in brief</li>
+    <li style="margin-bottom: 6px;"><a href="./superpowers/vision/gc-curriculum-tool-vision.html">Vision</a> — the product picture, surfaces, governance, and roadmap</li>
+    <li style="margin-bottom: 6px;"><a href="./background.html">Background</a> — the academic case: KUD+, why-not-Bloom, evidence rule</li>
+    <li style="margin-bottom: 6px;"><a href="./problem-solving-deep-dive.html">Problem-Solving Deep-Dive</a> — research on how problem-solving competence develops</li>
+    <li style="margin-bottom: 0;"><a href="./three-act-deep-dive.html">3-Act Companion</a> — the program-structure research</li>
+  </ul>
+</nav>
 
 <h2>What the tool does</h2>
 
@@ -190,11 +201,11 @@
 
 <ul>
   <li><strong>Curriculum redesigns</strong> often re-create courses without the program-wide view of what each course was actually delivering — so the redesigned curriculum inherits the gaps the old one had.</li>
-  <li><strong>Accreditation and advisory-board reviews</strong> require defensible claims about what graduates can do; "graduates of this program are ready for X" should be a verifiable statement, not a marketing assertion.</li>
+  <li><strong>Accreditation and advisory-board reviews</strong> require defensible claims about what graduates can do; "graduates of this program are ready for X" should be a verifiable statement backed by evidence of what each course was evidenced to develop.</li>
   <li><strong>Advising</strong> works better when "if you want career X, take this sequence and watch for these gaps" can be backed by evidence about what each course actually develops.</li>
 </ul>
 
-<p>The tool's commitments make these conversations possible: every coverage judgment is <strong>evidence-backed</strong> (every nonzero score requires evidence, but the evidence type varies by level — K=1 requires evidence of delivery; K&gt;1, U&gt;0, and D&gt;0 require evidence of assessed student engagement, reasoning, or performance), <strong>disputable</strong> (every AI reading can be flagged with a faculty note that persists across re-scores), and <strong>versioned</strong> (every snapshot is dated and immutable, so the curriculum's evolution is a record rather than an oral tradition).</p>
+<p>Three commitments make these conversations possible: every coverage judgment is <strong>evidence-backed</strong> (the scoring rules are detailed in the Framework section below), <strong>disputable</strong> (every AI reading can be flagged with a faculty note that persists across re-scores), and <strong>versioned</strong> (every snapshot is dated and immutable, so the curriculum's evolution is a record, not a memory).</p>
 
 <h2>The framework</h2>
 
@@ -214,52 +225,38 @@
 
 <h2>How it functions</h2>
 
-<p>Faculty work happens across several connected surfaces. Each is useful on its own; together they form the per-course-to-program-wide pipeline.</p>
+<p>Five connected surfaces form the per-course-to-program-wide pipeline; the <a href="./superpowers/vision/gc-curriculum-tool-vision.html">Vision document</a> covers each in full.</p>
 
 <div class="surfaces">
 
   <div class="surface">
     <div class="surface-title">CourseCapture · /capture/&lt;code&gt;</div>
-    <div class="surface-desc">An instructor-facing audit conversation that produces a <em>Course Outcome Profile</em> for one course. Before the audit begins, the instructor sees and confirms the evidence corpus the auditor will read: the syllabus/catalog entry (synced from the GC curriculum Google Sheet), everything imported from Canvas, and any other uploaded or linked materials — each shown honestly, with what's inside and whether it's actually readable. Only after that confirmation does the audit proceed, so ratings rest on a corpus the faculty member has reviewed. Voice or text input, one focused question per turn. A retrieval agent reads the course's chunked materials on demand and can consult the program-wide picture for cross-instructor context (as reference, never as evidence for this course); every finding in the resulting profile carries its provenance — instructor claim, course materials, or inferred — plus citations. When the instructor confirms, an immutable, versioned snapshot is written — the historical record. Drafts remain mutable for further iteration.</div>
+    <div class="surface-desc">An instructor-facing audit conversation: the instructor confirms the evidence corpus (syllabus, Canvas materials, uploads), then works through a focused AI-guided interview that produces a provenance-tagged, immutable Course Outcome Profile snapshot.</div>
   </div>
 
   <div class="surface">
     <div class="surface-title">Explore · /explore/&lt;code&gt;</div>
-    <div class="surface-desc">A read-only-on-the-snapshot module that asks <em>what should change</em>. Two modes: <strong>custom target</strong> (the instructor types in plain-language goals; AI proposes a structured KUD+ target; analysis surfaces alignment + ranked recommendations); <strong>downstream target</strong> (auto-detects courses that list this one as a prereq and unions their incoming expectations into a target). Includes what-if scenarios that simulate proposed changes.</div>
+    <div class="surface-desc">A prescriptive-analysis module that reads a confirmed snapshot and surfaces ranked recommendations against either a custom instructor-defined target or the inferred expectations of downstream courses.</div>
   </div>
 
   <div class="surface">
     <div class="surface-title">Program Coverage Matrix · /program</div>
-    <div class="surface-desc">The end-state view in snapshot form: every confirmed snapshot crossed with every career-target sub-competency, rendered as a depth-aware heat map. The curriculum is organized into four categories — GC Core, Specialty Area / GC Tech, Major Requirements + GenEds, and Other — and each course carries a flag for whether it builds toward the career. Coverage is measured against the flagged subset (near-term: the 16 GC Core courses plus 11 high-enrollment major requirements), so optional electives don't dilute the picture of what the program is actually building toward. Click any cell to see which snapshot competency contributed, the evidence excerpt that justifies the depth, the AI's confidence, and the full rationale. On-demand AI scoring with prompt-cache batching keeps cost bounded.</div>
+    <div class="surface-desc">Every confirmed snapshot crossed with every career-target sub-competency, rendered as a depth-aware heat map scoped to the courses that intentionally build toward the career.</div>
   </div>
 
   <div class="surface">
     <div class="surface-title">Position Capture &amp; Industry Input · /partners</div>
-    <div class="surface-desc">The employer-demand half of Q1 — the side that says what the careers <em>actually require</em>, so coverage has something defensible to be measured against. Industry partners work a guided flow that ingests a real job posting and turns it into a structured <em>Position Profile</em>: the demand a specific role places on each career-target competency, at depth. Alongside it, a magic-link partner survey feeds an AI synthesis layer (<code>/admin/synthesis</code>) that aggregates submissions into per-target themes, salary ranges, partner quotes, and proposed competency-descriptor edits — which faculty curate before adopting. The <strong>demand→coverage sufficiency seam</strong> that compares this captured demand against measured course attainment is built end-to-end and awaiting activation.</div>
+    <div class="surface-desc">The employer-demand half of Q1: industry partners turn real job postings into structured Position Profiles; a magic-link survey feeds an AI synthesis layer that aggregates input into proposed career-target edits faculty curate before adopting.</div>
   </div>
 
   <div class="surface">
     <div class="surface-title">Curriculum knowledge base · /wiki · /ask</div>
-    <div class="surface-desc">A self-maintaining, browsable record of the curriculum. Confirmed snapshots are compiled into cross-linked course, competency, career-target, and concept pages — readable at <code>/wiki</code> and answerable in plain language at <code>/ask</code>, where an AI assistant navigates the pages and cites the evidence behind every claim. This is the program's institutional memory: it gets richer and more answerable as more courses are captured, rather than living in scattered syllabi and the heads of whoever is still around.</div>
+    <div class="surface-desc">Confirmed snapshots compiled into cross-linked pages browsable at <code>/wiki</code> and answerable in plain language at <code>/ask</code> — the program's self-maintaining institutional memory.</div>
   </div>
 
 </div>
 
-<p>The flow has two axes that meet at the career targets. On the <strong>supply</strong> side: faculty capture courses one at a time; explore prescriptive analyses against the resulting snapshots; the program matrix aggregates across all snapshots into the cross-course picture. On the <strong>demand</strong> side: industry partners ingest real job postings into structured Position Profiles and respond to the magic-link survey; an AI synthesis layer aggregates that input into proposed career-target descriptor updates faculty curate before adopting. The sufficiency seam compares the two — captured employer demand against measured course attainment — and is built, awaiting activation.</p>
-
-<h2>The through-line: course → curriculum → career</h2>
-
-<p>The surfaces above are not three disconnected tools — they are the same evidence at three zoom levels, and the whole point is the line that runs through them.</p>
-
-<ul>
-  <li><strong>Course.</strong> One capture answers <em>what does this course develop, at what depth, on what evidence?</em> — an immutable, provenance-tagged Course Outcome Profile.</li>
-  <li><strong>Curriculum.</strong> As captures accumulate, the program coverage matrix, the scaffolding view, the prerequisite graph, and the self-maintaining wiki answer <em>what does the program as a whole develop — where are the gaps, how do courses hand off to each other, what does a student actually accumulate across four years?</em></li>
-  <li><strong>Career.</strong> The career targets name the destinations; Position Capture and partner input turn real job postings into a structured picture of <em>what those destinations actually demand.</em></li>
-</ul>
-
-<p>Q1 — <em>does the curriculum build students toward the careers we claim to prepare them for?</em> — is precisely the join of the last two: the program's measured coverage compared against the careers' captured demand. That coverage is scoped to the courses that actually build toward the career (a per-course flag; near-term the 27 GC Core and high-enrollment major-requirement courses), so the answer reflects the intentional curriculum, not the full transcript. Because every level is built from the same KUD+ evidence-scored records, the comparison is a real computation over real data, not a narrative assertion — a course audit, the program view, and a career-readiness claim are one continuous chain of evidence, zoomed in or out. (The sufficiency computation is built and awaiting activation; everything it draws on is live.)</p>
-
-<p>Faculty walkthrough of the day-to-day workflow: <a href="./using-coursecapture-and-explore.html">Using CourseCapture &amp; Explore</a>.</p>
+<p>The surfaces form one continuous chain: a course audit and a program-wide career-readiness claim draw on the same KUD+ evidence-scored records, zoomed in or out. Q1 is the join of the program coverage matrix and the captured employer demand — a real computation over real data, scoped to the courses that intentionally build toward each career. (The sufficiency computation is built and awaiting activation.) Faculty walkthrough: <a href="./using-coursecapture-and-explore.html">Using CourseCapture &amp; Explore</a>.</p>
 
 <h2>Trust and governance</h2>
 
@@ -271,7 +268,7 @@
   <li><strong>The curriculum committee retains all authority over curriculum changes.</strong> The tool informs deliberation. It does not replace it. A proposed change still goes through the committee; what the tool adds is the ability to bring evidence-grounded readings into the conversation and to model the proposed change's coverage impact before the committee votes.</li>
 </ul>
 
-<p>AI-model cost is a manageable variable as adoption grows. The current trial runs against the OpenAI API on credits; if usage scales beyond what credits absorb, the architecture supports a swap to Clemson RCD's campus-hosted models or a local runtime without changes to the application layer.</p>
+<p>AI cost stays bounded and provider-swappable — see the <a href="./superpowers/vision/gc-curriculum-tool-vision.html">Vision document</a> for operational detail.</p>
 
 <h2>Where it stands today</h2>
 
@@ -284,13 +281,10 @@
 <div class="deeper">
 <h2>Deeper reading</h2>
 <ul>
+  <li><a href="./superpowers/vision/gc-curriculum-tool-vision.html">Vision</a> — the full product picture, surfaces, governance, and roadmap.</li>
   <li><a href="./background.html">KUD+ Background</a> — academic justification for the framework: Backward Design, Constructive Alignment, the relationship to Bloom's, the depth-scale extension.</li>
   <li><a href="./problem-solving-deep-dive.html">Problem-Solving as a Program-Level Emergent Property</a> — the research synthesis behind the tool's position on how problem-solving competence actually develops.</li>
   <li><a href="./three-act-deep-dive.html">The 3-Act Program Structure</a> — an honest accounting of what the proposed 3-Act organizing model is consistent with, what it is not grounded in, and how it engages the strongest critiques.</li>
-  <li><a href="./superpowers/vision/gc-curriculum-tool-vision.html">Vision</a> — the full high-level picture, end-state visualizations, governance and operational realities.</li>
-  <li><a href="./graduate-outcome-validation.html">Graduate Outcome Criterion-Relevance Study</a> — proposed external-alignment check of the framework's output against 268 Clemson GC graduates' actual occupational destinations, with pre-committed failure criteria.</li>
-  <li><a href="./architecture.html">Architecture overview</a> — how the surfaces, pipeline, and data substrate fit together. The "system as a system" read: KUD+ framework, agentic-retrieval pipeline, provenance discipline, HTTP/HTTPS deployment, and how everything connects to the program-level views.</li>
-  <li><a href="./using-coursecapture-and-explore.html">Faculty guide</a> — practical walkthrough of CourseCapture and Explore.</li>
 </ul>
 </div>
 

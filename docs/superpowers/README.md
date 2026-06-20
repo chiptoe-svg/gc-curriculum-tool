@@ -8,8 +8,7 @@ These four are linked from the GH Pages root at [chiptoe-svg.github.io/gc-curric
 
 - **Documents hub** — [`../index.html`](../index.html). Reading-order index for everything below.
 - **Vision** — the high-level picture: the two questions, what it produces, the 3-Act program structure, end state, illustrative visualizations.
-  - [`vision/gc-curriculum-tool-vision.html`](./vision/gc-curriculum-tool-vision.html) — styled web view
-  - [`vision/gc-curriculum-tool-vision.md`](./vision/gc-curriculum-tool-vision.md) — source markdown
+  - [`vision/gc-curriculum-tool-vision.html`](./vision/gc-curriculum-tool-vision.html) — the Vision (single source, HTML-only; the `.md` twin was retired 2026-06-20 to match the deep-dive consolidation)
 - **Background** — academic companion to the Vision. Theoretical justification for KUD+ (Backward Design, Constructive Alignment, Bloom's relationship), the depth-scale extension and evidence rule, foundational competency treatment, course- and career-path implementation.
   - [`../background.html`](../background.html)
 - **Validation** — proposal for empirical validation against external occupational data using a dataset of 268 Clemson GC graduates.
