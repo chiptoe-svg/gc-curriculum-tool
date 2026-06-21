@@ -181,7 +181,7 @@
 
 <h2>What the tool does</h2>
 
-<p>The GC Curriculum Tool answers two questions that the department has historically answered through committee discussion, faculty intuition, and periodic curriculum review:</p>
+<p>Curriculum review usually runs on memory and paperwork: catalog language, aspirational syllabi, and what faculty can recall about courses taught years ago. The GC Curriculum Tool changes the burden of proof — a course earns credit for developing a competency not because the syllabus names it, but when assignments, rubrics, or student work show students actually engage it. Built on that evidentiary shift, it answers two questions the department has historically settled through committee discussion, faculty intuition, and periodic review:</p>
 
 <blockquote>
   <span class="q-label">Q1</span>
@@ -209,9 +209,9 @@
 
 <h2>The framework</h2>
 
-<p>Every coverage judgment factors into three categories — <strong>Know</strong> (recall and use of terminology), <strong>Understand</strong> (reasoning about why), <strong>Do</strong> (behavioral output, what a student can actually execute). Each is scored independently on a 0–5 depth scale anchored to <em>what the student does or grasps</em>, not what the syllabus claims. Binary coverage ("covered / not covered") collapses in practice — most courses touch most relevant competencies at some level, and the matrix loses its ability to discriminate between a brief mention and an assessed performance. The depth scales restore that resolution.</p>
+<p>Every coverage judgment factors into three categories — <strong>Know</strong> (recall and use of terminology), <strong>Understand</strong> (reasoning about why), <strong>Do</strong> (behavioral output, what a student can actually execute). Each is scored independently on a 0–5 depth scale anchored to <em>what the student does or grasps</em>, not what the syllabus claims: &ldquo;covers color management&rdquo; earns nothing on its own, whereas a <strong>Do</strong> score requires the graded artifact in which a student actually corrects color under novel conditions. Binary coverage ("covered / not covered") collapses in practice — most courses touch most relevant competencies at some level, and the matrix loses its ability to discriminate between a brief mention and an assessed performance. The depth scales restore that resolution.</p>
 
-<p>This is the <strong>KUD+ framework</strong>, drawn from Carol Ann Tomlinson's work on differentiated instruction and compatible with Wiggins &amp; McTighe's <em>Understanding by Design</em>. Three rules anchor the rubric across the program:</p>
+<p>This is the <strong>KUD+ framework</strong>, drawn from Carol Ann Tomlinson's work on differentiated instruction and compatible with Wiggins &amp; McTighe's <em>Understanding by Design</em>. It is deliberately <em>not</em> Bloom's taxonomy, and the reason is fit to purpose. Bloom's six cognitive levels (Remember, Analyze, Evaluate, Create…) are built to classify a single assessment — not to map a whole program against the careers it feeds — and they simply don't line up with how jobs are described. Careers are defined by the <em>knowledge</em> a role requires and the <em>work</em> it performs — which is exactly <strong>Know</strong> and <strong>Do</strong>, with <strong>Understand</strong> the reasoning that carries a graduate into unfamiliar cases. That shared vocabulary is what makes KUD a <strong>universal translator</strong> between curriculum and career: program coverage and job requirements sit on the same three axes, so comparing them is one scale on both sides rather than a lossy translation — and unlike Bloom, KUD carries the performance (<strong>Do</strong>) dimension where career readiness and habitual problem-solving are actually evidenced. Three rules anchor the rubric across the program:</p>
 
 <ul>
   <li><strong>Evidence-typed scoring.</strong> Every nonzero score requires evidence, but the evidence type varies by level: K=1 requires delivery evidence; K&gt;1, U&gt;0, and D&gt;0 require evidence of assessed student engagement, reasoning, or performance. Aspirational syllabus verbs do not by themselves justify depth above those thresholds.</li>
@@ -219,44 +219,44 @@
   <li><strong>Dissociation cases are signal.</strong> K-high with U-low is jargon without rationale; U-high with D-low is theory without craft; D-high with U-low is craft without articulation. The depth scales surface these patterns; binary coverage hides them.</li>
 </ul>
 
-<p>The framework also takes a specific position on problem-solving — an attribute employers consistently rank among the most important when reviewing graduates' resumes. The framework treats problem-solving as <strong>domain-embedded rather than reliably transferable as a free-floating skill</strong>. In technical domains (the GC core: press, ink, plates, prepress, color management, finishing), it looks for domain depth plus the productive-failure and structured-reflection conditions evidenced by Kapur's PS-I research. In design-judgment work (typography, layout, brand identity), it uses the broader language of productive struggle, critique, revision, and reflective practice in the Schön tradition. Whether these patterns cumulate into graduate-level problem-solving gains across the four-year curriculum is part of the validation agenda, not a settled finding. The tool's per-course audit surfaces these conditions; the program-level scaffolding analysis (Stage 1 live) aggregates them.</p>
+<p>The framework also takes a deliberate position on problem-solving — the attribute employers rank among the most important. It is not ignored or reduced to a checkbox: the framework treats it as a <strong>program-level emergent property</strong> that shows up in the pattern across courses — domain depth, productive failure, and structured reflection, accumulated over the sequence — rather than as a single course trait, which is why it is not added as a sixth foundational competency. Whether those conditions cumulate into graduate-level gains across the four years is part of the validation agenda, not a settled finding.</p>
 
 <p>The full academic case for KUD+ and its theoretical antecedents is in the <a href="./background.html">Background document</a>. The full research synthesis on problem-solving is in <a href="./problem-solving-deep-dive.html">Problem-Solving as a Program-Level Emergent Property</a>.</p>
 
 <h2>How it functions</h2>
 
-<p>Five connected surfaces form the per-course-to-program-wide pipeline; the <a href="./superpowers/vision/gc-curriculum-tool-vision.html">Vision document</a> covers each in full.</p>
+<p>Five connected surfaces take a course from a single capture to the program-wide picture; the <a href="./superpowers/vision/gc-curriculum-tool-vision.html">Vision document</a> covers each in full.</p>
 
 <div class="surfaces">
 
   <div class="surface">
-    <div class="surface-title">CourseCapture · /capture/&lt;code&gt;</div>
+    <div class="surface-title">CourseCapture</div>
     <div class="surface-desc">An instructor-facing audit conversation: the instructor confirms the evidence corpus (syllabus, Canvas materials, uploads), then works through a focused AI-guided interview that produces a provenance-tagged, immutable Course Outcome Profile snapshot.</div>
   </div>
 
   <div class="surface">
-    <div class="surface-title">Explore · /explore/&lt;code&gt;</div>
+    <div class="surface-title">Explore</div>
     <div class="surface-desc">A prescriptive-analysis module that reads a confirmed snapshot and surfaces ranked recommendations against either a custom instructor-defined target or the inferred expectations of downstream courses.</div>
   </div>
 
   <div class="surface">
-    <div class="surface-title">Program Coverage Matrix · /program</div>
+    <div class="surface-title">Program Coverage Matrix</div>
     <div class="surface-desc">Every confirmed snapshot crossed with every career-target sub-competency, rendered as a depth-aware heat map scoped to the courses that intentionally build toward the career.</div>
   </div>
 
   <div class="surface">
-    <div class="surface-title">Position Capture &amp; Industry Input · /partners</div>
+    <div class="surface-title">Position Capture &amp; Industry Input</div>
     <div class="surface-desc">The employer-demand half of Q1: industry partners turn real job postings into structured Position Profiles; a magic-link survey feeds an AI synthesis layer that aggregates input into proposed career-target edits faculty curate before adopting.</div>
   </div>
 
   <div class="surface">
-    <div class="surface-title">Curriculum knowledge base · /wiki · /ask</div>
-    <div class="surface-desc">Confirmed snapshots compiled into cross-linked pages browsable at <code>/wiki</code> and answerable in plain language at <code>/ask</code> — the program's self-maintaining institutional memory.</div>
+    <div class="surface-title">Curriculum knowledge base</div>
+    <div class="surface-desc">Confirmed snapshots compiled into a cross-linked knowledge base — browsable as pages and answerable in plain language — the program's self-maintaining institutional memory.</div>
   </div>
 
 </div>
 
-<p>The surfaces form one continuous chain: a course audit and a program-wide career-readiness claim draw on the same KUD+ evidence-scored records, zoomed in or out. Q1 is the join of the program coverage matrix and the captured employer demand — a real computation over real data, scoped to the courses that intentionally build toward each career. (The sufficiency computation is built and awaiting activation.) Faculty walkthrough: <a href="./using-coursecapture-and-explore.html">Using CourseCapture &amp; Explore</a>.</p>
+<p>These surfaces are one connected chain, not separate tools, because they all use the same KUD+ scale: the same Know / Understand / Do depths describe what a course develops, what the next course expects, and — once employer demand is captured — what a career requires. The same evidence-backed reading of a course can therefore be looked at up close as a course audit or stepped back to fill in the program-wide picture, without being re-translated along the way. The course captures, the coverage matrix, and the prerequisite and scaffolding views are live today; the final step — comparing program coverage against captured employer demand to answer Q1 — is built and awaiting activation and the first employer captures. Faculty walkthrough: <a href="./using-coursecapture-and-explore.html">Using CourseCapture &amp; Explore</a>.</p>
 
 <h2>Trust and governance</h2>
 
@@ -272,11 +272,13 @@
 
 <h2>Where it stands today</h2>
 
-<p>The faculty trial period is underway. CourseCapture (now the v2 agentic-retrieval pipeline — the v1 single-context version was retired), Explore, the Program Coverage Matrix (Phase 1A), and the Prerequisite Gap Analysis (Phase 1C — shipped as skill-tagged prerequisite edges with a per-course gap view at <code>/courses/[code]</code>) are live. Scaffolding analysis (Phase 1B Stage 1) is also live; Stage 2's AI narrative layer is next. The curriculum knowledge base (the self-maintaining wiki at <code>/wiki</code>, the plain-language assistant at <code>/ask</code>, and an MCP endpoint for internal agents) regenerates from confirmed snapshots; its trust-hardening pass shipped — a deterministic structural linter, loud-not-silent reconciliation, and evidence-credibility markers carried into the narrative. Industry Partner Input is live end-to-end: the magic-link survey, the AI synthesis layer, and Position Capture v1 (full 6-page flow). The advising view (Phase 1D) is specified and queued; the demand→coverage sufficiency seam is built and awaiting activation.</p>
+<p>The faculty trial is underway, and most of the tool is usable now. Instructors can run a CourseCapture audit and get Explore's recommendations; the Program Coverage Matrix and the per-course prerequisite-gap view work against confirmed captures; and the scaffolding analysis is live in its first form, with an AI-written narrative layer coming next. The curriculum knowledge base — a self-maintaining wiki and a plain-language assistant that answer from confirmed captures — regenerates automatically and has been through a reliability-hardening pass. Industry input works end-to-end: partners turn real job postings into structured demand through a guided flow and a short survey, which an AI layer aggregates into proposed career-target updates for faculty to curate. Two pieces are not yet switched on: the student advising view (specified and queued) and the final career-readiness comparison of program coverage against employer demand (built, awaiting activation and the first employer captures).</p>
 
-<p>The honest list of what's <em>not</em> yet in place is also worth naming: per-user authentication for faculty is currently a stopgap; the snapshot dispute pipeline is informal; the program-wide cross-snapshot diff that operationalizes "honest defense against curricular drift" is Phase 2 work. The framework expects to refine these as the trial period reveals what matters.</p>
+<p>The honest list of what's <em>not</em> yet in place is also worth naming: individual faculty logins are still a stopgap; the process for disputing a snapshot is informal; and the program-wide comparison across snapshots over time — the real defense against curricular drift — is planned, not yet built. The framework expects to refine these as the trial reveals what matters.</p>
 
-<p>The detailed, continually-updated status of every surface, every plan, and every blocker lives in the project's <a href="https://github.com/chiptoe-svg/gc-curriculum-tool/blob/main/docs/STATE.md">STATE document</a>.</p>
+<h2>The graduate-outcome study</h2>
+
+<p>One honest limit sits above the rest: the tool can make a claim like &ldquo;this curriculum prepares students for these careers&rdquo; visible and disputable, but it cannot confirm <em>on its own</em> that its readings track how graduates actually fare — its auditor is an AI, and the only real check is an outside signal. A <strong>Graduate Outcome Criterion-Relevance Study</strong>, now underway, supplies one: it compares the competencies the tool emphasizes against where GC graduates from the past ten years actually landed, with failure criteria set in advance so it can disconfirm the framework, not just flatter it. Until it reports, the framework's bigger claims are best read as working hypotheses the tool is built to test, not settled findings. Full design: <a href="./graduate-outcome-validation.html">Graduate Outcome Criterion-Relevance Study</a>.</p>
 
 <div class="deeper">
 <h2>Deeper reading</h2>
@@ -285,6 +287,7 @@
   <li><a href="./background.html">KUD+ Background</a> — academic justification for the framework: Backward Design, Constructive Alignment, the relationship to Bloom's, the depth-scale extension.</li>
   <li><a href="./problem-solving-deep-dive.html">Problem-Solving as a Program-Level Emergent Property</a> — the research synthesis behind the tool's position on how problem-solving competence actually develops.</li>
   <li><a href="./three-act-deep-dive.html">The 3-Act Program Structure</a> — an honest accounting of what the proposed 3-Act organizing model is consistent with, what it is not grounded in, and how it engages the strongest critiques.</li>
+  <li><a href="./graduate-outcome-validation.html">Graduate Outcome Criterion-Relevance Study</a> — the planned external check: do the competencies the tool measures actually relate to where GC graduates land? With failure criteria committed in advance.</li>
 </ul>
 </div>
 
