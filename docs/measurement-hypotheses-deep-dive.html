@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Curriculum Measurement — Open Hypotheses &amp; Research Agenda</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Mono:wght@300;400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --rail: #141412;
+    --rail-text: #8a8780;
+    --rail-active: #E8A44A;
+    --rail-hover: #2a2925;
+    --bg: #F7F5F0;
+    --bg-card: #FFFFFF;
+    --bg-alt: #F0EDE6;
+    --text: #1C1C18;
+    --text-muted: #6B6860;
+    --text-faint: #9E9B94;
+    --accent: #C8682A;
+    --accent-light: #F5E6D8;
+    --border: #E2DDD4;
+    --border-strong: #C8C4BA;
+    --mono: 'DM Mono', monospace;
+    --serif: 'Source Serif 4', Georgia, serif;
+    --display: 'Playfair Display', Georgia, serif;
+    --t1: #2A5C8C;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--serif);
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    min-height: 100vh;
+    font-size: 16px;
+    line-height: 1.7;
+  }
+
+  #rail {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: 240px;
+    background: var(--rail);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    z-index: 100;
+  }
+  .rail-header { padding: 28px 20px 20px; border-bottom: 1px solid #252420; }
+  .rail-dept { font-family: var(--mono); font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: #5a5750; margin-bottom: 6px; }
+  .rail-title { font-family: var(--display); font-size: 14px; color: #d4d0c8; line-height: 1.4; }
+  .rail-doc-type { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--rail-active); margin-top: 10px; }
+  .rail-nav { padding: 20px 0; flex: 1; }
+  .nav-group-label { font-family: var(--mono); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: #4d4a44; padding: 14px 20px 8px; }
+  .nav-link { display: block; padding: 7px 20px 7px 22px; color: var(--rail-text); text-decoration: none; font-family: var(--serif); font-size: 13.5px; border-left: 2px solid transparent; transition: all 120ms; }
+  .nav-link:hover { color: #c8c4ba; background: var(--rail-hover); }
+  .rail-footer { padding: 16px 20px; font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.08em; color: #5a5750; border-top: 1px solid #252420; line-height: 1.7; }
+  .rail-footer a { color: var(--rail-text); text-decoration: none; }
+  .rail-footer a:hover { color: var(--rail-active); }
+
+  main { margin-left: 240px; flex: 1; padding: 64px 80px 96px; max-width: 1080px; }
+
+  .doc-head { margin-bottom: 56px; padding-bottom: 32px; border-bottom: 1px solid var(--border-strong); }
+  .doc-eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; }
+  .doc-title { font-family: var(--display); font-size: 44px; font-weight: 700; line-height: 1.1; color: var(--text); margin-bottom: 20px; letter-spacing: -0.005em; }
+  .doc-subtitle { font-family: var(--serif); font-size: 18px; color: var(--text-muted); line-height: 1.55; max-width: 740px; font-style: italic; font-weight: 300; }
+  .doc-meta { margin-top: 22px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; color: var(--text-faint); display: flex; gap: 20px; flex-wrap: wrap; }
+  .doc-meta strong { color: var(--text-muted); font-weight: 500; margin-right: 6px; }
+
+  section { margin-bottom: 56px; scroll-margin-top: 32px; }
+
+  h2 { font-family: var(--display); font-size: 30px; font-weight: 600; line-height: 1.2; margin-bottom: 22px; padding-bottom: 12px; border-bottom: 1px solid var(--border); display: flex; align-items: baseline; gap: 14px; }
+  h2 .num { font-family: var(--mono); font-size: 13px; font-weight: 500; letter-spacing: 0.1em; color: var(--accent); background: var(--accent-light); padding: 3px 10px; border-radius: 3px; flex-shrink: 0; }
+  h3 { font-family: var(--display); font-size: 21px; font-weight: 600; line-height: 1.3; margin: 32px 0 14px; color: var(--text); }
+
+  p { margin-bottom: 14px; max-width: 760px; }
+  strong { color: var(--text); font-weight: 600; }
+  em { color: var(--text); font-style: italic; }
+  a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:hover { color: #a85020; }
+
+  ul, ol { margin: 14px 0 22px 22px; max-width: 760px; }
+  li { margin-bottom: 8px; }
+  li strong { color: var(--text); }
+
+  code { font-family: var(--mono); font-size: 0.88em; background: var(--bg-alt); padding: 1px 6px; border-radius: 3px; color: var(--text); }
+
+  blockquote {
+    border-left: 3px solid var(--border-strong);
+    padding: 4px 0 4px 18px;
+    margin: 18px 0;
+    color: var(--text-muted);
+    font-style: italic;
+    max-width: 740px;
+  }
+
+  .callout { background: var(--bg-card); border-left: 3px solid var(--accent); padding: 18px 22px; margin: 22px 0; border-radius: 0 4px 4px 0; max-width: 820px; }
+  .callout-title { font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout.note { border-left-color: var(--t1); }
+  .callout.note .callout-title { color: var(--t1); }
+
+  table.compact { border-collapse: collapse; margin: 18px 0 22px; max-width: 820px; font-size: 14px; }
+  table.compact th, table.compact td { padding: 8px 14px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border); }
+  table.compact thead th { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--border-strong); }
+
+  .doc-foot { margin-top: 96px; padding-top: 24px; border-top: 1px solid var(--border-strong); font-family: var(--mono); font-size: 11px; color: var(--text-faint); letter-spacing: 0.05em; }
+
+  @media (max-width: 900px) {
+    #rail { position: static; width: 100%; height: auto; }
+    main { margin-left: 0; padding: 32px 24px 64px; }
+  }
+</style>
+</head>
+<body>
+
+<aside id="rail">
+  <div class="rail-header">
+    <div class="rail-dept">Clemson &middot; Graphic Communications</div>
+    <div class="rail-title">GC Curriculum Tool</div>
+    <div class="rail-doc-type">Research Deep Dive</div>
+  </div>
+  <nav class="rail-nav">
+    <div class="nav-group-label">Sections</div>
+    <a class="nav-link" href="#what-to-read">What to read</a>
+    <a class="nav-link" href="#keystone">The keystone — KUD as the unit</a>
+    <a class="nav-link" href="#durability">B: Durability &amp; bleed-off</a>
+    <a class="nav-link" href="#crosswalk">A: Competency&rarr;career cross-walk</a>
+    <a class="nav-link" href="#uncertainty">C: Uncertainty &amp; convergence</a>
+    <a class="nav-link" href="#embeddings">Skill relatedness &amp; embeddings</a>
+    <a class="nav-link" href="#scale">Scale representation</a>
+    <a class="nav-link" href="#open-questions">Open questions</a>
+    <a class="nav-link" href="#references">References</a>
+    <div class="nav-group-label" style="margin-top: 18px;">See also</div>
+    <a class="nav-link" href="./background.html">KUD+ Background (full)</a>
+    <a class="nav-link" href="./problem-solving-deep-dive.html">Problem-Solving Deep-Dive</a>
+    <a class="nav-link" href="./three-act-deep-dive.html">3-Act Companion</a>
+    <a class="nav-link" href="./graduate-outcome-validation.html">Graduate-Outcome Study</a>
+  </nav>
+  <div class="rail-footer">
+    <a href="./background.html">&larr; KUD+ Background</a>
+  </div>
+</aside>
+
+<main>
+
+<header class="doc-head">
+  <div class="doc-eyebrow">Research synthesis &amp; open hypotheses</div>
+  <h1 class="doc-title">Curriculum Measurement &mdash; Open Hypotheses &amp; Research Agenda</h1>
+  <p class="doc-subtitle">Three interrelated hypotheses about what the KUD+depth framework measures and how: a durable-depth model, a competency-to-career cross-walk, and a convergence discipline for irreducible uncertainty. Companion to the <a href="./background.html" style="color: var(--accent);">KUD+ Background</a>; these hypotheses are forward and unvalidated &mdash; most are gated on the graduate-outcome study.</p>
+  <div class="doc-meta">
+    <span><strong>Date</strong> June 2026</span>
+    <span><strong>Status</strong> Hypotheses only &mdash; not validated, not built</span>
+    <span><strong>Audience</strong> Faculty, curriculum committee, advisory partners</span>
+  </div>
+</header>
+
+<section id="what-to-read">
+
+  <div class="callout note" style="margin-bottom: 22px;">
+    <div class="callout-title">What to read</div>
+    <p style="margin-bottom: 10px; font-style: normal;">
+      <a href="./executive-brief.html">Executive Brief</a> &mdash; 3-min what / why / status<br>
+      <a href="./superpowers/vision/gc-curriculum-tool-vision.html">Vision</a> &mdash; the product picture, surfaces, and roadmap<br>
+      <a href="./background.html">Background</a> &mdash; the academic case (KUD+, why-not-Bloom, evidence rule)<br>
+      <a href="./problem-solving-deep-dive.html">Problem-Solving Deep-Dive</a> &mdash; research on how problem-solving develops<br>
+      <a href="./three-act-deep-dive.html">3-Act Companion</a> &mdash; the program-structure research<br>
+      <strong style="color: var(--text);">Measurement Hypotheses</strong> (you are here) &mdash; open questions and research agenda
+    </p>
+  </div>
+
+  <div class="callout note">
+    <div class="callout-title">Register of this document</div>
+    <p><strong>This document is explicitly forward and unvalidated.</strong> The Background and Problem-Solving Deep-Dive present settled (or defensibly bounded) commitments the framework rests on today. This companion presents what would need to be true &mdash; and how it would need to be tested &mdash; for the framework to do the things it aspires to: trace competencies across a curriculum, compare program output to career demand, and report uncertainty honestly. Most of the quantitative hypotheses here are gated on the <a href="./graduate-outcome-validation.html">graduate-outcome study</a>. Nothing in this document constitutes a validated finding or a claimed result.</p>
+  </div>
+
+</section>
+
+<section id="keystone">
+  <h2><span class="num">&sect; 1</span>The keystone &mdash; KUD+depth as the unit of account</h2>
+
+  <p>The three hypotheses below are not independent ideas. They are three uses of one underlying move: <strong>KUD+depth is the unit of account the whole framework is denominated in</strong> &mdash; a shared currency on which a course&rsquo;s output, a downstream course&rsquo;s prerequisite expectation, the program&rsquo;s aggregate coverage, and a career&rsquo;s measured demand are all expressible. Because all of these entities are expressed on the same Know/Understand/Do &times; depth-0&ndash;5 axes, boundary-crossing questions become arithmetic on a shared axis rather than translation between mismatched vocabularies.</p>
+
+  <p>A currency needs three properties, and KUD+depth has all three. A <strong>common denomination</strong>: every entity uses the same axes. A <strong>medium of exchange</strong>: because the units match, the questions that require crossing a boundary &mdash; prerequisite gap, curriculum roll-up, career-readiness comparison &mdash; become subtractions and aggregations rather than fuzzy title matches. An <strong>evidence-anchored store of value</strong>: the evidence-above-zero rule (see <a href="./background.html">Background</a> &sect;6) is the hard-money discipline; aspirational syllabus verbs alone cannot inflate a score.</p>
+
+  <p>No other unit does this job. Course names and titles do not translate across institutions or roles. Raw text and generic embeddings are lossy and context-free &mdash; the research makes clear why (see &sect;5). The 35 cross-occupational skills in O*NET are the context-free transferable-skill construct the framework rejects on the grounds documented in <a href="./background.html">Background</a> &sect;11. Bloom levels have no Do axis and are designed for assessment design, not cross-program mapping. Credit hours and grades measure seat-time and relative ranking, not attained capability. KUD+depth is the only unit simultaneously fine-grained enough to be honest, universal enough to span course, program, and career, and pegged to student-side evidence rather than aspiration.</p>
+
+  <p>Naming the unit of account does not make the currency frictionless. It locates where the friction is, and each friction corresponds to one of the three hypotheses:</p>
+
+  <ul>
+    <li><strong>Hypothesis A (Competency&rarr;career cross-walk)</strong> &mdash; the currency converts cleanly <em>within</em> the curriculum (one authored taxonomy) but imperfectly <em>into</em> careers. That is the entire reason A is many-to-many, partially matched, match-quality-stamped, with &ldquo;no clean match&rdquo; as a first-class finding. External: pegged but imperfect.</li>
+    <li><strong>Hypothesis B (Durability &amp; bleed-off)</strong> &mdash; instantaneous depth is not the same quantity as durable depth. Cross-level comparisons must spend <em>durable</em> depth, not the instantaneous end-of-course maximum. Bleed-off is the depreciation of held KUD.</li>
+    <li><strong>Hypothesis C (Uncertainty &amp; convergence discipline)</strong> &mdash; rolling up ordinal KUD treats it as interval, and its sums travel with an uncertainty band, not as points. The currency is real; its arithmetic is honest only when it carries the interval.</li>
+  </ul>
+
+  <p>This is also why the embeddings question (&sect;5) resolves the way it does: KUD+depth is not a representation <em>competing</em> with embeddings &mdash; it is the denomination the comparisons are settled in.</p>
+
+</section>
+
+<section id="durability">
+  <h2><span class="num">&sect; 2</span>Hypothesis B &mdash; Durability &amp; bleed-off</h2>
+
+  <p><strong>This is where &ldquo;common threads through the curriculum&rdquo; live.</strong> The animating goal of the framework is to find the threads that run between courses, through the curriculum, and into career paths. A thread is not a single similarity score &mdash; it is a typed, depth-conditioned progression: a competency that appears in one course, deepens across several, and (via hypothesis A) feeds a career destination. Durability is the model of which threads actually hold. A thread reached once decays; a thread reinforced across courses and modalities sticks. Because the through-line <em>within</em> the curriculum is the prerequisite for any honest claim <em>into</em> careers, durability is arguably the more foundational hypothesis of the two.</p>
+
+  <h3>The gap in the current model</h3>
+
+  <p>A KUD score certifies depth <em>at the end of a course</em>. The question the program cares about &mdash; how well does the curriculum prepare students for careers &mdash; concerns depth <em>at graduation</em>, after the rest of the curriculum has happened. These are different quantities, and the current model conflates them. A lone D4 reached in the first year and never revisited is not a D4 at graduation; it has decayed.</p>
+
+  <h3>The two forces: decay and consolidation</h3>
+
+  <p>Two bodies of evidence shape the hypothesis. First, <strong>decay</strong>: between exposures, attainment fades. The forgetting-curve research (Murre &amp; Dros, 2015, replicating Ebbinghaus over 31 days) shows a two-component curve &mdash; a fast early drop plus a slow residual tail whose depth depends on the depth of original encoding. Cognitive skills decay at roughly one standard deviation per year of non-use (Arthur et al., 1998, a meta-analysis of d &rarr; &minus;1.4 after more than 365 days). The existence of <em>permastore</em> (Bahrick, 1984 &mdash; a 50-year study showing that learning past a depth and repetition threshold enters a stable plateau lasting decades, while shallow single-exposure learning decays toward zero) validates the core distinction between instantaneous and durable depth as two genuinely different states.</p>
+
+  <p>Second, <strong>consolidation</strong>: repeated and varied reinforcement makes depth durable. The spacing and retrieval-practice literatures (Cepeda et al., 2006, 2008; Adesope et al., 2017; Roediger &amp; Karpicke, 2006; Bjork &amp; Bjork) establish that spaced, varied practice produces substantially better long-term retention than massed exposure &mdash; even when massed exposure produces higher in-the-moment performance. Variety matters, not just count.</p>
+
+  <p>An important caveat: decay is front-loaded. Most loss occurs in days to weeks after last use. The &ldquo;roughly one level per course gap&rdquo; figure sometimes used as a rule of thumb is a <em>reasonable extrapolation</em> from the SD-unit cognitive-skill findings, not an empirical finding in KUD levels. The parameters are not settled.</p>
+
+  <h3>The &ldquo;pull neighbors up&rdquo; extension (knowledge integration)</h3>
+
+  <p>Durability does not operate per-competency in isolation. High-depth attainment in a competency <em>may lift related neighbors</em> &mdash; the integration dimension of expertise. Chi, Feltovich, and Glaser&rsquo;s (1981) expert&ndash;novice findings, discussed in <a href="./background.html">Background</a> &sect;4, show that deep knowledge is connected and principle-organized in ways shallow knowledge is not: the connectedness emerges at depth and makes knowledge more durable and transferable. So a high-depth node may slow the decay of related competencies by embedding them in an active, integrated schema.</p>
+
+  <p>This effect must be modeled conservatively. The transfer literature is a strong counterweight: far transfer is fragile (Sala &amp; Gobet, 2017, find near-zero far transfer under active controls; Perkins &amp; Salomon, 1992, require deliberate bridging for high-road transfer). The within-domain &ldquo;rich-get-richer&rdquo; effect (Witherby &amp; Carpenter, 2021, three replications) holds only within the same domain. A pull-up mechanism that fires automatically on depth alone would systematically overestimate cross-competency strength &mdash; the pseudo-precision the framework refuses. The appropriate boundary is <strong>Knowledge Space Theory</strong>&rsquo;s surmise relation (Doignon &amp; Falmagne, 1985, in <a href="./background.html">Background</a> references): competence in a higher item implies competence in its prerequisites, giving a principled and falsifiable definition of &ldquo;neighbor.&rdquo; Any pull-up mechanism should be bounded to KST-surmise-related, same-domain pairs and should never auto-elevate on depth alone.</p>
+
+  <h3>A borrowable computational form (for the quantitative hypothesis)</h3>
+
+  <p>The structural durability question (is a competency a lone peak or a reinforced thread?) can be read from existing captured data without any new model. The quantitative durability question &mdash; what is the estimated depth at graduation? &mdash; would require fitting a decay-and-consolidation model to outcome data. The most reusable form from the literature is <strong>Half-Life Regression</strong> (Settles &amp; Meeder, 2016, ACL, from Duolingo): recall probability as a function of time with a half-life that grows multiplicatively with each spaced successful exposure &mdash; exactly the decay-plus-consolidation shape needed. <strong>FSRS</strong> (the Anki default) is the empirically superior form, with a power-law retrievability, a Stability term that grows more when retrieval happens under partial forgetting (the spacing effect built in), and a per-item Difficulty parameter that maps naturally to the Do dimension being harder to consolidate than Know.</p>
+
+  <p>By contrast, Bayesian Knowledge Tracing hard-codes no forgetting, and DKT-family models require millions of interaction events not available here. Their only portable piece is HawkesKT&rsquo;s exponential decay kernel. The HLR/FSRS form is the realistic starting point if and when outcome data are available.</p>
+
+  <p>Nothing in the published literature operates at curriculum or degree scale. All knowledge tracing and spaced-repetition research is single-course, single-platform, or flashcard-grain. No published model tracks competency mastery as it builds, decays, and consolidates across a sequence of courses taught by different instructors on different timelines. The contribution of lifting the HLR/FSRS stability model from item-level to (competency &times; course) cells would be genuinely novel at that scale.</p>
+
+  <h3>The structural / quantitative split</h3>
+
+  <p>The hypothesis divides into two parts with different dependencies:</p>
+
+  <ul>
+    <li><strong>B1 &mdash; structural durability.</strong> Over existing captured snapshots, flag each competency as a <em>lone peak</em> (one high-depth hit, never reinforced &rarr; decay risk) versus a <em>reinforced thread</em> (multiple, varied, across the sequence &rarr; likely durable). This is qualitative but informative. It enriches the scaffolding analysis by making it durability-aware &mdash; not just whether a competency appears in the introduce&ndash;practice&ndash;integrate pattern, but whether the spacing and variety predict durability. No new model or gated data required.</li>
+    <li><strong>B2 &mdash; quantitative durability.</strong> An actual decay-rate and consolidation function producing a numeric durable depth per competency at graduation. The parameters (decay per gap, exposures-to-consolidate, variety weighting) are empirical unknowns that would need to be validated against graduate outcomes &mdash; never hard-coded, because hard-coded parameters would import exactly the pseudo-precision the framework refuses. This hypothesis is gated on the <a href="./graduate-outcome-validation.html">graduate-outcome study</a>.</li>
+  </ul>
+
+  <h3>Durability and prerequisite gaps</h3>
+
+  <p>The hypothesis also sharpens the prerequisite-gap question (&ldquo;do the prerequisites students walk in with support what the course expects?&rdquo;). That question is itself a bleed-off question: the prerequisite&rsquo;s relevant depth is its level <em>when the dependent course starts</em>, not when the prerequisite course ended. Bleed-off is precisely why prerequisites fail. B is therefore not only a scaffolding enrichment; it is the missing temporal dimension of the prerequisite-gap analysis.</p>
+
+</section>
+
+<section id="crosswalk">
+  <h2><span class="num">&sect; 3</span>Hypothesis A &mdash; Competency&rarr;career cross-walk</h2>
+
+  <p>The framework&rsquo;s central question &mdash; how well does the GC curriculum build students toward the careers we claim to prepare them for? &mdash; requires comparing program output to career demand on a common axis. Hypothesis A is about whether and how that comparison can be made honestly.</p>
+
+  <p>The data source that makes this tractable is <strong>Course-Skill Atlas</strong> (Javadian Sabet et al., 2024, <em>Scientific Data</em>), which computed national O*NET Detailed Work Activity (DWA) coverage by major (CIP code) over approximately 3.16 million syllabi. This turns the expensive operation of hand-extracting relevant O*NET tasks into a slice-and-benchmark operation: pull the GC slice, compare captured coverage to the national GC curriculum&rsquo;s DWA profile. The benchmark the memo&rsquo;s O*NET recommendations lacked.</p>
+
+  <h3>Design commitments</h3>
+
+  <p>Skill-to-skill mapping is not a clean operation. Names do not match &mdash; &ldquo;color management&rdquo; in a GC course does not string-match to an O*NET DWA, and the mismatch is not a data-quality failure but a structural feature of translating between a fine-grained authored taxonomy and a cross-industry general-purpose one. The cross-walk would need to be designed to accommodate this honestly:</p>
+
+  <ul>
+    <li><strong>Many-to-many and partial, never one-to-one.</strong> A weighted bipartite relation, not a lookup.</li>
+    <li><strong>A match-quality stamp on every edge</strong> (strong / partial / weak / none) &mdash; mirroring the prerequisite &ldquo;basis&rdquo; stamp already in the framework.</li>
+    <li><strong>&ldquo;No clean match&rdquo; is a first-class, asymmetric finding:</strong> when a GC competency maps to no DWA, that is a finding about O*NET&rsquo;s coarseness for GC specifics (Typography, Color Science, Press Chemistry are predictably under-represented in a cross-industry ontology). When a high-coverage DWA in the national profile maps to none of the captured competencies, that is a candidate blind spot in the framework itself.</li>
+    <li><strong>Pipeline: embeddings shortlist &rarr; depth-aware reasoning adjudicates &rarr; near-miss queue for faculty review.</strong> Embedding-only approaches show roughly 24% precision on this task (&ldquo;From Course to Skill,&rdquo; Xu et al., 2025); retrieve-then-reason approaches reach 70&ndash;82%. The shortlist is recall; adjudication is the reasoning step; the near-miss queue exists because a roughly 52% recall ceiling means faculty must be able to add matches the shortlist missed.</li>
+    <li><strong>Map durable depth (B), not instantaneous maximum.</strong> Comparing career demand to end-of-course depth re-imports the bleed-off error into the career-readiness claim. The cross-walk should use B1 durability-flagged depth once that analysis exists.</li>
+  </ul>
+
+  <p>Two of the five identified career destinations for GC graduates (AI Workflow Orchestrator; Creative Generalist) have no clean SOC home in O*NET. That is itself a finding the cross-walk should surface rather than suppress.</p>
+
+  <p>One empirical anchor from the Course-Skill Atlas research is useful for calibrating how many course captures are needed before a program-level aggregate stabilizes: approximately nine syllabi produce a stable major profile. That is a useful prior for deciding when the captured dataset is sufficient to attempt the cross-walk.</p>
+
+</section>
+
+<section id="uncertainty">
+  <h2><span class="num">&sect; 4</span>Hypothesis C &mdash; Uncertainty &amp; convergence discipline</h2>
+
+  <p>This is the best-supported of the three hypotheses, and in a sense the most foundational: it governs how every claim produced by the framework should be stated and treated.</p>
+
+  <h3>No reliable oracle</h3>
+
+  <p>There is no reliable oracle for KUD scoring. Large language models reach roughly 80% agreement with human reference labels on curricular scoring tasks, and perform substantially worse on fine-grained pedagogical reasoning (Xu et al., 2026, reporting inter-rater &kappa; collapsing to 0.17&ndash;0.29 on abstract competencies until evidence-versus-aspiration is separated). But humans are not a clean oracle either. Trained-human inter-rater reliability on open-ended competency and essay scoring realistically lands at &kappa;/ICC = 0.40&ndash;0.70, and frequently worse for soft or abstract constructs: essay raters reach a mean r of roughly 0.54 (Casabianca et al., 2017); a high-stakes teacher performance assessment scored &kappa; = 0.17 (Goldhaber/edTPA studies); clinical portfolio assessments ICC 0.38&ndash;0.44. The Landis&ndash;Koch &ldquo;good &ge;0.61&rdquo; threshold is rarely cleared without narrow, heavily-anchored conditions. So &ldquo;humans correct the AI to truth&rdquo; is not an accurate description of the loop; it is more accurately &ldquo;multiple partially-reliable signals are combined and disagreement is surfaced as uncertainty.&rdquo;</p>
+
+  <h3>The residual is mostly irreducible</h3>
+
+  <p>The roughly 20% error residual is dominated by label noise, genuine ambiguity, and under-specified inputs &mdash; not a tidy &ldquo;missing knowledge&rdquo; gap. This is <strong>aleatoric uncertainty</strong> (Hüllermeier &amp; Waegeman, 2021): uncertainty inherent to an ambiguous construct, not reducible by more data or a better prompt. The ceiling is quantifiable: label reliability bounds achievable accuracy (Bartz et al., 2024: <code>mAP &asymp; 0.836&middot;&alpha; + 0.197</code> where &alpha; is annotation agreement; state-of-the-art detectors are already at their annotation-agreement ceiling). One cannot exceed the reliability of one&rsquo;s own labels.</p>
+
+  <p>The right response is to <em>characterize and report the ceiling</em>, not to engineer against it. The data-perspectivism program (Plank, 2022; Aroyo &amp; Welty, 2015) makes this point: the <em>distribution</em> over raters is itself a finding &mdash; disagreement signals genuine ambiguity in the underlying construct, not noise to be averaged away.</p>
+
+  <h3>The measurement-theory home: Generalizability Theory</h3>
+
+  <p>The measurement-theory home of &ldquo;manage uncertainty, don&rsquo;t chase it&rdquo; is Generalizability Theory (Cronbach et al., 1972; Brennan, 2001). G-theory decomposes score variance into rater, item, and occasion facets; the D-study identifies where investment actually buys reliability. The counterintuitive load-bearing result: <strong>adding raters often buys almost nothing while adding items/tasks buys a great deal</strong>. In an illustrative two-facet design, expanding from 2 to 8 raters lifts E&rho;&sup2; from roughly 0.62 to 0.69; expanding from 2 to 8 tasks lifts it from 0.62 to 0.82. When faculty disagree on a score, the answer is usually <em>more or better evidence items</em>, not more adjudicators.</p>
+
+  <p><strong>Standard Error of Measurement</strong> (<code>SD &middot; &radic;(1&minus;r)</code>) is the formal confidence stamp: at r &asymp; 0.65 on a 5-point scale, the 95% band exceeds &plusmn;1 level, so scores within roughly one SEM are ties. The honest output of a derived KUD score is an interval, not a point. <strong>Many-Facet Rasch Measurement</strong> (Linacre, 1989) is the formal treatment of rater disagreement as signal: rater severity is modeled as a facet to calibrate rather than noise to average.</p>
+
+  <h3>The correlated-error finding: why graduate-outcome validation is necessary</h3>
+
+  <p>One finding from the uncertainty literature is strong enough to change how the framework&rsquo;s external check should be framed. Wisdom-of-crowds convergence works when errors are independent and zero-mean. But LLMs have <em>correlated</em> errors from shared training data: they agree approximately 60% of the time when both are wrong, and larger or better models are <em>more</em> correlated (Kim et al., ICML 2025, arXiv:2506.07962). A 9-judge panel drawn from 7 model families delivers an effective sample size of approximately 2.18 &mdash; only about 24% of theoretical independence (Kohli, 2025, arXiv:2605.29800). A single best judge can match the panel. Any bias that all LLM judges share &mdash; inflating Know because syllabi use recall verbs, rewarding detailed syllabi, underweighting assessment evidence &mdash; survives every panel size.</p>
+
+  <p>The only check on that error class is comparison against an external signal the models did not generate: the <a href="./graduate-outcome-validation.html">graduate-outcome study</a>. This reframes that study from &ldquo;nice external validation&rdquo; to the <em>structurally necessary instrument for the one error class convergence cannot reach</em>. It is also the same dependency that gates B2&rsquo;s parameters &mdash; graduate-outcome data is the shared prerequisite for both.</p>
+
+  <h3>The convergence machinery</h3>
+
+  <p>Within those constraints, standard forms exist for the internal confidence signal: self-consistency sampling (Wang et al., 2022 &mdash; sample K scorings and use the spread as the uncertainty estimate); panel-of-LLM-judges aggregation (Verga et al., 2024); calibration and Expected Calibration Error (Guo et al., 2017); and selective prediction (Geifman &amp; El-Yaniv, 2017/2019 &mdash; the rigorous version of &ldquo;flag low-confidence rather than guess,&rdquo; routing items with cross-pass agreement below roughly 0.70 to human review). These are the convergence mechanisms for the aleatoric-reducible portion; they are blind to the shared systematic layer.</p>
+
+  <h3>The representation contract</h3>
+
+  <p>Hypothesis C is most usefully understood not as a standalone claim but as a <em>representation contract</em> every derived claim must conform to: confidence-stamped, revisable, stated as intervals rather than points, with &ldquo;disagreement is surfaced as uncertainty, not falsely resolved&rdquo; as the default. The framework&rsquo;s honest framing &mdash; that it is stronger as a conversation engine than as a measurement instrument &mdash; is the application of this contract at the program level. The comparative claim (&ldquo;more evidence-grounded, explicit, contestable, and aggregable than committee oral tradition&rdquo;) is strong; the absolute claim (&ldquo;correct&rdquo;) is not. The basis stamp and evidence-above-zero rule in the existing framework are precedents for C applied at the course level.</p>
+
+</section>
+
+<section id="embeddings">
+  <h2><span class="num">&sect; 5</span>Skill relatedness &amp; embeddings</h2>
+
+  <p>A recurring question in applying the framework is how it relates to the modern machinery of text embeddings and attention mechanisms, which seem to do something similar. The answer is that the distinction is informational rather than mechanistic.</p>
+
+  <h3>The resolved question</h3>
+
+  <p>A static embedding represents a term as one fixed vector: one scalar per pair of terms (symmetric cosine), no slot to condition on depth or dimension. The limitation of this representation is not mechanistic &mdash; attention can represent asymmetric, depth-conditional, and hierarchical relations. The limitation is informational: the relevant information (what dimension, at what depth, under what evidence) is not present. When that information is supplied in context, the accuracy gap closes: embedding-only approaches reach roughly 24% precision on curricular skill-matching; retrieve-then-reason approaches (where embeddings propose a shortlist and reasoning adjudicates) reach 70&ndash;82% (&ldquo;From Course to Skill,&rdquo; Xu et al., 2025). The 24&ndash;to&ndash;80% jump is &ldquo;generic context-free representation versus task-specific-context representation,&rdquo; not &ldquo;embeddings versus reasoning.&rdquo;</p>
+
+  <p>KUD+depth <em>is</em> the orthogonal factorization a generic token embedding entangles. The framework already separates &ldquo;which competency &times; which dimension (Know/Understand/Do)&rdquo; from &ldquo;how deep (0&ndash;5)&rdquo; by design. A depth-factored vector space &mdash; depth as an explicit learned orthogonal axis, content on another &mdash; would be the continuous learned version of what the framework authors discretely. Given that the irreducible residual identified in hypothesis C bounds accuracy, a fancier representation is unlikely to move the needle. A depth-factored embedding would be a cost and scale optimization, not an accuracy win.</p>
+
+  <h3>Embeddings in the durability topology</h3>
+
+  <p>Embeddings have a legitimate role in B: defining the reinforcement <em>topology</em> (which competencies are neighbors) for the pull-up extension. Embeddings propose the neighborhood; depth-aware reasoning decides the pull-up strength and whether the KST surmise relation holds. This is consistent with the retrieve-then-reason principle: similarity at the embedding level is recall, not adjudication.</p>
+
+  <h3>Domain-specific embedding engines</h3>
+
+  <p>A distinct question is whether a domain-tuned embedder would materially improve retrieval. The evidence suggests the gain is real but bounded and confined to the recall stage. Domain embedders beat generic ones by meaningful margins on in-domain vocabulary: voyage-finance-2 achieves 54% vs. 38.5% for OpenAI&rsquo;s text-embedding-3-small on SEC filings; voyage-law-2 shows more than 10% gains on legal sets trained on over one trillion legal tokens (Voyage AI, 2024). MatSciBERT and ChEmbed report domain training as indispensable for materials and chemistry. Education-specific embedders exist (JobBERT, ESCOXLM-R, CareerBERT, UniSkill) and are adaptable for curriculum-to-career matching.</p>
+
+  <p>The sharpest practical finding from this literature is what might be called the <strong>leaderboard trap</strong>. Per the FinMTEB benchmark (Tang &amp; Yang, 2024/2025), a model&rsquo;s general-benchmark (MTEB) rank does not predict its domain performance (Spearman rank insignificant, p &gt; 0.05; general models drop 1.9&ndash;8.6 points on finance tasks). A general benchmark rank cannot be used to pick an embedder for a specialized domain task. The only valid test is an empirical bake-off on the target data.</p>
+
+  <p>No off-the-shelf print, graphics, or packaging embedder exists. Searches in that space surface degree programs, not models. Adjacent options include materials-science models (MatSciBERT, MatBERT, MELT &mdash; substrates, inks, polymers, adhesives), chemistry models (ChEmbed &mdash; inks, coatings, colorants), and emerging perceptual color&ndash;text work relevant to color management. Building a GC-domain model from scratch would require the kind of large-scale continued pretraining (one trillion or more tokens; Harvey&rsquo;s legal model used over 20 billion) not available here. The realistic range is adapter-based or contrastive fine-tuning on synthesized pairs over a small labeled set and the existing course corpus &mdash; which would buy recall gains, not a commercial-embedder-grade model.</p>
+
+    <div class="callout">
+    <div class="callout-title">What would need to be tested</div>
+    <p>Before any domain fine-tuning, an empirical embedder bake-off on the curriculum retrieval task itself would establish whether the generic embedder is actually the bottleneck and whether the failure is in recall (a domain embedder would help) or in depth adjudication (it would not). The leaderboard trap means this cannot be inferred from general benchmarks.</p>
+  </div>
+
+</section>
+
+<section id="scale">
+  <h2><span class="num">&sect; 6</span>Scale representation &mdash; integer judgments, continuous derivations</h2>
+
+  <p>Hypotheses B and C both depend on a representation decision that can be stated once and applied throughout: <strong>integer at the boundary, float in the model.</strong></p>
+
+  <p><strong>Faculty input, storage, and display of direct judgments stays integer (0&ndash;5).</strong> The depth scale is ordinal with anchored rungs &mdash; each integer has a behavioral definition; a 3.5 has no anchor (there is no defined behavior halfway between &ldquo;recall&rdquo; and &ldquo;use correct terminology&rdquo;). Soliciting decimals would invent precision faculty cannot reliably produce and would collapse already-fragile inter-rater reliability. The evidence-above-zero gates are themselves integer thresholds. The faculty-facing interface stays on integers.</p>
+
+  <p><strong>Every derived quantity is float, because the operations themselves produce continuous values</strong> &mdash; and rounding mid-computation destroys the signal those operations exist to surface:</p>
+
+  <ul>
+    <li><strong>Decay / durability (B2):</strong> <code>depth(t) = depth&sub;0; &middot; e^(&minus;t/&tau;)</code> (or an HLR/FSRS retrievability function) returns a real number. The entire point of modeling bleed-off is to catch <em>partial</em> erosion below the next rung &mdash; a D4 decaying toward D3.2 &mdash; which integer rounding erases.</li>
+    <li><strong>Prerequisite gap (durability-adjusted):</strong> a depth-weighted aggregation over upstream prerequisites is a float. The load-bearing output is the gap between expected entry depth and supplied depth, where 0.3 versus 2.1 is a real and decision-relevant distinction.</li>
+    <li><strong>Pull-up / reinforcement:</strong> a partial increment or decay-slowing contribution is continuous by nature. A D2 touch does not promote a D4 to D5; it adds a fractional boost and slows decay.</li>
+  </ul>
+
+  <p>Two guardrails follow. First, a float should never be written back into a faculty-score field and should never be displayed as a faculty-facing score. Derived results are shown as bands or arrows (&ldquo;entered D4 &rarr; estimated D3.1 at graduation, erosion flagged&rdquo;); the raw float stays internal for ranking and thresholding. Second, treating the 0&ndash;5 ordinal as interval &mdash; so that 4&minus;2 equals 3&minus;1 &mdash; is an assumption, not a fact. It is the same simplification every GPA and Likert mean makes, defensible but to be stated explicitly, because hypothesis C forbids over-claiming precision. The corollary is that the honest form of every derived value is a distribution, not a point: &ldquo;D3.1 &plusmn; 0.6&rdquo; rather than &ldquo;D3.1.&rdquo; The float layer carries an uncertainty band.</p>
+
+  <p>The boundary between integers and floats <em>is</em> the hypothesis C representation contract applied to hypothesis B&rsquo;s arithmetic.</p>
+
+</section>
+
+<section id="open-questions">
+  <h2><span class="num">&sect; 7</span>Open questions</h2>
+
+  <p>These are the questions that would need answers before the quantitative hypotheses above could move from plausible design directions to validated components.</p>
+
+  <ol>
+    <li><strong>Prevalence of lone peaks vs. reinforced threads.</strong> How common are lone-peak competencies (one high-depth hit, never reinforced) versus reinforced threads in the actual captured GC snapshots? The answer determines whether the durability hypothesis addresses a real problem in this curriculum or a non-issue.</li>
+
+    <li><strong>Decay and consolidation parameters (B2).</strong> What decay rate applies to academic competencies across inter-semester gaps? How many exposures, at what variety and spacing, consolidate a competency into a sticking depth? These are empirical unknowns. The HLR/FSRS form supplies the structure; the parameters must be fitted against longitudinal outcome data.</li>
+
+    <li><strong>Pull-up mechanism.</strong> Is the neighbor-lift effect durability-only (a high-depth neighbor slows a related competency&rsquo;s decay by embedding it in an active schema), or does it include a level-floor entailment (reaching D4 in a higher competency implies a floor on its subsumed prerequisite)? The transfer literature suggests modeling both conservatively. How the KST surmise boundary should be drawn in the specific GC competency graph is an open empirical question.</li>
+
+    <li><strong>Neighborhood definition.</strong> Should the similarity neighborhood for the pull-up mechanism be authored (from the competency taxonomy and its prerequisite structure) or embedding-derived (and then adjudicated)? Knowledge Space Theory&rsquo;s surmise relation gives a principled and falsifiable definition of &ldquo;neighbor&rdquo;; whether the authored prerequisite structure is rich enough to substitute for an embedding-derived neighborhood is an open question.</li>
+
+    <li><strong>Cross-walk feasibility.</strong> Is the Course-Skill Atlas GC slice rich enough, given O*NET&rsquo;s known coarseness for GC-specific competencies, to be a useful benchmark? Would &ldquo;no clean match&rdquo; dominate the output for GC specifics, and if so, what does that imply about the external benchmark&rsquo;s value as a check?</li>
+
+    <li><strong>Embedder bottleneck.</strong> Does an empirical bake-off show the generic campus embedder limiting retrieval on the curriculum matching task? And if so, is the failure in recall (where a domain embedder would help) or in depth adjudication (where it would not)?</li>
+
+    <li><strong>Depth-factored embedding at scale.</strong> Is the curriculum ever large enough that per-pair LLM reasoning calls become impractical, justifying investment in a learned depth-factored embedding? Or does depth-in-context remain the better tradeoff indefinitely?</li>
+
+    <li><strong>Shared dependency on graduate-outcome data.</strong> The correlated-error finding (C) establishes that graduate-outcome validation is the only check on shared systematic LLM bias. The B2 quantitative durability model requires the same data to fit its parameters. Both are gated on the same study. One open question is whether that shared dependency strengthens the case for prioritizing the graduate-outcome study relative to other work.</li>
+  </ol>
+
+</section>
+
+<section id="references">
+  <h2><span class="num">&sect; 8</span>References</h2>
+
+  <h3>Curriculum analytics and skill matching</h3>
+
+  <ul>
+    <li>Javadian Sabet, A., Bana, S. H., Yu, R., &amp; Frank, M. R. (2024). Course-Skill Atlas: A national longitudinal dataset of skills taught in U.S. higher education curricula. <em>Scientific Data</em> 11:1086. https://www.nature.com/articles/s41597-024-03931-8</li>
+    <li>Xu, Z., Li, X., Huan, Y., Minaya, V., &amp; Yu, R. (2025). From Course to Skill: Evaluating LLM Performance in Curricular Analytics. arXiv:2505.02324.</li>
+    <li>Xu, Z., Guan, X., Shi, C., Chen, Q., &amp; Yu, R. (2026). Evaluating 21st-Century Competencies in Postsecondary Curricula with LLMs. <em>Journal of Learning Analytics</em> (to appear). arXiv:2601.10983.</li>
+    <li>Musazade, N., Mezei, J., &amp; Zhang, M. (2026). UniSkill: A Dataset for Matching University Curricula to Professional Competencies. arXiv:2603.03134.</li>
+    <li>Le Van-Duyet, Vo Minh Quan, &amp; Dang Quang An (2017). Skill2vec. arXiv:1707.09751.</li>
+    <li>Senger, E., Zhang, M., van der Goot, R., &amp; Plank, B. (2024). Deep Learning-based Computational Job Market Analysis: A Survey on Skill Extraction and Classification. arXiv:2402.05617.</li>
+    <li>Decorte, J.-J., et al. (2023). Extreme Multi-Label Skill Extraction Training using LLMs (bi-encoder/contrastive/ESCO). AI4HR.</li>
+    <li>ESCOXLM-R (arXiv:2305.12092); CareerBERT (arXiv:2503.02056); permutation-equivariant directed GNN CPRP (arXiv:2312.09802); GKROM (AAAI 2025).</li>
+    <li>Wong, T.-L., Xie, H., Wang, F. L., Poon, C. K., &amp; Zou, D. (2017). An automatic approach for discovering skill relationship from learning data. <em>LAK &rsquo;17</em>.</li>
+  </ul>
+
+  <h3>Domain-specific embedding and the leaderboard trap</h3>
+
+  <ul>
+    <li>Tang, Y., &amp; Yang, Y. (2024/2025). Do We Need Domain-Specific Embedding Models? An Empirical Investigation / FinMTEB: Finance Massive Text Embedding Benchmark. arXiv:2409.18511, arXiv:2502.10990.</li>
+    <li>Voyage AI. Domain-Specific Embeddings &mdash; Legal Edition (voyage-law-2) and Finance Edition (voyage-finance-2). blog.voyageai.com (2024).</li>
+    <li>Gupta, T., et al. (2022). MatSciBERT: A Materials Domain Language Model. arXiv:2109.15290. MELT (arXiv:2410.15126); ChEmbed (arXiv:2508.01643).</li>
+    <li>Domain adaptation on small corpora: adapter-based sentence-embedding adaptation (arXiv:2307.03104); contrastive fine-tuning of smaller LMs (arXiv:2408.00690).</li>
+    <li>Education/professional-training sentence-embedding framework for hierarchical multi-label classification (ScienceDirect S0169023X24000053); HydroEmbed dual-loss education Q&amp;A embedder (arXiv:2505.04916).</li>
+  </ul>
+
+  <h3>Durability, decay, and spaced repetition (Hypothesis B)</h3>
+
+  <ul>
+    <li>Murre, J. M. J., &amp; Dros, J. (2015). Replication and Analysis of Ebbinghaus&rsquo; Forgetting Curve. <em>PLOS ONE</em> 10(7):e0120644. (~50% retained at 20 min &rarr; ~18% at 31 days; two-component curve.)</li>
+    <li>Arthur, W., Bennett, W., Stanush, P. L., &amp; McNelly, T. L. (1998). Factors That Influence Skill Decay and Retention: A Quantitative Review. <em>Human Performance</em> 11(1):57&ndash;101. (Cognitive skills d &rarr; &minus;1.4 after more than one year of non-use.)</li>
+    <li>Bahrick, H. P. (1984). Semantic Memory Content in Permastore: Fifty Years of Memory for Spanish. <em>J. Exp. Psychol. General</em> 113(1):1&ndash;29. (Threshold &rarr; decades-stable plateau.)</li>
+    <li>Cepeda, N. J., Pashler, H., Vul, E., Wixted, J. T., &amp; Rohrer, D. (2006). Distributed Practice in Verbal Recall Tasks: A Review and Quantitative Synthesis. <em>Psychological Bulletin</em> 132(3):354&ndash;380. Cepeda et al. (2008), <em>Psychological Science</em> 19(11):1095&ndash;1102.</li>
+    <li>Adesope, O. O., Trevisan, D. A., &amp; Sundararajan, N. (2017). Rethinking the Use of Tests: A Meta-Analysis of Practice Testing. <em>Review of Educational Research</em> 87(3):659&ndash;701 (g = 0.51&ndash;0.93). Roediger &amp; Karpicke (2006); Bjork &amp; Bjork, New Theory of Disuse.</li>
+    <li>Settles, B., &amp; Meeder, B. (2016). A Trainable Spaced Repetition Model for Language Learning (Half-Life Regression). <em>ACL 2016</em>:1848&ndash;1858. (The borrowable B2 form.) FSRS (open-spaced-repetition; Anki default); SM-2 (Wo&zacute;niak, 1987).</li>
+    <li>Knowledge tracing (for contrast): Corbett &amp; Anderson (1995, BKT); Piech et al. (2015, DKT); Nagatani et al. (2019, DKT+forgetting, WWW); Wang et al. (2021, HawkesKT, WSDM); Cen, Koedinger &amp; Junker (2006, AFM); Pavlik, Cen &amp; Koedinger (2009, PFA).</li>
+    <li>Pull-up and transfer: Linn, Eylon &amp; Davis (2004, Knowledge Integration); Witherby &amp; Carpenter (2021, <em>JEP:LMC</em> &mdash; rich-get-richer is within-domain only); Perkins &amp; Salomon (1992, low/high-road transfer); Barnett &amp; Ceci (2002, far-transfer taxonomy); Sala &amp; Gobet (2017, <em>Curr. Dir. Psych. Sci.</em> &mdash; near-zero far transfer); Chi, Feltovich &amp; Glaser (1981, expert integration); Doignon &amp; Falmagne (1985, Knowledge Space Theory / surmise relation).</li>
+    <li>Ebbinghaus (forgetting curve); Craik &amp; Lockhart (levels of processing); Bjork (desirable difficulties).</li>
+  </ul>
+
+  <h3>Uncertainty, convergence, and measurement theory (Hypothesis C)</h3>
+
+  <ul>
+    <li>Landis, J. R., &amp; Koch, G. G. (1977). The Measurement of Observer Agreement for Categorical Data. <em>Biometrics</em> 33(1):159&ndash;174. Casabianca et al. (2017, essay rater r &asymp; 0.54); Goldhaber/edTPA low-IRR studies (&kappa; = 0.17; <em>Education Sciences</em> 11(10):648, 14(3):300).</li>
+    <li>Cronbach, Gleser, Nanda &amp; Rajaratnam (1972), <em>The Dependability of Behavioral Measurements</em>; Brennan (2001), <em>Generalizability Theory</em>.</li>
+    <li>Lord &amp; Novick (1968) / SEM. Linacre (1989), <em>Many-Facet Rasch Measurement</em>.</li>
+    <li>H&uuml;llermeier, E., &amp; Waegeman, W. (2021). Aleatoric and Epistemic Uncertainty in ML. <em>Machine Learning</em> 110:457&ndash;506. Bartz et al. (2024). Label Convergence (arXiv:2409.09412 &mdash; <code>mAP &asymp; 0.836&middot;&alpha; + 0.197</code>).</li>
+    <li>Plank, B. (2022). The &ldquo;Problem&rdquo; of Human Label Variation. <em>EMNLP 2022</em>:10367&ndash;10390. Aroyo &amp; Welty (2015), Truth Is a Lie. <em>AI Magazine</em> 36(1). Data perspectivism (Basile et al.).</li>
+    <li>Wang et al. (2022), Self-Consistency (arXiv:2203.11171); Verga et al. (2024), Panel of LLM Judges / PoLL (arXiv:2404.18796); Guo et al. (2017), Calibration / ECE (ICML); Geifman &amp; El-Yaniv (2017/2019, selective prediction / SelectiveNet).</li>
+    <li>Kim, Garg, Peng &amp; Garg (2025). Correlated Errors in LLMs. <em>ICML 2025</em> (arXiv:2506.07962 &mdash; ~60% agreement when both wrong; bigger models more correlated). Kohli (2025). Nine Judges, Two Effective Votes (arXiv:2605.29800 &mdash; 9-judge panel n<sub>eff</sub> &asymp; 2.18, ~24% of independence).</li>
+  </ul>
+
+</section>
+
+<div class="doc-foot">
+  Clemson Department of Graphic Communications &mdash; GC Curriculum Tool &mdash; Research companion. Forward / hypothesis register; not validated findings.
+</div>
+
+</main>
+</body>
+</html>
