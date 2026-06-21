@@ -90,6 +90,7 @@ Audit of the 42 references in `/docs/background.html` §15 (rows 29–31 added 2
 | 50 | Gonczi 1994 — Competency-Based Assessment in the Professions | [gonczi-1994.md](gonczi-1994.md) | §11 | Accessible (OCR PDF) | Consistent |
 | 51 | Brockmann, Clarke & Winch 2008 — Knowledge, Skills, Competence (VET) | [brockmann-clarke-winch-2008.md](brockmann-clarke-winch-2008.md) | §11 | Accessible (PDF) | Consistent |
 | 52 | Dearden, McGranahan & Sianesi 2004 — Returns to NVQs at Level 2 | [dearden-2004.md](dearden-2004.md) | §11 | Accessible (PDF) | Partially inconsistent (source) → **§11 now cites it precisely** (poor-to-negative returns + ability-bias caveat); see Findings #4 |
+| 53 | Bruner 1960 — The Spiral Curriculum (The Process of Education) | [bruner-spiral.md](bruner-spiral.md) | §9 | Note-only (in-copyright books; archive.org borrow) | Consistent |
 
 **Staged cards** (reviewer-supplied 2026-06-20; present in `docs/references/` but the source is **not yet cited in any live doc** — left staged deliberately):
 
