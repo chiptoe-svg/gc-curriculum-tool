@@ -49,7 +49,14 @@ function coerce(raw: unknown): SlideNote {
 export async function describeSlide(png: Buffer): Promise<SlideNote> {
   const baseUrl = (process.env.LOCAL_BASE_URL ?? 'http://localhost:8000/v1').replace(/\/$/, '');
   const apiKey = process.env.LOCAL_API_KEY ?? '';
-  const model = process.env.SLIDE_VISION_MODEL?.trim() || 'gemma-4-E4B-it-MLX-8bit';
+  // gemma-4-12B-it-qat-4bit, NOT the E4B-8bit this used to default to: the E4B
+  // MLX conversion is broken for vision (126-param mismatch in mlx-vlm → omlx
+  // loads it non-strictly and it silently drops the image, returning "I cannot
+  // see the image"), so middle-tier slide-vision was a no-op. 12B-qat-4bit
+  // ingests the image and returns substantive notes, ~7GB, ~3s warm (validated
+  // 2026-06-23 via the real describeSlide path on stock omlx). E4B stays on disk
+  // — it's voicelab's audio/perception model, just not vision-capable.
+  const model = process.env.SLIDE_VISION_MODEL?.trim() || 'gemma-4-12B-it-qat-4bit';
 
   const dataUri = `data:image/png;base64,${png.toString('base64')}`;
 
