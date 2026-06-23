@@ -93,10 +93,12 @@ describe('LocalProvider', () => {
     ).rejects.toThrow('Local model returned non-JSON');
   });
 
-  it('throws from transcribeDocument (handled by caller)', async () => {
+  it('throws from transcribeDocument when the document yields no pages (handled by caller)', async () => {
+    // transcribeDocument now renders the PDF to page images; a non-PDF byte blob
+    // renders to zero pages, so it throws — still caught by extract-text's caller.
     const p = new LocalProvider('qwen3-35b', 'http://localhost:8000/v1', 'test-key');
     await expect(
       p.transcribeDocument({ fileBytes: Buffer.from('pdf'), mimeType: 'application/pdf' }),
-    ).rejects.toThrow('Local provider does not support document vision transcription');
+    ).rejects.toThrow('renderToImages produced no pages');
   });
 });
