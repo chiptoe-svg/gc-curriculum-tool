@@ -11,7 +11,7 @@
 Three operator-reported gaps on the Step-2 "Triage materials → Ingest" screen:
 
 1. **Time estimates don't clearly track choices.** The estimate should recompute when materials move between High/Middle/Background tiers (and, new, when the provider changes).
-2. **No way to choose a free/on-prem provider.** Ingestion always runs on OpenAI (`AI_PROVIDER=openai`): vision transcription on `gpt-5.4`, digest + contextualize on `gpt-5.4-mini`. That costs money and sends slide content off-device. A 2026-06-23 bench (`~/.local/share/gc-curriculum-tool/vision-bench/README.md`) established that **omlx `Qwen3.6-35B-A3B` (thinking off) does image/slide transcription cleanly and completely (~9–23 s/slide), comparable to OpenAI** — so a local path is now viable for vision, and the Clemson campus Qwen endpoint already serves fast free text. We want an opt-in "use local/free" toggle.
+2. **No way to choose a free/on-prem provider.** Ingestion always runs on OpenAI (`AI_PROVIDER=openai`): vision transcription on `gpt-5.4`, digest + contextualize on `gpt-5.4-mini`. That costs money and sends slide content off-device. A 2026-06-23 bench (`~/.local/share/gc-curriculum-tool/vision-bench/README.md`) established that **omlx `Qwen3.6-35B-A3B` (thinking off) does image/slide transcription cleanly and completely (~9–23 s/slide), comparable to OpenAI** — so a local path is now viable for vision. A follow-up 2026-06-23 text bench validated the digest + contextualize steps too: **Clemson campus `gptoss-120b` matches OpenAI `gpt-5.4-mini` quality and is faster (digest 5.8s vs 6.6s; contextualize 0.6s vs 1.3s), free.** (The campus `qwen3.6-*` models were rejected — they default to thinking-mode and returned empty content for these JSON tasks without `enable_thinking:false`.) We want an opt-in "use local/free" toggle.
 3. **Ingestion completion is invisible.** "Ingest & continue" fires the background queue and *immediately* advances to the interview (`onIngested()` → `landingStep='interview'`), so the user proceeds while extraction/indexing is still running, with no signal that it isn't done.
 
 All three are being built together as one increment.
@@ -27,7 +27,7 @@ All three are being built together as one increment.
 - Changing the global default provider (stays OpenAI; local is opt-in per run).
 - Embeddings provider choice (always campus Qwen, unchanged).
 - A general per-function provider-routing UI (out of scope; this is one ingest-run toggle).
-- Validating local *text* quality (digest/contextualize) beyond "campus Qwen is the documented fast free text tier"; if quality is poor, retuning the profile map is a follow-up.
+- Further tuning of local text quality beyond the 2026-06-23 validation (campus `gptoss-120b` confirmed comparable to OpenAI for both text steps); the profile map remains the retune point if a better model emerges.
 
 ## 3. Design
 
@@ -57,8 +57,8 @@ Default **unchecked** (OpenAI, the fast current path). Its boolean lives in `Tri
 | task | openai profile (default) | local/free profile |
 |---|---|---|
 | vision transcription | openai `gpt-5.4` | **omlx** `Qwen3.6-35B-A3B-UD-MLX-4bit` (thinking off) |
-| material digest | openai `gpt-5.4-mini` | **campus** `qwen3.6-35b-a3b-fp8` |
-| chunk contextualize | openai `gpt-5.4-mini` | **campus** `qwen3.6-35b-a3b-fp8` |
+| material digest | openai `gpt-5.4-mini` | **campus** `gptoss-120b` |
+| chunk contextualize | openai `gpt-5.4-mini` | **campus** `gptoss-120b` |
 | embeddings | campus (unchanged) | campus (unchanged) |
 
 The map is the single retune point if a different model fits better (e.g. swap omlx vision for Clemson `gemma-4-31b`).
@@ -130,7 +130,7 @@ Migration `0045` (Drizzle-generated): `ALTER TABLE course_materials ADD COLUMN i
 - **Schema:** new migration `0045` + `course_materials.ingest_provider`.
 - **AI functions / providers:** local `transcribeDocument` now implemented; new ingest-provider-profile map; `v2-backfill` accepts `provider`.
 - **What's live:** Triage step gains the use-local checkbox + completion gate.
-- **Deferred/debt:** local *text* (digest/contextualize) quality is unvalidated — profile is best-guess (campus Qwen); retune if poor. Local vision est. constant (12 s/slide) is a coarse bench midpoint.
+- **Deferred/debt:** local text steps use campus `gptoss-120b` (validated 2026-06-23, comparable to OpenAI); campus `qwen3.6-*` avoided (empty output in thinking-mode). Local vision est. constant (12 s/slide) is a coarse bench midpoint, recalibrate from real `[ingest]` logs.
 
 ## 9. Deferred / follow-ups
 
