@@ -13,6 +13,7 @@ import {
 } from '@/lib/db/course-materials-queries';
 import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
 import { getCourseByCode } from '@/lib/db/courses-queries';
+import { buildLocalProvider } from '@/lib/ai/provider';
 
 // ---------------------------------------------------------------------------
 // In-process worker — drains the indexing queue with bounded concurrency
@@ -50,9 +51,14 @@ export function __setProcessForTest(fn: (row: CourseMaterialRow) => Promise<void
   _process = fn;
 }
 
-/** Mark a material queued and ensure the worker is draining. Idempotent. */
-export async function enqueue(materialId: string): Promise<void> {
-  await updateIndexingStatus({ id: materialId, status: 'queued' });
+/** Mark a material queued and ensure the worker is draining. Idempotent.
+ *  `opts.ingestProvider` stamps the per-run mode ('local' | null). */
+export async function enqueue(materialId: string, opts?: { ingestProvider?: string | null }): Promise<void> {
+  await updateIndexingStatus({
+    id: materialId,
+    status: 'queued',
+    ...(opts && 'ingestProvider' in opts ? { ingestProvider: opts.ingestProvider } : {}),
+  });
   wake = true;
   ensureWorker();
 }
@@ -110,6 +116,7 @@ async function drainLoop(): Promise<void> {
  */
 export async function processMaterial(row: CourseMaterialRow): Promise<void> {
   try {
+    const isLocal = row.ingestProvider === 'local';
     let extractedText = row.extractedText ?? undefined;
     let extractionStatus = row.extractionStatus as ExtractionStatus;
     let extractionMethod: ExtractionMethod | undefined;
@@ -127,11 +134,10 @@ export async function processMaterial(row: CourseMaterialRow): Promise<void> {
         return;
       }
       fileBytes = bytes;
-      const ex = await extractText({
-        fileBytes: bytes,
-        mimeType: row.mimeType as ExtractedMimeType,
-        fileName: row.fileName,
-      });
+      const ex = await extractText(
+        { fileBytes: bytes, mimeType: row.mimeType as ExtractedMimeType, fileName: row.fileName },
+        isLocal ? { visionProvider: buildLocalProvider() } : undefined,
+      );
       // Fix 2: meter vision OCR cost immediately after extraction
       if (ex.visionCostUsdCents !== undefined && ex.visionCostUsdCents > 0) {
         const cap = await checkDailyCap();
@@ -157,6 +163,7 @@ export async function processMaterial(row: CourseMaterialRow): Promise<void> {
       ...(extractedText !== undefined && { extractedText }),
       ...(pageCount !== undefined && { pageCount }),
       courseHasLearningObjectives,
+      noOpenAIFallback: isLocal,
       vectorStore: createVectorStore(),
       tier: row.tier as Tier | null,
       // Thread file bytes for middle-tier slide rendering (undefined for text-backed rows)
