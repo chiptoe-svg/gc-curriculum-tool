@@ -52,12 +52,15 @@ export function __setProcessForTest(fn: (row: CourseMaterialRow) => Promise<void
 }
 
 /** Mark a material queued and ensure the worker is draining. Idempotent.
- *  `opts.ingestProvider` stamps the per-run mode ('local' | null). */
+ *  `opts.ingestProvider` stamps the per-run mode. A plain enqueue() (no opts)
+ *  resets the mode to hybrid (null) — so re-indexing a material that was once
+ *  run in local-only mode (via the Triage "use local" path) doesn't silently
+ *  stick in local mode. Only the Triage local path passes 'local' explicitly. */
 export async function enqueue(materialId: string, opts?: { ingestProvider?: string | null }): Promise<void> {
   await updateIndexingStatus({
     id: materialId,
     status: 'queued',
-    ...(opts && 'ingestProvider' in opts ? { ingestProvider: opts.ingestProvider } : {}),
+    ingestProvider: opts?.ingestProvider ?? null,
   });
   wake = true;
   ensureWorker();

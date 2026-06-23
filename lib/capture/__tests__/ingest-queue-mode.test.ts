@@ -24,4 +24,9 @@ describe('enqueue stamps ingest_provider', () => {
     await enqueue('m2', { ingestProvider: null });
     expect(updateIndexingStatus).toHaveBeenCalledWith({ id: 'm2', status: 'queued', ingestProvider: null });
   });
+
+  it('a plain enqueue (no opts) resets the mode to hybrid (null) — no sticky local', async () => {
+    await enqueue('m3');
+    expect(updateIndexingStatus).toHaveBeenCalledWith({ id: 'm3', status: 'queued', ingestProvider: null });
+  });
 });
