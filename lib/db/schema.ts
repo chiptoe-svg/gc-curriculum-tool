@@ -302,6 +302,12 @@ export const courseMaterials = pgTable('course_materials', {
   // disk. The durable record (extractedText, digest, vectors) is unaffected.
   // Gated behind isTriageEnabled(). Migration 0043.
   rawCleared: boolean('raw_cleared').notNull().default(false),
+  // Per-run ingest mode, set when the Triage "Ingest & continue" enqueues a row.
+  // null = hybrid (default: OpenAI image-PDF transcription, campus text w/ OpenAI
+  // fallback). 'local' = local-only run (omlx transcription, campus text w/ the
+  // OpenAI fallback suppressed). Persisted so a worker restart keeps the mode.
+  // Migration 0045.
+  ingestProvider: text('ingest_provider'),
 });
 
 export const courseProfiles = pgTable('course_profiles', {
