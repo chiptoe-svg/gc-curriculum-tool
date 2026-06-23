@@ -26,6 +26,12 @@ export interface ExtractTextArgs {
   fileName: string;
 }
 
+export interface ExtractTextOptions {
+  /** When set, image-PDF vision transcription uses this provider instead of the
+   *  global getProvider(). Used by the ingest worker's local-only mode. */
+  visionProvider?: import('@/lib/ai/provider').AIProvider;
+}
+
 export interface ExtractTextResult {
   method?: 'text' | 'vision';
   status: 'ok' | 'low_text' | 'failed';
@@ -47,7 +53,7 @@ const MIN_MEANINGFUL_CHARS = 10;
 /** Max pages to send to vision to bound cost + latency. */
 const VISION_PAGE_CAP = 40;
 
-export async function extractText(args: ExtractTextArgs): Promise<ExtractTextResult> {
+export async function extractText(args: ExtractTextArgs, opts?: ExtractTextOptions): Promise<ExtractTextResult> {
   let { fileBytes, mimeType, fileName } = args;
 
   // Legacy Office files (.doc / .ppt / .xls): convert to modern equivalent
@@ -96,7 +102,7 @@ export async function extractText(args: ExtractTextArgs): Promise<ExtractTextRes
     const isImageBased = charsPerPage < MIN_CHARS_PER_PAGE;
     if (isImageBased) {
       try {
-        const provider = getProvider();
+        const provider = opts?.visionProvider ?? getProvider();
         const transcribed = await provider.transcribeDocument({
           fileBytes,
           mimeType,
