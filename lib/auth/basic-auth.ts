@@ -34,6 +34,11 @@ const PUBLIC_PREFIXES = [
   // machine token, not the faculty Basic Auth credential. Skip the Basic
   // Auth gate here; the route owns its auth.
   '/api/mcp',
+  // Curriculum spine retrieval for non-agent clients (voicelab). Bearer-auth'd
+  // via CURRICULUM_SEARCH_TOKEN (checked in app/api/curriculum/search/route.ts).
+  // Excluded from faculty Basic Auth for the same reason as /api/mcp: the
+  // caller presents a machine token, not the faculty credential.
+  '/api/curriculum/search',
   // Static public explainer page for the sibling "ask_procurement" project,
   // served from public/procurement.html. Intentionally reachable by anyone —
   // it is a high-level overview with no faculty data.
