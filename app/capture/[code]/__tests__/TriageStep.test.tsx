@@ -471,3 +471,23 @@ describe('TriageStep', () => {
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// Task 10: use-local checkbox
+// ---------------------------------------------------------------------------
+
+describe('TriageStep use-local checkbox', () => {
+  beforeEach(() => { vi.restoreAllMocks(); });
+
+  it("sends mode:'local' when the box is checked", async () => {
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ results: [], queued: 0 }), { status: 200 }),
+    );
+    render(<TriageStep courseCode="GC 1010" slug="s" materials={[makeMaterial({ id: 'm1', tier: 'high', pageCount: 2 })] as never} onIngested={() => {}} onBack={() => {}} />);
+    fireEvent.click(screen.getByLabelText(/use local/i));
+    fireEvent.click(screen.getByRole('button', { name: /ingest/i }));
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
+    const call = fetchSpy.mock.calls.find(c => String(c[0]).includes('v2-backfill'))!;
+    expect(JSON.parse((call[1] as RequestInit).body as string).mode).toBe('local');
+  });
+});

@@ -284,6 +284,7 @@ export function TriageStep({ courseCode, slug, materials, onIngested, onBack }: 
   );
   const [ingesting, setIngesting] = useState(false);
   const [ingestError, setIngestError] = useState<string | null>(null);
+  const [useLocal, setUseLocal] = useState(false);
 
   // Tiers are classified in the background after upload (see the materials POST
   // route's after()), so a file added moments before reaching this step may still
@@ -336,7 +337,7 @@ export function TriageStep({ courseCode, slug, materials, onIngested, onBack }: 
       const res = await fetch('/api/admin/v2-backfill', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ courseCode, slug }),
+        body: JSON.stringify({ courseCode, slug, mode: useLocal ? 'local' : 'hybrid' }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({})) as { error?: string };
@@ -434,12 +435,25 @@ export function TriageStep({ courseCode, slug, materials, onIngested, onBack }: 
 
       {/* Total estimate + primary action */}
       <div className="mt-6 flex flex-col items-end gap-1.5">
+        <label className="flex items-center gap-2 text-xs text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={useLocal}
+            onChange={(e) => setUseLocal(e.target.checked)}
+            disabled={ingesting}
+          />
+          <span>Use local/free models — no API cost, nothing leaves campus</span>
+        </label>
+        {useLocal && (
+          <p className="text-[10px] text-amber-700/80">May run longer for scanned/image PDFs.</p>
+        )}
         <div className="text-right">
           <p className="text-xs text-muted-foreground">
             <span className="font-medium">Estimated:</span> {total.label} · 2 at a time
           </p>
           <p className="text-[10px] text-muted-foreground/70">rough estimate</p>
         </div>
+        {/* button block from Task 11 replaces the simple button here */}
         <button
           type="button"
           onClick={() => void handleIngest()}
