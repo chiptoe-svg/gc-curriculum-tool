@@ -8,7 +8,7 @@
 
 **Tech Stack:** Python bench harness (`~/.local/share/gc-curriculum-tool/vision-bench/`), mlx-vlm #1426 (patched), omlx #1986 (patched), campus LLMs; TypeScript/Vitest for the `describeSlide` upgrade. Spec: `docs/superpowers/specs/2026-06-23-slide-note-vision-benchmark-design.md`.
 
-**Pre-committed before running (spec §3.F):** adopt the lightest/fastest `(model, schema, budget)` clearing mean-fidelity ≥ 0.75×max, mean-hallucination ≤ 0.5, gate-accuracy ≥ 0.85, ≤ 18 s/slide at concurrency 2, no OOM. If none clears → keep `gemma-4-E4B`, document the gap.
+**Pre-committed before running (spec §3.F):** adopt the lightest/fastest `(model, schema, budget)` clearing mean-fidelity ≥ 0.75×max, mean-hallucination ≤ 0.5, gate-accuracy ≥ 0.85, ≤ 18 s/slide at concurrency 2, no OOM. If none beats the shipped `gemma-4-12B-it-qat-4bit`, document the gap. (E-series gemmas excluded — vision-incapable, spec §3.B.)
 
 ---
 
@@ -55,7 +55,7 @@ Distinct from the transcription probes (`bench_1426.py` etc.): this runs the **d
 
 ### Task 1.2: Execute the matrix (spec §3.B–C, §3.G memory discipline)
 
-- [ ] **Step 1: Local gemma** (E4B baseline / 12B / 26B-A4B) × {P1,P2} at pinned **budget 560**, `repetition_penalty=1.3`, **one model loaded at a time, unload between** (memory). Record peak mem / any 507.
+- [ ] **Step 1: Local dense gemma** (12B-qat-4bit [shipped baseline] / 26B-A4B) × {P1,P2} at pinned **budget 560**, `repetition_penalty=1.3`, **one model loaded at a time, unload between** (memory). Record peak mem / any 507.
 - [ ] **Step 2: Local Qwen** (27B, 35B-A3B) × {P1,P2}, `enable_thinking:false`.
 - [ ] **Step 3: Campus** (gemma-4-31b, qwen twins) × {P1,P2}.
 - [ ] **Step 4: Budget sweep** — the leading gemma (by P2 score so far) × {280,560,1120} at its best prompt.
@@ -68,7 +68,7 @@ Distinct from the transcription probes (`bench_1426.py` etc.): this runs the **d
 
 - [ ] **Step 1: Write `grade.py`** — a gpt-5.x judge scores each run's notes vs `ground-truth.json` on the §3.E dimensions (instructional-point correctness, terminology preservation, hallucination-inverse, gate accuracy), 0–3 each; aggregate per (model, prompt, budget). Log judge cost.
 - [ ] **Step 2: Run it**, write the scorecard table to `README.md`.
-- [ ] **Step 3: Apply the §3.F decision rule** → **VERDICT: `(model, schema, budget, rep_penalty)`** OR "keep gemma-4-E4B + document gap". Write the verdict + the full table to `README.md`.
+- [ ] **Step 3: Apply the §3.F decision rule** → **VERDICT: `(model, schema, budget, rep_penalty)`** OR "keep the shipped gemma-4-12B-it-qat-4bit + document gap". Write the verdict + the full table to `README.md`.
 - [ ] **Step 4: Commit** a short results summary into the repo (`docs/superpowers/pilot/2026-06-23-slide-note-bench-results.md`) pointing at the bench README for detail.
 
 ---

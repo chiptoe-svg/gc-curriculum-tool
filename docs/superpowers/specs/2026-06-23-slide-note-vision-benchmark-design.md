@@ -13,7 +13,7 @@ Middle-tier slide decks are ingested via `describeSlide()` (`lib/capture/slide-v
 
 Two facts make the current state suspect:
 
-1. **`gemma-4-E4B` was never benchmarked for this task.** It was wired in commit `2ad5e7c` ("feat(triage): per-slide vision note via omlx gemma-4-E4B") and assumed adequate. The 2026-06-23 vision bench (`vision-bench/README.md`) tested a *different, harder* task — full-text transcription (`transcribeDocument`) — and found local gemma-4 at every size fails on fine print, with `gemma-4-31B` prone to repetition-loop garbage on dense slides and `Qwen3.6-35B-A3B` (thinking off) the only viable local transcriber (~9–23 s/slide).
+1. **`gemma-4-E4B` was never benchmarked for this task.** It was wired in commit `2ad5e7c` ("feat(triage): per-slide vision note via omlx gemma-4-E4B") and assumed adequate. The 2026-06-23 vision bench (`vision-bench/README.md`) tested a *different, harder* task — full-text transcription (`transcribeDocument`) — and found local gemma-4 at every size fails on fine print, with `gemma-4-31B` prone to repetition-loop garbage on dense slides and `Qwen3.6-35B-A3B` (thinking off) the only viable local transcriber (~9–23 s/slide). **ANSWERED 2026-06-23, worse than feared:** `gemma-4-E4B-it-MLX-8bit` is **vision-incapable on mlx-vlm 0.6.3** (E-series architecture mismatch — §3.B) — it *never ingested the slide images at all*, so `describeSlide` has been a silent no-op. The default was switched to the working `gemma-4-12B-it-qat-4bit` (shipped). **This bench now optimizes the *working* slide model, not "is E4B adequate" (it was zero).**
 2. **The describe task's required fidelity is undefined.** `describeSlide` deliberately does not transcribe — but no one has established what it *must* capture for the downstream audit to have real K/U/D evidence, nor whether `gemma-4-E4B` clears that bar.
 
 This benchmark establishes both: **the fidelity the slide note must carry, and the lightest local VLM that delivers it** — then adopts the result for all ingests.
@@ -54,15 +54,17 @@ All **already on disk** under `~/projects/Models` (verified 2026-06-23) — no n
 
 | model | role | notes |
 |---|---|---|
-| `gemma-4-E4B-it-MLX-8bit` | **baseline** (current default) | must include — the thing we're testing the skepticism against |
-| `gemma-4-12B-it-qat-4bit` | small-mid candidate | 4-bit, lighter/faster; loop-prone under greedy but fixed by a repetition penalty (§3.B-bis); may suffice for the *lighter* describe task |
-| `gemma-4-26B-A4B-it-QAT-MLX-4bit` | mid-high candidate (MoE) | got primary text + headlines in the transcription bench; **validated 2026-06-23** to read fine print at higher soft-token budgets via the patched stack (§3.B-bis); ~2.5 s/slide with a repetition penalty |
+| `gemma-4-12B-it-qat-4bit` | small-mid candidate (**now the production default**) | dense gemma; 4-bit, lighter/faster; loop-prone under greedy but fixed by a repetition penalty (§3.B-bis); validated via the real describeSlide path (substantive notes, ~7GB, ~3 s) and **shipped as `SLIDE_VISION_MODEL` 2026-06-23** — the bench is now optimizing *above* this, not from scratch |
+| `gemma-4-26B-A4B-it-QAT-MLX-4bit` | mid-high candidate (MoE) | dense gemma; got primary text + headlines in the transcription bench; **validated 2026-06-23** to read fine print at higher soft-token budgets via the patched stack (§3.B-bis); ~2.5 s/slide with a repetition penalty |
 | `Qwen3.6-27B-UD-MLX-4bit` | mid candidate | vision-capable (omlx engine=vlm, `qwen3_5`), untested for this task |
 | `Qwen3.6-35B-A3B-UD-MLX-4bit` | high candidate | transcription winner; run with `chat_template_kwargs:{enable_thinking:false}` |
 
 Campus-hosted (zero local memory, free): `gemma-4-31b`, `qwen3.6-35b-a3b` / `qwen3.6-27b` twins (the qwen campus models **require** `enable_thinking:false` or they return empty content).
 
-**Excluded:** `Qwen3-Omni-30B` (shelved 2026-06-23 — ~25 s/slide, too slow); `gemma-4-E2B` (available but out of scope to bound the matrix — addable for a finer floor).
+**Excluded:**
+- **gemma-4 E-series (`E2B` / `E4B`) — vision-INCAPABLE on mlx-vlm 0.6.3, at ANY quant. Do not bench them for vision.** Verified 2026-06-23: both fail to load in mlx-vlm with a parameter mismatch (`E4B` → 126 extra params, `E2B` → 140 — `k_norm` + attention biases the `gemma4` model doesn't define; the elastic/MatFormer E-series has a different attention structure). omlx loads them non-strictly so they serve **text/audio** (voicelab uses E4B for audio), but the image path is dead — which is the bug that made `describeSlide` a no-op. `#1426` doesn't change this (it's soft-tokens, not E-series support). The former `gemma-4-E4B-it-MLX-8bit` "baseline" is therefore the **broken status quo (no vision)**, documented here, not a runnable cell.
+- `Qwen3-Omni-30B` (shelved 2026-06-23 — ~25 s/slide, too slow).
+- A lighter-than-12B option, if wanted, would be a **non-E-series** small VLM (e.g. a small Qwen-VL — would need a download), not an E4B quant.
 
 ### 3.B-bis — Validated gemma resolution axis (the prior bench's blocker is fixed)
 
@@ -81,7 +83,7 @@ Each note schema is a prompt + an output shape. Three levels:
 - **P2 — concept + terminology.** P1 plus `keyTerms: string[]` (vocabulary/labels shown) and `definitions` (any definition/procedure stated, verbatim where short). Aimed at preserving K-level (terminology) and U-level (rationale) evidence.
 - **P3 — near-transcription.** `{topic, contentLevel, text: <all instructional text on the slide>}` — merges describe + transcribe.
 
-**Matrix bound:** all candidates run P1 + P2 (gemma at a **pinned budget 560**); only the top 1–2 (by P2 score) carry through to P3, and only the leading gemma sweeps the full budget axis `{280, 560, 1120}` (§3.B-bis). This keeps runs ≈ `5 local × 2 prompts + campus + (≤2 × P3) + (1 gemma × 3 budgets)` rather than a full model×prompt×budget cross-product.
+**Matrix bound:** all candidates run P1 + P2 (gemma at a **pinned budget 560**); only the top 1–2 (by P2 score) carry through to P3, and only the leading gemma sweeps the full budget axis `{280, 560, 1120}` (§3.B-bis). This keeps runs ≈ `4 local × 2 prompts + campus + (≤2 × P3) + (1 gemma × 3 budgets)` rather than a full model×prompt×budget cross-product.
 
 ### 3.D — Ground truth
 
@@ -111,7 +113,7 @@ Fixed **before** the run (the project's failure-criteria discipline — cf. `doc
 > - per-slide latency such that a typical 20-slide deck stays ≲ 3 min wall-clock at `SLIDE_CONCURRENCY` — i.e. **≲ 18 s/slide** at concurrency 2,
 > - fits memory: no 507 OOM on the box under normal omlx tenancy.
 >
-> If multiple clear it, pick lowest `latency × memory`. **If none clears it, keep `gemma-4-E4B` and document the gap** as accepted debt + recommend a download/campus follow-up.
+> If multiple clear it, pick lowest `latency × memory`. **If none clears it, keep the shipped `gemma-4-12B-it-qat-4bit` and document the gap** as accepted debt + recommend a download/campus follow-up. (The old E4B fallback is gone — E4B can't do vision; 12B is the new floor.)
 
 Thresholds are proposals; lock them (adjust if needed) at the top of the bench `README.md` section *before* running.
 
@@ -136,7 +138,7 @@ for each candidate model [3.B] × prompt {P1,P2(,P3)} [3.C]:
 gpt-5.x judge: score every (model,prompt) note vs ground truth     [3.E]
   └─ scorecard → README.md
 apply decision rule                                                [3.F]
-  └─ VERDICT: (model, schema)  OR  keep gemma-4-E4B + document gap
+  └─ VERDICT: (model, schema)  OR  keep shipped gemma-4-12B-it-qat-4bit + document gap
        └─ implement: SLIDE_VISION_MODEL default + describeSlide INSTRUCTION + SlideNote schema
             └─ consumed by Spec B (local-vision path + estimate constants)
 ```
@@ -168,7 +170,7 @@ The bench itself is a research spike (scripts + a written verdict), not TDD. The
 
 - **AI functions / providers:** `SLIDE_VISION_MODEL` default changed (or explicitly confirmed unchanged); `describeSlide` schema/prompt updated; if Qwen wins, `enable_thinking:false` now sent.
 - **What's live:** middle-tier slide notes now carry `<new fidelity>` (if changed).
-- **Deferred/debt:** if no model cleared the bar, the kept-`gemma-4-E4B` gap + recommended follow-up; the bench thresholds + corpus location; any candidate deferred (E2B/26B, downloads).
+- **Deferred/debt:** if no model beat the shipped `gemma-4-12B-it-qat-4bit`, document that + any recommended follow-up; the bench thresholds + corpus location; any candidate deferred (downloads). (E-series gemmas already excluded — vision-incapable, §3.B.)
 
 ## 9. Deferred / follow-ups
 
