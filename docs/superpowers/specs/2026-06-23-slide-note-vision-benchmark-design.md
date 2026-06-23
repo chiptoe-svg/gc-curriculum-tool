@@ -1,7 +1,7 @@
 # Slide-note vision benchmark — Design (Spec A)
 
 **Date:** 2026-06-23
-**Status:** Proposed (brainstorming-approved 2026-06-23)
+**Status:** Proposed (brainstorming-approved 2026-06-23; expanded 2026-06-23 with a validated gemma resolution axis — see §3.B-bis)
 **Surface:** `lib/capture/slide-vision.ts` (`describeSlide`, `SlideNote`, `SLIDE_VISION_MODEL`), the `~/.local/share/gc-curriculum-tool/vision-bench/` harness, and the middle-tier slide path in `lib/capture/finalize-extraction.ts` (consumer).
 **Relationship:** Spec A of a two-spec split. **Spec B** (`2026-06-23-ingest-provider-estimates-completion-design.md`) is the ingestion-UX feature (estimates + use-local toggle + completion gate); it consumes Spec A's chosen slide model for its local-vision path and estimate constants. Spec A ships independently and does not block Spec B.
 
@@ -55,13 +55,23 @@ All **already on disk** under `~/projects/Models` (verified 2026-06-23) — no n
 | model | role | notes |
 |---|---|---|
 | `gemma-4-E4B-it-MLX-8bit` | **baseline** (current default) | must include — the thing we're testing the skepticism against |
-| `gemma-4-12B-it-qat-4bit` | small-mid candidate | per operator request; 4-bit, lighter than the 8-bit 12B that loop-failed transcription |
+| `gemma-4-12B-it-qat-4bit` | small-mid candidate | 4-bit, lighter/faster; loop-prone under greedy but fixed by a repetition penalty (§3.B-bis); may suffice for the *lighter* describe task |
+| `gemma-4-26B-A4B-it-QAT-MLX-4bit` | mid-high candidate (MoE) | got primary text + headlines in the transcription bench; **validated 2026-06-23** to read fine print at higher soft-token budgets via the patched stack (§3.B-bis); ~2.5 s/slide with a repetition penalty |
 | `Qwen3.6-27B-UD-MLX-4bit` | mid candidate | vision-capable (omlx engine=vlm, `qwen3_5`), untested for this task |
 | `Qwen3.6-35B-A3B-UD-MLX-4bit` | high candidate | transcription winner; run with `chat_template_kwargs:{enable_thinking:false}` |
 
 Campus-hosted (zero local memory, free): `gemma-4-31b`, `qwen3.6-35b-a3b` / `qwen3.6-27b` twins (the qwen campus models **require** `enable_thinking:false` or they return empty content).
 
-**Excluded:** `Qwen3-Omni-30B` (shelved 2026-06-23 — ~25 s/slide, too slow); `gemma-4-E2B`, `gemma-4-26B-A4B*` (available but out of scope to bound the matrix — addable if the four core local candidates all fail or all pass and we want a finer floor).
+**Excluded:** `Qwen3-Omni-30B` (shelved 2026-06-23 — ~25 s/slide, too slow); `gemma-4-E2B` (available but out of scope to bound the matrix — addable for a finer floor).
+
+### 3.B-bis — Validated gemma resolution axis (the prior bench's blocker is fixed)
+
+The prior bench's verdict — *"local gemma fails fine print; the soft-token budget is NOT client-tunable"* — was caused by two things, **both now resolved and validated on 2026-06-23**:
+
+1. **The resolution knob was broken** (mlx-vlm could not run a non-default soft-token budget — `#1425`). **Fixed by `Blaizzy/mlx-vlm#1426` + `jundot/omlx#1986`** (both authored by us). Validated end-to-end: at budgets 280/560/1120 the image-token count now scales (`prompt_tokens` 306→569→1142 direct; 292/555/1128 through the omlx HTTP API incl. the `max_soft_tokens` alias), and **fine print gemma garbled at 280 ("Daritos") is read correctly at 560** ("Doritos / TANGY CHEESE / CHILI HEATWAVE / 200g"). #1986's plumbing suite is 274/274 green.
+2. **The "gemma loops / is unreliable" finding was a greedy-decoding artifact** — the prior bench ran gemma with no repetition penalty. A `repetition_penalty ≈ 1.15–1.3` eliminates the loop on every dense slide (550×→1×), is harmless on easy slides, composes with the resolution knob, and returns clean output in ~2.5 s. **Both 12B and 26B** show this pattern (26B reads the fine print more completely; 12B is terser/marginal).
+
+**Consequence for this bench:** the gemma candidates (E4B / 12B / 26B-A4B) gain a **soft-token-budget axis** `{280, 560, 1120}` and are run with `repetition_penalty=1.3`, on the **isolated patched stack** (`vision-bench/.venv-1426` + the `omlx-1986` clone), never the shared `:8000`. gemma-26B-A4B at a mid budget is now a genuine contender — and, separately, a candidate to replace Qwen3.6-35B as Spec B's `LOCAL_VISION_MODEL` (it's ~4–9× faster). The budget axis applies only to gemma (Qwen sets its own resolution); E4B at the default budget is the status-quo baseline.
 
 ### 3.C — Fidelity-prompt variants (the "let the bench decide" axis)
 
@@ -71,7 +81,7 @@ Each note schema is a prompt + an output shape. Three levels:
 - **P2 — concept + terminology.** P1 plus `keyTerms: string[]` (vocabulary/labels shown) and `definitions` (any definition/procedure stated, verbatim where short). Aimed at preserving K-level (terminology) and U-level (rationale) evidence.
 - **P3 — near-transcription.** `{topic, contentLevel, text: <all instructional text on the slide>}` — merges describe + transcribe.
 
-**Matrix bound:** all candidates run P1 + P2; only the top 1–2 (by P2 score) carry through to P3. This keeps runs ≈ `4 local × 2 prompts + campus + (≤2 × P3)` rather than a full cross-product.
+**Matrix bound:** all candidates run P1 + P2 (gemma at a **pinned budget 560**); only the top 1–2 (by P2 score) carry through to P3, and only the leading gemma sweeps the full budget axis `{280, 560, 1120}` (§3.B-bis). This keeps runs ≈ `5 local × 2 prompts + campus + (≤2 × P3) + (1 gemma × 3 budgets)` rather than a full model×prompt×budget cross-product.
 
 ### 3.D — Ground truth
 
@@ -111,7 +121,8 @@ Reuse the `vision-bench` harness (`bench.py`, `wait-for-omlx.sh`, the cron polle
 - **One local model loaded at a time** via omlx; explicitly unload (free RAM) between models — leftover loaded models were the memory-wall cause last time.
 - omlx **507s rather than evicts** under pressure, so a queued load that 507s is a non-destructive "not enough RAM now" signal — record it as the memory result and move on / let the cron poller retry when RAM frees.
 - Campus models need no local memory — test them anytime.
-- omlx :8000 is **shared with nanoclaw agents** — never restart it out from under them; only load/unload models.
+- omlx :8000 is **shared with nanoclaw agents + voicelab** — never restart it out from under them; only load/unload models.
+- **gemma resolution-axis runs use the isolated patched stack**, NOT the shared `:8000`: the `vision-bench/.venv-1426` venv (patched mlx-vlm `#1426`) for direct runs, or the `omlx-1986` clone served on a **separate registered port** (e.g. `:8011`, `127.0.0.1`, deregistered + killed when done) for API-path runs. This keeps the production omlx on its stable release while we bench the patched gemma path. Watch combined Metal memory (both omlx instances share the GPU pool) — prefer the smaller gemma (12B, ~7 GB) when headroom is tight.
 - Append all results to `vision-bench/README.md` (consistent with prior bench history).
 
 ## 4. Data flow
@@ -162,5 +173,7 @@ The bench itself is a research spike (scripts + a written verdict), not TDD. The
 ## 9. Deferred / follow-ups
 
 - A download candidate (small dedicated VLM) if the on-box set fails the bar.
-- Periodic re-bench when omlx adds models or mlx-vlm fixes the gemma-4 variable-resolution path (`mlx-vlm #1425`).
+- ~~Periodic re-bench when mlx-vlm fixes the gemma-4 variable-resolution path~~ — **done 2026-06-23**: `#1425` fixed by `Blaizzy/mlx-vlm#1426` + `jundot/omlx#1986` (validated, §3.B-bis). The gemma resolution axis is now part of *this* bench.
+- **Productionizing the patched stack (deferred decision).** The bench runs on the isolated patched stack; making the *live* app use patched-gemma vision (for `describeSlide` and/or Spec B's `transcribeDocument`) requires either (a) the two PRs merging upstream + a pin bump, or (b) self-pinning the branches on the **shared** `com.omlx.cli` `:8000`, which has blast radius (nanoclaw + voicelab + `describeSlide` all depend on it) and needs a full regression pass. Recommendation: keep on the branches; don't upgrade the shared omlx until the bench verdict justifies it AND a regression check of the other consumers is run. Tracked in STATE Deferred/debt.
+- If gemma-26B-A4B + repetition penalty wins the transcription comparison, it becomes a candidate `LOCAL_VISION_MODEL` for **Spec B** (~4–9× faster than Qwen3.6-35B) — gated on the same productionizing decision.
 - Applying the same describe-quality lens to the `transcribeDocument` image-PDF path (separate; Spec B wires it, quality already established).
