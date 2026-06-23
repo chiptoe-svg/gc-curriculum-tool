@@ -1,6 +1,7 @@
 /**
- * Bearer-token check for agent-facing endpoints (the wiki MCP server at
- * /api/mcp).
+ * Bearer-token check for agent-facing endpoints — the wiki MCP server at
+ * /api/mcp (`WIKI_MCP_TOKEN`) and the spine-search endpoint at
+ * /api/curriculum/search (`CURRICULUM_SEARCH_TOKEN`, used by voicelab).
  *
  * Deliberately separate from faculty Basic Auth (`lib/auth/basic-auth.ts`):
  * agents present a machine token, never the human faculty credential, so the
