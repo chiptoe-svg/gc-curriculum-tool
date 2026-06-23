@@ -29,6 +29,7 @@ function campusOss(): CampusProvider | null {
 export async function chunkLlmComplete<T>(
   funcId: AIFunctionId,
   args: CompleteArgs<T>,
+  opts?: { noOpenAIFallback?: boolean },
 ): Promise<{ data: T; model: string } & CompletionTelemetry> {
   const campus = campusOss();
   if (campus) {
@@ -36,8 +37,12 @@ export async function chunkLlmComplete<T>(
       const r = await campus.complete<T>(args);
       return { ...r, model: campus.model };
     } catch (e) {
+      if (opts?.noOpenAIFallback) throw e; // local-only mode: surface as a failed material, no paid fallback
       console.warn(`[chunk-llm] campus ${campus.model} failed → OpenAI fallback:`, e instanceof Error ? e.message : e);
     }
+  } else if (opts?.noOpenAIFallback) {
+    // Local-only mode with campus unconfigured/disabled has no free path — fail loudly.
+    throw new Error('chunkLlmComplete: local-only mode but campus provider is unavailable');
   }
   const provider = await getProviderForFunction(funcId);
   const r = await provider.complete<T>(args);

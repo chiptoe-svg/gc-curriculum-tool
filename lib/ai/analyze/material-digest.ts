@@ -16,7 +16,7 @@ export interface DigestResult {
  * Stage 2a (not just long reference ones — that was the v1 reference-
  * compression flow, generalized here). Light-tier; one call per material.
  */
-export async function generateMaterialDigest(input: DigestInput): Promise<DigestResult> {
+export async function generateMaterialDigest(input: DigestInput, opts?: { noOpenAIFallback?: boolean }): Promise<DigestResult> {
   const systemPrompt = await loadPrompt('material-digest');
 
   const jsonSchema = {
@@ -50,7 +50,7 @@ export async function generateMaterialDigest(input: DigestInput): Promise<Digest
       }
       return { digest: r.digest };
     },
-  });
+  }, opts);
 
   return { digest: data.digest, model };
 }

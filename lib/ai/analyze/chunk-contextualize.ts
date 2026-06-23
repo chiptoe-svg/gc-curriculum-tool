@@ -18,7 +18,7 @@ export interface ContextualizeResult {
  * embedding so the resulting vector encodes position + content (Anthropic
  * contextual-retrieval pattern). Light-tier; one call per detail chunk.
  */
-export async function contextualizeChunk(input: ContextualizeInput): Promise<ContextualizeResult> {
+export async function contextualizeChunk(input: ContextualizeInput, opts?: { noOpenAIFallback?: boolean }): Promise<ContextualizeResult> {
   const systemPrompt = await loadPrompt('chunk-contextualize');
 
   const jsonSchema = {
@@ -53,7 +53,7 @@ export async function contextualizeChunk(input: ContextualizeInput): Promise<Con
       }
       return { blurb: r.blurb };
     },
-  });
+  }, opts);
 
   return { blurb: data.blurb, model };
 }
