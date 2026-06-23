@@ -4,6 +4,7 @@ import { db } from '@/lib/db/client';
 import { checkAdminAuth } from '@/lib/auth/admin-auth';
 import { courseMaterials, courses } from '@/lib/db/schema';
 import { enqueue } from '@/lib/capture/ingest-queue';
+import { ingestAction } from '@/lib/capture/ingest-selection';
 
 /**
  * POST /api/admin/v2-backfill
@@ -47,7 +48,12 @@ export async function POST(req: Request): Promise<Response> {
   const results: Array<{ id: string; fileName: string; status: string; error?: string }> = [];
 
   for (const m of materials) {
-    if (m.extractionStatus !== 'ok' || !m.extractedText) {
+    // Enqueue anything the worker can process — a row with extracted text OR a
+    // readable local blob it can extract from disk (incl. vision OCR for
+    // image-based slide decks). Skip already-'ready' rows and rows with neither
+    // text nor a local blob. The old `extraction_status === 'ok'` guard wrongly
+    // skipped every freshly-uploaded (still-pending) file — see ingest-selection.ts.
+    if (ingestAction(m) === 'skip') {
       results.push({ id: m.id, fileName: m.fileName, status: 'skipped' });
       continue;
     }
