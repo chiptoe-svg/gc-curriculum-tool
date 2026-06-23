@@ -22,7 +22,7 @@ import { ingestAction } from '@/lib/capture/ingest-selection';
  * Gated by /api/admin/* middleware (FACULTY_BASIC_AUTH).
  */
 export async function POST(req: Request): Promise<Response> {
-  const body = await req.json().catch(() => ({})) as { courseCode?: unknown; slug?: unknown };
+  const body = await req.json().catch(() => ({})) as { courseCode?: unknown; slug?: unknown; mode?: unknown };
   if (!checkAdminAuth(req, { slug: typeof body.slug === 'string' ? body.slug : '' })) {
     return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
   }
@@ -30,6 +30,11 @@ export async function POST(req: Request): Promise<Response> {
   if (!courseCode) {
     return NextResponse.json({ error: 'courseCode required' }, { status: 400 });
   }
+  const mode = body.mode === undefined ? 'hybrid' : body.mode;
+  if (mode !== 'hybrid' && mode !== 'local') {
+    return NextResponse.json({ error: "mode must be 'hybrid' or 'local'" }, { status: 400 });
+  }
+  const ingestProvider = mode === 'local' ? 'local' : null;
 
   const [courseRow] = await db
     .select({ code: courses.code })
@@ -58,7 +63,7 @@ export async function POST(req: Request): Promise<Response> {
       continue;
     }
     try {
-      await enqueue(m.id);
+      await enqueue(m.id, { ingestProvider });
       results.push({ id: m.id, fileName: m.fileName, status: 'queued' });
     } catch (e) {
       results.push({ id: m.id, fileName: m.fileName, status: 'failed', error: String(e) });
