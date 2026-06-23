@@ -58,6 +58,12 @@ drizzle/meta/
 # Self-signed certs for LAN HTTPS (mkcert; regenerate with mkcert in scripts/setup-lan-https.sh)
 /certs/
 
+# Tailscale Funnel / LAN TLS certs at repo root — NEVER commit (especially the private .key)
+/admins-mac-studio-2.tailb723c1.ts.net.crt
+/admins-mac-studio-2.tailb723c1.ts.net.key
+*.tailb723c1.ts.net.key
+*.tailb723c1.ts.net.crt
+
 # Visual brainstorm companion (local mockups, not source)
 /.superpowers/
 

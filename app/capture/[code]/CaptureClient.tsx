@@ -332,6 +332,7 @@ export function CaptureClient({
           slug={slug}
           materials={materials}
           onIngested={() => setLandingStep('interview')}
+          onBack={() => setLandingStep('materials')}
         />
       ) : (
         <>

@@ -16,6 +16,8 @@ export interface TriageStepProps {
   /** The course's live materials from CaptureClient state. */
   materials: CaptureMaterial[];
   onIngested: () => void;
+  /** Return to Step 1 (import / confirm materials) — tier edits already persisted. */
+  onBack: () => void;
 }
 
 const TIER_ORDER: Tier[] = ['background', 'middle', 'high'];
@@ -270,7 +272,7 @@ function TierSection({ tier, rows, courseCode, slug, onUpdate, onRemove }: TierS
 // Main component
 // ---------------------------------------------------------------------------
 
-export function TriageStep({ courseCode, slug, materials, onIngested }: TriageStepProps) {
+export function TriageStep({ courseCode, slug, materials, onIngested, onBack }: TriageStepProps) {
   // Initialise local row state from live materials.
   // null-tier materials default to 'high' (full pipeline = current behavior).
   const [rows, setRows] = useState<RowState[]>(
@@ -351,12 +353,23 @@ export function TriageStep({ courseCode, slug, materials, onIngested }: TriageSt
 
   return (
     <div className="rounded-lg border bg-card p-6">
-      {/* Mono-caps step header — matches CaptureMaterialsStep pattern */}
-      <div className="mb-1 flex items-center gap-2 font-mono-plex text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-        <span>Step 2 of 3 · Triage materials</span>
-        <span aria-hidden className="text-foreground">●</span>
-        <span aria-hidden>──</span>
-        <span aria-hidden>○</span>
+      {/* Mono-caps step header — matches CaptureMaterialsStep pattern. Back button
+          returns to Step 1 (import); tier edits are PATCHed as they're made, so
+          nothing is lost on the round trip. */}
+      <div className="mb-1 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 font-mono-plex text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+          <span>Step 2 of 3 · Triage materials</span>
+          <span aria-hidden className="text-foreground">●</span>
+          <span aria-hidden>──</span>
+          <span aria-hidden>○</span>
+        </div>
+        <button
+          type="button"
+          onClick={onBack}
+          className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
+        >
+          ← Back to materials
+        </button>
       </div>
 
       <h2 className="font-display text-xl font-semibold tracking-tight">

@@ -63,7 +63,7 @@ describe('TriageStep', () => {
         courseCode="GC 3800"
         slug="test-slug"
         materials={baseMaterials}
-        onIngested={noop}
+        onIngested={noop} onBack={noop}
       />,
     );
     expect(screen.getByText(/high value/i)).toBeTruthy();
@@ -77,7 +77,7 @@ describe('TriageStep', () => {
         courseCode="GC 3800"
         slug="test-slug"
         materials={baseMaterials}
-        onIngested={noop}
+        onIngested={noop} onBack={noop}
       />,
     );
     expect(screen.getByText(/lecture\.pptx/i)).toBeTruthy();
@@ -91,7 +91,7 @@ describe('TriageStep', () => {
         courseCode="GC 3800"
         slug="test-slug"
         materials={[...baseMaterials, nullTierMat]}
-        onIngested={noop}
+        onIngested={noop} onBack={noop}
       />,
     );
     // null-tier mat should appear (uploaded-notes.pdf)
@@ -109,7 +109,7 @@ describe('TriageStep', () => {
         courseCode="GC 3800"
         slug="test-slug"
         materials={baseMaterials}
-        onIngested={noop}
+        onIngested={noop} onBack={noop}
       />,
     );
     // Old skipped section had "Skipped (won't be pulled in)" text
@@ -123,7 +123,7 @@ describe('TriageStep', () => {
         courseCode="GC 3800"
         slug="test-slug"
         materials={noMiddle}
-        onIngested={noop}
+        onIngested={noop} onBack={noop}
       />,
     );
     expect(screen.getByText(/add your lecture slides/i)).toBeTruthy();
@@ -136,7 +136,7 @@ describe('TriageStep', () => {
         courseCode="GC 3800"
         slug="test-slug"
         materials={baseMaterials}
-        onIngested={noop}
+        onIngested={noop} onBack={noop}
       />,
     );
     expect(screen.queryByText(/add your lecture slides/i)).toBeNull();
@@ -152,7 +152,7 @@ describe('TriageStep', () => {
         courseCode="GC 3800"
         slug="test-slug"
         materials={baseMaterials}
-        onIngested={onIngested}
+        onIngested={onIngested} onBack={noop}
       />,
     );
 
@@ -182,7 +182,7 @@ describe('TriageStep', () => {
         courseCode="GC 3800"
         slug="test-slug"
         materials={baseMaterials}
-        onIngested={noop}
+        onIngested={noop} onBack={noop}
       />,
     );
 
@@ -200,7 +200,7 @@ describe('TriageStep', () => {
         courseCode="GC 3800"
         slug="test-slug"
         materials={baseMaterials}
-        onIngested={noop}
+        onIngested={noop} onBack={noop}
       />,
     );
 
@@ -238,7 +238,7 @@ describe('TriageStep', () => {
         courseCode="GC 3800"
         slug="test-slug"
         materials={baseMaterials}
-        onIngested={noop}
+        onIngested={noop} onBack={noop}
       />,
     );
 
@@ -265,7 +265,7 @@ describe('TriageStep', () => {
         courseCode="GC 3800"
         slug="test-slug"
         materials={baseMaterials}
-        onIngested={noop}
+        onIngested={noop} onBack={noop}
       />,
     );
 
@@ -302,7 +302,7 @@ describe('TriageStep', () => {
         courseCode="GC 3800"
         slug="test-slug"
         materials={baseMaterials}
-        onIngested={noop}
+        onIngested={noop} onBack={noop}
       />,
     );
 
@@ -332,7 +332,7 @@ describe('TriageStep', () => {
           courseCode="GC 3800"
           slug="test-slug"
           materials={baseMaterials}
-          onIngested={noop}
+          onIngested={noop} onBack={noop}
         />,
       );
       // Should show "Estimated:" label
@@ -345,7 +345,7 @@ describe('TriageStep', () => {
           courseCode="GC 3800"
           slug="test-slug"
           materials={baseMaterials}
-          onIngested={noop}
+          onIngested={noop} onBack={noop}
         />,
       );
       const estimatedEl = screen.getByText(/estimated:/i).parentElement ?? screen.getByText(/estimated:/i);
@@ -360,7 +360,7 @@ describe('TriageStep', () => {
           courseCode="GC 3800"
           slug="test-slug"
           materials={baseMaterials}
-          onIngested={noop}
+          onIngested={noop} onBack={noop}
         />,
       );
       expect(screen.getByText(/rough estimate/i)).toBeTruthy();
@@ -372,7 +372,7 @@ describe('TriageStep', () => {
           courseCode="GC 3800"
           slug="test-slug"
           materials={baseMaterials}
-          onIngested={noop}
+          onIngested={noop} onBack={noop}
         />,
       );
       expect(screen.getByText(/2 at a time/i)).toBeTruthy();
@@ -384,7 +384,7 @@ describe('TriageStep', () => {
           courseCode="GC 3800"
           slug="test-slug"
           materials={baseMaterials}
-          onIngested={noop}
+          onIngested={noop} onBack={noop}
         />,
       );
       // At least one chip should match a formatDuration pattern (~Xs, ~N min, ~N.M hr, or —)
@@ -400,7 +400,7 @@ describe('TriageStep', () => {
           courseCode="GC 3800"
           slug="test-slug"
           materials={[ignoredMat]}
-          onIngested={noop}
+          onIngested={noop} onBack={noop}
         />,
       );
       // The per-row chip for an ignored material should be '—'
@@ -450,7 +450,7 @@ describe('TriageStep', () => {
           courseCode="GC 3800"
           slug="test-slug"
           materials={[midOnlyMat]}
-          onIngested={noop}
+          onIngested={noop} onBack={noop}
         />,
       );
 
