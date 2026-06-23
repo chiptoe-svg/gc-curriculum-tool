@@ -17,7 +17,7 @@ vi.mock('@/lib/capture/render-pages', () => ({
 import { LocalProvider } from '../local';
 
 function fakeClient(contents: string[]) {
-  const create = vi.fn(async () => ({
+  const create = vi.fn(async (_body: unknown) => ({
     choices: [{ message: { content: contents.shift() ?? '' } }],
   }));
   return { create, chat: { completions: { create } } };
@@ -40,7 +40,8 @@ describe('LocalProvider.transcribeDocument', () => {
     expect(res.truncated).toBe(false);
     // chat_template_kwargs.enable_thinking === false on every call
     for (const call of client.create.mock.calls) {
-      expect((call[0] as { chat_template_kwargs?: { enable_thinking?: boolean } }).chat_template_kwargs?.enable_thinking).toBe(false);
+      const body = call[0] as unknown as { chat_template_kwargs?: { enable_thinking?: boolean } };
+      expect(body.chat_template_kwargs?.enable_thinking).toBe(false);
     }
   });
 
