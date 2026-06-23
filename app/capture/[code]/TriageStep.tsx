@@ -282,8 +282,11 @@ export function TriageStep({ courseCode, slug, materials, onIngested, onBack }: 
       pendingDelete: false,
     })),
   );
-  const [ingesting, setIngesting] = useState(false);
+  const [phase, setPhase] = useState<'idle' | 'ingesting' | 'done'>('idle');
   const [ingestError, setIngestError] = useState<string | null>(null);
+  const [progress, setProgress] = useState<{ total: number; terminal: number; ready: number; failed: number; skipped: number }>(
+    { total: 0, terminal: 0, ready: 0, failed: 0, skipped: 0 },
+  );
   const [useLocal, setUseLocal] = useState(false);
 
   // Tiers are classified in the background after upload (see the materials POST
@@ -331,7 +334,7 @@ export function TriageStep({ courseCode, slug, materials, onIngested, onBack }: 
   const total = estimateTotal(rows);
 
   async function handleIngest(): Promise<void> {
-    setIngesting(true);
+    setPhase('ingesting');
     setIngestError(null);
     try {
       const res = await fetch('/api/admin/v2-backfill', {
@@ -342,14 +345,39 @@ export function TriageStep({ courseCode, slug, materials, onIngested, onBack }: 
       if (!res.ok) {
         const body = await res.json().catch(() => ({})) as { error?: string };
         setIngestError(body.error ?? `Failed (${res.status})`);
+        setPhase('idle');
         return;
       }
-      onIngested();
+      const data = await res.json().catch(() => ({})) as { results?: Array<{ id: string; status: string }> };
+      const queuedIds = (data.results ?? []).filter(r => r.status === 'queued').map(r => r.id);
+      if (queuedIds.length === 0) {
+        setProgress({ total: 0, terminal: 0, ready: 0, failed: 0, skipped: 0 });
+        setPhase('done');
+        return;
+      }
+      void pollUntilDone(queuedIds);
     } catch (e) {
       setIngestError(e instanceof Error ? e.message : 'Ingest failed');
-    } finally {
-      setIngesting(false);
+      setPhase('idle');
     }
+  }
+
+  async function pollUntilDone(ids: string[]): Promise<void> {
+    const tick = async (): Promise<void> => {
+      const fresh = await fetchCourseMaterials(courseCode, slug);
+      const byId = new Map((fresh ?? []).map(m => [m.id, m.indexingStatus]));
+      let ready = 0, failed = 0, skipped = 0, terminal = 0;
+      for (const id of ids) {
+        const s = byId.get(id);
+        if (s === 'ready') { ready++; terminal++; }
+        else if (s === 'failed') { failed++; terminal++; }
+        else if (s === 'skipped') { skipped++; terminal++; }
+      }
+      setProgress({ total: ids.length, terminal, ready, failed, skipped });
+      if (terminal >= ids.length) { setPhase('done'); return; }
+      setTimeout(() => { void tick(); }, 3000);
+    };
+    await tick();
   }
 
   return (
@@ -440,7 +468,7 @@ export function TriageStep({ courseCode, slug, materials, onIngested, onBack }: 
             type="checkbox"
             checked={useLocal}
             onChange={(e) => setUseLocal(e.target.checked)}
-            disabled={ingesting}
+            disabled={phase !== 'idle'}
           />
           <span>Use local/free models — no API cost, nothing leaves campus</span>
         </label>
@@ -453,15 +481,42 @@ export function TriageStep({ courseCode, slug, materials, onIngested, onBack }: 
           </p>
           <p className="text-[10px] text-muted-foreground/70">rough estimate</p>
         </div>
-        {/* button block from Task 11 replaces the simple button here */}
-        <button
-          type="button"
-          onClick={() => void handleIngest()}
-          disabled={ingesting}
-          className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-        >
-          {ingesting ? 'Ingesting…' : 'Ingest & continue →'}
-        </button>
+        {phase === 'idle' && (
+          <button
+            type="button"
+            onClick={() => void handleIngest()}
+            className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+          >
+            Ingest &amp; continue →
+          </button>
+        )}
+        {phase === 'ingesting' && (
+          <div className="w-full max-w-xs text-right">
+            <p className="text-sm text-muted-foreground">
+              Ingesting {progress.terminal} of {progress.total}…
+            </p>
+            <div className="mt-1 h-1.5 w-full overflow-hidden rounded bg-muted">
+              <div
+                className="h-full bg-primary transition-all"
+                style={{ width: `${progress.total ? Math.round((progress.terminal / progress.total) * 100) : 0}%` }}
+              />
+            </div>
+          </div>
+        )}
+        {phase === 'done' && (
+          <div className="flex flex-col items-end gap-1.5">
+            <p className="text-sm text-emerald-700">
+              ✓ Ingestion complete ({progress.ready} ready{progress.skipped ? `, ${progress.skipped} skipped` : ''}{progress.failed ? `, ${progress.failed} failed` : ''})
+            </p>
+            <button
+              type="button"
+              onClick={() => onIngested()}
+              className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+            >
+              Continue to interview →
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

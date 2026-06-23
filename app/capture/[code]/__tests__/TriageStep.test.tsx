@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import type { CaptureMaterial } from '@/app/capture/[code]/MaterialsPanel';
 import { estimateTotal, estimateSeconds, formatDuration } from '@/lib/capture/ingest-estimate';
 
@@ -142,9 +142,11 @@ describe('TriageStep', () => {
     expect(screen.queryByText(/add your lecture slides/i)).toBeNull();
   });
 
-  it('clicking Ingest & continue POSTs to /api/admin/v2-backfill and calls onIngested', async () => {
+  it('clicking Ingest & continue POSTs to /api/admin/v2-backfill and gates onIngested behind Continue', async () => {
     const onIngested = vi.fn();
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ queued: 3 }) });
+    // No queued results → the gate goes straight to 'done' and surfaces the
+    // Continue button rather than auto-advancing.
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ results: [], queued: 0 }) });
     vi.stubGlobal('fetch', fetchMock);
 
     render(
@@ -166,7 +168,11 @@ describe('TriageStep', () => {
     const body = JSON.parse((init as RequestInit).body as string);
     expect(body).toMatchObject({ courseCode: 'GC 3800', slug: 'test-slug' });
 
-    await waitFor(() => expect(onIngested).toHaveBeenCalled());
+    // Gate: onIngested fires only after the explicit Continue click.
+    const cont = await screen.findByRole('button', { name: /continue to interview/i });
+    expect(onIngested).not.toHaveBeenCalled();
+    fireEvent.click(cont);
+    expect(onIngested).toHaveBeenCalled();
   });
 
   it('shows an error message and re-enables button when ingest fails', async () => {
@@ -489,5 +495,38 @@ describe('TriageStep use-local checkbox', () => {
     await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
     const call = fetchSpy.mock.calls.find(c => String(c[0]).includes('v2-backfill'))!;
     expect(JSON.parse((call[1] as RequestInit).body as string).mode).toBe('local');
+  });
+});
+
+describe('TriageStep completion gate', () => {
+  beforeEach(() => { vi.restoreAllMocks(); vi.useFakeTimers(); });
+  afterEach(() => { vi.useRealTimers(); });
+
+  it('gates Continue until all queued materials are terminal', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ results: [{ id: 'm1', status: 'queued' }], queued: 1 }), { status: 200 }),
+    );
+    // Test-controlled status (mutable) — robust to the mount-sync useEffect, which
+    // also calls fetchCourseMaterials. A call counter would be thrown off by it.
+    let status = 'indexing';
+    const fetchMaterials = await import('@/lib/capture/fetch-course-materials');
+    vi.spyOn(fetchMaterials, 'fetchCourseMaterials').mockImplementation(
+      async () => [{ id: 'm1', fileName: 'f.pdf', mimeType: 'application/pdf', indexingStatus: status, ignored: false }] as never,
+    );
+
+    const onIngested = vi.fn();
+    render(<TriageStep courseCode="GC 1010" slug="s" materials={[{ id: 'm1', fileName: 'f.pdf', mimeType: 'application/pdf', tier: 'high', indexingStatus: 'pending', ignored: false, pageCount: 2 }] as never} onIngested={onIngested} onBack={() => {}} />);
+
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /ingest/i })); });
+    // While indexing: no Continue button.
+    await act(async () => { await vi.advanceTimersByTimeAsync(3000); }); // poll sees 'indexing'
+    expect(screen.queryByRole('button', { name: /continue to interview/i })).toBeNull();
+    status = 'ready';
+    await act(async () => { await vi.advanceTimersByTimeAsync(3000); }); // poll sees 'ready'
+    // Phase flips to 'done' synchronously after the timer+microtasks above flush,
+    // so the button is present without findByRole's (now-faked) retry loop.
+    const cont = screen.getByRole('button', { name: /continue to interview/i });
+    fireEvent.click(cont);
+    expect(onIngested).toHaveBeenCalledOnce();
   });
 });
