@@ -39,6 +39,8 @@ export interface FinalizeExtractionInput {
   // (Canvas HTML) leave these undefined and fall through to the full pipeline.
   fileBytes?: Buffer;
   mimeType?: string;
+  /** Local-only run: suppress the OpenAI fallback in digest/contextualize. */
+  noOpenAIFallback?: boolean;
 }
 
 const v2Enabled = (): boolean => process.env.COURSECAPTURE_V2_INGESTION === '1';
@@ -168,7 +170,7 @@ async function runV2Pipeline(input: FinalizeExtractionInput): Promise<void> {
   let digestMs = 0;
   let digestText = '';
   try {
-    const { digest, model } = await generateMaterialDigest({ fileName, extractedText });
+    const { digest, model } = await generateMaterialDigest({ fileName, extractedText }, { noOpenAIFallback: input.noOpenAIFallback });
     digestMs = Date.now() - tDigest;
     digestText = digest;
     await updateMaterialDigest({
@@ -321,7 +323,7 @@ async function runV2Pipeline(input: FinalizeExtractionInput): Promise<void> {
           const summaries = await mapWithConcurrency(
             qualifying,
             4,
-            (s) => generateMaterialDigest({ fileName: `${fileName} — ${s.title}`, extractedText: s.text }),
+            (s) => generateMaterialDigest({ fileName: `${fileName} — ${s.title}`, extractedText: s.text }, { noOpenAIFallback: input.noOpenAIFallback }),
           );
 
           const vectors = await embedBatch(summaries.map(x => x.digest));
@@ -389,7 +391,7 @@ async function runV2Pipeline(input: FinalizeExtractionInput): Promise<void> {
         materialDigest: digestText,
         sectionTitle: d.sectionTitle,
         chunkText: d.text,
-      })),
+      }, { noOpenAIFallback: input.noOpenAIFallback })),
     );
     const ctxMs = Date.now() - tCtx;
 
