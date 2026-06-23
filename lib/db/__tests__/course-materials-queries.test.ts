@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildIndexableMaterialsWhere } from '@/lib/db/course-materials-queries';
+import { buildIndexableMaterialsWhere, __mapMaterialRowForTest } from '@/lib/db/course-materials-queries';
 
 /**
  * Recursively collect string tokens from a drizzle SQL condition's queryChunks
@@ -58,5 +58,21 @@ describe('buildIndexableMaterialsWhere', () => {
     const tokens = collectSQLTokens(condition);
     // course_code column should be referenced
     expect(tokens).toContain('course_code');
+  });
+});
+
+describe('mapMaterialRow', () => {
+  it('maps ingest_provider (incl. null)', () => {
+    const base = {
+      id: 'a', course_code: 'GC 1010', file_name: 'f', blob_url: 'u', mime_type: 'application/pdf',
+      size_bytes: 1, page_count: null, extraction_method: null, extraction_status: 'pending',
+      extracted_text: null, analysis_finding: null, analysis_model: null, analysis_cost_usd_cents: null,
+      uploaded_at: new Date(), ip_hash: 'h', digest: null, digest_model: null, digest_generated_at: null,
+      use_digest: false, ferpa_risk: 'low', auto_set_aside: false, set_aside_reason: null,
+      indexing_status: 'queued', tier: null, indexed_at: null, ignored: false, ignored_items: null,
+      source_code: null, raw_cleared: false, retired_at: null,
+    };
+    expect(__mapMaterialRowForTest({ ...base, ingest_provider: 'local' }).ingestProvider).toBe('local');
+    expect(__mapMaterialRowForTest({ ...base, ingest_provider: null }).ingestProvider).toBeNull();
   });
 });

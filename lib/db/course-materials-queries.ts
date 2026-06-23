@@ -40,6 +40,7 @@ function mapMaterialRow(row: Record<string, unknown>): CourseMaterialRow {
     sourceCode: row['source_code'] as string | null,
     rawCleared: row['raw_cleared'] as boolean,
     retiredAt: row['retired_at'] as Date | null,
+    ingestProvider: row['ingest_provider'] as string | null,
   };
 }
 export type ExtractionStatus = 'pending' | 'ok' | 'low_text' | 'failed';
@@ -259,11 +260,14 @@ export async function updateIndexingStatus(args: {
   id: string;
   status: 'pending' | 'queued' | 'indexing' | 'ready' | 'failed' | 'skipped';
   indexedAt?: Date;
+  /** When present, also write ingest_provider (null clears it). Omit to leave it untouched. */
+  ingestProvider?: string | null;
 }): Promise<void> {
   await db.update(courseMaterials)
     .set({
       indexingStatus: args.status,
       ...(args.indexedAt ? { indexedAt: args.indexedAt } : {}),
+      ...(args.ingestProvider !== undefined ? { ingestProvider: args.ingestProvider } : {}),
     })
     .where(eq(courseMaterials.id, args.id));
 }
@@ -362,3 +366,6 @@ export async function resetStuckIndexing(): Promise<number> {
   `);
   return res.rowCount ?? 0;
 }
+
+/** Test seam — exercise the raw-row mapper directly. */
+export const __mapMaterialRowForTest = mapMaterialRow;
