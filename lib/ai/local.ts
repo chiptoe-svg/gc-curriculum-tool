@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import type { AIProvider, CompletionTelemetry, TranscribeDocumentArgs, TranscribeDocumentResult } from './provider';
+import { renderToImages } from '@/lib/capture/render-pages';
 // v6 Vercel AI SDK: structured output with tools uses generateText + Output.object, not generateObject.
 // tool() in v6 uses `inputSchema` (not `parameters`), matching our ToolDefinition shape directly.
 // jsonSchema() wraps a plain JSON Schema object into the SDK's Schema type for Output.object.
@@ -71,13 +72,54 @@ export class LocalProvider implements AIProvider {
     };
   }
 
-  // Local text-generation models cannot process raw PDF/DOCX bytes.
-  // The extract-text caller wraps this in try/catch and returns status:'failed'.
-  async transcribeDocument(_args: TranscribeDocumentArgs): Promise<TranscribeDocumentResult> {
-    throw new Error(
-      'Local provider does not support document vision transcription. ' +
-      'Set AI_PROVIDER=openai for image-based PDF ingestion.',
-    );
+  // Render the document to page PNGs and transcribe each via the omlx vision
+  // model (OpenAI-compatible chat with an image_url part + enable_thinking:false).
+  // Pages run at low concurrency (memory-bound) and are concatenated in order.
+  // Cost is always 0 for the local provider.
+  async transcribeDocument(args: TranscribeDocumentArgs): Promise<TranscribeDocumentResult> {
+    const PROMPT =
+      'Please transcribe every piece of text visible in this document image. ' +
+      'Return plain text only, preserving the reading order. Do not add commentary.';
+    const maxPages = args.maxPages ?? 40;
+
+    const rendered = await renderToImages(args.fileBytes, args.mimeType, 'document');
+    if (rendered.length === 0) {
+      throw new Error('LocalProvider.transcribeDocument: renderToImages produced no pages');
+    }
+    const truncated = rendered.length > maxPages;
+    const pages = truncated ? rendered.slice(0, maxPages) : rendered;
+
+    const CONCURRENCY = 2;
+    const texts: string[] = new Array(pages.length).fill('');
+    let next = 0;
+    const worker = async (): Promise<void> => {
+      while (next < pages.length) {
+        const i = next++;
+        const dataUri = `data:image/png;base64,${pages[i]!.toString('base64')}`;
+        const resp = await this.client.chat.completions.create({
+          model: this.model,
+          messages: [
+            {
+              role: 'user',
+              content: [
+                { type: 'text', text: PROMPT },
+                { type: 'image_url', image_url: { url: dataUri } },
+              ],
+            },
+          ],
+          temperature: 0,
+          max_tokens: 4096,
+          // omlx-specific: pass through to the chat template so Qwen3.6 skips
+          // its reasoning trace (keeps `content` to the raw transcription).
+          chat_template_kwargs: { enable_thinking: false },
+        } as Parameters<typeof this.client.chat.completions.create>[0]);
+        texts[i] = ((resp as { choices?: Array<{ message?: { content?: string } }> })
+          .choices?.[0]?.message?.content ?? '').trim();
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, pages.length) }, worker));
+
+    return { text: texts.join('\n\n').trim(), costUsdCents: 0, truncated };
   }
 
   async completeWithTools<T>(args: {
