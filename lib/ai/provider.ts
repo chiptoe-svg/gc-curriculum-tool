@@ -104,6 +104,7 @@ import { AnthropicProvider } from './anthropic';
 import { LocalProvider } from './local';
 import { CampusProvider } from './campus';
 import { resolveModelForFunction, type AIFunctionId } from './function-settings';
+import { visionModel } from './vision-models';
 
 export interface GetProviderOptions {
   /** When set, the provider uses the model assigned to this function via
@@ -199,13 +200,14 @@ function buildProvider(modelOverride: string | undefined): AIProvider {
  * Build a LocalProvider (omlx) for vision transcription, independent of the
  * global AI_PROVIDER. Used by the ingest worker's local-only mode to route
  * image-PDF transcription to omlx while the rest of the app stays on OpenAI.
- * Model resolution: explicit arg → LOCAL_VISION_MODEL → Qwen3.6-35B-A3B default.
+ * Model resolution: explicit arg → the vision registry's `docTranscribe` model
+ * (LOCAL_VISION_MODEL env → gemma-4-26B-A4B default, the transcription-bench winner).
  */
 export function buildLocalProvider(model?: string): AIProvider {
   const baseURL = process.env.LOCAL_BASE_URL?.trim() || 'http://localhost:8000/v1';
   const apiKey = process.env.LOCAL_API_KEY?.trim();
   if (!apiKey) throw new Error('LOCAL_API_KEY not set');
-  const resolved = model ?? process.env.LOCAL_VISION_MODEL?.trim() ?? 'Qwen3.6-35B-A3B-UD-MLX-4bit';
+  const resolved = model ?? visionModel('docTranscribe').model;
   return new LocalProvider(resolved, baseURL, apiKey);
 }
 

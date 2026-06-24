@@ -21,7 +21,7 @@ describe('buildLocalProvider', () => {
   it('returns a LocalProvider regardless of AI_PROVIDER', () => {
     const p = buildLocalProvider();
     expect(p.name).toBe('local');
-    expect(p.model).toBe('Qwen3.6-35B-A3B-UD-MLX-4bit'); // LOCAL_VISION_MODEL default
+    expect(p.model).toBe('gemma-4-26B-A4B-it-QAT-MLX-4bit'); // vision registry docTranscribe default (transcription-bench winner)
   });
 
   it('honors LOCAL_VISION_MODEL and an explicit override', () => {

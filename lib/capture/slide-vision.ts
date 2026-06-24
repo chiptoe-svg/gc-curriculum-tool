@@ -7,6 +7,8 @@
  * uninformative slides without aborting the ingestion pipeline.
  */
 
+import { visionModel } from '@/lib/ai/vision-models';
+
 export interface SlideNote {
   topic: string;
   teaches: string;
@@ -49,14 +51,11 @@ function coerce(raw: unknown): SlideNote {
 export async function describeSlide(png: Buffer): Promise<SlideNote> {
   const baseUrl = (process.env.LOCAL_BASE_URL ?? 'http://localhost:8000/v1').replace(/\/$/, '');
   const apiKey = process.env.LOCAL_API_KEY ?? '';
-  // gemma-4-12B-it-qat-4bit, NOT the E4B-8bit this used to default to: the E4B
-  // MLX conversion is broken for vision (126-param mismatch in mlx-vlm → omlx
-  // loads it non-strictly and it silently drops the image, returning "I cannot
-  // see the image"), so middle-tier slide-vision was a no-op. 12B-qat-4bit
-  // ingests the image and returns substantive notes, ~7GB, ~3s warm (validated
-  // 2026-06-23 via the real describeSlide path on stock omlx). E4B stays on disk
-  // — it's voicelab's audio/perception model, just not vision-capable.
-  const model = process.env.SLIDE_VISION_MODEL?.trim() || 'gemma-4-12B-it-qat-4bit';
+  // Model + soft-token budget from the consolidated vision registry. Default
+  // gemma-4-12B-it-qat-4bit @ 560 (describe-bench winner) — NOT the old E4B-8bit,
+  // whose broken-for-vision MLX conversion silently dropped the image (slide
+  // vision was a no-op). The 560 budget needs the patched omlx (resolution knob).
+  const { model, budget } = visionModel('slideNote');
 
   const dataUri = `data:image/png;base64,${png.toString('base64')}`;
 
@@ -74,6 +73,11 @@ export async function describeSlide(png: Buffer): Promise<SlideNote> {
     response_format: { type: 'json_object' },
     max_tokens: 300,
     temperature: 0.2,
+    // Resolution knob (patched omlx) + repetition penalty — matches the bench
+    // config; the penalty prevents gemma's greedy-decode loop on dense slides,
+    // the budget raises effective resolution. Both ignored by non-gemma models.
+    ...(budget ? { vision_soft_tokens_per_image: budget } : {}),
+    repetition_penalty: 1.3,
   });
 
   try {

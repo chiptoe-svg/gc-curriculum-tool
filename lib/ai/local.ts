@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import type { AIProvider, CompletionTelemetry, TranscribeDocumentArgs, TranscribeDocumentResult } from './provider';
 import { renderToImages } from '@/lib/capture/render-pages';
+import { visionModel } from './vision-models';
 // v6 Vercel AI SDK: structured output with tools uses generateText + Output.object, not generateObject.
 // tool() in v6 uses `inputSchema` (not `parameters`), matching our ToolDefinition shape directly.
 // jsonSchema() wraps a plain JSON Schema object into the SDK's Schema type for Output.object.
@@ -81,6 +82,7 @@ export class LocalProvider implements AIProvider {
       'Please transcribe every piece of text visible in this document image. ' +
       'Return plain text only, preserving the reading order. Do not add commentary.';
     const maxPages = args.maxPages ?? 40;
+    const txBudget = visionModel('docTranscribe').budget;
 
     const rendered = await renderToImages(args.fileBytes, args.mimeType, 'document');
     if (rendered.length === 0) {
@@ -112,6 +114,12 @@ export class LocalProvider implements AIProvider {
           // omlx-specific: pass through to the chat template so Qwen3.6 skips
           // its reasoning trace (keeps `content` to the raw transcription).
           chat_template_kwargs: { enable_thinking: false },
+          // Resolution knob + repetition penalty for the gemma transcription path
+          // (docTranscribe = gemma-26B-A4B @ 1120, the bench winner): the budget
+          // raises effective resolution for fine print; the penalty stops gemma's
+          // greedy-decode loop on dense OCR. Both ignored by non-gemma models.
+          ...(txBudget ? { vision_soft_tokens_per_image: txBudget } : {}),
+          repetition_penalty: 1.3,
         } as Parameters<typeof this.client.chat.completions.create>[0]);
         texts[i] = ((resp as { choices?: Array<{ message?: { content?: string } }> })
           .choices?.[0]?.message?.content ?? '').trim();

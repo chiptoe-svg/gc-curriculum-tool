@@ -27,6 +27,7 @@
 import { extractText as unpdfExtractText } from 'unpdf';
 import mammoth from 'mammoth';
 import { compactSpreadsheetMarkdown } from '@/lib/capture/spreadsheet-compact';
+import { visionModel } from '@/lib/ai/vision-models';
 
 // Source-format MIME types the system can handle. Anything outside this
 // list is rejected at the upload-route allowlist level — by the time a
@@ -166,7 +167,7 @@ class DoclingExtractor implements MaterialExtractor {
       form.append('image_export_mode', 'placeholder');
       const vlmConfig = {
         model_spec: {
-          name: process.env.DOCLING_VLM_MODEL ?? 'Qwen3.6-35B-A3B-UD-MLX-4bit',
+          name: visionModel('docPicture').model,
           default_repo_id: 'Qwen/Qwen3-VL',
           prompt: process.env.DOCLING_VLM_PROMPT
             ?? 'Describe this image in 1-2 sentences. Focus on content and concepts (chart type, axes, key values, diagram structure, etc.). Reply with only the description — no preamble.',
@@ -179,7 +180,7 @@ class DoclingExtractor implements MaterialExtractor {
           headers: process.env.DOCLING_VLM_API_KEY
             ? { Authorization: `Bearer ${process.env.DOCLING_VLM_API_KEY}` }
             : {},
-          params: { model: process.env.DOCLING_VLM_MODEL ?? 'Qwen3.6-35B-A3B-UD-MLX-4bit' },
+          params: { model: visionModel('docPicture').model },
           timeout: 120,
         },
       };
