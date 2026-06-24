@@ -32,8 +32,11 @@ interface Props {
  *     learning objectives, major projects, prereqs, syllabus link from
  *     the courses table, with a prominent "not yet audited" banner.
  *
- * Edit button (header) sends faculty to the HTTPS Tailscale Funnel where
- * Basic Auth gates the editor and mic works natively.
+ * Edit button (header + catalog fallback) is a DIRECT, same-origin link to the
+ * editor — it follows whatever host the viewer is on (the cert'd Clemson host
+ * for direct/IT access, the Funnel via the Funnel). Both are HTTPS, so Basic
+ * Auth gates the editor and the mic works natively either way. (Was hardcoded
+ * to the Funnel origin before the direct host had a cert — 2026-06-24.)
  */
 export default async function ViewCoursePage({ params }: Props) {
   const { code: rawCode } = await params;
@@ -122,10 +125,16 @@ export default async function ViewCoursePage({ params }: Props) {
   // Bake the slug into the Edit link server-side so faculty don't need
   // to know or type it. The slug is a deeper-layer access gate alongside
   // Basic Auth; PROTOTYPE_SLUG is the canonical source.
+  //
+  // DIRECT / same-origin link (NOT the Tailscale Funnel): the Edit link now
+  // resolves to whatever host the viewer is on — the cert'd Clemson host
+  // (gcworkflow.clemson.edu) when viewed directly, the Funnel when viewed via
+  // the Funnel. It was previously hardcoded to TAILSCALE_FUNNEL_ORIGIN to force
+  // HTTPS for the mic; the direct host now has a Clemson cert, so same-origin is
+  // HTTPS too — and IT can review the page on the direct host. (2026-06-24)
   const slug = process.env.PROTOTYPE_SLUG ?? '';
-  const funnelOrigin = process.env.TAILSCALE_FUNNEL_ORIGIN ?? '';
-  const editHref = funnelOrigin && slug
-    ? `${funnelOrigin}/capture/${encodeURIComponent(code)}?slug=${encodeURIComponent(slug)}`
+  const editHref = slug
+    ? `/capture/${encodeURIComponent(code)}?slug=${encodeURIComponent(slug)}`
     : null;
 
   return (

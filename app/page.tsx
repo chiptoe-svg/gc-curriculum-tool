@@ -40,15 +40,17 @@ function CurriculumPathIcon({ className, ...rest }: SVGProps<SVGSVGElement>) {
  * path marker (a dotted, jagged line with a point at each end).
  *
  * Two link types per course:
- *   - View -> /view/[code] (HTTP, read-only, public)
- *   - Edit -> https://<funnel>/capture/[code]?slug=<PROTOTYPE_SLUG> (Basic Auth)
+ *   - View -> /view/[code] (read-only, public)
+ *   - Edit -> /capture/[code]?slug=<PROTOTYPE_SLUG> (Basic Auth)
  *
- * "+ Add a course" links to the authenticated roster page on the funnel -
- * the public surface never hosts a write path.
+ * Faculty links (Edit, "+ Add a course", Ask) are DIRECT / same-origin — they
+ * follow whatever host the viewer is on (the cert'd Clemson host for direct/IT
+ * access, the Funnel via the Funnel; both HTTPS). They were hardcoded to the
+ * Funnel origin before the direct host had a cert (2026-06-24). The public
+ * surface still never hosts a write path — these go to Basic-Auth'd routes.
  */
 export default async function HomePage() {
   const slug = process.env.PROTOTYPE_SLUG ?? '';
-  const funnelOrigin = process.env.TAILSCALE_FUNNEL_ORIGIN ?? '';
 
   const rows = await listCoursesWithStatus();
   const pairedCodeRows = await listPairedCodesForCourses([...new Set(rows.map(r => r.code))]);
@@ -60,18 +62,19 @@ export default async function HomePage() {
   }
   const groups = groupByCategory(rows.filter(r => isProgramVisible({ scope: r.scope, status: r.courseStatus })));
 
-  // Dedicated add-a-course page: focuses on code / title / catalog URL → straight
-  // into CourseCapture.  Uses the funnel origin (HTTPS, Basic Auth) because it
-  // is a write path; same slug forwarding mechanism as other faculty links here.
-  const addCourseHref = funnelOrigin && slug
-    ? `${funnelOrigin}/courses/new?slug=${encodeURIComponent(slug)}`
+  // Dedicated add-a-course page: code / title / catalog URL → straight into
+  // CourseCapture. DIRECT / same-origin link (not the Funnel) — follows whatever
+  // host the viewer is on (cert'd Clemson host or Funnel; both HTTPS + Basic
+  // Auth). Same slug forwarding as the other faculty links here. (2026-06-24)
+  const addCourseHref = slug
+    ? `/courses/new?slug=${encodeURIComponent(slug)}`
     : null;
 
   // Curriculum adviser chat (/ask — streaming Q&A over the wiki). Faculty
-  // surface (Basic Auth + slug on the funnel), same forwarding pattern as
-  // the Edit / Add links above.
-  const askHref = funnelOrigin && slug
-    ? `${funnelOrigin}/ask?slug=${encodeURIComponent(slug)}`
+  // surface (Basic Auth + slug); same direct same-origin pattern as the
+  // Edit / Add links.
+  const askHref = slug
+    ? `/ask?slug=${encodeURIComponent(slug)}`
     : null;
 
   return (
@@ -128,8 +131,8 @@ export default async function HomePage() {
               </h2>
               <ul className="divide-y border-y">
                 {catRows.map((row) => {
-                  const editHref = funnelOrigin && slug
-                    ? `${funnelOrigin}/capture/${encodeURIComponent(row.code)}?slug=${encodeURIComponent(slug)}`
+                  const editHref = slug
+                    ? `/capture/${encodeURIComponent(row.code)}?slug=${encodeURIComponent(slug)}`
                     : null;
                   // Drop the special-topics letter suffix for display (GC 4900ap → GC 4900):
                   // the title disambiguates the section, so the bare number reads cleaner here.
