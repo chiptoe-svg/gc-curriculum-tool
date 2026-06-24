@@ -168,7 +168,10 @@ class DoclingExtractor implements MaterialExtractor {
       const vlmConfig = {
         model_spec: {
           name: visionModel('docPicture').model,
-          default_repo_id: 'Qwen/Qwen3-VL',
+          // Informational only on the engine_type:'api' path (Docling calls the
+          // remote URL, it doesn't load the model) — kept aligned with the gemma
+          // captioner for clarity; the actual model is `name` / params.model.
+          default_repo_id: 'mlx-community/gemma-4-12B-it-qat-4bit',
           prompt: process.env.DOCLING_VLM_PROMPT
             ?? 'Describe this image in 1-2 sentences. Focus on content and concepts (chart type, axes, key values, diagram structure, etc.). Reply with only the description — no preamble.',
           response_format: 'plaintext',
