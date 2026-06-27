@@ -168,7 +168,10 @@ function buildProvider(modelOverride: string | undefined): AIProvider {
     );
   }
   if (which === 'local') {
-    const model = modelOverride ?? process.env.LOCAL_MODEL?.trim() ?? 'gemma-4-31B-it-MLX-4bit';
+    // Default to a STANDARDIZED resident omlx model (gemma-4-26B-A4B, one of the
+    // three we keep loaded) so the dormant AI_PROVIDER=local path can never pull
+    // a 4th model and force a swap. (Was gemma-4-31B-it-MLX-4bit. 2026-06-27)
+    const model = modelOverride ?? process.env.LOCAL_MODEL?.trim() ?? 'gemma-4-26B-A4B-it-QAT-MLX-4bit';
     const baseURL = process.env.LOCAL_BASE_URL?.trim() || 'http://localhost:8000/v1';
     const apiKey = process.env.LOCAL_API_KEY?.trim();
     if (!apiKey) throw new Error('LOCAL_API_KEY not set');
