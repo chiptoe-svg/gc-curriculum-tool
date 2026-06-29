@@ -126,15 +126,18 @@ export default async function ViewCoursePage({ params }: Props) {
   // to know or type it. The slug is a deeper-layer access gate alongside
   // Basic Auth; PROTOTYPE_SLUG is the canonical source.
   //
-  // DIRECT / same-origin link (NOT the Tailscale Funnel): the Edit link now
-  // resolves to whatever host the viewer is on — the cert'd Clemson host
-  // (gcworkflow.clemson.edu) when viewed directly, the Funnel when viewed via
-  // the Funnel. It was previously hardcoded to TAILSCALE_FUNNEL_ORIGIN to force
-  // HTTPS for the mic; the direct host now has a Clemson cert, so same-origin is
-  // HTTPS too — and IT can review the page on the direct host. (2026-06-24)
+  // The Edit link points at CAPTURE_ORIGIN — the HTTPS origin that serves the
+  // authenticated app under a trusted cert (https://gc-alumni.com:8443, the
+  // local Caddy + Let's Encrypt path). This forces the capture interview onto a
+  // secure context so the in-browser mic (getUserMedia) works no matter how the
+  // viewer reached this public catalog — including plain HTTP on the Clemson LAN,
+  // where a same-origin Edit link would land on http:// and the mic would be
+  // blocked. Unset → same-origin/relative (dev, or when the catalog is already
+  // HTTPS). Was same-origin (2026-06-24); switched to CAPTURE_ORIGIN 2026-06-29.
   const slug = process.env.PROTOTYPE_SLUG ?? '';
+  const captureOrigin = process.env.CAPTURE_ORIGIN?.trim() ?? '';
   const editHref = slug
-    ? `/capture/${encodeURIComponent(code)}?slug=${encodeURIComponent(slug)}`
+    ? `${captureOrigin}/capture/${encodeURIComponent(code)}?slug=${encodeURIComponent(slug)}`
     : null;
 
   return (

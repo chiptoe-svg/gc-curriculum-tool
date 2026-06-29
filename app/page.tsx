@@ -43,14 +43,18 @@ function CurriculumPathIcon({ className, ...rest }: SVGProps<SVGSVGElement>) {
  *   - View -> /view/[code] (read-only, public)
  *   - Edit -> /capture/[code]?slug=<PROTOTYPE_SLUG> (Basic Auth)
  *
- * Faculty links (Edit, "+ Add a course", Ask) are DIRECT / same-origin — they
- * follow whatever host the viewer is on (the cert'd Clemson host for direct/IT
- * access, the Funnel via the Funnel; both HTTPS). They were hardcoded to the
- * Funnel origin before the direct host had a cert (2026-06-24). The public
- * surface still never hosts a write path — these go to Basic-Auth'd routes.
+ * The capture-flow faculty links (Edit, "+ Add a course") point at CAPTURE_ORIGIN
+ * — the HTTPS origin serving the authenticated app under a trusted cert
+ * (https://gc-alumni.com:8443) — so the in-browser mic works in the capture
+ * interview even when this public catalog is viewed over plain HTTP on the LAN.
+ * Unset → same-origin. The Ask link stays same-origin (chat, not the mic flow).
+ * The public surface still never hosts a write path — these go to Basic-Auth'd
+ * routes. (Was all same-origin 2026-06-24; capture links → CAPTURE_ORIGIN 2026-06-29.)
  */
 export default async function HomePage() {
   const slug = process.env.PROTOTYPE_SLUG ?? '';
+  // HTTPS origin for the authenticated capture flow (mic). See file header.
+  const captureOrigin = process.env.CAPTURE_ORIGIN?.trim() ?? '';
 
   const rows = await listCoursesWithStatus();
   const pairedCodeRows = await listPairedCodesForCourses([...new Set(rows.map(r => r.code))]);
@@ -63,16 +67,15 @@ export default async function HomePage() {
   const groups = groupByCategory(rows.filter(r => isProgramVisible({ scope: r.scope, status: r.courseStatus })));
 
   // Dedicated add-a-course page: code / title / catalog URL → straight into
-  // CourseCapture. DIRECT / same-origin link (not the Funnel) — follows whatever
-  // host the viewer is on (cert'd Clemson host or Funnel; both HTTPS + Basic
-  // Auth). Same slug forwarding as the other faculty links here. (2026-06-24)
+  // CourseCapture (which uses the mic), so this link also targets CAPTURE_ORIGIN
+  // (the HTTPS origin) — same reason as Edit. Same slug forwarding. (2026-06-29)
   const addCourseHref = slug
-    ? `/courses/new?slug=${encodeURIComponent(slug)}`
+    ? `${captureOrigin}/courses/new?slug=${encodeURIComponent(slug)}`
     : null;
 
   // Curriculum adviser chat (/ask — streaming Q&A over the wiki). Faculty
-  // surface (Basic Auth + slug); same direct same-origin pattern as the
-  // Edit / Add links.
+  // surface (Basic Auth + slug). Kept SAME-ORIGIN (not CAPTURE_ORIGIN): it's a
+  // text chat, not the mic capture flow, so it doesn't need the HTTPS origin.
   const askHref = slug
     ? `/ask?slug=${encodeURIComponent(slug)}`
     : null;
@@ -132,7 +135,7 @@ export default async function HomePage() {
               <ul className="divide-y border-y">
                 {catRows.map((row) => {
                   const editHref = slug
-                    ? `/capture/${encodeURIComponent(row.code)}?slug=${encodeURIComponent(slug)}`
+                    ? `${captureOrigin}/capture/${encodeURIComponent(row.code)}?slug=${encodeURIComponent(slug)}`
                     : null;
                   // Drop the special-topics letter suffix for display (GC 4900ap → GC 4900):
                   // the title disambiguates the section, so the bare number reads cleaner here.
