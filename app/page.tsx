@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { SVGProps } from 'react';
+import { CaptureLink } from '@/components/CaptureLink';
 import { listCoursesWithStatus, type CaptureStatus } from '@/lib/db/capture-status-queries';
 import { groupByCategory } from '@/lib/courses/group-by-category';
 import { CATEGORY_LABELS } from '@/lib/db/course-category-seed';
@@ -43,18 +44,17 @@ function CurriculumPathIcon({ className, ...rest }: SVGProps<SVGSVGElement>) {
  *   - View -> /view/[code] (read-only, public)
  *   - Edit -> /capture/[code]?slug=<PROTOTYPE_SLUG> (Basic Auth)
  *
- * The capture-flow faculty links (Edit, "+ Add a course") point at CAPTURE_ORIGIN
- * — the HTTPS origin serving the authenticated app under a trusted cert
- * (https://gc-alumni.com:8443) — so the in-browser mic works in the capture
- * interview even when this public catalog is viewed over plain HTTP on the LAN.
- * Unset → same-origin. The Ask link stays same-origin (chat, not the mic flow).
- * The public surface still never hosts a write path — these go to Basic-Auth'd
- * routes. (Was all same-origin 2026-06-24; capture links → CAPTURE_ORIGIN 2026-06-29.)
+ * The capture-flow faculty links (Edit, "+ Add a course") are <CaptureLink>s:
+ * they prefer the voice-capable HTTPS origin (NEXT_PUBLIC_VOICE_ORIGIN, the
+ * Funnel) and fall back to a reliable direct origin (NEXT_PUBLIC_FALLBACK_ORIGIN
+ * — on-campus HTTP, typed) when the voice origin isn't reachable, giving
+ * on-campus faculty automatic "funnel-until-it-isn't, then typed" behavior. The
+ * Ask link stays a plain same-origin <a> (chat, no mic). The public surface
+ * still never hosts a write path — these go to Basic-Auth'd routes. (Superseded
+ * the sinkholed CAPTURE_ORIGIN / gc-alumni.com approach 2026-07-02.)
  */
 export default async function HomePage() {
   const slug = process.env.PROTOTYPE_SLUG ?? '';
-  // HTTPS origin for the authenticated capture flow (mic). See file header.
-  const captureOrigin = process.env.CAPTURE_ORIGIN?.trim() ?? '';
 
   const rows = await listCoursesWithStatus();
   const pairedCodeRows = await listPairedCodesForCourses([...new Set(rows.map(r => r.code))]);
@@ -66,16 +66,16 @@ export default async function HomePage() {
   }
   const groups = groupByCategory(rows.filter(r => isProgramVisible({ scope: r.scope, status: r.courseStatus })));
 
-  // Dedicated add-a-course page: code / title / catalog URL → straight into
-  // CourseCapture (which uses the mic), so this link also targets CAPTURE_ORIGIN
-  // (the HTTPS origin) — same reason as Edit. Same slug forwarding. (2026-06-29)
+  // Dedicated add-a-course page → straight into CourseCapture (which uses the
+  // mic), so it's a capture-flow link (<CaptureLink>): voice origin with a
+  // reliable direct fallback. Path only; CaptureLink resolves the origin.
   const addCourseHref = slug
-    ? `${captureOrigin}/courses/new?slug=${encodeURIComponent(slug)}`
+    ? `/courses/new?slug=${encodeURIComponent(slug)}`
     : null;
 
-  // Curriculum adviser chat (/ask — streaming Q&A over the wiki). Faculty
-  // surface (Basic Auth + slug). Kept SAME-ORIGIN (not CAPTURE_ORIGIN): it's a
-  // text chat, not the mic capture flow, so it doesn't need the HTTPS origin.
+  // Curriculum adviser chat (/ask — streaming Q&A). Faculty surface (Basic Auth
+  // + slug). Plain same-origin <a> (NOT a CaptureLink): text chat, no mic, so it
+  // doesn't need the voice origin / probe.
   const askHref = slug
     ? `/ask?slug=${encodeURIComponent(slug)}`
     : null;
@@ -116,13 +116,13 @@ export default async function HomePage() {
             curriculum should build toward the careers it aims to prepare students for.
           </p>
           {addCourseHref && (
-            <a
-              href={addCourseHref}
+            <CaptureLink
+              path={addCourseHref}
               className="shrink-0 rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
               title="Add a course (requires login)"
             >
               + Add a course
-            </a>
+            </CaptureLink>
           )}
         </div>
 
@@ -135,7 +135,7 @@ export default async function HomePage() {
               <ul className="divide-y border-y">
                 {catRows.map((row) => {
                   const editHref = slug
-                    ? `${captureOrigin}/capture/${encodeURIComponent(row.code)}?slug=${encodeURIComponent(slug)}`
+                    ? `/capture/${encodeURIComponent(row.code)}?slug=${encodeURIComponent(slug)}`
                     : null;
                   // Drop the special-topics letter suffix for display (GC 4900ap → GC 4900):
                   // the title disambiguates the section, so the bare number reads cleaner here.
@@ -183,13 +183,13 @@ export default async function HomePage() {
                           View →
                         </Link>
                         {editHref && (
-                          <a
-                            href={editHref}
+                          <CaptureLink
+                            path={editHref}
                             className="text-sm text-muted-foreground hover:text-foreground"
                             title="Faculty edit (requires login)"
                           >
                             Edit ↗
-                          </a>
+                          </CaptureLink>
                         )}
                       </span>
                     </li>

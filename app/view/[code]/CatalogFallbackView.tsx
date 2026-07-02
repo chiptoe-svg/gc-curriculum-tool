@@ -10,6 +10,8 @@
  * landing's View link is uniform regardless of capture state.
  */
 
+import { CaptureLink } from '@/components/CaptureLink';
+
 interface CourseRow {
   code: string;
   title: string;
@@ -22,14 +24,14 @@ interface CourseRow {
 
 interface Props {
   course: CourseRow;
-  editHref: string | null;
+  editPath: string | null;
   /** Where the catalog content came from. 'sheet-live' = fetched from the
    * Google Sheet at request time (default for uncaptured courses);
    * 'db' = the snapshotted seed in the courses table (Sheet unreachable). */
   catalogSource?: 'sheet-live' | 'db';
 }
 
-export function CatalogFallbackView({ course, editHref, catalogSource = 'db' }: Props) {
+export function CatalogFallbackView({ course, editPath, catalogSource = 'db' }: Props) {
   const hasObjectives = course.learningObjectives.length > 0;
   const hasProjects = course.majorProjects.length > 0;
   const hasPrereqs = course.prerequisites.trim().length > 0;
@@ -53,12 +55,12 @@ export function CatalogFallbackView({ course, editHref, catalogSource = 'db' }: 
             </span>
           )}
           {' '}and the live syllabus.
-          {editHref && (
+          {editPath && (
             <>
               {' '}Faculty can start a capture via the{' '}
-              <a href={editHref} className="font-medium underline-offset-2 hover:underline">
+              <CaptureLink path={editPath} className="font-medium underline-offset-2 hover:underline">
                 Edit
-              </a>
+              </CaptureLink>
               {' '}button above.
             </>
           )}

@@ -6,6 +6,7 @@ import { eq, desc, and, isNull } from 'drizzle-orm';
 import { courses, courseCaptureSnapshots } from '@/lib/db/schema';
 import { CapturedView } from './CapturedView';
 import { CatalogFallbackView } from './CatalogFallbackView';
+import { CaptureLink } from '@/components/CaptureLink';
 import { fetchLiveCourseFromSheet } from '@/lib/sheets/fetchLiveCourse';
 import { redactPiiDeep } from '@/lib/capture/redact-pii';
 import { headers } from 'next/headers';
@@ -32,11 +33,11 @@ interface Props {
  *     learning objectives, major projects, prereqs, syllabus link from
  *     the courses table, with a prominent "not yet audited" banner.
  *
- * Edit button (header + catalog fallback) is a DIRECT, same-origin link to the
- * editor — it follows whatever host the viewer is on (the cert'd Clemson host
- * for direct/IT access, the Funnel via the Funnel). Both are HTTPS, so Basic
- * Auth gates the editor and the mic works natively either way. (Was hardcoded
- * to the Funnel origin before the direct host had a cert — 2026-06-24.)
+ * Edit button (header + catalog fallback) is a <CaptureLink>: it prefers the
+ * voice-capable HTTPS origin (the Funnel) and falls back to a reliable direct
+ * origin (on-campus HTTP, typed) when the voice origin isn't reachable — see
+ * components/CaptureLink.tsx. (Superseded the sinkholed gc-alumni.com approach
+ * 2026-07-02; the mic still needs a secure context, hence the voice origin.)
  */
 export default async function ViewCoursePage({ params }: Props) {
   const { code: rawCode } = await params;
@@ -126,18 +127,15 @@ export default async function ViewCoursePage({ params }: Props) {
   // to know or type it. The slug is a deeper-layer access gate alongside
   // Basic Auth; PROTOTYPE_SLUG is the canonical source.
   //
-  // The Edit link points at CAPTURE_ORIGIN — the HTTPS origin that serves the
-  // authenticated app under a trusted cert (https://gc-alumni.com:8443, the
-  // local Caddy + Let's Encrypt path). This forces the capture interview onto a
-  // secure context so the in-browser mic (getUserMedia) works no matter how the
-  // viewer reached this public catalog — including plain HTTP on the Clemson LAN,
-  // where a same-origin Edit link would land on http:// and the mic would be
-  // blocked. Unset → same-origin/relative (dev, or when the catalog is already
-  // HTTPS). Was same-origin (2026-06-24); switched to CAPTURE_ORIGIN 2026-06-29.
+  // The Edit link is a capture-flow link (<CaptureLink>): it prefers the
+  // voice-capable HTTPS origin (NEXT_PUBLIC_VOICE_ORIGIN, the Funnel) and falls
+  // back to the reliable direct origin (NEXT_PUBLIC_FALLBACK_ORIGIN — on-campus
+  // HTTP, typed) when the voice origin isn't reachable. Path only here;
+  // CaptureLink resolves the origin + runs the reachability probe. (Replaced the
+  // sinkholed CAPTURE_ORIGIN / gc-alumni.com approach 2026-07-02.)
   const slug = process.env.PROTOTYPE_SLUG ?? '';
-  const captureOrigin = process.env.CAPTURE_ORIGIN?.trim() ?? '';
-  const editHref = slug
-    ? `${captureOrigin}/capture/${encodeURIComponent(code)}?slug=${encodeURIComponent(slug)}`
+  const editPath = slug
+    ? `/capture/${encodeURIComponent(code)}?slug=${encodeURIComponent(slug)}`
     : null;
 
   return (
@@ -194,14 +192,14 @@ export default async function ViewCoursePage({ params }: Props) {
               </a>
             )}
             {snapshot && <PrintButton />}
-            {editHref && (
-              <a
-                href={editHref}
+            {editPath && (
+              <CaptureLink
+                path={editPath}
                 className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
                 title="Faculty edit (requires login)"
               >
                 Edit →
-              </a>
+              </CaptureLink>
             )}
           </div>
         </div>
@@ -213,7 +211,7 @@ export default async function ViewCoursePage({ params }: Props) {
           // (Faculty/authenticated views render the un-redacted profile.)
           <CapturedView profile={redactPiiDeep(snapshot.profile)} capturedAt={snapshot.createdAt} />
         ) : (
-          <CatalogFallbackView course={fallbackCourse} editHref={editHref} catalogSource={catalogSource} />
+          <CatalogFallbackView course={fallbackCourse} editPath={editPath} catalogSource={catalogSource} />
         )}
       </main>
     </div>
