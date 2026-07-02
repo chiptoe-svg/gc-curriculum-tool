@@ -84,12 +84,71 @@ export class LocalProvider implements AIProvider {
     const maxPages = args.maxPages ?? 40;
     const txBudget = visionModel('docTranscribe').budget;
 
+    // Optional OFFLOAD: when TRANSCRIBE_OFFLOAD_BASE_URL + _MODEL are set, send
+    // page OCR to that OpenAI-compatible endpoint (e.g. a DGX Spark serving
+    // Gemma-4-26B-A4B-NVFP4 over SGLang) and fall back to the LOCAL omlx model on
+    // any failure — "offload when the DGX is up, local machine as the safety net."
+    // The offload request is STANDARD OpenAI: no omlx-only vision_soft_tokens_per_image
+    // or chat_template_kwargs (SGLang rejects/ignores them); repetition_penalty
+    // stays (standard sampling param; curbs the same gemma OCR decode loop).
+    const offloadBaseURL = process.env.TRANSCRIBE_OFFLOAD_BASE_URL?.trim();
+    const offloadModel = process.env.TRANSCRIBE_OFFLOAD_MODEL?.trim();
+    const offloadClient = offloadBaseURL && offloadModel
+      ? new OpenAI({ baseURL: offloadBaseURL, apiKey: process.env.TRANSCRIBE_OFFLOAD_API_KEY?.trim() || 'offload' })
+      : null;
+    // Once a page fails on the offload, skip it for the rest of THIS document
+    // (avoid paying a failed-connect timeout on every remaining page).
+    let offloadDown = false;
+
     const rendered = await renderToImages(args.fileBytes, args.mimeType, 'document');
     if (rendered.length === 0) {
       throw new Error('LocalProvider.transcribeDocument: renderToImages produced no pages');
     }
     const truncated = rendered.length > maxPages;
     const pages = truncated ? rendered.slice(0, maxPages) : rendered;
+
+    const imageMessages = (dataUri: string) => [
+      { role: 'user' as const, content: [
+        { type: 'text' as const, text: PROMPT },
+        { type: 'image_url' as const, image_url: { url: dataUri } },
+      ] },
+    ];
+    const pickContent = (resp: unknown): string =>
+      ((resp as { choices?: Array<{ message?: { content?: string } }> })
+        .choices?.[0]?.message?.content ?? '').trim();
+
+    const transcribePage = async (dataUri: string): Promise<string> => {
+      // Offload (DGX) first, if configured and not marked down this run.
+      if (offloadClient && offloadModel && !offloadDown) {
+        try {
+          const resp = await offloadClient.chat.completions.create({
+            model: offloadModel,
+            messages: imageMessages(dataUri),
+            temperature: 0,
+            max_tokens: 4096,
+            repetition_penalty: 1.3,
+          } as Parameters<typeof this.client.chat.completions.create>[0]);
+          return pickContent(resp);
+        } catch (e) {
+          offloadDown = true;
+          console.warn('[transcribeDocument] offload failed, falling back to local omlx:', (e as Error).message);
+        }
+      }
+      // Local omlx path: the resolution knob + enable_thinking are omlx-specific
+      // (docTranscribe = gemma-26B-A4B @ 1120 — the budget raises effective
+      // resolution for fine print; the penalty stops gemma's greedy-decode loop
+      // on dense OCR; enable_thinking:false keeps Qwen from emitting a trace).
+      const resp = await this.client.chat.completions.create({
+        model: this.model,
+        messages: imageMessages(dataUri),
+        temperature: 0,
+        max_tokens: 4096,
+        chat_template_kwargs: { enable_thinking: false },
+        ...(txBudget ? { vision_soft_tokens_per_image: txBudget } : {}),
+        repetition_penalty: 1.3,
+      } as Parameters<typeof this.client.chat.completions.create>[0]);
+      return pickContent(resp);
+    };
 
     const CONCURRENCY = 2;
     const texts: string[] = new Array(pages.length).fill('');
@@ -98,31 +157,7 @@ export class LocalProvider implements AIProvider {
       while (next < pages.length) {
         const i = next++;
         const dataUri = `data:image/png;base64,${pages[i]!.toString('base64')}`;
-        const resp = await this.client.chat.completions.create({
-          model: this.model,
-          messages: [
-            {
-              role: 'user',
-              content: [
-                { type: 'text', text: PROMPT },
-                { type: 'image_url', image_url: { url: dataUri } },
-              ],
-            },
-          ],
-          temperature: 0,
-          max_tokens: 4096,
-          // omlx-specific: pass through to the chat template so Qwen3.6 skips
-          // its reasoning trace (keeps `content` to the raw transcription).
-          chat_template_kwargs: { enable_thinking: false },
-          // Resolution knob + repetition penalty for the gemma transcription path
-          // (docTranscribe = gemma-26B-A4B @ 1120, the bench winner): the budget
-          // raises effective resolution for fine print; the penalty stops gemma's
-          // greedy-decode loop on dense OCR. Both ignored by non-gemma models.
-          ...(txBudget ? { vision_soft_tokens_per_image: txBudget } : {}),
-          repetition_penalty: 1.3,
-        } as Parameters<typeof this.client.chat.completions.create>[0]);
-        texts[i] = ((resp as { choices?: Array<{ message?: { content?: string } }> })
-          .choices?.[0]?.message?.content ?? '').trim();
+        texts[i] = await transcribePage(dataUri);
       }
     };
     await Promise.all(Array.from({ length: Math.min(CONCURRENCY, pages.length) }, worker));
