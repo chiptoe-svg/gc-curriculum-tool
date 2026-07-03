@@ -19,7 +19,7 @@ import { tenantForCourse } from '@/lib/capture/vector-store';
 import type { VectorStore, ChunkVectorRecord, SectionRecord } from '@/lib/capture/vector-store';
 import type { Tier } from '@/lib/capture/material-tier';
 import { renderToImages } from '@/lib/capture/render-pages';
-import { describeSlide } from '@/lib/capture/slide-vision';
+import { describeSlides } from '@/lib/capture/slide-vision';
 
 export interface FinalizeExtractionInput {
   id: string;
@@ -242,7 +242,9 @@ async function runV2Pipeline(input: FinalizeExtractionInput): Promise<void> {
         : [];
 
       if (images.length > 0) {
-        const allNotes = await mapWithConcurrency(images, 4, (img) => describeSlide(img));
+        // Batch describe: DGX offload (high concurrency) + local fallback — the
+        // "DGX = all vision" path. Concurrency + fallback handled inside describeSlides.
+        const allNotes = await describeSlides(images);
         // Keep notes with original index for stable IDs before filtering.
         const substantive = allNotes
           .map((note, i) => ({ note, i }))

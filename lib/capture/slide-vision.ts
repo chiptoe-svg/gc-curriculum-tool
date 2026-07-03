@@ -8,6 +8,7 @@
  */
 
 import { visionModel } from '@/lib/ai/vision-models';
+import { visionOffloadConfig, twoPhaseOffload } from '@/lib/ai/vision-offload';
 
 export interface SlideNote {
   topic: string;
@@ -48,77 +49,117 @@ function coerce(raw: unknown): SlideNote {
   };
 }
 
-export async function describeSlide(png: Buffer): Promise<SlideNote> {
-  const baseUrl = (process.env.LOCAL_BASE_URL ?? 'http://localhost:8000/v1').replace(/\/$/, '');
-  const apiKey = process.env.LOCAL_API_KEY ?? '';
-  // Model + soft-token budget from the consolidated vision registry. Default
-  // gemma-4-12B-it-qat-4bit @ 560 (describe-bench winner) — NOT the old E4B-8bit,
-  // whose broken-for-vision MLX conversion silently dropped the image (slide
-  // vision was a no-op). The 560 budget needs the patched omlx (resolution knob).
+interface SlideBackend {
+  baseUrl: string;
+  apiKey: string;
+  model: string;
+  budget?: number;
+  offload: boolean;
+}
+
+/** Local omlx backend (gemma-4-12B @ knob 560) from the vision registry + env. */
+function localSlideBackend(): SlideBackend {
   const { model, budget } = visionModel('slideNote');
-
-  const dataUri = `data:image/png;base64,${png.toString('base64')}`;
-
-  const body = JSON.stringify({
+  return {
+    baseUrl: (process.env.LOCAL_BASE_URL ?? 'http://localhost:8000/v1').replace(/\/$/, ''),
+    apiKey: process.env.LOCAL_API_KEY ?? '',
     model,
+    budget,
+    offload: false,
+  };
+}
+
+/**
+ * One slide against one backend. THROWS on transport failure (non-OK status,
+ * timeout, network) so a batch orchestrator can fall back; returns a note
+ * (possibly SAFE_DEFAULT) on any 200 response. The omlx resolution knob is sent
+ * ONLY to the local backend — SGLang (the DGX) doesn't know it.
+ */
+async function describeSlideOn(png: Buffer, be: SlideBackend): Promise<SlideNote> {
+  const dataUri = `data:image/png;base64,${png.toString('base64')}`;
+  const body = JSON.stringify({
+    model: be.model,
     messages: [
-      {
-        role: 'user',
-        content: [
-          { type: 'text', text: INSTRUCTION },
-          { type: 'image_url', image_url: { url: dataUri } },
-        ],
-      },
+      { role: 'user', content: [
+        { type: 'text', text: INSTRUCTION },
+        { type: 'image_url', image_url: { url: dataUri } },
+      ] },
     ],
     response_format: { type: 'json_object' },
     max_tokens: 300,
     temperature: 0.2,
-    // Resolution knob (patched omlx) + repetition penalty — matches the bench
-    // config; the penalty prevents gemma's greedy-decode loop on dense slides,
-    // the budget raises effective resolution. Both ignored by non-gemma models.
-    ...(budget ? { vision_soft_tokens_per_image: budget } : {}),
+    ...(!be.offload && be.budget ? { vision_soft_tokens_per_image: be.budget } : {}),
     repetition_penalty: 1.3,
   });
 
+  const res = await fetch(`${be.baseUrl}/chat/completions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${be.apiKey}` },
+    body,
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+  });
+  if (!res.ok) {
+    throw new Error(`slide-vision ${be.offload ? 'offload' : 'local'} non-OK: ${res.status} ${res.statusText}`);
+  }
+
+  let outer: unknown;
   try {
-    const res = await fetch(`${baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body,
-      signal: AbortSignal.timeout(TIMEOUT_MS),
-    });
+    outer = await res.json();
+  } catch {
+    console.warn('[slide-vision] response body is not valid JSON');
+    return { ...SAFE_DEFAULT };
+  }
+  const content =
+    (outer as { choices?: Array<{ message?: { content?: string } }> })?.choices?.[0]?.message?.content ?? '';
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(content);
+  } catch {
+    console.warn('[slide-vision] message.content is not valid JSON:', content.slice(0, 100));
+    return { ...SAFE_DEFAULT };
+  }
+  return coerce(parsed);
+}
 
-    if (!res.ok) {
-      console.warn(`[slide-vision] non-OK response: ${res.status} ${res.statusText}`);
-      return { ...SAFE_DEFAULT };
-    }
-
-    let outer: unknown;
-    try {
-      outer = await res.json();
-    } catch {
-      console.warn('[slide-vision] response body is not valid JSON');
-      return { ...SAFE_DEFAULT };
-    }
-
-    const content =
-      (outer as { choices?: Array<{ message?: { content?: string } }> })
-        ?.choices?.[0]?.message?.content ?? '';
-
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(content);
-    } catch {
-      console.warn('[slide-vision] message.content is not valid JSON:', content.slice(0, 100));
-      return { ...SAFE_DEFAULT };
-    }
-
-    return coerce(parsed);
+/**
+ * A single slide — LOCAL only, fully graceful (never throws; SAFE_DEFAULT on any
+ * failure). Kept for single-slide callers; batch ingestion uses describeSlides.
+ */
+export async function describeSlide(png: Buffer): Promise<SlideNote> {
+  try {
+    return await describeSlideOn(png, localSlideBackend());
   } catch (err) {
     console.warn('[slide-vision] fetch failed:', err instanceof Error ? err.message : err);
     return { ...SAFE_DEFAULT };
   }
+}
+
+/**
+ * A batch of slides — OFFLOAD to the DGX (VISION_OFFLOAD_*) at high concurrency
+ * with LOCAL fallback at low concurrency (two-phase; see vision-offload.ts). The
+ * "DGX = all vision" path: the DGX 26B is higher-quality and much faster under
+ * load than the local dense 12B for slide description. Each slide is graceful
+ * (SAFE_DEFAULT on failure), preserving skip-uninformative-slides behavior.
+ */
+export async function describeSlides(pngs: Buffer[]): Promise<SlideNote[]> {
+  const local = localSlideBackend();
+  const off = visionOffloadConfig();
+  const offBackend: SlideBackend | null = off
+    ? { baseUrl: off.baseURL.replace(/\/$/, ''), apiKey: off.apiKey, model: off.model, offload: true }
+    : null;
+  return twoPhaseOffload<SlideNote>(pngs.length, {
+    offload: offBackend ? (i) => describeSlideOn(pngs[i]!, offBackend) : null,
+    local: async (i) => {
+      try {
+        return await describeSlideOn(pngs[i]!, local);
+      } catch (err) {
+        console.warn('[slide-vision] local fallback failed:', err instanceof Error ? err.message : err);
+        return { ...SAFE_DEFAULT };
+      }
+    },
+    offloadConcurrency: off?.concurrency ?? 12,
+    localConcurrency: 4, // slides are lighter than OCR; matches the prior mapWithConcurrency(4)
+    onFallback: (n, total, err) =>
+      console.warn(`[slide-vision] offload: ${n}/${total} slide(s) fell back to local (first error: ${err})`),
+  });
 }

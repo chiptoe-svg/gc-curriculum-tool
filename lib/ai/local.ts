@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import type { AIProvider, CompletionTelemetry, TranscribeDocumentArgs, TranscribeDocumentResult } from './provider';
 import { renderToImages } from '@/lib/capture/render-pages';
 import { visionModel } from './vision-models';
+import { visionOffloadConfig, twoPhaseOffload } from './vision-offload';
 // v6 Vercel AI SDK: structured output with tools uses generateText + Output.object, not generateObject.
 // tool() in v6 uses `inputSchema` (not `parameters`), matching our ToolDefinition shape directly.
 // jsonSchema() wraps a plain JSON Schema object into the SDK's Schema type for Output.object.
@@ -84,31 +85,15 @@ export class LocalProvider implements AIProvider {
     const maxPages = args.maxPages ?? 40;
     const txBudget = visionModel('docTranscribe').budget;
 
-    // Optional OFFLOAD: when TRANSCRIBE_OFFLOAD_BASE_URL + _MODEL are set, page OCR
-    // runs against that OpenAI-compatible endpoint (e.g. a DGX Spark serving
-    // Gemma-4-26B-A4B-NVFP4 over SGLang), FALLING BACK to the local omlx model for
-    // any page that errors. TWO-PHASE so each backend runs at its own safe
-    // concurrency: the DGX at HIGH concurrency (SGLang continuous-batches it — the
-    // volume win: ~100+ docs/min at conc 16 vs local's ~30/min ceiling), local at 2
-    // (memory-bound + shared). A DGX outage just drops the failed pages into phase 2
-    // at conc 2 — never 12 concurrent requests at the memory-bound box. The offload
-    // request is STANDARD OpenAI (no omlx-only vision_soft_tokens_per_image /
-    // chat_template_kwargs — SGLang rejects/ignores them; keeps repetition_penalty).
-    const offloadBaseURL = process.env.TRANSCRIBE_OFFLOAD_BASE_URL?.trim();
-    const offloadModel = process.env.TRANSCRIBE_OFFLOAD_MODEL?.trim();
-    const offloadClient = offloadBaseURL && offloadModel
-      ? new OpenAI({
-          baseURL: offloadBaseURL,
-          apiKey: process.env.TRANSCRIBE_OFFLOAD_API_KEY?.trim() || 'offload',
-          timeout: 120_000, // bound a hung endpoint
-          maxRetries: 0,    // fail fast to the local fallback, don't retry
-        })
+    // OFFLOAD to the DGX (VISION_OFFLOAD_*) with local omlx fallback, two-phase so
+    // each backend runs at its own safe concurrency — DGX high (SGLang batches it,
+    // the volume win), local at 2 (memory-bound + voice-shared). See vision-offload.ts.
+    // The offload request is STANDARD OpenAI (no omlx-only vision_soft_tokens_per_image
+    // / chat_template_kwargs — SGLang rejects/ignores them; keeps repetition_penalty).
+    const offload = visionOffloadConfig();
+    const offloadClient = offload
+      ? new OpenAI({ baseURL: offload.baseURL, apiKey: offload.apiKey, timeout: 120_000, maxRetries: 0 })
       : null;
-    const offloadConcurrency = Math.max(
-      1,
-      Number.parseInt(process.env.TRANSCRIBE_OFFLOAD_CONCURRENCY ?? '12', 10) || 12,
-    );
-    const LOCAL_CONCURRENCY = 2; // memory-bound + shared omlx
 
     const rendered = await renderToImages(args.fileBytes, args.mimeType, 'document');
     if (rendered.length === 0) {
@@ -117,75 +102,45 @@ export class LocalProvider implements AIProvider {
     const truncated = rendered.length > maxPages;
     const pages = truncated ? rendered.slice(0, maxPages) : rendered;
 
-    const dataUriFor = (i: number) => `data:image/png;base64,${pages[i]!.toString('base64')}`;
-    const imageMessages = (dataUri: string) => [
+    const imageMessages = (i: number) => [
       { role: 'user' as const, content: [
         { type: 'text' as const, text: PROMPT },
-        { type: 'image_url' as const, image_url: { url: dataUri } },
+        { type: 'image_url' as const, image_url: { url: `data:image/png;base64,${pages[i]!.toString('base64')}` } },
       ] },
     ];
     const pickContent = (resp: unknown): string =>
       ((resp as { choices?: Array<{ message?: { content?: string } }> })
         .choices?.[0]?.message?.content ?? '').trim();
 
-    // Bounded-concurrency pool over a list of page indices.
-    const runPool = async (indices: number[], limit: number, fn: (i: number) => Promise<void>): Promise<void> => {
-      let next = 0;
-      const worker = async (): Promise<void> => {
-        while (next < indices.length) {
-          await fn(indices[next++]!);
-        }
-      };
-      await Promise.all(Array.from({ length: Math.min(limit, indices.length) }, worker));
-    };
-
-    const texts: (string | null)[] = new Array(pages.length).fill(null);
-
-    // Phase 1 — OFFLOAD (DGX) at high concurrency. A page that errors is left null
-    // and picked up locally in phase 2.
-    if (offloadClient && offloadModel) {
-      let firstErr: string | null = null;
-      await runPool(pages.map((_, i) => i), offloadConcurrency, async (i) => {
-        try {
-          const resp = await offloadClient.chat.completions.create({
-            model: offloadModel,
-            messages: imageMessages(dataUriFor(i)),
+    const texts = await twoPhaseOffload<string>(pages.length, {
+      offload: offloadClient && offload
+        ? async (i) => pickContent(await offloadClient.chat.completions.create({
+            model: offload.model,
+            messages: imageMessages(i),
             temperature: 0,
             max_tokens: 4096,
             repetition_penalty: 1.3,
-          } as Parameters<typeof this.client.chat.completions.create>[0]);
-          texts[i] = pickContent(resp);
-        } catch (e) {
-          firstErr ??= (e as Error).message;
-        }
-      });
-      const fellBack = texts.filter((t) => t === null).length;
-      if (fellBack > 0) {
-        console.warn(`[transcribeDocument] offload: ${fellBack}/${pages.length} page(s) fell back to local (first error: ${firstErr})`);
-      }
-    }
+          } as Parameters<typeof this.client.chat.completions.create>[0]))
+        : null,
+      // Local omlx: the knob + enable_thinking are omlx-specific (raise effective
+      // resolution for fine print; stop gemma's greedy-decode loop; keep Qwen from
+      // emitting a reasoning trace).
+      local: async (i) => pickContent(await this.client.chat.completions.create({
+        model: this.model,
+        messages: imageMessages(i),
+        temperature: 0,
+        max_tokens: 4096,
+        chat_template_kwargs: { enable_thinking: false },
+        ...(txBudget ? { vision_soft_tokens_per_image: txBudget } : {}),
+        repetition_penalty: 1.3,
+      } as Parameters<typeof this.client.chat.completions.create>[0])),
+      offloadConcurrency: offload?.concurrency ?? 12,
+      localConcurrency: 2, // memory-bound + shared omlx
+      onFallback: (n, total, err) =>
+        console.warn(`[transcribeDocument] offload: ${n}/${total} page(s) fell back to local (first error: ${err})`),
+    });
 
-    // Phase 2 — LOCAL omlx at low concurrency for any page not done (all pages when
-    // no offload; stragglers otherwise). The knob + enable_thinking are omlx-specific
-    // (raise effective resolution for fine print; stop gemma's greedy-decode loop on
-    // dense OCR; keep Qwen from emitting a reasoning trace).
-    const remaining = texts.map((t, i) => (t === null ? i : -1)).filter((i) => i >= 0);
-    if (remaining.length > 0) {
-      await runPool(remaining, LOCAL_CONCURRENCY, async (i) => {
-        const resp = await this.client.chat.completions.create({
-          model: this.model,
-          messages: imageMessages(dataUriFor(i)),
-          temperature: 0,
-          max_tokens: 4096,
-          chat_template_kwargs: { enable_thinking: false },
-          ...(txBudget ? { vision_soft_tokens_per_image: txBudget } : {}),
-          repetition_penalty: 1.3,
-        } as Parameters<typeof this.client.chat.completions.create>[0]);
-        texts[i] = pickContent(resp);
-      });
-    }
-
-    return { text: texts.map((t) => t ?? '').join('\n\n').trim(), costUsdCents: 0, truncated };
+    return { text: texts.join('\n\n').trim(), costUsdCents: 0, truncated };
   }
 
   async completeWithTools<T>(args: {
