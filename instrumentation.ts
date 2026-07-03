@@ -18,4 +18,14 @@ export async function register() {
     // Never let a worker-arming failure block server startup.
     console.error('[instrumentation] failed to arm ingest worker:', err);
   }
+
+  try {
+    // Vision-offload canary — surfaces silent DGX-offload degradation (see the
+    // module header). Periodic /models probe + passive real-request signal.
+    const { startVisionOffloadHealthLoop } = await import('@/lib/ai/vision-offload-health');
+    startVisionOffloadHealthLoop();
+    console.log('[instrumentation] vision-offload canary armed on boot');
+  } catch (err) {
+    console.error('[instrumentation] failed to arm vision-offload canary:', err);
+  }
 }

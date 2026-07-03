@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { visionOffloadConfig } from '@/lib/ai/vision-offload';
+import { recordRealSuccess, recordRealFallback } from '@/lib/ai/vision-offload-health';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -56,11 +57,14 @@ export async function POST(req: NextRequest): Promise<Response> {
     try {
       const res = await forward(`${off.baseURL.replace(/\/$/, '')}/chat/completions`, off.apiKey, dgxBody);
       if (res.ok) {
+        recordRealSuccess();
         return new NextResponse(await res.text(), { status: 200, headers: { 'Content-Type': 'application/json' } });
       }
+      recordRealFallback(`caption DGX HTTP ${res.status}`);
       console.warn(`[vision-proxy] DGX non-OK ${res.status} at ${off.baseURL}; falling back to omlx`);
     } catch (e) {
       const cause = (e as { cause?: { code?: string; message?: string } }).cause;
+      recordRealFallback(`caption DGX error: ${cause?.code ?? (e as Error).message}`);
       console.warn(`[vision-proxy] DGX error at ${off.baseURL}; falling back to omlx:`, (e as Error).message, '| cause:', cause?.code ?? cause?.message ?? '');
     }
   }

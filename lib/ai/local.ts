@@ -3,6 +3,7 @@ import type { AIProvider, CompletionTelemetry, TranscribeDocumentArgs, Transcrib
 import { renderToImages } from '@/lib/capture/render-pages';
 import { visionModel } from './vision-models';
 import { visionOffloadConfig, twoPhaseOffload, shouldOffload } from './vision-offload';
+import { recordRealFallback } from './vision-offload-health';
 // v6 Vercel AI SDK: structured output with tools uses generateText + Output.object, not generateObject.
 // tool() in v6 uses `inputSchema` (not `parameters`), matching our ToolDefinition shape directly.
 // jsonSchema() wraps a plain JSON Schema object into the SDK's Schema type for Output.object.
@@ -139,8 +140,10 @@ export class LocalProvider implements AIProvider {
       } as Parameters<typeof this.client.chat.completions.create>[0])),
       offloadConcurrency: offload?.concurrency ?? 12,
       localConcurrency: 2, // memory-bound + shared omlx
-      onFallback: (n, total, err) =>
-        console.warn(`[transcribeDocument] offload: ${n}/${total} page(s) fell back to local (first error: ${err})`),
+      onFallback: (n, total, err) => {
+        recordRealFallback(`OCR ${n}/${total} pages: ${err}`);
+        console.warn(`[transcribeDocument] offload: ${n}/${total} page(s) fell back to local (first error: ${err})`);
+      },
     });
 
     return { text: texts.join('\n\n').trim(), costUsdCents: 0, truncated };

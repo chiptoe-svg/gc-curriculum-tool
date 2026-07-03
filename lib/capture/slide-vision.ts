@@ -9,6 +9,7 @@
 
 import { visionModel } from '@/lib/ai/vision-models';
 import { visionOffloadConfig, twoPhaseOffload, shouldOffload } from '@/lib/ai/vision-offload';
+import { recordRealFallback } from '@/lib/ai/vision-offload-health';
 
 export interface SlideNote {
   topic: string;
@@ -161,7 +162,9 @@ export async function describeSlides(pngs: Buffer[]): Promise<SlideNote[]> {
     },
     offloadConcurrency: off?.concurrency ?? 12,
     localConcurrency: 4, // slides are lighter than OCR; matches the prior mapWithConcurrency(4)
-    onFallback: (n, total, err) =>
-      console.warn(`[slide-vision] offload: ${n}/${total} slide(s) fell back to local (first error: ${err})`),
+    onFallback: (n, total, err) => {
+      recordRealFallback(`slides ${n}/${total}: ${err}`);
+      console.warn(`[slide-vision] offload: ${n}/${total} slide(s) fell back to local (first error: ${err})`);
+    },
   });
 }
