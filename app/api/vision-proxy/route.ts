@@ -58,9 +58,10 @@ export async function POST(req: NextRequest): Promise<Response> {
       if (res.ok) {
         return new NextResponse(await res.text(), { status: 200, headers: { 'Content-Type': 'application/json' } });
       }
-      console.warn(`[vision-proxy] DGX non-OK ${res.status}; falling back to omlx`);
+      console.warn(`[vision-proxy] DGX non-OK ${res.status} at ${off.baseURL}; falling back to omlx`);
     } catch (e) {
-      console.warn('[vision-proxy] DGX error; falling back to omlx:', (e as Error).message);
+      const cause = (e as { cause?: { code?: string; message?: string } }).cause;
+      console.warn(`[vision-proxy] DGX error at ${off.baseURL}; falling back to omlx:`, (e as Error).message, '| cause:', cause?.code ?? cause?.message ?? '');
     }
   }
 
