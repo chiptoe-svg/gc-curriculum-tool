@@ -15,6 +15,8 @@ export interface VisionOffload {
   model: string;
   apiKey: string;
   concurrency: number;
+  /** Only offload batches of at least this many items; smaller ones stay local. */
+  minItems: number;
 }
 
 /** `VISION_OFFLOAD_*` config, or null when unset (→ local only). Shared by OCR + slides. */
@@ -27,7 +29,17 @@ export function visionOffloadConfig(): VisionOffload | null {
     model,
     apiKey: process.env.VISION_OFFLOAD_API_KEY?.trim() || 'offload',
     concurrency: Math.max(1, Number.parseInt(process.env.VISION_OFFLOAD_CONCURRENCY ?? '12', 10) || 12),
+    // Small/quick jobs stay on the local omlx (fast, and they clear before they
+    // tie up the box that v2v needs); time-consuming jobs shunt to the DGX. The
+    // default 4 matches the measured per-doc crossover (~4-5 items). Set 1 to
+    // always offload; a huge number to keep everything local.
+    minItems: Math.max(1, Number.parseInt(process.env.VISION_OFFLOAD_MIN_ITEMS ?? '4', 10) || 4),
   };
+}
+
+/** Should a batch of `count` items go to the DGX? (config present AND big enough) */
+export function shouldOffload(off: VisionOffload | null, count: number): boolean {
+  return !!off && count >= off.minItems;
 }
 
 async function pool(indices: number[], limit: number, fn: (i: number) => Promise<void>): Promise<void> {

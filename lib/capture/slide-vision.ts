@@ -8,7 +8,7 @@
  */
 
 import { visionModel } from '@/lib/ai/vision-models';
-import { visionOffloadConfig, twoPhaseOffload } from '@/lib/ai/vision-offload';
+import { visionOffloadConfig, twoPhaseOffload, shouldOffload } from '@/lib/ai/vision-offload';
 
 export interface SlideNote {
   topic: string;
@@ -144,7 +144,9 @@ export async function describeSlide(png: Buffer): Promise<SlideNote> {
 export async function describeSlides(pngs: Buffer[]): Promise<SlideNote[]> {
   const local = localSlideBackend();
   const off = visionOffloadConfig();
-  const offBackend: SlideBackend | null = off
+  // Small slide sets stay local (fast); shunt big decks to the DGX (keeps the box
+  // free for v2v). See shouldOffload / VISION_OFFLOAD_MIN_ITEMS.
+  const offBackend: SlideBackend | null = shouldOffload(off, pngs.length) && off
     ? { baseUrl: off.baseURL.replace(/\/$/, ''), apiKey: off.apiKey, model: off.model, offload: true }
     : null;
   return twoPhaseOffload<SlideNote>(pngs.length, {

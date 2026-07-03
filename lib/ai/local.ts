@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 import type { AIProvider, CompletionTelemetry, TranscribeDocumentArgs, TranscribeDocumentResult } from './provider';
 import { renderToImages } from '@/lib/capture/render-pages';
 import { visionModel } from './vision-models';
-import { visionOffloadConfig, twoPhaseOffload } from './vision-offload';
+import { visionOffloadConfig, twoPhaseOffload, shouldOffload } from './vision-offload';
 // v6 Vercel AI SDK: structured output with tools uses generateText + Output.object, not generateObject.
 // tool() in v6 uses `inputSchema` (not `parameters`), matching our ToolDefinition shape directly.
 // jsonSchema() wraps a plain JSON Schema object into the SDK's Schema type for Output.object.
@@ -91,9 +91,6 @@ export class LocalProvider implements AIProvider {
     // The offload request is STANDARD OpenAI (no omlx-only vision_soft_tokens_per_image
     // / chat_template_kwargs — SGLang rejects/ignores them; keeps repetition_penalty).
     const offload = visionOffloadConfig();
-    const offloadClient = offload
-      ? new OpenAI({ baseURL: offload.baseURL, apiKey: offload.apiKey, timeout: 120_000, maxRetries: 0 })
-      : null;
 
     const rendered = await renderToImages(args.fileBytes, args.mimeType, 'document');
     if (rendered.length === 0) {
@@ -101,6 +98,12 @@ export class LocalProvider implements AIProvider {
     }
     const truncated = rendered.length > maxPages;
     const pages = truncated ? rendered.slice(0, maxPages) : rendered;
+
+    // Small docs stay on the local omlx (fast, and they clear before tying up the
+    // box v2v needs); only shunt time-consuming (many-page) docs to the DGX.
+    const offloadClient = shouldOffload(offload, pages.length) && offload
+      ? new OpenAI({ baseURL: offload.baseURL, apiKey: offload.apiKey, timeout: 120_000, maxRetries: 0 })
+      : null;
 
     const imageMessages = (i: number) => [
       { role: 'user' as const, content: [
