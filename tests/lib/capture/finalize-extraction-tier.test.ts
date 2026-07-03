@@ -95,8 +95,11 @@ vi.mock('@/lib/capture/render-pages', () => ({
   renderToImages: (...a: unknown[]) => renderToImages(...(a as Parameters<typeof renderToImages>)),
 }));
 
+// finalize-extraction now calls the batch describeSlides() (2026-07-02 offload
+// refactor); back it with the per-image describeSlide spy so the existing
+// mockResolvedValueOnce(...) sequence still drives one call per image, in order.
 vi.mock('@/lib/capture/slide-vision', () => ({
-  describeSlide: (...a: unknown[]) => describeSlide(...(a as Parameters<typeof describeSlide>)),
+  describeSlides: (pngs: Buffer[]) => Promise.all(pngs.map((p) => describeSlide(p))),
 }));
 
 // ---------------------------------------------------------------------------
