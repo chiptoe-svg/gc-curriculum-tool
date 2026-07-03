@@ -73,7 +73,9 @@ interface EmbeddingsResponse {
   usage: { prompt_tokens: number; total_tokens: number };
 }
 
-function resolveConfig(opts: EmbedOptions = {}): { baseURL: string; apiKey: string; model: string } {
+interface EmbedConfig { baseURL: string; apiKey: string; model: string }
+
+function resolveConfig(opts: EmbedOptions = {}): EmbedConfig {
   const baseURL = (opts.baseURL ?? process.env.CAMPUS_LLM_BASE_URL?.trim());
   if (!baseURL) throw new Error('CAMPUS_LLM_BASE_URL not set');
   const apiKey = (opts.apiKey ?? process.env.CAMPUS_LLM_API_KEY?.trim());
@@ -83,13 +85,37 @@ function resolveConfig(opts: EmbedOptions = {}): { baseURL: string; apiKey: stri
 }
 
 /**
+ * Optional FALLBACK endpoint for when the campus primary is unreachable/hung —
+ * the DGX Spark router (`qwen3-embedding-4b`, vectors verified cosine-0.9997
+ * identical to campus, so existing Weaviate vectors stay consistent). Campus
+ * stays primary; this only fires on a primary failure. Null when unconfigured,
+ * or when the caller pinned an explicit `baseURL` (tests) — don't second-guess.
+ */
+function resolveFallbackConfig(opts: EmbedOptions = {}): EmbedConfig | null {
+  if (opts.baseURL) return null;
+  const baseURL = process.env.EMBEDDINGS_FALLBACK_BASE_URL?.trim();
+  if (!baseURL) return null;
+  return {
+    baseURL,
+    apiKey: process.env.EMBEDDINGS_FALLBACK_API_KEY?.trim() || 'none',
+    model: opts.model ?? process.env.EMBEDDINGS_FALLBACK_MODEL?.trim() ?? DEFAULT_EMBEDDING_MODEL,
+  };
+}
+
+// Primary is failed-over on any error incl. timeout, so a HUNG campus doesn't
+// block indefinitely; the fallback gets a generous window for a cold model load.
+const PRIMARY_TIMEOUT_MS = Math.max(5_000, Number.parseInt(process.env.EMBEDDINGS_PRIMARY_TIMEOUT_MS ?? '60000', 10) || 60_000);
+const FALLBACK_TIMEOUT_MS = Math.max(30_000, Number.parseInt(process.env.EMBEDDINGS_FALLBACK_TIMEOUT_MS ?? '200000', 10) || 200_000);
+
+/**
  * Send exactly one batch of (already-packed, already-truncated) texts to the
  * endpoint.  Returns vectors in input order using the index-slot reconstruction
  * pattern (the API may return rows in any order).
  */
 async function embedOneRequest(
   texts: string[],
-  cfg: { baseURL: string; apiKey: string; model: string },
+  cfg: EmbedConfig,
+  timeoutMs?: number,
 ): Promise<number[][]> {
   const res = await fetch(`${cfg.baseURL.replace(/\/$/, '')}/embeddings`, {
     method: 'POST',
@@ -98,6 +124,7 @@ async function embedOneRequest(
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ model: cfg.model, input: texts }),
+    ...(timeoutMs ? { signal: AbortSignal.timeout(timeoutMs) } : {}),
   });
 
   if (!res.ok) {
@@ -129,12 +156,24 @@ async function embedOneRequest(
  */
 export async function embedBatch(texts: string[], opts: EmbedOptions = {}): Promise<number[][]> {
   if (texts.length === 0) return [];
-  const cfg = resolveConfig(opts);
+  const primary = resolveConfig(opts);
+  const fallback = resolveFallbackConfig(opts);
 
   const batches = packEmbeddingBatches(texts);
   const results: number[][] = [];
+  let announcedFallback = false;
   for (const batch of batches) {
-    const vecs = await embedOneRequest(batch, cfg);
+    let vecs: number[][];
+    try {
+      vecs = await embedOneRequest(batch, primary, PRIMARY_TIMEOUT_MS);
+    } catch (e) {
+      if (!fallback) throw e; // no fallback configured → fail loudly as before
+      if (!announcedFallback) {
+        console.warn(`[embeddings] campus primary failed → DGX fallback: ${e instanceof Error ? e.message : e}`);
+        announcedFallback = true;
+      }
+      vecs = await embedOneRequest(batch, fallback, FALLBACK_TIMEOUT_MS);
+    }
     for (const v of vecs) results.push(v);
   }
   return results;

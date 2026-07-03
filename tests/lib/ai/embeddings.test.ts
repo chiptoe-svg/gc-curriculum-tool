@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   packEmbeddingBatches,
+  embedBatch,
   MAX_CHARS_PER_REQUEST,
   MAX_CHARS_PER_INPUT,
 } from '@/lib/ai/embeddings';
@@ -76,5 +77,58 @@ describe('packEmbeddingBatches', () => {
     expect(batches).toHaveLength(2);
     expect(batches[0]).toEqual([big]);
     expect(batches[1]).toEqual([other]);
+  });
+});
+
+describe('embedBatch — campus primary with DGX fallback', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllEnvs();
+  });
+  afterEach(() => vi.unstubAllEnvs());
+
+  function embResponse(n: number) {
+    return new Response(
+      JSON.stringify({
+        data: Array.from({ length: n }, (_, i) => ({ index: i, embedding: [i, i, i] })),
+        model: 'qwen3-embedding-4b',
+        usage: { prompt_tokens: 1, total_tokens: 1 },
+      }),
+      { status: 200 },
+    );
+  }
+
+  it('falls back to the DGX router when the campus primary fails', async () => {
+    vi.stubEnv('CAMPUS_LLM_BASE_URL', 'https://llm.rcd.clemson.edu/v1');
+    vi.stubEnv('CAMPUS_LLM_API_KEY', 'k');
+    vi.stubEnv('EMBEDDINGS_FALLBACK_BASE_URL', 'http://127.0.0.1:38001/v1');
+    const fetchMock = vi.fn((url: unknown) =>
+      String(url).includes('llm.rcd.clemson.edu')
+        ? Promise.reject(new Error('EHOSTUNREACH'))
+        : Promise.resolve(embResponse(1)),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const vecs = await embedBatch(['hello']);
+    expect(vecs).toEqual([[0, 0, 0]]);
+    const urls = fetchMock.mock.calls.map((c) => String(c[0]));
+    expect(urls.some((u) => u.includes('llm.rcd.clemson.edu'))).toBe(true);
+    expect(urls.some((u) => u.includes('127.0.0.1:38001'))).toBe(true);
+  });
+
+  it('throws when the primary fails and no fallback is configured', async () => {
+    vi.stubEnv('CAMPUS_LLM_BASE_URL', 'https://llm.rcd.clemson.edu/v1');
+    vi.stubEnv('CAMPUS_LLM_API_KEY', 'k');
+    vi.stubEnv('EMBEDDINGS_FALLBACK_BASE_URL', '');
+    vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new Error('EHOSTUNREACH'))));
+    await expect(embedBatch(['hello'])).rejects.toThrow(/EHOSTUNREACH/);
+  });
+
+  it('does NOT fall back when the caller pins an explicit baseURL', async () => {
+    vi.stubEnv('EMBEDDINGS_FALLBACK_BASE_URL', 'http://127.0.0.1:38001/v1');
+    const fetchMock = vi.fn((..._a: unknown[]) => Promise.reject(new Error('boom')));
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(embedBatch(['hello'], { baseURL: 'http://pinned/v1', apiKey: 'k' })).rejects.toThrow(/boom/);
+    expect(fetchMock.mock.calls.every((c) => String(c[0]).includes('pinned'))).toBe(true);
   });
 });
