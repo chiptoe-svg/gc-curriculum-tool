@@ -5,6 +5,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
  * reset the registry and re-import to isolate each case.
  */
 async function freshModule() {
+  // The canary state lives on globalThis (so instrumentation + route handlers share
+  // it in Next) — resetModules alone won't clear it, so drop the global registry too.
+  delete (globalThis as unknown as { __gcVisionOffloadHealth?: unknown }).__gcVisionOffloadHealth;
   vi.resetModules();
   return import('@/lib/ai/vision-offload-health');
 }

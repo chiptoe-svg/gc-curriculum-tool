@@ -46,15 +46,34 @@ interface HealthState {
   realFallbacks: { count: number; lastAt: string | null; lastReason: string | null };
 }
 
-const state: HealthState = {
-  status: 'unknown',
-  since: null,
-  lastCheckedAt: null,
-  lastOkAt: null,
-  lastError: null,
-  servedModels: null,
-  realFallbacks: { count: 0, lastAt: null, lastReason: null },
-};
+interface Registry {
+  state: HealthState;
+  loopStarted: boolean;
+  debounce: ReturnType<typeof setTimeout> | null;
+}
+
+/**
+ * Stored on `globalThis`, NOT a plain module const. Next.js can hand `instrumentation.ts`
+ * (which arms the probe loop) and the route handlers (which read/record) SEPARATE module
+ * instances, so a module-level singleton would be split-brained — the loop mutates one
+ * copy, `/api/health` reads another and shows `unknown` forever. A global registry is the
+ * one object all instances share.
+ */
+const g = globalThis as unknown as { __gcVisionOffloadHealth?: Registry };
+const reg: Registry = (g.__gcVisionOffloadHealth ??= {
+  state: {
+    status: 'unknown',
+    since: null,
+    lastCheckedAt: null,
+    lastOkAt: null,
+    lastError: null,
+    servedModels: null,
+    realFallbacks: { count: 0, lastAt: null, lastReason: null },
+  },
+  loopStarted: false,
+  debounce: null,
+});
+const state = reg.state;
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -116,14 +135,13 @@ export async function probeVisionOffload(): Promise<void> {
 }
 
 /** Debounced off-cycle probe trigger (so a real signal confirms within seconds). */
-let debounce: ReturnType<typeof setTimeout> | null = null;
 function triggerProbeSoon(): void {
-  if (debounce) return;
-  debounce = setTimeout(() => {
-    debounce = null;
+  if (reg.debounce) return;
+  reg.debounce = setTimeout(() => {
+    reg.debounce = null;
     void probeVisionOffload();
   }, 2_000);
-  debounce.unref?.();
+  reg.debounce.unref?.();
 }
 
 /**
@@ -153,14 +171,13 @@ export function getOffloadHealthSnapshot(): HealthState & { downForSeconds: numb
   return { ...state, realFallbacks: { ...state.realFallbacks }, downForSeconds };
 }
 
-let loopStarted = false;
 /**
  * Arm the periodic canary (idempotent). Runs one probe ~3s after boot (let the
  * server settle), then every `VISION_OFFLOAD_HEALTHCHECK_INTERVAL_MS` (default 5 min).
  */
 export function startVisionOffloadHealthLoop(): void {
-  if (loopStarted) return;
-  loopStarted = true;
+  if (reg.loopStarted) return;
+  reg.loopStarted = true;
   const intervalMs = Math.max(
     30_000,
     Number.parseInt(process.env.VISION_OFFLOAD_HEALTHCHECK_INTERVAL_MS ?? '300000', 10) || 300_000,
