@@ -10,6 +10,7 @@
 import { visionModel } from '@/lib/ai/vision-models';
 import { visionOffloadConfig, twoPhaseOffload, shouldOffload } from '@/lib/ai/vision-offload';
 import { recordRealFallback } from '@/lib/ai/vision-offload-health';
+import { canonicalize } from '@/lib/ai/vision-canonicalize';
 
 export interface SlideNote {
   topic: string;
@@ -89,7 +90,13 @@ async function describeSlideOn(png: Buffer, be: SlideBackend): Promise<SlideNote
     response_format: { type: 'json_object' },
     max_tokens: 300,
     temperature: 0.2,
-    ...(!be.offload && be.budget ? { vision_soft_tokens_per_image: be.budget } : {}),
+    // Same budget B to both backends (image is canonical): omlx honors it via the
+    // resolution knob; the DGX router uses max_soft_tokens as its budget/ceiling.
+    ...(be.budget
+      ? be.offload
+        ? { max_soft_tokens: be.budget }
+        : { vision_soft_tokens_per_image: be.budget }
+      : {}),
     repetition_penalty: 1.3,
   });
 
@@ -144,17 +151,21 @@ export async function describeSlide(png: Buffer): Promise<SlideNote> {
  */
 export async function describeSlides(pngs: Buffer[]): Promise<SlideNote[]> {
   const local = localSlideBackend();
+  const slideBudget = local.budget ?? 560;
   const off = visionOffloadConfig();
   // Small slide sets stay local (fast); shunt big decks to the DGX (keeps the box
   // free for v2v). See shouldOffload / VISION_OFFLOAD_MIN_ITEMS.
   const offBackend: SlideBackend | null = shouldOffload(off, pngs.length) && off
-    ? { baseUrl: off.baseURL.replace(/\/$/, ''), apiKey: off.apiKey, model: off.model, offload: true }
+    ? { baseUrl: off.baseURL.replace(/\/$/, ''), apiKey: off.apiKey, model: off.model, budget: slideBudget, offload: true }
     : null;
-  return twoPhaseOffload<SlideNote>(pngs.length, {
-    offload: offBackend ? (i) => describeSlideOn(pngs[i]!, offBackend) : null,
+  // Canonical render each slide at the slideNote budget so both backends see the
+  // identical resolution (DGX max_soft_tokens / omlx knob = the same B).
+  const canon = await Promise.all(pngs.map((p) => canonicalize(p, slideBudget)));
+  return twoPhaseOffload<SlideNote>(canon.length, {
+    offload: offBackend ? (i) => describeSlideOn(canon[i]!.png, offBackend) : null,
     local: async (i) => {
       try {
-        return await describeSlideOn(pngs[i]!, local);
+        return await describeSlideOn(canon[i]!.png, local);
       } catch (err) {
         console.warn('[slide-vision] local fallback failed:', err instanceof Error ? err.message : err);
         return { ...SAFE_DEFAULT };

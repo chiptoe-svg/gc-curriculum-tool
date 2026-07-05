@@ -6,8 +6,15 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { describeSlide } from '@/lib/capture/slide-vision';
+import { describeSlide, describeSlides } from '@/lib/capture/slide-vision';
 import type { SlideNote } from '@/lib/capture/slide-vision';
+
+// Stub canonicalize (sharp can't read the tiny magic-byte buffers); pass through.
+vi.mock('@/lib/ai/vision-canonicalize', () => ({
+  canonicalize: vi.fn(async (raw: Buffer, budget: number) => ({
+    png: raw, tokens: 520, budget, width: 1248, height: 960,
+  })),
+}));
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -308,5 +315,32 @@ describe('describeSlide — field coercion', () => {
     expect(result.teaches).toBe('');
     expect(result.keyVisual).toBe('Some visual');
     expect(result.contentLevel).toBe('substantive');
+  });
+});
+
+describe('describeSlides — canonical render + per-backend budget', () => {
+  beforeEach(() => {
+    process.env.VISION_OFFLOAD_BASE_URL = 'http://127.0.0.1:38001/v1';
+    process.env.VISION_OFFLOAD_MODEL = 'gemma-4-26b';
+    process.env.VISION_OFFLOAD_MIN_ITEMS = '1'; // always offload for the test
+  });
+  afterEach(() => {
+    delete process.env.VISION_OFFLOAD_BASE_URL;
+    delete process.env.VISION_OFFLOAD_MODEL;
+    delete process.env.VISION_OFFLOAD_MIN_ITEMS;
+  });
+
+  it('sends max_soft_tokens=560 to the DGX (not the omlx knob)', async () => {
+    fetchSpy.mockResolvedValue(
+      makeOkResponse({ topic: 't', teaches: 'x', keyVisual: '', contentLevel: 'low' }),
+    );
+    await describeSlides([SAMPLE_PNG, SAMPLE_PNG]);
+    const bodies = fetchSpy.mock.calls.map(
+      (c: unknown[]) => JSON.parse((c[1] as { body: string }).body) as Record<string, unknown>,
+    );
+    expect(bodies.length).toBeGreaterThan(0);
+    // All succeeded on the DGX offload → max_soft_tokens set, knob absent.
+    expect(bodies.every((b: Record<string, unknown>) => b['max_soft_tokens'] === 560)).toBe(true);
+    expect(bodies.every((b: Record<string, unknown>) => b['vision_soft_tokens_per_image'] === undefined)).toBe(true);
   });
 });
