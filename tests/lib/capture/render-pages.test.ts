@@ -146,7 +146,7 @@ describe('renderToImages — unsupported MIME', () => {
 // ---------------------------------------------------------------------------
 
 describe('renderToImages — application/pdf', () => {
-  it('invokes pdftoppm with -png, -r, 150 and does NOT invoke soffice', async () => {
+  it('invokes pdftoppm with -png, -r, 200 and does NOT invoke soffice', async () => {
     const result = await renderToImages(Buffer.from('%PDF'), 'application/pdf', 'deck.pdf');
 
     // Should get 3 pages from mock readdir
@@ -156,12 +156,13 @@ describe('renderToImages — application/pdf', () => {
     expect(lastSpawnCmds().some(c => c.includes('pdftoppm'))).toBe(true);
     expect(lastSpawnCmds().some(c => c.includes('soffice'))).toBe(false);
 
-    // Verify pdftoppm args contain -png, -r, 150
+    // Verify pdftoppm args contain -png, -r, 200 (raised from 150 so canonicalize
+    // only downscales — see lib/ai/vision-canonicalize.ts).
     const pdfCall = spawnCallFor('pdftoppm')!;
     expect(pdfCall).toBeDefined();
     expect(pdfCall.args).toContain('-png');
     expect(pdfCall.args).toContain('-r');
-    expect(pdfCall.args).toContain('150');
+    expect(pdfCall.args).toContain('200');
   });
 });
 
