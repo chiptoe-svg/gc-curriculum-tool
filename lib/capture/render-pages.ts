@@ -160,12 +160,18 @@ function comparePageFiles(a: string, b: string): number {
 }
 
 /**
- * Runs `pdftoppm -png -r 150 <pdfPath> <pagePrefix>`.
+ * Runs `pdftoppm -png -r <RENDER_DPI> <pdfPath> <pagePrefix>`.
  * Prefers /opt/homebrew/bin/pdftoppm, falls back to bare `pdftoppm`.
- * Timeout: 120 s (large decks can be slow at 150 dpi).
+ * Timeout: 120 s (large decks can be slow).
+ *
+ * RENDER_DPI is 200 (up from 150) so the raw render is at least as wide as the
+ * largest canonical width in use (OCR@1120 on a 16:9 slide ≈ 2112px). Downstream
+ * `canonicalize()` then only ever DOWNSCALES to the budget's canonical dims — never
+ * upscales — keeping fine print crisp. See lib/ai/vision-canonicalize.ts.
  */
+const RENDER_DPI = 200;
 function runPdftoppm(pdfPath: string, pagePrefix: string): Promise<void> {
-  return runCommand(PDFTOPPM_BIN, 'pdftoppm', ['-png', '-r', '150', pdfPath, pagePrefix], 120_000);
+  return runCommand(PDFTOPPM_BIN, 'pdftoppm', ['-png', '-r', String(RENDER_DPI), pdfPath, pagePrefix], 120_000);
 }
 
 /**

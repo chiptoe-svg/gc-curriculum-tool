@@ -4,6 +4,7 @@ import { renderToImages } from '@/lib/capture/render-pages';
 import { visionModel } from './vision-models';
 import { visionOffloadConfig, twoPhaseOffload, shouldOffload } from './vision-offload';
 import { recordRealFallback } from './vision-offload-health';
+import { canonicalize } from './vision-canonicalize';
 // v6 Vercel AI SDK: structured output with tools uses generateText + Output.object, not generateObject.
 // tool() in v6 uses `inputSchema` (not `parameters`), matching our ToolDefinition shape directly.
 // jsonSchema() wraps a plain JSON Schema object into the SDK's Schema type for Output.object.
@@ -84,7 +85,7 @@ export class LocalProvider implements AIProvider {
       'Please transcribe every piece of text visible in this document image. ' +
       'Return plain text only, preserving the reading order. Do not add commentary.';
     const maxPages = args.maxPages ?? 40;
-    const txBudget = visionModel('docTranscribe').budget;
+    const txBudget = visionModel('docTranscribe').budget ?? 1120;
 
     // OFFLOAD to the DGX (VISION_OFFLOAD_*) with local omlx fallback, two-phase so
     // each backend runs at its own safe concurrency — DGX high (SGLang batches it,
@@ -98,7 +99,12 @@ export class LocalProvider implements AIProvider {
       throw new Error('LocalProvider.transcribeDocument: renderToImages produced no pages');
     }
     const truncated = rendered.length > maxPages;
-    const pages = truncated ? rendered.slice(0, maxPages) : rendered;
+    const rawPages = truncated ? rendered.slice(0, maxPages) : rendered;
+
+    // Canonical render: each page → 48-aligned dims sized to the docTranscribe budget,
+    // so BOTH backends see the same resolution (DGX max_soft_tokens / omlx
+    // vision_soft_tokens_per_image = the same B). See lib/ai/vision-canonicalize.ts.
+    const pages = await Promise.all(rawPages.map((p) => canonicalize(p, txBudget)));
 
     // Small docs stay on the local omlx (fast, and they clear before tying up the
     // box v2v needs); only shunt time-consuming (many-page) docs to the DGX.
@@ -109,7 +115,7 @@ export class LocalProvider implements AIProvider {
     const imageMessages = (i: number) => [
       { role: 'user' as const, content: [
         { type: 'text' as const, text: PROMPT },
-        { type: 'image_url' as const, image_url: { url: `data:image/png;base64,${pages[i]!.toString('base64')}` } },
+        { type: 'image_url' as const, image_url: { url: `data:image/png;base64,${pages[i]!.png.toString('base64')}` } },
       ] },
     ];
     const pickContent = (resp: unknown): string =>
@@ -123,6 +129,9 @@ export class LocalProvider implements AIProvider {
             messages: imageMessages(i),
             temperature: 0,
             max_tokens: 4096,
+            // Image is canonical (48-aligned, tokens ≤ B); max_soft_tokens = B is the
+            // DGX budget/ceiling (the router recomputes tokens from dims and validates).
+            max_soft_tokens: txBudget,
             repetition_penalty: 1.3,
           } as Parameters<typeof this.client.chat.completions.create>[0]))
         : null,

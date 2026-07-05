@@ -26,8 +26,9 @@ describe('canonicalDims — matches the render contract test vectors', () => {
   });
 
   it('always: dims on the 48-grid and tokens ≤ B', () => {
+    const shapes: Array<[number, number]> = [[850, 1100], [4, 3], [16, 9], [1, 1], [3, 2], [11, 8.5]];
     for (const B of [70, 140, 280, 560, 1120]) {
-      for (const [sw, sh] of [[850, 1100], [4, 3], [16, 9], [1, 1], [3, 2], [11, 8.5]]) {
+      for (const [sw, sh] of shapes) {
         const d = canonicalDims(B, sw, sh);
         expect(d.width % UNIT).toBe(0);
         expect(d.height % UNIT).toBe(0);

@@ -14,6 +14,14 @@ vi.mock('@/lib/capture/render-pages', () => ({
   renderToImages: vi.fn(async () => [Buffer.from('png1'), Buffer.from('png2')]),
 }));
 
+// Stub canonicalize (sharp can't read the fake buffers); pass the buffer through
+// and report a canonical result at the docTranscribe budget.
+vi.mock('@/lib/ai/vision-canonicalize', () => ({
+  canonicalize: vi.fn(async (raw: Buffer, budget: number) => ({
+    png: raw, tokens: 1102, budget, width: 1392, height: 1824,
+  })),
+}));
+
 import { LocalProvider } from '../local';
 
 function fakeClient(contents: string[]) {
@@ -38,10 +46,15 @@ describe('LocalProvider.transcribeDocument', () => {
     expect(res.text).toBe('PAGE ONE\n\nPAGE TWO');
     expect(res.costUsdCents).toBe(0);
     expect(res.truncated).toBe(false);
-    // chat_template_kwargs.enable_thinking === false on every call
+    // chat_template_kwargs.enable_thinking === false + vision_soft_tokens_per_image
+    // carries the docTranscribe budget (1120) on every local call.
     for (const call of client.create.mock.calls) {
-      const body = call[0] as unknown as { chat_template_kwargs?: { enable_thinking?: boolean } };
+      const body = call[0] as unknown as {
+        chat_template_kwargs?: { enable_thinking?: boolean };
+        vision_soft_tokens_per_image?: number;
+      };
       expect(body.chat_template_kwargs?.enable_thinking).toBe(false);
+      expect(body.vision_soft_tokens_per_image).toBe(1120);
     }
   });
 
