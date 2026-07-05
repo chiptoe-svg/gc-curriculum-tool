@@ -11,6 +11,7 @@ import { visionModel } from '@/lib/ai/vision-models';
 import { visionOffloadConfig, twoPhaseOffload, shouldOffload } from '@/lib/ai/vision-offload';
 import { recordRealFallback } from '@/lib/ai/vision-offload-health';
 import { canonicalize } from '@/lib/ai/vision-canonicalize';
+import { withVisionSlot } from '@/lib/ai/vision-offload-gate';
 
 export interface SlideNote {
   topic: string;
@@ -162,7 +163,8 @@ export async function describeSlides(pngs: Buffer[]): Promise<SlideNote[]> {
   // identical resolution (DGX max_soft_tokens / omlx knob = the same B).
   const canon = await Promise.all(pngs.map((p) => canonicalize(p, slideBudget)));
   return twoPhaseOffload<SlideNote>(canon.length, {
-    offload: offBackend ? (i) => describeSlideOn(canon[i]!.png, offBackend) : null,
+    // Weighted DGX gate (shared with OCR + captions) — keeps in-flight ≤ 8 slots.
+    offload: offBackend ? (i) => withVisionSlot(slideBudget, () => describeSlideOn(canon[i]!.png, offBackend)) : null,
     local: async (i) => {
       try {
         return await describeSlideOn(canon[i]!.png, local);

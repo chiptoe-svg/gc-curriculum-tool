@@ -5,6 +5,7 @@ import { visionModel } from './vision-models';
 import { visionOffloadConfig, twoPhaseOffload, shouldOffload } from './vision-offload';
 import { recordRealFallback } from './vision-offload-health';
 import { canonicalize } from './vision-canonicalize';
+import { withVisionSlot } from './vision-offload-gate';
 // v6 Vercel AI SDK: structured output with tools uses generateText + Output.object, not generateObject.
 // tool() in v6 uses `inputSchema` (not `parameters`), matching our ToolDefinition shape directly.
 // jsonSchema() wraps a plain JSON Schema object into the SDK's Schema type for Output.object.
@@ -124,7 +125,9 @@ export class LocalProvider implements AIProvider {
 
     const texts = await twoPhaseOffload<string>(pages.length, {
       offload: offloadClient && offload
-        ? async (i) => pickContent(await offloadClient.chat.completions.create({
+        // Weighted gate: 1120 requests crash the shared DGX past ~4-5 concurrent,
+        // so hold in-flight DGX weight ≤ 8 slots across ALL vision paths.
+        ? async (i) => withVisionSlot(txBudget, async () => pickContent(await offloadClient.chat.completions.create({
             model: offload.model,
             messages: imageMessages(i),
             temperature: 0,
@@ -133,7 +136,7 @@ export class LocalProvider implements AIProvider {
             // DGX budget/ceiling (the router recomputes tokens from dims and validates).
             max_soft_tokens: txBudget,
             repetition_penalty: 1.3,
-          } as Parameters<typeof this.client.chat.completions.create>[0]))
+          } as Parameters<typeof this.client.chat.completions.create>[0])))
         : null,
       // Local omlx: the knob + enable_thinking are omlx-specific (raise effective
       // resolution for fine print; stop gemma's greedy-decode loop; keep Qwen from

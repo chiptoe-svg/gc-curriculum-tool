@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { visionOffloadConfig } from '@/lib/ai/vision-offload';
 import { recordRealSuccess, recordRealFallback } from '@/lib/ai/vision-offload-health';
 import { canonicalizeAdaptive } from '@/lib/ai/vision-canonicalize';
+import { withVisionSlot } from '@/lib/ai/vision-offload-gate';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -96,7 +97,10 @@ export async function POST(req: NextRequest): Promise<Response> {
     delete dgxBody['chat_template_kwargs'];
     if (budget) dgxBody['max_soft_tokens'] = budget;
     try {
-      const res = await forward(`${off.baseURL.replace(/\/$/, '')}/chat/completions`, off.apiKey, dgxBody);
+      // Weighted DGX gate (shared with OCR + slides) — keeps in-flight ≤ 8 slots.
+      const res = await withVisionSlot(budget ?? 560, () =>
+        forward(`${off.baseURL.replace(/\/$/, '')}/chat/completions`, off.apiKey, dgxBody),
+      );
       if (res.ok) {
         recordRealSuccess();
         return new NextResponse(await res.text(), { status: 200, headers: { 'Content-Type': 'application/json' } });
