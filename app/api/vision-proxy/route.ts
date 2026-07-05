@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { visionOffloadConfig } from '@/lib/ai/vision-offload';
 import { recordRealSuccess, recordRealFallback } from '@/lib/ai/vision-offload-health';
+import { canonicalizeAdaptive } from '@/lib/ai/vision-canonicalize';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -18,6 +19,30 @@ export const runtime = 'nodejs';
  * caption load). Bearer-gated by DOCLING_VLM_API_KEY; excluded from faculty Basic
  * Auth in the middleware matcher (self-authenticating, like /api/transcribe).
  */
+
+/**
+ * Find the first data-URL image in a chat-completions body and return its decoded
+ * bytes plus a setter that swaps the URL in place (mutates the body's messages).
+ */
+function extractImage(body: Record<string, unknown>): { buffer: Buffer; set: (dataUrl: string) => void } | null {
+  const messages = body['messages'];
+  if (!Array.isArray(messages)) return null;
+  for (const m of messages) {
+    const content = (m as { content?: unknown })?.content;
+    if (!Array.isArray(content)) continue;
+    for (const part of content) {
+      const p = part as { type?: string; image_url?: { url?: string } };
+      if (p?.type === 'image_url' && typeof p.image_url?.url === 'string' && p.image_url.url.startsWith('data:')) {
+        const b64 = p.image_url.url.split(',', 2)[1] ?? '';
+        return {
+          buffer: Buffer.from(b64, 'base64'),
+          set: (dataUrl: string) => { p.image_url!.url = dataUrl; },
+        };
+      }
+    }
+  }
+  return null;
+}
 
 async function forward(url: string, apiKey: string, body: unknown): Promise<Response> {
   return fetch(url, {
@@ -49,11 +74,27 @@ export async function POST(req: NextRequest): Promise<Response> {
   const localModel = process.env.DOCLING_VLM_MODEL ?? 'gemma-4-12B-it-qat-4bit';
   const localKey = process.env.LOCAL_API_KEY ?? '';
 
-  // Phase 1 — DGX (override model; drop omlx-only params SGLang doesn't know).
+  // Canonicalize the figure crop adaptively (ride native, cap 1120) and pick the
+  // budget tier. Swaps the image in-place; both backends then get the canonical
+  // pixels + the same B (DGX max_soft_tokens / omlx vision_soft_tokens_per_image).
+  let budget: number | null = null;
+  const img = extractImage(body);
+  if (img) {
+    try {
+      const canon = await canonicalizeAdaptive(img.buffer);
+      img.set(`data:image/png;base64,${canon.png.toString('base64')}`);
+      budget = canon.budget;
+    } catch (e) {
+      console.warn('[vision-proxy] canonicalize failed; forwarding original crop:', (e as Error).message);
+    }
+  }
+
+  // Phase 1 — DGX (override model; drop the omlx knob; send max_soft_tokens=B).
   if (off) {
     const dgxBody: Record<string, unknown> = { ...body, model: off.model };
     delete dgxBody['vision_soft_tokens_per_image'];
     delete dgxBody['chat_template_kwargs'];
+    if (budget) dgxBody['max_soft_tokens'] = budget;
     try {
       const res = await forward(`${off.baseURL.replace(/\/$/, '')}/chat/completions`, off.apiKey, dgxBody);
       if (res.ok) {
@@ -71,6 +112,7 @@ export async function POST(req: NextRequest): Promise<Response> {
 
   // Phase 2 — local omlx fallback (Docling's configured caption model).
   const localBody: Record<string, unknown> = { ...body, model: localModel };
+  if (budget) localBody['vision_soft_tokens_per_image'] = budget;
   const res = await forward(`${localBase}/chat/completions`, localKey, localBody);
   return new NextResponse(await res.text(), {
     status: res.status,
