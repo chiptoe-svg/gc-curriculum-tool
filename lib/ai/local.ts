@@ -83,16 +83,17 @@ export class LocalProvider implements AIProvider {
   // Cost is always 0 for the local provider.
   async transcribeDocument(args: TranscribeDocumentArgs): Promise<TranscribeDocumentResult> {
     const PROMPT =
-      'Please transcribe every piece of text visible in this document image. ' +
-      'Return plain text only, preserving the reading order. Do not add commentary.';
+      'Transcribe all text in this document image verbatim, preserving reading order. ' +
+      'Output only the transcription — no preamble, commentary, or explanation.';
     const maxPages = args.maxPages ?? 40;
     const txBudget = visionModel('docTranscribe').budget ?? 1120;
 
     // OFFLOAD to the DGX (VISION_OFFLOAD_*) with local omlx fallback, two-phase so
-    // each backend runs at its own safe concurrency — DGX high (SGLang batches it,
-    // the volume win), local at 2 (memory-bound + voice-shared). See vision-offload.ts.
-    // The offload request is STANDARD OpenAI (no omlx-only vision_soft_tokens_per_image
-    // / chat_template_kwargs — SGLang rejects/ignores them; keeps repetition_penalty).
+    // each backend runs at its own safe concurrency (weighted gate). The DGX (now
+    // vLLM) DOES honor chat_template_kwargs, so we pin enable_thinking:false there too
+    // — Gemma-4 auto-activates step-by-step reasoning that costs ~7-8× the tokens on
+    // transcription (pure waste, decode-bound → the latency win). The offload uses
+    // max_soft_tokens for the budget; local uses vision_soft_tokens_per_image.
     const offload = visionOffloadConfig();
 
     const rendered = await renderToImages(args.fileBytes, args.mimeType, 'document');
@@ -135,6 +136,9 @@ export class LocalProvider implements AIProvider {
             // Image is canonical (48-aligned, tokens ≤ B); max_soft_tokens = B is the
             // DGX budget/ceiling (the router recomputes tokens from dims and validates).
             max_soft_tokens: txBudget,
+            // Pin thinking OFF on the DGX (vLLM honors it) — no reasoning preamble, ~7-8×
+            // fewer decode tokens on transcription.
+            chat_template_kwargs: { enable_thinking: false },
             repetition_penalty: 1.3,
           } as Parameters<typeof this.client.chat.completions.create>[0])))
         : null,

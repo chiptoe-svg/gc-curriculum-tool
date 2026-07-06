@@ -94,7 +94,9 @@ export async function POST(req: NextRequest): Promise<Response> {
   if (off) {
     const dgxBody: Record<string, unknown> = { ...body, model: off.model };
     delete dgxBody['vision_soft_tokens_per_image'];
-    delete dgxBody['chat_template_kwargs'];
+    // DGX (vLLM) honors chat_template_kwargs — pin thinking OFF (no reasoning preamble,
+    // fewer decode tokens) rather than dropping it.
+    dgxBody['chat_template_kwargs'] = { enable_thinking: false };
     if (budget) dgxBody['max_soft_tokens'] = budget;
     try {
       // Weighted DGX gate (shared with OCR + slides) — keeps in-flight ≤ 8 slots.

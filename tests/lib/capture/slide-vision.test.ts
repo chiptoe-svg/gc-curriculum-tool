@@ -339,8 +339,10 @@ describe('describeSlides — canonical render + per-backend budget', () => {
       (c: unknown[]) => JSON.parse((c[1] as { body: string }).body) as Record<string, unknown>,
     );
     expect(bodies.length).toBeGreaterThan(0);
-    // All succeeded on the DGX offload → max_soft_tokens set, knob absent.
+    // All succeeded on the DGX offload → max_soft_tokens set, knob absent, thinking off.
     expect(bodies.every((b: Record<string, unknown>) => b['max_soft_tokens'] === 560)).toBe(true);
     expect(bodies.every((b: Record<string, unknown>) => b['vision_soft_tokens_per_image'] === undefined)).toBe(true);
+    expect(bodies.every((b: Record<string, unknown>) =>
+      (b['chat_template_kwargs'] as { enable_thinking?: boolean })?.enable_thinking === false)).toBe(true);
   });
 });

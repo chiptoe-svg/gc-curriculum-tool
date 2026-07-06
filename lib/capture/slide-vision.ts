@@ -91,6 +91,8 @@ async function describeSlideOn(png: Buffer, be: SlideBackend): Promise<SlideNote
     response_format: { type: 'json_object' },
     max_tokens: 300,
     temperature: 0.2,
+    // Pin thinking OFF (both backends honor it) — no reasoning preamble before the JSON.
+    chat_template_kwargs: { enable_thinking: false },
     // Same budget B to both backends (image is canonical): omlx honors it via the
     // resolution knob; the DGX router uses max_soft_tokens as its budget/ceiling.
     ...(be.budget
