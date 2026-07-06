@@ -51,6 +51,14 @@ describe('CompetencyPortrait', () => {
     expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ u_depth: 3, evidence_u: 'unit-3 exam Q7, class mean 82%' }));
   });
 
+  it('can dismiss the flag row after opening it', () => {
+    render(<CompetencyPortrait competency={comp} onChange={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: /something's off/i }));
+    expect(screen.getByText('Reasoning')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /something's off/i }));
+    expect(screen.queryByText('Reasoning')).toBeNull();
+  });
+
   it('renders Do-only for a foundational competency', () => {
     const f: CaptureCompetency = { ...comp, type: 'foundational', k_depth: null, u_depth: null, k_says: null, u_says: null, d_says: 'Consistently attends to detail.' };
     render(<CompetencyPortrait competency={f} onChange={() => {}} />);

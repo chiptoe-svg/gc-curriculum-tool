@@ -49,6 +49,7 @@ export function CompetencyPortrait({
   function chooseLower(dim: Dimension, level: number) {
     onChange(withDepth(competency, dim, level));
     setMode(null);
+    setEvidence('');
   }
   function raiseWithEvidence(dim: Dimension) {
     const current = depthOf(competency, dim);
@@ -71,15 +72,16 @@ export function CompetencyPortrait({
         <span className="shrink-0 font-mono text-[11px] text-muted-foreground">{ratingLabel(competency)}</span>
       </div>
 
-      {!flagsOpen && (
-        <button
-          type="button"
-          onClick={() => setFlagsOpen(true)}
-          className="text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-        >
-          Something&apos;s off ▾
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={() => {
+          if (flagsOpen) { setMode(null); setEvidence(''); }
+          setFlagsOpen(!flagsOpen);
+        }}
+        className="text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+      >
+        Something&apos;s off {flagsOpen ? '▴' : '▾'}
+      </button>
 
       {flagsOpen && (
         <div className="space-y-2 rounded-md border border-muted bg-muted/30 p-2">
