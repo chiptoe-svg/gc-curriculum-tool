@@ -37,6 +37,9 @@ function makeProfile(): CaptureProfile {
         k_depth: 4, u_depth: 4, d_depth: 3,
         evidence_k: 'k', evidence_u: 'u', evidence_d: 'd',
         rationale: 'inferred from course arc', source: 'inferred' as const, citations: [],
+        k_says: 'They recall color terminology.',
+        u_says: 'They explain why color profiles matter.',
+        d_says: 'They produce a calibration report.',
       },
     ],
     incoming_expectations: [],
@@ -71,44 +74,55 @@ function renderPanel() {
   );
 }
 
-describe('ProfileReviewPanel — adjusting a KUD slider does not auto-confirm', () => {
-  it('keeps the "Worth a look" row at "Looks right ✓" after a slider change', () => {
+// Helper: open the portrait "Something's off" panel and apply a score correction.
+// Uses "too high → first lower option" to trigger a downward adjustment (onChange).
+function applyPortraitCorrection() {
+  fireEvent.click(screen.getByRole('button', { name: /something.s off/i }));
+  // Click "too high" for the Do dimension to open the lower-anchor options.
+  const flagRow = document.querySelector('[data-testid="flag-row-d"]')!;
+  const tooHighBtn = Array.from(flagRow.querySelectorAll('button')).find(b => b.textContent?.includes('too high'))!;
+  fireEvent.click(tooHighBtn);
+  // Pick the first offered lower option to commit the change.
+  const lowerOptions = document.querySelectorAll('[data-testid="flag-row-d"] button');
+  const lowerOpt = Array.from(lowerOptions).find(b => b.textContent && !b.textContent.includes('too high') && !b.textContent.includes('too low'))!;
+  fireEvent.click(lowerOpt);
+}
+
+describe('ProfileReviewPanel — adjusting a portrait score does not auto-confirm', () => {
+  it('keeps the "Worth a look" row at "✓ Sounds like them" after a score correction', () => {
     renderPanel();
 
-    // The flagged row starts unreviewed: button reads "Looks right ✓".
-    expect(screen.getByRole('button', { name: /looks right/i })).toBeTruthy();
+    // The flagged row starts unreviewed: button reads "✓ Sounds like them".
+    expect(screen.getByRole('button', { name: /sounds like them/i })).toBeTruthy();
     expect(screen.queryByRole('button', { name: /✓ Confirmed/i })).toBeNull();
 
-    // Adjust the Do slider on the flagged competency.
-    const doSlider = screen.getByLabelText(`Do depth for "${FLAGGED_STATEMENT}"`);
-    fireEvent.change(doSlider, { target: { value: '4' } });
+    // Apply a portrait correction on the flagged competency.
+    applyPortraitCorrection();
 
-    // The slider edit must NOT flip the row to confirmed — confirmation is the
-    // explicit button click, not a side effect of moving a score.
-    expect(screen.getByRole('button', { name: /looks right/i })).toBeTruthy();
+    // The portrait correction must NOT flip the row to confirmed — confirmation is the
+    // explicit button click, not a side effect of correcting a score.
+    expect(screen.getByRole('button', { name: /sounds like them/i })).toBeTruthy();
     expect(screen.queryByRole('button', { name: /✓ Confirmed/i })).toBeNull();
   });
 
   it('marks the row confirmed only when the explicit button is clicked', () => {
     renderPanel();
-    fireEvent.click(screen.getByRole('button', { name: /looks right/i }));
+    fireEvent.click(screen.getByRole('button', { name: /sounds like them/i }));
     expect(screen.getByRole('button', { name: /✓ Confirmed/i })).toBeTruthy();
   });
 
-  it('keeps a flagged row in place (does not migrate to confident) when a score drops below threshold', () => {
+  it('keeps a flagged row in place (does not migrate to confident) when a score is corrected', () => {
     renderPanel();
     // The flagged row starts expanded with a reason label + confirm button.
     expect(screen.getByText(/resting on your word/i)).toBeTruthy();
-    expect(screen.getByRole('button', { name: /looks right/i })).toBeTruthy();
-    const doSlider = screen.getByLabelText(`Do depth for "${FLAGGED_STATEMENT}"`);
+    expect(screen.getByRole('button', { name: /sounds like them/i })).toBeTruthy();
 
-    // Drop the Do score well below the original flag threshold, then nudge back.
-    fireEvent.change(doSlider, { target: { value: '1' } });
-    fireEvent.change(doSlider, { target: { value: '2' } });
+    // Apply a portrait correction to change a score.
+    applyPortraitCorrection();
 
     // Membership is frozen at load — the row stays a full, confirmable card and
-    // never rolls up into the confident zone. Its slider is still present.
-    expect(screen.getByRole('button', { name: /looks right/i })).toBeTruthy();
-    expect(screen.getByLabelText(`Do depth for "${FLAGGED_STATEMENT}"`)).toBeTruthy();
+    // never rolls up into the confident zone. The portrait is still present.
+    expect(screen.getByRole('button', { name: /sounds like them/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /something.s off/i })).toBeTruthy();
   });
 });

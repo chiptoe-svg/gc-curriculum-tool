@@ -263,14 +263,14 @@ describe('A15 — approve rubber-stamp guard', () => {
     expect(screen.getByText(/locked until reviewed/i)).toBeTruthy();
   });
 
-  it('locked hint disappears after all worth-a-look items are marked Looks right', async () => {
+  it('locked hint disappears after all worth-a-look items are marked ✓ Sounds like them', async () => {
     renderPanelWithWorthLook();
 
     // Locked hint visible initially
     expect(screen.getByText(/locked until reviewed/i)).toBeTruthy();
 
-    // Click every "Looks right ✓" button — each maps to a worthLook item.
-    const looksRightBtns = screen.getAllByRole('button', { name: /looks right/i });
+    // Click every "✓ Sounds like them" button — each maps to a worthLook item.
+    const looksRightBtns = screen.getAllByRole('button', { name: /sounds like them/i });
     expect(looksRightBtns.length).toBeGreaterThan(0);
     for (const btn of looksRightBtns) {
       await act(async () => { fireEvent.click(btn); });
