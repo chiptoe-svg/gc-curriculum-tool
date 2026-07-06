@@ -985,7 +985,7 @@ export function ProfileReviewPanel({
   // about (flagged, capped at 6, ranked by Do depth). Computed ONCE from the
   // profile as it arrived — editing a score must never reshuffle the list or
   // migrate a row out from under you mid-review (2026-06-16 operator report: a
-  // row jumped sections on a Do 4→1→2 slider drag). The list always renders in
+  // row jumped sections on a Do 4→1→2 portrait correction). The list always renders in
   // course order; these frozen indices only decide which rows are highlighted +
   // expanded vs. rolled up.
   const [{ needsReview, reasonOf }] = useState(() => {
@@ -1048,10 +1048,11 @@ export function ProfileReviewPanel({
   }
 
   // Inline "Save edits" rendered right under any expanded competency card once
-  // there are unsaved edits — so adjusting a slider on a rolled-up "confident"
-  // (e.g. found-in-materials) row has an obvious save at the point of editing,
-  // not just the global one in the sticky bar (operator: "after adjusting
-  // sliders, there is no save button"). Persists the whole working profile.
+  // there are unsaved edits — so correcting a score via the portrait on a
+  // rolled-up "confident" (e.g. found-in-materials) row has an obvious save at
+  // the point of editing, not just the global one in the sticky bar (operator:
+  // "after making a correction, there is no save button"). Persists the whole
+  // working profile.
   function renderInlineSave() {
     if (!dirty) return null;
     return (
@@ -1287,11 +1288,12 @@ export function ProfileReviewPanel({
                   <CompetencyCard
                     competency={c}
                     index={i}
-                    // Editing a score is NOT confirmation. Adjusting a slider (or
-                    // statement) only mutates the draft + unlocks approval via the
-                    // `dirty` guard; clearing the row requires the explicit
-                    // "Looks right ✓" click below. (A stray slider tick used to
-                    // auto-confirm the row — 2026-06-16 operator report.)
+                    // Editing a score is NOT confirmation. Using the portrait's
+                    // "Something's off → too high/too low" correction only mutates
+                    // the draft + unlocks approval via the `dirty` guard; clearing
+                    // the row requires the explicit "✓ Sounds like them" button
+                    // below. (A stray portrait edit used to auto-confirm the row —
+                    // 2026-06-16 operator report.)
                     onChange={next => updateCompetency(i, next)}
                     onCitationClick={handleCitationClick}
                     courseCode={courseCode}

@@ -115,6 +115,7 @@ export function CompetencyPortrait({
                       <button
                         key={opt.level}
                         type="button"
+                        data-testid={`lower-opt-${dim}-${opt.level}`}
                         onClick={() => chooseLower(dim, opt.level)}
                         className="block w-full rounded border border-input px-2 py-1 text-left text-[11px] hover:bg-background"
                       >

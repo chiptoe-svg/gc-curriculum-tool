@@ -93,9 +93,9 @@ describe('K/U/D override rationale gate', () => {
     const flagRow = document.querySelector('[data-testid="flag-row-d"]')!;
     const tooHighBtn = Array.from(flagRow.querySelectorAll('button')).find(b => b.textContent?.includes('too high'))!;
     fireEvent.click(tooHighBtn);
-    const lowerOptions = Array.from(document.querySelectorAll('[data-testid="flag-row-d"] button'))
-      .filter(b => b.textContent && !b.textContent.includes('too high') && !b.textContent.includes('too low'));
-    if (lowerOptions.length > 0) fireEvent.click(lowerOptions[0]!);
+    // d_depth is 2 in the fixture; level 0 is the first lower-anchor option.
+    const lowerOpt = document.querySelector('[data-testid="lower-opt-d-0"]') as HTMLButtonElement | null;
+    if (lowerOpt) fireEvent.click(lowerOpt);
     expect(screen.queryByText(/You raised a score/i)).toBeNull();
   });
 });
