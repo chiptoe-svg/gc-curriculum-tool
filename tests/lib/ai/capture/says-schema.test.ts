@@ -21,6 +21,7 @@ describe('captureCompetencySchema k_says/u_says/d_says', () => {
   it('accepts null (foundational / pre-feature snapshots)', () => {
     const r = captureCompetencySchema.safeParse({
       ...base, type: 'foundational', k_depth: null, u_depth: null,
+      evidence_k: null, evidence_u: null,
       k_says: null, u_says: null, d_says: 'Consistently attends to detail.',
     });
     expect(r.success && r.data.d_says).toBe('Consistently attends to detail.');

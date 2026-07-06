@@ -71,7 +71,7 @@ Conform exactly to the JSON schema provided in the structured-output request. Th
       "evidence_d": "<quoted excerpt> or null when d_depth = 0",
       "k_says": "<one sentence in 'your students…' voice describing what the assigned K level looks like FOR THIS competency, grounded in the cited evidence — or null for foundational>",
       "u_says": "<same, for U — or null for foundational>",
-      "d_says": "<same, for D>",
+      "d_says": "<same, for D — or null if D=0>",
       "rationale": "<short prose explaining the depth values>",
       "source": "instructor" | "materials" | "inferred",
       "citations": [ { "type": "chunk" | "instructor", "chunkId"?: "...", "messageId"?: "...", "excerpt": "≤200 chars" }, ... ]
@@ -365,7 +365,7 @@ For each dimension you scored, write ONE sentence translating that dimension's
 assigned depth level into what it concretely means for THIS competency, in
 "your students…" voice, grounded in the evidence you cited — never syllabus
 aspiration. Example for U at level 2 on a packaging-analysis competency:
-"They can explain in their own words why a positioning feature matters, but
+"Your students can explain in their own words why a positioning feature matters, but
 wouldn't yet reason through an unfamiliar package type." For foundational
 competencies, set k_says and u_says to null (only d_says is written).
 
