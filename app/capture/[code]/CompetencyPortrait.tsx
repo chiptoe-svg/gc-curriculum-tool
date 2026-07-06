@@ -92,20 +92,24 @@ export function CompetencyPortrait({
               <div key={dim} data-testid={`flag-row-${dim}`} className="space-y-1">
                 <div className="flex items-center gap-2 text-xs">
                   <span className="w-20 font-medium">{dimLabel(dim)}</span>
-                  <button
-                    type="button"
-                    onClick={() => setMode(isActive && mode?.dir === 'high' ? null : { dim, dir: 'high' })}
-                    className="rounded border border-input px-2 py-0.5 hover:bg-background"
-                  >
-                    too high
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setEvidence(''); setMode(isActive && mode?.dir === 'low' ? null : { dim, dir: 'low' }); }}
-                    className="rounded border border-input px-2 py-0.5 hover:bg-background"
-                  >
-                    too low
-                  </button>
+                  {depthOf(competency, dim) > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setMode(isActive && mode?.dir === 'high' ? null : { dim, dir: 'high' })}
+                      className="rounded border border-input px-2 py-0.5 hover:bg-background"
+                    >
+                      too high
+                    </button>
+                  )}
+                  {depthOf(competency, dim) < 5 && (
+                    <button
+                      type="button"
+                      onClick={() => { setEvidence(''); setMode(isActive && mode?.dir === 'low' ? null : { dim, dir: 'low' }); }}
+                      className="rounded border border-input px-2 py-0.5 hover:bg-background"
+                    >
+                      too low
+                    </button>
+                  )}
                 </div>
 
                 {isActive && mode?.dir === 'high' && (

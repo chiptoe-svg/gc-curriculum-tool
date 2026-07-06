@@ -67,4 +67,22 @@ describe('CompetencyPortrait', () => {
     expect(screen.queryByText('Naming')).toBeNull();
     expect(screen.queryByText('Reasoning')).toBeNull();
   });
+
+  it('hides "too low" for a dimension already at depth 5 (ceiling)', () => {
+    const maxed = { ...comp, d_depth: 5 };
+    render(<CompetencyPortrait competency={maxed} onChange={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: /something's off/i }));
+    const row = screen.getByTestId('flag-row-d');
+    expect(within(row).queryByRole('button', { name: /too low/i })).toBeNull();
+    expect(within(row).getByRole('button', { name: /too high/i })).toBeInTheDocument();
+  });
+
+  it('hides "too high" for a dimension at depth 0 (floor)', () => {
+    const zero = { ...comp, d_depth: 0 };
+    render(<CompetencyPortrait competency={zero} onChange={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: /something's off/i }));
+    const row = screen.getByTestId('flag-row-d');
+    expect(within(row).queryByRole('button', { name: /too high/i })).toBeNull();
+    expect(within(row).getByRole('button', { name: /too low/i })).toBeInTheDocument();
+  });
 });

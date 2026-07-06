@@ -45,15 +45,16 @@ function makeProfile(): CaptureProfile {
     ],
     incoming_expectations: [],
     verification_summary: {
-      overall_shape: 'Balanced', strongest_evidence: 'Rubric', dimensional_patterns: 'Aligned',
-      catalog_vs_evidence: 'Consistent', foundationals_at_a_glance: 'Agency present',
+      course_shape: 'Balanced', strongest_evidence: ['Rubric'], dimensional_patterns: ['Aligned'],
+      catalog_vs_evidence: ['Consistent'], foundationals_glance: 'Agency present',
       source: 'materials' as const, citations: [],
     },
     audit_notes: {
       prereq_gaps: [], objective_misalignments: [], cross_source_conflicts: [],
       suggested_objective_revisions: [], source: 'inferred' as const, citations: [],
     },
-    course_emphasis: [], generated_at: new Date().toISOString(), scale_version: 'v2',
+    course_emphasis: [], generated_at: new Date().toISOString(), scale_version: 'v1',
+    course_code: 'GC 4400',
     overview: null, class_structure: null, major_projects: null, revised_objectives_draft: [],
   } as unknown as CaptureProfile;
 }

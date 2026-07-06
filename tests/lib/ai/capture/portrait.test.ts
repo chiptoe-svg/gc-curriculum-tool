@@ -32,6 +32,14 @@ describe('portraitClauses', () => {
     expect(u.text).toBe('Explains the rationale in own words'); // describeDepth('u', 2)
     expect(u.fallback).toBe(true);
   });
+
+  it('shows the generic "Not present" anchor at depth 0 even if a says sentence is set', () => {
+    const zeroWithSays: CaptureCompetency = { ...technical, d_depth: 0, d_says: 'Your students do this well.' };
+    const cs = portraitClauses(zeroWithSays);
+    const d = cs.find(c => c.dim === 'd')!;
+    expect(d.fallback).toBe(true);
+    expect(d.text).toBe('Not present'); // describeDepth('d', 0)
+  });
 });
 
 describe('lowerAnchorOptions', () => {

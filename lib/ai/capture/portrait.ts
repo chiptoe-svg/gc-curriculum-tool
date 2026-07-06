@@ -30,9 +30,10 @@ export function portraitClauses(c: CaptureCompetency): PortraitClause[] {
   const out: PortraitClause[] = [];
   for (const r of rows) {
     if (r.depth === null) continue; // unscored (foundational K/U) — hidden, never zero
-    if (r.says && r.says.trim().length > 0) {
+    if (r.depth > 0 && r.says && r.says.trim().length > 0) {
       out.push({ dim: r.dim, text: r.says.trim(), fallback: false });
     } else {
+      // depth === 0 → "Not present"; always use the generic anchor regardless of says
       out.push({ dim: r.dim, text: describeDepth(r.dim, r.depth), fallback: true });
     }
   }
