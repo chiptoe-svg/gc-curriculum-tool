@@ -88,9 +88,12 @@ export class LocalProvider implements AIProvider {
     const PROMPT =
       'Output only the verbatim text of this image as plain lines, preserving line breaks. ' +
       'No description, commentary, or explanation.';
-    // Bounded so a runaway response can't hold a shared-DGX slot (a canonical page is
-    // ~1000-1100 output tokens; 1500 leaves headroom without inviting overrun).
-    const OCR_MAX_TOKENS = 1500;
+    // Ceiling, not a target — a normal transcription stops at EOS (~1000-1100 tokens for
+    // a dense page) regardless of the cap, so a generous ceiling costs nothing on normal
+    // requests. 3000 (not 1500) so the densest scanned pages (≤ ~2000 tokens at the 1120
+    // soft-token budget) never TRUNCATE, while still bounding a pathological runaway well
+    // below unbounded. repetition_penalty:1.3 (sent below) is the primary runaway guard.
+    const OCR_MAX_TOKENS = 3000;
     const maxPages = args.maxPages ?? 40;
     const txBudget = visionModel('docTranscribe').budget ?? 1120;
 
