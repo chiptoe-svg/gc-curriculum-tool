@@ -33,6 +33,9 @@ function makeProfile(): CaptureProfile {
       statement: STMT, type: 'technical', k_depth: 2, u_depth: 2, d_depth: 2,
       evidence_k: 'k', evidence_u: 'u', evidence_d: 'd', rationale: 'r',
       source: 'materials', citations: [{ type: 'chunk', chunkId: 'c1', messageId: null, excerpt: 'ex' }],
+      k_says: 'They name the color spaces.',
+      u_says: 'They explain gamut differences.',
+      d_says: 'They produce a color-managed PDF.',
     }],
     incoming_expectations: [],
     verification_summary: { overall_shape: 'x', strongest_evidence: 'x', dimensional_patterns: 'x', catalog_vs_evidence: 'x', foundationals_at_a_glance: 'x', source: 'materials', citations: [] },
@@ -44,21 +47,34 @@ function renderPanel() {
   render(<ProfileReviewPanel profile={makeProfile()} reviewerStatus="ai_drafted" initialReviewerNote={null}
     telemetry={null} onSave={async () => {}} onResumeChat={() => {}} courseCode="GC 2400" courseTitle="Color" slug="s" onSnapshotCreated={() => {}} />);
 }
+
 // The single materials competency is non-flagged → confident/rolled-up. Expand to edit.
 function ensureExpanded() {
-  const slider = screen.queryByLabelText(`Do depth for "${STMT}"`);
-  if (slider) return;
+  const portrait = document.querySelector('[data-testid="flag-row-d"]');
+  if (portrait) return; // already expanded
   const row = screen.getByRole('button', { name: new RegExp(STMT, 'i') });
   fireEvent.click(row);
+}
+
+// Raise Do depth by 1 using the portrait "too low → evidence → Raise Do" flow.
+function raiseDoDepthViaPortrait() {
+  ensureExpanded();
+  // Open the "Something's off" panel.
+  fireEvent.click(screen.getByRole('button', { name: /something.s off/i }));
+  // Click "too low" for Do.
+  const flagRow = document.querySelector('[data-testid="flag-row-d"]')!;
+  const tooLowBtn = Array.from(flagRow.querySelectorAll('button')).find(b => b.textContent?.includes('too low'))!;
+  fireEvent.click(tooLowBtn);
+  // Fill in evidence text (required to unlock the Raise button).
+  fireEvent.change(screen.getByLabelText(/evidence for do/i), { target: { value: 'capstone press checks' } });
+  // Submit.
+  fireEvent.click(screen.getByRole('button', { name: /raise do/i }));
 }
 
 describe('K/U/D override rationale gate', () => {
   it('shows a required reason on an upward bump and blocks approve until filled', () => {
     renderPanel();
-    ensureExpanded();
-    // Raise Do depth from 2 → 4
-    const slider = screen.getByLabelText(`Do depth for "${STMT}"`);
-    fireEvent.change(slider, { target: { value: '4' } });
+    raiseDoDepthViaPortrait();
     // Reason field appears
     expect(screen.getByText(/You raised a score/i)).toBeTruthy();
     // Approve lock message names the bump count
@@ -72,9 +88,14 @@ describe('K/U/D override rationale gate', () => {
   it('no reason field for a downward edit', () => {
     renderPanel();
     ensureExpanded();
-    // Lower Do depth from 2 → 1
-    const slider = screen.getByLabelText(`Do depth for "${STMT}"`);
-    fireEvent.change(slider, { target: { value: '1' } });
+    // Lower Do depth by opening "too high" and picking a lower option.
+    fireEvent.click(screen.getByRole('button', { name: /something.s off/i }));
+    const flagRow = document.querySelector('[data-testid="flag-row-d"]')!;
+    const tooHighBtn = Array.from(flagRow.querySelectorAll('button')).find(b => b.textContent?.includes('too high'))!;
+    fireEvent.click(tooHighBtn);
+    // d_depth is 2 in the fixture; level 0 is the first lower-anchor option.
+    const lowerOpt = document.querySelector('[data-testid="lower-opt-d-0"]') as HTMLButtonElement | null;
+    if (lowerOpt) fireEvent.click(lowerOpt);
     expect(screen.queryByText(/You raised a score/i)).toBeNull();
   });
 });

@@ -15,7 +15,7 @@ import { formatIncomingRequirements } from '@/lib/capture/incoming-requirements'
 import { VerificationSummary } from './VerificationSummary';
 import { LegacyBanner } from './LegacyBanner';
 import { CitationDrawer, type CitationTarget } from './CitationDrawer';
-import { describeDepth, type Dimension } from '@/lib/ai/capture/depth-anchors';
+import { CompetencyPortrait } from './CompetencyPortrait';
 import { CourseOverview } from './CourseOverview';
 import { ClassStructureSection } from './ClassStructureSection';
 import { MajorProjectsSection } from './MajorProjectsSection';
@@ -267,61 +267,6 @@ interface Props {
   hasSnapshot?: boolean;
 }
 
-function DepthSlider({
-  label,
-  dimension,
-  value,
-  onChange,
-  disabled,
-  context,
-}: {
-  label: string;
-  dimension: Dimension;
-  value: number | null;
-  onChange: (v: number) => void;
-  disabled?: boolean;
-  /** Competency statement, woven into the slider's accessible name so a
-   *  screen reader announces which competency + dimension is being scored
-   *  (the visual <p> label is not programmatically associated with the input). */
-  context?: string;
-}) {
-  if (value === null) {
-    return (
-      <div className="space-y-0.5">
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-          {label}
-        </p>
-        <p className="text-xs italic text-muted-foreground">— (not scored)</p>
-      </div>
-    );
-  }
-  return (
-    <div className="space-y-0.5">
-      <div className="flex items-baseline justify-between">
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-          {label}
-        </p>
-        <p className="font-mono text-xs">{value}</p>
-      </div>
-      <input
-        type="range"
-        min={0}
-        max={5}
-        step={1}
-        value={value}
-        disabled={disabled}
-        onChange={e => onChange(parseInt(e.target.value, 10))}
-        className="w-full"
-        aria-label={`${label} depth${context ? ` for "${context}"` : ''}`}
-        aria-valuetext={`${value} of 5 — ${describeDepth(dimension, value)}`}
-      />
-      <p className="text-[10px] leading-snug text-muted-foreground">
-        {describeDepth(dimension, value)}
-      </p>
-    </div>
-  );
-}
-
 /**
  * ⚑ dispute affordance on one competency. Files a profile_competency flag
  * keyed (courseCode, statement) with the current depths frozen as context.
@@ -491,31 +436,7 @@ function CompetencyCard({
         </p>
       )}
 
-      <div className="grid grid-cols-3 gap-4">
-        <DepthSlider
-          label="Know"
-          dimension="k"
-          value={competency.k_depth}
-          onChange={v => onChange({ ...competency, k_depth: v })}
-          disabled={!isTechnical}
-          context={competency.statement}
-        />
-        <DepthSlider
-          label="Understand"
-          dimension="u"
-          value={competency.u_depth}
-          onChange={v => onChange({ ...competency, u_depth: v })}
-          disabled={!isTechnical}
-          context={competency.statement}
-        />
-        <DepthSlider
-          label="Do"
-          dimension="d"
-          value={competency.d_depth}
-          onChange={v => onChange({ ...competency, d_depth: v })}
-          context={competency.statement}
-        />
-      </div>
+      <CompetencyPortrait competency={competency} onChange={onChange} />
 
       {(competency.evidence_k || competency.evidence_u || competency.evidence_d) && (
         <details className="text-xs" open={!isTechnical}>
@@ -1064,7 +985,7 @@ export function ProfileReviewPanel({
   // about (flagged, capped at 6, ranked by Do depth). Computed ONCE from the
   // profile as it arrived — editing a score must never reshuffle the list or
   // migrate a row out from under you mid-review (2026-06-16 operator report: a
-  // row jumped sections on a Do 4→1→2 slider drag). The list always renders in
+  // row jumped sections on a Do 4→1→2 portrait correction). The list always renders in
   // course order; these frozen indices only decide which rows are highlighted +
   // expanded vs. rolled up.
   const [{ needsReview, reasonOf }] = useState(() => {
@@ -1106,7 +1027,7 @@ export function ProfileReviewPanel({
   const unjustifiedBumpCount = bumps.filter(b => (overrideReasons.get(b.index) ?? '').trim().length === 0).length;
   const allUpwardBumpsJustified = unjustifiedBumpCount === 0;
   const approveUnlocked = (dirty || allWorthLookReviewed || noteSubstantive) && allUpwardBumpsJustified;
-  const approveLockTitle = "Review before approving — adjust at least one score, mark each 'Worth a look' item Looks right ✓, or add a departmental-context note. (Approval is an epistemic act, not a click-through.)";
+  const approveLockTitle = "Review before approving — for each 'Worth a look' card, mark ✓ Sounds like them or use 'Something's off' to correct a dimension, or add a departmental-context note. (Approval is an epistemic act, not a click-through.)";
 
   async function persist(status: 'confirmed' | 'edited') {
     if (validationError) {
@@ -1127,10 +1048,11 @@ export function ProfileReviewPanel({
   }
 
   // Inline "Save edits" rendered right under any expanded competency card once
-  // there are unsaved edits — so adjusting a slider on a rolled-up "confident"
-  // (e.g. found-in-materials) row has an obvious save at the point of editing,
-  // not just the global one in the sticky bar (operator: "after adjusting
-  // sliders, there is no save button"). Persists the whole working profile.
+  // there are unsaved edits — so correcting a score via the portrait on a
+  // rolled-up "confident" (e.g. found-in-materials) row has an obvious save at
+  // the point of editing, not just the global one in the sticky bar (operator:
+  // "after making a correction, there is no save button"). Persists the whole
+  // working profile.
   function renderInlineSave() {
     if (!dirty) return null;
     return (
@@ -1344,7 +1266,7 @@ export function ProfileReviewPanel({
               Listed in course order. The highlighted rows are the ones the interviewer was less
               sure about — they rest on your word, sit high on the scale, were inferred without a
               direct source, or carry the most graded weight. Adjust a score if it&apos;s off, then
-              mark each Looks right ✓. The confident rows are rolled up — click any to edit.
+              mark each ✓ Sounds like them. The confident rows are rolled up — click any to edit.
             </p>
           )}
 
@@ -1366,11 +1288,12 @@ export function ProfileReviewPanel({
                   <CompetencyCard
                     competency={c}
                     index={i}
-                    // Editing a score is NOT confirmation. Adjusting a slider (or
-                    // statement) only mutates the draft + unlocks approval via the
-                    // `dirty` guard; clearing the row requires the explicit
-                    // "Looks right ✓" click below. (A stray slider tick used to
-                    // auto-confirm the row — 2026-06-16 operator report.)
+                    // Editing a score is NOT confirmation. Using the portrait's
+                    // "Something's off → too high/too low" correction only mutates
+                    // the draft + unlocks approval via the `dirty` guard; clearing
+                    // the row requires the explicit "✓ Sounds like them" button
+                    // below. (A stray portrait edit used to auto-confirm the row —
+                    // 2026-06-16 operator report.)
                     onChange={next => updateCompetency(i, next)}
                     onCitationClick={handleCitationClick}
                     courseCode={courseCode}
@@ -1391,7 +1314,7 @@ export function ProfileReviewPanel({
                           : 'inline-flex items-center gap-1.5 rounded-md border border-amber-600 bg-amber-500 px-4 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-amber-600'
                       }
                     >
-                      {reviewed.has(i) ? '✓ Confirmed' : 'Looks right ✓'}
+                      {reviewed.has(i) ? '✓ Confirmed' : '✓ Sounds like them'}
                     </button>
                   </div>
                 </div>
