@@ -99,6 +99,9 @@ export const captureCompetencySchema = z
     k_depth: depthSchema.nullable(),
     u_depth: depthSchema.nullable(),
     d_depth: depthSchema,
+    // Per-dimension plain-language "what this level looks like here" sentences,
+    // authored by the scorer. nullable → OpenAI strict-mode / foundational K/U;
+    // optional → pre-feature snapshots that predate the field.
     k_says: z.string().nullable().optional(),
     u_says: z.string().nullable().optional(),
     d_says: z.string().nullable().optional(),

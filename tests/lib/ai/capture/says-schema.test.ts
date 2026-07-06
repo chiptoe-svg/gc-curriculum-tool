@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { captureCompetencySchema } from '@/lib/ai/capture/schema';
+import { captureProfileJsonSchema } from '@/lib/ai/analyze/capture-scores';
 
 const base = {
   statement: 'Students analyze packaging requirements',
@@ -28,5 +29,25 @@ describe('captureCompetencySchema k_says/u_says/d_says', () => {
   it('parses when the says fields are omitted (backward-compat)', () => {
     const r = captureCompetencySchema.safeParse(base);
     expect(r.success).toBe(true);
+  });
+});
+
+describe('strict request schema — competency says fields', () => {
+  const comp = (captureProfileJsonSchema as any).properties.competencies.items;
+
+  it('lists k_says/u_says/d_says in required', () => {
+    for (const f of ['k_says', 'u_says', 'd_says']) {
+      expect(comp.required).toContain(f);
+    }
+  });
+
+  it('declares them as nullable string in properties', () => {
+    for (const f of ['k_says', 'u_says', 'd_says']) {
+      expect(comp.properties[f]).toEqual({ type: ['string', 'null'] });
+    }
+  });
+
+  it('keeps required and properties in sync (strict-mode invariant)', () => {
+    expect(new Set(comp.required)).toEqual(new Set(Object.keys(comp.properties)));
   });
 });
