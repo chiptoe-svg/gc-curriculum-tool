@@ -82,9 +82,15 @@ export class LocalProvider implements AIProvider {
   // Pages run at low concurrency (memory-bound) and are concatenated in order.
   // Cost is always 0 for the local provider.
   async transcribeDocument(args: TranscribeDocumentArgs): Promise<TranscribeDocumentResult> {
+    // A tightly CONSTRAINED prompt is the primary latency lever: an open-ended
+    // "transcribe this" can tip Gemma-4 into step-by-step reasoning (~7-8× the decode
+    // tokens). Pin the output shape so there's nothing to reason about. (Per the DGX side.)
     const PROMPT =
-      'Transcribe all text in this document image verbatim, preserving reading order. ' +
-      'Output only the transcription — no preamble, commentary, or explanation.';
+      'Output only the verbatim text of this image as plain lines, preserving line breaks. ' +
+      'No description, commentary, or explanation.';
+    // Bounded so a runaway response can't hold a shared-DGX slot (a canonical page is
+    // ~1000-1100 output tokens; 1500 leaves headroom without inviting overrun).
+    const OCR_MAX_TOKENS = 1500;
     const maxPages = args.maxPages ?? 40;
     const txBudget = visionModel('docTranscribe').budget ?? 1120;
 
@@ -132,7 +138,7 @@ export class LocalProvider implements AIProvider {
             model: offload.model,
             messages: imageMessages(i),
             temperature: 0,
-            max_tokens: 4096,
+            max_tokens: OCR_MAX_TOKENS,
             // Image is canonical (48-aligned, tokens ≤ B); max_soft_tokens = B is the
             // DGX budget/ceiling (the router recomputes tokens from dims and validates).
             max_soft_tokens: txBudget,
@@ -149,7 +155,7 @@ export class LocalProvider implements AIProvider {
         model: this.model,
         messages: imageMessages(i),
         temperature: 0,
-        max_tokens: 4096,
+        max_tokens: OCR_MAX_TOKENS,
         chat_template_kwargs: { enable_thinking: false },
         ...(txBudget ? { vision_soft_tokens_per_image: txBudget } : {}),
         repetition_penalty: 1.3,
