@@ -21,6 +21,8 @@ import { getLatestSnapshotByCourse } from '@/lib/db/capture-snapshots-queries';
 import { saveScenario } from '@/lib/db/explore-scenario-queries';
 import { getIntendedCoverageForCourses } from '@/lib/db/courses-queries';
 import type { CaptureProfile } from '@/lib/ai/capture/schema';
+import { computeCareerFit } from './career-fit';
+import { getMatrixData } from '@/lib/db/program-coverage-queries';
 
 // ---------------------------------------------------------------------------
 // Shared helpers
@@ -50,6 +52,8 @@ export interface AssembleScenarioInput {
    * Key = relying course code; value = edges where prereqCourseCode === focalCourseCode.
    */
   downstreamByCourse: Record<string, RelyEdge[]>;
+  /** Career-fit ripple lines computed externally; appended verbatim after the downstream + upstream passes. */
+  careerFitLines?: RippleLine[];
   subCompLabel: (subCompetencyId: string) => string;
 }
 
@@ -96,6 +100,9 @@ export function assembleScenario(input: AssembleScenarioInput): Scenario {
     subCompLabel: input.subCompLabel,
   });
   rippleLines.push(...upstreamLines.filter(l => l.kind === 'upstream_gap'));
+
+  // Append career_fit lines from external computation (computeCareerFit).
+  rippleLines.push(...(input.careerFitLines ?? []).filter(l => l.kind === 'career_fit'));
 
   const scenario = {
     id: input.id,
@@ -315,6 +322,10 @@ export async function runImpact(
     aiResult.predictedDeltas,
   );
 
+  // Step 4b — career-fit lines: does the predicted delta improve a career-target band?
+  const matrix = await getMatrixData();
+  const careerFitLines = computeCareerFit({ focalSnapshotId: focalSnapshot.id, predictedSubCompDepths, matrix });
+
   // Step 5 — baseline delivered attainment for focal course (as a prereq)
   const baselineDelivered = await buildBaselineDelivered(courseCode, focalSnapshot.id);
 
@@ -374,6 +385,7 @@ export async function runImpact(
     predictedSubCompDepths,
     baselineDelivered,
     downstreamByCourse,
+    careerFitLines,
     subCompLabel,
   });
 

@@ -26,3 +26,14 @@ describe('normalizeCompetencyKey', () => {
     expect(normalizeCompetencyKey('Trapping')).not.toBe(normalizeCompetencyKey('Imposition'));
   });
 });
+
+it('includes provided career_fit lines in the scenario ripple', () => {
+  const scenario = assembleScenario({
+    id: 's2', courseCode: 'GC 3460', baselineSnapshotId: 'snap1', createdAt: '2026-07-07T00:00:00.000Z',
+    aiResult: { change: { prose: 'x', activity: 'x', artifact: 'graded', competencies: ['prepress'], rubricCriteria: [], assumesIncoming: [] }, predictedDeltas: [] },
+    predictedSubCompDepths: [], baselineDelivered: [], downstreamByCourse: {},
+    careerFitLines: [{ kind: 'career_fit', courseCode: null, subCompetencyId: 'sc-trap', label: 'Prepress Technician · Trapping', before: 'working (3)', after: 'high (4–5)' }],
+    subCompLabel: (id) => id,
+  });
+  expect(scenario.computedRipple.filter(r => r.kind === 'career_fit')).toHaveLength(1);
+});
