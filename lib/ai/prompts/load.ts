@@ -25,6 +25,7 @@ type PromptName =
   | 'explore-draft-target'
   | 'explore-compare'
   | 'explore-what-if'
+  | 'explore-local-delta'
   | 'program-score-coverage'
   | 'parse-profile-fields'
   | 'decompose-prereq-gap'

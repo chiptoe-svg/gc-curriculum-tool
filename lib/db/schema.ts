@@ -781,3 +781,23 @@ export const facultyFlags = pgTable('faculty_flags', {
   cellIdx: index('idx_faculty_flags_cell').on(t.courseCode, t.careerTargetId, t.subCompetencyId),
   statusIdx: index('idx_faculty_flags_status').on(t.status),
 }));
+
+/**
+ * Explore-side what-if IMPACT scenarios. One row per run of runImpact().
+ * Stores the full Scenario shape (change + predicted deltas + ripple) in JSONB
+ * columns. Never modifies capture-side tables; pure analytical scratch-space.
+ * Migration 0046.
+ */
+export const courseExploreScenarios = pgTable('course_explore_scenarios', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  courseCode: text('course_code').notNull().references(() => courses.code, { onDelete: 'cascade' }),
+  baselineSnapshotId: text('baseline_snapshot_id').notNull(),
+  change: jsonb('change').notNull(),
+  predictedDeltas: jsonb('predicted_deltas').notNull(),
+  computedRipple: jsonb('computed_ripple').notNull(),
+  agentNotes: text('agent_notes'),
+  caption: text('caption'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => ({
+  courseIdx: index('idx_course_explore_scenarios_course').on(t.courseCode),
+}));

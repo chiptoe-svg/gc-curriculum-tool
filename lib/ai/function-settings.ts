@@ -22,6 +22,7 @@ export const AI_FUNCTION_IDS = [
   'explore-draft-target',
   'explore-compare',
   'explore-what-if',
+  'explore-local-delta',
   'program-score-coverage',
   'decompose-prereq-gap',
   'material-digest',
@@ -93,6 +94,11 @@ export const DEFAULT_TIERS: Record<AIFunctionId, Exclude<ModelTier, 'custom'>> =
   'explore-draft-target': 'light',
   'explore-compare': 'default',
   'explore-what-if': 'heavy',
+  // Default tier. Translates a proposed course change into a structured ChangeObject
+  // + PredictedDelta[]. Reasoning load is moderate — grounded in focal competencies +
+  // neighbor context, but a single-call structured output. Default matches explore-compare;
+  // promote to heavy if delta quality is poor on complex multi-competency changes.
+  'explore-local-delta': 'default',
   'program-score-coverage': 'heavy',
   // Small per-click transformation — one short gap → up to ~12 short
   // competency rows. Light tier handles this well; promote to default
@@ -186,6 +192,7 @@ export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
   'explore-draft-target': 'Explore — draft custom target from prose',
   'explore-compare': 'Explore — compare snapshot to target',
   'explore-what-if': 'Explore — what-if simulation',
+  'explore-local-delta': 'Explore — local delta (change object + predicted KUD deltas)',
   'program-score-coverage': 'Program coverage scoring',
   'decompose-prereq-gap': 'Decompose prereq gap into competencies (copy-as-KUD)',
   'material-digest': 'Material digest (every material, audit at-rest context)',
@@ -215,6 +222,7 @@ export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
   'explore-draft-target': 'Translating an instructor\'s prose goal into a structured custom target.',
   'explore-compare': "Running the comparator against a snapshot + target to produce alignment + recommendations.",
   'explore-what-if': 'Predicting the effect of a hypothetical change on the snapshot\'s competencies.',
+  'explore-local-delta': 'Translating a proposed course change into a structured ChangeObject (activity, artifact, touched competencies, rubric criteria, new incoming demands) + PredictedDelta[] (before→after KUD shift per competency, with confidence and rationale).',
   'program-score-coverage': 'Scoring each captured snapshot against each career target\'s sub-competencies for the program coverage matrix.',
   'decompose-prereq-gap': 'Decomposing one free-form prereq-gap finding into a structured list of competencies with K/U/D depths, for the copy-as-KUD button in the review panel.',
   'material-digest': 'Per-material structured digest, generated at extraction for every material. Loaded into the audit agent\'s at-rest context.',
