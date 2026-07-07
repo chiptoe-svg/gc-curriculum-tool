@@ -81,11 +81,17 @@ export const localDeltaJsonSchema = {
 // Estimator
 // ---------------------------------------------------------------------------
 
+export interface EstimateLocalDeltaResult {
+  result: LocalDeltaResult;
+  model: string;
+  costUsdCents: number;
+}
+
 export async function estimateLocalDelta(
   courseCode: string,
   changeProse: string,
   neighbors: NeighborContext,
-): Promise<LocalDeltaResult> {
+): Promise<EstimateLocalDeltaResult> {
   if (!changeProse.trim()) throw new Error('changeProse is required');
   const provider = await getProviderForFunction('explore-local-delta');
   const systemPrompt = await loadPrompt('explore-local-delta');
@@ -150,5 +156,5 @@ export async function estimateLocalDelta(
     validate: (raw: unknown) => localDeltaResultSchema.parse(raw),
   });
 
-  return result.data;
+  return { result: result.data, model: provider.model, costUsdCents: result.costUsdCents };
 }
