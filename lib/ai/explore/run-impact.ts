@@ -46,12 +46,19 @@ export interface AssembleScenarioInput {
  * Pure assembly — runs the ripple engine per downstream course, stamps
  * courseCode onto each downstream_gap line, and builds the full Scenario.
  * Validates the result through scenarioSchema before returning.
+ *
+ * Invariant: downstream_gap lines come exclusively from the per-course loop
+ * (stamped with courseCode); upstream_gap lines come exclusively from the
+ * final assumesIncoming pass. Filtering each pass by kind keeps these sources
+ * from ever crossing, regardless of computeRipple's internal emission order.
  */
 export function assembleScenario(input: AssembleScenarioInput): Scenario {
   const rippleLines: RippleLine[] = [];
 
   // Per downstream course: run ripple with only that course's edges,
-  // then stamp courseCode onto each downstream_gap line it emits.
+  // filter to downstream_gap lines only, then stamp courseCode on each.
+  // Lines of any other kind from this call are dropped — they must come
+  // from the dedicated upstream pass, not the downstream loop.
   for (const [downCourse, edges] of Object.entries(input.downstreamByCourse)) {
     const lines = computeRipple({
       focalCourseCode: input.courseCode,
@@ -61,17 +68,14 @@ export function assembleScenario(input: AssembleScenarioInput): Scenario {
       assumesIncoming: [],
       subCompLabel: input.subCompLabel,
     });
-    for (const line of lines) {
-      if (line.kind === 'downstream_gap') {
-        rippleLines.push({ ...line, courseCode: downCourse });
-      } else {
-        rippleLines.push(line);
-      }
+    for (const line of lines.filter(l => l.kind === 'downstream_gap')) {
+      rippleLines.push({ ...line, courseCode: downCourse });
     }
   }
 
   // One more pass with no downstream edges but with the real assumesIncoming
-  // to get upstream_gap lines.
+  // to get upstream_gap lines. Filter to upstream_gap only — career_fit is a
+  // future kind produced by a separate path, not here.
   const upstreamLines = computeRipple({
     focalCourseCode: input.courseCode,
     downstreamEdges: [],
@@ -80,7 +84,7 @@ export function assembleScenario(input: AssembleScenarioInput): Scenario {
     assumesIncoming: input.aiResult.change.assumesIncoming,
     subCompLabel: input.subCompLabel,
   });
-  rippleLines.push(...upstreamLines);
+  rippleLines.push(...upstreamLines.filter(l => l.kind === 'upstream_gap'));
 
   const scenario = {
     id: input.id,
@@ -307,7 +311,10 @@ export async function runImpact(
       ),
     );
 
-  // Group by relying course
+  // Group by relying course.
+  // NB: prerequisiteEdges.focalCourseCode is the RELYING (downstream) course here —
+  // we filtered edges to prereqCourseCode === courseCode, so the relying side is
+  // the downstream course that depends on our focal course.
   const downstreamByCourse: Record<string, RelyEdge[]> = {};
   for (const row of downstreamEdgeRows) {
     const edges = downstreamByCourse[row.focalCourseCode] ?? [];
