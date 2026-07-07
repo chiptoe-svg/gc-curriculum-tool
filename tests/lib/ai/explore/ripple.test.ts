@@ -32,6 +32,19 @@ describe('computeRipple — downstream gap flips', () => {
     expect(up[0]).toMatchObject({ kind: 'upstream_gap', label: 'color models', after: 'new demand K3' });
   });
 
+  it('does not surface a no_data → met transition as a closed gap', () => {
+    // Downstream edge exists but the focal course has NO baseline delivered row for it
+    // → baseline status is no_data (never a confirmed gap). Predicting a depth makes it
+    // met, but that must NOT read as "gap closed".
+    const edges: RelyEdge[] = [{ prereqCourseCode: 'GC 3460', subCompetencyId: 'sc-trap', expectedK: null, expectedU: null, expectedD: 4 }];
+    const ripple = computeRipple({
+      focalCourseCode: 'GC 3460', downstreamEdges: edges, baselineDelivered: [],
+      predictedSubCompDepths: [{ subCompetencyId: 'sc-trap', k: null, u: null, d: 4 }],
+      assumesIncoming: [], subCompLabel: (id) => id,
+    });
+    expect(ripple.filter(r => r.kind === 'downstream_gap')).toHaveLength(0);
+  });
+
   it('does not flag a downstream gap that was already met', () => {
     const edges: RelyEdge[] = [{ prereqCourseCode: 'GC 3460', subCompetencyId: 'sc-trap', expectedK: null, expectedU: null, expectedD: 3 }];
     const baseline: DeliveredAttainment[] = [{ prereqCourseCode: 'GC 3460', subCompetencyId: 'sc-trap', k: null, u: null, d: 3, basis: 'measured' }];

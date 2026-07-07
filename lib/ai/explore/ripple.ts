@@ -25,14 +25,16 @@ export function computeRipple(input: ComputeRippleInput): RippleLine[] {
 
   // --- Downstream: re-run the gap engine on baseline vs. predicted-overridden delivered ---
   const predBySub = new Map(input.predictedSubCompDepths.map(p => [p.subCompetencyId, p]));
+  // Predicted depths are hypotheses → tag 'intended' (not 'measured') so nothing downstream
+  // mistakes a prediction for measured evidence.
   const scenarioDelivered: DeliveredAttainment[] = input.baselineDelivered.map(d => {
     const p = d.prereqCourseCode === input.focalCourseCode ? predBySub.get(d.subCompetencyId) : undefined;
-    return p ? { ...d, k: p.k, u: p.u, d: p.d } : d;
+    return p ? { ...d, k: p.k, u: p.u, d: p.d, basis: 'intended' } : d;
   });
   // Ensure predicted sub-comps with no baseline row still get a scenario row for the focal course.
   for (const p of input.predictedSubCompDepths) {
     if (!scenarioDelivered.some(d => d.prereqCourseCode === input.focalCourseCode && d.subCompetencyId === p.subCompetencyId)) {
-      scenarioDelivered.push({ prereqCourseCode: input.focalCourseCode, subCompetencyId: p.subCompetencyId, k: p.k, u: p.u, d: p.d, basis: 'measured' });
+      scenarioDelivered.push({ prereqCourseCode: input.focalCourseCode, subCompetencyId: p.subCompetencyId, k: p.k, u: p.u, d: p.d, basis: 'intended' });
     }
   }
 
@@ -43,6 +45,8 @@ export function computeRipple(input: ComputeRippleInput): RippleLine[] {
   for (const subId of subs) {
     const before = statusOf(baseGaps, subId);
     const after = statusOf(scenGaps, subId);
+    // Only surface genuine gap → met flips; no_data → met is intentionally suppressed
+    // because no gap was ever confirmed, so claiming "gap closed" would be misleading.
     if (before === 'gap' && after === 'met') {
       out.push({ kind: 'downstream_gap', subCompetencyId: subId, label: input.subCompLabel(subId), before, after });
     }
