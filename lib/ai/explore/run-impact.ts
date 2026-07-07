@@ -149,12 +149,19 @@ async function resolveSubCompetencyDepths(
   // Build a map: competency statement → [subCompetencyId, ...] (one competency
   // can score against multiple sub-comps; emit one PredictedSubCompDepth per
   // sub-comp, all carrying the same predicted depths).
+  // snapshot_target_coverage has a 3-col PK incl. careerTargetId; a course scored
+  // against multiple targets yields duplicate rows per subComp with identical depths
+  // — dedup by subCompetencyId to match computePrereqGaps.
   const byStatement = new Map<string, string[]>();
   for (const row of coverageRows) {
     if (!row.matchedCompetency) continue;
     const existing = byStatement.get(row.matchedCompetency) ?? [];
     existing.push(row.subCompetencyId);
     byStatement.set(row.matchedCompetency, existing);
+  }
+  // Dedup the subCompetencyId lists (careerTargetId multiplicity can produce duplicates)
+  for (const [stmt, ids] of byStatement) {
+    byStatement.set(stmt, Array.from(new Set(ids)));
   }
 
   const out: PredictedSubCompDepth[] = [];
@@ -196,7 +203,14 @@ async function buildBaselineDelivered(
     .from(snapshotTargetCoverage)
     .where(eq(snapshotTargetCoverage.snapshotId, snapshotId));
 
-  const delivered: DeliveredAttainment[] = measuredRows.map(r => ({
+  // snapshot_target_coverage has a 3-col PK incl. careerTargetId; a course scored
+  // against multiple targets yields duplicate rows per subComp with identical depths
+  // — dedup by subCompetencyId to match computePrereqGaps.
+  const dedupedMeasured = Array.from(
+    new Map(measuredRows.map(r => [r.subCompetencyId, r])).values(),
+  );
+
+  const delivered: DeliveredAttainment[] = dedupedMeasured.map(r => ({
     prereqCourseCode: focalCourseCode,
     subCompetencyId: r.subCompetencyId,
     k: r.kDepth,
