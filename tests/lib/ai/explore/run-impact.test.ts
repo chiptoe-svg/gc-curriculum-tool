@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { assembleScenario } from '@/lib/ai/explore/run-impact';
+import { assembleScenario, normalizeCompetencyKey } from '@/lib/ai/explore/run-impact';
 
 it('stamps downstream courseCode by running ripple per downstream course', () => {
   const scenario = assembleScenario({
@@ -16,4 +16,13 @@ it('stamps downstream courseCode by running ripple per downstream course', () =>
   const down = scenario.computedRipple.filter(r => r.kind === 'downstream_gap');
   expect(down).toHaveLength(1);
   expect(down[0]).toMatchObject({ courseCode: 'GC 4440', label: 'trapping', before: 'gap', after: 'met' });
+});
+
+describe('normalizeCompetencyKey', () => {
+  it('collapses case + whitespace so near-identical statements match', () => {
+    expect(normalizeCompetencyKey('  Prepress   Preparation ')).toBe(normalizeCompetencyKey('prepress preparation'));
+  });
+  it('distinguishes genuinely different statements', () => {
+    expect(normalizeCompetencyKey('Trapping')).not.toBe(normalizeCompetencyKey('Imposition'));
+  });
 });

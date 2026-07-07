@@ -23,6 +23,17 @@ import { getIntendedCoverageForCourses } from '@/lib/db/courses-queries';
 import type { CaptureProfile } from '@/lib/ai/capture/schema';
 
 // ---------------------------------------------------------------------------
+// Shared helpers
+// ---------------------------------------------------------------------------
+
+/** Normalize a competency statement for matching: trim, lowercase, collapse internal whitespace.
+ *  Tolerates the formatting/casing drift between the local-delta AI's competency wording and
+ *  snapshot_target_coverage.matched_competency (which the scoring AI may have re-cased/spaced). */
+export function normalizeCompetencyKey(s: string): string {
+  return s.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+// ---------------------------------------------------------------------------
 // assembleScenario — pure orchestration (no DB, no AI)
 // ---------------------------------------------------------------------------
 
@@ -155,9 +166,10 @@ async function resolveSubCompetencyDepths(
   const byStatement = new Map<string, string[]>();
   for (const row of coverageRows) {
     if (!row.matchedCompetency) continue;
-    const existing = byStatement.get(row.matchedCompetency) ?? [];
+    const key = normalizeCompetencyKey(row.matchedCompetency);
+    const existing = byStatement.get(key) ?? [];
     existing.push(row.subCompetencyId);
-    byStatement.set(row.matchedCompetency, existing);
+    byStatement.set(key, existing);
   }
   // Dedup the subCompetencyId lists (careerTargetId multiplicity can produce duplicates)
   for (const [stmt, ids] of byStatement) {
@@ -166,7 +178,7 @@ async function resolveSubCompetencyDepths(
 
   const out: PredictedSubCompDepth[] = [];
   for (const delta of predictedDeltas) {
-    const subIds = byStatement.get(delta.competency);
+    const subIds = byStatement.get(normalizeCompetencyKey(delta.competency));
     if (!subIds || subIds.length === 0) {
       // No coverage row matched this competency statement — omit from ripple.
       continue;
