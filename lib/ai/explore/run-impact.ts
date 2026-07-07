@@ -376,6 +376,7 @@ export async function runImpact(
 function snapshotToNeighborProfile(courseCode: string, profile: CaptureProfile): NeighborProfile {
   const competencies = (profile.competencies ?? []).map(c => ({
     statement: c.statement,
+    type: c.type,
     k_depth: c.k_depth,
     u_depth: c.u_depth,
     d_depth: c.d_depth,

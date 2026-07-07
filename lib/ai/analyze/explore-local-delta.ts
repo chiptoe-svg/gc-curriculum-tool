@@ -97,7 +97,7 @@ export async function estimateLocalDelta(
   const systemPrompt = await loadPrompt('explore-local-delta');
 
   const focalCompetencies = neighbors.focal.competencies
-    .map(c => `  - ${c.statement} (K:${c.k_depth ?? 'null'} U:${c.u_depth ?? 'null'} D:${c.d_depth})`)
+    .map(c => `  - [${c.type}] ${c.statement} (K${c.k_depth ?? '–'} U${c.u_depth ?? '–'} D${c.d_depth})`)
     .join('\n');
 
   const upstreamSummary = neighbors.upstream
