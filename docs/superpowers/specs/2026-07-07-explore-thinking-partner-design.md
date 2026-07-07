@@ -51,6 +51,15 @@ When a concrete impact estimate would sharpen the conversation, the agent calls 
 
 **Epistemic discipline (light, not heavy):** the crisp quantitative flips come from the deterministic engines on the predicted delta (traceable, no invented numbers); the agent's own richer reasoning (displacement/opportunity cost, redundancy, coherence, second-order and non-KUD effects, "what to check") is offered as *interpretation*, cited to sources, and never states the canonical depth/coverage numbers as fact. Most turns won't call the tool at all — it exists for when a number helps, not as the centerpiece. Honest caveats surfaced in-product: the estimate is only as good as the one predicted delta (hence overridable); the computed flips only see *known* prereq edges (so "along N known dependencies," never implying completeness).
 
+## Scenario as a first-class object — save + compare designed in
+
+The impact tool's output is **not** throwaway chat text; it is a structured, serializable **Scenario**: `{ id, courseCode, baselineSnapshotId, changeObject, predictedDeltas, computedRipple, agentNotes?, caption?, createdAt }`. Naming this domain object from day one is what makes save and compare *additive* rather than a retrofit — an explicit requirement (operator, 2026-07-07): build the structural ability to save and compare, or at least never build architecture that makes it hard.
+
+- **Save = persist the object.** A single clean table, `courseExploreScenarios`, is added now — it *replaces* the three retired `courseExplore*` tables, so the net table count drops — with a thin repository (`saveScenario` / `listScenarios(courseCode)` / `getScenario(id)`). In v1 the agent can already save a scenario on request ("save this as 'trapping lab v2'") and recall a course's saved scenarios in conversation.
+- **Compare = a pure function** `compareScenarios(a, b)` (and scenario-vs-baseline) over two of these structured objects — change-objects, predicted deltas, and ripple ledgers diff cleanly *because* they're structured. In v1, comparison is surfaced **conversationally** (the agent recalls two saved scenarios and narrates their differences via that function).
+
+**Design rule:** nothing in the agent/tool layer may treat a scenario as ephemeral prose. Every impact result is a `Scenario`; persistence and comparison are functions over it. That keeps the save/compare capability real from the first commit — the *only* piece deferred is a dedicated side-by-side visual **compare view** (polish), not the ability.
+
 ## What it reuses vs. retires
 
 **Reuses:** the curriculum-chat/agent framework + `AskTab`-style chat shell; `search_curriculum` (spine) + `read_wiki`/`search_wiki` (wiki) tools; `computeGapsFromInputs` / `computeSufficiency` / `getMatrixData` as the impact tool's compute layer; the prereq-edge graph.
@@ -61,11 +70,10 @@ When a concrete impact estimate would sharpen the conversation, the agent calls 
 
 ## Thin-v1 scope
 
-**In:** the course-anchored thinking-partner agent (both predict and suggest directions); upstream/downstream + spine + wiki grounding; the optional impact tool (local delta → reuse gap/coverage engines). New: a specialized system prompt + a small set of agent tools (a "neighbor context" tool over prereq edges + neighbor snapshots/incoming-expectations, and the "impact estimate" tool); the spine/wiki tools already exist. A new anchored chat surface at `/explore/[code]` replacing the old client.
+**In:** the course-anchored thinking-partner agent (both predict and suggest directions); upstream/downstream + spine + wiki grounding; the optional impact tool (local delta → reuse gap/coverage engines); the **first-class `Scenario` object + `courseExploreScenarios` table + repository**, with **conversational save, recall, and compare** built on it. New code: a specialized system prompt + a small set of agent tools (a "neighbor context" tool over prereq edges + neighbor snapshots/incoming-expectations, the "impact estimate" tool that emits a `Scenario`, and the save/list/compare tools over the repository); the spine/wiki tools already exist. A new anchored chat surface at `/explore/[code]` replacing the old client.
 
-**Out (deferred — genuinely structured features, not the conversational core):**
-- saving / comparing **named** scenarios (v1 conversations are ephemeral, like `/ask`);
-- a structured **diff UI** for scenario-vs-baseline;
+**Out (deferred — genuinely additional surface, not the conversational core):**
+- a dedicated **side-by-side visual compare view** (the save/compare *capability* is in v1 via the `Scenario` object + conversational recall/compare; only the polished visual diff surface is deferred);
 - **AI edge-discovery** writing candidate prereq edges back into the graph (the agent may *mention* a missing dependency in prose; it does not yet mutate the edge store);
 - a structured **suggest pipeline** (ranked candidate generation as a first-class artifact) beyond the conversational form.
 
@@ -74,7 +82,7 @@ When a concrete impact estimate would sharpen the conversation, the agent calls 
 - **The center is the local-delta credibility.** Everything the impact tool says hangs off one estimate; the whole design quarantines that uncertainty into a single, inspectable, faculty-overridable number. If it reads as generic in practice, the impact tool is the weak point — but the *thinking-partner* value (grounded reasoning over real neighbor materials) stands independently of it.
 - **Computed ripple is thin where edges are sparse.** Prereq edges are coarse/incomplete, so clean downstream gap-flips will be the minority of value; most ripple insight comes from the agent's wiki+spine reasoning. Emphasis is on the reasoning, with the computed flips as a small trustworthy anchor.
 - **Framing must stay "co-thinker, not oracle"** in copy and UX so a what-if is never mistaken for a forecast.
-- **Retirement migration:** dropping/deprecating the `courseExplore*` tables + routes needs a clean migration and a check that nothing else reads them.
+- **Retirement migration:** the net data-model change is **drop 3, add 1** — retire `courseExploreTargets` / `courseExploreAnalyses` / `courseExploreWhatIfs` (+ their routes) and stand up the single `courseExploreScenarios` table. Needs a clean migration and a check that nothing else reads the old tables; whether to export any faculty-authored targets before dropping is an open call (see review question).
 
 ## Success criteria
 
