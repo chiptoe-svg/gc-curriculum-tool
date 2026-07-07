@@ -1,4 +1,4 @@
-export interface NeighborCompetency { statement: string; k_depth: number | null; u_depth: number | null; d_depth: number; }
+export interface NeighborCompetency { statement: string; type: 'technical' | 'foundational'; k_depth: number | null; u_depth: number | null; d_depth: number; }
 export interface NeighborIncoming { statement: string; expected_depth: { k: number | null; u: number | null; d: number }; }
 export interface NeighborProfile { courseCode: string; competencies: NeighborCompetency[]; incoming_expectations: NeighborIncoming[]; }
 export interface EdgePair { relyingCourseCode: string; prereqCourseCode: string; }

@@ -21,6 +21,19 @@ import { getLatestSnapshotByCourse } from '@/lib/db/capture-snapshots-queries';
 import { saveScenario } from '@/lib/db/explore-scenario-queries';
 import { getIntendedCoverageForCourses } from '@/lib/db/courses-queries';
 import type { CaptureProfile } from '@/lib/ai/capture/schema';
+import { computeCareerFit } from './career-fit';
+import { getMatrixData } from '@/lib/db/program-coverage-queries';
+
+// ---------------------------------------------------------------------------
+// Shared helpers
+// ---------------------------------------------------------------------------
+
+/** Normalize a competency statement for matching: trim, lowercase, collapse internal whitespace.
+ *  Tolerates the formatting/casing drift between the local-delta AI's competency wording and
+ *  snapshot_target_coverage.matched_competency (which the scoring AI may have re-cased/spaced). */
+export function normalizeCompetencyKey(s: string): string {
+  return s.trim().toLowerCase().replace(/\s+/g, ' ');
+}
 
 // ---------------------------------------------------------------------------
 // assembleScenario — pure orchestration (no DB, no AI)
@@ -39,6 +52,8 @@ export interface AssembleScenarioInput {
    * Key = relying course code; value = edges where prereqCourseCode === focalCourseCode.
    */
   downstreamByCourse: Record<string, RelyEdge[]>;
+  /** Career-fit ripple lines computed externally; appended verbatim after the downstream + upstream passes. */
+  careerFitLines?: RippleLine[];
   subCompLabel: (subCompetencyId: string) => string;
 }
 
@@ -85,6 +100,9 @@ export function assembleScenario(input: AssembleScenarioInput): Scenario {
     subCompLabel: input.subCompLabel,
   });
   rippleLines.push(...upstreamLines.filter(l => l.kind === 'upstream_gap'));
+
+  // Append career_fit lines from external computation (computeCareerFit).
+  rippleLines.push(...(input.careerFitLines ?? []).filter(l => l.kind === 'career_fit'));
 
   const scenario = {
     id: input.id,
@@ -155,9 +173,10 @@ async function resolveSubCompetencyDepths(
   const byStatement = new Map<string, string[]>();
   for (const row of coverageRows) {
     if (!row.matchedCompetency) continue;
-    const existing = byStatement.get(row.matchedCompetency) ?? [];
+    const key = normalizeCompetencyKey(row.matchedCompetency);
+    const existing = byStatement.get(key) ?? [];
     existing.push(row.subCompetencyId);
-    byStatement.set(row.matchedCompetency, existing);
+    byStatement.set(key, existing);
   }
   // Dedup the subCompetencyId lists (careerTargetId multiplicity can produce duplicates)
   for (const [stmt, ids] of byStatement) {
@@ -166,7 +185,7 @@ async function resolveSubCompetencyDepths(
 
   const out: PredictedSubCompDepth[] = [];
   for (const delta of predictedDeltas) {
-    const subIds = byStatement.get(delta.competency);
+    const subIds = byStatement.get(normalizeCompetencyKey(delta.competency));
     if (!subIds || subIds.length === 0) {
       // No coverage row matched this competency statement — omit from ripple.
       continue;
@@ -303,6 +322,10 @@ export async function runImpact(
     aiResult.predictedDeltas,
   );
 
+  // Step 4b — career-fit lines: does the predicted delta improve a career-target band?
+  const matrix = await getMatrixData();
+  const careerFitLines = computeCareerFit({ focalSnapshotId: focalSnapshot.id, predictedSubCompDepths, matrix });
+
   // Step 5 — baseline delivered attainment for focal course (as a prereq)
   const baselineDelivered = await buildBaselineDelivered(courseCode, focalSnapshot.id);
 
@@ -362,6 +385,7 @@ export async function runImpact(
     predictedSubCompDepths,
     baselineDelivered,
     downstreamByCourse,
+    careerFitLines,
     subCompLabel,
   });
 
@@ -376,6 +400,7 @@ export async function runImpact(
 function snapshotToNeighborProfile(courseCode: string, profile: CaptureProfile): NeighborProfile {
   const competencies = (profile.competencies ?? []).map(c => ({
     statement: c.statement,
+    type: c.type,
     k_depth: c.k_depth,
     u_depth: c.u_depth,
     d_depth: c.d_depth,

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { assembleScenario } from '@/lib/ai/explore/run-impact';
+import { assembleScenario, normalizeCompetencyKey } from '@/lib/ai/explore/run-impact';
 
 it('stamps downstream courseCode by running ripple per downstream course', () => {
   const scenario = assembleScenario({
@@ -16,4 +16,24 @@ it('stamps downstream courseCode by running ripple per downstream course', () =>
   const down = scenario.computedRipple.filter(r => r.kind === 'downstream_gap');
   expect(down).toHaveLength(1);
   expect(down[0]).toMatchObject({ courseCode: 'GC 4440', label: 'trapping', before: 'gap', after: 'met' });
+});
+
+describe('normalizeCompetencyKey', () => {
+  it('collapses case + whitespace so near-identical statements match', () => {
+    expect(normalizeCompetencyKey('  Prepress   Preparation ')).toBe(normalizeCompetencyKey('prepress preparation'));
+  });
+  it('distinguishes genuinely different statements', () => {
+    expect(normalizeCompetencyKey('Trapping')).not.toBe(normalizeCompetencyKey('Imposition'));
+  });
+});
+
+it('includes provided career_fit lines in the scenario ripple', () => {
+  const scenario = assembleScenario({
+    id: 's2', courseCode: 'GC 3460', baselineSnapshotId: 'snap1', createdAt: '2026-07-07T00:00:00.000Z',
+    aiResult: { change: { prose: 'x', activity: 'x', artifact: 'graded', competencies: ['prepress'], rubricCriteria: [], assumesIncoming: [] }, predictedDeltas: [] },
+    predictedSubCompDepths: [], baselineDelivered: [], downstreamByCourse: {},
+    careerFitLines: [{ kind: 'career_fit', courseCode: null, subCompetencyId: 'sc-trap', label: 'Prepress Technician · Trapping', before: 'working (3)', after: 'high (4–5)' }],
+    subCompLabel: (id) => id,
+  });
+  expect(scenario.computedRipple.filter(r => r.kind === 'career_fit')).toHaveLength(1);
 });
