@@ -254,12 +254,21 @@ async function buildBaselineDelivered(
   return delivered;
 }
 
+export interface LoadNeighborContextResult {
+  context: import('./neighbor-context').NeighborContext;
+  focalSnapshot: import('@/lib/db/capture-snapshots-queries').SnapshotRow;
+  edgePairs: EdgePair[];
+}
+
 /**
  * Load the focal course's neighbor context (focal + upstream + downstream profiles)
  * without running any AI or saving anything. Exported for the agent's
  * `neighbor_context` tool so it can surface the profiles to the model directly.
+ *
+ * Returns the assembled NeighborContext plus the raw focalSnapshot and edgePairs
+ * so callers (e.g. runImpact) can reuse them without a second round of DB fetches.
  */
-export async function loadNeighborContext(courseCode: string): Promise<import('./neighbor-context').NeighborContext> {
+export async function loadNeighborContext(courseCode: string): Promise<LoadNeighborContextResult> {
   const focalSnapshot = await getLatestSnapshotByCourse(courseCode);
   if (!focalSnapshot) {
     throw new Error(`loadNeighborContext: no snapshot for ${courseCode}`);
@@ -291,7 +300,8 @@ export async function loadNeighborContext(courseCode: string): Promise<import('.
     }),
   );
 
-  return assembleNeighborContext({ focalCourseCode: courseCode, profiles: profileMap, edgePairs });
+  const context = assembleNeighborContext({ focalCourseCode: courseCode, profiles: profileMap, edgePairs });
+  return { context, focalSnapshot, edgePairs };
 }
 
 /**
@@ -309,52 +319,10 @@ export async function runImpact(
   courseCode: string,
   changeProse: string,
 ): Promise<Scenario> {
-  // Step 1 — focal snapshot
-  const focalSnapshot = await getLatestSnapshotByCourse(courseCode);
-  if (!focalSnapshot) {
-    throw new Error(`runImpact: no snapshot for ${courseCode}`);
-  }
+  // Steps 1–3: load focal snapshot, edge pairs, and neighbor context in one call.
+  const { context: neighborContext, focalSnapshot } = await loadNeighborContext(courseCode);
 
-  // Step 2 — confirmed edge pairs → neighbor codes (reuse loadNeighborContext's logic
-  // by rebuilding the edge pairs; neighbor context is needed for the AI call).
-  const confirmedPairs = await listConfirmedEdgePairs();
-  // Map to EdgePair shape (relyingCourseCode = focal side of the confirmed pair)
-  const edgePairs: EdgePair[] = confirmedPairs.map(p => ({
-    relyingCourseCode: p.focal,
-    prereqCourseCode: p.prereq,
-  }));
-
-  // Collect all neighbor course codes (upstream + downstream of focal)
-  const upstreamCodes = new Set(
-    edgePairs.filter(e => e.relyingCourseCode === courseCode).map(e => e.prereqCourseCode),
-  );
-  const downstreamCodes = new Set(
-    edgePairs.filter(e => e.prereqCourseCode === courseCode).map(e => e.relyingCourseCode),
-  );
-  const neighborCodes = new Set([...upstreamCodes, ...downstreamCodes]);
-
-  // Fetch latest snapshot per neighbor; build NeighborProfile map
-  const profileMap: Record<string, NeighborProfile> = {};
-
-  // Focal profile
-  profileMap[courseCode] = snapshotToNeighborProfile(courseCode, focalSnapshot.profile);
-
-  // Neighbor profiles
-  await Promise.all(
-    [...neighborCodes].map(async (code) => {
-      const snap = await getLatestSnapshotByCourse(code);
-      if (snap) {
-        profileMap[code] = snapshotToNeighborProfile(code, snap.profile);
-      }
-    }),
-  );
-
-  // Step 3 — build NeighborContext and call the AI
-  const neighborContext = assembleNeighborContext({
-    focalCourseCode: courseCode,
-    profiles: profileMap,
-    edgePairs,
-  });
+  // Call the AI with the assembled neighbor context.
   const { result: aiResult } = await estimateLocalDelta(courseCode, changeProse, neighborContext);
 
   // Step 4 — resolve competency statements → sub-competency depths

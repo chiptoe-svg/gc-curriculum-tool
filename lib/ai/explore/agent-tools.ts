@@ -12,7 +12,7 @@ export type ExploreEmit =
 function summarize(s: Scenario): string {
   const deltas = s.predictedDeltas.map(d => `${d.competency}: D${d.from.d}→${d.to.d} (${d.confidence})`).join('; ');
   const ripple = s.computedRipple.map(r => `${r.kind}:${r.label} ${r.before}→${r.after}`).join('; ');
-  return `scenario ${s.id}. predicted: ${deltas || 'none'}. ripple: ${ripple || 'none (data-sparse)'}.`;
+  return `scenario ${s.id} — "${s.change.activity}". predicted: ${deltas || 'none'}. ripple: ${ripple || 'none (data-sparse)'}.`;
 }
 
 export function buildExploreTools(courseCode: string, emit: (e: ExploreEmit) => void): ToolDefinition[] {
@@ -23,7 +23,7 @@ export function buildExploreTools(courseCode: string, emit: (e: ExploreEmit) => 
       usagePolicy: 'No args needed beyond the anchored course. Returns focal + upstream[] + downstream[] profiles.',
       inputSchema: z.object({}),
       async execute() {
-        return await loadNeighborContext(courseCode);
+        return (await loadNeighborContext(courseCode)).context;
       },
     },
     {
