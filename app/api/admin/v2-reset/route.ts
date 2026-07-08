@@ -6,9 +6,6 @@ import {
   courseMaterials,
   courseCaptureProfiles,
   courseCaptureSnapshots,
-  courseExploreAnalyses,
-  courseExploreTargets,
-  courseExploreWhatIfs,
   snapshotTargetCoverage,
 } from '@/lib/db/schema';
 import { checkAdminAuth } from '@/lib/auth/admin-auth';
@@ -25,7 +22,6 @@ import { tenantForCourse } from '@/lib/capture/vector-store';
  *   courseCode: string,
  *   scope?: 'session' | 'materials' | 'everything',  // default 'session'
  *   includeSnapshots?: boolean,
- *   includeExplore?: boolean,
  * }
  *
  * Three reset scopes — pick the gentlest one that solves your problem:
@@ -52,8 +48,6 @@ import { tenantForCourse } from '@/lib/capture/vector-store';
  *   - includeSnapshots: ALSO drops course_capture_snapshots + dependent
  *     rows (snapshot_target_coverage). Snapshots are the system of record;
  *     dropping them is destructive.
- *   - includeExplore: drops explore analyses, targets, what-ifs. Implied
- *     by includeSnapshots.
  *
  * Gated by /api/admin/* middleware (FACULTY_BASIC_AUTH).
  */
@@ -62,7 +56,6 @@ export async function POST(req: Request): Promise<Response> {
     courseCode?: unknown;
     scope?: unknown;
     includeSnapshots?: unknown;
-    includeExplore?: unknown;
     slug?: unknown;
   };
   // Slug gate (second factor behind Basic Auth). This is a one-request,
@@ -80,7 +73,6 @@ export async function POST(req: Request): Promise<Response> {
       : body.scope === 'everything' ? 'everything'
       : 'session';
   const includeSnapshots = body.includeSnapshots === true;
-  const includeExplore = body.includeExplore === true || includeSnapshots;
 
   const result: Record<string, unknown> = { courseCode, scope };
 
@@ -105,25 +97,7 @@ export async function POST(req: Request): Promise<Response> {
     .returning({ courseCode: courseCaptureProfiles.courseCode });
   result.workingDraftDeleted = profilesDeleted.length;
 
-  // 3. Optional: explore + snapshots.
-  if (includeExplore) {
-    const exploreAnalyses = await db
-      .delete(courseExploreAnalyses)
-      .where(eq(courseExploreAnalyses.courseCode, courseCode))
-      .returning({ id: courseExploreAnalyses.id });
-    const exploreTargets = await db
-      .delete(courseExploreTargets)
-      .where(eq(courseExploreTargets.courseCode, courseCode))
-      .returning({ id: courseExploreTargets.id });
-    const exploreWhatIfs = await db
-      .delete(courseExploreWhatIfs)
-      .where(eq(courseExploreWhatIfs.courseCode, courseCode))
-      .returning({ id: courseExploreWhatIfs.id });
-    result.exploreAnalysesDeleted = exploreAnalyses.length;
-    result.exploreTargetsDeleted = exploreTargets.length;
-    result.exploreWhatIfsDeleted = exploreWhatIfs.length;
-  }
-
+  // 3. Optional: snapshots.
   if (includeSnapshots) {
     // snapshot_target_coverage has snapshotId FK; clear it first.
     const snapshotIds = await db

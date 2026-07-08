@@ -19,9 +19,6 @@ export const AI_FUNCTION_IDS = [
   'capture-chat',
   'capture-scores',
   'materials-analysis',
-  'explore-draft-target',
-  'explore-compare',
-  'explore-what-if',
   'explore-local-delta',
   'program-score-coverage',
   'decompose-prereq-gap',
@@ -75,10 +72,6 @@ export const TIER_TO_MODEL: Record<Exclude<ModelTier, 'custom'>, string> = {
  *   - capture-scores: default. Drives every downstream view; structured
  *     output but with rich reasoning across the whole audit transcript.
  *   - materials-analysis: light. Per-file extraction is bounded.
- *   - explore-draft-target: light. First draft only; instructor edits.
- *   - explore-compare: default. Multi-step reasoning across snapshot + spec.
- *   - explore-what-if: heavy. Hypothetical cascade reasoning; exactly where
- *     bigger reasoning earns its keep.
  *   - program-score-coverage: heavy. Was piloted at light ("promote if
  *     quality is insufficient") — the 2026-06-12 reliability study supplied
  *     the evidence: at light (gpt-5.4-mini), 5× re-runs on fixed pairs hit
@@ -92,13 +85,10 @@ export const DEFAULT_TIERS: Record<AIFunctionId, Exclude<ModelTier, 'custom'>> =
   'capture-chat': 'default',
   'capture-scores': 'default',
   'materials-analysis': 'light',
-  'explore-draft-target': 'light',
-  'explore-compare': 'default',
-  'explore-what-if': 'heavy',
   // Default tier. Translates a proposed course change into a structured ChangeObject
   // + PredictedDelta[]. Reasoning load is moderate — grounded in focal competencies +
-  // neighbor context, but a single-call structured output. Default matches explore-compare;
-  // promote to heavy if delta quality is poor on complex multi-competency changes.
+  // neighbor context, but a single-call structured output.
+  // Promote to heavy if delta quality is poor on complex multi-competency changes.
   'explore-local-delta': 'default',
   'program-score-coverage': 'heavy',
   // Small per-click transformation — one short gap → up to ~12 short
@@ -196,9 +186,6 @@ export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
   'capture-chat': 'Capture audit conversation',
   'capture-scores': 'Capture scoring (Generate Profile)',
   'materials-analysis': 'Materials AI analysis (per-file)',
-  'explore-draft-target': 'Explore — draft custom target from prose',
-  'explore-compare': 'Explore — compare snapshot to target',
-  'explore-what-if': 'Explore — what-if simulation',
   'explore-local-delta': 'Explore — local delta (change object + predicted KUD deltas)',
   'program-score-coverage': 'Program coverage scoring',
   'decompose-prereq-gap': 'Decompose prereq gap into competencies (copy-as-KUD)',
@@ -227,9 +214,6 @@ export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
   'capture-chat': "The auditor's per-turn replies during a capture conversation.",
   'capture-scores': 'Producing the structured Course Outcome Profile from the audit transcript.',
   'materials-analysis': 'AI analysis of an uploaded PDF / DOCX during the materials phase.',
-  'explore-draft-target': 'Translating an instructor\'s prose goal into a structured custom target.',
-  'explore-compare': "Running the comparator against a snapshot + target to produce alignment + recommendations.",
-  'explore-what-if': 'Predicting the effect of a hypothetical change on the snapshot\'s competencies.',
   'explore-local-delta': 'Translating a proposed course change into a structured ChangeObject (activity, artifact, touched competencies, rubric criteria, new incoming demands) + PredictedDelta[] (before→after KUD shift per competency, with confidence and rationale).',
   'program-score-coverage': 'Scoring each captured snapshot against each career target\'s sub-competencies for the program coverage matrix.',
   'decompose-prereq-gap': 'Decomposing one free-form prereq-gap finding into a structured list of competencies with K/U/D depths, for the copy-as-KUD button in the review panel.',
