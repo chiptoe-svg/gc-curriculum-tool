@@ -255,6 +255,46 @@ async function buildBaselineDelivered(
 }
 
 /**
+ * Load the focal course's neighbor context (focal + upstream + downstream profiles)
+ * without running any AI or saving anything. Exported for the agent's
+ * `neighbor_context` tool so it can surface the profiles to the model directly.
+ */
+export async function loadNeighborContext(courseCode: string): Promise<import('./neighbor-context').NeighborContext> {
+  const focalSnapshot = await getLatestSnapshotByCourse(courseCode);
+  if (!focalSnapshot) {
+    throw new Error(`loadNeighborContext: no snapshot for ${courseCode}`);
+  }
+
+  const confirmedPairs = await listConfirmedEdgePairs();
+  const edgePairs: EdgePair[] = confirmedPairs.map(p => ({
+    relyingCourseCode: p.focal,
+    prereqCourseCode: p.prereq,
+  }));
+
+  const upstreamCodes = new Set(
+    edgePairs.filter(e => e.relyingCourseCode === courseCode).map(e => e.prereqCourseCode),
+  );
+  const downstreamCodes = new Set(
+    edgePairs.filter(e => e.prereqCourseCode === courseCode).map(e => e.relyingCourseCode),
+  );
+  const neighborCodes = new Set([...upstreamCodes, ...downstreamCodes]);
+
+  const profileMap: Record<string, NeighborProfile> = {};
+  profileMap[courseCode] = snapshotToNeighborProfile(courseCode, focalSnapshot.profile);
+
+  await Promise.all(
+    [...neighborCodes].map(async (code) => {
+      const snap = await getLatestSnapshotByCourse(code);
+      if (snap) {
+        profileMap[code] = snapshotToNeighborProfile(code, snap.profile);
+      }
+    }),
+  );
+
+  return assembleNeighborContext({ focalCourseCode: courseCode, profiles: profileMap, edgePairs });
+}
+
+/**
  * Full orchestration:
  *  1. Fetch the focal course's latest snapshot.
  *  2. Fetch all confirmed edge pairs; build neighbor profiles from their snapshots.
@@ -275,7 +315,8 @@ export async function runImpact(
     throw new Error(`runImpact: no snapshot for ${courseCode}`);
   }
 
-  // Step 2 — confirmed edge pairs → neighbor codes
+  // Step 2 — confirmed edge pairs → neighbor codes (reuse loadNeighborContext's logic
+  // by rebuilding the edge pairs; neighbor context is needed for the AI call).
   const confirmedPairs = await listConfirmedEdgePairs();
   // Map to EdgePair shape (relyingCourseCode = focal side of the confirmed pair)
   const edgePairs: EdgePair[] = confirmedPairs.map(p => ({
