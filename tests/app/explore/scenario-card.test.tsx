@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { ScenarioCard } from '@/app/explore/[code]/ScenarioCard';
 import type { Scenario } from '@/lib/ai/explore/scenario';
 
@@ -14,11 +14,13 @@ const scenario: Scenario = {
 describe('ScenarioCard', () => {
   it('renders the change, a predicted delta, and a ripple line', () => {
     render(<ScenarioCard scenario={scenario} onSave={() => {}} onCompare={() => {}} />);
-    expect(screen.getByText(/trapping lab/)).toBeInTheDocument();
-    expect(screen.getByText(/prepress preparation/)).toBeInTheDocument();
-    expect(screen.getByText(/D3\s*→\s*4/)).toBeInTheDocument();
-    expect(screen.getByText(/trapping/)).toBeInTheDocument();
-    expect(screen.getByText(/gap\s*→\s*met/)).toBeInTheDocument();
+    expect(screen.getByText(/trapping lab/)).toBeInTheDocument();          // header/change
+    expect(screen.getByText(/prepress preparation/)).toBeInTheDocument();  // delta
+    expect(screen.getByText(/D3\s*→\s*4/)).toBeInTheDocument();            // delta D
+    const ripple = screen.getByTestId('scenario-ripple');
+    expect(within(ripple).getByText(/trapping/)).toBeInTheDocument();      // ripple label VISIBLE
+    expect(within(ripple).getByText(/gap\s*→\s*met/)).toBeInTheDocument(); // ripple before→after
+    expect(within(ripple).getByText(/GC 4440/)).toBeInTheDocument();       // ripple courseCode visible
   });
   it('fires onSave and onCompare; Adopt is disabled', () => {
     const onSave = vi.fn(); const onCompare = vi.fn();

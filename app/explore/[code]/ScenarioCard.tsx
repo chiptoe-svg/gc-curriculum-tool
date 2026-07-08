@@ -41,19 +41,11 @@ function DeltaLine({ delta }: { delta: PredictedDelta }) {
 
 function RippleEntry({ line }: { line: RippleLine }) {
   const glyph = RIPPLE_GLYPH[line.kind];
-  const prefix = line.courseCode ? `${line.courseCode}` : '';
-  // Render label as title attribute so it's accessible but doesn't create a
-  // separate text node that conflicts with the activity text in getByText queries.
-  // The visible text shows the glyph, course, and before→after transition.
-  const labelTitle = line.label;
   return (
-    <div
-      className="flex gap-1 text-xs"
-      title={labelTitle}
-    >
+    <div className="flex gap-1 text-xs">
       <span className="text-muted-foreground">{glyph}</span>
-      {prefix && <span className="font-medium">{prefix}</span>}
-      <span>{line.before} → {line.after}</span>
+      {line.courseCode && <span className="font-medium">{line.courseCode}</span>}
+      <span>{line.label}: {line.before} → {line.after}</span>
     </div>
   );
 }
@@ -92,7 +84,7 @@ export function ScenarioCard({ scenario, onSave, onCompare }: ScenarioCardProps)
 
       {/* Ripple block */}
       {computedRipple.length > 0 && (
-        <div className="space-y-1">
+        <div className="space-y-1" data-testid="scenario-ripple">
           <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Ripple</div>
           {computedRipple.map((line, i) => (
             <RippleEntry key={i} line={line} />
