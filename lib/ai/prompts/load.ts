@@ -44,7 +44,8 @@ type PromptName =
   | 'prereq-edge-seed'
   | 'intended-skills-extract'
   | 'reconcile-feedback'
-  | 'material-classify';
+  | 'material-classify'
+  | 'explore-agent';
 
 interface ParsedPrompt {
   frontmatter: Record<string, unknown>;

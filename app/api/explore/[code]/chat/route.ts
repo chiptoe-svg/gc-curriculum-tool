@@ -4,7 +4,7 @@ import { hashIp } from '@/lib/ip-hash';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { getCourseByCode } from '@/lib/db/courses-queries';
 import { readWikiPage } from '@/lib/wiki/git-ops';
-import { streamCurriculumChat } from '@/lib/ai/wiki/chat';
+import { streamExploreAgent } from '@/lib/ai/explore/agent';
 import type { Message } from '@/lib/ai/tool-use-types';
 
 export const maxDuration = 120;
@@ -15,7 +15,7 @@ interface Ctx { params: Promise<{ code: string }> }
  * POST /api/explore/[code]/chat?slug=...
  * Body: { messages: { role: 'user' | 'assistant'; content: string }[] }
  *
- * Streams curriculum-chat NDJSON events back. On the first turn, pre-loads
+ * Streams explore-agent NDJSON events back. On the first turn, pre-loads
  * the focused course's wiki page as anchor context so the agent doesn't
  * have to call `read_wiki` for the obvious starting point. The agent is
  * fully program-aware — anchoring is a starting hint, not a fence.
@@ -65,7 +65,7 @@ export async function POST(req: Request, { params }: Ctx): Promise<Response> {
     ? `The user is currently looking at the **${courseCode} — ${course.title}** wiki page (\`${coursePagePath}\`):\n\n${coursePage}`
     : `The user is currently looking at **${courseCode} — ${course.title}**, but no wiki page has been generated for this course yet (no captured snapshot). Use \`list_wiki\` or \`search_wiki\` to find related pages, and let the user know the course itself doesn't have a wiki entry.`;
 
-  const stream = streamCurriculumChat({ anchorContext, messages });
+  const stream = streamExploreAgent({ courseCode, anchorContext, messages });
 
   const encoder = new TextEncoder();
   const body$ = new ReadableStream<Uint8Array>({
