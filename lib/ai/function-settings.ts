@@ -43,6 +43,7 @@ export const AI_FUNCTION_IDS = [
   'synthesize-target',
   'reconcile-feedback',
   'material-classify',
+  'explore-agent',
 ] as const;
 export type AIFunctionId = (typeof AI_FUNCTION_IDS)[number];
 
@@ -183,6 +184,12 @@ export const DEFAULT_TIERS: Record<AIFunctionId, Exclude<ModelTier, 'custom'>> =
   // (→ middle) or a reading/reference (→ background)? Short input, two-value enum
   // output; light is correct. Bias cheap — defaults to background on any error.
   'material-classify': 'light',
+  // Default tier. Tool-using course-change thinking partner anchored to one focal
+  // course. Per-turn agent loop: reads neighbor context + wiki, optionally calls
+  // estimate_impact, emits a cited markdown response. Default matches curriculum-chat
+  // (same reasoning pattern — read context, route 2–5 tool calls, synthesize response);
+  // promote to heavy if multi-competency change reasoning quality is insufficient.
+  'explore-agent': 'default',
 };
 
 export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
@@ -213,6 +220,7 @@ export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
   'synthesize-target': 'Career-target synthesis (admin)',
   'reconcile-feedback': 'Reconcile feedback (guided faculty review)',
   'material-classify': 'Material tier classifier (deck vs reading)',
+  'explore-agent': 'Explore agent (course-change thinking partner)',
 };
 
 export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
@@ -243,6 +251,7 @@ export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
   'synthesize-target': 'Synthesizes a career target\'s sub-competencies + descriptors from industry/partner input (admin synthesis run).',
   'reconcile-feedback': 'Proposes per-item edits (keep/modify/remove/add with revised K/U/D and rationale) from faculty prose feedback over a capture section. Proposals only — never sets provenance; the apply step does that.',
   'material-classify': 'Classifies a file-bucket material as a lecture deck/slides (→ middle tier) or a reading/reference (→ background tier) from filename, MIME type, size, page count, and optional peek text.',
+  'explore-agent': 'Tool-using course-change thinking partner anchored to one focal course. Per-turn agent loop: reads neighbor context + wiki via tools, optionally runs estimate_impact for concrete KUD sizing, emits a cited markdown response. Supports PREDICT ("what happens if I change X?") and SUGGEST ("how do I achieve goal Y?") postures with scenario save/compare tools for multi-option exploration.',
 };
 
 interface CachedSetting {
