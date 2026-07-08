@@ -87,8 +87,8 @@ export const DEFAULT_TIERS: Record<AIFunctionId, Exclude<ModelTier, 'custom'>> =
   'materials-analysis': 'light',
   // Default tier. Translates a proposed course change into a structured ChangeObject
   // + PredictedDelta[]. Reasoning load is moderate — grounded in focal competencies +
-  // neighbor context, but a single-call structured output. Default matches explore-compare;
-  // promote to heavy if delta quality is poor on complex multi-competency changes.
+  // neighbor context, but a single-call structured output.
+  // Promote to heavy if delta quality is poor on complex multi-competency changes.
   'explore-local-delta': 'default',
   'program-score-coverage': 'heavy',
   // Small per-click transformation — one short gap → up to ~12 short
