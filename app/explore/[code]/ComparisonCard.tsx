@@ -21,7 +21,7 @@ export function ComparisonCard({ aCaption, bCaption, diff }: ComparisonCardProps
 
   return (
     <div className="rounded-md border bg-card p-3 text-sm">
-      <p className="font-medium">
+      <p className="font-medium" data-testid="comparison-header">
         Comparing &ldquo;{aCaption}&rdquo; vs &ldquo;{bCaption}&rdquo;
       </p>
 
@@ -39,11 +39,8 @@ export function ComparisonCard({ aCaption, bCaption, diff }: ComparisonCardProps
       )}
 
       {rippleOnlyInA.length > 0 && (
-        <div
-          data-testid="only-in-a"
-          aria-label={`Only in "${aCaption}"`}
-          className="mt-2"
-        >
+        <div data-testid="only-in-a" className="mt-2">
+          <p className="font-semibold">Only in &ldquo;{aCaption}&rdquo;</p>
           <ul className="mt-1 space-y-0.5">
             {rippleOnlyInA.map((r) => (
               <li key={`${r.kind}-${r.label}`}>{rippleLineText(r)}</li>
@@ -53,11 +50,8 @@ export function ComparisonCard({ aCaption, bCaption, diff }: ComparisonCardProps
       )}
 
       {rippleOnlyInB.length > 0 && (
-        <div
-          data-testid="only-in-b"
-          aria-label={`Only in "${bCaption}"`}
-          className="mt-2"
-        >
+        <div data-testid="only-in-b" className="mt-2">
+          <p className="font-semibold">Only in &ldquo;{bCaption}&rdquo;</p>
           <ul className="mt-1 space-y-0.5">
             {rippleOnlyInB.map((r) => (
               <li key={`${r.kind}-${r.label}`}>{rippleLineText(r)}</li>

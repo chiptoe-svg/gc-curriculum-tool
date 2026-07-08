@@ -10,9 +10,11 @@ it('renders which deltas and ripple lines differ', () => {
       rippleOnlyInA: [{ kind: 'downstream_gap', label: 'trapping', before: 'gap', after: 'met' } as any],
       rippleOnlyInB: [],
     }} />);
-  expect(screen.getByText(/trapping v1/)).toBeInTheDocument();
-  expect(screen.getByText(/trapping v2/)).toBeInTheDocument();
+  const header = screen.getByTestId('comparison-header');
+  expect(within(header).getByText(/trapping v1/)).toBeInTheDocument();
+  expect(within(header).getByText(/trapping v2/)).toBeInTheDocument();
   expect(screen.getByText(/prepress/)).toBeInTheDocument();
   const onlyA = screen.getByTestId('only-in-a');
-  expect(within(onlyA).getByText(/trapping/)).toBeInTheDocument();
+  expect(within(onlyA).getByText(/Only in .*trapping v1/)).toBeInTheDocument(); // heading VISIBLE
+  expect(within(onlyA).getByText(/trapping:/)).toBeInTheDocument();             // ripple line VISIBLE
 });
