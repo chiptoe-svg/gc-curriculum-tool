@@ -155,7 +155,7 @@ export function AskTab({ courseCode, courseTitle, slug, endpoint }: Props) {
       let assistantText = '';
       const toolCalls: AskMessage['toolCalls'] = [];
       const scenarios: Scenario[] = [];
-      const comparisons: AskMessage['comparisons'] = [];
+      const comparisons: Array<{ aCaption: string; bCaption: string; diff: ScenarioComparison }> = [];
 
       await readNdjson(res, ev => {
         const kind = ev.kind as string | undefined;
@@ -191,14 +191,14 @@ export function AskTab({ courseCode, courseTitle, slug, endpoint }: Props) {
         } else if (kind === 'comparison') {
           const a = ev.a as Scenario;
           const b = ev.b as Scenario;
-          comparisons!.push({
+          comparisons.push({
             aCaption: (a.caption ?? a.change.activity),
             bCaption: (b.caption ?? b.change.activity),
             diff: ev.diff as ScenarioComparison,
           });
           setMessages(m => {
             const last = m[m.length - 1]!;
-            return [...m.slice(0, -1), { ...last, comparisons: [...comparisons!] }];
+            return [...m.slice(0, -1), { ...last, comparisons: [...comparisons] }];
           });
         } else if (kind === 'error') {
           setError((ev.message as string) ?? 'Stream error');
@@ -220,18 +220,18 @@ export function AskTab({ courseCode, courseTitle, slug, endpoint }: Props) {
   async function handleSave(id: string) {
     const caption = window.prompt('Name this scenario:');
     if (!caption || !courseCode) return;
-    await fetch(
-      `/api/explore/${encodeURIComponent(courseCode)}/scenarios/${id}?slug=${encodeURIComponent(slug)}`,
-      {
-        method: 'PATCH',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ caption }),
-      },
-    );
+    try {
+      const res = await fetch(`/api/explore/${encodeURIComponent(courseCode)}/scenarios/${id}?slug=${encodeURIComponent(slug)}`, {
+        method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ caption }),
+      });
+      if (!res.ok) throw new Error(`save failed (${res.status})`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to save scenario');
+    }
   }
 
-  function handleCompare(_id: string) {
-    void send('Compare this scenario with another saved one — list my saved scenarios first if needed.');
+  function handleCompare(id: string) {
+    void send(`Compare scenario ${id} with another saved one for this course — list my saved scenarios first if needed, then compare.`);
   }
 
   return (
