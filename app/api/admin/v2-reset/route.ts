@@ -22,7 +22,6 @@ import { tenantForCourse } from '@/lib/capture/vector-store';
  *   courseCode: string,
  *   scope?: 'session' | 'materials' | 'everything',  // default 'session'
  *   includeSnapshots?: boolean,
- *   includeExplore?: boolean,
  * }
  *
  * Three reset scopes — pick the gentlest one that solves your problem:
