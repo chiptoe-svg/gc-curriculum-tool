@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { isValidSlug } from '@/lib/slug';
+import { hashIp } from '@/lib/ip-hash';
+import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { getScenario, saveScenario } from '@/lib/db/explore-scenario-queries';
 
 interface Ctx { params: Promise<{ code: string; id: string }> }
@@ -16,6 +18,10 @@ export async function PATCH(req: Request, { params }: Ctx): Promise<Response> {
   if (!isValidSlug(slug)) {
     return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
   }
+
+  const ipHash = hashIp(req);
+  const { allowed } = await checkIpRateLimit(ipHash);
+  if (!allowed) return NextResponse.json({ error: 'rate limit exceeded' }, { status: 429 });
 
   const { code, id } = await params;
   const courseCode = decodeURIComponent(code);

@@ -8,4 +8,7 @@ describe('scenarios/[id] save route', () => {
     expect(src).toMatch(/getScenario/);
     expect(src).toMatch(/saveScenario/);
   });
+  it('applies IP rate limiting', () => {
+    expect(src).toMatch(/checkIpRateLimit/);
+  });
 });
