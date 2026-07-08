@@ -17,6 +17,10 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { VoiceRecorder } from '@/components/VoiceRecorder';
 import type { CurriculumChatCitation } from '@/lib/ai/wiki/response-schema';
+import { ScenarioCard } from '@/app/explore/[code]/ScenarioCard';
+import { ComparisonCard } from '@/app/explore/[code]/ComparisonCard';
+import type { Scenario } from '@/lib/ai/explore/scenario';
+import type { ScenarioComparison } from '@/lib/ai/explore/compare';
 
 /**
  * Strip inline citation markers like [courses/gc-3460.md] from assistant
@@ -33,6 +37,10 @@ interface AskMessage {
   citations?: CurriculumChatCitation[];
   /** Tool calls the agent made on this turn (for the "tool trail" disclosure). */
   toolCalls?: Array<{ toolName: string; args: Record<string, unknown> }>;
+  /** Scenario cards streamed inline from the Explore agent. */
+  scenarios?: Scenario[];
+  /** Comparison cards streamed inline from the Explore agent. */
+  comparisons?: Array<{ aCaption: string; bCaption: string; diff: ScenarioComparison }>;
 }
 
 interface Props {
@@ -146,6 +154,8 @@ export function AskTab({ courseCode, courseTitle, slug, endpoint }: Props) {
 
       let assistantText = '';
       const toolCalls: AskMessage['toolCalls'] = [];
+      const scenarios: Scenario[] = [];
+      const comparisons: AskMessage['comparisons'] = [];
 
       await readNdjson(res, ev => {
         const kind = ev.kind as string | undefined;
@@ -172,6 +182,24 @@ export function AskTab({ courseCode, courseTitle, slug, endpoint }: Props) {
               citations: response.citations,
             }];
           });
+        } else if (kind === 'scenario') {
+          scenarios.push(ev.scenario as Scenario);
+          setMessages(m => {
+            const last = m[m.length - 1]!;
+            return [...m.slice(0, -1), { ...last, scenarios: [...scenarios] }];
+          });
+        } else if (kind === 'comparison') {
+          const a = ev.a as Scenario;
+          const b = ev.b as Scenario;
+          comparisons!.push({
+            aCaption: (a.caption ?? a.change.activity),
+            bCaption: (b.caption ?? b.change.activity),
+            diff: ev.diff as ScenarioComparison,
+          });
+          setMessages(m => {
+            const last = m[m.length - 1]!;
+            return [...m.slice(0, -1), { ...last, comparisons: [...comparisons!] }];
+          });
         } else if (kind === 'error') {
           setError((ev.message as string) ?? 'Stream error');
         }
@@ -187,6 +215,23 @@ export function AskTab({ courseCode, courseTitle, slug, endpoint }: Props) {
     } finally {
       setBusy(false);
     }
+  }
+
+  async function handleSave(id: string) {
+    const caption = window.prompt('Name this scenario:');
+    if (!caption || !courseCode) return;
+    await fetch(
+      `/api/explore/${encodeURIComponent(courseCode)}/scenarios/${id}?slug=${encodeURIComponent(slug)}`,
+      {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ caption }),
+      },
+    );
+  }
+
+  function handleCompare(_id: string) {
+    void send('Compare this scenario with another saved one — list my saved scenarios first if needed.');
   }
 
   return (
@@ -235,7 +280,13 @@ export function AskTab({ courseCode, courseTitle, slug, endpoint }: Props) {
           </div>
         ) : (
           messages.map((m, i) => (
-            <MessageBubble key={i} message={m} slug={slug} />
+            <MessageBubble
+              key={i}
+              message={m}
+              slug={slug}
+              onSave={handleSave}
+              onCompare={handleCompare}
+            />
           ))
         )}
         {error && (
@@ -280,7 +331,17 @@ export function AskTab({ courseCode, courseTitle, slug, endpoint }: Props) {
   );
 }
 
-function MessageBubble({ message, slug }: { message: AskMessage; slug: string }) {
+function MessageBubble({
+  message,
+  slug,
+  onSave,
+  onCompare,
+}: {
+  message: AskMessage;
+  slug: string;
+  onSave: (id: string) => void;
+  onCompare: (id: string) => void;
+}) {
   const isUser = message.role === 'user';
   return (
     <div className={isUser ? 'pl-4' : ''}>
@@ -317,6 +378,20 @@ function MessageBubble({ message, slug }: { message: AskMessage; slug: string })
             </li>
           ))}
         </ul>
+      )}
+      {!isUser && (message.scenarios?.length ?? 0) > 0 && (
+        <div className="mt-2 space-y-2" data-testid="scenario-cards">
+          {message.scenarios!.map(s => (
+            <ScenarioCard key={s.id} scenario={s} onSave={onSave} onCompare={onCompare} />
+          ))}
+        </div>
+      )}
+      {!isUser && (message.comparisons?.length ?? 0) > 0 && (
+        <div className="mt-2 space-y-2" data-testid="comparison-cards">
+          {message.comparisons!.map((c, i) => (
+            <ComparisonCard key={i} aCaption={c.aCaption} bCaption={c.bCaption} diff={c.diff} />
+          ))}
+        </div>
       )}
     </div>
   );
