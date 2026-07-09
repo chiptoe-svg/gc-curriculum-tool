@@ -9,6 +9,7 @@ import {
   setCaptureProfileStatus,
 } from '@/lib/db/course-capture-profiles-queries';
 import { generateCaptureProfileV2 } from '@/lib/ai/analyze/capture-scores';
+import { preserveAdoptOverlay } from '@/lib/capture/adopt-overlay';
 import type { CaptureChatContext } from '@/lib/ai/analyze/capture-chat';
 import { getLatestSnapshotByCourse } from '@/lib/db/capture-snapshots-queries';
 import { getLatestSessionId, getSessionMessages } from '@/lib/db/capture-messages-queries';
@@ -157,7 +158,12 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     // leaking back in via transcript text), which makes the "generated"
     // line in the header lie about when synthesis actually ran. The
     // server's clock is the source of truth.
-    const profile = { ...rawProfile, generated_at: new Date().toISOString() };
+    const stampedProfile = { ...rawProfile, generated_at: new Date().toISOString() };
+
+    // Preserve the adopt overlay (intended_target + adopted_from_scenario_id)
+    // from the existing draft onto this fresh score. No-op when the draft has
+    // no overlay (priorCapture is null or was never adopted).
+    const profile = priorCapture ? preserveAdoptOverlay(priorCapture.profile, stampedProfile) : stampedProfile;
 
     await upsertCaptureProfile({ courseCode, profile, reviewerStatus: 'ai_drafted' });
     return NextResponse.json({
