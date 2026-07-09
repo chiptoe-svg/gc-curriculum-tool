@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull } from 'drizzle-orm';
+import { and, count, desc, eq, isNull } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { courseCaptureSnapshots, courseCaptureProfiles } from '@/lib/db/schema';
 import type { CaptureProfile } from '@/lib/ai/capture/schema';
@@ -179,6 +179,19 @@ export async function loadSnapshotAsDraft(snapshotId: string): Promise<boolean> 
     .values({ courseCode: snapshot.courseCode, createdAt: now, ...fields })
     .onConflictDoUpdate({ target: courseCaptureProfiles.courseCode, set: fields });
   return true;
+}
+
+/**
+ * Returns a Map of courseCode → non-retired snapshot count.
+ * Used by the /courses list to render "N versions" affordance per row.
+ */
+export async function countSnapshotsByCourse(): Promise<Map<string, number>> {
+  const rows = await db
+    .select({ courseCode: courseCaptureSnapshots.courseCode, n: count() })
+    .from(courseCaptureSnapshots)
+    .where(isNull(courseCaptureSnapshots.retiredAt))
+    .groupBy(courseCaptureSnapshots.courseCode);
+  return new Map(rows.map(r => [r.courseCode, Number(r.n)]));
 }
 
 function rowToSnapshot(row: typeof courseCaptureSnapshots.$inferSelect): SnapshotRow {

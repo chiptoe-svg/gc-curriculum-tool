@@ -101,6 +101,12 @@ export function CaptureClient({
   const [materials, setMaterials] = useState<CaptureMaterial[]>(initialMaterials);
   // Bumped each time a new snapshot is created so the history panel reloads.
   const [snapshotsRefreshKey, setSnapshotsRefreshKey] = useState(0);
+  // Scroll to snapshot history panel if ?panel=history is in the URL.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('panel') === 'history') {
+      document.getElementById('snapshot-history')?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, []);
   // Session-start chooser state — single source of truth, shared by the landing
   // hero's chooser controls and the chat panel's mid-session auditor badge +
   // start request. Pre-fills from a resumed session's stamped instructor;
@@ -301,12 +307,14 @@ export function CaptureClient({
         onMaterialsChange={setMaterials}
         onCourseChange={setCourse}
       />
-      <SnapshotHistoryPanel
-        courseCode={courseCode}
-        slug={slug}
-        onUseAsDraft={handleUseSnapshotAsDraft}
-        refreshKey={snapshotsRefreshKey}
-      />
+      <div id="snapshot-history">
+        <SnapshotHistoryPanel
+          courseCode={courseCode}
+          slug={slug}
+          onUseAsDraft={handleUseSnapshotAsDraft}
+          refreshKey={snapshotsRefreshKey}
+        />
+      </div>
     </>
   );
 
