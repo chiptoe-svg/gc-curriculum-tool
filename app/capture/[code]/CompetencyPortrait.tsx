@@ -72,6 +72,22 @@ export function CompetencyPortrait({
         <span className="shrink-0 font-mono text-[11px] text-muted-foreground">{ratingLabel(competency)}</span>
       </div>
 
+      {competency.intended_target && (() => {
+        const it = competency.intended_target;
+        const parts: string[] = [];
+        if (it.d !== null && it.d !== undefined) parts.push(`D${it.d}`);
+        if (it.k !== null && it.k !== undefined && it.k !== competency.k_depth) parts.push(`K${it.k}`);
+        if (it.u !== null && it.u !== undefined && it.u !== competency.u_depth) parts.push(`U${it.u}`);
+        if (parts.length === 0) return null;
+        return (
+          <p className="text-[10px] text-muted-foreground">
+            <span className="font-medium text-amber-600">target</span>{' '}
+            {parts.join(' · ')}{' '}
+            <span className="opacity-70">· measured {ratingLabel(competency)}</span>
+          </p>
+        );
+      })()}
+
       <button
         type="button"
         onClick={() => {

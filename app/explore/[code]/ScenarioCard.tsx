@@ -6,6 +6,7 @@ interface ScenarioCardProps {
   scenario: Scenario;
   onSave: (id: string) => void;
   onCompare: (id: string) => void;
+  onAdopt?: (id: string) => void;
 }
 
 const RIPPLE_GLYPH: Record<RippleLine['kind'], string> = {
@@ -50,7 +51,7 @@ function RippleEntry({ line }: { line: RippleLine }) {
   );
 }
 
-export function ScenarioCard({ scenario, onSave, onCompare }: ScenarioCardProps) {
+export function ScenarioCard({ scenario, onSave, onCompare, onAdopt }: ScenarioCardProps) {
   const { id, change, predictedDeltas, computedRipple, caption } = scenario;
   // When caption is null, activity is used as the title; when caption is set,
   // the header shows caption and the change line shows the activity.
@@ -108,14 +109,24 @@ export function ScenarioCard({ scenario, onSave, onCompare }: ScenarioCardProps)
         >
           Compare
         </button>
-        <button
-          type="button"
-          className="rounded border px-2 py-0.5 text-xs opacity-40 cursor-not-allowed"
-          disabled
-          title="Coming soon — adopt this scenario as the course's next planned version"
-        >
-          Adopt · soon
-        </button>
+        {onAdopt ? (
+          <button
+            type="button"
+            className="rounded border px-2 py-0.5 text-xs hover:bg-muted"
+            onClick={() => onAdopt(id)}
+          >
+            Adopt
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="rounded border px-2 py-0.5 text-xs opacity-40 cursor-not-allowed"
+            disabled
+            title="Coming soon — adopt this scenario as the course's next planned version"
+          >
+            Adopt · soon
+          </button>
+        )}
       </div>
     </div>
   );
