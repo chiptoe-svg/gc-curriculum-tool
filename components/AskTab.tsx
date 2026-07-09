@@ -234,6 +234,18 @@ export function AskTab({ courseCode, courseTitle, slug, endpoint }: Props) {
     void send(`Compare scenario ${id} with another saved one for this course — list my saved scenarios first if needed, then compare.`);
   }
 
+  async function handleAdopt(id: string) {
+    if (!courseCode) return;
+    if (!window.confirm("Adopt this scenario as the course's next planned version? It seeds your capture draft with intended targets + the revised design.")) return;
+    try {
+      const res = await fetch(`/api/explore/${encodeURIComponent(courseCode)}/scenarios/${id}/adopt?slug=${encodeURIComponent(slug)}`, { method: 'POST' });
+      if (!res.ok) throw new Error(`adopt failed (${res.status})`);
+      void send('I adopted that scenario — what changed in the plan, and what should I gather evidence for when I teach it?');
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Adopt failed');
+    }
+  }
+
   return (
     <section className="flex flex-col rounded-md border bg-card">
       <header className="border-b px-4 py-3">
@@ -286,6 +298,7 @@ export function AskTab({ courseCode, courseTitle, slug, endpoint }: Props) {
               slug={slug}
               onSave={handleSave}
               onCompare={handleCompare}
+              onAdopt={handleAdopt}
             />
           ))
         )}
@@ -336,11 +349,13 @@ function MessageBubble({
   slug,
   onSave,
   onCompare,
+  onAdopt,
 }: {
   message: AskMessage;
   slug: string;
   onSave: (id: string) => void;
   onCompare: (id: string) => void;
+  onAdopt: (id: string) => void;
 }) {
   const isUser = message.role === 'user';
   return (
@@ -382,7 +397,7 @@ function MessageBubble({
       {!isUser && (message.scenarios?.length ?? 0) > 0 && (
         <div className="mt-2 space-y-2" data-testid="scenario-cards">
           {message.scenarios!.map(s => (
-            <ScenarioCard key={s.id} scenario={s} onSave={onSave} onCompare={onCompare} />
+            <ScenarioCard key={s.id} scenario={s} onSave={onSave} onCompare={onCompare} onAdopt={onAdopt} />
           ))}
         </div>
       )}

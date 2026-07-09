@@ -31,4 +31,12 @@ describe('ScenarioCard', () => {
     expect(onCompare).toHaveBeenCalledWith('s1');
     expect(screen.getByRole('button', { name: /adopt/i })).toBeDisabled();
   });
+  it('fires onAdopt and is enabled when onAdopt is provided', () => {
+    const onAdopt = vi.fn();
+    render(<ScenarioCard scenario={scenario} onSave={() => {}} onCompare={() => {}} onAdopt={onAdopt} />);
+    const adoptBtn = screen.getByRole('button', { name: /adopt/i });
+    expect(adoptBtn).not.toBeDisabled();
+    fireEvent.click(adoptBtn);
+    expect(onAdopt).toHaveBeenCalledWith('s1');
+  });
 });
