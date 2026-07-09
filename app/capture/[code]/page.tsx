@@ -8,11 +8,12 @@ import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
 import { listPairedCodes } from '@/lib/db/course-codes-queries';
 import { getCaptureProfileByCourse } from '@/lib/db/course-capture-profiles-queries';
 import { getCaptureConversation } from '@/lib/db/capture-conversations-queries';
-import { getLatestSnapshotByCourse } from '@/lib/db/capture-snapshots-queries';
+import { getLatestSnapshotByCourse, getSnapshotById } from '@/lib/db/capture-snapshots-queries';
 import { getLatestSessionId, getSessionInstructor, listPriorSessionSummaries } from '@/lib/db/capture-messages-queries';
 import { composeSessionBriefing } from '@/lib/ai/agent/session-briefing';
 import type { SessionBriefingView } from './CaptureChatPanel';
 import { CaptureClient } from './CaptureClient';
+import { DraftStatusStrip } from './DraftStatusStrip';
 import { isTriageEnabled } from '@/lib/capture/triage-flag';
 import { FeedbackLink } from '@/app/FeedbackLink';
 
@@ -63,6 +64,11 @@ export default async function CapturePage({ params, searchParams }: Props) {
     getLatestSnapshotByCourse(code),
     listPairedCodes(code),
   ]);
+
+  // Resolve the snapshot this draft was forked from (if any) for the status strip.
+  const forkedSnapshot = priorCapture?.sourceSnapshotId
+    ? await getSnapshotById(priorCapture.sourceSnapshotId)
+    : null;
 
   // Tells the chat panel's session-start chooser whether there's a prior
   // snapshot to "build on" vs. forcing fresh-only. Just the identity +
@@ -171,6 +177,13 @@ export default async function CapturePage({ params, searchParams }: Props) {
       </header>
 
       <main className="mx-auto max-w-5xl px-6 py-6">
+        {priorCapture && (
+          <DraftStatusStrip
+            reviewerStatus={priorCapture.reviewerStatus}
+            lastSnapshotAt={latestSnapshot ? latestSnapshot.createdAt.toISOString() : null}
+            forkedFrom={forkedSnapshot ? { caption: forkedSnapshot.caption, createdAt: forkedSnapshot.createdAt.toISOString() } : null}
+          />
+        )}
         <CaptureClient
           course={courseView}
           initialMaterials={materialsView}
