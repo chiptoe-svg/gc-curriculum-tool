@@ -13,6 +13,7 @@ interface Props {
   rosterRows: CourseRosterRow[];
   slug: string;
   pairedByCode: Record<string, Array<{ pairedCode: string }>>;
+  snapshotCountByCode: Map<string, number>;
 }
 
 // ─── Status pill config ────────────────────────────────────────────────────
@@ -136,27 +137,34 @@ function StatusCounters({ rows }: { rows: CourseStatusRow[] }) {
 
 // ─── Course row ───────────────────────────────────────────────────────────
 
-function CourseRow({
+export function CourseRow({
   row,
   slug,
   index,
   dataState,
   pairedCodes,
+  versionCount = 0,
 }: {
   row: CourseStatusRow;
   slug: string;
   index: number;
   dataState?: CourseDataState;
   pairedCodes: Array<{ pairedCode: string }>;
+  versionCount?: number;
 }) {
   const captureHref = `/capture/${encodeURIComponent(row.code)}?slug=${encodeURIComponent(slug)}`;
   const askHref = `/explore/${encodeURIComponent(row.code)}?slug=${encodeURIComponent(slug)}&tab=ask`;
+  const viewHref = `/view/${encodeURIComponent(row.code)}?slug=${encodeURIComponent(slug)}`;
+  const historyHref = `/capture/${encodeURIComponent(row.code)}?slug=${encodeURIComponent(slug)}&panel=history`;
   // Task 8 will build the course detail page — link target is /courses/[code]
   const prereqHref = `/courses/${encodeURIComponent(row.code)}?slug=${encodeURIComponent(slug)}`;
   const delay = Math.min(index * 30, 600); // cap stagger at 600ms
+  const isStarted = row.status !== 'not-started';
+  const primaryLabel = isStarted ? 'Edit Course' : 'Capture Course';
 
   return (
     <div
+      data-testid={`course-row-${row.code}`}
       className="group relative flex items-center gap-4 rounded-md transition-colors hover:bg-muted/40 animate-in fade-in slide-in-from-bottom-1"
       style={{ animationDelay: `${delay}ms`, animationFillMode: 'both' }}
     >
@@ -189,13 +197,43 @@ function CourseRow({
           {row.lastCapturedAt ? formatDate(row.lastCapturedAt) : ''}
         </span>
 
-        {/* Arrow */}
+        {/* State-dependent primary action label + arrow */}
+        <span className="shrink-0 text-xs text-muted-foreground/70">{primaryLabel}</span>
         <span className="shrink-0 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5">
           →
         </span>
       </Link>
 
-      {/* Prereq view link — Task 8 builds the actual view at /courses/[code] */}
+      {/* View Course — only when course has been started */}
+      {isStarted && (
+        <Link
+          href={viewHref}
+          className="shrink-0 text-xs text-muted-foreground/70 transition-colors hover:text-foreground"
+        >
+          View Course
+        </Link>
+      )}
+
+      {/* Explore Changes — replaces "💬 Ask", keeps askHref */}
+      <Link
+        href={askHref}
+        className="shrink-0 text-xs text-muted-foreground/70 transition-colors hover:text-foreground"
+        title="Explore changes to this course with the thinking-partner (grounded here, but ranges across the whole program)"
+      >
+        Explore Changes
+      </Link>
+
+      {/* N versions — only when snapshots exist */}
+      {versionCount > 0 && (
+        <Link
+          href={historyHref}
+          className="shrink-0 text-xs text-muted-foreground/60 transition-colors hover:text-foreground"
+        >
+          {versionCount} versions
+        </Link>
+      )}
+
+      {/* Prereq view link — demoted, unchanged */}
       <Link
         href={prereqHref}
         className="shrink-0 text-xs text-muted-foreground/50 transition-colors hover:text-foreground"
@@ -204,14 +242,6 @@ function CourseRow({
         Prereqs
       </Link>
 
-      {/* Ask affordance — separate Link so the chat tab deep-links cleanly */}
-      <Link
-        href={askHref}
-        className="shrink-0 pr-3 text-xs text-muted-foreground/70 transition-colors hover:text-foreground"
-        title="Ask the curriculum chat about this course (anchored here, but ranges across the whole program)"
-      >
-        💬 Ask
-      </Link>
       <CourseClassControls
         code={row.code}
         slug={slug}
@@ -232,6 +262,7 @@ function LevelGroup({
   startIndex,
   dataStateByCode,
   pairedByCode,
+  snapshotCountByCode,
 }: {
   level: number | null;
   rows: CourseStatusRow[];
@@ -239,6 +270,7 @@ function LevelGroup({
   startIndex: number;
   dataStateByCode: Map<string, CourseDataState>;
   pairedByCode: Record<string, Array<{ pairedCode: string }>>;
+  snapshotCountByCode: Map<string, number>;
 }) {
   return (
     <div className="mb-6">
@@ -263,6 +295,7 @@ function LevelGroup({
             index={startIndex + i}
             dataState={dataStateByCode.get(row.code)}
             pairedCodes={pairedByCode[row.code] ?? []}
+            versionCount={snapshotCountByCode.get(row.code) ?? 0}
           />
         ))}
       </div>
@@ -272,7 +305,7 @@ function LevelGroup({
 
 // ─── Main component ───────────────────────────────────────────────────────
 
-export function CoursesIndex({ rows, rosterRows, slug, pairedByCode }: Props) {
+export function CoursesIndex({ rows, rosterRows, slug, pairedByCode, snapshotCountByCode }: Props) {
   // Build a lookup map: code → dataState from the roster query
   const dataStateByCode = new Map<string, CourseDataState>(
     rosterRows.map((r) => [r.code, r.dataState]),
@@ -328,6 +361,7 @@ export function CoursesIndex({ rows, rosterRows, slug, pairedByCode }: Props) {
             startIndex={start}
             dataStateByCode={dataStateByCode}
             pairedByCode={pairedByCode}
+            snapshotCountByCode={snapshotCountByCode}
           />
         );
       })}
@@ -347,6 +381,7 @@ export function CoursesIndex({ rows, rosterRows, slug, pairedByCode }: Props) {
               index={globalIndex + i}
               dataState={dataStateByCode.get(row.code)}
               pairedCodes={pairedByCode[row.code] ?? []}
+              versionCount={snapshotCountByCode.get(row.code) ?? 0}
             />
           ))}
         </section>
@@ -364,6 +399,7 @@ export function CoursesIndex({ rows, rosterRows, slug, pairedByCode }: Props) {
               index={globalIndex + partition.proposed.length + i}
               dataState={dataStateByCode.get(row.code)}
               pairedCodes={pairedByCode[row.code] ?? []}
+              versionCount={snapshotCountByCode.get(row.code) ?? 0}
             />
           ))}
         </section>

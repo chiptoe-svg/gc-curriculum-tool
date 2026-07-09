@@ -409,6 +409,7 @@ export const courseCaptureProfiles = pgTable('course_capture_profiles', {
   profile: jsonb('profile').$type<CaptureProfile>().notNull(),
   reviewerStatus: text('reviewer_status').$type<CaptureReviewerStatus>().notNull().default('ai_drafted'),
   reviewerNote: text('reviewer_note'),
+  sourceSnapshotId: text('source_snapshot_id'), // nullable — the snapshot a draft was forked from (load/adopt); cleared on fresh re-score
   scaleVersion: text('scale_version').notNull().default('v1'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),

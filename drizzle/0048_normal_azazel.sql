@@ -1,0 +1,1 @@
+ALTER TABLE "course_capture_profiles" ADD COLUMN "source_snapshot_id" text;

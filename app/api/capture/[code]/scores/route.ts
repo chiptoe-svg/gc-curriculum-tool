@@ -165,7 +165,11 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     // no overlay (priorCapture is null or was never adopted).
     const profile = priorCapture ? preserveAdoptOverlay(priorCapture.profile, stampedProfile) : stampedProfile;
 
-    await upsertCaptureProfile({ courseCode, profile, reviewerStatus: 'ai_drafted' });
+    // Clear the fork/drift baseline: a fresh AI re-score IS scored against the
+    // current materials, so the "materials changed since the forked snapshot"
+    // banner no longer applies. (The adopt target overlay is orthogonal and is
+    // still carried by preserveAdoptOverlay above.)
+    await upsertCaptureProfile({ courseCode, profile, reviewerStatus: 'ai_drafted', sourceSnapshotId: null });
     return NextResponse.json({
       profile,
       reviewerStatus: 'ai_drafted',
