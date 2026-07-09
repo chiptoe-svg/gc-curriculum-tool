@@ -218,7 +218,7 @@ export function CourseRow({
       <Link
         href={askHref}
         className="shrink-0 text-xs text-muted-foreground/70 transition-colors hover:text-foreground"
-        title="Ask the curriculum chat about this course (anchored here, but ranges across the whole program)"
+        title="Explore changes to this course with the thinking-partner (grounded here, but ranges across the whole program)"
       >
         Explore Changes
       </Link>
