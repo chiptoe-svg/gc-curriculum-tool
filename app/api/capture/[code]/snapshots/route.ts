@@ -96,8 +96,8 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     })),
     prereqSnapshotsUsed: prereqSnapshots.flatMap(p => p ? [p] : []),
     scanPasses: {
-      canvasImportedAt: null,  // not currently tracked per-course; future enhancement
-      googleDocsScannedAt: null,
+      canvasImportedAt: course.canvasImportedAt ? course.canvasImportedAt.toISOString() : null,
+      googleDocsScannedAt: null, // no live per-course docs-scan timestamp exists to freeze
     },
   };
 
