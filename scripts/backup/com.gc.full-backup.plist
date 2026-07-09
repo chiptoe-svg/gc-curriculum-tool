@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.gc.full-backup</string>
+
+    <!-- Full disaster-recovery backup (DB + blobs + Weaviate + encrypted
+         secrets + wiki bundle + service config) to the gc-pks share, once
+         daily at 03:30. Guarded: if the share isn't mounted it logs and
+         exits 0. See scripts/backup/full-backup.sh + RESTORE.md. This is the
+         primary recovery line; pg-backup (every 6h) is the DB-only second line. -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/admin/projects/curriculum_developer/scripts/backup/full-backup.sh</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/admin/projects/curriculum_developer</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>HOME</key>
+        <string>/Users/admin</string>
+        <key>PATH</key>
+        <string>/Applications/Postgres.app/Contents/Versions/17/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+    </dict>
+
+    <!-- Daily at 03:30 local -->
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>3</integer>
+        <key>Minute</key>
+        <integer>30</integer>
+    </dict>
+    <key>RunAtLoad</key>
+    <false/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/admin/.local/state/gc-curriculum-tool/full-backup.stdout.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/admin/.local/state/gc-curriculum-tool/full-backup.stderr.log</string>
+</dict>
+</plist>
