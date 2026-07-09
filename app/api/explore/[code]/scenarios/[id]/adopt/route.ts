@@ -25,9 +25,10 @@ export async function POST(req: Request, { params }: Ctx): Promise<Response> {
   const { allowed } = await checkIpRateLimit(ipHash);
   if (!allowed) return NextResponse.json({ error: 'rate limit exceeded' }, { status: 429 });
 
-  const { id } = await params;
+  const { code, id } = await params;
+  const courseCode = decodeURIComponent(code);
 
-  const r = await adoptScenario(id);
+  const r = await adoptScenario(id, courseCode);
   if (!r.ok) return NextResponse.json({ error: r.error }, { status: 404 });
 
   return NextResponse.json({ ok: true });

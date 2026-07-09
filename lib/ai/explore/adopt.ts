@@ -57,9 +57,15 @@ export function buildAdoptedProfile(baseline: CaptureProfile, scenario: Scenario
  */
 export async function adoptScenario(
   scenarioId: string,
+  expectedCourseCode?: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const scenario = await getScenario(scenarioId);
-  if (!scenario) return { ok: false, error: 'scenario not found' };
+  // Cross-course guard (mirrors the sibling scenarios/[id] route): under the
+  // single shared prototype slug, the [code] URL segment must match the
+  // scenario's own course, or a caller could adopt another course's scenario.
+  if (!scenario || (expectedCourseCode !== undefined && scenario.courseCode !== expectedCourseCode)) {
+    return { ok: false, error: 'scenario not found' };
+  }
   const snap = await getSnapshotById(scenario.baselineSnapshotId);
   if (!snap) return { ok: false, error: 'baseline snapshot not found' };
   const profile = buildAdoptedProfile(snap.profile, scenario);

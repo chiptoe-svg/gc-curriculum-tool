@@ -6,4 +6,7 @@ it('adopt route: POST, slug-gated, rate-limited, calls adoptScenario', () => {
   expect(src).toMatch(/isValidSlug/);
   expect(src).toMatch(/checkIpRateLimit/);
   expect(src).toMatch(/adoptScenario/);
+  // cross-course guard: the [code] segment is passed to adoptScenario so a
+  // scenario belonging to another course can't be adopted under this URL.
+  expect(src).toMatch(/adoptScenario\(\s*id\s*,\s*courseCode\s*\)/);
 });
