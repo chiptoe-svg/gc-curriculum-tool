@@ -1,6 +1,9 @@
 import type { CaptureProfile, CaptureCompetency } from '@/lib/ai/capture/schema';
 import type { Scenario } from './scenario';
 import { normalizeCompetencyKey } from './run-impact';
+import { getScenario } from '@/lib/db/explore-scenario-queries';
+import { getSnapshotById } from '@/lib/db/capture-snapshots-queries';
+import { upsertCaptureProfile } from '@/lib/db/course-capture-profiles-queries';
 
 /**
  * Pure: baseline evidenced profile + a scenario → the "planned" profile.
@@ -43,4 +46,23 @@ export function buildAdoptedProfile(baseline: CaptureProfile, scenario: Scenario
     revised_objectives_draft,
     adopted_from_scenario_id: scenario.id,
   };
+}
+
+/**
+ * Adopt a scenario as the course's next PLANNED draft. Loads the scenario + its
+ * baseline snapshot, seeds the working draft (course_capture_profiles) with the
+ * planned profile (intended targets + revised objectives + new incoming skills +
+ * provenance), leaving measured depths for the next Capture to re-score from
+ * evidence. Mirrors loadSnapshotAsDraft, sourced from a Scenario.
+ */
+export async function adoptScenario(
+  scenarioId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const scenario = await getScenario(scenarioId);
+  if (!scenario) return { ok: false, error: 'scenario not found' };
+  const snap = await getSnapshotById(scenario.baselineSnapshotId);
+  if (!snap) return { ok: false, error: 'baseline snapshot not found' };
+  const profile = buildAdoptedProfile(snap.profile, scenario);
+  await upsertCaptureProfile({ courseCode: scenario.courseCode, profile, reviewerStatus: 'edited' });
+  return { ok: true };
 }
