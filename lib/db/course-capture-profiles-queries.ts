@@ -8,6 +8,7 @@ export interface CourseCaptureProfileRow {
   profile: CaptureProfile;
   reviewerStatus: CaptureReviewerStatus;
   reviewerNote: string | null;
+  sourceSnapshotId: string | null;
   scaleVersion: string;
   createdAt: Date;
   updatedAt: Date;
@@ -28,6 +29,7 @@ export async function getCaptureProfileByCourse(
     profile: row.profile,
     reviewerStatus: row.reviewerStatus,
     reviewerNote: row.reviewerNote,
+    sourceSnapshotId: row.sourceSnapshotId,
     scaleVersion: row.scaleVersion,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
@@ -39,6 +41,7 @@ export interface UpsertCaptureProfileInput {
   profile: CaptureProfile;
   reviewerStatus?: CaptureReviewerStatus;
   reviewerNote?: string | null;
+  sourceSnapshotId?: string | null;
 }
 
 /**
@@ -49,12 +52,17 @@ export interface UpsertCaptureProfileInput {
  * we add a sibling `course_capture_profile_runs` table mirroring the
  * `course_profile_runs` pattern. For alpha, single-row-per-course matches
  * the existing `course_profiles` convention and keeps the data model small.
+ *
+ * `sourceSnapshotId` follows preserve-on-undefined semantics: if omitted
+ * (undefined) on an update, the existing value is left unchanged. Pass
+ * explicit `null` to clear it (e.g. on a fresh re-score).
  */
 export async function upsertCaptureProfile({
   courseCode,
   profile,
   reviewerStatus = 'ai_drafted',
   reviewerNote = null,
+  sourceSnapshotId,
 }: UpsertCaptureProfileInput): Promise<void> {
   const now = new Date();
   const existing = await db
@@ -70,6 +78,7 @@ export async function upsertCaptureProfile({
       reviewerStatus,
       reviewerNote,
       scaleVersion: profile.scale_version,
+      sourceSnapshotId: sourceSnapshotId ?? null,
       createdAt: now,
       updatedAt: now,
     });
@@ -82,6 +91,7 @@ export async function upsertCaptureProfile({
         reviewerNote,
         scaleVersion: profile.scale_version,
         updatedAt: now,
+        ...(sourceSnapshotId !== undefined ? { sourceSnapshotId } : {}),
       })
       .where(eq(courseCaptureProfiles.courseCode, courseCode));
   }
