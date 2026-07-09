@@ -236,7 +236,7 @@ export function AskTab({ courseCode, courseTitle, slug, endpoint }: Props) {
 
   async function handleAdopt(id: string) {
     if (!courseCode) return;
-    if (!window.confirm("Adopt this scenario as the course's next planned version? It seeds your capture draft with intended targets + the revised design.")) return;
+    if (!window.confirm(`Adopt this scenario as ${courseCode}'s next planned version? This replaces your current working draft with the scenario's intended targets + revised design (snapshots are not affected).`)) return;
     try {
       const res = await fetch(`/api/explore/${encodeURIComponent(courseCode)}/scenarios/${id}/adopt?slug=${encodeURIComponent(slug)}`, { method: 'POST' });
       if (!res.ok) throw new Error(`adopt failed (${res.status})`);
