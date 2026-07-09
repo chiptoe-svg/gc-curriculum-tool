@@ -27,6 +27,11 @@ describe('buildAdoptedProfile', () => {
     expect(p.revised_objectives_draft?.some(o => /trapping lab/i.test(o))).toBe(true);
     expect(p.incoming_expectations.some(e => /color models/i.test(e.statement))).toBe(true);
   });
+  it('does not duplicate an incoming-expectation the baseline already has', () => {
+    const withExisting = { ...baseline, incoming_expectations: [{ statement: 'color models', expected_depth: { k: 2, u: null, d: 1 }, evidenced_by: ['syllabus'], confidence: 'medium' }] } as unknown as CaptureProfile;
+    const p = buildAdoptedProfile(withExisting, scenario);
+    expect(p.incoming_expectations.filter(e => /color models/i.test(e.statement))).toHaveLength(1);
+  });
   it('does not mutate the baseline (pure)', () => {
     const p = buildAdoptedProfile(baseline, scenario);
     expect((baseline.competencies[0] as any).intended_target).toBeUndefined();

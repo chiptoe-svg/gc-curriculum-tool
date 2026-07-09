@@ -13,6 +13,9 @@ export function buildAdoptedProfile(baseline: CaptureProfile, scenario: Scenario
   for (const d of scenario.predictedDeltas) {
     targetByStmt.set(normalizeCompetencyKey(d.competency), { k: d.to.k, u: d.to.u, d: d.to.d });
   }
+  // A predicted delta whose competency doesn't match any baseline competency statement
+  // is intentionally dropped — v1 overlays targets onto existing competencies only;
+  // a genuinely-new competency is not added here (documented deferral).
   const competencies: CaptureCompetency[] = baseline.competencies.map((c) => {
     const t = targetByStmt.get(normalizeCompetencyKey(c.statement));
     return t ? { ...c, intended_target: t } : c;
@@ -21,15 +24,18 @@ export function buildAdoptedProfile(baseline: CaptureProfile, scenario: Scenario
     ...(baseline.revised_objectives_draft ?? []),
     `Adopted change: ${scenario.change.activity}`,
   ];
-  const incoming_expectations = [
-    ...baseline.incoming_expectations,
-    ...scenario.change.assumesIncoming.map((a) => ({
+  const existingIncoming = new Set(
+    baseline.incoming_expectations.map((e) => normalizeCompetencyKey(e.statement)),
+  );
+  const newIncoming = scenario.change.assumesIncoming
+    .filter((a) => !existingIncoming.has(normalizeCompetencyKey(a.label)))
+    .map((a) => ({
       statement: a.label,
       expected_depth: { k: a.k, u: a.u, d: a.d ?? 0 },
       evidenced_by: [`adopted from scenario ${scenario.id}`],
       confidence: 'low' as const,
-    })),
-  ];
+    }));
+  const incoming_expectations = [...baseline.incoming_expectations, ...newIncoming];
   return {
     ...baseline,
     competencies,
