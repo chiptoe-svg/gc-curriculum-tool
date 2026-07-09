@@ -169,6 +169,9 @@ export async function loadSnapshotAsDraft(snapshotId: string): Promise<boolean> 
     reviewerStatus: 'edited' as const,
     reviewerNote: `Loaded from snapshot ${snapshotId}`,
     scaleVersion: snapshot.profile.scale_version,
+    // Forked from exactly this snapshot — the drift baseline for the inputs
+    // banner. Cleared later by a fresh AI re-score; preserved on edit-save.
+    sourceSnapshotId: snapshotId,
     updatedAt: now,
   };
   await db

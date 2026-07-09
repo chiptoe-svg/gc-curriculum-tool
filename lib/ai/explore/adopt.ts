@@ -69,6 +69,13 @@ export async function adoptScenario(
   const snap = await getSnapshotById(scenario.baselineSnapshotId);
   if (!snap) return { ok: false, error: 'baseline snapshot not found' };
   const profile = buildAdoptedProfile(snap.profile, scenario);
-  await upsertCaptureProfile({ courseCode: scenario.courseCode, profile, reviewerStatus: 'edited' });
+  await upsertCaptureProfile({
+    courseCode: scenario.courseCode,
+    profile,
+    reviewerStatus: 'edited',
+    // Forked from the scenario's baseline snapshot — the drift baseline for
+    // the inputs banner. Cleared by a fresh re-score; preserved on edit-save.
+    sourceSnapshotId: scenario.baselineSnapshotId,
+  });
   return { ok: true };
 }
