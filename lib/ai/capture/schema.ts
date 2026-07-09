@@ -111,6 +111,15 @@ export const captureCompetencySchema = z
     rationale: z.string().min(1),
     source: CaptureProfileSource.optional(),
     citations: z.array(CaptureProfileCitation).optional(),
+    // Aspirational target set by ADOPT (Explore close-the-loop) — the predicted
+    // depth a change aims for. A SEPARATE field from the measured k/u/d: a target
+    // can never occupy a measured slot, so evidence-above-zero governs only the
+    // measured depths and no prediction can launder into an evidenced score.
+    intended_target: z.object({
+      k: z.number().int().min(0).max(5).nullable(),
+      u: z.number().int().min(0).max(5).nullable(),
+      d: z.number().int().min(0).max(5).nullable(),
+    }).nullable().optional(),
   })
   .refine(
     (c) => c.type !== 'foundational' || (c.k_depth === null && c.u_depth === null),
@@ -374,6 +383,12 @@ export const captureProfileSchema = z.object({
    * labeled "from the course sheet — not yet captured."
    */
   major_projects: z.array(majorProjectItemSchema).nullable().optional(),
+  /**
+   * Provenance: the scenario ID this profile was adopted from via the Explore
+   * "adopt" flow. Null or absent for profiles captured from scratch.
+   * Nullable/optional for backward-compat — existing snapshots have neither.
+   */
+  adopted_from_scenario_id: z.string().nullable().optional(),
 });
 export type CaptureProfile = z.infer<typeof captureProfileSchema>;
 
