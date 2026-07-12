@@ -311,6 +311,37 @@ interface DoclingResponse {
   };
 }
 
+/**
+ * Transcribe an image-based document via docling-serve's Granite-Docling VLM
+ * pipeline (pipeline=vlm + vlm_pipeline_model=granite_docling). Structured,
+ * local, free. Throws on any docling-serve error so the caller (extractText)
+ * can fall back to the OpenAI vision path. Base URL = DOCLING_URL (:5001).
+ */
+export async function transcribeWithGranite(
+  { fileBytes, mimeType, fileName }: { fileBytes: Buffer; mimeType: string; fileName: string },
+): Promise<{ text: string; pageCount: number }> {
+  const baseUrl = (process.env.DOCLING_URL?.trim() || 'http://localhost:5001').replace(/\/$/, '');
+  const form = new FormData();
+  form.append('files', new Blob([new Uint8Array(fileBytes)], { type: mimeType }), fileName);
+  form.append('to_formats', 'md');
+  form.append('pipeline', 'vlm');
+  form.append('vlm_pipeline_model', 'granite_docling');
+
+  const res = await fetch(`${baseUrl}/v1/convert/file`, { method: 'POST', body: form });
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`granite docling-serve ${res.status}: ${body.slice(0, 200)}`);
+  }
+  const data = (await res.json()) as DoclingResponse;
+  if (data.status && data.status !== 'success') {
+    throw new Error(`granite conversion failed: ${data.errors?.[0]?.error_message ?? 'unknown'}`);
+  }
+  const doc = data.document ?? {};
+  const text = (doc.md_content ?? doc.text_content ?? '').trim();
+  const pageCount = text ? Math.max(1, (text.match(/^---$/gm) ?? []).length + 1) : 0;
+  return { text, pageCount };
+}
+
 // ─── Factory ───────────────────────────────────────────────────────────────
 
 /**
