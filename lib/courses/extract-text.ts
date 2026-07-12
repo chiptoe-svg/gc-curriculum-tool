@@ -11,9 +11,10 @@
  * `low_text` directly, never as `vision`.
  */
 
-import { getExtractorFor, SUPPORTED_MIME_TYPES } from '@/lib/courses/material-extractor';
+import { getExtractorFor, transcribeWithGranite, SUPPORTED_MIME_TYPES } from '@/lib/courses/material-extractor';
 import { isLegacyOfficeMime, convertLegacyToModern } from '@/lib/courses/legacy-converter';
 import { getProvider } from '@/lib/ai/provider';
+import { repetitionRatio } from '@/lib/courses/repetition-ratio';
 
 // Re-export the supported-types list and type name so callers (upload
 // route, schemas) read the same source of truth as the extractor itself.
@@ -33,7 +34,7 @@ export interface ExtractTextOptions {
 }
 
 export interface ExtractTextResult {
-  method?: 'text' | 'vision';
+  method?: 'text' | 'vision' | 'granite';
   status: 'ok' | 'low_text' | 'failed';
   text?: string;
   pageCount?: number;
@@ -52,6 +53,9 @@ const MIN_MEANINGFUL_CHARS = 10;
 
 /** Max pages to send to vision to bound cost + latency. */
 const VISION_PAGE_CAP = 40;
+
+/** Granite output with repetition ratio at or above this threshold is considered degenerate. */
+const GRANITE_REPETITION_THRESHOLD = 0.3;
 
 export async function extractText(args: ExtractTextArgs, opts?: ExtractTextOptions): Promise<ExtractTextResult> {
   let { fileBytes, mimeType, fileName } = args;
@@ -101,6 +105,18 @@ export async function extractText(args: ExtractTextArgs, opts?: ExtractTextOptio
     const charsPerPage = pageCount && pageCount > 0 ? text.length / pageCount : text.length;
     const isImageBased = charsPerPage < MIN_CHARS_PER_PAGE;
     if (isImageBased) {
+      if (process.env.GRANITE_DOCLING_ENABLED && process.env.GRANITE_DOCLING_ENABLED !== 'false') {
+        try {
+          const g = await transcribeWithGranite({ fileBytes, mimeType, fileName });
+          const gText = g.text.trim();
+          if (gText.length >= MIN_MEANINGFUL_CHARS && repetitionRatio(gText) < GRANITE_REPETITION_THRESHOLD) {
+            return { method: 'granite', status: 'ok', text: gText, pageCount: g.pageCount || pageCount, visionCostUsdCents: 0 };
+          }
+          // else: declined (empty / short / repetitive) → fall through to OpenAI below
+        } catch {
+          // Granite error → fall through to OpenAI below (Granite can only decline, never fail)
+        }
+      }
       try {
         const provider = opts?.visionProvider ?? getProvider();
         const transcribed = await provider.transcribeDocument({
