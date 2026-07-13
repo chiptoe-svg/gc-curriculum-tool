@@ -37,9 +37,9 @@ export function visionOffloadConfig(): VisionOffload | null {
   };
 }
 
-/** Should a batch of `count` items go to the DGX? (config present AND big enough) */
-export function shouldOffload(off: VisionOffload | null, count: number): boolean {
-  return !!off && count >= off.minItems;
+/** Should a batch of `count` items go to the DGX? (config present AND (forced OR big enough)) */
+export function shouldOffload(off: VisionOffload | null, count: number, force = false): boolean {
+  return !!off && (force || count >= off.minItems);
 }
 
 async function pool(indices: number[], limit: number, fn: (i: number) => Promise<void>): Promise<void> {
