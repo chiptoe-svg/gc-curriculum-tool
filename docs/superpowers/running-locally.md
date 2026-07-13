@@ -181,6 +181,21 @@ near-instant (cached at
 `~/.local/share/uv/tools/docling-serve/lib/python3.12/site-packages/rapidocr/models/`
 and `~/.cache/huggingface/`).
 
+### Hard-scan OCR lane (local Qwen, optional)
+
+Image-based PDFs (scanned/handwritten, `charsPerPage < 100`) OCR through the
+`extract-text.ts` vision lane. Default → OpenAI. To route hard scans to
+Qwen3.6-35B on the DGX Spark (local, free, FERPA-friendlier; ~1.6x slower/page):
+
+1. Set `VISION_OFFLOAD_BASE_URL=http://gcspark.clemson.edu:8080/v1`,
+   `VISION_OFFLOAD_MODEL=qwen3.6-35b-a3b`, `VISION_OFFLOAD_API_KEY=…`.
+2. Set `LOCAL_HARDSCAN_OCR=1`.
+
+OpenAI remains the automatic fallback if the Spark errors/empties (ingestion never
+breaks). Backup endpoint: `qwen3.6-35b-a3b-fp8` @ `https://llm.rcd.clemson.edu/v1`
+(swap the three `VISION_OFFLOAD_*` vars). Born-digital PDFs (Docling text
+extraction) and the Granite clean-scan lane are unaffected.
+
 ### Next.js startup (handled by launchd)
 
 The launchd plist `~/Library/LaunchAgents/com.gc.curriculum-tool.plist`
