@@ -73,3 +73,43 @@ Then set `GRANITE_DOCLING_ENABLED=1` + the docling-serve preset in the deploy co
 - **Born-digital PDFs** (standard Docling text extraction) and the **hard-scan OCR lane** (Qwen on the Spark, shipped `feat/local-hardscan-ocr`) — untouched; this is only the Granite VLM path.
 - **Granite's targeted instructions** (chart→table, formula→LaTeX, section-header retrieval) — future enhancement, not this lane.
 - **Moving the standard extraction pipeline off CPU** — the MPS layout bug still forces CPU there; this design deliberately leaves born-digital extraction exactly as-is.
+
+---
+
+## Validation findings (2026-07-13)
+
+**Status: pipeline VALIDATED end-to-end; blocked on a macOS permission + app wiring. Not shipped.**
+
+**Proven** (via a temporary shell-owned docling-serve on `:5002`, which held the Local Network permission):
+- `final_salary` (16pg, emptied on CPU 2026-07-12) → **9,401 chars clean structured markdown in 14s** on the Spark (headings, bullets, a full table, image placeholders).
+- `advising_slides` (40pg, 504'd on CPU) → 12,248 chars, but **one page hit Granite's repetition runaway** (`stop_reason=length`) → overall repetitionRatio 0.44 > 0.3 → the built lane's guard **declines → OpenAI fallback**. Designed, safe — Granite stays a clean-docs tool.
+
+**The config recipe (the real unknown — now solved).** docling-serve's `vlm_pipeline_model` form field is a **hard enum** (custom preset names → HTTP 422), and `custom_vlm_presets`/`default_vlm_preset` do **not** route via the HTTP API (they silently fall back to the local transformers model). The working path is the **per-request custom config**:
+
+1. Server: `allow_custom_vlm_config: true` (via `DOCLING_SERVE_CONFIG_FILE` → `~/.config/docling-serve/config.json`) + `DOCLING_SERVE_ENABLE_REMOTE_SERVICES=true` (already set in the plist).
+2. Request (multipart to `POST /v1/convert/file`): `pipeline=vlm`, `image_export_mode=placeholder`, and `vlm_pipeline_custom_config=<JSON>`.
+3. The JSON is a `VlmConvertOptions` whose `engine_options` must be **manually spliced** — pydantic drops the `ApiVlmEngineOptions` subclass fields (`url`/`params`) on `model_dump` because the field is typed as the base class:
+
+```python
+# run with the docling-serve venv python
+import json
+from docling.datamodel.vlm_engine_options import ApiVlmEngineOptions
+from docling.datamodel.pipeline_options import VlmConvertOptions
+import docling.datamodel.stage_model_specs as sms
+ms = sms.VLM_CONVERT_GRANITE_DOCLING.model_spec  # complete spec (prompt + response_format=doctags)
+eng = ApiVlmEngineOptions(
+    url="http://130.127.162.68:8080/v1/chat/completions",   # IP, not hostname
+    headers={},
+    params={"model": "granite-docling", "skip_special_tokens": False, "max_tokens": 4096},
+    timeout=400.0, concurrency=4,
+)
+d = VlmConvertOptions(engine_options=eng, model_spec=ms, scale=2.0).model_dump(mode="json")
+d["engine_options"] = eng.model_dump(mode="json")   # MANDATORY splice (else url/params dropped)
+json.dump(d, open("/tmp/granite_vco.json", "w"))
+```
+
+Gotchas: **`skip_special_tokens: False` is REQUIRED** (else DocTags loc tokens are stripped and parsing fails); use the **IP** `130.127.162.68`, and the Spark model id is **`granite-docling`** (not the HF repo).
+
+**The deploy blocker (not code, not docling): macOS Local Network privacy.** The launchd docling-serve (`:5001`) gets `EHOSTUNREACH "No route to host"` to the Spark, while a shell reaches it (HTTP 200, same venv python, same `requests`, no proxy). Cause: the Spark `130.127.162.68` is **same-subnet** as this Mac (`en0 130.127.162.67`), and macOS blocks headless launchd agents from same-subnet hosts without the **Local Network** permission (which Terminal/the shell holds). **Fix (GUI/human):** grant docling-serve (or `…/uv/tools/docling-serve/bin/python`) Local Network access in System Settings → Privacy & Security → Local Network, or launch the service in a permission-granted context.
+
+**Remaining steps to ship (none done):** (1) grant the Local Network permission [operator]; (2) wire `transcribeWithGranite` to send `vlm_pipeline_custom_config` (above) instead of `vlm_pipeline_model=granite_docling`, and set `allow_custom_vlm_config`/`DOCLING_SERVE_CONFIG_FILE` on the deployed `:5001`; (3) re-validate through the deployed `:5001`; (4) flip `GRANITE_DOCLING_ENABLED=1`. Live box was restored to clean (plist reverted, `:5002` killed, flag off) — production unchanged.
