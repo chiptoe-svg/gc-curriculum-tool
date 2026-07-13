@@ -312,20 +312,81 @@ interface DoclingResponse {
 }
 
 /**
+ * Granite-Docling-258M model spec (docling `VLM_CONVERT_GRANITE_DOCLING.model_spec`),
+ * embedded so we can drive the VLM pipeline at a REMOTE endpoint. Docling's HTTP
+ * `vlm_pipeline_model` field is a fixed enum (can't name a remote model), so we send
+ * a per-request `vlm_pipeline_custom_config` instead — which requires this spec inline.
+ * Pinned to the installed docling version; if docling is upgraded, re-derive from
+ * `docling.datamodel.stage_model_specs.VLM_CONVERT_GRANITE_DOCLING.model_spec`.
+ */
+const GRANITE_MODEL_SPEC = {
+  name: 'Granite-Docling-258M',
+  default_repo_id: 'ibm-granite/granite-docling-258M',
+  revision: 'main',
+  prompt: 'Convert this page to docling.',
+  response_format: 'doctags',
+  supported_engines: null,
+  engine_overrides: {
+    transformers: {
+      repo_id: null,
+      revision: null,
+      torch_dtype: null,
+      extra_config: {
+        transformers_model_type: 'automodel-imagetexttotext',
+        extra_generation_config: { skip_special_tokens: false },
+      },
+    },
+  },
+  api_overrides: {},
+  trust_remote_code: false,
+  stop_strings: ['</doctag>', '<|end_of_text|>'],
+  max_new_tokens: 8192,
+} as const;
+
+/**
  * Transcribe an image-based document via docling-serve's Granite-Docling VLM
- * pipeline (pipeline=vlm + vlm_pipeline_model=granite_docling). Structured,
- * local, free. Throws on any docling-serve error so the caller (extractText)
- * can fall back to the OpenAI vision path. Base URL = DOCLING_URL (:5001).
+ * pipeline, offloading the VLM inference to Granite on the DGX Spark (docling-serve
+ * renders pages + parses DocTags→markdown locally; only inference is remote).
+ * Structured, local-network, free. Throws on any docling-serve error so the caller
+ * (extractText) can fall back to the OpenAI vision path. Base URL = DOCLING_URL (:5001).
+ *
+ * Requires the docling-serve deployment to set `allow_custom_vlm_config=true`
+ * (via `DOCLING_SERVE_CONFIG_FILE`) + `enable_remote_services=true`, and the Spark to
+ * serve `granite-docling` (`--revision untied`). `skip_special_tokens:false` is
+ * mandatory (keeps DocTags location tokens).
  */
 export async function transcribeWithGranite(
   { fileBytes, mimeType, fileName }: { fileBytes: Buffer; mimeType: string; fileName: string },
 ): Promise<{ text: string; pageCount: number }> {
   const baseUrl = (process.env.DOCLING_URL?.trim() || 'http://localhost:5001').replace(/\/$/, '');
+  const sparkUrl = process.env.GRANITE_VLM_URL?.trim() || 'http://130.127.162.68:8080/v1/chat/completions';
+  const sparkModel = process.env.GRANITE_VLM_MODEL?.trim() || 'granite-docling';
+  // Per-request custom VLM config: docling-serve renders + parses locally, but runs
+  // Granite inference on the Spark (engine_type 'api'). engine_options carries the
+  // endpoint + params; model_spec is embedded above (the HTTP enum can't name a remote model).
+  const vlmCustomConfig = {
+    engine_options: {
+      engine_type: 'api',
+      url: sparkUrl,
+      headers: {},
+      params: { model: sparkModel, skip_special_tokens: false, max_tokens: 4096 },
+      timeout: 400.0,
+      concurrency: 4,
+    },
+    model_spec: GRANITE_MODEL_SPEC,
+    scale: 2.0,
+    max_size: null,
+    batch_size: 1,
+    force_backend_text: false,
+  };
   const form = new FormData();
   form.append('files', new Blob([new Uint8Array(fileBytes)], { type: mimeType }), fileName);
   form.append('to_formats', 'md');
   form.append('pipeline', 'vlm');
-  form.append('vlm_pipeline_model', 'granite_docling');
+  // 'placeholder' — don't extract/write picture images (avoids docling's "cannot write
+  // empty image" on image regions); we only want the text/structure.
+  form.append('image_export_mode', 'placeholder');
+  form.append('vlm_pipeline_custom_config', JSON.stringify(vlmCustomConfig));
 
   const res = await fetch(`${baseUrl}/v1/convert/file`, { method: 'POST', body: form });
   if (!res.ok) {
