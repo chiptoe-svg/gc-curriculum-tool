@@ -13,7 +13,7 @@
 
 import { getExtractorFor, transcribeWithGranite, SUPPORTED_MIME_TYPES } from '@/lib/courses/material-extractor';
 import { isLegacyOfficeMime, convertLegacyToModern } from '@/lib/courses/legacy-converter';
-import { getProvider } from '@/lib/ai/provider';
+import { getProvider, buildLocalProvider } from '@/lib/ai/provider';
 import { repetitionRatio } from '@/lib/courses/repetition-ratio';
 
 // Re-export the supported-types list and type name so callers (upload
@@ -115,6 +115,39 @@ export async function extractText(args: ExtractTextArgs, opts?: ExtractTextOptio
           // else: declined (empty / short / repetitive) → fall through to OpenAI below
         } catch {
           // Granite error → fall through to OpenAI below (Granite can only decline, never fail)
+        }
+      }
+      // Lane 3 — flat OCR fallback for hard/handwritten scans. Default: getProvider()
+      // (OpenAI). When LOCAL_HARDSCAN_OCR is on AND we are not already in "use local"
+      // mode (which injects opts.visionProvider), transcribe on Qwen-35B via the Spark
+      // (buildLocalProvider + forceOffload = every page on the benched variant), and
+      // fall through to OpenAI on any failure/empty so ingestion never breaks.
+      const hardscanLocal =
+        !opts?.visionProvider &&
+        !!process.env.LOCAL_HARDSCAN_OCR &&
+        process.env.LOCAL_HARDSCAN_OCR !== 'false';
+      if (hardscanLocal) {
+        try {
+          const local = buildLocalProvider();
+          const t = await local.transcribeDocument({
+            fileBytes,
+            mimeType,
+            maxPages: VISION_PAGE_CAP,
+            forceOffload: true,
+          });
+          const localText = t.text.trim();
+          if (localText.length >= MIN_MEANINGFUL_CHARS) {
+            return {
+              method: 'vision',
+              status: 'ok',
+              text: localText,
+              pageCount,
+              visionCostUsdCents: t.costUsdCents,
+            };
+          }
+          // empty/short → fall through to the OpenAI fallback below
+        } catch {
+          // local/Spark error → fall through to the OpenAI fallback below
         }
       }
       try {

@@ -11,6 +11,10 @@ export interface TranscribeDocumentArgs {
   mimeType: 'application/pdf' | 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
   /** Max pages to transcribe. Default: 40. */
   maxPages?: number;
+  /** Force every page to the DGX offload endpoint, bypassing the small-doc size
+   *  tier. Used by the hard-scan OCR lane so all pages run on the benched Spark
+   *  variant. Ignored by providers without an offload path (OpenAI/Anthropic/campus). */
+  forceOffload?: boolean;
 }
 
 export interface TranscribeDocumentResult {
