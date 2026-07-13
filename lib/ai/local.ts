@@ -119,7 +119,7 @@ export class LocalProvider implements AIProvider {
 
     // Small docs stay on the local omlx (fast, and they clear before tying up the
     // box v2v needs); only shunt time-consuming (many-page) docs to the DGX.
-    const offloadClient = shouldOffload(offload, pages.length) && offload
+    const offloadClient = shouldOffload(offload, pages.length, args.forceOffload) && offload
       ? new OpenAI({ baseURL: offload.baseURL, apiKey: offload.apiKey, timeout: 120_000, maxRetries: 0 })
       : null;
 
