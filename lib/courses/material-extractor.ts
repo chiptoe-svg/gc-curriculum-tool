@@ -150,72 +150,74 @@ class DoclingExtractor implements MaterialExtractor {
     // content-type + filename, so we don't pass from_formats explicitly.
     // We do ask for markdown specifically — Docling's main quality
     // win is rendering tables as proper markdown tables.
-    const form = new FormData();
-    const blob = new Blob([new Uint8Array(fileBytes)], { type: mimeType });
-    form.append('files', blob, fileName);
-    form.append('to_formats', 'md');
-    // NOTE: OCR is kept ON (Docling default). It extracts real content from chart/
-    // table/diagram IMAGES on slides — axis values, labels, numbers — that the text
-    // layer lacks and describeSlides' notes summarize but don't transcribe. (An
-    // earlier do_ocr=false attempt dropped final_salary from 13k→2k chars.)
-    // Always strip base64 image bytes to placeholders (independent of picture
-    // description) — inline base64 inflates token count 20-30x. Decoupled from the
-    // VLM block below so skipping captioning never reintroduces that bloat.
-    form.append('image_export_mode', 'placeholder');
-
     // XLSX images (embedded charts, logos, screenshots) are almost never
-    // audit-relevant — the agent cares about cell content, not the
-    // graphics. Skip image extraction entirely so Docling doesn't drop
-    // base64 data URIs into the markdown. Defaults to include_images=true
-    // upstream, so for PDFs/DOCX/PPTX we still pull them.
+    // audit-relevant — the agent cares about cell content, not the graphics.
     const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-    if (mimeType === XLSX_MIME) {
-      form.append('include_images', 'false');
-    }
+    // Built fresh per attempt so the primary→fallback retry below has an unconsumed body.
+    const buildForm = (): FormData => {
+      const form = new FormData();
+      const blob = new Blob([new Uint8Array(fileBytes)], { type: mimeType });
+      form.append('files', blob, fileName);
+      form.append('to_formats', 'md');
+      // OCR is kept ON (Docling default): it extracts real content from chart/table/
+      // diagram IMAGES — axis values, labels, numbers — that the text layer lacks and
+      // describeSlides summarizes but doesn't transcribe (do_ocr=false dropped
+      // final_salary 13k→2k chars). Always strip base64 bytes to placeholders
+      // (inline base64 inflates tokens 20-30x); decoupled from the VLM block so
+      // skipping captioning never reintroduces that bloat.
+      form.append('image_export_mode', 'placeholder');
+      if (mimeType === XLSX_MIME) form.append('include_images', 'false');
 
-    // Optional VLM picture-description pass. Enabled when DOCLING_VLM_ENABLED
-    // is truthy AND docling-serve was started with
-    // DOCLING_SERVE_ALLOW_CUSTOM_PICTURE_DESCRIPTION_CONFIG=true and
-    // DOCLING_SERVE_ENABLE_REMOTE_SERVICES=true. The VLM is an OpenAI-compatible
-    // backend pointed at by DOCLING_VLM_URL (defaults to local omlx).
-    // Skipped for middle-tier slide decks (skipPictureDescription) — describeSlides
-    // already runs vision per slide, so captioning every embedded image is a
-    // redundant second pass (~5-7s/page, the dominant deck-ingest cost). Kept for
-    // non-deck PDFs (syllabi/proposals), which don't get describeSlides.
-    if (!skipPictureDescription && process.env.DOCLING_VLM_ENABLED && process.env.DOCLING_VLM_ENABLED !== 'false') {
-      form.append('do_picture_description', 'true');
-      const vlmConfig = {
-        model_spec: {
-          name: visionModel('docPicture').model,
-          // Informational only on the engine_type:'api' path (Docling calls the
-          // remote URL, it doesn't load the model) — kept aligned with the gemma
-          // captioner for clarity; the actual model is `name` / params.model.
-          default_repo_id: 'mlx-community/gemma-4-12B-it-qat-4bit',
-          prompt: process.env.DOCLING_VLM_PROMPT
-            ?? 'Describe this image in 1-2 sentences. Focus on content and concepts (chart type, axes, key values, diagram structure, etc.). Reply with only the description — no preamble.',
-          response_format: 'plaintext',
-          max_new_tokens: 200,
-        },
-        engine_options: {
-          engine_type: 'api',
-          url: process.env.DOCLING_VLM_URL ?? 'http://localhost:8000/v1/chat/completions',
-          headers: process.env.DOCLING_VLM_API_KEY
-            ? { Authorization: `Bearer ${process.env.DOCLING_VLM_API_KEY}` }
-            : {},
-          params: { model: visionModel('docPicture').model },
-          timeout: 120,
-        },
-      };
-      form.append('picture_description_custom_config', JSON.stringify(vlmConfig));
-    }
+      // Optional VLM picture-description pass (DOCLING_VLM_ENABLED + docling-serve
+      // remote-services/custom-picture-config flags). Skipped for middle-tier slide
+      // decks (skipPictureDescription) — describeSlides already runs vision per slide,
+      // so captioning every embedded image is a redundant ~5-7s/page second pass.
+      if (!skipPictureDescription && process.env.DOCLING_VLM_ENABLED && process.env.DOCLING_VLM_ENABLED !== 'false') {
+        form.append('do_picture_description', 'true');
+        const vlmConfig = {
+          model_spec: {
+            name: visionModel('docPicture').model,
+            default_repo_id: 'mlx-community/gemma-4-12B-it-qat-4bit',
+            prompt: process.env.DOCLING_VLM_PROMPT
+              ?? 'Describe this image in 1-2 sentences. Focus on content and concepts (chart type, axes, key values, diagram structure, etc.). Reply with only the description — no preamble.',
+            response_format: 'plaintext',
+            max_new_tokens: 200,
+          },
+          engine_options: {
+            engine_type: 'api',
+            url: process.env.DOCLING_VLM_URL ?? 'http://localhost:8000/v1/chat/completions',
+            headers: process.env.DOCLING_VLM_API_KEY
+              ? { Authorization: `Bearer ${process.env.DOCLING_VLM_API_KEY}` }
+              : {},
+            params: { model: visionModel('docPicture').model },
+            timeout: 120,
+          },
+        };
+        form.append('picture_description_custom_config', JSON.stringify(vlmConfig));
+      }
+      return form;
+    };
 
-    const url = `${this.baseUrl.replace(/\/$/, '')}/v1/convert/file`;
-    const res = await fetch(url, { method: 'POST', body: form });
-    if (!res.ok) {
-      const body = await res.text().catch(() => '');
-      throw new Error(`docling-serve ${res.status}: ${body.slice(0, 200)}`);
+    // Primary docling-serve with an optional local fallback (DOCLING_FALLBACK_URL):
+    // when the primary is a remote (Spark) instance, a Spark outage / unreachable
+    // (same-subnet Local-Network gate) never blocks ingestion — we retry the local one.
+    const fallbackUrl = process.env.DOCLING_FALLBACK_URL?.trim();
+    const post = async (base: string): Promise<DoclingResponse> => {
+      const res = await fetch(`${base.replace(/\/$/, '')}/v1/convert/file`, { method: 'POST', body: buildForm() });
+      if (!res.ok) {
+        const body = await res.text().catch(() => '');
+        throw new Error(`docling-serve ${res.status}: ${body.slice(0, 200)}`);
+      }
+      return (await res.json()) as DoclingResponse;
+    };
+    let data: DoclingResponse;
+    try {
+      data = await post(this.baseUrl);
+    } catch (err) {
+      if (!fallbackUrl || fallbackUrl === this.baseUrl) throw err;
+      console.warn(`[docling] primary ${this.baseUrl} failed (${err instanceof Error ? err.message : err}); falling back to ${fallbackUrl}`);
+      data = await post(fallbackUrl);
     }
-    const data = (await res.json()) as DoclingResponse;
     if (data.status && data.status !== 'success') {
       const reason = data.errors?.[0]?.error_message ?? 'unknown failure';
       throw new Error(`docling-serve conversion failed: ${reason}`);

@@ -179,6 +179,26 @@ describe('DoclingExtractor', () => {
       delete process.env.DOCLING_VLM_ENABLED;
     }
   });
+  it('falls back to DOCLING_FALLBACK_URL when the primary docling-serve fails', async () => {
+    process.env.DOCLING_FALLBACK_URL = 'http://127.0.0.1:5001';
+    try {
+      let call = 0;
+      (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(async (u: string) => {
+        call += 1;
+        if (call === 1) throw new TypeError('fetch failed'); // primary unreachable
+        return { ok: true, json: async () => ({ status: 'success', document: { md_content: '## ok' } }) };
+      });
+      const r = await new DoclingExtractor('http://130.127.162.68:5001').extract({
+        fileBytes: Buffer.from('x'), mimeType: PPTX, fileName: 'a.pptx',
+      });
+      expect(r.text).toContain('## ok');
+      const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+      expect(String(calls[0]![0])).toContain('130.127.162.68'); // primary tried first
+      expect(String(calls[1]![0])).toContain('127.0.0.1');       // then the fallback
+    } finally {
+      delete process.env.DOCLING_FALLBACK_URL;
+    }
+  });
   it('throws when docling returns status=failure inside a 200 envelope', async () => {
     (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
       ok: true,
