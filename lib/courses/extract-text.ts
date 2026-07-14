@@ -31,6 +31,9 @@ export interface ExtractTextOptions {
   /** When set, image-PDF vision transcription uses this provider instead of the
    *  global getProvider(). Used by the ingest worker's local-only mode. */
   visionProvider?: import('@/lib/ai/provider').AIProvider;
+  /** Skip Docling's picture-description pass (see ExtractArgs). Set by the ingest
+   *  worker for middle-tier slide decks — describeSlides covers per-slide vision. */
+  skipPictureDescription?: boolean;
 }
 
 export interface ExtractTextResult {
@@ -90,7 +93,7 @@ export async function extractText(args: ExtractTextArgs, opts?: ExtractTextOptio
   let pageCount: number | undefined;
   let text = '';
   try {
-    const r = await extractor.extract({ fileBytes, mimeType, fileName });
+    const r = await extractor.extract({ fileBytes, mimeType, fileName, skipPictureDescription: opts?.skipPictureDescription });
     text = r.text;
     pageCount = r.pageCount ?? undefined;
   } catch {

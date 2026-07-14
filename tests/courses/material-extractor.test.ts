@@ -147,6 +147,37 @@ describe('DoclingExtractor', () => {
     const [url, init] = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0] ?? [];
     expect(url).toBe('http://localhost:5001/v1/convert/file');
     expect(init).toMatchObject({ method: 'POST' });
+    // OCR is disabled — born-digital text comes from the text layer; scanned PDFs
+    // fall to the vision lanes via the isImageBased gate (~4-6x faster extraction).
+    const form = (init as { body: FormData }).body;
+    // OCR stays ON (Docling default) — it extracts chart/table data from images.
+    expect(form.get('do_ocr')).toBeNull();
+  });
+  it('skipPictureDescription gates captioning but always keeps image_export_mode=placeholder', async () => {
+    process.env.DOCLING_VLM_ENABLED = 'true';
+    try {
+      const run = async (skip?: boolean) => {
+        (global.fetch as ReturnType<typeof vi.fn>).mockClear();
+        (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+          ok: true, json: async () => ({ status: 'success', document: { md_content: 'x' } }),
+        });
+        await new DoclingExtractor('http://localhost:5001').extract({
+          fileBytes: Buffer.from('x'), mimeType: PPTX, fileName: 'l.pptx', skipPictureDescription: skip,
+        });
+        const [, init] = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0] ?? [];
+        return (init as { body: FormData }).body;
+      };
+      // default (deck tier flag not set): picture-description ON, base64 stripped
+      let form = await run(undefined);
+      expect(form.get('do_picture_description')).toBe('true');
+      expect(form.get('image_export_mode')).toBe('placeholder');
+      // middle-tier deck (skip): captioning OFF, but base64 still stripped (decoupled)
+      form = await run(true);
+      expect(form.get('do_picture_description')).toBeNull();
+      expect(form.get('image_export_mode')).toBe('placeholder');
+    } finally {
+      delete process.env.DOCLING_VLM_ENABLED;
+    }
   });
   it('throws when docling returns status=failure inside a 200 envelope', async () => {
     (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({

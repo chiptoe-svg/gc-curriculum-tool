@@ -139,7 +139,12 @@ export async function processMaterial(row: CourseMaterialRow): Promise<void> {
       fileBytes = bytes;
       const ex = await extractText(
         { fileBytes: bytes, mimeType: row.mimeType as ExtractedMimeType, fileName: row.fileName },
-        isLocal ? { visionProvider: buildLocalProvider() } : undefined,
+        {
+          ...(isLocal ? { visionProvider: buildLocalProvider() } : {}),
+          // Middle-tier decks get per-slide vision via describeSlides in finalize;
+          // skip Docling's redundant picture-description pass (~5-7s/page).
+          skipPictureDescription: row.tier === 'middle',
+        },
       );
       // Fix 2: meter vision OCR cost immediately after extraction
       if (ex.visionCostUsdCents !== undefined && ex.visionCostUsdCents > 0) {

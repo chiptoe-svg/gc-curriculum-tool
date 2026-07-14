@@ -65,10 +65,20 @@ export interface MaterialExtractorResult {
   pageCount: number | null;
 }
 
+export interface ExtractArgs {
+  fileBytes: Buffer;
+  mimeType: string;
+  fileName: string;
+  /** Skip Docling's picture-description VLM pass — redundant for middle-tier slide
+   *  decks (describeSlides already runs vision per slide) and ~5-7s/page. Only
+   *  DoclingExtractor honors it; base64 stripping is unaffected (always placeholder). */
+  skipPictureDescription?: boolean;
+}
+
 export interface MaterialExtractor {
   readonly name: 'unpdf' | 'docling' | 'mammoth';
   supports(mimeType: string): boolean;
-  extract(args: { fileBytes: Buffer; mimeType: string; fileName: string }): Promise<MaterialExtractorResult>;
+  extract(args: ExtractArgs): Promise<MaterialExtractorResult>;
 }
 
 // ─── Backends ──────────────────────────────────────────────────────────────
@@ -76,7 +86,7 @@ export interface MaterialExtractor {
 class UnpdfExtractor implements MaterialExtractor {
   readonly name = 'unpdf' as const;
   supports(mimeType: string): boolean { return mimeType === 'application/pdf'; }
-  async extract(args: { fileBytes: Buffer; mimeType: string; fileName: string }): Promise<MaterialExtractorResult> {
+  async extract(args: ExtractArgs): Promise<MaterialExtractorResult> {
     const parsed = await unpdfExtractText(new Uint8Array(args.fileBytes), { mergePages: true });
     return { text: (parsed.text ?? '').trim(), pageCount: parsed.totalPages };
   }
@@ -87,7 +97,7 @@ class MammothExtractor implements MaterialExtractor {
   supports(mimeType: string): boolean {
     return mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
   }
-  async extract(args: { fileBytes: Buffer; mimeType: string; fileName: string }): Promise<MaterialExtractorResult> {
+  async extract(args: ExtractArgs): Promise<MaterialExtractorResult> {
     const result = await mammoth.extractRawText({ buffer: args.fileBytes });
     return { text: (result.value ?? '').trim(), pageCount: null };
   }
@@ -124,18 +134,18 @@ class DoclingExtractor implements MaterialExtractor {
    */
   private static readonly LARGE_PDF_THRESHOLD_BYTES = 2 * 1024 * 1024;
 
-  async extract({ fileBytes, mimeType, fileName }: { fileBytes: Buffer; mimeType: string; fileName: string }): Promise<MaterialExtractorResult> {
+  async extract({ fileBytes, mimeType, fileName, skipPictureDescription }: ExtractArgs): Promise<MaterialExtractorResult> {
     // Large-PDF path: split into pages first, extract each, concatenate.
     // Page-citable output: each page's text is prefaced with `--- page N ---`
     // so downstream chunking + the agent's citation tooling can reference
     // specific pages. Per-page failures are isolated rather than fatal.
     if (mimeType === 'application/pdf' && fileBytes.length > DoclingExtractor.LARGE_PDF_THRESHOLD_BYTES) {
-      return this.extractByPageSplit(fileBytes, fileName);
+      return this.extractByPageSplit(fileBytes, fileName, skipPictureDescription);
     }
-    return this.extractWhole({ fileBytes, mimeType, fileName });
+    return this.extractWhole({ fileBytes, mimeType, fileName, skipPictureDescription });
   }
 
-  private async extractWhole({ fileBytes, mimeType, fileName }: { fileBytes: Buffer; mimeType: string; fileName: string }): Promise<MaterialExtractorResult> {
+  private async extractWhole({ fileBytes, mimeType, fileName, skipPictureDescription }: ExtractArgs): Promise<MaterialExtractorResult> {
     // docling-serve auto-detects from_format based on the upload's
     // content-type + filename, so we don't pass from_formats explicitly.
     // We do ask for markdown specifically — Docling's main quality
@@ -144,6 +154,14 @@ class DoclingExtractor implements MaterialExtractor {
     const blob = new Blob([new Uint8Array(fileBytes)], { type: mimeType });
     form.append('files', blob, fileName);
     form.append('to_formats', 'md');
+    // NOTE: OCR is kept ON (Docling default). It extracts real content from chart/
+    // table/diagram IMAGES on slides — axis values, labels, numbers — that the text
+    // layer lacks and describeSlides' notes summarize but don't transcribe. (An
+    // earlier do_ocr=false attempt dropped final_salary from 13k→2k chars.)
+    // Always strip base64 image bytes to placeholders (independent of picture
+    // description) — inline base64 inflates token count 20-30x. Decoupled from the
+    // VLM block below so skipping captioning never reintroduces that bloat.
+    form.append('image_export_mode', 'placeholder');
 
     // XLSX images (embedded charts, logos, screenshots) are almost never
     // audit-relevant — the agent cares about cell content, not the
@@ -160,11 +178,12 @@ class DoclingExtractor implements MaterialExtractor {
     // DOCLING_SERVE_ALLOW_CUSTOM_PICTURE_DESCRIPTION_CONFIG=true and
     // DOCLING_SERVE_ENABLE_REMOTE_SERVICES=true. The VLM is an OpenAI-compatible
     // backend pointed at by DOCLING_VLM_URL (defaults to local omlx).
-    // image_export_mode=placeholder keeps the markdown lean — we want the
-    // VLM's description, not the base64 image bytes.
-    if (process.env.DOCLING_VLM_ENABLED && process.env.DOCLING_VLM_ENABLED !== 'false') {
+    // Skipped for middle-tier slide decks (skipPictureDescription) — describeSlides
+    // already runs vision per slide, so captioning every embedded image is a
+    // redundant second pass (~5-7s/page, the dominant deck-ingest cost). Kept for
+    // non-deck PDFs (syllabi/proposals), which don't get describeSlides.
+    if (!skipPictureDescription && process.env.DOCLING_VLM_ENABLED && process.env.DOCLING_VLM_ENABLED !== 'false') {
       form.append('do_picture_description', 'true');
-      form.append('image_export_mode', 'placeholder');
       const vlmConfig = {
         model_spec: {
           name: visionModel('docPicture').model,
@@ -229,7 +248,7 @@ class DoclingExtractor implements MaterialExtractor {
    * `brew install poppler`; the Vercel deploy doesn't use this extractor
    * because PDF_PARSER=unpdf there.
    */
-  private async extractByPageSplit(fileBytes: Buffer, fileName: string): Promise<MaterialExtractorResult> {
+  private async extractByPageSplit(fileBytes: Buffer, fileName: string, skipPictureDescription?: boolean): Promise<MaterialExtractorResult> {
     const fsp = await import('node:fs/promises');
     const os = await import('node:os');
     const pathMod = await import('node:path');
@@ -271,6 +290,7 @@ class DoclingExtractor implements MaterialExtractor {
             fileBytes: pageBytes,
             mimeType: 'application/pdf',
             fileName: `${fileName}#page-${pageNum}`,
+            skipPictureDescription,
           });
           if (r.text && r.text.trim().length > 0) {
             sections.push(`--- page ${pageNum} ---\n\n${r.text}`);
