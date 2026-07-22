@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { openAIBaseURL } from './openai-base-url';
 
 /**
  * Lists chat-completion-capable models available to the configured OpenAI
@@ -94,7 +95,7 @@ export async function listAvailableChatModels(): Promise<ListModelsResult> {
     if (cache) return { models: cache.models, stale: true, fetchedAt: cache.fetchedAt };
     throw new Error('OPENAI_API_KEY not set');
   }
-  const client = new OpenAI({ apiKey });
+  const client = new OpenAI({ apiKey, baseURL: openAIBaseURL() });
 
   try {
     const ids: string[] = [];

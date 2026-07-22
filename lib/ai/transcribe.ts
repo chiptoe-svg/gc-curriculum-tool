@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { openAIBaseURL } from './openai-base-url';
 import * as childProcess from 'node:child_process';
 import { promises as fs } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -227,7 +228,7 @@ async function transcribeAudioOpenAI(
   const apiKey = process.env.OPENAI_API_KEY?.trim();
   if (!apiKey) throw new Error('OPENAI_API_KEY not set');
 
-  const client = new OpenAI({ apiKey });
+  const client = new OpenAI({ apiKey, baseURL: openAIBaseURL() });
   const model = opts.model ?? 'whisper-1';
 
   // OpenAI's Node SDK wants a File-like object. We construct one from the

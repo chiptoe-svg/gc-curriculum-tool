@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { openAIBaseURL } from './openai-base-url';
 import type { AIProvider, CompletionTelemetry, TranscribeDocumentArgs, TranscribeDocumentResult } from './provider';
 // v6 Vercel AI SDK: structured output with tools uses generateText + Output.object, not generateObject.
 // tool() in v6 uses `inputSchema` (not `parameters`), matching our ToolDefinition shape directly.
@@ -35,7 +36,7 @@ export class OpenAIProvider implements AIProvider {
   constructor(model: string, apiKey: string) {
     this.model = model;
     this.apiKey = apiKey;
-    this.client = new OpenAI({ apiKey });
+    this.client = new OpenAI({ apiKey, baseURL: openAIBaseURL() });
   }
 
   async complete<T>(args: {

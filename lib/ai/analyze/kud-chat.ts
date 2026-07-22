@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { openAIBaseURL } from '../openai-base-url';
 import { loadPrompt } from '@/lib/ai/prompts/load';
 
 export interface KudChatProfile {
@@ -71,7 +72,7 @@ export async function kudChatTurn(
 ): Promise<string> {
   const apiKey = process.env.OPENAI_API_KEY?.trim();
   if (!apiKey) throw new Error('OPENAI_API_KEY not set');
-  const client = new OpenAI({ apiKey });
+  const client = new OpenAI({ apiKey, baseURL: openAIBaseURL() });
 
   const model = process.env.OPENAI_MODEL?.trim() || 'gpt-4o';
 
