@@ -34,7 +34,7 @@ export const DEPTH_ANCHORS: Record<Dimension, readonly [string, string, string, 
     'Critiques the principle, identifies limits, extends to new domains',
   ],
   d: [
-    'Not present',
+    'Not evidenced in the materials',
     'Performs with per-step direction or supervision',
     'Performs using a reference or checklist',
     'Performs independently in familiar conditions',

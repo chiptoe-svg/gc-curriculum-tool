@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { VoiceRecorder } from '@/components/VoiceRecorder';
 import type { CaptureReadiness } from '@/lib/ai/capture/schema';
 import type { ChatMessage } from '@/lib/ai/analyze/capture-chat';
+import { mergeTurnText } from '@/lib/capture/merge-turn-text';
 import { CitationDrawer, type CitationTarget } from './CitationDrawer';
 import { InstructorSelect } from './InstructorSelect';
 
@@ -282,18 +283,11 @@ export function CaptureChatPanel({
       }
 
       const fr: FinalResponse = finalResponse;
-      // Some agent turns include the question text inside the `finding`
-      // paragraph (the prompt asks for 3 paragraphs of prose AND splits
-      // into structured finding + question fields — agents satisfy both
-      // by writing the question into both). Append `question` only when
-      // it's not already part of `finding`, so faculty don't see it twice.
-      const finding = (fr.finding ?? '').trim();
-      const question = (fr.question ?? '').trim();
-      const content = !question
-        ? finding
-        : finding.includes(question)
-          ? finding
-          : finding + '\n\n' + question;
+      // The prompt keeps the follow-up question in the `question` field only.
+      // mergeTurnText is the defense-in-depth: if a turn still ends its
+      // `finding` with a (possibly reworded) question, we don't append the
+      // `question` field again, so faculty never see the question twice.
+      const content = mergeTurnText(fr.finding ?? '', fr.question ?? '');
       const assistantMessage: ChatMessage = {
         role: 'assistant',
         content,

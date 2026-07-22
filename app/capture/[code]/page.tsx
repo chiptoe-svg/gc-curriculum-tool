@@ -158,13 +158,13 @@ export default async function CapturePage({ params, searchParams }: Props) {
             </h1>
           </div>
           <div className="flex items-center gap-4">
-            {/* The LAN landing is the canonical public course list — the
-                faculty guide's published entry point. A relative link would
-                keep users on the funnel origin instead of sending them to
-                the shared course list. No slug: the landing is public, and
-                appending the faculty slug to a shareable URL leaks it. */}
+            {/* Home → the public course list at "/". Relative/same-origin
+                (2026-07-22): "/" is public on every door, so a relative link
+                shows the same landing without bouncing faculty to a different
+                origin (which re-prompts Basic Auth). No slug: the landing is
+                public, and appending the faculty slug to a shareable URL leaks it. */}
             <a
-              href="http://gcworkflow.clemson.edu:3000/"
+              href="/"
               className="text-sm text-muted-foreground hover:text-foreground"
             >
               Course List

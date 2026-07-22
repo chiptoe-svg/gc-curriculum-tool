@@ -427,12 +427,11 @@ function CompetencyCard({
       </div>
 
       {!isTechnical && (
-        <p className="rounded bg-amber-50/70 px-2.5 py-1.5 text-[11px] leading-snug text-amber-800">
-          <span className="font-semibold">Foundational competency — scored on Do only.</span>{' '}
-          Dispositions like this show up in what students <em>do</em>, not in what they can
-          recall or explain, so Know and Understand are left unscored (—). A zero there would
-          wrongly read as &ldquo;the course tried to build this and failed.&rdquo; The evidence
-          and rationale below say what this refers to and why the Do score landed where it did.
+        <p
+          className="text-[11px] italic leading-snug text-muted-foreground"
+          title="Foundational dispositions show up in what students do, not in what they can recall or explain, so Know and Understand are left unscored (—) rather than zero — a zero would wrongly read as 'the course tried to build this and failed.' The rationale below says why the Do score landed where it did."
+        >
+          Foundational disposition — scored on <span className="font-medium not-italic">Do</span> only (K/U shown as —, not zero).
         </p>
       )}
 
@@ -1118,12 +1117,12 @@ export function ProfileReviewPanel({
   // `profile` prop asynchronously and working momentarily ≠ profile.
   const isCaptured = lastSavedStatus === 'confirmed';
 
-  // Portable OKF markdown of the last-saved snapshot. Absolute LAN origin
-  // matches this file's other /view links (so the downloaded file is the
-  // public LAN projection). The route sets Content-Disposition: attachment,
-  // so it downloads even cross-origin where the `download` attr is ignored.
-  const okfHref = `http://gcworkflow.clemson.edu:3000/view/${encodeURIComponent(courseCode)}/okf`;
-  const bundleHref = `http://gcworkflow.clemson.edu:3000/view/${encodeURIComponent(courseCode)}/okf-bundle`;
+  // Portable OKF markdown of the last-saved snapshot. Same-origin/relative
+  // (2026-07-22) so faculty stay on whatever door they're on (HTTPS/tailnet/
+  // LAN) — no cross-origin bounce that re-prompts Basic Auth. /view is public,
+  // and the route sets Content-Disposition: attachment so it still downloads.
+  const okfHref = `/view/${encodeURIComponent(courseCode)}/okf`;
+  const bundleHref = `/view/${encodeURIComponent(courseCode)}/okf-bundle`;
   // hasSnapshot: a snapshot existed at page load. snapshotMessage ok: one was
   // just captured this session (exists now even though it didn't at load).
   const showOkfDownload = Boolean(hasSnapshot) || snapshotMessage?.kind === 'ok';
@@ -1530,7 +1529,7 @@ export function ProfileReviewPanel({
           </p>
           <div className="mt-3 flex flex-wrap items-center gap-3 text-xs">
             <a
-              href={`http://gcworkflow.clemson.edu:3000/view/${encodeURIComponent(courseCode)}`}
+              href={`/view/${encodeURIComponent(courseCode)}`}
               className="rounded-md border border-green-700 bg-white px-3 py-1.5 font-medium text-green-900 hover:bg-green-100 dark:bg-transparent dark:text-green-200"
             >
               View the public profile →
@@ -1559,7 +1558,7 @@ export function ProfileReviewPanel({
               See the program matrix
             </a>
             <a
-              href="http://gcworkflow.clemson.edu:3000/"
+              href="/"
               className="rounded-md border border-input bg-background px-3 py-1.5 font-medium hover:bg-muted"
             >
               Back to the course list

@@ -33,12 +33,12 @@ describe('portraitClauses', () => {
     expect(u.fallback).toBe(true);
   });
 
-  it('shows the generic "Not present" anchor at depth 0 even if a says sentence is set', () => {
+  it('shows the generic depth-0 anchor even if a says sentence is set', () => {
     const zeroWithSays: CaptureCompetency = { ...technical, d_depth: 0, d_says: 'Your students do this well.' };
     const cs = portraitClauses(zeroWithSays);
     const d = cs.find(c => c.dim === 'd')!;
     expect(d.fallback).toBe(true);
-    expect(d.text).toBe('Not present'); // describeDepth('d', 0)
+    expect(d.text).toBe('Not evidenced in the materials'); // describeDepth('d', 0)
   });
 });
 

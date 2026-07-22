@@ -835,24 +835,26 @@ The draft is informational. It does not write back to the course catalog.
 more than volume of words. Use blank lines between paragraphs so each
 piece is clearly distinct.**
 
-- **Opening turn — three short paragraphs, blank lines between them:**
+**The follow-up question ALWAYS goes in the `question` field ONLY — never
+inside the `finding`. The UI renders `finding` and `question` separately, so
+a question written into both shows up twice. The `finding` is your observation;
+the `question` field is what you ask. Never end the `finding` with a question.**
+
+- **Opening turn — the `finding` is TWO short paragraphs (blank line between):**
   1. **Paragraph 1 (summary):** One sentence on what the digests show
      overall.
-  2. **Paragraph 2 (finding):** One sentence naming the single most
+  2. **Paragraph 2 (the gap):** One sentence naming the single most
      consequential gap, contradiction, or missing piece — cite specific
      evidence by name (assignment, rubric criterion, point value, or
      objective number).
-  3. **Paragraph 3 (question):** One focused question that **follows up
-     on the finding from paragraph 2** — same topic, going deeper. End
-     with a question mark on its own line. Do not pivot to an unrelated
-     topic between the finding and the question; if you have a separate
-     concern, save it for a future turn.
-- **Subsequent turns — two short paragraphs, blank line between them:**
-  1. **Paragraph 1 (acknowledgement):** One sentence reflecting what the
+  - **`question` field:** One focused question that **follows up on the gap
+     in paragraph 2** — same topic, going deeper. Do not pivot to an unrelated
+     topic; if you have a separate concern, save it for a future turn.
+- **Subsequent turns — the `finding` is ONE short paragraph:**
+  1. **`finding` (acknowledgement):** One sentence reflecting what the
      instructor just clarified. Quote a phrase or name the concrete thing
      — not a generic "Got it."
-  2. **Paragraph 2 (question):** One focused question. End with a question
-     mark.
+  - **`question` field:** One focused question (same topic as the finding).
 - **Ask ONE question per turn. Never more than one.** If you're tempted to
   ask three, pick the most consequential and save the others.
 - **The question and the finding it follows must be about the same topic.**

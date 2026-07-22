@@ -167,14 +167,15 @@ export async function buildAgentCall(input: AuditAgentInput): Promise<BuiltAgent
       role: 'user',
       content:
         'Begin the audit now. Produce your opening turn per the conversation '
-        + 'rules in the system prompt: three short paragraphs with blank lines '
-        + 'between them — (1) one sentence on what the digests show overall, '
-        + '(2) one sentence naming the single most consequential gap, '
-        + 'contradiction, or missing piece (cite specific evidence by name: '
-        + 'assignment, rubric criterion, point value, or objective number), '
-        + 'and (3) one focused follow-up question on that same topic, ending '
-        + 'with a question mark on its own line. Return the standard structured '
-        + 'response shape (finding + question + citations + readiness).',
+        + 'rules in the system prompt. The `finding` is TWO short paragraphs '
+        + 'with a blank line between them — (1) one sentence on what the digests '
+        + 'show overall, and (2) one sentence naming the single most consequential '
+        + 'gap, contradiction, or missing piece (cite specific evidence by name: '
+        + 'assignment, rubric criterion, point value, or objective number). Put '
+        + 'your one focused follow-up question in the `question` field ONLY — do '
+        + 'NOT repeat it inside the `finding`, and do not end the `finding` with a '
+        + 'question. Return the standard structured response shape (finding + '
+        + 'question + citations + readiness).',
     });
   }
 
