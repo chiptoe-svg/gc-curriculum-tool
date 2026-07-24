@@ -8,7 +8,7 @@
  */
 
 import { visionModel } from '@/lib/ai/vision-models';
-import { visionOffloadConfig, twoPhaseOffload, shouldOffload } from '@/lib/ai/vision-offload';
+import { visionOffloadConfig, twoPhaseOffload, shouldOffload, resolveOffloadConcurrency } from '@/lib/ai/vision-offload';
 import { accumulateSseContent } from '@/lib/ai/sse-accumulate';
 import { recordRealFallback } from '@/lib/ai/vision-offload-health';
 import { canonicalize } from '@/lib/ai/vision-canonicalize';
@@ -185,7 +185,7 @@ export async function describeSlides(pngs: Buffer[]): Promise<SlideNote[]> {
         return { ...SAFE_DEFAULT };
       }
     },
-    offloadConcurrency: off?.concurrency ?? 12,
+    offloadConcurrency: off ? await resolveOffloadConcurrency(off) : 12,
     localConcurrency: 4, // slides are lighter than OCR; matches the prior mapWithConcurrency(4)
     onFallback: (n, total, err) => {
       recordRealFallback(`slides ${n}/${total}: ${err}`);

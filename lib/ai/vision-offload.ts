@@ -42,6 +42,44 @@ export function shouldOffload(off: VisionOffload | null, count: number, force = 
   return !!off && (force || count >= off.minItems);
 }
 
+// The Spark gateway advertises `recommended_concurrency` per model in /v1/models
+// (derived from its max-running-requests). We read it at ingest time so our throttle
+// auto-tracks server retunes with no code change, capped by VISION_OFFLOAD_CONCURRENCY
+// (the operator's cost ceiling). Cached to avoid a /models GET per deck.
+const CONC_TTL_MS = 5 * 60_000;
+const concCache = new Map<string, { value: number; at: number }>();
+/** Test hook: clear the recommended-concurrency cache. */
+export function __resetConcurrencyCache(): void { concCache.clear(); }
+
+/**
+ * Resolve the offload concurrency: `min(gateway recommended_concurrency, env
+ * VISION_OFFLOAD_CONCURRENCY)`. Falls back to the env value if the gateway
+ * doesn't advertise it or the probe fails (graceful). Cached for 5 min.
+ */
+export async function resolveOffloadConcurrency(off: VisionOffload, now: number = Date.now()): Promise<number> {
+  const key = `${off.baseURL}|${off.model}`;
+  const hit = concCache.get(key);
+  if (hit && now - hit.at < CONC_TTL_MS) return hit.value;
+  let value = off.concurrency; // env fallback / ceiling
+  try {
+    const res = await fetch(`${off.baseURL.replace(/\/$/, '')}/models`, {
+      headers: { Authorization: `Bearer ${off.apiKey}` },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (res.ok) {
+      const body = (await res.json()) as { data?: Array<{ id: string; recommended_concurrency?: number }> };
+      const rc = body.data?.find((m) => m.id === off.model)?.recommended_concurrency;
+      if (typeof rc === 'number' && Number.isInteger(rc) && rc >= 1) {
+        value = Math.min(rc, off.concurrency); // honor gateway, never exceed operator ceiling
+      }
+    }
+  } catch {
+    // fall back to env value
+  }
+  concCache.set(key, { value, at: now });
+  return value;
+}
+
 async function pool(indices: number[], limit: number, fn: (i: number) => Promise<void>): Promise<void> {
   let next = 0;
   const worker = async (): Promise<void> => {

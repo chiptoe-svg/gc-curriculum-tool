@@ -344,9 +344,10 @@ describe('describeSlides — canonical render + per-backend budget', () => {
       Promise.resolve(makeSseResponse({ topic: 't', teaches: 'x', keyVisual: '', contentLevel: 'low' })),
     );
     await describeSlides([SAMPLE_PNG, SAMPLE_PNG]);
-    const bodies = fetchSpy.mock.calls.map(
-      (c: unknown[]) => JSON.parse((c[1] as { body: string }).body) as Record<string, unknown>,
-    );
+    const bodies = fetchSpy.mock.calls
+      // resolveOffloadConcurrency does a bodyless GET /models — keep only the POSTs.
+      .filter((c: unknown[]) => (c[1] as { body?: string })?.body)
+      .map((c: unknown[]) => JSON.parse((c[1] as { body: string }).body) as Record<string, unknown>);
     expect(bodies.length).toBeGreaterThan(0);
     // All succeeded on the DGX offload → max_soft_tokens set, knob absent, thinking off.
     expect(bodies.every((b: Record<string, unknown>) => b['max_soft_tokens'] === 560)).toBe(true);

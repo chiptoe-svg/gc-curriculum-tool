@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 import type { AIProvider, CompletionTelemetry, TranscribeDocumentArgs, TranscribeDocumentResult } from './provider';
 import { renderToImages } from '@/lib/capture/render-pages';
 import { visionModel } from './vision-models';
-import { visionOffloadConfig, twoPhaseOffload, shouldOffload } from './vision-offload';
+import { visionOffloadConfig, twoPhaseOffload, shouldOffload, resolveOffloadConcurrency } from './vision-offload';
 import { recordRealFallback } from './vision-offload-health';
 import { canonicalize } from './vision-canonicalize';
 import { withVisionSlot } from './vision-offload-gate';
@@ -172,7 +172,7 @@ export class LocalProvider implements AIProvider {
         ...(txBudget ? { vision_soft_tokens_per_image: txBudget } : {}),
         repetition_penalty: 1.3,
       } as Parameters<typeof this.client.chat.completions.create>[0])),
-      offloadConcurrency: offload?.concurrency ?? 12,
+      offloadConcurrency: offload ? await resolveOffloadConcurrency(offload) : 12,
       localConcurrency: 2, // memory-bound + shared omlx
       onFallback: (n, total, err) => {
         recordRealFallback(`OCR ${n}/${total} pages: ${err}`);
