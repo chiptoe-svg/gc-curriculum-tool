@@ -137,19 +137,28 @@ export class LocalProvider implements AIProvider {
       offload: offloadClient && offload
         // Weighted gate: 1120 requests crash the shared DGX past ~4-5 concurrent,
         // so hold in-flight DGX weight ≤ 8 slots across ALL vision paths.
-        ? async (i) => withVisionSlot(txBudget, async () => pickContent(await offloadClient.chat.completions.create({
-            model: offload.model,
-            messages: imageMessages(i),
-            temperature: 0,
-            max_tokens: OCR_MAX_TOKENS,
-            // Image is canonical (48-aligned, tokens ≤ B); max_soft_tokens = B is the
-            // DGX budget/ceiling (the router recomputes tokens from dims and validates).
-            max_soft_tokens: txBudget,
-            // Pin thinking OFF on the DGX (vLLM honors it) — no reasoning preamble, ~7-8×
-            // fewer decode tokens on transcription.
-            chat_template_kwargs: { enable_thinking: false },
-            repetition_penalty: 1.3,
-          } as Parameters<typeof this.client.chat.completions.create>[0])))
+        ? async (i) => withVisionSlot(txBudget, async () => {
+            // gcspark's loopback forwarder (com.gc.dgx-forward) stalls NON-streamed
+            // responses ~15s — STREAM the offload path (accumulated text is identical to
+            // message.content). Local omlx (loopback, no forwarder) stays non-streamed.
+            const stream = (await offloadClient.chat.completions.create({
+              model: offload.model,
+              messages: imageMessages(i),
+              temperature: 0,
+              max_tokens: OCR_MAX_TOKENS,
+              // Image is canonical (48-aligned, tokens ≤ B); max_soft_tokens = B is the
+              // DGX budget/ceiling (the router recomputes tokens from dims and validates).
+              max_soft_tokens: txBudget,
+              // Pin thinking OFF on the DGX (vLLM honors it) — no reasoning preamble, ~7-8×
+              // fewer decode tokens on transcription.
+              chat_template_kwargs: { enable_thinking: false },
+              repetition_penalty: 1.3,
+              stream: true,
+            } as Parameters<typeof this.client.chat.completions.create>[0])) as unknown as AsyncIterable<{ choices?: Array<{ delta?: { content?: string } }> }>;
+            let text = '';
+            for await (const chunk of stream) text += chunk.choices?.[0]?.delta?.content ?? '';
+            return text.trim();
+          })
         : null,
       // Local omlx: the knob + enable_thinking are omlx-specific (raise effective
       // resolution for fine print; stop gemma's greedy-decode loop; keep Qwen from

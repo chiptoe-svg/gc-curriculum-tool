@@ -9,6 +9,7 @@
 
 import { visionModel } from '@/lib/ai/vision-models';
 import { visionOffloadConfig, twoPhaseOffload, shouldOffload } from '@/lib/ai/vision-offload';
+import { accumulateSseContent } from '@/lib/ai/sse-accumulate';
 import { recordRealFallback } from '@/lib/ai/vision-offload-health';
 import { canonicalize } from '@/lib/ai/vision-canonicalize';
 import { withVisionSlot } from '@/lib/ai/vision-offload-gate';
@@ -101,6 +102,10 @@ async function describeSlideOn(png: Buffer, be: SlideBackend): Promise<SlideNote
         : { vision_soft_tokens_per_image: be.budget }
       : {}),
     repetition_penalty: 1.3,
+    // gcspark's loopback forwarder stalls NON-streamed responses ~15s — stream the
+    // offload path (accumulated text is identical). Local omlx (loopback, no
+    // forwarder) stays non-streamed. See lib/ai/sse-accumulate.ts.
+    ...(be.offload ? { stream: true } : {}),
   });
 
   const res = await fetch(`${be.baseUrl}/chat/completions`, {
@@ -113,15 +118,20 @@ async function describeSlideOn(png: Buffer, be: SlideBackend): Promise<SlideNote
     throw new Error(`slide-vision ${be.offload ? 'offload' : 'local'} non-OK: ${res.status} ${res.statusText}`);
   }
 
-  let outer: unknown;
-  try {
-    outer = await res.json();
-  } catch {
-    console.warn('[slide-vision] response body is not valid JSON');
-    return { ...SAFE_DEFAULT };
+  let content: string;
+  if (be.offload) {
+    content = await accumulateSseContent(res);
+  } else {
+    let outer: unknown;
+    try {
+      outer = await res.json();
+    } catch {
+      console.warn('[slide-vision] response body is not valid JSON');
+      return { ...SAFE_DEFAULT };
+    }
+    content =
+      (outer as { choices?: Array<{ message?: { content?: string } }> })?.choices?.[0]?.message?.content ?? '';
   }
-  const content =
-    (outer as { choices?: Array<{ message?: { content?: string } }> })?.choices?.[0]?.message?.content ?? '';
   let parsed: unknown;
   try {
     parsed = JSON.parse(content);

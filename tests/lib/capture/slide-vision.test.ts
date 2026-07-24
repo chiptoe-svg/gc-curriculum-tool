@@ -35,6 +35,15 @@ function makeOkResponse(note: SlideNote) {
   );
 }
 
+// The offload path streams (gcspark forwarder stalls non-streamed) — build a fresh
+// SSE Response per call (a reused Response locks its body on the 2nd getReader()).
+function makeSseResponse(note: SlideNote) {
+  const sse =
+    `data: ${JSON.stringify({ choices: [{ delta: { content: JSON.stringify(note) } }] })}\n\n` +
+    `data: [DONE]\n\n`;
+  return new Response(sse, { status: 200, headers: { 'Content-Type': 'text/event-stream' } });
+}
+
 const SAMPLE_PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47]); // PNG magic bytes
 
 // ---------------------------------------------------------------------------
@@ -331,8 +340,8 @@ describe('describeSlides — canonical render + per-backend budget', () => {
   });
 
   it('sends max_soft_tokens=560 to the DGX (not the omlx knob)', async () => {
-    fetchSpy.mockResolvedValue(
-      makeOkResponse({ topic: 't', teaches: 'x', keyVisual: '', contentLevel: 'low' }),
+    fetchSpy.mockImplementation(() =>
+      Promise.resolve(makeSseResponse({ topic: 't', teaches: 'x', keyVisual: '', contentLevel: 'low' })),
     );
     await describeSlides([SAMPLE_PNG, SAMPLE_PNG]);
     const bodies = fetchSpy.mock.calls.map(
