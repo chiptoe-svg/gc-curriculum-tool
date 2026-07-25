@@ -80,3 +80,29 @@ A faculty spot-check on a sample remains the ultimate ground truth.
 - **Faculty review load:** 30 nodes × rich drafts is real review effort — mitigated by AI grounding (drafts should be mostly-right) and by allowing incremental confirmation (partial enrichment is safe, §5).
 - **Prompt size:** threading full enrichment for 5–7 sub-comps per call grows the prompt; bounded (30 nodes total, 5–7 per target call) and well within context.
 - **Aliases + precision:** aliases could invite thematic hits; Stage-1 matching uses them only lightly (recall aid), with boundaries/exclusions as the precision guard.
+
+---
+
+## Revision 1 (post-adversarial-review + literature, 2026-07-25)
+
+An adversarial review found the original §4/§6 validation **fatally contaminated** (authored node examples from the same fixture used to validate) and the metric **precision-only / gameable by matching less**; and a literature pass (Xu 2025 *From Course to Skill*; Xu 2026 *21st-Century Competencies*; UniSkill 2026) supplied concrete methods. This revision supersedes §4, §5, §6 as noted and adds a pilot gate. The §1–3 problem/goals/data-model stand.
+
+**R1 — Decontaminate authoring vs. validation (supersedes §4 grounding + §6).** The 58-row fixture is 6 snapshots and is ~97% not-correct, so it can neither be the *test set* we author from nor a source of *positive* examples. Therefore:
+- **Positive examples are faculty-authored** from the node's descriptors (the fixture can't supply them); AI drafts only the negatives/boundaries/aliases.
+- **AI drafts from a HELD-OUT set** — score N of the ~10 currently-unscored captures (labeled by **gpt-5.6-sol**, the honest judge, not gpt-5.4) — and the **original 6-snapshot fixture is reserved for validation only**. Author-set and test-set share no snapshot.
+
+**R2 — Recall measure + pre-committed threshold (supersedes §6 metric).** Precision alone is gameable by matching less. Build a small **faculty-affirmed "should-match" set** (course-competency → node pairs that genuinely align) and report **both precision and recall** — how many genuine matches the strict "default-None" contract drops. Pre-commit the success threshold *before* seeing results (e.g., meaningful-depth precision ≥ X and recall ≥ Y on the enriched fixture; exact X/Y set in the plan on the decontaminated split).
+
+**R3 — Judge is graded + cross-family + faculty, in the gate (supersedes §6 judge).** Replace the single self-family judge with the Xu 2025/2026 methodology: a **graded rubric with a 0-vs-NA distinction** — *3 = explicit / 2 = reasonably inferred / 1 = vaguely implied / 0 = clearly out-of-scope / NA = insufficient evidence* (the 0-vs-NA split is exactly the force-match vs can't-tell distinction; Xu 2026's coding-guideline clarity took human κ from 0.29→0.94 on abstract competencies). Gate on a **cross-family panel (gpt-5.6-sol + glm-5.2)** plus a **mandatory faculty spot-check of N cells** — not advisory footnotes.
+
+**R4 — Matching = extract-then-align (supersedes §5 mechanism).** Adopt Xu 2026's *Curricular CoT*: (a) **extract** the course competency's pedagogical elements via guided questions (activity/deliverable/assessment/target skill; their Table 4), (b) **align** the standardized representation against each node's enriched boundaries, node-by-node, with cited evidence + default-None. Expect **modest** lift (Xu reports Curricular-CoT gains are modest; the honest ceiling is ~80% even with rich descriptions — RAG's Precision₄ in Xu 2025). Trust comes from R3's faculty gate, not model accuracy.
+
+**R5 — Node boundaries in the "clear-definition" style.** Author boundaries/examples in the **EU Key Competences** style (Xu 2026's high-agreement exemplar, κ=0.84) — crisp inclusion/exclusion that produces rater agreement — cross-checked against O\*NET Workforce Competencies + ESDC Skills-for-Success for the foundational nodes. Lean the *matching input* on **detailed instructional-activity materials** (Xu 2026: the most informative document type), not thin catalog text.
+
+**R6 — Resolve strict-vs-graceful.** Strict matching (inside-boundary + evidence + default-None) is **gated on `status = faculty_confirmed`**; un-enriched nodes score as today. Validation must therefore measure the **mixed state** (some confirmed, some not), not only the all-enriched ideal, since that is what faculty see during rollout.
+
+**R7 — Cross-target `distinguishFrom`.** Extend `distinguishFrom` beyond same-target siblings to the **known cross-target collision clusters** (e.g. `ai-tool-direction` ↔ `prompt-design`; `gc-production-literacy` ↔ `production domain-knowledge`), since the per-target scorer otherwise double-credits across targets.
+
+**R8 — Pilot first (new gate before full build).** Before enriching all 30 nodes + building the faculty surface, **enrich 2–3 high-collision nodes** and run the decontaminated R1–R3 measurement. Only greenlight the full build if the pilot shows a judge-robust improvement on held-out data. This tests the load-bearing (and still unproven) hypothesis that richer nodes fix identity — cheaply.
+
+**Literature added to `docs/references/_pdfs/`:** xu-2025-course-to-skill, xu-2026-21c-competencies, musazade-2026-uniskill, wang-2022-self-consistency, and the co-occurrence/skill-mapping cluster. Methods folded above; complementarity-edge sources (Skill2vec, Liu) belong to Stage 3.
