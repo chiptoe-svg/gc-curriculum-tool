@@ -41,6 +41,22 @@ Find the GAPS, CONTRADICTIONS, and UNSAIDS. Examples to look for:
 - Big sub-competency gap. If the career target's sub-comps include
   things their pages 1-5 didn't mention, ask one probing question
   about whether it matters here.
+- **Incoming under-preparation — the highest-value gap.** Where do people
+  coming straight out of a program consistently arrive short? This is the
+  supply/demand gap the whole tool exists to locate — it points straight at
+  what the curriculum must build — so spend a turn on it even if pages 1-5
+  never raised it. "Thinking about hires straight out of a program, what do
+  they end up having to learn on the job that you wish they'd walked in
+  already able to do?"
+- **Depth of a core competency — familiar vs. novel.** Once you know WHAT a
+  strong hire does at a key skill, pin HOW deep the role needs it: executing
+  it in the expected, familiar cases, or adapting it when the job is unlike
+  anything they've seen. This is what separates a "can follow the process"
+  demand from an "can handle the exception" demand. "When something comes in
+  that breaks the usual template — an odd substrate, a spec that doesn't fit —
+  does this role expect them to work it out themselves, or flag it and
+  escalate?" (Same idea for reasoning: do they need to reason from the
+  underlying principle, or follow the established approach?)
 
 Ask one question per turn, conversational, ≤2 sentences. Cite
 specifically what they wrote ("On page 3 you said…", "You rated
