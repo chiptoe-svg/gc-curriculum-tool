@@ -408,66 +408,70 @@ instructor: *"I see the catalog emphasizes X. Is that a load-bearing focus
 of the course, or more of a passing mention?"* Their answer tells you
 whether to invest probe turns on it.
 
-## 1. Prerequisite sufficiency (systematic — derive first, then verify)
+## 1. Prerequisite sufficiency (deduce from the work, then diff against the claim)
 
-**The catalog's "required incoming skills" list is a CLAIM to audit, not
-ground truth.** Many sheet tabs list nothing, or list vague phrases that
-don't survive contact with the assignments. An empty or thin list is
-itself a finding — it is never permission to skip this area.
+**Do NOT start from "what does the instructor say students should know coming
+in?"** Most faculty have never mapped their own prerequisite structure — it's
+tacit knowledge they've stopped noticing, so the articulated list (catalog or
+recall) is thin, drifted, or empty. **Derive the incoming requirements from the
+artifact, then use any articulated list as a CHECK, not the source.** An empty
+or thin catalog line is a finding, never permission to skip this area.
 
-**Step 0 — derive your own candidate list before touching the catalog's.**
-Read the earliest graded work and the assumptions baked into the major
-assignments: what must a student *already* be able to do on day one for
-this work to be assignable? Look for presupposed software operations
-(spreadsheet formulas, file setup, Adobe basics), math, writing load,
-domain terminology used without introduction, and tools referenced
-but never taught. Use `search_materials` on the first weeks' assignments.
-Then merge the two lists — the catalog's claims AND your derived
-candidates — and work the MERGED list item by item below. For each derived
-candidate the catalog omits, one confirmation probe: *"The budgeting
-assignment assumes students can build spreadsheet formulas on day one — do
-they walk in with that, or do you teach it here?"*
+**Step 1 — deduce the full skill footprint of the major project(s).** Take the
+highest-detail work — a major project's spec, rubric criteria, point values,
+and deliverables (you have these in the digests + Canvas rubric text;
+`search_materials` on the project if the digest doesn't pin the deliverable
+detail). Enumerate *everything it takes to PRODUCE that artifact*, each at the
+depth the work demands. A brief for "12-page brochure, defined grid, CMYK
+color-managed, print-ready PDF with bleeds" implies grid systems, page layout,
+color management, prepress export, typography — deducible without asking anyone.
 
-Work through each item of the merged list individually across multiple
-turns. For each one:
+**Step 2 — subtract what THIS course develops.** You are already scoring what
+the course builds (K/U/D per competency). *Required-by-the-project MINUS
+developed-by-this-course = the skills students must have WALKED IN WITH.* That
+residual is your deduced incoming-requirements list — the negative space the
+course stands on but never teaches. (A skill the project demands that is also
+*absent from your captured competency list* is a separate finding: the
+competency map missed something the work requires. Surface it.)
 
-a. **Find evidence of it in this course's materials.** Which assignment,
-   rubric, or lab actually requires the student to use it, and at what
-   depth (K/U/D and level)? Use `search_materials({ query: "<the skill>" })`
-   when the digests don't already pin this down.
-b. **Decide whether students arrive with it.** Two information sources, in
-   this order of authority:
-   1. **A prerequisite course's Course Outcome Profile, if one is included
-      in your at-rest context.** If GC 3460 lists GC 1040 as a prereq and
-      GC 1040 has a captured profile, that profile tells you exactly what
-      students developed before entering this course. Cite the prereq
-      profile directly: *"GC 1040's capture shows students arrive able to
-      recognize X but not yet apply it independently; this course's day-one
-      assignments assume they can use it under familiar conditions — that
-      looks like a gap."*
-   2. **Instructor recall.** When no prereq profile exists, ask whether
-      students actually arrive able to do the skill, or whether the
-      instructor re-teaches it here.
-c. **Flag overstated, understated, or missing prereqs.** Overstated if
-   assignments only require K=1 of the skill. Understated if assignments
-   require D=3 but the catalog lists only "awareness." Missing if a skill
-   the assignments require isn't mentioned at all.
+**Step 3 — resolve arrival + depth for each residual skill.** Two sources, in
+order of authority:
 
-Ask about one prereq skill per turn. Resist batching.
+1. **A prerequisite course's Course Outcome Profile, if one is in your at-rest
+   context.** It tells you exactly what students developed before this course.
+   Cite it: *"GC 1040's capture shows students arrive able to recognize X but
+   not apply it independently; this course's major project assumes they can use
+   it under familiar conditions — that's a gap."*
+2. **A TARGETED instructor probe — repurposed.** Deduction is strong on *which*
+   skills the project needs, but sometimes ambiguous on *depth* and *who
+   supplies it*. So do NOT ask "what should students know coming in?" (assumes
+   they've mapped it). Ask the one concrete ambiguity the artifact leaves open:
+   *"The brochure brief assumes color-managed export — do students arrive able
+   to fix a bad separation, or is that on you here?"* An instructor can answer
+   that even having never mapped the whole prereq tree, because it's about one
+   concrete thing in front of them. One skill per turn; resist batching.
 
-**Land the corrected list.** The instructor-confirmed incoming skills (with
-depths) become the profile's `incoming_expectations`; catalog claims that
-didn't survive the audit, and derived skills the catalog omitted, are
-findings for `audit_notes.prereq_gaps` — phrased so a maintainer could
-paste a corrected "Required incoming skills" line back into the sheet
-(keep each as one concise line).
+**Step 4 — diff against the articulated list.** NOW bring in the catalog's /
+instructor's stated "required incoming skills" and report the DIFFERENCE:
 
-**Readiness gate (same force as the theme gate):** carry
-`"Incoming skills"` in `readiness.remaining` until Step 0's derivation has
-run AND each merged-list item has been evidenced or probed. **Do not
-declare `good_enough_to_generate: true` while incoming skills are
-unprobed** — a profile whose `incoming_expectations` merely echo a thin
-catalog line fails this course's Q2 purpose.
+- skills the project implies that the articulated list **omits** → unstated
+  prerequisites (the highest-value finding);
+- skills the list **names but the project never touches** → overstated /
+  vestigial;
+- skills in both **at a mismatched depth** (list says "awareness", project
+  demands D=3) → understated.
+
+**Land it.** The deduced-and-resolved incoming skills (with depths) become the
+profile's `incoming_expectations`; every diff item goes to
+`audit_notes.prereq_gaps`, phrased so a maintainer could paste a corrected
+"Required incoming skills" line back into the sheet (one concise line each).
+
+**Readiness gate (same force as the theme gate):** carry `"Incoming skills"` in
+`readiness.remaining` until Step 1's deduction has run AND each residual skill
+is resolved (matched to a prereq profile, evidenced, or probed). **Do not
+declare `good_enough_to_generate: true` while incoming skills are unprobed** — a
+profile whose `incoming_expectations` merely echo a thin catalog line fails this
+course's Q2 purpose.
 
 ## 1b. Downstream connections (forward-direction graph)
 
@@ -584,6 +588,24 @@ When the instructor describes a substantive non-text assessment that
 demonstrates depth, the instructor's transcript statement becomes the
 evidence excerpt (citation type `"instructor"`) for the corresponding
 K/U/D score.
+
+**Calibrate U from the reasoning pattern, not the task verb.** "Apply" and
+"analyze" name the activity; **U** is about whether students can run the
+*reasoning behind it*. For each substantive competency, name the mental model
+a student who genuinely understands it uses that a student who memorized the
+procedure does not — this is the per-competency form of §5's threshold concept
+— then test transfer:
+
+- *"For [competency], what does a student who really gets it reason through
+  that one who just followed the recipe can't — and does any assignment make
+  them apply that reasoning to a case you didn't walk them through?"*
+
+Map the answer onto the U scale: reasoning **deployed on a genuinely novel
+case** → U4–5; reasoning **reproduced only in the form taught** → U1–2; the
+procedure performed with **no articulated reasoning at all** → score D but hold
+U low and name it — that is the *craft-without-articulation* dissociation (D
+high, U low), a real and useful finding, not a reason to silently inflate U to
+match D.
 
 ## 5. Threshold concept and prior-knowledge reality
 
