@@ -82,16 +82,19 @@ The alignments were *produced* by gpt-5.4 (`AI_PROVIDER=openai`), so gpt-5.4-as-
 
 **Both stronger judges — one cross-family, one newer-same-family — find it far worse than gpt-5.4.** gpt-5.4 was the lenient outlier (own-output circularity). So the finding is not just judge-robust but **understated**: the true not-same-skill rate is ~80–92%, and the "59% wrong / 3% correct" headline is generous. **gpt-5.6-sol is the better judge going forward.** Consequence: the fix-validation numbers (measured on gpt-5.4) hold in *direction* (same judge both sides) but are *optimistic* in absolute terms — a re-validation of the fix under gpt-5.6-sol is owed before trusting any post-fix absolute number, and a faculty spot-check remains the ultimate ground truth.
 
-## Model-upgrade test — the producing model is the biggest lever
+## Model test — the producing-model upgrade is marginal (corrected)
 
-Since alignment *is* same-skill discrimination (what gpt-5.6 is far better at than gpt-5.4), tested upgrading the **producing** model. Re-scored the 23 fixture pairs with the new prompt across producers, all judged by the honest gpt-5.6-sol (baseline = 5.4 + old prompt = 92% wrong):
+Tested the **producing** model across the 23 fixture pairs, new prompt, all judged by the honest gpt-5.6-sol. **Correction:** the coverage function's actual default is the `heavy` tier = **gpt-5.5**, not gpt-5.4 (`default` tier). The initial framing wrongly used gpt-5.4 as "current" and overstated the upgrade. Apples-to-apples:
 
-| producer (+ new prompt) | matched cells | wrong % | foundational leak |
-|---|---|---|---|
-| gpt-5.4 (current) | 51 | 84% | 2 |
-| **gpt-5.6-sol** | 19 | **63%** (self-judged → optimistic) | 1 |
-| gpt-5.6-terra | 30 | **73%** (clean cross-judge) | 1 |
-| gpt-5.6-luna | 25 | 84% | 0 |
+| producer (+ new prompt) | matched cells | wrong % |
+|---|---|---|
+| gpt-5.4 | 51 | 84% |
+| **gpt-5.5 (ACTUAL current, heavy tier)** | 28 | **79%** |
+| gpt-5.6-terra | 30 | 73% (clean cross-judge) |
+| gpt-5.6-sol | 19–31 | ~66–74% (non-self: terra 66 / glm 74; sol self-judge 63) |
+| gpt-5.6-luna | 25 | 84% |
+
+**Corrected finding:** the real available model change — current **gpt-5.5 (79%) → gpt-5.6-sol (~70%)** — is only **~9 points**, to an *experimental* variant (sol/terra/luna read as experimental snapshots), with both still ~70–79% wrong. **Marginal and risky, not the "biggest lever."** Model capability helps monotonically (5.4 84 → 5.5 79 → terra 73 → sol ~70) but gently; the dominant improvement in the fresh runs vs the 92% stored baseline is the **prompt fix + newer model together**, and none of it makes the feature trustworthy. Recommendation: **don't switch prod to an experimental variant for ~9 points** — revisit when a 5.6-class model stabilizes, or fold model choice into the redesign.
 
 **Findings:** (1) upgrading the producer to gpt-5.6-sol is the single biggest lever — bigger than the prompt fix; (2) the 5.6 producers **stop force-matching** (19–30 matches vs 51 — far more honest "not served"), the desired structural behavior emerging from a better model; (3) sol > terra > luna, and luna is no better than 5.4 — the variant matters.
 
