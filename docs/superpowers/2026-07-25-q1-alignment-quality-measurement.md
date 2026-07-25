@@ -93,7 +93,9 @@ Since alignment *is* same-skill discrimination (what gpt-5.6 is far better at th
 | gpt-5.6-terra | 30 | **73%** (clean cross-judge) | 1 |
 | gpt-5.6-luna | 25 | 84% | 0 |
 
-**Findings:** (1) upgrading the producer to gpt-5.6-sol is the single biggest lever — 84%→63% wrong, bigger than the prompt fix; (2) the 5.6 producers **stop force-matching** (19–30 matches vs 51 — far more honest "not served"), the desired structural behavior emerging from a better model; (3) sol > terra > luna, and luna is no better than 5.4 — the variant matters; (4) sol's 63% is *self-judged* (sol produced and judged → lenient), so the clean non-self-judged 5.6 benefit is terra's **73%** (still +11 over 5.4). **But even the best case is ~63–73% wrong** — no model+prompt combination solves it; the alignment remains untrustworthy for driving decisions, and the deeper fix is structural + faculty-in-the-loop.
+**Findings:** (1) upgrading the producer to gpt-5.6-sol is the single biggest lever — bigger than the prompt fix; (2) the 5.6 producers **stop force-matching** (19–30 matches vs 51 — far more honest "not served"), the desired structural behavior emerging from a better model; (3) sol > terra > luna, and luna is no better than 5.4 — the variant matters.
+
+**Self-judge check (confirmed the sol number).** sol judging its own output was 63% wrong (optimistic). Re-judged the *same* sol-produced cells with non-sol judges: **gpt-5.6-terra 66%**, **glm-5.2 (independent) 74%**. So sol's honest error is **~66–74% wrong** (self-judge inflation was real but modest, ~3–11 pts). **Net: the model upgrade takes honest error ~92% → ~70%** — a real ~20-point win, but the alignment is still ~70% wrong. No model+prompt combination solves it; the deeper fix is structural (stop scoring every sub-competency) + faculty-in-the-loop.
 
 The producing model is now overridable per call (`ScoreCoverageInput.modelOverride`); adopting gpt-5.6 in prod is a `program-score-coverage` function-settings (`customModel`) change.
 
