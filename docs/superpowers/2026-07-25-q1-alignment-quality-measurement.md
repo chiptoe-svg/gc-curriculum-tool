@@ -82,6 +82,21 @@ The alignments were *produced* by gpt-5.4 (`AI_PROVIDER=openai`), so gpt-5.4-as-
 
 **Both stronger judges — one cross-family, one newer-same-family — find it far worse than gpt-5.4.** gpt-5.4 was the lenient outlier (own-output circularity). So the finding is not just judge-robust but **understated**: the true not-same-skill rate is ~80–92%, and the "59% wrong / 3% correct" headline is generous. **gpt-5.6-sol is the better judge going forward.** Consequence: the fix-validation numbers (measured on gpt-5.4) hold in *direction* (same judge both sides) but are *optimistic* in absolute terms — a re-validation of the fix under gpt-5.6-sol is owed before trusting any post-fix absolute number, and a faculty spot-check remains the ultimate ground truth.
 
+## Model-upgrade test — the producing model is the biggest lever
+
+Since alignment *is* same-skill discrimination (what gpt-5.6 is far better at than gpt-5.4), tested upgrading the **producing** model. Re-scored the 23 fixture pairs with the new prompt across producers, all judged by the honest gpt-5.6-sol (baseline = 5.4 + old prompt = 92% wrong):
+
+| producer (+ new prompt) | matched cells | wrong % | foundational leak |
+|---|---|---|---|
+| gpt-5.4 (current) | 51 | 84% | 2 |
+| **gpt-5.6-sol** | 19 | **63%** (self-judged → optimistic) | 1 |
+| gpt-5.6-terra | 30 | **73%** (clean cross-judge) | 1 |
+| gpt-5.6-luna | 25 | 84% | 0 |
+
+**Findings:** (1) upgrading the producer to gpt-5.6-sol is the single biggest lever — 84%→63% wrong, bigger than the prompt fix; (2) the 5.6 producers **stop force-matching** (19–30 matches vs 51 — far more honest "not served"), the desired structural behavior emerging from a better model; (3) sol > terra > luna, and luna is no better than 5.4 — the variant matters; (4) sol's 63% is *self-judged* (sol produced and judged → lenient), so the clean non-self-judged 5.6 benefit is terra's **73%** (still +11 over 5.4). **But even the best case is ~63–73% wrong** — no model+prompt combination solves it; the alignment remains untrustworthy for driving decisions, and the deeper fix is structural + faculty-in-the-loop.
+
+The producing model is now overridable per call (`ScoreCoverageInput.modelOverride`); adopting gpt-5.6 in prod is a `program-score-coverage` function-settings (`customModel`) change.
+
 ## Caveats
 
 - Strict "same-skill" rubric → absolute % is a floor; the depth-disaggregated 6%-correct-at-depth and the foundational leak survive any reasonable discount (and the independent judge was harsher).
