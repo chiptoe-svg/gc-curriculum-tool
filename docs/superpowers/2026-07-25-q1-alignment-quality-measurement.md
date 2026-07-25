@@ -56,11 +56,26 @@ The withdrawn spec proposed an embedding cross-check *for the identity match*. T
 - **(b) + (c) — first cut shipped to the prompt** (`lib/ai/prompts/program-score-coverage.md`, §1 match-classification): a "foundational dispositions are not technical-skill supply" rule and a "same skill, not same topic" rule. Prompt-only, loads at runtime.
 - **(a) — not yet done.** Whether to stop force-matching unserved cells (let "not served" stand rather than record a D1 thread) is a design choice affecting the "score every sub-competency, gaps are the point" contract — deferred pending the operator's call.
 
-## Validation still owed
+## Validation of the first-cut fix (re-scored the 23 fixture pairs with the new prompt)
 
-The first-cut prompt fix is **not yet validated** — the honest check is to re-run `program-score-coverage` on the same course snapshots and re-measure against this fixture (does foundational-leak drop to ~0, does meaningful-cell correctness rise?). Deploy is held until that re-measure.
+Re-ran `program-score-coverage` (new prompt, in-memory, no DB writes) on the same 23 (snapshot, target) pairs and re-judged with the same rubric. **Directional improvement across every metric — but not a solve:**
+
+| metric | baseline | new prompt |
+|---|---|---|
+| foundational→technical leak | 4 | **1** |
+| force-matched cells | 58 | **39** (98 now honest "not served") |
+| correct | 3% | **10%** |
+| wrong | 59% | **46%** |
+| meaningful-depth (≥2) correct | 6% | **13%** |
+
+The foundational-leak rule and the "not served" behavior clearly work; alignment quality is still poor in absolute terms (~46% wrong). The structural **(a)** change and better grounding remain owed. (Harness: `scripts/_one-off/validate-coverage-fix.ts`.)
+
+## Judge robustness (is gpt-5.4 the right judge?)
+
+The alignments were *produced* by gpt-5.4 (`AI_PROVIDER=openai`), so gpt-5.4-as-judge is partly grading its own family → a **leniency** bias. Cross-checked the 58 baseline alignments with an independent **glm-5.2** (Zhipu GLM, non-OpenAI family): it judged them **harsher — 82% wrong vs gpt-5.4's 58%**, 72% binary agreement. So the finding is **judge-robust, not a gpt artifact**, and every number here is a **conservative floor**. Ground truth is still faculty; a faculty spot-check on a sample is the right final validation before any absolute number drives a decision.
 
 ## Caveats
 
-- Single judge, deliberately strict "same-skill" rubric → the 59% strict-wrong is likely somewhat inflated; the depth-disaggregated 6%-correct-at-depth and the foundational leak survive any reasonable discount.
+- Strict "same-skill" rubric → absolute % is a floor; the depth-disaggregated 6%-correct-at-depth and the foundational leak survive any reasonable discount (and the independent judge was harsher).
 - This is the **shipped** `program-score-coverage` behavior (unchanged by the recent capture-chat-agent prompt work). Snapshots may predate other improvements, but the alignment step itself is current.
+- The fix is committed to `dev`, **not deployed** — deploy decision pending (it is strictly better than current, but still poor; may be worth bundling with the structural (a) change).
