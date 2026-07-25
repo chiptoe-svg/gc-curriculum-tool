@@ -72,7 +72,15 @@ The foundational-leak rule and the "not served" behavior clearly work; alignment
 
 ## Judge robustness (is gpt-5.4 the right judge?)
 
-The alignments were *produced* by gpt-5.4 (`AI_PROVIDER=openai`), so gpt-5.4-as-judge is partly grading its own family → a **leniency** bias. Cross-checked the 58 baseline alignments with an independent **glm-5.2** (Zhipu GLM, non-OpenAI family): it judged them **harsher — 82% wrong vs gpt-5.4's 58%**, 72% binary agreement. So the finding is **judge-robust, not a gpt artifact**, and every number here is a **conservative floor**. Ground truth is still faculty; a faculty spot-check on a sample is the right final validation before any absolute number drives a decision.
+The alignments were *produced* by gpt-5.4 (`AI_PROVIDER=openai`), so gpt-5.4-as-judge is partly grading its own family → a **leniency** bias. Three-judge panel on the same 58 baseline alignments (% "wrong"):
+
+| judge | % wrong |
+|---|---|
+| gpt-5.4 (produced the alignments) | 58% |
+| glm-5.2 (independent, non-gpt family) | 82% |
+| **gpt-5.6-sol (newer, stronger)** | **92%** |
+
+**Both stronger judges — one cross-family, one newer-same-family — find it far worse than gpt-5.4.** gpt-5.4 was the lenient outlier (own-output circularity). So the finding is not just judge-robust but **understated**: the true not-same-skill rate is ~80–92%, and the "59% wrong / 3% correct" headline is generous. **gpt-5.6-sol is the better judge going forward.** Consequence: the fix-validation numbers (measured on gpt-5.4) hold in *direction* (same judge both sides) but are *optimistic* in absolute terms — a re-validation of the fix under gpt-5.6-sol is owed before trusting any post-fix absolute number, and a faculty spot-check remains the ultimate ground truth.
 
 ## Caveats
 
