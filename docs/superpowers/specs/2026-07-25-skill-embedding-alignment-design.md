@@ -1,7 +1,34 @@
 # Skill-Embedding Layer + Cross-Check Alignment — Design
 
+> ⛔ **WITHDRAWN 2026-07-25 (same day), before any implementation.** An adversarial
+> review (Opus subagent, verified against the code) found the premise wrong: the
+> supply→canonical catalog is only **5–7 sub-competencies per target (~35 total)**
+> and `program-score-coverage` / `intended-skills-extract` already hand the LLM the
+> **whole** per-target catalog, so this seam is **not a retrieval problem**. The
+> current pass is already full-catalog LLM reasoning — the *strong* regime — with no
+> shortlisting to do. The 24%/70–80% precision result this spec leaned on contrasts
+> *pure embedding* vs *retrieve-then-reason on a large taxonomy*; it does not apply
+> here. Worse, making the ~24%-precision embedding the *verifier* of the stronger
+> full-context LLM would make disagreements more likely embedding error than caught
+> LLM error → a false-flag flood no τ can fix on a 5–7-item space. Three of four
+> "primitives" already exist (`embedText`, `cosineSimilarity`, the deployed vector
+> store); `centroid` had no slice-1 consumer; and the verdict table didn't even fit
+> `program-score-coverage` (which scores *every* sub-comp, never "misses" one).
+>
+> **The real failure mode is LLM reasoning on a tiny catalog, not recall.** The
+> correct next step (superseding this spec) is to first **measure the LLM-only
+> alignment error rate** on a labeled fixture — if low (likely, given full context +
+> distinct descriptors), no feature is warranted. If there's headroom, attack it with
+> signals we already compute: the existing `confidence` field and/or a self-consistency
+> second pass — no embeddings, no new table, no layer. An embedding second-opinion,
+> if it ever earns its keep, is narrowed to `intended-skills-extract` only,
+> target-scoped, query-time embed, surfacing *only* the conservative "possible missed
+> supply" verdict with a measured false-flag budget as the gate. The background.html
+> §11 addition that operationalized this was reverted the same day (it misapplied the
+> same finding). Retained append-only as a record of the design + why it was rejected.
+
 **Date:** 2026-07-25
-**Status:** Design (approved in brainstorming; pending spec review → plan)
+**Status:** ⛔ WITHDRAWN same-day (see banner) — superseded by "measure LLM-only error rate first"
 **Scope:** Slice 1 — a general skill-embedding layer, wired to one consumer (supply→canonical competency alignment) via an LLM×embedding cross-check, with disagreements surfaced for faculty review. Dedup and gap-retrieval are designed-for but out of this spec.
 
 ---
