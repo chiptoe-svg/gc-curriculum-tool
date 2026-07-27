@@ -397,7 +397,18 @@ export async function transcribeWithGranite(
     },
     model_spec: GRANITE_MODEL_SPEC,
     scale: 2.0,
-    max_size: null,
+    // max_size = docling's native render-side downsample (the required ApiVlmOptions
+    // field) — left `null` before, so docling rasterized slides to 3840×2160 and fed
+    // that monster to the layout/OCR models, which on the Spark's GB10 (sm_121)
+    // immature kernels crash with `CUDA error: unknown error` instead of resizing.
+    // Value DERIVED from a legibility target, not a magic number: capture text down
+    // to ~10 pt (slide caption/footnote). cap-height ≈ 0.7×pt; a VLM needs ~16 px
+    // cap-height to read reliably ⇒ DPI ≈ 16 ÷ (0.7·10/72) ≈ 165. Longest edge of the
+    // widest slide (16:9 = 13.33") × 165 DPI ≈ 2200 px. So 2200 both (a) keeps 10 pt
+    // legible and (b) clamps the render well under the GB10 crash point. (The 1120
+    // soft-token budget in vision-models.ts is a *Gemma*-specific knob, kept separate.
+    // rag-core will make min-point-size a first-class per-corpus ingestion contract.)
+    max_size: 2200,
     batch_size: 1,
     force_backend_text: false,
   };
