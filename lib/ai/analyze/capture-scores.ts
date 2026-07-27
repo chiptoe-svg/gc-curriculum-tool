@@ -419,6 +419,92 @@ function buildV2SynthesisUserMessage(context: V2SynthesisContext): string {
   ].join('\n');
 }
 
+// Citation-provenance repair (issue #4, 2026-07-27). The synthesizer sometimes
+// cites an instructor turn by a SYNTHETIC id (`user_3`, `turn_5`, `msg_2`) — the
+// role+turnIndex the transcript shows on each line — instead of the real message
+// id. These are correct references in the wrong FORMAT, not hallucinations, so
+// the strict citation schema (schema.ts, tightened 2026-06-03) wrongly rejected
+// the ENTIRE profile over them ("scoring failed"). We repair them here, before
+// validation, by resolving synthetic ids back to the real message id via the
+// transcript. Any citation still invalid after repair (a genuinely ungrounded
+// ref) is DROPPED rather than failing the whole profile; if that empties a
+// finding's citations, its source is set to 'inferred' — the schema permits that
+// (empty citations are allowed for inferred findings) and withDerivedCompetency-
+// Sources re-confirms it. So ungrounded claims are honestly downgraded, not
+// masked, and one bad citation no longer discards a valid profile.
+const SYNTH_CITATION_ID_RE = /^(user|assistant|tool|turn|msg|message)_(\d+)$/i;
+const CIT_FULL_UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const CIT_SHORT_HEX_RE = /^[0-9a-f]{8}$/i;
+
+function buildTurnResolver(transcript: CaptureMessageRow[]): (synthId: string) => string | null {
+  const byRoleTurn = new Map<string, string>();
+  const byTurn = new Map<number, string>();
+  for (const row of transcript) {
+    byRoleTurn.set(`${row.role}_${row.turnIndex}`.toLowerCase(), row.id);
+    if (!byTurn.has(row.turnIndex)) byTurn.set(row.turnIndex, row.id);
+  }
+  return (synthId: string): string | null => {
+    const m = SYNTH_CITATION_ID_RE.exec(synthId);
+    if (!m) return null;
+    const prefix = (m[1] ?? '').toLowerCase();
+    const n = Number(m[2] ?? NaN);
+    if (Number.isNaN(n)) return null;
+    if (prefix === 'user' || prefix === 'assistant' || prefix === 'tool') {
+      return byRoleTurn.get(`${prefix}_${n}`) ?? byTurn.get(n) ?? null;
+    }
+    return byTurn.get(n) ?? null; // turn_/msg_/message_ — resolve by turn index
+  };
+}
+
+function isValidCitation(c: Record<string, unknown>): boolean {
+  if (c.type === 'chunk') return typeof c.chunkId === 'string' && c.chunkId.length > 0;
+  if (c.type === 'instructor') {
+    return typeof c.messageId === 'string' && (CIT_FULL_UUID_RE.test(c.messageId) || CIT_SHORT_HEX_RE.test(c.messageId));
+  }
+  return false;
+}
+
+/** Repair synthetic instructor citation ids → real message ids; drop still-invalid
+ *  citations and downgrade the emptied finding's source to 'inferred'. Runs before
+ *  schema validation. Returns { profile, repaired, dropped } for logging. */
+export function repairCitationProvenance(
+  raw: unknown,
+  transcript: CaptureMessageRow[],
+): { profile: unknown; repaired: number; dropped: number } {
+  const resolve = buildTurnResolver(transcript);
+  let repaired = 0;
+  let dropped = 0;
+  const walk = (node: unknown): unknown => {
+    if (Array.isArray(node)) return node.map(walk);
+    if (!node || typeof node !== 'object') return node;
+    const obj = node as Record<string, unknown>;
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(obj)) out[k] = k === 'citations' ? v : walk(v);
+    if (Array.isArray(out.citations)) {
+      const kept = (out.citations as unknown[])
+        .map(c => {
+          if (!c || typeof c !== 'object') return c;
+          const cit = { ...(c as Record<string, unknown>) };
+          if (cit.type === 'instructor' && typeof cit.messageId === 'string' && !isValidCitation(cit)) {
+            const real = resolve(cit.messageId);
+            if (real) { cit.messageId = real; repaired += 1; }
+          }
+          return cit;
+        })
+        .filter(c => {
+          const ok = !!c && typeof c === 'object' && isValidCitation(c as Record<string, unknown>);
+          if (!ok) dropped += 1;
+          return ok;
+        });
+      out.citations = kept;
+      if (kept.length === 0 && 'source' in out && out.source !== undefined) out.source = 'inferred';
+    }
+    return out;
+  };
+  const profile = walk(raw);
+  return { profile, repaired, dropped };
+}
+
 /**
  * v2 synthesis: reads the v2 capture-synthesis prompt + the full session
  * transcript from capture_messages, emits a CaptureProfile with source +
@@ -441,7 +527,15 @@ export async function generateCaptureProfileV2(
     // provenance field fails validation and retries instead of slipping
     // through silently.
     jsonSchema: captureProfileJsonSchemaV2 as unknown as object,
-    validate: (raw: unknown) => captureProfileSchemaV2.parse(raw),
+    validate: (raw: unknown) => {
+      // Repair synthetic citation ids (issue #4) BEFORE validating, so a
+      // wrong-format-but-real reference (`user_3`) doesn't discard the profile.
+      const { profile, repaired, dropped } = repairCitationProvenance(raw, context.transcript);
+      if (repaired || dropped) {
+        console.warn(`[capture-scores] citation repair: ${repaired} synthetic id(s) resolved, ${dropped} unresolvable dropped`);
+      }
+      return captureProfileSchemaV2.parse(profile);
+    },
   });
 
   return {
