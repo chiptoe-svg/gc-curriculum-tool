@@ -242,17 +242,40 @@ describe('describeSlide — non-JSON response body', () => {
     });
   });
 
-  it('returns safe default when choices[0].message.content is invalid JSON', async () => {
-    fetchSpy.mockResolvedValueOnce(
-      new Response(
-        JSON.stringify({ choices: [{ message: { content: '{ broken json' } }] }),
-        { status: 200, headers: { 'Content-Type': 'application/json' } },
-      ),
+  it('returns safe default when choices[0].message.content is invalid JSON on BOTH attempts', async () => {
+    const broken = () => new Response(
+      JSON.stringify({ choices: [{ message: { content: '{ broken json' } }] }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } },
     );
+    fetchSpy.mockResolvedValueOnce(broken()).mockResolvedValueOnce(broken());
 
     const result = await describeSlide(SAMPLE_PNG);
     expect(result.contentLevel).toBe('low');
     expect(result.topic).toBe('');
+    // retry-once: unparseable content is re-requested once before giving up
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it('retries once and succeeds when the first content is a truncated-JSON runaway', async () => {
+    // Simulates the keyVisual verbosity runaway (2026-07-27): 1st draw overruns the
+    // token cap → truncated JSON; the retry draws cleanly and parses.
+    const good: SlideNote = {
+      topic: 'Bleed & Trim', teaches: 'Why bleed prevents white edges',
+      keyVisual: 'Diagram of trim/bleed marks', contentLevel: 'substantive',
+    };
+    fetchSpy
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ choices: [{ message: { content: '{"topic":"Bleed","keyVisual":"a very long ' } }] }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+      )
+      .mockResolvedValueOnce(makeOkResponse(good));
+
+    const result = await describeSlide(SAMPLE_PNG);
+    expect(result.topic).toBe('Bleed & Trim');
+    expect(result.contentLevel).toBe('substantive');
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
   });
 
   it('returns safe default when fetch itself rejects (network error)', async () => {

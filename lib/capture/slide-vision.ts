@@ -108,38 +108,50 @@ async function describeSlideOn(png: Buffer, be: SlideBackend): Promise<SlideNote
     ...(be.offload ? { stream: true } : {}),
   });
 
-  const res = await fetch(`${be.baseUrl}/chat/completions`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${be.apiKey}` },
-    body,
-    signal: AbortSignal.timeout(TIMEOUT_MS),
-  });
-  if (!res.ok) {
-    throw new Error(`slide-vision ${be.offload ? 'offload' : 'local'} non-OK: ${res.status} ${res.statusText}`);
-  }
+  // Retry once on UNPARSEABLE content: a stochastic keyVisual verbosity runaway can
+  // overrun max_tokens → truncated JSON; a fresh draw almost always parses (measured
+  // ~20%→~4% on a susceptible slide, 2026-07-27). Non-OK / transport / body-not-JSON
+  // errors are NOT retried — they still throw or safe-default as before, so the
+  // caller's local↔offload fallback still fires; only content-parse failure retries.
+  const MAX_ATTEMPTS = 2;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+    const res = await fetch(`${be.baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${be.apiKey}` },
+      body,
+      signal: AbortSignal.timeout(TIMEOUT_MS),
+    });
+    if (!res.ok) {
+      throw new Error(`slide-vision ${be.offload ? 'offload' : 'local'} non-OK: ${res.status} ${res.statusText}`);
+    }
 
-  let content: string;
-  if (be.offload) {
-    content = await accumulateSseContent(res);
-  } else {
-    let outer: unknown;
+    let content: string;
+    if (be.offload) {
+      content = await accumulateSseContent(res);
+    } else {
+      let outer: unknown;
+      try {
+        outer = await res.json();
+      } catch {
+        console.warn('[slide-vision] response body is not valid JSON');
+        return { ...SAFE_DEFAULT };
+      }
+      content =
+        (outer as { choices?: Array<{ message?: { content?: string } }> })?.choices?.[0]?.message?.content ?? '';
+    }
     try {
-      outer = await res.json();
+      return coerce(JSON.parse(content));
     } catch {
-      console.warn('[slide-vision] response body is not valid JSON');
+      if (attempt < MAX_ATTEMPTS) {
+        console.warn(`[slide-vision] content not valid JSON, retrying (${attempt}/${MAX_ATTEMPTS})`);
+        continue;
+      }
+      console.warn('[slide-vision] message.content is not valid JSON:', content.slice(0, 100));
       return { ...SAFE_DEFAULT };
     }
-    content =
-      (outer as { choices?: Array<{ message?: { content?: string } }> })?.choices?.[0]?.message?.content ?? '';
   }
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(content);
-  } catch {
-    console.warn('[slide-vision] message.content is not valid JSON:', content.slice(0, 100));
-    return { ...SAFE_DEFAULT };
-  }
-  return coerce(parsed);
+  // Unreachable — the loop returns on every path; satisfies the type checker.
+  return { ...SAFE_DEFAULT };
 }
 
 /**
