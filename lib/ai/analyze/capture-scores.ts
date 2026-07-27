@@ -493,7 +493,10 @@ export function repairCitationProvenance(
         })
         .filter(c => {
           const ok = !!c && typeof c === 'object' && isValidCitation(c as Record<string, unknown>);
-          if (!ok) dropped += 1;
+          if (!ok) {
+            dropped += 1;
+            if (process.env.CITATION_DEBUG) console.warn('  DROP', JSON.stringify(c).slice(0, 140));
+          }
           return ok;
         });
       out.citations = kept;
