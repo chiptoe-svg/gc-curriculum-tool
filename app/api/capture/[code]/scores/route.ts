@@ -28,6 +28,7 @@ import {
 } from '@/lib/ai/capture/schema';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { hashIp } from '@/lib/ip-hash';
+import { assessMaterialsHealth } from '@/lib/capture/materials-health';
 
 interface RouteContext { params: Promise<{ code: string }> }
 
@@ -88,6 +89,14 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     listMaterialsByCourse(courseCode),
     getCaptureProfileByCourse(courseCode),
   ]);
+
+  // Extraction-health guard (issue #4 follow-up): a profile synthesized from a
+  // corpus where materials silently failed to extract is under-evidenced. Compute
+  // it, log it, and return it so the client can warn instead of scoring blind.
+  const materialsHealth = assessMaterialsHealth(materials);
+  if (materialsHealth.severity !== 'none') {
+    console.warn(`[scores] ${courseCode}: ${materialsHealth.failedExtraction}/${materialsHealth.total} materials failed extraction (${materialsHealth.severity}) — profile will be under-evidenced. Failed: ${materialsHealth.failedFiles.join(', ')}`);
+  }
 
   // Latest snapshot first, draft fall-back — see chat route for rationale.
   const prereqCodes = extractPrereqCodes(course.prerequisites ?? '', courseCode);
@@ -174,6 +183,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
       profile,
       reviewerStatus: 'ai_drafted',
       telemetry: { ...telemetry, model },
+      materialsHealth,
     });
   } catch (err) {
     console.error(`POST /api/capture/${courseCode}/scores failed`, err);

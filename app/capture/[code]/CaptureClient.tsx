@@ -15,6 +15,7 @@ import { CaptureHero } from './CaptureHero';
 import { CaptureMaterialsStep } from './CaptureMaterialsStep';
 import { TriageStep } from './TriageStep';
 import { shouldShowMaterialsStep } from '@/lib/capture/material-display';
+import { assessMaterialsHealth } from '@/lib/capture/materials-health';
 import { FACULTY_ROSTER } from '@/lib/faculty';
 
 interface Props {
@@ -99,6 +100,10 @@ export function CaptureClient({
   const [telemetry, setTelemetry] = useState<Telemetry | null>(null);
   const [reconciliationLog, setReconciliationLog] = useState<ReconciliationLogEntry[]>([]);
   const [materials, setMaterials] = useState<CaptureMaterial[]>(initialMaterials);
+  // Extraction-health guard: surface silently-failed materials loudly (issue #4
+  // follow-up) so a profile is never scored from a corpus that mostly failed to
+  // ingest without the reviewer knowing.
+  const materialsHealth = assessMaterialsHealth(materials);
   // Bumped each time a new snapshot is created so the history panel reloads.
   const [snapshotsRefreshKey, setSnapshotsRefreshKey] = useState(0);
   // Scroll to snapshot history panel if ?panel=history is in the URL.
@@ -440,6 +445,30 @@ export function CaptureClient({
               {resetState === 'resetting' ? 'Resetting…' : 'Reset interview'}
             </button>
           </div>
+          {materialsHealth.failedExtraction > 0 && (
+            <div
+              className={
+                'rounded-md border px-4 py-3 text-sm ' +
+                (materialsHealth.severity === 'severe'
+                  ? 'border-destructive/40 bg-red-50'
+                  : 'border-amber-300 bg-amber-50')
+              }
+              role="alert"
+            >
+              <p className={materialsHealth.severity === 'severe' ? 'font-medium text-destructive' : 'font-medium text-amber-800'}>
+                ⚠ {materialsHealth.failedExtraction} of {materialsHealth.total} materials failed to extract
+                {materialsHealth.severity === 'severe'
+                  ? ' — this profile is under-evidenced. Fix or re-upload these before trusting the scores.'
+                  : '.'}
+              </p>
+              <details className="mt-1 text-xs text-muted-foreground">
+                <summary className="cursor-pointer">Which materials?</summary>
+                <ul className="mt-1 list-disc pl-5">
+                  {materialsHealth.failedFiles.map(f => <li key={f}>{f}</li>)}
+                </ul>
+              </details>
+            </div>
+          )}
           {generationError && (
             <div className="rounded-md border border-destructive/30 bg-red-50 px-4 py-3 text-sm">
               <p className="font-medium text-destructive">Generation failed: {generationError}</p>
