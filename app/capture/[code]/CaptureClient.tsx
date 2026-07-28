@@ -17,6 +17,8 @@ import { TriageStep } from './TriageStep';
 import { shouldShowMaterialsStep } from '@/lib/capture/material-display';
 import { assessMaterialsHealth } from '@/lib/capture/materials-health';
 import { IngestProgress, type IngestStatus } from './IngestProgress';
+import { MaterialGate } from './MaterialGate';
+import { flagMaterials } from '@/lib/capture/flag-materials';
 import { FACULTY_ROSTER } from '@/lib/faculty';
 
 interface Props {
@@ -161,6 +163,11 @@ export function CaptureClient({
   // → interview (Step 3). Reversible via the interview's "Back to materials" button.
   // A resumed conversation (messages already exist) starts on 'interview' so it
   // lands straight in the chat rather than re-confirming materials first.
+  // Pre-interview material-failure gate (issue #4 follow-up): when materials are flagged
+  // (extraction-failed / FERPA-held / inaccessible-link), the ingest step shows the gate
+  // and requires an explicit Continue before the interview. No flags → straight through.
+  const [gatePassed, setGatePassed] = useState(false);
+  const [gateError, setGateError] = useState<string | null>(null);
   const [landingStep, setLandingStep] = useState<'materials' | 'ingest' | 'interview'>(
     initialMessages.length > 0 ? 'interview' : 'materials',
   );
@@ -369,6 +376,40 @@ export function CaptureClient({
           onInstructorChange={setChooserInstructor}
           triageEnabled={triageEnabled}
           showImscc={isExternalTester}
+        />
+      ) : isLanding && landingStep === 'ingest' && flagMaterials(materials).length > 0 && !gatePassed ? (
+        <MaterialGate
+          flags={flagMaterials(materials)}
+          error={gateError}
+          onBack={() => setLandingStep('materials')}
+          onContinue={async (notes, include) => {
+            setGateError(null);
+            try {
+              await Promise.all([
+                ...Object.entries(notes).map(([id, facultyNote]) =>
+                  fetch(
+                    `/api/courses/${encodeURIComponent(courseCode)}/materials/${id}?slug=${encodeURIComponent(slug)}`,
+                    { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ facultyNote }) },
+                  ).then((r) => { if (!r.ok) throw new Error('note'); }),
+                ),
+                ...include.map((id) =>
+                  fetch(
+                    `/api/courses/${encodeURIComponent(courseCode)}/materials/${id}?slug=${encodeURIComponent(slug)}`,
+                    { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ignored: false }) },
+                  ).then((r) => { if (!r.ok) throw new Error('include'); }),
+                ),
+              ]);
+              setMaterials((prev) => prev.map((m) => {
+                if (notes[m.id] !== undefined) m = { ...m, facultyNote: notes[m.id] };
+                if (include.includes(m.id)) m = { ...m, ignored: false };
+                return m;
+              }));
+              setGatePassed(true);
+              setLandingStep('interview');
+            } catch {
+              setGateError('Could not save — please try again.');
+            }
+          }}
         />
       ) : isLanding && landingStep === 'ingest' ? (
         <TriageStep

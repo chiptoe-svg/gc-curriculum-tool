@@ -60,6 +60,7 @@ vi.mock('@/app/capture/[code]/ProfileReviewPanel', () => ({
 vi.mock('@/lib/capture/material-display', () => ({
   shouldShowMaterialsStep: ({ stage, landingStep }: { stage: string; landingStep: string }) =>
     stage === 'chat' && landingStep === 'materials',
+  materialProvenance: () => 'uploaded',
 }));
 vi.mock('@/lib/faculty', () => ({
   FACULTY_ROSTER: ['Alice Appleton', 'Department canonical'],

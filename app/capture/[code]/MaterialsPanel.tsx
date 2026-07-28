@@ -29,6 +29,7 @@ export interface CaptureMaterial {
   indexedAt: string | null;
   ferpaRisk: FerpaRisk;
   autoSetAside: boolean;
+  facultyNote?: string | null;
   setAsideReason: string | null;
   /**
    * Remote URL for materials whose content lives off-server: YouTube,

@@ -138,6 +138,7 @@ export default async function CapturePage({ params, searchParams }: Props) {
     indexedAt: m.indexedAt ? m.indexedAt.toISOString() : null,
     ferpaRisk: (m.ferpaRisk ?? 'low') as 'low' | 'medium' | 'high',
     autoSetAside: m.autoSetAside,
+    facultyNote: m.facultyNote ?? null,
     setAsideReason: m.setAsideReason ?? null,
     ignoredItems: m.ignoredItems,
     blobUrl: m.blobUrl,
