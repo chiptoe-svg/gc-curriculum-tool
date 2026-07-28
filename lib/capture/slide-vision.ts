@@ -44,9 +44,14 @@ const INSTRUCTION =
   '"teaches": "<what the slide teaches or intends students to learn>", ' +
   '"keyVisual": "<brief description of the dominant visual element>", ' +
   '"contentLevel": "substantive" | "low"}\n' +
-  'Use contentLevel:"low" for title slides, agenda slides, dividers, thank-you slides, ' +
-  'or any slide with no real instructional content. ' +
-  'Use contentLevel:"substantive" for all other slides. ' +
+  'Use contentLevel:"low" ONLY for pure title slides, section dividers, agenda/outline ' +
+  'slides, thank-you/questions slides, and recurring template/transition slides that carry ' +
+  'no content. Everything else is "substantive" — INCLUDING slides that teach through ' +
+  'VISUAL EXAMPLES (design showcases, logo/typography comparisons, before/after, worked ' +
+  'examples, portfolio or reference screenshots). In a design course the examples ARE the ' +
+  'instruction, so do NOT mark a slide "low" merely because it is image-heavy with little ' +
+  'text. When a slide shows examples, infer and state in "teaches" the principle or ' +
+  'technique the examples demonstrate. ' +
   'Return only the JSON object.';
 
 function coerce(raw: unknown): SlideNote {
