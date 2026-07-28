@@ -207,7 +207,13 @@ export class OpenAIProvider implements AIProvider {
     // Output.object accepts a Zod schema; the result is in `result.output`.
     // stopWhen: use maxToolCalls+1 steps (extra step for the structured output generation itself).
     const { output, usage, toolCalls } = await generateText({
-      model: aiOpenai(this.model),
+      // Chat Completions, NOT the Responses API. The default aiOpenai(model) uses the
+      // Responses API, whose multi-step tool loop needs server-side item persistence —
+      // but the campus RCD proxy runs store:false AND blocks store:true (RLS policy), so
+      // it 404s "Item fc_… not found" and the interview dies. Chat Completions is
+      // stateless (full messages resent each step), so it sidesteps this entirely.
+      // (Validated 2026-07-28 against RCD; see scripts/_one-off/repro-store-bug.ts.)
+      model: aiOpenai.chat(this.model),
       system: args.systemPrompt,
       messages: sdkMessages,
       tools: sdkTools,
@@ -308,7 +314,10 @@ export class OpenAIProvider implements AIProvider {
     });
 
     const result = streamText({
-      model: aiOpenai(this.model),
+      // Chat Completions (stateless), NOT the Responses API — RCD blocks the Responses
+      // API's item persistence (store:false 404s, store:true is RLS-blocked), which
+      // breaks multi-step tool loops. See completeWithTools above + repro-store-bug.ts.
+      model: aiOpenai.chat(this.model),
       system: args.systemPrompt,
       messages: sdkMessages,
       tools: sdkTools,
