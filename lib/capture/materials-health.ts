@@ -17,6 +17,8 @@ export interface MaterialsHealth {
   severity: 'none' | 'notice' | 'severe';
 }
 
+import { materialProvenance } from '@/lib/capture/material-display';
+
 interface MaterialLike {
   fileName: string;
   extractionStatus: string;
@@ -24,7 +26,15 @@ interface MaterialLike {
 }
 
 export function assessMaterialsHealth(materials: MaterialLike[]): MaterialsHealth {
-  const active = materials.filter(m => !m.ignored);
+  // Linked-external references we couldn't fetch (Drive PDF:/YouTube:/Google … with a
+  // failed status) are intentional "a reference exists but we couldn't fetch it"
+  // breadcrumbs from scan-linked-docs — NOT failed extractions of provided content. They
+  // must not inflate the under-evidenced signal, so exclude them from the health calculus
+  // entirely (a successfully-fetched linked material has status 'ok' and still counts).
+  // (issue #4 follow-up)
+  const active = materials.filter(
+    m => !m.ignored && !(m.extractionStatus === 'failed' && materialProvenance(m) === 'linked'),
+  );
   const failed = active.filter(m => m.extractionStatus === 'failed');
   const total = active.length;
   const failedExtraction = failed.length;

@@ -42,4 +42,31 @@ describe('assessMaterialsHealth', () => {
     expect(h.total).toBe(1);
     expect(h.severity).toBe('none');
   });
+
+  it('does NOT count unfetched linked-external breadcrumbs as failed extraction', () => {
+    // Drive PDF:/YouTube: with status 'failed' are intentional "reference exists but we
+    // could not fetch it" breadcrumbs — not failed extractions of provided content.
+    const mats = [
+      m('Drive PDF: 1abc… (unsupported type)', 'failed'),
+      m('YouTube: Some video (inaccessible)', 'failed'),
+      m('a.pdf', 'ready'),
+      m('b.pdf', 'ready'),
+    ];
+    const h = assessMaterialsHealth(mats);
+    expect(h.failedExtraction).toBe(0);
+    expect(h.total).toBe(2); // breadcrumbs excluded from the calculus entirely
+    expect(h.severity).toBe('none');
+  });
+
+  it('still counts a genuinely failed uploaded/canvas material alongside linked breadcrumbs', () => {
+    const mats = [
+      m('Drive PDF: 1abc… (not accessible)', 'failed'), // excluded
+      m('Canvas File: real-deck.pdf', 'failed'), // counted
+      m('a.pdf', 'ready'),
+    ];
+    const h = assessMaterialsHealth(mats);
+    expect(h.failedExtraction).toBe(1);
+    expect(h.failedFiles).toEqual(['Canvas File: real-deck.pdf']);
+    expect(h.total).toBe(2);
+  });
 });
