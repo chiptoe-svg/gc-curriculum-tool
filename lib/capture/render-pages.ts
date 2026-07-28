@@ -160,18 +160,24 @@ function comparePageFiles(a: string, b: string): number {
 }
 
 /**
- * Runs `pdftoppm -png -r <RENDER_DPI> <pdfPath> <pagePrefix>`.
+ * Runs `pdftoppm -png -scale-to <RENDER_MAX_LONG_EDGE_PX> <pdfPath> <pagePrefix>`.
  * Prefers /opt/homebrew/bin/pdftoppm, falls back to bare `pdftoppm`.
  * Timeout: 120 s (large decks can be slow).
  *
- * RENDER_DPI is 200 (up from 150) so the raw render is at least as wide as the
- * largest canonical width in use (OCR@1120 on a 16:9 slide ≈ 2112px). Downstream
- * `canonicalize()` then only ever DOWNSCALES to the budget's canonical dims — never
+ * We bound the LONG EDGE to a fixed pixel size rather than using a fixed DPI. A fixed
+ * `-r 200` renders a normal letter page at ~2200px (fine), but a 4K-exported 16:9 deck
+ * page (1920pt wide) at 200 DPI is 5333×3000px = 16 MP — 58 of those blew the render
+ * timeout, and `canonicalize()` throws ~85% of those pixels away anyway (issue #4).
+ * `-scale-to 2200` rasterizes each page NATIVELY (crisp, not upscaled) with its long
+ * edge capped at 2200px: identical to 200 DPI for a letter page (792pt→2200px), ~6×
+ * fewer pixels for a deck page, and it matches the 2200px legibility cap already on the
+ * VLM path (76d08ab). 2200 ≥ the largest canonical width in use (OCR@1120 on a 16:9
+ * slide ≈ 2112px), so downstream `canonicalize()` still only DOWNSCALES — never
  * upscales — keeping fine print crisp. See lib/ai/vision-canonicalize.ts.
  */
-const RENDER_DPI = 200;
+const RENDER_MAX_LONG_EDGE_PX = 2200;
 function runPdftoppm(pdfPath: string, pagePrefix: string): Promise<void> {
-  return runCommand(PDFTOPPM_BIN, 'pdftoppm', ['-png', '-r', String(RENDER_DPI), pdfPath, pagePrefix], 120_000);
+  return runCommand(PDFTOPPM_BIN, 'pdftoppm', ['-png', '-scale-to', String(RENDER_MAX_LONG_EDGE_PX), pdfPath, pagePrefix], 120_000);
 }
 
 /**
