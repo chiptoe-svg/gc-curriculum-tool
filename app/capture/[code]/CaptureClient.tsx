@@ -16,6 +16,7 @@ import { CaptureMaterialsStep } from './CaptureMaterialsStep';
 import { TriageStep } from './TriageStep';
 import { shouldShowMaterialsStep } from '@/lib/capture/material-display';
 import { assessMaterialsHealth } from '@/lib/capture/materials-health';
+import { IngestProgress, type IngestStatus } from './IngestProgress';
 import { FACULTY_ROSTER } from '@/lib/faculty';
 
 interface Props {
@@ -104,6 +105,36 @@ export function CaptureClient({
   // follow-up) so a profile is never scored from a corpus that mostly failed to
   // ingest without the reviewer knowing.
   const materialsHealth = assessMaterialsHealth(materials);
+
+  // Poll ingest progress while any material is still being extracted/indexed, so the
+  // (slower) qwen vision path for image decks shows a live bar + ETA rather than
+  // reading as "hung" (issue #4). Stops itself once everything settles.
+  const [ingestStatus, setIngestStatus] = useState<IngestStatus | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const poll = async () => {
+      try {
+        const res = await fetch(
+          `/api/capture/${encodeURIComponent(courseCode)}/ingest-status?slug=${encodeURIComponent(slug)}`,
+        );
+        if (!res.ok) return;
+        const s: IngestStatus = await res.json();
+        if (cancelled) return;
+        setIngestStatus(s);
+        if (s.total > 0 && s.done + s.failed < s.total) {
+          timer = setTimeout(poll, 3000);
+        }
+      } catch {
+        // transient fetch error — let the next mount/poll retry; don't spam
+      }
+    };
+    poll();
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [courseCode, slug]);
   // Bumped each time a new snapshot is created so the history panel reloads.
   const [snapshotsRefreshKey, setSnapshotsRefreshKey] = useState(0);
   // Scroll to snapshot history panel if ?panel=history is in the URL.
@@ -445,6 +476,7 @@ export function CaptureClient({
               {resetState === 'resetting' ? 'Resetting…' : 'Reset interview'}
             </button>
           </div>
+          {ingestStatus && <IngestProgress status={ingestStatus} />}
           {materialsHealth.failedExtraction > 0 && (
             <div
               className={
