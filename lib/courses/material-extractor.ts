@@ -28,6 +28,7 @@ import { extractText as unpdfExtractText } from 'unpdf';
 import mammoth from 'mammoth';
 import { compactSpreadsheetMarkdown } from '@/lib/capture/spreadsheet-compact';
 import { visionModel } from '@/lib/ai/vision-models';
+import { withDoclingSlot } from '@/lib/courses/docling-gate';
 
 // Source-format MIME types the system can handle. Anything outside this
 // list is rejected at the upload-route allowlist level — by the time a
@@ -203,7 +204,9 @@ class DoclingExtractor implements MaterialExtractor {
     // (same-subnet Local-Network gate) never blocks ingestion — we retry the local one.
     const fallbackUrl = process.env.DOCLING_FALLBACK_URL?.trim();
     const post = async (base: string): Promise<DoclingResponse> => {
-      const res = await fetch(`${base.replace(/\/$/, '')}/v1/convert/file`, { method: 'POST', body: buildForm() });
+      const res = await withDoclingSlot(() =>
+        fetch(`${base.replace(/\/$/, '')}/v1/convert/file`, { method: 'POST', body: buildForm() }),
+      );
       if (!res.ok) {
         const body = await res.text().catch(() => '');
         throw new Error(`docling-serve ${res.status}: ${body.slice(0, 200)}`);
@@ -421,7 +424,9 @@ export async function transcribeWithGranite(
   form.append('image_export_mode', 'placeholder');
   form.append('vlm_pipeline_custom_config', JSON.stringify(vlmCustomConfig));
 
-  const res = await fetch(`${baseUrl}/v1/convert/file`, { method: 'POST', body: form });
+  const res = await withDoclingSlot(() =>
+    fetch(`${baseUrl}/v1/convert/file`, { method: 'POST', body: form }),
+  );
   if (!res.ok) {
     const body = await res.text().catch(() => '');
     throw new Error(`granite docling-serve ${res.status}: ${body.slice(0, 200)}`);
