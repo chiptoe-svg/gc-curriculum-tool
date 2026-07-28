@@ -57,6 +57,47 @@ describe('processMaterial', () => {
     );
   });
 
+  it('text-backed row staged pending with good text: promotes to ok, does NOT mark failed', async () => {
+    // Canvas list-import stages text rows as extractionStatus:'pending' and never
+    // enqueues; a later re-index must treat the existing good text as a success, not
+    // carry 'pending' into finalize (which would mark it failed). (issue #4 follow-up)
+    const row = {
+      ...(baseRow as object),
+      id: 'canvas1',
+      courseCode: 'GC 3620',
+      fileName: 'Canvas: Assignments',
+      blobUrl: 'https://clemson.instructure.com/courses/282643',
+      mimeType: 'text/html',
+      extractedText: 'Monday Mentions – Week 2: keep up with what is fresh and trending in design.',
+      extractionStatus: 'pending',
+      tier: 'high',
+    } as never;
+    await processMaterial(row);
+    expect(readLocal).not.toHaveBeenCalled();
+    expect(extractText).not.toHaveBeenCalled();
+    expect(finalizeExtraction).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'canvas1', extractionStatus: 'ok' }),
+    );
+    expect(updateIndexingStatus).not.toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'failed' }),
+    );
+  });
+
+  it('text-backed row with only trivial text stays non-ok (not promoted)', async () => {
+    const row = {
+      ...(baseRow as object),
+      id: 'thin1',
+      blobUrl: 'https://example.com/x',
+      mimeType: 'text/html',
+      extractedText: '  ',
+      extractionStatus: 'pending',
+    } as never;
+    await processMaterial(row);
+    expect(finalizeExtraction).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'thin1', extractionStatus: 'pending' }),
+    );
+  });
+
   it('marks failed when the blob is missing', async () => {
     readLocal.mockResolvedValue(null);
     await processMaterial(baseRow);

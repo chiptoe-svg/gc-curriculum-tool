@@ -117,6 +117,9 @@ async function drainLoop(): Promise<void> {
  * finalizeExtraction. Marks 'failed' on any unrecoverable error so a single
  * bad material never wedges the queue.
  */
+/** Min chars for a text-backed row's existing text to count as a successful extraction. */
+const MIN_TEXT_BACKED_CHARS = 10;
+
 export async function processMaterial(row: CourseMaterialRow): Promise<void> {
   try {
     const isLocal = row.ingestProvider === 'local';
@@ -155,6 +158,13 @@ export async function processMaterial(row: CourseMaterialRow): Promise<void> {
       extractionStatus = ex.status;
       extractionMethod = ex.method as ExtractionMethod | undefined;
       pageCount = ex.pageCount;
+    } else if (extractionStatus !== 'ok' && (extractedText.trim().length ?? 0) >= MIN_TEXT_BACKED_CHARS) {
+      // Text-backed row (Canvas list-import staging / scan-linked-docs) that was staged
+      // 'pending' and never promoted: it already has good text, so re-indexing must treat
+      // it as a successful extraction rather than carry the stale 'pending' into finalize
+      // (whose terminal-status logic would then mark it 'failed'). Promote so it indexes.
+      // (issue #4 follow-up — recovers the stuck GC 3620 Canvas rows.)
+      extractionStatus = 'ok';
     }
 
     // Fix 3: fetch course to pass LO flag to finalizeExtraction so the
