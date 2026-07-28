@@ -26,30 +26,36 @@ Two coupled problems, surfaced by issue #4 / GC 3620:
 
 ## 3. Design
 
-### 3.1 Detection (cheap, before the crashing path)
-Add an **upfront text-layer probe** for `application/pdf`, using `pdftotext`/`pdfinfo` (poppler, on PATH — CPU, no GPU): compute `charsPerPage` from the *text layer* (born-digital text). `charsPerPage < MIN_CHARS_PER_PAGE` (100, existing constant) ⇒ **image-heavy** ⇒ route to qwen. This runs *before* `DoclingExtractor.extract`, so the standard GPU pipeline is never invoked for image decks (no crash). Text-heavy PDFs keep today's Docling text path.
+### 3.1 Detection (cheap, before the crashing path) — GEOMETRY-FIRST
+Upfront `pdfinfo`/`pdftotext` probe for `application/pdf` (poppler, CPU, no GPU). Route to qwen when **`(page geometry is deck-shaped) OR (charsPerPage < MIN_CHARS_PER_PAGE)`**:
+- **Geometry first** (the robust signal): `pdfinfo` page dimensions — decks are 16:9 / far larger than letter/A4. This catches the case text-density misses: a **text-bearing 4K slide** (live title/label text → `pdftotext` yields >100 chars) that is *still* a full-bleed image, which crashes render. The crash trigger is render size, not text scarcity, so geometry is the primary detector.
+- **Text density second** (`charsPerPage < 100`, existing constant) — catches image PDFs that aren't deck-shaped (scanned letter/A4).
 
-### 3.2 Routing (image-heavy → qwen per-page, capped)
-Image-heavy PDFs go to the **existing per-page vision path** (`renderToImages` → `canonicalize` → offload to `VISION_OFFLOAD_MODEL` = **qwen3.6-35b-a3b**, already wired). Each page is rendered + **capped at `max_size 2200`** (10 pt-derived, `76d08ab`) and sent to qwen individually — so no whole-deck raster, no GB10 blowup. Coordinates with the operator's server-side `docling-serve → qwen` `ApiVlmOptions.max_size` wiring; the app-side per-request cap is belt-and-suspenders.
+Runs *before* `DoclingExtractor.extract`, so the standard GPU pipeline is never invoked for image decks.
+
+### 3.2 Routing — (b) APP-DIRECT per-page qwen (locked; docling not in the image path)
+Image-heavy PDFs go to the **app's own per-page vision path** (`renderToImages` → `canonicalize` → offload to `VISION_OFFLOAD_MODEL` = **qwen3.6-35b-a3b**) — **docling is not involved in the image path at all.** Each page is rendered + resolution-capped and sent to qwen individually, so no whole-deck raster and **the GB10 crash is structurally impossible** for image decks (they never touch docling's standard pipeline). qwen params (validated Spark-side): `temperature 0.2–0.3`, `max_tokens ~700–800`, thinking-off (auto-injected); concurrency **5–7** (shared with prod → backfills off-peak). Architecture decision: **(b) over (a) docling-VLM** — self-contained, no docling-serve/bridge-IP dependency, uses the already-benchmarked path; the docling→qwen `ApiVlmOptions` recipe is retired to a documented fallback, not the prod image path.
+
+**Defense-in-depth so routing isn't load-bearing:** also cap the **standard** pipeline's render (`PdfPipelineOptions.images_scale` in `buildForm`) so that a *misrouted* image deck (geometry+text both fooled) **degrades to weaker OCR instead of a hard CUDA crash**. (The `max_size 2200` cap shipped `76d08ab` covers only the VLM path; the standard pipeline is still uncapped today — this closes it.)
 
 ### 3.3 ETA (upfront, self-correcting)
 Before ingest, `pdfinfo` gives per-material page counts (cheap). Estimate =
-`qwen_pages × ~3 s ÷ concurrency(~6)` + `digest(~1 light LLM/material)` + `chunk-contextualize(~1 LLM/chunk — the larger slice)` + `embed`. Surfaced as "**~N min**", refined as real per-material completion times land.
+`qwen_pages × 1.25 s/page ÷ concurrency(~6)` (**1.25 s/page = the Spark-measured anchor**) + `digest(~1 light LLM/material)` + `chunk-contextualize(~1 LLM/chunk — the larger slice)` + `embed`. Surfaced as "**~N min**", and it **self-corrects** as real per-material completion times land — important because qwen is the shared prod model, so wall time drifts with prod load. **No hard promise** — always a live estimate.
 
 ### 3.4 Progress (material-level poll)
 Materials already carry `indexing_status` (`pending → queued → indexing → ready/failed`). The capture client **polls** a status endpoint → "**X of Y materials done**" + a bar + the running ETA + a per-material failed count (ties to the extraction-health guard). No pipeline rework; reuses existing status. A poll-able `GET …/ingest-status` returns `{ total, done, failed, etaSeconds }`.
 
 ## 4. Testing
-- Unit: the image-heavy **detection** (charsPerPage threshold, confusion→qwen); the **ETA** computation (page counts × rates → seconds); the status aggregation (`X/Y/failed`). All CPU, testable now.
-- The **qwen extraction leg** is verified **end-to-end once the operator's `docling-serve → qwen` wiring is live** (re-run a staged GC 3620 deck → real text, no CUDA). Deploy gated on that.
-- Regression: text-heavy PDFs still take the Docling text path unchanged; full capture suite green.
+- Unit: the image-heavy **detection** (geometry-first + charsPerPage; confusion→qwen); the **ETA** computation (page counts × 1.25 s/page + overhead → seconds); the status aggregation (`X/Y/failed`); the `images_scale` cap on `buildForm`. All CPU, testable now.
+- **qwen is already prod-served** (decision (b) needs no Spark deploy) → the extraction leg is **verifiable end-to-end immediately** against the live offload: re-run a staged GC 3620 deck → real per-slide text, no CUDA. **No external gate.**
+- Regression: text-heavy PDFs still take the Docling text path unchanged; a *misrouted* deck degrades (weaker OCR) not crashes (the `images_scale` cap); full capture suite green.
 
 ## 5. Risks / Notes
-- **Shared Spark GPU contention** during a bulk backfill (qwen is the prod model) — bounded by the ≤8-slot concurrency gate; run backfills off-peak.
-- **qwen not yet wired** — the routing + ETA + progress ship testable now; the qwen leg's end-to-end proof + deploy wait on the Spark side.
-- **Backfill:** once live, re-extract GC 3620 (14) + GC 2400 (5) + GC 1040 (2) failed materials → re-score → the "under-evidenced" banners clear.
+- **Shared Spark GPU contention** during a bulk backfill (qwen is the prod model, 5–7 concurrency) — run backfills **off-peak**; the Spark side offered a load sanity-check.
+- **ETA drift** — qwen wall time varies with prod load; the self-correcting estimate absorbs it (no hard promise).
+- **Backfill:** re-extract GC 3620 (14) + GC 2400 (5) + GC 1040 (2) failed materials → re-score → the "under-evidenced" banners clear.
 
 ## 6. Phasing
-1. Detection + routing (image-heavy → qwen per-page, skip standard Docling).
-2. ETA (pdfinfo pre-count + rate model) + material-level progress poll + capture-UI bar.
-3. (After qwen live) end-to-end verify + deploy + backfill.
+1. Detection (geometry-first) + routing to app-direct qwen per-page + `images_scale` cap on the standard pipeline.
+2. ETA (`pdfinfo` pre-count + 1.25 s/page model) + material-level progress poll + capture-UI bar.
+3. End-to-end verify (staged deck → live qwen) → deploy → off-peak backfill → re-score.
