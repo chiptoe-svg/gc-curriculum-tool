@@ -51,7 +51,6 @@ const OMLX_BASE_URL = process.env.LOCAL_BASE_URL?.trim() ?? '';
 const OMLX_API_KEY = process.env.LOCAL_API_KEY?.trim() ?? '';
 const OMLX_WHISPER_MODEL = process.env.WHISPER_OMLX_MODEL?.trim()
   ?? 'mlx-community/whisper-large-v3-turbo';
-const MAX_DURATION_SEC = Number(process.env.WHISPER_MAX_DURATION_SEC ?? 1800);
 
 export interface WhisperResult {
   status: 'ok' | 'skipped' | 'failed';
@@ -140,6 +139,34 @@ async function probeDurationSec(videoUrl: string): Promise<number | null> {
  * success, throws on any failure (model not loaded, network, etc.) so
  * the caller can fall back to CLI.
  */
+/**
+ * Preferred backend: the Spark's OpenAI-compatible ASR (parakeet-tdt) at
+ * SPARK_ASR_URL (the /v1 root). It chunks long audio server-side (unlimited
+ * length, bounded memory), so it handles multi-hour videos the local Whisper
+ * couldn't. Reads the env at call time so it's togglable + testable. Throws on
+ * any failure so the caller can fall back to omlx → CLI.
+ */
+const SPARK_ASR_TIMEOUT_MS = Number(process.env.SPARK_ASR_TIMEOUT_MS ?? 20 * 60_000);
+
+export async function transcribeViaSparkAsr(audioPath: string): Promise<string> {
+  const base = process.env.SPARK_ASR_URL?.trim();
+  if (!base) throw new Error('SPARK_ASR_URL not set');
+  const audioBytes = await fs.readFile(audioPath);
+  const blob = new Blob([new Uint8Array(audioBytes)], { type: 'audio/wav' });
+  const form = new FormData();
+  form.append('file', blob, 'audio.wav');
+  form.append('response_format', 'json');
+  const url = base.replace(/\/$/, '') + '/audio/transcriptions';
+  const res = await fetch(url, { method: 'POST', body: form, signal: AbortSignal.timeout(SPARK_ASR_TIMEOUT_MS) });
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new Error(`spark-asr ${res.status}: ${body.slice(0, 200)}`);
+  }
+  const json = await res.json() as { text?: string };
+  if (!json.text) throw new Error('spark-asr returned no text');
+  return json.text.trim();
+}
+
 async function tryOmlxTranscribe(audioPath: string): Promise<string> {
   const audioBytes = await fs.readFile(audioPath);
   const blob = new Blob([new Uint8Array(audioBytes)], { type: 'audio/wav' });
@@ -208,11 +235,15 @@ export async function transcribeYouTubeAudio(videoId: string): Promise<WhisperRe
   if (durationSec === null) {
     return { status: 'failed', errorReason: 'could not probe video duration (private, age-gated, or region-locked)' };
   }
-  if (durationSec > MAX_DURATION_SEC) {
+  // Spark ASR (parakeet) chunks long audio server-side → allow much longer videos;
+  // fall back to the 30-min omlx-Whisper cap when Spark ASR isn't configured.
+  const sparkAsr = process.env.SPARK_ASR_URL?.trim();
+  const maxDurationSec = Number(process.env.WHISPER_MAX_DURATION_SEC ?? (sparkAsr ? 14400 : 1800));
+  if (durationSec > maxDurationSec) {
     return {
       status: 'skipped',
       durationSec,
-      errorReason: `video is ${Math.round(durationSec / 60)} min; exceeds ${Math.round(MAX_DURATION_SEC / 60)}-min Whisper cap`,
+      errorReason: `video is ${Math.round(durationSec / 60)} min; exceeds ${Math.round(maxDurationSec / 60)}-min transcription cap`,
     };
   }
 
@@ -233,9 +264,9 @@ export async function transcribeYouTubeAudio(videoId: string): Promise<WhisperRe
         '-o', path.join(workDir, 'audio.%(ext)s'),
         url,
       ],
-      // 5 min cap on the download — short videos finish in seconds; if it
-      // hangs longer, something is wrong (rate limit, geo block, etc.)
-      { timeoutMs: 5 * 60_000 },
+      // Download cap: 5 min normally; raised to 20 min when Spark ASR is on, since
+      // long (multi-hour) videos are now allowed and their audio takes longer to pull.
+      { timeoutMs: sparkAsr ? 20 * 60_000 : 5 * 60_000 },
     );
     if (dl.code !== 0) {
       return {
@@ -245,12 +276,18 @@ export async function transcribeYouTubeAudio(videoId: string): Promise<WhisperRe
       };
     }
 
-    // 2. Transcribe. Prefer omlx persistent server (model stays loaded
-    // across calls; shared across concurrent scans). Fall back to CLI
-    // shell-out on any failure so this keeps working before omlx has
-    // the Whisper model loaded.
+    // 2. Transcribe. Prefer the Spark ASR (parakeet — fast, GPU, chunks long audio)
+    // when configured; fall back to the omlx persistent Whisper server, then the CLI
+    // shell-out. Each layer falls through on any failure so ingestion never breaks.
     let text: string | null = null;
-    if (OMLX_BASE_URL && OMLX_API_KEY) {
+    if (sparkAsr) {
+      const sparkText = await transcribeViaSparkAsr(audioPath).catch(err => {
+        console.warn(`[transcribe-yt] spark-asr unavailable for ${videoId}, falling back:`, err instanceof Error ? err.message : err);
+        return null;
+      });
+      if (sparkText) text = sparkText;
+    }
+    if (text === null && OMLX_BASE_URL && OMLX_API_KEY) {
       const omlxText = await tryOmlxTranscribe(audioPath).catch(err => {
         console.warn(`[transcribe-yt] omlx unavailable for ${videoId}, falling back to CLI:`, err instanceof Error ? err.message : err);
         return null;
