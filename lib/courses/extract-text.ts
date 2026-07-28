@@ -60,6 +60,91 @@ const VISION_PAGE_CAP = 40;
 /** Granite output with repetition ratio at or above this threshold is considered degenerate. */
 const GRANITE_REPETITION_THRESHOLD = 0.3;
 
+/**
+ * The image-PDF vision cascade: granite (if enabled) → local qwen (Spark) → OpenAI.
+ * Reachable two ways: (1) a PDF whose textual extraction came back near-empty
+ * (`isImageBased`, forceLocalOffload=false — preserves the historical OpenAI-default
+ * behaviour unless LOCAL_HARDSCAN_OCR is set); (2) the upfront geometry route for
+ * image-heavy decks (forceLocalOffload=true — always try qwen first, per issue #4,
+ * since sending a design deck to OpenAI defeats the local-first provider decision).
+ */
+async function runVisionFallback(
+  args: ExtractTextArgs,
+  opts: ExtractTextOptions | undefined,
+  pageCount: number | undefined,
+  forceLocalOffload: boolean,
+): Promise<ExtractTextResult> {
+  const { fileBytes, fileName } = args;
+  // runVisionFallback is only invoked for PDFs (both call sites gate on it); narrow the
+  // mimeType so the transcribe args (pdf | docx) typecheck — the enclosing `if` used to
+  // do this narrowing before the cascade was lifted into this helper.
+  const mimeType = args.mimeType as Extract<ExtractedMimeType, 'application/pdf'>;
+  if (process.env.GRANITE_DOCLING_ENABLED && process.env.GRANITE_DOCLING_ENABLED !== 'false') {
+    try {
+      const g = await transcribeWithGranite({ fileBytes, mimeType, fileName });
+      const gText = g.text.trim();
+      if (gText.length >= MIN_MEANINGFUL_CHARS && repetitionRatio(gText) < GRANITE_REPETITION_THRESHOLD) {
+        return { method: 'granite', status: 'ok', text: gText, pageCount: g.pageCount || pageCount, visionCostUsdCents: 0 };
+      }
+      // else: declined (empty / short / repetitive) → fall through to OpenAI below
+    } catch {
+      // Granite error → fall through to OpenAI below (Granite can only decline, never fail)
+    }
+  }
+  // Lane 3 — flat OCR fallback for hard/handwritten scans + image decks. Transcribe on
+  // Qwen-35B via the Spark (buildLocalProvider + forceOffload) when forced (image route)
+  // or when LOCAL_HARDSCAN_OCR is on, AND we are not already in "use local" mode (which
+  // injects opts.visionProvider). Fall through to OpenAI on any failure/empty so
+  // ingestion never breaks.
+  const hardscanLocal =
+    !opts?.visionProvider &&
+    (forceLocalOffload ||
+      (!!process.env.LOCAL_HARDSCAN_OCR && process.env.LOCAL_HARDSCAN_OCR !== 'false'));
+  if (hardscanLocal) {
+    try {
+      const local = buildLocalProvider();
+      const t = await local.transcribeDocument({
+        fileBytes,
+        mimeType,
+        maxPages: VISION_PAGE_CAP,
+        forceOffload: true,
+      });
+      const localText = t.text.trim();
+      if (localText.length >= MIN_MEANINGFUL_CHARS) {
+        return {
+          method: 'vision',
+          status: 'ok',
+          text: localText,
+          pageCount,
+          visionCostUsdCents: t.costUsdCents,
+        };
+      }
+      // empty/short → fall through to the OpenAI fallback below
+    } catch {
+      // local/Spark error → fall through to the OpenAI fallback below
+    }
+  }
+  try {
+    const provider = opts?.visionProvider ?? getProvider();
+    const transcribed = await provider.transcribeDocument({
+      fileBytes,
+      mimeType,
+      maxPages: VISION_PAGE_CAP,
+    });
+    const vText = transcribed.text.trim();
+    const status = vText.length < MIN_MEANINGFUL_CHARS ? 'low_text' : 'ok';
+    return {
+      method: 'vision',
+      status,
+      text: vText,
+      pageCount,
+      visionCostUsdCents: transcribed.costUsdCents,
+    };
+  } catch {
+    return { method: 'vision', status: 'failed', pageCount };
+  }
+}
+
 export async function extractText(args: ExtractTextArgs, opts?: ExtractTextOptions): Promise<ExtractTextResult> {
   let { fileBytes, mimeType, fileName } = args;
 
@@ -108,70 +193,8 @@ export async function extractText(args: ExtractTextArgs, opts?: ExtractTextOptio
     const charsPerPage = pageCount && pageCount > 0 ? text.length / pageCount : text.length;
     const isImageBased = charsPerPage < MIN_CHARS_PER_PAGE;
     if (isImageBased) {
-      if (process.env.GRANITE_DOCLING_ENABLED && process.env.GRANITE_DOCLING_ENABLED !== 'false') {
-        try {
-          const g = await transcribeWithGranite({ fileBytes, mimeType, fileName });
-          const gText = g.text.trim();
-          if (gText.length >= MIN_MEANINGFUL_CHARS && repetitionRatio(gText) < GRANITE_REPETITION_THRESHOLD) {
-            return { method: 'granite', status: 'ok', text: gText, pageCount: g.pageCount || pageCount, visionCostUsdCents: 0 };
-          }
-          // else: declined (empty / short / repetitive) → fall through to OpenAI below
-        } catch {
-          // Granite error → fall through to OpenAI below (Granite can only decline, never fail)
-        }
-      }
-      // Lane 3 — flat OCR fallback for hard/handwritten scans. Default: getProvider()
-      // (OpenAI). When LOCAL_HARDSCAN_OCR is on AND we are not already in "use local"
-      // mode (which injects opts.visionProvider), transcribe on Qwen-35B via the Spark
-      // (buildLocalProvider + forceOffload = every page on the benched variant), and
-      // fall through to OpenAI on any failure/empty so ingestion never breaks.
-      const hardscanLocal =
-        !opts?.visionProvider &&
-        !!process.env.LOCAL_HARDSCAN_OCR &&
-        process.env.LOCAL_HARDSCAN_OCR !== 'false';
-      if (hardscanLocal) {
-        try {
-          const local = buildLocalProvider();
-          const t = await local.transcribeDocument({
-            fileBytes,
-            mimeType,
-            maxPages: VISION_PAGE_CAP,
-            forceOffload: true,
-          });
-          const localText = t.text.trim();
-          if (localText.length >= MIN_MEANINGFUL_CHARS) {
-            return {
-              method: 'vision',
-              status: 'ok',
-              text: localText,
-              pageCount,
-              visionCostUsdCents: t.costUsdCents,
-            };
-          }
-          // empty/short → fall through to the OpenAI fallback below
-        } catch {
-          // local/Spark error → fall through to the OpenAI fallback below
-        }
-      }
-      try {
-        const provider = opts?.visionProvider ?? getProvider();
-        const transcribed = await provider.transcribeDocument({
-          fileBytes,
-          mimeType,
-          maxPages: VISION_PAGE_CAP,
-        });
-        const vText = transcribed.text.trim();
-        const status = vText.length < MIN_MEANINGFUL_CHARS ? 'low_text' : 'ok';
-        return {
-          method: 'vision',
-          status,
-          text: vText,
-          pageCount,
-          visionCostUsdCents: transcribed.costUsdCents,
-        };
-      } catch {
-        return { method: 'vision', status: 'failed', pageCount };
-      }
+      // Existing behaviour: OpenAI default unless LOCAL_HARDSCAN_OCR is set (forceLocalOffload=false).
+      return runVisionFallback(args, opts, pageCount, false);
     }
   }
 
