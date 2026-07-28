@@ -12,6 +12,7 @@
  */
 
 import { getExtractorFor, transcribeWithGranite, SUPPORTED_MIME_TYPES } from '@/lib/courses/material-extractor';
+import { isImageHeavyPdf, pdfPageInfo } from '@/lib/courses/pdf-classify';
 import { isLegacyOfficeMime, convertLegacyToModern } from '@/lib/courses/legacy-converter';
 import { getProvider, buildLocalProvider } from '@/lib/ai/provider';
 import { repetitionRatio } from '@/lib/courses/repetition-ratio';
@@ -162,6 +163,15 @@ export async function extractText(args: ExtractTextArgs, opts?: ExtractTextOptio
     } catch {
       return { status: 'failed' };
     }
+  }
+
+  // Image-heavy PDFs (design slide decks) crash the standard Docling GPU pipeline on
+  // the Spark GB10 (issue #4): the whole-deck raster hits a CUDA op before any
+  // model-side resize. Detect them cheaply (geometry-first) and route straight to the
+  // qwen per-page vision cascade — Docling is never invoked. Any probe doubt → qwen.
+  if (mimeType === 'application/pdf' && (await isImageHeavyPdf(fileBytes))) {
+    const info = await pdfPageInfo(fileBytes).catch(() => ({ pageCount: undefined as number | undefined }));
+    return runVisionFallback(args, opts, info.pageCount, /* forceLocalOffload */ true);
   }
 
   // Pick the backend up front. If the configuration doesn't support this

@@ -61,13 +61,28 @@ async function charsPerPage(bytes: Buffer, pageCount: number): Promise<number> {
   }
 }
 
-/** Geometry first, density second. Any probe error → true (confusion → qwen). */
+/**
+ * Geometry first, density second. Only a CONFIRMED signal returns true.
+ *
+ * A probe error (unparseable / non-PDF / encrypted bytes) returns FALSE — routed to the
+ * normal Docling pipeline, not force-qwen. Rationale: the crash we guard against is an
+ * oversized *render*, and every valid PDF — including a 40 MB image deck — has a
+ * readable structure `pdfinfo` parses fine (it reads page boxes, never renders). So a
+ * genuine crash-case deck is always detectable via geometry; a `pdfinfo` failure means
+ * bytes that aren't a valid deck at all. Trust the existing pipeline for those (the
+ * `images_scale` cap on the standard pipeline is the crash backstop for any misroute).
+ */
 export async function isImageHeavyPdf(bytes: Buffer): Promise<boolean> {
+  let info: { pageCount: number; widthPt: number; heightPt: number };
   try {
-    const { pageCount, widthPt, heightPt } = await pdfPageInfo(bytes);
-    if (isDeckGeometry(widthPt, heightPt)) return true;
-    return (await charsPerPage(bytes, pageCount)) < MIN_CHARS_PER_PAGE;
+    info = await pdfPageInfo(bytes);
   } catch {
-    return true;
+    return false; // unparseable → normal pipeline (images_scale cap backstops the crash)
+  }
+  if (isDeckGeometry(info.widthPt, info.heightPt)) return true;
+  try {
+    return (await charsPerPage(bytes, info.pageCount)) < MIN_CHARS_PER_PAGE;
+  } catch {
+    return false;
   }
 }
