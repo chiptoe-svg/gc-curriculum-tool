@@ -23,6 +23,7 @@ const {
   setMaterialIgnoredItems,
   updateMaterialTier,
   setMaterialRetired,
+  setMaterialFacultyNote,
   isTriageEnabled,
   probeSize,
   classifyManifestItem,
@@ -50,6 +51,7 @@ const {
   setMaterialIgnoredItems: vi.fn(),
   updateMaterialTier: vi.fn(),
   setMaterialRetired: vi.fn(),
+  setMaterialFacultyNote: vi.fn(),
   isTriageEnabled: vi.fn(),
   probeSize: vi.fn(),
   classifyManifestItem: vi.fn(),
@@ -79,6 +81,7 @@ vi.mock('@/lib/db/course-materials-queries', () => ({
   setMaterialIgnoredItems,
   updateMaterialTier,
   setMaterialRetired,
+  setMaterialFacultyNote,
 }));
 vi.mock('@/lib/courses/extract-text', () => ({ extractText }));
 vi.mock('@/lib/rate-limit/ip-rate-limit', () => ({ checkIpRateLimit }));
@@ -457,6 +460,14 @@ describe('PATCH /api/courses/[code]/materials/[id]', () => {
     setMaterialIgnoredItems.mockResolvedValue(true);
     updateMaterialTier.mockResolvedValue(undefined);
     setMaterialRetired.mockResolvedValue(true);
+    setMaterialFacultyNote.mockResolvedValue(true);
+  });
+
+  it('accepts facultyNote → 200 and calls setMaterialFacultyNote', async () => {
+    const [req, ctx] = makePatchReq({ facultyNote: 'optional video, ok to skip' });
+    const res = await PATCH(req, ctx);
+    expect(res.status).toBe(200);
+    expect(setMaterialFacultyNote).toHaveBeenCalledWith('mat-1', 'optional video, ok to skip');
   });
 
   it('returns 401 on invalid slug', async () => {

@@ -4,6 +4,7 @@ import { deleteLocal, keyFromLocalUrl } from '@/lib/storage/local-storage';
 import {
   getMaterialById,
   deleteMaterial,
+  setMaterialFacultyNote,
   setMaterialIgnored,
   setMaterialIgnoredItems,
   setMaterialRetired,
@@ -85,9 +86,10 @@ export async function PATCH(req: Request, { params }: RouteContext): Promise<Res
   const hasTier =
     body.tier === 'high' || body.tier === 'middle' || body.tier === 'background';
   const hasRetired = typeof body.retired === 'boolean';
-  if (!hasIgnored && !hasUseDigest && !hasFerpaRisk && !hasIgnoredItems && !hasTier && !hasRetired) {
+  const hasFacultyNote = typeof body.facultyNote === 'string';
+  if (!hasIgnored && !hasUseDigest && !hasFerpaRisk && !hasIgnoredItems && !hasTier && !hasRetired && !hasFacultyNote) {
     return NextResponse.json(
-      { error: 'at least one of `ignored`, `useDigest`, `ferpaRisk`, `ignoredItems`, `tier`, or `retired` must be provided' },
+      { error: 'at least one of `ignored`, `useDigest`, `ferpaRisk`, `ignoredItems`, `tier`, `retired`, or `facultyNote` must be provided' },
       { status: 400 },
     );
   }
@@ -130,6 +132,10 @@ export async function PATCH(req: Request, { params }: RouteContext): Promise<Res
   }
   if (hasRetired) {
     const updated = await setMaterialRetired(id, body.retired as boolean);
+    if (!updated) return NextResponse.json({ error: 'no row updated' }, { status: 404 });
+  }
+  if (hasFacultyNote) {
+    const updated = await setMaterialFacultyNote(id, body.facultyNote as string);
     if (!updated) return NextResponse.json({ error: 'no row updated' }, { status: 404 });
   }
 

@@ -32,6 +32,7 @@ function mapMaterialRow(row: Record<string, unknown>): CourseMaterialRow {
     ferpaRisk: row['ferpa_risk'] as string,
     autoSetAside: row['auto_set_aside'] as boolean,
     setAsideReason: row['set_aside_reason'] as string | null,
+    facultyNote: row['faculty_note'] as string | null,
     indexingStatus: row['indexing_status'] as string,
     tier: row['tier'] as string | null,
     indexedAt: row['indexed_at'] as Date | null,
@@ -242,6 +243,16 @@ export async function setMaterialIgnoredItems(id: string, ignoredItems: string[]
   const rows = await db
     .update(courseMaterials)
     .set({ ignoredItems })
+    .where(eq(courseMaterials.id, id))
+    .returning({ id: courseMaterials.id });
+  return rows.length > 0;
+}
+
+/** Faculty note captured at the pre-interview gate. Empty/blank clears it to null. */
+export async function setMaterialFacultyNote(id: string, note: string | null): Promise<boolean> {
+  const rows = await db
+    .update(courseMaterials)
+    .set({ facultyNote: note && note.trim().length > 0 ? note : null })
     .where(eq(courseMaterials.id, id))
     .returning({ id: courseMaterials.id });
   return rows.length > 0;
