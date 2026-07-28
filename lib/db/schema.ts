@@ -270,6 +270,10 @@ export const courseMaterials = pgTable('course_materials', {
   autoSetAside: boolean('auto_set_aside').notNull().default(false),
   // Human-readable reason for the auto set-aside (e.g. "PII detected").
   setAsideReason: text('set_aside_reason'),
+  // Optional faculty note captured at the pre-interview gate explaining a flagged
+  // material (why a gap is acceptable / will be fixed / ok to include). Increment 1
+  // persists + displays it; scoring integration is a later increment.
+  facultyNote: text('faculty_note'),
   // Indexing pipeline status: 'pending' | 'queued' | 'indexing' | 'ready' | 'failed' | 'skipped'.
   // 'queued' = enqueued for the background ingest worker; 'pending' = inserted but not yet enqueued.
   indexingStatus: text('indexing_status').notNull().default('pending'),
