@@ -353,6 +353,31 @@ describe('finalizeExtraction — middle tier (slide-vision)', () => {
     expect(allChunks).toHaveLength(2);
   });
 
+  it('middle + all-unknown slides (vision outage): marks FAILED, does not skip or index', async () => {
+    // 'unknown' = couldn't score (offload+local both failed), not the model saying 'low'.
+    // A whole deck of unscorable slides must be surfaced for retry, never silently dropped.
+    renderToImages.mockResolvedValue(FAKE_IMAGES);
+    describeSlide.mockResolvedValue({ topic: '', teaches: '', keyVisual: '', contentLevel: 'unknown' });
+
+    const store = makeFakeStore();
+    await finalizeExtraction({
+      id: 'mat-slide-fail',
+      courseCode: 'GC 3800',
+      fileName: SLIDE_FILE_NAME,
+      extractionStatus: 'ok',
+      extractedText: MULTI_SECTION_TEXT,
+      fileBytes: FAKE_BYTES,
+      mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      vectorStore: store,
+      courseHasLearningObjectives: false,
+      tier: 'middle',
+    });
+
+    const lastStatus = updateIndexingStatus.mock.calls.at(-1)?.[0] as { status: string };
+    expect(lastStatus.status).toBe('failed');
+    expect(store.upsertedChunks.flat()).toHaveLength(0);
+  });
+
   it('middle + 3 images (2 substantive): no surfaced field contains a slide number', async () => {
     renderToImages.mockResolvedValue(FAKE_IMAGES);
     describeSlide

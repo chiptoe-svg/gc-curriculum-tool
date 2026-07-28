@@ -245,6 +245,21 @@ async function runV2Pipeline(input: FinalizeExtractionInput): Promise<void> {
         // Batch describe: DGX offload (high concurrency) + local fallback — the
         // "DGX = all vision" path. Concurrency + fallback handled inside describeSlides.
         const allNotes = await describeSlides(images);
+
+        // Reliability guard (issue #4 follow-up): 'unknown' means a slide could NOT be
+        // scored (vision offload + local both failed), which is distinct from the model
+        // deciding 'low'. If most slides are unscorable the vision path was down for this
+        // deck — do NOT silently degrade to skip/prose (that drops a whole deck of real
+        // content, as happened to GC 3620 WK1-Intro). Mark 'failed' so the health guard
+        // surfaces it and a re-index retries cleanly once vision is back.
+        const unknownCount = allNotes.filter(n => n.contentLevel === 'unknown').length;
+        if (allNotes.length > 0 && unknownCount / allNotes.length >= 0.5) {
+          console.warn(
+            `[ingest] ${courseCode} "${fileName}": ${unknownCount}/${allNotes.length} slides unscorable (vision failure) — marking failed for retry, not skipping`,
+          );
+          await updateIndexingStatus({ id, status: 'failed' });
+          handledBySlide = true;
+        } else {
         // Keep notes with original index for stable IDs before filtering.
         const substantive = allNotes
           .map((note, i) => ({ note, i }))
@@ -293,6 +308,7 @@ async function runV2Pipeline(input: FinalizeExtractionInput): Promise<void> {
             `[ingest] ${courseCode} "${fileName}": middle/slide tier — ${substantive.length} slide notes (${skipped} skipped)`,
           );
           await updateIndexingStatus({ id, status: 'ready', indexedAt: new Date() });
+        }
         }
       }
     } catch (err) {

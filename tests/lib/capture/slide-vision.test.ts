@@ -204,7 +204,7 @@ describe('describeSlide — non-OK HTTP status', () => {
       topic: '',
       teaches: '',
       keyVisual: '',
-      contentLevel: 'low',
+      contentLevel: 'unknown',
     });
   });
 
@@ -214,7 +214,7 @@ describe('describeSlide — non-OK HTTP status', () => {
     );
 
     const result = await describeSlide(SAMPLE_PNG);
-    expect(result.contentLevel).toBe('low');
+    expect(result.contentLevel).toBe('unknown');
     expect(result.topic).toBe('');
   });
 });
@@ -238,7 +238,7 @@ describe('describeSlide — non-JSON response body', () => {
       topic: '',
       teaches: '',
       keyVisual: '',
-      contentLevel: 'low',
+      contentLevel: 'unknown',
     });
   });
 
@@ -250,7 +250,7 @@ describe('describeSlide — non-JSON response body', () => {
     fetchSpy.mockResolvedValueOnce(broken()).mockResolvedValueOnce(broken());
 
     const result = await describeSlide(SAMPLE_PNG);
-    expect(result.contentLevel).toBe('low');
+    expect(result.contentLevel).toBe('unknown');
     expect(result.topic).toBe('');
     // retry-once: unparseable content is re-requested once before giving up
     expect(fetchSpy).toHaveBeenCalledTimes(2);
@@ -286,7 +286,7 @@ describe('describeSlide — non-JSON response body', () => {
       topic: '',
       teaches: '',
       keyVisual: '',
-      contentLevel: 'low',
+      contentLevel: 'unknown',
     });
   });
 });

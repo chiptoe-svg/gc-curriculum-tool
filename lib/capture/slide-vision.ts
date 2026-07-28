@@ -18,14 +18,21 @@ export interface SlideNote {
   topic: string;
   teaches: string;
   keyVisual: string;
-  contentLevel: 'substantive' | 'low';
+  /**
+   * 'substantive' | 'low' are MODEL verdicts on a successfully-scored slide.
+   * 'unknown' means we COULDN'T score it (vision offload + local both failed, or
+   * unparseable JSON after retry) — NOT the same as the model deciding "low". The
+   * distinction matters: an error must never be silently treated as low-and-dropped,
+   * which would let a vision outage skip a whole deck of real content. (issue #4)
+   */
+  contentLevel: 'substantive' | 'low' | 'unknown';
 }
 
 const SAFE_DEFAULT: SlideNote = {
   topic: '',
   teaches: '',
   keyVisual: '',
-  contentLevel: 'low',
+  contentLevel: 'unknown',
 };
 
 const TIMEOUT_MS = 60_000;
