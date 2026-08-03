@@ -29,10 +29,37 @@ This alone stops both flavours from being persisted going forward. Ship first.
 - Create: `tests/lib/capture/sanitize-extracted-text.test.ts`
 - Modify: `lib/capture/finalize-extraction.ts:78-84` (scrub `input.extractedText` before the `updateExtractionResult` write)
 - Modify: `tests/lib/capture/finalize-extraction.test.ts` (add a scrub-integration case)
+- Modify: `app/api/vision-proxy/route.ts:~43` (pin `enable_thinking:false` on the local-fallback body — closes the live Flavour-A leak vector)
+
+**Model note (verified 2026-08-02):** the vision workhorse on every path is **qwen3.6-35b-a3b** (DGX offload, `VISION_OFFLOAD_MIN_ITEMS=1` = always offload); gemma is local-fallback-only. Flavour A is qwen reasoning leakage. The DGX caption body already pins `enable_thinking:false`; the local-fallback body does not — Step 0 below fixes that.
 
 **Interfaces:**
 - Produces: `export function sanitizeExtractedText(text: string): string` — returns the input with contamination spans removed; returns `''` if nothing survives; returns the input byte-identical when clean.
 - Consumes: nothing from other tasks.
+
+- [ ] **Step 0: Pin thinking-off on the proxy local-fallback body** — `app/api/vision-proxy/route.ts:~43`
+
+The DGX body already sets `dgxBody['chat_template_kwargs'] = { enable_thinking: false }`. Add the same to `localBody` so a DGX-outage fallback can't leak a qwen reasoning preamble into picture-description captions:
+
+```ts
+  const localBody: Record<string, unknown> = { ...body, model: localModel };
+  localBody['chat_template_kwargs'] = { enable_thinking: false }; // parity with DGX; closes Flavour-A fallback leak
+  if (budget) localBody['vision_soft_tokens_per_image'] = budget;
+```
+
+Commit this one line on its own (it's an independent source fix):
+
+```bash
+git add app/api/vision-proxy/route.ts
+git commit -m "fix(vision-proxy): pin enable_thinking:false on local-fallback caption body
+
+DGX caption path already suppresses thinking; the local fallback did not, so a
+DGX outage could leak a qwen reasoning preamble into docling picture-description
+(Flavour A). Parity closes the live vector.
+
+Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01E9oD91Fvd77dU1FUEQsoV3"
+```
 
 - [ ] **Step 1: Write the failing test** — `tests/lib/capture/sanitize-extracted-text.test.ts`
 

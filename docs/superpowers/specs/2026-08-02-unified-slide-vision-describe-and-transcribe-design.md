@@ -19,18 +19,26 @@ The report measured **two distinct contaminations in two distinct code paths**:
   path. **Fixed at the source** by the reframe below (§1–§3): the adaptive prompt never asks for
   verbatim-only, so the model never narrates an absence.
 - **Flavour A — leaked reasoning preambles** (`method=text`, GC 1010's 8 PDFs at 58% of sections,
-  GC 4440/4060/3460, dated 06-01–06-23). This is **docling's `do_picture_description` VLM**
-  (gemma via `DOCLING_VLM`) emitting *"The user wants a description… 1. Identify the main subject…"*
-  into `md_content`, stored verbatim. **The reframe does not touch this path.** It is **still live**
-  (`DOCLING_VLM_ENABLED=true`, `do_picture_description=true`), and the picture-description prompt
-  already says *"Reply with only the description — no preamble"* yet gemma ignores it — so the source
-  prompt cannot reliably suppress it.
+  GC 4440/4060/3460, dated 06-01–06-23). This is **docling's `do_picture_description` VLM** emitting
+  *"The user wants a description… 1. Identify the main subject…"* into `md_content`, stored verbatim.
+  **Model correction (2026-08-02):** the workhorse on *every* vision path is **qwen3.6-35b-a3b** on the
+  DGX offload (`VISION_OFFLOAD_MODEL`, always-on `VISION_OFFLOAD_MIN_ITEMS=1`) — including
+  picture-description, which routes through `/api/vision-proxy` (offload-first). gemma
+  (`gemma-4-12B`/`-26B`) is the **local fallback only**. So Flavour A is **qwen reasoning leakage**, not
+  a gemma quirk (matching rag-core's own "thinking-capable model" hypothesis).
+  **Two sources, and A *is* partly source-fixable:** the proxy's **DGX** caption body already pins
+  `chat_template_kwargs:{enable_thinking:false}` (`vision-proxy/route.ts:~22`) — clean today. But the
+  proxy's **local-fallback** body (`~43`) does **not** pin it, so a DGX outage → local fallback →
+  reasoning preamble leaks again. The 06-01–06-23 scar predates the DGX suppression (or came via that
+  fallback vector). Fix: **pin `enable_thinking:false` on the local-fallback body too** (one line) +
+  the scrub for the frozen scar.
 
 Both flavours share one exit: every `extracted_text` write goes through `updateExtractionResult`,
 called from a single site at the top of `finalizeExtraction`. So the cross-cutting fix for **A** (and
 belt-and-suspenders for **B**) is a **persistence-boundary scrub** applied there — see §3.5. Flavour A
 requires **span-scrubbing** (strip the reasoning-preamble span from within otherwise-good markdown),
-not whole-field rejection, because the contaminated GC 1010 files also carry real content.
+not whole-field rejection, because the contaminated GC 1010 files also carry real content. The proxy
+one-liner closes the live fallback vector; the scrub cleans the historical scar and backstops both.
 
 ## 1. The reframe
 
