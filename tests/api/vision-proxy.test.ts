@@ -55,3 +55,45 @@ describe('vision-proxy — adaptive caption canonicalize', () => {
     expect(img?.image_url?.url).toBe('data:image/png;base64,' + Buffer.from('CANON').toString('base64'));
   });
 });
+
+// Wire-payload parity: a thinking-capable model (qwen) emits a DETERMINISTIC
+// reasoning preamble ("the user wants a description…") unless enable_thinking is
+// pinned OFF — retry can't save you, so this must be asserted on the actual
+// serialized body of BOTH backends. The bug: the fallback body drifted from the
+// primary and reopened the leak during a DGX outage. Pin both, forever.
+describe('vision-proxy — enable_thinking:false pinned on BOTH bodies', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    delete process.env.DOCLING_VLM_API_KEY; // fail-open for the test
+  });
+
+  const payload = {
+    model: 'x',
+    messages: [{ role: 'user', content: [{ type: 'text', text: 'describe this chart' }] }],
+  };
+
+  it('DGX (primary) body carries chat_template_kwargs.enable_thinking=false', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ choices: [{ message: { content: 'ok' } }] }), { status: 200 }),
+    );
+    await POST(req(payload));
+    const dgx = JSON.parse((fetchSpy.mock.calls[0]![1] as { body: string }).body) as {
+      chat_template_kwargs?: { enable_thinking?: boolean };
+    };
+    expect(dgx.chat_template_kwargs).toEqual({ enable_thinking: false });
+  });
+
+  it('local fallback body ALSO carries chat_template_kwargs.enable_thinking=false when the DGX fails', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response('DGX down', { status: 503 })) // DGX non-OK → fall back
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ choices: [{ message: { content: 'ok' } }] }), { status: 200 }),
+      );
+    await POST(req(payload));
+    expect(fetchSpy).toHaveBeenCalledTimes(2); // primary then fallback
+    const fallback = JSON.parse((fetchSpy.mock.calls[1]![1] as { body: string }).body) as {
+      chat_template_kwargs?: { enable_thinking?: boolean };
+    };
+    expect(fallback.chat_template_kwargs).toEqual({ enable_thinking: false });
+  });
+});

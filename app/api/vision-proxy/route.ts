@@ -118,6 +118,13 @@ export async function POST(req: NextRequest): Promise<Response> {
 
   // Phase 2 — local omlx fallback (Docling's configured caption model).
   const localBody: Record<string, unknown> = { ...body, model: localModel };
+  // Parity with the DGX body: pin thinking OFF here too. A thinking-capable model
+  // (qwen) emits a DETERMINISTIC reasoning preamble ("the user wants a description…")
+  // when this is unset — it lands in the caption and is stored as document text
+  // (Flavour-A contamination). The DGX body pinned it; the fallback silently didn't,
+  // so a DGX outage reopened the leak. Both bodies MUST carry this — asserted in the
+  // wire-payload test so the fallback can't drift from the primary again.
+  localBody['chat_template_kwargs'] = { enable_thinking: false };
   if (budget) localBody['vision_soft_tokens_per_image'] = budget;
   const res = await forward(`${localBase}/chat/completions`, localKey, localBody);
   return new NextResponse(await res.text(), {
