@@ -7,9 +7,13 @@ vi.mock('ai', async () => {
   const actual = await vi.importActual<typeof import('ai')>('ai');
   return { ...actual, generateText: (...args: unknown[]) => generateTextMock(...args) };
 });
-vi.mock('@ai-sdk/openai', () => ({
-  openai: vi.fn((model: string) => ({ modelId: model })),
-}));
+vi.mock('@ai-sdk/openai', () => {
+  // completeWithTools + streamText use aiOpenai.chat(model) (Chat Completions, not the
+  // Responses API — the RCD proxy blocks Responses store; see the interview-outage fix).
+  const openai = vi.fn((model: string) => ({ modelId: model }));
+  (openai as unknown as { chat: (m: string) => unknown }).chat = (model: string) => ({ modelId: model });
+  return { openai };
+});
 // Mock the raw OpenAI SDK so the constructor doesn't complain in test environment.
 vi.mock('openai', () => ({
   default: class {
