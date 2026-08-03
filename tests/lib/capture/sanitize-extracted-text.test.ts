@@ -2,20 +2,37 @@ import { describe, it, expect } from 'vitest';
 import { sanitizeExtractedText } from '@/lib/capture/sanitize-extracted-text';
 
 describe('sanitizeExtractedText', () => {
-  it('strips a Flavour-A reasoning preamble but keeps surrounding markdown', () => {
+  it('strips Flavour-A reasoning FRAMING but keeps the described substance', () => {
+    // The VLM emits its reasoning inline with the description; the described
+    // substance ("a bar chart of file sizes", "two columns") is real slide content
+    // and — for raw_cleared decks — the only surviving record of it. Surgical scrub
+    // removes only the framing, keeps the substance.
     const input = [
       '--- page 3 ---',
-      'The user wants a description of the provided image. 1. Identify the main subject: a bar chart.',
+      'The user wants a description of the provided image.',
+      '1. **Identify the main subject:** a bar chart of file sizes.',
+      '2. **Analyze the layout:** two columns of data.',
       '',
       '--- page 4 ---',
       '# Typography basics',
       'Kerning is the space between individual letters.',
     ].join('\n');
     const out = sanitizeExtractedText(input);
-    expect(out).toContain('# Typography basics');
-    expect(out).toContain('Kerning is the space between individual letters.');
+    // framing gone
     expect(out).not.toMatch(/user wants a description/i);
     expect(out).not.toMatch(/identify the main subject/i);
+    expect(out).not.toMatch(/analyze the layout/i);
+    // described substance KEPT
+    expect(out).toContain('a bar chart of file sizes.');
+    expect(out).toContain('two columns of data.');
+    // surrounding real markdown untouched
+    expect(out).toContain('# Typography basics');
+    expect(out).toContain('Kerning is the space between individual letters.');
+  });
+
+  it('drops a bare reasoning opener with nothing after it', () => {
+    const input = 'The user wants a description of the image.\nThe user wants a description of the provided image.';
+    expect(sanitizeExtractedText(input).trim()).toBe('');
   });
 
   it('drops a Flavour-B failure-narration sentence, keeps real text', () => {
