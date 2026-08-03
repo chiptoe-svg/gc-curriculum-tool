@@ -14,7 +14,13 @@ vi.mock('@/lib/ai/analyze/material-digest', () => ({
 
 import { finalizeExtraction } from '@/lib/capture/finalize-extraction';
 
-const LONG = 'x'.repeat(60_001); // > 15k tokens
+// Realistic long text > 15k tokens. (Was 'x'.repeat(60_001) — 60k identical chars
+// is degenerate repetition that the extracted_text scrub correctly strips, so the
+// fixture must be real prose. Sentence-joined, single spaces, no leading/trailing
+// whitespace → the scrub is a no-op on it, matching production behavior on clean text.)
+const LONG = Array(2000)
+  .fill('Lorem ipsum dolor sit amet consectetur adipiscing elit.')
+  .join(' ');
 
 describe('finalizeExtraction', () => {
   beforeEach(() => {
@@ -35,6 +41,23 @@ describe('finalizeExtraction', () => {
     expect(updateExtractionResult).toHaveBeenCalledOnce();
     expect(generateMaterialDigest).not.toHaveBeenCalled();
     expect(updateMaterialDigest).not.toHaveBeenCalled();
+  });
+
+  it('scrubs contamination out of extracted_text before persisting', async () => {
+    await finalizeExtraction({
+      id: 'm1',
+      courseCode: 'GC 3620',
+      fileName: 'wk4.pdf',
+      extractionStatus: 'ok',
+      extractionMethod: 'vision',
+      extractedText:
+        'Real slide content. The provided image is completely blank and contains no visible content to transcribe. More real content.',
+    });
+    const persisted = updateExtractionResult.mock.calls[0]![0] as { extractedText: string };
+    expect(persisted.extractedText).toContain('Real slide content.');
+    expect(persisted.extractedText).toContain('More real content.');
+    expect(persisted.extractedText).not.toMatch(/completely blank/i);
+    expect(persisted.extractedText).not.toMatch(/no visible content to transcribe/i);
   });
 
   it('writes extraction result and skips digest when not a candidate (dense kind)', async () => {

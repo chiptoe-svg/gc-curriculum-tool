@@ -20,6 +20,7 @@ import type { VectorStore, ChunkVectorRecord, SectionRecord } from '@/lib/captur
 import type { Tier } from '@/lib/capture/material-tier';
 import { renderToImages } from '@/lib/capture/render-pages';
 import { describeSlides } from '@/lib/capture/slide-vision';
+import { sanitizeExtractedText } from '@/lib/capture/sanitize-extracted-text';
 
 export interface FinalizeExtractionInput {
   id: string;
@@ -76,35 +77,44 @@ async function mapWithConcurrency<T, R>(
  * site (uploads, canvas import, scan-linked-docs, canvas re-extract).
  */
 export async function finalizeExtraction(input: FinalizeExtractionInput): Promise<void> {
+  // Persistence-boundary scrub: strip VLM reasoning preambles (Flavour A) and
+  // failure narration / decoder repetition (Flavour B) from ANY source path
+  // before extracted_text is stored. Every extracted_text write funnels through
+  // here, so this is the one place that covers docling-text and vision alike.
+  // Downstream reads use `scrubbed`, never `input`, so nothing sees the raw text.
+  const cleanedText =
+    input.extractedText !== undefined ? sanitizeExtractedText(input.extractedText) : undefined;
+  const scrubbed: FinalizeExtractionInput = { ...input, extractedText: cleanedText };
+
   await updateExtractionResult({
-    id: input.id,
-    extractionStatus: input.extractionStatus,
-    ...(input.extractionMethod !== undefined && { extractionMethod: input.extractionMethod }),
-    ...(input.extractedText !== undefined && { extractedText: input.extractedText }),
-    ...(input.pageCount !== undefined && { pageCount: input.pageCount }),
+    id: scrubbed.id,
+    extractionStatus: scrubbed.extractionStatus,
+    ...(scrubbed.extractionMethod !== undefined && { extractionMethod: scrubbed.extractionMethod }),
+    ...(scrubbed.extractedText !== undefined && { extractedText: scrubbed.extractedText }),
+    ...(scrubbed.pageCount !== undefined && { pageCount: scrubbed.pageCount }),
   });
 
-  if (input.extractionStatus !== 'ok' || !input.extractedText) return;
+  if (scrubbed.extractionStatus !== 'ok' || !scrubbed.extractedText) return;
 
   if (v2Enabled()) {
-    await runV2Pipeline(input);
+    await runV2Pipeline(scrubbed);
     return;
   }
 
   // Legacy path: long reference materials get a digest via the existing summarizer.
   const candidate = isCompressionCandidate({
-    fileName: input.fileName,
-    extractedText: input.extractedText,
+    fileName: scrubbed.fileName,
+    extractedText: scrubbed.extractedText,
     digest: null,
     useDigest: false,
   });
   if (!candidate) return;
   try {
     const { digest, model } = await generateMaterialDigest({
-      fileName: input.fileName,
-      extractedText: input.extractedText,
+      fileName: scrubbed.fileName,
+      extractedText: scrubbed.extractedText,
     });
-    await updateMaterialDigest({ id: input.id, digest, digestModel: model });
+    await updateMaterialDigest({ id: scrubbed.id, digest, digestModel: model });
   } catch (err) {
     console.error(`finalizeExtraction (legacy): digest failed for ${input.id} (${input.fileName})`, err);
     // Intentionally swallowed — extraction itself succeeded. The backfill
