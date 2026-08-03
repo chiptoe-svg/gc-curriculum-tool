@@ -14,8 +14,9 @@
 import { getExtractorFor, transcribeWithGranite, SUPPORTED_MIME_TYPES } from '@/lib/courses/material-extractor';
 import { isImageHeavyPdf, pdfPageInfo } from '@/lib/courses/pdf-classify';
 import { isLegacyOfficeMime, convertLegacyToModern } from '@/lib/courses/legacy-converter';
-import { getProvider, buildLocalProvider } from '@/lib/ai/provider';
 import { repetitionRatio } from '@/lib/courses/repetition-ratio';
+import { renderToImages } from '@/lib/capture/render-pages';
+import { describeSlides, notesToExtractedText, type SlideNote } from '@/lib/capture/slide-vision';
 
 // Re-export the supported-types list and type name so callers (upload
 // route, schemas) read the same source of truth as the extractor itself.
@@ -29,9 +30,6 @@ export interface ExtractTextArgs {
 }
 
 export interface ExtractTextOptions {
-  /** When set, image-PDF vision transcription uses this provider instead of the
-   *  global getProvider(). Used by the ingest worker's local-only mode. */
-  visionProvider?: import('@/lib/ai/provider').AIProvider;
   /** Skip Docling's picture-description pass (see ExtractArgs). Set by the ingest
    *  worker for middle-tier slide decks — describeSlides covers per-slide vision. */
   skipPictureDescription?: boolean;
@@ -44,6 +42,13 @@ export interface ExtractTextResult {
   pageCount?: number;
   /** Cost in 1/100 of a cent, only present when vision transcription was used. */
   visionCostUsdCents?: number;
+  /**
+   * Per-slide notes from the adaptive vision pass (method='vision' only). Threaded
+   * to finalizeExtraction so the middle-tier chunk build REUSES them instead of
+   * re-rendering + re-describing (removes the double vision pass). Absent for
+   * text/granite methods.
+   */
+  slideNotes?: SlideNote[];
 }
 
 /**
@@ -55,31 +60,38 @@ const MIN_CHARS_PER_PAGE = 100;
 /** Minimum chars for text to be considered meaningful (not low_text). */
 const MIN_MEANINGFUL_CHARS = 10;
 
-/** Max pages to send to vision to bound cost + latency. */
-const VISION_PAGE_CAP = 40;
-
 /** Granite output with repetition ratio at or above this threshold is considered degenerate. */
 const GRANITE_REPETITION_THRESHOLD = 0.3;
 
 /**
- * The image-PDF vision cascade: granite (if enabled) → local qwen (Spark) → OpenAI.
- * Reachable two ways: (1) a PDF whose textual extraction came back near-empty
- * (`isImageBased`, forceLocalOffload=false — preserves the historical OpenAI-default
- * behaviour unless LOCAL_HARDSCAN_OCR is set); (2) the upfront geometry route for
- * image-heavy decks (forceLocalOffload=true — always try qwen first, per issue #4,
- * since sending a design deck to OpenAI defeats the local-first provider decision).
+ * The image-PDF vision cascade: granite clean-scan OCR (if enabled) → ONE adaptive
+ * `describeSlides` pass. Reachable two ways: (1) a PDF whose textual extraction came
+ * back near-empty (`isImageBased`); (2) the upfront geometry route for image-heavy
+ * decks. Both are image-based PDFs (the corpus is decks — no handwriting), so both
+ * take the same adaptive pass.
+ *
+ * `describeSlides` replaced the old `transcribeDocument` verbatim lanes: that
+ * verbatim-only prompt made the model NARRATE empty/near-blank slides ("the image is
+ * completely blank…"), which was persisted as document text (Flavour-B
+ * contamination). The adaptive prompt transcribes text AND describes imagery and
+ * emits nothing for a genuinely empty page, so the failure mode is structural gone.
+ * `describeSlides` handles the DGX-offload → local-omlx fallback + retry internally,
+ * so there is no separate provider/forceLocalOffload plumbing here anymore.
+ * `notesToExtractedText` derives `extracted_text`; the notes are returned so
+ * finalizeExtraction can reuse them for chunks (single vision pass, no re-describe).
  */
 async function runVisionFallback(
   args: ExtractTextArgs,
-  opts: ExtractTextOptions | undefined,
   pageCount: number | undefined,
-  forceLocalOffload: boolean,
 ): Promise<ExtractTextResult> {
   const { fileBytes, fileName } = args;
   // runVisionFallback is only invoked for PDFs (both call sites gate on it); narrow the
-  // mimeType so the transcribe args (pdf | docx) typecheck — the enclosing `if` used to
-  // do this narrowing before the cascade was lifted into this helper.
+  // mimeType so the granite transcribe args (pdf | docx) typecheck.
   const mimeType = args.mimeType as Extract<ExtractedMimeType, 'application/pdf'>;
+
+  // Lane 1 — granite clean-scan OCR (unchanged). Declines (empty/short/repetitive) or
+  // errors → fall through to the adaptive pass. Design decks make granite decline; it
+  // wins only for genuinely clean text scans.
   if (process.env.GRANITE_DOCLING_ENABLED && process.env.GRANITE_DOCLING_ENABLED !== 'false') {
     try {
       const g = await transcribeWithGranite({ fileBytes, mimeType, fileName });
@@ -87,59 +99,27 @@ async function runVisionFallback(
       if (gText.length >= MIN_MEANINGFUL_CHARS && repetitionRatio(gText) < GRANITE_REPETITION_THRESHOLD) {
         return { method: 'granite', status: 'ok', text: gText, pageCount: g.pageCount || pageCount, visionCostUsdCents: 0 };
       }
-      // else: declined (empty / short / repetitive) → fall through to OpenAI below
     } catch {
-      // Granite error → fall through to OpenAI below (Granite can only decline, never fail)
+      // Granite error → fall through to the adaptive pass (Granite can only decline, never fail)
     }
   }
-  // Lane 3 — flat OCR fallback for hard/handwritten scans + image decks. Transcribe on
-  // Qwen-35B via the Spark (buildLocalProvider + forceOffload) when forced (image route)
-  // or when LOCAL_HARDSCAN_OCR is on, AND we are not already in "use local" mode (which
-  // injects opts.visionProvider). Fall through to OpenAI on any failure/empty so
-  // ingestion never breaks.
-  const hardscanLocal =
-    !opts?.visionProvider &&
-    (forceLocalOffload ||
-      (!!process.env.LOCAL_HARDSCAN_OCR && process.env.LOCAL_HARDSCAN_OCR !== 'false'));
-  if (hardscanLocal) {
-    try {
-      const local = buildLocalProvider();
-      const t = await local.transcribeDocument({
-        fileBytes,
-        mimeType,
-        maxPages: VISION_PAGE_CAP,
-        forceOffload: true,
-      });
-      const localText = t.text.trim();
-      if (localText.length >= MIN_MEANINGFUL_CHARS) {
-        return {
-          method: 'vision',
-          status: 'ok',
-          text: localText,
-          pageCount,
-          visionCostUsdCents: t.costUsdCents,
-        };
-      }
-      // empty/short → fall through to the OpenAI fallback below
-    } catch {
-      // local/Spark error → fall through to the OpenAI fallback below
-    }
-  }
+
+  // Lane 2 — one adaptive vision pass. Render (capped at 60 pages inside renderToImages),
+  // describe each page (verbatim text + imagery), derive extracted_text from the notes.
+  // Both DGX+local vision down (e.g. a full outage) → describeSlides returns 'unknown'
+  // notes → empty text → low_text (retriable), never a silent narration.
   try {
-    const provider = opts?.visionProvider ?? getProvider();
-    const transcribed = await provider.transcribeDocument({
-      fileBytes,
-      mimeType,
-      maxPages: VISION_PAGE_CAP,
-    });
-    const vText = transcribed.text.trim();
-    const status = vText.length < MIN_MEANINGFUL_CHARS ? 'low_text' : 'ok';
+    const images = await renderToImages(fileBytes, mimeType, fileName);
+    if (images.length === 0) return { method: 'vision', status: 'failed', pageCount };
+    const notes = await describeSlides(images);
+    const text = notesToExtractedText(notes);
     return {
       method: 'vision',
-      status,
-      text: vText,
-      pageCount,
-      visionCostUsdCents: transcribed.costUsdCents,
+      status: text.length < MIN_MEANINGFUL_CHARS ? 'low_text' : 'ok',
+      text,
+      pageCount: images.length,
+      slideNotes: notes,
+      visionCostUsdCents: 0, // DGX/omlx vision is off-meter (no OpenAI call)
     };
   } catch {
     return { method: 'vision', status: 'failed', pageCount };
@@ -171,7 +151,7 @@ export async function extractText(args: ExtractTextArgs, opts?: ExtractTextOptio
   // qwen per-page vision cascade — Docling is never invoked. Any probe doubt → qwen.
   if (mimeType === 'application/pdf' && (await isImageHeavyPdf(fileBytes))) {
     const info = await pdfPageInfo(fileBytes).catch(() => ({ pageCount: undefined as number | undefined }));
-    return runVisionFallback(args, opts, info.pageCount, /* forceLocalOffload */ true);
+    return runVisionFallback(args, info.pageCount);
   }
 
   // Pick the backend up front. If the configuration doesn't support this
@@ -203,8 +183,7 @@ export async function extractText(args: ExtractTextArgs, opts?: ExtractTextOptio
     const charsPerPage = pageCount && pageCount > 0 ? text.length / pageCount : text.length;
     const isImageBased = charsPerPage < MIN_CHARS_PER_PAGE;
     if (isImageBased) {
-      // Existing behaviour: OpenAI default unless LOCAL_HARDSCAN_OCR is set (forceLocalOffload=false).
-      return runVisionFallback(args, opts, pageCount, false);
+      return runVisionFallback(args, pageCount);
     }
   }
 

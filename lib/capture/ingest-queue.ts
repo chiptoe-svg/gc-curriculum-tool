@@ -13,7 +13,6 @@ import {
 } from '@/lib/db/course-materials-queries';
 import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
 import { getCourseByCode } from '@/lib/db/courses-queries';
-import { buildLocalProvider } from '@/lib/ai/provider';
 
 // ---------------------------------------------------------------------------
 // In-process worker — drains the indexing queue with bounded concurrency
@@ -130,6 +129,9 @@ export async function processMaterial(row: CourseMaterialRow): Promise<void> {
     // File bytes are retained for middle-tier slide rendering; text-backed rows
     // (Canvas HTML) have no blob and leave fileBytes undefined.
     let fileBytes: Buffer | undefined;
+    // Slide notes from the adaptive vision pass (image-PDF only), threaded to
+    // finalizeExtraction so the middle-tier chunk build reuses them (single pass).
+    let slideNotes: import('@/lib/capture/slide-vision').SlideNote[] | undefined;
 
     if (!extractedText) {
       const key = keyFromLocalUrl(row.blobUrl);
@@ -143,7 +145,6 @@ export async function processMaterial(row: CourseMaterialRow): Promise<void> {
       const ex = await extractText(
         { fileBytes: bytes, mimeType: row.mimeType as ExtractedMimeType, fileName: row.fileName },
         {
-          ...(isLocal ? { visionProvider: buildLocalProvider() } : {}),
           // Middle-tier decks get per-slide vision via describeSlides in finalize;
           // skip Docling's redundant picture-description pass (~5-7s/page).
           skipPictureDescription: row.tier === 'middle',
@@ -158,6 +159,7 @@ export async function processMaterial(row: CourseMaterialRow): Promise<void> {
       extractionStatus = ex.status;
       extractionMethod = ex.method as ExtractionMethod | undefined;
       pageCount = ex.pageCount;
+      slideNotes = ex.slideNotes;
     } else if (extractionStatus !== 'ok' && (extractedText.trim().length ?? 0) >= MIN_TEXT_BACKED_CHARS) {
       // Text-backed row (Canvas list-import staging / scan-linked-docs) that was staged
       // 'pending' and never promoted: it already has good text, so re-indexing must treat
@@ -187,6 +189,8 @@ export async function processMaterial(row: CourseMaterialRow): Promise<void> {
       // Thread file bytes for middle-tier slide rendering (undefined for text-backed rows)
       ...(fileBytes !== undefined && { fileBytes }),
       mimeType: row.mimeType ?? undefined,
+      // Reuse the adaptive-pass notes in finalize's middle tier (no re-describe)
+      ...(slideNotes !== undefined && { slideNotes }),
     });
 
     // Fix 1: finalizeExtraction early-returns (without setting a terminal

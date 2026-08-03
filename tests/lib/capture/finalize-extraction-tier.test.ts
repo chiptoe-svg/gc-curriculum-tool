@@ -353,6 +353,35 @@ describe('finalizeExtraction — middle tier (slide-vision)', () => {
     expect(allChunks).toHaveLength(2);
   });
 
+  it('middle + threaded slideNotes: reuses them, does NOT render or re-describe (single pass)', async () => {
+    // renderToImages/describeSlide are left un-mocked (returning undefined) on purpose:
+    // if the reuse path is taken, neither is called. The extract-time adaptive pass
+    // already produced these notes; finalize must not run a second vision pass.
+    const notes = [
+      { topic: 'Color theory', teaches: 'Hue relationships', keyVisual: 'color wheel', text: 'RGB is additive.', contentLevel: 'substantive' as const },
+      { topic: 'Typography', teaches: 'Serif vs sans', keyVisual: 'type specimen', text: 'Serifs aid print legibility.', contentLevel: 'substantive' as const },
+      { topic: '', teaches: '', keyVisual: '', text: '', contentLevel: 'low' as const },
+    ];
+    const store = makeFakeStore();
+    await finalizeExtraction({
+      id: 'mat-slide-reuse',
+      courseCode: 'GC 3800',
+      fileName: SLIDE_FILE_NAME,
+      extractionStatus: 'ok',
+      extractedText: MULTI_SECTION_TEXT,
+      fileBytes: FAKE_BYTES,
+      mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      slideNotes: notes,
+      vectorStore: store,
+      courseHasLearningObjectives: false,
+      tier: 'middle',
+    });
+
+    expect(renderToImages).not.toHaveBeenCalled();
+    expect(describeSlide).not.toHaveBeenCalled();
+    expect(store.upsertedChunks.flat()).toHaveLength(2); // 2 substantive notes → 2 chunks
+  });
+
   it('middle + all-unknown slides (vision outage): marks FAILED, does not skip or index', async () => {
     // 'unknown' = couldn't score (offload+local both failed), not the model saying 'low'.
     // A whole deck of unscorable slides must be surfaced for retry, never silently dropped.

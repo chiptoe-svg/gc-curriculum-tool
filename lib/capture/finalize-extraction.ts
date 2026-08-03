@@ -19,7 +19,7 @@ import { tenantForCourse } from '@/lib/capture/vector-store';
 import type { VectorStore, ChunkVectorRecord, SectionRecord } from '@/lib/capture/vector-store';
 import type { Tier } from '@/lib/capture/material-tier';
 import { renderToImages } from '@/lib/capture/render-pages';
-import { describeSlides } from '@/lib/capture/slide-vision';
+import { describeSlides, type SlideNote } from '@/lib/capture/slide-vision';
 import { sanitizeExtractedText } from '@/lib/capture/sanitize-extracted-text';
 
 export interface FinalizeExtractionInput {
@@ -40,6 +40,13 @@ export interface FinalizeExtractionInput {
   // (Canvas HTML) leave these undefined and fall through to the full pipeline.
   fileBytes?: Buffer;
   mimeType?: string;
+  /**
+   * Per-slide notes from the extract-time adaptive vision pass. When present, the
+   * middle-tier chunk build REUSES them instead of re-rendering + re-describing
+   * (removes the double vision pass). Absent (text-backed / non-vision) → the
+   * middle tier renders + describes as before.
+   */
+  slideNotes?: SlideNote[];
   /** Local-only run: suppress the OpenAI fallback in digest/contextualize. */
   noOpenAIFallback?: boolean;
 }
@@ -247,15 +254,17 @@ async function runV2Pipeline(input: FinalizeExtractionInput): Promise<void> {
   if (input.tier === 'middle') {
     let handledBySlide = false;
     try {
-      const images = input.fileBytes
-        ? await renderToImages(input.fileBytes, input.mimeType ?? '', fileName)
-        : [];
+      // Single vision pass: reuse the notes from the extract-time adaptive pass when
+      // they were threaded (the image-PDF path), else render + describe here (covers a
+      // non-vision caller that still lands in the middle tier). This removes the old
+      // double pass where extract-text transcribed AND finalize re-described the deck.
+      const allNotes: SlideNote[] = input.slideNotes?.length
+        ? input.slideNotes
+        : input.fileBytes
+          ? await describeSlides(await renderToImages(input.fileBytes, input.mimeType ?? '', fileName))
+          : [];
 
-      if (images.length > 0) {
-        // Batch describe: DGX offload (high concurrency) + local fallback — the
-        // "DGX = all vision" path. Concurrency + fallback handled inside describeSlides.
-        const allNotes = await describeSlides(images);
-
+      if (allNotes.length > 0) {
         // Reliability guard (issue #4 follow-up): 'unknown' means a slide could NOT be
         // scored (vision offload + local both failed), which is distinct from the model
         // deciding 'low'. If most slides are unscorable the vision path was down for this

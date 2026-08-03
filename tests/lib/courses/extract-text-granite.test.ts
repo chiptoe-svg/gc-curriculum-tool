@@ -10,33 +10,49 @@ vi.mock('@/lib/courses/material-extractor', async (orig) => {
   };
 });
 
+// The vision fallback now renders + runs the adaptive describeSlides pass (no
+// injected provider, no OpenAI transcribe). Mock the render + describe; keep the
+// real notesToExtractedText so the extracted_text derivation is exercised.
+vi.mock('@/lib/capture/render-pages', () => ({
+  renderToImages: vi.fn(async () => [Buffer.from('img1')]),
+}));
+vi.mock('@/lib/capture/slide-vision', async (orig) => ({
+  ...(await orig<typeof import('@/lib/capture/slide-vision')>()),
+  describeSlides: vi.fn(async () => [
+    { topic: 'Fallback', teaches: 'x', keyVisual: '', text: 'ADAPTIVE VISION TEXT that is long enough', contentLevel: 'substantive' as const },
+  ]),
+}));
+
 import { extractText } from '@/lib/courses/extract-text';
 import { transcribeWithGranite } from '@/lib/courses/material-extractor';
+import { describeSlides } from '@/lib/capture/slide-vision';
 
-const fakeVision = { transcribeDocument: vi.fn(async () => ({ text: 'OPENAI FALLBACK TEXT that is long enough', costUsdCents: 5 })) };
 const args = { fileBytes: Buffer.from('%PDF'), mimeType: 'application/pdf' as const, fileName: 's.pdf' };
 
 beforeEach(() => { process.env.GRANITE_DOCLING_ENABLED = '1'; vi.clearAllMocks(); });
 afterEach(() => { delete process.env.GRANITE_DOCLING_ENABLED; });
 
-it('clean Granite output → method granite, cost 0, OpenAI not called', async () => {
+it('clean Granite output → method granite, cost 0, adaptive pass not called', async () => {
   (transcribeWithGranite as any).mockResolvedValue({ text: '## R\n\npara a\n\npara b\n\npara c', pageCount: 1 });
-  const r = await extractText(args, { visionProvider: fakeVision as any });
+  const r = await extractText(args);
   expect(r.method).toBe('granite'); expect(r.visionCostUsdCents).toBe(0);
-  expect(fakeVision.transcribeDocument).not.toHaveBeenCalled();
+  expect(describeSlides).not.toHaveBeenCalled();
 });
-it('junk (repetitive) Granite output → falls back to OpenAI (method vision)', async () => {
+it('junk (repetitive) Granite output → falls back to the adaptive pass (method vision)', async () => {
   (transcribeWithGranite as any).mockResolvedValue({ text: ['·','·','·','·','·','·'].join('\n'), pageCount: 1 });
-  const r = await extractText(args, { visionProvider: fakeVision as any });
-  expect(r.method).toBe('vision'); expect(fakeVision.transcribeDocument).toHaveBeenCalledOnce();
+  const r = await extractText(args);
+  expect(r.method).toBe('vision');
+  expect(r.text).toContain('ADAPTIVE VISION TEXT');
+  expect(describeSlides).toHaveBeenCalledOnce();
 });
-it('Granite throws → falls back to OpenAI', async () => {
+it('Granite throws → falls back to the adaptive pass', async () => {
   (transcribeWithGranite as any).mockRejectedValue(new Error('docling-serve down'));
-  const r = await extractText(args, { visionProvider: fakeVision as any });
-  expect(r.method).toBe('vision'); expect(fakeVision.transcribeDocument).toHaveBeenCalledOnce();
+  const r = await extractText(args);
+  expect(r.method).toBe('vision'); expect(describeSlides).toHaveBeenCalledOnce();
 });
-it('flag OFF → Granite never called, straight to OpenAI', async () => {
+it('flag OFF → Granite never called, straight to the adaptive pass', async () => {
   delete process.env.GRANITE_DOCLING_ENABLED;
-  const r = await extractText(args, { visionProvider: fakeVision as any });
+  const r = await extractText(args);
   expect(r.method).toBe('vision'); expect(transcribeWithGranite).not.toHaveBeenCalled();
+  expect(describeSlides).toHaveBeenCalledOnce();
 });
