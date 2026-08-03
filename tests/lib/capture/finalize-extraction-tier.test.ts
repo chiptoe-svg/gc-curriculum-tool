@@ -331,9 +331,9 @@ describe('finalizeExtraction — middle tier (slide-vision)', () => {
   it('middle + 3 images (2 substantive, 1 low): upserts exactly 2 chunks', async () => {
     renderToImages.mockResolvedValue(FAKE_IMAGES);
     describeSlide
-      .mockResolvedValueOnce({ topic: 'Color theory', teaches: 'Hue relationships', keyVisual: 'color wheel', contentLevel: 'substantive' })
-      .mockResolvedValueOnce({ topic: 'Typography', teaches: 'Serif vs sans', keyVisual: 'type specimen', contentLevel: 'substantive' })
-      .mockResolvedValueOnce({ topic: '', teaches: '', keyVisual: '', contentLevel: 'low' });
+      .mockResolvedValueOnce({ topic: 'Color theory', teaches: 'Hue relationships', keyVisual: 'color wheel', text: '', contentLevel: 'substantive' })
+      .mockResolvedValueOnce({ topic: 'Typography', teaches: 'Serif vs sans', keyVisual: 'type specimen', text: '', contentLevel: 'substantive' })
+      .mockResolvedValueOnce({ topic: '', teaches: '', keyVisual: '', text: '', contentLevel: 'low' });
 
     const store = makeFakeStore();
     await finalizeExtraction({
@@ -357,7 +357,7 @@ describe('finalizeExtraction — middle tier (slide-vision)', () => {
     // 'unknown' = couldn't score (offload+local both failed), not the model saying 'low'.
     // A whole deck of unscorable slides must be surfaced for retry, never silently dropped.
     renderToImages.mockResolvedValue(FAKE_IMAGES);
-    describeSlide.mockResolvedValue({ topic: '', teaches: '', keyVisual: '', contentLevel: 'unknown' });
+    describeSlide.mockResolvedValue({ topic: '', teaches: '', keyVisual: '', text: '', contentLevel: 'unknown' });
 
     const store = makeFakeStore();
     await finalizeExtraction({
@@ -381,9 +381,9 @@ describe('finalizeExtraction — middle tier (slide-vision)', () => {
   it('middle + 3 images (2 substantive): no surfaced field contains a slide number', async () => {
     renderToImages.mockResolvedValue(FAKE_IMAGES);
     describeSlide
-      .mockResolvedValueOnce({ topic: 'Color theory', teaches: 'Hue relationships', keyVisual: 'color wheel', contentLevel: 'substantive' })
-      .mockResolvedValueOnce({ topic: 'Typography', teaches: 'Serif vs sans', keyVisual: 'type specimen', contentLevel: 'substantive' })
-      .mockResolvedValueOnce({ topic: '', teaches: '', keyVisual: '', contentLevel: 'low' });
+      .mockResolvedValueOnce({ topic: 'Color theory', teaches: 'Hue relationships', keyVisual: 'color wheel', text: '', contentLevel: 'substantive' })
+      .mockResolvedValueOnce({ topic: 'Typography', teaches: 'Serif vs sans', keyVisual: 'type specimen', text: '', contentLevel: 'substantive' })
+      .mockResolvedValueOnce({ topic: '', teaches: '', keyVisual: '', text: '', contentLevel: 'low' });
 
     const store = makeFakeStore();
     await finalizeExtraction({
@@ -412,9 +412,9 @@ describe('finalizeExtraction — middle tier (slide-vision)', () => {
   it('middle + 3 images (2 substantive): status ends ready', async () => {
     renderToImages.mockResolvedValue(FAKE_IMAGES);
     describeSlide
-      .mockResolvedValueOnce({ topic: 'Color theory', teaches: 'Hue relationships', keyVisual: 'color wheel', contentLevel: 'substantive' })
-      .mockResolvedValueOnce({ topic: 'Typography', teaches: 'Serif vs sans', keyVisual: 'type specimen', contentLevel: 'substantive' })
-      .mockResolvedValueOnce({ topic: '', teaches: '', keyVisual: '', contentLevel: 'low' });
+      .mockResolvedValueOnce({ topic: 'Color theory', teaches: 'Hue relationships', keyVisual: 'color wheel', text: '', contentLevel: 'substantive' })
+      .mockResolvedValueOnce({ topic: 'Typography', teaches: 'Serif vs sans', keyVisual: 'type specimen', text: '', contentLevel: 'substantive' })
+      .mockResolvedValueOnce({ topic: '', teaches: '', keyVisual: '', text: '', contentLevel: 'low' });
 
     const store = makeFakeStore();
     await finalizeExtraction({
@@ -458,8 +458,8 @@ describe('finalizeExtraction — middle tier (slide-vision)', () => {
   it('middle + 2 images (both low): falls through to full chunk pipeline (contextualizeChunk called)', async () => {
     renderToImages.mockResolvedValue([Buffer.from('png1'), Buffer.from('png2')]);
     describeSlide
-      .mockResolvedValueOnce({ topic: '', teaches: '', keyVisual: '', contentLevel: 'low' })
-      .mockResolvedValueOnce({ topic: '', teaches: '', keyVisual: '', contentLevel: 'low' });
+      .mockResolvedValueOnce({ topic: '', teaches: '', keyVisual: '', text: '', contentLevel: 'low' })
+      .mockResolvedValueOnce({ topic: '', teaches: '', keyVisual: '', text: '', contentLevel: 'low' });
 
     const store = makeFakeStore();
     await finalizeExtraction({

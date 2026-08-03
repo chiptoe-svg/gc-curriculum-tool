@@ -19,6 +19,13 @@ export interface SlideNote {
   teaches: string;
   keyVisual: string;
   /**
+   * Verbatim visible text on the slide, '' if none. Feeds `extracted_text` (the
+   * digest / KUD-audit source) via `notesToExtractedText`. Kept separate from
+   * `keyVisual` (imagery description). A genuinely empty slide yields '' here —
+   * never a narration of the emptiness (that was the Flavour-B contamination).
+   */
+  text: string;
+  /**
    * 'substantive' | 'low' are MODEL verdicts on a successfully-scored slide.
    * 'unknown' means we COULDN'T score it (vision offload + local both failed, or
    * unparseable JSON after retry) — NOT the same as the model deciding "low". The
@@ -32,18 +39,24 @@ const SAFE_DEFAULT: SlideNote = {
   topic: '',
   teaches: '',
   keyVisual: '',
+  text: '',
   contentLevel: 'unknown',
 };
 
 const TIMEOUT_MS = 60_000;
 
 const INSTRUCTION =
-  'You are a curriculum-analysis assistant. ' +
-  'Examine the slide image and return STRICT JSON (no markdown fences, no extra keys) with exactly these fields:\n' +
-  '{"topic": "<short topic label>", ' +
+  'You are a curriculum-analysis assistant analyzing one slide/page image. ' +
+  'Return STRICT JSON (no markdown fences, no extra keys) with exactly these fields:\n' +
+  '{"text": "<verbatim transcription of ALL visible text, preserving line order; empty string if there is no text>", ' +
+  '"keyVisual": "<one brief phrase describing the dominant imagery/diagram; empty string if there is no notable imagery>", ' +
+  '"topic": "<short topic label>", ' +
   '"teaches": "<what the slide teaches or intends students to learn>", ' +
-  '"keyVisual": "<brief description of the dominant visual element>", ' +
   '"contentLevel": "substantive" | "low"}\n' +
+  'A slide may have text, imagery, or both — transcribe what is there and describe what is there. ' +
+  'Do NOT summarize or paraphrase the text: reproduce it verbatim. ' +
+  'If the page is genuinely empty, return empty strings for "text" and "keyVisual" — ' +
+  'NEVER write a sentence explaining that the slide is blank or has nothing to transcribe. ' +
   'Use contentLevel:"low" ONLY for pure title slides, section dividers, agenda/outline ' +
   'slides, thank-you/questions slides, and recurring template/transition slides that carry ' +
   'no content. Everything else is "substantive" — INCLUDING slides that teach through ' +
@@ -61,8 +74,28 @@ function coerce(raw: unknown): SlideNote {
     topic: typeof r['topic'] === 'string' ? r['topic'] : '',
     teaches: typeof r['teaches'] === 'string' ? r['teaches'] : '',
     keyVisual: typeof r['keyVisual'] === 'string' ? r['keyVisual'] : '',
+    text: typeof r['text'] === 'string' ? r['text'] : '',
     contentLevel: r['contentLevel'] === 'substantive' ? 'substantive' : 'low',
   };
+}
+
+/**
+ * Derive an `extracted_text` string from a deck's slide notes: verbatim text per
+ * page, with a one-line imagery note appended when the page carries notable
+ * imagery. Empty pages emit nothing — the failure-narration failure mode is
+ * structurally impossible here (there is no "the slide is blank" string to write).
+ * This is what lets one adaptive vision pass feed BOTH extracted_text and chunks.
+ */
+export function notesToExtractedText(notes: SlideNote[]): string {
+  const pages: string[] = [];
+  for (let i = 0; i < notes.length; i++) {
+    const n = notes[i]!;
+    const parts: string[] = [];
+    if (n.text.trim()) parts.push(n.text.trim());
+    if (n.keyVisual.trim()) parts.push(`[visual: ${n.keyVisual.trim()}]`);
+    if (parts.length) pages.push(`--- page ${i + 1} ---\n${parts.join('\n')}`);
+  }
+  return pages.join('\n\n');
 }
 
 interface SlideBackend {
