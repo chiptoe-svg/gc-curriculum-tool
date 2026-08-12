@@ -70,3 +70,4 @@ drizzle/meta/
 # Playwright MCP session artifacts (screenshots, snapshots, console logs)
 /.playwright-mcp/
 /review-*.jpeg
+/research-papers/
