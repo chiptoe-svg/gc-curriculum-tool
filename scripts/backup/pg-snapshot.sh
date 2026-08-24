@@ -43,6 +43,25 @@ if [ -z "$DATABASE_URL" ]; then
   exit 1
 fi
 
+# Wait for Postgres to accept connections before dumping. launchd starts this
+# job and com.gc.postgres concurrently at boot, so at reboot pg_dump can fire
+# first and die on "connection refused" — that is exactly how the 2026-08-21
+# post-reboot run failed (exit 1, no dump). Bounded so a genuinely-down server
+# still fails the job rather than hanging until the next 6-hourly invocation.
+PG_WAIT_SECS=0
+PG_WAIT_MAX=60
+until pg_isready -d "$DATABASE_URL" -q; do
+  if [ "$PG_WAIT_SECS" -ge "$PG_WAIT_MAX" ]; then
+    echo "Postgres still not accepting connections after ${PG_WAIT_SECS}s — aborting"
+    exit 1
+  fi
+  sleep 5
+  PG_WAIT_SECS=$((PG_WAIT_SECS + 5))
+done
+if [ "$PG_WAIT_SECS" -gt 0 ]; then
+  echo "waited ${PG_WAIT_SECS}s for Postgres to accept connections"
+fi
+
 TS=$(date -u +%Y-%m-%dT%H%MZ)
 LOCAL_FILE="$LOCAL_BACKUPS/dump-$TS.sql.gz"
 
