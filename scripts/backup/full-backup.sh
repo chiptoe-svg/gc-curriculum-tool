@@ -49,9 +49,34 @@ echo "=== $(date -u +%FT%TZ) full-backup start ==="
 fail() { echo "FATAL: $*"; [ -n "${TMP:-}" ] && rm -rf "$TMP"; exit 1; }
 
 # --- Preconditions -----------------------------------------------------------
-# Volume not mounted is NOT an error (the share may be detached) — log + exit 0
-# so launchd doesn't treat it as a crash and back off.
-[ -d "$BACKUP_ROOT" ] || { echo "backup volume $BACKUP_ROOT not mounted — skipping this run"; exit 0; }
+# Volume not mounted: ATTEMPT A REMOUNT before giving up. The old behavior
+# ("not mounted is NOT an error — log + exit 0") let the backup silently skip
+# for 11 straight days (2026-08-16 → 08-26): the SMB session idle-disconnects
+# overnight, so the 03:30 run always found the dir missing, while daytime
+# Finder access revived the mount so the share always looked fine when a human
+# checked. `mount volume` pulls the credential from the login keychain (this
+# job runs in the gui launchd domain, so the keychain is available).
+SMB_SHARE_URL="smb://tonkin@gcserver.clemson.edu/gc-pks"
+if [ ! -d "$BACKUP_ROOT" ]; then
+  echo "backup volume $BACKUP_ROOT not mounted — attempting remount of $SMB_SHARE_URL"
+  # Run osascript in the background and poll: if the keychain lacks the
+  # credential it can hang on an auth prompt no one will see — never let that
+  # wedge the job past ~45s.
+  osascript -e "mount volume \"$SMB_SHARE_URL\"" >/dev/null 2>&1 &
+  OSA_PID=$!
+  WAITED=0
+  while [ ! -d "$BACKUP_ROOT" ] && [ "$WAITED" -lt 45 ]; do sleep 5; WAITED=$((WAITED + 5)); done
+  kill "$OSA_PID" 2>/dev/null; wait "$OSA_PID" 2>/dev/null
+  if [ -d "$BACKUP_ROOT" ]; then
+    echo "remount succeeded after ${WAITED}s"
+  else
+    # Exit 1 — NOT 0 — so `launchctl list` shows a nonzero status a health
+    # sweep can catch (exactly how the pg-backup boot race was found). launchd
+    # calendar jobs don't back off on failure, so this is safe to make loud.
+    echo "remount FAILED — backup NOT taken; exiting 1 so the failure is visible in launchctl"
+    exit 1
+  fi
+fi
 [ -f "$PASSPHRASE_FILE" ] || fail "passphrase file missing at $PASSPHRASE_FILE (see scripts/backup/RESTORE.md)"
 [ -d "$REPO_DIR/.git" ] || fail "repo not found at $REPO_DIR"
 command -v pg_dump >/dev/null || fail "pg_dump not on PATH"
