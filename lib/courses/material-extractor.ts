@@ -393,7 +393,9 @@ export async function transcribeWithGranite(
     engine_options: {
       engine_type: 'api',
       url: sparkUrl,
-      headers: {},
+      // Service-identity label for the Spark gateway's access log — docling-serve
+      // relays these headers on its Granite inference calls.
+      headers: { 'X-Client': 'curriculum-granite' },
       params: { model: sparkModel, skip_special_tokens: false, max_tokens: 4096 },
       timeout: 400.0,
       concurrency: 4,

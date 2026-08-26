@@ -110,7 +110,7 @@ export async function probeVisionOffload(): Promise<void> {
   const url = `${off.baseURL.replace(/\/$/, '')}/models`;
   try {
     const res = await fetch(url, {
-      headers: off.apiKey ? { Authorization: `Bearer ${off.apiKey}` } : {},
+      headers: { ...(off.apiKey ? { Authorization: `Bearer ${off.apiKey}` } : {}), 'X-Client': 'curriculum-health' },
       signal: AbortSignal.timeout(8_000),
     });
     if (!res.ok) {

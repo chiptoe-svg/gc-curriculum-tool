@@ -45,10 +45,10 @@ function extractImage(body: Record<string, unknown>): { buffer: Buffer; set: (da
   return null;
 }
 
-async function forward(url: string, apiKey: string, body: unknown): Promise<Response> {
+async function forward(url: string, apiKey: string, body: unknown, extraHeaders?: Record<string, string>): Promise<Response> {
   return fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}) },
+    headers: { 'Content-Type': 'application/json', ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}), ...extraHeaders },
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(120_000),
   });
@@ -101,7 +101,8 @@ export async function POST(req: NextRequest): Promise<Response> {
     try {
       // Weighted DGX gate (shared with OCR + slides) — keeps in-flight ≤ 8 slots.
       const res = await withVisionSlot(budget ?? 560, () =>
-        forward(`${off.baseURL.replace(/\/$/, '')}/chat/completions`, off.apiKey, dgxBody),
+        // X-Client: Spark-gateway service-identity label (load attribution) — DGX leg only.
+        forward(`${off.baseURL.replace(/\/$/, '')}/chat/completions`, off.apiKey, dgxBody, { 'X-Client': 'curriculum-vision' }),
       );
       if (res.ok) {
         recordRealSuccess();

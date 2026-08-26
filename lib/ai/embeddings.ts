@@ -73,7 +73,13 @@ interface EmbeddingsResponse {
   usage: { prompt_tokens: number; total_tokens: number };
 }
 
-interface EmbedConfig { baseURL: string; apiKey: string; model: string }
+interface EmbedConfig {
+  baseURL: string;
+  apiKey: string;
+  model: string;
+  /** Service-identity value sent as `X-Client` — set only for the Spark fallback lane. */
+  clientHeader?: string;
+}
 
 function resolveConfig(opts: EmbedOptions = {}): EmbedConfig {
   const baseURL = (opts.baseURL ?? process.env.CAMPUS_LLM_BASE_URL?.trim());
@@ -99,6 +105,8 @@ function resolveFallbackConfig(opts: EmbedOptions = {}): EmbedConfig | null {
     baseURL,
     apiKey: process.env.EMBEDDINGS_FALLBACK_API_KEY?.trim() || 'none',
     model: opts.model ?? process.env.EMBEDDINGS_FALLBACK_MODEL?.trim() ?? DEFAULT_EMBEDDING_MODEL,
+    // Spark-gateway service-identity label (load attribution / incident diagnosis).
+    clientHeader: 'curriculum-embeddings',
   };
 }
 
@@ -122,6 +130,7 @@ async function embedOneRequest(
     headers: {
       'Authorization': `Bearer ${cfg.apiKey}`,
       'Content-Type': 'application/json',
+      ...(cfg.clientHeader ? { 'X-Client': cfg.clientHeader } : {}),
     },
     body: JSON.stringify({ model: cfg.model, input: texts }),
     ...(timeoutMs ? { signal: AbortSignal.timeout(timeoutMs) } : {}),

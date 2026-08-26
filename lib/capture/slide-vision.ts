@@ -162,7 +162,14 @@ async function describeSlideOn(png: Buffer, be: SlideBackend): Promise<SlideNote
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
     const res = await fetch(`${be.baseUrl}/chat/completions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${be.apiKey}` },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${be.apiKey}`,
+        // Service-identity label for the Spark gateway's access log (load
+        // attribution / incident diagnosis — requested by the Spark operator
+        // 2026-08-26). Offload leg only; local omlx doesn't log it.
+        ...(be.offload ? { 'X-Client': 'curriculum-vision' } : {}),
+      },
       body,
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });

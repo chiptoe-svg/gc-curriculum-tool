@@ -63,7 +63,7 @@ export async function resolveOffloadConcurrency(off: VisionOffload, now: number 
   let value = off.concurrency; // env fallback / ceiling
   try {
     const res = await fetch(`${off.baseURL.replace(/\/$/, '')}/models`, {
-      headers: { Authorization: `Bearer ${off.apiKey}` },
+      headers: { Authorization: `Bearer ${off.apiKey}`, 'X-Client': 'curriculum-health' },
       signal: AbortSignal.timeout(5000),
     });
     if (res.ok) {
