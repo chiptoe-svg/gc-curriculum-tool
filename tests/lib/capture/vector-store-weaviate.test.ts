@@ -209,6 +209,61 @@ describe('WeaviateVectorStore', () => {
     });
   });
 
+  describe('insertMany failure surfacing (2026-09-05 chunk-loss incident)', () => {
+    // Weaviate's insertMany does NOT throw on per-object failures — it returns
+    // { hasErrors, errors } which the store used to discard. Every per-course
+    // chunk insert failed silently for ~11 weeks ("invalid date property
+    // 'uploadedAt' ... given value is ''") while the pipeline logged success
+    // and marked materials ready. These tests pin the fail-loud contract.
+    const failedResult = {
+      hasErrors: true,
+      errors: { 0: { message: "invalid date property 'uploadedAt' on class 'MaterialChunk': requires a string with a RFC3339 formatted date, but the given value is ''" } },
+    };
+
+    it('upsert throws when insertMany reports per-object errors', async () => {
+      mockInsertMany.mockResolvedValueOnce(failedResult);
+      const store = createWeaviateVectorStore();
+      await expect(store.upsert('tenant-a', [makeChunk('c1')])).rejects.toThrow(/invalid date property 'uploadedAt'/);
+    });
+
+    it('upsertSections throws when insertMany reports per-object errors', async () => {
+      mockInsertMany.mockResolvedValueOnce(failedResult);
+      const store = createWeaviateVectorStore();
+      await expect(store.upsertSections('tenant-a', [makeSection('s1')])).rejects.toThrow(/invalid date property/);
+    });
+
+    it('upsert error names the collection and failure count', async () => {
+      mockInsertMany.mockResolvedValueOnce({ hasErrors: true, errors: { 0: { message: 'boom' }, 1: { message: 'boom2' } } });
+      const store = createWeaviateVectorStore();
+      await expect(store.upsert('tenant-a', [makeChunk('c1'), makeChunk('c2')])).rejects.toThrow(/MaterialChunk.*2 of 2/);
+    });
+  });
+
+  describe('provenance fields on per-course writes (same incident)', () => {
+    // The live MaterialChunk class has uploadedAt typed `date` (autoschema
+    // inferred it from the spine's ISO stamps). An empty string is invalid
+    // RFC3339 and rejects the whole object — so unset provenance must be
+    // OMITTED from properties, never sent as ''.
+    it('upsert omits uploadedAt and snapshotId when unset', async () => {
+      const store = createWeaviateVectorStore();
+      await store.upsert('tenant-a', [makeChunk('c1')]); // makeChunk sets neither
+      const [items] = mockInsertMany.mock.calls[0] as [unknown[]];
+      const props = (items[0] as Record<string, unknown>)['properties'] as Record<string, unknown>;
+      expect(props).not.toHaveProperty('uploadedAt');
+      expect(props).not.toHaveProperty('snapshotId');
+    });
+
+    it('upsert passes real provenance values through', async () => {
+      const store = createWeaviateVectorStore();
+      const chunk = { ...makeChunk('c1'), uploadedAt: '2026-09-05T00:00:00.000Z', snapshotId: 'snap-1' };
+      await store.upsert('tenant-a', [chunk]);
+      const [items] = mockInsertMany.mock.calls[0] as [unknown[]];
+      const props = (items[0] as Record<string, unknown>)['properties'] as Record<string, unknown>;
+      expect(props['uploadedAt']).toBe('2026-09-05T00:00:00.000Z');
+      expect(props['snapshotId']).toBe('snap-1');
+    });
+  });
+
   describe('deleteByMaterial', () => {
     it('calls deleteMany on both MaterialChunk and MaterialSection with a materialId filter', async () => {
       const store = createWeaviateVectorStore();

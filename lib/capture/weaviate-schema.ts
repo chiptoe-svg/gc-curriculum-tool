@@ -13,7 +13,13 @@ const chunkProps = [
   { name: 'parentSectionId', dataType: 'text' as const },
   { name: 'text', dataType: 'text' as const },
   { name: 'contextBlurb', dataType: 'text' as const },
-  { name: 'uploadedAt', dataType: 'text' as const },
+  // `date`, matching the LIVE class: this prop was added by Weaviate autoschema
+  // (inferred `date` from the spine's ISO stamps) before this declaration could
+  // apply — ensureSchema never migrates existing classes. Declaring `text` here
+  // recreated the mismatch on fresh installs. Writers must OMIT the prop when
+  // unset ('' is invalid RFC3339 and rejects the whole object). See
+  // vector-store-weaviate.ts upsert + the 2026-09-05 chunk-loss incident.
+  { name: 'uploadedAt', dataType: 'date' as const },
   { name: 'snapshotId', dataType: 'text' as const },
 ];
 

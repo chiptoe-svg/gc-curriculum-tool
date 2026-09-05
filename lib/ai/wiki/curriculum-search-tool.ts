@@ -39,6 +39,15 @@ export const curriculumSearchTool: ToolDefinition = {
     const limit = perCourse ? Math.min((k ?? 8) * 6, 50) : (k ?? 8);
     const raw = await store.hybridSearch(tenantForProgram(), { queryVector, queryText: query, k: limit, courseCode });
     const hits = perCourse ? diversifyByCourse(raw, 3).slice(0, (k ?? 8) * 3) : raw;
+    // Empty hits for a specific course means "nothing in the MATERIALS index",
+    // not "the course has nothing" — say so, or a small model reading a bare []
+    // reports the course as empty (observed via the gc-wiki MCP, 2026-09-05).
+    if (hits.length === 0 && courseCode) {
+      return {
+        hits: [],
+        note: `No indexed material chunks for ${courseCode}. This means the primary-source materials index has nothing for that course — NOT that the course is empty. The course may still have a curated wiki page: try search_wiki or read_wiki ("courses/${courseCode.toLowerCase().replace(/\s+/g, '-')}").`,
+      };
+    }
     return {
       hits: hits.map(h => ({
         courseCode: h.courseCode, materialId: h.materialId, fileName: h.fileName,

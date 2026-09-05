@@ -63,6 +63,28 @@ function toISOStringOrNull(val: unknown): string | null {
 // Factory
 // ---------------------------------------------------------------------------
 
+/**
+ * insertMany does NOT throw on per-object failures — it returns
+ * { hasErrors, errors } and stores whatever succeeded. Discarding that result
+ * let every per-course chunk insert fail silently for ~11 weeks
+ * (2026-06-17 → 09-05: "invalid date property 'uploadedAt' … given value is ''")
+ * while the pipeline logged success and marked materials ready. Fail loud:
+ * a throw here propagates to finalizeExtraction's catch, which marks the
+ * material `failed` — surfaced by the materials-health guard and retriable.
+ */
+function assertInsertMany(
+  res: { hasErrors?: boolean; errors?: Record<number, { message?: string }> } | undefined,
+  cls: string,
+  attempted: number,
+): void {
+  if (!res?.hasErrors) return;
+  const errs = Object.values(res.errors ?? {});
+  const first = errs[0]?.message ?? 'unknown insertMany error';
+  throw new Error(
+    `Weaviate insertMany failed on ${cls}: ${errs.length} of ${attempted} objects rejected — first: ${first}`,
+  );
+}
+
 export function createWeaviateVectorStore(): VectorStore {
   return {
     // -----------------------------------------------------------------------
@@ -74,7 +96,7 @@ export function createWeaviateVectorStore(): VectorStore {
       await ensureTenantOnce(tenant);
       const client = await getWeaviateClient();
       const col = client.collections.use(MATERIAL_CHUNK_CLASS).withTenant(tenant);
-      await col.data.insertMany(
+      const res = await col.data.insertMany(
         records.map((r) => ({
           id: r.id,
           // v3 DataObject uses `vectors` (plural). For a single un-named vector
@@ -89,11 +111,17 @@ export function createWeaviateVectorStore(): VectorStore {
             parentSectionId: r.parentSectionId,
             text: r.text,
             contextBlurb: r.contextBlurb,
-            uploadedAt: r.uploadedAt ?? '',
-            snapshotId: r.snapshotId ?? '',
+            // The live class has uploadedAt typed `date` (autoschema inferred it
+            // from the spine's ISO stamps before ensureSchema's `text` decl could
+            // apply — it never migrates existing classes). '' is invalid RFC3339
+            // and rejects the WHOLE object, so unset provenance is OMITTED, never
+            // sent as an empty string. Root cause of the 2026-09-05 incident.
+            ...(r.uploadedAt ? { uploadedAt: r.uploadedAt } : {}),
+            ...(r.snapshotId ? { snapshotId: r.snapshotId } : {}),
           },
         })),
       );
+      assertInsertMany(res, MATERIAL_CHUNK_CLASS, records.length);
     },
 
     // -----------------------------------------------------------------------
@@ -105,7 +133,7 @@ export function createWeaviateVectorStore(): VectorStore {
       await ensureTenantOnce(tenant);
       const client = await getWeaviateClient();
       const col = client.collections.use(MATERIAL_SECTION_CLASS).withTenant(tenant);
-      await col.data.insertMany(
+      const res = await col.data.insertMany(
         sections.map((s) => ({
           id: s.id,
           properties: {
@@ -116,6 +144,7 @@ export function createWeaviateVectorStore(): VectorStore {
           },
         })),
       );
+      assertInsertMany(res, MATERIAL_SECTION_CLASS, sections.length);
     },
 
     // -----------------------------------------------------------------------
