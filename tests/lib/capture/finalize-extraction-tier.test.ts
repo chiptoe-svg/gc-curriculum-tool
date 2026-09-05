@@ -80,7 +80,8 @@ const DEFAULT_CHUNK_RESULT: ChunkResult = {
 
 const chunkMaterialMock = vi.fn<() => ChunkResult>();
 
-vi.mock('@/lib/capture/chunker', () => ({
+vi.mock('@/lib/capture/chunker', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/capture/chunker')>()),
   chunkMaterial: (...a: unknown[]) => chunkMaterialMock(...(a as [])),
 }));
 
@@ -155,6 +156,38 @@ describe('finalizeExtraction — tier routing (v2 pipeline)', () => {
   });
 
   // -------------------------------------------------------------------------
+  // -------------------------------------------------------------------------
+  // Synthetic-id validity (2026-09-05 incident, second lane): Weaviate rejects
+  // any object whose id is not a UUID. The tier paths built ids like
+  // `${materialId}-digest` (43 chars) — every background/middle-tier section
+  // and chunk write failed silently for months. Ids must be UUID-formatted and
+  // parent/child references must stay consistent.
+  // -------------------------------------------------------------------------
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  it('background tier: section + chunk ids are valid UUIDs and parentSectionId matches the section id', async () => {
+    const store = makeFakeStore();
+    await finalizeExtraction({ id: 'mat-uuid-1', ...BASE, vectorStore: store, tier: 'background' });
+    const sections = store.upsertedSections.flat();
+    const chunks = store.upsertedChunks.flat();
+    expect(sections.length).toBeGreaterThan(0);
+    expect(chunks.length).toBeGreaterThan(0);
+    for (const s of sections) expect(s.id).toMatch(UUID_RE);
+    for (const c of chunks) {
+      expect(c.id).toMatch(UUID_RE);
+      expect(c.parentSectionId).toBe(sections[0]!.id);
+    }
+  });
+
+  it('background tier: synthetic ids are deterministic across runs (idempotent upserts)', async () => {
+    const a = makeFakeStore();
+    await finalizeExtraction({ id: 'mat-uuid-2', ...BASE, vectorStore: a, tier: 'background' });
+    const b = makeFakeStore();
+    await finalizeExtraction({ id: 'mat-uuid-2', ...BASE, vectorStore: b, tier: 'background' });
+    expect(a.upsertedChunks.flat()[0]!.id).toBe(b.upsertedChunks.flat()[0]!.id);
+    expect(a.upsertedSections.flat()[0]!.id).toBe(b.upsertedSections.flat()[0]!.id);
+  });
+
   // background tier — digest-only path
   // -------------------------------------------------------------------------
 

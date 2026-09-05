@@ -49,6 +49,18 @@ export interface ChunkResult {
 
 const HEADING_RE = /^#{1,6}\s+(.+)$/;
 
+/**
+ * Deterministic UUID-formatted id from an arbitrary name string. Weaviate v3
+ * rejects any object id that is not a UUID — the tier paths' plain synthetic
+ * ids (`${materialId}-digest`, 43 chars) made every background/middle-tier
+ * section+chunk insert fail, silently until 2026-09-05. Same input → same
+ * UUID, so upserts stay idempotent.
+ */
+export function syntheticUuid(name: string): string {
+  const hex = createHash('sha256').update(name).digest('hex').slice(0, 32);
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
+}
+
 function makeId(
   fileName: string,
   kind: string,

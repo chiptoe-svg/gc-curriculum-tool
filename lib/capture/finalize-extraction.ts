@@ -12,7 +12,7 @@ import { isCompressionCandidate } from '@/lib/capture/material-compression';
 import { generateMaterialDigest } from '@/lib/ai/analyze/material-digest';
 import { contextualizeChunk } from '@/lib/ai/analyze/chunk-contextualize';
 import { embedBatch } from '@/lib/ai/embeddings';
-import { chunkMaterial } from '@/lib/capture/chunker';
+import { chunkMaterial, syntheticUuid } from '@/lib/capture/chunker';
 import { detectFerpaRisk } from '@/lib/capture/ferpa-detect';
 import { evaluateMaterialsPolicy } from '@/lib/capture/materials-policy';
 import { tenantForCourse } from '@/lib/capture/vector-store';
@@ -213,7 +213,8 @@ async function runV2Pipeline(input: FinalizeExtractionInput): Promise<void> {
     try {
       const [vector] = await embedBatch([digestText]);
       const tenant = tenantForCourse(courseCode);
-      const sectionId = `${id}-digest`;
+      // UUID-formatted: Weaviate rejects non-UUID ids (see syntheticUuid).
+      const sectionId = syntheticUuid(`${id}-digest`);
       await input.vectorStore.deleteByMaterial(tenant, id);
       await input.vectorStore.upsertSections(tenant, [{
         id: sectionId,
@@ -223,7 +224,7 @@ async function runV2Pipeline(input: FinalizeExtractionInput): Promise<void> {
         text: digestText,
       }]);
       await input.vectorStore.upsert(tenant, [{
-        id: `${id}-digest-0`,
+        id: syntheticUuid(`${id}-digest-0`),
         vector: vector!,
         materialId: id,
         courseCode,
@@ -293,7 +294,7 @@ async function runV2Pipeline(input: FinalizeExtractionInput): Promise<void> {
           const vectors = await embedBatch(texts);
 
           const tenant = tenantForCourse(courseCode);
-          const deckSectionId = `${id}-deck`;
+          const deckSectionId = syntheticUuid(`${id}-deck`);
           const deckSection: SectionRecord = {
             id: deckSectionId,
             materialId: id,
@@ -302,7 +303,7 @@ async function runV2Pipeline(input: FinalizeExtractionInput): Promise<void> {
             text: digestText || fileName,
           };
           const chunkRecords: ChunkVectorRecord[] = substantive.map(({ note: n, i }, batchIdx) => ({
-            id: `${id}-slide-${i}`,
+            id: syntheticUuid(`${id}-slide-${i}`),
             vector: vectors[batchIdx]!,
             materialId: id,
             courseCode,
@@ -366,7 +367,7 @@ async function runV2Pipeline(input: FinalizeExtractionInput): Promise<void> {
           const vectors = await embedBatch(summaries.map(x => x.digest));
 
           const tenant = tenantForCourse(courseCode);
-          const docSectionId = `${id}-doc`;
+          const docSectionId = syntheticUuid(`${id}-doc`);
 
           const rollupSection: SectionRecord = {
             id: docSectionId,
@@ -379,7 +380,7 @@ async function runV2Pipeline(input: FinalizeExtractionInput): Promise<void> {
           // sectionTitle MUST be the document name — section indices live only
           // in the record `id`, never in any surfaced field.
           const chunkRecords: ChunkVectorRecord[] = qualifying.map((_, i) => ({
-            id: `${id}-section-${i}`,
+            id: syntheticUuid(`${id}-section-${i}`),
             vector: vectors[i]!,
             materialId: id,
             courseCode,
