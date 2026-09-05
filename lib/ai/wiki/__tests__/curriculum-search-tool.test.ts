@@ -42,3 +42,10 @@ describe('search_curriculum tool', () => {
     expect(fakeStore.hybridSearch).toHaveBeenLastCalledWith('coursecapture-program', expect.objectContaining({ courseCode: 'GC 2000' }));
   });
 });
+
+describe('k clamp (payload-size guard, 2026-09-05)', () => {
+  it('clamps effective k to 20 even when the caller passes 50', async () => {
+    await curriculumSearchTool.execute({ query: 'anything', k: 50 });
+    expect(fakeStore.hybridSearch).toHaveBeenLastCalledWith('coursecapture-program', expect.objectContaining({ k: 20 }));
+  });
+});

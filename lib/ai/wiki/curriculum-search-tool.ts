@@ -29,16 +29,22 @@ export const curriculumSearchTool: ToolDefinition = {
     query: z.string().min(1),
     courseCode: z.string().optional(),
     perCourse: z.boolean().optional(),
+    // Schema still ADVERTISES 50 so old callers don't schema-error, but the
+    // effective k is clamped to 20 below: 50 full-text hits ≈ 70KB in one JSON
+    // line, which overflows downstream consumers (the pi harness truncates at
+    // 50KB and spills to a temp file — reported by a NanoClaw agent 2026-09-05).
+    // 20 hits ≈ 28KB stays comfortably under. Matches the REST wrapper's ≤20.
     k: z.number().int().positive().max(50).optional(),
   }),
   async execute(args) {
     const { query, courseCode, perCourse, k } = args as
       { query: string; courseCode?: string; perCourse?: boolean; k?: number };
+    const kk = Math.min(k ?? 8, 20);
     const store = createVectorStore();
     const queryVector = await embedText(query);
-    const limit = perCourse ? Math.min((k ?? 8) * 6, 50) : (k ?? 8);
+    const limit = perCourse ? Math.min(kk * 6, 50) : kk;
     const raw = await store.hybridSearch(tenantForProgram(), { queryVector, queryText: query, k: limit, courseCode });
-    const hits = perCourse ? diversifyByCourse(raw, 3).slice(0, (k ?? 8) * 3) : raw;
+    const hits = perCourse ? diversifyByCourse(raw, 3).slice(0, kk * 3) : raw;
     // Empty hits for a specific course means "nothing in the MATERIALS index",
     // not "the course has nothing" — say so, or a small model reading a bare []
     // reports the course as empty (observed via the gc-wiki MCP, 2026-09-05).
