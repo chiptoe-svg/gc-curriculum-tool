@@ -100,13 +100,16 @@ function extractTitle(markdown: string, fallback: string): string {
 export const wikiReadTool: ToolDefinition = {
   name: 'read_wiki',
   description:
-    'Read one wiki page by its repo-relative path (e.g. "courses/gc-4800.md", "competencies/brand-strategy.md", "targets/production-operations.md", "concepts/productive-failure.md", "index.md"). Returns the page\'s full markdown. Reject paths under "raw/" — those are immutable snapshot JSON, not narrative.',
+    'Read one wiki page. The argument is named `path` and takes the repo-relative page path, e.g. {"path": "courses/gc-4800.md"} — also "competencies/brand-strategy.md", "targets/production-operations.md", "concepts/productive-failure.md", "index.md". A missing .md extension is tolerated ("courses/gc-4800" works). Returns the page\'s full markdown. Reject paths under "raw/" — those are immutable snapshot JSON, not narrative.',
   usagePolicy:
     'Use when you know the exact path you want (typically from a prior list_wiki / search_wiki call, or an obvious slug from the user\'s question like "GC 4800" → "courses/gc-4800.md"). Cite the path in your response.',
   inputSchema: z.object({ path: z.string() }),
   async execute(args) {
     const a = args as { path: string };
-    const guard = rejectRaw(a.path);
+    // Forgive a missing .md — MCP callers pass "courses/gc-3700" from slugs
+    // (observed 2026-09-06; the caller then concluded the page didn't exist).
+    const withExt = /\.\w+$/.test(a.path) ? a.path : `${a.path}.md`;
+    const guard = rejectRaw(withExt);
     if (!guard.ok) return { error: guard.error };
     const content = await readWikiPage(guard.path);
     if (content === null) return { error: `page not found: ${guard.path}` };
@@ -144,9 +147,9 @@ export const wikiListTool: ToolDefinition = {
 export const wikiSearchTool: ToolDefinition = {
   name: 'search_wiki',
   description:
-    'Full-text search across all narrative wiki pages. Returns matching pages with a short snippet around the first hit, and the evidence bands each page carries (claimed / materials_supported / artifact_verified). Case-insensitive. Cap 20 hits. Pass an optional `bandFloor` to keep only pages whose evidence reaches that credibility level (e.g. "only artifact-verified") — pages carrying no band markers are kept (legacy).',
+    'Full-text search across all narrative wiki pages. Matches by TERMS (a page hits when it contains at least half the query\'s words; pages matching more words rank higher, an exact-phrase match ranks first), so multi-word queries like "GC 3700 major projects" work. Returns matching pages with a short snippet, and the evidence bands each page carries (claimed / materials_supported / artifact_verified). Case-insensitive; literal words, not semantic. Cap 20 hits. Pass an optional `bandFloor` to keep only pages whose evidence reaches that credibility level (e.g. "only artifact-verified") — pages carrying no band markers are kept (legacy).',
   usagePolicy:
-    'Use when the user names a topic but you don\'t know which page covers it ("does anyone teach spot color matching?", "what does the program say about deliberate practice?"). Pass a single term or short phrase — full-text matching is literal, not semantic. Use `bandFloor` only when the user asks for evidence-grounded results ("which courses can actually demonstrate X", "only artifact-verified").',
+    'Use when the user names a topic but you don\'t know which page covers it ("does anyone teach spot color matching?", "what does the program say about deliberate practice?"). Matching is literal words, not semantic — prefer the topic\'s distinctive words over long sentences. Use `bandFloor` only when the user asks for evidence-grounded results ("which courses can actually demonstrate X", "only artifact-verified").',
   inputSchema: z.object({
     query: z.string().min(1),
     bandFloor: z.enum(BAND_ORDER as unknown as [string, ...string[]]).optional(),
@@ -154,29 +157,49 @@ export const wikiSearchTool: ToolDefinition = {
   async execute(args) {
     const a = args as { query: string; bandFloor?: (typeof BAND_ORDER)[number] };
     const q = a.query.toLowerCase();
+    // Term matching, not whole-query substring. The old exact-substring match
+    // meant "GC 3700 major projects assignments" had to appear verbatim in a
+    // page — any query with extra words returned 0 hits, and the calling agent
+    // concluded the wiki had nothing for the course (observed via the gc-wiki
+    // MCP, 2026-09-06). Now: pages match if they contain at least half the
+    // query's terms (≥2 chars), ranked by how many terms they match, with a
+    // whole-phrase match ranked above everything. Single-term queries behave
+    // exactly as before.
+    const terms = q.split(/\s+/).filter(t => t.length >= 2);
+    const threshold = Math.max(1, Math.ceil(terms.length / 2));
     const paths = await listNarrativePages();
-    const hits: Array<{ path: string; title: string; snippet: string; evidenceBands: string[] }> = [];
+    const scored: Array<{ score: number; order: number; hit: { path: string; title: string; snippet: string; evidenceBands: string[] } }> = [];
+    let order = 0;
     for (const p of paths) {
       const content = await readWikiPage(p);
       if (!content) continue;
-      const idx = content.toLowerCase().indexOf(q);
-      if (idx < 0) continue;
+      const lower = content.toLowerCase();
+      const phraseIdx = lower.indexOf(q);
+      const matched = terms.filter(t => lower.includes(t));
+      if (phraseIdx < 0 && matched.length < threshold) continue;
       const bands = resolvePageBands(content);
       // Band floor (increment A): drop pages whose evidence is entirely below
       // the requested level. Pages with no markers pass through (annotated []).
       if (a.bandFloor && !pagePassesBandFloor(bands, a.bandFloor)) continue;
-      const start = Math.max(0, idx - 60);
-      const end = Math.min(content.length, idx + a.query.length + 100);
+      // Snippet around the whole phrase when present, else the first matched term.
+      const anchorIdx = phraseIdx >= 0 ? phraseIdx : lower.indexOf(matched[0]!);
+      const anchorLen = phraseIdx >= 0 ? q.length : matched[0]!.length;
+      const start = Math.max(0, anchorIdx - 60);
+      const end = Math.min(content.length, anchorIdx + anchorLen + 100);
       const raw = content.slice(start, end).replace(/\s+/g, ' ').trim();
-      hits.push({
-        path: p,
-        title: extractTitle(content, p.replace(/\.md$/, '')),
-        snippet: (start > 0 ? '…' : '') + raw + (end < content.length ? '…' : ''),
-        evidenceBands: bands,
+      scored.push({
+        score: matched.length + (phraseIdx >= 0 ? terms.length + 1 : 0),
+        order: order++,
+        hit: {
+          path: p,
+          title: extractTitle(content, p.replace(/\.md$/, '')),
+          snippet: (start > 0 ? '…' : '') + raw + (end < content.length ? '…' : ''),
+          evidenceBands: bands,
+        },
       });
-      if (hits.length >= 20) break;
     }
-    return { hits, query: a.query, bandFloor: a.bandFloor ?? null };
+    scored.sort((x, y) => (y.score - x.score) || (x.order - y.order));
+    return { hits: scored.slice(0, 20).map(s => s.hit), query: a.query, bandFloor: a.bandFloor ?? null };
   },
 };
 
