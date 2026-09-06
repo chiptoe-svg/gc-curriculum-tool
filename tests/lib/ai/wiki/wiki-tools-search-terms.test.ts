@@ -27,6 +27,10 @@ beforeAll(async () => {
     '---\ntype: course\n---\n\n# GC 3700 — Brand Communications\n\n## Major projects\n\nBrand playbook, purpose campaign.\n',
   );
   writeFileSync(
+    join(ROOT, 'courses', 'gc-0001.md'),
+    '---\ntype: course\n---\n\n# GC 0001 — Portfolio Studio\n\nMajor projects here too; builds on GC 3700. Weekly assignments.\n',
+  );
+  writeFileSync(
     join(ROOT, 'courses', 'gc-9999.md'),
     '---\ntype: course\n---\n\n# GC 9999 — Unrelated\n\nNothing shared with the query here.\n',
   );
@@ -45,6 +49,13 @@ describe('search_wiki multi-term queries', () => {
   it('matches on topic terms that never appear as one contiguous phrase', async () => {
     const res = await wikiSearchTool.execute({ query: 'brand communications projects' }) as { hits: Array<{ path: string }> };
     expect(res.hits.map(h => h.path)).toContain('courses/gc-3700.md');
+  });
+
+  it('ranks the course page FIRST for a code+topic query — title/path terms outweigh body mentions', async () => {
+    // gc-0001 (which sorts FIRST) mentions all the query words in its body (incl. a passing
+    // "GC 3700" reference), but only gc-3700 has the code in its title/path.
+    const res = await wikiSearchTool.execute({ query: 'GC 3700 major projects' }) as { hits: Array<{ path: string }> };
+    expect(res.hits[0]!.path).toBe('courses/gc-3700.md');
   });
 
   it('still excludes pages sharing no terms with the query', async () => {

@@ -177,6 +177,11 @@ export const wikiSearchTool: ToolDefinition = {
       const phraseIdx = lower.indexOf(q);
       const matched = terms.filter(t => lower.includes(t));
       if (phraseIdx < 0 && matched.length < threshold) continue;
+      // Title/path terms outweigh body mentions: for "GC 3700 major projects"
+      // the GC 3700 page must beat pages that merely reference GC 3700 in
+      // passing — its title/slug is the discriminating signal.
+      const titlePath = `${extractTitle(content, '')} ${p}`.toLowerCase();
+      const boosted = matched.filter(t => titlePath.includes(t)).length;
       const bands = resolvePageBands(content);
       // Band floor (increment A): drop pages whose evidence is entirely below
       // the requested level. Pages with no markers pass through (annotated []).
@@ -188,7 +193,7 @@ export const wikiSearchTool: ToolDefinition = {
       const end = Math.min(content.length, anchorIdx + anchorLen + 100);
       const raw = content.slice(start, end).replace(/\s+/g, ' ').trim();
       scored.push({
-        score: matched.length + (phraseIdx >= 0 ? terms.length + 1 : 0),
+        score: matched.length + 2 * boosted + (phraseIdx >= 0 ? 3 * terms.length + 1 : 0),
         order: order++,
         hit: {
           path: p,
