@@ -135,6 +135,39 @@ export function stampOkfFrontmatter(content: string, opts: OkfStampOpts): string
   return content.replace(FRONTMATTER_RE, `---\n${block}\n---\n`);
 }
 
+/**
+ * SELF-HEAL for the `resource:` origin.
+ *
+ * `resource:` is an ABSOLUTE URL frozen into page frontmatter, and `read_wiki`
+ * hands raw markdown to MCP clients — so whenever the origin moves, every page
+ * that is not regenerated keeps shipping a dead link, and nothing surfaces it:
+ * the endpoint stays healthy because only the link *inside* the reply is wrong.
+ * That is not hypothetical — 44 pages sat pointing at an IP this host no longer
+ * held (see DEFAULT_BASE above).
+ *
+ * `stampOkfFrontmatter` already writes the current base, so a page heals when
+ * it is regenerated. This heals the ones that are NOT: it rewrites the origin
+ * of any `resource:` that disagrees with `base`, preserving the path.
+ *
+ * Returns the content unchanged when already correct, so callers can use the
+ * identity check to decide whether a page needs rewriting at all — in steady
+ * state that means zero extra writes.
+ */
+export function normalizeResourceOrigin(content: string, base: string = okfBase()): string {
+  const m = content.match(FRONTMATTER_RE);
+  if (!m) return content;
+  const block = m[1]!;
+  const current = scalarInBlock(block, 'resource');
+  if (!current) return content;
+  // Split origin from path: scheme://host[:port] then the rest.
+  const parsed = current.match(/^(https?:\/\/[^/]+)(\/.*)?$/);
+  if (!parsed) return content;
+  const wantBase = base.replace(/\/$/, '');
+  if (parsed[1] === wantBase) return content;
+  const healed = `${wantBase}${parsed[2] ?? ''}`;
+  return content.replace(FRONTMATTER_RE, `---\n${setLine(block, 'resource', healed)}\n---\n`);
+}
+
 // ---------------------------------------------------------------------------
 // Section index builder (pure) — see Task 2 for tests.
 // ---------------------------------------------------------------------------

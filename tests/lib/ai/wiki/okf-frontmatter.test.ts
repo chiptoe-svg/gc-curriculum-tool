@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  stampOkfFrontmatter, deriveTags, okfResource, readFrontmatterScalar, setFrontmatterLine,
+  stampOkfFrontmatter, deriveTags, okfResource, readFrontmatterScalar, setFrontmatterLine, normalizeResourceOrigin,
 } from '@/lib/ai/wiki/okf-frontmatter';
 
 const COURSE = `---
@@ -97,5 +97,47 @@ describe('setFrontmatterLine', () => {
     expect(readFrontmatterScalar(added, 'description')).toBe('d');
     const replaced = setFrontmatterLine(added, 'description', '"e"');
     expect(readFrontmatterScalar(replaced, 'description')).toBe('e');
+  });
+});
+
+describe('normalizeResourceOrigin — self-heal for a drifted origin', () => {
+  const page = (res: string) => `---\ntype: course\nslug: gc-2400\nresource: ${res}\n---\n\n# GC 2400\n`;
+  const BASE = 'https://gcworkflow.clemson.edu:8443';
+
+  it('heals the real incident: a stale IP origin, path preserved', () => {
+    const out = normalizeResourceOrigin(page('http://130.127.162.180:3000/wiki/courses/gc-2400'), BASE);
+    expect(out).toContain('resource: https://gcworkflow.clemson.edu:8443/wiki/courses/gc-2400');
+  });
+
+  it('heals a scheme/port change on the same host', () => {
+    const out = normalizeResourceOrigin(page('http://gcworkflow.clemson.edu:3000/wiki/courses/gc-2400'), BASE);
+    expect(out).toContain('resource: https://gcworkflow.clemson.edu:8443/wiki/courses/gc-2400');
+  });
+
+  it('returns content UNCHANGED when already correct — callers use identity to avoid needless writes', () => {
+    const ok = page(`${BASE}/wiki/courses/gc-2400`);
+    expect(normalizeResourceOrigin(ok, BASE)).toBe(ok);
+  });
+
+  it('is idempotent', () => {
+    const once = normalizeResourceOrigin(page('http://130.127.162.180:3000/wiki/courses/gc-2400'), BASE);
+    expect(normalizeResourceOrigin(once, BASE)).toBe(once);
+  });
+
+  it('handles the root index form with no path', () => {
+    const out = normalizeResourceOrigin(page('http://130.127.162.180:3000/wiki'), BASE);
+    expect(out).toContain('resource: https://gcworkflow.clemson.edu:8443/wiki');
+  });
+
+  it('leaves pages without frontmatter or without resource alone', () => {
+    expect(normalizeResourceOrigin('# no frontmatter\n', BASE)).toBe('# no frontmatter\n');
+    const noRes = '---\ntype: course\n---\n\n# x\n';
+    expect(normalizeResourceOrigin(noRes, BASE)).toBe(noRes);
+  });
+
+  it('does not touch other frontmatter keys', () => {
+    const out = normalizeResourceOrigin(page('http://130.127.162.180:3000/wiki/courses/gc-2400'), BASE);
+    expect(out).toContain('type: course');
+    expect(out).toContain('slug: gc-2400');
   });
 });

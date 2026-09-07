@@ -33,11 +33,11 @@ import { loadPrompt } from '@/lib/ai/prompts/load';
 import { getProviderForFunction } from '@/lib/ai/provider';
 import { fetchLiveCourseFromSheet } from '@/lib/sheets/fetchLiveCourse';
 import type { ParsedCourse } from '@/lib/sheets/parseCourseTab';
-import { writeAndPush } from '@/lib/wiki/git-ops';
+import { writeAndPush, readWikiPage, wikiRepoPath } from '@/lib/wiki/git-ops';
 import { deriveEvidenceBand, type EvidenceBand } from '@/lib/program/evidence-ladder';
 import { dedupeBands, stampEvidenceBands } from '@/lib/ai/wiki/evidence-band-markers';
 export { dedupeBands, stampEvidenceBands } from '@/lib/ai/wiki/evidence-band-markers';
-import { stampOkfFrontmatter } from '@/lib/ai/wiki/okf-frontmatter';
+import { stampOkfFrontmatter, normalizeResourceOrigin } from '@/lib/ai/wiki/okf-frontmatter';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -84,6 +84,22 @@ export interface WikiUpdateResult {
 // ---------------------------------------------------------------------------
 // Course-slug helpers
 // ---------------------------------------------------------------------------
+
+/** All narrative wiki pages plus the root index, for the resource-origin
+ *  self-heal below. Best-effort: a missing section dir is normal on a fresh wiki. */
+async function listWikiPagesForHeal(): Promise<string[]> {
+  const { readdir } = await import('node:fs/promises');
+  const root = wikiRepoPath();
+  const out: string[] = ['index.md'];
+  for (const dir of ['courses', 'competencies', 'targets', 'concepts']) {
+    try {
+      for (const e of await readdir(path.join(root, dir))) {
+        if (e.endsWith('.md')) out.push(`${dir}/${e}`);
+      }
+    } catch { /* section dir absent — fine */ }
+  }
+  return out;
+}
 
 /**
  * Convert a course code like "GC 4800" to a wiki slug like "gc-4800".
@@ -1076,6 +1092,33 @@ export async function updateWikiForSnapshot(snapshotId: string): Promise<WikiUpd
       content = stampOkfFrontmatter(content, { slug, timestamp: tsIso });
     }
     wiki.push({ path: p.path, content });
+  }
+
+  // SELF-HEAL the `resource:` origin across pages this compile did NOT touch.
+  //
+  // `resource:` is an absolute URL frozen into frontmatter, and read_wiki hands
+  // raw markdown to MCP clients — so when the origin moves, every page that
+  // isn't regenerated keeps serving a dead link with nothing to surface it (the
+  // endpoint stays healthy; only the link inside the reply is wrong). That is
+  // how 44 pages ended up pointing at an IP this host no longer held.
+  //
+  // Pages flowing through the loop above already heal via stampOkfFrontmatter.
+  // This catches the rest: any page whose origin disagrees with the current
+  // base joins THIS commit. normalizeResourceOrigin returns the input unchanged
+  // when correct, so in steady state this adds zero writes — it only does work
+  // on the one compile after an origin actually changes.
+  {
+    const alreadyWriting = new Set(wiki.map(w => w.path));
+    for (const relPath of await listWikiPagesForHeal()) {
+      if (alreadyWriting.has(relPath)) continue;
+      const before = await readWikiPage(relPath);
+      if (before === null) continue;
+      const after = normalizeResourceOrigin(before);
+      if (after !== before) {
+        wiki.push({ path: relPath, content: after });
+        logEntries.push(`healed stale resource origin: ${relPath}`);
+      }
+    }
   }
 
   return {
