@@ -55,9 +55,12 @@ export async function middleware(req: NextRequest) {
   // the interstitial rendered.
   //
   // Scope + exemptions, each load-bearing:
-  //   • /api/* — gcdept_agents' containers call
-  //     http://gcworkflow.clemson.edu:3000/api/mcp with a bearer token; an MCP
-  //     client will not follow an HTML interstitial. Breaking it = live outage.
+  //   • /api/* — gets a machine-readable 426 instead of HTML (below): an MCP or
+  //     HTTP client cannot follow an interstitial, so it must fail LOUDLY
+  //     rather than silently sending a bearer token in the clear. This was a
+  //     blanket exemption until 2026-09-07, held while gcdept_agents' 8 groups
+  //     were still on cleartext; they migrated to /gc_wiki/ over 8443 and
+  //     confirmed with a read_wiki trace, so the exemption is gone.
   //   • "/" and /view/* — intentionally public read-only over LAN HTTP
   //     ("transparent curriculum, anyone can read"); requiresBasicAuth already
   //     excludes them.
@@ -68,12 +71,30 @@ export async function middleware(req: NextRequest) {
   // Detection is x-forwarded-proto, verified empirically on this deploy:
   //   direct LAN HTTP → xfp=http   |   via Caddy :8443 → xfp=https
   const httpsOrigin = process.env.PUBLIC_HTTPS_ORIGIN?.trim();
-  if (httpsOrigin && requiresBasicAuth(path) && !path.startsWith('/api/')) {
+  if (httpsOrigin) {
     const proto = req.headers.get('x-forwarded-proto') ?? req.nextUrl.protocol.replace(':', '');
     const host = (req.headers.get('host') ?? '').toLowerCase();
     const isLoopback = host.startsWith('127.0.0.1') || host.startsWith('localhost') || host.startsWith('[::1]');
-    if (proto !== 'https' && !isLoopback) {
-      const target = `${httpsOrigin.replace(/\/$/, '')}${path}${req.nextUrl.search}`;
+    const cleartext = proto !== 'https' && !isLoopback;
+    const target = `${httpsOrigin.replace(/\/$/, '')}${path}${req.nextUrl.search}`;
+
+    // Machine clients: 426, never HTML. /api/partners is excluded because it is
+    // driven by the public browser-based survey page, not a machine client — a
+    // JSON 426 would just break the form. Every other cleartext API call is
+    // wrong now, so this is a default-deny rule with one named exception rather
+    // than an allowlist that goes stale as routes are added.
+    if (cleartext && path.startsWith('/api/') && !path.startsWith('/api/partners')) {
+      return NextResponse.json(
+        {
+          error: 'upgrade_required',
+          message: 'This API is HTTPS-only. Cleartext HTTP is no longer served — reconnect over HTTPS. Any bearer token is unchanged.',
+          https_url: target,
+        },
+        { status: 426, headers: { 'Upgrade': 'TLS/1.3, HTTP/1.1', 'Connection': 'Upgrade', 'Cache-Control': 'no-store' } },
+      );
+    }
+
+    if (cleartext && requiresBasicAuth(path)) {
       const esc = target.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
       return new NextResponse(
         `<!doctype html><html lang="en"><head><meta charset="utf-8">` +

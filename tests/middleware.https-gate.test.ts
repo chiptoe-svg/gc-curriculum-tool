@@ -66,9 +66,39 @@ describe('http→https interstitial', () => {
     expect(await res.text()).not.toContain('Switch to HTTPS');
   });
 
-  it('exempts /api/* over HTTP — agent MCP consumers must not get HTML', async () => {
+  // The /api/* exemption was TEMPORARY, held only while gcdept_agents' 8 groups
+  // were still on cleartext. Their migration + a read_wiki trace over
+  // /gc_wiki/ landed 2026-09-07, so cleartext API calls now fail LOUDLY and
+  // machine-readably instead of silently shipping a bearer token in the clear.
+  it('426s a cleartext API call — machine-readable, never HTML', async () => {
     const res = await middleware(reqFor('http://gcworkflow.clemson.edu:3000/api/mcp', { proto: 'http', host: 'gcworkflow.clemson.edu:3000' }));
-    expect(await res.text()).not.toContain(HTTPS_ORIGIN);
+    expect(res.status).toBe(426);
+    const body = await res.text();
+    expect(body).not.toContain('<html');
+    const json = JSON.parse(body);
+    expect(json.error).toBe('upgrade_required');
+    expect(json.https_url).toBe(`${HTTPS_ORIGIN}/api/mcp`);
+  });
+
+  it('426 preserves the path so the caller is told exactly where to go', async () => {
+    const res = await middleware(reqFor('http://gcworkflow.clemson.edu:3000/api/curriculum/search?q=ink', { proto: 'http', host: 'gcworkflow.clemson.edu:3000' }));
+    expect(res.status).toBe(426);
+    expect(JSON.parse(await res.text()).https_url).toContain('/api/curriculum/search?q=ink');
+  });
+
+  it('does NOT 426 the partner API — browser-driven public survey, not a machine client', async () => {
+    const res = await middleware(reqFor('http://gcworkflow.clemson.edu:3000/api/partners/transcribe', { proto: 'http', host: 'gcworkflow.clemson.edu:3000' }));
+    expect(res.status).not.toBe(426);
+  });
+
+  it('does NOT 426 an API call over HTTPS', async () => {
+    const res = await middleware(reqFor('https://gcworkflow.clemson.edu:8443/api/mcp', { proto: 'https', host: 'gcworkflow.clemson.edu:8443' }));
+    expect(res.status).not.toBe(426);
+  });
+
+  it('does NOT 426 loopback — internal callers (docling vision-proxy, health probes) keep working', async () => {
+    const res = await middleware(reqFor('http://127.0.0.1:3000/api/mcp', { proto: 'http', host: '127.0.0.1:3000' }));
+    expect(res.status).not.toBe(426);
   });
 
   it('exempts loopback so local tooling and health probes still work', async () => {
