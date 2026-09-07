@@ -1,0 +1,138 @@
+# Cloudflare-enabled Caddy for the GC curriculum capture tool over real HTTPS.
+# DNS-01 challenge (no inbound needed — campus firewall blocks public inbound).
+# Separate admin port so it never collides with the stock brew Caddy (:2019).
+{
+	admin localhost:2020
+	auto_https disable_redirects
+}
+
+gc-alumni.com:8443 {
+	# Bind ONLY the Clemson public IP (where gc-alumni.com resolves). Tailscale
+	# Funnel already listens on 100.76.9.89:8443, so an all-interfaces bind collides.
+	# NOTE: gc-alumni.com is sinkholed by Clemson DNS Security — effectively dead;
+	# kept only so this block doesn't error. gcworkflow.clemson.edu (below) is the real one.
+	bind 130.127.162.67
+	tls {
+		dns cloudflare {env.CF_API_TOKEN}
+	}
+	reverse_proxy 127.0.0.1:3000
+}
+
+# Official Clemson (InCommon/Internet2 OV) cert for gcworkflow.clemson.edu — the
+# durable HTTPS path for the capture mic on the Clemson LAN (won't be sinkholed like
+# gc-alumni.com; reachable internal-only via the campus edge firewall). STATIC cert
+# from IT (2026-07-06, valid to 21 Jan 2027 — MANUAL renewal for now). Same :8443 bind
+# as gc-alumni (Caddy routes by SNI). 443 needs root; see the pf redirect option.
+gcworkflow.clemson.edu:8443 {
+	bind 130.127.162.67
+	tls /Users/admin/certs/gcworkflow.clemson.edu/fullchain.pem /Users/admin/certs/gcworkflow.clemson.edu/gcworkflow.clemson.edu.key
+
+	# Advisor chat (CUassistant, 127.0.0.1:8770). Mounted under a PATH PREFIX
+	# rather than its own hostname because the InCommon OV cert has exactly one
+	# SAN (DNS:gcworkflow.clemson.edu) — a third SNI name would need a new cert
+	# request from Clemson IT. handle_path strips /advisor so the app still sees
+	# its own absolute routes (/login, /chat, /clear, /export, /stop, /upload);
+	# the app's UI emits RELATIVE URLs so the browser keeps the prefix.
+	# The redir gives /advisor a trailing slash — without it, relative URLs on
+	# the page would resolve against / and hit the capture tool instead.
+	redir /advisor /advisor/
+	handle_path /advisor/* {
+		reverse_proxy 127.0.0.1:8770
+	}
+
+	# CUassistant public MCP server (127.0.0.1:8766 — Clemson class-schedule tools,
+	# bearer-gated). POC for fronting an MCP server at a distinct TLS path so a
+	# credential proxy (OneCLI) can key the injected bearer off the path. The
+	# handle_path strips /cu_schedule; the MCP server ignores the request path, so
+	# it serves normally. Bearer still required end to end.
+	redir /cu_schedule /cu_schedule/
+	handle_path /cu_schedule/* {
+		reverse_proxy 127.0.0.1:8766 {
+			# MCP responses are text/event-stream. Today they carry a
+			# content-length and close immediately, so buffering only adds
+			# latency — but if the SDK ever streams progress notifications, a
+			# buffering proxy would hold them until the stream ended. Costs
+			# nothing to disable now.
+			flush_interval -1
+		}
+	}
+
+	# CUassistant CATALOG MCP server (127.0.0.1:8767 — College of Business
+	# curriculum: program plans, requirement rules, gen-ed). Same published-data
+	# class and same bearer gate as /cu_schedule, on its OWN registry and token,
+	# so a token minted for one is rejected by the other.
+	#
+	# Added 2026-08-28 for extraction step 5. Before this, a client posting to
+	# /cu_catalog/ fell through to `handle {}` and reached the CAPTURE TOOL on
+	# :3000, which answered "Authentication required." — an auth error from a
+	# different application that reads exactly like an MCP auth error. An
+	# unmapped MCP path must 404, not silently land somewhere else.
+	redir /cu_catalog /cu_catalog/
+	handle_path /cu_catalog/* {
+		reverse_proxy 127.0.0.1:8767 {
+			flush_interval -1
+		}
+	}
+
+	# /add_key credential-onboarding form (nanoclaw webhook server, 127.0.0.1:3001).
+	# `handle` (not handle_path) preserves the /webhook/add-key path the endpoint serves.
+	# Reachable on the Clemson network via the InCommon cert; the one-time nonce is the
+	# auth, so the form is inert without a valid link.
+	handle /webhook/add-key* {
+		reverse_proxy 127.0.0.1:3001
+	}
+
+	handle /gc_wiki* {
+		rewrite * /api/mcp
+		reverse_proxy 127.0.0.1:3000 {
+			flush_interval -1
+			# Keep the backend seeing 127.0.0.1:3000. This route passes today
+			# only because /api/mcp has NO host/origin/rebinding validation
+			# (verified 2026-09-07) — i.e. by accident of configuration. If an
+			# allowlist or origin check is ever added here, or arrives via a
+			# framework upgrade, the route would break with a rebinding-style
+			# rejection that reads as unrelated to the proxy. The alumni routes
+			# below need this line as a PREREQUISITE, not hardening.
+			header_up Host {upstream_hostport}
+		}
+	}
+
+	# gc-alumni MCP (127.0.0.1:8011). The @notphoto matcher is LOAD-BEARING:
+	# this backend serves TWO paths — the MCP endpoint at /mcp and raw photo
+	# bytes at /photos/{id} behind an HMAC-signed URL (the photo consumer is a
+	# plain fetcher that cannot send an Authorization header). A blanket
+	# `rewrite * /mcp` would send photo requests to the MCP endpoint and kill
+	# photo delivery SILENTLY. handle_path strips the prefix before the matcher
+	# runs, so @notphoto sees /photos/... as expected. The HMAC signs person +
+	# expiry only — never host or path — so routing through the ingress cannot
+	# invalidate a signature.
+	#
+	# header_up Host is a PREREQUISITE here, not hardening: this server enforces
+	# FastMCP's DNS-rebinding allowlist and gcworkflow.clemson.edu is not on it,
+	# so without the override the backend rejects via transport security — which
+	# reads as unrelated to both auth and routing.
+	redir /gc_alumni /gc_alumni/
+	handle_path /gc_alumni/* {
+		@notphoto not path /photos/*
+		rewrite @notphoto /mcp
+		reverse_proxy 127.0.0.1:8011 {
+			header_up Host {upstream_hostport}
+			flush_interval -1
+		}
+	}
+
+	# gc-public MCP (127.0.0.1:8012). Single path, so the unconditional rewrite
+	# is correct here. Same rebinding-allowlist prerequisite as above.
+	redir /gc_public /gc_public/
+	handle_path /gc_public/* {
+		rewrite * /mcp
+		reverse_proxy 127.0.0.1:8012 {
+			header_up Host {upstream_hostport}
+			flush_interval -1
+		}
+	}
+
+	handle {
+		reverse_proxy 127.0.0.1:3000
+	}
+}
