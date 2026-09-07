@@ -1,0 +1,39 @@
+# ============================================================================
+# gc-wiki MCP route — insert into ~/.config/caddy-gc/Caddyfile
+# IMMEDIATELY ABOVE the final `handle { reverse_proxy 127.0.0.1:3000 }`
+# inside the gcworkflow.clemson.edu:8443 site block.
+# ============================================================================
+# WHY THIS EXISTS (2026-09-07, raised by the gcdept_agents session):
+# /api/mcp is not claimed by any explicit route — verified by reading the
+# Caddyfile: it reaches the wiki only through the final catch-all. Migrating
+# eight faculty agent groups onto a fallback path is precisely the trap this
+# Caddyfile already records, where /cu_catalog fell through to the capture tool
+# and returned a look-alike auth error. So the wiki gets its own prefix:
+#   https://gcworkflow.clemson.edu:8443/gc_wiki/
+#
+# WHY `rewrite` AND NOT `handle_path` (the non-obvious part):
+# the cu_* MCP servers ignore the request path, so stripping their prefix is
+# safe. This backend is a Next app and IS path-sensitive. Measured against
+# 127.0.0.1:3000 on 2026-09-07 and independently reconfirmed here:
+#     POST /api/mcp   → 401   ← the real MCP endpoint (bearer required)
+#     POST /          → 200   ← HTML app shell
+#     POST /gc_wiki/  → 308
+# So a plain `handle_path /gc_wiki/*` would strip the prefix, land on the app
+# root, and return a cheerful 200 that is not MCP at all. Rewriting every
+# /gc_wiki* path to /api/mcp is what actually reaches the server.
+#
+# WHY `flush_interval -1`:
+# MCP replies are text/event-stream; a buffering proxy holds streamed
+# notifications. Copied from the working /cu_schedule block rather than
+# rediscovered.
+#
+# ORDERING: `handle` blocks are evaluated in source order, so this must sit
+# ABOVE the catch-all or the catch-all wins and nothing changes.
+# ============================================================================
+
+	handle /gc_wiki* {
+		rewrite * /api/mcp
+		reverse_proxy 127.0.0.1:3000 {
+			flush_interval -1
+		}
+	}
