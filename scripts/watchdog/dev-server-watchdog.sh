@@ -37,8 +37,6 @@ HEARTBEAT_DIR="$LOG_DIR/watchdog-heartbeats"
 HEALTH_URL="http://127.0.0.1:3000/"
 TIMEOUT_SECS=10
 PROBE_SLEEP=12     # after kickstart, time for Next to start serving
-TS_BIN="/usr/local/bin/tailscale"
-TS_SETTLE=8        # after `tailscale up`, time for the backend to reach Running
 
 mkdir -p "$LOG_DIR" "$HEARTBEAT_DIR"
 TS() { date -u +%Y-%m-%dT%H:%M:%SZ; }
@@ -63,14 +61,6 @@ kickstart() {
   launchctl kickstart -k "gui/$(id -u)/com.gc.curriculum-tool" 2>&1 | head -1
 }
 
-# BackendState from `tailscale status --json`: NoState / NeedsLogin / Stopped /
-# Starting / Running. Empty if the CLI is missing or the daemon is unreachable.
-ts_state() {
-  "$TS_BIN" status --json 2>/dev/null \
-    | sed -n 's/.*"BackendState"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
-    | head -1
-}
-
 # Daily heartbeat — proves the cron itself is firing.
 HEARTBEAT_TODAY="$HEARTBEAT_DIR/$(date -u +%Y-%m-%d).txt"
 if [ ! -f "$HEARTBEAT_TODAY" ]; then
@@ -79,44 +69,13 @@ if [ ! -f "$HEARTBEAT_TODAY" ]; then
   find "$HEARTBEAT_DIR" -type f -mtime +14 -delete 2>/dev/null
 fi
 
-# === 1. Tailscale reachability ===
-# After the 2026-08-21 reboot the app came up healthy on loopback while
-# Tailscale sat in BackendState=Stopped, so the whole remote surface was dark
-# and nothing here noticed. `tailscale up` is idempotent when already Running.
-#
-# Only reconnects a node that is STOPPED but still logged in. NeedsLogin/
-# NoState need a human (interactive auth) and are logged, not retried. Note the
-# tradeoff: a deliberate `tailscale down` gets undone within 5 minutes — to keep
-# the node off, log it out (`tailscale logout`) or unload this watchdog.
-if [ -x "$TS_BIN" ]; then
-  TS_STATE=$(ts_state)
-  case "$TS_STATE" in
-    Running|Starting|"")
-      # Running is fine; Starting is a transient at boot — do not fight it;
-      # empty means no daemon to talk to, which this script cannot fix.
-      ;;
-    Stopped)
-      if "$TS_BIN" debug prefs 2>/dev/null | grep -q '"LoggedOut": *false'; then
-        echo "$(TS) TAILSCALE state=$TS_STATE — reconnecting" >> "$LOG_FILE"
-        "$TS_BIN" up >> "$LOG_FILE" 2>&1
-        sleep "$TS_SETTLE"
-        TS_AFTER=$(ts_state)
-        if [ "$TS_AFTER" = "Running" ]; then
-          echo "$(TS)   TAILSCALE RECOVERED (state=$TS_AFTER)" >> "$LOG_FILE"
-        else
-          echo "$(TS)   TAILSCALE still not running (state=$TS_AFTER)" >> "$LOG_FILE"
-        fi
-      else
-        echo "$(TS) TAILSCALE state=$TS_STATE but logged out — needs manual login" >> "$LOG_FILE"
-      fi
-      ;;
-    *)
-      echo "$(TS) TAILSCALE state=$TS_STATE — needs manual attention" >> "$LOG_FILE"
-      ;;
-  esac
-fi
+# === 1. App health check ===
+# (A Tailscale reconnect block lived here 2026-08-21 → 09-07. Removed when
+# Tailscale was retired: gcworkflow.clemson.edu:8443 via Caddy is now the only
+# HTTPS path, and Caddy is a launchd service with KeepAlive. Left in place it
+# would have logged "needs manual login" every 5 minutes forever once the node
+# was logged out. Caddy/TLS health is not yet watched — see STATE Deferred/debt.)
 
-# === 2. App health check ===
 INITIAL_CODE=$(probe)
 
 if ! is_unhealthy "$INITIAL_CODE"; then
