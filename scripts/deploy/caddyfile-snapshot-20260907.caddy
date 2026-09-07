@@ -136,3 +136,62 @@ gcworkflow.clemson.edu:8443 {
 		reverse_proxy 127.0.0.1:3000
 	}
 }
+# ============================================================================
+# STAGED — NOT YET ACTIVE. Cleartext :3000 signpost.
+# ============================================================================
+# Append this block to ~/.config/caddy-gc/Caddyfile as part of the HTTPS-only
+# cutover. See scripts/deploy/https-only-cutover.md for the ordered runbook.
+#
+# ⚠️  DO NOT ADD THIS WHILE NEXT STILL BINDS 0.0.0.0:3000. Caddy would fail to
+#     bind a port Next already holds, and a Caddyfile that fails to load takes
+#     the HTTPS site down with it — turning a tidy-up into a total outage.
+#     Next must move to --hostname 127.0.0.1 FIRST, in the same maintenance step.
+#
+# What it does: once the app is loopback-only, Caddy takes over the now-free
+# :3000 on the network-facing addresses and answers every cleartext request with
+# a signpost instead of the application:
+#   • /api/*  → 426 Upgrade Required, JSON. Machine-readable, because an MCP or
+#               HTTP client cannot follow an HTML page. Fails LOUDLY so a
+#               straggler is obvious rather than silently sending a bearer token
+#               in the clear.
+#   • everything else → a dead-end HTML page carrying the HTTPS link, with the
+#               original path preserved ({http.request.orig_uri}) so a deep
+#               bookmark lands on its own page, not a generic notice.
+#
+# Nothing is proxied to the app from here. Cleartext reaches a signpost only.
+# ============================================================================
+
+# CATCH-ALL on port 3000, deliberately: `http://:3000` matches ANY Host, not a
+# list of named addresses.
+#
+# Why it must be a catch-all (verified the hard way 2026-09-07): Caddy binds the
+# port wildcard (*:3000) but only ROUTES hosts a site block names. With the two
+# named addresses only, a request to any other host on :3000 — notably the
+# vmnet bridge 192.168.64.1 the agent containers used — matched no block and got
+# Caddy's DEFAULT EMPTY 200. Zero-byte body, success status: the exact
+# looks-fine-isn't failure this whole cutover was about, reintroduced by the
+# thing meant to prevent it. A stale client would read that as success.
+#
+# Same reasoning as the 426's default-deny scope: enumerate nothing, cover
+# everything, so a host nobody thought of still gets a real answer.
+http://:3000 {
+	handle /api/* {
+		header Upgrade "TLS/1.3, HTTP/1.1"
+		header Connection "Upgrade"
+		header Content-Type "application/json"
+		respond 426 {
+			body `{"error":"upgrade_required","message":"This API is HTTPS-only. Cleartext HTTP is no longer served. Reconnect to https://gcworkflow.clemson.edu:8443{http.request.orig_uri} — the bearer token is unchanged.","https_url":"https://gcworkflow.clemson.edu:8443{http.request.orig_uri}"}`
+		}
+	}
+
+	handle {
+		header Content-Type "text/html; charset=utf-8"
+		header Cache-Control "no-store"
+		respond 200 {
+			body `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>This site has moved to HTTPS</title><style>body{font:16px/1.55 system-ui,-apple-system,sans-serif;max-width:34rem;margin:12vh auto;padding:0 1.5rem;color:#1b1d21}h1{font-size:1.4rem;margin:0 0 .75rem}a.btn{display:inline-block;margin:1.25rem 0;padding:.7rem 1.15rem;background:#f56600;color:#fff;text-decoration:none;border-radius:6px;font-weight:600}p{color:#4b5563}code{background:#f3f4f6;padding:.1rem .3rem;border-radius:3px;word-break:break-all}</style></head><body><h1>This site has moved to HTTPS</h1><p>The GC Curriculum Tool is no longer served over plain <code>http</code>. The insecure address you used is retired.</p><p><a class="btn" href="https://gcworkflow.clemson.edu:8443{http.request.orig_uri}">Open the secure page</a></p><p>New address: <code>https://gcworkflow.clemson.edu:8443</code> — please update your bookmark.</p></body></html>`
+		}
+	}
+}
+
+# (An earlier draft carried an OPTIONAL named block for the bridge address.
+# Superseded: the catch-all above covers it and every other host by construction.)

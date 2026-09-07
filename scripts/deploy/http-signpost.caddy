@@ -23,8 +23,20 @@
 # Nothing is proxied to the app from here. Cleartext reaches a signpost only.
 # ============================================================================
 
-# The Clemson-facing address. Bookmarks and typed URLs land here.
-http://130.127.162.67:3000, http://gcworkflow.clemson.edu:3000 {
+# CATCH-ALL on port 3000, deliberately: `http://:3000` matches ANY Host, not a
+# list of named addresses.
+#
+# Why it must be a catch-all (verified the hard way 2026-09-07): Caddy binds the
+# port wildcard (*:3000) but only ROUTES hosts a site block names. With the two
+# named addresses only, a request to any other host on :3000 — notably the
+# vmnet bridge 192.168.64.1 the agent containers used — matched no block and got
+# Caddy's DEFAULT EMPTY 200. Zero-byte body, success status: the exact
+# looks-fine-isn't failure this whole cutover was about, reintroduced by the
+# thing meant to prevent it. A stale client would read that as success.
+#
+# Same reasoning as the 426's default-deny scope: enumerate nothing, cover
+# everything, so a host nobody thought of still gets a real answer.
+http://:3000 {
 	handle /api/* {
 		header Upgrade "TLS/1.3, HTTP/1.1"
 		header Connection "Upgrade"
@@ -43,18 +55,5 @@ http://130.127.162.67:3000, http://gcworkflow.clemson.edu:3000 {
 	}
 }
 
-# OPTIONAL — the Apple-container bridge gateway. Agent containers reach the host
-# here as host.docker.internal. Add this ONLY after gcdept_agents has migrated
-# its 8 gc-wiki groups to https://gcworkflow.clemson.edu:8443/api/mcp; until
-# then they still need the real app on this address. With it, a stale container
-# gets the 426 above instead of a silent cleartext success.
-#
-# http://192.168.64.1:3000 {
-# 	handle /api/* {
-# 		header Content-Type "application/json"
-# 		respond 426 `{"error":"upgrade_required","message":"Use https://gcworkflow.clemson.edu:8443{http.request.orig_uri}"}`
-# 	}
-# 	handle {
-# 		respond 426 "This host is HTTPS-only: https://gcworkflow.clemson.edu:8443"
-# 	}
-# }
+# (An earlier draft carried an OPTIONAL named block for the bridge address.
+# Superseded: the catch-all above covers it and every other host by construction.)
