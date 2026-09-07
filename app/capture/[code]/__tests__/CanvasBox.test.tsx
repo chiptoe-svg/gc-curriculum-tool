@@ -90,6 +90,38 @@ describe('CanvasBox', () => {
     expect(screen.queryByRole('button', { name: /index now/i })).toBeNull();
   });
 
+  // The token-handling disclosure is a PROMISE made to faculty at the moment
+  // they paste a credential, so it is pinned here: a refactor must not silently
+  // drop it. The claim is verified true in the code — no DB column, no logging,
+  // no browser storage, no tokenized URL persisted — so the UI may state it.
+  describe('Canvas token disclosure', () => {
+    const openTokenField = () => {
+      render(<CanvasBox course={course} materials={[mat({ id: 'a', fileName: 'Canvas: Assignments', extractedText: '## One\nb' })]} slug="s" onMaterialsChange={noop} />);
+      fireEvent.click(screen.getByRole('button', { name: /reimport|import from canvas/i }));
+    };
+
+    it('states the token is not kept, WITHOUT needing the help disclosure opened', () => {
+      openTokenField();
+      // Visible copy, not inside the collapsed <details>.
+      expect(screen.getByText(/we don't keep your token/i)).toBeTruthy();
+      expect(screen.getByText(/discarded/i)).toBeTruthy();
+      expect(screen.getByText(/never written to our database, logs, or disk/i)).toBeTruthy();
+    });
+
+    it('advises a same-day / next-day expiry', () => {
+      openTokenField();
+      // Appears twice by design: once in the always-visible note, once in the
+      // step-by-step help. Both should say the same thing.
+      expect(screen.getAllByText(/today or tomorrow/i).length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText(/expire/i).length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('does NOT tell people to leave the expiry blank (the old advice, now reversed)', () => {
+      openTokenField();
+      expect(screen.queryByText(/leave the expiry blank/i)).toBeNull();
+    });
+  });
+
   it('Import/Reimport opens a Canvas token field and POSTs canvas-reextract', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true, headers: { get: () => 'application/json' }, json: async () => ({ updated: 1, skipped: 0 }),

@@ -76,7 +76,18 @@ const STATUS_RANK: Record<string, number> = {
 /** Collapsible "where do I find these?" note, shown inside both Canvas import forms. */
 function CanvasCredsHelp() {
   return (
-    <details className="mt-1 text-sm text-muted-foreground">
+    <>
+      {/* Always visible — NOT inside the collapsed <details>. The disposal
+          promise and the expiry advice are the two things a faculty member
+          should see before pasting a credential, so they must not be hidden
+          behind a disclosure most people never open. */}
+      <p className="mt-1.5 text-xs leading-snug text-muted-foreground">
+        <span className="font-medium text-foreground">We don&apos;t keep your token.</span> It&apos;s used
+        for this import only and then discarded — never written to our database, logs, or disk.
+        For extra safety, set it to expire <span className="font-medium">today or tomorrow</span> when
+        you create it, and delete it in Canvas once your import is done.
+      </p>
+      <details className="mt-1 text-sm text-muted-foreground">
       <summary className="cursor-pointer hover:text-foreground">Where do I find the URL and token?</summary>
       <div className="mt-1 space-y-1.5 border-l-2 border-muted pl-2 leading-snug">
         <p>
@@ -86,12 +97,14 @@ function CanvasCredsHelp() {
         <p>
           <span className="font-medium">API token:</span> in Canvas, open <span className="font-medium">Account
           &rarr; Settings</span>, scroll to <span className="font-medium">Approved Integrations</span>, and click
-          {' '}<span className="font-medium">+ New Access Token</span>. Add a purpose, leave the expiry blank, click
+          {' '}<span className="font-medium">+ New Access Token</span>. Add a purpose, set the expiry to
+          {' '}<span className="font-medium">today or tomorrow</span> (this tool only needs it for the import), click
           {' '}<span className="font-medium">Generate Token</span>, and paste it here. Treat it like a password (it
-          gives read access to your Canvas courses); you can delete it afterward.
+          gives read access to your Canvas courses); delete it in Canvas once you&apos;re done.
         </p>
       </div>
-    </details>
+      </details>
+    </>
   );
 }
 

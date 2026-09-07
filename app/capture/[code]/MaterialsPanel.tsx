@@ -1416,7 +1416,12 @@ The materials themselves — and their per-item controls (ignore, preview, AI su
                 {reextractOpen && (
                   <div className="border-b bg-muted/30 px-3 py-2 space-y-2">
                     <label className="block text-[11px] text-muted-foreground" htmlFor="reextract-token">
-                      Canvas API token (used once, not stored). Same token as for &quot;Import from Canvas&quot;.
+                      Canvas API token. Same token as for &quot;Import from Canvas&quot;.
+                      <span className="mt-0.5 block">
+                        <span className="font-medium text-foreground">We don&apos;t keep it</span> — used for this
+                        import only, then discarded; never written to our database, logs, or disk. Best practice:
+                        set it to expire today or tomorrow, and delete it in Canvas when you&apos;re done.
+                      </span>
                     </label>
                     <div className="flex items-center gap-2">
                       <input
