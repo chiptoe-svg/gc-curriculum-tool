@@ -13,9 +13,18 @@ import { WIKI_PAGE_TYPES, type WikiPageType } from './schema';
 export const OKF_REQUIRED_KEYS = ['type', 'title', 'description', 'slug', 'tags', 'timestamp', 'resource'] as const;
 
 const FRONTMATTER_RE = /^---\n([\s\S]*?)\n---\n?/;
-const DEFAULT_BASE = 'http://gcworkflow.clemson.edu:3000';
+// HTTPS, and the port that survives. These `resource:` values are ABSOLUTE URLs
+// embedded in page frontmatter, and `read_wiki` hands the raw markdown to MCP
+// clients — so a stale origin here ships dead links to every agent, and the
+// endpoint still looks healthy because only the link inside the reply is wrong.
+// That is exactly how it failed: 44 pages were generated with an old
+// WIKI_PUBLIC_ORIGIN of http://130.127.162.180:3000 — an IP this Mac no longer
+// holds — so those links were already dead before anyone noticed. Cleartext
+// :3000 is being retired on top of that. Keep this pointed at the canonical
+// HTTPS origin, and prefer setting WIKI_PUBLIC_ORIGIN explicitly.
+const DEFAULT_BASE = 'https://gcworkflow.clemson.edu:8443';
 
-/** Public origin used in `resource:` URLs. Env-overridable; LAN default. */
+/** Public origin used in `resource:` URLs. Env-overridable; HTTPS default. */
 export function okfBase(): string {
   return process.env.WIKI_PUBLIC_ORIGIN ?? DEFAULT_BASE;
 }

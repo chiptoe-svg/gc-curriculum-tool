@@ -35,5 +35,22 @@
 		rewrite * /api/mcp
 		reverse_proxy 127.0.0.1:3000 {
 			flush_interval -1
+			# NOT YET IN THE LIVE Caddyfile — add at the next ingress edit
+			# (see STATE.md; deliberately not reloaded on its own).
+			#
+			# Caddy preserves the original Host by default, so the backend
+			# currently receives `gcworkflow.clemson.edu:8443`. That works only
+			# because this route has NO host/origin/DNS-rebinding validation —
+			# verified 2026-09-07: app/api/mcp/route.ts and
+			# lib/ai/wiki/mcp-server.ts gate on the shared bearer alone. It
+			# passes by accident of configuration, not by design.
+			#
+			# The alumni MCP servers next door enforce FastMCP's rebinding
+			# allowlist and would reject the ingress hostname outright. If an
+			# allowlist or origin check is ever added here — by hand or by a
+			# framework upgrade — this route breaks with a rebinding-style
+			# rejection that reads like nothing to do with the proxy, and
+			# whoever debugs it will be staring at Caddy.
+			header_up Host {upstream_hostport}
 		}
 	}
