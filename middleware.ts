@@ -43,6 +43,57 @@ export async function middleware(req: NextRequest) {
     }
   }
 
+  // --- HTTP → HTTPS interstitial for gated faculty surfaces -----------------
+  // Gating used to be by PATH only, so the full editable CourseCapture page —
+  // Canvas API token field included — served over plain LAN HTTP on
+  // 0.0.0.0:3000 (verified 2026-09-07: 200 with Basic Auth + slug). Over
+  // cleartext that exposes the SHARED faculty password and the slug, which are
+  // worse to lose than the per-user, self-revocable Canvas token.
+  //
+  // This block sits BEFORE the Basic Auth challenge deliberately: after it,
+  // the browser would already have sent the password in cleartext by the time
+  // the interstitial rendered.
+  //
+  // Scope + exemptions, each load-bearing:
+  //   • /api/* — gcdept_agents' containers call
+  //     http://gcworkflow.clemson.edu:3000/api/mcp with a bearer token; an MCP
+  //     client will not follow an HTML interstitial. Breaking it = live outage.
+  //   • "/" and /view/* — intentionally public read-only over LAN HTTP
+  //     ("transparent curriculum, anyone can read"); requiresBasicAuth already
+  //     excludes them.
+  //   • loopback — local tooling, the watchdog health probe, and unit tests.
+  //   • unset PUBLIC_HTTPS_ORIGIN — fail OPEN, so a config gap can never lock
+  //     everyone out of a headless machine.
+  //
+  // Detection is x-forwarded-proto, verified empirically on this deploy:
+  //   direct LAN HTTP → xfp=http   |   via Caddy :8443 → xfp=https
+  const httpsOrigin = process.env.PUBLIC_HTTPS_ORIGIN?.trim();
+  if (httpsOrigin && requiresBasicAuth(path) && !path.startsWith('/api/')) {
+    const proto = req.headers.get('x-forwarded-proto') ?? req.nextUrl.protocol.replace(':', '');
+    const host = (req.headers.get('host') ?? '').toLowerCase();
+    const isLoopback = host.startsWith('127.0.0.1') || host.startsWith('localhost') || host.startsWith('[::1]');
+    if (proto !== 'https' && !isLoopback) {
+      const target = `${httpsOrigin.replace(/\/$/, '')}${path}${req.nextUrl.search}`;
+      const esc = target.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+      return new NextResponse(
+        `<!doctype html><html lang="en"><head><meta charset="utf-8">` +
+        `<meta name="viewport" content="width=device-width,initial-scale=1">` +
+        `<meta http-equiv="refresh" content="3;url=${esc}">` +
+        `<title>Switch to HTTPS</title>` +
+        `<style>body{font:16px/1.55 system-ui,-apple-system,sans-serif;max-width:34rem;margin:12vh auto;padding:0 1.5rem;color:#1b1d21}` +
+        `h1{font-size:1.4rem;margin:0 0 .75rem}a.btn{display:inline-block;margin:1.25rem 0;padding:.7rem 1.15rem;background:#f56600;color:#fff;` +
+        `text-decoration:none;border-radius:6px;font-weight:600}p{color:#4b5563}code{background:#f3f4f6;padding:.1rem .3rem;border-radius:3px}</style>` +
+        `</head><body><h1>Switch to HTTPS to continue</h1>` +
+        `<p>This page handles credentials — including your Canvas API token — so it is only served over a secure connection. ` +
+        `You reached it over plain <code>http</code>.</p>` +
+        `<p><a class="btn" href="${esc}">Continue securely</a></p>` +
+        `<p>Redirecting automatically in a moment. Please update any bookmark to the secure address.</p>` +
+        `</body></html>`,
+        { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } },
+      );
+    }
+  }
+
   const facultyExpected = process.env.FACULTY_BASIC_AUTH;
   if (facultyExpected && requiresBasicAuth(path)) {
     const role = resolveRole(req.headers.get('authorization'), {
