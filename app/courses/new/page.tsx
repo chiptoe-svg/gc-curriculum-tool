@@ -42,11 +42,12 @@ export default async function NewCoursePage({ searchParams }: Props) {
             <p className="text-xs uppercase tracking-wide text-muted-foreground">CourseCapture</p>
             <h1 className="mt-0.5 text-xl font-semibold">Add a course</h1>
           </div>
-          {/* The LAN landing is the canonical public course list (the faculty
-              guide's published entry point); a relative link would keep users
-              on the funnel origin. */}
+          {/* The campus HTTPS landing is the canonical public course list (the
+              faculty guide's published entry point). Was http://…:3000 while the
+              Funnel was the faculty origin; since 2026-09-07 there is one origin
+              and cleartext :3000 is being retired, so this points at HTTPS. */}
           <a
-            href="http://gcworkflow.clemson.edu:3000/"
+            href="https://gcworkflow.clemson.edu:8443/"
             className="text-sm text-muted-foreground hover:text-foreground"
           >
             ← Course List

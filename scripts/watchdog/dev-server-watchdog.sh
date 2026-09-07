@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
-# Watchdog for the curriculum-tool production server + its remote-access path.
+# Watchdog for the curriculum-tool production server + its TLS ingress.
 #
 # Two independent responsibilities, both idempotent and safe to run every cycle:
 #
-#   1. Tailscale reachability. The serve/Funnel URL is the only way in for a
-#      headless operator, and it can be down while the app itself is perfectly
-#      healthy — so the loopback probe below cannot see it. Checked first.
+#   1. Caddy / TLS ingress. gcworkflow.clemson.edu:8443 is the ONLY way in for
+#      a user once cleartext :3000 is closed off, and it can be down while the
+#      app itself is perfectly healthy — the loopback probe below cannot see it.
+#      Checked first. (Replaced a Tailscale reconnect block, removed 2026-09-07
+#      when Tailscale was retired.)
 #   2. App health. launchd already restarts the process if it CRASHES (KeepAlive
 #      in com.gc.curriculum-tool.plist). This handles the OTHER failure mode:
 #      process alive but returning 5xx. Faculty hit Internal Server Error with
@@ -43,8 +45,15 @@ TS() { date -u +%Y-%m-%dT%H:%M:%SZ; }
 
 # Returns the HTTP status code (or "000" on transport error).
 # Use `curl -k` and switch HEALTH_URL to https when running `pnpm dev:lan-https`.
+# NOTE (2026-09-07): do NOT write this as `curl … || echo "000"`. On a transport
+# failure curl BOTH prints "000" (from -w) AND exits non-zero, so the `||` used
+# to append a second one — yielding "000000", which matches neither branch of
+# is_unhealthy. A fully-down server therefore read as HEALTHY, defeating this
+# script's main purpose; only 5xx was ever detected. Capture, then default.
 probe() {
-  curl -sS -o /dev/null -m "$TIMEOUT_SECS" -w '%{http_code}' "$HEALTH_URL" 2>/dev/null || echo "000"
+  local out
+  out=$(curl -sS -o /dev/null -m "$TIMEOUT_SECS" -w '%{http_code}' "$HEALTH_URL" 2>/dev/null)
+  printf '%s' "${out:-000}"
 }
 
 # Unhealthy: 5xx code OR "000" (curl error / timeout).
@@ -61,20 +70,71 @@ kickstart() {
   launchctl kickstart -k "gui/$(id -u)/com.gc.curriculum-tool" 2>&1 | head -1
 }
 
+# Caddy is the ONLY network ingress once cleartext :3000 is closed off, so its
+# health is now as load-bearing as the app's. Probe the real TLS path (SNI +
+# cert validation, no -k) and kickstart com.gc.caddy-tls if it's down. Also warn
+# well before the InCommon cert expires — it is MANUAL-renewal (2027-01-21), and
+# after the loopback cutover an expired cert is a total outage, not a degraded
+# path. Silent when healthy.
+CADDY_URL="https://gcworkflow.clemson.edu:8443/"
+CADDY_IP="130.127.162.67"
+CERT_WARN_DAYS=30
+
+caddy_probe() {
+  local out
+  out=$(curl -sS -o /dev/null -m "$TIMEOUT_SECS" -w '%{http_code}' \
+    --resolve "gcworkflow.clemson.edu:8443:$CADDY_IP" "$CADDY_URL" 2>/dev/null)
+  printf '%s' "${out:-000}"   # see the probe() note — never `|| echo "000"`
+}
+
+check_caddy() {
+  local code
+  code=$(caddy_probe)
+  if is_unhealthy "$code"; then
+    echo "$(TS) CADDY UNHEALTHY code=$code — kickstarting com.gc.caddy-tls" >> "$LOG_FILE"
+    launchctl kickstart -k "gui/$(id -u)/com.gc.caddy-tls" >> "$LOG_FILE" 2>&1
+    sleep "$PROBE_SLEEP"
+    code=$(caddy_probe)
+    if is_unhealthy "$code"; then
+      echo "$(TS)   CADDY STILL DOWN (code=$code) — manual intervention needed" >> "$LOG_FILE"
+    else
+      echo "$(TS)   CADDY RECOVERED (code=$code)" >> "$LOG_FILE"
+    fi
+  fi
+
+  # Cert expiry — once daily (FIRST_RUN_TODAY is captured BEFORE the heartbeat
+  # file is created; guarding on the file itself would never fire).
+  if [ "$FIRST_RUN_TODAY" = "1" ]; then
+    local end_date end_epoch now_epoch days
+    end_date=$(echo | openssl s_client -connect "$CADDY_IP:8443" -servername gcworkflow.clemson.edu 2>/dev/null \
+      | openssl x509 -noout -enddate 2>/dev/null | cut -d= -f2)
+    if [ -n "$end_date" ]; then
+      end_epoch=$(date -j -f "%b %e %H:%M:%S %Y %Z" "$end_date" +%s 2>/dev/null || echo "")
+      now_epoch=$(date +%s)
+      if [ -n "$end_epoch" ]; then
+        days=$(( (end_epoch - now_epoch) / 86400 ))
+        if [ "$days" -le "$CERT_WARN_DAYS" ]; then
+          echo "$(TS) CERT EXPIRING in ${days}d ($end_date) — MANUAL renewal; see STATE.md" >> "$LOG_FILE"
+        fi
+      fi
+    fi
+  fi
+}
+
 # Daily heartbeat — proves the cron itself is firing.
 HEARTBEAT_TODAY="$HEARTBEAT_DIR/$(date -u +%Y-%m-%d).txt"
-if [ ! -f "$HEARTBEAT_TODAY" ]; then
+FIRST_RUN_TODAY=0
+[ -f "$HEARTBEAT_TODAY" ] || FIRST_RUN_TODAY=1
+if [ "$FIRST_RUN_TODAY" = "1" ]; then
   echo "$(TS) heartbeat — watchdog cron is running" >> "$LOG_FILE"
   touch "$HEARTBEAT_TODAY"
   find "$HEARTBEAT_DIR" -type f -mtime +14 -delete 2>/dev/null
 fi
 
-# === 1. App health check ===
-# (A Tailscale reconnect block lived here 2026-08-21 → 09-07. Removed when
-# Tailscale was retired: gcworkflow.clemson.edu:8443 via Caddy is now the only
-# HTTPS path, and Caddy is a launchd service with KeepAlive. Left in place it
-# would have logged "needs manual login" every 5 minutes forever once the node
-# was logged out. Caddy/TLS health is not yet watched — see STATE Deferred/debt.)
+# === 1. Caddy / TLS ingress ===
+check_caddy
+
+# === 2. App health check ===
 
 INITIAL_CODE=$(probe)
 
