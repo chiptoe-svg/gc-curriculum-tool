@@ -8,7 +8,7 @@
 - NBER Working Paper 33941; also circulated via MIT Economics and SSRN. Autor: MIT & NBER. Thompson: MIT FutureTech, CSAIL, and the Initiative on the Digital Economy.
 - Open-access status: open. Free PDF from MIT Economics; NBER copy is gated for some users.
 - **Local copy:** `docs/references/_pdfs/autor-thompson-2025-expertise.pdf`
-- *Unverified:* secondary sources state a subsequent *Journal of the European Economic Association* publication. Not confirmed from the PDF; cite the NBER working paper unless verified.
+- **VERIFIED 2026-09-09 — it is published.** *Journal of the European Economic Association* **23(4), 1203–1271** (Oxford Academic, `academic.oup.com/jeea/article-abstract/23/4/1203`). The earlier "unverified" note is resolved. **Cite the JEEA article**, not the working paper: a peer-reviewed publication carries more weight for exactly the §16 claim this anchors. The archived PDF remains the June 2025 NBER/MIT working-paper version — same substance (abstracts compared line by line 2026-09-09; the NBER copy is the identical text plus a cover page), but page/section numbers will not match the journal article, so quote by section name rather than page. Flagged by the GC Alumni session's own currency check.
 
 **Accessibility:** Clean born-digital PDF. Abstract + §1 Introduction (pp. 1–3, read here) carry the full conceptual argument; the formal model is §2, the novel expertise measure and four-decade empirics follow.
 
