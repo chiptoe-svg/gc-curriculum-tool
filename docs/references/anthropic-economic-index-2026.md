@@ -1,0 +1,31 @@
+# Anthropic Economic Index — *Learning curves* (March 2026)
+
+**Full citation:** Massenkoff, M., Lyubich, E., McCrory, P., Appel, R., & Heller, R. (2026). *The Anthropic Economic Index report: Learning curves*. Anthropic. Published 24 March 2026. (Massenkoff, Lyubich, and McCrory are the report's lead authors.)
+
+**Reference ID in background.html:** `ref-anthropic-economic-index-2026`; cited in §16 (AI-era implications).
+
+**Where it lives:**
+- Published by Anthropic as part of the ongoing Economic Index series (prior reports: January 2026 "economic primitives," using November 2025 data; subsequent: June 2026 "Cadences"). Not peer-reviewed — an industry research report.
+- Open-access status: open. Published on anthropic.com; a mirrored PDF is also hosted at humanreadiness.org.
+- **Local copy:** `docs/references/_pdfs/anthropic-economic-index-2026-learning-curves.pdf`
+
+**Accessibility:** Clean born-digital PDF. Introduction and "What has changed" (pp. 2–5, read here) carry the headline findings; the learning-curve analysis and O*NET appendix follow.
+
+**What the doc claims it says:** Per §16, that platform-level usage data mapped to O*NET tasks corroborates the task-crossover picture from the OpenAI study §16 already cites — AI use is task-level and spreads across occupational boundaries — and, separately, that *effective* AI use appears to be learned rather than innate, since higher-tenure users attempt higher-value tasks and succeed more often.
+
+**What it actually says (synthesis):**
+
+Methodologically this is the direct counterpart to Chin & Martin Richmond (2026): both sample real conversations and classify them against **O*NET tasks**, and both report at the task rather than occupation level. This report samples "1 million conversations from both Claude.ai... and our first-party API," covering 5–12 February 2026, through a privacy-preserving aggregation system that "allows us to describe behavior at an aggregated level without revealing the content of individual transcripts."
+
+Headline findings:
+- **Breadth of task coverage.** "About 49% of jobs have seen at least a quarter of their tasks performed using Claude." Coding dominates: "tasks associated with Computer and Mathematical occupations account[] for 35% of conversations on Claude.ai."
+- **Diversification.** On Claude.ai "the top 10 most common O\*NET tasks went from 24% of conversations to just 19%" between November 2025 and February 2026, while first-party API traffic moved the other way (to 33%) — "coding tasks continue to migrate from augmentative usage in Claude.ai to more automated workflows in our first-party API traffic."
+- **Value drift downward.** As use diversified, "the average economic value of work done on Claude — as measured by US wages paid to workers in the associated occupations — has decreased slightly," attributed mechanically to a rise in personal queries and consistent with "a standard 'adoption curve' story."
+- **Persistent adoption inequality.** "The top 20 countries account for 48% of all per-capita usage, up from 45%."
+- **Learning curves (the report's own focus).** "People who have been using Claude for 6 months or more have 10% fewer personal conversations and a 6% higher education level reflected in their inputs. Most strikingly, people in this higher-tenure group have a 10% higher success rate in their conversations, an association that is not explained by their task selection, country of origin, or other factors." Users also match model to task: "Opus is used 4 percentage points more than average for coding tasks and 7 percentage points less than average for tutoring-related tasks."
+
+**Limits that bound citation.** (1) **Single-vendor, self-selected users.** This is Claude usage, not economy-wide behaviour; users who choose Claude are not a random sample of workers, and the report says nothing about people who use no AI. (2) **"Success" is the platform's own classification**, not an external outcome measure. (3) **The tenure→success finding is explicitly non-causal**: the authors state it "could reflect sophistication of early adopters" as readily as "learning-by-doing, where people get better at using Claude through experience." Citing it as evidence that AI skill is *learned* overstates it — the honest claim is that the association is consistent with learning-by-doing and that the authors could not explain it by task selection, country, or other observed factors. (4) Not peer-reviewed; the publisher has a commercial interest in AI adoption being widespread and beneficial.
+
+**Why it earns a place here:** §16's task-crossover argument currently rests on a single vendor's data (OpenAI's). This is an independent platform reporting the same *kind* of measurement against the same taxonomy (O*NET tasks), which makes the underlying observation — that AI use is task-level and does not respect occupational boundaries — a triangulated finding rather than one company's. The learning-curve result is a second, distinct contribution relevant to the framework's Do-axis thesis: it is at least consistent with the position that effective AI use is a developed capability rather than a static trait, which is what a curriculum can act on.
+
+**Verdict:** Consistent, provided the two hedges are carried into the prose — cite it as *corroborating* the task-level picture (not as independent economy-wide evidence), and state the tenure/success finding as an association the authors explicitly decline to call causal. Do not cite it as showing that AI skill is learned; cite it as consistent with that reading.

@@ -174,3 +174,16 @@ The audit priority was §4 (problem-solving as program-level emergent property) 
 ## Notes on accessibility methodology
 
 Several PDFs were located by URL but returned binary content that the WebFetch tool could not parse as text (including the Biggs 1996 Helsinki mirror, Bjork 1994 Gwern PDF, Macnamara 2014 Gwern PDF, NECHE 2015 PDF, and Tuning project PDFs). In all these cases, the framework's claims were verified against: (a) detailed secondary literature from Semantic Scholar, ERIC, and educational psychology summaries, (b) the abstract (where available via publisher page), and (c) the extensive citations to these works in the broader literature. No content was fabricated; where verification was limited, this is stated explicitly in the individual file.
+
+---
+
+## 2026-09-09 addition — the §16 AI-era pair
+
+Two sources added to `background.html` §16, each with a card here. Both were **read from the PDF**, not from search summaries, and both PDFs are committed to `_pdfs/` (unlike the earlier `citations/load_bearing/` set, which is not in this repo).
+
+| # | Reference | Card | Used in | Verdict |
+| - | --------- | ---- | ------- | ------- |
+| 53 | Autor & Thompson (2025), *Expertise*, NBER WP 33941 | [autor-thompson-2025.md](./autor-thompson-2025.md) | §16 entry rung | Consistent, extrapolation flagged — empirics are four decades of *automation*, not generative AI |
+| 54 | Anthropic Economic Index, *Learning curves* (Mar 2026) | [anthropic-economic-index-2026.md](./anthropic-economic-index-2026.md) | §16 task crossover | Consistent with two hedges — corroborating not economy-wide; tenure→success is explicitly non-causal |
+
+**Why these two and not the paper that prompted the search.** The trigger was Korinek, Jones, Sacher, Cotter & McCrory (2026), *Economic Scenarios for Transformative AI* (Anthropic Institute WP 2026-02) — a macroeconomic scenario model projecting GDP, labour share, and unemployment to 2030. It was **deliberately not added**: it is a scenario framework whose authors state "the scenarios are not predictions, and we attach no probabilities to them," so it cannot be load-bearing for any curriculum or KUD+ claim, and filing it here would invite exactly the overclaim the 2026-08-12 citation audit corrected elsewhere. Its legitimate use is one sentence of macro *context* in a stakeholder-facing doc, clearly labelled as scenarios-not-forecasts. Its literature review is, however, what surfaced Autor & Thompson — the mechanism §16 actually needed.
