@@ -190,3 +190,26 @@ Two sources added to `background.html` §16, each with a card here. Both were **
 **Why these two and not the paper that prompted the search.** The trigger was Korinek, Jones, Sacher, Cotter & McCrory (2026), *Economic Scenarios for Transformative AI* (Anthropic Institute WP 2026-02) — a macroeconomic scenario model projecting GDP, labour share, and unemployment to 2030. It was **deliberately not added**: it is a scenario framework whose authors state "the scenarios are not predictions, and we attach no probabilities to them," so it cannot be load-bearing for any curriculum or KUD+ claim, and filing it here would invite exactly the overclaim the 2026-08-12 citation audit corrected elsewhere. Its legitimate use is one sentence of macro *context* in a stakeholder-facing doc, clearly labelled as scenarios-not-forecasts. Its literature review is, however, what surfaced Autor & Thompson — the mechanism §16 actually needed.
 
 **Card 55 added retroactively (2026-09-09).** Chin & Martin Richmond had been cited in §16 since August with **no archived PDF and no card** — a load-bearing claim depending on a live vendor URL. Both now exist. The card was prompted by the GC Alumni session, which independently read the source and flagged that 43.5% is the *rebased* figure (16.8% of all work-related messages, after excluding 61.5% generic work). §16 was correct as written but the qualifier was fragile, so the absolute figure now sits beside it: dropping "occupation-specific" would make the sentence visibly self-contradictory rather than quietly wrong. The same session's reframing — usage as a *leading indicator* of occupational change rather than evidence the taxonomy is defective — was adopted into §16, along with the report's travellers-vs-borrowers direction and its small-firm crossover finding (18.9% at 2–5 seats vs 16.3% at 101+), which bears on GC destinations.
+
+---
+
+## Currency check — a NEW audit type, first run 2026-09-09
+
+**The gap this closes.** Every prior audit here (2026-06-01/05/20, 2026-08-12) was an **accuracy** audit: does the doc's claim match what the source says? None asked the different question — **has this source been superseded, revised, or miscited, and have its authors published something that changes our reading?** That question had never been asked systematically, and the cost was visible: Brynjolfsson was found a year stale on 2026-09-09 **by accident**, while fetching the PDF for another project, not by looking.
+
+**What the first run found, in under half an hour, across the 13 refs dated 2024–2026:**
+
+| Finding | Severity |
+| --- | --- |
+| **Brynjolfsson et al.** cited as 2025; current is **August 2026** (ADP data through June 2026). Headline moved 15% → **19%**, and two facts we now rely on (substitution-vs-complementation; adjustment through employment not wages) were absent from our entry | High — load-bearing in §16 |
+| **Kohli** cited as "Kohli, N. (2025)"; actually **Guneet Kohli (2026)**, arXiv:2605.29800. **Both initial and year wrong** | High — load-bearing in §7, and it is the source used to caveat *other* sources' LLM-derived measures |
+| **Autor & Thompson** — secondary sources claim a "revised March 2026"; **checked and resolved: NBER still serves June 2025, abstracts identical to our copy.** No action | Resolved, no drift |
+| **Kapur** — no newer meta-analysis; Sinha & Kapur (2021) remains current | Confirmed current |
+| **Acemoglu, Autor & Johnson (2026)**, *Building Pro-Worker Artificial Intelligence* (NBER WP 34854) — new work by a load-bearing author. **Assessed and NOT added**: a policy/design argument with nine policy directions, not empirical measurement. Same category as Korinek — framing, not evidence | Assessed, declined |
+| **AEI *Cadences*** (Jun 2026) — successor to the cited *Learning curves*. **Archived, not cited**: does not restate our figures, largely orthogonal subject matter, and methodology changes make its numbers not directly comparable | Assessed, declined |
+
+**Method that worked.** Tier by *revision risk*, not by importance: working papers, industry-report series, and preprints revise **in place** and are the whole risk surface; the canon (Bloom 1956, Chi 1981, Thorndike & Woodworth 1901) does not go stale. The 13 refs dated 2024–2026 are the check; the other 60 are not.
+
+**One process note worth keeping.** During this check a `grep` returned 0 hits for a key abstract sentence in the NBER copy, which looked like evidence of a substantive revision. It was a PDF text-extraction line-break artifact (`remain?We argue`). Verify a suspected difference by reading the passage, not by counting matches — the same looks-like-evidence-isn't shape this project keeps meeting.
+
+**Cadence recommendation: run this quarterly, and always before any external-facing use** (accreditation packet, advisory board, publication). It is cheap — one search per fast-moving author — and the first run found two live errors in load-bearing citations.
