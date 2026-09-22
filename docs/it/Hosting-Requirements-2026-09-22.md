@@ -203,7 +203,7 @@ Runtime dependencies as declared in each `package.json` (dev-only tooling omitte
 | Framework / UI | `next` 15.5.18, `react` 19.1, `react-dom` 19.1, `@base-ui/react`, `shadcn`, `lucide-react`, `class-variance-authority`, `clsx`, `tailwind-merge`, `tw-animate-css`, `react-markdown`, `remark-gfm`, `@react-email/components` |
 | Database | `drizzle-orm` 0.45, `pg` 8.21 |
 | Vector store | `weaviate-client` 3.13 |
-| AI / LLM | `ai` 6 (Vercel AI SDK), `@ai-sdk/openai`, `@ai-sdk/openai-compatible`, `@ai-sdk/anthropic`, `openai` 6, `@anthropic-ai/sdk` |
+| AI / LLM | `ai` 6 + `@ai-sdk/openai`, `@ai-sdk/openai-compatible`, `@ai-sdk/anthropic` (the open-source "AI SDK" npm library, maintained by Vercel — a client library only; **no Vercel service is used or contacted**; Vercel hosting was retired 2026-06-04), `openai` 6, `@anthropic-ai/sdk` |
 | MCP | `@modelcontextprotocol/sdk` 1.29 |
 | Documents / files | `mammoth` (DOCX), `unpdf` (PDF), `sharp` (images, native), `yauzl` / `yazl` (zip), `papaparse` (CSV), `fast-xml-parser`, `youtube-transcript` |
 | Validation | `zod` 4 |
