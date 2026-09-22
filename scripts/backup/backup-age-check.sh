@@ -31,7 +31,10 @@ age_h() { local t="$1"; [ -n "$t" ] || { echo 999999; return; }; echo $(( (now -
 newest_dir_mtime() { ls -td "$SHARE"/$1_* 2>/dev/null | head -1 | xargs -I{} stat -f %m {} 2>/dev/null || true; }
 
 stale=(); report=()
-if ! mount | grep -q " $SHARE" && ! mount | grep -q " ${SHARE%/*} "; then
+# Absolute path: /sbin is NOT on the launchd job's PATH, so a bare `mount` is
+# "command not found" there — which read as "NOT MOUNTED" and opened issue #6.
+mounts=$(/sbin/mount)
+if [[ "$mounts" != *" on ${SHARE%/*} ("* ]]; then
   stale+=("share"); report+=("share: NOT MOUNTED ($SHARE)")
 else
   for name in gc_curriculum gc_alumni; do
