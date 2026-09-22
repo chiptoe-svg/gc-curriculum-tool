@@ -4,9 +4,7 @@ Clemson Graphic Communications · prepared for CCIT · 22 September 2026
 
 ## Short answer
 
-Three TypeScript/Node.js services plus one PostgreSQL database, all reached today as paths under `https://gcworkflow.clemson.edu:8443` on a department Mac. Nothing in the applications is Mac-specific. All AI inference already runs on campus infrastructure (RCD LLM gateway, DGX Spark), so the server needs **no GPU**. One small Linux VM — 4 vCPU, 8 GB, 50 GB — is sufficient for everything in this document.
-
-A Shibboleth SP at the reverse proxy (Apache `mod_shib` or equivalent) is a natural fit: the apps would read identity and affiliation from headers set by the SP.
+Three TypeScript/Node.js services plus one PostgreSQL database, all reached today as paths under `https://gcworkflow.clemson.edu:8443` on a department Mac. Nothing in the applications is Mac-specific. All AI inference already runs on campus infrastructure (RCD LLM gateway, DGX Spark), so the server needs **no GPU**. One small Linux VM — 4 vCPU, 8 GB, 50 GB — is sufficient for everything in this document (although additional storage for files would need to be provisioned).
 
 ---
 
@@ -23,8 +21,6 @@ A Shibboleth SP at the reverse proxy (Apache `mod_shib` or equivalent) is a natu
 
 Components 2–4 are each a single Node process; component 1 is one Node process plus the two backing services. Each calls the others over HTTPS through the proxy, so they can be moved independently and in any order.
 
-**Out of scope** (other services on the department Mac): see Appendix B.
-
 ---
 
 ## 2. Languages and runtimes
@@ -34,7 +30,7 @@ Components 2–4 are each a single Node process; component 1 is one Node process
 | 1 Curriculum Tool | TypeScript 5.x | **Node.js 22 LTS**, `pnpm` 11 | `pnpm install && pnpm build` → `next start` (Next.js 15.5) |
 | 2–3 Schedule / catalog MCP | TypeScript 5.5 | Node.js ≥ 22, `npm` | No build; run via `tsx` (`npm install` including dev deps) |
 | 4 COB Advisor | TypeScript 5.5 | Node.js ≥ 20 (runs on 22), `npm` | No build; run via `tsx` |
-| Python | — | — | **Not required at runtime for any component.** Two off-path uses: `yt-dlp` (Python CLI) for the curriculum tool's optional YouTube-transcript feature; and the advising repo's `core/` package (Python ≥ 3.12 + Playwright), an offline catalog builder run once a year off-box — "no request ever runs it." |
+| Python | — | — | **Not required at runtime for any component.** Two off-path uses: `yt-dlp` (Python CLI) for the curriculum tool's YouTube-transcript feature; and the advising repo's `core/` package (Python ≥ 3.12 + Playwright), an offline catalog builder run once a year off-box — "no request ever runs it." |
 
 One Node.js 22 LTS install covers everything. No GPU, CUDA, or ML Python stack. Native Node modules (`sharp`, `pg`, `better-sqlite3`) ship prebuilt Linux binaries; if the base image lacks them, `python3 make g++` are the build-time fallback.
 
@@ -58,7 +54,7 @@ One Node.js 22 LTS install covers everything. No GPU, CUDA, or ML Python stack. 
 | **PostgreSQL** | 17 | 1 | Primary database (`gc_curriculum`). Plain SQL, no extensions. | IT-managed Postgres, or on-VM |
 | **Weaviate** | current | 1 | Vector store; multi-tenant (one tenant per course). ~400 MB. | Container on the VM, loopback only |
 | **SQLite** | (bundled) | 2, 3, 4 | File-based state; no server | — |
-| **docling-serve** (fallback only) | current | 1 | Document extraction. Primary is the DGX Spark instance; local copy is a fallback | Optional container, or accept Spark as single path |
+| **docling-serve** | current | 1 | Document extraction. Primary is the DGX Spark instance; local copy is a fallback | Container on the VM |
 
 ---
 
@@ -68,27 +64,25 @@ One Node.js 22 LTS install covers everything. No GPU, CUDA, or ML Python stack. 
 
 | Port | Purpose |
 |---|---|
-| 443 | HTTPS, terminated by the reverse proxy. Shibboleth SP lives here. |
+| 443 | HTTPS, terminated by the reverse proxy |
 | 22 | Admin SSH |
 
 All components bind `127.0.0.1` behind the proxy. Campus/VPN-only is fine.
 
-### Outbound (all on campus except where noted)
+### Outbound (egress the hosting network must permit)
 
-| Destination | Port | Used by | Purpose | Required |
-|---|---|---|---|---|
-| `llm.rcd.clemson.edu` | 443 | 1, 4 | RCD LLM gateway — all LLM calls (`/v1` hosted models, `/openai/v1` passthrough) | Yes |
-| `gcspark.clemson.edu` (130.127.162.68) | 8080 | 1, 4 | DGX Spark router — embeddings, vision, ASR (Whisper), advisor's primary model | Yes |
-| `gcspark.clemson.edu` | 5001 | 1 | docling-serve (document extraction) | Yes |
-| `regssb.sis.clemson.edu` | 443 | 2 | Banner self-service public pages — daily schedule refresh | Yes |
-| `catalog.clemson.edu` | 443 | 1, 3 | Course catalog | Yes |
-| `clemson.instructure.com` | 443 | 1 | Canvas API — faculty course import | Yes |
-| `github.com` / `api.github.com` | 443 | 1 | Wiki repo push/pull; feedback widget files issues; weekly off-site DB dump | Yes (external) |
-| `www.youtube.com` | 443 | 1 | `yt-dlp` transcript/audio fetch | Optional |
-| `sheets.googleapis.com` | 443 | 1 | Partner-survey sheet export | Optional |
-| Clemson SMB share `gc-pks` | 445 | 1 | Nightly backup target | Replace with IT backup |
+| Destination | Port | Used by | Purpose |
+|---|---|---|---|
+| `llm.rcd.clemson.edu` | 443 | 1, 4 | RCD LLM gateway — all LLM calls |
+| `gcspark.clemson.edu` (130.127.162.68) | 8080, 5001 | 1, 4 | DGX Spark — embeddings, vision, ASR; docling extraction |
+| `regssb.sis.clemson.edu` | 443 | 2 | Banner self-service — daily schedule refresh (until the data feed in Q10 exists) |
+| `catalog.clemson.edu` | 443 | 1, 3 | Course catalog |
+| `clemson.instructure.com` | 443 | 1 | Canvas API — faculty course import |
+| `github.com` / `api.github.com` | 443 | 1 | Wiki repo sync, feedback issues, weekly off-site DB dump (external) |
+| `www.youtube.com` | 443 | 1 | `yt-dlp` transcript fetch |
+| `sheets.googleapis.com` | 443 | 1 | Partner-survey sheet export |
 
-Component 4 calls components 2 and 3 over HTTPS (URLs are configuration). System tools needed on PATH: `git`; optionally `yt-dlp`.
+Component 4 calls components 2 and 3 over HTTPS (URLs are configuration). System tools needed on PATH: `git`, `yt-dlp`.
 
 ---
 
@@ -151,7 +145,7 @@ Component 4 is launched today through a Mac-local wrapper (`onecli run`) that ro
 | `dgx-forward` loopback relay | Works around macOS Local Network Privacy blocking background processes | Not needed; Linux talks to Spark directly |
 | `onecli run` wrapper (component 4 only) | Local outbound-proxy credential injection; not a dependency | Dropped; `.env` as-is |
 | Postgres.app, launchd plists, Caddy | Mac packaging | System Postgres, systemd units, Apache/nginx |
-| Local docling-serve fallback | Resilience when Spark is down | Optional container |
+| Local docling-serve fallback | Resilience when Spark is down | Container |
 
 The move is packaging, not porting.
 
@@ -159,7 +153,7 @@ The move is packaging, not porting.
 
 ## 11. Authentication on the IT host
 
-Shibboleth SP at the reverse proxy. Attributes the apps consume from headers: `eppn`, `mail`, `displayName`, **`eduPersonAffiliation` / `eduPersonScopedAffiliation`** (required for role gating), `isMemberOf` for a GC-faculty or advisor group if available. Replacing the current password checks with trust-the-SP-headers is a contained change in each app (`middleware.ts` + `lib/auth/basic-auth.ts` in component 1; `src/advisor-auth.ts` in component 4).
+Shibboleth SP at the reverse proxy. Attributes the apps consume from headers: `eppn`, `mail`, `displayName`, **`eduPersonAffiliation` / `eduPersonScopedAffiliation`** (required for role gating), `isMemberOf` for a GC-faculty or advisor group if available. Replacing the current password checks with trust-the-SP-headers is a contained change in each app (`middleware.ts` + `lib/auth/basic-auth.ts` in component 1; `src/advisor-auth.ts` in component 4). Attribute release and SP registration are covered in the separate SSO Integration Brief.
 
 | Path | Backend | SP-protected |
 |---|---|---|
@@ -179,16 +173,13 @@ Shibboleth SP at the reverse proxy. Attributes the apps consume from headers: `e
 3. Can the VM run a Weaviate container (or is there a hosted vector store)?
 4. Outbound egress from the hosting network to the destinations in §5 — RCD gateway, Spark (`:8080`, `:5001`), Banner self-service, GitHub, Canvas?
 5. Is Node.js 22 LTS in the standard image? If native-module prebuilts are unavailable, can `python3 make g++` be installed?
-6. Who installs and maintains the Shibboleth SP and reverse-proxy config? Can the app owner edit location blocks?
-7. Which attributes will the SP release — specifically `eduPersonAffiliation` and a group claim (`isMemberOf`)?
-8. Deploy access: shell for the app owner? CI/CD from GitHub?
-9. Backups: coverage (VM snapshot, DB), retention, restore request process.
-10. Logs and monitoring: how does the app owner see application logs and get alerted?
-11. Staging instance possible?
-12. Can `gcworkflow.clemson.edu` move with the apps, on port 443?
-13. `clemson-advising-mcp/docs/clemson-it-data-api-request.md` asks for a supported schedule data feed instead of scraping Banner's public pages daily — can CCIT provide one?
-14. Cost, SLA, patching responsibility (OS vs. Node vs. app), expected turnaround.
-15. Proposed order: components 2–3 first (public data, smallest, repo already written for IT security review with `docs/security.md`, `docs/capacity.md`, `docs/operations.md`, `deploy/`), then 4, then 1.
+6. Deploy access: shell for the app owner? CI/CD from GitHub?
+7. Backups: coverage (VM snapshot, DB), retention, restore request process.
+8. Logs and monitoring: how does the app owner see application logs and get alerted?
+9. Staging instance possible?
+10. `clemson-advising-mcp/docs/clemson-it-data-api-request.md` asks for a supported schedule data feed instead of scraping Banner's public pages daily (this has been approved by CheckIT #4528405715, but still working with Rock McCaskill on making it happen).
+11. Cost, SLA, patching responsibility (OS vs. Node vs. app), expected turnaround.
+12. Proposed order: components 2–3 first (public data, smallest, repo already written for IT security review with `docs/security.md`, `docs/capacity.md`, `docs/operations.md`, `deploy/`), then 4, then 1.
 
 ---
 
@@ -237,19 +228,6 @@ Runtime dependencies as declared in each `package.json` (dev-only tooling omitte
 | PostgreSQL 17 client + server (or managed) | Component 1 | Yes |
 | `git` | Wiki repo sync, deploys | Yes |
 | Apache + `mod_shib` (or nginx + SP) | Proxy + SSO | Yes |
-| Docker/Podman | Weaviate (and optional docling fallback) | Yes, unless IT hosts Weaviate |
-| `python3` + `yt-dlp` | YouTube transcripts (optional feature) | Optional |
+| Docker/Podman | Weaviate, docling-serve | Yes, unless IT hosts Weaviate |
+| `python3` + `yt-dlp` | YouTube transcripts | Yes |
 | `python3 make g++` | Native-module build fallback | Only if prebuilts unavailable |
-
----
-
-## Appendix B — Other services on the department Mac (out of scope)
-
-| Service | Runtime | Notes |
-|---|---|---|
-| Departmental agent runner (nanoclaw) | Node + Apple `container` sandboxes | Docker-native upstream; would need a Docker host. Telegram-connected. Heaviest of the set. |
-| CU Assistant credentialed MCP (mail/calendar) | Node | Deliberately never exposed to the advisor |
-| GC alumni app + careers MCP | Python / Node | Separate DB |
-| Course demand planner, recruiting page, ask-gc | static / small Node | |
-| rag-core | Python (Haystack) | Shadow-mode RAG prototype |
-| omlx | Apple MLX | Would not move — Apple-Silicon-only; replaced by Spark/RCD |
