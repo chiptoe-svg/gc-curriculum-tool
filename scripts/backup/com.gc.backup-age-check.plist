@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.gc.backup-age-check</string>
+  <!-- /bin/bash, not zsh: bash holds the macOS "Network Volumes" grant that lets a
+       background job read the SMB share (the cob-advisor backup's root cause). -->
+  <key>ProgramArguments</key>
+  <array><string>/bin/bash</string><string>/Users/admin/projects/curriculum_developer/scripts/backup/backup-age-check.sh</string></array>
+  <key>WorkingDirectory</key><string>/Users/admin/projects/curriculum_developer</string>
+  <key>EnvironmentVariables</key>
+  <dict><key>PATH</key><string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string><key>HOME</key><string>/Users/admin</string></dict>
+  <!-- 09:00 local: after the 03:15 alumni, 03:30 curriculum and 04:15 cob-advisor runs. -->
+  <key>StartCalendarInterval</key><dict><key>Hour</key><integer>9</integer><key>Minute</key><integer>0</integer></dict>
+  <key>StandardOutPath</key><string>/Users/admin/.local/state/gc-curriculum-tool/backup-age.stdout.log</string>
+  <key>StandardErrorPath</key><string>/Users/admin/.local/state/gc-curriculum-tool/backup-age.stderr.log</string>
+</dict>
+</plist>
