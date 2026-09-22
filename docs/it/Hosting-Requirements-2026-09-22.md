@@ -4,7 +4,7 @@ Clemson Graphic Communications · prepared for CCIT · 22 September 2026
 
 ## Short answer
 
-Three TypeScript/Node.js services plus one PostgreSQL database, all reached today as paths under `https://gcworkflow.clemson.edu:8443` on a department Mac. Nothing in the applications is Mac-specific. All AI inference already runs on campus infrastructure (RCD LLM gateway, DGX Spark), so the server needs **no GPU**. One small Linux VM — 4 vCPU, 8 GB, 50 GB — is sufficient for everything in this document (although additional storage for files would need to be provisioned).
+Three TypeScript/Node.js services plus one PostgreSQL database, all reached today as paths under `https://gcworkflow.clemson.edu:8443` on a department Mac. Nothing in the applications is Mac-specific. All AI inference already runs on campus infrastructure (RCD LLM gateway, DGX Spark), so the server needs **no GPU**. One small Linux VM — 4 vCPU, 8 GB RAM, 100 GB disk — is sufficient for everything in this document.
 
 ---
 
@@ -42,7 +42,7 @@ One Node.js 22 LTS install covers everything. No GPU, CUDA, or ML Python stack. 
 |---|---|---|
 | OS | Linux — Ubuntu 24.04 LTS or RHEL 9 | Anything with systemd |
 | CPU / RAM | 4 vCPU / 8 GB | 16 GB gives headroom for Weaviate; no GPU |
-| Disk | 50 GB | Current data ≈ 600 MB total (see §6); growth is slow |
+| Disk | 100 GB | Measured 2026-09-22: everything that moves is ≈ 5 GB (code + build 1 GB, curriculum data 2.6 GB, Weaviate 0.4 GB, Postgres 0.2 GB, advising MCP + advisor 0.9 GB). OS, runtimes and container images add ~15 GB. 100 GB leaves room for uploaded course materials, logs and IT snapshots. (The department Mac's ~825 GB in use is ~90 % local model weights, agent-container images and caches — none of which exist on a server that uses campus GPUs.) |
 | Process manager | systemd | One unit per component (4) + timers; replaces macOS launchd |
 
 ---
