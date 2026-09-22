@@ -34,13 +34,29 @@ All host-side findings that can be addressed without CCIT involvement have been 
 
 Current externally reachable surface: **22 (key-only), 5900 (admin only), 8443, 8444**. Ports 53 and 88 accept a TCP handshake but 53 is pf-blocked on `en0` and 88 is the local KDC.
 
+## Third assessment (13:22–13:24 EDT, post-reboot) — findings and actions
+
+| Priority | Finding | Action / position | Status |
+|---|---|---|---|
+| High | Administrator auto-login with FileVault off | **Deliberate, documented.** Headless server: every service is a user-level launchd agent, so without auto-login nothing serves after a reboot until someone reaches the console. Mitigations in place: screen lock is set to *immediate* (`sysadminctl -screenLock status`), Screen Sharing restricted to admin, SSH key-only. This is the same decision as FileVault (FileVault on = no auto-login) and we are asking CCIT to make it once, for both — see below. Physical control of the Mac Studio's location is the compensating control. | **Open — CCIT decision** |
+| Medium | Custom PF anchor absent after reboot | Cause confirmed: the macOS 26.7 update replaced `/etc/pf.conf`, dropping the `load anchor` line (standard macOS behaviour; the anchor file survived). Fix: a root LaunchDaemon (`edu.clemson.gc.pf-anchor`) that runs `pfctl -a gc-weaviate-block -f /etc/pf.anchors/gc-weaviate-block` at every boot, independent of `/etc/pf.conf`. Residual value is small — Weaviate is loopback-only since noon — but it keeps the port-53 block enforced and the control update-proof. | **Fix prepared; applied at next admin session** |
+| Medium | Skipped backups return exit 0 | `scripts/backup-offbox.sh` now exits **75 (EX_TEMPFAIL)** on the unwritable-share branch; verified: forced-unwritable → 75, real run → `backup=OK` / 0. `launchctl list` now shows a nonzero last-exit for a skipped window. Backup age monitoring remains a follow-up. | **Closed** (alerting follow-up open) |
+| Medium | 88 / 5900 network scope | 88 is the local KDC that Screen Sharing's Kerberos auth requires; 5900 is Screen Sharing itself, admin only. Both are the administrative-access path for a headless box; the intended boundary is campus/VPN, which is CCIT's perimeter rule. We are not able to narrow further host-side without losing remote administration. | **Policy — CCIT perimeter ACL** |
+| Medium | 53 inconclusive | Attributed on-host with root `lsof`: `mDNSResponder` acting as DNS proxy for Internet Sharing (the Apple `container` bridge). Never answered on the campus interface; pf-blocked on `en0` once the anchor loader above is in place. | **Closed** once anchor loader active |
+| Medium | Shared admin identity; `pfctl` NOPASSWD | The `pfctl` sudoers exception (`/etc/sudoers.d/claude-pfctl`) becomes unnecessary once the LaunchDaemon owns the anchor load and will be removed in the same admin session. Service-account separation: deferred, documented; strongest argument for CCIT hosting. | **pfctl: closing; separation: deferred** |
+| Medium | MDM / EDR / central logging | CCIT decision. | **Open — CCIT** |
+| Low | Safari 27 / Command Line Tools updates; CSP | CLT 26.6 and Safari 27.0 to be applied with the next maintenance. CSP deferred (application nonce work). | **Scheduled / deferred** |
+| — | Automatic restart after power loss: off | Turning on (`pmset -a autorestart 1`) — with auto-login this makes the box fully self-recovering after a power event. | **Applied at next admin session** |
+
+Post-reboot verification (13:30 EDT): all HTTPS routes serving, three containers healthy, container-bridge listeners present, agent runner running, auto-login brought every service back without intervention.
+
 ## Items requiring CCIT
 
 | Item | Request |
 |---|---|
 | External verification | Please scan from an independent network against this allowlist: **8443, 8444, 22, 5900**. Expect everything else filtered (stealth). |
 | Perimeter ACL | Please restrict inbound to this host to those four ports from campus/VPN ranges, so host configuration is not the only control. |
-| FileVault | Currently off. This is a headless, always-on server: with FileVault on, it does not return after a power loss or reboot until someone unlocks it at the console. We need CCIT's guidance on whether that trade-off is acceptable or whether an alternative (e.g. hosting on CCIT infrastructure — see the separate Hosting Requirements document) is preferred. |
+| FileVault + auto-login (one decision) | Headless, always-on server with no on-site operator. Two consistent configurations exist: **(a)** FileVault off + administrator auto-login + immediate screen lock + physical access control (current); **(b)** FileVault on, no auto-login, and a named person who unlocks the console after every reboot/update, accepting the outage until they do. We need CCIT to choose (a) or (b) — or (c) CCIT hosting per the Hosting Requirements document, which makes the question moot. |
 | MDM enrollment | Open to discussion; please advise what enrollment implies for a server-role Mac operated by a department. |
 | Security updates | `softwareupdate -l` to be run and any pending updates applied at the next maintenance window. |
 
