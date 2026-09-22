@@ -117,7 +117,7 @@ Environment variables, read from a `.env` file (chmod 600) or a secrets manager 
 | 2–3 | ~8 | Transport, host/port, per-server auth tokens | `MCP_SCHEDULE_AUTH_TOKEN`, `MCP_CATALOG_AUTH_TOKEN` (consumer bearer tokens, revocable) |
 | 4 | ~35 | LLM provider chain, MCP URLs/tokens, Whisper, session, limits | `CLEMSON_LLM_API_KEY`, `ADVISOR_PASSWORD` (replaced by SSO), `ADVISOR_MCP_*_TOKEN`, `ADVISOR_WHISPER_KEY` |
 
-Component 4's secrets are supplied today by a local credential-injection wrapper (`onecli`); on the IT host, plain env or IT's secrets manager.
+Component 4 is launched today through a Mac-local wrapper (`onecli run`) that routes its outbound HTTPS via a credential-injecting proxy. It is **not a dependency**: it injects no environment variables, the component's own `.env` already carries its keys, and components 1–3 do not use it at all. On the IT host the wrapper is simply dropped; the only migration check is one live LLM call to confirm the `.env` gateway key works without the proxy.
 
 ---
 
@@ -149,7 +149,7 @@ Component 4's secrets are supplied today by a local credential-injection wrapper
 |---|---|---|
 | omlx (Apple MLX local LLM / Whisper) | Local inference option; local Whisper for advisor dictation | Not needed. Production already uses RCD (`AI_PROVIDER=openai`); ASR goes to Spark. |
 | `dgx-forward` loopback relay | Works around macOS Local Network Privacy blocking background processes | Not needed; Linux talks to Spark directly |
-| `onecli` credential wrapper (component 4) | Local secrets injection | Env file or secrets manager |
+| `onecli run` wrapper (component 4 only) | Local outbound-proxy credential injection; not a dependency | Dropped; `.env` as-is |
 | Postgres.app, launchd plists, Caddy | Mac packaging | System Postgres, systemd units, Apache/nginx |
 | Local docling-serve fallback | Resilience when Spark is down | Optional container |
 
