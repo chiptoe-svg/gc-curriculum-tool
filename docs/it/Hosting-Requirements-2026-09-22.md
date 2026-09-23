@@ -32,7 +32,9 @@ Components 2–4 are each a single Node process; component 1 is one Node process
 | 4 COB Advisor | TypeScript 5.5 | Node.js ≥ 20 (runs on 22), `npm` | No build; run via `tsx` |
 | Python | — | — | **Not required at runtime for any component.** Two off-path uses: `yt-dlp` (Python CLI) for the curriculum tool's YouTube-transcript feature; and the advising repo's `core/` package (Python ≥ 3.12 + Playwright), an offline catalog builder run once a year off-box — "no request ever runs it." |
 
-One Node.js 22 LTS install covers everything. No GPU, CUDA, or ML Python stack. Native Node modules (`sharp`, `pg`, `better-sqlite3`) ship prebuilt Linux binaries; if the base image lacks them, `python3 make g++` are the build-time fallback.
+One Node.js 22 LTS install covers everything. No GPU, CUDA, or ML Python stack. Native Node modules: `sharp` and `pg` work from prebuilt binaries on RHEL 8; **`better-sqlite3` (components 2–4) must be compiled on RHEL 8** — `dnf install gcc-toolset-13-gcc-c++ make python3.12`, then `source /opt/rh/gcc-toolset-13/enable` before `npm install` (or `npm rebuild better-sqlite3`). Verified 2026-09-23. Pin `better-sqlite3` to 12.x as the lockfiles do.
+
+Maintenance tooling: Claude Code (2.1.280) and the OpenAI Codex CLI (0.156.1) both install and run on RHEL 8 with Node 22 (verified in the same test), so the app owner can maintain the deployment on the server the same way as today. They need outbound HTTPS to `api.anthropic.com` and `api.openai.com` (or the RCD gateway, if it proxies them) from the app owner's shell — add to §5 egress if used.
 
 ---
 
@@ -40,7 +42,7 @@ One Node.js 22 LTS install covers everything. No GPU, CUDA, or ML Python stack. 
 
 | Item | Requirement | Notes |
 |---|---|---|
-| OS | Linux — Ubuntu 24.04 LTS or RHEL 9 | Anything with systemd |
+| OS | **RHEL 8** (CCIT standard) | Verified 2026-09-23 in a Rocky Linux 8.9 container (binary-compatible, glibc 2.28): Node 22 via NodeSource, PostgreSQL 17 via PGDG, Shibboleth SP 3.6 from the project's EL8 repo, Podman 4.9, Python 3.12 — all install and run. One caveat: the `better-sqlite3` prebuilt binary needs glibc 2.29, so on RHEL 8 it must be built from source with `gcc-toolset-13` (AppStream; the system gcc 8.5 lacks C++20). Tested: 64 s build, loads correctly. Note RHEL 8 maintenance support ends 2029-05-31 — see Q13. |
 | CPU / RAM | 4 vCPU / 8 GB | 16 GB gives headroom for Weaviate; no GPU |
 | Disk | 100 GB | Measured 2026-09-22: everything that moves is ≈ 5 GB (code + build 1 GB, curriculum data 2.6 GB, Weaviate 0.4 GB, Postgres 0.2 GB, advising MCP + advisor 0.9 GB). OS, runtimes and container images add ~15 GB. 100 GB leaves room for uploaded course materials, logs and IT snapshots. (The department Mac's ~825 GB in use is ~90 % local model weights, agent-container images and caches — none of which exist on a server that uses campus GPUs.) |
 | Process manager | systemd | One unit per component (4) + timers; replaces macOS launchd |
@@ -180,6 +182,8 @@ Shibboleth SP at the reverse proxy. Attributes the apps consume from headers: `e
 10. `clemson-advising-mcp/docs/clemson-it-data-api-request.md` asks for a supported schedule data feed instead of scraping Banner's public pages daily (this has been approved by CheckIT #4528405715, but still working with Rock McCaskill on making it happen).
 11. Cost, SLA, patching responsibility (OS vs. Node vs. app), expected turnaround.
 12. Proposed order: components 2–3 first (public data, smallest, repo already written for IT security review with `docs/security.md`, `docs/capacity.md`, `docs/operations.md`, `deploy/`), then 4, then 1.
+13. RHEL 8 maintenance support ends 2029-05-31. What is CCIT's RHEL 9 timeline for hosted VMs, and would a migration be an in-place upgrade or a new VM? (Nothing in our stack is RHEL-8-specific; RHEL 9 removes the compiler caveat.)
+14. Can the VM disk be grown online later (LVM + xfs)? If not, we would ask for 200 GB rather than 100 GB up front.
 
 ---
 
