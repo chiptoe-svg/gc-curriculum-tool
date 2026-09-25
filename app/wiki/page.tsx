@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { isValidSlug } from '@/lib/slug';
-import { loadWikiIndex, levelGroup, type WikiCourse } from '@/lib/wiki/index-data';
+import { loadWikiIndex, levelGroup, codeFromSlug, type WikiCourse } from '@/lib/wiki/index-data';
 import { FeedbackLink } from '@/app/FeedbackLink';
 import { AskTab } from '@/components/AskTab';
 
@@ -16,6 +16,13 @@ function fmtDate(iso: string | null): string {
   if (!iso) return 'not yet captured';
   const d = new Date(iso + 'T00:00:00Z');
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+}
+
+/** "ingest gc-3710 (uncaptioned): regenerated …" → "GC 3710 page updated". */
+function describeLogEntry(text: string): string {
+  const m = /^ingest\s+([a-z]+-[0-9]{4}[a-z]*)/i.exec(text);
+  if (m?.[1]) return `${codeFromSlug(m[1])} page updated`;
+  return text.replace(/: regenerated .*/, '');
 }
 
 function fmtStamp(iso: string): string {
@@ -154,7 +161,7 @@ export default async function WikiIndexPage({ searchParams }: Props) {
                     {data.recent.map(r => (
                       <li key={r.date + r.text}>
                         <time dateTime={r.date}>{fmtStamp(r.date)}</time>
-                        <span>{r.text.replace(/: regenerated .*/, '')}</span>
+                        <span>{describeLogEntry(r.text)}</span>
                       </li>
                     ))}
                   </ul>
