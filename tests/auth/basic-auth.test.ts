@@ -25,6 +25,9 @@ describe('requiresBasicAuth', () => {
     // /view/* is the public read-only profile surface (2026-06-03).
     '/view',
     '/view/GC%204800',
+    // /wiki/* is public read-only (2026-09-25) — same class as /view.
+    '/wiki',
+    '/wiki/courses/gc-1010',
     '/partners',
     '/partners/some-token',
     '/partners/some-token/survey',

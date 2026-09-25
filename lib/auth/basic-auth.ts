@@ -29,6 +29,15 @@ const PUBLIC_PREFIXES = [
   // Edit pages link to the HTTPS Tailscale Funnel where Basic Auth
   // gates them.
   '/view',
+  // The wiki (2026-09-25): the LLM-maintained narrative layer of the same
+  // captured evidence /view shows — course, competency, target and concept
+  // pages. Read-only, serves only the four narrative types (never raw/
+  // snapshots or transcripts), names no individuals. Same "transparent
+  // curriculum" rationale as /view. The pages themselves keep the ?slug=
+  // key OPTIONAL: with it, faculty see their nav + the embedded Ask chat;
+  // without it, readers get the pages and public links only, so LLM spend
+  // (/ask, AskTab) stays behind the gate.
+  '/wiki',
   // The wiki MCP server is self-authenticating via a bearer token
   // (WIKI_MCP_TOKEN, checked in app/api/mcp/route.ts) — agents present a
   // machine token, not the faculty Basic Auth credential. Skip the Basic

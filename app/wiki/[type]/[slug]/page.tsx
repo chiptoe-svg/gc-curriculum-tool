@@ -28,18 +28,10 @@ interface Props {
 export default async function WikiPage({ params, searchParams }: Props) {
   const { type, slug: pageSlug } = await params;
   const { slug = '' } = await searchParams;
-
-  // Slug gate (same pattern as /program / /courses).
-  if (!isValidSlug(slug)) {
-    return (
-      <div className="mx-auto max-w-2xl px-6 py-16 text-center">
-        <h1 className="text-2xl font-semibold">Access link required</h1>
-        <p className="mt-3 text-muted-foreground">
-          Open this page through the access link your administrator shared.
-        </p>
-      </div>
-    );
-  }
+  // Public read-only since 2026-09-25 (see PUBLIC_PREFIXES). The slug is
+  // optional: valid → faculty links (Ask) carry it; absent → public links only.
+  const faculty = isValidSlug(slug);
+  const q = faculty ? `?slug=${encodeURIComponent(slug)}` : '';
 
   // Validate type — 404 for anything outside the allowed set.
   if (!isAllowedType(type)) {
@@ -62,7 +54,7 @@ export default async function WikiPage({ params, searchParams }: Props) {
   const title = frontmatter.title ?? pageSlug;
 
   // Pre-process wikilinks before react-markdown sees the string.
-  const processedBody = resolveWikilinks(body, slug);
+  const processedBody = resolveWikilinks(body, faculty ? slug : '');
 
   // Capitalise type label for breadcrumb.
   const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
@@ -73,10 +65,7 @@ export default async function WikiPage({ params, searchParams }: Props) {
         <div className="mx-auto flex max-w-3xl items-baseline justify-between gap-4 px-6 py-4">
           {/* Breadcrumb */}
           <nav className="flex items-baseline gap-1.5 text-sm text-muted-foreground">
-            <Link
-              href={`/wiki?slug=${encodeURIComponent(slug)}`}
-              className="hover:text-foreground"
-            >
+            <Link href={`/wiki${q}`} className="hover:text-foreground">
               Wiki
             </Link>
             <span>/</span>
@@ -87,15 +76,17 @@ export default async function WikiPage({ params, searchParams }: Props) {
 
           {/* Back link + ask */}
           <div className="flex items-center gap-4">
+            {faculty && (
+              <Link
+                href={`/ask${q}`}
+                className="text-sm text-muted-foreground hover:text-foreground"
+                title="Ask the curriculum chat about this — works at program scope"
+              >
+                💬 Ask
+              </Link>
+            )}
             <Link
-              href={`/ask?slug=${encodeURIComponent(slug)}`}
-              className="text-sm text-muted-foreground hover:text-foreground"
-              title="Ask the curriculum chat about this — works at program scope"
-            >
-              💬 Ask
-            </Link>
-            <Link
-              href={`/wiki?slug=${encodeURIComponent(slug)}`}
+              href={`/wiki${q}`}
               className="text-sm text-muted-foreground hover:text-foreground"
             >
               ← Wiki index

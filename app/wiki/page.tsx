@@ -14,17 +14,11 @@ interface Props {
 
 export default async function WikiIndexPage({ searchParams }: Props) {
   const { slug = '' } = await searchParams;
-
-  if (!isValidSlug(slug)) {
-    return (
-      <div className="mx-auto max-w-2xl px-6 py-16 text-center">
-        <h1 className="text-2xl font-semibold">Access link required</h1>
-        <p className="mt-3 text-muted-foreground">
-          Open this page through the access link your administrator shared.
-        </p>
-      </div>
-    );
-  }
+  // Public read-only since 2026-09-25 (see PUBLIC_PREFIXES). The slug is no
+  // longer a gate: a valid one unlocks the faculty nav + embedded Ask chat;
+  // without it the page renders read-only with public links only.
+  const faculty = isValidSlug(slug);
+  const q = faculty ? `?slug=${encodeURIComponent(slug)}` : '';
 
   const raw = await readWikiPage('index.md');
   const isEmpty = !raw || raw.trim().length === 0;
@@ -42,31 +36,35 @@ export default async function WikiIndexPage({ searchParams }: Props) {
             </h1>
           </div>
           <div className="flex items-center gap-4">
+            {faculty && (
+              <>
+                <Link
+                  href={`/program${q}`}
+                  className="text-sm text-muted-foreground hover:text-foreground"
+                >
+                  Program →
+                </Link>
+                <Link
+                  href={`/courses${q}`}
+                  className="text-sm text-muted-foreground hover:text-foreground"
+                >
+                  Courses →
+                </Link>
+                <Link
+                  href={`/ask${q}`}
+                  className="text-sm text-muted-foreground hover:text-foreground"
+                >
+                  💬 Ask
+                </Link>
+              </>
+            )}
             <Link
-              href={`/program?slug=${encodeURIComponent(slug)}`}
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
-              Program →
-            </Link>
-            <Link
-              href={`/courses?slug=${encodeURIComponent(slug)}`}
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
-              Courses →
-            </Link>
-            <Link
-              href={`/ask?slug=${encodeURIComponent(slug)}`}
-              className="text-sm text-muted-foreground hover:text-foreground"
-            >
-              💬 Ask
-            </Link>
-            <Link
-              href={`/?slug=${encodeURIComponent(slug)}`}
+              href={`/${q}`}
               className="text-sm text-muted-foreground hover:text-foreground"
             >
               ← Hub
             </Link>
-            <FeedbackLink />
+            {faculty && <FeedbackLink />}
           </div>
         </div>
       </header>
@@ -77,12 +75,14 @@ export default async function WikiIndexPage({ searchParams }: Props) {
             <p className="text-muted-foreground">
               No pages yet. They appear here once a course profile is approved.
             </p>
-            <Link
-              href={`/courses?slug=${encodeURIComponent(slug)}`}
-              className="mt-4 inline-block text-sm text-blue-700 hover:underline"
-            >
-              Go to Courses →
-            </Link>
+            {faculty && (
+              <Link
+                href={`/courses${q}`}
+                className="mt-4 inline-block text-sm text-blue-700 hover:underline"
+              >
+                Go to Courses →
+              </Link>
+            )}
           </div>
         ) : (
           <article className="wiki-prose">
@@ -90,12 +90,14 @@ export default async function WikiIndexPage({ searchParams }: Props) {
           </article>
         )}
 
-        <div className="mt-10 border-t pt-6">
-          <p className="mb-3 text-sm text-muted-foreground">
-            Or just ask — the curriculum chat reads the same pages and cites them back as you go.
-          </p>
-          <AskTab slug={slug} />
-        </div>
+        {faculty && (
+          <div className="mt-10 border-t pt-6">
+            <p className="mb-3 text-sm text-muted-foreground">
+              Or just ask — the curriculum chat reads the same pages and cites them back as you go.
+            </p>
+            <AskTab slug={slug} />
+          </div>
+        )}
       </main>
     </div>
   );

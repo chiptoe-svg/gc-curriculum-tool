@@ -97,7 +97,8 @@ export function resolveWikilinks(markdown: string, currentSlug: string): string 
       const displayText = label?.trim() ?? slug;
       const resolved = resolveWikiSlug(slug);
       if (resolved) {
-        return `[${displayText}](/wiki/${resolved.type}/${resolved.slug}?slug=${encodeURIComponent(currentSlug)})`;
+        const q = currentSlug ? `?slug=${encodeURIComponent(currentSlug)}` : '';
+        return `[${displayText}](/wiki/${resolved.type}/${resolved.slug}${q})`;
       }
       // Broken link — render as a code-span so it stands out without raw HTML.
       return `\`${displayText}\``;
