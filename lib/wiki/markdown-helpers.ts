@@ -89,12 +89,17 @@ function resolveWikiSlug(slug: string): { type: WikiType; slug: string } | null 
  *   [[gc-4800]]             → link using slug as label
  *   [[gc-4800|Custom Text]] → link using "Custom Text" as label
  */
-export function resolveWikilinks(markdown: string, currentSlug: string): string {
+export function resolveWikilinks(
+  markdown: string,
+  currentSlug: string,
+  /** Page titles by slug; an unlabelled [[slug]] shows the title instead of the raw slug. */
+  titles?: ReadonlyMap<string, string>,
+): string {
   return markdown.replace(
     /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g,
     (_match, rawSlug: string, label?: string) => {
       const slug = rawSlug.trim();
-      const displayText = label?.trim() ?? slug;
+      const displayText = label?.trim() ?? titles?.get(slug) ?? slug;
       const resolved = resolveWikiSlug(slug);
       if (resolved) {
         const q = currentSlug ? `?slug=${encodeURIComponent(currentSlug)}` : '';

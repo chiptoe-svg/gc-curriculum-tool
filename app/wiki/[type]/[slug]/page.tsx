@@ -58,7 +58,6 @@ export default async function WikiPage({ params, searchParams }: Props) {
   const { frontmatter: fm, body } = parseFrontmatter(raw);
   const title = fm.title ?? pageSlug;
   const description = fm.description ?? '';
-  const processedBody = resolveWikilinks(stripLeadingH1(body), faculty ? slug : '');
 
   // Titles for related links + reverse relations (targets/competencies name
   // their courses; courses mostly don't name them back).
@@ -68,6 +67,7 @@ export default async function WikiPage({ params, searchParams }: Props) {
   for (const t of index.targets) titleOf.set(t.slug, t.title);
   for (const c of index.competencies) titleOf.set(c.slug, c.title);
   for (const c of index.concepts) titleOf.set(c.slug, c.title);
+  const processedBody = resolveWikilinks(stripLeadingH1(body), faculty ? slug : '', titleOf);
   const list = (k: string) => listFromFrontmatter(fm[k]).filter(s => titleOf.has(s));
   const fmOf = makeFmReader(); // per-request: the wiki regenerates, so never cache across requests
 
