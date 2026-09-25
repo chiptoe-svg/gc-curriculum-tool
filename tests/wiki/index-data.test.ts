@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { loadWikiIndex, codeFromSlug, levelGroup } from '@/lib/wiki/index-data';
+import { loadWikiIndex, codeFromSlug, levelGroup, listFromFrontmatter } from '@/lib/wiki/index-data';
 
 let root: string;
 const fm = (o: Record<string, string>) =>
@@ -64,5 +64,15 @@ describe('helpers', () => {
     expect(levelGroup(1).key).toBe('foundations'); expect(levelGroup(2).key).toBe('foundations');
     expect(levelGroup(3).key).toBe('integration'); expect(levelGroup(4).key).toBe('specialty');
     expect(levelGroup(0).key).toBe('related');
+  });
+});
+
+describe('listFromFrontmatter', () => {
+  it('parses the raw "[a, b]" strings the frontmatter parser leaves', () => {
+    expect(listFromFrontmatter('[gc-1040, gc-3460]')).toEqual(['gc-1040', 'gc-3460']);
+    expect(listFromFrontmatter('[]')).toEqual([]);
+    expect(listFromFrontmatter('null')).toEqual(['null']); // caller filters against known slugs
+    expect(listFromFrontmatter(undefined)).toEqual([]);
+    expect(listFromFrontmatter(['x'])).toEqual(['x']);
   });
 });

@@ -58,6 +58,14 @@ export function codeFromSlug(slug: string): string {
   return `${m[1].toUpperCase()} ${m[2].toUpperCase()}`;
 }
 
+/** Frontmatter lists arrive as the raw string "[a, b, c]" — split them. */
+export function listFromFrontmatter(v: unknown): string[] {
+  if (Array.isArray(v)) return v.map(String);
+  if (typeof v !== 'string') return [];
+  const inner = v.trim().replace(/^\[|\]$/g, '');
+  return inner.split(',').map(x => x.trim().replace(/^["']|["']$/g, '')).filter(Boolean);
+}
+
 function str(v: unknown): string {
   return typeof v === 'string' ? v : '';
 }

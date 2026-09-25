@@ -404,3 +404,29 @@
 @media (prefers-reduced-motion: no-preference) {
   .wiki-index a { transition: text-decoration-color 120ms ease; }
 }
+
+/* /wiki article pages — same system as the index ---------------------------- */
+.wiki-page__crumbs { display: flex; gap: 0.5rem; font-size: 0.875rem; color: var(--wiki-muted); }
+.wiki-page__crumbs a:hover { color: var(--foreground); }
+.wiki-page__kind { margin: 2.5rem 0 0.25rem; font-size: 1rem; font-weight: 600; letter-spacing: 0.01em; font-variant-numeric: tabular-nums; }
+.wiki-page__title { margin-top: 0; max-width: 20ch; font-size: clamp(2rem, 4.5vw, 3rem); }
+.wiki-page__body { display: grid; grid-template-columns: minmax(0, 42rem) 16rem; gap: 4rem; margin-top: 2.5rem; padding-top: 2rem; border-top: 1px solid var(--wiki-rule); }
+.wiki-page .wiki-prose { font-family: var(--font-body, ui-sans-serif, system-ui, sans-serif); font-size: 1.0625rem; line-height: 1.65; }
+.wiki-page .wiki-prose h2 { font-size: 1.5rem; margin-top: 2.5rem; }
+.wiki-page .wiki-prose h3 { font-size: 1.125rem; }
+.wiki-page .wiki-prose a { color: inherit; text-decoration: underline; text-decoration-color: var(--wiki-accent); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.wiki-page .wiki-prose a:hover { text-decoration-thickness: 2px; }
+.wiki-page .wiki-prose code { font-family: var(--font-mono-plex, ui-monospace, monospace); font-size: 0.9em; background: var(--muted); padding: 0.05em 0.35em; border-radius: 3px; }
+.wiki-page .wiki-prose table { width: 100%; border-collapse: collapse; font-size: 0.9375rem; margin: 1rem 0 1.5rem; }
+.wiki-page .wiki-prose th, .wiki-page .wiki-prose td { text-align: left; padding: 0.45rem 0.6rem 0.45rem 0; border-bottom: 1px solid var(--wiki-rule); vertical-align: top; }
+.wiki-page .wiki-prose th { font-weight: 600; }
+.wiki-page .wiki-prose blockquote { margin: 1rem 0; padding-left: 1rem; border-left: 2px solid var(--wiki-accent); color: var(--wiki-muted); }
+.wiki-page__aside { font-size: 0.9375rem; }
+.wiki-page__aside section + section { margin-top: 1.75rem; }
+.wiki-page__aside h2 { font-family: var(--font-display); font-weight: 500; font-size: 1.125rem; letter-spacing: -0.01em; margin: 0 0 0.5rem; }
+.wiki-page__aside ul { list-style: none; margin: 0; padding: 0; }
+.wiki-page__aside li { padding: 0.4rem 0; border-top: 1px solid var(--wiki-rule); line-height: 1.35; }
+.wiki-page__aside li:last-child { border-bottom: 1px solid var(--wiki-rule); }
+@media (max-width: 860px) {
+  .wiki-page__body { grid-template-columns: 1fr; gap: 2.5rem; }
+}
