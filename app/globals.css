@@ -398,6 +398,8 @@
   .wiki-index__bar { flex-direction: column; gap: 0.5rem; }
   .wiki-cols { grid-template-columns: 1fr; gap: 2rem; }
   .wiki-map__list { padding-left: 0; }
+  .wiki-map__level { flex-wrap: wrap; row-gap: 0; }
+  .wiki-map__range { flex-basis: 100%; padding-left: 1.35rem; }
 }
 @media (prefers-reduced-motion: no-preference) {
   .wiki-index a { transition: text-decoration-color 120ms ease; }
