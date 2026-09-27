@@ -332,6 +332,8 @@ Anything not listed here that a wiki would want — edits with rationale, concep
 
 ### Next steps — ordered (the working sequence)
 
+> **Forward-looking plan now lives in [`docs/ROADMAP.md`](./ROADMAP.md) (2026-09-26)** — vision, themes, planned, possible, outstanding issues, decisions pending — rendered live at `https://gcworkflow.clemson.edu:8443/dashboard/curriculum/`. STATE.md stays the record; items move here when they ship or are deferred with a reason. The arcs below are kept for their detail.
+
 > Consolidated 2026-06-05 so nothing drops. Status: ✅ shipped · 📋 spec'd, ready to build · ◻ not spec'd. The detailed catalog is the "Spec'd, not yet implemented" table below; this is the *order* + dependencies.
 
 **Arc A — Employer demand → curriculum-sufficiency loop (vision Q1 spine; current priority — IN PROGRESS)**

@@ -71,3 +71,6 @@ drizzle/meta/
 /.playwright-mcp/
 /review-*.jpeg
 /research-papers/
+
+# per-project live dashboard working copy (published by ~/.claude/dashboard/sync.sh)
+/.dashboard/
