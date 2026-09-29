@@ -2,7 +2,7 @@
 
 The forward-looking plan. `STATE.md` is the record of what is and what was decided; this is
 what could be and what we intend. Items move from here to STATE.md when they ship or are
-deferred with a reason. Rendered live at `https://gcworkflow.clemson.edu:8443/dashboard/curriculum/`.
+deferred with a reason. Rendered live at `https://gcworkflow.clemson.edu:8443/board/curriculum/`.
 Seeded 2026-09-26 from STATE.md's Next-up and the September IT arc; edit freely.
 
 ## Vision
