@@ -46,7 +46,7 @@ Table `access_grants` (Drizzle migration; sits beside `partners`, which already 
 | `created_at` | timestamptz | |
 | `last_used_at` | timestamptz null | written at most once per hour |
 
-**Built-in grants** (never rows): `FACULTY_BASIC_AUTH` → `{scope: ['*'], can: ['capture','create','admin']}`; `CREATE_ONLY_AUTH` → `{scope: [], can: ['create']}`; `PROTOTYPE_SLUG` presented as `?key=` or `?slug=` → the department-wide grant.
+**Built-in grants** (never rows): `FACULTY_BASIC_AUTH` → `{scope: ['*'], can: ['capture','create','admin']}`; `CREATE_ONLY_AUTH` → `{scope: [], can: ['create']}`. `PROTOTYPE_SLUG` is **not** a grant (amended 2026-09-30): it is only the value that satisfies the page-level `isValidSlug` checks.
 
 **Session cookie** `gc_session` = `<grant id>.<base64url HMAC-SHA256(grant id, SESSION_SECRET)>`; `HttpOnly; Secure; SameSite=Lax; Path=/`; max-age = remaining grant lifetime capped at 30 days. Carries no scope — the row is read on every request, so revocation and scope changes are immediate. Built-in grants use fixed ids (`builtin:faculty`, `builtin:creator`).
 
@@ -58,7 +58,8 @@ Step 2.1 (magic-link exchange) runs on **every** path, public ones included — 
 
 1. Cleartext interstitial — unchanged, first.
 2. Resolve a grant, first match wins:
-   1. `?key=` (or legacy `?slug=` on a gated path) on **any** path: hash → look up (or match built-in) → live → **set cookie, 302 to the same URL with `key`/`slug` removed**. On a public path a dead key is simply ignored (no 401 — the page is public anyway).
+   1. `?key=` on **any non-`/api/` path, GET/HEAD only**: hash → look up → live → **set cookie, 302 to the same URL with `key` removed**, the redirect built from `PUBLIC_HTTPS_ORIGIN` (falling back to the request URL) so it lands on the public origin behind the proxy. On a public path a dead key — or a DB failure during the lookup — is simply ignored (`next`; the page is public anyway). `?key=` on `/api/*` or on a non-GET method is ignored (keys are for top-level navigation; a 302 on a POST would drop the body).
+      **`?slug=` is NOT a credential and is never exchanged** (amended 2026-09-30 after Task 5 review). It never was one: the app has always required Basic Auth *alongside* the slug. Existing `?slug=` links therefore keep working exactly as before — Basic Auth (now setting a cookie) or a session cookie authorizes; the slug only satisfies the page-level checks. Consequence: the value the middleware injects for those checks (step 4) grants nothing by itself, so exposing it to a scoped user is harmless. The department-wide grant is reachable only through Basic Auth or a minted `*` link.
    2. `gc_session` cookie: verify HMAC → load row → live → use. Invalid/dead → clear cookie, fall through.
    3. `Authorization: Basic` → built-in grant → also set cookie.
    4. None → **401**, `WWW-Authenticate: Basic realm="GC Curriculum Tool - Faculty"`, body: a plain page — "Faculty: sign in with your access link, or the department login. Students and visitors: the course pages and wiki need no login."
@@ -88,9 +89,11 @@ Lost link = revoke + grant.
 ## Errors
 
 - Expired/revoked cookie → cleared, then the normal 401 page.
-- Expired/revoked `?key=` → on a gated path, 401 page; on a public path, ignored (no cookie set).
+- Expired/revoked `?key=` → on a gated path, falls through to cookie/Basic and otherwise the 401 page; on a public path, ignored (no cookie set).
+- With `SESSION_SECRET` unset, a valid `?key=` on a gated page authorizes that request but cannot be stripped (no cookie to carry the session), so the token remains in the URL — a known exposure, acceptable only in development; production must set the secret (recorded in STATE.md Deferred/debt).
+- `touchLastUsed` failures never affect the response (fire-and-forget, including synchronous throws).
 - Tampered cookie (bad HMAC) → treated as absent.
-- DB unavailable → 503 for gated paths (fail closed), public paths unaffected.
+- DB unavailable → 503 for gated paths (fail closed); public paths unaffected, including a public path carrying a `?key=` (the key is ignored).
 
 ## Testing
 
