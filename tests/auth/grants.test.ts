@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { describe, it, expect } from 'vitest';
 import { newToken, hashToken, signSession, verifySession, builtinGrant, isLive, cookieMaxAge, MAX_COOKIE_AGE_S } from '@/lib/auth/grants';
 
@@ -30,8 +31,10 @@ describe('session cookie', () => {
 
 describe('built-ins and liveness', () => {
   it('faculty is department-wide, creator is create-only', () => {
-    expect(builtinGrant('faculty')).toEqual({ id: 'builtin:faculty', label: 'Department login', scope: ['*'], can: ['capture', 'create', 'admin'] });
-    expect(builtinGrant('creator')).toEqual({ id: 'builtin:creator', label: 'Create-only login', scope: [], can: ['create'] });
+    const fp = (c: string) => createHash('sha256').update(c).digest('hex').slice(0, 16);
+    expect(builtinGrant('faculty', 'gcfaculty:pw')).toEqual({ id: `builtin:faculty:${fp('gcfaculty:pw')}`, label: 'Department login', scope: ['*'], can: ['capture', 'create', 'admin'] });
+    expect(builtinGrant('creator', 'creator:pw')).toEqual({ id: `builtin:creator:${fp('creator:pw')}`, label: 'Create-only login', scope: [], can: ['create'] });
+    expect(builtinGrant('faculty', 'a:1').id).not.toBe(builtinGrant('faculty', 'a:2').id);
   });
   it('isLive', () => {
     const now = new Date('2026-09-30T12:00:00Z');

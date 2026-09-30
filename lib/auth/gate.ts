@@ -1,6 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { authorize, type Grant } from '@/lib/auth/authorize';
-import { SESSION_COOKIE, builtinGrant, cookieMaxAge, isLive, signSession, verifySession, type StoredGrant } from '@/lib/auth/grants';
+import { SESSION_COOKIE, builtinGrant, cookieMaxAge, grantFromSessionCookie, isLive, signSession, type StoredGrant } from '@/lib/auth/grants';
 import { forbiddenPage, unauthorizedPage } from '@/lib/auth/pages';
 import { requiresBasicAuth, resolveRole } from '@/lib/auth/basic-auth';
 
@@ -53,23 +53,22 @@ async function fromKey(req: NextRequest, gated: boolean, deps: GateDeps): Promis
 }
 
 async function fromCookie(req: NextRequest, deps: GateDeps): Promise<Resolved | null | 'dead'> {
-  const raw = req.cookies.get(SESSION_COOKIE)?.value;
-  if (!raw) return null;
-  const id = deps.env.sessionSecret ? verifySession(raw, deps.env.sessionSecret) : null;
-  if (!id) return 'dead';
-  if (id === 'builtin:faculty' || id === 'builtin:creator') return { grant: builtinGrant(id.slice(8) as 'faculty' | 'creator') };
-  const stored = await deps.findGrantById(id);
-  if (!stored || !isLive(stored, deps.now?.())) return 'dead';
-  // Fire-and-forget: deferred to a microtask so even a synchronous throw
-  // inside deps.touch() can never turn into a 503 for this request.
-  void Promise.resolve().then(() => deps.touch(id)).catch(() => {});
-  return { grant: stored };
+  const g = await grantFromSessionCookie(req.cookies.get(SESSION_COOKIE)?.value, deps);
+  if (!g || g === 'dead') return g;
+  if (!g.id.startsWith('builtin:')) {
+    // Fire-and-forget: deferred to a microtask so even a synchronous throw
+    // inside deps.touch() can never turn into a 503 for this request.
+    void Promise.resolve().then(() => deps.touch(g.id)).catch(() => {});
+  }
+  return { grant: g };
 }
 
 function fromBasic(req: NextRequest, deps: GateDeps): Resolved | null {
   const role = resolveRole(req.headers.get('authorization'), { faculty: deps.env.faculty, creator: deps.env.creator });
   if (!role) return null;
-  const g = builtinGrant(role);
+  const credential = role === 'faculty' ? deps.env.faculty : deps.env.creator;
+  if (!credential) return null; // unreachable: resolveRole only matches a set credential
+  const g = builtinGrant(role, credential);
   return { grant: g, setCookie: cookieFor(g, { expiresAt: null }, deps) };
 }
 

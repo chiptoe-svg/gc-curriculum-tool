@@ -26,10 +26,34 @@ export function verifySession(value: string | undefined, secret: string): string
   return id;
 }
 
-export function builtinGrant(role: 'faculty' | 'creator'): Grant {
+export type BuiltinRole = 'faculty' | 'creator';
+
+/** First 16 hex of sha256(credential): binds a built-in session to the Basic
+ * credential it was minted from, so rotating FACULTY_BASIC_AUTH /
+ * CREATE_ONLY_AUTH kills every cookie minted from the old value
+ * (2026-09-30 final review, I1). */
+export function credentialFingerprint(credential: string): string {
+  return createHash('sha256').update(credential).digest('hex').slice(0, 16);
+}
+
+/** id is `builtin:<role>:<fingerprint of the credential>`. */
+export function builtinGrant(role: BuiltinRole, credential: string): Grant {
+  const id = `builtin:${role}:${credentialFingerprint(credential)}`;
   return role === 'faculty'
-    ? { id: 'builtin:faculty', label: 'Department login', scope: ['*'], can: ['capture', 'create', 'admin'] }
-    : { id: 'builtin:creator', label: 'Create-only login', scope: [], can: ['create'] };
+    ? { id, label: 'Department login', scope: ['*'], can: ['capture', 'create', 'admin'] }
+    : { id, label: 'Create-only login', scope: [], can: ['create'] };
+}
+
+/** Rebuild a built-in grant from a verified cookie id against the CURRENT
+ * credentials. null (dead) when the id is not a well-formed built-in id, the
+ * role's credential is unset, or the fingerprint no longer matches. */
+export function builtinFromId(id: string, env: { faculty?: string; creator?: string }): Grant | null {
+  const m = /^builtin:(faculty|creator):([0-9a-f]{16})$/.exec(id);
+  if (!m) return null;
+  const role = m[1] as BuiltinRole;
+  const credential = env[role];
+  if (!credential || credentialFingerprint(credential) !== m[2]) return null;
+  return builtinGrant(role, credential);
 }
 
 export interface StoredGrant extends Grant { expiresAt: Date | null; revokedAt: Date | null; lastUsedAt: Date | null }
@@ -42,6 +66,31 @@ export function isLive(g: { expiresAt: Date | null; revokedAt: Date | null }, no
 export function cookieMaxAge(g: { expiresAt: Date | null }, now = new Date()): number {
   if (!g.expiresAt) return MAX_COOKIE_AGE_S;
   return Math.max(0, Math.min(MAX_COOKIE_AGE_S, Math.floor((g.expiresAt.getTime() - now.getTime()) / 1000)));
+}
+
+/**
+ * Resolve a raw `gc_session` cookie value to its grant. null = no cookie;
+ * 'dead' = present but unusable (bad MAC, unknown/revoked/expired grant, or a
+ * built-in cookie whose credential has since rotated or been unset — I1).
+ * DB errors propagate. Shared by gate() and the upload routes that sit
+ * outside the middleware matcher (lib/sandbox/access.ts). `findGrantById` is
+ * injected so callers (and tests) control the lookup.
+ */
+export async function grantFromSessionCookie(
+  raw: string | undefined,
+  deps: {
+    findGrantById(id: string): Promise<StoredGrant | null>;
+    env: { sessionSecret?: string; faculty?: string; creator?: string };
+    now?: () => Date;
+  },
+): Promise<Grant | null | 'dead'> {
+  if (!raw) return null;
+  const id = deps.env.sessionSecret ? verifySession(raw, deps.env.sessionSecret) : null;
+  if (!id) return 'dead';
+  if (id.startsWith('builtin:')) return builtinFromId(id, deps.env) ?? 'dead';
+  const stored = await deps.findGrantById(id);
+  if (!stored || !isLive(stored, deps.now?.())) return 'dead';
+  return stored;
 }
 
 function toStored(r: typeof accessGrants.$inferSelect): StoredGrant {

@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 // @vitest-environment node
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
@@ -71,7 +72,8 @@ describe('middleware cookie ordering', () => {
     const cookie = res.cookies.get('gc_session');
     expect(cookie).toBeDefined();
     expect(cookie!.value).not.toBe('');
-    expect(cookie!.value.startsWith('builtin:faculty.')).toBe(true);
+    const fp = createHash('sha256').update('gcfaculty:godfrey').digest('hex').slice(0, 16);
+    expect(cookie!.value.startsWith(`builtin:faculty:${fp}.`)).toBe(true);
     expect(cookie!.maxAge).toBeGreaterThan(0);
   });
 });

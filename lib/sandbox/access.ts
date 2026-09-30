@@ -3,6 +3,8 @@ import { authorizedForBearer } from '@/lib/auth/bearer';
 import { getGrantById, isGrantValid } from '@/lib/sandbox/grants';
 import { lookupScopedSession, SCOPED_SESSION_COOKIE } from '@/lib/sandbox/sessions';
 import { isProgramVisible, type CourseVisibilityFields } from '@/lib/courses/program-visibility';
+import { authorize, classify } from '@/lib/auth/authorize';
+import { findGrantById, grantFromSessionCookie, SESSION_COOKIE as GRANT_SESSION_COOKIE } from '@/lib/auth/grants';
 
 /**
  * Operator override credential — presented as `Authorization: Bearer <token>`
@@ -54,18 +56,68 @@ export function courseFromScopedPath(pathname: string): string | null {
   return null;
 }
 
-/** Read the scoped-session cookie, validate the session AND its grant, return the binding. */
+/**
+ * The two upload routes EXCLUDED from the middleware matcher (see
+ * middleware.ts `config.matcher`) whose inline auth consults
+ * resolveScopedSession in place of Basic. Exact paths — no trailing slash, no
+ * sub-paths (those still pass through middleware + gate()).
+ */
+const EXCLUDED_UPLOAD_ROUTE = /^\/api\/courses\/([^/]+)\/(?:materials|imscc-import)$/;
+
+/**
+ * Scoped-access-link holders on the matcher-excluded upload routes
+ * (2026-09-30 final review, I3b). Those routes never see gate(), so resolve
+ * the `gc_session` cookie here and run it through the SAME scope table
+ * (`authorize`): only a live grant whose classification is a course write it
+ * is allowed on binds, to the route's own (decoded, un-normalised) [code].
+ * Any failure — no url, bad MAC, dead grant, DB error — is null (the route
+ * then falls back to Basic Auth, i.e. fails closed).
+ */
+async function resolveGrantSession(
+  req: { headers: { get(name: string): string | null }; url?: string; method?: string },
+): Promise<{ courseCode: string; instructorName: string } | null> {
+  if (!req.url || !req.method) return null;
+  let pathname: string;
+  try { pathname = new URL(req.url).pathname; } catch { return null; }
+  const route = EXCLUDED_UPLOAD_ROUTE.exec(pathname);
+  if (!route?.[1]) return null;
+  const cookie = req.headers.get('cookie') ?? '';
+  const m = cookie.match(new RegExp(`(?:^|; )${GRANT_SESSION_COOKIE}=([^;]+)`));
+  if (!m?.[1]) return null;
+  try {
+    const grant = await grantFromSessionCookie(m[1], {
+      findGrantById,
+      env: {
+        sessionSecret: process.env.SESSION_SECRET?.trim() || undefined,
+        faculty: process.env.FACULTY_BASIC_AUTH,
+        creator: process.env.CREATE_ONLY_AUTH,
+      },
+    });
+    if (!grant || grant === 'dead') return null;
+    if (classify(req.method, pathname).kind !== 'course-write') return null;
+    if (!authorize(grant, req.method, pathname).ok) return null;
+    return { courseCode: decodeURIComponent(route[1]), instructorName: grant.label };
+  } catch {
+    return null;
+  }
+}
+
+/** Read the scoped-session cookie, validate the session AND its grant, return
+ * the binding. Falls back to a scoped-access-link `gc_session` cookie on the
+ * matcher-excluded upload routes (resolveGrantSession). */
 export async function resolveScopedSession(
-  req: { headers: { get(name: string): string | null } },
+  req: { headers: { get(name: string): string | null }; url?: string; method?: string },
 ): Promise<{ courseCode: string; instructorName: string } | null> {
   const cookie = req.headers.get('cookie') ?? '';
   const m = cookie.match(new RegExp(`(?:^|; )${SCOPED_SESSION_COOKIE}=([^;]+)`));
-  if (!m || !m[1]) return null;
-  const sess = await lookupScopedSession(m[1]);
-  if (!sess) return null;
-  const grant = await getGrantById(sess.grantId);
-  if (!grant || !isGrantValid(grant)) return null;
-  return { courseCode: sess.courseCode, instructorName: sess.instructorName };
+  if (m && m[1]) {
+    const sess = await lookupScopedSession(m[1]);
+    if (sess) {
+      const grant = await getGrantById(sess.grantId);
+      if (grant && isGrantValid(grant)) return { courseCode: sess.courseCode, instructorName: sess.instructorName };
+    }
+  }
+  return resolveGrantSession(req);
 }
 
 /**

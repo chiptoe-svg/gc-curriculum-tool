@@ -70,12 +70,20 @@ Cost: one DB read per gated request (as the partner path today).
 
 ## Scope table — `authorize()` (pure, no I/O)
 
-| Kind | Recognised by | Requires |
-|---|---|---|
-| Read | `GET`/`HEAD` on any gated page or API (incl. `/program`, `/explore/*`, `/courses`, `/ask`, `/api/ask*`, `/board/*`) | any live grant |
-| Course write | non-GET where the course code is in the path: `/api/capture/[code]/**`, `/api/courses/[code]/**`, `/api/explore/[code]/**`, `/api/admin/courses/[code]/**`; `[code]` URL-decoded and normalised (`GC%201010` → `GC 1010`) | `capture` ∧ (code ∈ scope or scope `*`) |
-| Create | `POST /courses/new`, the single-add roster API (the existing `creatorAllowed` list) | `create` |
-| Admin / unclassified | any other gated non-GET (`/api/admin/**` bulk, `/api/program/**` writes, `/api/settings`, `/api/flags`, **and anything not matched above**) | scope `*` ∧ `admin` |
+(Table amended 2026-09-30 after the final review — see *Amendments — 2026-09-30 final review* below. It mirrors `classify()` rule for rule, in evaluation order; trailing slashes are stripped first.)
+
+A **course code** below means the path segment right after a course prefix (`/api/capture/`, `/api/courses/`, `/api/explore/`, `/api/admin/courses/`) that, after **one** percent-decode and with **no** normalisation (no trim, no whitespace collapse, no case-fold), matches `^(?:[A-Z]{2,4} \d{4}[A-Za-z]{0,2}|EXT-[0-9a-f]{8})$`. A segment that fails to decode or to match is not a course code.
+
+| # | Kind | Recognised by | Requires |
+|---|---|---|---|
+| 1 | Read | `GET`/`HEAD` on any gated page or API **outside the admin surface** (`/admin`, `/admin/**`, `/api/admin/**`) — incl. `/program`, `/explore/*`, `/courses`, `/ask`, `/api/ask*`, `/board/*` | any live grant |
+| 2 | Read | `GET`/`HEAD` on the admin surface only at `/api/admin/courses/roster` or `/api/admin/courses/<course code>/**` (course data) | any live grant |
+| 3 | Admin | every other `GET`/`HEAD` on the admin surface (`/admin`, `/admin/partners`, `/api/admin/sandbox-grants`, `/api/admin/partners`, `/api/admin/courses/intended-skills`, …) | scope `*` ∧ `admin` |
+| 4 | Read | any method on `/api/ask`, `/api/ask/**`, `/api/flags`, `/api/feedback` (exact; `/api/flags/<id>` is not included) | any live grant |
+| 5 | Create | `POST /courses/new`, `POST /api/admin/courses/roster` (the existing `creatorAllowed` list) | `create` |
+| 6 | Admin | non-GET on `/api/admin/courses/roster/**` (bulk) | scope `*` ∧ `admin` |
+| 7 | Course write | non-GET on `/api/capture/<course code>/**`, `/api/courses/<course code>/**`, `/api/explore/<course code>/**`, `/api/admin/courses/<course code>/**`; the code is upper-cased for the scope comparison | `capture` ∧ (code ∈ scope or scope `*`) |
+| 8 | Admin / unclassified | **anything not matched above** — including non-GET under a course prefix whose segment is not a course code (`/api/admin/courses/intended-skills`, `GC%203730%20`, `gc%203730`, `GC3730`), `/api/program/**` writes, `/api/settings`, `PATCH /api/flags/<id>` | scope `*` ∧ `admin` |
 
 Rules: the **real HTTP method only** (override headers ignored); the **path is the source of truth** for the course (handlers already trust it); **default-deny** — unmatched gated writes are admin-only; **capabilities are always required** — scope `*` widens *which courses*, never *what* may be done (amended 2026-09-30 after Task 1 review: the first draft let `*` bypass `capture`/`create`).
 
@@ -109,3 +117,19 @@ Migration + `SESSION_SECRET` (`.env.local`, `.env.example`), deploy without sudo
 ## Files
 
 `middleware.ts` (faculty branch), new `lib/auth/grants.ts` (lookup, cookie sign/verify, built-ins), new `lib/auth/authorize.ts` (pure scope table), `lib/db/schema.ts` + one migration, `scripts/access/{grant,list,revoke}.ts`, tests under `tests/auth/`. No page or API route is edited.
+
+## Amendments — 2026-09-30 final review
+
+The final whole-branch review found one critical and three important gaps. The rulings below are part of this design; the scope table above has been rewritten to match `classify()` exactly.
+
+**C1 — the admin surface is not part of "everything readable".** "Everything readable" was too broad: `/admin/partners` renders partner magic links and `GET /api/admin/sandbox-grants` returns raw tokens. `GET`/`HEAD` on `/admin`, `/admin/**` and `/api/admin/**` is admin-kind (scope `*` ∧ `admin`), with two carve-outs that keep their read kind: course data at `/api/admin/courses/<course code>/**` and the roster create path `/api/admin/courses/roster`. A scoped grant, and the create-only built-in, get 403 there; the department built-in is unaffected.
+
+**I1 — built-in sessions are bound to the credential they were minted from.** A built-in grant's id is `builtin:<faculty|creator>:<fp>`, `fp` = the first 16 hex of sha256 of the Basic credential. On every request the gate recomputes the fingerprint from the **current** `FACULTY_BASIC_AUTH` / `CREATE_ONLY_AUTH`; if that variable is unset or the fingerprint differs, the cookie is dead (cleared, 401 unless Basic is also presented). Rotating the shared credential therefore revokes its cookies immediately, restoring the pre-cookie meaning of "rotate the password". Cookies in the old fingerprint-less shape are dead.
+
+**I2 — only a strictly-shaped course code makes a course path.** The segment after a course prefix is a course code only if, after one percent-decode and with **no** normalisation, it matches `^(?:[A-Z]{2,4} \d{4}[A-Za-z]{0,2}|EXT-[0-9a-f]{8})$`. Anything else under `/api/capture/`, `/api/courses/`, `/api/explore/` or `/api/admin/courses/` (other than the roster create path) is admin-kind — so `POST /api/admin/courses/intended-skills` (the bulk seeding job) needs `admin`, and `GC%203730%20` (trailing space), `gc%203730` and `GC3730` fail closed rather than being trimmed or case-folded into a real code. The review proposed `[A-Z]?` for the suffix; it was widened to fit the live `courses.code` data (2026-09-30: `GC 4900ap`, `GC 4900bl`, `GC 4900or`, `GC 4990ta` carry lower-case two-letter suffixes; `EXT-<8 hex>` is the generated sandbox namespace in `lib/sandbox/courses.ts`). The code is upper-cased only for the scope comparison.
+
+**I3a — `/ask`, flags and feedback are readable.** `/api/ask`, `/api/ask/**`, `/api/flags` and `/api/feedback` are read-kind for any live grant, any method — interaction endpoints without privilege, as "Everything readable, `/ask` included" already promised. `PATCH /api/flags/<id>` (resolving a flag) is not included and stays admin.
+
+**I3b — uploads outside the matcher.** `/api/courses/<code>/materials` and `/api/courses/<code>/imscc-import` are excluded from the middleware matcher (body-replay) and authorize inline through `resolveScopedSession` in `lib/sandbox/access.ts`. That helper now also resolves a `gc_session` cookie — on exactly those two paths, for a non-GET that `classify` makes a course write — and runs it through `authorize()`; a pass binds the session to the route's own decoded `[code]`, so a scoped link holder with `capture` on that course can upload, import and bulk-wipe materials. Any failure (no cookie, bad MAC, dead grant, DB error) yields no binding and the route falls back to Basic (fail closed). `/api/transcribe` checks Basic inline with no such hook, so it is **deferred**: scoped link holders cannot transcribe until that route is edited. The "No page or API route is edited" constraint stands.
+
+**Deferred — `?key=` over plain HTTP.** A key sent over cleartext HTTP to a public path (e.g. LAN `:3000/`) is exchanged there; links are minted with the HTTPS origin, so mitigation is deferred and recorded in STATE.md Deferred/debt.

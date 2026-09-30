@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { NextRequest } from 'next/server';
 import { gate, type GateDeps } from '@/lib/auth/gate';
+import { createHash } from 'node:crypto';
 import { signSession, hashToken, type StoredGrant } from '@/lib/auth/grants';
+
+const fp = (cred: string) => createHash('sha256').update(cred).digest('hex').slice(0, 16);
 
 const SECRET = 'x'.repeat(32), SLUG = 'prototypeslug123';
 const danita: StoredGrant = { id: '11111111-1111-4111-8111-111111111111', label: 'Danita — GC 3730', scope: ['GC 3730'], can: ['capture'], expiresAt: null, revokedAt: null, lastUsedAt: null };
@@ -71,7 +74,7 @@ describe('gated paths — resolution order', () => {
   });
   it('Basic faculty → allowed and a cookie is set', async () => {
     const r = await gate(req('/admin', { auth: basic('gcfaculty:pw') }), deps());
-    expect(r.kind).toBe('rewrite'); if (r.kind === 'rewrite') expect(r.setCookie?.value.startsWith('builtin:faculty.')).toBe(true);
+    expect(r.kind).toBe('rewrite'); if (r.kind === 'rewrite') expect(r.setCookie?.value.startsWith(`builtin:faculty:${fp('gcfaculty:pw')}.`)).toBe(true);
   });
   it('no SESSION_SECRET → key still authorizes this request but no cookie is issued', async () => {
     const r = await gate(req(`/courses?key=${TOKEN}`), deps({ env: { faculty: 'gcfaculty:pw', slug: SLUG } }));
@@ -110,7 +113,7 @@ describe('gated paths — resolution order', () => {
   it('stale cookie + Basic → cookie replaced', async () => {
     const r = await gate(req('/admin', { cookie: 'gc_session=' + danita.id + '.bad', auth: basic('gcfaculty:pw') }), deps());
     expect(r.kind).toBe('rewrite'); if (r.kind !== 'rewrite') return;
-    expect(r.setCookie?.value.startsWith('builtin:faculty.')).toBe(true);
+    expect(r.setCookie?.value.startsWith(`builtin:faculty:${fp('gcfaculty:pw')}.`)).toBe(true);
     expect(r.clearCookie).toBe(true);
   });
   it('touch that throws synchronously does not 503', async () => {
@@ -168,5 +171,61 @@ describe('gated paths — authorization', () => {
     const d = deps({ findGrantById: async () => { throw new Error('db down'); } });
     const r = await gate(req('/courses', { cookie }), d);
     expect(r.kind).toBe('response'); if (r.kind === 'response') expect(r.status).toBe(503);
+  });
+});
+
+describe('I1 — built-in sessions are bound to the credential they were minted from', () => {
+  const facultyCookie = (cred: string) => `gc_session=${signSession(`builtin:faculty:${fp(cred)}`, SECRET)}`;
+  const creatorCookie = (cred: string) => `gc_session=${signSession(`builtin:creator:${fp(cred)}`, SECRET)}`;
+  it('same credential → allowed', async () => {
+    const r = await gate(req('/courses', { cookie: facultyCookie('gcfaculty:pw') }), deps());
+    expect(r.kind).toBe('rewrite');
+    const c = await gate(req('/courses/new', { cookie: creatorCookie('creator:pw') }), deps());
+    expect(c.kind).toBe('rewrite');
+  });
+  it('credential rotated (cookie from A, env now B) → 401 + cookie cleared', async () => {
+    const r = await gate(req('/courses', { cookie: facultyCookie('gcfaculty:OLD') }), deps());
+    expect(r.kind).toBe('response'); if (r.kind !== 'response') return;
+    expect(r.status).toBe(401); expect(r.clearCookie).toBe(true);
+    const c = await gate(req('/courses/new', { cookie: creatorCookie('creator:OLD') }), deps());
+    expect(c.kind).toBe('response'); if (c.kind === 'response') { expect(c.status).toBe(401); expect(c.clearCookie).toBe(true); }
+  });
+  it('env var unset → the built-in cookie is dead (401 + clear)', async () => {
+    const d = deps({ env: { sessionSecret: SECRET, slug: SLUG } });
+    const r = await gate(req('/courses', { cookie: facultyCookie('gcfaculty:pw') }), d);
+    expect(r.kind).toBe('response'); if (r.kind === 'response') { expect(r.status).toBe(401); expect(r.clearCookie).toBe(true); }
+    const c = await gate(req('/courses/new', { cookie: creatorCookie('creator:pw') }), d);
+    expect(c.kind).toBe('response'); if (c.kind === 'response') { expect(c.status).toBe(401); expect(c.clearCookie).toBe(true); }
+  });
+  it('pre-fingerprint cookie shape (builtin:faculty, no fp) is dead', async () => {
+    const r = await gate(req('/courses', { cookie: `gc_session=${signSession('builtin:faculty', SECRET)}` }), deps());
+    expect(r.kind).toBe('response'); if (r.kind === 'response') { expect(r.status).toBe(401); expect(r.clearCookie).toBe(true); }
+  });
+  it('a creator fingerprint cannot be replayed as faculty', async () => {
+    const r = await gate(req('/courses', { cookie: `gc_session=${signSession(`builtin:faculty:${fp('creator:pw')}`, SECRET)}` }), deps());
+    expect(r.kind).toBe('response'); if (r.kind === 'response') expect(r.status).toBe(401);
+  });
+  it('rotated cookie + current Basic → replaced with a cookie for the new credential', async () => {
+    const r = await gate(req('/courses', { cookie: facultyCookie('gcfaculty:OLD'), auth: basic('gcfaculty:pw') }), deps());
+    expect(r.kind).toBe('rewrite'); if (r.kind !== 'rewrite') return;
+    expect(r.clearCookie).toBe(true);
+    expect(r.setCookie?.value.startsWith(`builtin:faculty:${fp('gcfaculty:pw')}.`)).toBe(true);
+  });
+});
+
+describe('C1 — admin surface through the gate', () => {
+  const cookie = `gc_session=${signSession(danita.id, SECRET)}`;
+  it('scoped cookie GET /admin/partners → 403', async () => {
+    const r = await gate(req('/admin/partners', { cookie }), deps());
+    expect(r.kind).toBe('response'); if (r.kind === 'response') expect(r.status).toBe(403);
+  });
+  it('scoped cookie GET /api/admin/sandbox-grants → 403', async () => {
+    const r = await gate(req('/api/admin/sandbox-grants', { cookie }), deps());
+    expect(r.kind).toBe('response'); if (r.kind === 'response') expect(r.status).toBe(403);
+  });
+  it('creator Basic GET /admin → 403; faculty Basic → allowed', async () => {
+    const c = await gate(req('/admin', { auth: basic('creator:pw') }), deps());
+    expect(c.kind).toBe('response'); if (c.kind === 'response') expect(c.status).toBe(403);
+    expect((await gate(req('/admin', { auth: basic('gcfaculty:pw') }), deps())).kind).toBe('rewrite');
   });
 });
