@@ -59,7 +59,7 @@ describe('gated paths — resolution order', () => {
   it('valid cookie → rewrite with ?slug= for pages, next for APIs', async () => {
     const cookie = `gc_session=${signSession(danita.id, SECRET)}`;
     const p = await gate(req('/capture/GC%203730', { cookie }), deps());
-    expect(p.kind).toBe('rewrite'); if (p.kind === 'rewrite') expect(p.url.searchParams.get('slug')).toBe(SLUG);
+    expect(p.kind).toBe('rewrite'); if (p.kind === 'rewrite') { expect(p.url.searchParams.get('slug')).toBe(SLUG); expect(p.url.protocol).toBe('http:'); }
     const a = await gate(req('/api/capture/GC%203730/context', { cookie }), deps());
     expect(a.kind).toBe('next');
   });

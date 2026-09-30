@@ -141,6 +141,15 @@ function decide(req: NextRequest, grant: Grant, setCookie: CookieSpec | undefine
   const isPage = !req.nextUrl.pathname.startsWith('/api/');
   if (isPage && deps.env.slug && !req.nextUrl.searchParams.has('slug')) {
     const u = new URL(req.nextUrl.toString()); u.searchParams.set('slug', deps.env.slug);
+    // Behind Caddy (X-Forwarded-Proto: https) Next's router and render server
+    // disagree on the app's own origin (`--hostname 127.0.0.1` vs the render
+    // server's `localhost`), so it classifies this rewrite as EXTERNAL and
+    // proxies it to itself — over TLS to a plain-HTTP port, which fails with
+    // EPROTO and a 500 (observed 2026-09-30). The self-proxy works over plain
+    // HTTP, so pin the scheme. Cost: one loopback hop per gated page view.
+    // Tracked in STATE.md Deferred/debt — the durable fix is dropping the
+    // 11 page-level slug checks so no rewrite is needed.
+    u.protocol = 'http:';
     return { kind: 'rewrite', url: u, setCookie, ...clear };
   }
   return { kind: 'next', setCookie, ...clear };
