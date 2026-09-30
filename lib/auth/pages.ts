@@ -10,7 +10,7 @@ export function unauthorizedPage(): string {
 }
 export function forbiddenPage(label: string, code?: string): string {
   const what = code ? `can edit ${esc(code)}` : 'has the access it was given';
-  return page("This link can't do that",
+  return page("This link can’t do that",
     `<p>The access link <strong>${esc(label)}</strong> ${code ? `is not allowed to edit <strong>${esc(code)}</strong>` : 'is not allowed to make this change'}; it ${what} only.</p>` +
     `<p>Ask the department for a wider link if you need it. <a href="/">Back to the course list</a>.</p>`);
 }
