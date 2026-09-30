@@ -165,6 +165,23 @@ export const partners = pgTable('partners', {
   active: boolean('active').notNull().default(true),
 });
 
+/**
+ * Per-person, per-course access links (spec 2026-09-30). `token_hash` is
+ * sha256(token); the token itself is shown once by `pnpm access:grant` and
+ * never stored. `scope` holds roster course codes or the single value '*'.
+ */
+export const accessGrants = pgTable('access_grants', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tokenHash: text('token_hash').notNull().unique(),
+  label: text('label').notNull(),
+  scope: jsonb('scope').$type<string[]>().notNull().default([]),
+  can: jsonb('can').$type<('capture' | 'create' | 'admin')[]>().notNull().default([]),
+  expiresAt: timestamp('expires_at', { withTimezone: true }),
+  revokedAt: timestamp('revoked_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
+});
+
 export const partnerSessions = pgTable('partner_sessions', {
   id: uuid('id').primaryKey().defaultRandom(),
   partnerId: uuid('partner_id').notNull().references(() => partners.id, { onDelete: 'cascade' }),
