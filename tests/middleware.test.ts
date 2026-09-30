@@ -28,11 +28,18 @@ describe('middleware role enforcement', () => {
   it('lets faculty reach an edit surface', async () => {
     expect((await middleware(reqFor('/capture/GC%201040', { cred: 'gcfaculty:godfrey' }))).status).toBe(200);
   });
-  it('403s a creator on an edit surface', async () => {
-    expect((await middleware(reqFor('/capture/GC%201040', { cred: 'cufaculty:tigers' }))).status).toBe(403);
+  // Superseded by the 2026-09-30 scoped-access-links design (gate()/authorize()):
+  // reads are free for any live grant (see tests/auth/authorize.test.ts "reads
+  // are free for any grant"); only writes are capability/scope-gated. A creator
+  // credential is still forbidden from WRITING outside /courses/new and the
+  // roster create API — see "lets a creator GET the add-course form" /
+  // "lets a creator POST the create API" below, and the 403 case covered
+  // directly in tests/auth/authorize.test.ts ('needs-capture').
+  it('lets a creator read an edit surface (reads are free for any live grant)', async () => {
+    expect((await middleware(reqFor('/capture/GC%201040', { cred: 'cufaculty:tigers' }))).status).toBe(200);
   });
-  it('403s a creator on /program', async () => {
-    expect((await middleware(reqFor('/program', { cred: 'cufaculty:tigers' }))).status).toBe(403);
+  it('lets a creator read /program (reads are free for any live grant)', async () => {
+    expect((await middleware(reqFor('/program', { cred: 'cufaculty:tigers' }))).status).toBe(200);
   });
   it('lets a creator GET the add-course form', async () => {
     expect((await middleware(reqFor('/courses/new', { cred: 'cufaculty:tigers' }))).status).toBe(200);

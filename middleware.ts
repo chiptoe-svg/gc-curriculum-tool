@@ -3,8 +3,10 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { partners } from '@/lib/db/schema';
 import { createSession, SESSION_COOKIE } from '@/lib/partners/sessions';
-import { requiresBasicAuth, resolveRole, creatorAllowed } from '@/lib/auth/basic-auth';
+import { requiresBasicAuth } from '@/lib/auth/basic-auth';
 import { courseFromScopedPath, resolveScopedSession } from '@/lib/sandbox/access';
+import { gate } from '@/lib/auth/gate';
+import { findGrantByToken, findGrantById, touchLastUsed, SESSION_COOKIE as GRANT_SESSION_COOKIE } from '@/lib/auth/grants';
 
 /**
  * Middleware does two things, dispatched by path prefix:
@@ -115,28 +117,31 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  const facultyExpected = process.env.FACULTY_BASIC_AUTH;
-  if (facultyExpected && requiresBasicAuth(path)) {
-    const role = resolveRole(req.headers.get('authorization'), {
-      faculty: facultyExpected,
+  const result = await gate(req, {
+    findGrantByToken, findGrantById, touch: touchLastUsed,
+    env: {
+      sessionSecret: process.env.SESSION_SECRET?.trim() || undefined,
+      faculty: process.env.FACULTY_BASIC_AUTH,
       creator: process.env.CREATE_ONLY_AUTH,
-    });
-    if (role === null) {
-      return new NextResponse('Authentication required.', {
-        status: 401,
-        headers: {
-          // Realm string must be ASCII (HTTP header = ByteString).
-          'WWW-Authenticate': 'Basic realm="GC Curriculum Tool - Faculty"',
-        },
-      });
-    }
-    // Create-only role: allowed on the add-course paths, forbidden elsewhere.
-    if (role === 'creator' && !creatorAllowed(path, req.method)) {
-      return new NextResponse('Forbidden.', { status: 403 });
-    }
+      slug: process.env.PROTOTYPE_SLUG?.trim(),
+      publicOrigin: process.env.PUBLIC_HTTPS_ORIGIN?.trim() || undefined,
+    },
+  });
+  const cookieOpts = { httpOnly: true, secure: true, sameSite: 'lax' as const, path: '/' };
+  let res: NextResponse;
+  switch (result.kind) {
+    case 'next': res = NextResponse.next(); break;
+    case 'rewrite': res = NextResponse.rewrite(result.url); break;
+    case 'redirect': res = NextResponse.redirect(result.url, 302); break;
+    case 'response': res = new NextResponse(result.body, { status: result.status, headers: result.headers }); break;
   }
-
-  return NextResponse.next();
+  if ('setCookie' in result && result.setCookie) {
+    res.cookies.set({ name: result.setCookie.name, value: result.setCookie.value, maxAge: result.setCookie.maxAge, ...cookieOpts });
+  }
+  if ('clearCookie' in result && result.clearCookie) {
+    res.cookies.set({ name: GRANT_SESSION_COOKIE, value: '', maxAge: 0, ...cookieOpts });
+  }
+  return res;
 }
 
 /**
