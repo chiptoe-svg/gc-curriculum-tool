@@ -78,7 +78,14 @@ function fromBasic(req: NextRequest, deps: GateDeps): Resolved | null {
  * proxy, never wherever the request happened to arrive from. `key` removed. */
 function redirectUrl(req: NextRequest, deps: GateDeps): URL {
   const base = deps.env.publicOrigin ?? req.nextUrl.origin;
-  const u = new URL(req.nextUrl.pathname + req.nextUrl.search, base);
+  // Never let the path influence the origin: a pathname beginning with
+  // `//` (or a backslash variant normalised to `//`) parses as
+  // protocol-relative when combined with a base via `new URL(path, base)`,
+  // letting an attacker redirect off-origin. Assigning `.pathname`/
+  // `.search` on an already-anchored URL can't be reinterpreted that way.
+  const u = new URL(base);
+  u.pathname = req.nextUrl.pathname;
+  u.search = req.nextUrl.search;
   u.searchParams.delete('key');
   return u;
 }

@@ -119,6 +119,21 @@ describe('gated paths — resolution order', () => {
     const r = await gate(req('/courses', { cookie }), d);
     expect(r.kind).toBe('rewrite');
   });
+  it('redirect never leaves the public origin', async () => {
+    const d = deps({ env: { sessionSecret: SECRET, faculty: 'gcfaculty:pw', creator: 'creator:pw', slug: SLUG, publicOrigin: 'https://gcworkflow.clemson.edu:8443' } });
+    for (const evilPath of [`https://gcworkflow.clemson.edu:8443//evil.com/?key=${TOKEN}`, `https://gcworkflow.clemson.edu:8443/\\evil.com/?key=${TOKEN}`]) {
+      const r = await gate(req(evilPath), d);
+      expect(r.kind).toBe('redirect'); if (r.kind !== 'redirect') continue;
+      expect(r.url.origin).toBe('https://gcworkflow.clemson.edu:8443');
+      expect(r.url.hostname).toBe('gcworkflow.clemson.edu');
+    }
+  });
+  it('live cookie plus another grant’s key on a GATED path', async () => {
+    const cookie = `gc_session=${signSession(danita.id, SECRET)}`;
+    const r = await gate(req(`/courses?key=${OTHER_TOKEN}`, { cookie }), deps());
+    expect(r.kind).toBe('rewrite'); if (r.kind !== 'rewrite') return;
+    expect(r.setCookie).toBeUndefined();
+  });
 });
 
 describe('gated paths — ?slug= is inert', () => {
