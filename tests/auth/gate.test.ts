@@ -5,11 +5,17 @@ import { signSession, hashToken, type StoredGrant } from '@/lib/auth/grants';
 
 const SECRET = 'x'.repeat(32), SLUG = 'prototypeslug123';
 const danita: StoredGrant = { id: '11111111-1111-4111-8111-111111111111', label: 'Danita — GC 3730', scope: ['GC 3730'], can: ['capture'], expiresAt: null, revokedAt: null, lastUsedAt: null };
+const marcus: StoredGrant = { id: '22222222-2222-4222-8222-222222222222', label: 'Marcus — GC 4400', scope: ['GC 4400'], can: ['capture'], expiresAt: null, revokedAt: null, lastUsedAt: null };
 const TOKEN = 'tok_danita';
+const OTHER_TOKEN = 'tok_marcus';
 function deps(over: Partial<GateDeps> = {}): GateDeps {
   return {
-    findGrantByToken: async t => (hashToken(t) === hashToken(TOKEN) ? danita : null),
-    findGrantById: async id => (id === danita.id ? danita : null),
+    findGrantByToken: async t => {
+      if (hashToken(t) === hashToken(TOKEN)) return danita;
+      if (hashToken(t) === hashToken(OTHER_TOKEN)) return marcus;
+      return null;
+    },
+    findGrantById: async id => (id === danita.id ? danita : id === marcus.id ? marcus : null),
     touch: async () => {},
     env: { sessionSecret: SECRET, faculty: 'gcfaculty:pw', creator: 'creator:pw', slug: SLUG },
     now: () => new Date('2026-09-30T12:00:00Z'),
@@ -34,6 +40,10 @@ describe('public paths', () => {
   });
   it('ignore a dead key on a public path', async () =>
     expect(await gate(req('/?key=nope'), deps())).toEqual({ kind: 'next' }));
+  it('public path with key and DB down → next', async () => {
+    const d = deps({ findGrantByToken: async () => { throw new Error('db down'); } });
+    expect(await gate(req('/?key=x'), d)).toEqual({ kind: 'next' });
+  });
 });
 
 describe('gated paths — resolution order', () => {
@@ -49,12 +59,6 @@ describe('gated paths — resolution order', () => {
     expect(p.kind).toBe('rewrite'); if (p.kind === 'rewrite') expect(p.url.searchParams.get('slug')).toBe(SLUG);
     const a = await gate(req('/api/capture/GC%203730/context', { cookie }), deps());
     expect(a.kind).toBe('next');
-  });
-  it('legacy ?slug= link still works and is exchanged for a cookie', async () => {
-    const r = await gate(req(`/courses?slug=${SLUG}`), deps());
-    expect(r.kind).toBe('redirect'); if (r.kind !== 'redirect') return;
-    expect(r.setCookie.value.startsWith('builtin:faculty.')).toBe(true);
-    expect(r.url.searchParams.has('slug')).toBe(false);
   });
   it('tampered cookie → treated as absent (401 + clear)', async () => {
     const r = await gate(req('/courses', { cookie: 'gc_session=' + danita.id + '.bad' }), deps());
@@ -72,6 +76,63 @@ describe('gated paths — resolution order', () => {
   it('no SESSION_SECRET → key still authorizes this request but no cookie is issued', async () => {
     const r = await gate(req(`/courses?key=${TOKEN}`), deps({ env: { faculty: 'gcfaculty:pw', slug: SLUG } }));
     expect(r.kind).toBe('rewrite'); if (r.kind === 'rewrite') expect(r.setCookie).toBeUndefined();
+  });
+  it('key on an API path is ignored', async () => {
+    const noCookie = await gate(req(`/api/capture/GC%203730/context?key=${TOKEN}`), deps());
+    expect(noCookie.kind).toBe('response'); if (noCookie.kind === 'response') expect(noCookie.status).toBe(401);
+    const cookie = `gc_session=${signSession(danita.id, SECRET)}`;
+    const withCookie = await gate(req(`/api/capture/GC%203730/context?key=${TOKEN}`, { cookie }), deps());
+    expect(withCookie.kind).toBe('next');
+  });
+  it('key on a POST is ignored', async () => {
+    const r = await gate(req(`/courses/new?key=${TOKEN}`, { method: 'POST' }), deps());
+    expect(r.kind).toBe('response'); if (r.kind === 'response') expect(r.status).toBe(401);
+  });
+  it('key does not replace a live session', async () => {
+    const cookie = `gc_session=${signSession(danita.id, SECRET)}`;
+    const r = await gate(req(`/?key=${OTHER_TOKEN}`, { cookie }), deps());
+    expect(r).toEqual({ kind: 'next' });
+  });
+  it('gated path with key and DB down → 503', async () => {
+    const d = deps({ findGrantByToken: async () => { throw new Error('db down'); } });
+    const r = await gate(req('/courses?key=x'), d);
+    expect(r.kind).toBe('response'); if (r.kind === 'response') expect(r.status).toBe(503);
+  });
+  it('redirect uses publicOrigin', async () => {
+    const d = deps({ env: { sessionSecret: SECRET, faculty: 'gcfaculty:pw', creator: 'creator:pw', slug: SLUG, publicOrigin: 'https://gcworkflow.clemson.edu:8443' } });
+    const localReq = new NextRequest(new URL(`/?key=${TOKEN}`, 'http://localhost:3000'));
+    const r = await gate(localReq, d);
+    expect(r.kind).toBe('redirect'); if (r.kind !== 'redirect') return;
+    expect(r.url.origin).toBe('https://gcworkflow.clemson.edu:8443');
+    expect(r.url.pathname).toBe('/');
+    expect(r.url.searchParams.has('key')).toBe(false);
+  });
+  it('stale cookie + Basic → cookie replaced', async () => {
+    const r = await gate(req('/admin', { cookie: 'gc_session=' + danita.id + '.bad', auth: basic('gcfaculty:pw') }), deps());
+    expect(r.kind).toBe('rewrite'); if (r.kind !== 'rewrite') return;
+    expect(r.setCookie?.value.startsWith('builtin:faculty.')).toBe(true);
+    expect(r.clearCookie).toBe(true);
+  });
+  it('touch that throws synchronously does not 503', async () => {
+    const cookie = `gc_session=${signSession(danita.id, SECRET)}`;
+    const d = deps({ touch: () => { throw new Error('x'); } });
+    const r = await gate(req('/courses', { cookie }), d);
+    expect(r.kind).toBe('rewrite');
+  });
+});
+
+describe('gated paths — ?slug= is inert', () => {
+  it('legacy ?slug= is not a credential', async () => {
+    const r = await gate(req(`/courses?slug=${SLUG}`), deps());
+    expect(r.kind).toBe('response'); if (r.kind !== 'response') return;
+    expect(r.status).toBe(401);
+  });
+  it('a scoped cookie plus ?slug= never upgrades', async () => {
+    const cookie = `gc_session=${signSession(danita.id, SECRET)}`;
+    const p = await gate(req(`/program?slug=${SLUG}`, { cookie }), deps());
+    expect(p.kind).toBe('next'); if (p.kind === 'next') expect(p.setCookie).toBeUndefined();
+    const w = await gate(req(`/api/capture/GC%201010/conversation?slug=${SLUG}`, { cookie, method: 'POST' }), deps());
+    expect(w.kind).toBe('response'); if (w.kind === 'response') expect(w.status).toBe(403);
   });
 });
 

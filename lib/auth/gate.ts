@@ -9,12 +9,12 @@ export interface GateDeps {
   findGrantByToken(token: string): Promise<StoredGrant | null>;
   findGrantById(id: string): Promise<StoredGrant | null>;
   touch(id: string): Promise<void>;
-  env: { sessionSecret?: string; faculty?: string; creator?: string; slug?: string };
+  env: { sessionSecret?: string; faculty?: string; creator?: string; slug?: string; publicOrigin?: string };
   now?: () => Date;
 }
 export type GateResult =
   | { kind: 'next'; setCookie?: CookieSpec; clearCookie?: true }
-  | { kind: 'rewrite'; url: URL; setCookie?: CookieSpec }
+  | { kind: 'rewrite'; url: URL; setCookie?: CookieSpec; clearCookie?: true }
   | { kind: 'redirect'; url: URL; setCookie: CookieSpec }
   | { kind: 'response'; status: 401 | 403 | 503; body: string; headers: Record<string, string>; clearCookie?: true };
 
@@ -30,17 +30,26 @@ function cookieFor(grant: Grant, live: { expiresAt: Date | null }, deps: GateDep
   return maxAge > 0 ? { name: SESSION_COOKIE, value: signSession(grant.id, secret), maxAge } : undefined;
 }
 
-/** ?key= (any path) or legacy ?slug= (gated path) → grant, or null. */
+/**
+ * ?key= → grant, or null. `?slug=` is NEVER a credential (2026-09-30 spec
+ * amendment) — PROTOTYPE_SLUG grants nothing by itself.
+ * Caller (`gate`) has already confirmed eligibility (GET/HEAD, non-/api/,
+ * no live session cookie already present) before calling this.
+ * On a public path a DB failure during the lookup is swallowed (key
+ * treated as absent, `next`); on a gated path it propagates so the
+ * request fails closed (503).
+ */
 async function fromKey(req: NextRequest, gated: boolean, deps: GateDeps): Promise<Resolved | null> {
-  const key = req.nextUrl.searchParams.get('key') ?? (gated ? req.nextUrl.searchParams.get('slug') : null);
+  const key = req.nextUrl.searchParams.get('key');
   if (!key) return null;
-  if (deps.env.slug && key === deps.env.slug) {
-    const g = builtinGrant('faculty');
-    return { grant: g, setCookie: cookieFor(g, { expiresAt: null }, deps) };
+  try {
+    const stored = await deps.findGrantByToken(key);
+    if (!stored || !isLive(stored, deps.now?.())) return null;
+    return { grant: stored, setCookie: cookieFor(stored, stored, deps) };
+  } catch (err) {
+    if (gated) throw err;
+    return null;
   }
-  const stored = await deps.findGrantByToken(key);
-  if (!stored || !isLive(stored, deps.now?.())) return null;
-  return { grant: stored, setCookie: cookieFor(stored, stored, deps) };
 }
 
 async function fromCookie(req: NextRequest, deps: GateDeps): Promise<Resolved | null | 'dead'> {
@@ -51,7 +60,9 @@ async function fromCookie(req: NextRequest, deps: GateDeps): Promise<Resolved | 
   if (id === 'builtin:faculty' || id === 'builtin:creator') return { grant: builtinGrant(id.slice(8) as 'faculty' | 'creator') };
   const stored = await deps.findGrantById(id);
   if (!stored || !isLive(stored, deps.now?.())) return 'dead';
-  void deps.touch(id).catch(() => {});
+  // Fire-and-forget: deferred to a microtask so even a synchronous throw
+  // inside deps.touch() can never turn into a 503 for this request.
+  void Promise.resolve().then(() => deps.touch(id)).catch(() => {});
   return { grant: stored };
 }
 
@@ -62,44 +73,69 @@ function fromBasic(req: NextRequest, deps: GateDeps): Resolved | null {
   return { grant: g, setCookie: cookieFor(g, { expiresAt: null }, deps) };
 }
 
-function stripKeys(url: URL): URL {
-  const u = new URL(url.toString());
-  u.searchParams.delete('key'); u.searchParams.delete('slug');
+/** Redirect target for a key exchange: PUBLIC_HTTPS_ORIGIN (falling back to
+ * the request's own origin) so it lands on the public origin behind the
+ * proxy, never wherever the request happened to arrive from. `key` removed. */
+function redirectUrl(req: NextRequest, deps: GateDeps): URL {
+  const base = deps.env.publicOrigin ?? req.nextUrl.origin;
+  const u = new URL(req.nextUrl.pathname + req.nextUrl.search, base);
+  u.searchParams.delete('key');
   return u;
 }
 
 export async function gate(req: NextRequest, deps: GateDeps): Promise<GateResult> {
   const path = req.nextUrl.pathname;
   const gated = requiresBasicAuth(path);
+  const method = req.method.toUpperCase();
+  const isApi = path.startsWith('/api/');
+  const keyEligible = (method === 'GET' || method === 'HEAD') && !isApi && req.nextUrl.searchParams.has('key');
+
   try {
-    // 1. Magic-link exchange — on ANY path (the link lands on the public /).
-    const keyed = await fromKey(req, gated, deps);
-    if (keyed) {
-      if (keyed.setCookie) return { kind: 'redirect', url: stripKeys(req.nextUrl), setCookie: keyed.setCookie };
-      if (!gated) return { kind: 'next' };
-      // No cookie possible (no SESSION_SECRET): authorize this request only.
-      return decide(req, keyed.grant, undefined, deps);
+    // Cookie resolution: always for gated paths (it's the primary auth
+    // source there); for public paths, only when a key is in play and
+    // might need to be overridden by an established session — and a DB
+    // failure here must never leak into a public response.
+    let c: Resolved | null | 'dead' = null;
+    if (gated) {
+      c = await fromCookie(req, deps);
+    } else if (keyEligible) {
+      try { c = await fromCookie(req, deps); } catch { c = null; }
+    }
+    const liveCookie = !!c && c !== 'dead';
+
+    // 1. Magic-link exchange — GET/HEAD, non-/api/ only, and only when no
+    // live session cookie is already present (a stray ?key= must never
+    // swap an established session). Runs on public paths too (the link
+    // lands on the public /).
+    if (keyEligible && !liveCookie) {
+      const keyed = await fromKey(req, gated, deps);
+      if (keyed) {
+        if (keyed.setCookie) return { kind: 'redirect', url: redirectUrl(req, deps), setCookie: keyed.setCookie };
+        if (!gated) return { kind: 'next' };
+        // No cookie possible (no SESSION_SECRET): authorize this request only.
+        return decide(req, keyed.grant, undefined, deps, false);
+      }
     }
     if (!gated) return { kind: 'next' };
 
     // 2. Cookie, then Basic.
-    const c = await fromCookie(req, deps);
-    if (c && c !== 'dead') return decide(req, c.grant, undefined, deps);
+    if (c && c !== 'dead') return decide(req, c.grant, undefined, deps, false);
     const b = fromBasic(req, deps);
-    if (b) return decide(req, b.grant, b.setCookie, deps);
+    if (b) return decide(req, b.grant, b.setCookie, deps, c === 'dead');
     return { kind: 'response', status: 401, body: unauthorizedPage(), headers: CHALLENGE, ...(c === 'dead' ? { clearCookie: true as const } : {}) };
   } catch {
     return { kind: 'response', status: 503, body: 'Sign-in is temporarily unavailable.', headers: HTML };
   }
 }
 
-function decide(req: NextRequest, grant: Grant, setCookie: CookieSpec | undefined, deps: GateDeps): GateResult {
+function decide(req: NextRequest, grant: Grant, setCookie: CookieSpec | undefined, deps: GateDeps, clearStale: boolean): GateResult {
   const d = authorize(grant, req.method, req.nextUrl.pathname);
-  if (!d.ok) return { kind: 'response', status: 403, body: forbiddenPage(grant.label, d.code), headers: HTML };
+  const clear = clearStale ? { clearCookie: true as const } : {};
+  if (!d.ok) return { kind: 'response', status: 403, body: forbiddenPage(grant.label, d.code), headers: HTML, ...clear };
   const isPage = !req.nextUrl.pathname.startsWith('/api/');
   if (isPage && deps.env.slug && !req.nextUrl.searchParams.has('slug')) {
     const u = new URL(req.nextUrl.toString()); u.searchParams.set('slug', deps.env.slug);
-    return { kind: 'rewrite', url: u, setCookie };
+    return { kind: 'rewrite', url: u, setCookie, ...clear };
   }
-  return { kind: 'next', setCookie };
+  return { kind: 'next', setCookie, ...clear };
 }
