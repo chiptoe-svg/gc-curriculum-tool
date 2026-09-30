@@ -9,9 +9,10 @@ import { NextRequest } from 'next/server';
 import { middleware } from '@/middleware';
 
 const auth = (cred: string) => 'Basic ' + Buffer.from(cred).toString('base64');
-function reqFor(path: string, opts: { method?: string; cred?: string } = {}) {
+function reqFor(path: string, opts: { method?: string; cred?: string; cookie?: string } = {}) {
   const headers: Record<string, string> = {};
   if (opts.cred) headers.authorization = auth(opts.cred);
+  if (opts.cookie) headers.cookie = opts.cookie;
   return new NextRequest(`http://localhost${path}`, { method: opts.method ?? 'GET', headers });
 }
 
@@ -46,5 +47,31 @@ describe('middleware role enforcement', () => {
   });
   it('lets a creator POST the create API', async () => {
     expect((await middleware(reqFor('/api/admin/courses/roster', { method: 'POST', cred: 'cufaculty:tigers' }))).status).toBe(200);
+  });
+});
+
+describe('middleware cookie ordering', () => {
+  // Regression for Task 6 fix round 1: gate() can return BOTH setCookie
+  // and clearCookie: true on the same result — a stale/dead session
+  // cookie plus a fresh Basic-Auth login. NextResponse.cookies.set()
+  // called twice with the same cookie name keeps only the LAST call, so
+  // the two writes must be ordered clear-then-set; set-then-clear (the
+  // brief's original snippet) silently clobbers the fresh cookie with
+  // the empty/maxAge-0 clear.
+  it('replaces a stale session cookie with a fresh one on successful Basic Auth, not clears it', async () => {
+    vi.stubEnv('SESSION_SECRET', 'test-secret');
+    const res = await middleware(reqFor('/capture/GC%201040', {
+      cred: 'gcfaculty:godfrey',
+      // Well-formed `<id>.<mac>` shape but a bad MAC — verifySession()
+      // rejects it, so gate() treats the cookie as dead (clearCookie: true)
+      // while the valid Basic Auth header still authorizes (setCookie).
+      cookie: 'gc_session=some-stale-id.badmac',
+    }));
+    expect(res.status).toBe(200);
+    const cookie = res.cookies.get('gc_session');
+    expect(cookie).toBeDefined();
+    expect(cookie!.value).not.toBe('');
+    expect(cookie!.value.startsWith('builtin:faculty.')).toBe(true);
+    expect(cookie!.maxAge).toBeGreaterThan(0);
   });
 });

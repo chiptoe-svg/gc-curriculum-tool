@@ -135,11 +135,17 @@ export async function middleware(req: NextRequest) {
     case 'redirect': res = NextResponse.redirect(result.url, 302); break;
     case 'response': res = new NextResponse(result.body, { status: result.status, headers: result.headers }); break;
   }
-  if ('setCookie' in result && result.setCookie) {
-    res.cookies.set({ name: result.setCookie.name, value: result.setCookie.value, maxAge: result.setCookie.maxAge, ...cookieOpts });
-  }
+  // clearCookie first, setCookie second: both can be present on the same
+  // result (stale/dead cookie + a fresh Basic-Auth login), and
+  // NextResponse.cookies.set() with the same name keeps only the LAST
+  // call. Setting after clearing means a real replacement always wins;
+  // the reverse order would leave the browser with the cookie cleared
+  // instead of replaced.
   if ('clearCookie' in result && result.clearCookie) {
     res.cookies.set({ name: GRANT_SESSION_COOKIE, value: '', maxAge: 0, ...cookieOpts });
+  }
+  if ('setCookie' in result && result.setCookie) {
+    res.cookies.set({ name: result.setCookie.name, value: result.setCookie.value, maxAge: result.setCookie.maxAge, ...cookieOpts });
   }
   return res;
 }
