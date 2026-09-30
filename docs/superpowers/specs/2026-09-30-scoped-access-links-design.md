@@ -72,11 +72,11 @@ Cost: one DB read per gated request (as the partner path today).
 | Kind | Recognised by | Requires |
 |---|---|---|
 | Read | `GET`/`HEAD` on any gated page or API (incl. `/program`, `/explore/*`, `/courses`, `/ask`, `/api/ask*`, `/board/*`) | any live grant |
-| Course write | non-GET where the course code is in the path: `/api/capture/[code]/**`, `/api/courses/[code]/**`, `/api/explore/[code]/**`, `/api/admin/courses/[code]/**`; `[code]` URL-decoded and normalised (`GC%201010` → `GC 1010`) | `capture` ∧ code ∈ scope, or scope `*` |
-| Create | `POST /courses/new`, the single-add roster API (the existing `creatorAllowed` list) | `create` or scope `*` |
+| Course write | non-GET where the course code is in the path: `/api/capture/[code]/**`, `/api/courses/[code]/**`, `/api/explore/[code]/**`, `/api/admin/courses/[code]/**`; `[code]` URL-decoded and normalised (`GC%201010` → `GC 1010`) | `capture` ∧ (code ∈ scope or scope `*`) |
+| Create | `POST /courses/new`, the single-add roster API (the existing `creatorAllowed` list) | `create` |
 | Admin / unclassified | any other gated non-GET (`/api/admin/**` bulk, `/api/program/**` writes, `/api/settings`, `/api/flags`, **and anything not matched above**) | scope `*` ∧ `admin` |
 
-Rules: the **real HTTP method only** (override headers ignored); the **path is the source of truth** for the course (handlers already trust it); **default-deny** — unmatched gated writes are admin-only.
+Rules: the **real HTTP method only** (override headers ignored); the **path is the source of truth** for the course (handlers already trust it); **default-deny** — unmatched gated writes are admin-only; **capabilities are always required** — scope `*` widens *which courses*, never *what* may be done (amended 2026-09-30 after Task 1 review: the first draft let `*` bypass `capture`/`create`).
 
 ## Scripts (`scripts/access/`, run with the deploy env; `pnpm access:*`)
 
