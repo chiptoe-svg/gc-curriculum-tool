@@ -68,7 +68,7 @@ function fromBasic(req: NextRequest, deps: GateDeps): Resolved | null {
   if (!role) return null;
   const credential = role === 'faculty' ? deps.env.faculty : deps.env.creator;
   if (!credential) return null; // unreachable: resolveRole only matches a set credential
-  const g = builtinGrant(role, credential);
+  const g = builtinGrant(role, credential, deps.env.sessionSecret);
   return { grant: g, setCookie: cookieFor(g, { expiresAt: null }, deps) };
 }
 

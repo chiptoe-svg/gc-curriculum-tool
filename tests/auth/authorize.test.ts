@@ -75,8 +75,8 @@ describe('authorize', () => {
 });
 
 describe('C1 — the admin surface is not readable by scoped grants (2026-09-30 final review)', () => {
-  const faculty = builtinGrant('faculty', 'gcfaculty:pw');
-  const creatorB = builtinGrant('creator', 'creator:pw');
+  const faculty = builtinGrant('faculty', 'gcfaculty:pw', 'x'.repeat(32));
+  const creatorB = builtinGrant('creator', 'creator:pw', 'x'.repeat(32));
   const adminReads = ['/admin', '/admin/', '/admin/partners', '/admin/synthesis', '/api/admin/sandbox-grants', '/api/admin/partners', '/api/admin/synthesis'];
   it.each(adminReads)('GET/HEAD %s is admin-kind', p => {
     for (const m of ['GET', 'HEAD']) expect(classify(m, p)).toEqual({ kind: 'admin' });

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createHash } from 'node:crypto';
+import { createHmac } from 'node:crypto';
 
 // I3b (2026-09-30 final review): the two matcher-excluded upload routes
 // (/api/courses/<code>/materials and /imscc-import) authorize a scoped link
@@ -21,10 +21,11 @@ vi.mock('@/lib/auth/grants', async () => {
   return { ...actual, findGrantById: (id: string) => findGrantById(id) };
 });
 
+import { NextResponse } from 'next/server';
 import { signSession } from '@/lib/auth/grants';
 import { authorizeCourseWrite, resolveScopedSession } from '@/lib/sandbox/access';
 
-const fp = (c: string) => createHash('sha256').update(c).digest('hex').slice(0, 16);
+const fp = (c: string) => createHmac('sha256', SECRET).update(c).digest('hex').slice(0, 16);
 const cookieFor = (id: string) => `gc_session=${signSession(id, SECRET)}`;
 const req = (path: string, cookie: string, method = 'POST') =>
   new Request(new URL(path, 'https://gcworkflow.clemson.edu:8443'), { method, headers: { cookie } });
@@ -71,6 +72,18 @@ describe('resolveScopedSession — gc_session on the matcher-excluded upload rou
     const rotated = req('/api/courses/GC%203730/materials', cookieFor(`builtin:faculty:${fp('gcfaculty:OLD')}`));
     expect(await resolveScopedSession(rotated)).toBeNull();
   });
+  it('built-in cookie in the percent-encoded form Next writes and a browser sends back binds (tail round)', async () => {
+    const res = NextResponse.next();
+    res.cookies.set('gc_session', signSession(`builtin:faculty:${fp('gcfaculty:pw')}`, SECRET));
+    const pair = (res.headers.get('set-cookie') ?? '').split(';')[0]!;
+    expect(pair).toContain('builtin%3Afaculty%3A'); // proves the fixture is the encoded wire form
+    const r = req('/api/courses/GC%203730/materials', pair);
+    expect(await resolveScopedSession(r)).toEqual({ courseCode: 'GC 3730', instructorName: 'Department login' });
+  });
+  it('an undecodable cookie value is treated as absent', async () =>
+    expect(await resolveScopedSession(req('/api/courses/GC%203730/materials', 'gc_session=%E0%A4%A.x'))).toBeNull());
+  it('an unencoded uuid-grant cookie still binds', async () =>
+    expect((await resolveScopedSession(req('/api/courses/GC%203730/materials', cookieFor(danita.id))))?.courseCode).toBe('GC 3730'));
   it('a request object without a url (headers only) → null', async () =>
     expect(await resolveScopedSession({ headers: { get: () => cookieFor(danita.id) } })).toBeNull());
   it('DB failure → null (fails closed, never a pass)', async () => {

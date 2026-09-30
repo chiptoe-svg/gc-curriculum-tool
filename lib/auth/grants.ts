@@ -28,17 +28,20 @@ export function verifySession(value: string | undefined, secret: string): string
 
 export type BuiltinRole = 'faculty' | 'creator';
 
-/** First 16 hex of sha256(credential): binds a built-in session to the Basic
- * credential it was minted from, so rotating FACULTY_BASIC_AUTH /
- * CREATE_ONLY_AUTH kills every cookie minted from the old value
- * (2026-09-30 final review, I1). */
-export function credentialFingerprint(credential: string): string {
-  return createHash('sha256').update(credential).digest('hex').slice(0, 16);
+/** First 16 hex of HMAC-SHA256(SESSION_SECRET, credential): binds a built-in
+ * session to the Basic credential it was minted from, so rotating
+ * FACULTY_BASIC_AUTH / CREATE_ONLY_AUTH kills every cookie minted from the old
+ * value (2026-09-30 final review, I1). Keyed, not a bare hash, so a leaked
+ * cookie gives no offline handle on a low-entropy shared password (tail round). */
+export function credentialFingerprint(credential: string, secret: string): string {
+  return createHmac('sha256', secret).update(credential).digest('hex').slice(0, 16);
 }
 
-/** id is `builtin:<role>:<fingerprint of the credential>`. */
-export function builtinGrant(role: BuiltinRole, credential: string): Grant {
-  const id = `builtin:${role}:${credentialFingerprint(credential)}`;
+/** id is `builtin:<role>:<fingerprint of the credential>`. Without a
+ * SESSION_SECRET no cookie is ever issued or accepted, so the id is the bare
+ * `builtin:<role>` (which builtinFromId never accepts). */
+export function builtinGrant(role: BuiltinRole, credential: string, secret: string | undefined): Grant {
+  const id = secret ? `builtin:${role}:${credentialFingerprint(credential, secret)}` : `builtin:${role}`;
   return role === 'faculty'
     ? { id, label: 'Department login', scope: ['*'], can: ['capture', 'create', 'admin'] }
     : { id, label: 'Create-only login', scope: [], can: ['create'] };
@@ -47,13 +50,13 @@ export function builtinGrant(role: BuiltinRole, credential: string): Grant {
 /** Rebuild a built-in grant from a verified cookie id against the CURRENT
  * credentials. null (dead) when the id is not a well-formed built-in id, the
  * role's credential is unset, or the fingerprint no longer matches. */
-export function builtinFromId(id: string, env: { faculty?: string; creator?: string }): Grant | null {
+export function builtinFromId(id: string, env: { faculty?: string; creator?: string; sessionSecret?: string }): Grant | null {
   const m = /^builtin:(faculty|creator):([0-9a-f]{16})$/.exec(id);
-  if (!m) return null;
+  if (!m || !env.sessionSecret) return null;
   const role = m[1] as BuiltinRole;
   const credential = env[role];
-  if (!credential || credentialFingerprint(credential) !== m[2]) return null;
-  return builtinGrant(role, credential);
+  if (!credential || credentialFingerprint(credential, env.sessionSecret) !== m[2]) return null;
+  return builtinGrant(role, credential, env.sessionSecret);
 }
 
 export interface StoredGrant extends Grant { expiresAt: Date | null; revokedAt: Date | null; lastUsedAt: Date | null }

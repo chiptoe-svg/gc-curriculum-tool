@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { NextRequest } from 'next/server';
 import { gate, type GateDeps } from '@/lib/auth/gate';
-import { createHash } from 'node:crypto';
+import { createHmac } from 'node:crypto';
 import { signSession, hashToken, type StoredGrant } from '@/lib/auth/grants';
 
-const fp = (cred: string) => createHash('sha256').update(cred).digest('hex').slice(0, 16);
+const fp = (cred: string) => createHmac('sha256', SECRET).update(cred).digest('hex').slice(0, 16);
 
 const SECRET = 'x'.repeat(32), SLUG = 'prototypeslug123';
 const danita: StoredGrant = { id: '11111111-1111-4111-8111-111111111111', label: 'Danita — GC 3730', scope: ['GC 3730'], can: ['capture'], expiresAt: null, revokedAt: null, lastUsedAt: null };

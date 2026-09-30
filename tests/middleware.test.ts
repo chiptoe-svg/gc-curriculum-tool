@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHmac } from 'node:crypto';
 // @vitest-environment node
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
@@ -8,6 +8,7 @@ vi.mock('@/lib/partners/sessions', () => ({ SESSION_COOKIE: 'gc_partner', create
 
 import { NextRequest } from 'next/server';
 import { middleware } from '@/middleware';
+import { signSession } from '@/lib/auth/grants';
 
 const auth = (cred: string) => 'Basic ' + Buffer.from(cred).toString('base64');
 function reqFor(path: string, opts: { method?: string; cred?: string; cookie?: string } = {}) {
@@ -72,8 +73,19 @@ describe('middleware cookie ordering', () => {
     const cookie = res.cookies.get('gc_session');
     expect(cookie).toBeDefined();
     expect(cookie!.value).not.toBe('');
-    const fp = createHash('sha256').update('gcfaculty:godfrey').digest('hex').slice(0, 16);
+    const fp = createHmac('sha256', 'test-secret').update('gcfaculty:godfrey').digest('hex').slice(0, 16);
     expect(cookie!.value.startsWith(`builtin:faculty:${fp}.`)).toBe(true);
     expect(cookie!.maxAge).toBeGreaterThan(0);
+  });
+  // Regression (final review tail): a pre-fix built-in cookie — the old id
+  // shape `builtin:faculty` with NO fingerprint but a VALID MAC — is dead:
+  // 401 with the cookie cleared, never honoured.
+  it('old-shape builtin:faculty.<valid mac> cookie → 401 and cleared', async () => {
+    vi.stubEnv('SESSION_SECRET', 'test-secret');
+    const res = await middleware(reqFor('/capture/GC%201040', { cookie: `gc_session=${signSession('builtin:faculty', 'test-secret')}` }));
+    expect(res.status).toBe(401);
+    const cookie = res.cookies.get('gc_session');
+    expect(cookie?.value).toBe('');
+    expect(cookie?.maxAge).toBe(0);
   });
 });

@@ -84,8 +84,13 @@ async function resolveGrantSession(
   const cookie = req.headers.get('cookie') ?? '';
   const m = cookie.match(new RegExp(`(?:^|; )${GRANT_SESSION_COOKIE}=([^;]+)`));
   if (!m?.[1]) return null;
+  // Next writes cookie values percent-encoded (`builtin%3Afaculty%3A…`) and
+  // the browser sends them back as-is; NextRequest.cookies decodes, this raw
+  // header parse must too. Undecodable → treat as absent.
+  let raw: string;
+  try { raw = decodeURIComponent(m[1]); } catch { return null; }
   try {
-    const grant = await grantFromSessionCookie(m[1], {
+    const grant = await grantFromSessionCookie(raw, {
       findGrantById,
       env: {
         sessionSecret: process.env.SESSION_SECRET?.trim() || undefined,
