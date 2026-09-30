@@ -50,11 +50,10 @@ export function authorize(grant: Grant, method: string, pathname: string): Decis
   switch (k.kind) {
     case 'read': return { ok: true };
     case 'course-write':
-      if (grant.scope.includes('*')) return { ok: true };
       if (!grant.can.includes('capture')) return { ok: false, reason: 'needs-capture', code: k.code };
       return inScope(grant, k.code) ? { ok: true } : { ok: false, reason: 'out-of-scope', code: k.code };
     case 'create':
-      return grant.scope.includes('*') || grant.can.includes('create') ? { ok: true } : { ok: false, reason: 'needs-create' };
+      return grant.can.includes('create') ? { ok: true } : { ok: false, reason: 'needs-create' };
     case 'admin':
       return grant.scope.includes('*') && grant.can.includes('admin') ? { ok: true } : { ok: false, reason: 'needs-admin' };
   }

@@ -61,4 +61,11 @@ describe('authorize', () => {
     expect(authorize({ ...scoped, scope: ['gc 4900AP'] }, 'POST', '/api/capture/GC%204900ap/chat')).toEqual({ ok: true }));
   it('lower-case method is treated as its upper-case form', () =>
     expect(authorize(scoped, 'post', '/api/capture/GC%201010/chat').ok).toBe(false));
+  it('scope * never substitutes for a capability', () => {
+    const wide: Grant = { id: 'g4', label: 'wide, no caps', scope: ['*'], can: [] };
+    expect(authorize(wide, 'POST', '/api/capture/GC%203730/chat')).toEqual({ ok: false, reason: 'needs-capture', code: 'GC 3730' });
+    expect(authorize(wide, 'POST', '/courses/new')).toEqual({ ok: false, reason: 'needs-create' });
+    expect(authorize({ ...wide, can: ['capture'] }, 'POST', '/courses/new')).toEqual({ ok: false, reason: 'needs-create' });
+    expect(authorize({ ...wide, can: ['capture'] }, 'POST', '/api/capture/GC%209999/chat')).toEqual({ ok: true });
+  });
 });
