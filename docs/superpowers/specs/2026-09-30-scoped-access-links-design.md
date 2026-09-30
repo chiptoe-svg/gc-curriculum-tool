@@ -54,11 +54,11 @@ Table `access_grants` (Drizzle migration; sits beside `partners`, which already 
 
 ## Middleware flow (faculty branch of `middleware.ts`; partner branch unchanged)
 
-For a request to a gated path (not in `PUBLIC_PREFIXES`):
+Step 2.1 (magic-link exchange) runs on **every** path, public ones included — the link is `https://…:8443/?key=…`, and `/` is public. Steps 1, 2.2–2.4, 3 and 4 run only for gated paths (not in `PUBLIC_PREFIXES`):
 
 1. Cleartext interstitial — unchanged, first.
 2. Resolve a grant, first match wins:
-   1. `?key=` (or legacy `?slug=`): hash → look up (or match built-in) → live → **set cookie, 302 to the same URL with `key`/`slug` removed**.
+   1. `?key=` (or legacy `?slug=` on a gated path) on **any** path: hash → look up (or match built-in) → live → **set cookie, 302 to the same URL with `key`/`slug` removed**. On a public path a dead key is simply ignored (no 401 — the page is public anyway).
    2. `gc_session` cookie: verify HMAC → load row → live → use. Invalid/dead → clear cookie, fall through.
    3. `Authorization: Basic` → built-in grant → also set cookie.
    4. None → **401**, `WWW-Authenticate: Basic realm="GC Curriculum Tool - Faculty"`, body: a plain page — "Faculty: sign in with your access link, or the department login. Students and visitors: the course pages and wiki need no login."
@@ -88,7 +88,7 @@ Lost link = revoke + grant.
 ## Errors
 
 - Expired/revoked cookie → cleared, then the normal 401 page.
-- Expired/revoked `?key=` → 401 page (no cookie set).
+- Expired/revoked `?key=` → on a gated path, 401 page; on a public path, ignored (no cookie set).
 - Tampered cookie (bad HMAC) → treated as absent.
 - DB unavailable → 503 for gated paths (fail closed), public paths unaffected.
 
