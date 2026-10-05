@@ -1,4 +1,4 @@
-# Objective evidence guide — design
+# Objective assessment guide — design
 
 **Date:** 2026-10-05 · **Status:** design approved by the owner in conversation (2026-10-05); this spec awaits owner review before planning.
 
@@ -88,7 +88,7 @@ The table is overwritten on regeneration. History lives in the snapshots it is b
 
 ## Where it shows
 
-- **Public wiki course page** (`app/wiki/[type]/[slug]/page.tsx`): a fourth section under `CourseViewsPanel`, titled **"Documenting the objectives this semester"**.
+- **Public wiki course page** (`app/wiki/[type]/[slug]/page.tsx`): a fourth section under `CourseViewsPanel`, titled **"Assessing the course objectives"**.
   - One row per objective: the objective, a measure label (Clearly measured / Partly measured / No graded measure yet), where the evidence is, and what to gather. The suggestion appears when there is one.
   - Then the checklist.
   - A **Copy as text** button gives the plain-text rendering. That text is what a faculty member would hand to a Canvas-connected agent, and it reads as ordinary instructions to a person.
