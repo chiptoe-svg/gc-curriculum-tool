@@ -34,14 +34,16 @@ Never names or implies individual students. No grades for any person, only class
 
 All inputs are existing data. Nothing new is collected.
 
-1. `courses.learning_objectives` and the course title.
+1. The stated objectives and the course title. Objectives come from `courses.learning_objectives` (the GC catalog sheet). When that is empty, as it is for non-GC courses the sheet doesn't cover, they come from the course's uploaded syllabus: the model quotes them verbatim, and a deterministic check confirms each quoted objective appears in the syllabus text (same treatment as Canvas names: one retry, then drop). The section's footnote says which source was used.
 2. The latest capture snapshot profile:
    - competencies with their evidence and citations;
    - `course_emphasis` (points per competency);
    - `objective_misalignments` and `verification_summary.catalog_vs_evidence`.
 3. The course's active `Canvas: Assignments` material. This holds assignment names, points and rubric criteria inline. It is the full text, not the digest, since names must match exactly.
 
-Coverage today: 18 captured courses, all 18 with `Canvas: Assignments`, and 16 with stated objectives. The two without objectives get no guide. Their wiki section says no stated objectives are on file.
+Coverage today: 18 captured courses, all 18 with `Canvas: Assignments`. 16 have catalog objectives. The two that don't are Marketing courses outside the GC catalog sheet:
+- MKT 3310 has an uploaded syllabus with objectives, so it uses the syllabus fallback.
+- MKT 4320 has no syllabus among its materials; it gets a guide once one is uploaded. Until then its wiki section says no stated objectives are on file.
 
 ## The firm rule: no invented Canvas items
 
