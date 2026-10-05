@@ -2,8 +2,8 @@
  * Defense-in-depth PII redaction for LLM-generated profile text rendered on the
  * PUBLIC, unauthenticated /view/<code> surface.
  *
- * The capture pipeline already keeps FERPA-high material out of the model
- * (see lib/capture/finalize-extraction.ts), so model output should not contain
+ * Material text is privacy-scrubbed before it is stored (lib/privacy/scrub.ts,
+ * called by updateExtractionResult), so model output should not contain
  * student identifiers. This is the belt-and-suspenders layer: if a name, CUID,
  * or email ever does slip into a generated field (strongest_evidence, narrative,
  * per-competency evidence, catalog deltas), scrub it before it reaches an

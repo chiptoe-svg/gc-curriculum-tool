@@ -25,6 +25,9 @@ const updateIndexingStatus = vi.fn();
 const updateFerpaRisk = vi.fn();
 const updateAutoSetAside = vi.fn();
 
+/** updateExtractionResult stand-in: stores the text it was given (no scrub in these unit tests). */
+const storeAsGiven = async (i: { extractedText?: string }) => ({ outcome: 'stored' as const, extractedText: i.extractedText });
+
 vi.mock('@/lib/db/course-materials-queries', () => ({
   updateExtractionResult: (...a: unknown[]) => updateExtractionResult(...a),
   updateMaterialDigest: (...a: unknown[]) => updateMaterialDigest(...a),
@@ -143,7 +146,7 @@ const BASE = {
 describe('finalizeExtraction — tier routing (v2 pipeline)', () => {
   beforeEach(() => {
     process.env.COURSECAPTURE_V2_INGESTION = '1';
-    updateExtractionResult.mockReset().mockResolvedValue(undefined);
+    updateExtractionResult.mockReset().mockImplementation(storeAsGiven);
     updateMaterialDigest.mockReset().mockResolvedValue(undefined);
     updateIndexingStatus.mockReset().mockResolvedValue(undefined);
     updateFerpaRisk.mockReset().mockResolvedValue(undefined);
@@ -350,7 +353,7 @@ const FAKE_IMAGES = [Buffer.from('png1'), Buffer.from('png2'), Buffer.from('png3
 describe('finalizeExtraction — middle tier (slide-vision)', () => {
   beforeEach(() => {
     process.env.COURSECAPTURE_V2_INGESTION = '1';
-    updateExtractionResult.mockReset().mockResolvedValue(undefined);
+    updateExtractionResult.mockReset().mockImplementation(storeAsGiven);
     updateMaterialDigest.mockReset().mockResolvedValue(undefined);
     updateIndexingStatus.mockReset().mockResolvedValue(undefined);
     updateFerpaRisk.mockReset().mockResolvedValue(undefined);
@@ -578,7 +581,7 @@ function longSectionText(label: string): string {
 describe('finalizeExtraction — middle tier (prose-section)', () => {
   beforeEach(() => {
     process.env.COURSECAPTURE_V2_INGESTION = '1';
-    updateExtractionResult.mockReset().mockResolvedValue(undefined);
+    updateExtractionResult.mockReset().mockImplementation(storeAsGiven);
     updateMaterialDigest.mockReset().mockResolvedValue(undefined);
     updateIndexingStatus.mockReset().mockResolvedValue(undefined);
     updateFerpaRisk.mockReset().mockResolvedValue(undefined);

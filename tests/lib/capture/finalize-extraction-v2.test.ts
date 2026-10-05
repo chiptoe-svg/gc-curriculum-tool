@@ -8,6 +8,9 @@ const updateIndexingStatus = vi.fn();
 const updateFerpaRisk = vi.fn();
 const updateAutoSetAside = vi.fn();
 
+/** updateExtractionResult stand-in: stores the text it was given (no scrub in these unit tests). */
+const storeAsGiven = async (i: { extractedText?: string }) => ({ outcome: 'stored' as const, extractedText: i.extractedText });
+
 vi.mock('@/lib/db/course-materials-queries', () => ({
   updateExtractionResult: (...a: unknown[]) => updateExtractionResult(...a),
   updateMaterialDigest: (...a: unknown[]) => updateMaterialDigest(...a),
@@ -44,7 +47,7 @@ vi.mock('@/lib/ai/embeddings', async () => {
 
 describe('finalizeExtraction (v2 pipeline)', () => {
   beforeEach(() => {
-    updateExtractionResult.mockReset();
+    updateExtractionResult.mockReset().mockImplementation(storeAsGiven);
     updateMaterialDigest.mockReset();
     updateIndexingStatus.mockReset();
     updateFerpaRisk.mockReset();
@@ -84,50 +87,90 @@ describe('finalizeExtraction (v2 pipeline)', () => {
     expect(updateIndexingStatus).toHaveBeenCalledWith(expect.objectContaining({ status: 'ready' }));
   });
 
-  it('respects materials policy — sets aside high-FERPA materials', async () => {
+  it('includes Canvas: Discussions: discussions are privacy-scrubbed, not set aside (spec 2026-10-05)', async () => {
     process.env.COURSECAPTURE_V2_INGESTION = '1';
-    const store = createInMemoryVectorStore();
+    const { generateMaterialDigest } = await import('@/lib/ai/analyze/material-digest');
+    vi.mocked(generateMaterialDigest).mockClear();
     await finalizeExtraction({
       id: 'm2',
       courseCode: 'GC 4800',
       fileName: 'Canvas: Discussions',
       extractionStatus: 'ok',
-      extractedText: 'Some discussion content here.',
-      vectorStore: store,
+      extractedText: 'Some discussion content here about kerning and leading in body type.',
+      vectorStore: createInMemoryVectorStore(),
       courseHasLearningObjectives: false,
     });
-    expect(updateAutoSetAside).toHaveBeenCalledWith(expect.objectContaining({
-      autoSetAside: true,
-      ignored: true,
-    }));
-    expect(updateIndexingStatus).toHaveBeenCalledWith(expect.objectContaining({ status: 'skipped' }));
+    expect(updateAutoSetAside).not.toHaveBeenCalledWith(expect.objectContaining({ autoSetAside: true }));
+    expect(updateAutoSetAside).toHaveBeenCalledWith(expect.objectContaining({ autoSetAside: false, ignored: false }));
+    expect(generateMaterialDigest).toHaveBeenCalled();
   });
 
-  it('auto-sets-aside high-FERPA CONTENT (benign filename) before any LLM/embed call', async () => {
+  it('no longer holds FERPA-flagged content back: records ferpa_risk and indexes the stored text', async () => {
+    process.env.COURSECAPTURE_V2_INGESTION = '1';
+    const { generateMaterialDigest } = await import('@/lib/ai/analyze/material-digest');
+    vi.mocked(generateMaterialDigest).mockClear();
+    await finalizeExtraction({
+      id: 'm-ferpa',
+      courseCode: 'GC 4800',
+      fileName: 'Canvas File: final-projects.pdf',
+      extractionStatus: 'ok',
+      // storeAsGiven does not scrub, so the detector still sees the CUID here.
+      extractedText: 'Final project rubric.\nStudent C12345678 submitted on time.',
+      vectorStore: createInMemoryVectorStore(),
+      courseHasLearningObjectives: false,
+    });
+    expect(updateFerpaRisk).toHaveBeenCalledWith(expect.objectContaining({ risk: 'high' }));
+    expect(updateAutoSetAside).not.toHaveBeenCalledWith(expect.objectContaining({ autoSetAside: true }));
+    expect(updateIndexingStatus).not.toHaveBeenCalledWith(expect.objectContaining({ status: 'skipped' }));
+    expect(generateMaterialDigest).toHaveBeenCalled();
+  });
+
+  it('indexes the text exactly as stored (privacy-scrubbed), never the text passed in', async () => {
     process.env.COURSECAPTURE_V2_INGESTION = '1';
     const { generateMaterialDigest } = await import('@/lib/ai/analyze/material-digest');
     const { embedBatch } = await import('@/lib/ai/embeddings');
     vi.mocked(generateMaterialDigest).mockClear();
     vi.mocked(embedBatch).mockClear();
-    const store = createInMemoryVectorStore();
+    const stored = '# Feedback\nSubmitted by [student]. Strong grid work and clear hierarchy.';
+    updateExtractionResult.mockResolvedValueOnce({ outcome: 'stored', extractedText: stored });
     await finalizeExtraction({
-      id: 'm-ferpa',
+      id: 'm5',
       courseCode: 'GC 4800',
-      // Filename the materials policy would happily INCLUDE — the only signal
-      // is the student data in the body (a Clemson CUID).
-      fileName: 'Canvas File: final-projects.pdf',
+      fileName: 'Canvas File: critiques.pdf',
       extractionStatus: 'ok',
-      extractedText: 'Final project rubric.\nStudent C12345678 submitted on time.',
-      vectorStore: store,
+      extractedText: '# Feedback\nSubmitted by Jane Doe. Strong grid work and clear hierarchy.',
+      vectorStore: createInMemoryVectorStore(),
       courseHasLearningObjectives: false,
     });
-    expect(updateFerpaRisk).toHaveBeenCalledWith(expect.objectContaining({ risk: 'high' }));
-    expect(updateAutoSetAside).toHaveBeenCalledWith(expect.objectContaining({
-      autoSetAside: true,
-      ignored: true,
-    }));
-    expect(updateIndexingStatus).toHaveBeenCalledWith(expect.objectContaining({ status: 'skipped' }));
-    // The whole point: student data must NOT reach the external provider.
+    expect(generateMaterialDigest).toHaveBeenCalledWith(
+      expect.objectContaining({ extractedText: stored }),
+      expect.anything(),
+    );
+    const downstream = JSON.stringify([
+      vi.mocked(generateMaterialDigest).mock.calls,
+      vi.mocked(embedBatch).mock.calls,
+    ]);
+    expect(downstream).not.toContain('Jane Doe');
+  });
+
+  it('stops and marks indexing failed when the privacy scrub failed (nothing stored)', async () => {
+    process.env.COURSECAPTURE_V2_INGESTION = '1';
+    const { generateMaterialDigest } = await import('@/lib/ai/analyze/material-digest');
+    const { embedBatch } = await import('@/lib/ai/embeddings');
+    vi.mocked(generateMaterialDigest).mockClear();
+    vi.mocked(embedBatch).mockClear();
+    updateExtractionResult.mockResolvedValueOnce({ outcome: 'scrub_failed', extractedText: undefined, reason: 'privacy-scrub guard rejected chunk 1/1' });
+    await finalizeExtraction({
+      id: 'm6',
+      courseCode: 'GC 4800',
+      fileName: 'Canvas: Discussions',
+      extractionStatus: 'ok',
+      extractedText: 'Posted by Jane Doe on May 2: thoughts on grids.',
+      vectorStore: createInMemoryVectorStore(),
+      courseHasLearningObjectives: false,
+    });
+    expect(updateIndexingStatus).toHaveBeenCalledWith({ id: 'm6', status: 'failed' });
+    expect(updateFerpaRisk).not.toHaveBeenCalled();
     expect(generateMaterialDigest).not.toHaveBeenCalled();
     expect(embedBatch).not.toHaveBeenCalled();
   });
