@@ -3,7 +3,7 @@ import { isValidSlug } from '@/lib/slug';
 import { loadWikiIndex, levelGroup, codeFromSlug, type WikiCourse } from '@/lib/wiki/index-data';
 import { FeedbackLink } from '@/app/FeedbackLink';
 import { AskTab } from '@/components/AskTab';
-import { HowToRead } from './HowToRead';
+import { HowToRead, CAREER_TARGETS_BETA, TOOL_OVERVIEW_URL, TOOL_DOCS_URL } from './HowToRead';
 import { loadTargetMap, type TargetWithCompetencies } from '@/lib/wiki/course-views';
 
 export const dynamic = 'force-dynamic';
@@ -76,6 +76,9 @@ export default async function WikiIndexPage({ searchParams }: Props) {
           than catalog copy, and how those courses build toward the{' '}
           <a href="#career-target">careers the program prepares for</a>.
         </p>
+        <p className="wiki-index__about">
+          New here? Read the <a href={TOOL_OVERVIEW_URL}>overview of the curriculum tool</a>, or browse <a href={TOOL_DOCS_URL}>all of its documents</a>.
+        </p>
         {!isEmpty && (
           <p className="wiki-index__status">
             {captured.length} of {data.courses.length} courses captured
@@ -132,6 +135,7 @@ export default async function WikiIndexPage({ searchParams }: Props) {
             <div className="wiki-col">
               <h2 className="wiki-index__h2">Career targets</h2>
               <p className="wiki-col__intro">The five destinations the program prepares students for. Each is made of the <a href="#competency">competencies</a> listed beside it.</p>
+              <p className="wiki-beta"><strong>Beta.</strong> {CAREER_TARGETS_BETA}</p>
               <ul className="wiki-col__list">
                 {data.targets.map(t => (
                   <li key={t.slug}>

@@ -22,6 +22,14 @@ export const EVIDENCE_LABELS: Array<[string, string]> = [
   ['predicted', 'Implied by the course’s written description. A prediction, not evidence.'],
 ];
 
+/** Owner request 2026-10-05: flag the career targets as forward-looking, beta-level. */
+export const CAREER_TARGETS_BETA =
+  'These targets are forward-looking: they describe where the program expects graduates to be heading, including roles that are still emerging, and were drafted before we had full input from employers. Employer interviews will refine them. Read them as working definitions, not settled job descriptions.';
+
+/** Public overview of the curriculum tool (GitHub Pages). */
+export const TOOL_OVERVIEW_URL = 'https://chiptoe-svg.github.io/gc-curriculum-tool/docs/executive-brief.html';
+export const TOOL_DOCS_URL = 'https://chiptoe-svg.github.io/gc-curriculum-tool/docs/index.html';
+
 export function HowToRead({ q }: { q: string }) {
   return (
     <section className="wiki-howto" id="how-to-read" aria-labelledby="howto-heading">
@@ -42,6 +50,7 @@ export function HowToRead({ q }: { q: string }) {
         <li id="career-target">
           <span className="wiki-howto__term">Career targets</span>
           <p>The five destinations the program prepares students for. Each is made of five to seven competencies, so a target is well served when courses across the sequence build its competencies to depth.</p>
+          <p className="wiki-beta"><strong>Beta.</strong> {CAREER_TARGETS_BETA}</p>
         </li>
       </ol>
 

@@ -8,7 +8,7 @@ import { parseFrontmatter, resolveWikilinks } from '@/lib/wiki/markdown-helpers'
 import { loadWikiIndex, levelGroup, codeFromSlug, listFromFrontmatter } from '@/lib/wiki/index-data';
 import { FeedbackLink } from '@/app/FeedbackLink';
 import { CourseViewsPanel } from '../../CourseViewsPanel';
-import { TermsHint } from '../../HowToRead';
+import { TermsHint, CAREER_TARGETS_BETA } from '../../HowToRead';
 import { loadCourseViews, loadTargetMap, type CourseViews } from '@/lib/wiki/course-views';
 
 export const dynamic = 'force-dynamic';
@@ -138,7 +138,10 @@ export default async function WikiPage({ params, searchParams }: Props) {
           <TermsHint q={q}>A competency is one capability a graduate needs. It belongs to one career target and is scored on know, understand and do, each 0 to 5.</TermsHint>
         )}
         {type === 'targets' && (
-          <TermsHint q={q}>A career target is one of the five destinations the program prepares students for, made of the competencies listed beside this text.</TermsHint>
+          <>
+            <TermsHint q={q}>A career target is one of the five destinations the program prepares students for, made of the competencies listed beside this text.</TermsHint>
+            <p className="wiki-beta"><strong>Beta.</strong> {CAREER_TARGETS_BETA}</p>
+          </>
         )}
       </header>
 

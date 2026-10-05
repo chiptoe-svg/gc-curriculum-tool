@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { isValidSlug } from '@/lib/slug';
 import { loadTargetMap, type TargetWithCompetencies } from '@/lib/wiki/course-views';
-import { DEPTH_SCALE, EVIDENCE_LABELS } from '../HowToRead';
+import { DEPTH_SCALE, EVIDENCE_LABELS, CAREER_TARGETS_BETA, TOOL_OVERVIEW_URL } from '../HowToRead';
 
 export const dynamic = 'force-dynamic';
 
@@ -82,6 +82,7 @@ export default async function WikiGuidePage({ searchParams }: Props) {
         </p>
 
         <h2>The five career targets and their competencies</h2>
+        <p className="wiki-beta"><strong>Beta.</strong> {CAREER_TARGETS_BETA}</p>
         {targets ? (
           <div className="wiki-guide__targets">
             {targets.map(t => (
@@ -104,6 +105,7 @@ export default async function WikiGuidePage({ searchParams }: Props) {
         </ol>
 
         <h2>Further reading</h2>
+        <p>For what the curriculum tool is and where it stands, see the <a href={TOOL_OVERVIEW_URL}>overview</a>.</p>
         <p>
           The academic background is in the program’s framework document: <a href={`${BACKGROUND}#kud`}>the know, understand, do model</a>,{' '}
           <a href={`${BACKGROUND}#depth`}>the depth scale</a>, and <a href={`${BACKGROUND}#anchors`}>the evidence rule</a>.
