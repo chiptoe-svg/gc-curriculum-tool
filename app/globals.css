@@ -443,6 +443,7 @@
 .wiki-howto__chain li:target, .wiki-howto__keys > div:target { background: color-mix(in srgb, var(--wiki-accent) 7%, transparent); }
 .wiki-howto__term { display: block; font-family: var(--font-display); font-weight: 500; font-size: 1.0625rem; margin-bottom: 0.3rem; }
 .wiki-howto__chain p { margin: 0; font-size: 0.9rem; line-height: 1.5; color: var(--wiki-muted); }
+.wiki-howto__chain .wiki-beta { margin-top: 0.4rem; }
 .wiki-howto__keys { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 1.75rem; }
 .wiki-howto__keys > div { scroll-margin-top: 1rem; }
 .wiki-howto__keys h3 { font-size: 0.875rem; font-weight: 600; margin: 0 0 0.5rem; }
@@ -497,7 +498,7 @@
   .wiki-howto__scale > div, .wiki-howto__labels > div { grid-template-columns: 4.5rem 1fr; }
 }
 
-.wiki-beta { margin: 0.6rem 0 0; padding: 0.45rem 0.7rem; font-size: 0.8125rem; line-height: 1.5; color: var(--wiki-muted); border-left: 2px solid var(--wiki-accent); background: color-mix(in srgb, var(--wiki-accent) 5%, transparent); max-width: 46rem; }
+.wiki-beta { margin: 0.4rem 0 0; font-size: 0.8125rem; line-height: 1.5; color: var(--wiki-muted); max-width: 46rem; }
 .wiki-beta strong { color: var(--foreground); font-weight: 600; }
 .wiki-index__about { margin: 0.6rem 0 0; font-size: 0.9375rem; color: var(--wiki-muted); }
 .wiki-index__about a { text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; text-decoration-color: color-mix(in srgb, var(--wiki-accent) 60%, transparent); }

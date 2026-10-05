@@ -24,7 +24,7 @@ export const EVIDENCE_LABELS: Array<[string, string]> = [
 
 /** Owner request 2026-10-05: flag the career targets as forward-looking, beta-level. */
 export const CAREER_TARGETS_BETA =
-  'These targets are forward-looking: they describe where the program expects graduates to be heading, including roles that are still emerging, and were drafted before we had full input from employers. Employer interviews will refine them. Read them as working definitions, not settled job descriptions.';
+  'Drafted ahead of full employer input, so expect them to change.';
 
 /** Public overview of the curriculum tool (GitHub Pages). */
 export const TOOL_OVERVIEW_URL = 'https://chiptoe-svg.github.io/gc-curriculum-tool/docs/executive-brief.html';
@@ -76,7 +76,8 @@ export function HowToRead({ q }: { q: string }) {
         </div>
       </div>
       <p className="wiki-howto__more">
-        <Link href={`/wiki/guide${q}`}>Read the full guide</Link>, including why the three scores are kept separate.
+        <Link href={`/wiki/guide${q}`}>Read the full guide</Link>, including why the three scores are kept separate,
+        or the <a href={TOOL_OVERVIEW_URL}>overview of the curriculum tool</a>.
       </p>
     </section>
   );
