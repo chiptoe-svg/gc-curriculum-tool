@@ -262,6 +262,11 @@ export const courseMaterials = pgTable('course_materials', {
   extractionMethod: text('extraction_method'),      // 'text' | 'vision' | null
   extractionStatus: text('extraction_status').notNull().default('pending'), // 'pending' | 'ok' | 'low_text' | 'failed'
   extractedText: text('extracted_text'),
+  // Privacy scrub (spec 2026-10-05, migration 0052): placeholder counts in the
+  // stored extracted_text, or why the scrub failed (then no text is stored).
+  // null = row written before the scrub existed. Shape = MaterialRedactions
+  // in lib/privacy/types.ts (typed inline to keep this file's imports stable).
+  redactions: jsonb('redactions').$type<{ counts: Record<string, number>; failedReason: string | null }>(),
   analysisFinding: jsonb('analysis_finding').$type<{
     materialType: string;
     competencies: Array<{ name: string; description: string; evidenceQuotes: string[] }>;

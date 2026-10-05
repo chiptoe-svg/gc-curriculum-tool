@@ -20,6 +20,7 @@ function mapMaterialRow(row: Record<string, unknown>): CourseMaterialRow {
     extractionMethod: row['extraction_method'] as string | null,
     extractionStatus: row['extraction_status'] as string,
     extractedText: row['extracted_text'] as string | null,
+    redactions: (row['redactions'] as CourseMaterialRow['redactions'] | undefined) ?? null,
     analysisFinding: row['analysis_finding'] as CourseMaterialRow['analysisFinding'],
     analysisModel: row['analysis_model'] as string | null,
     analysisCostUsdCents: row['analysis_cost_usd_cents'] as number | null,
