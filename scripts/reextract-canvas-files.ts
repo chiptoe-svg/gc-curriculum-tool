@@ -43,6 +43,7 @@ import { extractText, SUPPORTED_MIME_TYPES, type ExtractedMimeType } from '@/lib
 import { isLegacyOfficeMime } from '@/lib/courses/legacy-converter';
 import { EXT_TO_MIME } from '@/lib/canvas/ext-to-mime';
 import { parseCanvasUrl } from '@/lib/canvas/parseCanvasUrl';
+import { updateExtractionResult, updateMaterialMetadata, type ExtractionMethod } from '@/lib/db/course-materials-queries';
 
 function resolveMimeType(reported: string, displayName: string): string {
   if (reported && reported !== 'application/octet-stream') return reported;
@@ -176,16 +177,20 @@ async function main() {
       skipped++;
       continue;
     }
-    await db.update(courseMaterials)
-      .set({
-        extractedText: result.text,
-        extractionStatus: 'ok',
-        extractionMethod: result.method ?? 'text',
-        pageCount: result.pageCount ?? null,
-        mimeType: resolvedMime,
-        sizeBytes: buffer.length,
-      })
-      .where(eq(courseMaterials.id, targetRow.id));
+    // extracted_text goes through the single scrubbing writer (privacy-scrub spec 2026-10-05).
+    await updateMaterialMetadata({ id: targetRow.id, mimeType: resolvedMime, sizeBytes: buffer.length });
+    const persisted = await updateExtractionResult({
+      id: targetRow.id,
+      extractionStatus: 'ok',
+      extractionMethod: (result.method ?? 'text') as ExtractionMethod,
+      extractedText: result.text,
+      ...(result.pageCount != null && { pageCount: result.pageCount }),
+    });
+    if (persisted.outcome === 'scrub_failed') {
+      console.log(`    privacy scrub failed, no text stored: ${persisted.reason}`);
+      skipped++;
+      continue;
+    }
     console.log(`    ✓ updated, ${result.text.length} chars, ${result.pageCount ?? '?'} pages, via ${result.method ?? '?'}`);
     updated++;
   }
