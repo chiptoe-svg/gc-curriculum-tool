@@ -31,6 +31,35 @@ export async function chunkLlmComplete<T>(
   args: CompleteArgs<T>,
   opts?: { noOpenAIFallback?: boolean },
 ): Promise<{ data: T; model: string } & CompletionTelemetry> {
+  // Campus and the OpenAI fallback share one gateway (llm.rcd.clemson.edu), so
+  // a gateway blip fails both together (seen 2026-10-05: 502 on both within a
+  // minute; the retry a minute later succeeded). On a gateway-type failure, wait
+  // and run the whole sequence once more instead of failing the material.
+  try {
+    return await chunkLlmAttempt(funcId, args, opts);
+  } catch (e) {
+    if (!isGatewayOutage(e)) throw e;
+    const delayMs = Number(process.env.CHUNK_LLM_RETRY_DELAY_MS ?? 60_000);
+    console.warn(`[chunk-llm] gateway error on both routes (${e instanceof Error ? e.message : e}); retrying in ${delayMs / 1000}s`);
+    await new Promise(r => setTimeout(r, delayMs));
+    return chunkLlmAttempt(funcId, args, opts);
+  }
+}
+
+/** 5xx, connection failure or timeout: the gateway, not the request, is at fault. */
+function isGatewayOutage(e: unknown): boolean {
+  const status = (e as { status?: unknown })?.status;
+  if (typeof status === 'number' && status >= 500) return true;
+  const name = (e as { name?: unknown })?.name;
+  if (name === 'APIConnectionError' || name === 'APIConnectionTimeoutError') return true;
+  return /ECONNRESET|ETIMEDOUT|ECONNREFUSED|fetch failed|timed out|Bad Gateway|Gateway Time-?out/i.test(e instanceof Error ? e.message : String(e));
+}
+
+async function chunkLlmAttempt<T>(
+  funcId: AIFunctionId,
+  args: CompleteArgs<T>,
+  opts?: { noOpenAIFallback?: boolean },
+): Promise<{ data: T; model: string } & CompletionTelemetry> {
   const campus = campusOss();
   if (campus) {
     try {

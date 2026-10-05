@@ -33,3 +33,29 @@ describe('chunkLlmComplete noOpenAIFallback', () => {
     expect(openaiComplete).not.toHaveBeenCalled();
   });
 });
+
+describe('chunkLlmComplete gateway outage retry', () => {
+  const outage = Object.assign(new Error('502 Bad Gateway'), { status: 502 });
+  beforeEach(() => {
+    process.env.CAMPUS_LLM_BASE_URL = 'http://campus/v1';
+    process.env.CAMPUS_LLM_API_KEY = 'k';
+    process.env.CHUNK_LLM_RETRY_DELAY_MS = '0';
+    delete process.env.CHUNK_LLM_SKIP_CAMPUS;
+    campusComplete.mockReset(); openaiComplete.mockClear();
+  });
+
+  it('waits and retries the whole campus → OpenAI sequence once when both routes hit a gateway error', async () => {
+    campusComplete.mockRejectedValueOnce(outage).mockResolvedValueOnce({ data: { ok: 'second' }, costUsdCents: 0, durationMs: 1, cachedTokens: 0, uncachedPromptTokens: 1, completionTokens: 1 });
+    openaiComplete.mockRejectedValueOnce(outage);
+    const r = await chunkLlmComplete('material-digest', args);
+    expect(r.data).toEqual({ ok: 'second' });
+    expect(campusComplete).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not retry a non-gateway failure (e.g. a validation error)', async () => {
+    campusComplete.mockRejectedValue(new Error('bad json'));
+    openaiComplete.mockRejectedValueOnce(new Error('validate: missing digest'));
+    await expect(chunkLlmComplete('material-digest', args)).rejects.toThrow('validate: missing digest');
+    expect(campusComplete).toHaveBeenCalledTimes(1);
+  });
+});
