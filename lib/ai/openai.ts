@@ -37,6 +37,15 @@ function toCents(usd: number): number {
   return Math.ceil(usd * 100 * 100); // 1/100 of a cent
 }
 
+/**
+ * Per-call limits for the OpenAI gateway. The SDK defaults (10 min per attempt,
+ * 2 retries) let one hung call stall for ~30 min before failing; the longest
+ * legitimate single call observed is ~3 min (course profile, 2026-10-05).
+ * 5 min x 2 attempts caps a hang at 10 min while still retrying a 502 once.
+ */
+export const OPENAI_TIMEOUT_MS = 5 * 60_000;
+export const OPENAI_MAX_RETRIES = 1;
+
 export class OpenAIProvider implements AIProvider {
   readonly name = 'openai';
   readonly model: string;
@@ -50,7 +59,7 @@ export class OpenAIProvider implements AIProvider {
     this.model = model;
     this.reasoningEffort = reasoningEffort;
     this.apiKey = apiKey;
-    this.client = new OpenAI({ apiKey, baseURL: openAIBaseURL() });
+    this.client = new OpenAI({ apiKey, baseURL: openAIBaseURL(), timeout: OPENAI_TIMEOUT_MS, maxRetries: OPENAI_MAX_RETRIES });
   }
 
   async complete<T>(args: {
