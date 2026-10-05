@@ -20,12 +20,14 @@ import { assembleSynthesisContext, computePart1Metrics } from '../_one-off/relia
 
 const N_RUNS = Number(process.env.N_RUNS ?? 3);
 const COURSES = ['GC 3460', 'GC 3700', 'GC 3730'];
+// Lean rerun (owner, 2026-10-05): the coverage evaluation showed no gain from
+// medium/high effort, so only production vs Sol low.
 const SETUPS: Array<{ label: string; model: string; effort?: string }> = [
   { label: 'gpt-5.4 (production)', model: 'gpt-5.4' },
   { label: 'gpt-6.1-sol low', model: 'gpt-6.1-sol', effort: 'low' },
-  { label: 'gpt-6.1-sol medium', model: 'gpt-6.1-sol', effort: 'medium' },
-  { label: 'gpt-6.1-sol high', model: 'gpt-6.1-sol', effort: 'high' },
 ];
+const CALL_TIMEOUT_MS = Number(process.env.CALL_TIMEOUT_MS ?? 10 * 60_000);
+const withTimeout = <T,>(p: Promise<T>) => Promise.race([p, new Promise<never>((_, rej) => setTimeout(() => rej(new Error(`timeout after ${CALL_TIMEOUT_MS / 1000}s`)), CALL_TIMEOUT_MS))]);
 const OUT_JSON = `docs/superpowers/audits/${new Date().toISOString().slice(0, 10)}-profile-model-evaluation.json`;
 
 async function main() {
@@ -35,24 +37,28 @@ async function main() {
   const results: Record<string, Record<string, { profiles: CaptureProfile[]; costs: number[]; secs: number[]; failures: string[] }>> = {};
   for (const s of SETUPS) { results[s.label] = {}; for (const c of COURSES) results[s.label]![c] = { profiles: [], costs: [], secs: [], failures: [] }; }
 
+  const t00 = Date.now();
   for (let run = 1; run <= N_RUNS; run++) {
-    for (const c of COURSES) {
+    // Every setup × course in parallel: a pass waits once for its slowest call.
+    await Promise.all(COURSES.flatMap(c => SETUPS.map(async s => {
       const ctx = contexts.get(c)!;
-      await Promise.all(SETUPS.map(async s => {
-        const t0 = Date.now();
-        const slot = results[s.label]![c]!;
-        try {
-          const r = await generateCaptureProfileV2(
-            { chatContext: ctx, sessionId: ctx.sessionId, transcript: ctx.transcript } as Parameters<typeof generateCaptureProfileV2>[0],
-            { model: s.model, reasoningEffort: s.effort },
-          );
-          await recordSpend(r.telemetry.costUsdCents);
-          slot.profiles.push(r.profile); slot.costs.push(r.telemetry.costUsdCents / 10_000); slot.secs.push((Date.now() - t0) / 1000);
-          process.stdout.write('.');
-        } catch (e) { slot.failures.push(`run ${run}: ${(e as Error).message.slice(0, 200)}`); process.stdout.write('x'); }
-      }));
-    }
-    console.log(` pass ${run}/${N_RUNS} done`);
+      const t0 = Date.now();
+      const slot = results[s.label]![c]!;
+      try {
+        const r = await withTimeout(generateCaptureProfileV2(
+          { chatContext: ctx, sessionId: ctx.sessionId, transcript: ctx.transcript } as Parameters<typeof generateCaptureProfileV2>[0],
+          { model: s.model, reasoningEffort: s.effort },
+        ));
+        await recordSpend(r.telemetry.costUsdCents);
+        slot.profiles.push(r.profile); slot.costs.push(r.telemetry.costUsdCents / 10_000); slot.secs.push((Date.now() - t0) / 1000);
+        console.log(`[call] run ${run} ${c} | ${s.label} | ok ${((Date.now() - t0) / 1000).toFixed(0)}s $${(r.telemetry.costUsdCents / 10_000).toFixed(3)}`);
+      } catch (e) {
+        slot.failures.push(`run ${run}: ${(e as Error).message.slice(0, 200)}`);
+        console.log(`[call] run ${run} ${c} | ${s.label} | FAIL ${((Date.now() - t0) / 1000).toFixed(0)}s ${(e as Error).message.slice(0, 160)}`);
+      }
+    })));
+    console.log(` pass ${run}/${N_RUNS} done at ${((Date.now() - t00) / 60000).toFixed(1)} min`);
+    writeFileSync(OUT_JSON.replace('.json', '-checkpoint.json'), JSON.stringify(results, null, 1));
   }
 
   const report: Record<string, unknown> = {};
