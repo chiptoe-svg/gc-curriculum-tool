@@ -21,6 +21,7 @@ import type { Tier } from '@/lib/capture/material-tier';
 import { renderToImages } from '@/lib/capture/render-pages';
 import { describeSlides, type SlideNote } from '@/lib/capture/slide-vision';
 import { sanitizeExtractedText } from '@/lib/capture/sanitize-extracted-text';
+import { scrubForRecord } from '@/lib/privacy/scrub';
 
 export interface FinalizeExtractionInput {
   id: string;
@@ -291,7 +292,20 @@ async function runV2Pipeline(input: FinalizeExtractionInput): Promise<void> {
           const texts = substantive.map(({ note }) =>
             [note.topic, note.teaches, note.keyVisual].filter(Boolean).join('\n'),
           );
-          const vectors = await embedBatch(texts);
+          // Privacy scrub (spec 2026-10-05): slide-vision text is model-generated
+          // from the deck's images and can itself name a student (e.g. a
+          // "presented by" slide) or carry a CUID/email. Chunk text and
+          // embeddings are stored records under the spec, same as
+          // extracted_text, so scrub BEFORE embedBatch and BEFORE any
+          // vector-store write. A scrub failure throws here, inside the
+          // existing try below, and is caught by the existing catch, which
+          // falls through to the full chunk pipeline — that pipeline indexes
+          // `extractedText`, the already-scrubbed stored text, so the
+          // fallback is safe.
+          const scrubbedSlideTexts = (
+            await Promise.all(texts.map(t => scrubForRecord(t, { fileName, isSyllabus: isSyllabusFileName(fileName) })))
+          ).map(r => r.text);
+          const vectors = await embedBatch(scrubbedSlideTexts);
 
           const tenant = tenantForCourse(courseCode);
           const deckSectionId = syntheticUuid(`${id}-deck`);
@@ -312,7 +326,7 @@ async function runV2Pipeline(input: FinalizeExtractionInput): Promise<void> {
             sectionTitle: fileName,
             sectionIndex: 0,
             parentSectionId: deckSectionId,
-            text: [n.topic, n.teaches, n.keyVisual].filter(Boolean).join('\n'),
+            text: scrubbedSlideTexts[batchIdx]!,
             contextBlurb: '',
           }));
 

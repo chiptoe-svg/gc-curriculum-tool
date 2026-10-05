@@ -65,6 +65,20 @@ vi.mock('@/lib/ai/embeddings', async () => {
   };
 });
 
+// Real deterministic CUID/email redaction (no AI), backing the scrubForRecord
+// mock below, so slide-vision scrub tests exercise genuine redaction behavior
+// without a name-pass/AI call.
+import { scrubIdentifiers } from '@/lib/privacy/deterministic';
+
+const scrubForRecordMock = vi.fn(async (text: string, opts: { fileName: string; isSyllabus: boolean }) => ({
+  text: scrubIdentifiers(text, { keepEmails: opts.isSyllabus }),
+  redactions: { 'student-name': 0, 'student-id': 0, email: 0 },
+}));
+
+vi.mock('@/lib/privacy/scrub', () => ({
+  scrubForRecord: (...a: unknown[]) => scrubForRecordMock(...(a as [string, { fileName: string; isSyllabus: boolean }])),
+}));
+
 // ---------------------------------------------------------------------------
 // Mock for chunker — controlled per-test; default returns 2 sections + 2 details
 // so the existing full-pipeline tests (high/null) still see contextualizeChunk called.
@@ -362,6 +376,10 @@ describe('finalizeExtraction — middle tier (slide-vision)', () => {
     renderToImages.mockReset();
     describeSlide.mockReset();
     chunkMaterialMock.mockReset().mockReturnValue(DEFAULT_CHUNK_RESULT);
+    scrubForRecordMock.mockReset().mockImplementation(async (text: string, opts: { fileName: string; isSyllabus: boolean }) => ({
+      text: scrubIdentifiers(text, { keepEmails: opts.isSyllabus }),
+      redactions: { 'student-name': 0, 'student-id': 0, email: 0 },
+    }));
   });
 
   it('middle + 3 images (2 substantive, 1 low): upserts exactly 2 chunks', async () => {
@@ -416,6 +434,68 @@ describe('finalizeExtraction — middle tier (slide-vision)', () => {
     expect(renderToImages).not.toHaveBeenCalled();
     expect(describeSlide).not.toHaveBeenCalled();
     expect(store.upsertedChunks.flat()).toHaveLength(2); // 2 substantive notes → 2 chunks
+  });
+
+  it('middle + slideNotes carrying a CUID/email: upserted chunk text and embedBatch input are scrubbed, never raw (spec 2026-10-05)', async () => {
+    const { embedBatch } = await import('@/lib/ai/embeddings');
+    vi.mocked(embedBatch).mockClear();
+    const notes = [
+      { topic: 'Contact jane@g.clemson.edu, C12345678', teaches: 'Office hours', keyVisual: '', text: '', contentLevel: 'substantive' as const },
+    ];
+    const store = makeFakeStore();
+    await finalizeExtraction({
+      id: 'mat-slide-pii',
+      courseCode: 'GC 3800',
+      fileName: SLIDE_FILE_NAME,
+      extractionStatus: 'ok',
+      extractedText: MULTI_SECTION_TEXT,
+      fileBytes: FAKE_BYTES,
+      mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      slideNotes: notes,
+      vectorStore: store,
+      courseHasLearningObjectives: false,
+      tier: 'middle',
+    });
+
+    const chunk = store.upsertedChunks.flat()[0]!;
+    expect(chunk.text).toContain('[email]');
+    expect(chunk.text).toContain('[student ID]');
+    expect(chunk.text).not.toContain('jane@g.clemson.edu');
+    expect(chunk.text).not.toContain('C12345678');
+
+    const embedInputs = JSON.stringify(vi.mocked(embedBatch).mock.calls);
+    expect(embedInputs).toContain('[email]');
+    expect(embedInputs).toContain('[student ID]');
+    expect(embedInputs).not.toContain('jane@g.clemson.edu');
+    expect(embedInputs).not.toContain('C12345678');
+  });
+
+  it('middle + slideNotes: scrub failure upserts no slide chunks and falls through to the full chunk pipeline', async () => {
+    const notes = [
+      { topic: 'Color theory', teaches: 'Hue relationships', keyVisual: 'color wheel', text: '', contentLevel: 'substantive' as const },
+    ];
+    scrubForRecordMock.mockRejectedValue(new Error('privacy-scrub guard rejected chunk 1/1'));
+
+    const store = makeFakeStore();
+    await finalizeExtraction({
+      id: 'mat-slide-scrubfail',
+      courseCode: 'GC 3800',
+      fileName: SLIDE_FILE_NAME,
+      extractionStatus: 'ok',
+      extractedText: MULTI_SECTION_TEXT,
+      fileBytes: FAKE_BYTES,
+      mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      slideNotes: notes,
+      vectorStore: store,
+      courseHasLearningObjectives: false,
+      tier: 'middle',
+    });
+
+    // No slide-vision chunk ("Color theory") was upserted before the scrub threw.
+    expect(store.upsertedChunks.flat().some(c => c.text.includes('Color theory'))).toBe(false);
+    // The existing catch falls through to the full chunk pipeline — contextualizeChunk
+    // running is the distinguishing signal used elsewhere in this file.
+    expect(contextualizeChunk).toHaveBeenCalled();
   });
 
   it('middle + all-unknown slides (vision outage): marks FAILED, does not skip or index', async () => {
