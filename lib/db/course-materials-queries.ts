@@ -278,6 +278,19 @@ export async function updateMaterialDigest(input: UpdateMaterialDigestInput): Pr
 }
 
 /**
+ * Privacy backfill only (spec 2026-10-05): replace a stored digest with its
+ * scrubbed text, or clear it (null) when the scrub failed. Clearing also turns
+ * useDigest off so context loaders fall back to the scrubbed extracted text.
+ * Leaves digestModel / digestGeneratedAt alone (the content is the same digest).
+ */
+export async function setScrubbedDigest(id: string, digest: string | null): Promise<void> {
+  await db
+    .update(courseMaterials)
+    .set(digest === null ? { digest: null, useDigest: false } : { digest })
+    .where(eq(courseMaterials.id, id));
+}
+
+/**
  * Whether a freshly-extracted material should default to `useDigest = true`
  * (digest replaces raw text in the agent's at-rest context) or `false`
  * (agent reads the original extracted text).

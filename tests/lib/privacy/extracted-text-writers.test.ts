@@ -128,6 +128,7 @@ describe('extracted_text has exactly one writer', () => {
       'app/api/courses/[code]/imscc-import/route.ts',
       'app/api/courses/[code]/scan-linked-docs/route.ts',
       'lib/capture/finalize-extraction.ts',
+      'scripts/privacy/backfill-scrub.ts',
       'scripts/reextract-canvas-files.ts',
     ]);
   });
