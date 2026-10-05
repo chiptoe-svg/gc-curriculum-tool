@@ -90,9 +90,19 @@ vi.mock('@/lib/db/capture-snapshots-queries', () => ({
 }));
 
 // ── wiki update (fire-and-forget, don't await) ───────────────────────────────
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const updateWikiForSnapshot = vi.fn(async (_id?: any) => ({ raw: [], wiki: [], logEntry: null }));
 vi.mock('@/lib/ai/wiki/update', () => ({
-  updateWikiForSnapshot: async () => ({ raw: [], wiki: [], logEntry: null }),
+  updateWikiForSnapshot: (id: unknown) => updateWikiForSnapshot(id),
 }));
+
+// ── objective assessment guide (own fire-and-forget task) ───────────────────
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const runObjectiveGuideForSnapshot = vi.fn(async (_id?: any) => ({ status: 'written' }));
+vi.mock('@/lib/objective-guide/run', () => ({
+  runObjectiveGuideForSnapshot: (id: unknown) => runObjectiveGuideForSnapshot(id),
+}));
+
 vi.mock('@/lib/wiki/git-ops', () => ({
   writeAndPush: async () => {},
 }));
@@ -186,5 +196,31 @@ describe('snapshots POST — clearRawBlobsForCourse hook', () => {
     const body = await res.json() as { snapshot: Record<string, unknown> };
     expect(body.snapshot).toHaveProperty('id', 'snap-1');
     expect(body.snapshot).toHaveProperty('model', 'gpt-4o');
+  });
+});
+
+describe('snapshots POST — objective assessment guide task', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    isTriageEnabled.mockReturnValue(false);
+    runObjectiveGuideForSnapshot.mockResolvedValue({ status: 'written' });
+  });
+
+  it('fires the guide task with the new snapshot id', async () => {
+    const res = await callPost();
+    expect(res.status).toBe(200);
+    await new Promise(r => setTimeout(r, 0));
+    expect(runObjectiveGuideForSnapshot).toHaveBeenCalledWith('snap-1');
+  });
+
+  it('a guide failure fails neither the response nor the wiki update', async () => {
+    runObjectiveGuideForSnapshot.mockRejectedValueOnce(new Error('model down'));
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const res = await callPost();
+    expect(res.status).toBe(200);
+    await new Promise(r => setTimeout(r, 0));
+    expect(updateWikiForSnapshot).toHaveBeenCalledWith('snap-1');
+    expect(errSpy).toHaveBeenCalledWith('[objective-guide] failed for', 'GC 4440', expect.any(Error));
+    errSpy.mockRestore();
   });
 });

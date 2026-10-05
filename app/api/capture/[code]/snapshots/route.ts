@@ -12,6 +12,7 @@ import { hashIp } from '@/lib/ip-hash';
 import { updateWikiForSnapshot } from '@/lib/ai/wiki/update';
 import { writeAndPush } from '@/lib/wiki/git-ops';
 import { refreshProgramIndex } from '@/lib/capture/program-index';
+import { runObjectiveGuideForSnapshot } from '@/lib/objective-guide/run';
 import { resolveScopedSession, authorizeCourseWrite } from '@/lib/sandbox/access';
 import { isTriageEnabled } from '@/lib/capture/triage-flag';
 import { clearRawBlobsForCourse } from '@/lib/capture/clear-raw-blobs';
@@ -173,6 +174,13 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   // full rebuild is the recovery path and the next snapshot re-stamps.
   void refreshProgramIndex(snapshot.courseCode, { snapshotId: snapshot.id }).catch(err =>
     console.error('[program-index] refresh failed for', snapshot.courseCode, err),
+  );
+
+  // Objective assessment guide (spec 2026-10-05) — its own task, independent
+  // of the wiki update and the spine refresh, so a failure in one never skips
+  // another. Fire-and-log; the next snapshot (or the backfill script) retries.
+  void runObjectiveGuideForSnapshot(snapshot.id).catch(err =>
+    console.error('[objective-guide] failed for', snapshot.courseCode, err),
   );
 
   return NextResponse.json({
