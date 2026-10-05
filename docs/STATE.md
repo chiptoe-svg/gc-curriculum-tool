@@ -173,6 +173,7 @@ Setup details: [`docs/superpowers/running-locally.md`](./superpowers/running-loc
 | `program-score-coverage` | heavy | Heaviest scorer; batches by target for cache reuse |
 | `decompose-prereq-gap` | default | |
 | `material-digest` | light | Per-material structured digest generated at extraction for every material (supersedes `material-summary`); loaded into audit agent's at-rest context |
+| `privacy-scrub` | light | Privacy scrub (spec 2026-10-05). Replaces student names with `[student]` in material text before it is stored and in wiki pages before publish (`lib/privacy/scrub.ts`). Runs only when the FERPA detector reports `submitted-by` / `posted-by` / `roster-names` / `gradebook`, or the file is `Canvas: Discussions`; long text in 6000-char chunks. A token-alignment guard (`lib/privacy/align.ts`) rejects any output that changed more than names, and the stored text is rebuilt from the input. Spend recorded, daily cap not enforced (skipping would mean storing nothing). |
 | `chunk-contextualize` | light | Per-chunk position blurb prepended before embedding so the vector encodes position + content (Anthropic contextual-retrieval pattern) |
 | `ingestion-checkin` | light | Per-page-open curation review; one call before audit chat begins; silent most of the time |
 | `capture-chat-agent` | default | Stage 3 audit-chat per-turn loop; tool-using retrieval against Weaviate per-course tenants; returns structured finding + question + citations + readiness |
