@@ -18,7 +18,7 @@ For each stated learning objective:
 
 | Field | Content |
 |---|---|
-| `objective` | The objective text, verbatim from the catalog or, failing that, the syllabus |
+| `objective` | The objective text, quoted verbatim from the course syllabus |
 | `measure` | `clear`: a graded item plainly measures it. `partial`: graded work touches it but doesn't isolate it. `none`: no graded measure found. |
 | `evidence` | 0–3 items, each `{ assignment, rubric_row \| null }`, named exactly as in the inputs |
 | `gather` | One or two sentences on what to pull at semester's end, in **class-level numbers only**. Example: "the score distribution on the 'Strategic rationale' row of the Final Brand Playbook rubric, and the share of students at proficient or above". |
@@ -34,16 +34,33 @@ Never names or implies individual students. No grades for any person, only class
 
 All inputs are existing data. Nothing new is collected.
 
-1. The stated objectives and the course title. Objectives come from `courses.learning_objectives` (the GC catalog sheet). When that is empty, as it is for non-GC courses the sheet doesn't cover, they come from the course's uploaded syllabus: the model quotes them verbatim, and a deterministic check confirms each quoted objective appears in the syllabus text (same treatment as Canvas names: one retry, then drop). The section's footnote says which source was used.
+1. **The syllabus is the source of the objectives** (owner, 2026-10-05). The model quotes them verbatim from the course's syllabus material, and a deterministic check confirms each one appears in the syllabus text (whitespace- and bullet-insensitive). As with Canvas names, a miss gets one retry and is then dropped. The catalog objectives from the Google Sheet (`courses.learning_objectives`) stay exactly as they are and are still used everywhere else; the guide does not read them.
 2. The latest capture snapshot profile:
    - competencies with their evidence and citations;
    - `course_emphasis` (points per competency);
    - `objective_misalignments` and `verification_summary.catalog_vs_evidence`.
 3. The course's active `Canvas: Assignments` material. This holds assignment names, points and rubric criteria inline. It is the full text, not the digest, since names must match exactly.
 
-Coverage today: 18 captured courses, all 18 with `Canvas: Assignments`. 16 have catalog objectives. The two that don't are Marketing courses outside the GC catalog sheet:
-- MKT 3310 has an uploaded syllabus with objectives, so it uses the syllabus fallback.
-- MKT 4320 has no syllabus among its materials; it gets a guide once one is uploaded. Until then its wiki section says no stated objectives are on file.
+Coverage today (2026-10-05): all 18 captured courses have `Canvas: Assignments`.
+- **Syllabus on file:** GC 1010, GC 3620, GC 3800, GC 4440, GC 4800, MKT 3310, and MKT 4320 (uploaded 2026-10-05 from the owner's copy).
+- **Likely a syllabus under another name:** GC 3400 (the Summer 2026 course PDF). It gets marked as the syllabus by hand at backfill time after a check.
+- **No syllabus found:** GC 1020, GC 1040, GC 1050, GC 2400, GC 3400 (until confirmed), GC 3460, GC 3700, GC 3710, GC 3730, GC 3740, GC 4900ap.
+  - One reason: the Canvas import has been skipping the Canvas syllabus page whenever the catalog sheet already had objectives.
+  - These courses get no guide until a syllabus arrives. The wiki section says so and asks the instructor to provide one.
+
+## A syllabus is required at ingest
+
+Owner decision (2026-10-05): every course must have a syllabus, either imported from Canvas or uploaded by the instructor.
+
+- **The Canvas import stops skipping the syllabus page.** `assembleCanvasMaterials` always writes `Canvas: Syllabus` when Canvas has one; the `sheetsHasCatalog` suppression is removed. A course re-imported from Canvas picks up its syllabus.
+- **Syllabus flag.** Materials gain an explicit `is_syllabus` boolean, added in the same migration, so the syllabus is found by flag, not by file name. It is set:
+  - by the Canvas import for `Canvas: Syllabus`;
+  - by an upload made through the Syllabus box, which sends `role=syllabus` with the upload;
+  - once, by a backfill, for existing materials whose name contains "syllabus".
+- **Ingest page, Syllabus box.**
+  - When no syllabus material exists, the box shows a required-item notice: "Add the course syllabus: import it from Canvas or upload it here." The notice is styled like the page's other blocking items, and the upload button sits in the box.
+  - The capture can't move past Step 1 until a syllabus exists, using the existing Step-1 gate (`MaterialGate`).
+  - Courses captured before this change keep their snapshots. They just get no guide until a syllabus is added.
 
 ## The firm rule: no invented Canvas items
 
@@ -64,11 +81,11 @@ The guide may name only assignments and rubric rows that appear in input 3. Afte
   - Includes the shared depth scale only if needed; the guide does not score.
   - Rules: plain advice voice, class-level numbers only, exact names, and `none` is an acceptable honest answer.
 - **Output:** a strict JSON schema. Every property is required; optional fields are nullable unions, following the OpenAI strict-mode rule in CLAUDE.md.
-- **Cost:** about $0.05–0.20 per course on gpt-5.4. The backfill of 17 courses costs about $1–4.
+- **Cost:** about $0.05–0.20 per course on gpt-5.4. The backfill of about 8 courses costs about $1–2.
 
 ## Storage
 
-New table `course_objective_guides`, migration `0051`:
+New table `course_objective_guides`, plus `course_materials.is_syllabus boolean not null default false`, in migration `0051`:
 
 | Column | Type | Notes |
 |---|---|---|
@@ -84,7 +101,7 @@ The table is overwritten on regeneration. History lives in the snapshots it is b
 ## When it runs
 
 - **After every new capture snapshot,** in `app/api/capture/[code]/snapshots/route.ts`. It runs as its own background task beside the wiki update and the program-index refresh. A failure is logged and does not affect either of those; the next snapshot retries.
-- **One-time backfill:** `scripts/backfill-objective-guides.ts`, with `--dry-run` and per-course output, covering the 17 captured courses with objectives (16 catalog, 1 syllabus).
+- **One-time backfill:** `scripts/backfill-objective-guides.ts`, with `--dry-run` and per-course output, covering every captured course with a flagged syllabus (8 today, including GC 3400 if confirmed).
 
 ## Where it shows
 
