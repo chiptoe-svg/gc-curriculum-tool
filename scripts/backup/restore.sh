@@ -73,6 +73,7 @@ if [ "$MODE" = verify ]; then
   say "Tarball contents:"
   echo "  materials: $(tar -tzf "$BACKUP/materials.tar.gz" 2>/dev/null | wc -l | xargs) entries"
   echo "  weaviate:  $(tar -tzf "$BACKUP/weaviate.tar.gz"  2>/dev/null | wc -l | xargs) entries"
+  [ -f "$BACKUP/reference-pdfs.tar.gz" ] && echo "  ref PDFs:  $(tar -tzf "$BACKUP/reference-pdfs.tar.gz" 2>/dev/null | grep -c '\.pdf$' | xargs) PDFs"
   [ -f "$BACKUP/wiki.bundle" ] && { git bundle verify "$BACKUP/wiki.bundle" >/dev/null 2>&1 && say "  wiki.bundle OK" || warn "  wiki.bundle INVALID"; }
 
   if command -v psql >/dev/null && [ -n "${VDB_URL:-}" ]; then
@@ -142,6 +143,11 @@ else warn "  psql missing — restore the DB manually (see RESTORE.md)"; fi
 say "[5/8] Material blobs…"
 mkdir -p "$BLOB_PARENT"
 tar -xzf "$BACKUP/materials.tar.gz" -C "$BLOB_PARENT" && say "  blobs restored" || warn "  materials extract had errors"
+# Archived source PDFs (git-ignored, so not in the clone). Older backups lack this file.
+if [ -f "$BACKUP/reference-pdfs.tar.gz" ]; then
+  mkdir -p "$REPO_DIR/docs/references"
+  tar -xzf "$BACKUP/reference-pdfs.tar.gz" -C "$REPO_DIR/docs/references" && say "  reference PDFs restored" || warn "  reference PDF extract had errors"
+fi
 
 # --- 6. Weaviate -------------------------------------------------------------
 say "[6/8] Weaviate vectors…"

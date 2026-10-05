@@ -112,6 +112,18 @@ else
   echo "  (no weaviate dir — writing empty marker)"; : | gzip > "$TMP/weaviate.tar.gz"
 fi
 
+# --- 3b. Archived source PDFs ------------------------------------------------
+# docs/references/_pdfs is git-ignored since 2026-10-05 (owner: keep published
+# PDFs off the public GitHub repo), so GitHub no longer holds them — this is now
+# their only off-machine copy (24 of 27 are also in the private ai_career_impact repo).
+echo "[3b/8] reference PDFs…"
+REF_PDF_DIR="$REPO_DIR/docs/references/_pdfs"
+if [ -d "$REF_PDF_DIR" ]; then
+  tar -czf "$TMP/reference-pdfs.tar.gz" -C "$(dirname "$REF_PDF_DIR")" "$(basename "$REF_PDF_DIR")" || fail "reference pdfs tar failed"
+else
+  echo "  (no reference PDF dir — writing empty marker)"; : | gzip > "$TMP/reference-pdfs.tar.gz"
+fi
+
 # --- 4. Secrets (encrypted) --------------------------------------------------
 echo "[4/8] secrets (encrypted)…"
 openssl enc -aes-256-cbc -pbkdf2 -salt -in .env.local -out "$TMP/secrets.env.enc" -pass file:"$PASSPHRASE_FILE" \
@@ -151,10 +163,10 @@ cat > "$TMP/manifest.json" <<JSON
   "storage_root": "$BLOB_DIR",
   "weaviate_dir": "$WEAVIATE_DIR",
   "secrets_cipher": "openssl aes-256-cbc -pbkdf2 (passphrase)",
-  "artifacts": ["db.sql.gz","materials.tar.gz","weaviate.tar.gz","secrets.env.enc","wiki.bundle"]
+  "artifacts": ["db.sql.gz","materials.tar.gz","weaviate.tar.gz","reference-pdfs.tar.gz","secrets.env.enc","wiki.bundle"]
 }
 JSON
-( cd "$TMP" && shasum -a 256 db.sql.gz materials.tar.gz weaviate.tar.gz secrets.env.enc $( [ -f wiki.bundle ] && echo wiki.bundle ) manifest.json > SHA256SUMS ) \
+( cd "$TMP" && shasum -a 256 db.sql.gz materials.tar.gz weaviate.tar.gz reference-pdfs.tar.gz secrets.env.enc $( [ -f wiki.bundle ] && echo wiki.bundle ) manifest.json > SHA256SUMS ) \
   || fail "checksum failed"
 
 # --- 8. Runbook + atomic finalize -------------------------------------------

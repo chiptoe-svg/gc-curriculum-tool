@@ -74,3 +74,8 @@ drizzle/meta/
 
 # per-project live dashboard working copy (published by ~/.claude/dashboard/sync.sh)
 /.dashboard/
+
+# Archived source PDFs: published works are kept OFF this public repo (owner decision 2026-10-05).
+# Local copies stay here; off-machine copies are in the nightly backup (reference-pdfs.tar.gz)
+# and, for most, the private ai_career_impact library.
+/docs/references/_pdfs/*.pdf
