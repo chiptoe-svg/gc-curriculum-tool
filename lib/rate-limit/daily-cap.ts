@@ -44,14 +44,36 @@ export function getDailyCapCents(): number {
   return capCents();
 }
 
-export async function checkDailyCap(): Promise<{ ok: boolean; spentCents: number }> {
+/**
+ * 'block' (historical default): over the cap, `ok` is false and callers refuse
+ * paid AI work. 'warn' (owner decision 2026-10-05: "ignore the cap — warn me but
+ * don't stop anything"): `ok` is always true; being over the cap is reported via
+ * `overCap`, a once-per-day server log line, and the hourly
+ * scripts/cost/cost-cap-check.mjs GitHub-issue alert. Set DAILY_COST_CAP_MODE.
+ */
+export type CapMode = 'block' | 'warn';
+export function capMode(raw: string | undefined = process.env.DAILY_COST_CAP_MODE): CapMode {
+  return raw?.trim().toLowerCase() === 'warn' ? 'warn' : 'block';
+}
+
+let warnedDay = '';
+
+export async function checkDailyCap(): Promise<{ ok: boolean; spentCents: number; overCap: boolean }> {
   const day = currentDayKey();
   const result = await db.execute(sql`
     SELECT COALESCE(total_cost_usd_cents, 0) AS spent
     FROM daily_cost WHERE day = ${day}
   `);
-  const spent = (result.rows[0] as { spent: number } | undefined)?.spent ?? 0;
-  return { ok: spent < capCents(), spentCents: spent };
+  const spent = Number((result.rows[0] as { spent: number } | undefined)?.spent ?? 0);
+  const overCap = spent >= capCents();
+  if (overCap && capMode() === 'warn') {
+    if (warnedDay !== day) {
+      warnedDay = day;
+      console.warn(`[daily-cap] AI spend $${(spent / 10_000).toFixed(2)} is over the $${(capCents() / 10_000).toFixed(2)} daily cap — warn-only mode, nothing is blocked.`);
+    }
+    return { ok: true, spentCents: spent, overCap };
+  }
+  return { ok: !overCap, spentCents: spent, overCap };
 }
 
 export interface DailyCostRow {
