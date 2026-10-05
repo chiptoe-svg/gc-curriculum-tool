@@ -12,6 +12,16 @@ import { renderToolDescription } from './tool-use-types';
 // Per-model pricing in USD per 1M tokens. Update from
 // https://developers.openai.com/api/docs/pricing when adding models.
 const MODEL_PRICING: Record<string, { input: number; output: number }> = {
+  // GPT-6 / 5.6 families, published standard rates as of 2026-10-05 (gateway
+  // markup, if any, unverified). Without these, unpriced models fell back to
+  // gpt-5.4 rates and the daily-cost ledger under-counted (Astra ~4×).
+  'gpt-6-astra': { input: 10.0, output: 50.0 },
+  'gpt-6.1-sol': { input: 2.0, output: 10.0 },
+  'gpt-6-sol': { input: 2.0, output: 10.0 },
+  'gpt-6-luna': { input: 0.1, output: 0.5 },
+  'gpt-5.6-sol': { input: 4.0, output: 20.0 },
+  'gpt-5.6-terra': { input: 2.0, output: 12.0 },
+  'gpt-5.6-luna': { input: 0.2, output: 1.2 },
   'gpt-5.5': { input: 5.0, output: 30.0 },
   'gpt-5.4': { input: 2.5, output: 15.0 },
   'gpt-5.4-mini': { input: 0.75, output: 4.5 },
@@ -48,8 +58,13 @@ export class OpenAIProvider implements AIProvider {
     documents?: Array<{ bytes: Buffer; mimeType: string }>;
   }): Promise<{ data: T } & CompletionTelemetry> {
     const started = Date.now();
+    // Evaluation-only knob (2026-10-05 model evaluation): when OPENAI_REASONING_EFFORT
+    // is set (low | medium | high | xhigh), it is forwarded as `reasoning_effort`.
+    // Unset in production, so production requests are unchanged.
+    const effort = process.env.OPENAI_REASONING_EFFORT?.trim();
     const response = await this.client.chat.completions.create({
       model: this.model,
+      ...(effort ? { reasoning_effort: effort as 'low' | 'medium' | 'high' } : {}),
       messages: [
         { role: 'system', content: args.systemPrompt },
         { role: 'user', content: args.userMessage },
