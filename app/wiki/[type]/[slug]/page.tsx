@@ -10,6 +10,8 @@ import { FeedbackLink } from '@/app/FeedbackLink';
 import { CourseViewsPanel } from '../../CourseViewsPanel';
 import { TermsHint, CAREER_TARGETS_BETA } from '../../HowToRead';
 import { loadCourseViews, loadTargetMap, type CourseViews } from '@/lib/wiki/course-views';
+import { ObjectiveGuidePanel } from '../../ObjectiveGuidePanel';
+import { loadObjectiveGuideSection, type ObjectiveGuideSection } from '@/lib/wiki/objective-guide-section';
 
 export const dynamic = 'force-dynamic';
 
@@ -78,6 +80,7 @@ export default async function WikiPage({ params, searchParams }: Props) {
   let facts: string[] = [];
   // DB-backed structure (best-effort; the page still renders from the wiki alone).
   let views: CourseViews | null = null;
+  let guideSection: ObjectiveGuideSection | null = null;
   const targetMap = type === 'competencies' || type === 'targets' ? await loadTargetMap().catch(() => null) : null;
   if (type === 'courses') {
     const course = index.courses.find(c => c.slug === pageSlug);
@@ -97,6 +100,7 @@ export default async function WikiPage({ params, searchParams }: Props) {
     for (const c of index.competencies) if (listFromFrontmatter(await fmOf('competencies', c.slug, 'contributing_courses')).includes(pageSlug)) comps.add(c.slug);
     related.push({ heading: 'Builds toward', type: 'targets', slugs: [...targets] });
     views = await loadCourseViews(codeFromSlug(pageSlug)).catch(() => null);
+    guideSection = await loadObjectiveGuideSection(codeFromSlug(pageSlug)).catch(() => null);
     related.push({ heading: 'Develops', type: 'competencies', slugs: [...comps] });
   } else if (type === 'targets') {
     const fromDb = targetMap?.find(t => t.id === pageSlug)?.competencies.map(c => c.id).filter(id => titleOf.has(id)) ?? [];
@@ -146,6 +150,7 @@ export default async function WikiPage({ params, searchParams }: Props) {
       </header>
 
       {type === 'courses' && views && <CourseViewsPanel views={views} q={q} />}
+      {type === 'courses' && guideSection && <ObjectiveGuidePanel section={guideSection} />}
 
       <div className="wiki-page__body">
         <article className="wiki-prose">
