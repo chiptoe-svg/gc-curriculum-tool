@@ -1,3 +1,4 @@
+import { visionModel, softTokenKnob } from '@/lib/ai/vision-models';
 import { NextResponse, type NextRequest } from 'next/server';
 import { visionOffloadConfig } from '@/lib/ai/vision-offload';
 import { recordRealSuccess, recordRealFallback } from '@/lib/ai/vision-offload-health';
@@ -72,7 +73,7 @@ export async function POST(req: NextRequest): Promise<Response> {
 
   const off = visionOffloadConfig();
   const localBase = (process.env.LOCAL_BASE_URL ?? 'http://localhost:8000/v1').replace(/\/$/, '');
-  const localModel = process.env.DOCLING_VLM_MODEL ?? 'gemma-4-12B-it-qat-4bit';
+  const localModel = visionModel('docPicture').model;
   const localKey = process.env.LOCAL_API_KEY ?? '';
 
   // Canonicalize the figure crop adaptively (ride native, cap 1120) and pick the
@@ -126,7 +127,7 @@ export async function POST(req: NextRequest): Promise<Response> {
   // so a DGX outage reopened the leak. Both bodies MUST carry this — asserted in the
   // wire-payload test so the fallback can't drift from the primary again.
   localBody['chat_template_kwargs'] = { enable_thinking: false };
-  if (budget) localBody['vision_soft_tokens_per_image'] = budget;
+  Object.assign(localBody, softTokenKnob(localModel, budget));
   const res = await forward(`${localBase}/chat/completions`, localKey, localBody);
   return new NextResponse(await res.text(), {
     status: res.status,

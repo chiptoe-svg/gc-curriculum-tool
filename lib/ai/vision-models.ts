@@ -8,9 +8,12 @@
  * docs/superpowers/pilot/2026-06-23-slide-note-bench-results.md). Each is
  * env-overridable, read lazily (per call) so a runtime env change takes effect.
  *
- * The gemma `vision_soft_tokens_per_image` budget requires the PATCHED omlx stack
- * (mlx-vlm #1426 + omlx #1986 — the resolution knob); see ~/.dev-ports.yaml. A
- * budget sent to a non-gemma model (e.g. Qwen) is harmlessly ignored.
+ * 2026-10-05 (owner decision "no more Gemma as backup"): every local fallback is
+ * Qwen3.6-35B-A3B on stock omlx. The Gemma-only `vision_soft_tokens_per_image`
+ * resolution knob (which needed the patched omlx fork) is now sent ONLY when the
+ * resolved model is a Gemma — see softTokenKnob() — so nothing depends on the fork.
+ * The June bench found Gemma-26B better at transcription; accepted, because the
+ * local leg is only the fallback when the Spark offload fails.
  */
 export interface VisionTask {
   /** omlx model id. */
@@ -40,10 +43,22 @@ export type VisionTaskName = 'slideNote' | 'docTranscribe' | 'docPicture';
 export function visionModel(task: VisionTaskName): VisionTask {
   switch (task) {
     case 'slideNote':
-      return { model: s('SLIDE_VISION_MODEL') ?? 'gemma-4-12B-it-qat-4bit', budget: n('SLIDE_VISION_BUDGET') ?? 560 };
+      return { model: s('SLIDE_VISION_MODEL') ?? 'Qwen3.6-35B-A3B-UD-MLX-4bit', budget: n('SLIDE_VISION_BUDGET') ?? 560 };
     case 'docTranscribe':
-      return { model: s('LOCAL_VISION_MODEL') ?? 'gemma-4-26B-A4B-it-QAT-MLX-4bit', budget: n('LOCAL_VISION_BUDGET') ?? 1120 };
+      return { model: s('LOCAL_VISION_MODEL') ?? 'Qwen3.6-35B-A3B-UD-MLX-4bit', budget: n('LOCAL_VISION_BUDGET') ?? 1120 };
     case 'docPicture':
-      return { model: s('DOCLING_VLM_MODEL') ?? 'gemma-4-12B-it-qat-4bit' };
+      return { model: s('DOCLING_VLM_MODEL') ?? 'Qwen3.6-35B-A3B-UD-MLX-4bit' };
   }
+}
+
+/** Default local (omlx) model for every vision fallback and for LOCAL_MODEL. */
+export const DEFAULT_LOCAL_VISION_MODEL = 'Qwen3.6-35B-A3B-UD-MLX-4bit';
+
+/**
+ * The omlx `vision_soft_tokens_per_image` resolution knob, ONLY for Gemma models
+ * (it exists only in the patched omlx/mlx-vlm fork and only Gemma reads it).
+ * Returns {} for any other model, so stock omlx never receives it.
+ */
+export function softTokenKnob(model: string, budget: number | null | undefined): Record<string, number> {
+  return budget && /^gemma/i.test(model) ? { vision_soft_tokens_per_image: budget } : {};
 }

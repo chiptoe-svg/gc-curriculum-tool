@@ -54,7 +54,8 @@ describe('LocalProvider.transcribeDocument', () => {
         vision_soft_tokens_per_image?: number;
       };
       expect(body.chat_template_kwargs?.enable_thinking).toBe(false);
-      expect(body.vision_soft_tokens_per_image).toBe(1120);
+      // Qwen on stock omlx: the Gemma-only resolution knob must NOT be sent (2026-10-05).
+      expect(body.vision_soft_tokens_per_image).toBeUndefined();
     }
   });
 

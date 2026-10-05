@@ -1,5 +1,5 @@
 /**
- * Per-slide vision note via a local omlx vision model (gemma-4).
+ * Per-slide vision note: Spark offload first, local omlx (Qwen3.6-35B-A3B) as fallback.
  *
  * Uses the OpenAI chat-completions protocol at LOCAL_BASE_URL with an
  * image_url data-URI part. On any failure (network, non-OK status, bad JSON,
@@ -7,7 +7,7 @@
  * uninformative slides without aborting the ingestion pipeline.
  */
 
-import { visionModel } from '@/lib/ai/vision-models';
+import { visionModel, softTokenKnob } from '@/lib/ai/vision-models';
 import { visionOffloadConfig, twoPhaseOffload, shouldOffload, resolveOffloadConcurrency } from '@/lib/ai/vision-offload';
 import { accumulateSseContent } from '@/lib/ai/sse-accumulate';
 import { recordRealFallback } from '@/lib/ai/vision-offload-health';
@@ -106,7 +106,7 @@ interface SlideBackend {
   offload: boolean;
 }
 
-/** Local omlx backend (gemma-4-12B @ knob 560) from the vision registry + env. */
+/** Local omlx fallback backend (Qwen3.6-35B-A3B by default) from the vision registry + env. */
 function localSlideBackend(): SlideBackend {
   const { model, budget } = visionModel('slideNote');
   return {
@@ -144,7 +144,7 @@ async function describeSlideOn(png: Buffer, be: SlideBackend): Promise<SlideNote
     ...(be.budget
       ? be.offload
         ? { max_soft_tokens: be.budget }
-        : { vision_soft_tokens_per_image: be.budget }
+        : softTokenKnob(be.model, be.budget)
       : {}),
     repetition_penalty: 1.3,
     // gcspark's loopback forwarder stalls NON-streamed responses ~15s — stream the

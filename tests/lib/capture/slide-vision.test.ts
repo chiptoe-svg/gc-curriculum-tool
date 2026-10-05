@@ -176,7 +176,7 @@ describe('describeSlide — request shape', () => {
     expect(body.model).toBe('my-custom-vision-model');
   });
 
-  it('falls back to gemma-4-12B-it-qat-4bit when SLIDE_VISION_MODEL is unset', async () => {
+  it('falls back to Qwen3.6-35B-A3B (no Gemma, no knob) when SLIDE_VISION_MODEL is unset', async () => {
     // E4B-8bit is a broken-for-vision MLX conversion (silently drops the image);
     // 12B-qat-4bit ingests images. See lib/capture/slide-vision.ts. (2026-06-23)
     fetchSpy.mockResolvedValueOnce(
@@ -187,7 +187,8 @@ describe('describeSlide — request shape', () => {
 
     const [_url, init] = fetchSpy.mock.calls[0]!;
     const body = JSON.parse((init as RequestInit).body as string);
-    expect(body.model).toBe('gemma-4-12B-it-qat-4bit');
+    expect(body.model).toBe('Qwen3.6-35B-A3B-UD-MLX-4bit');
+    expect(body.vision_soft_tokens_per_image).toBeUndefined();
   });
 });
 

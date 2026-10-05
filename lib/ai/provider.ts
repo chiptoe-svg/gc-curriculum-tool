@@ -108,7 +108,7 @@ import { AnthropicProvider } from './anthropic';
 import { LocalProvider } from './local';
 import { CampusProvider } from './campus';
 import { resolveModelForFunction, type AIFunctionId } from './function-settings';
-import { visionModel } from './vision-models';
+import { visionModel, DEFAULT_LOCAL_VISION_MODEL } from './vision-models';
 
 export interface GetProviderOptions {
   /** When set, the provider uses the model assigned to this function via
@@ -175,7 +175,7 @@ function buildProvider(modelOverride: string | undefined): AIProvider {
     // Default to a STANDARDIZED resident omlx model (gemma-4-26B-A4B, one of the
     // three we keep loaded) so the dormant AI_PROVIDER=local path can never pull
     // a 4th model and force a swap. (Was gemma-4-31B-it-MLX-4bit. 2026-06-27)
-    const model = modelOverride ?? process.env.LOCAL_MODEL?.trim() ?? 'gemma-4-26B-A4B-it-QAT-MLX-4bit';
+    const model = modelOverride ?? process.env.LOCAL_MODEL?.trim() ?? DEFAULT_LOCAL_VISION_MODEL;
     const baseURL = process.env.LOCAL_BASE_URL?.trim() || 'http://localhost:8000/v1';
     const apiKey = process.env.LOCAL_API_KEY?.trim();
     if (!apiKey) throw new Error('LOCAL_API_KEY not set');
@@ -208,7 +208,7 @@ function buildProvider(modelOverride: string | undefined): AIProvider {
  * global AI_PROVIDER. Used by the ingest worker's local-only mode to route
  * image-PDF transcription to omlx while the rest of the app stays on OpenAI.
  * Model resolution: explicit arg → the vision registry's `docTranscribe` model
- * (LOCAL_VISION_MODEL env → gemma-4-26B-A4B default, the transcription-bench winner).
+ * (LOCAL_VISION_MODEL env → Qwen3.6-35B-A3B default since 2026-10-05; Gemma retired).
  */
 export function buildLocalProvider(model?: string): AIProvider {
   const baseURL = process.env.LOCAL_BASE_URL?.trim() || 'http://localhost:8000/v1';
