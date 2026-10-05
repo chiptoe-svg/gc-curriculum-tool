@@ -90,8 +90,7 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
 
   const { data, files, skipped } = parsed;
 
-  const sheetsHasCatalog = (course.learningObjectives ?? []).length > 0;
-  const toInsert = assembleCanvasMaterials(data, { sheetsHasCatalog });
+  const toInsert = assembleCanvasMaterials(data);
   console.log(
     `[imscc-import] parsed "${data.course.name}": ${toInsert.length} structured material(s), ${files.length} embedded file(s), ${skipped.length} skipped`,
   );

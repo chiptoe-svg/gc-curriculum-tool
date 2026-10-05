@@ -122,8 +122,7 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
   // etc.) so we can filter, badge, and re-extract them later. Prior to
   // 2026-05-25 every row was hard-coded text/html which made PDF
   // attachments invisible to mimeType filters.
-  const sheetsHasCatalog = (course.learningObjectives ?? []).length > 0;
-  const toInsert = assembleCanvasMaterials(data, { sheetsHasCatalog });
+  const toInsert = assembleCanvasMaterials(data);
 
   // Reference-driven Canvas File attachments: scan everything we've extracted
   // so far for Canvas file URLs, fetch each unique file, extract PDF/DOCX text,

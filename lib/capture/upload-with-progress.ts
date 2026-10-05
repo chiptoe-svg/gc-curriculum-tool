@@ -33,6 +33,8 @@ export interface UploadOptions {
   file: File;
   /** Faculty slug (second factor) — sent as a form field, mirroring the fetch path. */
   slug: string;
+  /** Marks the upload as the course syllabus (sent as form field `role`). */
+  role?: 'syllabus';
   onProgress?: (p: UploadProgress) => void;
   signal?: AbortSignal;
   /**
@@ -48,7 +50,7 @@ export interface UploadOptions {
  * `res.ok`.
  */
 export function uploadFileWithProgress(opts: UploadOptions): Promise<UploadResult> {
-  const { url, file, slug, onProgress, signal, xhrFactory } = opts;
+  const { url, file, slug, role, onProgress, signal, xhrFactory } = opts;
 
   return new Promise<UploadResult>((resolve, reject) => {
     if (signal?.aborted) {
@@ -60,6 +62,7 @@ export function uploadFileWithProgress(opts: UploadOptions): Promise<UploadResul
     const form = new FormData();
     form.set('slug', slug);
     form.set('file', file);
+    if (role) form.set('role', role);
 
     if (onProgress) {
       xhr.upload.onprogress = (e: ProgressEvent) => {

@@ -184,6 +184,8 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     mimeType: file.type,
     sizeBytes: file.size,
     ipHash,
+    // The Syllabus box sends role=syllabus; any other upload is not the syllabus.
+    isSyllabus: form.get('role') === 'syllabus',
   });
 
   if (isTriageEnabled()) {

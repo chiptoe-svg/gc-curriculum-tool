@@ -71,6 +71,16 @@ describe('uploadFileWithProgress', () => {
     expect((res.json as { error?: string }).error).toBe('file too large');
   });
 
+  it('sends role=syllabus only when asked', async () => {
+    const withRole = makeFakeXhr({ status: 200, responseText: '{}' });
+    await uploadFileWithProgress({ url: '/x', file: pdf(), slug: 's', role: 'syllabus', xhrFactory: () => withRole as unknown as XMLHttpRequest });
+    expect((withRole.send.mock.calls[0]![0] as FormData).get('role')).toBe('syllabus');
+
+    const without = makeFakeXhr({ status: 200, responseText: '{}' });
+    await uploadFileWithProgress({ url: '/x', file: pdf(), slug: 's', xhrFactory: () => without as unknown as XMLHttpRequest });
+    expect((without.send.mock.calls[0]![0] as FormData).get('role')).toBeNull();
+  });
+
   it('rejects immediately if the signal is already aborted', async () => {
     const controller = new AbortController();
     controller.abort();

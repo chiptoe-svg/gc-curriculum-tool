@@ -117,8 +117,7 @@ export async function runListImport(
   }
 
   const ipHash = hashIp(req);
-  const sheetsHasCatalog = (course.learningObjectives ?? []).length > 0;
-  const assembledItems = assembleCanvasMaterials(data, { sheetsHasCatalog });
+  const assembledItems = assembleCanvasMaterials(data);
 
   // ── File-reference scan (same regex + cap as runImport) ───────────────────
   const allExtractedText = assembledItems.map(t => t.text).join('\n\n');

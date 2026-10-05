@@ -131,10 +131,9 @@ describe('POST /api/courses/[code]/canvas-import', () => {
     expect(mockUpdateMeta).not.toHaveBeenCalled();
   });
 
-  it('suppresses Canvas: Syllabus when Sheets catalog has learning objectives', async () => {
-    // Sheets is the curated source of truth; Canvas Syllabus is typically a
-    // rambling duplicate. When LOs are present, skip it. Faculty can
-    // re-include by un-ignoring in the Materials panel.
+  it('imports Canvas: Syllabus even when the Sheets catalog has learning objectives', async () => {
+    // Owner decision 2026-10-05: the syllabus is the sole source of the
+    // objective assessment guide, so the importer no longer skips it.
     mockGetCourse.mockResolvedValue({
       ...FAKE_COURSE,
       learningObjectives: ['Understand color theory', 'Apply CMYK separations'],
@@ -145,11 +144,8 @@ describe('POST /api/courses/[code]/canvas-import', () => {
     const res = await POST(req, ctx);
     expect(res.status).toBe(200);
 
-    // The other Canvas content (assignments, modules) still imports.
-    // Only the Syllabus is suppressed.
     const insertCalls = mockInsert.mock.calls.map(c => c[0].fileName);
-    expect(insertCalls).not.toContain('Canvas: Syllabus');
-    expect(insertCalls.length).toBeGreaterThan(0);
+    expect(insertCalls).toContain('Canvas: Syllabus');
   });
 
   it('upserts: existing fileName takes the UPDATE branch, no duplicate INSERT', async () => {

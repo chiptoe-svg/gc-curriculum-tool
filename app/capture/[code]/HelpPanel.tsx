@@ -36,7 +36,7 @@ export function CaptureHelpPanel() {
               <strong>Gray dot</strong> — material is set aside (ignored). It stays in the database but is invisible to the agent. Common reasons:
               <ul className="mt-1 ml-5 list-disc space-y-0.5 text-muted-foreground">
                 <li>
-                  <em>Canvas: Syllabus</em> is auto-ignored when your Sheets catalog already lists learning objectives, projects, and skills — the syllabus content is redundant.
+                  <em>Canvas: Syllabus</em> may be set aside on courses imported before October 2026, when the importer treated it as a duplicate of the Sheets catalog. Include it: the syllabus is now where the course objectives are read from.
                 </li>
                 <li>
                   Files with a red token count (e.g. <em>~131k tok</em>) are auto-set-aside because they exceed the summary size limit. Usually safe to leave ignored unless the file is genuinely interview-relevant.

@@ -117,6 +117,7 @@ function makeUploadReq(overrides: {
   mimeType?: string;
   sizeBytes?: number;
   body?: Uint8Array;
+  role?: string;
 } = {}): [Request, { params: Promise<{ code: string }> }] {
   const {
     slug = SLUG,
@@ -129,6 +130,7 @@ function makeUploadReq(overrides: {
   const form = new FormData();
   form.set('slug', slug);
   form.set('file', file);
+  if (overrides.role) form.set('role', overrides.role);
   const req = new Request('http://test/api/courses/GC%203460/materials', {
     method: 'POST',
     body: form,
@@ -233,6 +235,19 @@ describe('POST /api/courses/[code]/materials', () => {
     expect(insertMaterial).toHaveBeenCalledOnce();
     expect(enqueue).toHaveBeenCalledWith('mat-1');
     expect(extractText).not.toHaveBeenCalled(); // extraction moved to the worker
+  });
+
+  it('flags an upload sent with role=syllabus as the syllabus', async () => {
+    const [req, ctx] = makeUploadReq({ fileName: 'course outline.pdf', role: 'syllabus' });
+    const res = await POST(req, ctx);
+    expect(res.status).toBe(200);
+    expect(insertMaterial).toHaveBeenCalledWith(expect.objectContaining({ isSyllabus: true }));
+  });
+
+  it('does not flag an ordinary upload', async () => {
+    const [req, ctx] = makeUploadReq({ fileName: 'syllabus.pdf' });
+    await POST(req, ctx);
+    expect(insertMaterial).toHaveBeenCalledWith(expect.objectContaining({ isSyllabus: false }));
   });
 
   // ── Triage-flag-aware defer (Fix A) ──────────────────────────────────────

@@ -6,25 +6,16 @@ export interface AssembledMaterial { fileName: string; text: string; mimeType: s
 /**
  * Turn fetched/parsed Canvas content into the `Canvas:` text materials. Shared by
  * the Canvas-API import and the IMSCC import so both produce identical materials.
- * `sheetsHasCatalog` suppresses `Canvas: Syllabus` when the Google-Sheet catalog
- * already supplies learning objectives.
+ * The syllabus page is always kept (owner decision 2026-10-05): it is the sole
+ * source of the objective assessment guide's objectives, and insertMaterial flags
+ * `Canvas: Syllabus` as the syllabus.
  */
-export function assembleCanvasMaterials(
-  data: CanvasCourseData,
-  opts: { sheetsHasCatalog: boolean },
-): AssembledMaterial[] {
-  const { sheetsHasCatalog } = opts;
+export function assembleCanvasMaterials(data: CanvasCourseData): AssembledMaterial[] {
   const toInsert: AssembledMaterial[] = [];
 
   const syllabusText = htmlToText(data.course.syllabusHtml);
-  // Suppress Canvas: Syllabus when the curated Sheets catalog already has LOs.
-  // The Sheets row is the structured source of truth; the Canvas Syllabus page
-  // tends to be a rambling, often-stale duplicate. Faculty can re-include by
-  // un-ignoring the row in the Materials panel if Sheets is missing structure.
-  if (syllabusText && !sheetsHasCatalog) {
+  if (syllabusText) {
     toInsert.push({ fileName: 'Canvas: Syllabus', text: syllabusText, mimeType: 'text/html' });
-  } else if (syllabusText && sheetsHasCatalog) {
-    console.log(`[canvas-import] suppressed Canvas: Syllabus (Sheets has LOs)`);
   }
 
   if (data.assignments.length > 0) {

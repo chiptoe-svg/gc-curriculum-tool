@@ -188,7 +188,7 @@ describe('POST /api/courses/[code]/imscc-import', () => {
     expect(hasAnyPng).toBe(false);
   });
 
-  it('suppresses Canvas: Syllabus when Sheets catalog has learning objectives', async () => {
+  it('imports Canvas: Syllabus even when the Sheets catalog has learning objectives', async () => {
     mockGetCourse.mockResolvedValue({
       ...FAKE_COURSE,
       learningObjectives: ['Understand color theory', 'Apply CMYK separations'],
@@ -200,9 +200,7 @@ describe('POST /api/courses/[code]/imscc-import', () => {
     expect(res.status).toBe(200);
 
     const insertedFileNames = mockInsert.mock.calls.map((c) => c[0].fileName as string);
-    expect(insertedFileNames).not.toContain('Canvas: Syllabus');
-    // Other content (assignments, modules, pages, quizzes, files) still imports.
-    expect(insertedFileNames.length).toBeGreaterThan(0);
+    expect(insertedFileNames).toContain('Canvas: Syllabus');
   });
 
   it('upserts: existing fileName takes the UPDATE branch, no duplicate INSERT', async () => {
