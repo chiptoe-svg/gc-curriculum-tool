@@ -145,6 +145,21 @@ describe('SyllabusBox', () => {
     expect(screen.getByText(/Re-sync/i)).toBeTruthy();
   });
 
+  it('names an attached syllabus even when the course is not in the sheet', () => {
+    const emptyCourse: CourseCatalogView = {
+      ...COURSE, description: '', prerequisites: '', learningObjectives: [], majorProjects: [], skillsRequired: [],
+    };
+    render(
+      <Harness
+        course={emptyCourse}
+        catalogSyncedAt={new Date().toISOString()}
+        materials={[M('MKT 4320 Simple Syllabus.pdf')]}
+      />,
+    );
+    expect(screen.getByText(/MKT 4320 Simple Syllabus\.pdf attached/)).toBeTruthy();
+    expect(screen.queryByText(/not in the Google Sheet/i)).toBeNull();
+  });
+
   it('notes a Canvas syllabus is available when present', () => {
     render(
       <Harness

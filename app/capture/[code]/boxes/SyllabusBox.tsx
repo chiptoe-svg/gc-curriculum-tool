@@ -78,10 +78,10 @@ export function SyllabusBox({
 
   const statusText = hasSheetCatalog
     ? `synced to Google Sheet on ${new Date(syncedAt!).toLocaleDateString(undefined, { month: 'numeric', day: 'numeric', year: '2-digit' })}`
-    : syncedAt !== null && !hasCatalogContent
-      ? 'not in the Google Sheet — attach a syllabus'
-      : attachedSyllabus
-        ? `${attachedSyllabus.fileName} attached`
+    : attachedSyllabus
+      ? `${attachedSyllabus.fileName} attached`
+      : syncedAt !== null && !hasCatalogContent
+        ? 'not in the Google Sheet — attach a syllabus'
         : 'add a syllabus';
 
   async function resync() {
