@@ -1,0 +1,126 @@
+{
+ "courses": [
+  "GC 3460",
+  "GC 3700",
+  "GC 3730"
+ ],
+ "setups": [
+  {
+   "label": "gpt-5.4 (production)",
+   "model": "gpt-5.4"
+  },
+  {
+   "label": "gpt-6.1-sol low",
+   "model": "gpt-6.1-sol",
+   "effort": "low"
+  }
+ ],
+ "report": {
+  "gpt-5.4 (production)": {
+   "perCourse": {
+    "GC 3460": {
+     "technicalCount": [
+      11,
+      10,
+      12
+     ],
+     "foundationalBandAgreement": 0.8,
+     "statementStability": {
+      "meanPairwiseJaccard": 0.14584269381473136,
+      "matchedPairs": 26,
+      "meanDeltaK": 0.6153846153846154,
+      "meanDeltaU": 0.38461538461538464,
+      "meanDeltaD": 0.46153846153846156
+     }
+    },
+    "GC 3700": {
+     "technicalCount": [
+      13,
+      11,
+      19
+     ],
+     "foundationalBandAgreement": 1,
+     "statementStability": {
+      "meanPairwiseJaccard": 0.14029516486111884,
+      "matchedPairs": 33,
+      "meanDeltaK": 0.12121212121212122,
+      "meanDeltaU": 0,
+      "meanDeltaD": 0.06060606060606061
+     }
+    },
+    "GC 3730": {
+     "technicalCount": [
+      9,
+      9,
+      9
+     ],
+     "foundationalBandAgreement": 1,
+     "statementStability": {
+      "meanPairwiseJaccard": 0.17336643740346036,
+      "matchedPairs": 25,
+      "meanDeltaK": 0.16,
+      "meanDeltaU": 0,
+      "meanDeltaD": 0
+     }
+    }
+   },
+   "failures": 0,
+   "inferredShare": 0.304635761589404,
+   "costUsd": 1.674,
+   "secondsPerCall": 123.89122222222221
+  },
+  "gpt-6.1-sol low": {
+   "perCourse": {
+    "GC 3460": {
+     "technicalCount": [
+      12,
+      11,
+      10
+     ],
+     "foundationalBandAgreement": 1,
+     "statementStability": {
+      "meanPairwiseJaccard": 0.15380774492386212,
+      "matchedPairs": 20,
+      "meanDeltaK": 0.3,
+      "meanDeltaU": 0.2,
+      "meanDeltaD": 0
+     }
+    },
+    "GC 3700": {
+     "technicalCount": [
+      8,
+      8,
+      8
+     ],
+     "foundationalBandAgreement": 0.8,
+     "statementStability": {
+      "meanPairwiseJaccard": 0.16743406937579902,
+      "matchedPairs": 13,
+      "meanDeltaK": 0.6923076923076923,
+      "meanDeltaU": 0.07692307692307693,
+      "meanDeltaD": 0
+     }
+    },
+    "GC 3730": {
+     "technicalCount": [
+      8,
+      6,
+      6
+     ],
+     "foundationalBandAgreement": 0.8,
+     "statementStability": {
+      "meanPairwiseJaccard": 0.1617228626212987,
+      "matchedPairs": 10,
+      "meanDeltaK": 0.1,
+      "meanDeltaU": 0.3,
+      "meanDeltaD": 0.1
+     }
+    }
+   },
+   "failures": 0,
+   "inferredShare": 0.12698412698412698,
+   "costUsd": 0.8828,
+   "secondsPerCall": 137.38433333333333
+  }
+ }
+}

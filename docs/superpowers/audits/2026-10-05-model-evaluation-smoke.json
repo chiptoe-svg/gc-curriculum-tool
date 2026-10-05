@@ -1,0 +1,386 @@
+{
+ "stamp": "2026-10-05",
+ "pairs": [
+  {
+   "course": "GC 3460",
+   "target": "production-operations"
+  }
+ ],
+ "setups": [
+  {
+   "label": "gpt-5.5 (production)",
+   "model": "gpt-5.5"
+  },
+  {
+   "label": "gpt-6.1-sol low",
+   "model": "gpt-6.1-sol",
+   "effort": "low"
+  },
+  {
+   "label": "gpt-6.1-sol medium",
+   "model": "gpt-6.1-sol",
+   "effort": "medium"
+  },
+  {
+   "label": "gpt-6.1-sol high",
+   "model": "gpt-6.1-sol",
+   "effort": "high"
+  }
+ ],
+ "report": {
+  "gpt-5.5 (production)": {
+   "calls": 1,
+   "succeeded": 1,
+   "failures": [],
+   "fullBandAgreement": {
+    "k": null,
+    "u": null,
+    "d": null,
+    "cells": 0
+   },
+   "evidence": {
+    "cellsScored": 0,
+    "scoredAboveFloor": 0,
+    "missingExcerpt": 0,
+    "excerptNotFoundInProfile": 0
+   },
+   "vsBaseline": null,
+   "costUsd": {
+    "total": 0.1591,
+    "perCall": 0.1591
+   },
+   "secondsPerCall": {
+    "mean": 25.543,
+    "max": 25.543
+   }
+  },
+  "gpt-6.1-sol low": {
+   "calls": 1,
+   "succeeded": 1,
+   "failures": [],
+   "fullBandAgreement": {
+    "k": null,
+    "u": null,
+    "d": null,
+    "cells": 0
+   },
+   "evidence": {
+    "cellsScored": 0,
+    "scoredAboveFloor": 0,
+    "missingExcerpt": 0,
+    "excerptNotFoundInProfile": 0
+   },
+   "vsBaseline": {
+    "comparedCellDims": 0,
+    "modalBandHigher": 0,
+    "modalBandLower": 0
+   },
+   "costUsd": {
+    "total": 0.0459,
+    "perCall": 0.0459
+   },
+   "secondsPerCall": {
+    "mean": 24.231,
+    "max": 24.231
+   }
+  },
+  "gpt-6.1-sol medium": {
+   "calls": 1,
+   "succeeded": 1,
+   "failures": [],
+   "fullBandAgreement": {
+    "k": null,
+    "u": null,
+    "d": null,
+    "cells": 0
+   },
+   "evidence": {
+    "cellsScored": 0,
+    "scoredAboveFloor": 0,
+    "missingExcerpt": 0,
+    "excerptNotFoundInProfile": 0
+   },
+   "vsBaseline": {
+    "comparedCellDims": 0,
+    "modalBandHigher": 0,
+    "modalBandLower": 0
+   },
+   "costUsd": {
+    "total": 0.0469,
+    "perCall": 0.0469
+   },
+   "secondsPerCall": {
+    "mean": 28.257,
+    "max": 28.257
+   }
+  },
+  "gpt-6.1-sol high": {
+   "calls": 1,
+   "succeeded": 1,
+   "failures": [],
+   "fullBandAgreement": {
+    "k": null,
+    "u": null,
+    "d": null,
+    "cells": 0
+   },
+   "evidence": {
+    "cellsScored": 0,
+    "scoredAboveFloor": 0,
+    "missingExcerpt": 0,
+    "excerptNotFoundInProfile": 0
+   },
+   "vsBaseline": {
+    "comparedCellDims": 0,
+    "modalBandHigher": 0,
+    "modalBandLower": 0
+   },
+   "costUsd": {
+    "total": 0.0645,
+    "perCall": 0.0645
+   },
+   "secondsPerCall": {
+    "mean": 66.533,
+    "max": 66.533
+   }
+  }
+ },
+ "calls": [
+  {
+   "setup": "gpt-6.1-sol low",
+   "pair": "GC 3460 × Production & Operations",
+   "run": 1,
+   "ok": true,
+   "ms": 24231,
+   "costCents": 459,
+   "cells": [
+    {
+     "sub": "workflow-design",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quality-control",
+     "k": 3,
+     "u": 2,
+     "d": 2,
+     "excerpt": "“Measure a control wedge on a print sample ... Measure a control wedge on an ICC profiled proof ... Compare the two measurements with Delta E 2000.” “The final step asks students to repeat the process with an ICC profiled proof and judge the degree of improvement gained by loading CxF data into Serendipity.”"
+    },
+    {
+     "sub": "vendor-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "timeline-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cost-management",
+     "k": 1,
+     "u": 0,
+     "d": 2,
+     "excerpt": "“They also utilize a component cost sheet to calculate the cost to make a 9 lb. batch of this ink.”"
+    },
+    {
+     "sub": "team-coordination",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "domain-knowledge",
+     "k": 3,
+     "u": 3,
+     "d": 2,
+     "excerpt": "“The purpose of this project will be to thoroughly examine a color, establishing a color standard and exploring the reproduction of those colors across various outputs.” “students do have graded analysis of how paper properties affect print behavior”"
+    }
+   ]
+  },
+  {
+   "setup": "gpt-5.5 (production)",
+   "pair": "GC 3460 × Production & Operations",
+   "run": 1,
+   "ok": true,
+   "ms": 25543,
+   "costCents": 1591,
+   "cells": [
+    {
+     "sub": "workflow-design",
+     "k": 2,
+     "u": 1,
+     "d": 1,
+     "excerpt": "\"Grading is mainly tied to completing the required workflow.\""
+    },
+    {
+     "sub": "quality-control",
+     "k": 4,
+     "u": 2,
+     "d": 3,
+     "excerpt": "\"Measure a control wedge on a print sample ... Measure a control wedge on an ICC profiled proof ... Compare the two measurements with Delta E 2000.\""
+    },
+    {
+     "sub": "vendor-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "timeline-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cost-management",
+     "k": 2,
+     "u": 0,
+     "d": 2,
+     "excerpt": "\"They also utilize a component cost sheet to calculate the cost to make a 9 lb. batch of this ink.\""
+    },
+    {
+     "sub": "team-coordination",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "domain-knowledge",
+     "k": 4,
+     "u": 4,
+     "d": 4,
+     "excerpt": "\"The purpose of this project will be to thoroughly examine a color, establishing a color standard and exploring the reproduction of those colors across various outputs.\""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol medium",
+   "pair": "GC 3460 × Production & Operations",
+   "run": 1,
+   "ok": true,
+   "ms": 28257,
+   "costCents": 469,
+   "cells": [
+    {
+     "sub": "workflow-design",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quality-control",
+     "k": 3,
+     "u": 0,
+     "d": 2,
+     "excerpt": "Measure a control wedge on a print sample ... Measure a control wedge on an ICC profiled proof ... Compare the two measurements with Delta E 2000."
+    },
+    {
+     "sub": "vendor-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "timeline-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cost-management",
+     "k": 2,
+     "u": 0,
+     "d": 1,
+     "excerpt": "They also utilize a component cost sheet to calculate the cost to make a 9 lb. batch of this ink."
+    },
+    {
+     "sub": "team-coordination",
+     "k": null,
+     "u": null,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "domain-knowledge",
+     "k": 4,
+     "u": 3,
+     "d": 2,
+     "excerpt": "The purpose of this project will be to thoroughly examine a color, establishing a color standard and exploring the reproduction of those colors across various outputs. ... students do have graded analysis of how paper properties affect print behavior"
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol high",
+   "pair": "GC 3460 × Production & Operations",
+   "run": 1,
+   "ok": true,
+   "ms": 66533,
+   "costCents": 645,
+   "cells": [
+    {
+     "sub": "workflow-design",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quality-control",
+     "k": 3,
+     "u": 0,
+     "d": 3,
+     "excerpt": "“Students produce and evaluate proofs — D4 via ISO 12647-7 Control Wedge”; “Measure a control wedge on a print sample ... Measure a control wedge on an ICC profiled proof ... Compare the two measurements with Delta E 2000.”"
+    },
+    {
+     "sub": "vendor-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "timeline-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cost-management",
+     "k": 2,
+     "u": 0,
+     "d": 2,
+     "excerpt": "“They also utilize a component cost sheet to calculate the cost to make a 9 lb. batch of this ink.”"
+    },
+    {
+     "sub": "team-coordination",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "domain-knowledge",
+     "k": 3,
+     "u": 2,
+     "d": 2,
+     "excerpt": "“The purpose of this project will be to thoroughly examine a color, establishing a color standard and exploring the reproduction of those colors across various outputs.”; “There is some graded work that requires them to draw conclusions about how the properties of the paper affect print behavior.”"
+    }
+   ]
+  }
+ ]
+}

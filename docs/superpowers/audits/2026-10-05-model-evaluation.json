@@ -1,0 +1,5366 @@
+{
+ "stamp": "2026-10-05",
+ "pairs": [
+  {
+   "course": "GC 3460",
+   "target": "production-operations"
+  },
+  {
+   "course": "GC 3700",
+   "target": "brand-strategy"
+  },
+  {
+   "course": "GC 3730",
+   "target": "account-management"
+  },
+  {
+   "course": "GC 1050",
+   "target": "creative-generalist"
+  },
+  {
+   "course": "GC 3400",
+   "target": "creative-generalist"
+  }
+ ],
+ "setups": [
+  {
+   "label": "gpt-5.5 (production)",
+   "model": "gpt-5.5"
+  },
+  {
+   "label": "gpt-6.1-sol low",
+   "model": "gpt-6.1-sol",
+   "effort": "low"
+  },
+  {
+   "label": "gpt-6.1-sol medium",
+   "model": "gpt-6.1-sol",
+   "effort": "medium"
+  },
+  {
+   "label": "gpt-6.1-sol high",
+   "model": "gpt-6.1-sol",
+   "effort": "high"
+  }
+ ],
+ "report": {
+  "gpt-5.5 (production)": {
+   "calls": 25,
+   "succeeded": 25,
+   "failures": [],
+   "fullBandAgreement": {
+    "k": 0.7333333333333333,
+    "u": 0.7666666666666667,
+    "d": 0.7666666666666667,
+    "cells": 30
+   },
+   "evidence": {
+    "cellsScored": 150,
+    "scoredAboveFloor": 88,
+    "missingExcerpt": 0,
+    "excerptNotFoundInProfile": 0
+   },
+   "vsBaseline": null,
+   "costUsd": {
+    "total": 2.4359000000000006,
+    "perCall": 0.09743600000000002
+   },
+   "secondsPerCall": {
+    "mean": 26.226839999999996,
+    "max": 49.807
+   }
+  },
+  "gpt-6.1-sol low": {
+   "calls": 25,
+   "succeeded": 25,
+   "failures": [],
+   "fullBandAgreement": {
+    "k": 0.8333333333333334,
+    "u": 0.8,
+    "d": 0.9333333333333333,
+    "cells": 30
+   },
+   "evidence": {
+    "cellsScored": 150,
+    "scoredAboveFloor": 80,
+    "missingExcerpt": 0,
+    "excerptNotFoundInProfile": 0
+   },
+   "vsBaseline": {
+    "comparedCellDims": 90,
+    "modalBandHigher": 2,
+    "modalBandLower": 18
+   },
+   "costUsd": {
+    "total": 0.49270000000000014,
+    "perCall": 0.019708000000000007
+   },
+   "secondsPerCall": {
+    "mean": 23.607999999999997,
+    "max": 31.956
+   }
+  },
+  "gpt-6.1-sol medium": {
+   "calls": 25,
+   "succeeded": 25,
+   "failures": [],
+   "fullBandAgreement": {
+    "k": 0.7333333333333333,
+    "u": 0.8333333333333334,
+    "d": 0.8666666666666667,
+    "cells": 30
+   },
+   "evidence": {
+    "cellsScored": 150,
+    "scoredAboveFloor": 76,
+    "missingExcerpt": 0,
+    "excerptNotFoundInProfile": 0
+   },
+   "vsBaseline": {
+    "comparedCellDims": 90,
+    "modalBandHigher": 2,
+    "modalBandLower": 20
+   },
+   "costUsd": {
+    "total": 0.5422,
+    "perCall": 0.021688
+   },
+   "secondsPerCall": {
+    "mean": 28.689519999999998,
+    "max": 36.041
+   }
+  },
+  "gpt-6.1-sol high": {
+   "calls": 25,
+   "succeeded": 25,
+   "failures": [],
+   "fullBandAgreement": {
+    "k": 0.8,
+    "u": 0.8,
+    "d": 0.9333333333333333,
+    "cells": 30
+   },
+   "evidence": {
+    "cellsScored": 150,
+    "scoredAboveFloor": 75,
+    "missingExcerpt": 0,
+    "excerptNotFoundInProfile": 3
+   },
+   "vsBaseline": {
+    "comparedCellDims": 90,
+    "modalBandHigher": 3,
+    "modalBandLower": 22
+   },
+   "costUsd": {
+    "total": 0.9273,
+    "perCall": 0.037092
+   },
+   "secondsPerCall": {
+    "mean": 66.85108,
+    "max": 88.144
+   }
+  }
+ },
+ "calls": [
+  {
+   "setup": "gpt-5.5 (production)",
+   "pair": "GC 3460 × Production & Operations",
+   "run": 1,
+   "ok": true,
+   "ms": 25807,
+   "costCents": 851,
+   "cells": [
+    {
+     "sub": "workflow-design",
+     "k": 1,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quality-control",
+     "k": 4,
+     "u": 3,
+     "d": 3,
+     "excerpt": "\"Measure a control wedge on a print sample ... Measure a control wedge on an ICC profiled proof ... Compare the two measurements with Delta E 2000.\""
+    },
+    {
+     "sub": "vendor-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "timeline-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cost-management",
+     "k": 2,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"They also utilize a component cost sheet to calculate the cost to make a 9 lb. batch of this ink.\""
+    },
+    {
+     "sub": "team-coordination",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "domain-knowledge",
+     "k": 4,
+     "u": 3,
+     "d": 3,
+     "excerpt": "\"The purpose of this project will be to thoroughly examine a color, establishing a color standard and exploring the reproduction of those colors across various outputs.\""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol medium",
+   "pair": "GC 3460 × Production & Operations",
+   "run": 1,
+   "ok": true,
+   "ms": 29779,
+   "costCents": 177,
+   "cells": [
+    {
+     "sub": "workflow-design",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quality-control",
+     "k": 3,
+     "u": 0,
+     "d": 2,
+     "excerpt": "Measure a control wedge on a print sample ... Measure a control wedge on an ICC profiled proof ... Compare the two measurements with Delta E 2000."
+    },
+    {
+     "sub": "vendor-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "timeline-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cost-management",
+     "k": 2,
+     "u": 0,
+     "d": 1,
+     "excerpt": "They also utilize a component cost sheet to calculate the cost to make a 9 lb. batch of this ink."
+    },
+    {
+     "sub": "team-coordination",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "domain-knowledge",
+     "k": 3,
+     "u": 3,
+     "d": 2,
+     "excerpt": "The purpose of this project will be to thoroughly examine a color, establishing a color standard and exploring the reproduction of those colors across various outputs. ... students do have graded analysis of how paper properties affect print behavior"
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol low",
+   "pair": "GC 3460 × Production & Operations",
+   "run": 1,
+   "ok": true,
+   "ms": 31956,
+   "costCents": 166,
+   "cells": [
+    {
+     "sub": "workflow-design",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quality-control",
+     "k": 3,
+     "u": 2,
+     "d": 3,
+     "excerpt": "“Measure a control wedge on a print sample ... Measure a control wedge on an ICC profiled proof ... Compare the two measurements with Delta E 2000.” “The final step asks students to repeat the process with an ICC profiled proof and judge the degree of improvement gained by loading CxF data into Serendipity.”"
+    },
+    {
+     "sub": "vendor-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "timeline-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cost-management",
+     "k": 2,
+     "u": 0,
+     "d": 2,
+     "excerpt": "“They also utilize a component cost sheet to calculate the cost to make a 9 lb. batch of this ink.”"
+    },
+    {
+     "sub": "team-coordination",
+     "k": null,
+     "u": null,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "domain-knowledge",
+     "k": 4,
+     "u": 3,
+     "d": 3,
+     "excerpt": "“The purpose of this project will be to thoroughly examine a color, establishing a color standard and exploring the reproduction of those colors across various outputs.” “students do have graded analysis of how paper properties affect print behavior”"
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol high",
+   "pair": "GC 3460 × Production & Operations",
+   "run": 1,
+   "ok": true,
+   "ms": 88144,
+   "costCents": 415,
+   "cells": [
+    {
+     "sub": "workflow-design",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quality-control",
+     "k": 3,
+     "u": 0,
+     "d": 2,
+     "excerpt": "Students produce and evaluate proofs — D4 via ISO 12647-7 Control Wedge. Measure a control wedge on a print sample ... Measure a control wedge on an ICC profiled proof ... Compare the two measurements with Delta E 2000."
+    },
+    {
+     "sub": "vendor-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "timeline-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cost-management",
+     "k": 2,
+     "u": 0,
+     "d": 2,
+     "excerpt": "They also utilize a component cost sheet to calculate the cost to make a 9 lb. batch of this ink."
+    },
+    {
+     "sub": "team-coordination",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "domain-knowledge",
+     "k": 4,
+     "u": 3,
+     "d": 2,
+     "excerpt": "Students thoroughly examine a color by establishing a standard, formulating spot ink, testing substrates, evaluating CMYK and RGB reproduction, and compiling the results into a final technical report built incrementally through the semester. There is some graded work that requires them to draw conclusions about how the properties of the paper affect print behavior."
+    }
+   ]
+  },
+  {
+   "setup": "gpt-5.5 (production)",
+   "pair": "GC 3700 × Brand Strategy",
+   "run": 1,
+   "ok": true,
+   "ms": 22267,
+   "costCents": 1616,
+   "cells": [
+    {
+     "sub": "consumer-research",
+     "k": 2,
+     "u": 3,
+     "d": 2,
+     "excerpt": "\"the grading of this project is based on how they translate kind of the quality of their research and the consumer insight into a potential opportunity for this brand\""
+    },
+    {
+     "sub": "competitive-analysis",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brand-positioning",
+     "k": 3,
+     "u": 2,
+     "d": 3,
+     "excerpt": "\"the students do have to defend their strategy and creative choices rather than just show them\""
+    },
+    {
+     "sub": "campaign-measurement",
+     "k": 1,
+     "u": 0,
+     "d": 0,
+     "excerpt": "\"The students use a one-page creative brief template... key items are a background... communication objectives... consumer insights and strategy section\""
+    },
+    {
+     "sub": "quantitative-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-channel-translation",
+     "k": 2,
+     "u": 2,
+     "d": 2,
+     "excerpt": "\"They then have to do a consumer journey... They do a loose media plan based on these channels connected to the consumer.\""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol low",
+   "pair": "GC 3700 × Brand Strategy",
+   "run": 1,
+   "ok": true,
+   "ms": 24162,
+   "costCents": 435,
+   "cells": [
+    {
+     "sub": "consumer-research",
+     "k": 0,
+     "u": 2,
+     "d": 2,
+     "excerpt": "“we're trying to look for something that's a little bit deeper in terms of how do they emotionally think about beauty or confidence and what role does that play”; “the grading of this project is based on how they translate kind of the quality of their research and the consumer insight into a potential opportunity for this brand”"
+    },
+    {
+     "sub": "competitive-analysis",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brand-positioning",
+     "k": 3,
+     "u": 2,
+     "d": 3,
+     "excerpt": "“The GAP model is a model and framework for identifying what the brand stands for, how that intersects with what people may need and what's happening in culture.”; “How do all those things work together?”; “first I'm looking for a broad strategy approach for them presenting the GAP model based on the brand that they're using.”"
+    },
+    {
+     "sub": "campaign-measurement",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quantitative-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-channel-translation",
+     "k": 1,
+     "u": 0,
+     "d": 1,
+     "excerpt": "“They have to work through brand assets... They do have to outline the brand's tone and voice and the clear emotion in that tone and voice.”"
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol medium",
+   "pair": "GC 3700 × Brand Strategy",
+   "run": 1,
+   "ok": true,
+   "ms": 25392,
+   "costCents": 444,
+   "cells": [
+    {
+     "sub": "consumer-research",
+     "k": 1,
+     "u": 2,
+     "d": 2,
+     "excerpt": "“the grading of this project is based on how they translate kind of the quality of their research and the consumer insight into a potential opportunity for this brand”; “we're trying to look for something that's a little bit deeper in terms of how do they emotionally think about beauty or confidence”"
+    },
+    {
+     "sub": "competitive-analysis",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brand-positioning",
+     "k": 3,
+     "u": 2,
+     "d": 3,
+     "excerpt": "“The GAP model is a model and framework for identifying what the brand stands for, how that intersects with what people may need and what's happening in culture.”; “first I'm looking for a broad strategy approach for them presenting the GAP model based on the brand that they're using.”; “How do all those things work together?”"
+    },
+    {
+     "sub": "campaign-measurement",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quantitative-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-channel-translation",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol high",
+   "pair": "GC 3700 × Brand Strategy",
+   "run": 1,
+   "ok": true,
+   "ms": 68741,
+   "costCents": 597,
+   "cells": [
+    {
+     "sub": "consumer-research",
+     "k": 0,
+     "u": 2,
+     "d": 0,
+     "excerpt": "Students develop consumer insights and personas that connect audience motivations, emotion, and culture to a brand opportunity. / \"we're trying to look for something that's a little bit deeper in terms of how do they emotionally think about beauty or confidence and what role does that play\""
+    },
+    {
+     "sub": "competitive-analysis",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brand-positioning",
+     "k": 3,
+     "u": 0,
+     "d": 2,
+     "excerpt": "\"The GAP model is a model and framework for identifying what the brand stands for, how that intersects with what people may need and what's happening in culture.\" / \"first I'm looking for a broad strategy approach for them presenting the GAP model based on the brand that they're using.\""
+    },
+    {
+     "sub": "campaign-measurement",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quantitative-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-channel-translation",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-5.5 (production)",
+   "pair": "GC 3730 × Account Management",
+   "run": 1,
+   "ok": true,
+   "ms": 18063,
+   "costCents": 1230,
+   "cells": [
+    {
+     "sub": "client-needs-diagnosis",
+     "k": 2,
+     "u": 1,
+     "d": 1,
+     "excerpt": "\"Week 11 Homework: Business Challenge, Desired Response, Who/What/Where/When/Why (10 pts)\""
+    },
+    {
+     "sub": "proposal-development",
+     "k": 2,
+     "u": 2,
+     "d": 2,
+     "excerpt": "Instructor: \"the third section is Media strategy and budget allocation, worth up to 25 points and includes identifying the Campaign Objective, the Media strategy statement, the media channel details ... and the budget allocation\""
+    },
+    {
+     "sub": "project-oversight",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "results-interpretation",
+     "k": 2,
+     "u": 1,
+     "d": 1,
+     "excerpt": "Instructor: \"the final section is the summary, worth up to 5 more points and should include a re-stated campaign objective, the measurement plan, and a statement around why the recommendation should work\""
+    },
+    {
+     "sub": "gc-production-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol low",
+   "pair": "GC 3730 × Account Management",
+   "run": 1,
+   "ok": true,
+   "ms": 24102,
+   "costCents": 361,
+   "cells": [
+    {
+     "sub": "client-needs-diagnosis",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "proposal-development",
+     "k": 3,
+     "u": 2,
+     "d": 3,
+     "excerpt": "“the third section is Media strategy and budget allocation ... includes identifying the Campaign Objective”; “I prompt the students to make sure they are providing a \"why\" behind each recommendation”; “they get graded on both the ability to explain thier section and answer questions”"
+    },
+    {
+     "sub": "project-oversight",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "results-interpretation",
+     "k": 2,
+     "u": 1,
+     "d": 0,
+     "excerpt": "“Students create a basic measurement plan that connects campaign objectives to how success will be assessed.”"
+    },
+    {
+     "sub": "gc-production-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol medium",
+   "pair": "GC 3730 × Account Management",
+   "run": 1,
+   "ok": true,
+   "ms": 26091,
+   "costCents": 387,
+   "cells": [
+    {
+     "sub": "client-needs-diagnosis",
+     "k": 1,
+     "u": 0,
+     "d": 0,
+     "excerpt": "Week 11 Homework: Business Challenge, Desired Response, Who/What/Where/When/Why (10 pts)"
+    },
+    {
+     "sub": "proposal-development",
+     "k": 3,
+     "u": 2,
+     "d": 3,
+     "excerpt": "The rubric covers business situation, planning parameters, media strategy and budget allocation, and a summary with measurement plan and rationale for why the recommendation should work."
+    },
+    {
+     "sub": "project-oversight",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "results-interpretation",
+     "k": 2,
+     "u": 1,
+     "d": 0,
+     "excerpt": "Students can explain in their own words what the plan is measuring and why those measures fit the campaign objective"
+    },
+    {
+     "sub": "gc-production-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol high",
+   "pair": "GC 3730 × Account Management",
+   "run": 1,
+   "ok": true,
+   "ms": 55378,
+   "costCents": 500,
+   "cells": [
+    {
+     "sub": "client-needs-diagnosis",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "proposal-development",
+     "k": 3,
+     "u": 2,
+     "d": 3,
+     "excerpt": "\"includes identifying the Campaign Objective, the Media strategy statement, the media channel details (at least one slide per media channel), and the budget allocation\"; \"I prompt the students to make sure they are providing a \\\"why\\\" behind each recommendation that is based on earlier lectures and what they've learned.\""
+    },
+    {
+     "sub": "project-oversight",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "results-interpretation",
+     "k": 2,
+     "u": 1,
+     "d": 0,
+     "excerpt": "\"Students create a basic measurement plan that connects campaign objectives to how success will be assessed.\"; \"Activity 2: Print CPM (submit file)\"; \"Activity 2: Media Math Worksheet_41: R/F/GRPs\""
+    },
+    {
+     "sub": "gc-production-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol low",
+   "pair": "GC 1050 × Creative Generalist / AI-Native",
+   "run": 1,
+   "ok": true,
+   "ms": 27479,
+   "costCents": 472,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 2,
+     "u": 1,
+     "d": 2,
+     "excerpt": "“create a fictional food company logo and label using Adobe Illustrator”; “They do all three, describe what they made, justify design decisions, and print choices.”"
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 3,
+     "u": 1,
+     "d": 2,
+     "excerpt": "“find 3 graphic design examples representing an effective use of the elements and principles of design”; “Discuss what elements and principles are used and why they work in that specific design.”"
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 1,
+     "u": 0,
+     "d": 2,
+     "excerpt": "“Students produce finished artifacts through introductory digital print, dye sublimation, and direct-to-garment workflows.”; “Photo of your printed shirt and upload to Canvas.”"
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 1,
+     "u": 0,
+     "d": 2,
+     "excerpt": "“create a fictional food company logo and label using Adobe Illustrator”; “They have creative freedom in terms of topic on most projects. I do provide them with parameters to stay within or specific requirements such as size, resolution, etc.”"
+    }
+   ]
+  },
+  {
+   "setup": "gpt-5.5 (production)",
+   "pair": "GC 1050 × Creative Generalist / AI-Native",
+   "run": 1,
+   "ok": true,
+   "ms": 27680,
+   "costCents": 1674,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 3,
+     "u": 2,
+     "d": 2,
+     "excerpt": "\"create a fictional food company logo and label using Adobe Illustrator\""
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 3,
+     "u": 2,
+     "d": 2,
+     "excerpt": "\"find 3 graphic design examples representing an effective use of the elements and principles of design\""
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 2,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"Project 2: DTG T-Shirt (75 pts)\"; \"Project 3: Mug Design Dye Sublimation (75 pts)\"; \"Project 8: Brochure (75 pts)\""
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 1,
+     "u": 0,
+     "d": 2,
+     "excerpt": "Instructor: \"They have creative freedom in terms of topic on most projects. I do provide them with parameters to stay within or specific requirements such as size, resolution, etc.\""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol medium",
+   "pair": "GC 1050 × Creative Generalist / AI-Native",
+   "run": 1,
+   "ok": true,
+   "ms": 29841,
+   "costCents": 492,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 2,
+     "u": 2,
+     "d": 2,
+     "excerpt": "Students generate sketches, build Illustrator logo files, and apply them to printed labels independently in familiar course conditions. Students can explain in their own words why their logo and print choices fit the brand brief."
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 3,
+     "u": 2,
+     "d": 2,
+     "excerpt": "find 3 graphic design examples representing an effective use of the elements and principles of design; Discuss what elements and principles are used and why they work in that specific design."
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 2,
+     "u": 0,
+     "d": 2,
+     "excerpt": "Students repeatedly produce artifacts and physical outputs across DTG, mug sublimation, coaster sublimation, poster printing, and related print tasks independently in familiar conditions."
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 0,
+     "u": 0,
+     "d": 2,
+     "excerpt": "create a fictional food company logo and label using Adobe Illustrator; Students independently create logo concepts and finished label applications in a familiar assignment frame, making their own branding and layout choices within set production requirements."
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol high",
+   "pair": "GC 1050 × Creative Generalist / AI-Native",
+   "run": 1,
+   "ok": true,
+   "ms": 77814,
+   "costCents": 674,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 2,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"thumbnail sketches ... color version ... black and white version\"; \"create a fictional food company logo and label using Adobe Illustrator\"; \"justify design decisions, and print choices.\""
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 3,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"find 3 graphic design examples representing an effective use of the elements and principles of design\"; \"Discuss what elements and principles are used and why they work in that specific design.\""
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 1,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"Photo of your printed shirt and upload to Canvas.\"; \"Use layers, layer blend modes, layer adjustments, layer masks, filters, adjustments in opacity, etc. to combine the elements into a single digital file\"; \"The importance of designing properly for print\""
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 1,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"why their logo and print choices fit the brand brief\"; \"create a fictional food company logo and label using Adobe Illustrator\"; \"justify design decisions, and print choices.\""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-5.5 (production)",
+   "pair": "GC 3400 × Creative Generalist / AI-Native",
+   "run": 1,
+   "ok": true,
+   "ms": 22785,
+   "costCents": 1420,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 2,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"Students produce a bulleted list of take-aways and explain how they will translate those insights into visual elements for the final shoot.\""
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 1,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"Revisit the location and reshoot your top 4 photographs based on the Critique.\""
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 2,
+     "u": 2,
+     "d": 3,
+     "excerpt": "\"They do submit their full chat with the GPT\" and \"they go out and reshoot the top images that were decided between them and the AI tool.\""
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 2,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"Students must locate and use at least one Creative Commons clip and at least one self-shot clip ... create a storyboard ... export the video to YouTube (Unlisted) and provide a link.\""
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol low",
+   "pair": "GC 3400 × Creative Generalist / AI-Native",
+   "run": 1,
+   "ok": true,
+   "ms": 23437,
+   "costCents": 413,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 1,
+     "u": 2,
+     "d": 2,
+     "excerpt": "Students produce a bulleted list of take-aways and explain how they will translate those insights into visual elements for the final shoot."
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 1,
+     "u": 1,
+     "d": 2,
+     "excerpt": "Students critique, cull, and revise photographic work using structured feedback processes, including AI-assisted Socratic critique. ... Revisit the location and reshoot your top 4 photographs based on the Critique."
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 2,
+     "u": 2,
+     "d": 2,
+     "excerpt": "They do submit their full chat with the GPT ... they go out and reshoot the top images that were decided between them and the AI tool."
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 2,
+     "u": 0,
+     "d": 2,
+     "excerpt": "Students must locate and use at least one Creative Commons clip and at least one self-shot clip ... create a storyboard ... export the video to YouTube (Unlisted) and provide a link."
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol medium",
+   "pair": "GC 3400 × Creative Generalist / AI-Native",
+   "run": 1,
+   "ok": true,
+   "ms": 31298,
+   "costCents": 442,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 1,
+     "u": 0,
+     "d": 1,
+     "excerpt": "Students produce a bulleted list of take-aways and explain how they will translate those insights into visual elements for the final shoot."
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 1,
+     "u": 0,
+     "d": 1,
+     "excerpt": "Revisit the location and reshoot your top 4 photographs based on the Critique."
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 1,
+     "u": 1,
+     "d": 2,
+     "excerpt": "They do submit their full chat with the GPT, so I do analyze it and make sure that they, in good faith, interacted with it; they go out and reshoot the top images that were decided between them and the AI tool."
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 1,
+     "u": 0,
+     "d": 2,
+     "excerpt": "Students must locate and use at least one Creative Commons clip and at least one self-shot clip ... create a storyboard ... export the video to YouTube (Unlisted) and provide a link."
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol high",
+   "pair": "GC 3400 × Creative Generalist / AI-Native",
+   "run": 1,
+   "ok": true,
+   "ms": 63780,
+   "costCents": 572,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 1,
+     "u": 0,
+     "d": 2,
+     "excerpt": "Students plan interview-based stories through question design, story structure, and production planning documents. ... sometimes they have to go all the way back to the beginning and restructure their story"
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 1,
+     "u": 0,
+     "d": 2,
+     "excerpt": "Students critique, cull, and revise photographic work using structured feedback processes, including AI-assisted Socratic critique. ... Revisit the location and reshoot your top 4 photographs based on the Critique."
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 1,
+     "u": 2,
+     "d": 2,
+     "excerpt": "Your students can explain in their own words how critique feedback should shape a stronger reshoot ... they go out and reshoot the top images that were decided between them and the AI tool"
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 1,
+     "u": 0,
+     "d": 2,
+     "excerpt": "Pick 2 (one product and one portrait) to edit in Photoshop. Submit the unedited and edited side by side ... export the video to YouTube (Unlisted) and provide a link."
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol low",
+   "pair": "GC 3460 × Production & Operations",
+   "run": 2,
+   "ok": true,
+   "ms": 25249,
+   "costCents": 162,
+   "cells": [
+    {
+     "sub": "workflow-design",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quality-control",
+     "k": 3,
+     "u": 0,
+     "d": 2,
+     "excerpt": "“Measure a control wedge on a print sample ... Measure a control wedge on an ICC profiled proof ... Compare the two measurements with Delta E 2000.”"
+    },
+    {
+     "sub": "vendor-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "timeline-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cost-management",
+     "k": 2,
+     "u": 0,
+     "d": 2,
+     "excerpt": "“They also utilize a component cost sheet to calculate the cost to make a 9 lb. batch of this ink.”"
+    },
+    {
+     "sub": "team-coordination",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "domain-knowledge",
+     "k": 4,
+     "u": 3,
+     "d": 2,
+     "excerpt": "“The purpose of this project will be to thoroughly examine a color, establishing a color standard and exploring the reproduction of those colors across various outputs.” “students do have graded analysis of how paper properties affect print behavior”"
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol medium",
+   "pair": "GC 3460 × Production & Operations",
+   "run": 2,
+   "ok": true,
+   "ms": 29242,
+   "costCents": 179,
+   "cells": [
+    {
+     "sub": "workflow-design",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quality-control",
+     "k": 3,
+     "u": 1,
+     "d": 2,
+     "excerpt": "Measure a control wedge on a print sample ... Measure a control wedge on an ICC profiled proof ... Compare the two measurements with Delta E 2000. ... The final step asks students to repeat the process with an ICC profiled proof and judge the degree of improvement gained by loading CxF data into Serendipity."
+    },
+    {
+     "sub": "vendor-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "timeline-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cost-management",
+     "k": 2,
+     "u": 0,
+     "d": 2,
+     "excerpt": "They also utilize a component cost sheet to calculate the cost to make a 9 lb. batch of this ink."
+    },
+    {
+     "sub": "team-coordination",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "domain-knowledge",
+     "k": 3,
+     "u": 3,
+     "d": 2,
+     "excerpt": "Students thoroughly examine a color by establishing a standard, formulating spot ink, testing substrates, evaluating CMYK and RGB reproduction, and compiling the results into a final technical report built incrementally through the semester. ... There is some graded work that requires them to draw conclusions about how the properties of the paper affect print behavior."
+    }
+   ]
+  },
+  {
+   "setup": "gpt-5.5 (production)",
+   "pair": "GC 3460 × Production & Operations",
+   "run": 2,
+   "ok": true,
+   "ms": 35636,
+   "costCents": 1085,
+   "cells": [
+    {
+     "sub": "workflow-design",
+     "k": 2,
+     "u": 0,
+     "d": 0,
+     "excerpt": "\"Students complete the full profiling workflow and apply those profiles in Photoshop and proofing, but within class-provided procedures rather than clearly novel transfer conditions.\""
+    },
+    {
+     "sub": "quality-control",
+     "k": 4,
+     "u": 2,
+     "d": 3,
+     "excerpt": "\"Measure a control wedge on a print sample ... Measure a control wedge on an ICC profiled proof ... Compare the two measurements with Delta E 2000.\""
+    },
+    {
+     "sub": "vendor-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "timeline-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cost-management",
+     "k": 2,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"They also utilize a component cost sheet to calculate the cost to make a 9 lb. batch of this ink.\""
+    },
+    {
+     "sub": "team-coordination",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "domain-knowledge",
+     "k": 4,
+     "u": 3,
+     "d": 3,
+     "excerpt": "\"The purpose of this project will be to thoroughly examine a color, establishing a color standard and exploring the reproduction of those colors across various outputs.\""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol high",
+   "pair": "GC 3460 × Production & Operations",
+   "run": 2,
+   "ok": true,
+   "ms": 70522,
+   "costCents": 347,
+   "cells": [
+    {
+     "sub": "workflow-design",
+     "k": 1,
+     "u": 0,
+     "d": 0,
+     "excerpt": "Students must generate four profiles from the same measurement file by changing profile settings and saving each profile separately."
+    },
+    {
+     "sub": "quality-control",
+     "k": 3,
+     "u": 2,
+     "d": 3,
+     "excerpt": "Measure a control wedge on a print sample ... Measure a control wedge on an ICC profiled proof ... Compare the two measurements with Delta E 2000. ... judge the degree of improvement gained by loading CxF data into Serendipity."
+    },
+    {
+     "sub": "vendor-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "timeline-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cost-management",
+     "k": 2,
+     "u": 0,
+     "d": 2,
+     "excerpt": "They also utilize a component cost sheet to calculate the cost to make a 9 lb. batch of this ink."
+    },
+    {
+     "sub": "team-coordination",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "domain-knowledge",
+     "k": 3,
+     "u": 3,
+     "d": 2,
+     "excerpt": "Students thoroughly examine a color by establishing a standard, formulating spot ink, testing substrates, evaluating CMYK and RGB reproduction ... There is some graded work that requires them to draw conclusions about how the properties of the paper affect print behavior."
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol low",
+   "pair": "GC 3700 × Brand Strategy",
+   "run": 2,
+   "ok": true,
+   "ms": 22052,
+   "costCents": 154,
+   "cells": [
+    {
+     "sub": "consumer-research",
+     "k": 1,
+     "u": 2,
+     "d": 2,
+     "excerpt": "“we're trying to look for something that's a little bit deeper in terms of how do they emotionally think about beauty or confidence and what role does that play”; “the grading of this project is based on how they translate kind of the quality of their research and the consumer insight into a potential opportunity for this brand”"
+    },
+    {
+     "sub": "competitive-analysis",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brand-positioning",
+     "k": 3,
+     "u": 2,
+     "d": 3,
+     "excerpt": "“The GAP model is a model and framework for identifying what the brand stands for, how that intersects with what people may need and what's happening in culture.”; “They also introduce the brand gap model... what's happening with the people we serve, what might be happening in culture and what does the brand stand for? How do all those things work together?”; “first I'm looking for a broad strategy approach for them presenting the GAP model based on the brand that they're using.”"
+    },
+    {
+     "sub": "campaign-measurement",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quantitative-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-channel-translation",
+     "k": 1,
+     "u": 1,
+     "d": 1,
+     "excerpt": "“They have to work through brand assets... They do have to outline the brand's tone and voice and the clear emotion in that tone and voice.”; “they have to showcase how those copy elements connect back.”"
+    }
+   ]
+  },
+  {
+   "setup": "gpt-5.5 (production)",
+   "pair": "GC 3700 × Brand Strategy",
+   "run": 2,
+   "ok": true,
+   "ms": 26382,
+   "costCents": 849,
+   "cells": [
+    {
+     "sub": "consumer-research",
+     "k": 2,
+     "u": 3,
+     "d": 2,
+     "excerpt": "\"the grading of this project is based on how they translate kind of the quality of their research and the consumer insight into a potential opportunity for this brand\""
+    },
+    {
+     "sub": "competitive-analysis",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brand-positioning",
+     "k": 3,
+     "u": 2,
+     "d": 3,
+     "excerpt": "\"the students do have to defend their strategy and creative choices rather than just show them.\""
+    },
+    {
+     "sub": "campaign-measurement",
+     "k": 1,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quantitative-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-channel-translation",
+     "k": 3,
+     "u": 2,
+     "d": 2,
+     "excerpt": "\"They then have to do a consumer journey... They do a loose media plan based on these channels connected to the consumer.\""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol medium",
+   "pair": "GC 3700 × Brand Strategy",
+   "run": 2,
+   "ok": true,
+   "ms": 36041,
+   "costCents": 201,
+   "cells": [
+    {
+     "sub": "consumer-research",
+     "k": 1,
+     "u": 2,
+     "d": 2,
+     "excerpt": "“we're trying to look for something that's a little bit deeper in terms of how do they emotionally think about beauty or confidence and what role does that play”; “the grading of this project is based on how they translate kind of the quality of their research and the consumer insight into a potential opportunity for this brand”"
+    },
+    {
+     "sub": "competitive-analysis",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brand-positioning",
+     "k": 3,
+     "u": 1,
+     "d": 3,
+     "excerpt": "“The students use a one-page creative brief template... the key items are a background... communication objectives... consumer insights and strategy section... brand support section... tone of voice... big idea.”; “They have to complete a one page creative brief, which answers some of the key strategic questions for the brand and the campaign.”"
+    },
+    {
+     "sub": "campaign-measurement",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quantitative-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-channel-translation",
+     "k": 1,
+     "u": 0,
+     "d": 0,
+     "excerpt": "“They have to work through brand assets... They do have to outline the brand's tone and voice and the clear emotion in that tone and voice.”"
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol high",
+   "pair": "GC 3700 × Brand Strategy",
+   "run": 2,
+   "ok": true,
+   "ms": 71997,
+   "costCents": 356,
+   "cells": [
+    {
+     "sub": "consumer-research",
+     "k": 0,
+     "u": 2,
+     "d": 2,
+     "excerpt": "“they tend to pick surface level things... that's not really an insight... we're trying to look for something that's a little bit deeper”; “the grading of this project is based on how they translate kind of the quality of their research and the consumer insight into a potential opportunity for this brand”"
+    },
+    {
+     "sub": "competitive-analysis",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brand-positioning",
+     "k": 2,
+     "u": 1,
+     "d": 2,
+     "excerpt": "“The GAP model is a model and framework for identifying what the brand stands for, how that intersects with what people may need and what's happening in culture”; “first I'm looking for a broad strategy approach for them presenting the GAP model based on the brand that they're using.”"
+    },
+    {
+     "sub": "campaign-measurement",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quantitative-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-channel-translation",
+     "k": 1,
+     "u": 0,
+     "d": 0,
+     "excerpt": "“They have to work through brand assets... They do have to outline the brand's tone and voice and the clear emotion in that tone and voice.”"
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol low",
+   "pair": "GC 3730 × Account Management",
+   "run": 2,
+   "ok": true,
+   "ms": 19272,
+   "costCents": 131,
+   "cells": [
+    {
+     "sub": "client-needs-diagnosis",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "proposal-development",
+     "k": 3,
+     "u": 2,
+     "d": 3,
+     "excerpt": "“the third section is Media strategy and budget allocation ... includes identifying the Campaign Objective”; “I prompt the students to make sure they are providing a \"why\" behind each recommendation”; “they get graded on both the ability to explain thier section and answer questions and the content of the presentation.”"
+    },
+    {
+     "sub": "project-oversight",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "results-interpretation",
+     "k": 2,
+     "u": 1,
+     "d": 0,
+     "excerpt": "“the final section is the summary ... should include a re-stated campaign objective, the measurement plan, and a statement around why the recommendation should work”"
+    },
+    {
+     "sub": "gc-production-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-5.5 (production)",
+   "pair": "GC 3730 × Account Management",
+   "run": 2,
+   "ok": true,
+   "ms": 22268,
+   "costCents": 634,
+   "cells": [
+    {
+     "sub": "client-needs-diagnosis",
+     "k": 2,
+     "u": 1,
+     "d": 2,
+     "excerpt": "Instructor: \"Introduction & Business Situation: who/what are your services, is the problem you are trying to solve (the business challenge), and what is the reposnse desired?\""
+    },
+    {
+     "sub": "proposal-development",
+     "k": 3,
+     "u": 2,
+     "d": 3,
+     "excerpt": "Instructor: \"they get graded on both the ability to explain thier section and answer questions and the content of the presentation.\""
+    },
+    {
+     "sub": "project-oversight",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "results-interpretation",
+     "k": 2,
+     "u": 1,
+     "d": 1,
+     "excerpt": "Instructor: \"the final section is the summary, worth up to 5 more points and should include a re-stated campaign objective, the measurement plan, and a statement around why the recommendation should work\""
+    },
+    {
+     "sub": "gc-production-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol medium",
+   "pair": "GC 3730 × Account Management",
+   "run": 2,
+   "ok": true,
+   "ms": 26333,
+   "costCents": 148,
+   "cells": [
+    {
+     "sub": "client-needs-diagnosis",
+     "k": 1,
+     "u": 0,
+     "d": 0,
+     "excerpt": "Students frame a media-planning problem by defining the business challenge, desired response, target audience, and planning parameters."
+    },
+    {
+     "sub": "proposal-development",
+     "k": 3,
+     "u": 2,
+     "d": 3,
+     "excerpt": "The rubric covers business situation, planning parameters, media strategy and budget allocation, and a summary with measurement plan and rationale for why the recommendation should work."
+    },
+    {
+     "sub": "project-oversight",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "results-interpretation",
+     "k": 2,
+     "u": 1,
+     "d": 0,
+     "excerpt": "Students create a basic measurement plan that connects campaign objectives to how success will be assessed."
+    },
+    {
+     "sub": "gc-production-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol high",
+   "pair": "GC 3730 × Account Management",
+   "run": 2,
+   "ok": true,
+   "ms": 53619,
+   "costCents": 276,
+   "cells": [
+    {
+     "sub": "client-needs-diagnosis",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "proposal-development",
+     "k": 3,
+     "u": 2,
+     "d": 3,
+     "excerpt": "\"the third section is Media strategy and budget allocation\"; \"I prompt the students to make sure they are providing a \\\"why\\\" behind each recommendation that is based on earlier lectures and what they've learned.\"; \"The student submission includes a presentation file, and an in-person presentation on the last day of class.\""
+    },
+    {
+     "sub": "project-oversight",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "results-interpretation",
+     "k": 2,
+     "u": 1,
+     "d": 0,
+     "excerpt": "\"Students perform core media-planning calculations such as CPM, CPP, CPx, ratings, reach/frequency, and GRPs.\"; \"Students create a basic measurement plan that connects campaign objectives to how success will be assessed.\""
+    },
+    {
+     "sub": "gc-production-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol low",
+   "pair": "GC 1050 × Creative Generalist / AI-Native",
+   "run": 2,
+   "ok": true,
+   "ms": 24933,
+   "costCents": 160,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 2,
+     "u": 1,
+     "d": 2,
+     "excerpt": "“create a fictional food company logo and label using Adobe Illustrator”; “They have creative freedom in terms of topic on most projects. I do provide them with parameters to stay within or specific requirements such as size, resolution, etc.”"
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 3,
+     "u": 1,
+     "d": 2,
+     "excerpt": "“find 3 graphic design examples representing an effective use of the elements and principles of design”; “Discuss what elements and principles are used and why they work in that specific design.”"
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 2,
+     "u": 0,
+     "d": 2,
+     "excerpt": "“Students repeatedly produce artifacts and physical outputs across DTG, mug sublimation, coaster sublimation, poster printing, and related print tasks independently in familiar conditions.”"
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 0,
+     "u": 0,
+     "d": 2,
+     "excerpt": "“Your students independently create logo concepts and finished label applications in a familiar assignment frame, making their own branding and layout choices within set production requirements.”"
+    }
+   ]
+  },
+  {
+   "setup": "gpt-5.5 (production)",
+   "pair": "GC 1050 × Creative Generalist / AI-Native",
+   "run": 2,
+   "ok": true,
+   "ms": 26427,
+   "costCents": 864,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 3,
+     "u": 2,
+     "d": 2,
+     "excerpt": "\"create a fictional food company logo and label using Adobe Illustrator\""
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 3,
+     "u": 2,
+     "d": 2,
+     "excerpt": "\"Discuss what elements and principles are used and why they work in that specific design.\""
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 2,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"Project 2: DTG T-Shirt (75 pts)\"; \"Project 3: Mug Design Dye Sublimation (75 pts)\"; \"Project 9: Magazine Cover/Article (100 pts)\""
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 1,
+     "u": 1,
+     "d": 2,
+     "excerpt": "Instructor: \"They have creative freedom in terms of topic on most projects. I do provide them with parameters to stay within or specific requirements such as size, resolution, etc.\""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol medium",
+   "pair": "GC 1050 × Creative Generalist / AI-Native",
+   "run": 2,
+   "ok": true,
+   "ms": 31617,
+   "costCents": 189,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 3,
+     "u": 2,
+     "d": 2,
+     "excerpt": "\"thumbnail sketches ... color version ... black and white version ... tagline ... label\"; \"create a fictional food company logo and label using Adobe Illustrator\"; \"They do all three, describe what they made, justify design decisions, and print choices.\""
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 3,
+     "u": 2,
+     "d": 2,
+     "excerpt": "\"find 3 graphic design examples representing an effective use of the elements and principles of design\"; \"Discuss what elements and principles are used and why they work in that specific design.\""
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 2,
+     "u": 0,
+     "d": 2,
+     "excerpt": "\"DTG Introduction\"; \"Students repeatedly produce artifacts and physical outputs across DTG, mug sublimation, coaster sublimation, poster printing, and related print tasks independently in familiar conditions.\""
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 1,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"Your students can explain in their own words why their logo and print choices fit the brand brief\"; \"create a fictional food company logo and label using Adobe Illustrator\""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol high",
+   "pair": "GC 1050 × Creative Generalist / AI-Native",
+   "run": 2,
+   "ok": true,
+   "ms": 72927,
+   "costCents": 347,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 2,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"thumbnail sketches ... color version ... black and white version\"; \"create a fictional food company logo and label using Adobe Illustrator\"; Instructor: \"They do all three, describe what they made, justify design decisions, and print choices.\""
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 3,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"find 3 graphic design examples representing an effective use of the elements and principles of design\"; \"Discuss what elements and principles are used and why they work in that specific design.\""
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 1,
+     "u": 0,
+     "d": 0,
+     "excerpt": "\"AI destination postcard\""
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 1,
+     "u": 0,
+     "d": 2,
+     "excerpt": "\"Project 2: DTG T-Shirt (75 pts)\"; \"Project 3: Mug Design Dye Sublimation (75 pts)\"; \"Photo of your printed shirt and upload to Canvas.\""
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 1,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"Your students can explain in their own words why their logo and print choices fit the brand brief\"; \"create a fictional food company logo and label using Adobe Illustrator\""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol low",
+   "pair": "GC 3400 × Creative Generalist / AI-Native",
+   "run": 2,
+   "ok": true,
+   "ms": 24645,
+   "costCents": 160,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 1,
+     "u": 0,
+     "d": 2,
+     "excerpt": "Students produce a bulleted list of take-aways and explain how they will translate those insights into visual elements for the final shoot."
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 1,
+     "u": 0,
+     "d": 1,
+     "excerpt": "Revisit the location and reshoot your top 4 photographs based on the Critique."
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 1,
+     "u": 1,
+     "d": 2,
+     "excerpt": "They do submit their full chat with the GPT, so I do analyze it and make sure that they, in good faith, interacted with it; they go out and reshoot the top images that were decided between them and the AI tool."
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 2,
+     "u": 0,
+     "d": 2,
+     "excerpt": "Students must locate and use at least one Creative Commons clip and at least one self-shot clip ... create a storyboard ... export the video to YouTube (Unlisted) and provide a link."
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol medium",
+   "pair": "GC 3400 × Creative Generalist / AI-Native",
+   "run": 2,
+   "ok": true,
+   "ms": 28641,
+   "costCents": 177,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 0,
+     "u": 0,
+     "d": 1,
+     "excerpt": "Students use set.a.light 3D to recreate two provided lighting scenarios and invent one original setup."
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 0,
+     "u": 0,
+     "d": 1,
+     "excerpt": "Revisit the location and reshoot your top 4 photographs based on the Critique."
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 1,
+     "u": 1,
+     "d": 2,
+     "excerpt": "Your students can explain in their own words how critique feedback should shape a stronger reshoot. Instructor: \"They do submit their full chat with the GPT\"; \"they go out and reshoot the top images that were decided between them and the AI tool\"."
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 1,
+     "u": 0,
+     "d": 2,
+     "excerpt": "Pick 2 (one product and one portrait) to edit in Photoshop. Submit the unedited and edited side by side in the 2x1. Students must locate and use at least one Creative Commons clip and at least one self-shot clip ... create a storyboard ... export the video to YouTube (Unlisted)."
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-5.5 (production)",
+   "pair": "GC 3400 × Creative Generalist / AI-Native",
+   "run": 2,
+   "ok": true,
+   "ms": 29622,
+   "costCents": 921,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 2,
+     "u": 2,
+     "d": 2,
+     "excerpt": "\"these are the settings that will help me get what I'm trying to achieve.\""
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 1,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"Revisit the location and reshoot your top 4 photographs based on the Critique.\""
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 2,
+     "u": 2,
+     "d": 2,
+     "excerpt": "\"They do submit their full chat with the GPT\" and \"Revisit the location and reshoot your top 4 photographs based on the Critique.\""
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 2,
+     "u": 0,
+     "d": 2,
+     "excerpt": "\"Split between photography and video rather than treating imaging as photo-only\""
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol high",
+   "pair": "GC 3400 × Creative Generalist / AI-Native",
+   "run": 2,
+   "ok": true,
+   "ms": 63992,
+   "costCents": 316,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 1,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"create a storyboard\"; \"Your students can explain the story and technical choices behind an edit in the assignment’s frame\""
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 1,
+     "u": 0,
+     "d": 2,
+     "excerpt": "\"Students critique, cull, and revise photographic work using structured feedback processes, including AI-assisted Socratic critique.\"; \"Revisit the location and reshoot your top 4 photographs based on the Critique.\""
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 1,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"Your students can explain in their own words how critique feedback should shape a stronger reshoot\"; \"They do submit their full chat with the GPT\"; \"they go out and reshoot the top images that were decided between them and the AI tool\""
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 2,
+     "u": 0,
+     "d": 2,
+     "excerpt": "\"Your students can recall the basic Premiere workflow and editing vocabulary\"; \"Submit the unedited and edited side by side\"; \"export the video to YouTube (Unlisted) and provide a link.\""
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol low",
+   "pair": "GC 3460 × Production & Operations",
+   "run": 3,
+   "ok": true,
+   "ms": 22265,
+   "costCents": 154,
+   "cells": [
+    {
+     "sub": "workflow-design",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quality-control",
+     "k": 3,
+     "u": 1,
+     "d": 2,
+     "excerpt": "Measure a control wedge on a print sample ... Measure a control wedge on an ICC profiled proof ... Compare the two measurements with Delta E 2000. The final step asks students to repeat the process with an ICC profiled proof and judge the degree of improvement gained by loading CxF data into Serendipity."
+    },
+    {
+     "sub": "vendor-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "timeline-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cost-management",
+     "k": 2,
+     "u": 1,
+     "d": 2,
+     "excerpt": "They also utilize a component cost sheet to calculate the cost to make a 9 lb. batch of this ink."
+    },
+    {
+     "sub": "team-coordination",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "domain-knowledge",
+     "k": 4,
+     "u": 3,
+     "d": 2,
+     "excerpt": "Students thoroughly examine a color by establishing a standard, formulating spot ink, testing substrates, evaluating CMYK and RGB reproduction, and compiling the results into a final technical report. There is some graded work that requires them to draw conclusions about how the properties of the paper affect print behavior."
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol medium",
+   "pair": "GC 3460 × Production & Operations",
+   "run": 3,
+   "ok": true,
+   "ms": 31743,
+   "costCents": 180,
+   "cells": [
+    {
+     "sub": "workflow-design",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quality-control",
+     "k": 3,
+     "u": 0,
+     "d": 2,
+     "excerpt": "Measure a control wedge on a print sample ... Measure a control wedge on an ICC profiled proof ... Compare the two measurements with Delta E 2000."
+    },
+    {
+     "sub": "vendor-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "timeline-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cost-management",
+     "k": 2,
+     "u": 0,
+     "d": 2,
+     "excerpt": "They also utilize a component cost sheet to calculate the cost to make a 9 lb. batch of this ink."
+    },
+    {
+     "sub": "team-coordination",
+     "k": null,
+     "u": null,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "domain-knowledge",
+     "k": 4,
+     "u": 3,
+     "d": 3,
+     "excerpt": "Students thoroughly examine a color by establishing a standard, formulating spot ink, testing substrates, evaluating CMYK and RGB reproduction, and compiling the results into a final technical report built incrementally through the semester."
+    }
+   ]
+  },
+  {
+   "setup": "gpt-5.5 (production)",
+   "pair": "GC 3460 × Production & Operations",
+   "run": 3,
+   "ok": true,
+   "ms": 49807,
+   "costCents": 1361,
+   "cells": [
+    {
+     "sub": "workflow-design",
+     "k": 1,
+     "u": 0,
+     "d": 0,
+     "excerpt": "\"Students complete the full profiling workflow and apply those profiles in Photoshop and proofing, but within class-provided procedures rather than clearly novel transfer conditions.\""
+    },
+    {
+     "sub": "quality-control",
+     "k": 3,
+     "u": 2,
+     "d": 3,
+     "excerpt": "\"Measure a control wedge on a print sample ... Measure a control wedge on an ICC profiled proof ... Compare the two measurements with Delta E 2000.\""
+    },
+    {
+     "sub": "vendor-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "timeline-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cost-management",
+     "k": 2,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"They also utilize a component cost sheet to calculate the cost to make a 9 lb. batch of this ink.\""
+    },
+    {
+     "sub": "team-coordination",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "domain-knowledge",
+     "k": 4,
+     "u": 4,
+     "d": 4,
+     "excerpt": "\"The purpose of this project will be to thoroughly examine a color, establishing a color standard and exploring the reproduction of those colors across various outputs.\""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol high",
+   "pair": "GC 3460 × Production & Operations",
+   "run": 3,
+   "ok": true,
+   "ms": 86846,
+   "costCents": 412,
+   "cells": [
+    {
+     "sub": "workflow-design",
+     "k": 1,
+     "u": 0,
+     "d": 0,
+     "excerpt": "Students measure a flexographic characterization chart with a spectrophotometer table, save measurement data, generate multiple ICC profiles with different black-generation settings, and compare datasets in analysis software."
+    },
+    {
+     "sub": "quality-control",
+     "k": 3,
+     "u": 0,
+     "d": 2,
+     "excerpt": "Students produce and evaluate proofs — D4 via ISO 12647-7 Control Wedge. \"Measure a control wedge on a print sample ... Measure a control wedge on an ICC profiled proof ... Compare the two measurements with Delta E 2000.\""
+    },
+    {
+     "sub": "vendor-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "timeline-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cost-management",
+     "k": 2,
+     "u": 0,
+     "d": 2,
+     "excerpt": "They also utilize a component cost sheet to calculate the cost to make a 9 lb. batch of this ink."
+    },
+    {
+     "sub": "team-coordination",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "domain-knowledge",
+     "k": 3,
+     "u": 3,
+     "d": 2,
+     "excerpt": "Students thoroughly examine a color by establishing a standard, formulating spot ink, testing substrates, evaluating CMYK and RGB reproduction, and compiling the results into a final technical report. \"There is some graded work that requires them to draw conclusions about how the properties of the paper affect print behavior.\""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-5.5 (production)",
+   "pair": "GC 3700 × Brand Strategy",
+   "run": 3,
+   "ok": true,
+   "ms": 18398,
+   "costCents": 702,
+   "cells": [
+    {
+     "sub": "consumer-research",
+     "k": 2,
+     "u": 3,
+     "d": 2,
+     "excerpt": "\"the grading of this project is based on how they translate kind of the quality of their research and the consumer insight into a potential opportunity for this brand\""
+    },
+    {
+     "sub": "competitive-analysis",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brand-positioning",
+     "k": 3,
+     "u": 2,
+     "d": 3,
+     "excerpt": "\"the students do have to defend their strategy and creative choices rather than just show them\""
+    },
+    {
+     "sub": "campaign-measurement",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quantitative-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-channel-translation",
+     "k": 2,
+     "u": 2,
+     "d": 2,
+     "excerpt": "\"They then have to do a consumer journey... They do a loose media plan based on these channels connected to the consumer.\""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol low",
+   "pair": "GC 3700 × Brand Strategy",
+   "run": 3,
+   "ok": true,
+   "ms": 25058,
+   "costCents": 159,
+   "cells": [
+    {
+     "sub": "consumer-research",
+     "k": 0,
+     "u": 2,
+     "d": 2,
+     "excerpt": "“the grading of this project is based on how they translate kind of the quality of their research and the consumer insight into a potential opportunity for this brand”; “we're trying to look for something that's a little bit deeper in terms of how do they emotionally think about beauty or confidence”"
+    },
+    {
+     "sub": "competitive-analysis",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brand-positioning",
+     "k": 3,
+     "u": 2,
+     "d": 3,
+     "excerpt": "“The GAP model is a model and framework for identifying what the brand stands for, how that intersects with what people may need and what's happening in culture.”; “How do all those things work together?”; “first I'm looking for a broad strategy approach for them presenting the GAP model based on the brand that they're using.”"
+    },
+    {
+     "sub": "campaign-measurement",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quantitative-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-channel-translation",
+     "k": 1,
+     "u": 0,
+     "d": 1,
+     "excerpt": "“They have to work through brand assets... They do have to outline the brand's tone and voice and the clear emotion in that tone and voice.”"
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol medium",
+   "pair": "GC 3700 × Brand Strategy",
+   "run": 3,
+   "ok": true,
+   "ms": 30454,
+   "costCents": 182,
+   "cells": [
+    {
+     "sub": "consumer-research",
+     "k": 0,
+     "u": 3,
+     "d": 0,
+     "excerpt": "“we're trying to look for something that's a little bit deeper in terms of how do they emotionally think about beauty or confidence and what role does that play”"
+    },
+    {
+     "sub": "competitive-analysis",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brand-positioning",
+     "k": 3,
+     "u": 2,
+     "d": 3,
+     "excerpt": "“The GAP model is a model and framework for identifying what the brand stands for, how that intersects with what people may need and what's happening in culture.” “first I'm looking for a broad strategy approach for them presenting the GAP model based on the brand that they're using.”"
+    },
+    {
+     "sub": "campaign-measurement",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quantitative-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-channel-translation",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol high",
+   "pair": "GC 3700 × Brand Strategy",
+   "run": 3,
+   "ok": true,
+   "ms": 73811,
+   "costCents": 348,
+   "cells": [
+    {
+     "sub": "consumer-research",
+     "k": 0,
+     "u": 2,
+     "d": 1,
+     "excerpt": "\"we're trying to look for something that's a little bit deeper in terms of how do they emotionally think about beauty or confidence and what role does that play\"; \"the grading of this project is based on how they translate kind of the quality of their research and the consumer insight into a potential opportunity for this brand\""
+    },
+    {
+     "sub": "competitive-analysis",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brand-positioning",
+     "k": 3,
+     "u": 2,
+     "d": 2,
+     "excerpt": "\"The GAP model is a model and framework for identifying what the brand stands for, how that intersects with what people may need and what's happening in culture.\"; \"How do all those things work together?\"; \"first I'm looking for a broad strategy approach for them presenting the GAP model based on the brand that they're using.\""
+    },
+    {
+     "sub": "campaign-measurement",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quantitative-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-channel-translation",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-5.5 (production)",
+   "pair": "GC 3730 × Account Management",
+   "run": 3,
+   "ok": true,
+   "ms": 17001,
+   "costCents": 623,
+   "cells": [
+    {
+     "sub": "client-needs-diagnosis",
+     "k": 2,
+     "u": 1,
+     "d": 1,
+     "excerpt": "Instructor: \"Introduction & Business Situation: who/what are your services, is the problem you are trying to solve (the business challenge), and what is the reposnse desired?\""
+    },
+    {
+     "sub": "proposal-development",
+     "k": 2,
+     "u": 2,
+     "d": 2,
+     "excerpt": "Instructor: \"the third section is Media strategy and budget allocation, worth up to 25 points and includes identifying the Campaign Objective, the Media strategy statement, the media channel details ... and the budget allocation\""
+    },
+    {
+     "sub": "project-oversight",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "results-interpretation",
+     "k": 2,
+     "u": 2,
+     "d": 1,
+     "excerpt": "Instructor: \"the final section is the summary, worth up to 5 more points and should include a re-stated campaign objective, the measurement plan, and a statement around why the recommendation should work\""
+    },
+    {
+     "sub": "gc-production-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol low",
+   "pair": "GC 3730 × Account Management",
+   "run": 3,
+   "ok": true,
+   "ms": 18873,
+   "costCents": 130,
+   "cells": [
+    {
+     "sub": "client-needs-diagnosis",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "proposal-development",
+     "k": 3,
+     "u": 2,
+     "d": 3,
+     "excerpt": "“the third section is Media strategy and budget allocation ... includes identifying the Campaign Objective, the Media strategy statement”; “I prompt the students to make sure they are providing a \"why\" behind each recommendation”; “they get graded on both the ability to explain thier section and answer questions and the content of the presentation.”"
+    },
+    {
+     "sub": "project-oversight",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "results-interpretation",
+     "k": 2,
+     "u": 1,
+     "d": 0,
+     "excerpt": "“Students can explain in their own words what the plan is measuring and why those measures fit the campaign objective”; “the final section is the summary ... should include a re-stated campaign objective, the measurement plan, and a statement around why the recommendation should work”."
+    },
+    {
+     "sub": "gc-production-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol medium",
+   "pair": "GC 3730 × Account Management",
+   "run": 3,
+   "ok": true,
+   "ms": 23900,
+   "costCents": 149,
+   "cells": [
+    {
+     "sub": "client-needs-diagnosis",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "proposal-development",
+     "k": 3,
+     "u": 2,
+     "d": 3,
+     "excerpt": "“Students develop an integrated paid-media strategy with channel roles and budget allocation tied to a campaign objective.” Instructor: “I prompt the students to make sure they are providing a \"why\" behind each recommendation that is based on earlier lectures and what they've learned.”"
+    },
+    {
+     "sub": "project-oversight",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "results-interpretation",
+     "k": 2,
+     "u": 1,
+     "d": 0,
+     "excerpt": "“Students create a basic measurement plan that connects campaign objectives to how success will be assessed.” Instructor: “the final section is the summary, worth up to 5 more points and should include a re-stated campaign objective, the measurement plan, and a statement around why the recommendation should work”"
+    },
+    {
+     "sub": "gc-production-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol high",
+   "pair": "GC 3730 × Account Management",
+   "run": 3,
+   "ok": true,
+   "ms": 40030,
+   "costCents": 225,
+   "cells": [
+    {
+     "sub": "client-needs-diagnosis",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "proposal-development",
+     "k": 3,
+     "u": 2,
+     "d": 3,
+     "excerpt": "\"Students develop an integrated paid-media strategy with channel roles and budget allocation tied to a campaign objective.\" \"they get graded on both the ability to explain thier section and answer questions and the content of the presentation.\""
+    },
+    {
+     "sub": "project-oversight",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "results-interpretation",
+     "k": 2,
+     "u": 1,
+     "d": 0,
+     "excerpt": "\"Students create a basic measurement plan that connects campaign objectives to how success will be assessed.\" \"Students perform core media-planning calculations such as CPM, CPP, CPx, ratings, reach/frequency, and GRPs.\""
+    },
+    {
+     "sub": "gc-production-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol medium",
+   "pair": "GC 1050 × Creative Generalist / AI-Native",
+   "run": 3,
+   "ok": true,
+   "ms": 24863,
+   "costCents": 165,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 2,
+     "u": 2,
+     "d": 2,
+     "excerpt": "Students generate sketches, build Illustrator logo files, and apply them to printed labels independently in familiar course conditions. Instructor: \"They do all three, describe what they made, justify design decisions, and print choices.\""
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 3,
+     "u": 2,
+     "d": 2,
+     "excerpt": "\"find 3 graphic design examples representing an effective use of the elements and principles of design\"; \"Discuss what elements and principles are used and why they work in that specific design.\""
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 2,
+     "u": 0,
+     "d": 2,
+     "excerpt": "Students repeatedly produce artifacts and physical outputs across DTG, mug sublimation, coaster sublimation, poster printing, and related print tasks independently in familiar conditions."
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 1,
+     "u": 0,
+     "d": 2,
+     "excerpt": "\"create a fictional food company logo and label using Adobe Illustrator\"; \"Your students can explain in their own words why their logo and print choices fit the brand brief\""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-5.5 (production)",
+   "pair": "GC 1050 × Creative Generalist / AI-Native",
+   "run": 3,
+   "ok": true,
+   "ms": 25711,
+   "costCents": 881,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 3,
+     "u": 2,
+     "d": 2,
+     "excerpt": "\"They have creative freedom in terms of topic on most projects. I do provide them with parameters to stay within or specific requirements such as size, resolution, etc.\""
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 4,
+     "u": 2,
+     "d": 2,
+     "excerpt": "\"Discuss what elements and principles are used and why they work in that specific design.\""
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 2,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"Project 2: DTG T-Shirt (75 pts)\"; \"Project 3: Mug Design Dye Sublimation (75 pts)\"; \"Project 8: Brochure (75 pts)\"; \"Project 9: Magazine Cover/Article (100 pts)\""
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 1,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"They have creative freedom in terms of topic on most projects. I do provide them with parameters to stay within or specific requirements such as size, resolution, etc.\""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol low",
+   "pair": "GC 1050 × Creative Generalist / AI-Native",
+   "run": 3,
+   "ok": true,
+   "ms": 26810,
+   "costCents": 172,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 2,
+     "u": 2,
+     "d": 2,
+     "excerpt": "“create a fictional food company logo and label using Adobe Illustrator”; “thumbnail sketches ... color version ... black and white version ... tagline ... label”; “They do all three, describe what they made, justify design decisions, and print choices.”"
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 3,
+     "u": 2,
+     "d": 2,
+     "excerpt": "“find 3 graphic design examples representing an effective use of the elements and principles of design”; “Discuss what elements and principles are used and why they work in that specific design.”"
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 1,
+     "u": 0,
+     "d": 0,
+     "excerpt": "“AI destination postcard”"
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 2,
+     "u": 0,
+     "d": 2,
+     "excerpt": "“Students create Photoshop composites and integrate them into print-ready layouts for sublimation products.”; “Photo of your printed shirt and upload to Canvas.”; “Students repeatedly produce artifacts and physical outputs across DTG, mug sublimation, coaster sublimation, poster printing, and related print tasks independently in familiar conditions.”"
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 1,
+     "u": 0,
+     "d": 2,
+     "excerpt": "“Your students independently create logo concepts and finished label applications in a familiar assignment frame, making their own branding and layout choices within set production requirements.”; “They have creative freedom in terms of topic on most projects.”"
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol high",
+   "pair": "GC 1050 × Creative Generalist / AI-Native",
+   "run": 3,
+   "ok": true,
+   "ms": 64877,
+   "costCents": 311,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 2,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"thumbnail sketches ... color version ... black and white version\"; \"create a fictional food company logo and label using Adobe Illustrator\"; \"They do all three, describe what they made, justify design decisions, and print choices.\""
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 3,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"find 3 graphic design examples representing an effective use of the elements and principles of design\"; \"Discuss what elements and principles are used and why they work in that specific design.\""
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 1,
+     "u": 0,
+     "d": 2,
+     "excerpt": "\"Project 2: DTG T-Shirt (75 pts)\"; \"Project 3: Mug Design Dye Sublimation (75 pts)\"; \"Photo of your printed shirt and upload to Canvas.\""
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 1,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"Your students can explain in their own words why their logo and print choices fit the brand brief\"; \"create a fictional food company logo and label using Adobe Illustrator\""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol low",
+   "pair": "GC 3400 × Creative Generalist / AI-Native",
+   "run": 3,
+   "ok": true,
+   "ms": 22766,
+   "costCents": 155,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 1,
+     "u": 0,
+     "d": 1,
+     "excerpt": "Students produce a bulleted list of take-aways and explain how they will translate those insights into visual elements for the final shoot."
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 1,
+     "u": 0,
+     "d": 2,
+     "excerpt": "Revisit the location and reshoot your top 4 photographs based on the Critique."
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 1,
+     "u": 2,
+     "d": 2,
+     "excerpt": "They do submit their full chat with the GPT”; “they go out and reshoot the top images that were decided between them and the AI tool"
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 2,
+     "u": 0,
+     "d": 2,
+     "excerpt": "Pick 2 (one product and one portrait) to edit in Photoshop”; “create a storyboard ... export the video to YouTube (Unlisted) and provide a link."
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-5.5 (production)",
+   "pair": "GC 3400 × Creative Generalist / AI-Native",
+   "run": 3,
+   "ok": true,
+   "ms": 30741,
+   "costCents": 1059,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 1,
+     "u": 2,
+     "d": 2,
+     "excerpt": "\"these are the settings that will help me get what I'm trying to achieve\""
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 1,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"Revisit the location and reshoot your top 4 photographs based on the Critique.\""
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 2,
+     "u": 2,
+     "d": 3,
+     "excerpt": "\"They do submit their full chat with the GPT\" and \"they go out and reshoot the top images that were decided between them and the AI tool\""
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 2,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"We do teach them as if they haven't ever used the programs before, like Photoshop and Audition and Premiere.\""
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol medium",
+   "pair": "GC 3400 × Creative Generalist / AI-Native",
+   "run": 3,
+   "ok": true,
+   "ms": 31150,
+   "costCents": 182,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 1,
+     "u": 0,
+     "d": 1,
+     "excerpt": "Students use set.a.light 3D to recreate two provided lighting scenarios and invent one original setup."
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 1,
+     "u": 0,
+     "d": 2,
+     "excerpt": "Revisit the location and reshoot your top 4 photographs based on the Critique."
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 1,
+     "u": 1,
+     "d": 2,
+     "excerpt": "They do submit their full chat with the GPT, so I do analyze it and make sure that they, in good faith, interacted with it; they go out and reshoot the top images that were decided between them and the AI tool."
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 1,
+     "u": 0,
+     "d": 2,
+     "excerpt": "Students must locate and use at least one Creative Commons clip and at least one self-shot clip ... create a storyboard ... export the video to YouTube (Unlisted) and provide a link."
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol high",
+   "pair": "GC 3400 × Creative Generalist / AI-Native",
+   "run": 3,
+   "ok": true,
+   "ms": 75566,
+   "costCents": 372,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 1,
+     "u": 0,
+     "d": 2,
+     "excerpt": "\"Your students can produce the core planning vocabulary and artifacts for interview-based storytelling, including questions, storyboards, and production plans.\"; \"sometimes they have to go all the way back to the beginning and restructure their story because either their interviewee changed or they didn't have a solid story to start with.\""
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 1,
+     "u": 0,
+     "d": 2,
+     "excerpt": "\"Students photograph a campus building, cull and export their work, engage a custom critique bot, then revisit and reshoot their strongest images based on that feedback.\"; \"Revisit the location and reshoot your top 4 photographs based on the Critique.\""
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 1,
+     "u": 2,
+     "d": 2,
+     "excerpt": "\"The use and misuse of generative AI for photos and imagery\"; \"Your students can explain in their own words how critique feedback should shape a stronger reshoot\"; \"they go out and reshoot the top images that were decided between them and the AI tool\""
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 2,
+     "u": 0,
+     "d": 2,
+     "excerpt": "\"Your students can recall the basic Premiere workflow and editing vocabulary taught through tutorials and project instructions.\"; \"Pick 2 (one product and one portrait) to edit in Photoshop.\"; \"Students must locate and use at least one Creative Commons clip and at least one self-shot clip ... create a storyboard ... export the video to YouTube (Unlisted) and provide a link.\""
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol low",
+   "pair": "GC 3460 × Production & Operations",
+   "run": 4,
+   "ok": true,
+   "ms": 23767,
+   "costCents": 157,
+   "cells": [
+    {
+     "sub": "workflow-design",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quality-control",
+     "k": 3,
+     "u": 0,
+     "d": 2,
+     "excerpt": "“Measure a control wedge on a print sample ... Measure a control wedge on an ICC profiled proof ... Compare the two measurements with Delta E 2000.”"
+    },
+    {
+     "sub": "vendor-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "timeline-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cost-management",
+     "k": 2,
+     "u": 0,
+     "d": 2,
+     "excerpt": "“They also utilize a component cost sheet to calculate the cost to make a 9 lb. batch of this ink.”"
+    },
+    {
+     "sub": "team-coordination",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "domain-knowledge",
+     "k": 3,
+     "u": 3,
+     "d": 2,
+     "excerpt": "“The purpose of this project will be to thoroughly examine a color, establishing a color standard and exploring the reproduction of those colors across various outputs.” “There is some graded work that requires them to draw conclusions about how the properties of the paper affect print behavior.”"
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol medium",
+   "pair": "GC 3460 × Production & Operations",
+   "run": 4,
+   "ok": true,
+   "ms": 32720,
+   "costCents": 180,
+   "cells": [
+    {
+     "sub": "workflow-design",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quality-control",
+     "k": 3,
+     "u": 1,
+     "d": 2,
+     "excerpt": "Measure a control wedge on a print sample ... Measure a control wedge on an ICC profiled proof ... Compare the two measurements with Delta E 2000."
+    },
+    {
+     "sub": "vendor-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "timeline-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cost-management",
+     "k": 2,
+     "u": 0,
+     "d": 2,
+     "excerpt": "They also utilize a component cost sheet to calculate the cost to make a 9 lb. batch of this ink."
+    },
+    {
+     "sub": "team-coordination",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "domain-knowledge",
+     "k": 4,
+     "u": 3,
+     "d": 2,
+     "excerpt": "Students thoroughly examine a color by establishing a standard, formulating spot ink, testing substrates, evaluating CMYK and RGB reproduction, and compiling the results into a final technical report built incrementally through the semester."
+    }
+   ]
+  },
+  {
+   "setup": "gpt-5.5 (production)",
+   "pair": "GC 3460 × Production & Operations",
+   "run": 4,
+   "ok": true,
+   "ms": 43026,
+   "costCents": 1264,
+   "cells": [
+    {
+     "sub": "workflow-design",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quality-control",
+     "k": 4,
+     "u": 2,
+     "d": 3,
+     "excerpt": "\"Measure a control wedge on a print sample ... Measure a control wedge on an ICC profiled proof ... Compare the two measurements with Delta E 2000.\""
+    },
+    {
+     "sub": "vendor-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "timeline-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cost-management",
+     "k": 2,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"They also utilize a component cost sheet to calculate the cost to make a 9 lb. batch of this ink.\""
+    },
+    {
+     "sub": "team-coordination",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "domain-knowledge",
+     "k": 4,
+     "u": 4,
+     "d": 3,
+     "excerpt": "\"The purpose of this project will be to thoroughly examine a color, establishing a color standard and exploring the reproduction of those colors across various outputs.\""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol high",
+   "pair": "GC 3460 × Production & Operations",
+   "run": 4,
+   "ok": true,
+   "ms": 71340,
+   "costCents": 355,
+   "cells": [
+    {
+     "sub": "workflow-design",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quality-control",
+     "k": 3,
+     "u": 2,
+     "d": 2,
+     "excerpt": "“Measure a control wedge on a print sample ... Measure a control wedge on an ICC profiled proof ... Compare the two measurements with Delta E 2000.” Students also “judge the degree of improvement gained by loading CxF data into Serendipity.”"
+    },
+    {
+     "sub": "vendor-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "timeline-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cost-management",
+     "k": 2,
+     "u": 0,
+     "d": 2,
+     "excerpt": "“They also utilize a component cost sheet to calculate the cost to make a 9 lb. batch of this ink.”"
+    },
+    {
+     "sub": "team-coordination",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "domain-knowledge",
+     "k": 3,
+     "u": 3,
+     "d": 2,
+     "excerpt": "The capstone includes “establishing a standard, formulating spot ink, testing substrates, evaluating CMYK and RGB reproduction.” The instructor confirms “graded work that requires them to draw conclusions about how the properties of the paper affect print behavior.”"
+    }
+   ]
+  },
+  {
+   "setup": "gpt-5.5 (production)",
+   "pair": "GC 3700 × Brand Strategy",
+   "run": 4,
+   "ok": true,
+   "ms": 18595,
+   "costCents": 688,
+   "cells": [
+    {
+     "sub": "consumer-research",
+     "k": 2,
+     "u": 3,
+     "d": 2,
+     "excerpt": "\"the grading of this project is based on how they translate kind of the quality of their research and the consumer insight into a potential opportunity for this brand\""
+    },
+    {
+     "sub": "competitive-analysis",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brand-positioning",
+     "k": 3,
+     "u": 3,
+     "d": 3,
+     "excerpt": "\"the students do have to defend their strategy and creative choices rather than just show them.\""
+    },
+    {
+     "sub": "campaign-measurement",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quantitative-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-channel-translation",
+     "k": 2,
+     "u": 2,
+     "d": 2,
+     "excerpt": "\"They then have to do a consumer journey... They do a loose media plan based on these channels connected to the consumer.\""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol low",
+   "pair": "GC 3700 × Brand Strategy",
+   "run": 4,
+   "ok": true,
+   "ms": 22779,
+   "costCents": 158,
+   "cells": [
+    {
+     "sub": "consumer-research",
+     "k": 0,
+     "u": 2,
+     "d": 2,
+     "excerpt": "“we're trying to look for something that's a little bit deeper in terms of how do they emotionally think about beauty or confidence and what role does that play”; “the grading of this project is based on how they translate kind of the quality of their research and the consumer insight into a potential opportunity for this brand”"
+    },
+    {
+     "sub": "competitive-analysis",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brand-positioning",
+     "k": 3,
+     "u": 2,
+     "d": 3,
+     "excerpt": "“The GAP model is a model and framework for identifying what the brand stands for, how that intersects with what people may need and what's happening in culture.”; “first I'm looking for a broad strategy approach for them presenting the GAP model based on the brand that they're using.”; “How do all those things work together?”"
+    },
+    {
+     "sub": "campaign-measurement",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quantitative-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-channel-translation",
+     "k": 1,
+     "u": 0,
+     "d": 1,
+     "excerpt": "“They have to work through brand assets... They do have to outline the brand's tone and voice and the clear emotion in that tone and voice.”; “They do a loose media plan based on these channels connected to the consumer.”"
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol medium",
+   "pair": "GC 3700 × Brand Strategy",
+   "run": 4,
+   "ok": true,
+   "ms": 28208,
+   "costCents": 175,
+   "cells": [
+    {
+     "sub": "consumer-research",
+     "k": 0,
+     "u": 2,
+     "d": 0,
+     "excerpt": "Students develop consumer insights and personas that connect audience motivations, emotion, and culture to a brand opportunity. \"we're trying to look for something that's a little bit deeper in terms of how do they emotionally think about beauty or confidence and what role does that play\""
+    },
+    {
+     "sub": "competitive-analysis",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brand-positioning",
+     "k": 3,
+     "u": 2,
+     "d": 2,
+     "excerpt": "\"The GAP model is a model and framework for identifying what the brand stands for, how that intersects with what people may need and what's happening in culture.\" \"first I'm looking for a broad strategy approach for them presenting the GAP model based on the brand that they're using.\" \"How do all those things work together?\""
+    },
+    {
+     "sub": "campaign-measurement",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quantitative-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-channel-translation",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol high",
+   "pair": "GC 3700 × Brand Strategy",
+   "run": 4,
+   "ok": true,
+   "ms": 67401,
+   "costCents": 336,
+   "cells": [
+    {
+     "sub": "consumer-research",
+     "k": 0,
+     "u": 2,
+     "d": 2,
+     "excerpt": "\"we're trying to look for something that's a little bit deeper in terms of how do they emotionally think about beauty or confidence and what role does that play\"; \"the grading of this project is based on how they translate kind of the quality of their research and the consumer insight into a potential opportunity for this brand\""
+    },
+    {
+     "sub": "competitive-analysis",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brand-positioning",
+     "k": 2,
+     "u": 0,
+     "d": 2,
+     "excerpt": "\"The GAP model is a model and framework for identifying what the brand stands for, how that intersects with what people may need and what's happening in culture.\"; \"first I'm looking for a broad strategy approach for them presenting the GAP model based on the brand that they're using.\""
+    },
+    {
+     "sub": "campaign-measurement",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quantitative-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-channel-translation",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol low",
+   "pair": "GC 3730 × Account Management",
+   "run": 4,
+   "ok": true,
+   "ms": 19068,
+   "costCents": 135,
+   "cells": [
+    {
+     "sub": "client-needs-diagnosis",
+     "k": 1,
+     "u": 0,
+     "d": 0,
+     "excerpt": "Week 11 Homework: Business Challenge, Desired Response, Who/What/Where/When/Why (10 pts)"
+    },
+    {
+     "sub": "proposal-development",
+     "k": 3,
+     "u": 2,
+     "d": 3,
+     "excerpt": "The third section is Media strategy and budget allocation ... includes identifying the Campaign Objective, the Media strategy statement, the media channel details ... and the budget allocation. ... They get graded on both the ability to explain thier section and answer questions and the content of the presentation."
+    },
+    {
+     "sub": "project-oversight",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "results-interpretation",
+     "k": 2,
+     "u": 1,
+     "d": 0,
+     "excerpt": "The final section is the summary ... should include a re-stated campaign objective, the measurement plan, and a statement around why the recommendation should work."
+    },
+    {
+     "sub": "gc-production-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-5.5 (production)",
+   "pair": "GC 3730 × Account Management",
+   "run": 4,
+   "ok": true,
+   "ms": 20753,
+   "costCents": 675,
+   "cells": [
+    {
+     "sub": "client-needs-diagnosis",
+     "k": 2,
+     "u": 1,
+     "d": 0,
+     "excerpt": "\"Week 11 Homework: Business Challenge, Desired Response, Who/What/Where/When/Why (10 pts)\""
+    },
+    {
+     "sub": "proposal-development",
+     "k": 3,
+     "u": 2,
+     "d": 3,
+     "excerpt": "Instructor: \"the third section is Media strategy and budget allocation, worth up to 25 points and includes identifying the Campaign Objective, the Media strategy statement, the media channel details ... and the budget allocation\""
+    },
+    {
+     "sub": "project-oversight",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "results-interpretation",
+     "k": 2,
+     "u": 1,
+     "d": 0,
+     "excerpt": "Instructor: \"the final section is the summary, worth up to 5 more points and should include a re-stated campaign objective, the measurement plan, and a statement around why the recommendation should work\""
+    },
+    {
+     "sub": "gc-production-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol medium",
+   "pair": "GC 3730 × Account Management",
+   "run": 4,
+   "ok": true,
+   "ms": 24892,
+   "costCents": 147,
+   "cells": [
+    {
+     "sub": "client-needs-diagnosis",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "proposal-development",
+     "k": 3,
+     "u": 2,
+     "d": 3,
+     "excerpt": "“Students develop an integrated paid-media strategy with channel roles and budget allocation tied to a campaign objective.” Instructor: “I prompt the students to make sure they are providing a \"why\" behind each recommendation that is based on earlier lectures and what they've learned.”"
+    },
+    {
+     "sub": "project-oversight",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "results-interpretation",
+     "k": 2,
+     "u": 1,
+     "d": 0,
+     "excerpt": "“Students create a basic measurement plan that connects campaign objectives to how success will be assessed.”"
+    },
+    {
+     "sub": "gc-production-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol high",
+   "pair": "GC 3730 × Account Management",
+   "run": 4,
+   "ok": true,
+   "ms": 41941,
+   "costCents": 228,
+   "cells": [
+    {
+     "sub": "client-needs-diagnosis",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "proposal-development",
+     "k": 3,
+     "u": 2,
+     "d": 3,
+     "excerpt": "\"Students develop an integrated paid-media strategy with channel roles and budget allocation tied to a campaign objective.\" Instructor: \"I prompt the students to make sure they are providing a \\\"why\\\" behind each recommendation that is based on earlier lectures and what they've learned.\""
+    },
+    {
+     "sub": "project-oversight",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "results-interpretation",
+     "k": 2,
+     "u": 1,
+     "d": 0,
+     "excerpt": "\"Students perform core media-planning calculations such as CPM, CPP, CPx, ratings, reach/frequency, and GRPs.\" \"Students create a basic measurement plan that connects campaign objectives to how success will be assessed.\""
+    },
+    {
+     "sub": "gc-production-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-5.5 (production)",
+   "pair": "GC 1050 × Creative Generalist / AI-Native",
+   "run": 4,
+   "ok": true,
+   "ms": 23031,
+   "costCents": 796,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 2,
+     "u": 2,
+     "d": 2,
+     "excerpt": "\"They have creative freedom in terms of topic on most projects. I do provide them with parameters to stay within or specific requirements such as size, resolution, etc.\""
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 3,
+     "u": 2,
+     "d": 2,
+     "excerpt": "\"Discuss what elements and principles are used and why they work in that specific design.\""
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 2,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"Project 2: DTG T-Shirt (75 pts)\"; \"Project 3: Mug Design Dye Sublimation (75 pts)\"; \"Project 8: Brochure (75 pts)\"; \"Project 9: Magazine Cover/Article (100 pts)\""
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 2,
+     "u": 1,
+     "d": 1,
+     "excerpt": "\"brand ... logo ... corporate identity ... thumbnail sketches ... color version ... black and white version ... tagline ... label ... bleed ... step and repeat\""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 1,
+     "u": 0,
+     "d": 1,
+     "excerpt": "\"create a fictional food company logo and label using Adobe Illustrator\""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol low",
+   "pair": "GC 1050 × Creative Generalist / AI-Native",
+   "run": 4,
+   "ok": true,
+   "ms": 25637,
+   "costCents": 166,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 2,
+     "u": 0,
+     "d": 2,
+     "excerpt": "“create a fictional food company logo and label using Adobe Illustrator”; “They have creative freedom in terms of topic on most projects. I do provide them with parameters to stay within or specific requirements such as size, resolution, etc.”"
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 3,
+     "u": 1,
+     "d": 2,
+     "excerpt": "“find 3 graphic design examples representing an effective use of the elements and principles of design”; “Discuss what elements and principles are used and why they work in that specific design.”"
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 2,
+     "u": 0,
+     "d": 2,
+     "excerpt": "“Students produce finished artifacts through introductory digital print, dye sublimation, and direct-to-garment workflows.”; “Photo of your printed shirt and upload to Canvas.”"
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 1,
+     "u": 0,
+     "d": 2,
+     "excerpt": "“create a fictional food company logo and label using Adobe Illustrator”; “They do all three, describe what they made, justify design decisions, and print choices.”"
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol medium",
+   "pair": "GC 1050 × Creative Generalist / AI-Native",
+   "run": 4,
+   "ok": true,
+   "ms": 25978,
+   "costCents": 176,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 2,
+     "u": 2,
+     "d": 2,
+     "excerpt": "“thumbnail sketches ... color version ... black and white version ... tagline ... label”; “They have creative freedom in terms of topic on most projects. I do provide them with parameters to stay within or specific requirements such as size, resolution, etc.”; “They do all three, describe what they made, justify design decisions, and print choices.”"
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 3,
+     "u": 2,
+     "d": 2,
+     "excerpt": "“find 3 graphic design examples representing an effective use of the elements and principles of design”; “Discuss what elements and principles are used and why they work in that specific design.”"
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 2,
+     "u": 0,
+     "d": 2,
+     "excerpt": "“Students repeatedly produce artifacts and physical outputs across DTG, mug sublimation, coaster sublimation, poster printing, and related print tasks independently in familiar conditions.”; “DTG Introduction”"
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 1,
+     "u": 0,
+     "d": 2,
+     "excerpt": "“Your students independently create logo concepts and finished label applications in a familiar assignment frame, making their own branding and layout choices within set production requirements.”"
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol high",
+   "pair": "GC 1050 × Creative Generalist / AI-Native",
+   "run": 4,
+   "ok": true,
+   "ms": 79113,
+   "costCents": 372,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 2,
+     "u": 2,
+     "d": 2,
+     "excerpt": "\"thumbnail sketches ... color version ... black and white version\"; \"create a fictional food company logo and label using Adobe Illustrator\"; \"They do all three, describe what they made, justify design decisions, and print choices.\""
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 3,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"find 3 graphic design examples representing an effective use of the elements and principles of design\"; \"Discuss what elements and principles are used and why they work in that specific design.\""
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 2,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"Your students can recognize the basic workflow and process names for DTG, dye sublimation, and digital printing\"; \"The importance of designing properly for print\"; \"Photo of your printed shirt and upload to Canvas.\""
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 1,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"Your students can explain in their own words why their logo and print choices fit the brand brief\"; \"create a fictional food company logo and label using Adobe Illustrator\"; \"They have creative freedom in terms of topic on most projects.\""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol low",
+   "pair": "GC 3400 × Creative Generalist / AI-Native",
+   "run": 4,
+   "ok": true,
+   "ms": 24242,
+   "costCents": 158,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 1,
+     "u": 0,
+     "d": 2,
+     "excerpt": "“Create a minimum of 6-8 questions for an interview.” Instructor: “sometimes they have to go all the way back to the beginning and restructure their story because either their interviewee changed or they didn't have a solid story to start with.”"
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 1,
+     "u": 0,
+     "d": 1,
+     "excerpt": "“Revisit the location and reshoot your top 4 photographs based on the Critique.”"
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 1,
+     "u": 1,
+     "d": 2,
+     "excerpt": "“They do submit their full chat with the GPT”; “they go out and reshoot the top images that were decided between them and the AI tool.”"
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 1,
+     "u": 0,
+     "d": 2,
+     "excerpt": "“Pick 2 (one product and one portrait) to edit in Photoshop. Submit the unedited and edited side by side”; “Students must locate and use at least one Creative Commons clip and at least one self-shot clip ... create a storyboard ... export the video to YouTube.”"
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol medium",
+   "pair": "GC 3400 × Creative Generalist / AI-Native",
+   "run": 4,
+   "ok": true,
+   "ms": 27839,
+   "costCents": 179,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 1,
+     "u": 0,
+     "d": 1,
+     "excerpt": "Students plan interview-based stories through question design, story structure, and production planning documents."
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 1,
+     "u": 0,
+     "d": 1,
+     "excerpt": "Revisit the location and reshoot your top 4 photographs based on the Critique."
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 1,
+     "u": 1,
+     "d": 2,
+     "excerpt": "They do submit their full chat with the GPT; they go out and reshoot the top images that were decided between them and the AI tool."
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 1,
+     "u": 0,
+     "d": 2,
+     "excerpt": "Students edit photographic images in Photoshop and Lightroom to improve and present final photographic work. Students plan and edit short-form video stories in Premiere by combining found footage, self-shot footage, and purposeful pre-production."
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-5.5 (production)",
+   "pair": "GC 3400 × Creative Generalist / AI-Native",
+   "run": 4,
+   "ok": true,
+   "ms": 31588,
+   "costCents": 1014,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 2,
+     "u": 2,
+     "d": 2,
+     "excerpt": "\"Students produce a bulleted list of take-aways and explain how they will translate those insights into visual elements for the final shoot.\""
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 2,
+     "u": 2,
+     "d": 2,
+     "excerpt": "\"Revisit the location and reshoot your top 4 photographs based on the Critique.\""
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 2,
+     "u": 2,
+     "d": 3,
+     "excerpt": "\"They do submit their full chat with the GPT\" and \"they go out and reshoot the top images that were decided between them and the AI tool.\""
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 2,
+     "u": 0,
+     "d": 2,
+     "excerpt": "\"Split between photography and video rather than treating imaging as photo-only\" and \"Adobe Lightroom, Photoshop, Premiere, and Audition are all taught from the ground up.\""
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol high",
+   "pair": "GC 3400 × Creative Generalist / AI-Native",
+   "run": 4,
+   "ok": true,
+   "ms": 72537,
+   "costCents": 362,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 1,
+     "u": 0,
+     "d": 2,
+     "excerpt": "Create a minimum of 6-8 questions for an interview. ... sometimes they have to go all the way back to the beginning and restructure their story because either their interviewee changed or they didn't have a solid story to start with."
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 1,
+     "u": 1,
+     "d": 2,
+     "excerpt": "Your students can explain in their own words how critique feedback should shape a stronger reshoot ... Revisit the location and reshoot your top 4 photographs based on the Critique."
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 1,
+     "u": 1,
+     "d": 2,
+     "excerpt": "The use and misuse of generative AI for photos and imagery ... Your students can explain in their own words how critique feedback should shape a stronger reshoot ... Revisit the location and reshoot your top 4 photographs based on the Critique."
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 2,
+     "u": 0,
+     "d": 2,
+     "excerpt": "Your students can recall the basic Premiere workflow and editing vocabulary taught through tutorials and project instructions. ... Students must locate and use at least one Creative Commons clip and at least one self-shot clip ... create a storyboard ... export the video to YouTube (Unlisted) and provide a link."
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-5.5 (production)",
+   "pair": "GC 3460 × Production & Operations",
+   "run": 5,
+   "ok": true,
+   "ms": 24338,
+   "costCents": 812,
+   "cells": [
+    {
+     "sub": "workflow-design",
+     "k": 2,
+     "u": 1,
+     "d": 1,
+     "excerpt": "\"Students must generate four profiles from the same measurement file by changing profile settings and saving each profile separately.\""
+    },
+    {
+     "sub": "quality-control",
+     "k": 4,
+     "u": 2,
+     "d": 3,
+     "excerpt": "\"Measure a control wedge on a print sample ... Measure a control wedge on an ICC profiled proof ... Compare the two measurements with Delta E 2000.\""
+    },
+    {
+     "sub": "vendor-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "timeline-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cost-management",
+     "k": 2,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"They also utilize a component cost sheet to calculate the cost to make a 9 lb. batch of this ink.\""
+    },
+    {
+     "sub": "team-coordination",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "domain-knowledge",
+     "k": 4,
+     "u": 3,
+     "d": 3,
+     "excerpt": "\"The purpose of this project will be to thoroughly examine a color, establishing a color standard and exploring the reproduction of those colors across various outputs.\""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol low",
+   "pair": "GC 3460 × Production & Operations",
+   "run": 5,
+   "ok": true,
+   "ms": 25889,
+   "costCents": 165,
+   "cells": [
+    {
+     "sub": "workflow-design",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quality-control",
+     "k": 3,
+     "u": 2,
+     "d": 2,
+     "excerpt": "“Use Delta E 2000 as the comparison metric”; “Measure a control wedge on a print sample ... Measure a control wedge on an ICC profiled proof ... Compare the two measurements with Delta E 2000.” The final step asks students to “judge the degree of improvement gained by loading CxF data into Serendipity.”"
+    },
+    {
+     "sub": "vendor-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "timeline-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cost-management",
+     "k": 2,
+     "u": 0,
+     "d": 2,
+     "excerpt": "“They also utilize a component cost sheet to calculate the cost to make a 9 lb. batch of this ink.”"
+    },
+    {
+     "sub": "team-coordination",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "domain-knowledge",
+     "k": 4,
+     "u": 3,
+     "d": 2,
+     "excerpt": "“The purpose of this project will be to thoroughly examine a color, establishing a color standard and exploring the reproduction of those colors across various outputs.” Students have “graded analysis of how paper properties affect print behavior.”"
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol medium",
+   "pair": "GC 3460 × Production & Operations",
+   "run": 5,
+   "ok": true,
+   "ms": 30038,
+   "costCents": 182,
+   "cells": [
+    {
+     "sub": "workflow-design",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quality-control",
+     "k": 3,
+     "u": 1,
+     "d": 2,
+     "excerpt": "Measure a control wedge on a print sample ... Measure a control wedge on an ICC profiled proof ... Compare the two measurements with Delta E 2000."
+    },
+    {
+     "sub": "vendor-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "timeline-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cost-management",
+     "k": 2,
+     "u": 1,
+     "d": 2,
+     "excerpt": "They also utilize a component cost sheet to calculate the cost to make a 9 lb. batch of this ink."
+    },
+    {
+     "sub": "team-coordination",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "domain-knowledge",
+     "k": 3,
+     "u": 3,
+     "d": 3,
+     "excerpt": "Students thoroughly examine a color by establishing a standard, formulating spot ink, testing substrates, evaluating CMYK and RGB reproduction, and compiling the results into a final technical report built incrementally through the semester."
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol high",
+   "pair": "GC 3460 × Production & Operations",
+   "run": 5,
+   "ok": true,
+   "ms": 70446,
+   "costCents": 353,
+   "cells": [
+    {
+     "sub": "workflow-design",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quality-control",
+     "k": 3,
+     "u": 2,
+     "d": 2,
+     "excerpt": "“Measure a control wedge on a print sample ... Measure a control wedge on an ICC profiled proof ... Compare the two measurements with Delta E 2000.” Students also “judge the degree of improvement gained by loading CxF data into Serendipity.”"
+    },
+    {
+     "sub": "vendor-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "timeline-management",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cost-management",
+     "k": 2,
+     "u": 0,
+     "d": 2,
+     "excerpt": "“They also utilize a component cost sheet to calculate the cost to make a 9 lb. batch of this ink.”"
+    },
+    {
+     "sub": "team-coordination",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "domain-knowledge",
+     "k": 3,
+     "u": 3,
+     "d": 2,
+     "excerpt": "“Students thoroughly examine a color by establishing a standard, formulating spot ink, testing substrates, evaluating CMYK and RGB reproduction.” The instructor confirms “graded work that requires them to draw conclusions about how the properties of the paper affect print behavior.”"
+    }
+   ]
+  },
+  {
+   "setup": "gpt-5.5 (production)",
+   "pair": "GC 3700 × Brand Strategy",
+   "run": 5,
+   "ok": true,
+   "ms": 18818,
+   "costCents": 702,
+   "cells": [
+    {
+     "sub": "consumer-research",
+     "k": 2,
+     "u": 3,
+     "d": 2,
+     "excerpt": "\"the grading of this project is based on how they translate kind of the quality of their research and the consumer insight into a potential opportunity for this brand\""
+    },
+    {
+     "sub": "competitive-analysis",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brand-positioning",
+     "k": 3,
+     "u": 2,
+     "d": 3,
+     "excerpt": "\"the students do have to defend their strategy and creative choices rather than just show them\""
+    },
+    {
+     "sub": "campaign-measurement",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quantitative-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-channel-translation",
+     "k": 2,
+     "u": 2,
+     "d": 2,
+     "excerpt": "\"They then have to do a consumer journey... They do a loose media plan based on these channels connected to the consumer.\""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol low",
+   "pair": "GC 3700 × Brand Strategy",
+   "run": 5,
+   "ok": true,
+   "ms": 20541,
+   "costCents": 155,
+   "cells": [
+    {
+     "sub": "consumer-research",
+     "k": 1,
+     "u": 2,
+     "d": 2,
+     "excerpt": "\"we're trying to look for something that's a little bit deeper in terms of how do they emotionally think about beauty or confidence and what role does that play\"; \"the grading of this project is based on how they translate kind of the quality of their research and the consumer insight into a potential opportunity for this brand\""
+    },
+    {
+     "sub": "competitive-analysis",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brand-positioning",
+     "k": 3,
+     "u": 2,
+     "d": 3,
+     "excerpt": "\"The GAP model is a model and framework for identifying what the brand stands for, how that intersects with what people may need and what's happening in culture.\"; \"How do all those things work together?\"; \"first I'm looking for a broad strategy approach for them presenting the GAP model based on the brand that they're using.\""
+    },
+    {
+     "sub": "campaign-measurement",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quantitative-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-channel-translation",
+     "k": 1,
+     "u": 1,
+     "d": 1,
+     "excerpt": "\"They have to work through brand assets... They do have to outline the brand's tone and voice and the clear emotion in that tone and voice.\"; \"they have to showcase how those copy elements connect back.\""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol medium",
+   "pair": "GC 3700 × Brand Strategy",
+   "run": 5,
+   "ok": true,
+   "ms": 29873,
+   "costCents": 185,
+   "cells": [
+    {
+     "sub": "consumer-research",
+     "k": 0,
+     "u": 2,
+     "d": 2,
+     "excerpt": "“the grading of this project is based on how they translate kind of the quality of their research and the consumer insight into a potential opportunity for this brand”; “we're trying to look for something that's a little bit deeper in terms of how do they emotionally think about beauty or confidence”"
+    },
+    {
+     "sub": "competitive-analysis",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brand-positioning",
+     "k": 3,
+     "u": 0,
+     "d": 2,
+     "excerpt": "“The GAP model is a model and framework for identifying what the brand stands for, how that intersects with what people may need and what's happening in culture”; “first I'm looking for a broad strategy approach for them presenting the GAP model based on the brand that they're using.”"
+    },
+    {
+     "sub": "campaign-measurement",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quantitative-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-channel-translation",
+     "k": 1,
+     "u": 0,
+     "d": 1,
+     "excerpt": "“They have to work through brand assets... They do have to outline the brand's tone and voice and the clear emotion in that tone and voice”; “They do a loose media plan based on these channels connected to the consumer.”"
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol high",
+   "pair": "GC 3700 × Brand Strategy",
+   "run": 5,
+   "ok": true,
+   "ms": 59321,
+   "costCents": 287,
+   "cells": [
+    {
+     "sub": "consumer-research",
+     "k": 0,
+     "u": 2,
+     "d": 2,
+     "excerpt": "“we're trying to look for something that's a little bit deeper in terms of how do they emotionally think about beauty or confidence”; “they translate kind of the quality of their research and the consumer insight into a potential opportunity for this brand”"
+    },
+    {
+     "sub": "competitive-analysis",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brand-positioning",
+     "k": 3,
+     "u": 1,
+     "d": 2,
+     "excerpt": "“The GAP model is a model and framework for identifying what the brand stands for, how that intersects with what people may need and what's happening in culture.”; “first I'm looking for a broad strategy approach for them presenting the GAP model based on the brand that they're using.”"
+    },
+    {
+     "sub": "campaign-measurement",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "quantitative-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-channel-translation",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-5.5 (production)",
+   "pair": "GC 3730 × Account Management",
+   "run": 5,
+   "ok": true,
+   "ms": 19279,
+   "costCents": 666,
+   "cells": [
+    {
+     "sub": "client-needs-diagnosis",
+     "k": 2,
+     "u": 1,
+     "d": 0,
+     "excerpt": "\"Week 11 Homework: Business Challenge, Desired Response, Who/What/Where/When/Why (10 pts)\""
+    },
+    {
+     "sub": "proposal-development",
+     "k": 2,
+     "u": 2,
+     "d": 2,
+     "excerpt": "Instructor: \"the third section is Media strategy and budget allocation, worth up to 25 points and includes identifying the Campaign Objective, the Media strategy statement... and the budget allocation\""
+    },
+    {
+     "sub": "project-oversight",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "results-interpretation",
+     "k": 2,
+     "u": 2,
+     "d": 0,
+     "excerpt": "Instructor: \"the final section is the summary, worth up to 5 more points and should include a re-stated campaign objective, the measurement plan, and a statement around why the recommendation should work\""
+    },
+    {
+     "sub": "gc-production-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol low",
+   "pair": "GC 3730 × Account Management",
+   "run": 5,
+   "ok": true,
+   "ms": 20309,
+   "costCents": 135,
+   "cells": [
+    {
+     "sub": "client-needs-diagnosis",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "proposal-development",
+     "k": 3,
+     "u": 2,
+     "d": 3,
+     "excerpt": "Students develop an integrated paid-media strategy with channel roles and budget allocation tied to a campaign objective. Instructor: \"I prompt the students to make sure they are providing a \\\"why\\\" behind each recommendation that is based on earlier lectures and what they've learned.\""
+    },
+    {
+     "sub": "project-oversight",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "results-interpretation",
+     "k": 2,
+     "u": 1,
+     "d": 0,
+     "excerpt": "Students create a basic measurement plan that connects campaign objectives to how success will be assessed. Instructor: \"the final section is the summary, worth up to 5 more points and should include a re-stated campaign objective, the measurement plan, and a statement around why the recommendation should work\""
+    },
+    {
+     "sub": "gc-production-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol medium",
+   "pair": "GC 3730 × Account Management",
+   "run": 5,
+   "ok": true,
+   "ms": 23144,
+   "costCents": 148,
+   "cells": [
+    {
+     "sub": "client-needs-diagnosis",
+     "k": 1,
+     "u": 0,
+     "d": 0,
+     "excerpt": "Week 11 Homework: Business Challenge, Desired Response, Who/What/Where/When/Why (10 pts)"
+    },
+    {
+     "sub": "proposal-development",
+     "k": 3,
+     "u": 2,
+     "d": 3,
+     "excerpt": "the third section is Media strategy and budget allocation, worth up to 25 points and includes identifying the Campaign Objective, the Media strategy statement, the media channel details (at least one slide per media channel), and the budget allocation"
+    },
+    {
+     "sub": "project-oversight",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "results-interpretation",
+     "k": 2,
+     "u": 1,
+     "d": 0,
+     "excerpt": "Students create a basic measurement plan that connects campaign objectives to how success will be assessed."
+    },
+    {
+     "sub": "gc-production-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol high",
+   "pair": "GC 3730 × Account Management",
+   "run": 5,
+   "ok": true,
+   "ms": 52131,
+   "costCents": 261,
+   "cells": [
+    {
+     "sub": "client-needs-diagnosis",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "proposal-development",
+     "k": 2,
+     "u": 2,
+     "d": 3,
+     "excerpt": "“the third section is Media strategy and budget allocation ... includes identifying the Campaign Objective, the Media strategy statement, the media channel details (at least one slide per media channel), and the budget allocation”; “I prompt the students to make sure they are providing a \"why\" behind each recommendation”"
+    },
+    {
+     "sub": "project-oversight",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "results-interpretation",
+     "k": 2,
+     "u": 0,
+     "d": 0,
+     "excerpt": "“Students perform core media-planning calculations such as CPM, CPP, CPx, ratings, reach/frequency, and GRPs.”"
+    },
+    {
+     "sub": "gc-production-literacy",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol low",
+   "pair": "GC 1050 × Creative Generalist / AI-Native",
+   "run": 5,
+   "ok": true,
+   "ms": 23080,
+   "costCents": 164,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 2,
+     "u": 1,
+     "d": 2,
+     "excerpt": "“create a fictional food company logo and label using Adobe Illustrator”; “students generate sketches, build Illustrator logo files, and apply them to printed labels independently in familiar course conditions.”"
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 3,
+     "u": 1,
+     "d": 2,
+     "excerpt": "“find 3 graphic design examples representing an effective use of the elements and principles of design”; “Discuss what elements and principles are used and why they work in that specific design.”"
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 1,
+     "u": 0,
+     "d": 1,
+     "excerpt": "“Students produce finished artifacts through introductory digital print, dye sublimation, and direct-to-garment workflows.”; “Photo of your printed shirt and upload to Canvas.”"
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 1,
+     "u": 0,
+     "d": 2,
+     "excerpt": "“create a fictional food company logo and label using Adobe Illustrator”; “They have creative freedom in terms of topic on most projects. I do provide them with parameters to stay within or specific requirements such as size, resolution, etc.”"
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol medium",
+   "pair": "GC 1050 × Creative Generalist / AI-Native",
+   "run": 5,
+   "ok": true,
+   "ms": 27079,
+   "costCents": 175,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 3,
+     "u": 2,
+     "d": 2,
+     "excerpt": "“Students generate sketches, build Illustrator logo files, and apply them to printed labels independently in familiar course conditions.” Instructor: “They do all three, describe what they made, justify design decisions, and print choices.”"
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 3,
+     "u": 2,
+     "d": 2,
+     "excerpt": "“find 3 graphic design examples representing an effective use of the elements and principles of design”; “Discuss what elements and principles are used and why they work in that specific design.”"
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 2,
+     "u": 0,
+     "d": 2,
+     "excerpt": "“Students repeatedly produce artifacts and physical outputs across DTG, mug sublimation, coaster sublimation, poster printing, and related print tasks independently in familiar conditions.”"
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 1,
+     "u": 1,
+     "d": 2,
+     "excerpt": "“create a fictional food company logo and label using Adobe Illustrator”; “Your students can explain in their own words why their logo and print choices fit the brand brief”."
+    }
+   ]
+  },
+  {
+   "setup": "gpt-5.5 (production)",
+   "pair": "GC 1050 × Creative Generalist / AI-Native",
+   "run": 5,
+   "ok": true,
+   "ms": 28520,
+   "costCents": 950,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 2,
+     "u": 2,
+     "d": 2,
+     "excerpt": "\"create a fictional food company logo and label using Adobe Illustrator\""
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 3,
+     "u": 2,
+     "d": 2,
+     "excerpt": "\"Discuss what elements and principles are used and why they work in that specific design.\""
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 2,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"Project 2: DTG T-Shirt (75 pts)\"; \"Project 3: Mug Design Dye Sublimation (75 pts)\"; \"Project 8: Brochure (75 pts)\""
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 1,
+     "u": 0,
+     "d": 1,
+     "excerpt": "\"They have creative freedom in terms of topic on most projects. I do provide them with parameters to stay within\""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol high",
+   "pair": "GC 1050 × Creative Generalist / AI-Native",
+   "run": 5,
+   "ok": true,
+   "ms": 54265,
+   "costCents": 285,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 2,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"thumbnail sketches\"; \"create a fictional food company logo and label using Adobe Illustrator\"; \"explain in their own words why their logo and print choices fit the brand brief\""
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 3,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"find 3 graphic design examples representing an effective use of the elements and principles of design\"; \"Discuss what elements and principles are used and why they work in that specific design.\""
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 1,
+     "u": 0,
+     "d": 2,
+     "excerpt": "\"DTG Introduction\"; \"Photo of your printed shirt and upload to Canvas.\"; \"Students produce finished artifacts through introductory digital print, dye sublimation, and direct-to-garment workflows.\""
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 1,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"making their own branding and layout choices within set production requirements\"; \"explain in their own words why their logo and print choices fit the brand brief\""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol low",
+   "pair": "GC 3400 × Creative Generalist / AI-Native",
+   "run": 5,
+   "ok": true,
+   "ms": 21829,
+   "costCents": 150,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 1,
+     "u": 2,
+     "d": 2,
+     "excerpt": "Students produce a bulleted list of take-aways and explain how they will translate those insights into visual elements for the final shoot."
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 1,
+     "u": 0,
+     "d": 1,
+     "excerpt": "Revisit the location and reshoot your top 4 photographs based on the Critique."
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 1,
+     "u": 2,
+     "d": 2,
+     "excerpt": "They do submit their full chat with the GPT, so I do analyze it; they go out and reshoot the top images that were decided between them and the AI tool."
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 2,
+     "u": 0,
+     "d": 2,
+     "excerpt": "Students edit photographic images in Photoshop and Lightroom to improve and present final photographic work. Students plan and edit short-form video stories in Premiere by combining found footage, self-shot footage, and purposeful pre-production."
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-5.5 (production)",
+   "pair": "GC 3400 × Creative Generalist / AI-Native",
+   "run": 5,
+   "ok": true,
+   "ms": 29128,
+   "costCents": 1022,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 2,
+     "u": 2,
+     "d": 2,
+     "excerpt": "\"Students produce a bulleted list of take-aways and explain how they will translate those insights into visual elements for the final shoot.\""
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 2,
+     "u": 2,
+     "d": 2,
+     "excerpt": "\"Revisit the location and reshoot your top 4 photographs based on the Critique.\""
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 2,
+     "u": 2,
+     "d": 3,
+     "excerpt": "\"They do submit their full chat with the GPT\" and \"they go out and reshoot the top images that were decided between them and the AI tool.\""
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 2,
+     "u": 1,
+     "d": 2,
+     "excerpt": "\"Split between photography and video\" and \"Adobe Lightroom, Photoshop, Premiere, and Audition are all taught from the ground up.\""
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol medium",
+   "pair": "GC 3400 × Creative Generalist / AI-Native",
+   "run": 5,
+   "ok": true,
+   "ms": 31082,
+   "costCents": 181,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 1,
+     "u": 0,
+     "d": 1,
+     "excerpt": "Students must locate and use at least one Creative Commons clip and at least one self-shot clip ... create a storyboard"
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 1,
+     "u": 0,
+     "d": 2,
+     "excerpt": "Students critique, cull, and revise photographic work using structured feedback processes, including AI-assisted Socratic critique."
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 1,
+     "u": 1,
+     "d": 2,
+     "excerpt": "They do submit their full chat with the GPT, so I do analyze it and make sure that they, in good faith, interacted with it"
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 1,
+     "u": 0,
+     "d": 2,
+     "excerpt": "Students independently produce layered photo edits and documented before/after results in familiar assignment conditions. ... Students independently storyboard, assemble, and export short-form edits in Premiere within the course’s established project frame."
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  },
+  {
+   "setup": "gpt-6.1-sol high",
+   "pair": "GC 3400 × Creative Generalist / AI-Native",
+   "run": 5,
+   "ok": true,
+   "ms": 74738,
+   "costCents": 366,
+   "cells": [
+    {
+     "sub": "conceptual-development",
+     "k": 2,
+     "u": 0,
+     "d": 2,
+     "excerpt": "“Students must locate and use at least one Creative Commons clip and at least one self-shot clip ... create a storyboard”; “Video is... creative, unique, well thought-out, appropriate story, technically sound”"
+    },
+    {
+     "sub": "aesthetic-judgment",
+     "k": 1,
+     "u": 0,
+     "d": 2,
+     "excerpt": "“Students critique, cull, and revise photographic work using structured feedback processes, including AI-assisted Socratic critique.” Instructor: “they go out and reshoot the top images that were decided between them and the AI tool”"
+    },
+    {
+     "sub": "ai-tool-direction",
+     "k": 1,
+     "u": 2,
+     "d": 2,
+     "excerpt": "“Your students can explain in their own words how critique feedback should shape a stronger reshoot”; “They do submit their full chat with the GPT”; “Revisit the location and reshoot your top 4 photographs based on the Critique.”"
+    },
+    {
+     "sub": "cross-medium-production",
+     "k": 2,
+     "u": 0,
+     "d": 2,
+     "excerpt": "“Pick 2 (one product and one portrait) to edit in Photoshop. Submit the unedited and edited side by side”; “Students must locate and use at least one Creative Commons clip and at least one self-shot clip ... create a storyboard ... export the video to YouTube (Unlisted)”"
+    },
+    {
+     "sub": "brand-standards-application",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    },
+    {
+     "sub": "brief-translation",
+     "k": 0,
+     "u": 0,
+     "d": 0,
+     "excerpt": ""
+    }
+   ]
+  }
+ ]
+}
