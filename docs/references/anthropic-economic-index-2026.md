@@ -2,6 +2,8 @@
 
 **Full citation:** Massenkoff, M., Lyubich, E., McCrory, P., Appel, R., & Heller, R. (2026). *The Anthropic Economic Index report: Learning curves*. Anthropic. Published 24 March 2026. (Massenkoff, Lyubich, and McCrory are the report's lead authors.)
 
+**Also carded in:** `ai_career_impact/library/cards/anthropic-economic-index-2026.md` (private) — read through the career-impact lens; this card reads it for KUD+ / §16. Interpretations may differ; **factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-anthropic-economic-index-2026`; cited in §16 (AI-era implications).
 
 **Where it lives:**

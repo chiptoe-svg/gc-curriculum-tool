@@ -2,6 +2,8 @@
 
 **Full citation:** Brynjolfsson, E., Chandar, B., & Chen, R. (2026). *Canaries in the Coal Mine? Six Facts about the Recent Employment Effects of Artificial Intelligence*. Stanford Digital Economy Lab Working Paper (first version August 2025; this archived copy is the **August 2026 revision**, using ADP payroll data through June 2026). The remote-work reconciliation discussed below is §4.3 ("Remote Work") and Appendix I ("Replicating the Work-from-Home Specification") of that paper — not a separate note.
 
+**Also carded in:** `ai_career_impact/library/cards/brynjolfsson-2026-response.md` (private) — read through the career-impact lens; this card reads it for KUD+ / §16. Interpretations may differ; **factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-brynjolfsson-2026-response` — proposed for §16, not yet cited.
 
 **Where it lives — correction to the brief's premise:** The task brief framed source B as a short "Stanford Digital Economy Lab research note" or Bharat Chandar substack post responding to Lambert & Schindler. I checked both candidates directly:

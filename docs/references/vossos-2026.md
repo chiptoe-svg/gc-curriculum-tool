@@ -2,6 +2,8 @@
 
 **Full citation:** Vossos, A., Andronic, A., Klein Teeselink, B., & Akileswaran, K. (2026). *Artificial Intelligence and the Future Supply of Skills: Evidence from UK University Applications*. Working paper, August 26, 2026. Author affiliations: Supervised Program for Alignment Research (SPAR); King's College London; AI Objectives Institute; King's Institute for Artificial Intelligence.
 
+**Also carded in:** `ai_career_impact/library/cards/vossos-2026.md` (private) — read through the career-impact lens; this card reads it for KUD+ / §16. Interpretations may differ; **factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID:** `ref-vossos-2026`; **proposed, not yet cited** in background.html.
 
 **Where it lives:**

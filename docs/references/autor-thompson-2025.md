@@ -2,6 +2,8 @@
 
 **Full citation:** Autor, D. H., & Thompson, N. (2025). *Expertise*. NBER Working Paper No. 33941 (version read: 18 June 2025). Originally the Joseph A. Schumpeter Lecture to the European Economic Association, 29 August 2024, under the title "Does Automation Replace Experts or Complement Expertise? The Answer is Yes."
 
+**Also carded in:** `ai_career_impact/library/cards/autor-thompson-2025.md` (private) — read through the career-impact lens; this card reads it for KUD+ / §16. Interpretations may differ; **factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-autor-thompson-2025`; cited in §16 (AI-era implications).
 
 **Where it lives:**

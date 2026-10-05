@@ -2,6 +2,8 @@
 
 **Full citation:** Chin, C., & Martin Richmond, A. (2026). *Work at the Frontier: How AI is Expanding What People Do at Work*. OpenAI Economic Research, July 2026.
 
+**Also carded in:** `ai_career_impact/library/cards/chin-richmond-2026.md` (private) — read through the career-impact lens; this card reads it for KUD+ / §16. Interpretations may differ; **factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-chin-richmond-2026`; cited in §16 (AI-era implications), and load-bearing for the §11 argument that a SOC-anchored destination taxonomy under-counts what graduates actually enter.
 
 **Where it lives:**

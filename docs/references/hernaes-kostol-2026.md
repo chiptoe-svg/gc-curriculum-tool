@@ -2,6 +2,8 @@
 
 **Full citation:** Hernæs, Ø., & Kostøl, A. R. (2026). *Has AI Widened Employment Gaps? Tracking Early-Career Employment by Occupational Exposure in Norway.* RFBerlin (ROCKWOOL Foundation Berlin, Institute for the Economy and the Future of Work) Discussion Paper No. 179/26. Paper dated June 2026; discussion-paper series publication dated July 2026. Authors: Øystein Hernæs (Frisch Centre, Oslo) and Andreas R. Kostøl (BI Norwegian Business School, Oslo).
 
+**Also carded in:** `ai_career_impact/library/cards/hernaes-kostol-2026.md` (private) — read through the career-impact lens; this card reads it for KUD+ / §16. Interpretations may differ; **factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID:** `ref-hernaes-kostol-2026`; **proposed for §16, not yet cited.**
 
 **Where it lives:**

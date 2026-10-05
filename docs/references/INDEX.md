@@ -244,3 +244,5 @@ Two sources added to `background.html` §16, each with a card here. Both were **
 3. **Orr, Tucker & Warren** — Commercial Art & Graphic Design is in exposure **decile 6 of 10 — above the median**, inside the paper's less-exposed comparison group (deciles 1–6). "Below the median" corrected in §16 and the card.
 
 **Lesson recorded:** the Dell'Acqua and Lee claims predate the PDF-only card rule — neither source ever had an audit card. Backfilling cards for every §16 source without one (Dell'Acqua, Lee, Eloundou) is the fix.
+
+**Shared-source rule (owner decision, 2026-10-05).** Sources relevant to both this repo and `ai_career_impact` keep a PDF and a card in each; the cards may read the source differently. Factual corrections are mirrored to the other card and announced. The planned pointer swap of the ten AI-era cards (rows 53–62) is cancelled — they stay here as this repo's cards.

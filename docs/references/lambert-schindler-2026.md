@@ -2,6 +2,8 @@
 
 **Full citation:** Lambert, P. J., & Schindler, Y. (2026). *The Broken Ladder: AI, Remote Work, and Early-Career Hiring*. CAGE (University of Warwick) / Centre for Economic Performance (LSE) Online Working Paper 808/2026, May 2026. Also circulated as SSRN Working Paper 6787638 (`papers.ssrn.com/sol3/papers.cfm?abstract_id=6787638`).
 
+**Also carded in:** `ai_career_impact/library/cards/lambert-schindler-2026.md` (private) — read through the career-impact lens; this card reads it for KUD+ / §16. Interpretations may differ; **factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-lambert-schindler-2026` — proposed for §16, not yet cited.
 
 **Where it lives:**

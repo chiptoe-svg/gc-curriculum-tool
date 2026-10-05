@@ -2,6 +2,8 @@
 
 **Full citation:** Frank, M. R., Javadian Sabet, A., Simon, L., Bana, S. H., & Yu, R. (2026). *AI-exposed jobs deteriorated before ChatGPT*. arXiv:2601.02554v1 [econ.GN]. Submitted 5 January 2026. University of Pittsburgh (Informatics and Networked Systems; Frank is corresponding author, mrfrank@pitt.edu), Stanford Digital Economy Lab, Microsoft AI Economy Institute, Revelio Labs, Chapman University (Argyros College of Business and Economics), and Columbia University Teachers College / Data Science Institute.
 
+**Also carded in:** `ai_career_impact/library/cards/frank-2026.md` (private) — read through the career-impact lens; this card reads it for KUD+ / §16. Interpretations may differ; **factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID:** `ref-frank-2026`; status: **proposed for §16, not yet cited**.
 
 **Where it lives:**

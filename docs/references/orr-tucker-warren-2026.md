@@ -2,6 +2,8 @@
 
 **Full citation:** Orr, C., Tucker, L. C., & Warren, L. (2026). *Graduating into Disruption: Labor Market Outcomes for AI-Exposed College Majors*. U.S. Census Bureau Center for Economic Studies Working Paper CES 26-56 (September 2026).
 
+**Also carded in:** `ai_career_impact/library/cards/orr-tucker-warren-2026.md` (private) — read through the career-impact lens; this card reads it for KUD+ / §16. Interpretations may differ; **factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-orr-tucker-warren-2026`; **proposed for §16, not yet cited.**
 
 **Where it lives:**

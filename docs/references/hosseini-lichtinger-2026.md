@@ -2,6 +2,8 @@
 
 **Full citation:** Hosseini, S. M., & Lichtinger, G. (2026). *Generative AI as Seniority-Biased Technological Change: Evidence from U.S. Résumé and Job Posting Data*. SSRN Working Paper 5425555. First version: August 31, 2025. **This version: May 25, 2026** (the version read for this card; SSRN's own "Latest Version" link resolves to the same working-paper number but the authors' own site is the only place the current PDF is mirrored — see below).
 
+**Also carded in:** `ai_career_impact/library/cards/hosseini-lichtinger-2026.md` (private) — read through the career-impact lens; this card reads it for KUD+ / §16. Interpretations may differ; **factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-hosseini-lichtinger-2026`; **proposed for §16, not yet cited.**
 
 **Where it lives:**
