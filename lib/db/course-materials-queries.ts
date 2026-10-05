@@ -1,6 +1,9 @@
 import { eq, and, asc, isNull, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { courseMaterials } from '@/lib/db/schema';
+import { scrubForRecord } from '@/lib/privacy/scrub';
+import { isSyllabusFileName } from '@/lib/capture/materials-policy';
+import type { MaterialRedactions } from '@/lib/privacy/types';
 
 export type CourseMaterialRow = typeof courseMaterials.$inferSelect;
 
@@ -101,16 +104,62 @@ export interface UpdateExtractionInput {
   pageCount?: number;
 }
 
-export async function updateExtractionResult(input: UpdateExtractionInput): Promise<void> {
+export type PersistedExtraction =
+  | { outcome: 'stored'; extractedText: string | undefined }
+  | { outcome: 'scrub_failed'; extractedText: undefined; reason: string };
+
+/**
+ * The ONLY writer of course_materials.extracted_text (privacy-scrub spec
+ * 2026-10-05; pinned by tests/lib/privacy/extracted-text-writers.test.ts).
+ *
+ * Text is scrubbed of student identifiers before it is stored, so no import
+ * path (Canvas, IMSCC, uploads, linked docs, re-extract) can skip it. If the
+ * scrub fails, the row is marked failed with the reason and NO text is
+ * stored — any earlier text is cleared too. Raw text is never a fallback.
+ *
+ * Returns the text actually stored; callers index that, never their input.
+ */
+export async function updateExtractionResult(input: UpdateExtractionInput): Promise<PersistedExtraction> {
+  let stored: { extractedText: string; redactions: MaterialRedactions } | undefined;
+  if (input.extractedText !== undefined) {
+    const [row] = await db
+      .select({ fileName: courseMaterials.fileName, isSyllabus: courseMaterials.isSyllabus })
+      .from(courseMaterials)
+      .where(eq(courseMaterials.id, input.id))
+      .limit(1);
+    if (!row) throw new Error(`updateExtractionResult: material ${input.id} not found`);
+    try {
+      const scrubbed = await scrubForRecord(input.extractedText, {
+        fileName: row.fileName,
+        isSyllabus: row.isSyllabus === true || isSyllabusFileName(row.fileName),
+      });
+      stored = { extractedText: scrubbed.text, redactions: { counts: scrubbed.redactions, failedReason: null } };
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err);
+      console.error(`[privacy] scrub failed for material ${input.id}; no text stored: ${reason}`);
+      await db
+        .update(courseMaterials)
+        .set({
+          extractionStatus: 'failed',
+          ...(input.extractionMethod !== undefined && { extractionMethod: input.extractionMethod }),
+          extractedText: null,
+          redactions: { counts: {}, failedReason: reason },
+          ...(input.pageCount !== undefined && { pageCount: input.pageCount }),
+        })
+        .where(eq(courseMaterials.id, input.id));
+      return { outcome: 'scrub_failed', extractedText: undefined, reason };
+    }
+  }
   await db
     .update(courseMaterials)
     .set({
       extractionStatus: input.extractionStatus,
       ...(input.extractionMethod !== undefined && { extractionMethod: input.extractionMethod }),
-      ...(input.extractedText !== undefined && { extractedText: input.extractedText }),
+      ...(stored !== undefined && { extractedText: stored.extractedText, redactions: stored.redactions }),
       ...(input.pageCount !== undefined && { pageCount: input.pageCount }),
     })
     .where(eq(courseMaterials.id, input.id));
+  return { outcome: 'stored', extractedText: stored?.extractedText };
 }
 
 export async function getMaterialById(id: string): Promise<CourseMaterialRow | null> {
