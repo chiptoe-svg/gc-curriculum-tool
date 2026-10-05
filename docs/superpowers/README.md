@@ -11,7 +11,7 @@ These four are linked from the GH Pages root at [chiptoe-svg.github.io/gc-curric
   - [`vision/gc-curriculum-tool-vision.html`](./vision/gc-curriculum-tool-vision.html) — the Vision (single source, HTML-only; the `.md` twin was retired 2026-06-20 to match the deep-dive consolidation)
 - **Background** — academic companion to the Vision. Theoretical justification for KUD+ (Backward Design, Constructive Alignment, Bloom's relationship), the depth-scale extension and evidence rule, foundational competency treatment, course- and career-path implementation.
   - [`../background.html`](../background.html)
-- **Validation** — proposal for empirical validation against external occupational data using a dataset of 268 Clemson GC graduates.
+- **Validation** — proposal for empirical validation against external occupational data using 1,337 validated Clemson GC graduates (672 coded first career jobs, 2016–2026).
   - [`../graduate-outcome-validation.html`](../graduate-outcome-validation.html)
 - **Faculty guide** — practical walkthrough of CourseCapture and Explore, written for the faculty member using the tool. Linked from the headers of `/capture/<code>` and `/explore/<code>` so users can jump from the app to the instructions.
   - [`../using-coursecapture-and-explore.html`](../using-coursecapture-and-explore.html)
