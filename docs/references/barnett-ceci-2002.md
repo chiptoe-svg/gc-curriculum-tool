@@ -2,6 +2,8 @@
 
 **Full citation:** Barnett, S. M., & Ceci, S. J. (2002). When and Where Do We Apply What We Learn? A Taxonomy for Far Transfer. *Psychological Bulletin*, 128(4), 612–637. Argues that a century of inconclusive far-transfer research stems from comparing "apples and oranges," and proposes a multi-dimensional taxonomy (content × context) for specifying exactly *how far* a given transfer claim reaches.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/load_bearing/barnett-ceci-2002.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-barnett-ceci-2002`; cited in §4/§5 (and in problem-solving-deep-dive.html where the difficulty of demonstrating distant transfer is discussed).
 
 **Where it lives:**

@@ -2,6 +2,8 @@
 
 **Full citation:** Wiggins, G., & McTighe, J. (2005). *Understanding by Design* (Expanded 2nd ed.). ASCD. Foundational reference for backward design and the structural commitment to evidence-as-stage-2.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/wiggins-2005.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-wiggins-2005`; cited in §2, §5, §7.
 
 **Where it lives:**

@@ -2,6 +2,8 @@
 
 **Full citation:** Gonczi, A. (1994). Competency Based Assessment in the Professions in Australia. *Assessment in Education: Principles, Policy & Practice*, 1(1), 27–44. https://doi.org/10.1080/0969594940010103. A conceptual and policy article arguing that an "integrated" (holistic) conception of competence — not an atomized behaviourist task-list — is the only defensible basis for competency-based assessment of professionals.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/load_bearing/gonczi-1994.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-gonczi-1994`; cited in §11 (occupational frameworks).
 
 **Where it lives:**

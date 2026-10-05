@@ -2,6 +2,8 @@
 
 **Full citation:** Biggs, J., & Tang, C. (2011). *Teaching for Quality Learning at University* (4th ed.). Open University Press.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/biggs-tang-2011.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** No explicit `ref-` ID; not cited via anchor link in the background doc. Listed in the references section without an ID.
 
 **Where it lives:**

@@ -2,6 +2,8 @@
 
 **Full citation:** Bruner, J. S. (1960). *The Process of Education*. Cambridge, MA: Harvard University Press. (The spiral is developed further in Bruner, J. S. (1966). *Toward a Theory of Instruction*. Harvard University Press.) The origin of the "spiral curriculum" — revisiting the structure of a discipline repeatedly, at increasing depth and abstraction, building on prior understanding each time.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/bruner-spiral.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-bruner-1960`; cited in §9 (the 3-Act model) as the strongest theoretical parallel to the proposed structure — and the tradition the GC program has long invoked when describing itself as a "spiraling curriculum." Companion treatment in *The 3-Act Program Structure: A Research Synthesis*. Classification: framework scaffolding (3-Act design lineage).
 
 **Where it lives:**

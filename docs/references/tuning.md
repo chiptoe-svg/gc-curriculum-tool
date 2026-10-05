@@ -2,6 +2,8 @@
 
 **Full citation:** González, J., & Wagenaar, R. (Eds.). (2003, 2005, 2008). *Tuning Educational Structures in Europe — Reference Points and Guidance*. University of Deusto / University of Groningen. The Tuning Project distinguishes *competence* (the holistic ability students construct) from *learning outcome* (the level of competence achieved), and provides a compact-and-leveled competency-profile approach the framework's design is consistent with.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/tuning.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-tuning`; cited in §3, §5.
 
 **Where it lives:**

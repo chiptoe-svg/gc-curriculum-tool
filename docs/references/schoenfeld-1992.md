@@ -2,6 +2,8 @@
 
 **Full citation:** Schoenfeld, A. H. (1992). Learning to think mathematically: Problem solving, metacognition, and sense making in mathematics. In D. Grouws (Ed.), *Handbook of Research on Mathematics Teaching and Learning* (pp. 334–370). New York: MacMillan. A landmark review chapter synthesizing the cognitive-science literature on mathematical problem solving, organized around a five-category framework in which metacognitive self-regulation ("monitoring and control") is a load-bearing component.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/load_bearing/schoenfeld-1992.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-schoenfeld-1992`; cited in §7 (and problem-solving-deep-dive.html §7 where noted).
 
 **Where it lives:**

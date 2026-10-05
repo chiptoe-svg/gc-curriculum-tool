@@ -2,6 +2,8 @@
 
 **Full citation:** Veenman, M. V. J., Van Hout-Wolters, B. H. A. M., & Afflerbach, P. (2006). Metacognition and learning: Conceptual and methodological considerations. *Metacognition and Learning*, 1(1), 3–14. https://doi.org/10.1007/s11409-006-6893-0. The inaugural ("theoretical article") position paper of the journal, laying out ten unresolved issues in metacognition research, including the general-vs-domain-specificity question and the conditions for effective metacognitive instruction.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/load_bearing/veenman-2006.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-veenman-2006`; cited in §7 (and problem-solving-deep-dive.html §7 where noted).
 
 **Where it lives:**

@@ -2,6 +2,8 @@
 
 **Full citation:** Camerer, C., Loewenstein, G., & Weber, M. (1989). The curse of knowledge in economic settings: An experimental analysis. *Journal of Political Economy*, 97(5), 1232–1254. https://doi.org/10.1086/261651. An experimental economics paper demonstrating that better-informed agents cannot ignore their private information when predicting the judgments of the less-informed.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/load_bearing/camerer-loewenstein-weber-1989.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-camerer-loewenstein-weber-1989`; cited in §7.
 
 **Where it lives:**

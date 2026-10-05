@@ -2,6 +2,8 @@
 
 **Full citation:** Dearden, L., McGranahan, L., & Sianesi, B. (2004). *An In-Depth Analysis of the Returns to National Vocational Qualifications Obtained at Level 2* (CEE Discussion Paper 46 / CEEDP0046). London: Centre for the Economics of Education, London School of Economics. An econometric study of the wage and employment returns to NVQ Level 2 using the 1970 British Cohort Study (BCS70) and the Labour Force Survey (LFS).
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/load_bearing/dearden-2004.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-dearden-2004`; cited in §11 (occupational frameworks).
 
 **Where it lives:**

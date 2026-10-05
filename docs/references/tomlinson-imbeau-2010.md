@@ -2,6 +2,8 @@
 
 **Full citation:** Tomlinson, C. A., & Imbeau, M. B. (2010). *Leading and Managing a Differentiated Classroom*. ASCD.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/tomlinson-imbeau-2010.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** No explicit `ref-` ID; no anchor link. Listed in the references section without an individual editorial note.
 
 **Where it lives:**

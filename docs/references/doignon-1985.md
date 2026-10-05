@@ -2,6 +2,8 @@
 
 **Full citation:** Doignon, J.-P., & Falmagne, J.-C. (1985). Spaces for the assessment of knowledge. *International Journal of Man-Machine Studies*, 23(2), 175–196. DOI: 10.1016/S0020-7373(85)80031-6. Full modern treatment: Falmagne, J.-C., & Doignon, J.-P. (2011). *Learning Spaces: Interdisciplinary Applied Mathematics*. Springer. DOI: 10.1007/978-3-642-01039-2 (revision/expansion of *Knowledge Spaces*, 1999).
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/doignon-1985.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-doignon-1985`; cited in §2 ("Knowledge spaces: the formal cousin of the 'skill tree'").
 
 **Where it lives:**

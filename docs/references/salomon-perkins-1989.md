@@ -2,6 +2,8 @@
 
 **Full citation:** Salomon, G., & Perkins, D. N. (1989). Rocky Roads to Transfer: Rethinking Mechanisms of a Neglected Phenomenon. *Educational Psychologist*, 24(2), 113–142. The foundational statement of the low-road / high-road distinction: transfer is not unitary but proceeds by two distinct mechanisms, and far transfer requires mindful abstraction plus deliberate bridging rather than occurring automatically.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/load_bearing/salomon-perkins-1989.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-salomon-perkins-1989`; cited in §4/§5 (and in problem-solving-deep-dive.html, where §5 invokes it to name the design moves behind far transfer).
 
 **Where it lives:**

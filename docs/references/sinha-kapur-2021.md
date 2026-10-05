@@ -2,6 +2,8 @@
 
 **Full citation:** Sinha, T., & Kapur, M. (2021). When Problem Solving Followed by Instruction Works: Evidence for Productive Failure. *Review of Educational Research*, 91(5), 761–798. Review of conditions under which the productive-failure effect holds.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/load_bearing/sinha-kapur-2021.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-sinha-kapur-2021`; cited in §4.
 
 **Where it lives:**

@@ -2,6 +2,8 @@
 
 **Full citation:** Donker, A. S., de Boer, H., Kostons, D., Dignath-van Ewijk, C. C., & van der Werf, M. P. C. (2014). Effectiveness of learning strategy instruction on academic performance: A meta-analysis. *Educational Research Review*, 11, 1–26. https://doi.org/10.1016/j.edurev.2013.11.002. Quantifies how much teaching cognitive, metacognitive, management, and motivational strategies improves student performance, and which strategies matter most.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/load_bearing/donker-2014.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-donker-2014`; cited in §5 (and problem-solving-deep-dive.html §7 where noted).
 
 **Where it lives:**

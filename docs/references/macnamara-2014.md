@@ -2,6 +2,8 @@
 
 **Full citation:** Macnamara, B. N., Hambrick, D. Z., & Oswald, F. L. (2014). Deliberate Practice and Performance in Music, Games, Sports, Education, and Professions: A Meta-Analysis. *Psychological Science*, 25(8), 1608–1618. https://doi.org/10.1177/0956797614535810
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/load_bearing/macnamara-2014.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-macnamara-2014`; cited in §4.
 
 **Where it lives:**

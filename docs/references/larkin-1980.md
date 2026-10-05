@@ -2,6 +2,8 @@
 
 **Full citation:** Larkin, J., McDermott, J., Simon, D. P., & Simon, H. A. (1980). Models of Competence in Solving Physics Problems. *Cognitive Science*, 4(4), 317–345. Companion to Chi et al. — experts use forward-chaining strategies that novices cannot access for lack of schemas.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/load_bearing/larkin-1980.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-larkin-1980`; cited in §4.
 
 **Where it lives:**

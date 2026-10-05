@@ -2,6 +2,8 @@
 
 **Full citation:** Bransford, J. D., & Schwartz, D. L. (1999). Rethinking Transfer: A Simple Proposal with Multiple Implications. *Review of Research in Education*, 24, 61–100. Introduces the "preparation for future learning" (PFL) construct and argues that the standard "sequestered problem solving" transfer test, paired with a "direct application" theory, systematically under-detects transfer.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/load_bearing/bransford-schwartz-1999.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-bransford-schwartz-1999`; cited in §4/§5 (and in problem-solving-deep-dive.html where the PFL reframing of assessment is invoked).
 
 **Where it lives:**

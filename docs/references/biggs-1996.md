@@ -2,6 +2,8 @@
 
 **Full citation:** Biggs, J. (1996). Enhancing teaching through constructive alignment. *Higher Education*, 32(3), 347–364.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/biggs-1996.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-biggs-1996`; cited in §2.
 
 **Where it lives:**

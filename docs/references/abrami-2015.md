@@ -2,6 +2,8 @@
 
 **Full citation:** Abrami, P. C., Bernard, R. M., Borokhovski, E., Waddington, D. I., Wade, C. A., & Persson, T. (2015). Strategies for teaching students to think critically: A meta-analysis. *Review of Educational Research*, 85(2), 275–314. https://doi.org/10.3102/0034654314551063. A comprehensive meta-analysis (341 effect sizes) of how — and how well — instruction develops critical-thinking (CT) skills and dispositions, including which instructional approaches and which CT-to-content relationships work best.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/load_bearing/abrami-2015.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** Not yet cited — recommended addition (see Writeup_Review §3.4).
 
 **Where it lives:**

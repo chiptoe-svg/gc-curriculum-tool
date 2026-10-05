@@ -2,6 +2,8 @@
 
 **Full citation:** Schön, D. A. (1983). *The Reflective Practitioner: How Professionals Think in Action*. Basic Books. The theoretical case for reflection-in-action and reflection-on-action as the mechanism of professional expertise development.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/load_bearing/schon-1983.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-schon-1983`; cited in §4.
 
 **Where it lives:**

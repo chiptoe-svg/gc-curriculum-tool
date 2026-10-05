@@ -2,6 +2,8 @@
 
 **Full citation:** Gentner, D., Loewenstein, J., & Thompson, L. (2003). Learning and Transfer: A General Role for Analogical Encoding. *Journal of Educational Psychology*, 95(2), 393–408. Demonstrates that comparing two cases during learning ("analogical encoding") abstracts a transferable schema and produces markedly better cross-context transfer than studying the same cases separately — shown with novices learning negotiation strategies, including a live face-to-face negotiation.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/load_bearing/gentner-loewenstein-thompson-2003.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-gentner-loewenstein-thompson-2003`; cited in §4/§5 (and in problem-solving-deep-dive.html where case-comparison is offered as a practical transfer-engineering move).
 
 **Where it lives:**

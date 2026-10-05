@@ -2,6 +2,8 @@
 
 **Full citation:** Sala, G., & Gobet, F. (2017). Does far transfer exist? Negative evidence from chess, music, and working memory training. *Current Directions in Psychological Science*, 26(6), 515–520. https://doi.org/10.1177/0963721417712760. A short integrative review pulling together five of the authors' meta-analyses to argue that trained cognitive skills do not generalize far.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/load_bearing/sala-gobet-2017.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-sala-gobet-2017`; cited in §5 (and problem-solving-deep-dive.html §5 where noted).
 
 **Where it lives:**

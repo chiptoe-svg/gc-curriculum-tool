@@ -2,6 +2,8 @@
 
 **Full citation:** Perkins, D. N., & Salomon, G. (1992). Transfer of Learning. In *International Encyclopedia of Education* (2nd ed.). Pergamon Press. Distinguishes low-road (near, automatic) from high-road (far, deliberate-abstraction) transfer; establishes that far transfer requires explicit scaffolding.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/load_bearing/perkins-salomon-1992.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-perkins-salomon-1992`; cited in §4.
 
 **Where it lives:**

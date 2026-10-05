@@ -2,6 +2,8 @@
 
 **Full citation:** Ericsson, K. A., Krampe, R. T., & Tesch-Römer, C. (1993). The Role of Deliberate Practice in the Acquisition of Expert Performance. *Psychological Review*, 100(3), 363–406. Original deliberate-practice paper.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/load_bearing/ericsson-1993.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-ericsson-1993`; cited in §4.
 
 **Where it lives:**

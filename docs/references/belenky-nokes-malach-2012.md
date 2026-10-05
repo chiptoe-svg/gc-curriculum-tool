@@ -2,6 +2,8 @@
 
 **Full citation:** Belenky, D. M., & Nokes-Malach, T. J. (2012). Motivation and transfer: The role of mastery-approach goals in preparation for future learning. *Journal of the Learning Sciences*, 21(3), 399–432. https://doi.org/10.1080/10508406.2011.651232. A laboratory experiment linking achievement-goal motivation to the "preparation for future learning" (PFL) view of transfer, testing how mastery-approach goals and invention vs. tell-and-practice instruction jointly predict transfer.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/load_bearing/belenky-nokes-malach-2012.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-belenky-nokes-malach-2012`; cited in §5 (and problem-solving-deep-dive.html §5 where noted).
 
 **Where it lives:**

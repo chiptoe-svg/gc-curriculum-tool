@@ -2,6 +2,8 @@
 
 **Full citation:** Gick, M. L., & Holyoak, K. J. (1980). Analogical Problem Solving. *Cognitive Psychology*, 12, 306–355; and Gick, M. L., & Holyoak, K. J. (1983). Schema Induction and Analogical Transfer. *Cognitive Psychology*, 15, 1–38. The classic Duncker-radiation-problem studies: transfer from a single analog is poor and depends heavily on a hint; comparing two analogs to induce a shared schema roughly doubles spontaneous transfer.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/load_bearing/gick-holyoak-1980-1983.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-gick-holyoak-1980-1983`; cited in §4/§5 (and in problem-solving-deep-dive.html where the case-comparison/schema-induction mechanism is invoked).
 
 **Where it lives:**

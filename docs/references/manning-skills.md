@@ -2,6 +2,8 @@
 
 **Full citation:** Manning, G. (2025). *Education Agent Skills Library* — an open GitHub-based library of procedural skill definitions for curriculum-design and assessment AI agents, organized into domains (curriculum-alignment, curriculum-assessment, AI literacy, etc.) with each skill providing a structured SKILL.md describing inputs, outputs, and procedural steps. https://github.com/GarethManning/education-agent-skills.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/manning-skills.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-manning-skills`; cited in §10.
 
 **Where it lives:**

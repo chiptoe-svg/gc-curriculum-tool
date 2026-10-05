@@ -2,6 +2,8 @@
 
 **Full citation:** Tannenbaum, S. I., & Cerasoli, C. P. (2013). Do Team and Individual Debriefs Enhance Performance? A Meta-Analysis. *Human Factors*, 55(1), 231–245. The quantitative anchor for the framework's reflection-scaffolding claim: structured debriefs improve subsequent performance by approximately 25%.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/load_bearing/tannenbaum-cerasoli-2013.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-tannenbaum-cerasoli-2013`; cited in §4.
 
 **Where it lives:**

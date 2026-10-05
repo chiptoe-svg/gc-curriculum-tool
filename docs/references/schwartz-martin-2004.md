@@ -2,6 +2,8 @@
 
 **Full citation:** Schwartz, D. L., & Martin, T. (2004). Inventing to Prepare for Future Learning: The Hidden Efficiency of Encouraging Original Student Production in Statistics Instruction. *Cognition and Instruction*, 22(2), 129–184. The experimental anchor for preparation-for-future-learning (PFL): inventing (suboptimal) methods before instruction builds readiness to learn from later instruction — a benefit invisible to standard cold-application transfer tests but revealed by a "double transfer" test that embeds a learning resource.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/load_bearing/schwartz-martin-2004.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-schwartz-martin-2004`; cited in §4/§5 (and in problem-solving-deep-dive.html as the empirical demonstration of PFL behind invention/productive-failure designs).
 
 **Where it lives:**

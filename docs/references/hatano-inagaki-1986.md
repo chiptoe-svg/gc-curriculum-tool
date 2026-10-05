@@ -2,6 +2,8 @@
 
 **Full citation:** Hatano, G., & Inagaki, K. (1986). Two Courses of Expertise. In H. Stevenson, H. Azuma, & K. Hakuta (Eds.), *Child Development and Education in Japan* (pp. 262–272). New York: Freeman. The origin of the routine-vs-adaptive expertise distinction: routine experts are fast, accurate, and automatic but inflexible; adaptive experts understand *why* their procedures work, can mentally simulate unfamiliar cases, and invent new approaches — and the adaptive course develops under variation, novelty, and an understanding-why orientation.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/load_bearing/hatano-inagaki-1986.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-hatano-inagaki-1986`; cited in §4/§5 (and in problem-solving-deep-dive.html §6, which adds an honesty note that the empirical demonstrations of adaptive expertise are mostly within-domain).
 
 **Where it lives:**

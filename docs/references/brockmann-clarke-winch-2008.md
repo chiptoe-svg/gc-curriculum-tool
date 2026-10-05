@@ -2,6 +2,8 @@
 
 **Full citation:** Brockmann, M., Clarke, L., & Winch, C. (2008). Knowledge, skills, competence: European divergences in vocational education and training (VET) — the English, German and Dutch cases. *Oxford Review of Education*, 34(5), 547–567. https://doi.org/10.1080/03054980701782098. A comparative analysis arguing that "skills," "competence," and "qualification" carry deeply divergent, socially constructed meanings across England, Germany, and the Netherlands, and that the English "skills-based" model strips out the integration and knowledge base that constitute occupational competence elsewhere.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/load_bearing/brockmann-clarke-winch-2008.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-brockmann-clarke-winch-2008`; cited in §11 (occupational frameworks).
 
 **Where it lives:**

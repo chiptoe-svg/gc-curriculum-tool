@@ -2,6 +2,8 @@
 
 **Full citation:** Sweller, J. (1988). Cognitive Load During Problem Solving: Effects on Learning. *Cognitive Science*, 12(2), 257–285. The mechanistic account: open-ended problem-solving imposes working-memory load that crowds out schema acquisition; sequence worked examples before ill-structured problems.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/load_bearing/sweller-1988.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-sweller-1988`; cited in §4.
 
 **Where it lives:**

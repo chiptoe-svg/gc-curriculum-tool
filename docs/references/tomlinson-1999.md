@@ -2,6 +2,8 @@
 
 **Full citation:** Tomlinson, C. A. (1999). *The Differentiated Classroom: Responding to the Needs of All Learners*. ASCD. (2nd ed., 2014.) Establishes the K/U/D three-category planning vocabulary that this framework adopts as a categorical structure. Tomlinson uses K/U/D as a pre-unit planning aid for differentiated instruction in K–12 contexts; the depth-scale extension and the program-mapping application are this framework's contributions, not Tomlinson's.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/tomlinson-1999.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-tomlinson-1999`; cited in §5.
 
 **Where it lives:**

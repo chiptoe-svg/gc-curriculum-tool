@@ -2,6 +2,8 @@
 
 **Full citation:** Nisbett, R. E., & Wilson, T. D. (1977). Telling more than we can know: Verbal reports on mental processes. *Psychological Review*, 84(3), 231–259. https://doi.org/10.1037/0033-295X.84.3.231. A landmark review arguing that people lack direct introspective access to their higher-order cognitive processes and instead reconstruct plausible causal stories.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/load_bearing/nisbett-wilson-1977.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-nisbett-wilson-1977`; cited in §7.
 
 **Where it lives:**

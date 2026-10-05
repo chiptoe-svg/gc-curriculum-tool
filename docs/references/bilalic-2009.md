@@ -2,6 +2,8 @@
 
 **Full citation:** Bilalić, M., McLeod, P., & Gobet, F. (2009). Specialization effect and its influence on memory and problem solving in expert chess players. *Cognitive Science*, 33(8), 1117–1143. https://doi.org/10.1111/j.1551-6709.2009.01030.x. An experimental study showing that an expert's familiarity with a specific problem area outweighs general skill in both recall and problem-solving.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/load_bearing/bilalic-2009.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-bilalic-2009`; cited in problem-solving-deep-dive.html §5 (and background.html §5 where noted).
 
 **Where it lives:**

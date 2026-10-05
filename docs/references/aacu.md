@@ -2,6 +2,8 @@
 
 **Full citation:** Association of American Colleges & Universities. *VALUE Rubrics*. Includes the Integrative Learning rubric used to inform the upper-range anchors of the Do scale. https://www.aacu.org/initiatives/value-initiative/value-rubrics.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/aacu.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-aacu`; cited in §2, §3.
 
 **Where it lives:**

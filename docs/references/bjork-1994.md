@@ -2,6 +2,8 @@
 
 **Full citation:** Bjork, R. A. (1994). Memory and Metamemory Considerations in the Training of Human Beings. In J. Metcalfe & A. Shimamura (Eds.), *Metacognition: Knowing About Knowing*. MIT Press. Introduces the desirable-difficulties framework: conditions that suppress short-term performance often improve long-term retention and transfer.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/load_bearing/bjork-1994.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-bjork-1994`; cited in §4.
 
 **Where it lives:**

@@ -2,6 +2,8 @@
 
 **Full citation:** McPeck, J. E. (1981). *Critical Thinking and Education*. Oxford University Press. The strong-specificity philosophical case: "there are no general thinking skills, since thinking is always thinking about some subject-matter."
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/load_bearing/mcpeck-1981.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-mcpeck-1981`; cited in §4.
 
 **Where it lives:**

@@ -2,6 +2,8 @@
 
 **Full citation:** Kapur, M. (2008). Productive Failure. *Cognition and Instruction*, 26(3), 379–424. The original productive-failure paradigm: students who struggle with ill-structured problems before instruction outperform direct-instruction controls on transfer.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/load_bearing/kapur-2008.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-kapur-2008`; cited in §4.
 
 **Where it lives:**

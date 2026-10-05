@@ -2,6 +2,8 @@
 
 **Full citation:** National Association of Colleges and Employers. *Job Outlook*. Annual employer survey of competencies most desired in college graduates; problem-solving consistently rates among the top five attributes. https://www.naceweb.org/research/job-outlook.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/nace.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-nace`; cited in §4, §8.
 
 **Where it lives:**

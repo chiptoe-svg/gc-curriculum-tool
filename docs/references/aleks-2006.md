@@ -2,6 +2,8 @@
 
 **Full citation:** Falmagne, J.-C., Cosyn, E., Doignon, J.-P., & Thiéry, N. (2006). The assessment of knowledge, in theory and in practice. In *Formal Concept Analysis: 4th International Conference, ICFCA 2006* (R. Missaoui & J. Schmid, Eds.), Lecture Notes in Computer Science, vol. 3874, pp. 61–79. Springer. DOI: 10.1007/11671404_4. Deployment-at-scale companion: Cosyn, E., Uzun, H., Doble, C., & Matayoshi, J. (2021). A practical perspective on knowledge space theory: ALEKS and its data. *Journal of Mathematical Psychology*, 101, 102512. DOI: 10.1016/j.jmp.2021.102512.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/aleks-2006.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-aleks-2006`; cited in §2.
 
 **Where it lives:**

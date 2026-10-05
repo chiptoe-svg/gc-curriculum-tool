@@ -2,6 +2,8 @@
 
 **Full citation:** Detterman, D. K. (1993). The case for the prosecution: Transfer as an epiphenomenon. In D. K. Detterman & R. J. Sternberg (Eds.), *Transfer on trial: Intelligence, cognition, and instruction* (pp. 1–24). Ablex Publishing. The polemical opening chapter of an influential edited volume, arguing that significant, spontaneous transfer is rare and largely an artifact of how experiments are designed.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/load_bearing/detterman-1993.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-detterman-1993`; cited in §5 (limits of far transfer), alongside Sala & Gobet (2017).
 
 **Where it lives:**

@@ -2,6 +2,8 @@
 
 **Full citation:** Thorndike, E. L., & Woodworth, R. S. (1901). The influence of improvement in one mental function upon the efficiency of other functions (I). *Psychological Review*, 8(3), 247–261. https://doi.org/10.1037/h0074898. The founding empirical study of transfer of training, originating the "common elements" theory and the modern skepticism toward broad, domain-general skill transfer.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/load_bearing/thorndike-woodworth-1901.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-thorndike-woodworth-1901`; cited in §5.
 
 **Where it lives:**

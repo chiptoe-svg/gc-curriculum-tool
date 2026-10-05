@@ -2,6 +2,8 @@
 
 **Full citation:** National Research Council. (2010). *A Database for a Changing Economy: Review of the Occupational Information Network (O*NET)* (N. T. Tippins & M. L. Hilton, Eds.). Washington, DC: The National Academies Press. https://doi.org/10.17226/12814. An expert-panel evaluation, commissioned by the U.S. Department of Labor, of the content, classification, data-collection, and uses of the O*NET occupational database.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/load_bearing/nrc-onet-2010.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-nrc-onet-2010`; cited in §11 (occupational frameworks).
 
 **Where it lives:**

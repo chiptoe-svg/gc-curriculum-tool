@@ -2,6 +2,8 @@
 
 **Full citation:** New England Commission of Higher Education. (2015). *Policy Statement on Competency-Based Education*.
 
+**Also carded in:** `ai_career_impact/library/cards/future_of_gc/neche.md` (private) — imported from the "Future of GC" project; may read the source through a different lens. **Factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
+
 **Reference ID in background.html:** `ref-neche`; cited in §2.
 
 **Where it lives:**
