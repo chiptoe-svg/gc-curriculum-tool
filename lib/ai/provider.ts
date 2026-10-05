@@ -135,14 +135,14 @@ export function getProvider(): AIProvider {
  */
 export async function getProviderForFunction(
   functionId: AIFunctionId,
-  override?: { model?: string },
+  override?: { model?: string; reasoningEffort?: string },
 ): Promise<AIProvider> {
-  if (override?.model) return buildProvider(override.model);
+  if (override?.model) return buildProvider(override.model, override.reasoningEffort);
   const resolved = await resolveModelForFunction(functionId);
   return buildProvider(resolved);
 }
 
-function buildProvider(modelOverride: string | undefined): AIProvider {
+function buildProvider(modelOverride: string | undefined, reasoningEffort?: string): AIProvider {
   // Trim every env var defensively — Vercel sometimes preserves trailing
   // newlines from pasted values, and OpenAI rejects an API key with CR/LF.
   //
@@ -161,7 +161,7 @@ function buildProvider(modelOverride: string | undefined): AIProvider {
     const key = process.env.OPENAI_API_KEY?.trim();
     if (!key) throw new Error('OPENAI_API_KEY not set');
     const model = modelOverride ?? process.env.OPENAI_MODEL?.trim() ?? 'gpt-5.4';
-    return new OpenAIProvider(model, key);
+    return new OpenAIProvider(model, key, reasoningEffort);
   }
   if (which === 'anthropic') {
     const key = process.env.ANTHROPIC_API_KEY?.trim();

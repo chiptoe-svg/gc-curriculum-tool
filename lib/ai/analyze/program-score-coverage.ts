@@ -73,6 +73,8 @@ export interface ScoreCoverageInput {
   courseCode: string;
   /** Optional model override (e.g. for A/B'ing the producing model); default = the function's configured tier. */
   modelOverride?: string;
+  /** Evaluation use only: reasoning effort for the override model (low | medium | high | xhigh). */
+  reasoningEffortOverride?: string;
   snapshotProfile: CaptureProfile;
   careerTarget: {
     id: string;
@@ -102,7 +104,7 @@ export interface ScoreCoverageResult {
 export async function scoreSnapshotAgainstTarget(input: ScoreCoverageInput): Promise<ScoreCoverageResult> {
   const provider = await getProviderForFunction(
     'program-score-coverage',
-    input.modelOverride ? { model: input.modelOverride } : undefined,
+    input.modelOverride ? { model: input.modelOverride, reasoningEffort: input.reasoningEffortOverride } : undefined,
   );
   const systemPrompt = await loadPrompt('program-score-coverage');
 

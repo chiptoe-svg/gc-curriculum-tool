@@ -43,8 +43,12 @@ export class OpenAIProvider implements AIProvider {
   private client: OpenAI;
   private apiKey: string;
 
-  constructor(model: string, apiKey: string) {
+  /** Optional reasoning effort for structured completions (evaluation use; production passes none). */
+  private reasoningEffort?: string;
+
+  constructor(model: string, apiKey: string, reasoningEffort?: string) {
     this.model = model;
+    this.reasoningEffort = reasoningEffort;
     this.apiKey = apiKey;
     this.client = new OpenAI({ apiKey, baseURL: openAIBaseURL() });
   }
@@ -61,7 +65,7 @@ export class OpenAIProvider implements AIProvider {
     // Evaluation-only knob (2026-10-05 model evaluation): when OPENAI_REASONING_EFFORT
     // is set (low | medium | high | xhigh), it is forwarded as `reasoning_effort`.
     // Unset in production, so production requests are unchanged.
-    const effort = process.env.OPENAI_REASONING_EFFORT?.trim();
+    const effort = this.reasoningEffort ?? process.env.OPENAI_REASONING_EFFORT?.trim();
     const response = await this.client.chat.completions.create({
       model: this.model,
       ...(effort ? { reasoning_effort: effort as 'low' | 'medium' | 'high' } : {}),
