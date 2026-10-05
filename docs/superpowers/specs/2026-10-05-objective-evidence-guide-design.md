@@ -18,7 +18,7 @@ For each stated learning objective:
 
 | Field | Content |
 |---|---|
-| `objective` | The objective text, verbatim from `courses.learning_objectives` |
+| `objective` | The objective text, verbatim from the catalog or, failing that, the syllabus |
 | `measure` | `clear`: a graded item plainly measures it. `partial`: graded work touches it but doesn't isolate it. `none`: no graded measure found. |
 | `evidence` | 0–3 items, each `{ assignment, rubric_row \| null }`, named exactly as in the inputs |
 | `gather` | One or two sentences on what to pull at semester's end, in **class-level numbers only**. Example: "the score distribution on the 'Strategic rationale' row of the Final Brand Playbook rubric, and the share of students at proficient or above". |
@@ -64,7 +64,7 @@ The guide may name only assignments and rubric rows that appear in input 3. Afte
   - Includes the shared depth scale only if needed; the guide does not score.
   - Rules: plain advice voice, class-level numbers only, exact names, and `none` is an acceptable honest answer.
 - **Output:** a strict JSON schema. Every property is required; optional fields are nullable unions, following the OpenAI strict-mode rule in CLAUDE.md.
-- **Cost:** about $0.05–0.20 per course on gpt-5.4. The backfill of 16 courses costs about $1–4.
+- **Cost:** about $0.05–0.20 per course on gpt-5.4. The backfill of 17 courses costs about $1–4.
 
 ## Storage
 
@@ -84,7 +84,7 @@ The table is overwritten on regeneration. History lives in the snapshots it is b
 ## When it runs
 
 - **After every new capture snapshot,** in `app/api/capture/[code]/snapshots/route.ts`. It runs as its own background task beside the wiki update and the program-index refresh. A failure is logged and does not affect either of those; the next snapshot retries.
-- **One-time backfill:** `scripts/backfill-objective-guides.ts`, with `--dry-run` and per-course output, covering the 16 captured courses with objectives.
+- **One-time backfill:** `scripts/backfill-objective-guides.ts`, with `--dry-run` and per-course output, covering the 17 captured courses with objectives (16 catalog, 1 syllabus).
 
 ## Where it shows
 
