@@ -1,0 +1,147 @@
+{
+ "files": 10,
+ "failures": 0,
+ "costUsd": 0.008799999999999999,
+ "results": [
+  {
+   "file": "Canvas: Assignments",
+   "secs": 11.584,
+   "lengths": {
+    "stored": 5791,
+    "luna": 4684
+   },
+   "numbersNotInSource": {
+    "stored": 0,
+    "luna": 0,
+    "lunaExamples": []
+   },
+   "shareOfStoredNumbersKept": 1
+  },
+  {
+   "file": "YouTube: Shepard Fairey: Printing \"Harmony & Discord\" at Pace Prints",
+   "secs": 5.631,
+   "lengths": {
+    "stored": 3487,
+    "luna": 1484
+   },
+   "numbersNotInSource": {
+    "stored": 0,
+    "luna": 0,
+    "lunaExamples": []
+   },
+   "shareOfStoredNumbersKept": null
+  },
+  {
+   "file": "Design for Innovation Project .docx",
+   "secs": 9.002,
+   "lengths": {
+    "stored": 6876,
+    "luna": 3000
+   },
+   "numbersNotInSource": {
+    "stored": 0,
+    "luna": 0,
+    "lunaExamples": []
+   },
+   "shareOfStoredNumbersKept": 0
+  },
+  {
+   "file": "Canvas: Quizzes",
+   "secs": 8.336,
+   "lengths": {
+    "stored": 4544,
+    "luna": 2691
+   },
+   "numbersNotInSource": {
+    "stored": 0,
+    "luna": 0,
+    "lunaExamples": []
+   },
+   "shareOfStoredNumbersKept": 1
+  },
+  {
+   "file": "Canvas: Quizzes",
+   "secs": 11.102,
+   "lengths": {
+    "stored": 5963,
+    "luna": 4393
+   },
+   "numbersNotInSource": {
+    "stored": 0,
+    "luna": 0,
+    "lunaExamples": []
+   },
+   "shareOfStoredNumbersKept": 0.9473684210526315
+  },
+  {
+   "file": "Canvas File: Substrate Properties Lab Instructions.docx",
+   "secs": 9.056,
+   "lengths": {
+    "stored": 4745,
+    "luna": 3561
+   },
+   "numbersNotInSource": {
+    "stored": 0,
+    "luna": 0,
+    "lunaExamples": []
+   },
+   "shareOfStoredNumbersKept": 0.75
+  },
+  {
+   "file": "Canvas File: ICC946v18.pdf",
+   "secs": 8.823,
+   "lengths": {
+    "stored": 4403,
+    "luna": 2646
+   },
+   "numbersNotInSource": {
+    "stored": 0,
+    "luna": 0,
+    "lunaExamples": []
+   },
+   "shareOfStoredNumbersKept": 0.6
+  },
+  {
+   "file": "Canvas: Module List",
+   "secs": 7.997,
+   "lengths": {
+    "stored": 7419,
+    "luna": 2007
+   },
+   "numbersNotInSource": {
+    "stored": 0,
+    "luna": 0,
+    "lunaExamples": []
+   },
+   "shareOfStoredNumbersKept": 0.42857142857142855
+  },
+  {
+   "file": "Canvas: Pages",
+   "secs": 9.379,
+   "lengths": {
+    "stored": 3936,
+    "luna": 1875
+   },
+   "numbersNotInSource": {
+    "stored": 0,
+    "luna": 0,
+    "lunaExamples": []
+   },
+   "shareOfStoredNumbersKept": 0.3125
+  },
+  {
+   "file": "Canvas File: Lab Safety Contract_25.pdf",
+   "secs": 8.785,
+   "lengths": {
+    "stored": 4239,
+    "luna": 3267
+   },
+   "numbersNotInSource": {
+    "stored": 0,
+    "luna": 0,
+    "lunaExamples": []
+   },
+   "shareOfStoredNumbersKept": 0.3333333333333333
+  }
+ ]
+}

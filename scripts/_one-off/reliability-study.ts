@@ -172,7 +172,7 @@ function bandAgreementRate(valuesPerRun: (number | null)[][]): number {
 
 // ─── Part 1: Context assembly (mirrors scores route exactly) ─────────────────
 
-async function assembleSynthesisContext(courseCode: string): Promise<{
+export async function assembleSynthesisContext(courseCode: string): Promise<{
   context: CaptureChatContext & { sessionId: string; transcript: Awaited<ReturnType<typeof getSessionMessages>> };
   sessionId: string;
 }> {
@@ -290,7 +290,7 @@ interface Part1CourseResult {
   };
 }
 
-function computePart1Metrics(courseCode: string, runs: CaptureProfile[], runCosts: number[], model: string, truncatedAtRun: number | null): Part1CourseResult {
+export function computePart1Metrics(courseCode: string, runs: CaptureProfile[], runCosts: number[], model: string, truncatedAtRun: number | null): Part1CourseResult {
   // (a) Technical competency count
   const techCounts = runs.map(r => r.competencies.filter(c => c.type === 'technical').length);
 
@@ -1082,7 +1082,7 @@ async function main() {
   process.exit(0);
 }
 
-main().catch(e => {
+if (require.main === module) main().catch(e => {
   console.error('FATAL:', e instanceof Error ? e.message : e);
   process.exit(1);
 });

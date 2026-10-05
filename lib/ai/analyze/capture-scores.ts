@@ -516,8 +516,10 @@ export function repairCitationProvenance(
  */
 export async function generateCaptureProfileV2(
   context: V2SynthesisContext,
+  /** Evaluation use only (2026-10-05 model evaluation); production passes nothing. */
+  override?: { model?: string; reasoningEffort?: string },
 ): Promise<GenerateCaptureProfileResult> {
-  const provider = await getProviderForFunction('capture-scores');
+  const provider = await getProviderForFunction('capture-scores', override);
   const systemPrompt = await loadPrompt('capture-synthesis');
   const userMessage = buildV2SynthesisUserMessage(context);
 
