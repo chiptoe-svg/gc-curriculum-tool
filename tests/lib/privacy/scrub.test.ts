@@ -94,6 +94,41 @@ describe('scrubForRecord — AI name pass', () => {
       .rejects.toBeInstanceOf(ScrubError);
   });
 
+  it('never leaks material text from a provider error into the ScrubError message', async () => {
+    // Providers sometimes echo raw model content in their own error messages
+    // (e.g. "OpenAI returned non-JSON content: <first 200 chars>"). That
+    // content is material text — possibly containing an unredacted student
+    // name — and must never end up in a ScrubError, because that message is
+    // stored as course_materials.redactions.failedReason and logged.
+    complete.mockRejectedValue(
+      new Error('OpenAI returned non-JSON content: Submitted by Jane Doe, the poster uses CMYK...'),
+    );
+    const p = scrubForRecord('Submitted by Jane Doe\nbody', { fileName: 'x.pdf', isSyllabus: false });
+    await expect(p).rejects.toBeInstanceOf(ScrubError);
+    await expect(p).rejects.not.toThrow(/Jane/);
+  });
+
+  it('keeps the input\'s exact whitespace even when the model collapses it', async () => {
+    // The model is instructed to change nothing but names, but the guard must
+    // independently enforce that: here the fake model both substitutes the
+    // name AND collapses whitespace (double blank line -> single, double
+    // space -> single). The stored text must still be rebuilt from the
+    // INPUT's exact whitespace, with only the name replaced.
+    complete.mockImplementation(async (args: { userMessage: string; validate: (raw: unknown) => { text: string } }) => {
+      const collapsed = args.userMessage
+        .split('Jane Doe').join('[student]')
+        .replace(/\n\n+/g, '\n')
+        .replace(/ {2,}/g, ' ');
+      return {
+        data: args.validate({ text: collapsed }),
+        costUsdCents: 7, durationMs: 1, cachedTokens: 0, uncachedPromptTokens: 0, completionTokens: 0,
+      };
+    });
+    const raw = 'Submitted by Jane Doe\n\nThe poster uses a  CMYK palette.';
+    const r = await scrubForRecord(raw, { fileName: 'Canvas: Assignments', isSyllabus: false });
+    expect(r.text).toBe('Submitted by [student]\n\nThe poster uses a  CMYK palette.');
+  });
+
   it('splits long text into chunks and joins the results', async () => {
     complete.mockImplementation(modelReplacing(['Jane Doe']));
     const raw = 'Submitted by Jane Doe\n'

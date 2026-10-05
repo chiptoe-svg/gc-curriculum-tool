@@ -70,8 +70,14 @@ async function runNamePass(text: string): Promise<string> {
     try {
       output = await callPrivacyScrub(provider, systemPrompt, chunk, recordSpend);
     } catch (err) {
-      const why = err instanceof Error ? err.message : String(err);
-      throw new ScrubError(`privacy-scrub call failed on chunk ${idx + 1}/${chunks.length}: ${why}`);
+      // Never interpolate err.message here: providers sometimes echo raw
+      // model/input content in their own error text (e.g. OpenAI's "returned
+      // non-JSON content: <first 200 chars>"), and that content is material
+      // text that may contain an unredacted name. This message is stored as
+      // course_materials.redactions.failedReason and logged, so only a
+      // text-free identifier of the error is allowed through.
+      const why = err instanceof Error ? err.name : typeof err;
+      throw new ScrubError(`privacy-scrub call failed on chunk ${idx + 1}/${chunks.length} (${why})`);
     }
     const aligned = applyNameRedactions(chunk, output);
     if (!aligned.ok) {
