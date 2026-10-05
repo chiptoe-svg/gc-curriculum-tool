@@ -213,3 +213,27 @@ Two sources added to `background.html` §16, each with a card here. Both were **
 **One process note worth keeping.** During this check a `grep` returned 0 hits for a key abstract sentence in the NBER copy, which looked like evidence of a substantive revision. It was a PDF text-extraction line-break artifact (`remain?We argue`). Verify a suspected difference by reading the passage, not by counting matches — the same looks-like-evidence-isn't shape this project keeps meeting.
 
 **Cadence recommendation: run this quarterly, and always before any external-facing use** (accreditation packet, advisory board, publication). It is cheap — one search per fast-moving author — and the first run found two live errors in load-bearing citations.
+
+---
+
+## 2026-10-05 addition — the entry-rung evidence, a year on
+
+**Trigger.** A survey post, Imas & Schaal, *Has AI Impacted the Labor Market Yet?* (Substack, 29 Sep 2026, `aleximas.substack.com/p/has-ai-impacted-the-labor-market`), reviewed about twenty 2025–2026 studies. §16's entry-rung paragraph had rested on one contested study, so the post was used as a **map, not a source**: it is not cited. The primaries it pointed to were downloaded, read from the PDF, and carded; one further paper was supplied by the programme owner (Vossos et al.). §16 gained two paragraphs ("The wider evidence, a year on" and "Closest to GC").
+
+| # | Reference | Card | Used in | Verdict |
+| - | --------- | ---- | ------- | ------- |
+| 56 | Hosseini Maasoum & Lichtinger (2026), SSRN 5425555 (v. 25 May 2026) | [hosseini-lichtinger-2026.md](./hosseini-lichtinger-2026.md) | §16 wider evidence | Consistent; adopters are large firms (scope mismatch with GC's small-firm destinations); adoption measure is an LLM classifier |
+| 57 | Orr, Tucker & Warren (2026), Census CES WP 26-56 | [orr-tucker-warren-2026.md](./orr-tucker-warren-2026.md) | §16 wider evidence; §16 Closest to GC | Consistent; per-major rows are descriptive; **card table corrected by the controller — see below** |
+| 58 | Vossos, Andronic, Klein Teeselink & Akileswaran (2026), SPAR working paper (owner-supplied) | [vossos-2026.md](./vossos-2026.md) | §16 wider evidence; §16 Closest to GC | Consistent for the junior-share result (postings result weak); **design and creative arts are excluded from its data** (Appendix A1, p. 20) — never cite it about GC's field |
+| 59 | Hernæs & Kostøl (2026), RFBerlin DP 179/26 | [hernaes-kostol-2026.md](./hernaes-kostol-2026.md) | §16 wider evidence | Consistent; the main null survives the failed pre-trend tests, the late 22–25 gap does not |
+| 60 | Frank et al. (2026), arXiv:2601.02554 v1 | [frank-2026.md](./frank-2026.md) | §16 wider evidence; §16 Closest to GC | Consistent; curriculum-exposure → pay association is explicitly non-causal |
+| 61 | Lambert & Schindler (2026), CAGE/CEP WP 808/2026 | [lambert-schindler-2026.md](./lambert-schindler-2026.md) | §16 wider evidence | Consistent; unresolved against the payroll replication |
+| 62 | Brynjolfsson, Chandar & Chen (2026, Aug.) — §4.3 / App. I remote-work replication | [brynjolfsson-2026-response.md](./brynjolfsson-2026-response.md) | §16 wider evidence (anchor `ref-brynjolfsson-2025`) | Consistent. **First card for this load-bearing source** — it had been cited since 2025 with a PDF but no card |
+
+**Errors caught, and where.**
+
+1. **The survey post misattributed a finding.** It said the latest Hosseini & Lichtinger version finds the junior decline "equally pronounced in non-teleworkable positions." The 105-page May 2026 version has no remote-work or teleworkability variable at all (zero matches for telework/remote/work-from-home). The teleworkability control belongs to the Brynjolfsson paper (Table 1, Panel E, Dingel & Neiman 2020). Had the post been cited, §16 would have carried a claim no paper makes.
+2. **The post framed Hernæs & Kostøl as an extension of Facius & Iacono.** The paper describes them as concurrent and independent.
+3. **A subagent misread four cells of the Orr et al. Table A3** — most consequentially, Commercial Art and Graphic Design earnings as "−0.007, not significant" when the PDF reads **−0.070 (0.005)**, which reverses the GC-relevant conclusion from "design shows no harm" to "design shows one of the largest relative earnings declines in the cluster." Caught because the controller re-extracted the GC-relevant rows with `pdftotext` before relying on them. Rule kept from this: **any number that a GC-facing sentence will carry is re-read from the PDF by someone other than the card's author** — the same decorrelation rule the code side follows.
+
+**Currency-check feed.** Add the Imas & Schaal post (and its companion trackers: the Stanford *Canaries Dashboard*, the Yale Budget Lab AI labour tracker) to the quarterly currency check as **discovery feeds** for the entry-rung question. They surfaced a dozen 2026 papers we had not seen. They are never cited; they point to what to read. Next quarterly run: by 2026-12-09.
