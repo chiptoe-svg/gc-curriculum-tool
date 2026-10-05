@@ -46,14 +46,8 @@ export function isSyllabusFileName(fileName: string): boolean {
 export function evaluateMaterialsPolicy(input: PolicyInput): PolicyDecision {
   const { fileName, extractedText } = input;
 
-  if (fileName === 'Canvas: Discussions') {
-    return {
-      included: false,
-      reason: 'Contains student posts',
-      ferpaRisk: 'high',
-      overridable: true,
-    };
-  }
+  // Canvas: Discussions is no longer set aside: student names in it are
+  // privacy-scrubbed before storage (spec 2026-10-05).
 
   // xlsx/xls/xlsm: default to included. Auto-exclude only when the
   // filename matches gradebook-shaped patterns where the content is

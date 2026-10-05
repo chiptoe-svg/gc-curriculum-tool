@@ -26,8 +26,8 @@ export interface FinalizeExtractionInput {
   id: string;
   courseCode: string;
   fileName: string;
-  /** The material's `is_syllabus` flag. When true, exempt from the FERPA hold
-   *  the same as a syllabus-shaped filename (syllabi are public documents). */
+  /** The material's `is_syllabus` flag. When true, exempt from the FERPA risk
+   *  check the same as a syllabus-shaped filename (syllabi are public documents). */
   isSyllabus?: boolean;
   extractionStatus: ExtractionStatus;
   extractionMethod?: ExtractionMethod;
@@ -91,40 +91,48 @@ export async function finalizeExtraction(input: FinalizeExtractionInput): Promis
   // failure narration / decoder repetition (Flavour B) from ANY source path
   // before extracted_text is stored. Every extracted_text write funnels through
   // here, so this is the one place that covers docling-text and vision alike.
-  // Downstream reads use `scrubbed`, never `input`, so nothing sees the raw text.
   const cleanedText =
     input.extractedText !== undefined ? sanitizeExtractedText(input.extractedText) : undefined;
   const scrubbed: FinalizeExtractionInput = { ...input, extractedText: cleanedText };
 
-  await updateExtractionResult({
+  // updateExtractionResult privacy-scrubs the text before storing it
+  // (spec 2026-10-05) and returns what it stored.
+  const persisted = await updateExtractionResult({
     id: scrubbed.id,
     extractionStatus: scrubbed.extractionStatus,
     ...(scrubbed.extractionMethod !== undefined && { extractionMethod: scrubbed.extractionMethod }),
     ...(scrubbed.extractedText !== undefined && { extractedText: scrubbed.extractedText }),
     ...(scrubbed.pageCount !== undefined && { pageCount: scrubbed.pageCount }),
   });
+  if (persisted.outcome === 'scrub_failed') {
+    // Nothing was stored, so nothing downstream (digest, chunks, embeddings) may see this text.
+    await updateIndexingStatus({ id: input.id, status: 'failed' });
+    return;
+  }
+  // Downstream reads use `stored` — the text exactly as written — never `input`.
+  const stored: FinalizeExtractionInput = { ...scrubbed, extractedText: persisted.extractedText };
 
-  if (scrubbed.extractionStatus !== 'ok' || !scrubbed.extractedText) return;
+  if (stored.extractionStatus !== 'ok' || !stored.extractedText) return;
 
   if (v2Enabled()) {
-    await runV2Pipeline(scrubbed);
+    await runV2Pipeline(stored);
     return;
   }
 
   // Legacy path: long reference materials get a digest via the existing summarizer.
   const candidate = isCompressionCandidate({
-    fileName: scrubbed.fileName,
-    extractedText: scrubbed.extractedText,
+    fileName: stored.fileName,
+    extractedText: stored.extractedText,
     digest: null,
     useDigest: false,
   });
   if (!candidate) return;
   try {
     const { digest, model } = await generateMaterialDigest({
-      fileName: scrubbed.fileName,
-      extractedText: scrubbed.extractedText,
+      fileName: stored.fileName,
+      extractedText: stored.extractedText,
     });
-    await updateMaterialDigest({ id: scrubbed.id, digest, digestModel: model });
+    await updateMaterialDigest({ id: stored.id, digest, digestModel: model });
   } catch (err) {
     console.error(`finalizeExtraction (legacy): digest failed for ${input.id} (${input.fileName})`, err);
     // Intentionally swallowed — extraction itself succeeded. The backfill
@@ -136,35 +144,18 @@ async function runV2Pipeline(input: FinalizeExtractionInput): Promise<void> {
   const { id, courseCode, fileName, extractedText } = input;
   if (!extractedText) return;
 
-  // 1. FERPA detection — ENFORCED, not merely advisory. High content-risk
-  //    material (CUIDs, gradebook/roster tables, multiple student emails,
-  //    multiple "Submitted by" names) is auto-set-aside BEFORE any external
-  //    LLM digest or embedding call, so student PII never leaves the box.
-  //    This is the CONTENT gate; the filename-based materials policy below is
-  //    the complementary shape gate. Faculty can override from the Review panel.
-  //    Medium/low risk continues to the policy step (medium surfaces a warning
-  //    badge but is not blocked, since a single "Submitted by" name is often
-  //    benign and the one-click include remains available).
-  //    Syllabi are exempt: they are public documents (owner, 2026-10-05).
-  //    A material explicitly flagged `is_syllabus` is exempt too, even when
-  //    its filename doesn't look like a syllabus (e.g. a Canvas File: upload
-  //    named via the Syllabus box).
+  // 1. FERPA risk — recorded for display only (privacy-scrub spec 2026-10-05).
+  //    Student identifiers were scrubbed out of `extractedText` by
+  //    updateExtractionResult before it was stored, so the old FERPA hold
+  //    (auto set-aside of high-risk files) is retired. The value now describes
+  //    the stored, scrubbed text. Syllabi are exempt: they are public
+  //    documents (owner, 2026-10-05). A material explicitly flagged
+  //    `is_syllabus` is exempt too, even when its filename doesn't look like a
+  //    syllabus (e.g. a Canvas File: upload named via the Syllabus box).
   const ferpa = (input.isSyllabus === true || isSyllabusFileName(fileName))
     ? { level: 'low' as const, matches: [] }
     : detectFerpaRisk(extractedText);
   await updateFerpaRisk({ id, risk: ferpa.level });
-
-  if (ferpa.level === 'high') {
-    const rules = [...new Set(ferpa.matches.map(m => m.rule))].join(', ') || 'content';
-    await updateAutoSetAside({
-      id,
-      autoSetAside: true,
-      setAsideReason: `FERPA risk detected (${rules}) — set aside automatically so student data is not sent to the AI provider. Review and override to include.`,
-      ignored: true,
-    });
-    await updateIndexingStatus({ id, status: 'skipped' });
-    return;
-  }
 
   // 2. Materials policy → set aside if not included
   const policy = evaluateMaterialsPolicy({

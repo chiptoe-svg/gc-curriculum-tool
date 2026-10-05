@@ -4,6 +4,9 @@ const updateExtractionResult = vi.fn();
 const updateMaterialDigest = vi.fn();
 const generateMaterialDigest = vi.fn();
 
+/** updateExtractionResult stand-in: stores the text it was given (no scrub in these unit tests). */
+const storeAsGiven = async (i: { extractedText?: string }) => ({ outcome: 'stored' as const, extractedText: i.extractedText });
+
 vi.mock('@/lib/db/course-materials-queries', () => ({
   updateExtractionResult: (...args: unknown[]) => updateExtractionResult(...args),
   updateMaterialDigest: (...args: unknown[]) => updateMaterialDigest(...args),
@@ -24,7 +27,7 @@ const LONG = Array(2000)
 
 describe('finalizeExtraction', () => {
   beforeEach(() => {
-    updateExtractionResult.mockReset().mockResolvedValue(undefined);
+    updateExtractionResult.mockReset().mockImplementation(storeAsGiven);
     updateMaterialDigest.mockReset().mockResolvedValue(undefined);
     generateMaterialDigest.mockReset();
     delete process.env.COURSECAPTURE_V2_INGESTION;

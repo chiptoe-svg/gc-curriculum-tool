@@ -83,11 +83,10 @@ describe('evaluateMaterialsPolicy', () => {
     });
   });
 
-  it('marks Canvas: Discussions as high FERPA risk and sets it aside', () => {
+  it('includes Canvas: Discussions: discussions are privacy-scrubbed, not set aside (spec 2026-10-05)', () => {
     const r = evaluateMaterialsPolicy({ ...base, fileName: 'Canvas: Discussions' });
-    expect(r.included).toBe(false);
-    expect(r.ferpaRisk).toBe('high');
-    expect(r.reason).toMatch(/student posts/i);
+    expect(r.included).toBe(true);
+    expect(r.ferpaRisk).toBe('low');
   });
 
   it('includes everything else with low risk', () => {
