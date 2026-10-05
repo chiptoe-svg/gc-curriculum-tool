@@ -44,22 +44,25 @@ async function main(): Promise<void> {
   const allDropped: string[] = [];
 
   for (const code of codes) {
-    const snap = await getLatestSnapshotByCourse(code);
-    if (!snap) continue;
-    const materials = await listMaterialsByCourse(code);
-    const syllabus = pickSyllabus(materials);
-    const hasAssignments = usableAssignmentsText(materials) !== null;
-    const syllabusState = syllabus.status === 'ok'
-      ? `syllabus ok (${syllabus.syllabi.map((s) => s.fileName).join(', ')})`
-      : syllabus.status;
-    const ready = syllabus.status === 'ok' && hasAssignments;
-
-    if (dryRun || !ready) {
-      console.log(`${code}: ${syllabusState}; assignments ${hasAssignments ? 'ok' : 'missing'} — ${ready ? 'would build' : 'skip'}`);
-      continue;
-    }
-
     try {
+      const snap = await getLatestSnapshotByCourse(code);
+      if (!snap) {
+        console.log(`${code}: skip — no live snapshot`);
+        continue;
+      }
+      const materials = await listMaterialsByCourse(code);
+      const syllabus = pickSyllabus(materials);
+      const hasAssignments = usableAssignmentsText(materials) !== null;
+      const syllabusState = syllabus.status === 'ok'
+        ? `syllabus ok (${syllabus.syllabi.map((s) => s.fileName).join(', ')})`
+        : syllabus.status;
+      const ready = syllabus.status === 'ok' && hasAssignments;
+
+      if (dryRun || !ready) {
+        console.log(`${code}: ${syllabusState}; assignments ${hasAssignments ? 'ok' : 'missing'} — ${ready ? 'would build' : 'skip'}`);
+        continue;
+      }
+
       const r = await runObjectiveGuideForSnapshot(snap.id);
       if (r.status === 'written') {
         built++;
