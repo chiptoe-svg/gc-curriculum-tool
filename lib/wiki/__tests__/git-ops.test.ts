@@ -506,9 +506,14 @@ describe('writeAndPush — serialization (F7)', () => {
     const p2 = writeAndPush(COMMIT);
 
     // Flush microtasks so the first call's serial body reaches its first exec.
-    await Promise.resolve();
-    await Promise.resolve();
-    await Promise.resolve();
+    // Bounded poll rather than a fixed tick count: the privacy-scrub step
+    // (Task 7, 2026-10-05) now runs before the first git call and adds its
+    // own await hops ahead of it, so the exact number of ticks needed is an
+    // implementation detail — what this test actually checks is that only
+    // ONE exec call has landed while p1 is gated, proving p2 never raced it.
+    for (let i = 0; i < 50 && mockExecFile().mock.calls.length === 0; i++) {
+      await Promise.resolve();
+    }
 
     // If the calls raced on the working tree, p2's git pull would already have
     // fired. With serialization, exactly one exec (p1's pull) has been issued.

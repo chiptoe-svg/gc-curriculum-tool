@@ -25,6 +25,8 @@ import * as childProcess from 'node:child_process';
 import * as nodeFs from 'node:fs';
 import path from 'node:path';
 import { rebuildSectionIndexes } from '@/lib/ai/wiki/section-index';
+import { scrubForRecord } from '@/lib/privacy/scrub';
+import { findResidualIdentifiers, scrubIdentifiers } from '@/lib/privacy/deterministic';
 
 const WIKI_REPO_PATH =
   process.env.WIKI_REPO_PATH ?? '/Users/admin/projects/gc-curriculum-wiki';
@@ -35,6 +37,49 @@ export interface WikiCommit {
   pages: Array<{ path: string; content: string }>;
   logEntry: string;
   commitMessage: string;
+}
+
+/**
+ * Thrown by writeAndPush AFTER the pages that passed were committed and
+ * pushed, when one or more pages were withheld by the privacy check. Callers
+ * already log writeAndPush errors as wiki-update failures.
+ */
+export class WikiPagesWithheldError extends Error {
+  constructor(
+    readonly withheld: Array<{ path: string; reason: string }>,
+    readonly sha: string,
+  ) {
+    super(`wiki-ops: ${withheld.length} page(s) withheld by the privacy check: ${withheld.map(w => `${w.path} (${w.reason})`).join('; ')}`);
+    this.name = 'WikiPagesWithheldError';
+  }
+}
+
+/**
+ * Privacy scrub for public wiki output (spec 2026-10-05, Layer 2). Every page
+ * is scrubbed with isSyllabus:false, so all emails are removed from public
+ * pages; the AI name pass runs only when the detector flags the page. Then a
+ * hard check: a page that still carries an email or student-ID pattern, or
+ * whose scrub failed, is withheld. Reasons never quote page text.
+ */
+export async function scrubWikiPages(
+  pages: WikiCommit['pages'],
+): Promise<{ pages: WikiCommit['pages']; withheld: Array<{ path: string; reason: string }> }> {
+  const kept: WikiCommit['pages'] = [];
+  const withheld: Array<{ path: string; reason: string }> = [];
+  for (const page of pages) {
+    try {
+      const { text } = await scrubForRecord(page.content, { fileName: page.path, isSyllabus: false });
+      const residual = findResidualIdentifiers(text);
+      if (residual.length > 0) {
+        withheld.push({ path: page.path, reason: `${residual.length} email/student-ID pattern(s) remain after the privacy scrub` });
+        continue;
+      }
+      kept.push({ path: page.path, content: text });
+    } catch (err) {
+      withheld.push({ path: page.path, reason: err instanceof Error ? err.message : String(err) });
+    }
+  }
+  return { pages: kept, withheld };
 }
 
 // ---------------------------------------------------------------------------
@@ -137,11 +182,22 @@ export function writeAndPush(commit: WikiCommit): Promise<{ sha: string }> {
 async function writeAndPushSerial(commit: WikiCommit): Promise<{ sha: string }> {
   const fs = fsPromises();
 
+  // 0. Privacy (spec 2026-10-05, Layer 2): scrub every page, the log entry and
+  //    the commit message before anything touches the working tree. Withheld
+  //    pages are not written; the error is raised after the push below.
+  const { pages, withheld } = await scrubWikiPages(commit.pages);
+  for (const w of withheld) console.error(`[wiki privacy] withheld ${w.path}: ${w.reason}`);
+  const logEntry = (await scrubForRecord(commit.logEntry, { fileName: 'log.md', isSyllabus: false })).text;
+  if (findResidualIdentifiers(logEntry).length > 0) {
+    throw new Error('wiki-ops: log entry still carries an email or student-ID pattern after the privacy scrub');
+  }
+  const commitMessage = scrubIdentifiers(commit.commitMessage, { keepEmails: false });
+
   // 1. Pull latest to minimise conflict surface.
   await exec('git', ['-C', WIKI_REPO_PATH, 'pull', '--ff-only', WIKI_REMOTE, WIKI_BRANCH]);
 
   // 2. Write each page (path-traversal guard applied to every entry).
-  for (const page of commit.pages) {
+  for (const page of pages) {
     const abs = resolvePagePath(page.path);
     await fs.mkdir(path.dirname(abs), { recursive: true });
     await fs.writeFile(abs, page.content);
@@ -153,16 +209,17 @@ async function writeAndPushSerial(commit: WikiCommit): Promise<{ sha: string }> 
 
   // 3. Append log entry to log.md (never overwrite — append-only log).
   const logPath = path.join(WIKI_REPO_PATH, 'log.md');
-  await fs.appendFile(logPath, `\n${commit.logEntry}\n`);
+  await fs.appendFile(logPath, `\n${logEntry}\n`);
 
   // 4. Stage everything.
   await exec('git', ['-C', WIKI_REPO_PATH, 'add', '-A']);
 
   // 5. Commit.
-  await exec('git', ['-C', WIKI_REPO_PATH, 'commit', '-m', commit.commitMessage]);
+  await exec('git', ['-C', WIKI_REPO_PATH, 'commit', '-m', commitMessage]);
 
   // 6. Capture HEAD sha before push attempt.
   const { stdout: shaRaw } = await exec('git', ['-C', WIKI_REPO_PATH, 'rev-parse', 'HEAD']);
+  const sha = shaRaw.trim();
 
   // 7. Push — one retry via rebase on failure (parallel-snapshot race).
   try {
@@ -174,7 +231,10 @@ async function writeAndPushSerial(commit: WikiCommit): Promise<{ sha: string }> 
     await exec('git', ['-C', WIKI_REPO_PATH, 'push', WIKI_REMOTE, WIKI_BRANCH]);
   }
 
-  return { sha: shaRaw.trim() };
+  // 8. Surface withheld pages like any other wiki-update failure.
+  if (withheld.length > 0) throw new WikiPagesWithheldError(withheld, sha);
+
+  return { sha };
 }
 
 // ---------------------------------------------------------------------------
