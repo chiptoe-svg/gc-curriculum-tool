@@ -1,6 +1,7 @@
 import { pgTable, pgEnum, uuid, text, jsonb, timestamp, integer, bigint, real, boolean, primaryKey, index, unique, foreignKey } from 'drizzle-orm/pg-core';
 import type { CaptureProfile, CaptureReadiness, CaptureReviewerStatus } from '@/lib/ai/capture/schema';
 import type { ReconciliationLogEntry } from '@/lib/ai/schemas';
+import type { ObjectiveGuide } from '@/lib/objective-guide/schema';
 
 export const careerTargets = pgTable('career_targets', {
   id: text('id').primaryKey(),               // stable slug like 'production-operations'
@@ -329,6 +330,11 @@ export const courseMaterials = pgTable('course_materials', {
   // OpenAI fallback suppressed). Persisted so a worker restart keeps the mode.
   // Migration 0045.
   ingestProvider: text('ingest_provider'),
+  // True when this material is the course syllabus — the sole source of the
+  // objectives quoted by the objective assessment guide (spec 2026-10-05).
+  // Set by the Canvas import for `Canvas: Syllabus`, by uploads through the
+  // Syllabus box (role=syllabus), and once by migration 0051's backfill.
+  isSyllabus: boolean('is_syllabus').notNull().default(false),
 });
 
 export const courseProfiles = pgTable('course_profiles', {
@@ -494,6 +500,18 @@ export const courseCaptureSnapshots = pgTable('course_capture_snapshots', {
   instructorName: text('instructor_name'),
   retiredAt: timestamp('retired_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+// Objective assessment guide (spec 2026-10-05): one row per course, the latest
+// guide only — overwritten on regeneration; history lives in the snapshots it
+// is built from. Migration 0051 (hand-written).
+export const courseObjectiveGuides = pgTable('course_objective_guides', {
+  courseCode: text('course_code').primaryKey().references(() => courses.code, { onDelete: 'cascade' }),
+  snapshotId: uuid('snapshot_id').notNull().references(() => courseCaptureSnapshots.id, { onDelete: 'cascade' }),
+  guide: jsonb('guide').$type<ObjectiveGuide>().notNull(),
+  droppedNames: jsonb('dropped_names').$type<string[]>().notNull().default([]),
+  model: text('model').notNull(),
+  generatedAt: timestamp('generated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
 // Program-level coverage matrix: one row per (snapshot × career-target ×

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildIndexableMaterialsWhere, __mapMaterialRowForTest } from '@/lib/db/course-materials-queries';
+import { buildIndexableMaterialsWhere, __mapMaterialRowForTest, isSyllabusInsert } from '@/lib/db/course-materials-queries';
 
 /**
  * Recursively collect string tokens from a drizzle SQL condition's queryChunks
@@ -74,5 +74,34 @@ describe('mapMaterialRow', () => {
     };
     expect(__mapMaterialRowForTest({ ...base, ingest_provider: 'local' }).ingestProvider).toBe('local');
     expect(__mapMaterialRowForTest({ ...base, ingest_provider: null }).ingestProvider).toBeNull();
+  });
+});
+
+describe('mapMaterialRow — is_syllabus', () => {
+  const base = {
+    id: 'a', course_code: 'GC 1010', file_name: 'f', blob_url: 'u', mime_type: 'application/pdf',
+    size_bytes: 1, page_count: null, extraction_method: null, extraction_status: 'pending',
+    extracted_text: null, analysis_finding: null, analysis_model: null, analysis_cost_usd_cents: null,
+    uploaded_at: new Date(), ip_hash: 'h', digest: null, digest_model: null, digest_generated_at: null,
+    use_digest: false, ferpa_risk: 'low', auto_set_aside: false, set_aside_reason: null,
+    indexing_status: 'queued', tier: null, indexed_at: null, ignored: false, ignored_items: null,
+    source_code: null, raw_cleared: false, retired_at: null, ingest_provider: null,
+  };
+  it('maps is_syllabus, defaulting a missing value to false', () => {
+    expect(__mapMaterialRowForTest({ ...base, is_syllabus: true }).isSyllabus).toBe(true);
+    expect(__mapMaterialRowForTest({ ...base, is_syllabus: false }).isSyllabus).toBe(false);
+    expect(__mapMaterialRowForTest(base).isSyllabus).toBe(false);
+  });
+});
+
+describe('isSyllabusInsert', () => {
+  it('flags the Canvas syllabus page by default', () => {
+    expect(isSyllabusInsert({ fileName: 'Canvas: Syllabus' })).toBe(true);
+    expect(isSyllabusInsert({ fileName: 'Canvas: Assignments' })).toBe(false);
+    expect(isSyllabusInsert({ fileName: 'my syllabus.pdf' })).toBe(false);
+  });
+  it('an explicit flag wins', () => {
+    expect(isSyllabusInsert({ fileName: 'notes.pdf', isSyllabus: true })).toBe(true);
+    expect(isSyllabusInsert({ fileName: 'Canvas: Syllabus', isSyllabus: false })).toBe(false);
   });
 });

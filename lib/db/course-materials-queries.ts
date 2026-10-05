@@ -42,6 +42,7 @@ function mapMaterialRow(row: Record<string, unknown>): CourseMaterialRow {
     rawCleared: row['raw_cleared'] as boolean,
     retiredAt: row['retired_at'] as Date | null,
     ingestProvider: row['ingest_provider'] as string | null,
+    isSyllabus: (row['is_syllabus'] as boolean | null | undefined) ?? false,
   };
 }
 export type ExtractionStatus = 'pending' | 'ok' | 'low_text' | 'failed';
@@ -55,12 +56,20 @@ export interface InsertMaterialInput {
   sizeBytes: number;
   ipHash: string;
   sourceCode?: string | null;
+  /** Explicit syllabus flag (Syllabus-box uploads). Omitted ⇒ derived by isSyllabusInsert. */
+  isSyllabus?: boolean;
+}
+
+/** The syllabus flag a new row gets: an explicit flag wins; otherwise only the
+ *  Canvas syllabus page (written by every Canvas/IMSCC importer) is flagged. */
+export function isSyllabusInsert(input: Pick<InsertMaterialInput, 'fileName' | 'isSyllabus'>): boolean {
+  return input.isSyllabus ?? input.fileName === 'Canvas: Syllabus';
 }
 
 export async function insertMaterial(input: InsertMaterialInput): Promise<CourseMaterialRow> {
   const [row] = await db
     .insert(courseMaterials)
-    .values({ ...input, extractionStatus: 'pending' })
+    .values({ ...input, isSyllabus: isSyllabusInsert(input), extractionStatus: 'pending' })
     .returning();
   if (!row) throw new Error('insertMaterial: no row returned');
   return row;
@@ -71,6 +80,15 @@ export async function listMaterialsByCourse(courseCode: string): Promise<CourseM
     .select()
     .from(courseMaterials)
     .where(eq(courseMaterials.courseCode, courseCode))
+    .orderBy(asc(courseMaterials.uploadedAt));
+}
+
+/** Every material flagged as the course syllabus (any state), oldest first. */
+export async function listSyllabusMaterials(courseCode: string): Promise<CourseMaterialRow[]> {
+  return db
+    .select()
+    .from(courseMaterials)
+    .where(and(eq(courseMaterials.courseCode, courseCode), eq(courseMaterials.isSyllabus, true)))
     .orderBy(asc(courseMaterials.uploadedAt));
 }
 
