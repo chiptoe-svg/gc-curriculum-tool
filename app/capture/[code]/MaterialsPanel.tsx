@@ -71,6 +71,8 @@ export interface CaptureMaterial {
    * spine excludes retired materials from evidence queries.
    */
   retiredAt: string | null;
+  /** True when this material is the course syllabus (course_materials.is_syllabus). */
+  isSyllabus?: boolean;
 }
 
 export interface CourseCatalogView {

@@ -40,7 +40,7 @@ describe('CaptureMaterialsStep — three source-boxes', () => {
 
   it('Continue calls onContinue', () => {
     const onContinue = vi.fn();
-    render(<CaptureMaterialsStep course={course} materials={[mat({})]} slug="s" catalogSyncedAt={null} onMaterialsChange={noop} onCourseChange={noop} onContinue={onContinue} instructor={defaultInstructor} onInstructorChange={noop} />);
+    render(<CaptureMaterialsStep course={course} materials={[mat({ isSyllabus: true })]} slug="s" catalogSyncedAt={null} onMaterialsChange={noop} onCourseChange={noop} onContinue={onContinue} instructor={defaultInstructor} onInstructorChange={noop} />);
     fireEvent.click(screen.getByRole('button', { name: /continue/i }));
     expect(onContinue).toHaveBeenCalled();
   });
@@ -65,11 +65,28 @@ describe('CaptureMaterialsStep — three source-boxes', () => {
     expect(screen.getByRole('button', { name: /material tools/i })).toBeTruthy();
   });
 
-  it('offers a start-anyway path when there are no materials and no synced syllabus', () => {
+  it('the start-anyway path is disabled until a syllabus exists', () => {
     const onContinue = vi.fn();
     render(<CaptureMaterialsStep course={course} materials={[]} slug="s" catalogSyncedAt={null} onMaterialsChange={noop} onCourseChange={noop} onContinue={onContinue} instructor={defaultInstructor} onInstructorChange={noop} />);
-    fireEvent.click(screen.getByRole('button', { name: /start without/i }));
-    expect(onContinue).toHaveBeenCalled();
+    const btn = screen.getByRole('button', { name: /start without/i });
+    expect((btn as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(btn);
+    expect(onContinue).not.toHaveBeenCalled();
+  });
+
+  it('cannot continue past Step 1 without a syllabus', () => {
+    const onContinue = vi.fn();
+    render(<CaptureMaterialsStep course={course} materials={[mat({})]} slug="s" catalogSyncedAt={null} onMaterialsChange={noop} onCourseChange={noop} onContinue={onContinue} instructor={defaultInstructor} onInstructorChange={noop} />);
+    expect(screen.getByText('Add the course syllabus to continue.')).toBeTruthy();
+    const btn = screen.getByRole('button', { name: /continue to interview/i });
+    expect((btn as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(btn);
+    expect(onContinue).not.toHaveBeenCalled();
+  });
+
+  it('a set-aside syllabus still counts as present for the gate', () => {
+    render(<CaptureMaterialsStep course={course} materials={[mat({ isSyllabus: true, ignored: true })]} slug="s" catalogSyncedAt={null} onMaterialsChange={noop} onCourseChange={noop} onContinue={noop} instructor={defaultInstructor} onInstructorChange={noop} />);
+    expect((screen.getByRole('button', { name: /continue to interview/i }) as HTMLButtonElement).disabled).toBe(false);
   });
 
   it('reveals the bulk-ops panel from the bottom disclosure', () => {
@@ -92,7 +109,7 @@ describe('CaptureMaterialsStep — three source-boxes', () => {
 describe('CaptureMaterialsStep — triageEnabled flag', () => {
   const baseProps = {
     course,
-    materials: [mat({})],
+    materials: [mat({ isSyllabus: true })],
     slug: 's',
     catalogSyncedAt: null,
     onMaterialsChange: noop,

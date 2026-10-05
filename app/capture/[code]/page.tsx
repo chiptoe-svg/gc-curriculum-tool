@@ -146,6 +146,7 @@ export default async function CapturePage({ params, searchParams }: Props) {
     tier: (m.tier as 'high' | 'middle' | 'background' | null) ?? null,
     rawCleared: m.rawCleared ?? false,
     retiredAt: m.retiredAt ? m.retiredAt.toISOString() : null,
+    isSyllabus: m.isSyllabus,
   }));
 
   return (

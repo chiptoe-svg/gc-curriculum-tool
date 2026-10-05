@@ -107,6 +107,32 @@ export function materialReadability(m: { indexingStatus: string; setAsideReason?
   }
 }
 
+// ---------------------------------------------------------------------------
+// Syllabus (spec 2026-10-05): found by the is_syllabus flag, never by name.
+// ---------------------------------------------------------------------------
+
+export interface SyllabusLike { isSyllabus?: boolean; retiredAt?: string | Date | null }
+
+/** Flagged, unretired syllabus materials — including set-aside ones. */
+export function syllabusMaterials<T extends SyllabusLike>(materials: T[]): T[] {
+  return materials.filter((m) => m.isSyllabus === true && !m.retiredAt);
+}
+
+/** True when the course has a syllabus (the Step-1 requirement). */
+export function hasSyllabusMaterial(materials: SyllabusLike[]): boolean {
+  return syllabusMaterials(materials).length > 0;
+}
+
+/** Readiness wording for a syllabus row in the Syllabus box. */
+export function syllabusReadinessLabel(
+  m: { ignored: boolean; indexingStatus: string; setAsideReason?: string | null },
+  triageEnabled: boolean,
+): string {
+  if (m.ignored) return 'set aside — not sent to the AI';
+  if (triageEnabled && m.indexingStatus === 'pending') return 'attached — will be read when you ingest';
+  return materialReadability(m).label;
+}
+
 /** Relative time string; `now` is passed in for testability. */
 export function relativeTimeFromNow(iso: string | null, now: number): string {
   if (!iso) return 'not synced yet';

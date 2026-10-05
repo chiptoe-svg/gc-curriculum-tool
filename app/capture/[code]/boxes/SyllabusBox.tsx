@@ -11,6 +11,9 @@ import {
   isSyllabusCanvasMaterial,
   materialProvenance,
   catalogContributionSummary,
+  syllabusMaterials,
+  syllabusReadinessLabel,
+  PROVENANCE_LABEL,
 } from '@/lib/capture/material-display';
 
 interface Props {
@@ -21,6 +24,8 @@ interface Props {
   slug: string;
   onCourseChange: (next: CourseCatalogView) => void;
   onMaterialsChange: (next: CaptureMaterial[]) => void;
+  /** Two-phase triage flow: uploads wait for the Ingest step, so "pending" is expected. */
+  triageEnabled?: boolean;
 }
 
 const ALLOWED_UPLOAD_TYPES = new Set([
@@ -29,13 +34,95 @@ const ALLOWED_UPLOAD_TYPES = new Set([
 ]);
 
 /**
+ * One recognised syllabus (flagged is_syllabus, uploaded or Canvas) with its
+ * readiness, and — when it is set aside — the reason plus the include control.
+ * Include mirrors OtherMaterialsBox's FERPA include-anyway: optimistic local
+ * update, PATCH {ignored:false}, revert + error on failure.
+ */
+function SyllabusRow({
+  m,
+  courseCode,
+  slug,
+  triageEnabled,
+  allMaterials,
+  onMaterialsChange,
+}: {
+  m: CaptureMaterial;
+  courseCode: string;
+  slug: string;
+  triageEnabled: boolean;
+  allMaterials: CaptureMaterial[];
+  onMaterialsChange: (next: CaptureMaterial[]) => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function include(): Promise<void> {
+    setBusy(true);
+    setError(null);
+    const previous = allMaterials;
+    onMaterialsChange(allMaterials.map((x) => (x.id === m.id ? { ...x, ignored: false } : x)));
+    try {
+      const res = await fetch(
+        `/api/courses/${encodeURIComponent(courseCode)}/materials/${encodeURIComponent(m.id)}?slug=${encodeURIComponent(slug)}`,
+        {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ ignored: false }),
+        },
+      );
+      if (!res.ok) {
+        onMaterialsChange(previous);
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        setError(body.error ?? `Failed (${res.status})`);
+      }
+    } catch (e) {
+      onMaterialsChange(previous);
+      setError(e instanceof Error ? e.message : 'Failed to include');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <li className="flex flex-col gap-1 px-3 py-2">
+      <div className="flex items-center gap-2">
+        <span aria-hidden className="w-4 shrink-0 text-center text-sm">📄</span>
+        <span className="min-w-0 flex-1 truncate text-sm">{m.fileName}</span>
+        <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          {PROVENANCE_LABEL[materialProvenance(m)]}
+        </span>
+        <span className={'shrink-0 text-[11px] ' + (m.ignored ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground')}>
+          {syllabusReadinessLabel(m, triageEnabled)}
+        </span>
+      </div>
+      {m.ignored && (
+        <div className="flex items-start justify-between gap-2 rounded border border-amber-200 bg-amber-50/50 px-2 py-1">
+          <p className="text-[11px] leading-snug italic text-amber-800">
+            {m.setAsideReason ?? (m.autoSetAside ? 'set aside automatically' : 'set aside by hand')}
+          </p>
+          <button
+            type="button"
+            onClick={() => void include()}
+            disabled={busy}
+            className="shrink-0 text-[11px] font-medium text-amber-900 underline hover:text-amber-700 disabled:opacity-50"
+          >
+            {busy ? 'Including…' : m.autoSetAside ? 'Include anyway' : 'Include'}
+          </button>
+        </div>
+      )}
+      {error && <p className="text-[11px] text-destructive">{error}</p>}
+    </li>
+  );
+}
+
+/**
  * Box 1 of the three-source capture surface — the course's syllabus / catalog
- * context. The synced GC-sheet catalog is the free default; a faculty member
- * may *also* attach a syllabus document. When more than one source is present
- * and they differ we surface a discrepancy note (never silently merge). The
- * Canvas syllabus page lives in the Canvas box; here we only note that it
- * exists. Collapsed = a one-line summary + sync status + actions; unrolled =
- * the <CatalogOverview/> block (read-only; edit in Course Builder).
+ * context. The syllabus is required (owner decision 2026-10-05): it is found by
+ * the is_syllabus flag, listed here whether uploaded or imported from Canvas,
+ * and until one exists the box shows the required notice and Step 1 cannot be
+ * passed. The synced GC-sheet catalog is still shown when unrolled; when it and
+ * an uploaded syllabus both exist we surface a discrepancy note (never merge).
  */
 export function SyllabusBox({
   course,
@@ -44,6 +131,7 @@ export function SyllabusBox({
   slug,
   onCourseChange,
   onMaterialsChange,
+  triageEnabled = false,
 }: Props) {
   useRouter();
   const [open, setOpen] = useState(false);
@@ -55,15 +143,10 @@ export function SyllabusBox({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // An attached syllabus = a non-Canvas, non-linked material whose name reads
-  // like a syllabus (uploaded by faculty as "the syllabus"). The Canvas
-  // syllabus list is intentionally excluded — it lives in the Canvas box.
-  const attachedSyllabus = materials.find(
-    (m) =>
-      materialProvenance(m) === 'uploaded' &&
-      /syllab/i.test(m.fileName) &&
-      !isSyllabusCanvasMaterial(m),
-  );
+  const syllabi = syllabusMaterials(materials);
+  const hasSyllabus = syllabi.length > 0;
+  // An attached syllabus = a flagged syllabus that faculty uploaded (not Canvas).
+  const attachedSyllabus = syllabi.find((m) => materialProvenance(m) === 'uploaded');
   // A stamp alone isn't enough — Google returns non-errors for missing tabs,
   // so the sync-from-sheet route may have written a blank row in the past.
   // Require real catalog content (non-empty summary) in addition to a syncedAt
@@ -133,6 +216,7 @@ export function SyllabusBox({
         url: `/api/courses/${encodeURIComponent(course.code)}/materials`,
         file,
         slug,
+        role: 'syllabus',
         onProgress: (p) => setProgress({ fileName: file.name, index: 1, total: 1, pct: p.pct }),
       });
       if (!res.ok) {
@@ -198,10 +282,29 @@ export function SyllabusBox({
         </div>
       </div>
 
-      {!hasSheetCatalog && !attachedSyllabus && (
-        <p className="px-4 pb-2 text-[11px] text-muted-foreground">
-          No syllabus yet — attach one above, or import it from Canvas.
+      {!hasSyllabus && (
+        <p
+          role="alert"
+          className="mx-4 mb-2 rounded border border-amber-300 bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-900 dark:bg-amber-900/20 dark:text-amber-200"
+        >
+          Add the course syllabus: import it from Canvas or upload it here.
         </p>
+      )}
+
+      {hasSyllabus && (
+        <ul aria-label="Syllabus materials" className="mx-4 mb-2 divide-y rounded border">
+          {syllabi.map((m) => (
+            <SyllabusRow
+              key={m.id}
+              m={m}
+              courseCode={course.code}
+              slug={slug}
+              triageEnabled={triageEnabled}
+              allMaterials={materials}
+              onMaterialsChange={onMaterialsChange}
+            />
+          ))}
+        </ul>
       )}
 
       {progress && (

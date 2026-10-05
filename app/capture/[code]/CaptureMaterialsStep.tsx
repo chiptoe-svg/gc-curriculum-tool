@@ -8,6 +8,7 @@ import { CanvasBox } from './boxes/CanvasBox';
 import { OtherMaterialsBox } from './boxes/OtherMaterialsBox';
 import { InstructorSelect } from './InstructorSelect';
 import { CaptureWhyBlurb } from './CaptureWhyBlurb';
+import { hasSyllabusMaterial } from '@/lib/capture/material-display';
 
 interface Props {
   course: CourseCatalogView;
@@ -49,6 +50,11 @@ export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt,
   // An instructor must be chosen before continuing — captures are attributed
   // per instructor, so an unselected (empty) name can't be allowed through.
   const needsInstructor = instructor.trim() === '';
+  // Every course must have a syllabus (owner decision 2026-10-05): it is the
+  // source of the objectives in the objective assessment guide. A set-aside
+  // syllabus still counts as present; the Syllabus box offers to include it.
+  const needsSyllabus = !hasSyllabusMaterial(materials);
+  const blocked = needsInstructor || needsSyllabus;
 
   return (
     <div className="rounded-lg border bg-card p-6">
@@ -100,6 +106,7 @@ export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt,
               slug={slug}
               onCourseChange={onCourseChange}
               onMaterialsChange={onMaterialsChange}
+              triageEnabled={triageEnabled}
             />
             <OtherMaterialsBox
               course={course}
@@ -118,6 +125,7 @@ export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt,
               slug={slug}
               onCourseChange={onCourseChange}
               onMaterialsChange={onMaterialsChange}
+              triageEnabled={triageEnabled}
             />
             <CanvasBox
               course={course}
@@ -176,14 +184,17 @@ export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt,
       </div>
 
       <div className="mt-6 flex items-center justify-end gap-4">
+        {needsSyllabus && (
+          <span className="text-xs text-muted-foreground">Add the course syllabus to continue.</span>
+        )}
         {needsInstructor && (
           <span className="text-xs text-muted-foreground">Select an instructor to continue.</span>
         )}
         {isEmpty ? (
-          <button type="button" onClick={onContinue} disabled={needsInstructor}
+          <button type="button" onClick={onContinue} disabled={blocked}
             className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:no-underline disabled:hover:text-muted-foreground">Start without materials anyway →</button>
         ) : (
-          <button type="button" onClick={onContinue} disabled={needsInstructor}
+          <button type="button" onClick={onContinue} disabled={blocked}
             className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed">
             {triageEnabled ? 'Continue →' : 'Continue to interview →'}
           </button>

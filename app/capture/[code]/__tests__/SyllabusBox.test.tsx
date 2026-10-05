@@ -7,6 +7,9 @@ import type { CaptureMaterial, CourseCatalogView } from '../MaterialsPanel';
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }) }));
 vi.mock('@/lib/capture/fetch-course-materials', () => ({ fetchCourseMaterials: vi.fn(async () => null) }));
 
+const { uploadFileWithProgress } = vi.hoisted(() => ({ uploadFileWithProgress: vi.fn() }));
+vi.mock('@/lib/capture/upload-with-progress', () => ({ uploadFileWithProgress }));
+
 const COURSE: CourseCatalogView = {
   code: 'GC 1040',
   title: 'Intro',
@@ -49,10 +52,12 @@ function Harness({
   course = COURSE,
   catalogSyncedAt = null,
   materials = [],
+  triageEnabled = false,
 }: {
   course?: CourseCatalogView;
   catalogSyncedAt?: string | null;
   materials?: CaptureMaterial[];
+  triageEnabled?: boolean;
 }) {
   const [c, setC] = useState(course);
   const [mats, setMats] = useState(materials);
@@ -64,6 +69,7 @@ function Harness({
       slug="s1"
       onCourseChange={setC}
       onMaterialsChange={setMats}
+      triageEnabled={triageEnabled}
     />
   );
 }
@@ -80,8 +86,8 @@ describe('SyllabusBox', () => {
   });
 
   it('collapsed status reflects an attached syllabus when no sheet sync', () => {
-    render(<Harness materials={[M('syllabus.pdf')]} />);
-    expect(screen.getByText(/syllabus\.pdf/i)).toBeTruthy();
+    render(<Harness materials={[M('syllabus.pdf', { isSyllabus: true })]} />);
+    expect(screen.getByText(/syllabus\.pdf attached/i)).toBeTruthy();
   });
 
   it('collapsed status reflects an empty slot prompting to add a syllabus', () => {
@@ -116,7 +122,7 @@ describe('SyllabusBox', () => {
     render(
       <Harness
         catalogSyncedAt={new Date().toISOString()}
-        materials={[M('syllabus.pdf')]}
+        materials={[M('syllabus.pdf', { isSyllabus: true })]}
       />,
     );
     expect(screen.getByText(/a different syllabus is also attached/i)).toBeTruthy();
@@ -153,7 +159,7 @@ describe('SyllabusBox', () => {
       <Harness
         course={emptyCourse}
         catalogSyncedAt={new Date().toISOString()}
-        materials={[M('MKT 4320 Simple Syllabus.pdf')]}
+        materials={[M('MKT 4320 Simple Syllabus.pdf', { isSyllabus: true })]}
       />,
     );
     expect(screen.getByText(/MKT 4320 Simple Syllabus\.pdf attached/)).toBeTruthy();
@@ -179,5 +185,65 @@ describe('SyllabusBox', () => {
   it('button label is "Attach a syllabus" when no sheet catalog', () => {
     render(<Harness />);
     expect(screen.getByRole('button', { name: /attach a syllabus/i })).toBeTruthy();
+  });
+
+  it('recognises the syllabus by its flag, not its file name', () => {
+    render(<Harness materials={[M('syllabus.pdf'), M('course outline.pdf', { isSyllabus: true })]} />);
+    expect(screen.getByText(/course outline\.pdf attached/i)).toBeTruthy();
+    expect(screen.queryByText(/^— syllabus\.pdf attached/i)).toBeNull();
+  });
+
+  it('shows the required notice until a syllabus exists', () => {
+    const { unmount } = render(<Harness catalogSyncedAt={new Date().toISOString()} />);
+    expect(screen.getByText('Add the course syllabus: import it from Canvas or upload it here.')).toBeTruthy();
+    unmount();
+    render(<Harness materials={[M('Canvas: Syllabus', { isSyllabus: true })]} />);
+    expect(screen.queryByText(/Add the course syllabus/)).toBeNull();
+  });
+
+  it('lists each recognised syllabus with its readiness', () => {
+    render(
+      <Harness
+        triageEnabled
+        materials={[
+          M('outline.pdf', { isSyllabus: true, indexingStatus: 'pending' }),
+          M('Canvas: Syllabus', { isSyllabus: true, indexingStatus: 'ready' }),
+        ]}
+      />,
+    );
+    const list = screen.getByRole('list', { name: /syllabus materials/i });
+    expect(list.textContent).toContain('outline.pdf');
+    expect(list.textContent).toContain('attached — will be read when you ingest');
+    expect(list.textContent).toContain('Canvas: Syllabus');
+    expect(list.textContent).toContain('ready');
+  });
+
+  it('offers Include anyway on a FERPA set-aside syllabus and PATCHes ignored:false', async () => {
+    const fetchMock = vi.spyOn(global, 'fetch').mockResolvedValue(new Response('{}', { status: 200 }));
+    render(
+      <Harness
+        materials={[M('MKT 4320 syllabus.pdf', {
+          id: 'syl-1', isSyllabus: true, ignored: true, autoSetAside: true, ferpaRisk: 'high',
+          setAsideReason: 'FERPA risk detected (emails) — set aside automatically',
+        })]}
+      />,
+    );
+    expect(screen.getByText(/FERPA risk detected/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Include anyway' }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(String(url)).toContain('/materials/syl-1?slug=s1');
+    expect((init as RequestInit).method).toBe('PATCH');
+    expect((init as RequestInit).body).toBe(JSON.stringify({ ignored: false }));
+  });
+
+  it('uploads through the box as the syllabus (role=syllabus)', async () => {
+    uploadFileWithProgress.mockResolvedValue({ ok: true, status: 200, json: {} });
+    const { container } = render(<Harness />);
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File([new Uint8Array(10)], 'outline.pdf', { type: 'application/pdf' });
+    fireEvent.change(input, { target: { files: [file] } });
+    await waitFor(() => expect(uploadFileWithProgress).toHaveBeenCalled());
+    expect(uploadFileWithProgress.mock.calls[0]![0]).toMatchObject({ role: 'syllabus' });
   });
 });

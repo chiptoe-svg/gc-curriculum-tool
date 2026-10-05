@@ -44,7 +44,8 @@ function mapContextToMaterials(json: {
     tier?: 'high' | 'middle' | 'background' | null;
     rawCleared?: boolean;
     retiredAt?: string | null;
+    isSyllabus?: boolean;
   }>;
 }): CaptureMaterial[] {
-  return json.materials.map(m => ({ ...m, sourceCode: m.sourceCode ?? null, tier: m.tier ?? null, rawCleared: m.rawCleared ?? false, retiredAt: m.retiredAt ?? null }));
+  return json.materials.map(m => ({ ...m, sourceCode: m.sourceCode ?? null, tier: m.tier ?? null, rawCleared: m.rawCleared ?? false, retiredAt: m.retiredAt ?? null, isSyllabus: m.isSyllabus ?? false }));
 }
