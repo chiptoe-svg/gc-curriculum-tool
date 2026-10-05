@@ -50,6 +50,26 @@ function textWriteSites(src: string): number[] {
   return sites;
 }
 
+/**
+ * Fix round 1 (2026-10-05): the text scan above can only see what's written
+ * literally in the `.set(`/`.values(` call. A courseMaterials update/insert
+ * whose patch argument is a bare identifier (e.g. `.set(patch)`) hides
+ * whatever that variable's type carries from the scan — if that type ever
+ * grows an `extractedText` field, the bypass would pass silently. Flag every
+ * such bare-argument courseMaterials write so a new one can't go unnoticed;
+ * keep it simple — a flagged file is reviewed/whitelisted deliberately, not
+ * auto-passed because the call happens to also mention extractedText.
+ */
+function bareWriteArgSites(src: string): number[] {
+  const RE = /\.(?:update|insert)\(\s*courseMaterials\s*\)\s*\.(?:set|values)\(\s*/g;
+  const sites: number[] = [];
+  for (const m of src.matchAll(RE)) {
+    const after = m.index! + m[0].length;
+    if (src[after] !== '{') sites.push(m.index!);
+  }
+  return sites;
+}
+
 const files = SCAN_DIRS.flatMap(sourceFiles);
 
 describe('extracted_text has exactly one writer', () => {
@@ -58,6 +78,20 @@ describe('extracted_text has exactly one writer', () => {
       .filter(f => f !== QUERIES)
       .filter(f => textWriteSites(fs.readFileSync(path.join(ROOT, f), 'utf8')).length > 0);
     expect(offenders).toEqual([]);
+  });
+
+  it('no file other than course-materials-queries.ts writes courseMaterials with an unanalyzable (bare-identifier) patch', () => {
+    const offenders = files
+      .filter(f => f !== QUERIES)
+      .filter(f => bareWriteArgSites(fs.readFileSync(path.join(ROOT, f), 'utf8')).length > 0);
+    expect(offenders).toEqual([]);
+  });
+
+  it('updateMaterialMetadata (the one bare-patch write, inside course-materials-queries.ts) cannot carry extracted text', () => {
+    const src = fs.readFileSync(path.join(ROOT, QUERIES), 'utf8');
+    const iface = /export interface UpdateMaterialMetadataInput \{([\s\S]*?)\n\}/.exec(src)?.[1] ?? '';
+    expect(iface).not.toBe('');
+    expect(iface).not.toMatch(/extractedText|extracted_text/);
   });
 
   it('inside course-materials-queries.ts, only updateExtractionResult writes it', () => {
