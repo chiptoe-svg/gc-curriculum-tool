@@ -41,6 +41,7 @@ export const AI_FUNCTION_IDS = [
   'reconcile-feedback',
   'material-classify',
   'explore-agent',
+  'objective-evidence-guide',
 ] as const;
 export type AIFunctionId = (typeof AI_FUNCTION_IDS)[number];
 
@@ -180,6 +181,11 @@ export const DEFAULT_TIERS: Record<AIFunctionId, Exclude<ModelTier, 'custom'>> =
   // (same reasoning pattern — read context, route 2–5 tool calls, synthesize response);
   // promote to heavy if multi-competency change reasoning quality is insufficient.
   'explore-agent': 'default',
+  // Default tier (owner decision 2026-10-05). One structured call per course
+  // after each snapshot: reads the syllabus, the Canvas assignments text and the
+  // snapshot findings, and writes the objective assessment guide. A deterministic
+  // check (lib/objective-guide/check.ts) drops any name not in Canvas.
+  'objective-evidence-guide': 'default',
 };
 
 export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
@@ -208,6 +214,7 @@ export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
   'reconcile-feedback': 'Reconcile feedback (guided faculty review)',
   'material-classify': 'Material tier classifier (deck vs reading)',
   'explore-agent': 'Explore agent (course-change thinking partner)',
+  'objective-evidence-guide': 'Objective assessment guide (wiki course page)',
 };
 
 export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
@@ -236,6 +243,7 @@ export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
   'reconcile-feedback': 'Proposes per-item edits (keep/modify/remove/add with revised K/U/D and rationale) from faculty prose feedback over a capture section. Proposals only — never sets provenance; the apply step does that.',
   'material-classify': 'Classifies a file-bucket material as a lecture deck/slides (→ middle tier) or a reading/reference (→ background tier) from filename, MIME type, size, page count, and optional peek text.',
   'explore-agent': 'Tool-using course-change thinking partner anchored to one focal course. Per-turn agent loop: reads neighbor context + wiki via tools, optionally runs estimate_impact for concrete KUD sizing, emits a cited markdown response. Supports PREDICT ("what happens if I change X?") and SUGGEST ("how do I achieve goal Y?") postures with scenario save/compare tools for multi-option exploration.',
+  'objective-evidence-guide': 'Writes the per-course guide on the public wiki page: each syllabus objective quoted verbatim, which Canvas assignments and rubric rows measure it, and what class-level numbers to gather at the end of the semester. Runs after each snapshot; names not found in Canvas are dropped by a deterministic check.',
 };
 
 interface CachedSetting {

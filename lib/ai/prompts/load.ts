@@ -42,7 +42,8 @@ type PromptName =
   | 'intended-skills-extract'
   | 'reconcile-feedback'
   | 'material-classify'
-  | 'explore-agent';
+  | 'explore-agent'
+  | 'objective-evidence-guide';
 
 interface ParsedPrompt {
   frontmatter: Record<string, unknown>;
