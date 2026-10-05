@@ -132,6 +132,24 @@ describe('finalizeExtraction (v2 pipeline)', () => {
     expect(embedBatch).not.toHaveBeenCalled();
   });
 
+  it('never sets a syllabus aside for FERPA: syllabi are public documents (owner, 2026-10-05)', async () => {
+    process.env.COURSECAPTURE_V2_INGESTION = '1';
+    vi.mocked(updateAutoSetAside).mockClear();
+    vi.mocked(updateFerpaRisk).mockClear();
+    await finalizeExtraction({
+      id: 'm-syllabus',
+      courseCode: 'MKT 4320',
+      fileName: 'MKT 4320 001 Qualitative Consumer Insights - Simple Syllabus.pdf',
+      extractionStatus: 'ok',
+      // Instructor + TA contact block: the shape that trips the email rule.
+      extractedText: 'Syllabus. Instructor: jdoe@clemson.edu. TA: asmith@clemson.edu, bjones@clemson.edu. Learning objectives: ...',
+      vectorStore: createInMemoryVectorStore(),
+      courseHasLearningObjectives: true,
+    });
+    expect(updateAutoSetAside).not.toHaveBeenCalledWith(expect.objectContaining({ autoSetAside: true }));
+    expect(updateFerpaRisk).toHaveBeenCalledWith(expect.objectContaining({ risk: 'low' }));
+  });
+
   it('marks indexing_status: failed when chunk embedding fails', async () => {
     process.env.COURSECAPTURE_V2_INGESTION = '1';
     const { embedBatch } = await import('@/lib/ai/embeddings');

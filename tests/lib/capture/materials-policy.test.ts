@@ -7,12 +7,9 @@ const base: Omit<PolicyInput, 'fileName'> = {
 };
 
 describe('evaluateMaterialsPolicy', () => {
-  it('sets aside Canvas: Syllabus when the course already has LOs', () => {
+  it('keeps Canvas: Syllabus even when the course has catalog LOs: the syllabus is the objective source (owner, 2026-10-05)', () => {
     const r = evaluateMaterialsPolicy({ ...base, fileName: 'Canvas: Syllabus', courseHasLearningObjectives: true });
-    expect(r.included).toBe(false);
-    expect(r.ferpaRisk).toBe('low');
-    expect(r.reason).toMatch(/Sheets has LOs/i);
-    expect(r.overridable).toBe(true);
+    expect(r.included).toBe(true);
   });
 
   it('keeps Canvas: Syllabus when the course has no LOs', () => {

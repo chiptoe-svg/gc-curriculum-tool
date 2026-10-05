@@ -14,7 +14,7 @@ import { contextualizeChunk } from '@/lib/ai/analyze/chunk-contextualize';
 import { embedBatch } from '@/lib/ai/embeddings';
 import { chunkMaterial, syntheticUuid } from '@/lib/capture/chunker';
 import { detectFerpaRisk } from '@/lib/capture/ferpa-detect';
-import { evaluateMaterialsPolicy } from '@/lib/capture/materials-policy';
+import { evaluateMaterialsPolicy, isSyllabusFileName } from '@/lib/capture/materials-policy';
 import { tenantForCourse } from '@/lib/capture/vector-store';
 import type { VectorStore, ChunkVectorRecord, SectionRecord } from '@/lib/capture/vector-store';
 import type { Tier } from '@/lib/capture/material-tier';
@@ -142,7 +142,10 @@ async function runV2Pipeline(input: FinalizeExtractionInput): Promise<void> {
   //    Medium/low risk continues to the policy step (medium surfaces a warning
   //    badge but is not blocked, since a single "Submitted by" name is often
   //    benign and the one-click include remains available).
-  const ferpa = detectFerpaRisk(extractedText);
+  //    Syllabi are exempt: they are public documents (owner, 2026-10-05).
+  const ferpa = isSyllabusFileName(fileName)
+    ? { level: 'low' as const, matches: [] }
+    : detectFerpaRisk(extractedText);
   await updateFerpaRisk({ id, risk: ferpa.level });
 
   if (ferpa.level === 'high') {

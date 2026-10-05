@@ -33,17 +33,18 @@ function looksLikeMalformedCsv(text: string | null): boolean {
   return stripped.length < 20;
 }
 
-export function evaluateMaterialsPolicy(input: PolicyInput): PolicyDecision {
-  const { fileName, extractedText, courseHasLearningObjectives } = input;
+/**
+ * A course syllabus: the Canvas syllabus page, or a file whose name says
+ * syllabus. Syllabi are public documents and the source of a course's stated
+ * objectives (owner, 2026-10-05), so they are never set aside, neither as a
+ * duplicate of the catalog nor for FERPA (instructor/TA emails trip that rule).
+ */
+export function isSyllabusFileName(fileName: string): boolean {
+  return fileName === 'Canvas: Syllabus' || /syllab/i.test(fileName);
+}
 
-  if (fileName === 'Canvas: Syllabus' && courseHasLearningObjectives) {
-    return {
-      included: false,
-      reason: 'Sheets has LOs — Canvas syllabus duplicates them',
-      ferpaRisk: 'low',
-      overridable: true,
-    };
-  }
+export function evaluateMaterialsPolicy(input: PolicyInput): PolicyDecision {
+  const { fileName, extractedText } = input;
 
   if (fileName === 'Canvas: Discussions') {
     return {
