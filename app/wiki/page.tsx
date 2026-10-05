@@ -3,6 +3,8 @@ import { isValidSlug } from '@/lib/slug';
 import { loadWikiIndex, levelGroup, codeFromSlug, type WikiCourse } from '@/lib/wiki/index-data';
 import { FeedbackLink } from '@/app/FeedbackLink';
 import { AskTab } from '@/components/AskTab';
+import { HowToRead } from './HowToRead';
+import { loadTargetMap, type TargetWithCompetencies } from '@/lib/wiki/course-views';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,6 +40,10 @@ export default async function WikiIndexPage({ searchParams }: Props) {
   const q = faculty ? `?slug=${encodeURIComponent(slug)}` : '';
 
   const data = await loadWikiIndex();
+  // Target → competency map from the DB (wiki competency pages don't record it).
+  // Best-effort: the page still renders the flat list if the DB is unreachable.
+  const targetMap: TargetWithCompetencies[] | null = await loadTargetMap().catch(() => null);
+  const compTitle = new Map(data.competencies.map(c => [c.slug, c.title]));
   const captured = data.courses.filter(c => c.lastCaptured);
   const latest = captured.map(c => c.lastCaptured!).sort().at(-1) ?? null;
   const groups = GROUP_ORDER.map(key => ({
@@ -65,9 +71,10 @@ export default async function WikiIndexPage({ searchParams }: Props) {
         </div>
         <h1 className="wiki-index__title">Curriculum knowledge base</h1>
         <p className="wiki-index__lede">
-          What each Graphic Communications course actually has students know, understand and do,
-          written from captured course evidence rather than catalog copy, and how those courses
-          build toward the careers the program prepares for.
+          What each Graphic Communications course actually has students{' '}
+          <a href="#kud">know, understand and do</a>, written from captured course evidence rather
+          than catalog copy, and how those courses build toward the{' '}
+          <a href="#career-target">careers the program prepares for</a>.
         </p>
         {!isEmpty && (
           <p className="wiki-index__status">
@@ -76,6 +83,8 @@ export default async function WikiIndexPage({ searchParams }: Props) {
           </p>
         )}
       </header>
+
+      {!isEmpty && <HowToRead q={q} />}
 
       {isEmpty ? (
         <section className="wiki-index__empty">
@@ -122,7 +131,7 @@ export default async function WikiIndexPage({ searchParams }: Props) {
           <section className="wiki-cols">
             <div className="wiki-col">
               <h2 className="wiki-index__h2">Career targets</h2>
-              <p className="wiki-col__intro">The destinations the program says it prepares students for.</p>
+              <p className="wiki-col__intro">The five destinations the program prepares students for. Each is made of the <a href="#competency">competencies</a> listed beside it.</p>
               <ul className="wiki-col__list">
                 {data.targets.map(t => (
                   <li key={t.slug}>
@@ -134,14 +143,29 @@ export default async function WikiIndexPage({ searchParams }: Props) {
             </div>
             <div className="wiki-col">
               <h2 className="wiki-index__h2">Competencies</h2>
-              <p className="wiki-col__intro">{data.competencies.length} competencies the targets decompose into, each scored on know, understand and do.</p>
-              <ul className="wiki-col__list wiki-col__list--dense">
-                {data.competencies.map(c => (
-                  <li key={c.slug}>
-                    <Link href={`/wiki/competencies/${c.slug}${q}`}>{c.title}</Link>
-                  </li>
-                ))}
-              </ul>
+              <p className="wiki-col__intro">{data.competencies.length} competencies, grouped by the career target each belongs to. Each is scored on <a href="#kud">know, understand and do</a>.</p>
+              {targetMap ? (
+                <div className="wiki-comp-groups">
+                  {targetMap.map(t => (
+                    <section key={t.id}>
+                      <h3><Link href={`/wiki/targets/${t.id}${q}`}>{t.name}</Link></h3>
+                      <ul className="wiki-col__list wiki-col__list--dense">
+                        {t.competencies.filter(c => compTitle.has(c.id)).map(c => (
+                          <li key={c.id}><Link href={`/wiki/competencies/${c.id}${q}`}>{compTitle.get(c.id)}</Link></li>
+                        ))}
+                      </ul>
+                    </section>
+                  ))}
+                </div>
+              ) : (
+                <ul className="wiki-col__list wiki-col__list--dense">
+                  {data.competencies.map(c => (
+                    <li key={c.slug}>
+                      <Link href={`/wiki/competencies/${c.slug}${q}`}>{c.title}</Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
             <div className="wiki-col">
               <h2 className="wiki-index__h2">Concepts</h2>

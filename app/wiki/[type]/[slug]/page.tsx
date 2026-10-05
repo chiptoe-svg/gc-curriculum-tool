@@ -7,6 +7,9 @@ import { readWikiPage } from '@/lib/wiki/git-ops';
 import { parseFrontmatter, resolveWikilinks } from '@/lib/wiki/markdown-helpers';
 import { loadWikiIndex, levelGroup, codeFromSlug, listFromFrontmatter } from '@/lib/wiki/index-data';
 import { FeedbackLink } from '@/app/FeedbackLink';
+import { CourseViewsPanel } from '../../CourseViewsPanel';
+import { TermsHint } from '../../HowToRead';
+import { loadCourseViews, loadTargetMap, type CourseViews } from '@/lib/wiki/course-views';
 
 export const dynamic = 'force-dynamic';
 
@@ -73,6 +76,9 @@ export default async function WikiPage({ params, searchParams }: Props) {
 
   const related: RelatedGroup[] = [];
   let facts: string[] = [];
+  // DB-backed structure (best-effort; the page still renders from the wiki alone).
+  let views: CourseViews | null = null;
+  const targetMap = type === 'competencies' || type === 'targets' ? await loadTargetMap().catch(() => null) : null;
   if (type === 'courses') {
     const course = index.courses.find(c => c.slug === pageSlug);
     if (course) {
@@ -90,12 +96,15 @@ export default async function WikiPage({ params, searchParams }: Props) {
     for (const t of index.targets) if (listFromFrontmatter(await fmOf('targets', t.slug, 'contributing_courses')).includes(pageSlug)) targets.add(t.slug);
     for (const c of index.competencies) if (listFromFrontmatter(await fmOf('competencies', c.slug, 'contributing_courses')).includes(pageSlug)) comps.add(c.slug);
     related.push({ heading: 'Builds toward', type: 'targets', slugs: [...targets] });
+    views = await loadCourseViews(codeFromSlug(pageSlug)).catch(() => null);
     related.push({ heading: 'Develops', type: 'competencies', slugs: [...comps] });
   } else if (type === 'targets') {
-    related.push({ heading: 'Made of these competencies', type: 'competencies', slugs: list('sub_competencies') });
+    const fromDb = targetMap?.find(t => t.id === pageSlug)?.competencies.map(c => c.id).filter(id => titleOf.has(id)) ?? [];
+    related.push({ heading: 'Made of these competencies', type: 'competencies', slugs: fromDb.length ? fromDb : list('sub_competencies') });
     related.push({ heading: 'Contributing courses', type: 'courses', slugs: list('contributing_courses') });
   } else if (type === 'competencies') {
-    related.push({ heading: 'Part of', type: 'targets', slugs: list('career_target') });
+    const owner = targetMap?.find(t => t.competencies.some(c => c.id === pageSlug))?.id;
+    related.push({ heading: 'Part of', type: 'targets', slugs: owner && titleOf.has(owner) ? [owner] : list('career_target') });
     related.push({ heading: 'Contributing courses', type: 'courses', slugs: list('contributing_courses') });
     if (fm.evidence_bands) facts = [listFromFrontmatter(fm.evidence_bands).includes('materials_supported') ? 'Evidence supported by course materials' : 'Evidence from interviews only'];
   } else {
@@ -125,7 +134,15 @@ export default async function WikiPage({ params, searchParams }: Props) {
         {facts.length > 0 && (
           <p className="wiki-index__status">{facts.map((f, i) => (i === 0 ? f.charAt(0).toUpperCase() + f.slice(1) : f)).join('; ')}.</p>
         )}
+        {type === 'competencies' && (
+          <TermsHint q={q}>A competency is one capability a graduate needs. It belongs to one career target and is scored on know, understand and do, each 0 to 5.</TermsHint>
+        )}
+        {type === 'targets' && (
+          <TermsHint q={q}>A career target is one of the five destinations the program prepares students for, made of the competencies listed beside this text.</TermsHint>
+        )}
       </header>
+
+      {type === 'courses' && views && <CourseViewsPanel views={views} q={q} />}
 
       <div className="wiki-page__body">
         <article className="wiki-prose">
