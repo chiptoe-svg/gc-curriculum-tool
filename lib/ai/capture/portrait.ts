@@ -5,7 +5,7 @@
  * expressed by picking a plain-language anchor (never a slider/number).
  */
 import type { CaptureCompetency } from '@/lib/ai/capture/schema';
-import { describeDepth, type Dimension } from '@/lib/ai/capture/depth-anchors';
+import type { Dimension } from '@/lib/ai/capture/depth-anchors';
 import { plainDepthPhrase, DIM_WORD } from '@/lib/capture/plain-depth';
 
 export interface PortraitClause {
@@ -44,29 +44,6 @@ export function portraitClauses(c: CaptureCompetency): PortraitClause[] {
     }
   }
   return out;
-}
-
-export interface AnchorOption { level: number; text: string; }
-
-/** Every level strictly below `current`, with its anchor text — the "too high" pick list. */
-export function lowerAnchorOptions(dim: Dimension, current: number): AnchorOption[] {
-  const out: AnchorOption[] = [];
-  for (let level = 0; level < current; level++) {
-    out.push({ level, text: describeDepth(dim, level) });
-  }
-  return out;
-}
-
-/** Dimension-aware evidence prompt shown before a "too low" raise is allowed. */
-export function evidencePromptFor(dim: Dimension): string {
-  switch (dim) {
-    case 'k':
-      return 'What shows students reach a higher level here? An exam or quiz item they answered correctly.';
-    case 'u':
-      return 'What shows students reason at a higher level here? A student explanation, or a reasoning-based exam item.';
-    case 'd':
-      return 'What shows students perform at a higher level here? A graded artifact or a completed rubric.';
-  }
 }
 
 /** One labeled, punctuated sentence: "Knowing: They use the right terms." */

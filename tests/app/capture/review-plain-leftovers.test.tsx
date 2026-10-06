@@ -94,9 +94,10 @@ describe('other review text', () => {
     fireEvent.click(screen.getByRole('button', { name: /Builds a LinkedIn profile/ }));
     fireEvent.click(screen.getByRole('button', { name: /needs adjusting/i }));
     const row = screen.getByTestId('flag-row-d');
-    fireEvent.click(within(row).getByRole('button', { name: /^higher/i }));
+    fireEvent.click(within(row).getByRole('button', { name: /change/i }));
+    fireEvent.click(within(row).getByRole('radio', { name: /does it independently in familiar situations/ }));
     fireEvent.change(within(row).getByRole('textbox'), { target: { value: 'capstone press check' } });
-    fireEvent.click(within(row).getByRole('button', { name: /raise doing/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     const prompt = screen.getByText(/You raised a score/);
     expect(prompt.textContent).toMatch(/Doing: does it with a reference or checklist → does it independently in familiar situations/);
     expect(prompt.textContent).not.toMatch(CODE);

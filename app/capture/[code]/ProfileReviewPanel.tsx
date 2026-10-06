@@ -1365,9 +1365,9 @@ export function ProfileReviewPanel({
           <StressTestStatus stressTest={stressTest} flaggedCount={needsReview.size} />
           {needsReview.size > 0 && (
             <p className="text-sm text-muted-foreground">
-              Listed in course order. The highlighted cards are worth a look — each says why. If a
-              score is off, use Needs adjusting; otherwise mark it ✓ Looks right. The rest are
-              rolled up — click any to open it.
+              Listed in course order. The highlighted cards are worth a look — each says why. Mark
+              each ✓ Looks right, or use Needs adjusting to change a score and save it. The rest
+              are rolled up — click any to open it.
             </p>
           )}
 
@@ -1389,12 +1389,14 @@ export function ProfileReviewPanel({
                   <CompetencyCard
                     competency={c}
                     index={i}
-                    // Editing a score is NOT confirmation. Using the portrait's
-                    // "Needs adjusting → Lower/Higher" correction only mutates
-                    // the draft + unlocks approval via the `dirty` guard; clearing
-                    // the row requires the explicit "✓ Looks right" button.
-                    // (A stray portrait edit used to auto-confirm the row —
-                    // 2026-06-16 operator report.)
+                    // Confirming is always an EXPLICIT act: "✓ Looks right", or —
+                    // since 2026-10-06 (owner rule) — "Save changes" in the opened
+                    // card, which applies the picked levels and then calls
+                    // onConfirm. Implicit edits never confirm: picking a level
+                    // without saving changes nothing, and editing the statement
+                    // text only marks the draft dirty. (2026-06-16 operator
+                    // report: a stray portrait edit used to auto-confirm a row —
+                    // that must stay impossible.)
                     onChange={next => updateCompetency(i, next)}
                     onCitationClick={handleCitationClick}
                     courseCode={courseCode}
