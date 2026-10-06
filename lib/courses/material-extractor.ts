@@ -137,17 +137,38 @@ class DoclingExtractor implements MaterialExtractor {
   private static readonly LARGE_PDF_THRESHOLD_BYTES = 2 * 1024 * 1024;
 
   async extract({ fileBytes, mimeType, fileName, skipPictureDescription }: ExtractArgs): Promise<MaterialExtractorResult> {
+    // Scanned-PDF detection (spec: docs/HANDOFF-curriculum-search-endpoint.md is
+    // unrelated; this is the Rag Core session's option (a), 2026-10-05): docling-serve
+    // 1.36 trusts a scanned PDF's own OCR text layer by default and interleaves
+    // multi-column scans. force_ocr=true fixes it but corrupts a born-digital PDF's
+    // perfect text layer, so the choice is made per document via detectScan. Decided
+    // ONCE here, on the whole document's bytes — never per split page below (an n=1
+    // sample on a single page is a different, weaker verdict than sampling the first
+    // 5 pages of the real document, and would run the ~150s async job once per page
+    // instead of once per document). Never throws — an unreadable/non-PDF verdict
+    // ('unknown') just leaves force_ocr off.
+    const scanVerdict = mimeType === 'application/pdf' ? await detectScan(fileBytes) : undefined;
+    const forceOcr = scanVerdict?.kind === 'scanned';
     // Large-PDF path: split into pages first, extract each, concatenate.
     // Page-citable output: each page's text is prefaced with `--- page N ---`
     // so downstream chunking + the agent's citation tooling can reference
     // specific pages. Per-page failures are isolated rather than fatal.
-    if (mimeType === 'application/pdf' && fileBytes.length > DoclingExtractor.LARGE_PDF_THRESHOLD_BYTES) {
+    //
+    // A scanned document skips the split entirely, regardless of size: splitting
+    // exists only to dodge the sync endpoint's 120s timeout, but a forced-OCR job
+    // already runs through the (timeout-free) async API as ONE whole-document job.
+    // Splitting it would turn that into N sequential ~150s async jobs. Born-digital
+    // large PDFs keep the existing split path, unchanged.
+    if (!forceOcr && mimeType === 'application/pdf' && fileBytes.length > DoclingExtractor.LARGE_PDF_THRESHOLD_BYTES) {
       return this.extractByPageSplit(fileBytes, fileName, skipPictureDescription);
     }
-    return this.extractWhole({ fileBytes, mimeType, fileName, skipPictureDescription });
+    return this.extractWhole({ fileBytes, mimeType, fileName, skipPictureDescription }, { forceOcr });
   }
 
-  private async extractWhole({ fileBytes, mimeType, fileName, skipPictureDescription }: ExtractArgs): Promise<MaterialExtractorResult> {
+  private async extractWhole(
+    { fileBytes, mimeType, fileName, skipPictureDescription }: ExtractArgs,
+    { forceOcr }: { forceOcr: boolean },
+  ): Promise<MaterialExtractorResult> {
     // docling-serve auto-detects from_format based on the upload's
     // content-type + filename, so we don't pass from_formats explicitly.
     // We do ask for markdown specifically — Docling's main quality
@@ -155,14 +176,6 @@ class DoclingExtractor implements MaterialExtractor {
     // XLSX images (embedded charts, logos, screenshots) are almost never
     // audit-relevant — the agent cares about cell content, not the graphics.
     const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-    // Scanned-PDF detection (spec: docs/HANDOFF-curriculum-search-endpoint.md is
-    // unrelated; this is the Rag Core session's option (a), 2026-10-05): docling-serve
-    // 1.36 trusts a scanned PDF's own OCR text layer by default and interleaves
-    // multi-column scans. force_ocr=true fixes it but corrupts a born-digital PDF's
-    // perfect text layer, so the choice is made per document via detectScan. Never
-    // throws — an unreadable/non-PDF verdict ('unknown') just leaves force_ocr off.
-    const scanVerdict = mimeType === 'application/pdf' ? await detectScan(fileBytes) : undefined;
-    const forceOcr = scanVerdict?.kind === 'scanned';
     // Built fresh per attempt so the primary→fallback retry below has an unconsumed body.
     const buildForm = (): FormData => {
       const form = new FormData();
@@ -307,12 +320,16 @@ class DoclingExtractor implements MaterialExtractor {
         const pageNum = parseInt(f.match(/page-(\d+)\.pdf/)?.[1] ?? '0', 10);
         const pageBytes = await fsp.readFile(pathMod.join(tmpDir, f));
         try {
+          // forceOcr is always false here: extract() already decided the whole
+          // document's verdict before routing into the split path (see above) —
+          // this path is only reached for a non-scanned document, so no per-page
+          // re-detection (and no per-page async OCR job) happens.
           const r = await this.extractWhole({
             fileBytes: pageBytes,
             mimeType: 'application/pdf',
             fileName: `${fileName}#page-${pageNum}`,
             skipPictureDescription,
-          });
+          }, { forceOcr: false });
           if (r.text && r.text.trim().length > 0) {
             sections.push(`--- page ${pageNum} ---\n\n${r.text}`);
             successful++;

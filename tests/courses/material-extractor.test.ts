@@ -2,14 +2,32 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock the upstream libs at the module boundary so backend selection +
 // dispatch is observable without doing any real PDF/DOCX parsing.
-const { unpdfExtractText, mammothExtractRawText, detectScan } = vi.hoisted(() => ({
+const { unpdfExtractText, mammothExtractRawText, detectScan, execFileMock, fsp } = vi.hoisted(() => ({
   unpdfExtractText: vi.fn(),
   mammothExtractRawText: vi.fn(),
   detectScan: vi.fn(),
+  execFileMock: vi.fn(),
+  fsp: {
+    mkdtemp: vi.fn(),
+    writeFile: vi.fn(),
+    readdir: vi.fn(),
+    readFile: vi.fn(),
+    rm: vi.fn(),
+  },
 }));
 vi.mock('unpdf', () => ({ extractText: unpdfExtractText }));
 vi.mock('mammoth', () => ({ default: { extractRawText: mammothExtractRawText } }));
 vi.mock('@/lib/courses/scan-detect', () => ({ detectScan }));
+// extractByPageSplit's dynamic `import('node:child_process')` / `import('node:fs/promises')`
+// — mocked so the large-PDF split tests below don't need a real `pdfseparate` on PATH or
+// touch the real filesystem.
+vi.mock('node:child_process', () => ({
+  execFile: (file: string, args: string[], callback: (err: unknown, stdout: string, stderr: string) => void) => {
+    execFileMock(file, args);
+    callback(null, '', '');
+  },
+}));
+vi.mock('node:fs/promises', () => fsp);
 
 import {
   getExtractorFor,
@@ -344,6 +362,76 @@ describe('DoclingExtractor', () => {
       await expect(new DoclingExtractor('http://localhost:5001').extract({
         fileBytes: Buffer.from('x'), mimeType: PDF, fileName: 'scan.pdf',
       })).rejects.toThrow(/docling-serve 500.*async submit failed/);
+    });
+  });
+
+  describe('large-PDF routing: scanned skips the split, digital keeps it (review finding #2)', () => {
+    const LARGE_BYTES = Buffer.alloc(2 * 1024 * 1024 + 10, 0x41); // > LARGE_PDF_THRESHOLD_BYTES
+
+    it('a large SCANNED PDF skips pdfseparate entirely and sends ONE async force_ocr job on the whole document', async () => {
+      detectScan.mockResolvedValue({ kind: 'scanned', reason: "producer word 'Scan'" });
+      (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(async (url: string) => {
+        if (url.endsWith('/v1/convert/file/async')) {
+          return { ok: true, json: async () => ({ task_id: 'big-scan', task_status: 'pending' }) };
+        }
+        if (url.includes('/v1/status/poll/big-scan')) {
+          return { ok: true, json: async () => ({ task_id: 'big-scan', task_status: 'success' }) };
+        }
+        if (url.endsWith('/v1/result/big-scan')) {
+          return { ok: true, json: async () => ({ status: 'success', document: { md_content: 'whole-document ocr text' } }) };
+        }
+        throw new Error(`unexpected fetch: ${url}`);
+      });
+
+      const r = await new DoclingExtractor('http://localhost:5001').extract({
+        fileBytes: LARGE_BYTES, mimeType: PDF, fileName: 'big-scan.pdf',
+      });
+
+      expect(detectScan).toHaveBeenCalledTimes(1);
+      expect(detectScan).toHaveBeenCalledWith(LARGE_BYTES);
+      expect(execFileMock).not.toHaveBeenCalled(); // pdfseparate never runs
+      expect(fsp.mkdtemp).not.toHaveBeenCalled(); // split path never entered
+      expect(r.text).toBe('whole-document ocr text');
+      expect(r.text).not.toContain('--- page'); // not page-split output
+      // Sync endpoint never touched; exactly one whole-document async submission.
+      const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+      const submitCalls = calls.filter(([url]) => String(url).endsWith('/v1/convert/file/async'));
+      expect(submitCalls).toHaveLength(1);
+      const submittedForm = (submitCalls[0]![1] as { body: FormData }).body;
+      const submittedFile = submittedForm.get('files') as File;
+      expect(submittedFile.size).toBe(LARGE_BYTES.length); // whole document, not a single split page
+    });
+
+    it('a large DIGITAL PDF still uses the existing pdfseparate page-split path, unchanged', async () => {
+      detectScan.mockResolvedValue({ kind: 'digital', reason: 'full-page images on 0/5 sampled pages' });
+      fsp.mkdtemp.mockResolvedValue('/tmp/pdf-split-test');
+      fsp.writeFile.mockResolvedValue(undefined);
+      fsp.readdir.mockResolvedValue(['page-1.pdf', 'page-2.pdf']);
+      fsp.readFile.mockImplementation(async (p: string) =>
+        Buffer.from(p.includes('page-1') ? 'page-1-bytes' : 'page-2-bytes'));
+      fsp.rm.mockResolvedValue(undefined);
+      (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(async () => ({
+        ok: true, json: async () => ({ status: 'success', document: { md_content: 'page text' } }),
+      }));
+
+      const r = await new DoclingExtractor('http://localhost:5001').extract({
+        fileBytes: LARGE_BYTES, mimeType: PDF, fileName: 'big-digital.pdf',
+      });
+
+      // Decided once for the whole document, not re-run per split page.
+      expect(detectScan).toHaveBeenCalledTimes(1);
+      expect(execFileMock).toHaveBeenCalledWith('pdfseparate', expect.anything());
+      expect(r.text).toContain('--- page 1 ---');
+      expect(r.text).toContain('--- page 2 ---');
+      expect(r.pageCount).toBe(2);
+      // Both per-page conversions went through the sync endpoint (force_ocr off).
+      const calls = (global.fetch as ReturnType<typeof vi.fn>).mock.calls;
+      expect(calls).toHaveLength(2);
+      for (const [url, init] of calls) {
+        expect(String(url)).toBe('http://localhost:5001/v1/convert/file');
+        const form = (init as { body: FormData }).body;
+        expect(form.get('force_ocr')).toBeNull();
+      }
     });
   });
 });
