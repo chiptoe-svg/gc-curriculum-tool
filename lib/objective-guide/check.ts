@@ -26,14 +26,19 @@ export function objectiveInSyllabus(objective: string, syllabusText: string): bo
 
 const objectiveLabel = (objective: string) => `objective: ${objective}`;
 
-type Resolved = { ok: true; evidence: GuideEvidence } | { ok: false; label: string };
+type Resolved =
+  | { ok: true; evidence: GuideEvidence }
+  // `droppedNames` is only the name(s) actually unverified — when just the
+  // rubric row fails to match, the assignment it names is real and must not
+  // be added to the scrub set (it would over-scrub legitimate mentions).
+  | { ok: false; label: string; droppedNames: string[] };
 
 function resolveEvidence(e: GuideEvidence, known: KnownNames): Resolved {
   const assignment = findAssignment(known, e.assignment);
-  if (!assignment) return { ok: false, label: `assignment: ${e.assignment}` };
+  if (!assignment) return { ok: false, label: `assignment: ${e.assignment}`, droppedNames: [e.assignment] };
   if (e.rubric_row === null) return { ok: true, evidence: { assignment: assignment.name, rubric_row: null } };
   const row = findRubricRow(assignment, e.rubric_row);
-  if (!row) return { ok: false, label: `rubric row: ${e.rubric_row} (under ${e.assignment})` };
+  if (!row) return { ok: false, label: `rubric row: ${e.rubric_row} (under ${e.assignment})`, droppedNames: [e.rubric_row] };
   return { ok: true, evidence: { assignment: assignment.name, rubric_row: row } };
 }
 
@@ -70,6 +75,17 @@ function buildGatherFromEvidence(evidence: GuideEvidence[]): string {
   return `The score distribution on ${evidence.map(formatEvidenceForGather).join(' and ')}, and the share of students at proficient or above.`;
 }
 
+/** Deterministic replacement `intro` text once a dropped name must be scrubbed out of it. */
+const FALLBACK_INTRO =
+  'This guide lists, for each course objective, the graded Canvas work that shows whether it was met and the class-level numbers to gather at the end of the semester.';
+
+const containsAny = (text: string, normalizedNeedles: Set<string>): boolean => {
+  if (normalizedNeedles.size === 0) return false;
+  const haystack = normalizeName(text);
+  for (const n of normalizedNeedles) if (haystack.includes(n)) return true;
+  return false;
+};
+
 /**
  * The firm rule: the stored guide names only Canvas items that exist and only
  * objectives the syllabus states. Unmatched items are dropped (and recorded);
@@ -82,22 +98,26 @@ export function finalizeGuide(
   syllabusText: string,
 ): { guide: ObjectiveGuide; dropped: string[] } {
   const dropped = new Set<string>();
-  const objectives: ObjectiveGuide['objectives'] = [];
+  // Guide-wide scrub set: every unverified assignment/rubric-row name, from
+  // EVERY objective — including one that itself gets dropped for not being
+  // in the syllabus — because a name dropped there can still leak into a
+  // SURVIVING objective's gather/suggestion/intro (#1a, 2026-10-05 re-review).
+  const droppedNamesAll = new Set<string>();
 
+  // Pass 1: resolve every objective's evidence and collect drops guide-wide.
+  type Prep = { objective: ModelGuide['objectives'][number]; inSyllabus: boolean; evidence: GuideEvidence[] };
+  const preps: Prep[] = [];
   for (const o of draft.objectives) {
-    if (!objectiveInSyllabus(o.objective, syllabusText)) {
-      dropped.add(objectiveLabel(o.objective));
-      continue;
-    }
+    const inSyllabus = objectiveInSyllabus(o.objective, syllabusText);
+    if (!inSyllabus) dropped.add(objectiveLabel(o.objective));
+
     const seen = new Set<string>();
     const evidence: GuideEvidence[] = [];
-    const droppedNames: string[] = [];
     for (const e of o.evidence) {
       const r = resolveEvidence(e, known);
       if (!r.ok) {
         dropped.add(r.label);
-        droppedNames.push(e.assignment);
-        if (e.rubric_row !== null) droppedNames.push(e.rubric_row);
+        for (const n of r.droppedNames) droppedNamesAll.add(normalizeName(n));
         continue;
       }
       const key = evidenceKey(r.evidence);
@@ -105,6 +125,16 @@ export function finalizeGuide(
       seen.add(key);
       evidence.push(r.evidence);
     }
+    preps.push({ objective: o, inSyllabus, evidence });
+  }
+
+  // Pass 2: build the surviving objectives, scrubbing gather/suggestion
+  // against the FULL guide-wide drop set.
+  const objectives: ObjectiveGuide['objectives'] = [];
+  for (const prep of preps) {
+    if (!prep.inSyllabus) continue;
+    const { objective: o, evidence } = prep;
+
     const kept = evidence.slice(0, 3);
     const measure = kept.length === 0 ? 'none' : o.measure;
     // #2: never show evidence next to "No graded measure yet".
@@ -115,14 +145,11 @@ export function finalizeGuide(
 
     // #1: the guide is never published with a dropped name that leaked into
     // free-text gather/suggestion (compare substring on normalizeName-normalized text).
-    if (droppedNames.length > 0) {
-      const normDropped = droppedNames.map(normalizeName);
-      if (normDropped.some((n) => normalizeName(gather).includes(n))) {
-        gather = buildGatherFromEvidence(finalEvidence);
-      }
-      if (suggestion !== null && normDropped.some((n) => normalizeName(suggestion as string).includes(n))) {
-        suggestion = null;
-      }
+    if (containsAny(gather, droppedNamesAll)) {
+      gather = buildGatherFromEvidence(finalEvidence);
+    }
+    if (suggestion !== null && containsAny(suggestion, droppedNamesAll)) {
+      suggestion = null;
     }
 
     objectives.push({
@@ -132,6 +159,12 @@ export function finalizeGuide(
       gather,
       suggestion,
     });
+  }
+
+  // #1b: the intro is free text too — scrub it the same way.
+  let intro = draft.intro.trim();
+  if (containsAny(intro, droppedNamesAll)) {
+    intro = FALLBACK_INTRO;
   }
 
   const checklist: GuideEvidence[] = [];
@@ -145,5 +178,5 @@ export function finalizeGuide(
     }
   }
 
-  return { guide: { intro: draft.intro.trim(), objectives, checklist }, dropped: [...dropped] };
+  return { guide: { intro, objectives, checklist }, dropped: [...dropped] };
 }

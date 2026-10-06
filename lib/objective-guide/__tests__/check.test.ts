@@ -189,4 +189,85 @@ describe('finalizeGuide', () => {
     expect(guide.objectives[0]!.evidence).toEqual([]);
     expect(guide.checklist).toEqual([]);
   });
+
+  it('scrubs a name dropped in one objective out of ANOTHER objective\'s gather (guide-wide, including names dropped from an objective that is itself dropped)', () => {
+    const draft: ModelGuide = {
+      intro: 'x',
+      objectives: [
+        {
+          // "Brand Playbook" is not a real Canvas assignment name — dropped here.
+          objective: 'Develop a brand strategy grounded in audience research.',
+          measure: 'partial',
+          evidence: [{ assignment: 'Brand Playbook', rubric_row: null }],
+          gather: 'g1',
+          suggestion: null,
+        },
+        {
+          objective: 'Build a visual identity system that holds across media.',
+          measure: 'clear',
+          evidence: [{ assignment: 'Brand Audit', rubric_row: 'Research depth' }],
+          gather: 'Compare against the Brand Playbook.',
+          suggestion: null,
+        },
+      ],
+    };
+    const { guide } = finalizeGuide(draft, known, SYLLABUS_TEXT);
+    const obj2 = guide.objectives.find((o) => o.objective === 'Build a visual identity system that holds across media.')!;
+    expect(obj2.gather.toLowerCase()).not.toContain('brand playbook');
+    expect(obj2.gather).toBe(
+      "The score distribution on the 'Research depth' row of the Brand Audit rubric, and the share of students at proficient or above.",
+    );
+  });
+
+  it('scrubs a dropped name out of the intro', () => {
+    const draft: ModelGuide = {
+      intro: 'This guide covers the Brand Playbook rubric and other evidence.',
+      objectives: [
+        {
+          objective: 'Develop a brand strategy grounded in audience research.',
+          measure: 'partial',
+          evidence: [{ assignment: 'Brand Playbook', rubric_row: null }],
+          gather: 'g',
+          suggestion: null,
+        },
+      ],
+    };
+    const { guide } = finalizeGuide(draft, known, SYLLABUS_TEXT);
+    expect(guide.intro.toLowerCase()).not.toContain('brand playbook');
+    expect(guide.intro).toBe(
+      'This guide lists, for each course objective, the graded Canvas work that shows whether it was met and the class-level numbers to gather at the end of the semester.',
+    );
+  });
+
+  it('leaves the intro untouched when no name was dropped', () => {
+    const draft: ModelGuide = {
+      intro: 'This guide mentions Brand Playbook in passing but nothing is dropped.',
+      objectives: [DRAFT.objectives[0]!],
+    };
+    const { guide, dropped } = finalizeGuide(draft, known, SYLLABUS_TEXT);
+    expect(dropped).toEqual([]);
+    expect(guide.intro).toBe('This guide mentions Brand Playbook in passing but nothing is dropped.');
+  });
+
+  it('a dropped rubric row under a REAL assignment does not scrub mentions of that real assignment name', () => {
+    const draft: ModelGuide = {
+      intro: 'x',
+      objectives: [
+        {
+          objective: 'Develop a brand strategy grounded in audience research.',
+          measure: 'partial',
+          // "Nonexistent Row" is not a real rubric row of Brand Audit — Brand Audit itself is real.
+          evidence: [
+            { assignment: 'Brand Audit', rubric_row: 'Nonexistent Row' },
+            { assignment: 'Brand Audit', rubric_row: 'Research depth' },
+          ],
+          gather: 'Pull the Brand Audit scores.',
+          suggestion: null,
+        },
+      ],
+    };
+    const { guide, dropped } = finalizeGuide(draft, known, SYLLABUS_TEXT);
+    expect(dropped).toEqual(['rubric row: Nonexistent Row (under Brand Audit)']);
+    expect(guide.objectives[0]!.gather).toBe('Pull the Brand Audit scores.');
+  });
 });
