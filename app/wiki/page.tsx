@@ -4,7 +4,7 @@ import { loadWikiIndex, levelGroup, codeFromSlug, type WikiCourse } from '@/lib/
 import { FeedbackLink } from '@/app/FeedbackLink';
 import { AskTab } from '@/components/AskTab';
 import { HowToRead, CAREER_TARGETS_BETA, TOOL_OVERVIEW_URL, TOOL_DOCS_URL } from './HowToRead';
-import { loadTargetMap, type TargetWithCompetencies } from '@/lib/wiki/course-views';
+import { loadTargetMap, loadRetiredCompetencyIds, withoutRetired, type TargetWithCompetencies } from '@/lib/wiki/course-views';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,7 +43,10 @@ export default async function WikiIndexPage({ searchParams }: Props) {
   // Target → competency map from the DB (wiki competency pages don't record it).
   // Best-effort: the page still renders the flat list if the DB is unreachable.
   const targetMap: TargetWithCompetencies[] | null = await loadTargetMap().catch(() => null);
-  const compTitle = new Map(data.competencies.map(c => [c.slug, c.title]));
+  // Retired competencies keep their wiki page as history; never list them as current.
+  const retired = await loadRetiredCompetencyIds().catch(() => new Set<string>());
+  const currentCompetencies = withoutRetired(data.competencies, retired);
+  const compTitle = new Map(currentCompetencies.map(c => [c.slug, c.title]));
   const captured = data.courses.filter(c => c.lastCaptured);
   const latest = captured.map(c => c.lastCaptured!).sort().at(-1) ?? null;
   const groups = GROUP_ORDER.map(key => ({
@@ -147,7 +150,7 @@ export default async function WikiIndexPage({ searchParams }: Props) {
             </div>
             <div className="wiki-col">
               <h2 className="wiki-index__h2">Competencies</h2>
-              <p className="wiki-col__intro">{data.competencies.length} competencies, grouped by the career target each belongs to. Each is scored on <a href="#kud">know, understand and do</a>.</p>
+              <p className="wiki-col__intro">{currentCompetencies.length} competencies, grouped by the career target each belongs to. Each is scored on <a href="#kud">know, understand and do</a>.</p>
               {targetMap ? (
                 <div className="wiki-comp-groups">
                   {targetMap.map(t => (
@@ -163,7 +166,7 @@ export default async function WikiIndexPage({ searchParams }: Props) {
                 </div>
               ) : (
                 <ul className="wiki-col__list wiki-col__list--dense">
-                  {data.competencies.map(c => (
+                  {currentCompetencies.map(c => (
                     <li key={c.slug}>
                       <Link href={`/wiki/competencies/${c.slug}${q}`}>{c.title}</Link>
                     </li>

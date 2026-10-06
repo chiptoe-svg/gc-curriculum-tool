@@ -9,7 +9,7 @@ import { loadWikiIndex, levelGroup, codeFromSlug, listFromFrontmatter } from '@/
 import { FeedbackLink } from '@/app/FeedbackLink';
 import { CourseViewsPanel } from '../../CourseViewsPanel';
 import { TermsHint, CAREER_TARGETS_BETA } from '../../HowToRead';
-import { loadCourseViews, loadTargetMap, type CourseViews } from '@/lib/wiki/course-views';
+import { loadCourseViews, loadTargetMap, loadRetiredCompetencyIds, type CourseViews } from '@/lib/wiki/course-views';
 import { ObjectiveGuidePanel } from '../../ObjectiveGuidePanel';
 import { loadObjectiveGuideSection, type ObjectiveGuideSection } from '@/lib/wiki/objective-guide-section';
 
@@ -82,6 +82,10 @@ export default async function WikiPage({ params, searchParams }: Props) {
   let views: CourseViews | null = null;
   let guideSection: ObjectiveGuideSection | null = null;
   const targetMap = type === 'competencies' || type === 'targets' ? await loadTargetMap().catch(() => null) : null;
+  // Retired competencies keep their wiki page as history: label the page, and
+  // never list them as something a course develops or a target is made of.
+  const retiredComps = type === 'concepts' ? new Set<string>() : await loadRetiredCompetencyIds().catch(() => new Set<string>());
+  const isRetiredCompetency = type === 'competencies' && retiredComps.has(pageSlug);
   if (type === 'courses') {
     const course = index.courses.find(c => c.slug === pageSlug);
     if (course) {
@@ -101,14 +105,14 @@ export default async function WikiPage({ params, searchParams }: Props) {
     related.push({ heading: 'Builds toward', type: 'targets', slugs: [...targets] });
     views = await loadCourseViews(codeFromSlug(pageSlug)).catch(() => null);
     guideSection = await loadObjectiveGuideSection(codeFromSlug(pageSlug)).catch(() => null);
-    related.push({ heading: 'Develops', type: 'competencies', slugs: [...comps] });
+    related.push({ heading: 'Develops', type: 'competencies', slugs: [...comps].filter(c => !retiredComps.has(c)) });
   } else if (type === 'targets') {
     const fromDb = targetMap?.find(t => t.id === pageSlug)?.competencies.map(c => c.id).filter(id => titleOf.has(id)) ?? [];
-    related.push({ heading: 'Made of these competencies', type: 'competencies', slugs: fromDb.length ? fromDb : list('sub_competencies') });
+    related.push({ heading: 'Made of these competencies', type: 'competencies', slugs: fromDb.length ? fromDb : list('sub_competencies').filter(c => !retiredComps.has(c)) });
     related.push({ heading: 'Contributing courses', type: 'courses', slugs: list('contributing_courses') });
   } else if (type === 'competencies') {
     const owner = targetMap?.find(t => t.competencies.some(c => c.id === pageSlug))?.id;
-    related.push({ heading: 'Part of', type: 'targets', slugs: owner && titleOf.has(owner) ? [owner] : list('career_target') });
+    related.push({ heading: isRetiredCompetency ? 'Formerly part of' : 'Part of', type: 'targets', slugs: owner && titleOf.has(owner) ? [owner] : list('career_target') });
     related.push({ heading: 'Contributing courses', type: 'courses', slugs: list('contributing_courses') });
     if (fm.evidence_bands) facts = [listFromFrontmatter(fm.evidence_bands).includes('materials_supported') ? 'Evidence supported by course materials' : 'Evidence from interviews only'];
   } else {
@@ -137,6 +141,9 @@ export default async function WikiPage({ params, searchParams }: Props) {
         {description && <p className="wiki-index__lede">{description}</p>}
         {facts.length > 0 && (
           <p className="wiki-index__status">{facts.map((f, i) => (i === 0 ? f.charAt(0).toUpperCase() + f.slice(1) : f)).join('; ')}.</p>
+        )}
+        {isRetiredCompetency && (
+          <p className="wiki-beta"><strong>Retired.</strong> This competency is no longer part of any career target. The page is kept as history; its scores are not used in current coverage.</p>
         )}
         {type === 'competencies' && (
           <TermsHint q={q}>A competency is one capability a graduate needs. It belongs to one career target and is scored on know, understand and do, each 0 to 5.</TermsHint>

@@ -78,12 +78,16 @@ export function evidenceFromProfile(profile: CaptureProfile, capturedOn: string)
   return { capturedOn, rows, disagreements: [...new Set(disagreements)] };
 }
 
-/** Roll per-competency predictions up to one line per career target (max depth). */
+/**
+ * Roll per-competency predictions up to one line per career target (max depth).
+ * Predictions on retired sub-competencies are history and are skipped.
+ */
 export function summarizePredicted(
-  rows: Array<{ targetId: string; name: string; order: number; k: number | null; u: number | null; d: number | null }>,
+  rows: Array<{ targetId: string; name: string; order: number; k: number | null; u: number | null; d: number | null; retired?: boolean }>,
 ): PredictedTarget[] {
   const byTarget = new Map<string, PredictedTarget & { order: number }>();
   for (const r of rows) {
+    if (r.retired) continue;
     const touches = [r.k, r.u, r.d].some(v => v !== null && v >= 1);
     const cur = byTarget.get(r.targetId) ?? { targetId: r.targetId, name: r.name, order: r.order, k: null, u: null, d: null, competencies: 0 };
     cur.k = max(cur.k, r.k);
@@ -119,6 +123,7 @@ export async function loadCourseViews(codeAnyCase: string): Promise<CourseViews 
       k: courseIntendedCoverage.intendedK,
       u: courseIntendedCoverage.intendedU,
       d: courseIntendedCoverage.intendedD,
+      retired: subCompetencies.retired,
     })
     .from(courseIntendedCoverage)
     .innerJoin(subCompetencies, eq(subCompetencies.id, courseIntendedCoverage.subCompetencyId))
@@ -157,6 +162,23 @@ export async function loadTargetMap(): Promise<TargetWithCompetencies[]> {
     .from(careerTargets)
     .leftJoin(subCompetencies, eq(subCompetencies.careerTargetId, careerTargets.id));
   return groupTargets(rows);
+}
+
+/**
+ * Ids of retired sub-competencies. Their wiki competency pages (slug = id) stay
+ * in the wiki repo as history, so the wiki must not present them as current.
+ */
+export async function loadRetiredCompetencyIds(): Promise<Set<string>> {
+  const rows = await db
+    .select({ id: subCompetencies.id })
+    .from(subCompetencies)
+    .where(eq(subCompetencies.retired, true));
+  return new Set(rows.map(r => r.id));
+}
+
+/** Drop wiki competency pages whose sub-competency is retired. */
+export function withoutRetired<T extends { slug: string }>(pages: T[], retired: Set<string>): T[] {
+  return pages.filter(p => !retired.has(p.slug));
 }
 
 /** Pure grouping step of loadTargetMap (exported for tests). */

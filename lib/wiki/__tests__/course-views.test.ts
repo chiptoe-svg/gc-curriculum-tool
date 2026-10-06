@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { evidenceFromProfile, summarizePredicted, groupTargets } from '../course-views';
+import { evidenceFromProfile, summarizePredicted, groupTargets, withoutRetired } from '../course-views';
 import type { CaptureProfile } from '@/lib/ai/capture/schema';
 
 describe('evidenceFromProfile', () => {
@@ -45,6 +45,15 @@ describe('summarizePredicted', () => {
   it('drops a target the syllabus does not touch at all', () => {
     expect(summarizePredicted([row('x', 0, 0, 0, 0), row('x', 0, null, null, null)])).toEqual([]);
   });
+
+  it('ignores predictions on retired sub-competencies (2026-10-06 target batch)', () => {
+    const out = summarizePredicted([
+      { ...row('t5', 4, 1, 1, 1), retired: false },
+      { ...row('t5', 4, 4, 4, 4), retired: true },
+      { ...row('t9', 5, 3, 3, 3), retired: true },
+    ]);
+    expect(out).toEqual([{ targetId: 't5', name: 'T5', k: 1, u: 1, d: 1, competencies: 1 }]);
+  });
 });
 
 describe('groupTargets', () => {
@@ -59,5 +68,12 @@ describe('groupTargets', () => {
     expect(out.map(t => t.id)).toEqual(['t1', 't2', 't3']);
     expect(out[0]!.competencies.map(c => c.id)).toEqual(['c1', 'c2']);
     expect(out[2]!.competencies).toEqual([]);
+  });
+});
+
+describe('withoutRetired', () => {
+  it('drops wiki competency pages whose sub-competency is retired', () => {
+    const pages = [{ slug: 'kept', title: 'Kept' }, { slug: 'prompt-design', title: 'Prompt design' }];
+    expect(withoutRetired(pages, new Set(['prompt-design']))).toEqual([{ slug: 'kept', title: 'Kept' }]);
   });
 });

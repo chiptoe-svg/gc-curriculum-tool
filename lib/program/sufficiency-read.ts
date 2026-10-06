@@ -25,7 +25,10 @@ export async function getTargetSufficiency(targetId: string): Promise<TargetSuff
 
   // Stored demand is already partner-weighted per sub-competency — feed each as a
   // single weight-1 contribution so the engine passes it through unchanged.
-  const demand: DemandContribution[] = demandRows.map(r => ({
+  // Only the target's current sub-competencies: the matrix already omits
+  // retired ones, so stored demand on a retired id is history, not a gap.
+  const currentIds = new Set(matrix.subCompetencies.filter(s => s.careerTargetId === targetId).map(s => s.id));
+  const demand: DemandContribution[] = demandRows.filter(r => currentIds.has(r.subCompetencyId)).map(r => ({
     subCompetencyId: r.subCompetencyId,
     weight: 1,
     k: r.kDemand,

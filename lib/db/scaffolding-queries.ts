@@ -74,11 +74,14 @@ export async function loadScaffoldingTarget(targetId: string): Promise<Scaffoldi
 
   // Schema uses displayOrder (not orderIndex) and singular descriptor field names:
   //   knowDescriptor / understandDescriptor / doDescriptor (not descriptorK/U/D)
-  const subs = await db
+  // Retired sub-competencies are history, not part of the target: skip them
+  // (same rule as the coverage-refresh routes).
+  const subs = (await db
     .select()
     .from(subCompetencies)
     .where(eq(subCompetencies.careerTargetId, targetId))
-    .orderBy(asc(subCompetencies.displayOrder));
+    .orderBy(asc(subCompetencies.displayOrder)))
+    .filter(s => !s.retired);
 
   // All latest (non-retired) snapshots, joined with their course for level
   // ordering. We use the cross-product of (snapshot × subCompetency) below.

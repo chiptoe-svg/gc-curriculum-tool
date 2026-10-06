@@ -219,7 +219,10 @@ export async function invalidateCoverageForSubCompetency(
 /**
  * Read the full matrix payload in one shot: every course with a non-retired
  * snapshot, every active career target with its non-retired sub-competencies,
- * and every scored cell currently in the table.
+ * and every scored cell for those (non-retired) sub-competencies. Cells under a
+ * retired sub-competency stay in snapshot_target_coverage as history but are
+ * not returned: every consumer of this payload (matrix, sufficiency, Explore
+ * career-fit, wiki graph tools, flags) reads it as the current state.
  */
 export async function getMatrixData(): Promise<MatrixData> {
   // One row per (course, instructor): the latest non-retired snapshot for
@@ -296,7 +299,8 @@ export async function getMatrixData(): Promise<MatrixData> {
       displayOrder: s.displayOrder,
     }));
 
-  const cells = await getAllCells();
+  const activeSubIds = new Set(subCompetenciesOut.map(s => s.id));
+  const cells = (await getAllCells()).filter(c => activeSubIds.has(c.subCompetencyId));
 
   return {
     courses: courses.sort((a, b) =>

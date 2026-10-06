@@ -83,3 +83,29 @@ describe('career-coverage queries gate on builds_to_career', () => {
     expect(texts.some((t) => t.includes('builds_to_career'))).toBe(true);
   });
 });
+
+describe('getMatrixData — retired sub-competencies (2026-10-06 target batch)', () => {
+  it('drops cells scored against retired sub-competencies, so no consumer reads them as current', async () => {
+    const schema = await import('@/lib/db/schema');
+    const mod = await import('@/lib/db/client');
+    (mod.db.execute as unknown as ReturnType<typeof vi.fn>) = vi.fn(() => Promise.resolve({ rows: [] }));
+    const cell = (subCompetencyId: string) => ({
+      snapshotId: 's1', careerTargetId: 't5', subCompetencyId, kDepth: 1, uDepth: 1, dDepth: 1,
+      matchedCompetency: null, evidenceExcerpt: null, confidence: 'high', rationale: '', model: 'm', generatedAt: new Date(0),
+    });
+    const byTable = new Map<unknown, unknown[]>([
+      [schema.careerTargets, [{ id: 't5', name: 'T5', displayOrder: 4 }]],
+      [schema.subCompetencies, [
+        { id: 'kept', name: 'Kept', careerTargetId: 't5', displayOrder: 0, retired: false },
+        { id: 'old', name: 'Old', careerTargetId: 't5', displayOrder: 1, retired: true },
+      ]],
+      [schema.snapshotTargetCoverage, [cell('kept'), cell('old')]],
+    ]);
+    (mod.db.select as unknown as ReturnType<typeof vi.fn>) = vi.fn(() => ({ from: (t: unknown) => byTable.get(t) ?? [] }));
+
+    const { getMatrixData } = await import('@/lib/db/program-coverage-queries');
+    const data = await getMatrixData();
+    expect(data.subCompetencies.map(s => s.id)).toEqual(['kept']);
+    expect(data.cells.map(c => c.subCompetencyId)).toEqual(['kept']);
+  });
+});
