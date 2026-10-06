@@ -10,17 +10,10 @@ import {
 } from '@/lib/db/course-capture-profiles-queries';
 import { generateCaptureProfileV2 } from '@/lib/ai/analyze/capture-scores';
 import { preserveAdoptOverlay } from '@/lib/capture/adopt-overlay';
+import { extractPrereqCodes } from '@/lib/capture/prereq-codes';
 import type { CaptureChatContext } from '@/lib/ai/analyze/capture-chat';
 import { getLatestSnapshotByCourse } from '@/lib/db/capture-snapshots-queries';
 import { getLatestSessionId, getSessionMessages } from '@/lib/db/capture-messages-queries';
-
-const COURSE_CODE_RE = /GC\s+\d{4}[a-z]{0,2}/gi;
-
-function extractPrereqCodes(prerequisites: string, selfCode: string): string[] {
-  const codes = (prerequisites.match(COURSE_CODE_RE) ?? [])
-    .map(c => c.replace(/\s+/, ' ').toUpperCase().replace(/GC (\d)/, 'GC $1'));
-  return Array.from(new Set(codes)).filter(c => c !== selfCode);
-}
 import {
   captureProfileSchema,
   type CaptureProfile,

@@ -10,17 +10,10 @@ import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
 import { hashIp } from '@/lib/ip-hash';
 import { runStressTest } from '@/lib/ai/stress-test/run';
+import { extractPrereqCodes } from '@/lib/capture/prereq-codes';
 import type { CaptureChatContext } from '@/lib/ai/analyze/capture-chat';
 
 interface RouteContext { params: Promise<{ code: string }> }
-
-const COURSE_CODE_RE = /GC\s+\d{4}[a-z]{0,2}/gi;
-
-function extractPrereqCodes(prerequisites: string, selfCode: string): string[] {
-  const codes = (prerequisites.match(COURSE_CODE_RE) ?? [])
-    .map(c => c.replace(/\s+/, ' ').toUpperCase().replace(/GC (\d)/, 'GC $1'));
-  return Array.from(new Set(codes)).filter(c => c !== selfCode);
-}
 
 /**
  * POST /api/capture/[code]/stress-test?slug=...
