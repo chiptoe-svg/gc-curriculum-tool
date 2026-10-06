@@ -14,6 +14,8 @@ vi.mock('@/lib/rate-limit/daily-cap', () => ({ recordSpend }));
 
 import { scrubForRecord, needsNamePass, ScrubError } from '@/lib/privacy/scrub';
 
+process.env.PRIVACY_SCRUB_RETRY_DELAY_MS = '0';
+
 /** A fake model that replaces the given names with [student] and echoes everything else. */
 function modelReplacing(names: string[]) {
   return async (args: { userMessage: string; validate: (raw: unknown) => { text: string } }) => {
@@ -137,6 +139,44 @@ describe('scrubForRecord — AI name pass', () => {
     const r = await scrubForRecord(raw, { fileName: 'Canvas: Assignments', isSyllabus: false });
     expect(complete.mock.calls.length).toBeGreaterThan(1);
     expect(r.text).toBe(raw.split('Jane Doe').join('[student]'));
+  });
+});
+
+describe('scrubForRecord — one retry per chunk', () => {
+  const ok = (text: string) => ({ data: { text }, costUsdCents: 1, durationMs: 1, cachedTokens: 0, uncachedPromptTokens: 0, completionTokens: 0 });
+
+  it('succeeds when the first provider call fails and the retry succeeds', async () => {
+    complete
+      .mockRejectedValueOnce(Object.assign(new Error('Bad Gateway'), { status: 502 }))
+      .mockImplementationOnce(modelReplacing(['Jane Doe']));
+    const r = await scrubForRecord('Submitted by Jane Doe\nbody', { fileName: 'x.pdf', isSyllabus: false });
+    expect(complete).toHaveBeenCalledTimes(2);
+    expect(r.text).toBe('Submitted by [student]\nbody');
+  });
+
+  it('succeeds when the first output is rejected by the guard and the retry is clean', async () => {
+    complete
+      .mockResolvedValueOnce(ok('Submitted by [student]\nsomething else entirely'))
+      .mockImplementationOnce(modelReplacing(['Jane Doe']));
+    const r = await scrubForRecord('Submitted by Jane Doe\nbody', { fileName: 'x.pdf', isSyllabus: false });
+    expect(complete).toHaveBeenCalledTimes(2);
+    expect(r.text).toBe('Submitted by [student]\nbody');
+  });
+
+  it('throws a text-free ScrubError when both attempts fail, after exactly two calls', async () => {
+    complete.mockRejectedValue(new Error('OpenAI returned non-JSON content: Submitted by Jane Doe'));
+    const p = scrubForRecord('Submitted by Jane Doe\nbody', { fileName: 'x.pdf', isSyllabus: false });
+    await expect(p).rejects.toBeInstanceOf(ScrubError);
+    await expect(p).rejects.not.toThrow(/Jane/);
+    expect(complete).toHaveBeenCalledTimes(2);
+  });
+
+  it('throws a text-free ScrubError when the guard rejects both attempts', async () => {
+    complete.mockResolvedValue(ok('Submitted by [student]\nJane Doe rewrote this'));
+    const p = scrubForRecord('Submitted by Jane Doe\nbody', { fileName: 'x.pdf', isSyllabus: false });
+    await expect(p).rejects.toBeInstanceOf(ScrubError);
+    await expect(p).rejects.not.toThrow(/Jane/);
+    expect(complete).toHaveBeenCalledTimes(2);
   });
 });
 
