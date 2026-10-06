@@ -266,11 +266,11 @@ export function SyllabusBox({
             onClick={() => inputRef.current?.click()}
             disabled={uploading !== null}
             title={hasSheetCatalog
-              ? 'Attach a syllabus document — it will be used alongside the synced Google-Sheet catalog; differences are surfaced, never merged'
-              : undefined}
+              ? 'Upload the course syllabus. It is kept alongside the Google-Sheet catalog (which stays as is); differences are surfaced, never merged.'
+              : 'Upload the course syllabus (PDF or Word).'}
             className="rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium hover:bg-muted disabled:opacity-50"
           >
-            {uploading ? 'Attaching…' : hasSheetCatalog ? 'Replace syllabus' : 'Attach a syllabus'}
+            {uploading ? 'Uploading…' : attachedSyllabus ? 'Replace syllabus' : 'Upload syllabus'}
           </button>
           <input
             ref={inputRef}

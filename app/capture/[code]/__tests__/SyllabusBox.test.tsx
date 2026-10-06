@@ -177,14 +177,20 @@ describe('SyllabusBox', () => {
     expect(screen.getByText(/a Canvas syllabus is also available/i)).toBeTruthy();
   });
 
-  it('button label is "Replace syllabus" when sheet catalog is synced with content', () => {
+  it('button says "Upload syllabus" when none is attached, even with a synced sheet (the sheet is not the syllabus)', () => {
     render(<Harness catalogSyncedAt={new Date().toISOString()} />);
-    expect(screen.getByRole('button', { name: /replace syllabus/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /upload syllabus/i })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /replace syllabus/i })).toBeNull();
   });
 
-  it('button label is "Attach a syllabus" when no sheet catalog', () => {
+  it('button says "Upload syllabus" when there is no sheet catalog either', () => {
     render(<Harness />);
-    expect(screen.getByRole('button', { name: /attach a syllabus/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /upload syllabus/i })).toBeTruthy();
+  });
+
+  it('button says "Replace syllabus" once an uploaded syllabus is attached', () => {
+    render(<Harness materials={[M('course outline.pdf', { isSyllabus: true })]} />);
+    expect(screen.getByRole('button', { name: /replace syllabus/i })).toBeTruthy();
   });
 
   it('recognises the syllabus by its flag, not its file name', () => {
