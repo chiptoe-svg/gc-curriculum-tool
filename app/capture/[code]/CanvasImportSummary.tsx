@@ -99,7 +99,7 @@ export function CanvasImportSummary({ materials }: Props) {
                   <div className="flex-1">
                     <span className="font-medium">{cat.label}</span>
                     <span className="ml-2 text-xs text-muted-foreground">— {status}</span>
-                    <p className="text-[11px] text-muted-foreground">{cat.description}</p>
+                    <p className="text-xs text-muted-foreground">{cat.description}</p>
                   </div>
                 </li>
               );
@@ -113,7 +113,7 @@ export function CanvasImportSummary({ materials }: Props) {
                 <span className="ml-2 text-xs text-muted-foreground">
                   — {canvasFileCount > 0 ? `${canvasFileCount} attached file${canvasFileCount === 1 ? '' : 's'}` : 'no files attached'}
                 </span>
-                <p className="text-[11px] text-muted-foreground">PDFs, DOCX, PPTX, XLSX, and other files attached to assignments or pages.</p>
+                <p className="text-xs text-muted-foreground">PDFs, DOCX, PPTX, XLSX, and other files attached to assignments or pages.</p>
               </div>
             </li>
           </ul>

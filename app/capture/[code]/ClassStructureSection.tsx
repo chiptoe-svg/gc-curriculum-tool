@@ -81,7 +81,7 @@ export function ClassStructureSection({
 
       {/* Topics */}
       <div className="space-y-1">
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Topics covered (in order)
         </p>
         <ol className="space-y-1 list-decimal list-inside">
@@ -133,7 +133,7 @@ export function ClassStructureSection({
           <button
             type="button"
             onClick={handleAddTopic}
-            className="mt-1 text-[11px] text-muted-foreground hover:text-foreground border border-dashed border-muted-foreground/40 rounded px-2 py-0.5"
+            className="mt-1 text-xs text-muted-foreground hover:text-foreground border border-dashed border-muted-foreground/40 rounded px-2 py-0.5"
           >
             + Add topic
           </button>
@@ -142,7 +142,7 @@ export function ClassStructureSection({
 
       {/* Cadence */}
       <div className="space-y-0.5">
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Cadence
         </p>
         {editable ? (
@@ -159,7 +159,7 @@ export function ClassStructureSection({
 
       {/* Assessment */}
       <div className="space-y-0.5">
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Assessment overview
         </p>
         {editable ? (

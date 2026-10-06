@@ -144,7 +144,7 @@ export function FeedbackWidget() {
                 </div>
                 {error && <p className="text-xs text-destructive">{error}</p>}
                 <div className="flex items-center justify-between gap-3 pt-1">
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     We&apos;ll capture the page you&apos;re on automatically.
                   </p>
                   <button

@@ -265,15 +265,15 @@ export function IndexingStatusDot({ status, indexedAt }: { status: IndexingStatu
 
 function StatusChip({ status }: { status: string }) {
   if (status === 'ok') {
-    return <span className="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-800">extracted</span>;
+    return <span className="rounded bg-green-100 px-1.5 py-0.5 text-xs font-medium text-green-800">extracted</span>;
   }
   if (status === 'low_text') {
-    return <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">low text</span>;
+    return <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800">low text</span>;
   }
   if (status === 'failed') {
-    return <span className="rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-800">failed</span>;
+    return <span className="rounded bg-red-100 px-1.5 py-0.5 text-xs font-medium text-red-800">failed</span>;
   }
-  return <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-medium text-slate-600">pending</span>;
+  return <span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-600">pending</span>;
 }
 
 function CatalogSummary({ course }: { course: CourseCatalogView }) {
@@ -398,34 +398,34 @@ function MaterialRow({
                 href={material.blobUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="shrink-0 text-[11px] text-muted-foreground hover:text-foreground"
+                className="shrink-0 text-xs text-muted-foreground hover:text-foreground"
                 title={material.blobUrl}
               >
                 ↗
               </a>
             )}
             {canvas ? (
-              <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-800">Canvas</span>
+              <span className="rounded bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-blue-800">Canvas</span>
             ) : canvasFile ? (
-              <span className="rounded bg-cyan-100 px-1.5 py-0.5 text-[10px] font-medium text-cyan-800">Canvas File</span>
+              <span className="rounded bg-cyan-100 px-1.5 py-0.5 text-xs font-medium text-cyan-800">Canvas File</span>
             ) : gdoc ? (
-              <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-800">Google Doc</span>
+              <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-xs font-medium text-emerald-800">Google Doc</span>
             ) : gslides ? (
-              <span className="rounded bg-yellow-100 px-1.5 py-0.5 text-[10px] font-medium text-yellow-800">Google Slides</span>
+              <span className="rounded bg-yellow-100 px-1.5 py-0.5 text-xs font-medium text-yellow-800">Google Slides</span>
             ) : gsheet ? (
-              <span className="rounded bg-lime-100 px-1.5 py-0.5 text-[10px] font-medium text-lime-800">Google Sheet</span>
+              <span className="rounded bg-lime-100 px-1.5 py-0.5 text-xs font-medium text-lime-800">Google Sheet</span>
             ) : drivePdf ? (
-              <span className="rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-medium text-sky-800">Drive PDF</span>
+              <span className="rounded bg-sky-100 px-1.5 py-0.5 text-xs font-medium text-sky-800">Drive PDF</span>
             ) : youtube ? (
-              <span className="rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-800">YouTube</span>
+              <span className="rounded bg-red-100 px-1.5 py-0.5 text-xs font-medium text-red-800">YouTube</span>
             ) : (
-              <span className="rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-medium text-purple-800">uploaded</span>
+              <span className="rounded bg-purple-100 px-1.5 py-0.5 text-xs font-medium text-purple-800">uploaded</span>
             )}
             <StatusChip status={material.extractionStatus} />
             {material.digest && (
               <span
                 className={
-                  'rounded px-1.5 py-0.5 text-[10px] font-medium ' +
+                  'rounded px-1.5 py-0.5 text-xs font-medium ' +
                   (usingDigest
                     ? 'bg-teal-100 text-teal-800'
                     : 'bg-slate-100 text-slate-600')
@@ -440,7 +440,7 @@ function MaterialRow({
               </span>
             )}
             {material.ignored && (
-              <span className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 border border-amber-200">
+              <span className="rounded bg-amber-50 px-1.5 py-0.5 text-xs font-medium text-amber-700 border border-amber-200">
                 ignored
               </span>
             )}
@@ -449,7 +449,7 @@ function MaterialRow({
                 type="button"
                 onClick={() => setFerpaWidgetOpen(o => !o)}
                 title="FERPA risk band — click to review or downgrade if it's a false positive."
-                className="rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-800 hover:bg-amber-100"
+                className="rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-xs font-medium text-amber-800 hover:bg-amber-100"
               >
                 {material.ferpaRisk === 'high'
                   ? 'Student names + IDs detected'
@@ -457,7 +457,7 @@ function MaterialRow({
               </button>
             )}
           </div>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">
+          <p className="mt-0.5 text-xs text-muted-foreground">
             {summary && <span>{summary} · </span>}
             {material.pageCount !== null && <span>{material.pageCount} pages · </span>}
             {wordCount > 0 && <span>{wordCount.toLocaleString()} words · </span>}
@@ -479,7 +479,7 @@ function MaterialRow({
           </p>
           {material.ignored && (
             <div className="mt-1 flex items-start justify-between gap-2 rounded border border-amber-200 bg-amber-50/50 px-2 py-1">
-              <p className="text-[11px] leading-snug text-amber-800">
+              <p className="text-xs leading-snug text-amber-800">
                 <span className="font-medium">Why ignored:</span>{' '}
                 {material.setAsideReason
                   ?? (material.fileName.startsWith('Canvas: Syllabus')
@@ -493,7 +493,7 @@ function MaterialRow({
                   type="button"
                   onClick={handleIncludeAnyway}
                   disabled={busy || overrideBusy}
-                  className="shrink-0 text-[11px] font-medium text-amber-900 underline hover:text-amber-700 disabled:opacity-50"
+                  className="shrink-0 text-xs font-medium text-amber-900 underline hover:text-amber-700 disabled:opacity-50"
                 >
                   {overrideBusy ? 'Including…' : 'Include anyway'}
                 </button>
@@ -501,10 +501,10 @@ function MaterialRow({
             </div>
           )}
           {overrideError && (
-            <p className="mt-1 text-[11px] text-destructive">{overrideError}</p>
+            <p className="mt-1 text-xs text-destructive">{overrideError}</p>
           )}
           {ferpaWidgetOpen && (
-            <div className="mt-1 flex flex-wrap items-center gap-2 rounded border border-amber-200 bg-amber-50/50 px-2 py-1.5 text-[11px]">
+            <div className="mt-1 flex flex-wrap items-center gap-2 rounded border border-amber-200 bg-amber-50/50 px-2 py-1.5 text-xs">
               <button
                 type="button"
                 onClick={handleDowngradeFerpa}
@@ -535,7 +535,7 @@ function MaterialRow({
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
           {material.digest && (
-            <label className="flex cursor-pointer items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground">
+            <label className="flex cursor-pointer items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
               <input
                 type="checkbox"
                 checked={material.useDigest}
@@ -546,7 +546,7 @@ function MaterialRow({
               AI summary
             </label>
           )}
-          <label className="flex cursor-pointer items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground">
+          <label className="flex cursor-pointer items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
             <input
               type="checkbox"
               checked={material.ignored}
@@ -561,7 +561,7 @@ function MaterialRow({
             onClick={() => onToggleRetired(!material.retiredAt)}
             disabled={busy}
             title={material.retiredAt ? 'Restore this material to the course — it will feed the cross-course spine again.' : 'Retire this material — marks it as no longer taught (distinct from ignored).'}
-            className="text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-30"
+            className="text-xs text-muted-foreground hover:text-foreground disabled:opacity-30"
           >
             {material.retiredAt ? 'restore' : 'retire'}
           </button>
@@ -570,7 +570,7 @@ function MaterialRow({
               type="button"
               onClick={() => setExpanded(e => !e)}
               disabled={!material.extractedText}
-              className="text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-30"
+              className="text-xs text-muted-foreground hover:text-foreground disabled:opacity-30"
             >
               {expanded ? 'hide' : 'preview'}
             </button>
@@ -579,20 +579,20 @@ function MaterialRow({
             type="button"
             onClick={onDelete}
             disabled={busy}
-            className="text-[11px] text-muted-foreground hover:text-destructive disabled:opacity-30"
+            className="text-xs text-muted-foreground hover:text-destructive disabled:opacity-30"
           >
             delete
           </button>
         </div>
       </div>
       {expanded && material.extractedText && (
-        <pre className="max-h-72 overflow-auto rounded border bg-muted/40 p-2 text-[11px] leading-snug whitespace-pre-wrap">
+        <pre className="max-h-72 overflow-auto rounded border bg-muted/40 p-2 text-xs leading-snug whitespace-pre-wrap">
           {material.extractedText.slice(0, 8000)}
           {material.extractedText.length > 8000 && '\n\n…(truncated)'}
         </pre>
       )}
       {isCanvasList && items.length > 0 && !material.ignored && (
-        <div className="mt-1 ml-5 text-[11px] text-muted-foreground">
+        <div className="mt-1 ml-5 text-xs text-muted-foreground">
           <button
             type="button"
             onClick={() => setItemsExpanded(e => !e)}
@@ -1196,7 +1196,7 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
             {totalAuditTokens >= 150_000 && (
               <span
                 className={
-                  'rounded-full px-2 py-0.5 text-[10px] font-medium ' +
+                  'rounded-full px-2 py-0.5 text-xs font-medium ' +
                   (totalAuditTokens >= 220_000 ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800')
                 }
                 title="The active materials are large for the interview prompt — open this panel and compress/ignore some before starting."
@@ -1205,7 +1205,7 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
               </span>
             )}
           </h2>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             {activeCount} active material{activeCount === 1 ? '' : 's'}
             {ignoredCount > 0 && ` · ${ignoredCount} ignored`} ·{' '}
             {course.learningObjectives.length} objectives · {course.majorProjects.length} projects ·{' '}
@@ -1213,7 +1213,7 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
           </p>
           {totalAuditTokens > 0 && (
             <p
-              className={'text-[11px] ' + totalTone}
+              className={'text-xs ' + totalTone}
               title="Estimated tokens the interview prompt will carry from your active materials. The interview input cap is 272k tokens; aim to stay well under it."
             >
               Interview prompt: ~{formatTokens(totalAuditTokens)} from materials
@@ -1221,7 +1221,7 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
             </p>
           )}
           {syncMessage && (
-            <p className={'mt-1 text-[11px] ' + (syncMessage.kind === 'ok' ? 'text-green-700' : 'text-destructive')}>
+            <p className={'mt-1 text-xs ' + (syncMessage.kind === 'ok' ? 'text-green-700' : 'text-destructive')}>
               {syncMessage.text}
             </p>
           )}
@@ -1249,7 +1249,7 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
                   }
                 >
                   Full {course.auditMode === 'full' && '✓'}
-                  <span className="block text-[10px] text-muted-foreground">Retrieval enabled (default).</span>
+                  <span className="block text-xs text-muted-foreground">Retrieval enabled (default).</span>
                 </button>
                 <button
                   type="button"
@@ -1261,10 +1261,10 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
                   }
                 >
                   Simple {course.auditMode === 'simple' && '✓'}
-                  <span className="block text-[10px] text-muted-foreground">Skip indexing; AI summaries inline.</span>
+                  <span className="block text-xs text-muted-foreground">Skip indexing; AI summaries inline.</span>
                 </button>
                 {auditModeError && (
-                  <p className="border-t px-3 py-1.5 text-[10px] text-destructive">{auditModeError}</p>
+                  <p className="border-t px-3 py-1.5 text-xs text-destructive">{auditModeError}</p>
                 )}
               </div>
             )}
@@ -1310,7 +1310,7 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
                 <span>
                   <h3 className="text-sm font-semibold">{hideRows ? `${materials.length} materials feed the interview` : `Materials (${materials.length})`}</h3>
                   {!materialsCollapsed && (
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                       Ignored items stay in the database but don&apos;t feed the interview.
                     </p>
                   )}
@@ -1371,7 +1371,7 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
                 <p className="text-xs font-medium text-destructive">
                   Delete all {materials.length} material{materials.length === 1 ? '' : 's'} on {course.code}? This removes their files and indexed chunks too, and can&apos;t be undone.
                 </p>
-                {wipeError && <p className="mt-1 text-[11px] text-destructive">{wipeError}</p>}
+                {wipeError && <p className="mt-1 text-xs text-destructive">{wipeError}</p>}
                 <div className="mt-2 flex items-center gap-2">
                   <button
                     type="button"
@@ -1395,29 +1395,29 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
             {/* hideRows: per-row controls live in the three source boxes above (Step 1).
                 The chat stage (CaptureClient trays) never sets hideRows, so it keeps full rows. */}
             {hideRows ? (
-              <p className="px-3 py-2.5 text-[11px] text-muted-foreground italic">
+              <p className="px-3 py-2.5 text-xs text-muted-foreground italic">
 The materials themselves — and their per-item controls (ignore, preview, AI summary, delete) — are listed in the three source boxes above. This panel is just for bulk actions.
               </p>
             ) : !materialsCollapsed && (
               <>
                 {scanMessage && (
-                  <p className={'border-b px-3 py-1.5 text-[11px] ' + (scanMessage.kind === 'ok' ? 'text-green-700 bg-green-50' : 'text-destructive bg-red-50')}>
+                  <p className={'border-b px-3 py-1.5 text-xs ' + (scanMessage.kind === 'ok' ? 'text-green-700 bg-green-50' : 'text-destructive bg-red-50')}>
                     {scanMessage.text}
                   </p>
                 )}
                 {reextractMessage && (
-                  <p className={'border-b px-3 py-1.5 text-[11px] ' + (reextractMessage.kind === 'ok' ? 'text-green-700 bg-green-50' : 'text-destructive bg-red-50')}>
+                  <p className={'border-b px-3 py-1.5 text-xs ' + (reextractMessage.kind === 'ok' ? 'text-green-700 bg-green-50' : 'text-destructive bg-red-50')}>
                     {reextractMessage.text}
                   </p>
                 )}
                 {compressMessage && (
-                  <p className={'border-b px-3 py-1.5 text-[11px] ' + (compressMessage.kind === 'ok' ? 'text-green-700 bg-green-50' : 'text-destructive bg-red-50')}>
+                  <p className={'border-b px-3 py-1.5 text-xs ' + (compressMessage.kind === 'ok' ? 'text-green-700 bg-green-50' : 'text-destructive bg-red-50')}>
                     {compressMessage.text}
                   </p>
                 )}
                 {reextractOpen && (
                   <div className="border-b bg-muted/30 px-3 py-2 space-y-2">
-                    <label className="block text-[11px] text-muted-foreground" htmlFor="reextract-token">
+                    <label className="block text-xs text-muted-foreground" htmlFor="reextract-token">
                       Canvas API token. Same token as for &quot;Import from Canvas&quot;.
                       <span className="mt-0.5 block">
                         <span className="font-medium text-foreground">We don&apos;t keep it</span> — used for this
@@ -1512,7 +1512,7 @@ The materials themselves — and their per-item controls (ignore, preview, AI su
               {uploadBgMessage && (
                 <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">{uploadBgMessage}</p>
               )}
-              <p className="mt-2 text-[11px] text-muted-foreground">
+              <p className="mt-2 text-xs text-muted-foreground">
                 To pull from Canvas (syllabus, assignments, modules), use the Course Builder Materials tab.
                 Imports land here automatically.
               </p>

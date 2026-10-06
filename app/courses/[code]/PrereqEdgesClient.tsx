@@ -33,7 +33,7 @@ function KudInput({
 }) {
   return (
     <label className="flex items-center gap-1">
-      <span className="font-mono-plex text-[10px] uppercase tracking-[0.14em] text-muted-foreground w-3">{label}</span>
+      <span className="font-mono-plex text-xs uppercase tracking-[0.14em] text-muted-foreground w-3">{label}</span>
       <input
         type="number"
         min={0}
@@ -131,7 +131,7 @@ function EdgeRow({
       {/* Sub-competency name */}
       <span className="flex-1 min-w-[12rem] text-sm font-medium leading-snug">
         {subCompName}
-        <span className="ml-1.5 font-mono-plex text-[9px] uppercase tracking-[0.14em] text-muted-foreground/60">
+        <span className="ml-1.5 font-mono-plex text-xs uppercase tracking-[0.14em] text-muted-foreground/60">
           {edge.source === 'llm_seed' ? 'ai-seeded' : 'faculty'}
         </span>
       </span>
@@ -148,7 +148,7 @@ function EdgeRow({
         onClick={handleConfirmToggle}
         disabled={isPending}
         title={confirmed ? 'Confirmed — click to un-confirm' : 'Click to confirm'}
-        className={`shrink-0 rounded-full px-2.5 py-0.5 font-body-sans text-[10px] uppercase tracking-[0.14em] font-medium transition-colors
+        className={`shrink-0 rounded-full px-2.5 py-0.5 font-body-sans text-xs uppercase tracking-[0.14em] font-medium transition-colors
           ${confirmed
             ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 hover:bg-emerald-200'
             : 'bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400 hover:bg-stone-200'
@@ -192,7 +192,7 @@ function PrereqGroup({
 }) {
   return (
     <div className="space-y-1.5">
-      <p className="font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+      <p className="font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
         {prereqCode}
       </p>
       {edges.map((e) => (

@@ -342,7 +342,7 @@ export function VoiceRecorder({ slug, endpoint, onTranscript, disabled, maxDurat
         <button
           type="button"
           onClick={discardAndReRecord}
-          className="text-[11px] text-muted-foreground underline-offset-2 hover:underline"
+          className="text-xs text-muted-foreground underline-offset-2 hover:underline"
         >
           Discard and re-record
         </button>

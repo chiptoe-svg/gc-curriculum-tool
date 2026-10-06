@@ -31,21 +31,21 @@ interface Props {
 function GapBadge({ status }: { status: SubCompetencyGap['status'] }) {
   if (status === 'met') {
     return (
-      <span className="inline-flex items-center rounded-full px-2 py-0.5 font-body-sans text-[10px] uppercase tracking-[0.14em] font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
+      <span className="inline-flex items-center rounded-full px-2 py-0.5 font-body-sans text-xs uppercase tracking-[0.14em] font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
         Met
       </span>
     );
   }
   if (status === 'gap') {
     return (
-      <span className="inline-flex items-center rounded-full px-2 py-0.5 font-body-sans text-[10px] uppercase tracking-[0.14em] font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
+      <span className="inline-flex items-center rounded-full px-2 py-0.5 font-body-sans text-xs uppercase tracking-[0.14em] font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300">
         Gap
       </span>
     );
   }
   // no_data
   return (
-    <span className="inline-flex items-center rounded-full px-2 py-0.5 font-body-sans text-[10px] uppercase tracking-[0.14em] font-medium bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400">
+    <span className="inline-flex items-center rounded-full px-2 py-0.5 font-body-sans text-xs uppercase tracking-[0.14em] font-medium bg-stone-100 text-stone-500 dark:bg-stone-800 dark:text-stone-400">
       No data
     </span>
   );
@@ -71,7 +71,7 @@ function KudCell({
   // tooltip. See lib/program/depth-band.ts.
   return (
     <span
-      className={`inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 font-mono-plex text-[11px]
+      className={`inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 font-mono-plex text-xs
         ${hasGap
           ? 'bg-red-50 text-red-800 dark:bg-red-950/40 dark:text-red-300'
           : 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
@@ -79,7 +79,7 @@ function KudCell({
       title={`${label}: needs ${needed} (${depthBand(needed)?.word}), delivered ${delivered ?? '?'}${delivered != null ? ` (${depthBand(delivered)?.word})` : ''} — exact values; bands shown in chip`}
     >
       <span className="font-medium">{label}</span>
-      <span className="text-[9px] text-muted-foreground">{depthBand(delivered)?.short ?? '?'}→{depthBand(needed)?.short}</span>
+      <span className="text-xs text-muted-foreground">{depthBand(delivered)?.short ?? '?'}→{depthBand(needed)?.short}</span>
     </span>
   );
 }
@@ -127,17 +127,17 @@ function GapList({
               <div className="flex-1 min-w-[12rem]">
                 <p className="text-sm font-medium leading-snug">{name}</p>
                 {g.basis === 'intended' && (
-                  <p className="mt-0.5 font-body-sans text-[10px] italic text-amber-700 dark:text-amber-400">
+                  <p className="mt-0.5 font-body-sans text-xs italic text-amber-700 dark:text-amber-400">
                     syllabus-promise — not verified
                   </p>
                 )}
                 {g.basis === 'mixed' && (
-                  <p className="mt-0.5 font-body-sans text-[10px] italic text-amber-700 dark:text-amber-400">
+                  <p className="mt-0.5 font-body-sans text-xs italic text-amber-700 dark:text-amber-400">
                     partial — some prereqs unverified
                   </p>
                 )}
                 {g.contributingPrereqs.length > 0 && (
-                  <p className="mt-0.5 font-mono-plex text-[9px] text-muted-foreground/60">
+                  <p className="mt-0.5 font-mono-plex text-xs text-muted-foreground/60">
                     via {g.contributingPrereqs.join(', ')}
                   </p>
                 )}
@@ -247,7 +247,7 @@ export default async function CourseDetailPage({ params, searchParams }: Props) 
       <header className="border-b">
         <div className="mx-auto flex max-w-5xl items-baseline justify-between gap-4 px-6 py-4">
           <div>
-            <p className="font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            <p className="font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
               Courses · {code}
             </p>
             <h1 className="mt-0.5 font-display text-2xl font-semibold tracking-tight">
@@ -283,7 +283,7 @@ export default async function CourseDetailPage({ params, searchParams }: Props) 
         {/* Course meta */}
         {course.prerequisites && (
           <section>
-            <h2 className="mb-1 font-body-sans text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            <h2 className="mb-1 font-body-sans text-xs uppercase tracking-[0.18em] text-muted-foreground">
               Catalog prerequisites
             </h2>
             <p className="text-sm text-foreground/80">{course.prerequisites}</p>

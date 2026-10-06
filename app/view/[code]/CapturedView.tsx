@@ -86,7 +86,7 @@ function DepthChip({ label, value }: { label: 'K' | 'U' | 'D'; value: number | n
   return (
     <span
       title={`${labelText} — depth ${value ?? 'n/a'} on the 0–5 scale`}
-      className={`inline-flex items-center gap-1 rounded border px-2 py-0.5 font-mono-plex text-[10px] uppercase tracking-[0.12em] ${tone}`}
+      className={`inline-flex items-center gap-1 rounded border px-2 py-0.5 font-mono-plex text-xs uppercase tracking-[0.12em] ${tone}`}
     >
       <span className="font-semibold">{label}</span>
       <span>{isNull ? '—' : value}</span>
@@ -202,7 +202,7 @@ export function CapturedView({ profile, capturedAt }: Props) {
 
   return (
     <article className="space-y-12">
-      <p className="font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+      <p className="font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
         Captured {date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
       </p>
 
@@ -221,7 +221,7 @@ export function CapturedView({ profile, capturedAt }: Props) {
       {/* At a glance */}
       {atAGlance.length > 0 && (
         <section>
-          <h2 className="mb-3 font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+          <h2 className="mb-3 font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
             At a glance
           </h2>
           <ul className="space-y-2">
@@ -237,7 +237,7 @@ export function CapturedView({ profile, capturedAt }: Props) {
         <section className="grid gap-8 md:grid-cols-2">
           {whoFor && (
             <div>
-              <h2 className="mb-2 font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+              <h2 className="mb-2 font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
                 Who it&apos;s for
               </h2>
               <p className="font-display text-base italic leading-relaxed text-foreground">{whoFor}</p>
@@ -245,7 +245,7 @@ export function CapturedView({ profile, capturedAt }: Props) {
           )}
           {arc && (
             <div>
-              <h2 className="mb-2 font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+              <h2 className="mb-2 font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
                 The arc
               </h2>
               <p className="font-display text-base italic leading-relaxed text-foreground">{arc}</p>
@@ -257,7 +257,7 @@ export function CapturedView({ profile, capturedAt }: Props) {
       {/* What students leave able to do — with K/U/D ratings */}
       {outcomes.length > 0 && (
         <section>
-          <h2 className="mb-4 font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+          <h2 className="mb-4 font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
             What students leave able to do
           </h2>
           <ul className="space-y-6">
@@ -271,14 +271,14 @@ export function CapturedView({ profile, capturedAt }: Props) {
                     {!isFoundational && <DepthChip label="U" value={c.u_depth} />}
                     <DepthChip label="D" value={c.d_depth} />
                     {isFoundational && (
-                      <span className="ml-1 font-mono-plex text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                      <span className="ml-1 font-mono-plex text-xs uppercase tracking-[0.16em] text-muted-foreground">
                         foundational
                       </span>
                     )}
                   </div>
                   {c.evidence_d && (
                     <p className="mt-2 text-sm text-muted-foreground">
-                      <span className="font-mono-plex text-[10px] uppercase tracking-[0.16em]">Evidence: </span>
+                      <span className="font-mono-plex text-xs uppercase tracking-[0.16em]">Evidence: </span>
                       {c.evidence_d}
                     </p>
                   )}
@@ -296,7 +296,7 @@ export function CapturedView({ profile, capturedAt }: Props) {
       {/* Apparent outcomes — what the evidence says the course delivers */}
       {apparentOutcomes.length > 0 && (
         <section>
-          <h2 className="mb-2 font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+          <h2 className="mb-2 font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
             Apparent outcomes
           </h2>
           <p className="mb-4 text-sm text-muted-foreground">
@@ -313,7 +313,7 @@ export function CapturedView({ profile, capturedAt }: Props) {
       {/* Catalog delta + proposed rewrites */}
       {(catalogDelta.length > 0 || suggestedRewrites.length > 0) && (
         <section>
-          <h2 className="mb-4 font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+          <h2 className="mb-4 font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
             Where this differs from the catalog
           </h2>
           {catalogDelta.length > 0 && (
@@ -325,7 +325,7 @@ export function CapturedView({ profile, capturedAt }: Props) {
           )}
           {suggestedRewrites.length > 0 && (
             <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 dark:border-amber-900/40 dark:bg-amber-900/10">
-              <p className="mb-2 font-mono-plex text-[10px] uppercase tracking-[0.16em] text-amber-900 dark:text-amber-300">
+              <p className="mb-2 font-mono-plex text-xs uppercase tracking-[0.16em] text-amber-900 dark:text-amber-300">
                 Proposed learning-objective rewrite
               </p>
               <ul className="space-y-1.5">
@@ -341,7 +341,7 @@ export function CapturedView({ profile, capturedAt }: Props) {
       {/* Incoming expectations */}
       {incoming.length > 0 && (
         <section>
-          <h2 className="mb-4 font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+          <h2 className="mb-4 font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
             What students walk in with
           </h2>
           <ul className="space-y-2">
@@ -364,12 +364,12 @@ export function CapturedView({ profile, capturedAt }: Props) {
       {/* Class structure */}
       {classStructure && (classStructure.cadence || (classStructure.topics?.length ?? 0) > 0 || classStructure.assessment) && (
         <section>
-          <h2 className="mb-3 font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+          <h2 className="mb-3 font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
             Class structure
           </h2>
           {classStructure.cadence && (
             <p className="mb-2 text-sm leading-relaxed text-foreground">
-              <span className="font-mono-plex text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Cadence: </span>
+              <span className="font-mono-plex text-xs uppercase tracking-[0.16em] text-muted-foreground">Cadence: </span>
               {classStructure.cadence}
             </p>
           )}
@@ -382,7 +382,7 @@ export function CapturedView({ profile, capturedAt }: Props) {
           )}
           {classStructure.assessment && (
             <p className="text-sm leading-relaxed text-foreground">
-              <span className="font-mono-plex text-[10px] uppercase tracking-[0.16em] text-muted-foreground">Assessment: </span>
+              <span className="font-mono-plex text-xs uppercase tracking-[0.16em] text-muted-foreground">Assessment: </span>
               {classStructure.assessment}
             </p>
           )}
@@ -392,7 +392,7 @@ export function CapturedView({ profile, capturedAt }: Props) {
       {/* Major projects */}
       {majorProjects.length > 0 && (
         <section>
-          <h2 className="mb-4 font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+          <h2 className="mb-4 font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
             Major projects
           </h2>
           <ul className="space-y-4">
@@ -409,7 +409,7 @@ export function CapturedView({ profile, capturedAt }: Props) {
       {/* Course emphasis — by point weight */}
       {emphasis.length > 0 && (
         <section>
-          <h2 className="mb-1 font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+          <h2 className="mb-1 font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
             Course emphasis — where the graded effort goes
           </h2>
           <p className="mb-3 text-xs text-muted-foreground">
@@ -425,7 +425,7 @@ export function CapturedView({ profile, capturedAt }: Props) {
                   : 'bg-transparent text-muted-foreground/70 border-border';
               return (
                 <li key={i} className="flex items-baseline gap-2">
-                  <span className={'shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.1em] ' + band}>
+                  <span className={'shrink-0 rounded border px-1.5 py-0.5 text-xs font-medium uppercase tracking-[0.1em] ' + band}>
                     {it.centrality}
                   </span>
                   <span className="flex-1 text-sm leading-snug text-foreground">{it.competency}</span>
@@ -441,7 +441,7 @@ export function CapturedView({ profile, capturedAt }: Props) {
       {/* Strongest evidence */}
       {strongest.length > 0 && (
         <section className="border-t pt-6">
-          <h2 className="mb-3 font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+          <h2 className="mb-3 font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
             Strongest evidence behind this capture
           </h2>
           <ul className="space-y-1">

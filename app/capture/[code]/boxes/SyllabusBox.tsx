@@ -89,29 +89,29 @@ function SyllabusRow({
       <div className="flex items-center gap-2">
         <span aria-hidden className="w-4 shrink-0 text-center text-sm">📄</span>
         <span className="min-w-0 flex-1 truncate text-sm">{m.fileName}</span>
-        <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+        <span className="rounded bg-muted px-1.5 py-0.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
           {PROVENANCE_LABEL[materialProvenance(m)]}
         </span>
-        <span className={'shrink-0 text-[11px] ' + (m.ignored ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground')}>
+        <span className={'shrink-0 text-xs ' + (m.ignored ? 'text-amber-700 dark:text-amber-400' : 'text-muted-foreground')}>
           {syllabusReadinessLabel(m, triageEnabled)}
         </span>
       </div>
       {m.ignored && (
         <div className="flex items-start justify-between gap-2 rounded border border-amber-200 bg-amber-50/50 px-2 py-1">
-          <p className="text-[11px] leading-snug italic text-amber-800">
+          <p className="text-xs leading-snug italic text-amber-800">
             {m.setAsideReason ?? (m.autoSetAside ? 'set aside automatically' : 'set aside by hand')}
           </p>
           <button
             type="button"
             onClick={() => void include()}
             disabled={busy}
-            className="shrink-0 text-[11px] font-medium text-amber-900 underline hover:text-amber-700 disabled:opacity-50"
+            className="shrink-0 text-xs font-medium text-amber-900 underline hover:text-amber-700 disabled:opacity-50"
           >
             {busy ? 'Including…' : m.autoSetAside ? 'Include anyway' : 'Include'}
           </button>
         </div>
       )}
-      {error && <p className="text-[11px] text-destructive">{error}</p>}
+      {error && <p className="text-xs text-destructive">{error}</p>}
     </li>
   );
 }
@@ -285,7 +285,7 @@ export function SyllabusBox({
       {!hasSyllabus && (
         <p
           role="alert"
-          className="mx-4 mb-2 rounded border border-amber-300 bg-amber-50 px-2 py-1 text-[11px] font-medium text-amber-900 dark:bg-amber-900/20 dark:text-amber-200"
+          className="mx-4 mb-2 rounded border border-amber-300 bg-amber-50 px-2 py-1 text-xs font-medium text-amber-900 dark:bg-amber-900/20 dark:text-amber-200"
         >
           Add the course syllabus: import it from Canvas or upload it here.
         </p>
@@ -312,11 +312,11 @@ export function SyllabusBox({
           <UploadProgressBar state={progress} />
         </div>
       )}
-      {resyncError && <p className="px-4 pb-1 text-[11px] text-amber-700 dark:text-amber-400">{resyncError}</p>}
-      {uploadError && <p className="px-4 pb-1 text-[11px] text-amber-700 dark:text-amber-400">{uploadError}</p>}
+      {resyncError && <p className="px-4 pb-1 text-xs text-amber-700 dark:text-amber-400">{resyncError}</p>}
+      {uploadError && <p className="px-4 pb-1 text-xs text-amber-700 dark:text-amber-400">{uploadError}</p>}
 
       {showDiffer && (
-        <p className="mx-4 mb-2 rounded border border-amber-300 bg-amber-50 px-2 py-1 text-[11px] text-amber-900 dark:bg-amber-900/20 dark:text-amber-200">
+        <p className="mx-4 mb-2 rounded border border-amber-300 bg-amber-50 px-2 py-1 text-xs text-amber-900 dark:bg-amber-900/20 dark:text-amber-200">
           ⚠ a different syllabus is also attached — review
         </p>
       )}
@@ -331,7 +331,7 @@ export function SyllabusBox({
             skillsRequired={course.skillsRequired}
           />
           {hasCanvasSyllabus && (
-            <p className="mt-2 text-[11px] italic text-muted-foreground">
+            <p className="mt-2 text-xs italic text-muted-foreground">
               (a Canvas syllabus is also available — see Canvas)
             </p>
           )}

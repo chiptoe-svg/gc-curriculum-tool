@@ -35,7 +35,7 @@ function Dim({ label, demand, attainment, gap, status }: {
         {fmt(demand)}<span className="text-slate-400"> / </span>{fmt(attainment)}
       </div>
       <div className="mt-0.5">
-        <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${STATUS_STYLE[status] ?? STATUS_STYLE.no_demand}`}>
+        <span className={`rounded-full px-1.5 py-0.5 text-xs font-medium ${STATUS_STYLE[status] ?? STATUS_STYLE.no_demand}`}>
           {status === 'gap' && gap != null ? `−${fmt(gap)}` : STATUS_LABEL[status] ?? status}
         </span>
       </div>
@@ -50,7 +50,7 @@ export async function SufficiencyPanel({ targetId }: { targetId: string }) {
   return (
     <section className="space-y-3">
       <div>
-        <h2 className="text-lg font-semibold">Demand → coverage sufficiency <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">preview</span></h2>
+        <h2 className="text-lg font-semibold">Demand → coverage sufficiency <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-medium text-amber-800">preview</span></h2>
         <p className="text-sm text-slate-600">
           Employer-weighted <strong>demand</strong> vs curriculum <strong>attainment</strong> (demand / attainment),
           per sub-competency. Demand is the partner-weighted average across submitted positions; attainment is the

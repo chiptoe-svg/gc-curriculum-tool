@@ -9,7 +9,7 @@ import { SourceBadge } from './ProfileReviewPanel';
 // ---------------------------------------------------------------------------
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="font-body-sans text-[10px] uppercase tracking-[0.18em] text-muted-foreground mb-1 select-none">
+    <p className="font-body-sans text-xs uppercase tracking-[0.18em] text-muted-foreground mb-1 select-none">
       {children}
     </p>
   );
@@ -192,7 +192,7 @@ function AtAGlanceSection({ bullets, editable, onChange }: AtAGlanceSectionProps
         <button
           type="button"
           onClick={handleAddBullet}
-          className="mt-1 ml-4 font-body-sans text-[10px] uppercase tracking-[0.12em] text-muted-foreground hover:text-foreground transition-colors"
+          className="mt-1 ml-4 font-body-sans text-xs uppercase tracking-[0.12em] text-muted-foreground hover:text-foreground transition-colors"
         >
           + Add bullet
         </button>
@@ -361,7 +361,7 @@ export function CourseOverview({
         className="animate-in fade-in slide-in-from-bottom-1 duration-400 fill-mode-both"
         style={delay(0)}
       >
-        <p className="font-mono-plex text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-1">
+        <p className="font-mono-plex text-xs uppercase tracking-[0.2em] text-muted-foreground mb-1">
           {courseCode}
         </p>
         <h1 className="font-display text-[2rem] sm:text-[2.75rem] font-semibold leading-[1.12] tracking-tight text-foreground">

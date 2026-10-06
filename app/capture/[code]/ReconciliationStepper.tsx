@@ -114,7 +114,7 @@ function ProposalCard({
               onChange={e => onChange({ accepted: e.target.checked })}
               className="accent-stone-700"
             />
-            <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+            <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
               {p.action}
             </span>
           </label>
@@ -125,11 +125,11 @@ function ProposalCard({
       {/* Before / after */}
       <div className="grid grid-cols-2 gap-2 text-xs">
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-0.5">Before</p>
+          <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground mb-0.5">Before</p>
           <p className="text-stone-700">{p.action === 'add' ? '(new)' : currentItem}</p>
         </div>
         <div>
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground mb-0.5">After</p>
+          <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground mb-0.5">After</p>
           {canEdit && decision.accepted ? (
             <div className="space-y-1">
               <input
@@ -141,7 +141,7 @@ function ProposalCard({
               />
               <div className="flex gap-1">
                 {(['k', 'u', 'd'] as const).map(dim => (
-                  <label key={dim} className="flex items-center gap-1 text-[10px] uppercase">
+                  <label key={dim} className="flex items-center gap-1 text-xs uppercase">
                     <span className="font-mono font-medium">{dim.toUpperCase()}</span>
                     <input
                       type="number"
@@ -215,7 +215,7 @@ export function ReconciliationStepper({ profile, slug, courseCode, onComplete }:
           {items.map((e, i) => (
             <li key={i} className="flex items-start gap-2">
               <span className="flex-1">{e.statement}</span>
-              <span className="font-mono text-[10px] text-muted-foreground whitespace-nowrap">
+              <span className="font-mono text-xs text-muted-foreground whitespace-nowrap">
                 K{depthStr(e.expected_depth.k)} U{depthStr(e.expected_depth.u)} D{e.expected_depth.d}
               </span>
             </li>
@@ -231,7 +231,7 @@ export function ReconciliationStepper({ profile, slug, courseCode, onComplete }:
         {items.map((c, i) => (
           <li key={i} className="flex items-start gap-2">
             <span className="flex-1">{c.statement}</span>
-            <span className="font-mono text-[10px] text-muted-foreground whitespace-nowrap">
+            <span className="font-mono text-xs text-muted-foreground whitespace-nowrap">
               K{depthStr(c.k_depth)} U{depthStr(c.u_depth)} D{c.d_depth}
             </span>
           </li>
@@ -367,7 +367,7 @@ export function ReconciliationStepper({ profile, slug, courseCode, onComplete }:
 
       {/* Section panel */}
       <div className="rounded-md border bg-card px-6 py-5 space-y-4">
-        <h2 className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+        <h2 className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">
           {title}
         </h2>
 

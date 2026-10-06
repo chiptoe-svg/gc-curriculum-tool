@@ -16,7 +16,7 @@ function BulletList({ items, label }: { items: string[]; label: string }) {
   if (items.length === 0) return null;
   return (
     <div>
-      <h4 className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+      <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         {label}
       </h4>
       <ul className="mt-1 space-y-1">
@@ -40,7 +40,7 @@ export function VerificationSummary({ summary, isLegacy, onCitationClick }: Prop
       {isLegacy && <LegacyBanner />}
       <header>
         <div className="flex items-center gap-2">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-700">
+          <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
             Does this capture your course?
           </p>
           <SourceBadge source={summary.source} citations={summary.citations} onCitationClick={onCitationClick} />
@@ -53,7 +53,7 @@ export function VerificationSummary({ summary, isLegacy, onCitationClick }: Prop
       </header>
 
       <div>
-        <h4 className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Course shape
         </h4>
         <p className="mt-1 text-sm leading-snug">{summary.course_shape}</p>
@@ -64,7 +64,7 @@ export function VerificationSummary({ summary, isLegacy, onCitationClick }: Prop
       <BulletList items={summary.catalog_vs_evidence} label="Where catalog and evidence disagree" />
 
       <div>
-        <h4 className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Foundationals
         </h4>
         <p className="mt-1 text-sm leading-snug">{summary.foundationals_glance}</p>

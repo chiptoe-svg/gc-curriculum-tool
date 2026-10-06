@@ -34,7 +34,7 @@ export function StressTestBadge({ annotation }: Props) {
       <summary className="cursor-pointer font-medium">
         Reviewer: {annotation.confidence}
         {annotation.suggested_adjustments && (
-          <span className="ml-2 font-mono-plex text-[10px] uppercase tracking-[0.14em]">
+          <span className="ml-2 font-mono-plex text-xs uppercase tracking-[0.14em]">
             suggests adjustment
           </span>
         )}
@@ -47,7 +47,7 @@ export function StressTestBadge({ annotation }: Props) {
         </ul>
       )}
       {annotation.suggested_adjustments && (
-        <p className="mt-1 font-mono-plex text-[10px]">
+        <p className="mt-1 font-mono-plex text-xs">
           Suggested:&nbsp;
           K={annotation.suggested_adjustments.k_depth ?? '—'} ·&nbsp;
           U={annotation.suggested_adjustments.u_depth ?? '—'} ·&nbsp;

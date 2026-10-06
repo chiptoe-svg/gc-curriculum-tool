@@ -112,12 +112,12 @@ export function SnapshotHistoryPanel({ courseCode, slug, onUseAsDraft, refreshKe
       <header className="flex items-center justify-between gap-3 border-b px-4 py-2">
         <div>
           <h2 className="text-sm font-semibold">Snapshot history</h2>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             {activeCount} active{retiredCount > 0 && ` · ${retiredCount} retired`} · immutable records of confirmed profiles
           </p>
         </div>
         {retiredCount > 0 && (
-          <label className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground">
+          <label className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
             <input
               type="checkbox"
               checked={includeRetired}
@@ -145,9 +145,9 @@ export function SnapshotHistoryPanel({ courseCode, slug, onUseAsDraft, refreshKe
                     </span>
                     <span className="text-xs text-muted-foreground">{formatDate(s.createdAt)}</span>
                     {isRetired && (
-                      <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-medium text-slate-700">retired</span>
+                      <span className="rounded bg-slate-200 px-1.5 py-0.5 text-xs font-medium text-slate-700">retired</span>
                     )}
-                    <span className="text-[10px] text-muted-foreground">{s.model}</span>
+                    <span className="text-xs text-muted-foreground">{s.model}</span>
                   </div>
                   {s.captionNote && (
                     <p className="mt-1 text-xs leading-snug text-muted-foreground italic">&ldquo;{s.captionNote}&rdquo;</p>
@@ -158,7 +158,7 @@ export function SnapshotHistoryPanel({ courseCode, slug, onUseAsDraft, refreshKe
                     </p>
                   )}
                 </div>
-                <div className="flex shrink-0 flex-col items-end gap-1 text-[11px]">
+                <div className="flex shrink-0 flex-col items-end gap-1 text-xs">
                   <button
                     type="button"
                     onClick={() => setExpanded(isExpanded ? null : s.id)}
@@ -189,7 +189,7 @@ export function SnapshotHistoryPanel({ courseCode, slug, onUseAsDraft, refreshKe
               {isExpanded && s.verificationSummary && (
                 <div className="mt-3 rounded border bg-muted/30 px-3 py-2 text-xs space-y-2">
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       What the course is developing
                     </p>
                     <ul className="mt-1 space-y-0.5">
@@ -200,7 +200,7 @@ export function SnapshotHistoryPanel({ courseCode, slug, onUseAsDraft, refreshKe
                   </div>
                   {s.verificationSummary.dimensional_patterns.length > 0 && (
                     <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                         Mixed signals
                       </p>
                       <ul className="mt-1 space-y-0.5">
@@ -212,7 +212,7 @@ export function SnapshotHistoryPanel({ courseCode, slug, onUseAsDraft, refreshKe
                   )}
                   {s.verificationSummary.catalog_vs_evidence.length > 0 && (
                     <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                         Catalog vs evidence
                       </p>
                       <ul className="mt-1 space-y-0.5">

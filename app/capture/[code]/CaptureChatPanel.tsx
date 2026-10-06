@@ -95,7 +95,7 @@ function ReadinessStrip({
   return (
     <div className="border-t bg-muted/20 px-4 py-2 space-y-1.5">
       <div className="flex items-center gap-2">
-        <span className="text-[11px] font-medium text-muted-foreground">
+        <span className="text-xs font-medium text-muted-foreground">
           Interviewer readiness
         </span>
         <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
@@ -104,7 +104,7 @@ function ReadinessStrip({
             style={{ width: `${readiness.score}%` }}
           />
         </div>
-        <span className="text-[11px] font-mono tabular-nums text-muted-foreground">
+        <span className="text-xs font-mono tabular-nums text-muted-foreground">
           {readiness.score}%
           {regressed && (
             <span
@@ -117,7 +117,7 @@ function ReadinessStrip({
         </span>
         {readiness.good_enough_to_generate && (
           <span
-            className="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-800"
+            className="rounded bg-green-100 px-1.5 py-0.5 text-xs font-medium text-green-800"
             title="The interviewer reports it has enough evidence to generate a defensible profile."
           >
             ready
@@ -125,13 +125,13 @@ function ReadinessStrip({
         )}
       </div>
       {coveredEver.length > 0 && (
-        <p className="text-[11px] leading-snug text-muted-foreground">
+        <p className="text-xs leading-snug text-muted-foreground">
           <span className="font-medium text-foreground">Covered (this session):</span>{' '}
           {coveredEver.join(' · ')}
         </p>
       )}
       {readiness.remaining.length > 0 && (
-        <p className="text-[11px] leading-snug text-muted-foreground">
+        <p className="text-xs leading-snug text-muted-foreground">
           <span className="font-medium text-foreground">Still probing:</span>{' '}
           {readiness.remaining.join(' · ')}
         </p>
@@ -373,7 +373,7 @@ export function CaptureChatPanel({
         <div className="shrink-0 flex items-center gap-2 text-xs">
           {editingInstructor ? (
             <>
-              <label htmlFor="badge-instructor" className="font-mono-plex text-[9px] uppercase tracking-[0.16em] text-muted-foreground">Instructor:</label>
+              <label htmlFor="badge-instructor" className="font-mono-plex text-xs uppercase tracking-[0.16em] text-muted-foreground">Instructor:</label>
               <InstructorSelect
                 id="badge-instructor"
                 value={chooserInstructor}
@@ -383,19 +383,19 @@ export function CaptureChatPanel({
               <button
                 type="button"
                 onClick={() => setEditingInstructor(false)}
-                className="text-[11px] text-muted-foreground hover:text-foreground"
+                className="text-xs text-muted-foreground hover:text-foreground"
               >
                 Done
               </button>
             </>
           ) : (
             <>
-              <span className="font-mono-plex text-[9px] uppercase tracking-[0.16em] text-muted-foreground">Instructor:</span>
+              <span className="font-mono-plex text-xs uppercase tracking-[0.16em] text-muted-foreground">Instructor:</span>
               <span className="font-medium">{chooserInstructor}</span>
               <button
                 type="button"
                 onClick={() => setEditingInstructor(true)}
-                className="text-[11px] text-muted-foreground underline-offset-2 hover:underline"
+                className="text-xs text-muted-foreground underline-offset-2 hover:underline"
                 title="Change instructor — earlier turns keep their original tag; new turns and the snapshot use the new one."
               >
                 change

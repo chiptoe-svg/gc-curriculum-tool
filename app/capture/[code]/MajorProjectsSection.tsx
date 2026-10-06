@@ -35,7 +35,7 @@ function ProjectCard({
     <div className="rounded border bg-background px-3 py-2.5 space-y-2">
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-baseline gap-2 flex-1 min-w-0">
-          <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
+          <span className="shrink-0 font-mono text-xs text-muted-foreground">
             {index + 1}.
           </span>
           {editable ? (
@@ -62,14 +62,14 @@ function ProjectCard({
                 <button
                   type="button"
                   onClick={onRemove}
-                  className="text-[10px] text-destructive border border-destructive rounded px-1.5 py-0.5 hover:bg-destructive/10"
+                  className="text-xs text-destructive border border-destructive rounded px-1.5 py-0.5 hover:bg-destructive/10"
                 >
                   Remove
                 </button>
                 <button
                   type="button"
                   onClick={() => setConfirmRemove(false)}
-                  className="text-[10px] text-muted-foreground border rounded px-1.5 py-0.5 hover:bg-muted"
+                  className="text-xs text-muted-foreground border rounded px-1.5 py-0.5 hover:bg-muted"
                 >
                   Cancel
                 </button>
@@ -78,7 +78,7 @@ function ProjectCard({
               <button
                 type="button"
                 onClick={() => setConfirmRemove(true)}
-                className="text-[10px] text-muted-foreground hover:text-foreground border rounded px-1.5 py-0.5"
+                className="text-xs text-muted-foreground hover:text-foreground border rounded px-1.5 py-0.5"
               >
                 ×
               </button>
@@ -103,13 +103,13 @@ function ProjectCard({
       {/* Competency tags — read-only (derived from competencies array) */}
       {project.competencies.length > 0 && (
         <div className="flex flex-wrap gap-1">
-          <span className="text-[10px] text-muted-foreground uppercase tracking-wide self-center mr-1">
+          <span className="text-xs text-muted-foreground uppercase tracking-wide self-center mr-1">
             Develops:
           </span>
           {project.competencies.map((comp, ci) => (
             <span
               key={ci}
-              className="inline-flex items-center rounded border bg-muted/60 px-1.5 py-0.5 text-[10px] leading-snug"
+              className="inline-flex items-center rounded border bg-muted/60 px-1.5 py-0.5 text-xs leading-snug"
               title={comp}
             >
               {comp.length > 60 ? comp.slice(0, 57) + '…' : comp}
@@ -184,7 +184,7 @@ export function MajorProjectsSection({
         <button
           type="button"
           onClick={handleAddProject}
-          className="text-[11px] text-muted-foreground hover:text-foreground border border-dashed border-muted-foreground/40 rounded px-2 py-0.5"
+          className="text-xs text-muted-foreground hover:text-foreground border border-dashed border-muted-foreground/40 rounded px-2 py-0.5"
         >
           + Add project
         </button>

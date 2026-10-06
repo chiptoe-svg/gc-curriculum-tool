@@ -75,32 +75,32 @@ export function FlagsPanel({ flags, slug, onChanged }: {
         <li key={f.id} className="space-y-1.5 px-4 py-3 text-xs">
           <div className="flex items-baseline gap-2">
             <span aria-hidden>⚑</span>
-            <span className="font-mono text-[11px]">{f.courseCode}</span>
+            <span className="font-mono text-xs">{f.courseCode}</span>
             <span className="text-muted-foreground">
               {f.targetKind === 'coverage_cell'
                 ? `${f.careerTargetId} · ${f.subCompetencyId}`
                 : `"${f.competencyStatement}"`}
             </span>
-            {f.status === 'resolved' && <span className="rounded bg-muted px-1.5 py-0.5 text-[10px]">resolved</span>}
+            {f.status === 'resolved' && <span className="rounded bg-muted px-1.5 py-0.5 text-xs">resolved</span>}
             {f.stillInMatrix === false && (
-              <span className="rounded border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-[10px] text-amber-800">no longer in matrix</span>
+              <span className="rounded border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-xs text-amber-800">no longer in matrix</span>
             )}
           </div>
           <p>{f.note}</p>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             {f.flaggedBy} · {new Date(f.createdAt).toLocaleDateString()}
             {f.flaggedContext && ` · flagged at K${f.flaggedContext.k ?? '—'}/U${f.flaggedContext.u ?? '—'}/D${f.flaggedContext.d ?? '—'}`}
           </p>
           {f.drift && (
-            <p className="text-[11px] font-medium text-amber-800">
+            <p className="text-xs font-medium text-amber-800">
               Score changed since flagged: {f.drift.map(driftLabel).join(', ')}
             </p>
           )}
           {f.status === 'resolved' ? (
-            <p className="text-[11px] text-muted-foreground">↳ {f.resolutionNote} — {f.resolvedBy}, {f.resolvedAt ? new Date(f.resolvedAt).toLocaleDateString() : ''}</p>
+            <p className="text-xs text-muted-foreground">↳ {f.resolutionNote} — {f.resolvedBy}, {f.resolvedAt ? new Date(f.resolvedAt).toLocaleDateString() : ''}</p>
           ) : resolving === f.id ? (
             <div className="space-y-1.5 rounded border bg-muted/30 p-2">
-              <label htmlFor={`resolve-name-${f.id}`} className="block text-[11px] text-muted-foreground">
+              <label htmlFor={`resolve-name-${f.id}`} className="block text-xs text-muted-foreground">
                 Resolving as
                 <select id={`resolve-name-${f.id}`} value={name} onChange={e => setName(e.target.value)} className="mt-0.5 block w-full rounded border border-input bg-background px-2 py-1 text-xs">
                   <option value="" disabled>Select your name…</option>
@@ -114,17 +114,17 @@ export function FlagsPanel({ flags, slug, onChanged }: {
                 onChange={e => setNote(e.target.value)}
                 className="block w-full rounded border border-input bg-background px-2 py-1 text-xs"
               />
-              {error && <p className="text-[11px] text-amber-700">{error}</p>}
+              {error && <p className="text-xs text-amber-700">{error}</p>}
               <div className="flex gap-2">
                 <button type="button" onClick={() => void confirmResolve(f.id)} disabled={busy || !name || note.trim().length === 0}
-                  className="rounded bg-primary px-2 py-1 text-[11px] font-medium text-primary-foreground disabled:opacity-50">
+                  className="rounded bg-primary px-2 py-1 text-xs font-medium text-primary-foreground disabled:opacity-50">
                   {busy ? 'Saving…' : 'Confirm resolve'}
                 </button>
-                <button type="button" onClick={() => setResolving(null)} className="text-[11px] text-muted-foreground hover:text-foreground">cancel</button>
+                <button type="button" onClick={() => setResolving(null)} className="text-xs text-muted-foreground hover:text-foreground">cancel</button>
               </div>
             </div>
           ) : (
-            <button type="button" onClick={() => { setResolving(f.id); setError(null); setNote(''); }} className="text-[11px] underline-offset-2 hover:underline">
+            <button type="button" onClick={() => { setResolving(f.id); setError(null); setNote(''); }} className="text-xs underline-offset-2 hover:underline">
               Resolve…
             </button>
           )}

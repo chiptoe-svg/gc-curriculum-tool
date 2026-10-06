@@ -427,7 +427,7 @@ export function CaptureClient({
               to materials" flips landingStep back to 'materials'; the conversation
               in state is preserved, so Continue returns to it intact. */}
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 font-mono-plex text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+            <div className="flex items-center gap-2 font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
               <span>Step 2 of 2 · Interview</span>
               <span aria-hidden>○</span><span aria-hidden>──</span><span aria-hidden className="text-foreground">●</span>
             </div>
@@ -599,7 +599,7 @@ export function CaptureClient({
             <li><span className="font-medium text-foreground">4 · Filling out the record.</span> Incoming expectations, course emphasis (where the graded points actually go), class structure, major projects, and a verification summary.</li>
             <li><span className="font-medium text-foreground">5 · Returning a draft — not a record.</span> Everything lands as an editable draft for your review. Nothing becomes an immutable snapshot until you confirm it.</li>
           </ol>
-          <p className="mt-4 text-center text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70">
+          <p className="mt-4 text-center text-xs uppercase tracking-[0.18em] text-muted-foreground/70">
             Usually 15–60 seconds — please don&apos;t close this tab
           </p>
         </div>

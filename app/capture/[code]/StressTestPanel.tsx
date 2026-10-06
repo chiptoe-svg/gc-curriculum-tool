@@ -143,7 +143,7 @@ export const StressTestPanel = forwardRef<StressTestHandle, Props>(function Stre
       {result && (
         <div className={`${hideTrigger ? '' : 'mt-3 '}space-y-3`}>
           <div className={`rounded border px-3 py-2 text-xs ${toneByOverall[result.overall_assessment] ?? ''}`}>
-            <p className="font-mono-plex text-[10px] uppercase tracking-[0.18em]">
+            <p className="font-mono-plex text-xs uppercase tracking-[0.18em]">
               Overall: {result.overall_assessment}
             </p>
             <p className="mt-1 leading-relaxed">{result.summary}</p>
@@ -163,7 +163,7 @@ export const StressTestPanel = forwardRef<StressTestHandle, Props>(function Stre
           />
 
           {telemetry && (
-            <p className="text-[10px] text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               {telemetry.model} · ${(telemetry.costUsdCents / 10000).toFixed(4)} · {(telemetry.durationMs / 1000).toFixed(1)}s
             </p>
           )}
@@ -177,14 +177,14 @@ function ProfileConcernList({ label, items }: { label: string; items: string[] }
   if (items.length === 0) {
     return (
       <div>
-        <p className="font-mono-plex text-[10px] uppercase tracking-[0.16em] text-muted-foreground">{label}</p>
+        <p className="font-mono-plex text-xs uppercase tracking-[0.16em] text-muted-foreground">{label}</p>
         <p className="mt-0.5 text-xs italic text-muted-foreground">(none surfaced)</p>
       </div>
     );
   }
   return (
     <div>
-      <p className="font-mono-plex text-[10px] uppercase tracking-[0.16em] text-muted-foreground">{label}</p>
+      <p className="font-mono-plex text-xs uppercase tracking-[0.16em] text-muted-foreground">{label}</p>
       <ul className="mt-0.5 space-y-1">
         {items.map((it, i) => (
           <li key={i} className="text-xs leading-relaxed text-foreground">
