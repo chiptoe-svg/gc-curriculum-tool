@@ -80,6 +80,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.5.18",
     "jsdom": "^29.1.1",
+    "pdf-lib": "^1.17.1",
     "pptxgenjs": "^4.0.1",
     "tailwindcss": "^4",
     "typescript": "^5",

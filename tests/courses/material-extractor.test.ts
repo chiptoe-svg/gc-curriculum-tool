@@ -2,12 +2,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock the upstream libs at the module boundary so backend selection +
 // dispatch is observable without doing any real PDF/DOCX parsing.
-const { unpdfExtractText, mammothExtractRawText } = vi.hoisted(() => ({
+const { unpdfExtractText, mammothExtractRawText, detectScan } = vi.hoisted(() => ({
   unpdfExtractText: vi.fn(),
   mammothExtractRawText: vi.fn(),
+  detectScan: vi.fn(),
 }));
 vi.mock('unpdf', () => ({ extractText: unpdfExtractText }));
 vi.mock('mammoth', () => ({ default: { extractRawText: mammothExtractRawText } }));
+vi.mock('@/lib/courses/scan-detect', () => ({ detectScan }));
 
 import {
   getExtractorFor,
@@ -26,6 +28,8 @@ const XLSX = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // Default: not scanned, so existing PDF tests keep exercising the sync path.
+  detectScan.mockResolvedValue({ kind: 'digital', reason: 'test default' });
   delete process.env.PDF_PARSER;
   delete process.env.DOCLING_URL;
 });
@@ -243,5 +247,103 @@ describe('DoclingExtractor', () => {
     });
     const [url] = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0] ?? [];
     expect(url).toBe('http://localhost:5001/v1/convert/file');
+  });
+
+  describe('scan detection + force_ocr + async path', () => {
+    it('does not call detectScan for non-PDF types', async () => {
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true, json: async () => ({ status: 'success', document: { md_content: 'x' } }),
+      });
+      await new DoclingExtractor('http://localhost:5001').extract({
+        fileBytes: Buffer.from('x'), mimeType: PPTX, fileName: 'x.pptx',
+      });
+      expect(detectScan).not.toHaveBeenCalled();
+    });
+
+    it('passes fileBytes to detectScan for PDFs and omits force_ocr when digital', async () => {
+      detectScan.mockResolvedValue({ kind: 'digital', reason: 'full-page images on 0/5 sampled pages' });
+      const bytes = Buffer.from('pdf-bytes');
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true, json: async () => ({ status: 'success', document: { md_content: 'x' } }),
+      });
+      await new DoclingExtractor('http://localhost:5001').extract({
+        fileBytes: bytes, mimeType: PDF, fileName: 'x.pdf',
+      });
+      expect(detectScan).toHaveBeenCalledWith(bytes);
+      const [url, init] = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0] ?? [];
+      expect(url).toBe('http://localhost:5001/v1/convert/file'); // sync path, unchanged
+      const form = (init as { body: FormData }).body;
+      expect(form.get('force_ocr')).toBeNull();
+    });
+
+    it('unknown verdict also stays on the sync path without force_ocr', async () => {
+      detectScan.mockResolvedValue({ kind: 'unknown', reason: 'unreadable: Error' });
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: true, json: async () => ({ status: 'success', document: { md_content: 'x' } }),
+      });
+      await new DoclingExtractor('http://localhost:5001').extract({
+        fileBytes: Buffer.from('x'), mimeType: PDF, fileName: 'x.pdf',
+      });
+      const [url, init] = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0] ?? [];
+      expect(url).toBe('http://localhost:5001/v1/convert/file');
+      const form = (init as { body: FormData }).body;
+      expect(form.get('force_ocr')).toBeNull();
+    });
+
+    it('scanned verdict sets force_ocr=true and routes through the async submit/poll/result API', async () => {
+      detectScan.mockResolvedValue({ kind: 'scanned', reason: "producer word 'Scan'" });
+      const calls: Array<{ url: string; init: RequestInit | undefined }> = [];
+      (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(async (url: string, init?: RequestInit) => {
+        calls.push({ url, init });
+        if (url.endsWith('/v1/convert/file/async')) {
+          return { ok: true, json: async () => ({ task_id: 'task-123', task_status: 'pending' }) };
+        }
+        if (url.includes('/v1/status/poll/task-123')) {
+          return { ok: true, json: async () => ({ task_id: 'task-123', task_status: 'success' }) };
+        }
+        if (url.endsWith('/v1/result/task-123')) {
+          return { ok: true, json: async () => ({ status: 'success', document: { md_content: 'ocr text' } }) };
+        }
+        throw new Error(`unexpected fetch: ${url}`);
+      });
+      const r = await new DoclingExtractor('http://localhost:5001').extract({
+        fileBytes: Buffer.from('x'), mimeType: PDF, fileName: 'scan.pdf',
+      });
+      expect(r.text).toBe('ocr text');
+      // Never hit the sync endpoint.
+      expect(calls.some(c => c.url === 'http://localhost:5001/v1/convert/file')).toBe(false);
+      const submitCall = calls.find(c => c.url.endsWith('/v1/convert/file/async'));
+      expect(submitCall).toBeDefined();
+      const submitForm = (submitCall!.init as { body: FormData }).body;
+      expect(submitForm.get('force_ocr')).toBe('true');
+      expect(calls.some(c => c.url.includes('/v1/status/poll/task-123'))).toBe(true);
+      expect(calls.some(c => c.url.endsWith('/v1/result/task-123'))).toBe(true);
+    });
+
+    it('throws when the async task reaches a failure status', async () => {
+      detectScan.mockResolvedValue({ kind: 'scanned', reason: "producer word 'Scan'" });
+      (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(async (url: string) => {
+        if (url.endsWith('/v1/convert/file/async')) {
+          return { ok: true, json: async () => ({ task_id: 'task-err', task_status: 'pending' }) };
+        }
+        if (url.includes('/v1/status/poll/task-err')) {
+          return { ok: true, json: async () => ({ task_id: 'task-err', task_status: 'failure', error_message: 'boom' }) };
+        }
+        throw new Error(`unexpected fetch: ${url}`);
+      });
+      await expect(new DoclingExtractor('http://localhost:5001').extract({
+        fileBytes: Buffer.from('x'), mimeType: PDF, fileName: 'scan.pdf',
+      })).rejects.toThrow(/task-err.*boom/);
+    });
+
+    it('throws on non-2xx HTTP when submitting the async task', async () => {
+      detectScan.mockResolvedValue({ kind: 'scanned', reason: "producer word 'Scan'" });
+      (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ok: false, status: 500, text: async () => 'async submit failed',
+      });
+      await expect(new DoclingExtractor('http://localhost:5001').extract({
+        fileBytes: Buffer.from('x'), mimeType: PDF, fileName: 'scan.pdf',
+      })).rejects.toThrow(/docling-serve 500.*async submit failed/);
+    });
   });
 });
