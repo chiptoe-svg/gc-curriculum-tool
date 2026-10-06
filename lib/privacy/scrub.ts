@@ -8,13 +8,16 @@
  *   1. Deterministic, always: CUIDs -> [student ID]; emails -> [email] except
  *      in syllabi.
  *   2. AI name pass, only when needed: when the FERPA detector reports a
- *      name-shaped rule, or the file is Canvas: Discussions. The model's copy
- *      is checked by the alignment guard; the stored text is rebuilt from the
- *      input. Any failure throws ScrubError — callers store nothing.
+ *      name-shaped rule, or the file is Canvas: Discussions — and never for
+ *      syllabi, which are public documents. The model returns only a LIST of
+ *      the student names it finds; the code replaces those names in the input
+ *      (lib/privacy/names.ts), so no other character of the text can change.
+ *      A provider failure is retried once, then throws ScrubError — callers
+ *      store nothing.
  */
 import { detectFerpaRisk } from '@/lib/capture/ferpa-detect';
 import { scrubIdentifiers, countRedactionMarkers } from './deterministic';
-import { applyNameRedactions, splitForNamePass } from './align';
+import { acceptNames, redactNames, splitForNamePass } from './names';
 import type { RedactionKind } from './types';
 
 export interface ScrubOptions { fileName: string; isSyllabus: boolean }
@@ -33,8 +36,8 @@ const NAME_PASS_CONCURRENCY = 4;
 const OUTPUT_SCHEMA: object = {
   type: 'object',
   additionalProperties: false,
-  required: ['text'],
-  properties: { text: { type: 'string' } },
+  required: ['names'],
+  properties: { names: { type: 'array', items: { type: 'string' } } },
 };
 
 export function needsNamePass(text: string, fileName: string): boolean {
@@ -50,7 +53,11 @@ export async function scrubForRecord(text: string, opts: ScrubOptions): Promise<
   // "[student ID]" cells read as a name-ish column, so a CUID + grade table is
   // gradebook-shaped only after replacement. Either signal runs the pass; the
   // rules themselves are unchanged (cuid/emails are not triggers).
-  if (needsNamePass(text, opts.fileName) || needsNamePass(out, opts.fileName)) out = await runNamePass(out);
+  // Syllabi skip the name pass entirely: they are public documents (owner
+  // ruling 2026-10-05), and the names in them are instructors and TAs.
+  if (!opts.isSyllabus && (needsNamePass(text, opts.fileName) || needsNamePass(out, opts.fileName))) {
+    out = await runNamePass(out);
+  }
   return { text: out, redactions: countRedactionMarkers(out) };
 }
 
@@ -74,8 +81,8 @@ async function runNamePass(text: string): Promise<string> {
   const results = await mapWithConcurrency(chunks, NAME_PASS_CONCURRENCY, async (chunk, idx) => {
     const where = `chunk ${idx + 1}/${chunks.length}`;
     // One retry per chunk (same pattern as chunkLlmComplete, commit edd59b6):
-    // a provider blip or a one-off guard reject would otherwise fail the whole
-    // material and store no text. Only the second failure throws.
+    // a provider blip would otherwise fail the whole material and store no
+    // text. Only the second failure throws.
     try {
       return await scrubChunk(provider, systemPrompt, chunk, where, recordSpend);
     } catch (first) {
@@ -86,7 +93,13 @@ async function runNamePass(text: string): Promise<string> {
       return scrubChunk(provider, systemPrompt, chunk, where, recordSpend);
     }
   });
-  return results.join('');
+  // A name found in any chunk is replaced wherever it occurs in the material
+  // (the model may miss a repeat of it in another chunk).
+  const names = [...new Set(results.flatMap(r => r.accepted))];
+  const ignored = results.reduce((n, r) => n + r.ignored, 0);
+  // Counts only — never the names.
+  if (ignored > 0) console.info(`[privacy] name pass ignored ${ignored} listed name(s) not found in the text`);
+  return redactNames(text, names);
 }
 
 async function scrubChunk(
@@ -95,10 +108,10 @@ async function scrubChunk(
   chunk: string,
   where: string,
   recordSpend: typeof import('@/lib/rate-limit/daily-cap').recordSpend,
-): Promise<string> {
-  let output: string;
+): Promise<{ accepted: string[]; ignored: number }> {
+  let names: string[];
   try {
-    output = await callPrivacyScrub(provider, systemPrompt, chunk, recordSpend);
+    names = await callPrivacyScrub(provider, systemPrompt, chunk, recordSpend);
   } catch (err) {
     // Never interpolate err.message here: providers sometimes echo raw
     // model/input content in their own error text (e.g. OpenAI's "returned
@@ -109,11 +122,7 @@ async function scrubChunk(
     const why = err instanceof Error ? err.name : typeof err;
     throw new ScrubError(`privacy-scrub call failed on ${where} (${why})`);
   }
-  const aligned = applyNameRedactions(chunk, output);
-  if (!aligned.ok) {
-    throw new ScrubError(`privacy-scrub guard rejected ${where}: ${aligned.reason}`);
-  }
-  return aligned.text;
+  return acceptNames(chunk, names);
 }
 
 async function callPrivacyScrub(
@@ -121,21 +130,23 @@ async function callPrivacyScrub(
   systemPrompt: string,
   chunk: string,
   recordSpend: typeof import('@/lib/rate-limit/daily-cap').recordSpend,
-): Promise<string> {
-  const result = await provider.complete<{ text: string }>({
+): Promise<string[]> {
+  const result = await provider.complete<{ names: string[] }>({
     systemPrompt,
     userMessage: chunk,
     schemaName: 'privacy_scrub',
     jsonSchema: OUTPUT_SCHEMA,
     validate: (raw) => {
-      const r = raw as { text?: unknown } | null;
-      if (!r || typeof r.text !== 'string') throw new Error('privacy-scrub: response has no text string');
-      return { text: r.text };
+      const r = raw as { names?: unknown } | null;
+      if (!r || !Array.isArray(r.names) || !r.names.every(n => typeof n === 'string')) {
+        throw new Error('privacy-scrub: response has no names array');
+      }
+      return { names: r.names as string[] };
     },
   });
   // Spend is recorded but never blocked: skipping the pass would mean storing nothing.
   await recordSpend(result.costUsdCents);
-  return result.data.text;
+  return result.data.names;
 }
 
 async function mapWithConcurrency<T, R>(items: T[], limit: number, fn: (item: T, index: number) => Promise<R>): Promise<R[]> {
