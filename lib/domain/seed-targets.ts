@@ -3,7 +3,7 @@ import type { CareerTarget } from './types';
 export const CAREER_TARGETS: CareerTarget[] = [
   {
     id: 'account-management',
-    name: 'Account Management',
+    name: 'Sales Solutions & Account Management',
     shortDefinition:
       'The consultative client-facing role that bridges a brand\'s marketing intent and the production or creative execution required to realize it.',
     industryContexts: [
@@ -69,7 +69,7 @@ export const CAREER_TARGETS: CareerTarget[] = [
   },
   {
     id: 'brand-strategy',
-    name: 'Brand Strategy',
+    name: 'Brand Strategy & Experience',
     shortDefinition:
       'The analytical and strategic layer of marketing — understanding consumers, competitors, and market conditions well enough to define where a brand should position itself and how.',
     industryContexts: [
@@ -224,7 +224,7 @@ export const CAREER_TARGETS: CareerTarget[] = [
   },
   {
     id: 'creative-generalist',
-    name: 'Creative Generalist',
+    name: 'Purposeful Design & Creative Generalist',
     shortDefinition:
       'A practitioner with broad creative capability across copy, design, photography, video, and print — who uses AI as a force multiplier that makes generalism viable at a professional level.',
     industryContexts: [
@@ -297,7 +297,7 @@ export const CAREER_TARGETS: CareerTarget[] = [
   },
   {
     id: 'ai-workflow',
-    name: 'AI Workflow / Orchestrator',
+    name: 'Creative Technology & Systems',
     shortDefinition:
       'The person who designs, builds, and manages the AI-augmented workflows that allow creative and production organizations to scale output without proportionally scaling headcount.',
     industryContexts: [
