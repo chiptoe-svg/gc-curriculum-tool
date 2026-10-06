@@ -133,7 +133,7 @@ export function ScaffoldingStripClient({ slug, targets, selectedTargetId }: Prop
                 {data.courses.map(c => (
                   <th key={c.snapshotId} className="px-2 py-2 text-left font-medium min-w-[120px]">
                     <div className="font-mono">{c.courseCode}</div>
-                    <div className="text-[10px] font-normal text-muted-foreground truncate max-w-[120px]">{c.courseTitle}</div>
+                    <div className="text-xs font-normal text-muted-foreground truncate max-w-[120px]">{c.courseTitle}</div>
                   </th>
                 ))}
                 <th className="px-2 py-2 text-left font-medium min-w-[220px]">Status</th>
@@ -169,8 +169,8 @@ export function ScaffoldingStripClient({ slug, targets, selectedTargetId }: Prop
                     })}
                     <td className="px-2 py-1">
                       <div className="flex flex-col gap-0.5">
-                        <span className={`inline-flex w-fit rounded px-1.5 py-0.5 text-[10px] font-medium ${status.cls}`}>{status.label}</span>
-                        <span className={`inline-flex w-fit rounded px-1.5 py-0.5 text-[10px] font-medium ${pf.cls}`}>{pf.label}</span>
+                        <span className={`inline-flex w-fit rounded px-1.5 py-0.5 text-xs font-medium ${status.cls}`}>{status.label}</span>
+                        <span className={`inline-flex w-fit rounded px-1.5 py-0.5 text-xs font-medium ${pf.cls}`}>{pf.label}</span>
                       </div>
                     </td>
                   </tr>
@@ -178,13 +178,13 @@ export function ScaffoldingStripClient({ slug, targets, selectedTargetId }: Prop
               })}
             </tbody>
           </table>
-          <p className="mt-2 px-2 text-[11px] text-stone-500">
+          <p className="mt-2 px-2 text-xs text-stone-500">
             PF dots reflect course-level productive-failure conditions applied to each sub-competency the course contributes to. &ldquo;no PF data&rdquo; means Audit Area 7 was not assessed for that course (distinct from &ldquo;absent&rdquo;).
           </p>
         </div>
       )}
 
-      <div className="space-y-1 text-[11px] text-muted-foreground">
+      <div className="space-y-1 text-xs text-muted-foreground">
         <p><span className="inline-block h-2 w-2 rounded-full bg-emerald-500 mr-1.5 align-middle" />green dot = ≥3 PF conditions present · <span className="inline-block h-2 w-2 rounded-full bg-amber-400 mx-1.5 align-middle" />amber = ≥1.5 · <span className="inline-block h-2 w-2 rounded-full bg-rose-500 mx-1.5 align-middle" />red = &lt;1.5 · <span className="inline-block h-2 w-2 rounded-full bg-stone-300 mx-1.5 align-middle" />grey = PF not assessed</p>
         <p>R = structured post-mortem present · r = partial · cell background = D depth (0–5, light→saturated)</p>
       </div>

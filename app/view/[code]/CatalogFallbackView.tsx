@@ -40,7 +40,7 @@ export function CatalogFallbackView({ course, editPath, catalogSource = 'db' }: 
   return (
     <article className="space-y-10">
       <div className="rounded-md border border-stone-300 bg-stone-50 px-4 py-3 dark:border-stone-700 dark:bg-stone-900/30">
-        <p className="font-mono-plex text-[10px] uppercase tracking-[0.18em] text-stone-700 dark:text-stone-300">
+        <p className="font-mono-plex text-xs uppercase tracking-[0.18em] text-stone-700 dark:text-stone-300">
           Not yet audited
         </p>
         <p className="mt-1 text-sm text-stone-800 dark:text-stone-200">
@@ -69,7 +69,7 @@ export function CatalogFallbackView({ course, editPath, catalogSource = 'db' }: 
 
       {hasDescription && (
         <section>
-          <h2 className="mb-3 font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+          <h2 className="mb-3 font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
             Catalog description
           </h2>
           <p className="font-display text-base leading-relaxed text-foreground">
@@ -80,7 +80,7 @@ export function CatalogFallbackView({ course, editPath, catalogSource = 'db' }: 
 
       {hasObjectives && (
         <section>
-          <h2 className="mb-3 font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+          <h2 className="mb-3 font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
             Learning objectives (catalog)
           </h2>
           <ul className="space-y-2">
@@ -95,7 +95,7 @@ export function CatalogFallbackView({ course, editPath, catalogSource = 'db' }: 
 
       {hasProjects && (
         <section>
-          <h2 className="mb-3 font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+          <h2 className="mb-3 font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
             Major projects (catalog)
           </h2>
           <ul className="space-y-2">
@@ -110,7 +110,7 @@ export function CatalogFallbackView({ course, editPath, catalogSource = 'db' }: 
 
       {hasPrereqs && (
         <section>
-          <h2 className="mb-3 font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+          <h2 className="mb-3 font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
             Prerequisites
           </h2>
           <p className="text-sm text-foreground">{course.prerequisites}</p>
@@ -119,7 +119,7 @@ export function CatalogFallbackView({ course, editPath, catalogSource = 'db' }: 
 
       {course.syllabusUrl && (
         <section>
-          <h2 className="mb-3 font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+          <h2 className="mb-3 font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
             Live syllabus
           </h2>
           <a

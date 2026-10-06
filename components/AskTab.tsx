@@ -249,7 +249,7 @@ export function AskTab({ courseCode, courseTitle, slug, endpoint }: Props) {
   return (
     <section className="flex flex-col rounded-md border bg-card">
       <header className="border-b px-4 py-3">
-        <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Ask · Curriculum chat</p>
+        <p className="text-xs uppercase tracking-wide text-muted-foreground">Ask · Curriculum chat</p>
         <h3 className="mt-0.5 text-sm font-semibold">
           {isCourseAnchored ? (
             <>
@@ -360,7 +360,7 @@ function MessageBubble({
   const isUser = message.role === 'user';
   return (
     <div className={isUser ? 'pl-4' : ''}>
-      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+      <p className="text-xs uppercase tracking-wide text-muted-foreground">
         {isUser ? 'You' : 'Assistant'}
       </p>
       <div className="mt-1 leading-snug">
@@ -377,14 +377,14 @@ function MessageBubble({
         )}
       </div>
       {!isUser && message.toolCalls && message.toolCalls.length > 0 && (
-        <p className="mt-1 text-[10px] text-muted-foreground">
+        <p className="mt-1 text-xs text-muted-foreground">
           Tools: {message.toolCalls.map(tc => tc.toolName).join(' · ')}
         </p>
       )}
       {!isUser && message.citations && message.citations.length > 0 && (
         <ul className="mt-1 space-y-0.5">
           {message.citations.map((c, i) => (
-            <li key={i} className="text-[11px] text-muted-foreground">
+            <li key={i} className="text-xs text-muted-foreground">
               {c.path != null
                 ? <WikiLink path={c.path} slug={slug} />
                 : <span>{c.courseCode} · {c.fileName}</span>}

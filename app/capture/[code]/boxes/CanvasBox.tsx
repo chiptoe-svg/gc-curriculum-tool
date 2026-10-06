@@ -753,7 +753,7 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange, triageEn
                   </span>
                   {hasRubric && (
                     <span
-                      className="rounded bg-muted px-1 py-0.5 text-[9px] font-medium text-muted-foreground"
+                      className="rounded bg-muted px-1 py-0.5 text-xs font-medium text-muted-foreground"
                       title="This assignment has a rubric — rubric criteria feed the depth evidence"
                     >
                       rubric ✓

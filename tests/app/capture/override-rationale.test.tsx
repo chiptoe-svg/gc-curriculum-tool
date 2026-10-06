@@ -56,15 +56,15 @@ function ensureExpanded() {
   fireEvent.click(row);
 }
 
-// Raise Do depth by 1 using the portrait "too low → evidence → Raise Do" flow.
+// Raise Do depth by 1 using the portrait "Needs adjusting → Higher → evidence → Raise Do" flow.
 function raiseDoDepthViaPortrait() {
   ensureExpanded();
-  // Open the "Something's off" panel.
-  fireEvent.click(screen.getByRole('button', { name: /something.s off/i }));
-  // Click "too low" for Do.
+  // Open the card's "Needs adjusting" view.
+  fireEvent.click(screen.getByRole('button', { name: /needs adjusting/i }));
+  // Choose "Higher" for Do.
   const flagRow = document.querySelector('[data-testid="flag-row-d"]')!;
-  const tooLowBtn = Array.from(flagRow.querySelectorAll('button')).find(b => b.textContent?.includes('too low'))!;
-  fireEvent.click(tooLowBtn);
+  const higherBtn = Array.from(flagRow.querySelectorAll('button')).find(b => b.textContent?.startsWith('Higher'))!;
+  fireEvent.click(higherBtn);
   // Fill in evidence text (required to unlock the Raise button).
   fireEvent.change(screen.getByLabelText(/evidence for do/i), { target: { value: 'capstone press checks' } });
   // Submit.
@@ -88,11 +88,11 @@ describe('K/U/D override rationale gate', () => {
   it('no reason field for a downward edit', () => {
     renderPanel();
     ensureExpanded();
-    // Lower Do depth by opening "too high" and picking a lower option.
-    fireEvent.click(screen.getByRole('button', { name: /something.s off/i }));
+    // Lower Do depth via "Needs adjusting → Lower" and picking a lower option.
+    fireEvent.click(screen.getByRole('button', { name: /needs adjusting/i }));
     const flagRow = document.querySelector('[data-testid="flag-row-d"]')!;
-    const tooHighBtn = Array.from(flagRow.querySelectorAll('button')).find(b => b.textContent?.includes('too high'))!;
-    fireEvent.click(tooHighBtn);
+    const lowerBtn = Array.from(flagRow.querySelectorAll('button')).find(b => b.textContent?.startsWith('Lower'))!;
+    fireEvent.click(lowerBtn);
     // d_depth is 2 in the fixture; level 0 is the first lower-anchor option.
     const lowerOpt = document.querySelector('[data-testid="lower-opt-d-0"]') as HTMLButtonElement | null;
     if (lowerOpt) fireEvent.click(lowerOpt);

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { VoiceRecorder } from '@/components/VoiceRecorder';
 import type { CaptureReadiness } from '@/lib/ai/capture/schema';
 import type { ChatMessage } from '@/lib/ai/analyze/capture-chat';
-import { mergeTurnText } from '@/lib/capture/merge-turn-text';
+import { joinTurnParts, splitTurnText, turnParts } from '@/lib/capture/merge-turn-text';
 import { CitationDrawer, type CitationTarget } from './CitationDrawer';
 import { InstructorSelect } from './InstructorSelect';
 
@@ -95,7 +95,7 @@ function ReadinessStrip({
   return (
     <div className="border-t bg-muted/20 px-4 py-2 space-y-1.5">
       <div className="flex items-center gap-2">
-        <span className="text-[11px] font-medium text-muted-foreground">
+        <span className="text-xs font-medium text-muted-foreground">
           Interviewer readiness
         </span>
         <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
@@ -104,7 +104,7 @@ function ReadinessStrip({
             style={{ width: `${readiness.score}%` }}
           />
         </div>
-        <span className="text-[11px] font-mono tabular-nums text-muted-foreground">
+        <span className="text-xs font-mono tabular-nums text-muted-foreground">
           {readiness.score}%
           {regressed && (
             <span
@@ -117,7 +117,7 @@ function ReadinessStrip({
         </span>
         {readiness.good_enough_to_generate && (
           <span
-            className="rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-medium text-green-800"
+            className="rounded bg-green-100 px-1.5 py-0.5 text-xs font-medium text-green-800"
             title="The interviewer reports it has enough evidence to generate a defensible profile."
           >
             ready
@@ -125,13 +125,13 @@ function ReadinessStrip({
         )}
       </div>
       {coveredEver.length > 0 && (
-        <p className="text-[11px] leading-snug text-muted-foreground">
+        <p className="text-xs leading-snug text-muted-foreground">
           <span className="font-medium text-foreground">Covered (this session):</span>{' '}
           {coveredEver.join(' · ')}
         </p>
       )}
       {readiness.remaining.length > 0 && (
-        <p className="text-[11px] leading-snug text-muted-foreground">
+        <p className="text-xs leading-snug text-muted-foreground">
           <span className="font-medium text-foreground">Still probing:</span>{' '}
           {readiness.remaining.join(' · ')}
         </p>
@@ -284,13 +284,17 @@ export function CaptureChatPanel({
 
       const fr: FinalResponse = finalResponse;
       // The prompt keeps the follow-up question in the `question` field only.
-      // mergeTurnText is the defense-in-depth: if a turn still ends its
-      // `finding` with a (possibly reworded) question, we don't append the
-      // `question` field again, so faculty never see the question twice.
-      const content = mergeTurnText(fr.finding ?? '', fr.question ?? '');
+      // splitTurnText is the defense-in-depth: if a turn still ends its
+      // `finding` with a (possibly reworded) question, that paragraph becomes
+      // the question and the field isn't added again, so faculty never see the
+      // question twice. The question is kept as its own field so the transcript
+      // can render it as a separate block; `content` stays the merged text the
+      // chat route and saved conversation expect.
+      const parts = splitTurnText(fr.finding ?? '', fr.question ?? '');
       const assistantMessage: ChatMessage = {
         role: 'assistant',
-        content,
+        content: joinTurnParts(parts),
+        ...(parts.question ? { question: parts.question } : {}),
         ...(Array.isArray(fr.citations) && fr.citations.length > 0
           ? { citations: fr.citations }
           : {}),
@@ -346,6 +350,8 @@ export function CaptureChatPanel({
   }
 
   const canGenerate = messages.some(m => m.role === 'assistant');
+  // The current interviewer turn is the visual focus; older turns stay compact.
+  const lastAssistantIndex = messages.map(m => m.role).lastIndexOf('assistant');
 
   function handleGenerateClick() {
     onGenerate();
@@ -367,7 +373,7 @@ export function CaptureChatPanel({
         <div className="shrink-0 flex items-center gap-2 text-xs">
           {editingInstructor ? (
             <>
-              <label htmlFor="badge-instructor" className="font-mono-plex text-[9px] uppercase tracking-[0.16em] text-muted-foreground">Instructor:</label>
+              <label htmlFor="badge-instructor" className="font-mono-plex text-xs uppercase tracking-[0.16em] text-muted-foreground">Instructor:</label>
               <InstructorSelect
                 id="badge-instructor"
                 value={chooserInstructor}
@@ -377,19 +383,19 @@ export function CaptureChatPanel({
               <button
                 type="button"
                 onClick={() => setEditingInstructor(false)}
-                className="text-[11px] text-muted-foreground hover:text-foreground"
+                className="text-xs text-muted-foreground hover:text-foreground"
               >
                 Done
               </button>
             </>
           ) : (
             <>
-              <span className="font-mono-plex text-[9px] uppercase tracking-[0.16em] text-muted-foreground">Instructor:</span>
+              <span className="font-mono-plex text-xs uppercase tracking-[0.16em] text-muted-foreground">Instructor:</span>
               <span className="font-medium">{chooserInstructor}</span>
               <button
                 type="button"
                 onClick={() => setEditingInstructor(true)}
-                className="text-[11px] text-muted-foreground underline-offset-2 hover:underline"
+                className="text-xs text-muted-foreground underline-offset-2 hover:underline"
                 title="Change instructor — earlier turns keep their original tag; new turns and the snapshot use the new one."
               >
                 change
@@ -463,61 +469,90 @@ export function CaptureChatPanel({
             )}
           </div>
         ) : (
-          messages.map((m, i) => (
-            <div
-              key={i}
-              className={
-                m.role === 'user'
-                  ? 'rounded-lg bg-primary/10 px-3 py-2 ml-12'
-                  : 'rounded-lg bg-muted/40 px-3 py-2 mr-12'
-              }
-            >
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                {m.role === 'user' ? 'You' : 'Interviewer'}
-              </p>
-              <p className="mt-1 whitespace-pre-wrap text-sm leading-snug">{m.content}</p>
-              {m.role === 'assistant' && m.citations && m.citations.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {m.citations.map((c, ci) => (
-                    <button
-                      key={ci}
-                      type="button"
-                      onClick={() => setDrawerTarget({
-                        type: c.type,
-                        chunkId: c.chunkId ?? null,
-                        messageId: c.messageId ?? null,
-                        excerpt: c.excerpt,
-                      })}
-                      title={c.excerpt}
-                      className="inline-flex max-w-full items-center gap-1.5 rounded border bg-background px-1.5 py-0.5 text-[10.5px] font-mono leading-none text-muted-foreground hover:bg-muted"
-                    >
-                      <span className={'font-semibold ' + (c.type === 'chunk' ? 'text-teal-700' : 'text-amber-700')}>
-                        {c.type === 'chunk' ? 'CH' : 'IN'}
-                      </span>
-                      <span className="max-w-[280px] truncate">{c.excerpt}</span>
-                    </button>
-                  ))}
+          messages.map((m, i) => {
+            if (m.role === 'user') {
+              return (
+                <div key={i} className="rounded-lg bg-primary/10 px-3 py-2 ml-12">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">You</p>
+                  <p className="mt-1 whitespace-pre-wrap text-sm leading-snug">{m.content}</p>
                 </div>
-              )}
-            </div>
-          ))
+              );
+            }
+            // Interviewer turn: finding first, citation chips (quiet) under it,
+            // then the follow-up question LAST — on the current turn in its own
+            // marked block, so it reads straight into the reply box below.
+            const isCurrent = i === lastAssistantIndex;
+            const { body, question } = turnParts(m);
+            return (
+              <div
+                key={i}
+                className={
+                  'rounded-lg bg-muted/40 mr-12 '
+                  + (isCurrent ? 'px-4 py-3' : 'px-3 py-2')
+                }
+              >
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Interviewer</p>
+                {body && (
+                  <p className={'mt-1 whitespace-pre-wrap text-sm ' + (isCurrent ? 'leading-relaxed' : 'leading-snug')}>
+                    {body}
+                  </p>
+                )}
+                {m.citations && m.citations.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {m.citations.map((c, ci) => (
+                      <button
+                        key={ci}
+                        type="button"
+                        onClick={() => setDrawerTarget({
+                          type: c.type,
+                          chunkId: c.chunkId ?? null,
+                          messageId: c.messageId ?? null,
+                          excerpt: c.excerpt,
+                        })}
+                        title={c.excerpt}
+                        className="inline-flex max-w-full items-center gap-1.5 rounded border border-border/70 bg-background/60 px-1.5 py-0.5 text-xs font-mono leading-tight text-muted-foreground/90 hover:bg-muted hover:text-foreground"
+                      >
+                        <span className={'font-semibold ' + (c.type === 'chunk' ? 'text-teal-700' : 'text-amber-700')}>
+                          {c.type === 'chunk' ? 'CH' : 'IN'}
+                        </span>
+                        <span className="max-w-[280px] truncate">{c.excerpt}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {question && (isCurrent ? (
+                  <div
+                    data-testid="interviewer-question"
+                    className="mt-4 rounded-r-md border-l-4 border-foreground bg-background px-4 py-3 shadow-sm"
+                  >
+                    <p className="text-xs font-medium text-muted-foreground">Question for you</p>
+                    <p className="mt-1 whitespace-pre-wrap text-base font-semibold leading-snug text-foreground">
+                      {question}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="mt-2 whitespace-pre-wrap text-sm font-medium leading-snug">{question}</p>
+                ))}
+              </div>
+            );
+          })
         )}
         {busy && messages.length > 0 && messages[messages.length - 1]?.content === '' && (
           <p className="text-xs italic text-muted-foreground">Interviewer is thinking…</p>
         )}
       </div>
 
-      {readiness && (
-        <ReadinessStrip
-          readiness={readiness}
-          peakScore={peakScore}
-          coveredEver={coveredEver}
-        />
-      )}
-
+      {/* Reading order: interviewer question (end of transcript) → reply box →
+          Record/Send → readiness → finish actions. The readiness strip used to
+          sit between the question and the reply box; it now sits with the
+          finish actions it informs. */}
       {messages.length > 0 && (
-        <div className="border-t px-4 py-3 space-y-2">
+        <div className="border-t px-4 pt-5 pb-4">
+          <label htmlFor="capture-reply" className="block text-xs font-medium text-muted-foreground">
+            Your reply
+          </label>
           <textarea
+            id="capture-reply"
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => {
@@ -531,9 +566,9 @@ export function CaptureChatPanel({
             }}
             rows={3}
             placeholder="Type a reply, or use voice. Enter to send, Shift+Enter for a new line."
-            className="w-full resize-y rounded border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            className="mt-1.5 w-full resize-y rounded border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
           />
-          <div className="flex items-center justify-between gap-3">
+          <div className="mt-4 flex items-center justify-between gap-3">
             <VoiceRecorder slug={slug} onTranscript={appendTranscript} disabled={busy} />
             <button
               type="button"
@@ -544,12 +579,24 @@ export function CaptureChatPanel({
               {busy ? 'Sending…' : 'Send'}
             </button>
           </div>
-          {error && <p className="text-xs text-destructive">{error}</p>}
+          {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
+        </div>
+      )}
 
+      {readiness && (
+        <ReadinessStrip
+          readiness={readiness}
+          peakScore={peakScore}
+          coveredEver={coveredEver}
+        />
+      )}
+
+      {messages.length > 0 && (
+        <div className="border-t px-4 pt-4 pb-4">
           {/* "I'm done" → generate. Pulled out of the Record/Send row and placed
               full-width below the whole input area so it reads as finishing the
               interview, not as another per-message action. */}
-          <div className="mt-1 border-t pt-3">
+          <div>
             <button
               type="button"
               onClick={handleOneLastQuestion}

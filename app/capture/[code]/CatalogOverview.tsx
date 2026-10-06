@@ -39,28 +39,28 @@ export function CatalogOverview({
         </p>
       </header>
       <div>
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Description</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Description</p>
         <p className="mt-1 text-xs leading-snug">{description || <span className="italic text-muted-foreground">(none)</span>}</p>
       </div>
       <div>
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Prerequisites</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Prerequisites</p>
         <p className="mt-1 text-xs leading-snug">{prerequisites || <span className="italic text-muted-foreground">(none listed)</span>}</p>
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Learning objectives ({learningObjectives.length})
           </p>
           <div className="mt-1">{listOrNone(learningObjectives)}</div>
         </div>
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Major projects ({majorProjects.length})
           </p>
           <div className="mt-1">{listOrNone(majorProjects)}</div>
         </div>
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Required incoming skills ({skillsRequired.length})
           </p>
           <div className="mt-1">{listOrNone(skillsRequired)}</div>

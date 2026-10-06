@@ -124,7 +124,7 @@ function ConfidenceDot({ confidence, hasValue }: { confidence: number; hasValue:
 /** Small "needs review" badge for empty or low-confidence fields */
 function NeedsReviewBadge() {
   return (
-    <span className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">
+    <span className="inline-flex items-center rounded-full border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-xs font-medium text-amber-800">
       needs review
     </span>
   );

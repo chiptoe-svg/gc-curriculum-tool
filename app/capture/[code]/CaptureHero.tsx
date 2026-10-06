@@ -35,7 +35,7 @@ export function CaptureHero({
   const ready = materialsCount > 0;
   return (
     <section className="rounded-lg border bg-card px-6 py-7 shadow-sm">
-      <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+      <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
         {courseCode} · Course capture
       </p>
       <h2 className="mt-1 text-xl font-semibold leading-snug">
@@ -64,7 +64,7 @@ export function CaptureHero({
         <div className="space-y-1">
           <label
             htmlFor="hero-chooser-instructor"
-            className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground"
+            className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground"
           >
             I&apos;m the instructor
           </label>
@@ -77,7 +77,7 @@ export function CaptureHero({
 
         {priorSnapshotInfo && (
           <fieldset className="space-y-1">
-            <legend className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            <legend className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
               Start mode
             </legend>
             <label className="flex items-start gap-2 rounded border border-transparent px-1 py-1 text-xs hover:bg-muted/40">
@@ -91,7 +91,7 @@ export function CaptureHero({
               />
               <span>
                 <span className="font-medium">Build on prior capture</span>
-                <span className="block text-[11px] text-muted-foreground">
+                <span className="block text-xs text-muted-foreground">
                   {priorSnapshotInfo.instructorName ?? 'Unknown'}
                   {' · '}
                   {new Date(priorSnapshotInfo.createdAt).toLocaleDateString('en-US', {
@@ -113,7 +113,7 @@ export function CaptureHero({
               />
               <span>
                 <span className="font-medium">Fresh capture</span>
-                <span className="block text-[11px] text-muted-foreground">
+                <span className="block text-xs text-muted-foreground">
                   Don&apos;t anchor on what previous instructors found — start from materials +
                   catalog only.
                 </span>

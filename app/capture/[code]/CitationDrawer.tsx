@@ -142,7 +142,7 @@ export function CitationDrawer({ courseCode, slug, target, onClose }: Props) {
             <p className="rounded bg-muted/40 px-3 py-2 text-sm leading-relaxed text-foreground">
               {target.excerpt}
             </p>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               The synthesizer included this excerpt to ground a finding without linking
               to a specific transcript turn. The full turn isn&apos;t directly resolvable —
               the excerpt above is what the synthesizer is citing.

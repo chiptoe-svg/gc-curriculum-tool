@@ -58,7 +58,7 @@ export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt,
 
   return (
     <div className="rounded-lg border bg-card p-6">
-      <div className="mb-1 flex items-center gap-2 font-mono-plex text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+      <div className="mb-1 flex items-center gap-2 font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
         <span>Step 1 of 2 · Confirm materials</span>
         <span aria-hidden className="text-foreground">●</span><span aria-hidden>──</span><span aria-hidden>○</span>
       </div>
@@ -67,7 +67,7 @@ export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt,
       <p className="mt-3 text-sm text-muted-foreground">Three sources — syllabus, Canvas, and anything else. Unroll each to see what&apos;s inside and add what&apos;s missing before you start.</p>
       {triageEnabled && (
         <p className="mt-3 text-sm text-muted-foreground">
-          <span className="font-mono-plex text-[11px] uppercase tracking-[0.18em] text-muted-foreground">INSTRUCTIONS</span>{' '}
+          <span className="font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">INSTRUCTIONS</span>{' '}
           Surface everything that surrounds this course — Canvas, syllabus, assignment sheets, rubrics, project briefs, slide decks, readings, exemplars — because the AI can only reason from what&apos;s here, and{' '}
           <strong className="font-semibold text-foreground">more is better</strong>: thin input yields a thin record.
         </p>
@@ -76,7 +76,7 @@ export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt,
       <div className="mt-3 flex items-center gap-3">
         <label
           htmlFor="step1-auditor"
-          className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"
+          className="shrink-0 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground"
         >
           I&apos;m the instructor
         </label>
@@ -150,7 +150,7 @@ export function CaptureMaterialsStep({ course, materials, slug, catalogSyncedAt,
           figure returns ONLY as a warning when the corpus is genuinely large
           (same 150k threshold as MaterialsPanel's review-before-starting chip). */}
       {tokens >= 150_000 && (
-        <p className="mt-4 text-[11px] text-amber-700 dark:text-amber-400">
+        <p className="mt-4 text-xs text-amber-700 dark:text-amber-400">
           ~{tokK}k tokens of material — large; consider ignoring or summarizing items before starting (see the materials manager below).
         </p>
       )}

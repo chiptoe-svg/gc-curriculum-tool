@@ -286,7 +286,7 @@ export function Page6Section({ token, captureId, positionTitle, initialSessionId
                     : 'rounded-lg bg-muted/40 px-3 py-2 mr-12'
                 }
               >
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {m.role === 'user' ? 'You' : 'Interviewer'}
                 </p>
                 <p className="mt-1 whitespace-pre-wrap text-sm leading-snug">{m.content}</p>

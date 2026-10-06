@@ -147,10 +147,10 @@ function TriageRow({ row, courseCode, slug, onUpdate, onRemove }: TriageRowProps
         >
           {displayName(row.fileName)}
         </span>
-        <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+        <span className="rounded bg-muted px-1.5 py-0.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
           {sizeDescriptor(row)}
         </span>
-        <span className="rounded bg-muted/60 px-1.5 py-0.5 text-[10px] tabular-nums text-muted-foreground">
+        <span className="rounded bg-muted/60 px-1.5 py-0.5 text-xs tabular-nums text-muted-foreground">
           {formatDuration(estimateSeconds(row))}
         </span>
 
@@ -161,7 +161,7 @@ function TriageRow({ row, courseCode, slug, onUpdate, onRemove }: TriageRowProps
             aria-label="move up"
             onClick={() => void moveTier(tierUp(row.tier))}
             disabled={busy}
-            className="shrink-0 text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-30"
+            className="shrink-0 text-xs text-muted-foreground hover:text-foreground disabled:opacity-30"
             title="Move to higher tier"
           >
             ▲
@@ -175,7 +175,7 @@ function TriageRow({ row, courseCode, slug, onUpdate, onRemove }: TriageRowProps
             aria-label="move down"
             onClick={() => void moveTier(tierDown(row.tier))}
             disabled={busy}
-            className="shrink-0 text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-30"
+            className="shrink-0 text-xs text-muted-foreground hover:text-foreground disabled:opacity-30"
             title="Move to lower tier"
           >
             ▼
@@ -187,7 +187,7 @@ function TriageRow({ row, courseCode, slug, onUpdate, onRemove }: TriageRowProps
           type="button"
           onClick={() => void toggleIgnored()}
           disabled={busy}
-          className="shrink-0 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline disabled:opacity-50"
+          className="shrink-0 text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline disabled:opacity-50"
         >
           {row.ignored ? 'include' : 'ignore'}
         </button>
@@ -198,7 +198,7 @@ function TriageRow({ row, courseCode, slug, onUpdate, onRemove }: TriageRowProps
             type="button"
             onClick={() => void handleDelete()}
             disabled={busy}
-            className="shrink-0 text-[11px] font-semibold text-destructive underline-offset-2 hover:underline disabled:opacity-30"
+            className="shrink-0 text-xs font-semibold text-destructive underline-offset-2 hover:underline disabled:opacity-30"
           >
             confirm
           </button>
@@ -207,14 +207,14 @@ function TriageRow({ row, courseCode, slug, onUpdate, onRemove }: TriageRowProps
             type="button"
             onClick={() => void handleDelete()}
             disabled={busy}
-            className="shrink-0 text-[11px] text-muted-foreground hover:text-destructive disabled:opacity-30"
+            className="shrink-0 text-xs text-muted-foreground hover:text-destructive disabled:opacity-30"
           >
             delete
           </button>
         )}
       </div>
 
-      {rowError && <p className="pl-6 text-[11px] text-destructive">{rowError}</p>}
+      {rowError && <p className="pl-6 text-xs text-destructive">{rowError}</p>}
     </li>
   );
 }
@@ -243,10 +243,10 @@ function TierSection({ tier, rows, courseCode, slug, onUpdate, onRemove }: TierS
   return (
     <section className="rounded-md border bg-card">
       <header className="px-3 py-2 border-b bg-muted/30">
-        <span className="font-mono-plex text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+        <span className="font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
           {cfg.label}
         </span>
-        <span className="ml-1 text-[11px] text-muted-foreground">— {cfg.sublabel}</span>
+        <span className="ml-1 text-xs text-muted-foreground">— {cfg.sublabel}</span>
       </header>
       {rows.length === 0 ? (
         <p className="px-3 py-3 text-xs text-muted-foreground italic">No materials in this tier.</p>
@@ -386,7 +386,7 @@ export function TriageStep({ courseCode, slug, materials, onIngested, onBack }: 
           returns to Step 1 (import); tier edits are PATCHed as they're made, so
           nothing is lost on the round trip. */}
       <div className="mb-1 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 font-mono-plex text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+        <div className="flex items-center gap-2 font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
           <span>Step 2 of 3 · Triage materials</span>
           <span aria-hidden className="text-foreground">●</span>
           <span aria-hidden>──</span>
@@ -473,13 +473,13 @@ export function TriageStep({ courseCode, slug, materials, onIngested, onBack }: 
           <span>Use local/free models — no API cost, nothing leaves campus</span>
         </label>
         {useLocal && (
-          <p className="text-[10px] text-amber-700/80">May run longer for scanned/image PDFs.</p>
+          <p className="text-xs text-amber-700/80">May run longer for scanned/image PDFs.</p>
         )}
         <div className="text-right">
           <p className="text-xs text-muted-foreground">
             <span className="font-medium">Estimated:</span> {total.label} · 2 at a time
           </p>
-          <p className="text-[10px] text-muted-foreground/70">rough estimate</p>
+          <p className="text-xs text-muted-foreground/70">rough estimate</p>
         </div>
         {phase === 'idle' && (
           <button

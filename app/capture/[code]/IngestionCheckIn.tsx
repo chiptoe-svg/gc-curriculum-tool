@@ -73,7 +73,7 @@ export function IngestionCheckIn({ courseCode, slug }: Props) {
         <ul className="mt-2 space-y-1 text-xs text-amber-900/90">
           {highlights.map((h, i) => (
             <li key={i} className="flex items-baseline gap-2">
-              <span className="inline-block min-w-[64px] shrink-0 font-mono text-[10px] uppercase tracking-wider text-amber-800">
+              <span className="inline-block min-w-[64px] shrink-0 font-mono text-xs uppercase tracking-wider text-amber-800">
                 {KIND_LABEL[h.kind]}
               </span>
               <span>{h.text}</span>

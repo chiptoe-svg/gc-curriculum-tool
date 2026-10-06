@@ -143,7 +143,7 @@ export default async function ViewCoursePage({ params }: Props) {
       <header className="border-b">
         <div className="mx-auto flex max-w-4xl items-baseline justify-between gap-4 px-6 py-4">
           <div>
-            <p className="font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            <p className="font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
               {course.code}{snapshot ? ' · captured' : ' · catalog'}
             </p>
             <h1 className="mt-0.5 font-display text-2xl font-semibold tracking-tight">

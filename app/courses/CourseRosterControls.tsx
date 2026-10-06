@@ -84,14 +84,14 @@ export function CourseRosterControls({ slug }: Props) {
       {!bulkOpen ? (
         <button
           onClick={() => setBulkOpen(true)}
-          className="rounded-md border border-border bg-background px-3 py-1.5 font-body-sans text-[11px] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
+          className="rounded-md border border-border bg-background px-3 py-1.5 font-body-sans text-xs uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
         >
           Preload courses
         </button>
       ) : (
         <div className="w-full rounded-lg border border-border bg-card p-4 shadow-sm">
           <div className="mb-3 flex items-center justify-between">
-            <span className="font-body-sans text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70 font-medium">
+            <span className="font-body-sans text-xs uppercase tracking-[0.18em] text-muted-foreground/70 font-medium">
               Preload courses
             </span>
             <button
@@ -101,7 +101,7 @@ export function CourseRosterControls({ slug }: Props) {
               ✕
             </button>
           </div>
-          <p className="mb-2 font-body-sans text-[11px] text-muted-foreground">
+          <p className="mb-2 font-body-sans text-xs text-muted-foreground">
             One course per line — <code className="font-mono-plex">CODE</code> or{' '}
             <code className="font-mono-plex">CODE — Title</code>. Em-dash, hyphen, comma, or tab all work.
           </p>
@@ -110,17 +110,17 @@ export function CourseRosterControls({ slug }: Props) {
             onChange={(e) => { setBulkText(e.target.value); setBulkResult(null); }}
             rows={6}
             placeholder={'GC 1000 — Intro to Graphic Communications\nGC 2100\nGC 3460 — Digital Media'}
-            className="w-full rounded-md border border-border bg-background px-3 py-2 font-mono-plex text-[11px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 font-mono-plex text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring"
           />
 
           {hasBulkSuccess && (
-            <p className="mt-2 font-body-sans text-[11px] text-emerald-700 dark:text-emerald-400">
+            <p className="mt-2 font-body-sans text-xs text-emerald-700 dark:text-emerald-400">
               Created {(bulkResult as BulkResult).created.length} ·{' '}
               skipped {(bulkResult as BulkResult).skipped.length} (already existed)
             </p>
           )}
           {hasBulkError && (
-            <p className="mt-2 font-body-sans text-[11px] text-destructive">
+            <p className="mt-2 font-body-sans text-xs text-destructive">
               {(bulkResult as ApiError).error}
             </p>
           )}
@@ -128,14 +128,14 @@ export function CourseRosterControls({ slug }: Props) {
           <div className="mt-3 flex items-center justify-end gap-2">
             <button
               onClick={() => { setBulkText(''); setBulkResult(null); }}
-              className="font-body-sans text-[11px] text-muted-foreground hover:text-foreground"
+              className="font-body-sans text-xs text-muted-foreground hover:text-foreground"
             >
               Clear
             </button>
             <button
               onClick={submitBulk}
               disabled={!bulkText.trim() || bulkPending}
-              className="rounded-md bg-foreground px-3 py-1.5 font-body-sans text-[11px] uppercase tracking-[0.14em] text-background transition-opacity disabled:opacity-40"
+              className="rounded-md bg-foreground px-3 py-1.5 font-body-sans text-xs uppercase tracking-[0.14em] text-background transition-opacity disabled:opacity-40"
             >
               {bulkPending ? 'Saving…' : 'Save roster'}
             </button>
@@ -147,14 +147,14 @@ export function CourseRosterControls({ slug }: Props) {
       {!addOpen ? (
         <button
           onClick={() => setAddOpen(true)}
-          className="rounded-md border border-border bg-background px-3 py-1.5 font-body-sans text-[11px] uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
+          className="rounded-md border border-border bg-background px-3 py-1.5 font-body-sans text-xs uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
         >
           + Add a course
         </button>
       ) : (
         <div className="w-full rounded-lg border border-border bg-card p-4 shadow-sm sm:w-auto sm:min-w-[22rem]">
           <div className="mb-3 flex items-center justify-between">
-            <span className="font-body-sans text-[10px] uppercase tracking-[0.18em] text-muted-foreground/70 font-medium">
+            <span className="font-body-sans text-xs uppercase tracking-[0.18em] text-muted-foreground/70 font-medium">
               Add a course
             </span>
             <button
@@ -171,14 +171,14 @@ export function CourseRosterControls({ slug }: Props) {
               value={addCode}
               onChange={(e) => { setAddCode(e.target.value); setAddResult(null); }}
               placeholder="Course code (e.g. GC 3460)"
-              className="w-full rounded-md border border-border bg-background px-3 py-1.5 font-mono-plex text-[11px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring"
+              className="w-full rounded-md border border-border bg-background px-3 py-1.5 font-mono-plex text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring"
             />
             <input
               type="text"
               value={addTitle}
               onChange={(e) => { setAddTitle(e.target.value); setAddResult(null); }}
               placeholder="Title (required)"
-              className="w-full rounded-md border border-border bg-background px-3 py-1.5 font-body-sans text-[12px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring"
+              className="w-full rounded-md border border-border bg-background px-3 py-1.5 font-body-sans text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring"
             />
             <div className="flex gap-2">
               <input
@@ -186,14 +186,14 @@ export function CourseRosterControls({ slug }: Props) {
                 value={addLevel}
                 onChange={(e) => { setAddLevel(e.target.value); setAddResult(null); }}
                 placeholder="Level (1–4)"
-                className="w-24 rounded-md border border-border bg-background px-3 py-1.5 font-mono-plex text-[11px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring"
+                className="w-24 rounded-md border border-border bg-background px-3 py-1.5 font-mono-plex text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring"
               />
               <input
                 type="text"
                 value={addTrack}
                 onChange={(e) => { setAddTrack(e.target.value); setAddResult(null); }}
                 placeholder="Track (optional)"
-                className="flex-1 rounded-md border border-border bg-background px-3 py-1.5 font-body-sans text-[12px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring"
+                className="flex-1 rounded-md border border-border bg-background px-3 py-1.5 font-body-sans text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring"
               />
             </div>
             <input
@@ -201,17 +201,17 @@ export function CourseRosterControls({ slug }: Props) {
               value={addCatalogUrl}
               onChange={(e) => { setAddCatalogUrl(e.target.value); setAddResult(null); }}
               placeholder="Clemson catalog URL (optional)"
-              className="w-full rounded-md border border-border bg-background px-3 py-1.5 font-body-sans text-[12px] text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring"
+              className="w-full rounded-md border border-border bg-background px-3 py-1.5 font-body-sans text-xs text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring"
             />
           </div>
 
           {hasAddSuccess && (
-            <p className="mt-2 font-body-sans text-[11px] text-emerald-700 dark:text-emerald-400">
+            <p className="mt-2 font-body-sans text-xs text-emerald-700 dark:text-emerald-400">
               Course added.
             </p>
           )}
           {hasAddError && (
-            <p className="mt-2 font-body-sans text-[11px] text-destructive">
+            <p className="mt-2 font-body-sans text-xs text-destructive">
               {(addResult as ApiError).error}
             </p>
           )}
@@ -220,7 +220,7 @@ export function CourseRosterControls({ slug }: Props) {
             <button
               onClick={submitOne}
               disabled={!addCode.trim() || !addTitle.trim() || addPending}
-              className="rounded-md bg-foreground px-3 py-1.5 font-body-sans text-[11px] uppercase tracking-[0.14em] text-background transition-opacity disabled:opacity-40"
+              className="rounded-md bg-foreground px-3 py-1.5 font-body-sans text-xs uppercase tracking-[0.14em] text-background transition-opacity disabled:opacity-40"
             >
               {addPending ? 'Adding…' : 'Add course'}
             </button>

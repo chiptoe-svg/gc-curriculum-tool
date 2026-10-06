@@ -364,7 +364,7 @@ export function ProgramCoverageClient({ slug, initialData, initialFlags }: Props
           </div>
         </div>
         {lens === 'problem-solving' && psRollup && (
-          <div className="text-[11px] text-muted-foreground">
+          <div className="text-xs text-muted-foreground">
             <span className="font-medium text-foreground">{psRollup.reachedDeep}</span>
             <span> of {psRollup.total} sub-competencies reach the upper-range U/D depth (≥4) across the program. </span>
             <span className="text-amber-700">{psRollup.reachedPracticed}</span>
@@ -424,7 +424,7 @@ export function ProgramCoverageClient({ slug, initialData, initialFlags }: Props
                       style={{ minWidth: '88px', maxWidth: '120px' }}
                       title={s.name}
                     >
-                      <div className="text-[10px] leading-tight">{s.name}</div>
+                      <div className="text-xs leading-tight">{s.name}</div>
                     </th>
                   ))}
                 </tr>
@@ -433,10 +433,10 @@ export function ProgramCoverageClient({ slug, initialData, initialFlags }: Props
                 {data.courses.map(course => (
                   <tr key={course.snapshotId} className="border-t">
                     <th className="text-left px-3 py-2 sticky left-0 bg-card border-r" style={{ minWidth: '120px' }}>
-                      <div className="font-mono text-[11px] text-foreground">{formatCourseLabel(course.courseCode, course.pairedCodes)}</div>
-                      <div className="text-[10px] text-muted-foreground truncate" style={{ maxWidth: '140px' }} title={course.courseTitle}>{course.courseTitle}</div>
+                      <div className="font-mono text-xs text-foreground">{formatCourseLabel(course.courseCode, course.pairedCodes)}</div>
+                      <div className="text-xs text-muted-foreground truncate" style={{ maxWidth: '190px' }} title={course.courseTitle}>{course.courseTitle}</div>
                       {course.instructorName && (
-                        <div className="text-[10px] italic text-muted-foreground truncate" style={{ maxWidth: '140px' }} title={`Captured by ${course.instructorName}`}>by {course.instructorName}</div>
+                        <div className="text-xs italic text-muted-foreground truncate" style={{ maxWidth: '190px' }} title={`Captured by ${course.instructorName}`}>by {course.instructorName}</div>
                       )}
                     </th>
                     {visibleSubs.map(s => {
@@ -462,25 +462,25 @@ export function ProgramCoverageClient({ slug, initialData, initialFlags }: Props
                           title={cell?.rationale || (cell === null ? 'Not scored yet — click to score' : '')}
                         >
                           {cell ? (
-                            <div className="font-mono text-[11px]">
+                            <div className="font-mono text-xs">
                               {depthDisplay === 'bands'
                                 ? `${depthBand(cell.kDepth)?.short ?? '·'}/${depthBand(cell.uDepth)?.short ?? '·'}/${depthBand(cell.dDepth)?.short ?? '·'}`
                                 : `${cell.kDepth ?? '—'}/${cell.uDepth ?? '—'}/${cell.dDepth}`}
                             </div>
                           ) : (
-                            <div className="text-[10px] italic text-muted-foreground">—</div>
+                            <div className="text-xs italic text-muted-foreground">—</div>
                           )}
                           {/* A16: K1-only dissociation badge — exposure, not coverage. */}
                           {cell && isMentionOnly(cell.kDepth, cell.uDepth, cell.dDepth) && (
                             <div
-                              className="text-[9px] italic leading-tight opacity-80"
+                              className="text-xs italic leading-tight opacity-80"
                               title="Mentioned, never engaged — K=1 with no Understand or Do evidence. The topic was delivered (e.g. appeared in a lecture or module) but students never reasoned about it or performed it. Counts as exposure, not coverage."
                             >
                               mention only
                             </div>
                           )}
                           {cellFlags.length > 0 && (
-                            <div className="text-[9px]" title={`${cellFlags.length} open flag${cellFlags.length === 1 ? '' : 's'}`} aria-label="open flags">⚑{cellFlags.length > 1 ? cellFlags.length : ''}</div>
+                            <div className="text-xs" title={`${cellFlags.length} open flag${cellFlags.length === 1 ? '' : 's'}`} aria-label="open flags">⚑{cellFlags.length > 1 ? cellFlags.length : ''}</div>
                           )}
                         </td>
                       );
@@ -498,7 +498,7 @@ export function ProgramCoverageClient({ slug, initialData, initialFlags }: Props
         {lens === 'coverage' ? (
           depthDisplay === 'bands' ? (
             <>
-              <div className="flex items-center gap-4 flex-wrap text-[11px]">
+              <div className="flex items-center gap-4 flex-wrap text-xs">
                 <span className="text-muted-foreground">Cell text = K/U/D band:</span>
                 <span className="flex items-center gap-1"><span className="inline-block h-4 w-6 rounded bg-slate-50 text-slate-400 text-center font-mono leading-4">—</span><span className="text-muted-foreground">not present (0)</span></span>
                 <span className="flex items-center gap-1"><span className={`inline-block h-4 w-6 rounded ${depthColor(2)} ${depthText(2)} text-center font-mono leading-4`}>L</span><span className="text-muted-foreground">low (1–2)</span></span>
@@ -510,13 +510,13 @@ export function ProgramCoverageClient({ slug, initialData, initialFlags }: Props
                   <span className="text-muted-foreground">not scored</span>
                 </span>
               </div>
-              <p className="mt-2 text-[10px] text-muted-foreground">
+              <p className="mt-2 text-xs text-muted-foreground">
                 Bands are the display default because the 0–5 depth instrument has no published reliability data yet — exact integers are point estimates with unknown error bars (the calibration study is queued). Click any cell for the exact scores, evidence, and rationale, or switch &ldquo;Scores: Exact&rdquo; above. Cell color = max(K, U, D). Cells marked <span className="italic">mention only</span> are K=1 with no Understand/Do evidence — the topic was delivered but never engaged; treat as exposure, not coverage.
               </p>
             </>
           ) : (
           <>
-            <div className="flex items-center gap-4 flex-wrap text-[11px]">
+            <div className="flex items-center gap-4 flex-wrap text-xs">
               <span className="text-muted-foreground">Cell color = max(K, U, D):</span>
               {[0, 1, 2, 3, 4, 5].map(n => (
                 <span key={n} className="flex items-center gap-1">
@@ -536,14 +536,14 @@ export function ProgramCoverageClient({ slug, initialData, initialFlags }: Props
                 <span className="text-muted-foreground">not scored</span>
               </span>
             </div>
-            <p className="mt-2 text-[10px] text-muted-foreground">
+            <p className="mt-2 text-xs text-muted-foreground">
               Each cell shows K/U/D scores — treat them as point estimates with unknown error bars until the reliability study lands. Click a cell for details and evidence. Click &ldquo;Score&rdquo; to run the AI scorer on missing pairs. Cells marked <span className="italic">mention only</span> are K=1 with no Understand/Do evidence — delivered but never engaged; exposure, not coverage.
             </p>
           </>
           )
         ) : (
           <>
-            <div className="flex items-center gap-4 flex-wrap text-[11px]">
+            <div className="flex items-center gap-4 flex-wrap text-xs">
               <span className="text-muted-foreground">Cell color = max(U, D), graded:</span>
               {[0, 1, 2, 3, 4, 5].map(n => (
                 <span key={n} className="flex items-center gap-1">
@@ -559,10 +559,10 @@ export function ProgramCoverageClient({ slug, initialData, initialFlags }: Props
                 </span>
               ))}
             </div>
-            <p className="mt-2 text-[10px] text-muted-foreground">
+            <p className="mt-2 text-xs text-muted-foreground">
               This <strong>upper-depth opportunity map</strong> emphasizes the U/D upper-range depths — where the <em>opportunity</em> for problem-solving formation appears. It reads <strong>depth alone</strong>; whether a course actually builds transferable problem-solving (productive failure × structured reflection × sequence) is the Scaffolding view (Phase 1B), not this map. U-4/5 = reasons through and critiques principles in novel cases; D-4/5 = adapts to new conditions, performs with creative judgment. Lower depths are de-emphasized but not hidden — they contribute in degrees, per <a href="https://chiptoe-svg.github.io/gc-curriculum-tool/docs/background.html#problem-solving" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">background.html §8</a>. K is excluded (recall alone doesn&rsquo;t indicate problem-solving).
             </p>
-            <p className="mt-1 text-[10px] text-muted-foreground italic">
+            <p className="mt-1 text-xs text-muted-foreground italic">
               v2 (planned): weight the contribution of each contributing snapshot by its productive-failure conditions (Audit Area 7 of CourseCapture) so this view also reflects whether the courses that reach upper depths do so through the kind of pedagogy that produces transferable problem-solving rather than memorization at depth.
             </p>
           </>
@@ -643,7 +643,7 @@ function CellDetailDrawer({
     <section className="rounded-md border bg-card shadow-sm">
       <header className="flex items-center justify-between border-b px-4 py-2">
         <div>
-          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
             {course.courseCode} × {targetName}
           </p>
           <h3 className="mt-0.5 text-sm font-semibold">{subCompetency.name}</h3>
@@ -658,9 +658,9 @@ function CellDetailDrawer({
       </header>
       <div className="px-4 py-3 space-y-3 text-xs">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Course</p>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Course</p>
           <p className="mt-0.5 text-sm">{course.courseTitle}</p>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">
+          <p className="mt-0.5 text-xs text-muted-foreground">
             Snapshot {course.snapshotCaption || ''} · {fmtDate(course.snapshotCreatedAt)}
             {course.instructorName ? ` · by ${course.instructorName}` : ''}
           </p>
@@ -675,19 +675,19 @@ function CellDetailDrawer({
             </div>
 
             {isMentionOnly(cell.kDepth, cell.uDepth, cell.dDepth) && (
-              <p className="rounded border border-amber-300 bg-amber-50 px-2 py-1.5 text-[11px] text-amber-900 dark:bg-amber-900/20 dark:text-amber-200">
+              <p className="rounded border border-amber-300 bg-amber-50 px-2 py-1.5 text-xs text-amber-900 dark:bg-amber-900/20 dark:text-amber-200">
                 <span className="font-semibold">Mention only.</span> K=1 with no Understand or Do evidence — the topic was delivered but students never reasoned about it or performed it. This is the K1-only dissociation case: exposure, not coverage.
               </p>
             )}
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Confidence</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Confidence</p>
                 <p className="mt-0.5">{cell.confidence}</p>
               </div>
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Scored by</p>
-                <p className="mt-0.5 font-mono text-[11px]" title="The model that produced this cell's scores. Provider/model changes alter scoring behavior — comparisons across cells scored by different models carry that caveat.">{cell.model}</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Scored by</p>
+                <p className="mt-0.5 font-mono text-xs" title="The model that produced this cell's scores. Provider/model changes alter scoring behavior — comparisons across cells scored by different models carry that caveat.">{cell.model}</p>
               </div>
             </div>
 
@@ -696,9 +696,9 @@ function CellDetailDrawer({
               if (rel) {
                 return (
                   <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Stability</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Stability</p>
                     <p
-                      className="mt-0.5 text-[11px] text-muted-foreground"
+                      className="mt-0.5 text-xs text-muted-foreground"
                       title="Test-retest stability — the same model gave the same band this fraction of the time across N=5 re-runs on fixed inputs. Consistency, not correctness; human validation is separate (study part iii, pending)."
                     >
                       Re-run agreement ({rel.date}): D {Math.round(rel.d * 100)}% · U {Math.round(rel.u * 100)}% · K {Math.round(rel.k * 100)}%
@@ -708,22 +708,22 @@ function CellDetailDrawer({
               }
               return (
                 <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Stability</p>
-                  <p className="mt-0.5 text-[11px] text-muted-foreground italic">Stability not yet measured for this model.</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Stability</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground italic">Stability not yet measured for this model.</p>
                 </div>
               );
             })()}
 
             {cell.matchedCompetency && (
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Matched snapshot competency</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Matched snapshot competency</p>
                 <p className="mt-0.5 leading-snug">{cell.matchedCompetency}</p>
               </div>
             )}
 
             {cell.evidenceExcerpt && (
               <div>
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Evidence</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Evidence</p>
                 <blockquote className="mt-0.5 border-l-2 border-muted pl-2 italic text-muted-foreground">
                   {cell.evidenceExcerpt}
                 </blockquote>
@@ -731,14 +731,14 @@ function CellDetailDrawer({
             )}
 
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Rationale</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Rationale</p>
               <p className="mt-0.5 leading-snug text-muted-foreground">{cell.rationale}</p>
             </div>
 
             <div className="flex items-center gap-3 pt-2 border-t">
               <Link
                 href={`/capture/${encodeURIComponent(course.courseCode)}?slug=${encodeURIComponent(slug)}`}
-                className="text-[11px] text-muted-foreground hover:text-foreground"
+                className="text-xs text-muted-foreground hover:text-foreground"
               >
                 View snapshot →
               </Link>
@@ -788,17 +788,17 @@ function DepthCell({ label, value }: { label: string; value: number | null }) {
   if (value === null) {
     return (
       <div>
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
         <p className="mt-0.5 text-sm italic text-muted-foreground">—</p>
       </div>
     );
   }
   return (
     <div>
-      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
       <p className={`mt-0.5 text-xl font-mono ${value >= 4 ? 'text-emerald-700' : value >= 2 ? 'text-amber-700' : 'text-slate-600'}`}>
         {value}
-        <span className="ml-1.5 align-middle text-[10px] font-sans text-muted-foreground">{depthBand(value)?.word}</span>
+        <span className="ml-1.5 align-middle text-xs font-sans text-muted-foreground">{depthBand(value)?.word}</span>
       </p>
     </div>
   );

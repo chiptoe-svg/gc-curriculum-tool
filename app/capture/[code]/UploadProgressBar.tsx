@@ -24,7 +24,7 @@ export function UploadProgressBar({ state }: { state: UploadProgressState }) {
   const done = pct >= 100;
   return (
     <div className="rounded-md border border-input bg-muted/30 px-3 py-2" role="status" aria-live="polite">
-      <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+      <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
         <span className="min-w-0 truncate">
           {total > 1 ? `Uploading ${index} of ${total}: ` : 'Uploading: '}
           <span className="font-medium text-foreground">{fileName}</span>

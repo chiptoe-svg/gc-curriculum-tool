@@ -85,7 +85,7 @@ export default async function HomePage() {
       <header className="border-b">
         <div className="mx-auto flex max-w-5xl items-baseline justify-between gap-4 px-6 py-4">
           <div>
-            <p className="font-mono-plex text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            <p className="font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
               Clemson · Graphic Communications
             </p>
             <h1 className="mt-0.5 font-display text-2xl font-semibold tracking-tight">
@@ -129,7 +129,7 @@ export default async function HomePage() {
         <div className="space-y-10">
           {groups.map(({ category, rows: catRows }) => (
             <section key={category}>
-              <h2 className="mb-3 font-mono-plex text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+              <h2 className="mb-3 font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
                 {CATEGORY_LABELS[category]}
               </h2>
               <ul className="divide-y border-y">
@@ -170,7 +170,7 @@ export default async function HomePage() {
                         )}
                       </Link>
                       <StatusPill status={row.status} />
-                      <span className="font-mono-plex text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                      <span className="font-mono-plex text-xs uppercase tracking-[0.16em] text-muted-foreground">
                         {row.lastCapturedAt
                           ? `${formatDate(row.lastCapturedAt)}${row.lastCapturedBy ? ` · ${row.lastCapturedBy}` : ''}`
                           : ''}
@@ -221,7 +221,7 @@ function StatusPill({ status }: { status: CaptureStatus }) {
   const { label, className } = STATUS_CONFIG[status];
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 font-body-sans text-[10px] uppercase tracking-[0.18em] font-medium ${className}`}
+      className={`inline-flex items-center rounded-full px-2 py-0.5 font-body-sans text-xs uppercase tracking-[0.18em] font-medium ${className}`}
     >
       {label}
     </span>

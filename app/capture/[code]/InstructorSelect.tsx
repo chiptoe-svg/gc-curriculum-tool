@@ -47,7 +47,7 @@ export function InstructorSelect({
         <button
           type="button"
           onClick={() => setAdding(false)}
-          className="shrink-0 text-[11px] text-muted-foreground hover:text-foreground"
+          className="shrink-0 text-xs text-muted-foreground hover:text-foreground"
           title="Choose from the list instead"
         >
           ↩ list

@@ -90,14 +90,14 @@ function DailyCostPanel({
                       title={`${d.day} — ${dollars(d.spentCents)}`}
                     />
                   </div>
-                  <span className={`text-[9px] ${isToday ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
+                  <span className={`text-xs ${isToday ? 'font-medium text-foreground' : 'text-muted-foreground'}`}>
                     {d.day.slice(5)}
                   </span>
                 </div>
               );
             })}
           </div>
-          <p className="mt-2 text-[11px] text-muted-foreground">
+          <p className="mt-2 text-xs text-muted-foreground">
             Hover any bar for the exact figure. Bars exceeding the daily cap show in red. Today is highlighted.
           </p>
         </div>
@@ -212,7 +212,7 @@ export function SettingsClient({
         <p className="mt-1">
           Each AI function in the system can use a different model. Tiers are an indirection: when a new generation of models ships, swapping the tier-to-model map updates every function using that tier. You can also pick a specific model from the dropdown for a function that needs a different one.
         </p>
-        <ul className="mt-2 space-y-0.5 font-mono text-[11px]">
+        <ul className="mt-2 space-y-0.5 font-mono text-xs">
           <li>Light  → <span className="text-foreground">{tierToModel.light}</span>
             {!modelAvailable(tierToModel.light) && <span className="ml-2 text-destructive">(not in available list)</span>}
             <span className="ml-2 text-muted-foreground">(cheap, fast)</span>
@@ -227,7 +227,7 @@ export function SettingsClient({
           </li>
         </ul>
         {availableModels.length > 0 && (
-          <p className="mt-2 text-[10px]">
+          <p className="mt-2 text-xs">
             {availableModels.length} chat-capable model{availableModels.length === 1 ? '' : 's'} available from this API key{modelsStale && ' (cached — could not refresh)'}.
           </p>
         )}
@@ -252,7 +252,7 @@ export function SettingsClient({
               <header>
                 <div className="flex items-baseline justify-between gap-3">
                   <h3 className="text-sm font-semibold">{labels[functionId]}</h3>
-                  <span className="font-mono text-[11px] text-muted-foreground">{s.resolvedModel}</span>
+                  <span className="font-mono text-xs text-muted-foreground">{s.resolvedModel}</span>
                 </div>
                 <p className="mt-0.5 text-xs text-muted-foreground">{descriptions[functionId]}</p>
               </header>
@@ -275,7 +275,7 @@ export function SettingsClient({
                     type="button"
                     onClick={() => resetToDefault(functionId)}
                     disabled={isBusy}
-                    className="ml-auto text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-50"
+                    className="ml-auto text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
                   >
                     reset to default ({defaults[functionId]})
                   </button>
@@ -335,7 +335,7 @@ function ModelDropdown({
   // placeholder so the UI doesn't render an empty unusable dropdown.
   if (availableModels.length === 0) {
     return (
-      <span className="text-[11px] italic text-muted-foreground">
+      <span className="text-xs italic text-muted-foreground">
         (loading models…)
       </span>
     );

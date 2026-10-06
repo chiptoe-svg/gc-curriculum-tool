@@ -58,7 +58,7 @@ function DataStateBadge({ state }: { state: CourseDataState }) {
   const { label, className } = DATA_STATE_CONFIG[state];
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 font-body-sans text-[9px] uppercase tracking-[0.18em] font-medium ${className}`}
+      className={`inline-flex items-center rounded-full px-2 py-0.5 font-body-sans text-xs uppercase tracking-[0.18em] font-medium ${className}`}
     >
       {label}
     </span>
@@ -94,7 +94,7 @@ function StatusPill({ status }: { status: CaptureStatus }) {
   const { label, className } = STATUS_CONFIG[status];
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 font-body-sans text-[10px] uppercase tracking-[0.18em] font-medium ${className}`}
+      className={`inline-flex items-center rounded-full px-2 py-0.5 font-body-sans text-xs uppercase tracking-[0.18em] font-medium ${className}`}
     >
       {label}
     </span>
@@ -126,7 +126,7 @@ function StatusCounters({ rows }: { rows: CourseStatusRow[] }) {
       {parts.map((p, i) => (
         <span key={p.label} className="flex items-center gap-1">
           {i > 0 && <span className="text-muted-foreground/40 select-none">·</span>}
-          <span className={`font-body-sans text-[10px] uppercase tracking-[0.18em] font-medium ${p.color}`}>
+          <span className={`font-body-sans text-xs uppercase tracking-[0.18em] font-medium ${p.color}`}>
             <span className="tabular-nums">{p.n}</span> {p.label}
           </span>
         </span>
@@ -171,7 +171,7 @@ export function CourseRow({
       {/* Main row link — capture is the primary action */}
       <Link href={captureHref} className="flex flex-1 items-center gap-4 px-3 py-3">
         {/* Course code */}
-        <span className="w-28 shrink-0 font-mono-plex text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+        <span className="w-28 shrink-0 font-mono-plex text-xs uppercase tracking-[0.14em] text-muted-foreground">
           {formatCourseLabel(row.code, pairedCodes)}
         </span>
 
@@ -193,7 +193,7 @@ export function CourseRow({
         </span>
 
         {/* Last captured date */}
-        <span className="w-32 shrink-0 text-right font-mono-plex text-[10px] text-muted-foreground/70">
+        <span className="w-32 shrink-0 text-right font-mono-plex text-xs text-muted-foreground/70">
           {row.lastCapturedAt ? formatDate(row.lastCapturedAt) : ''}
         </span>
 
@@ -276,11 +276,11 @@ function LevelGroup({
     <div className="mb-6">
       {/* Group header */}
       <div className="mb-1 flex items-center gap-3">
-        <span className="font-body-sans text-[10px] uppercase tracking-[0.18em] text-muted-foreground/60 font-medium select-none">
+        <span className="font-body-sans text-xs uppercase tracking-[0.18em] text-muted-foreground/60 font-medium select-none">
           {levelLabel(level)}
         </span>
         <span className="flex-1 border-t border-border/40" />
-        <span className="font-body-sans text-[10px] uppercase tracking-[0.18em] text-muted-foreground/40 tabular-nums select-none">
+        <span className="font-body-sans text-xs uppercase tracking-[0.18em] text-muted-foreground/40 tabular-nums select-none">
           {rows.length}
         </span>
       </div>
@@ -329,19 +329,19 @@ export function CoursesIndex({ rows, rosterRows, slug, pairedByCode, snapshotCou
 
       {/* Column header */}
       <div className="mb-2 flex items-center gap-4 px-3">
-        <span className="w-28 shrink-0 font-body-sans text-[10px] uppercase tracking-[0.18em] text-muted-foreground/50">
+        <span className="w-28 shrink-0 font-body-sans text-xs uppercase tracking-[0.18em] text-muted-foreground/50">
           Code
         </span>
-        <span className="flex-1 font-body-sans text-[10px] uppercase tracking-[0.18em] text-muted-foreground/50">
+        <span className="flex-1 font-body-sans text-xs uppercase tracking-[0.18em] text-muted-foreground/50">
           Title
         </span>
-        <span className="shrink-0 font-body-sans text-[10px] uppercase tracking-[0.18em] text-muted-foreground/50">
+        <span className="shrink-0 font-body-sans text-xs uppercase tracking-[0.18em] text-muted-foreground/50">
           Data
         </span>
-        <span className="shrink-0 font-body-sans text-[10px] uppercase tracking-[0.18em] text-muted-foreground/50">
+        <span className="shrink-0 font-body-sans text-xs uppercase tracking-[0.18em] text-muted-foreground/50">
           Status
         </span>
-        <span className="w-32 shrink-0 text-right font-body-sans text-[10px] uppercase tracking-[0.18em] text-muted-foreground/50">
+        <span className="w-32 shrink-0 text-right font-body-sans text-xs uppercase tracking-[0.18em] text-muted-foreground/50">
           Last captured
         </span>
         {/* prereqs + ask + arrow spacer */}
@@ -370,7 +370,7 @@ export function CoursesIndex({ rows, rosterRows, slug, pairedByCode, snapshotCou
           external-access / proposed-course flows; both are separate plans). */}
       {partition.proposed.length > 0 && (
         <section className="mt-10">
-          <h2 className="mb-2 px-3 font-body-sans text-[10px] uppercase tracking-[0.18em] text-amber-700 dark:text-amber-400">
+          <h2 className="mb-2 px-3 font-body-sans text-xs uppercase tracking-[0.18em] text-amber-700 dark:text-amber-400">
             Proposed · test the waters
           </h2>
           {partition.proposed.map((row, i) => (
@@ -388,7 +388,7 @@ export function CoursesIndex({ rows, rosterRows, slug, pairedByCode, snapshotCou
       )}
       {partition.external.length > 0 && (
         <section className="mt-10">
-          <h2 className="mb-2 px-3 font-body-sans text-[10px] uppercase tracking-[0.18em] text-blue-700 dark:text-blue-400">
+          <h2 className="mb-2 px-3 font-body-sans text-xs uppercase tracking-[0.18em] text-blue-700 dark:text-blue-400">
             External / sandbox
           </h2>
           {partition.external.map((row, i) => (

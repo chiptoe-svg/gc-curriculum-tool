@@ -167,12 +167,12 @@ function OtherRow({ m, courseCode, slug, indexing, onIndexNow, onMaterialsChange
       <div className="flex items-center gap-2">
         <span aria-hidden className="w-4 shrink-0 text-center text-sm">📄</span>
         <span className="min-w-0 flex-1 truncate text-sm">{m.fileName}</span>
-        <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+        <span className="rounded bg-muted px-1.5 py-0.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
           {PROVENANCE_LABEL[prov]}
         </span>
         {!triageEnabled && (
           <span
-            className={'flex shrink-0 items-center gap-1 text-[11px] ' + (read.readable ? 'text-muted-foreground' : 'text-amber-700 dark:text-amber-400')}
+            className={'flex shrink-0 items-center gap-1 text-xs ' + (read.readable ? 'text-muted-foreground' : 'text-amber-700 dark:text-amber-400')}
             title={read.reason ?? ''}
           >
             <IndexingStatusDot status={m.indexingStatus} indexedAt={m.indexedAt} />
@@ -184,7 +184,7 @@ function OtherRow({ m, courseCode, slug, indexing, onIndexNow, onMaterialsChange
             type="button"
             onClick={onIndexNow}
             disabled={indexing}
-            className="shrink-0 rounded-md border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-50 dark:bg-amber-900/20 dark:text-amber-200"
+            className="shrink-0 rounded-md border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-50 dark:bg-amber-900/20 dark:text-amber-200"
           >
             {indexing ? 'Indexing…' : 'Index now'}
           </button>
@@ -194,14 +194,14 @@ function OtherRow({ m, courseCode, slug, indexing, onIndexNow, onMaterialsChange
             href={m.blobUrl}
             target="_blank"
             rel="noreferrer"
-            className="shrink-0 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            className="shrink-0 text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
           >
             source ↗
           </a>
         )}
         {/* Per-row controls — mirror the manager */}
         {m.digest !== null && (
-          <label className="flex shrink-0 cursor-pointer items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground">
+          <label className="flex shrink-0 cursor-pointer items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
             <input
               type="checkbox"
               checked={m.useDigest}
@@ -216,7 +216,7 @@ function OtherRow({ m, courseCode, slug, indexing, onIndexNow, onMaterialsChange
           type="button"
           onClick={() => void toggleIgnored(!m.ignored)}
           disabled={busy}
-          className="shrink-0 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline disabled:opacity-50"
+          className="shrink-0 text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline disabled:opacity-50"
         >
           {m.ignored ? 're-include' : 'ignore'}
         </button>
@@ -224,7 +224,7 @@ function OtherRow({ m, courseCode, slug, indexing, onIndexNow, onMaterialsChange
           type="button"
           onClick={() => setExpanded((e) => !e)}
           disabled={!m.extractedText}
-          className="shrink-0 text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-30"
+          className="shrink-0 text-xs text-muted-foreground hover:text-foreground disabled:opacity-30"
         >
           {expanded ? 'hide' : 'preview'}
         </button>
@@ -232,7 +232,7 @@ function OtherRow({ m, courseCode, slug, indexing, onIndexNow, onMaterialsChange
           type="button"
           onClick={() => void handleDelete()}
           disabled={busy}
-          className="shrink-0 text-[11px] text-muted-foreground hover:text-destructive disabled:opacity-30"
+          className="shrink-0 text-xs text-muted-foreground hover:text-destructive disabled:opacity-30"
         >
           delete
         </button>
@@ -240,7 +240,7 @@ function OtherRow({ m, courseCode, slug, indexing, onIndexNow, onMaterialsChange
 
       {/* Meta line: words · ~tok · size · [audit sends ~N tok when using digest] */}
       {(wordCount > 0 || tokenEst > 0) && (
-        <p className="pl-6 text-[11px] text-muted-foreground">
+        <p className="pl-6 text-xs text-muted-foreground">
           {wordCount > 0 && <span>{wordCount.toLocaleString()} words · </span>}
           {tokenEst > 0 && <span>~{formatMaterialTokens(tokenEst)} · </span>}
           {usingDigest && digestTokenEst > 0 && (
@@ -252,14 +252,14 @@ function OtherRow({ m, courseCode, slug, indexing, onIndexNow, onMaterialsChange
         </p>
       )}
 
-      {rowError && <p className="pl-6 text-[11px] text-destructive">{rowError}</p>}
+      {rowError && <p className="pl-6 text-xs text-destructive">{rowError}</p>}
 
       {/* Why-ignored reason + FERPA include-anyway — parity with MaterialsPanel's
           MaterialRow. Shows for any ignored or auto-set-aside row, not just Canvas
           syllabus (generalizing beyond the original Canvas-only display). */}
       {m.ignored && (
         <div className="mt-0.5 flex items-start justify-between gap-2 rounded border border-amber-200 bg-amber-50/50 px-2 py-1">
-          <p className="text-[11px] leading-snug italic text-amber-800">
+          <p className="text-xs leading-snug italic text-amber-800">
             {m.setAsideReason
               ?? (m.autoSetAside
                     ? 'set aside automatically'
@@ -270,7 +270,7 @@ function OtherRow({ m, courseCode, slug, indexing, onIndexNow, onMaterialsChange
               type="button"
               onClick={() => void handleIncludeAnyway()}
               disabled={includeAnywayBusy}
-              className="shrink-0 text-[11px] font-medium text-amber-900 underline hover:text-amber-700 disabled:opacity-50"
+              className="shrink-0 text-xs font-medium text-amber-900 underline hover:text-amber-700 disabled:opacity-50"
             >
               {includeAnywayBusy ? 'Including…' : 'Include anyway'}
             </button>
@@ -278,11 +278,11 @@ function OtherRow({ m, courseCode, slug, indexing, onIndexNow, onMaterialsChange
         </div>
       )}
       {includeAnywayError && (
-        <p className="pl-2 text-[11px] text-destructive">{includeAnywayError}</p>
+        <p className="pl-2 text-xs text-destructive">{includeAnywayError}</p>
       )}
 
       {expanded && m.extractedText && (
-        <pre className="max-h-72 overflow-auto rounded border bg-muted/40 p-2 text-[11px] leading-snug whitespace-pre-wrap">
+        <pre className="max-h-72 overflow-auto rounded border bg-muted/40 p-2 text-xs leading-snug whitespace-pre-wrap">
           {m.extractedText.slice(0, 8000)}
           {m.extractedText.length > 8000 && '\n\n…(truncated)'}
         </pre>
@@ -424,9 +424,9 @@ export function OtherMaterialsBox({ course, materials, slug, onMaterialsChange, 
           <UploadProgressBar state={progress} />
         </div>
       )}
-      {error && <p className="px-3 pb-2 text-[11px] text-amber-700 dark:text-amber-400">{error}</p>}
+      {error && <p className="px-3 pb-2 text-xs text-amber-700 dark:text-amber-400">{error}</p>}
       {uploadBgMessage && (
-        <p className="px-3 pb-2 text-[11px] text-amber-700 dark:text-amber-400">{uploadBgMessage}</p>
+        <p className="px-3 pb-2 text-xs text-amber-700 dark:text-amber-400">{uploadBgMessage}</p>
       )}
 
       {open && (
