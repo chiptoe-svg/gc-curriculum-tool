@@ -10,7 +10,7 @@ import {
 } from '@/lib/db/course-capture-profiles-queries';
 import { generateCaptureProfileV2 } from '@/lib/ai/analyze/capture-scores';
 import { preserveAdoptOverlay } from '@/lib/capture/adopt-overlay';
-import { extractPrereqCodes } from '@/lib/capture/prereq-codes';
+import { prereqCodesFor } from '@/lib/curriculum/prereq-map';
 import type { CaptureChatContext } from '@/lib/ai/analyze/capture-chat';
 import { getLatestSnapshotByCourse } from '@/lib/db/capture-snapshots-queries';
 import { getLatestSessionId, getSessionMessages } from '@/lib/db/capture-messages-queries';
@@ -92,7 +92,9 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   }
 
   // Latest snapshot first, draft fall-back — see chat route for rationale.
-  const prereqCodes = extractPrereqCodes(course.prerequisites ?? '', courseCode);
+  // Catalog-first prerequisite map (course sheet fallback) — the same map the
+  // interview brief uses, so scoring sees the same prerequisite profiles.
+  const prereqCodes = await prereqCodesFor(courseCode);
   const prereqProfilesRaw = await Promise.all(
     prereqCodes.map(async code => {
       const c = await getCourseByCode(code);

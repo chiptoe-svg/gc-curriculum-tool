@@ -2,10 +2,10 @@
  * Prerequisite map read from the GC course sheet's `courses.prerequisites`
  * lines. Directly linked courses only. Spec:
  * docs/superpowers/specs/2026-10-06-interview-course-context-brief-design.md §1.
- * The Clemson catalog (via MCP) is the planned authoritative source.
+ * Now the FALLBACK source only: lib/curriculum/prereq-map.ts uses the Clemson
+ * catalog (synced into course_catalog_* tables) first, and these sheet pairs
+ * only for courses with no catalog row.
  */
-import { db } from '@/lib/db/client';
-import { courses } from '@/lib/db/schema';
 import { extractPrereqCodes } from '@/lib/capture/prereq-codes';
 
 export interface PrereqPair { focal: string; prereq: string }
@@ -25,11 +25,6 @@ export function sheetPrereqPairsFrom(
     }
   }
   return mergePrereqPairs(pairs);
-}
-
-export async function loadSheetPrereqPairs(): Promise<PrereqPair[]> {
-  const rows = await db.select({ code: courses.code, prerequisites: courses.prerequisites }).from(courses);
-  return sheetPrereqPairsFrom(rows);
 }
 
 export function prereqsOf(pairs: ReadonlyArray<PrereqPair>, code: string): string[] {

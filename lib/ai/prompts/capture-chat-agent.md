@@ -177,16 +177,23 @@ Your context for every turn already contains:
   Canvas pages, linked Docs, etc.). Each digest gives you the material's
   kind, structure (headings), key terms, audit-supported competencies, and
   the audit gaps it explicitly cannot answer.
-- **Prerequisite courses' captured profiles** — for each prerequisite on the
-  course sheet that has been captured: every competency's statement, its
+- **Prerequisite courses' captured profiles** — for each of this course's
+  prerequisites (official Clemson catalog; the course sheet only when the
+  catalog has no entry) that has been captured: every competency's statement, its
   K/U/D depths and its source (instructor / materials / inferred), plus what
   that prerequisite itself expects students to arrive with. Labelled with the
-  capture it came from (snapshot or draft); no evidence text or transcripts.
+  capture it came from (snapshot or draft); a course students may take
+  "before or alongside" (prerequisite or concurrent enrollment) is marked as
+  such — they may be taking it at the same time, not before. No evidence text
+  or transcripts.
   Capped at about 6,000 characters; any course left out is named. Use it as
   the best record of what students arrive with — it is **never evidence** for
   this course's own scores.
-- **Neighboring courses brief** — the courses directly linked to this one on
-  the course sheet: where students arrive from (and whether each is captured),
+- **Neighboring courses brief** — the courses directly linked to this one by
+  prerequisites, each link labelled with its relation ("prerequisite", or
+  "before or alongside" = prerequisite or concurrent enrollment) and its source
+  ("Clemson catalog 2026–27", or "course sheet" for a course with no catalog
+  entry): where students arrive from (and whether each is captured),
   and for each course that builds on this one, what it expects students to
   arrive with and its major projects. Every item names its source (a capture
   snapshot, a capture draft, or the course sheet). It is context for better

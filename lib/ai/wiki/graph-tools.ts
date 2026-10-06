@@ -15,7 +15,8 @@ import { z } from 'zod';
 import type { ToolDefinition } from '@/lib/ai/tool-use-types';
 import { getMatrixData, type MatrixData } from '@/lib/db/program-coverage-queries';
 import { listEdgePairs } from '@/lib/db/prerequisite-edge-queries';
-import { loadSheetPrereqPairs, mergePrereqPairs } from '@/lib/curriculum/sheet-prereq-graph';
+import { mergePrereqPairs } from '@/lib/curriculum/sheet-prereq-graph';
+import { loadPrereqMap, prereqEdgesOf, prereqSourceOf, prereqSourceLabel } from '@/lib/curriculum/prereq-map';
 
 const normCode = (s: string) => s.trim().toUpperCase().replace(/\s+/g, ' ');
 
@@ -126,13 +127,22 @@ export const coverageForTargetTool: ToolDefinition = {
 export const prereqChainTool: ToolDefinition = {
   name: 'prereq_chain',
   description:
-    'For a course code (e.g. "GC 4400"), return its prerequisite chain: the courses that must come before it (direct + transitive) and the courses that list it as a prerequisite. A typed-graph query over prerequisite_edges plus the course sheet\'s prerequisite lines. Use for "what does X require / what builds on X?" questions. Sheet-listed prerequisites may include recommended or alternative ("A or B") courses, not only strict requirements.',
+    'For a course code (e.g. "GC 4400"), return its prerequisite chain: the courses that must come before it (direct + transitive) and the courses that list it as a prerequisite. A typed-graph query over prerequisite_edges plus the prerequisite map (official Clemson catalog first; the GC course sheet only for courses with no catalog entry). directPrereqDetails gives each direct prerequisite\'s relation ("prerequisite" or "before or alongside" = prerequisite or concurrent enrollment), its any-of group (same number = any one satisfies), and its source. Use for "what does X require / what builds on X?" questions. Course-sheet prerequisites may include recommended courses, not only strict requirements.',
   usagePolicy: 'Pass a course code. Returns the prerequisite-graph neighborhood, not narrative.',
   inputSchema: z.object({ courseCode: z.string().min(1) }),
   async execute(args) {
     const { courseCode } = args as { courseCode: string };
-    const [edgePairs, sheetPairs] = await Promise.all([listEdgePairs(), loadSheetPrereqPairs()]);
-    return prereqNeighborhood(mergePrereqPairs(edgePairs, sheetPairs), courseCode);
+    const [edgePairs, map] = await Promise.all([listEdgePairs(), loadPrereqMap()]);
+    return {
+      ...prereqNeighborhood(mergePrereqPairs(edgePairs, map.edges), courseCode),
+      prerequisiteSource: prereqSourceLabel(map, prereqSourceOf(map, courseCode)),
+      directPrereqDetails: prereqEdgesOf(map, courseCode).map(e => ({
+        code: e.prereq,
+        relation: e.kind === 'concurrent_ok' ? 'before or alongside (prerequisite or concurrent enrollment)' : 'prerequisite',
+        anyOfGroup: e.anyOfGroup,
+        source: prereqSourceLabel(map, e.source),
+      })),
+    };
   },
 };
 

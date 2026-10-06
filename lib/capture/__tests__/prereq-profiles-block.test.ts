@@ -68,6 +68,9 @@ function makePrereq(overrides: Partial<BriefPrereq> = {}): BriefPrereq {
     title: 'Intro to Print',
     captureLabel: 'GC 1040 capture snapshot 2026-01-01',
     profile: makeProfile(),
+    kind: 'prereq',
+    source: 'Clemson catalog 2026–27',
+    alternatives: [],
     ...overrides,
   };
 }
@@ -84,6 +87,10 @@ describe('renderPrerequisiteProfiles', () => {
   it('renders competencies with K/U/D depth and source, including K– for null and "not recorded" when absent', () => {
     const md = renderPrerequisiteProfiles([makePrereq()]);
     expect(md).toContain('### GC 1040 — Intro to Print (GC 1040 capture snapshot 2026-01-01)');
+  });
+  it('marks a "before or alongside" prerequisite on its heading', () => {
+    const md = renderPrerequisiteProfiles([makePrereq({ kind: 'concurrent_ok' })]);
+    expect(md).toContain('### GC 1040 — Intro to Print (GC 1040 capture snapshot 2026-01-01) — taken before or alongside this course (Clemson catalog 2026–27)');
     expect(md).toContain('Competencies:');
     expect(md).toContain('- [technical] Operate a proof press (K3 U– D2; source: instructor)');
     expect(md).toContain('- [foundational] Articulate color theory (K– U– D0; source: not recorded)');

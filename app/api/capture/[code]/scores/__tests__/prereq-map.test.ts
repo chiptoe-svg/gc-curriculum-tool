@@ -20,6 +20,8 @@ const mockPrereqProfile = vi.hoisted(() => ({
 vi.mock('@/lib/db/courses-queries', () => ({
   getCourseByCode: vi.fn(async (code: string) => code === 'GC 1040'
     ? { code: 'GC 1040', title: 'Intro to Print', description: '', prerequisites: '', learningObjectives: [], majorProjects: [], skillsRequired: [] }
+    : code === 'GC 2070'
+    ? { code: 'GC 2070', title: 'Graphic Communications II', description: '', prerequisites: 'GC 1040', learningObjectives: [], majorProjects: [], skillsRequired: [] }
     : { code: 'GC 3460', title: 'Flexo', description: '', prerequisites: 'GC 1040', learningObjectives: [], majorProjects: [], skillsRequired: [] }),
 }));
 vi.mock('@/lib/db/course-profile-queries', () => ({ getCourseProfile: vi.fn().mockResolvedValue(null) }));
@@ -30,7 +32,7 @@ vi.mock('@/lib/db/course-capture-profiles-queries', () => ({
   setCaptureProfileStatus: vi.fn(),
 }));
 vi.mock('@/lib/db/capture-snapshots-queries', () => ({
-  getLatestSnapshotByCourse: vi.fn(async (code: string) => code === 'GC 1040'
+  getLatestSnapshotByCourse: vi.fn(async (code: string) => code === 'GC 1040' || code === 'GC 2070'
     ? { profile: mockPrereqProfile, createdAt: new Date('2026-01-01T00:00:00Z'), caption: null }
     : null),
 }));
@@ -40,25 +42,22 @@ vi.mock('@/lib/db/capture-messages-queries', () => ({
 }));
 vi.mock('@/lib/curriculum/prereq-map', async (orig) => ({
   ...(await orig<typeof import('@/lib/curriculum/prereq-map')>()),
-  prereqCodesFor: vi.fn().mockResolvedValue(['GC 1040']),
+  // The course sheet says GC 3460 needs GC 1040; the catalog map says GC 2070.
+  prereqCodesFor: vi.fn(async (code: string) => (code === 'GC 3460' ? ['GC 2070'] : [])),
 }));
 const gen = vi.fn().mockRejectedValue(new Error('stop after capture'));
 vi.mock('@/lib/ai/analyze/capture-scores', () => ({ generateCaptureProfileV2: (...a: unknown[]) => gen(...a) }));
 
 import { POST } from '@/app/api/capture/[code]/scores/route';
-import { BRIEF_HEADING } from '@/lib/capture/course-context-brief';
-import { PREREQ_PROFILES_HEADING } from '@/lib/capture/prereq-profiles-block';
 
-describe('scoring context', () => {
-  it('never receives the course-context brief or the prerequisite-profiles block, even with a captured prerequisite', async () => {
+describe('scoring prerequisite profiles', () => {
+  it('loads the prerequisite profiles named by the prerequisite map, not the course sheet line', async () => {
     await POST(
       new Request('http://x/api/capture/GC%203460/scores?slug=s', { method: 'POST', body: JSON.stringify({ messages: [{ role: 'user', content: 'hi' }] }) }),
       { params: Promise.resolve({ code: 'GC%203460' }) },
     ).catch(() => undefined);
     expect(gen).toHaveBeenCalled();
-    const passed = JSON.stringify(gen.mock.calls[0]);
-    expect(passed).not.toContain(BRIEF_HEADING);
-    expect(passed).not.toContain('Neighboring courses');
-    expect(passed).not.toContain(PREREQ_PROFILES_HEADING);
+    const ctx = (gen.mock.calls[0]![0] as { chatContext: { prerequisiteCaptureProfiles: Array<{ code: string }> } }).chatContext;
+    expect(ctx.prerequisiteCaptureProfiles.map(p => p.code)).toEqual(['GC 2070']);
   });
 });

@@ -16,10 +16,9 @@ import { runObjectiveGuideForSnapshot } from '@/lib/objective-guide/run';
 import { resolveScopedSession, authorizeCourseWrite } from '@/lib/sandbox/access';
 import { isTriageEnabled } from '@/lib/capture/triage-flag';
 import { clearRawBlobsForCourse } from '@/lib/capture/clear-raw-blobs';
+import { prereqCodesFor } from '@/lib/curriculum/prereq-map';
 
 interface RouteContext { params: Promise<{ code: string }> }
-
-const COURSE_CODE_RE = /GC\s+\d{4}[a-z]{0,2}/gi;
 
 // POST /api/capture/[code]/snapshots?slug=...
 // Body: { caption?: string, captionNote?: string }
@@ -67,12 +66,10 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   ]);
 
   // Collect prereq snapshots that were in play at snapshot time.
-  const prereqCodes = (course.prerequisites ?? '').match(COURSE_CODE_RE)?.map(c =>
-    c.replace(/\s+/, ' ').toUpperCase().replace(/GC (\d)/, 'GC $1'),
-  ) ?? [];
+  // Same catalog-first prerequisite map scoring used (lib/curriculum/prereq-map.ts).
+  const prereqCodes = await prereqCodesFor(courseCode);
   const prereqSnapshots = await Promise.all(
-    Array.from(new Set(prereqCodes))
-      .filter(c => c !== courseCode)
+    prereqCodes
       .map(async code => {
         const snap = await getLatestSnapshotByCourse(code);
         return snap ? { courseCode: code, snapshotId: snap.id, caption: snap.caption } : null;

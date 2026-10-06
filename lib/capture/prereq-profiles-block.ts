@@ -23,7 +23,8 @@ export function renderPrerequisiteProfiles(prereqs: BriefPrereq[], maxChars: num
   // the block, not just one of its competency/expectation sub-items.
   const lines: CapLine[] = [];
   for (const p of captured) {
-    lines.push({ text: `### ${p.code} — ${p.title} (${p.captureLabel})`, code: p.code });
+    const alongside = p.kind === 'concurrent_ok' ? ` — taken before or alongside this course (${p.source})` : '';
+    lines.push({ text: `### ${p.code} — ${p.title} (${p.captureLabel})${alongside}`, code: p.code });
     lines.push({ text: 'Competencies:' });
     for (const c of p.profile.competencies) {
       lines.push({ text: `- [${c.type}] ${c.statement} (K${c.k_depth ?? '–'} U${c.u_depth ?? '–'} D${c.d_depth}; source: ${c.source ?? 'not recorded'})` });

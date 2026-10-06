@@ -121,6 +121,12 @@ vi.mock('@/lib/capture/clear-raw-blobs', () => ({
 
 // ── triage flag ──────────────────────────────────────────────────────────────
 const isTriageEnabled = vi.fn(() => true);
+// Catalog-first prerequisite map; the course sheet line is not consulted.
+const prereqCodesFor = vi.fn(async (_code?: unknown): Promise<string[]> => []);
+vi.mock('@/lib/curriculum/prereq-map', () => ({
+  prereqCodesFor: (code: unknown) => prereqCodesFor(code),
+}));
+
 vi.mock('@/lib/capture/triage-flag', () => ({
   isTriageEnabled: () => isTriageEnabled(),
 }));
@@ -222,5 +228,18 @@ describe('snapshots POST — objective assessment guide task', () => {
     expect(updateWikiForSnapshot).toHaveBeenCalledWith('snap-1');
     expect(errSpy).toHaveBeenCalledWith('[objective-guide] failed for', 'GC 4440', expect.any(Error));
     errSpy.mockRestore();
+  });
+});
+
+describe('snapshots POST — prerequisite provenance', () => {
+  it('records the prerequisite snapshots named by the prerequisite map', async () => {
+    createSnapshot.mockResolvedValue({ id: 'snap-1', courseCode: 'GC 4440', caption: null, captionNote: null, scaleVersion: '1.0', model: 'gpt-4o', createdAt: new Date().toISOString(), profile: {} } as never);
+    prereqCodesFor.mockResolvedValueOnce(['GC 3400']);
+    getLatestSnapshotByCourse.mockImplementation((async (code: unknown) =>
+      code === 'GC 3400' ? { id: 'snap-3400', caption: 'v1' } : null) as never);
+    await callPost({ caption: 'Snapshot v1' });
+    expect(prereqCodesFor).toHaveBeenCalledWith('GC 4440');
+    const input = createSnapshot.mock.calls.at(-1)![0] as { inputsMeta: { prereqSnapshotsUsed: unknown[] } };
+    expect(input.inputsMeta.prereqSnapshotsUsed).toEqual([{ courseCode: 'GC 3400', snapshotId: 'snap-3400', caption: 'v1' }]);
   });
 });

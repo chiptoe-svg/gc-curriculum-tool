@@ -10,7 +10,7 @@ import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
 import { hashIp } from '@/lib/ip-hash';
 import { runStressTest } from '@/lib/ai/stress-test/run';
-import { extractPrereqCodes } from '@/lib/capture/prereq-codes';
+import { prereqCodesFor } from '@/lib/curriculum/prereq-map';
 import type { CaptureChatContext } from '@/lib/ai/analyze/capture-chat';
 
 interface RouteContext { params: Promise<{ code: string }> }
@@ -54,7 +54,9 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     getCourseProfile(courseCode),
     listMaterialsByCourse(courseCode),
   ]);
-  const prereqCodes = extractPrereqCodes(course.prerequisites ?? '', courseCode);
+  // Catalog-first prerequisite map (course sheet fallback) — the same map the
+  // interview brief uses, so scoring sees the same prerequisite profiles.
+  const prereqCodes = await prereqCodesFor(courseCode);
   const prereqProfilesRaw = await Promise.all(
     prereqCodes.map(async code => {
       const c = await getCourseByCode(code);

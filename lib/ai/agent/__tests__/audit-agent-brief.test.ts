@@ -38,8 +38,9 @@ vi.mock('@/lib/capture/course-context-brief', async (orig) => ({
   ...(await orig<typeof import('@/lib/capture/course-context-brief')>()),
   buildCourseContextBrief: vi.fn().mockResolvedValue({
     courseCode: 'GC 3460',
-    prerequisites: [{ code: 'GC 1040', title: 'Intro to Print', captureLabel: 'GC 1040 capture snapshot 2026-01-01', profile: mockSamplePrereqProfile }],
-    dependents: [{ code: 'GC 4060', title: 'Flexo Production', expectations: null, projects: { source: 'course sheet', items: ['Film run'] } }],
+    prereqSource: 'course sheet',
+    prerequisites: [{ code: 'GC 1040', title: 'Intro to Print', captureLabel: 'GC 1040 capture snapshot 2026-01-01', profile: mockSamplePrereqProfile, kind: 'prereq', source: 'course sheet', alternatives: [] }],
+    dependents: [{ code: 'GC 4060', title: 'Flexo Production', kind: 'prereq', source: 'course sheet', expectations: null, projects: { source: 'course sheet', items: ['Film run'] } }],
   }),
 }));
 vi.mock('@/lib/capture/prereq-profiles-block', async (orig) => {

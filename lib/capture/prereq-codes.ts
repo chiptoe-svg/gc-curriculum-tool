@@ -1,8 +1,8 @@
 /**
- * Course codes named in a course sheet "prerequisites" line. Shared by the
- * scores + stress-test routes and the sheet prerequisite map
- * (lib/curriculum/sheet-prereq-graph.ts). GC codes only (the sheet's own
- * vocabulary); the Clemson catalog is the planned authoritative source.
+ * Course codes named in a course sheet "prerequisites" line, for the sheet
+ * prerequisite map (lib/curriculum/sheet-prereq-graph.ts). GC codes only (the
+ * sheet's own vocabulary). The sheet is the fallback source; the Clemson
+ * catalog comes first — see lib/curriculum/prereq-map.ts.
  */
 const COURSE_CODE_RE = /GC\s+\d{4}[a-z]{0,2}/gi;
 
