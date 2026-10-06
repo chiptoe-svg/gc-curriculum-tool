@@ -498,6 +498,34 @@ describe('finalizeExtraction — middle tier (slide-vision)', () => {
     expect(contextualizeChunk).toHaveBeenCalled();
   });
 
+  it('middle + stored text contains [student]: skips the slide-notes path and indexes the stored text (names were found in the deck)', async () => {
+    // Per-slide note text is short and rarely trips the name-pass trigger, so a
+    // slide note can carry a student name the whole-deck scrub caught. When the
+    // stored text shows names were redacted, index the stored text instead.
+    const notes = [
+      { topic: 'Team presentation by Jane Doe', teaches: 'Brand systems', keyVisual: '', text: '', contentLevel: 'substantive' as const },
+    ];
+    const store = makeFakeStore();
+    await finalizeExtraction({
+      id: 'mat-slide-names',
+      courseCode: 'GC 3800',
+      fileName: SLIDE_FILE_NAME,
+      extractionStatus: 'ok',
+      extractedText: '# Brand systems\n\nTeam presentation by [student].\n\n# Results\n\nThe logo system.',
+      fileBytes: FAKE_BYTES,
+      mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      slideNotes: notes,
+      vectorStore: store,
+      courseHasLearningObjectives: false,
+      tier: 'middle',
+    });
+
+    expect(renderToImages).not.toHaveBeenCalled();
+    expect(JSON.stringify(store.upsertedChunks)).not.toContain('Jane Doe');
+    expect(JSON.stringify(store.upsertedSections)).not.toContain('Jane Doe');
+    expect(contextualizeChunk).toHaveBeenCalled();
+  });
+
   it('middle + all-unknown slides (vision outage): marks FAILED, does not skip or index', async () => {
     // 'unknown' = couldn't score (offload+local both failed), not the model saying 'low'.
     // A whole deck of unscorable slides must be surfaced for retry, never silently dropped.
