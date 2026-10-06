@@ -255,7 +255,15 @@ async function runV2Pipeline(input: FinalizeExtractionInput): Promise<void> {
       // they were threaded (the image-PDF path), else render + describe here (covers a
       // non-vision caller that still lands in the middle tier). This removes the old
       // double pass where extract-text transcribed AND finalize re-described the deck.
-      const allNotes: SlideNote[] = input.slideNotes?.length
+      // Privacy (final review 2026-10-05): per-slide note text is short and
+      // rarely trips the name-pass trigger on its own, so a note can carry a
+      // student name that the whole-deck scrub of the stored text caught. When
+      // the stored text shows names were redacted, skip the slide-notes path
+      // and fall through to the pipelines below, which index the stored text.
+      const namesRedacted = extractedText.includes('[student]');
+      const allNotes: SlideNote[] = namesRedacted
+        ? []
+        : input.slideNotes?.length
         ? input.slideNotes
         : input.fileBytes
           ? await describeSlides(await renderToImages(input.fileBytes, input.mimeType ?? '', fileName))
