@@ -402,3 +402,191 @@ Supersedes §7's list (kept above for the record; items 2 is resolved there alre
 - **Logistics (§11.7):** named in target 1's shortDefinition.
 - **Appendix numbering (§11.9):** fixed — account management is target 2.
 - **Still open:** course scope per new or broadened competency (§11.3; a candidate list is being drafted), the `prompt-design` coverage gap and re-score batching (§11.2, §11.8; recommended: close it in one consolidated re-score after the model decision), and target 5 id churn (§11.5).
+
+---
+
+## 13. Candidate courses for the re-score — DRAFT for owner correction (2026-10-06)
+
+**Purpose.** §11 Q3 asked for a curriculum-knowledge course list per new/broadened competency before any AI coverage run. This section is that candidate list — read-only analysis, not a re-score and not a seed-file change. Nothing here is applied; the owner should strike, add, or re-band anything below before it's used to scope the actual re-score batch.
+
+**Method.** A throwaway read-only `tsx` script (`pnpm exec tsx --env-file=.env.local`, `lib/db/client`, deleted after use, nothing written) pulled: (a) every program-visible GC course (`scope='gc' AND status='offered'`, the same predicate as `lib/courses/program-visibility.ts:isProgramVisible`) — **49 courses**; (b) the latest non-retired `course_capture_snapshots` row per course, with its `profile.competencies` (statement, type, K/U/D depth, rationale) and `profile.course_emphasis` — **18 of the 49 have one**; (c) active (`retired_at IS NULL`) `course_materials` file names per course, used only as a weak hint (a filename, not content).
+
+**Captured vs. not-yet-captured.** 18 courses have AI-scored K/U/D evidence from a real capture snapshot — **captured (evidence exists)**, marked below. The other 31 have only catalog text (title, description, learning objectives) — **not yet captured (catalog text only)**, marked below; their band is an *inference* from course level and catalog wording, not a scored result, and is flagged as such. Nothing below invents course content beyond what the catalog record or capture snapshot actually says; where a reason leans on a title alone (thin or empty catalog record), that's called out explicitly.
+
+**Bands**, mapped loosely from the KUD+ depth scale (`lib/ai/prompts/shared/depth-scale.md`): **Exposure** ≈ D1–2 (performs with direction/reference), **Working** ≈ D3 (performs independently in familiar conditions), **High** ≈ D4–5 (adapts to new conditions / fluent). For captured courses the band is read off the actual scored depth on the cited competency; for catalog-only courses it's a plausible guess, not a claim.
+
+This covers the 9 target-5 sub-competencies plus the new/broadened ones named in the task: target 1's `project-management` (new) and broadened `workflow-design` / `cost-management` / `team-coordination`; target 2's broadened `proposal-development` / `gc-production-literacy` and narrowed `project-oversight`; and target 4's broadened `ai-tool-direction`. 17 competencies in all.
+
+### 13.1 Target 5 — Creative Technology & Systems
+
+**1. `brand-system-templating`**
+
+| Course | Status | Band | Reason |
+|---|---|---|---|
+| GC 3620 Brand Design & Creative Direction | captured | Working–High | Scored competency "designs digital advertising systems that keep a campaign visually consistent across multiple formats and sizes" (K2 U2 **D4**), 25% of course emphasis — direct template-at-scale evidence. |
+| GC 3700 Survey of Brand Communications | captured | Working | "apply distinctive brand assets, tone of voice, and emotional cues to support a brand campaign concept" (K4 U2 **D3**) — brand-rule application, not yet a reusable system. |
+| GC 1020 Intro to Digital Graphics | captured | Exposure | "develop a basic brand identity... aligning logo, menu, and business-card choices" (K3 U3 **D3**, but single-asset, intro-level) — early brand-consistency work, not a template system. |
+| GC 3780 Brand Agency Practicum | not captured | Working (inferred) | Catalog LOs name Cadency client deliverables plus Monday.com/BOX workflow; plausible that recurring-client work involves brand templating, but nothing in the catalog record says so directly — inferred from course description only. |
+
+**2. `workflow-architecture`**
+
+| Course | Status | Band | Reason |
+|---|---|---|---|
+| GC 3780 Brand Agency Practicum | not captured | Working (inferred) | Catalog LO explicitly names "status reports, conference reports, scope-of-work documents, and Monday.com / BOX workflow" — direct platform-ops language, but no capture snapshot yet to confirm depth. |
+| GC 3790 Brand Agency Leadership Practicum | not captured | Working–High (inferred) | Catalog description: returning students "operationalize AI into agency workflow" in a leadership role — plausible deeper than GC 3780, inferred from title/description only. |
+| GC 3720 Digital Content & CMS | not captured | Working (inferred) | Catalog LO "plan deployment channels and schedule content delivery for marketing" — workflow/scheduling inside a CMS; thin catalog record, inferred. |
+| GC 2400 Web Development | captured | Exposure | "use WordPress as an introductory content-management-system workflow for page building and editing" (K3 U2 **D2**) — real but shallow platform-workflow evidence. |
+
+**3. `digital-asset-management`**
+
+| Course | Status | Band | Reason |
+|---|---|---|---|
+| GC 3400 Digital Imaging | captured | Working | "manage digital image assets in Lightroom through renaming, keywording, rating, metadata use, collections, and presentation outputs" (K3 U0 **D3**) — direct metadata/taxonomy-on-a-real-library evidence, the closest thing to a DAM pattern in the captured set. |
+| GC 3780 Brand Agency Practicum | not captured | Exposure–Working (inferred) | Catalog LO "Build skills with asset management utilizing BOX" — direct DAM-platform language, inferred band (no snapshot). |
+| GC 1050 Applications of Digital Graphics | captured | Exposure | "curate and present a digital portfolio that organizes and showcases their completed design projects" (K2 U1 **D3**) — portfolio curation, a lighter DAM analog than true metadata/taxonomy work. |
+
+**4. `packaging-artwork-compliance`**
+
+| Course | Status | Band | Reason |
+|---|---|---|---|
+| GC 4440 Current Developments and Trends in GC | captured | Working–High | "design cross-cultural packaging concepts that incorporate culture-specific visual and language choices" (K3 U4 **D4**) and "use ArtPro+ setup procedures... to support packaging workflow participation" (K2 U1 **D2**) — direct packaging + prepress-software evidence, including the compliance-adjacent software (ArtPro+). |
+| GC 1050 Applications of Digital Graphics | captured | Exposure | "design and assemble introductory package graphics that include required informational content and print-ready layout conventions" (K3 U2 **D3**) — early packaging-compliance evidence; matches §2's call for early Do-evidence, not only capstone. |
+| GC 4060 Package & Specialty Printing | not captured | High (inferred) | Catalog LOs are explicitly about folding-carton/corrugated structural design, dieline design, and print-quality analysis — the strongest textual match in the whole catalog; senior-level, inferred band since not yet captured. |
+| GC 3020 Package Printing Fundamentals | not captured | Exposure–Working (title only) | No description or learning objectives on file — the course has only its title and one syllabus filename. Flagged as a **title-only inference**, not grounded in any catalog text. |
+| PKSC 1020 Intro to Packaging Science | not captured | Exposure (title/note only) | Catalog note is one sentence ("scaffolds production literacy that upper-division GC courses expect"), no learning objectives. Title/note-only inference. |
+
+**5. `systems-automation-integration`** — see §13.5, flagged as a curriculum gap.
+
+| Course | Status | Band | Reason |
+|---|---|---|---|
+| GC 2400 Web Development | captured | Exposure–Working | "use AI as a coding assistant by prompting, evaluating, revising, and improving generated HTML/CSS against a wireframe" (K3 U3 **D3**) — closest existing evidence of AI-assisted build work, but this is one person coding one page, not a scripted handoff between two systems. |
+| GC 3720 Digital Content & CMS | not captured | Exposure (inferred, weak) | Catalog LO "plan deployment channels and schedule content delivery" gestures at pipeline thinking but says nothing about scripting, APIs, or low-code tools. Weak, inferred. |
+
+**6. `color-management`**
+
+| Course | Status | Band | Reason |
+|---|---|---|---|
+| GC 3460 Ink and Substrates | captured | High | This course *is* color management: "create and apply ICC-based color-management workflows... manage RGB-to-CMYK reproduction" (K4 U2 D1), "measure printed color and material samples with spectrophotometers... Lab data" (K4 U2 **D3**), "calculate... Delta E formulas and tolerances" (K4 U3 **D3**), capstone "analyze brand-color reproduction across inks, substrates, and output systems" (K4 U4 **D4**). Materials include "Color Management - Profiling.docx" and "Color Profiles in Photoshop.pdf". Strongest match in the whole dataset for any competency. |
+| GC 4070 Advanced Flexography | not captured | High (inferred) | Catalog LO: "Apply advanced color management principles using GMG OpenColor to create accurate ICC profiles and proofs" — direct, senior/advanced course, inferred band. |
+| GC 4060 Package & Specialty Printing | not captured | Working (inferred) | Catalog LO on "additive and subtractive color and color correction for both prepress and pressroom operations." |
+| GC 4400 Commercial Printing | not captured | Working (inferred) | Catalog LO "Configure color for commercial print design to ensure color consistency in a print production workflow." |
+
+**7. `quality-frameworks`**
+
+| Course | Status | Band | Reason |
+|---|---|---|---|
+| GC 3460 Ink and Substrates | captured | Working–High | "produce and evaluate proofs through visual comparison and standards-based control-wedge analysis against press output" (K4 U3 **D4**) — print-quality governance, strong fit for the print-quality third of this competency. |
+| GC 1040 Screen Printing & Flexography | captured | Working | "evaluate print quality and troubleshoot registration, impression, and process defects during production" (K4 U2 **D3**). |
+| GC 4440 Current Developments and Trends in GC | captured | Exposure (partial) | "use AI-assisted workflows to generate and refine design concepts from research-based prompts" (K1 U2 **D4**) — touches AI-output evaluation but isn't a formal brand/legal/print-quality check; weak on the governance half specifically, flagged as partial. |
+| GC 4060 / GC 4070 (Package & Specialty Printing / Advanced Flexography) | not captured | Working–High (inferred) | Catalog print-quality-analysis LOs in both (print quality analysis; bump/press curve optimization and QC checkpoints). No brand/legal-check language in either — covers only the print-quality third. |
+
+**8. `ai-tool-evaluation`** — the full benchmark→adopt/drop cycle is a curriculum gap; see §13.5.
+
+| Course | Status | Band | Reason |
+|---|---|---|---|
+| GC 3780 Brand Agency Practicum | not captured | Exposure–Working (inferred) | Catalog LO "Build skills with AI to ensure thoughtful and responsible inclusion of the technology" is the closest catalog language to "evaluating AI for adoption" anywhere in the catalog — but there's no benchmarking/test-set language, inferred only. |
+| GC 3790 Brand Agency Leadership Practicum | not captured | Working (inferred) | Catalog description: "operationalizing AI into agency workflow" at a leadership tier — closer to "implement an AI step and decide" than GC 3780, still inferred. |
+| GC 2400 Web Development | captured | Exposure | The AI-coding-assistant competency (K3 U3 **D3**) has students evaluate/revise AI output, but at the level of one task, not a benchmark-against-current-process exercise. |
+
+**9. `domain-grounding`**
+
+| Course | Status | Band | Reason |
+|---|---|---|---|
+| GC 3460 Ink and Substrates | captured | High | Deep ink/substrate/color domain content throughout; capstone technical report synthesizes it. |
+| GC 1040 Screen Printing & Flexography | captured | Working–High | Production-process domain fluency — most scored competencies sit at K4. |
+| GC 4060 / GC 4070 / GC 4400 / GC 2070 (Package & Specialty Printing / Advanced Flexography / Commercial Printing / GC II) | not captured | High (senior courses) – Working (GC 2070, mid-level) (inferred) | Catalog LOs show deep production-domain coverage across all four; inferred bands by course level. |
+| GC 3700 / GC 3620 (Survey of Brand Communications / Brand Design & Creative Direction) | captured | Working | For the brand half of "domain-grounding" (vs. the production half above) — these anchor brand-standards knowledge with real scored evidence. |
+
+### 13.2 Target 1 — Production & Operations
+
+**10. `project-management`** *(new)*
+
+| Course | Status | Band | Reason |
+|---|---|---|---|
+| GC 4480 Plan & Cont Printing Functions | not captured | High (inferred) | Catalog description is explicitly a capstone production-management course: "Systems for setting printing production standards, estimating, scheduling, job planning" — strongest catalog fit for the full project life cycle. |
+| GC 4990ta Creative Inquiry: TAGA Student Journal | not captured | Working (inferred) | Multi-semester, real fixed-deadline deliverable; catalog LOs include weekly individual status reports — project-cycle discipline, though framed as a Creative Inquiry, not formal PM training. |
+| GC 3760 Capstone \| Brand Communications | not captured | Working (inferred) | Explicit catalog LO: "Demonstrate creative and project management approaches for effective team and group management." |
+| GC 3400 Digital Imaging | captured | Exposure (materials hint only) | Course materials include a "Production Gantt Chart Template," but none of the *scored* competency statements in the snapshot name scheduling/PM explicitly — this is a materials-filename hint, not evidence from the profile. Flagged accordingly. |
+
+**11. `workflow-design`** *(broadened: + process engineering)*
+
+| Course | Status | Band | Reason |
+|---|---|---|---|
+| GC 1040 Screen Printing & Flexography | captured | Working–High | "operate screen-printing and flexographic workflows from file preparation through physical press output" (K4 U2 **D3**) and "use press-trial and optimization findings to select tint values and production settings" (K3 U2 **D2**) — workflow plus a light process-tuning step. |
+| GC 4060 / GC 4070 / GC 4400 (Package & Specialty Printing / Advanced Flexography / Commercial Printing) | not captured | High (inferred) | Catalog LOs on workflow design, prepress automation, and bump/press-curve optimization at senior level — the process-engineering half of this broadened competency lives here if anywhere. |
+| GC 2070 Graphic Communications II | not captured | Working (inferred) | Catalog LO: "Establish effective workflows for completing projects and assignments." |
+
+**12. `cost-management`** *(broadened: + equipment justification)* — the equipment-justification half is a curriculum gap; see §13.5.
+
+| Course | Status | Band | Reason |
+|---|---|---|---|
+| GC 4480 Plan & Cont Printing Functions | not captured | High (inferred) | Catalog LO: "Plan and price out the manufacturing methods for a series of products given the job requirements" — the closest catalog fit to production cost estimating. Still no capital-equipment/payback language. |
+
+Note: GC 1010, GC 3800, and GC 4800 all have a scored competency about students "calculat[ing] personal living costs and salary requirements using a budgeting spreadsheet" (K2–3, D2–3). That's personal household budgeting, a different skill from production cost estimation or equipment ROI — it's **not listed as a candidate** here to avoid miscounting it as production-cost evidence.
+
+**13. `team-coordination`** *(broadened: + performance management + people mgmt/HR)* — the HR half is a curriculum gap; see §13.5.
+
+| Course | Status | Band | Reason |
+|---|---|---|---|
+| GC 3790 Brand Agency Leadership Practicum | not captured | High (inferred) | Catalog description: "mentor and lead newer Cadency students," "leadership development, multi-disciplinary team management" — closest fit to people-leadership in the whole catalog, though still short of a formal HR task (hiring, onboarding, documented performance review). |
+| GC 3760 Capstone \| Brand Communications | not captured | Working (inferred) | Catalog LO: "effective group collaboration, responsiveness, availability as a team member, and collegial behavior." |
+| GC 3400 Digital Imaging | captured | Working–High | Scored foundational competency "Collaboration" at **D4** — real evidence of team functioning under pressure (multicam shoots), though it's peer collaboration, not people-management/HR. |
+
+### 13.3 Target 2 — Sales Solutions & Account Management
+
+**14. `proposal-development`** *(broadened: + ROI/TCO case)*
+
+| Course | Status | Band | Reason |
+|---|---|---|---|
+| GC 3740 Brand Communications Strategy | captured | Working–High | "build an evidence-based brand strategy recommendation that identifies what a brand should do next and how to activate it" (K4 U3 **D4**) — strong proposal-writing evidence; no cost/ROI quantification in any scored competency. |
+| MKT 3310 Marketing Metrics & Analytics | captured | Working–High | "synthesize multiple metrics into evidence-based marketing recommendations in a dashboard format" (K3 U3 **D3**) — the closest fit to the quantified-ROI/business-case half of this competency, though framed as marketing metrics, not a vendor-side sales proposal. |
+| GC 3710 Brand Creation & Communication | captured | Working | "develop a product innovation brief grounded in consumer need, market white space, competitor analysis, and launch timing" (K4 U2 **D4**) and "present personal and team pitch work" — proposal/pitch skills without ROI quantification. |
+
+Finding: the broadened competency's two halves — proposal narrative and quantified ROI/TCO case — currently live in two separate, unconnected courses (GC 3740 for the former, MKT 3310 for the latter). No single course currently evidences both together.
+
+**15. `gc-production-literacy`** *(broadened: + equipment/technology literacy for vendor-side credibility)*
+
+| Course | Status | Band | Reason |
+|---|---|---|---|
+| GC 3460 Ink and Substrates | captured | High | Deep substrate/ink/color/equipment-adjacent domain knowledge — same evidence as target 5's `domain-grounding` (#9), read here for the sales-credibility angle. |
+| GC 1040 Screen Printing & Flexography | captured | Working | Production-process fluency, same evidence as #9. |
+| GC 4060 / GC 4070 / GC 4400 | not captured | High (inferred) | Senior production courses; catalog LOs as in #9/#11. |
+
+**16. `project-oversight`** *(narrowed: client-facing coordination)*
+
+| Course | Status | Band | Reason |
+|---|---|---|---|
+| GC 2400 Web Development | captured | Working | "translate client goals, audience, and content needs into a custom homepage strategy and site plan" (K3 U3 **D3**); materials include an actual "Client Meeting 1 worksheet" — direct client-coordination evidence, including a real artifact of a client touchpoint. |
+| GC 3780 Brand Agency Practicum | not captured | Working (inferred) | Explicit catalog description of client-facing coordination with external brand partners via status reports and scope-of-work documents. |
+| GC 3760 Capstone \| Brand Communications | not captured | Working (inferred) | Catalog LO: "Demonstrate competency in skills related to professional interactions with brands/clients," final client-based project. |
+| GC 3740 Brand Communications Strategy | captured | Working (partial) | Course description says the course is "applied to real-world client challenges" and "strengthens client management," but none of the *scored* competencies explicitly name a client sign-off/handoff point — flagged as description-level, not profile-scored, support. |
+
+### 13.4 Target 4 — Purposeful Design & Creative Generalist
+
+**17. `ai-tool-direction`** *(broadened: + personal tool-building)* — the tool-building half is a curriculum gap; see §13.5.
+
+| Course | Status | Band | Reason |
+|---|---|---|---|
+| GC 2400 Web Development | captured | Working | "use AI as a coding assistant by prompting, evaluating, revising, and improving generated HTML/CSS against a wireframe" (K3 U3 **D3**) — the strongest existing match for AI-tool direction in the whole dataset. |
+| GC 4440 Current Developments and Trends in GC | captured | Exposure–Working | "use AI-assisted workflows to generate and refine design concepts from research-based prompts" (K1 U2 **D4**). |
+| GC 3700 / GC 3710 (Survey of Brand Communications / Brand Creation & Communication) | captured | Exposure | "use AI as a support tool for persona research and concept representation" / "...to build personas, surface consumer needs, refine strategy prompts" (both K2 U1 **D2**) — shallow, prompt-support only. |
+| GC 3780 / GC 3790 (Brand Agency Practicum / Leadership Practicum) | not captured | Working (inferred) | Catalog language "Build skills with AI to ensure thoughtful and responsible inclusion of the technology" / "operationalizing AI into agency workflow." |
+
+### 13.5 Curriculum gaps — competencies (or competency halves) with NO plausible course
+
+These are findings, not failures — the owner asked for exactly this signal. In each case either no course in the 49-course catalog touches the skill at all, or the only candidates are weak/tangential and explicitly flagged as such above:
+
+1. **`systems-automation-integration` (target 5)** — no course teaches scripting an API integration, a low-code automation, or a cross-system handoff (including a generative-AI step). The only adjacent evidence (GC 2400's AI-coding-assistant competency) is one person building one page, not an integration between two systems.
+2. **`ai-tool-evaluation`'s full benchmark→adopt/drop cycle (target 5)** — no course evidences building a test set, scoring an AI tool against it, and writing an adopt/adjust/drop recommendation. Every existing AI-evidence row in the catalog is "use AI as a support tool" at K2/D2 or catalog language about "responsible inclusion" — well below the implementation-and-benchmarking depth the broadened competency now requires.
+3. **Equipment-justification half of `cost-management` (target 1)** — no course mentions a capital-equipment business case (purchase cost, throughput/quality gain, payback period). The per-job cost-estimating half is covered (GC 4480); the equipment half has nothing.
+4. **HR half of `team-coordination` (target 1)** — no course covers hiring, onboarding, or documented performance/HR policy. Team coordination and peer leadership are covered (GC 3790, GC 3760, GC 3400); the HR-specific tasks are not.
+5. **Personal tool-building half of `ai-tool-direction` (target 4)** — no course evidences a student scripting or assembling a small personal AI automation (a prompt chain, a lightweight tool) for their own workflow. All existing AI evidence is prompt-direction *for content*, not tool assembly.
+
+A sixth, softer finding: `proposal-development`'s ROI/TCO half (target 2, §13.3 #14) has a course (MKT 3310) but it's disconnected from the course that teaches proposal narrative (GC 3740) — not a zero-course gap, but no course currently integrates both halves.
+
+### 13.6 Totals
+
+- **69** candidate course × competency pairs proposed above, across the 17 new/broadened/narrowed competencies.
+- Most-frequently-appearing candidate courses across all 17 competencies: **GC 3780 Brand Agency Practicum** and **GC 4060 Package & Specialty Printing** (6 competencies each — both not-yet-captured, catalog-only), then **GC 2400 Web Development** and **GC 4070 Advanced Flexography** (5 each), then a four-way tie at 4: **GC 3790 Brand Agency Leadership Practicum**, **GC 3460 Ink and Substrates**, **GC 4400 Commercial Printing**, **GC 1040 Screen Printing & Flexography**.
+- Of the 69 pairs, roughly a third fall on courses that are **not yet captured** at all (GC 3780, GC 3790, GC 4060, GC 4070, GC 4400, GC 4480, GC 3760, GC 2070, GC 4990ta, GC 3020, PKSC 1020, GC 3720) — meaning a capture pass on those courses would need to happen before (or alongside) any target-5/1/2/4 re-score that wants to claim their evidence, not just a coverage-row re-score against existing snapshots.
+- This list does not resolve §11 Q3 by itself — it's the candidate input the owner asked for. The owner should correct it (strike wrong calls, re-band, add anything missed) before it's used to scope the actual AI re-score run.
