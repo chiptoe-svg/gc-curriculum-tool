@@ -123,11 +123,32 @@ export async function updateExtractionResult(input: UpdateExtractionInput): Prom
   let stored: { extractedText: string; redactions: MaterialRedactions } | undefined;
   if (input.extractedText !== undefined) {
     const [row] = await db
-      .select({ fileName: courseMaterials.fileName, isSyllabus: courseMaterials.isSyllabus })
+      .select({
+        fileName: courseMaterials.fileName,
+        isSyllabus: courseMaterials.isSyllabus,
+        extractedText: courseMaterials.extractedText,
+        redactions: courseMaterials.redactions,
+      })
       .from(courseMaterials)
       .where(eq(courseMaterials.id, input.id))
       .limit(1);
     if (!row) throw new Error(`updateExtractionResult: material ${input.id} not found`);
+    // Already-scrubbed text: only the scrubber writes non-null redactions (this
+    // function is the single extracted_text writer), so a stored text with a
+    // successful redactions record IS the scrubber's output. Re-scrubbing it
+    // (re-index, backfill re-run) would put good text through the AI name pass
+    // again, where a provider blip or guard reject would clear it. Store as is.
+    if (row.redactions !== null && row.redactions.failedReason === null && row.extractedText === input.extractedText) {
+      await db
+        .update(courseMaterials)
+        .set({
+          extractionStatus: input.extractionStatus,
+          ...(input.extractionMethod !== undefined && { extractionMethod: input.extractionMethod }),
+          ...(input.pageCount !== undefined && { pageCount: input.pageCount }),
+        })
+        .where(eq(courseMaterials.id, input.id));
+      return { outcome: 'stored', extractedText: row.extractedText };
+    }
     try {
       const scrubbed = await scrubForRecord(input.extractedText, {
         fileName: row.fileName,
