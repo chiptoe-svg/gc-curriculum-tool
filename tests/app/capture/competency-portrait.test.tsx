@@ -20,7 +20,9 @@ describe('CompetencyPortrait — compact state', () => {
   it('shows the portrait sentence, a muted rating, and exactly two actions', () => {
     render(<CompetencyPortrait competency={comp} onChange={() => {}} onConfirm={() => {}} />);
     expect(screen.getByText(/They use the right terms\./)).toBeInTheDocument();
-    expect(screen.getByText(/K4 · U2 · D3/)).toBeInTheDocument();
+    // No score-code corner label: the labeled clauses already say each level in words.
+    expect(screen.queryByText(/K4 · U2 · D3/)).toBeNull();
+    expect(document.body.textContent).not.toMatch(/\b[KUD][0-5]\b/);
     const buttons = screen.getAllByRole('button');
     expect(buttons.map(b => b.textContent?.trim())).toEqual(['✓ Looks right', 'Needs adjusting']);
     // No evidence, rationale or per-dimension rows until asked for.
@@ -56,7 +58,7 @@ describe('CompetencyPortrait — Needs adjusting', () => {
     const u = screen.getByTestId('flag-row-u');
     expect(within(u).getByText('Reasoning: 2. Explains the rationale in own words')).toBeInTheDocument();
     expect(within(u).getByText('design memo')).toBeInTheDocument();
-    expect(within(screen.getByTestId('flag-row-k')).getByText(/Naming: 4\. Use correct terminology/)).toBeInTheDocument();
+    expect(within(screen.getByTestId('flag-row-k')).getByText(/Knowing: 4\. Use correct terminology/)).toBeInTheDocument();
     expect(within(screen.getByTestId('flag-row-d')).getByText('die-line project')).toBeInTheDocument();
     expect(screen.getByText('Rubric grades the die-line project independently.')).toBeInTheDocument();
     expect(document.querySelector('details')).toBeNull();
@@ -116,5 +118,40 @@ describe('CompetencyPortrait — Needs adjusting', () => {
     const row = screen.getByTestId('flag-row-d');
     expect(within(row).queryByRole('button', { name: /^lower/i })).toBeNull();
     expect(within(row).getByRole('button', { name: /^higher/i })).toBeInTheDocument();
+  });
+});
+
+describe('CompetencyPortrait — labeled, punctuated clauses', () => {
+  it('labels each AI sentence by dimension', () => {
+    render(<CompetencyPortrait competency={comp} onChange={() => {}} />);
+    const p = screen.getByTestId('portrait');
+    expect(p.textContent).toBe('Knowing: They use the right terms. Reasoning: They explain why. Doing: They do it on familiar cases.');
+  });
+
+  it('turns the generic fallback (no *_says) into labeled sentences, not a run-on', () => {
+    const bare = { ...comp, k_says: null, u_says: null, d_says: null } as unknown as CaptureCompetency;
+    render(<CompetencyPortrait competency={bare} onChange={() => {}} />);
+    expect(screen.getByTestId('portrait').textContent).toBe(
+      'Knowing: uses the correct terms. Reasoning: explains it in their own words. Doing: does it independently in familiar situations.',
+    );
+  });
+
+  it('adds a period to an AI sentence that lacks one', () => {
+    const c = { ...comp, k_says: 'They name the parts', u_says: 'They explain why!', d_says: 'They do it.' } as unknown as CaptureCompetency;
+    render(<CompetencyPortrait competency={c} onChange={() => {}} />);
+    expect(screen.getByTestId('portrait').textContent).toBe('Knowing: They name the parts. Reasoning: They explain why! Doing: They do it.');
+  });
+
+  it('a foundational card shows only the Doing clause', () => {
+    const f = { ...comp, type: 'foundational', k_depth: null, u_depth: null, d_says: null, d_depth: 2 } as unknown as CaptureCompetency;
+    render(<CompetencyPortrait competency={f} onChange={() => {}} />);
+    expect(screen.getByTestId('portrait').textContent).toBe('Doing: does it with a reference or checklist.');
+  });
+
+  it('shows extra controls (e.g. the dispute flag) only inside "Needs adjusting"', () => {
+    render(<CompetencyPortrait competency={comp} onChange={() => {}} adjustExtras={<button type="button">Flag this reading</button>} />);
+    expect(screen.queryByRole('button', { name: /flag this reading/i })).toBeNull();
+    expand();
+    expect(screen.getByRole('button', { name: /flag this reading/i })).toBeInTheDocument();
   });
 });

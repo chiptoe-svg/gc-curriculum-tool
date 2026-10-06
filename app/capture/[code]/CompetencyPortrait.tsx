@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { CaptureCompetency } from '@/lib/ai/capture/schema';
 import { describeDepth, type Dimension } from '@/lib/ai/capture/depth-anchors';
-import { portraitClauses, lowerAnchorOptions, evidencePromptFor, dimLabel } from '@/lib/ai/capture/portrait';
+import { portraitClauses, lowerAnchorOptions, evidencePromptFor, dimLabel, labeledClause } from '@/lib/ai/capture/portrait';
+import { plainDepthPhrase } from '@/lib/capture/plain-depth';
 
 /** The dimensions that are scored for this competency (foundational → Do only). */
 function scoredDims(c: CaptureCompetency): Dimension[] {
@@ -24,11 +25,6 @@ function withEvidence(c: CaptureCompetency, dim: Dimension, text: string): Captu
   return dim === 'k' ? { ...c, evidence_k: text } : dim === 'u' ? { ...c, evidence_u: text } : { ...c, evidence_d: text };
 }
 
-function ratingLabel(c: CaptureCompetency): string {
-  const k = c.k_depth === null ? '–' : c.k_depth;
-  const u = c.u_depth === null ? '–' : c.u_depth;
-  return c.type === 'foundational' ? `D${c.d_depth}` : `K${k} · U${u} · D${c.d_depth}`;
-}
 
 function evidenceOf(c: CaptureCompetency, dim: Dimension): string {
   return (dim === 'k' ? c.evidence_k : dim === 'u' ? c.evidence_u : c.evidence_d) ?? '';
@@ -49,12 +45,15 @@ export function CompetencyPortrait({
   onChange,
   onConfirm,
   confirmed = false,
+  adjustExtras,
 }: {
   competency: CaptureCompetency;
   onChange: (next: CaptureCompetency) => void;
   /** When provided, the card is confirmable and shows "✓ Looks right". */
   onConfirm?: () => void;
   confirmed?: boolean;
+  /** Secondary controls (e.g. the dispute flag) shown only inside "Needs adjusting". */
+  adjustExtras?: ReactNode;
 }) {
   const [adjusting, setAdjusting] = useState(false);
   const [mode, setMode] = useState<Mode>(null);
@@ -86,29 +85,32 @@ export function CompetencyPortrait({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-start justify-between gap-3">
-        <p className="text-sm leading-relaxed text-foreground">
-          {clauses.map((cl) => (
-            <span key={cl.dim} className={cl.fallback ? 'italic text-muted-foreground' : undefined}>
-              {cl.text}{' '}
+      {/* One labeled, punctuated sentence per scored dimension. The levels are
+          said in words here, so there is no separate "K4 · U2 · D3" code. */}
+      <p data-testid="portrait" className="text-sm leading-relaxed text-foreground">
+        {clauses.map((cl, i) => {
+          const { label, text } = labeledClause(cl);
+          return (
+            <span key={cl.dim}>
+              {i > 0 ? ' ' : ''}
+              <span className="font-semibold">{label}</span>{' '}
+              <span className={cl.fallback ? 'text-muted-foreground' : undefined}>{text}</span>
             </span>
-          ))}
-        </p>
-        <span className="shrink-0 font-mono text-xs text-muted-foreground">{ratingLabel(competency)}</span>
-      </div>
+          );
+        })}
+      </p>
 
       {competency.intended_target && (() => {
         const it = competency.intended_target;
         const parts: string[] = [];
-        if (it.d !== null && it.d !== undefined) parts.push(`D${it.d}`);
-        if (it.k !== null && it.k !== undefined && it.k !== competency.k_depth) parts.push(`K${it.k}`);
-        if (it.u !== null && it.u !== undefined && it.u !== competency.u_depth) parts.push(`U${it.u}`);
+        if (it.k !== null && it.k !== undefined && it.k !== competency.k_depth) parts.push(`${dimLabel('k')}: ${plainDepthPhrase('k', it.k)}`);
+        if (it.u !== null && it.u !== undefined && it.u !== competency.u_depth) parts.push(`${dimLabel('u')}: ${plainDepthPhrase('u', it.u)}`);
+        if (it.d !== null && it.d !== undefined) parts.push(`${dimLabel('d')}: ${plainDepthPhrase('d', it.d)}`);
         if (parts.length === 0) return null;
         return (
-          <p className="text-xs text-muted-foreground">
-            <span className="font-medium text-amber-600">target</span>{' '}
-            {parts.join(' · ')}{' '}
-            <span className="opacity-70">· measured {ratingLabel(competency)}</span>
+          <p data-testid="intended-target" className="text-sm text-muted-foreground">
+            <span className="font-medium text-amber-700">The course aims for more</span>
+            {` — ${parts.join('; ')}.`}
           </p>
         );
       })()}
@@ -224,7 +226,8 @@ export function CompetencyPortrait({
             <p className="border-t pt-3 text-sm leading-snug text-muted-foreground">{competency.rationale}</p>
           )}
 
-          <div className="flex justify-end">
+          <div className="flex items-center justify-between gap-2">
+            <div>{adjustExtras}</div>
             <button
               type="button"
               onClick={toggleAdjusting}

@@ -22,7 +22,7 @@ import { MajorProjectsSection } from './MajorProjectsSection';
 import { StressTestPanel, type StressTestHandle } from './StressTestPanel';
 import { StressTestBadge } from './StressTestBadge';
 import type { StressTestResultType } from '@/lib/ai/stress-test/schema';
-import { deriveEvidenceBand, type EvidenceBand, type EvidenceClaim } from '@/lib/program/evidence-ladder';
+import { deriveEvidenceBand } from '@/lib/program/evidence-ladder';
 import { FlagDialog } from '@/components/FlagDialog';
 import { upwardBumps, assembleOverrides } from '@/lib/ai/capture/score-overrides';
 
@@ -95,53 +95,6 @@ export function SourceBadge({
       title={count > 0 ? `${count} citation${count === 1 ? '' : 's'}` : source}
       aria-label={`Evidence source: ${label}${count > 0 ? `, ${count} citation${count === 1 ? '' : 's'}` : ''}`}
       className={className}
-    >
-      {label}
-    </span>
-  );
-}
-
-/**
- * Evidence-band chip — small read-time credibility annotation derived from
- * the claim's existing source + citations fields.  Sits next to SourceBadge.
- * Never gates or changes a score; purely a transparency annotation.
- *
- * Bands:
- *   claimed           → gray  "claim"     (≈L0 — instructor testimony / no material cite)
- *   materials_supported → green "materials" (≈L1-L2 — cites a course-material chunk)
- *   artifact_verified   → teal  "artifact"  (≈L3-L4 — student-produced evidence; unreachable today)
- */
-export function EvidenceBandChip({ claim }: { claim: EvidenceClaim }) {
-  const band: EvidenceBand = deriveEvidenceBand(claim);
-
-  const palette =
-    band === 'materials_supported'
-      ? 'bg-green-100 text-green-900 border-green-300'
-      : band === 'artifact_verified'
-        ? 'bg-teal-100 text-teal-800 border-teal-400'
-        : 'bg-stone-100 text-stone-500 border-stone-300';
-
-  const label =
-    band === 'materials_supported'
-      ? 'materials'
-      : band === 'artifact_verified'
-        ? 'artifact'
-        : 'claim';
-
-  const tooltip =
-    band === 'materials_supported'
-      ? 'Cites a course-material chunk (assignment/rubric/syllabus). ≈ ladder L1–L2.'
-      : band === 'artifact_verified'
-        ? 'Cites student-produced evidence. ≈ ladder L3–L4.'
-        : 'Instructor claim — no course-material citation. ≈ ladder L0.';
-
-  return (
-    <span
-      title={tooltip}
-      tabIndex={0}
-      role="note"
-      aria-label={`Evidence band — ${tooltip}`}
-      className={`inline-flex items-center rounded border px-1.5 py-0.5 text-xs font-mono uppercase tracking-wider focus:outline-none focus:ring-1 focus:ring-ring ${palette}`}
     >
       {label}
     </span>
@@ -291,7 +244,7 @@ export function CompetencyFlagButton({
         title="Dispute this AI reading — flags persist until explicitly resolved"
         className="inline-flex items-center rounded border border-input bg-background px-1.5 py-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted"
       >
-        ⚑ flag
+        ⚑ Flag this reading
       </button>
       <FlagDialog
         open={open}
@@ -397,30 +350,12 @@ function CompetencyCard({
       }
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="flex-1 space-y-1">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span
-              className={
-                'inline-block rounded px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide '
-                + (isTechnical
-                  ? 'bg-blue-50 text-blue-700'
-                  : 'bg-amber-50 text-amber-700')
-              }
-            >
-              {competency.type}
-            </span>
-            <SourceBadge source={competency.source} citations={competency.citations} onCitationClick={onCitationClick} />
-            <EvidenceBandChip claim={{ source: competency.source, citations: competency.citations }} />
-            <CompetencyFlagButton courseCode={courseCode} slug={slug} competency={competency} />
-            {isUnverifiedHighScore && (
-              <span
-                title="High score (D/U≥3) resting on instructor claim — no course material cited. Review whether assignment/rubric evidence could be added."
-                className="inline-flex items-center gap-0.5 rounded border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-xs font-mono text-amber-700"
-              >
-                ⚠ unverified
-              </span>
-            )}
-          </div>
+        <div className="flex-1 space-y-1.5">
+          <StatusTag
+            competency={competency}
+            unverifiedHighScore={isUnverifiedHighScore}
+            onCitationClick={onCitationClick}
+          />
           <textarea
             value={competency.statement}
             onChange={e => onChange({ ...competency, statement: e.target.value })}
@@ -433,22 +368,100 @@ function CompetencyCard({
 
       {!isTechnical && (
         <p
-          className="text-xs italic leading-snug text-muted-foreground"
-          title="Foundational dispositions show up in what students do, not in what they can recall or explain, so Know and Understand are left unscored (—) rather than zero — a zero would wrongly read as 'the course tried to build this and failed.' The rationale below says why the Do score landed where it did."
+          className="text-sm leading-snug text-muted-foreground"
+          title="Foundational habits show up in what students do, not in what they can recall or explain, so Knowing and Reasoning are left unscored rather than zero — a zero would wrongly read as 'the course tried to build this and failed.'"
         >
-          Foundational disposition — scored on <span className="font-medium not-italic">Do</span> only (K/U shown as —, not zero).
+          A habit, not a body of knowledge — only Doing is scored.
         </p>
       )}
 
       {/* Evidence and rationale live inside the portrait's "Needs adjusting"
-          view (per dimension), not behind separate fold-outs. */}
+          view (per dimension), not behind separate fold-outs. The dispute flag
+          sits there too — it is a secondary action, not a status. */}
       <CompetencyPortrait
         competency={competency}
         onChange={onChange}
         onConfirm={onConfirm}
         confirmed={confirmed}
+        adjustExtras={<CompetencyFlagButton courseCode={courseCode} slug={slug} competency={competency} />}
       />
     </div>
+  );
+}
+
+/**
+ * The card's single status tag — the one thing a faculty reviewer needs from
+ * the old row of chips (type / source / evidence band / "unverified"): where
+ * this reading comes from, in plain words, with a tooltip saying what it means.
+ * Clickable through to the cited passage when there is one.
+ */
+export function statusTagFor(
+  c: Pick<CaptureCompetency, 'source' | 'citations'>,
+  unverifiedHighScore: boolean,
+): { label: string; title: string; tone: string } | null {
+  if (!c.source) return null; // pre-provenance profile: nothing truthful to say
+  if (unverifiedHighScore) {
+    return {
+      label: 'Needs evidence',
+      title: 'A high score resting on your interview answers alone — no assignment or rubric is cited yet. If one exists, mention it under Needs adjusting.',
+      tone: 'border-amber-400 bg-amber-50 text-amber-900',
+    };
+  }
+  const band = deriveEvidenceBand({ source: c.source, citations: c.citations });
+  if (band === 'artifact_verified') {
+    return { label: 'From student work', title: 'Backed by student-produced work.', tone: 'border-teal-300 bg-teal-50 text-teal-900' };
+  }
+  if (band === 'materials_supported') {
+    return {
+      label: 'From course materials',
+      title: 'Backed by a course document (assignment, rubric, or syllabus).',
+      tone: 'border-green-300 bg-green-50 text-green-900',
+    };
+  }
+  if (c.source === 'instructor') {
+    return {
+      label: 'From your interview',
+      title: 'Based on what you said in the interview; no course document is cited.',
+      tone: 'border-stone-300 bg-stone-50 text-stone-800',
+    };
+  }
+  return {
+    label: "AI's inference",
+    title: 'The AI inferred this — no assignment, rubric, or interview answer points to it directly. Check it carefully.',
+    tone: 'border-stone-300 bg-stone-50 text-stone-800',
+  };
+}
+
+function StatusTag({
+  competency,
+  unverifiedHighScore,
+  onCitationClick,
+}: {
+  competency: CaptureCompetency;
+  unverifiedHighScore: boolean;
+  onCitationClick?: (c: CaptureProfileCitationType) => void;
+}) {
+  const tag = statusTagFor(competency, unverifiedHighScore);
+  if (!tag) return null;
+  const cites = competency.citations ?? [];
+  const className = `inline-flex items-center rounded border px-2 py-0.5 text-xs font-medium ${tag.tone}`;
+  if (onCitationClick && cites.length > 0) {
+    return (
+      <button
+        type="button"
+        data-testid="status-tag"
+        title={`${tag.title} Click to see the passage.`}
+        className={className + ' hover:opacity-80'}
+        onClick={() => onCitationClick(cites[0]!)}
+      >
+        {tag.label}
+      </button>
+    );
+  }
+  return (
+    <span data-testid="status-tag" title={tag.title} className={className}>
+      {tag.label}
+    </span>
   );
 }
 
