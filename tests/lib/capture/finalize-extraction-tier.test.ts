@@ -72,7 +72,7 @@ import { scrubIdentifiers } from '@/lib/privacy/deterministic';
 
 const scrubForRecordMock = vi.fn(async (text: string, opts: { fileName: string; isSyllabus: boolean }) => ({
   text: scrubIdentifiers(text, { keepEmails: opts.isSyllabus }),
-  redactions: { 'student-name': 0, 'student-id': 0, email: 0 },
+  redactions: { 'student-name': 0, 'student-id': 0, email: 0, ssn: 0 },
 }));
 
 vi.mock('@/lib/privacy/scrub', () => ({
@@ -378,7 +378,7 @@ describe('finalizeExtraction — middle tier (slide-vision)', () => {
     chunkMaterialMock.mockReset().mockReturnValue(DEFAULT_CHUNK_RESULT);
     scrubForRecordMock.mockReset().mockImplementation(async (text: string, opts: { fileName: string; isSyllabus: boolean }) => ({
       text: scrubIdentifiers(text, { keepEmails: opts.isSyllabus }),
-      redactions: { 'student-name': 0, 'student-id': 0, email: 0 },
+      redactions: { 'student-name': 0, 'student-id': 0, email: 0, ssn: 0 },
     }));
   });
 

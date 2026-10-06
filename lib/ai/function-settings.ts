@@ -23,7 +23,6 @@ export const AI_FUNCTION_IDS = [
   'program-score-coverage',
   'decompose-prereq-gap',
   'material-digest',
-  'privacy-scrub',
   'chunk-contextualize',
   'ingestion-checkin',
   'capture-chat-agent',
@@ -101,12 +100,6 @@ export const DEFAULT_TIERS: Record<AIFunctionId, Exclude<ModelTier, 'custom'>> =
   // Loaded into the audit agent's at-rest context. Light tier is appropriate —
   // one summarization pass per material; promote if output quality is poor.
   'material-digest': 'light',
-  // Light tier (privacy-scrub spec 2026-10-05). Replaces student names with
-  // [student] in material text before it is stored and in wiki pages before
-  // they are published. Runs only when the FERPA detector flags name-shaped
-  // content (or the file is Canvas: Discussions). A token-alignment guard
-  // accepts the output only if nothing but names changed.
-  'privacy-scrub': 'light',
   // Light per-chunk position blurb generated at extraction time for every
   // detail chunk. Prepended before embedding so the vector encodes position +
   // content (Anthropic contextual-retrieval pattern). Light tier is correct —
@@ -203,7 +196,6 @@ export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
   'program-score-coverage': 'Program coverage scoring',
   'decompose-prereq-gap': 'Decompose prereq gap into competencies (copy-as-KUD)',
   'material-digest': 'Material digest (every material, audit at-rest context)',
-  'privacy-scrub': 'Privacy scrub (student names out of stored material text and wiki pages)',
   'chunk-contextualize': 'Chunk contextualizer (per-chunk position blurb)',
   'ingestion-checkin': 'Ingestion check-in (materials curation review)',
   'capture-chat-agent': 'Audit chat agent (Stage 3 — tool-using auditor)',
@@ -233,7 +225,6 @@ export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
   'program-score-coverage': 'Scoring each captured snapshot against each career target\'s sub-competencies for the program coverage matrix.',
   'decompose-prereq-gap': 'Decomposing one free-form prereq-gap finding into a structured list of competencies with K/U/D depths, for the copy-as-KUD button in the review panel.',
   'material-digest': 'Per-material structured digest, generated at extraction for every material. Loaded into the audit agent\'s at-rest context.',
-  'privacy-scrub': 'Replaces student names with [student] in material text before it is stored and in wiki pages before they are published. Runs only on files the FERPA detector flags (submitted-by, posted-by, roster or gradebook shapes) or Canvas discussions; output is rejected unless only names changed.',
   'chunk-contextualize': 'One short positional blurb per detail chunk, prepended before embedding so the embedding encodes position + content.',
   'ingestion-checkin': 'Reviews the curated materials state before audit chat begins and emits either a short heads-up panel or silence.',
   'capture-chat-agent': 'Per-turn agent loop for CourseCapture v2 audit chat; reads at-rest digests, retrieves chunks on demand, emits a structured finding + question + citations.',

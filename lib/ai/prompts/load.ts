@@ -27,7 +27,6 @@ type PromptName =
   | 'parse-profile-fields'
   | 'decompose-prereq-gap'
   | 'material-digest'
-  | 'privacy-scrub'
   | 'chunk-contextualize'
   | 'ingestion-checkin'
   | 'capture-chat-agent'

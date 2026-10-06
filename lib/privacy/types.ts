@@ -5,9 +5,10 @@
 export const STUDENT_NAME = '[student]';
 export const STUDENT_ID = '[student ID]';
 export const EMAIL = '[email]';
+export const SSN = '[SSN]';
 
 /** Keys of the redaction counts. */
-export type RedactionKind = 'student-name' | 'student-id' | 'email';
+export type RedactionKind = 'student-name' | 'student-id' | 'email' | 'ssn';
 
 /**
  * Shape of `course_materials.redactions` (migration 0052). The column is null

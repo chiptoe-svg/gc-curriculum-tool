@@ -76,7 +76,7 @@ describe('writeAndPush — privacy scrub (Layer 2)', () => {
     const actual = await vi.importActual<typeof import('@/lib/privacy/scrub')>('@/lib/privacy/scrub');
     vi.mocked(scrubForRecord).mockImplementation(async (text, opts) =>
       opts.fileName === 'courses/leaky.md'
-        ? { text, redactions: { 'student-name': 0, 'student-id': 0, email: 0 } } // a scrub that missed it
+        ? { text, redactions: { 'student-name': 0, 'student-id': 0, email: 0, ssn: 0 } } // a scrub that missed it
         : actual.scrubForRecord(text, opts));
     const p = writeAndPush({
       pages: [

@@ -50,6 +50,6 @@ describe('findResidualIdentifiers', () => {
 describe('countRedactionMarkers', () => {
   it('counts each placeholder kind in the text', () => {
     expect(countRedactionMarkers('[student] met [student]; [student ID]; [email]'))
-      .toEqual({ 'student-name': 2, 'student-id': 1, email: 1 });
+      .toEqual({ 'student-name': 2, 'student-id': 1, email: 1, ssn: 0 });
   });
 });
