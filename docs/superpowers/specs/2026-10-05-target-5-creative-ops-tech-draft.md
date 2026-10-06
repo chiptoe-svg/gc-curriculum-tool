@@ -1,6 +1,7 @@
 # Target 5 redefinition — Creative Operations & Technology
 
-> **Revision 2026-10-06 (owner):** AI must be prominent in this target, well beyond usage: implementation, benchmarking and evaluation. `ai-tool-evaluation` is kept and broadened into an eighth sub-competency, and the definition and descriptors now say so. Eight sub-competencies is one above the usual 5–7; folding colour management into packaging (open question 5) would bring it back to seven.
+> **Revision 2026-10-06 (owner):** AI must be prominent in this target, well beyond usage: implementation, benchmarking and evaluation. `ai-tool-evaluation` is kept and broadened into an eighth sub-competency, and the definition and descriptors now say so. Nine sub-competencies is above the usual 5–7; folding colour management into packaging (open question 5) would bring it to eight.
+> **Revision 2026-10-06 (owner):** `domain-grounding` is kept as its own competency: domain knowledge is why this target belongs in a GC major.
 
 **STATUS: DRAFT FOR OWNER REVIEW.** Nothing here has been applied. `lib/domain/seed-targets.ts` and the live database are unchanged. This file is read-only analysis plus a proposal.
 
@@ -90,7 +91,7 @@ These came from the ai_career session (STATE.md and evidence-file §8, commits `
 
 ---
 
-## 4. Proposed sub-competencies (8)
+## 4. Proposed sub-competencies (9)
 
 Same format as `lib/domain/seed-targets.ts`: each has `id`, `name`, `knowDescriptor`, `understandDescriptor`, `doDescriptor`.
 
@@ -104,6 +105,7 @@ Same format as `lib/domain/seed-targets.ts`: each has `id`, `name`, `knowDescrip
 | 6 | `colour-management` | Colour management |
 | 7 | `quality-frameworks` *(kept)* | AI and quality governance |
 | 8 | `ai-tool-evaluation` *(kept, broadened)* | AI implementation, benchmarking and evaluation |
+| 9 | `domain-grounding` *(kept, broadened)* | Domain grounding: creative, brand and production knowledge |
 
 **1. `brand-system-templating` — Brand system templating**
 - Know: Knows how brand and campaign rules translate into reusable templates, components, and platform settings — including generative-AI presets — that scale compliant variation.
@@ -151,6 +153,13 @@ Same format as `lib/domain/seed-targets.ts`: each has `id`, `name`, `knowDescrip
 
 ---
 
+**9. `domain-grounding` — Domain grounding: creative, brand and production knowledge** *(id kept; broadened from AI output to all systems work, owner 2026-10-06)*
+- Know: Knows enough of the creative, brand and print/production domain (substrates, colour, finishing, brand standards, how creative work is made and approved) to judge whether a workflow, template, automation or AI output is fit for purpose.
+- Understand: Understands why systems built without domain knowledge look correct but fail at the point of use, and why that knowledge is what separates this role from a general IT or automation role.
+- Do: Designs or evaluates a workflow, template system, automation or AI step and shows, with specific domain reasons, where it would succeed or fail in a real creative or production setting.
+
+---
+
 ## 5. Mapping table: old sub-competency → new
 
 | Old id | Verdict | Where it lands | Why |
@@ -160,7 +169,7 @@ Same format as `lib/domain/seed-targets.ts`: each has `id`, `name`, `knowDescrip
 | `prompt-design` | **Retired** at target 5; **not duplicated** at target 4 | Target 4's existing `ai-tool-direction` already covers prompt design/iteration/quality-eval for content-making | Per the owner's split rule, content-making with AI is target 4's territory. `ai-tool-direction` already exists there — no new id needed. |
 | `quality-frameworks` | **Kept, id unchanged** | `quality-frameworks` | Broadened from "AI output quality" to brand/legal/print-quality governance generally, with AI as one input. Descriptors change — **re-score required**. |
 | `change-management` | **Retired, no replacement** | — | Not one of the seven evidenced strands. The "monitor and maintain" and "train teams" language from the job descriptions is folded into `brand-system-templating`'s do-descriptor instead of standing alone. Flagged as an open question in §6 — the owner may want to keep this as a distinct sub-competency. |
-| `domain-grounding` | **Retired, distributed** | Folded into the K-descriptors of `colour-management`, `packaging-artwork-compliance`, and `brand-system-templating` | Matches how other targets (e.g., Production & Operations) embed domain literacy inside specific competencies rather than always having one generic "domain knowledge" slot — though Production & Operations *does* keep a standalone one, so this is a judgment call, not a hard rule. Open question in §6. |
+| `domain-grounding` | **Kept, id unchanged** | `domain-grounding` | Owner, 2026-10-06: domain knowledge is the reason this target sits in a GC major, so it stays a scored competency. Broadened from judging AI output to judging any workflow, template, automation or AI output against creative, brand and production reality. Descriptors change — **re-score required**. |
 | *(none)* | **New** | `brand-system-templating` | New evidenced strand (#1), no prior analog. |
 | *(none)* | **New** | `digital-asset-management` | New evidenced strand (#3). |
 | *(none)* | **New** | `packaging-artwork-compliance` | New evidenced strand (#4). |
@@ -187,13 +196,13 @@ Read-only counts from the live database (2026-10-05), scoped to `career_target_i
 **What that means concretely:**
 
 - **All 36 existing rows are stale** once this ships, regardless of whether their sub-competency id is kept or retired:
-  - 18 rows (`workflow-architecture`, `quality-frameworks` and `ai-tool-evaluation`, 6 each) sit under ids that are *kept* but whose descriptors changed — these need a fresh AI coverage run against the new rubric, not a mechanical carry-forward.
-  - 18 rows (`prompt-design`, `change-management`, `domain-grounding` — 6 each) sit under ids that are *retired*. They become historical-only: still valid rows (the FK and `retired` flag handle this safely, same soft-delete pattern used elsewhere in the schema), but any current coverage view or program-matrix read for target 5 needs to exclude retired sub-competencies, or those 4 retired slots will silently show stale data forever.
+  - 24 rows (`workflow-architecture`, `quality-frameworks`, `ai-tool-evaluation` and `domain-grounding`, 6 each) sit under ids that are *kept* but whose descriptors changed — these need a fresh AI coverage run against the new rubric, not a mechanical carry-forward.
+  - 12 rows (`prompt-design`, `change-management` — 6 each) sit under ids that are *retired*. They become historical-only: still valid rows (the FK and `retired` flag handle this safely, same soft-delete pattern used elsewhere in the schema), but any current coverage view or program-matrix read for target 5 needs to exclude retired sub-competencies, or those 4 retired slots will silently show stale data forever.
 - **5 new sub-competencies start at zero rows.** First-time scoring is needed for any course judged in scope, and decision 2 (§2) means that scope is **broader than the current 5 courses** — colour-management, prepress, production, and packaging courses that were never captured against this target at all are now plausibly in scope, since those are exactly where early-career Do-evidence should appear. There are 18 distinct captured courses today and 50 in the catalog; which of those are actually in scope for target 5 is an open call (§7 Q4), not something this draft can determine from the schema alone.
 - **Tables touched by applying this draft** (not done here — read-only task):
   - `career_targets`: 1 row updated (`name`, `shortDefinition`, descriptor arrays, `defensibilityNote`; `id` and `socCode` unchanged).
-  - `sub_competencies`: 3 rows updated in place (`workflow-architecture`, `quality-frameworks`, `ai-tool-evaluation`), 3 rows set `retired=true` (`prompt-design`, `change-management`, `domain-grounding`), 5 rows inserted.
-  - `snapshot_target_coverage`: 36 existing rows become stale in the sense above; none need deleting (soft-delete handles it), but a re-score pass is needed for the 3 kept ids on the 5 already-captured courses (minimum ~10–12 rows) plus first-time scoring for the 5 new ids on whichever courses end up in scope.
+  - `sub_competencies`: 4 rows updated in place (`workflow-architecture`, `quality-frameworks`, `ai-tool-evaluation`, `domain-grounding`), 2 rows set `retired=true` (`prompt-design`, `change-management`), 5 rows inserted.
+  - `snapshot_target_coverage`: 36 existing rows become stale in the sense above; none need deleting (soft-delete handles it), but a re-score pass is needed for the 4 kept ids on the 5 already-captured courses (minimum ~10–12 rows) plus first-time scoring for the 5 new ids on whichever courses end up in scope.
   - Anything downstream that reads `snapshot_target_coverage` filtered by `career_target_id = 'ai-workflow'` — the program coverage matrix and the scaffolding analysis were not inspected in this draft task (out of scope; flagging so whoever applies this checks both before/after).
 
 ---
@@ -201,8 +210,8 @@ Read-only counts from the live database (2026-10-05), scoped to `career_target_i
 ## 7. Open questions for the owner
 
 1. **`change-management` — keep, drop, or fold in?** This draft retires it with no replacement, since it isn't one of the evidence file's seven strands. But "train a small team to operate a documented workflow" does appear in the job-description paraphrase for the senior AI-integration-lead role. Keep retired, or restore as an eighth sub-competency (pushing past the 5–7 target band)?
-2. **`domain-grounding` — distribute or keep standalone?** This draft folds general domain literacy into three of the new sub-competencies' K-descriptors rather than keeping a generic slot, unlike Production & Operations (which keeps a standalone `domain-knowledge` sub-competency). Confirm that's the right call for target 5, or keep a standalone domain sub-competency and drop to 6 of the new ones to stay in band.
+2. ~~`domain-grounding` — distribute or keep standalone?~~ **Decided 2026-10-06: keep standalone** (owner: "otherwise why have it in this major").
 3. **`prompt-design` — any coverage-continuity concern?** The old target-5 `prompt-design` rows (6, across the same 5 courses) are retired with no target-5 replacement, on the theory that target 4's `ai-tool-direction` already covers this. Those 5 courses have likely never been scored against target 4 at all — worth confirming whether that gap should be closed (i.e., run those 5 courses against target 4 too) as part of applying this change, or left for a separate pass.
 4. **Which courses are in scope for first-time target-5 scoring, and at what depth?** Decision 2 (§2) means Do-evidence should appear early in the curriculum (colour management, prepress, intro production, packaging courses), not only in an advanced/capstone course. This draft doesn't have a course list — someone with curriculum knowledge needs to name candidate courses for each of the 7 sub-competencies, especially `colour-management` and `packaging-artwork-compliance`, before any AI coverage run.
 5. **Sub-competency wording review.** Confirm the 7 names and descriptors in §4 match intent — in particular whether `colour-management` should stand alone (as the evidence file's owner decision implies) or be folded into `packaging-artwork-compliance`, since colour process control is heavily packaging/print-adjacent.
-6. **id churn.** This draft proposes keeping 3 of 6 old ids, retiring 3, and adding 5 new ones (net 8). If the owner would rather preserve more continuity (e.g., rename ids in place instead of retiring + adding new), that changes which existing coverage rows can be mechanically carried forward vs. need a fresh AI run — worth deciding before anyone touches the seed file.
+6. **id churn.** This draft proposes keeping 4 of 6 old ids, retiring 2, and adding 5 new ones (net 9). If the owner would rather preserve more continuity (e.g., rename ids in place instead of retiring + adding new), that changes which existing coverage rows can be mechanically carried forward vs. need a fresh AI run — worth deciding before anyone touches the seed file.
