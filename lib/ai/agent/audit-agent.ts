@@ -34,6 +34,7 @@ import {
 } from '@/lib/db/capture-messages-queries';
 import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
 import { getCourseByCode } from '@/lib/db/courses-queries';
+import { buildCourseContextBrief, renderCourseContextBrief } from '@/lib/capture/course-context-brief';
 
 export interface AuditAgentInput {
   sessionId: string;
@@ -75,6 +76,17 @@ interface BuiltAgentCall {
   userTurnIndex: number;
 }
 
+// Interview-only (spec 2026-10-06): neighbors' expectations + projects as
+// context for better handoff questions — never evidence, never in scoring.
+async function loadBriefBlock(courseCode: string): Promise<string> {
+  try {
+    return renderCourseContextBrief(await buildCourseContextBrief(courseCode));
+  } catch (err) {
+    console.warn(`[audit-agent] course-context brief failed for ${courseCode}; continuing without it`, err);
+    return '(course-context brief unavailable this turn)';
+  }
+}
+
 export async function buildAgentCall(input: AuditAgentInput): Promise<BuiltAgentCall> {
   const { sessionId, courseCode, userMessage, auditMode, instructorName, includePriorSessions } = input;
 
@@ -102,10 +114,11 @@ export async function buildAgentCall(input: AuditAgentInput): Promise<BuiltAgent
   // existing call sites).
   const wantPriorSessions = includePriorSessions !== false;
 
-  const [course, materials, priorSessions] = await Promise.all([
+  const [course, materials, priorSessions, briefBlock] = await Promise.all([
     getCourseByCode(courseCode),
     listMaterialsByCourse(courseCode),
     wantPriorSessions ? listPriorSessionSummaries(courseCode, sessionId, 3) : Promise.resolve([]),
+    loadBriefBlock(courseCode),
   ]);
   if (!course) throw new Error(`course not found: ${courseCode}`);
 
@@ -139,7 +152,7 @@ export async function buildAgentCall(input: AuditAgentInput): Promise<BuiltAgent
   const messages: Message[] = [
     {
       role: 'user',
-      content: `# Course catalog\n\n${catalogBlock}\n\n# Material digests\n\n${digestBlock}\n\n# Prior audit sessions (most recent)\n\n${priorSessionsBlock}`,
+      content: `# Course catalog\n\n${catalogBlock}\n\n# Material digests\n\n${digestBlock}\n\n# Prior audit sessions (most recent)\n\n${priorSessionsBlock}\n\n# Neighboring courses\n\n${briefBlock}`,
     },
     ...history
       .filter(m => m.role === 'user' || m.role === 'assistant')
