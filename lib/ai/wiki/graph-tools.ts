@@ -15,6 +15,7 @@ import { z } from 'zod';
 import type { ToolDefinition } from '@/lib/ai/tool-use-types';
 import { getMatrixData, type MatrixData } from '@/lib/db/program-coverage-queries';
 import { listEdgePairs } from '@/lib/db/prerequisite-edge-queries';
+import { loadSheetPrereqPairs, mergePrereqPairs } from '@/lib/curriculum/sheet-prereq-graph';
 
 const normCode = (s: string) => s.trim().toUpperCase().replace(/\s+/g, ' ');
 
@@ -125,13 +126,13 @@ export const coverageForTargetTool: ToolDefinition = {
 export const prereqChainTool: ToolDefinition = {
   name: 'prereq_chain',
   description:
-    'For a course code (e.g. "GC 4400"), return its prerequisite chain: the courses that must come before it (direct + transitive) and the courses that list it as a prerequisite. A typed-graph query over prerequisite_edges. Use for "what does X require / what builds on X?" questions.',
+    'For a course code (e.g. "GC 4400"), return its prerequisite chain: the courses that must come before it (direct + transitive) and the courses that list it as a prerequisite. A typed-graph query over prerequisite_edges plus the course sheet\'s prerequisite lines. Use for "what does X require / what builds on X?" questions.',
   usagePolicy: 'Pass a course code. Returns the prerequisite-graph neighborhood, not narrative.',
   inputSchema: z.object({ courseCode: z.string().min(1) }),
   async execute(args) {
     const { courseCode } = args as { courseCode: string };
-    const pairs = await listEdgePairs();
-    return prereqNeighborhood(pairs, courseCode);
+    const [edgePairs, sheetPairs] = await Promise.all([listEdgePairs(), loadSheetPrereqPairs()]);
+    return prereqNeighborhood(mergePrereqPairs(edgePairs, sheetPairs), courseCode);
   },
 };
 
