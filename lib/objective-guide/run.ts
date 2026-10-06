@@ -11,6 +11,8 @@ export type GuideSkipReason =
   | 'no-assignments' | 'daily-cap' | 'superseded';
 
 export type GuideRunResult =
+  // droppedNames is the model's raw, unscrubbed output (may contain a real
+  // student name) — never log or display it directly; log only its count.
   | { status: 'written'; courseCode: string; objectives: number; droppedNames: string[]; costUsdCents: number }
   | { status: 'skipped'; courseCode: string | null; reason: GuideSkipReason };
 
@@ -59,7 +61,7 @@ export async function runObjectiveGuideForSnapshot(snapshotId: string): Promise<
     model: result.model,
   });
   if (result.droppedNames.length > 0) {
-    console.warn(`[objective-guide] ${courseCode}: dropped ${result.droppedNames.length} unmatched item(s): ${result.droppedNames.join(' | ')}`);
+    console.warn(`[objective-guide] ${courseCode}: dropped ${result.droppedNames.length} unmatched item(s)`);
   }
   return {
     status: 'written',

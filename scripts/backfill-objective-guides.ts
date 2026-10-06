@@ -41,7 +41,7 @@ async function main(): Promise<void> {
   console.log(`${dryRun ? '[dry-run] ' : ''}${codes.length} captured course(s)\n`);
   let built = 0;
   let totalCost = 0;
-  const allDropped: string[] = [];
+  let totalDropped = 0;
 
   for (const code of codes) {
     try {
@@ -67,7 +67,7 @@ async function main(): Promise<void> {
       if (r.status === 'written') {
         built++;
         totalCost += r.costUsdCents;
-        allDropped.push(...r.droppedNames.map((d) => `${code} — ${d}`));
+        totalDropped += r.droppedNames.length;
         console.log(`${code}: built — ${r.objectives} objective(s), ${r.droppedNames.length} dropped, $${(r.costUsdCents / 10_000).toFixed(3)}`);
       } else {
         console.log(`${code}: skipped — ${r.reason}`);
@@ -79,7 +79,7 @@ async function main(): Promise<void> {
 
   if (!dryRun) {
     console.log(`\nBuilt ${built} guide(s); total $${(totalCost / 10_000).toFixed(2)}.`);
-    console.log(allDropped.length === 0 ? 'No names dropped.' : `Dropped names:\n${allDropped.map((d) => `  ${d}`).join('\n')}`);
+    console.log(`dropped ${totalDropped} unmatched item(s) across all courses.`);
   }
 }
 
