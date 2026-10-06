@@ -22,7 +22,7 @@ describe('seed-targets', () => {
 
   it('CAREER_TARGETS can be used to find a target by id', () => {
     const target = CAREER_TARGETS.find(t => t.id === 'brand-strategy');
-    expect(target?.name).toBe('Brand Strategy');
+    expect(target?.name).toBe('Brand Strategy & Experience');
   });
 
   it('every sub-competency has unique id within its target', () => {
