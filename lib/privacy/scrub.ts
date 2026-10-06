@@ -66,26 +66,48 @@ async function runNamePass(text: string): Promise<string> {
   const systemPrompt = await loadPrompt('privacy-scrub');
 
   const results = await mapWithConcurrency(chunks, NAME_PASS_CONCURRENCY, async (chunk, idx) => {
-    let output: string;
+    const where = `chunk ${idx + 1}/${chunks.length}`;
+    // One retry per chunk (same pattern as chunkLlmComplete, commit edd59b6):
+    // a provider blip or a one-off guard reject would otherwise fail the whole
+    // material and store no text. Only the second failure throws.
     try {
-      output = await callPrivacyScrub(provider, systemPrompt, chunk, recordSpend);
-    } catch (err) {
-      // Never interpolate err.message here: providers sometimes echo raw
-      // model/input content in their own error text (e.g. OpenAI's "returned
-      // non-JSON content: <first 200 chars>"), and that content is material
-      // text that may contain an unredacted name. This message is stored as
-      // course_materials.redactions.failedReason and logged, so only a
-      // text-free identifier of the error is allowed through.
-      const why = err instanceof Error ? err.name : typeof err;
-      throw new ScrubError(`privacy-scrub call failed on chunk ${idx + 1}/${chunks.length} (${why})`);
+      return await scrubChunk(provider, systemPrompt, chunk, where, recordSpend);
+    } catch (first) {
+      const delayMs = Number(process.env.PRIVACY_SCRUB_RETRY_DELAY_MS ?? 60_000);
+      // `first` is a ScrubError, whose message is text-free by construction.
+      console.warn(`[privacy] ${(first as Error).message}; retrying in ${delayMs / 1000}s`);
+      await new Promise(r => setTimeout(r, delayMs));
+      return scrubChunk(provider, systemPrompt, chunk, where, recordSpend);
     }
-    const aligned = applyNameRedactions(chunk, output);
-    if (!aligned.ok) {
-      throw new ScrubError(`privacy-scrub guard rejected chunk ${idx + 1}/${chunks.length}: ${aligned.reason}`);
-    }
-    return aligned.text;
   });
   return results.join('');
+}
+
+async function scrubChunk(
+  provider: Awaited<ReturnType<typeof import('@/lib/ai/provider').getProviderForFunction>>,
+  systemPrompt: string,
+  chunk: string,
+  where: string,
+  recordSpend: typeof import('@/lib/rate-limit/daily-cap').recordSpend,
+): Promise<string> {
+  let output: string;
+  try {
+    output = await callPrivacyScrub(provider, systemPrompt, chunk, recordSpend);
+  } catch (err) {
+    // Never interpolate err.message here: providers sometimes echo raw
+    // model/input content in their own error text (e.g. OpenAI's "returned
+    // non-JSON content: <first 200 chars>"), and that content is material
+    // text that may contain an unredacted name. This message is stored as
+    // course_materials.redactions.failedReason and logged, so only a
+    // text-free identifier of the error is allowed through.
+    const why = err instanceof Error ? err.name : typeof err;
+    throw new ScrubError(`privacy-scrub call failed on ${where} (${why})`);
+  }
+  const aligned = applyNameRedactions(chunk, output);
+  if (!aligned.ok) {
+    throw new ScrubError(`privacy-scrub guard rejected ${where}: ${aligned.reason}`);
+  }
+  return aligned.text;
 }
 
 async function callPrivacyScrub(
