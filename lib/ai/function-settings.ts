@@ -131,7 +131,8 @@ export const DEFAULT_TIERS: Record<AIFunctionId, Exclude<ModelTier, 'custom'>> =
   // surface internal contradictions, and flag catalog-vs-evidence
   // claims that don't hold up. This is exactly the kind of cross-
   // referenced critical-reasoning task where heavy-tier reasoning
-  // is the value. One call per stress-test click; not auto-on-generate.
+  // is the value. Runs automatically once after each profile generation
+  // (since 2026-10-06; ~$0.11 on gpt-6.1-sol), plus on a manual Re-check.
   'capture-stress-test': 'heavy',
   // Light tier. One-shot LLM call that reads an extracted JD (Docling
   // markdown or pasted text) and emits structured fields with per-field
@@ -230,7 +231,7 @@ export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
   'capture-chat-agent': 'Per-turn agent loop for CourseCapture v2 audit chat; reads at-rest digests, retrieves chunks on demand, emits a structured finding + question + citations.',
   'wiki-update': 'Regenerates the affected wiki-layer pages (course, competencies, targets, concepts) from a new snapshot + related substrate. Returns a page map; Task A3 git-ops writes + commits.',
   'curriculum-chat': 'Faculty-facing chat over the curriculum wiki. Tool-using agent reads / lists / searches wiki pages and emits a markdown response with structured page citations. Powers Explore\'s "Ask" tab and the future standalone /ask route.',
-  'capture-stress-test': 'Adversarial review of a produced Course Outcome Profile: challenges per-finding confidence, surfaces internal contradictions, flags catalog-vs-evidence claims that don\'t hold up. Heavy reasoning tier; one call per on-demand stress-test click.',
+  'capture-stress-test': 'Adversarial review of a produced Course Outcome Profile: challenges per-finding confidence, surfaces internal contradictions, flags catalog-vs-evidence claims that don\'t hold up. Heavy reasoning tier; runs automatically once after each profile is generated (its flags drive the "Worth a look" review cards), plus on a manual Re-check.',
   'jd-extract': 'One-shot extraction of structured fields from a job description (Docling markdown or pasted text), with per-field confidence scores.',
   'position-rated-items': 'Generates 10 "experiences worth having" candidates from pages 1-4 inputs + career target sub-competencies. Single-call generator.',
   'position-interview-agent': 'Per-turn interview agent for page 6 of Position Capture; anchor-probe-confirm posture using pages 1-5 context. Emits AuditResponse-shaped output.',

@@ -1,10 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CaptureProfile, CaptureReadiness, CaptureReviewerStatus } from '@/lib/ai/capture/schema';
 import type { ReconciliationLogEntry } from '@/lib/ai/schemas';
 import { CaptureChatPanel, type ChatMessage, type SessionBriefingView } from './CaptureChatPanel';
 import { ProfileReviewPanel } from './ProfileReviewPanel';
+import { useStressTest } from './useStressTest';
 import { ReconciliationStepper } from './ReconciliationStepper';
 import { MaterialsPanel, type CaptureMaterial, type CourseCatalogView } from './MaterialsPanel';
 import { SnapshotHistoryPanel } from './SnapshotHistoryPanel';
@@ -101,6 +102,12 @@ export function CaptureClient({
     return () => clearInterval(t);
   }, [stage]);
   const [telemetry, setTelemetry] = useState<Telemetry | null>(null);
+  // Automatic stress test (2026-10-06): runs once after a profile is GENERATED
+  // and its reconciliation is persisted — never merely because a saved profile
+  // was opened (each run is a paid heavy-tier call, ~$0.11). Lives here, not in
+  // the review panel, so the result survives the panel unmounting.
+  const stressTest = useStressTest(course.code, slug);
+  const freshGeneration = useRef(false);
   const [reconciliationLog, setReconciliationLog] = useState<ReconciliationLogEntry[]>([]);
   const [materials, setMaterials] = useState<CaptureMaterial[]>(initialMaterials);
   // Extraction-health guard: surface silently-failed materials loudly (issue #4
@@ -291,6 +298,7 @@ export function CaptureClient({
       setProfile(newProfile);
       setReviewerStatus(newStatus);
       if (t) setTelemetry(t);
+      freshGeneration.current = true;
       setStage('reconcile');
       // Generation succeeded — clear the persisted transcript so the next
       // visitor starts fresh. In-memory `messages` is intentionally kept so
@@ -619,6 +627,14 @@ export function CaptureClient({
               // profile even though the reconciliation_log says otherwise.
               // handleSaveReview sets profile+reviewerStatus on success.
               await handleSaveReview(reconciled, 'edited', existingReviewerNote ?? null);
+              // The stress test reads the persisted draft, so start it only once
+              // the reconciled profile is saved (its per-card indices must match
+              // what the review panel shows). In the background — the review
+              // renders immediately.
+              if (freshGeneration.current) {
+                freshGeneration.current = false;
+                stressTest.run();
+              }
             } catch {
               // If the persist fails, still advance so the user isn't stuck.
               // The review panel's own Save path will re-attempt on the next
@@ -654,6 +670,7 @@ export function CaptureClient({
             onSnapshotCreated={handleSnapshotCreated}
             reconciliationLog={reconciliationLog}
             hasSnapshot={hasSnapshot}
+            stressTest={stressTest}
           />
         </div>
       )}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   captureProfileSchema,
   type CaptureProfile,
@@ -19,9 +19,10 @@ import { CompetencyPortrait } from './CompetencyPortrait';
 import { CourseOverview } from './CourseOverview';
 import { ClassStructureSection } from './ClassStructureSection';
 import { MajorProjectsSection } from './MajorProjectsSection';
-import { StressTestPanel, type StressTestHandle } from './StressTestPanel';
+import { StressTestPanel } from './StressTestPanel';
 import { StressTestBadge } from './StressTestBadge';
-import type { StressTestResultType } from '@/lib/ai/stress-test/schema';
+import type { StressTestState } from './useStressTest';
+import { stressTestFlags } from '@/lib/capture/stress-flags';
 import { deriveEvidenceBand } from '@/lib/program/evidence-ladder';
 import { FlagDialog } from '@/components/FlagDialog';
 import { upwardBumps, assembleOverrides } from '@/lib/ai/capture/score-overrides';
@@ -218,6 +219,13 @@ interface Props {
    * returns 200 vs 404). Gates the "↓ Markdown" OKF download link.
    */
   hasSnapshot?: boolean;
+  /**
+   * The automatic stress test (owned by CaptureClient, started right after a
+   * profile is generated). When its result arrives, its flags become the
+   * "Worth a look" cards. Absent/idle/error → the interviewer's own triage
+   * flags stand.
+   */
+  stressTest?: StressTestState;
 }
 
 /**
@@ -311,6 +319,51 @@ function CompetencyRow({
       </span>
     </button>
   );
+}
+
+/**
+ * One quiet line about the automatic stress test: running → "Checking the
+ * profile…"; failed → a note that the interviewer's own flags stand; done →
+ * how many cards it flagged. A small "Re-check" / "Run the check" link reruns
+ * it (each run is a paid heavy-tier call, so it is never automatic on load).
+ */
+function StressTestStatus({ stressTest, flaggedCount }: { stressTest?: StressTestState; flaggedCount: number }) {
+  if (!stressTest) return null;
+  const link = (label: string) => (
+    <button
+      type="button"
+      onClick={stressTest.run}
+      className="text-muted-foreground underline underline-offset-2 hover:text-foreground"
+    >
+      {label}
+    </button>
+  );
+  if (stressTest.status === 'running') {
+    return (
+      <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground">
+        <span aria-hidden className="inline-block h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+        Checking the profile… a second AI reviewer is reading it. You can start reviewing now.
+      </p>
+    );
+  }
+  if (stressTest.status === 'error') {
+    return (
+      <p role="status" className="text-sm text-amber-900">
+        The automatic check didn&apos;t finish ({stressTest.error ?? 'unknown error'}). The highlighted
+        cards use the interviewer&apos;s own signals instead. {link('Re-check')}
+      </p>
+    );
+  }
+  if (stressTest.status === 'done') {
+    return (
+      <p role="status" className="text-sm text-muted-foreground">
+        Checked by a second AI reviewer —{' '}
+        {flaggedCount === 0 ? 'nothing stood out.' : `${flaggedCount} card${flaggedCount === 1 ? '' : 's'} worth a look.`}{' '}
+        {link('Re-check')}
+      </p>
+    );
+  }
+  return <p className="text-sm text-muted-foreground">{link('Check this profile')}</p>;
 }
 
 function CompetencyCard({
@@ -826,6 +879,7 @@ export function ProfileReviewPanel({
   onSnapshotCreated,
   reconciliationLog,
   hasSnapshot,
+  stressTest,
 }: Props) {
   const [working, setWorking] = useState<CaptureProfile>(profile);
   const [reviewerNote, setReviewerNote] = useState<string>(initialReviewerNote ?? '');
@@ -838,7 +892,6 @@ export function ProfileReviewPanel({
   // land you ON the snapshot caption/note inputs rather than at y=0
   // (which is above the modal, since the modal sits mid-page).
   const snapshotPanelRef = useRef<HTMLDivElement | null>(null);
-  const stressTestRef = useRef<StressTestHandle | null>(null);
   const [auditNotesOpen, setAuditNotesOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [snapshotCaption, setSnapshotCaption] = useState('');
@@ -846,13 +899,10 @@ export function ProfileReviewPanel({
   const [snapshotting, setSnapshotting] = useState(false);
   const [snapshotMessage, setSnapshotMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
   const [drawerTarget, setDrawerTarget] = useState<CitationTarget | null>(null);
-  // Adversarial reviewer result — ephemeral. Cleared whenever the user
-  // edits the profile (mutating `working` via setWorking), so stale
-  // annotations don't linger after the underlying scores change.
-  const [stressTestResult, setStressTestResult] = useState<StressTestResultType | null>(null);
-  // Mirrors StressTestPanel's running state so the sticky-bar trigger can
-  // be disabled and labelled while a run is in progress.
-  const [stressRunning, setStressRunning] = useState(false);
+  // Automatic stress test result (advisory; never modifies the draft). Kept
+  // through edits: it describes the generated profile, and its flags — like
+  // the triage below — must not vanish mid-review.
+  const stressTestResult = stressTest?.result ?? null;
   // Quick-review triage: which "worth a look" rows the faculty has eyeballed,
   // and which "confident" rows they've expanded to full edit. Advisory only —
   // never gates save/approve.
@@ -938,7 +988,6 @@ export function ProfileReviewPanel({
     const competencies = working.competencies.slice();
     competencies[i] = next;
     setWorking({ ...working, competencies });
-    setStressTestResult(null);
   }
 
   function markReviewed(i: number) {
@@ -980,7 +1029,7 @@ export function ProfileReviewPanel({
   // row jumped sections on a Do 4→1→2 portrait correction). The list always renders in
   // course order; these frozen indices only decide which rows are highlighted +
   // expanded vs. rolled up.
-  const [{ needsReview, reasonOf }] = useState(() => {
+  const [{ needsReview, reasonOf }, setTriage] = useState(() => {
     const triaged = profile.competencies.map((c, i) => ({
       c,
       i,
@@ -995,6 +1044,29 @@ export function ProfileReviewPanel({
       reasonOf: new Map<number, string | null>(flagged.map(t => [t.i, t.reason])),
     };
   });
+  // When the automatic stress test finishes, ITS flags become the "Worth a
+  // look" set (each with the reviewer's short reason in plain words). This is
+  // a one-time swap per result, not a reshuffle on edit. Cards already
+  // confirmed keep their place so nothing moves out from under the reviewer.
+  // If the check fails or never runs, the frozen interviewer triage stands.
+  useEffect(() => {
+    if (!stressTestResult) return;
+    const flags = stressTestFlags(stressTestResult, working.competencies);
+    setTriage(prev => {
+      const nextSet = new Set<number>(flags.keys());
+      const nextReasons = new Map<number, string | null>(flags);
+      for (const i of reviewed) {
+        if (!nextSet.has(i) && prev.needsReview.has(i)) {
+          nextSet.add(i);
+          nextReasons.set(i, prev.reasonOf.get(i) ?? null);
+        }
+      }
+      return { needsReview: nextSet, reasonOf: nextReasons };
+    });
+    // Only a NEW result re-derives the set — edits and confirmations must not.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stressTestResult]);
+
   const confidentIndices = useMemo(
     () => working.competencies.map((_, i) => i).filter(i => !needsReview.has(i)),
     [working.competencies, needsReview],
@@ -1039,7 +1111,7 @@ export function ProfileReviewPanel({
     }
   }
 
-  // Inline "Save edits" rendered right under any expanded competency card once
+  // Inline "Save draft" rendered right under any expanded competency card once
   // there are unsaved edits — so correcting a score via the portrait on a
   // rolled-up "confident" (e.g. found-in-materials) row has an obvious save at
   // the point of editing, not just the global one in the sticky bar (operator:
@@ -1052,10 +1124,10 @@ export function ProfileReviewPanel({
         type="button"
         onClick={() => persist('edited')}
         disabled={saving || validationError !== null}
-        title={validationError ? `Fix validation issue first: ${validationError}` : 'Save your edits to this profile'}
+        title={validationError ? `Fix validation issue first: ${validationError}` : 'Save your changes to the draft. Nothing is recorded until you approve.'}
         className="inline-flex items-center gap-1.5 rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {saving ? 'Saving…' : '💾 Save edits'}
+        {saving ? 'Saving…' : 'Save draft'}
       </button>
     );
   }
@@ -1253,12 +1325,12 @@ export function ProfileReviewPanel({
               )}
             </div>
           </div>
+          <StressTestStatus stressTest={stressTest} flaggedCount={needsReview.size} />
           {needsReview.size > 0 && (
-            <p className="text-xs text-muted-foreground">
-              Listed in course order. The highlighted rows are the ones the interviewer was less
-              sure about — they rest on your word, sit high on the scale, were inferred without a
-              direct source, or carry the most graded weight. Use Needs adjusting if a score is off,
-              then mark each ✓ Looks right. The confident rows are rolled up — click any to edit.
+            <p className="text-sm text-muted-foreground">
+              Listed in course order. The highlighted cards are worth a look — each says why. If a
+              score is off, use Needs adjusting; otherwise mark it ✓ Looks right. The rest are
+              rolled up — click any to open it.
             </p>
           )}
 
@@ -1292,9 +1364,6 @@ export function ProfileReviewPanel({
                     slug={slug}
                     onConfirm={() => markReviewed(i)}
                     confirmed={reviewed.has(i)}
-                  />
-                  <StressTestBadge
-                    annotation={stressTestResult?.per_competency.find(a => a.competency_index === i) ?? null}
                   />
                   {renderOverrideReason(i)}
                   {dirty && <div className="flex justify-end">{renderInlineSave()}</div>}
@@ -1338,15 +1407,10 @@ export function ProfileReviewPanel({
         </section>
       </div>
 
-      {/* ── 3. STRESS TEST RESULTS — trigger is in sticky bar; results render here ── */}
-      <StressTestPanel
-        ref={stressTestRef}
-        courseCode={courseCode}
-        slug={slug}
-        onResult={setStressTestResult}
-        onRunningChange={setStressRunning}
-        hideTrigger={true}
-      />
+      {/* ── 3. STRESS TEST — profile-level findings from the automatic check ── */}
+      {stressTestResult && (
+        <StressTestPanel result={stressTestResult} telemetry={stressTest?.telemetry ?? null} />
+      )}
 
       {/* ── 4. AUDIT NOTES — full-width collapsible ──
           The SourceBadge can render as a <button> (citation click-through),
@@ -1456,7 +1520,7 @@ export function ProfileReviewPanel({
                 courseCode={courseCode}
                 courseTitle={courseTitle}
                 overview={working.overview ?? null}
-                onOverviewChange={(next) => { setWorking({ ...working, overview: next }); setStressTestResult(null); }}
+                onOverviewChange={(next) => { setWorking({ ...working, overview: next }); }}
                 editable={true}
                 onCitationClick={handleCitationClick}
               />
@@ -1468,7 +1532,6 @@ export function ProfileReviewPanel({
               editable={true}
               onChange={(next) => {
                 setWorking({ ...working, class_structure: next ?? undefined });
-                setStressTestResult(null);
               }}
               onCitationClick={handleCitationClick}
             />
@@ -1479,7 +1542,6 @@ export function ProfileReviewPanel({
               editable={true}
               onChange={(next) => {
                 setWorking({ ...working, major_projects: next ?? undefined });
-                setStressTestResult(null);
               }}
               onCitationClick={handleCitationClick}
             />
@@ -1604,41 +1666,33 @@ export function ProfileReviewPanel({
       )}
 
       {/* ── 7. STICKY ACTION BAR ── */}
-      <div className="sticky bottom-0 z-10 border-t bg-card px-4 py-3 shadow-[0_-1px_4px_rgba(0,0,0,0.06)]">
+      <div data-testid="action-bar" className="sticky bottom-0 z-10 border-t bg-card px-4 py-3 shadow-[0_-1px_4px_rgba(0,0,0,0.06)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Summary chip */}
-          <span className="rounded border border-muted bg-muted/40 px-2.5 py-1 text-xs font-mono text-muted-foreground">
-            {needsReview.size} to review · {confidentIndices.length} confident
+          <span className="rounded border border-muted bg-muted/40 px-2.5 py-1 text-xs text-muted-foreground">
+            {needsReview.size} worth a look · {confidentIndices.length} rolled up
           </span>
 
-          <div className="flex items-center gap-2">
-            {/* Stress-test trigger */}
-            <button
-              type="button"
-              onClick={() => stressTestRef.current?.run()}
-              disabled={stressRunning}
-              className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {stressRunning ? 'Stress-testing…' : 'Stress-test this profile'}
-            </button>
-
-            {/* Save edits */}
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {/* Save draft — persists edits to the working draft. It does NOT
+                approve or snapshot; that is "Approve the profile". */}
             <button
               type="button"
               onClick={() => persist('edited')}
               disabled={!dirty || saving || validationError !== null}
-              title={validationError ? `Fix validation issue first: ${validationError}` : undefined}
+              title={validationError ? `Fix validation issue first: ${validationError}` : 'Save your changes to the draft. Nothing is recorded until you approve.'}
               className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {saving ? 'Saving…' : 'Save edits'}
+              {saving ? 'Saving…' : 'Save draft'}
             </button>
 
-            {/* Approve — guard prevents rubber-stamping (A15) */}
+            {/* Approve — guard prevents rubber-stamping (A15). The live count
+                says exactly what is left, instead of a hover-only hint. */}
             {!approveUnlocked && (
-              <span className="text-xs text-muted-foreground">
+              <span className="text-sm text-muted-foreground" title={approveLockTitle}>
                 {unjustifiedBumpCount > 0
                   ? `${unjustifiedBumpCount} raised score${unjustifiedBumpCount === 1 ? '' : 's'} need a reason before you can approve.`
-                  : 'Locked until reviewed — hover for what counts.'}
+                  : `${unreviewedCount} card${unreviewedCount === 1 ? '' : 's'} left to review — confirm or adjust each to approve`}
               </span>
             )}
             <button
