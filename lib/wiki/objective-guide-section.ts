@@ -7,6 +7,7 @@ import { listSyllabusMaterials } from '@/lib/db/course-materials-queries';
 import { pickSyllabus, type SyllabusPick } from '@/lib/objective-guide/inputs';
 import { renderGuideText } from '@/lib/objective-guide/render';
 import type { ObjectiveGuide } from '@/lib/objective-guide/schema';
+import { findResidualIdentifiers } from '@/lib/privacy/deterministic';
 
 export type ObjectiveGuideSection =
   | { kind: 'guide'; guide: ObjectiveGuide; text: string; capturedOn: string }
@@ -25,7 +26,18 @@ export function decideGuideSection(args: {
   hasSnapshot: boolean;
   syllabus: SyllabusPick;
 }): ObjectiveGuideSection | null {
-  const { course, stored, hasSnapshot, syllabus } = args;
+  const { course, hasSnapshot, syllabus } = args;
+  let { stored } = args;
+  // Privacy read-time defence: a guide stored before upsertObjectiveGuide
+  // scrubbed may still carry an email/CUID. Treat it as absent; log only the
+  // course code and the count, never the matched text.
+  if (stored) {
+    const residual = findResidualIdentifiers(JSON.stringify(stored.guide));
+    if (residual.length > 0) {
+      console.error(`[objective-guide] ${course.code}: stored guide hidden by the privacy check (${residual.length} pattern(s))`);
+      stored = null;
+    }
+  }
   if (stored) {
     const capturedOn = (stored.snapshotCreatedAt ?? stored.generatedAt).toISOString().slice(0, 10);
     return { kind: 'guide', guide: stored.guide, text: renderGuideText(stored.guide, course), capturedOn };

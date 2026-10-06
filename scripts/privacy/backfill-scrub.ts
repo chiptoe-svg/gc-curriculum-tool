@@ -10,7 +10,11 @@
  *      (cross-course spine) for each touched course. Program chunks are
  *      restamped with snapshotId = null, as rebuildProgramIndex does; the next
  *      snapshot restamps them.
- *   4. Scans the published wiki for email/CUID patterns; with --wiki,
+ *   4. Re-scrubs every stored objective guide (course_objective_guides: guide
+ *      strings + dropped names) through the same scrub + hard check as
+ *      upsertObjectiveGuide; a guide that fails is left as is (withheld) and
+ *      the public wiki read path hides it if it still carries an email/CUID.
+ *   5. Scans the published wiki for email/CUID patterns; with --wiki,
  *      republishes those pages through writeAndPush (which scrubs them).
  *
  * Usage:
@@ -28,7 +32,7 @@
  */
 import { and, eq, isNull } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
-import { courseMaterials } from '@/lib/db/schema';
+import { courseMaterials, courseObjectiveGuides } from '@/lib/db/schema';
 import {
   updateExtractionResult,
   updateAutoSetAside,
@@ -37,6 +41,7 @@ import {
   getMaterialById,
   type ExtractionStatus,
 } from '@/lib/db/course-materials-queries';
+import { rescrubStoredObjectiveGuide } from '@/lib/db/objective-guides-queries';
 import { scrubForRecord } from '@/lib/privacy/scrub';
 import { countRedactionMarkers } from '@/lib/privacy/deterministic';
 import { isRetiredPrivacyHold, scanWikiForIdentifiers, parseBackfillArgs } from '@/lib/privacy/backfill';
@@ -207,6 +212,23 @@ async function main(): Promise<void> {
       }
     }
   }
+
+  // Objective guides (rendered on the public wiki at request time).
+  const guideRows = await db
+    .select({ courseCode: courseObjectiveGuides.courseCode })
+    .from(courseObjectiveGuides)
+    .where(course ? eq(courseObjectiveGuides.courseCode, course) : undefined);
+  let guidesChanged = 0;
+  let guidesWithheld = 0;
+  for (const { courseCode } of guideRows.sort((a, b) => a.courseCode.localeCompare(b.courseCode))) {
+    const outcome = await rescrubStoredObjectiveGuide(courseCode, { apply: mode === 'apply' });
+    if (outcome === 'changed') guidesChanged++;
+    if (outcome === 'withheld') {
+      guidesWithheld++;
+      console.log(`  ! ${courseCode}: objective guide ${mode === 'apply' ? 'withheld (left as is)' : 'would be withheld'} by the privacy check`);
+    }
+  }
+  console.log(`\nguides: ${guideRows.length} scanned | ${guidesChanged} ${mode === 'apply' ? 'changed' : 'would change'} | ${guidesWithheld} withheld`);
 
   const root = wikiRepoPath();
   const hits = await scanWikiForIdentifiers(root);

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { decideGuideSection } from '../objective-guide-section';
 import type { StoredObjectiveGuide } from '@/lib/db/objective-guides-queries';
 
@@ -32,5 +32,20 @@ describe('decideGuideSection', () => {
   it('omits the section for uncaptured courses and for a guide not yet built', () => {
     expect(decideGuideSection({ course, stored: null, hasSnapshot: false, syllabus: { status: 'no-syllabus' } })).toBeNull();
     expect(decideGuideSection({ course, stored: null, hasSnapshot: true, syllabus: { status: 'ok', syllabi: [{ id: 's', fileName: 'f', text: 't' }] } })).toBeNull();
+  });
+});
+
+describe('decideGuideSection — privacy read-time defence', () => {
+  it('hides a stored guide that still carries an email or CUID, logging only the code and count', () => {
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const leaky = { ...stored, guide: { ...guide, intro: 'Ask jane.doe@g.clemson.edu or C12345678.' } };
+    const s = decideGuideSection({ course, stored: leaky, hasSnapshot: true, syllabus: { status: 'no-syllabus' } });
+    expect(s).toEqual({ kind: 'no-syllabus' });
+    expect(err).toHaveBeenCalledOnce();
+    const logged = err.mock.calls[0]!.map(String).join(' ');
+    expect(logged).toContain('MKT 4320');
+    expect(logged).toContain('2');
+    expect(logged).not.toMatch(/clemson|C\d{8}/);
+    err.mockRestore();
   });
 });
