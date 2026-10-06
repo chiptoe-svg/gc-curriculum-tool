@@ -542,6 +542,6 @@ describe('DoclingExtractor', () => {
         const form = (init as { body: FormData }).body;
         expect(form.get('force_ocr')).toBeNull();
       }
-    });
+    }, 30_000); // builds a large PDF in-test; slow under full-suite load
   });
 });
