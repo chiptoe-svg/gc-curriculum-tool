@@ -68,8 +68,12 @@ export function ObjectiveGuidePanel({ section }: { section: ObjectiveGuideSectio
 
           <p className="wiki-assess__note">{CLASS_LEVEL_NOTE}</p>
           <details className="wiki-assess__text">
-            <summary>Show as plain text</summary>
-            <pre>{section.text}</pre>
+            <summary>Copy as a Canvas AI prompt</summary>
+            <p className="wiki-assess__note">
+              Paste into an AI assistant connected to your Canvas course to get a class-level report on each objective.
+            </p>
+            <pre>{section.canvasPrompt}</pre>
+            <CopyGuideButton text={section.canvasPrompt} label="Copy prompt" />
           </details>
           <p className="wiki-views__note">Built from the capture of {fmt(section.capturedOn)}.</p>
         </>

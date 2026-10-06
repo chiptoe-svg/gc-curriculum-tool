@@ -7,6 +7,7 @@ const SECTION: ObjectiveGuideSection = {
   kind: 'guide',
   capturedOn: '2026-10-05',
   text: 'PLAIN TEXT VERSION',
+  canvasPrompt: 'CANVAS AI PROMPT VERSION',
   guide: {
     intro: 'Pull a few class-level numbers at the end of term.',
     objectives: [
@@ -39,6 +40,19 @@ describe('ObjectiveGuidePanel', () => {
     render(<ObjectiveGuidePanel section={SECTION} />);
     fireEvent.click(screen.getByRole('button', { name: 'Copy as text' }));
     await waitFor(() => expect(writeText).toHaveBeenCalledWith('PLAIN TEXT VERSION'));
+    expect(await screen.findByRole('button', { name: 'Copied' })).toBeTruthy();
+  });
+
+  it('shows the Canvas AI prompt disclosure with its explanation and the prompt text, and copies it', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    render(<ObjectiveGuidePanel section={SECTION} />);
+    expect(screen.getByText('Copy as a Canvas AI prompt')).toBeTruthy();
+    expect(screen.getByText(/Paste into an AI assistant connected to your Canvas course/)).toBeTruthy();
+    expect(screen.getByText('CANVAS AI PROMPT VERSION')).toBeTruthy();
+    expect(screen.queryByText('Show as plain text')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Copy prompt' }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith('CANVAS AI PROMPT VERSION'));
     expect(await screen.findByRole('button', { name: 'Copied' })).toBeTruthy();
   });
 

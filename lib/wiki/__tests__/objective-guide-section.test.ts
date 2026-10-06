@@ -16,6 +16,11 @@ describe('decideGuideSection', () => {
     expect(s && s.kind === 'guide' && s.text.startsWith('Assessing the course objectives: MKT 4320 Brand Management')).toBe(true);
   });
 
+  it('also includes the deterministic Canvas AI prompt for the stored guide', () => {
+    const s = decideGuideSection({ course, stored, hasSnapshot: true, syllabus: { status: 'no-syllabus' } });
+    expect(s && s.kind === 'guide' && s.canvasPrompt.startsWith('You have access to my Canvas course "MKT 4320 Brand Management"')).toBe(true);
+  });
+
   it('falls back to the generation date when the snapshot is gone', () => {
     const s = decideGuideSection({ course, stored: { ...stored, snapshotCreatedAt: null }, hasSnapshot: true, syllabus: { status: 'no-syllabus' } });
     expect(s).toMatchObject({ kind: 'guide', capturedOn: '2026-10-06' });
