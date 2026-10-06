@@ -180,6 +180,28 @@ describe('scrubForRecord — one retry per chunk', () => {
   });
 });
 
+describe('scrubForRecord — name-pass trigger sees the raw text', () => {
+  it('runs the name pass when the name signal exists only before the email is replaced', async () => {
+    // "Doe@clemson.edu" is one email to the deterministic pass, so after it
+    // runs the line reads "Submitted by Jane [email]" and no longer matches the
+    // submitted-by rule. The raw text does.
+    complete.mockImplementation(modelReplacing(['Jane']));
+    const r = await scrubForRecord('Submitted by Jane Doe@clemson.edu\nbody', { fileName: 'x.pdf', isSyllabus: false });
+    expect(complete).toHaveBeenCalledOnce();
+    expect(r.text).toBe('Submitted by [student] [email]\nbody');
+  });
+
+  it('still runs the name pass when the signal appears only after IDs are replaced', async () => {
+    // "[student ID]" cells give the table a name-ish column, so the scrubbed
+    // text is gradebook-shaped while the raw text is not. Keep today's trigger.
+    complete.mockImplementation(modelReplacing(['Jane Doe', 'Raj Patel']));
+    const raw = '| ID | Result |\n|---|---|\n| C12345678 | Jane Doe | 95% |\n| C12345679 | Raj Patel | 88% |';
+    const r = await scrubForRecord(raw, { fileName: 'x.pdf', isSyllabus: false });
+    expect(complete).toHaveBeenCalledOnce();
+    expect(r.text).not.toMatch(/Jane|Raj/);
+  });
+});
+
 describe('needsNamePass', () => {
   it('is true for name-shaped detector rules and for discussions', () => {
     expect(needsNamePass('Submitted by Jane Doe', 'a.pdf')).toBe(true);

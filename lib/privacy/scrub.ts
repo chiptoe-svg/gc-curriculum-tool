@@ -44,7 +44,13 @@ export function needsNamePass(text: string, fileName: string): boolean {
 
 export async function scrubForRecord(text: string, opts: ScrubOptions): Promise<ScrubResult> {
   let out = scrubIdentifiers(text, { keepEmails: opts.isSyllabus });
-  if (needsNamePass(out, opts.fileName)) out = await runNamePass(out);
+  // The trigger is checked on the RAW text and on the ID/email-scrubbed text.
+  // Raw: an email glued to a surname ("Submitted by Jane Doe@x.edu") becomes
+  // "Submitted by Jane [email]", which no longer matches submitted-by. Scrubbed:
+  // "[student ID]" cells read as a name-ish column, so a CUID + grade table is
+  // gradebook-shaped only after replacement. Either signal runs the pass; the
+  // rules themselves are unchanged (cuid/emails are not triggers).
+  if (needsNamePass(text, opts.fileName) || needsNamePass(out, opts.fileName)) out = await runNamePass(out);
   return { text: out, redactions: countRedactionMarkers(out) };
 }
 
