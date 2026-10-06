@@ -115,8 +115,11 @@ function buildStressTestUserMessage(ctx: StressTestContext): string {
  * critique + telemetry. Cost interlock + provider selection happen
  * inside getProviderForFunction (same as other capture-* functions).
  */
-export async function runStressTest(ctx: StressTestContext): Promise<StressTestRunResult> {
-  const provider = await getProviderForFunction('capture-stress-test');
+export async function runStressTest(
+  ctx: StressTestContext,
+  override?: { model?: string; reasoningEffort?: string },
+): Promise<StressTestRunResult> {
+  const provider = await getProviderForFunction('capture-stress-test', override);
   const systemPrompt = await loadPrompt('capture-stress-test');
   const userMessage = buildStressTestUserMessage(ctx);
 
