@@ -434,9 +434,9 @@ export function ProgramCoverageClient({ slug, initialData, initialFlags }: Props
                   <tr key={course.snapshotId} className="border-t">
                     <th className="text-left px-3 py-2 sticky left-0 bg-card border-r" style={{ minWidth: '120px' }}>
                       <div className="font-mono text-xs text-foreground">{formatCourseLabel(course.courseCode, course.pairedCodes)}</div>
-                      <div className="text-xs text-muted-foreground truncate" style={{ maxWidth: '140px' }} title={course.courseTitle}>{course.courseTitle}</div>
+                      <div className="text-xs text-muted-foreground truncate" style={{ maxWidth: '190px' }} title={course.courseTitle}>{course.courseTitle}</div>
                       {course.instructorName && (
-                        <div className="text-xs italic text-muted-foreground truncate" style={{ maxWidth: '140px' }} title={`Captured by ${course.instructorName}`}>by {course.instructorName}</div>
+                        <div className="text-xs italic text-muted-foreground truncate" style={{ maxWidth: '190px' }} title={`Captured by ${course.instructorName}`}>by {course.instructorName}</div>
                       )}
                     </th>
                     {visibleSubs.map(s => {
