@@ -59,6 +59,42 @@ export function effectiveReasoningEffort(model: string, explicit: string | undef
   return explicit ?? process.env.OPENAI_REASONING_EFFORT?.trim() ?? DEFAULT_REASONING_EFFORT[model];
 }
 
+/**
+ * Model + providerOptions for the Vercel AI SDK tool-using calls
+ * (completeWithTools / streamWithTools). gpt-6* models go through the
+ * stateless Responses API (see the comment at the top of completeWithTools
+ * for why); every other model keeps the existing Chat Completions path
+ * untouched.
+ */
+function toolUseModelConfig(model: string, effort: string | undefined) {
+  if (/^gpt-6/.test(model)) {
+    return {
+      model: aiOpenai.responses(model),
+      providerOptions: {
+        openai: {
+          store: false,
+          include: ['reasoning.encrypted_content' as const],
+          forceReasoning: true,
+          ...(effort ? { reasoningEffort: effort } : {}),
+        },
+      },
+    };
+  }
+  return { model: aiOpenai.chat(model), providerOptions: undefined };
+}
+
+/**
+ * Extract a readable message from a streamText `error` stream part. The
+ * error can arrive as a real Error, or as a plain object (e.g. an API error
+ * body) whose message may be nested under `.error.message`; naively
+ * String()-ing the latter renders "[object Object]".
+ */
+function describeStreamError(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  const obj = error as { error?: { message?: string }; message?: string } | null | undefined;
+  return obj?.error?.message ?? obj?.message ?? String(error);
+}
+
 export class OpenAIProvider implements AIProvider {
   readonly name = 'openai';
   readonly model: string;
@@ -245,14 +281,19 @@ export class OpenAIProvider implements AIProvider {
     // v6: Use generateText + Output.object (not generateObject) for structured output with tools.
     // Output.object accepts a Zod schema; the result is in `result.output`.
     // stopWhen: use maxToolCalls+1 steps (extra step for the structured output generation itself).
-    const { output, usage, toolCalls } = await generateText({
-      // Chat Completions, NOT the Responses API. The default aiOpenai(model) uses the
-      // Responses API, whose multi-step tool loop needs server-side item persistence —
-      // but the campus RCD proxy runs store:false AND blocks store:true (RLS policy), so
-      // it 404s "Item fc_… not found" and the interview dies. Chat Completions is
-      // stateless (full messages resent each step), so it sidesteps this entirely.
-      // (Validated 2026-07-28 against RCD; see scripts/_one-off/repro-store-bug.ts.)
-      model: aiOpenai.chat(this.model),
+    //
+    // Model selection: gpt-6* models 400 on Chat Completions when function tools are
+    // present ("use /v1/responses"), so those go through the Responses API instead, with
+    // providerOptions.openai.store:false so the SDK resends full function_call/reasoning
+    // items inline each step rather than a server-side item_reference (store defaults to
+    // true, which 404s "Item fc_… not found" through RCD's stateless proxy — vercel/ai
+    // #7543). gpt-5.x and earlier keep the existing Chat Completions path untouched, since
+    // it already works and backs the live interview. (Investigated 2026-10-06.)
+    const effort = effectiveReasoningEffort(this.model, this.reasoningEffort);
+    const { model: toolUseModel, providerOptions } = toolUseModelConfig(this.model, effort);
+    const { output, totalUsage, steps } = await generateText({
+      model: toolUseModel,
+      ...(providerOptions ? { providerOptions } : {}),
       system: args.systemPrompt,
       messages: sdkMessages,
       tools: sdkTools,
@@ -264,8 +305,10 @@ export class OpenAIProvider implements AIProvider {
 
     const value = args.validate(output);
 
-    // v6: StaticToolCall has `toolCallId`, `toolName`, and `input` (not `args`).
-    const toolCallsUsed: ToolCall[] = (toolCalls ?? []).map(tc => ({
+    // v6: StaticToolCall has `toolCallId`, `toolName`, and `input` (not `args`). `toolCalls`
+    // on the top-level result is LAST-STEP ONLY; build the full list from every step so
+    // multi-step tool loops report all the calls they made, not just the final step's.
+    const toolCallsUsed: ToolCall[] = steps.flatMap(s => s.toolCalls).map(tc => ({
       id: tc.toolCallId,
       toolName: tc.toolName,
       args: (tc as unknown as { input: Record<string, unknown> }).input ?? {},
@@ -273,9 +316,11 @@ export class OpenAIProvider implements AIProvider {
 
     // v6: LanguageModelUsage uses `inputTokens`/`outputTokens`/`inputTokenDetails.cacheReadTokens`
     // (not `promptTokens`/`completionTokens`/`cachedPromptTokens` from the plan's v4 reference).
-    const inputTokens = usage?.inputTokens ?? 0;
-    const outputTokens = usage?.outputTokens ?? 0;
-    const cachedTokens = usage?.inputTokenDetails?.cacheReadTokens ?? 0;
+    // `totalUsage` (not `usage`, which is last-step only) sums all steps, so multi-step tool
+    // loops record their full spend rather than just the final step's.
+    const inputTokens = totalUsage?.inputTokens ?? 0;
+    const outputTokens = totalUsage?.outputTokens ?? 0;
+    const cachedTokens = totalUsage?.inputTokenDetails?.cacheReadTokens ?? 0;
     const uncachedPromptTokens = Math.max(0, inputTokens - cachedTokens);
 
     // Per-token cost, mirroring complete()/streamWithTools(). The non-streaming
@@ -352,11 +397,14 @@ export class OpenAIProvider implements AIProvider {
       return { role: m.role as 'system' | 'user' | 'assistant', content: m.content ?? '' };
     });
 
+    // Model selection mirrors completeWithTools above: gpt-6* models go through the
+    // stateless Responses API (store:false) because Chat Completions rejects function
+    // tools on them; gpt-5.x and earlier keep the existing Chat Completions path.
+    const effort = effectiveReasoningEffort(this.model, this.reasoningEffort);
+    const { model: toolUseModel, providerOptions } = toolUseModelConfig(this.model, effort);
     const result = streamText({
-      // Chat Completions (stateless), NOT the Responses API — RCD blocks the Responses
-      // API's item persistence (store:false 404s, store:true is RLS-blocked), which
-      // breaks multi-step tool loops. See completeWithTools above + repro-store-bug.ts.
-      model: aiOpenai.chat(this.model),
+      model: toolUseModel,
+      ...(providerOptions ? { providerOptions } : {}),
       system: args.systemPrompt,
       messages: sdkMessages,
       tools: sdkTools,
@@ -382,26 +430,29 @@ export class OpenAIProvider implements AIProvider {
         } else if (part.type === 'error') {
           yield {
             kind: 'error',
-            message: part.error instanceof Error ? part.error.message : String(part.error),
+            message: describeStreamError(part.error),
           };
           return;
         }
       }
 
-      const usage = await result.usage;
-      const finalToolCalls = await result.toolCalls;
+      // `usage`/`toolCalls` on the result are LAST-STEP ONLY; `totalUsage` sums all
+      // steps, and the full tool-call list comes from flattening every step's calls —
+      // mirrors completeWithTools above.
+      const totalUsage = await result.totalUsage;
+      const steps = await result.steps;
       const finalOutput = await result.output;
 
       const value = args.validate(finalOutput);
-      const toolCallsUsed: ToolCall[] = (finalToolCalls ?? []).map(tc => ({
+      const toolCallsUsed: ToolCall[] = steps.flatMap(s => s.toolCalls).map(tc => ({
         id: tc.toolCallId,
         toolName: tc.toolName,
         args: (tc as unknown as { input: Record<string, unknown> }).input ?? {},
       }));
 
-      const inputTokens = usage?.inputTokens ?? 0;
-      const outputTokens = usage?.outputTokens ?? 0;
-      const cachedTokens = usage?.inputTokenDetails?.cacheReadTokens ?? 0;
+      const inputTokens = totalUsage?.inputTokens ?? 0;
+      const outputTokens = totalUsage?.outputTokens ?? 0;
+      const cachedTokens = totalUsage?.inputTokenDetails?.cacheReadTokens ?? 0;
       const uncachedPromptTokens = Math.max(0, inputTokens - cachedTokens);
       const pricing = MODEL_PRICING[this.model] ?? FALLBACK_PRICING;
       const costUsdCents =
