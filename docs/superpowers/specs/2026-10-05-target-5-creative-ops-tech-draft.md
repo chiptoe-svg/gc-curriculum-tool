@@ -1,5 +1,7 @@
 # Target 5 redefinition — Creative Operations & Technology
 
+> **Revision 2026-10-06 (owner):** AI must be prominent in this target, well beyond usage: implementation, benchmarking and evaluation. `ai-tool-evaluation` is kept and broadened into an eighth sub-competency, and the definition and descriptors now say so. Eight sub-competencies is one above the usual 5–7; folding colour management into packaging (open question 5) would bring it back to seven.
+
 **STATUS: DRAFT FOR OWNER REVIEW.** Nothing here has been applied. `lib/domain/seed-targets.ts` and the live database are unchanged. This file is read-only analysis plus a proposal.
 
 **Date:** 2026-10-05
@@ -57,26 +59,30 @@ These came from the ai_career session (STATE.md and evidence-file §8, commits `
 | `socCode` | `null` | **unchanged** — `null` (no SOC code; the evidence file flags this as the target's weakest-data point, since it blocks any BLS or OpenAI-framework rating) |
 
 **shortDefinition:**
-> The detail-oriented systems and workflow side of creative and production work — the counterpart to Creative Generalist's maker side. Builds and runs the templates, workflow platforms, asset libraries, automations, and compliance checks that creative and production work flows through. AI is one strand of this work; it does not define it.
+> The detail-oriented systems and workflow side of creative and production work — the counterpart to Creative Generalist's maker side. Builds and runs the templates, workflow platforms, asset libraries, automations, and compliance checks that creative and production work flows through. Implementing, benchmarking and evaluating AI in those systems is a central part of the role, well beyond using AI tools.
 
 **industryContexts:**
 - Creative or marketing workflow technologist configuring intake, approvals, and reporting on a platform like Workfront or Monday
 - Packaging workflow or compliance specialist managing artwork versioning and regulatory/print-quality sign-off
 - DAM specialist, creative-ops coordinator, or colour-management technician governing a brand's asset library, colour accuracy, or AI-assisted output quality
+- AI implementation lead selecting, piloting, benchmarking and rolling out AI models and tools across a creative or production operation
 
 **knowDescriptors:**
 - How workflow platforms, DAM systems, and packaging-artwork pipelines structure creative and production work
 - What brand, regulatory, and print-quality compliance standards govern packaging and brand asset output
 - How scripting, APIs, and low-code automation connect creative, workflow, and AI systems
+- How AI models and tools are selected, implemented, benchmarked and evaluated: test sets, quality and cost measures, failure modes, drift
 
 **understandDescriptors:**
 - Why systems and workflow design is what lets creative and production work scale without proportional headcount growth
 - Why someone has to stay accountable for AI-assisted and automated output against brand, legal, and quality standards
+- Why an AI tool has to be measured on the organisation's own work before it is adopted, and re-measured after, rather than trusted on vendor claims
 - Why colour, metadata, and versioning discipline compound in value as volume grows — and compound in cost when missing
 
 **doDescriptors:**
 - Configure or design a workflow, template system, or automation for a real creative or production context
 - Check a packaging, brand, or AI-assisted output against a defined compliance or quality standard and catch failure modes
+- Implement an AI step in a real workflow and benchmark it against the current process on quality, cost and turnaround, then recommend adopt, adjust or drop
 - Manage a digital asset library or a colour-management process so output stays accurate, findable, and reusable at scale
 
 **defensibilityNote:**
@@ -84,7 +90,7 @@ These came from the ai_career session (STATE.md and evidence-file §8, commits `
 
 ---
 
-## 4. Proposed sub-competencies (7)
+## 4. Proposed sub-competencies (8)
 
 Same format as `lib/domain/seed-targets.ts`: each has `id`, `name`, `knowDescriptor`, `understandDescriptor`, `doDescriptor`.
 
@@ -97,6 +103,7 @@ Same format as `lib/domain/seed-targets.ts`: each has `id`, `name`, `knowDescrip
 | 5 | `systems-automation-integration` | Systems automation and integration |
 | 6 | `colour-management` | Colour management |
 | 7 | `quality-frameworks` *(kept)* | AI and quality governance |
+| 8 | `ai-tool-evaluation` *(kept, broadened)* | AI implementation, benchmarking and evaluation |
 
 **1. `brand-system-templating` — Brand system templating**
 - Know: Knows how brand and campaign rules translate into reusable templates, components, and platform settings — including generative-AI presets — that scale compliant variation.
@@ -137,11 +144,18 @@ Same format as `lib/domain/seed-targets.ts`: each has `id`, `name`, `knowDescrip
 
 ---
 
+**8. `ai-tool-evaluation` — AI implementation, benchmarking and evaluation** *(id kept; broadened from "evaluate generative AI tools" to the full adoption cycle, owner 2026-10-06)*
+- Know: Knows how AI models and tools are chosen and deployed in creative and production operations, and the measures used to judge them: output quality against a reference set, error and failure-mode rates, cost per item, turnaround, and consistency across runs.
+- Understand: Understands why an AI tool must be benchmarked on the organisation's own work, not vendor demos; why results drift as models change; and how to weigh quality, cost, risk and staff workload in an adopt-or-drop decision.
+- Do: Implements an AI step in a real workflow, builds a small benchmark (a test set and scoring rule) comparing it with the current process, runs it, and writes a recommendation to adopt, adjust or drop, with the evidence.
+
+---
+
 ## 5. Mapping table: old sub-competency → new
 
 | Old id | Verdict | Where it lands | Why |
 |---|---|---|---|
-| `ai-tool-evaluation` | **Retired** (soft-delete, `retired=true`) | — | Narrow scope ("evaluate generative AI tools") is absorbed into `systems-automation-integration`'s broader tool/stack evaluation. No direct replacement id. |
+| `ai-tool-evaluation` | **Kept, id unchanged** | `ai-tool-evaluation` | Owner, 2026-10-06: AI must be prominent in this target, well beyond usage. Broadened from evaluating generative-AI tools to the full cycle: implementation, benchmarking, evaluation, adoption decision. Descriptors change — **re-score required**. |
 | `workflow-architecture` | **Kept, id unchanged** | `workflow-architecture` | Same conceptual slot, broadened from "sequence human and AI work" to full workflow-platform configuration and operation. Descriptors change — **re-score required**, old coverage rows don't reflect the new rubric. |
 | `prompt-design` | **Retired** at target 5; **not duplicated** at target 4 | Target 4's existing `ai-tool-direction` already covers prompt design/iteration/quality-eval for content-making | Per the owner's split rule, content-making with AI is target 4's territory. `ai-tool-direction` already exists there — no new id needed. |
 | `quality-frameworks` | **Kept, id unchanged** | `quality-frameworks` | Broadened from "AI output quality" to brand/legal/print-quality governance generally, with AI as one input. Descriptors change — **re-score required**. |
@@ -173,13 +187,13 @@ Read-only counts from the live database (2026-10-05), scoped to `career_target_i
 **What that means concretely:**
 
 - **All 36 existing rows are stale** once this ships, regardless of whether their sub-competency id is kept or retired:
-  - 12 rows (`workflow-architecture` + `quality-frameworks`, 6 each) sit under ids that are *kept* but whose descriptors changed — these need a fresh AI coverage run against the new rubric, not a mechanical carry-forward.
-  - 24 rows (`ai-tool-evaluation`, `prompt-design`, `change-management`, `domain-grounding` — 6 each) sit under ids that are *retired*. They become historical-only: still valid rows (the FK and `retired` flag handle this safely, same soft-delete pattern used elsewhere in the schema), but any current coverage view or program-matrix read for target 5 needs to exclude retired sub-competencies, or those 4 retired slots will silently show stale data forever.
+  - 18 rows (`workflow-architecture`, `quality-frameworks` and `ai-tool-evaluation`, 6 each) sit under ids that are *kept* but whose descriptors changed — these need a fresh AI coverage run against the new rubric, not a mechanical carry-forward.
+  - 18 rows (`prompt-design`, `change-management`, `domain-grounding` — 6 each) sit under ids that are *retired*. They become historical-only: still valid rows (the FK and `retired` flag handle this safely, same soft-delete pattern used elsewhere in the schema), but any current coverage view or program-matrix read for target 5 needs to exclude retired sub-competencies, or those 4 retired slots will silently show stale data forever.
 - **5 new sub-competencies start at zero rows.** First-time scoring is needed for any course judged in scope, and decision 2 (§2) means that scope is **broader than the current 5 courses** — colour-management, prepress, production, and packaging courses that were never captured against this target at all are now plausibly in scope, since those are exactly where early-career Do-evidence should appear. There are 18 distinct captured courses today and 50 in the catalog; which of those are actually in scope for target 5 is an open call (§7 Q4), not something this draft can determine from the schema alone.
 - **Tables touched by applying this draft** (not done here — read-only task):
   - `career_targets`: 1 row updated (`name`, `shortDefinition`, descriptor arrays, `defensibilityNote`; `id` and `socCode` unchanged).
-  - `sub_competencies`: 2 rows updated in place (`workflow-architecture`, `quality-frameworks`), 4 rows set `retired=true` (`ai-tool-evaluation`, `prompt-design`, `change-management`, `domain-grounding`), 5 rows inserted.
-  - `snapshot_target_coverage`: 36 existing rows become stale in the sense above; none need deleting (soft-delete handles it), but a re-score pass is needed for the 2 kept ids on the 5 already-captured courses (minimum ~10–12 rows) plus first-time scoring for the 5 new ids on whichever courses end up in scope.
+  - `sub_competencies`: 3 rows updated in place (`workflow-architecture`, `quality-frameworks`, `ai-tool-evaluation`), 3 rows set `retired=true` (`prompt-design`, `change-management`, `domain-grounding`), 5 rows inserted.
+  - `snapshot_target_coverage`: 36 existing rows become stale in the sense above; none need deleting (soft-delete handles it), but a re-score pass is needed for the 3 kept ids on the 5 already-captured courses (minimum ~10–12 rows) plus first-time scoring for the 5 new ids on whichever courses end up in scope.
   - Anything downstream that reads `snapshot_target_coverage` filtered by `career_target_id = 'ai-workflow'` — the program coverage matrix and the scaffolding analysis were not inspected in this draft task (out of scope; flagging so whoever applies this checks both before/after).
 
 ---
@@ -191,4 +205,4 @@ Read-only counts from the live database (2026-10-05), scoped to `career_target_i
 3. **`prompt-design` — any coverage-continuity concern?** The old target-5 `prompt-design` rows (6, across the same 5 courses) are retired with no target-5 replacement, on the theory that target 4's `ai-tool-direction` already covers this. Those 5 courses have likely never been scored against target 4 at all — worth confirming whether that gap should be closed (i.e., run those 5 courses against target 4 too) as part of applying this change, or left for a separate pass.
 4. **Which courses are in scope for first-time target-5 scoring, and at what depth?** Decision 2 (§2) means Do-evidence should appear early in the curriculum (colour management, prepress, intro production, packaging courses), not only in an advanced/capstone course. This draft doesn't have a course list — someone with curriculum knowledge needs to name candidate courses for each of the 7 sub-competencies, especially `colour-management` and `packaging-artwork-compliance`, before any AI coverage run.
 5. **Sub-competency wording review.** Confirm the 7 names and descriptors in §4 match intent — in particular whether `colour-management` should stand alone (as the evidence file's owner decision implies) or be folded into `packaging-artwork-compliance`, since colour process control is heavily packaging/print-adjacent.
-6. **id churn.** This draft proposes keeping 2 of 6 old ids, retiring 4, and adding 5 new ones (net 7). If the owner would rather preserve more continuity (e.g., rename ids in place instead of retiring + adding new), that changes which existing coverage rows can be mechanically carried forward vs. need a fresh AI run — worth deciding before anyone touches the seed file.
+6. **id churn.** This draft proposes keeping 3 of 6 old ids, retiring 3, and adding 5 new ones (net 8). If the owner would rather preserve more continuity (e.g., rename ids in place instead of retiring + adding new), that changes which existing coverage rows can be mechanically carried forward vs. need a fresh AI run — worth deciding before anyone touches the seed file.
