@@ -150,6 +150,26 @@ describe('finalizeExtraction (v2 pipeline)', () => {
     expect(updateFerpaRisk).toHaveBeenCalledWith(expect.objectContaining({ risk: 'low' }));
   });
 
+  it('exempts a material flagged isSyllabus from the FERPA hold even with a non-syllabus filename', async () => {
+    process.env.COURSECAPTURE_V2_INGESTION = '1';
+    vi.mocked(updateAutoSetAside).mockClear();
+    vi.mocked(updateFerpaRisk).mockClear();
+    await finalizeExtraction({
+      id: 'm-syllabus-2',
+      courseCode: 'MKT 4320',
+      // Filename gives no hint it's a syllabus — only the isSyllabus flag does.
+      fileName: 'Canvas File: course-info.pdf',
+      isSyllabus: true,
+      extractionStatus: 'ok',
+      // Instructor + TA contact block: the shape that trips the email rule / would be high FERPA risk.
+      extractedText: 'Syllabus. Instructor: jdoe@clemson.edu. TA: asmith@clemson.edu, bjones@clemson.edu. Learning objectives: ...',
+      vectorStore: createInMemoryVectorStore(),
+      courseHasLearningObjectives: true,
+    });
+    expect(updateAutoSetAside).not.toHaveBeenCalledWith(expect.objectContaining({ autoSetAside: true }));
+    expect(updateFerpaRisk).toHaveBeenCalledWith(expect.objectContaining({ risk: 'low' }));
+  });
+
   it('marks indexing_status: failed when chunk embedding fails', async () => {
     process.env.COURSECAPTURE_V2_INGESTION = '1';
     const { embedBatch } = await import('@/lib/ai/embeddings');

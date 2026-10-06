@@ -178,6 +178,7 @@ export async function processMaterial(row: CourseMaterialRow): Promise<void> {
       id: row.id,
       courseCode: row.courseCode,
       fileName: row.fileName,
+      isSyllabus: row.isSyllabus,
       extractionStatus,
       ...(extractionMethod !== undefined && { extractionMethod }),
       ...(extractedText !== undefined && { extractedText }),

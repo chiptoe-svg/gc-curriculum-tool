@@ -34,6 +34,23 @@ describe('pickSyllabus', () => {
     ]);
     expect(r).toEqual({ status: 'ok', syllabi: [{ id: 'b', fileName: 'f.pdf', text: 'OBJ' }] });
   });
+
+  it('dedupes two usable syllabi with identical extracted text, keeping the first', () => {
+    const r = pickSyllabus([
+      mat({ id: 'a', fileName: 'syllabus-v1.docx', isSyllabus: true, extractedText: 'Same text.' }),
+      mat({ id: 'b', fileName: 'syllabus-v2.docx', isSyllabus: true, extractedText: 'Same text.' }),
+    ]);
+    expect(r).toEqual({ status: 'ok', syllabi: [{ id: 'a', fileName: 'syllabus-v1.docx', text: 'Same text.' }] });
+  });
+
+  it('keeps syllabi whose text genuinely differs', () => {
+    const r = pickSyllabus([
+      mat({ id: 'a', isSyllabus: true, extractedText: 'Text one.' }),
+      mat({ id: 'b', isSyllabus: true, extractedText: 'Text two.' }),
+    ]);
+    expect(r.status).toBe('ok');
+    expect(r.status === 'ok' && r.syllabi.map((s) => s.id)).toEqual(['a', 'b']);
+  });
 });
 
 describe('usableAssignmentsText', () => {

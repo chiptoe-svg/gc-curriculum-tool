@@ -26,6 +26,9 @@ export interface FinalizeExtractionInput {
   id: string;
   courseCode: string;
   fileName: string;
+  /** The material's `is_syllabus` flag. When true, exempt from the FERPA hold
+   *  the same as a syllabus-shaped filename (syllabi are public documents). */
+  isSyllabus?: boolean;
   extractionStatus: ExtractionStatus;
   extractionMethod?: ExtractionMethod;
   extractedText?: string;
@@ -143,7 +146,10 @@ async function runV2Pipeline(input: FinalizeExtractionInput): Promise<void> {
   //    badge but is not blocked, since a single "Submitted by" name is often
   //    benign and the one-click include remains available).
   //    Syllabi are exempt: they are public documents (owner, 2026-10-05).
-  const ferpa = isSyllabusFileName(fileName)
+  //    A material explicitly flagged `is_syllabus` is exempt too, even when
+  //    its filename doesn't look like a syllabus (e.g. a Canvas File: upload
+  //    named via the Syllabus box).
+  const ferpa = (input.isSyllabus === true || isSyllabusFileName(fileName))
     ? { level: 'low' as const, matches: [] }
     : detectFerpaRisk(extractedText);
   await updateFerpaRisk({ id, risk: ferpa.level });

@@ -54,6 +54,23 @@ const evidenceKey = (e: GuideEvidence) =>
   `${normalizeName(e.assignment)}\u0000${e.rubric_row === null ? '' : normalizeName(e.rubric_row)}`;
 
 /**
+ * Local to avoid coupling check.ts to render.ts. Matches the spec's own
+ * phrasing for `gather` text ("the score distribution on the 'Strategic
+ * rationale' row of the Final Brand Playbook rubric, ...").
+ */
+function formatEvidenceForGather(e: GuideEvidence): string {
+  return e.rubric_row ? `the '${e.rubric_row}' row of the ${e.assignment} rubric` : e.assignment;
+}
+
+/** Deterministic replacement `gather` text once a dropped name must be scrubbed out of it. */
+function buildGatherFromEvidence(evidence: GuideEvidence[]): string {
+  if (evidence.length === 0) {
+    return 'Once a graded measure exists, the score distribution on it and the share of students at proficient or above.';
+  }
+  return `The score distribution on ${evidence.map(formatEvidenceForGather).join(' and ')}, and the share of students at proficient or above.`;
+}
+
+/**
  * The firm rule: the stored guide names only Canvas items that exist and only
  * objectives the syllabus states. Unmatched items are dropped (and recorded);
  * an objective left with no evidence becomes `none`; names take their Canvas
@@ -74,9 +91,15 @@ export function finalizeGuide(
     }
     const seen = new Set<string>();
     const evidence: GuideEvidence[] = [];
+    const droppedNames: string[] = [];
     for (const e of o.evidence) {
       const r = resolveEvidence(e, known);
-      if (!r.ok) { dropped.add(r.label); continue; }
+      if (!r.ok) {
+        dropped.add(r.label);
+        droppedNames.push(e.assignment);
+        if (e.rubric_row !== null) droppedNames.push(e.rubric_row);
+        continue;
+      }
       const key = evidenceKey(r.evidence);
       if (seen.has(key)) continue;
       seen.add(key);
@@ -84,12 +107,30 @@ export function finalizeGuide(
     }
     const kept = evidence.slice(0, 3);
     const measure = kept.length === 0 ? 'none' : o.measure;
+    // #2: never show evidence next to "No graded measure yet".
+    const finalEvidence = measure === 'none' ? [] : kept;
+
+    let gather = o.gather.trim();
+    let suggestion = measure === 'clear' ? null : (o.suggestion?.trim() || null);
+
+    // #1: the guide is never published with a dropped name that leaked into
+    // free-text gather/suggestion (compare substring on normalizeName-normalized text).
+    if (droppedNames.length > 0) {
+      const normDropped = droppedNames.map(normalizeName);
+      if (normDropped.some((n) => normalizeName(gather).includes(n))) {
+        gather = buildGatherFromEvidence(finalEvidence);
+      }
+      if (suggestion !== null && normDropped.some((n) => normalizeName(suggestion as string).includes(n))) {
+        suggestion = null;
+      }
+    }
+
     objectives.push({
       objective: stripLeadingMarker(o.objective),
       measure,
-      evidence: kept,
-      gather: o.gather.trim(),
-      suggestion: measure === 'clear' ? null : (o.suggestion?.trim() || null),
+      evidence: finalEvidence,
+      gather,
+      suggestion,
     });
   }
 

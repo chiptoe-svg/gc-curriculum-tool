@@ -105,4 +105,88 @@ describe('finalizeGuide', () => {
       { assignment: 'Final Brand Playbook', rubric_row: 'Strategic   Rationale' },
     ]);
   });
+
+  it('scrubs a dropped assignment/rubric name out of gather when it leaks there, and nulls a leaking suggestion', () => {
+    const draft: ModelGuide = {
+      intro: 'x',
+      objectives: [
+        {
+          objective: 'Develop a brand strategy grounded in audience research.',
+          measure: 'partial',
+          // "Brand Playbook / Strategic rationale" is not a real Canvas name — gets dropped.
+          evidence: [
+            { assignment: 'Brand Playbook', rubric_row: 'Strategic rationale' },
+            { assignment: 'Brand Audit', rubric_row: 'Research depth' },
+          ],
+          gather: 'Pull the Brand Playbook scores and the share of students at proficient or above.',
+          suggestion: 'Add a rubric row to the Brand Playbook.',
+        },
+      ],
+    };
+    const { guide, dropped } = finalizeGuide(draft, known, SYLLABUS_TEXT);
+    expect(dropped).toEqual(['assignment: Brand Playbook']);
+    const o = guide.objectives[0]!;
+    expect(o.gather.toLowerCase()).not.toContain('brand playbook');
+    expect(o.gather).toBe(
+      "The score distribution on the 'Research depth' row of the Brand Audit rubric, and the share of students at proficient or above.",
+    );
+    expect(o.suggestion).toBeNull();
+  });
+
+  it('falls back to the no-measure gather sentence when no evidence survives the drop', () => {
+    const draft: ModelGuide = {
+      intro: 'x',
+      objectives: [
+        {
+          objective: 'Develop a brand strategy grounded in audience research.',
+          measure: 'partial',
+          evidence: [{ assignment: 'Brand Playbook', rubric_row: 'Strategic rationale' }],
+          gather: 'Pull the Brand Playbook scores.',
+          suggestion: null,
+        },
+      ],
+    };
+    const { guide } = finalizeGuide(draft, known, SYLLABUS_TEXT);
+    expect(guide.objectives[0]!.gather).toBe(
+      'Once a graded measure exists, the score distribution on it and the share of students at proficient or above.',
+    );
+    expect(guide.objectives[0]!.measure).toBe('none');
+  });
+
+  it('leaves gather untouched when nothing was dropped for that objective', () => {
+    const draft: ModelGuide = {
+      intro: 'x',
+      objectives: [
+        {
+          objective: 'Develop a brand strategy grounded in audience research.',
+          measure: 'clear',
+          evidence: [{ assignment: 'Brand Audit', rubric_row: 'Research depth' }],
+          gather: 'Mentions Brand Playbook in passing but nothing was dropped here.',
+          suggestion: null,
+        },
+      ],
+    };
+    const { guide, dropped } = finalizeGuide(draft, known, SYLLABUS_TEXT);
+    expect(dropped).toEqual([]);
+    expect(guide.objectives[0]!.gather).toBe('Mentions Brand Playbook in passing but nothing was dropped here.');
+  });
+
+  it('clears evidence when the model says measure is none but evidence survived', () => {
+    const draft: ModelGuide = {
+      intro: 'x',
+      objectives: [
+        {
+          objective: 'Develop a brand strategy grounded in audience research.',
+          measure: 'none',
+          evidence: [{ assignment: 'Brand Audit', rubric_row: 'Research depth' }],
+          gather: 'g',
+          suggestion: 's',
+        },
+      ],
+    };
+    const { guide } = finalizeGuide(draft, known, SYLLABUS_TEXT);
+    expect(guide.objectives[0]!.measure).toBe('none');
+    expect(guide.objectives[0]!.evidence).toEqual([]);
+    expect(guide.checklist).toEqual([]);
+  });
 });

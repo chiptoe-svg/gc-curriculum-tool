@@ -18,6 +18,20 @@ export type SyllabusPick =
 
 const hasText = (m: GuideMaterial) => (m.extractedText ?? '').trim().length > 0;
 
+/** Drops later materials whose extracted text exactly matches an earlier one
+ *  (e.g. two identical .docx uploads of the same syllabus), keeping the first. */
+function dedupeByText(materials: GuideMaterial[]): GuideMaterial[] {
+  const seen = new Set<string>();
+  const out: GuideMaterial[] = [];
+  for (const m of materials) {
+    const text = (m.extractedText ?? '').trim();
+    if (seen.has(text)) continue;
+    seen.add(text);
+    out.push(m);
+  }
+  return out;
+}
+
 /**
  * The usable syllabus: flagged, not retired, not ignored, with text. `ignored`
  * is the app-wide "don't send to the AI" flag, so a FERPA auto-set-aside
@@ -25,7 +39,7 @@ const hasText = (m: GuideMaterial) => (m.extractedText ?? '').trim().length > 0;
  */
 export function pickSyllabus(materials: GuideMaterial[]): SyllabusPick {
   const flagged = materials.filter((m) => m.isSyllabus && !m.retiredAt);
-  const usable = flagged.filter((m) => !m.ignored && hasText(m));
+  const usable = dedupeByText(flagged.filter((m) => !m.ignored && hasText(m)));
   if (usable.length > 0) {
     return { status: 'ok', syllabi: usable.map((m) => ({ id: m.id, fileName: m.fileName, text: m.extractedText as string })) };
   }
