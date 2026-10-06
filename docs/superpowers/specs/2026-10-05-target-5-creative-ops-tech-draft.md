@@ -215,3 +215,23 @@ Read-only counts from the live database (2026-10-05), scoped to `career_target_i
 4. **Which courses are in scope for first-time target-5 scoring, and at what depth?** Decision 2 (§2) means Do-evidence should appear early in the curriculum (colour management, prepress, intro production, packaging courses), not only in an advanced/capstone course. This draft doesn't have a course list — someone with curriculum knowledge needs to name candidate courses for each of the 7 sub-competencies, especially `colour-management` and `packaging-artwork-compliance`, before any AI coverage run.
 5. **Sub-competency wording review.** Confirm the 7 names and descriptors in §4 match intent — in particular whether `colour-management` should stand alone (as the evidence file's owner decision implies) or be folded into `packaging-artwork-compliance`, since colour process control is heavily packaging/print-adjacent.
 6. **id churn.** This draft proposes keeping 4 of 6 old ids, retiring 2, and adding 5 new ones (net 9). If the owner would rather preserve more continuity (e.g., rename ids in place instead of retiring + adding new), that changes which existing coverage rows can be mechanically carried forward vs. need a fresh AI run — worth deciding before anyone touches the seed file.
+
+---
+
+## Appendix: related changes to targets 1 and 3 (owner, 2026-10-06)
+
+Decision: project management (SOC 13-1082) belongs to target 1. The owner chose to give target 1 its own project-management competency and narrow target 3's to client-facing coordination (option b), rather than moving target 3's competency.
+
+**New, target 1 (`production-operations`): `project-management` — Project management across creative and production work**
+- Know: Knows the project life cycle (scope, plan, schedule, budget, risk, change control, close-out) and the standard tools for each: work breakdown, dependencies, critical path, status reporting.
+- Understand: Understands why projects fail at scope and handoff rather than at execution, and why a plan has to be re-baselined when scope, budget or dates change rather than quietly absorbed.
+- Do: Plans and runs a real creative or production project from brief to delivery: defines scope, builds the schedule and budget, tracks risks and changes, reports status, and closes it out with a lessons-learned record.
+
+Overlap to watch: target 1 already has `timeline-management` (schedule under pressure), `cost-management` (estimating and budgets) and `team-coordination`. The new competency is the end-to-end discipline that ties them together; it should not re-score the same evidence those three already capture. If the owner prefers fewer competencies, the alternative is to broaden `timeline-management` into project management instead of adding a seventh target-1 competency.
+
+**Narrowed, target 3 (`account-management`): `project-oversight` (id kept) — Client-facing project coordination**
+- Know: Knows the handoff points between brief, creative, prepress, production and delivery, and which of them need client sign-off.
+- Understand: Understands why the client's expectations on timeline, quality and cost have to be managed continuously, and how to communicate trade-offs before they become surprises.
+- Do: Keeps the client and the internal creative and production teams aligned through a project, managing approvals, changes and expectations, while the production side runs the plan.
+
+Re-scoring: target 3's `project-oversight` descriptors change, so its existing coverage rows need a fresh run; target 1's new competency starts with none. Both go in the same batch as the target 5 re-score.
