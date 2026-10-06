@@ -29,6 +29,7 @@ import mammoth from 'mammoth';
 import { compactSpreadsheetMarkdown } from '@/lib/capture/spreadsheet-compact';
 import { visionModel } from '@/lib/ai/vision-models';
 import { withDoclingSlot } from '@/lib/courses/docling-gate';
+import { detectScan } from '@/lib/courses/scan-detect';
 
 // Source-format MIME types the system can handle. Anything outside this
 // list is rejected at the upload-route allowlist level — by the time a
@@ -136,17 +137,38 @@ class DoclingExtractor implements MaterialExtractor {
   private static readonly LARGE_PDF_THRESHOLD_BYTES = 2 * 1024 * 1024;
 
   async extract({ fileBytes, mimeType, fileName, skipPictureDescription }: ExtractArgs): Promise<MaterialExtractorResult> {
+    // Scanned-PDF detection (spec: docs/HANDOFF-curriculum-search-endpoint.md is
+    // unrelated; this is the Rag Core session's option (a), 2026-10-05): docling-serve
+    // 1.36 trusts a scanned PDF's own OCR text layer by default and interleaves
+    // multi-column scans. force_ocr=true fixes it but corrupts a born-digital PDF's
+    // perfect text layer, so the choice is made per document via detectScan. Decided
+    // ONCE here, on the whole document's bytes — never per split page below (an n=1
+    // sample on a single page is a different, weaker verdict than sampling the first
+    // 5 pages of the real document, and would run the ~150s async job once per page
+    // instead of once per document). Never throws — an unreadable/non-PDF verdict
+    // ('unknown') just leaves force_ocr off.
+    const scanVerdict = mimeType === 'application/pdf' ? await detectScan(fileBytes) : undefined;
+    const forceOcr = scanVerdict?.kind === 'scanned';
     // Large-PDF path: split into pages first, extract each, concatenate.
     // Page-citable output: each page's text is prefaced with `--- page N ---`
     // so downstream chunking + the agent's citation tooling can reference
     // specific pages. Per-page failures are isolated rather than fatal.
-    if (mimeType === 'application/pdf' && fileBytes.length > DoclingExtractor.LARGE_PDF_THRESHOLD_BYTES) {
+    //
+    // A scanned document skips the split entirely, regardless of size: splitting
+    // exists only to dodge the sync endpoint's 120s timeout, but a forced-OCR job
+    // already runs through the (timeout-free) async API as ONE whole-document job.
+    // Splitting it would turn that into N sequential ~150s async jobs. Born-digital
+    // large PDFs keep the existing split path, unchanged.
+    if (!forceOcr && mimeType === 'application/pdf' && fileBytes.length > DoclingExtractor.LARGE_PDF_THRESHOLD_BYTES) {
       return this.extractByPageSplit(fileBytes, fileName, skipPictureDescription);
     }
-    return this.extractWhole({ fileBytes, mimeType, fileName, skipPictureDescription });
+    return this.extractWhole({ fileBytes, mimeType, fileName, skipPictureDescription }, { forceOcr });
   }
 
-  private async extractWhole({ fileBytes, mimeType, fileName, skipPictureDescription }: ExtractArgs): Promise<MaterialExtractorResult> {
+  private async extractWhole(
+    { fileBytes, mimeType, fileName, skipPictureDescription }: ExtractArgs,
+    { forceOcr }: { forceOcr: boolean },
+  ): Promise<MaterialExtractorResult> {
     // docling-serve auto-detects from_format based on the upload's
     // content-type + filename, so we don't pass from_formats explicitly.
     // We do ask for markdown specifically — Docling's main quality
@@ -168,6 +190,7 @@ class DoclingExtractor implements MaterialExtractor {
       // skipping captioning never reintroduces that bloat.
       form.append('image_export_mode', 'placeholder');
       if (mimeType === XLSX_MIME) form.append('include_images', 'false');
+      if (forceOcr) form.append('force_ocr', 'true');
 
       // Optional VLM picture-description pass (DOCLING_VLM_ENABLED + docling-serve
       // remote-services/custom-picture-config flags). Skipped for middle-tier slide
@@ -204,8 +227,14 @@ class DoclingExtractor implements MaterialExtractor {
     // (same-subnet Local-Network gate) never blocks ingestion — we retry the local one.
     const fallbackUrl = process.env.DOCLING_FALLBACK_URL?.trim();
     const post = async (base: string): Promise<DoclingResponse> => {
+      const url = base.replace(/\/$/, '');
+      // Forced-OCR scans measured ~150s on the Spark (2026-10-05) — past the sync
+      // endpoint's DOCLING_SERVE_MAX_SYNC_WAIT (120s, which 504s). Route those
+      // through the async submit/poll/result API instead; born-digital PDFs (the
+      // overwhelming majority) stay on the fast sync path, unchanged.
+      if (forceOcr) return convertAsync(url, buildForm());
       const res = await withDoclingSlot(() =>
-        fetch(`${base.replace(/\/$/, '')}/v1/convert/file`, { method: 'POST', body: buildForm() }),
+        fetch(`${url}/v1/convert/file`, { method: 'POST', body: buildForm() }),
       );
       if (!res.ok) {
         const body = await res.text().catch(() => '');
@@ -221,7 +250,10 @@ class DoclingExtractor implements MaterialExtractor {
       console.warn(`[docling] primary ${this.baseUrl} failed (${err instanceof Error ? err.message : err}); falling back to ${fallbackUrl}`);
       data = await post(fallbackUrl);
     }
-    if (data.status && data.status !== 'success') {
+    // 'partial_success' (the async path's ConversionStatus can return it — e.g. a
+    // forced-OCR job that completed with some pages degraded) is accepted here too:
+    // best-effort content beats throwing away a result that mostly worked.
+    if (data.status && data.status !== 'success' && data.status !== 'partial_success') {
       const reason = data.errors?.[0]?.error_message ?? 'unknown failure';
       throw new Error(`docling-serve conversion failed: ${reason}`);
     }
@@ -291,12 +323,16 @@ class DoclingExtractor implements MaterialExtractor {
         const pageNum = parseInt(f.match(/page-(\d+)\.pdf/)?.[1] ?? '0', 10);
         const pageBytes = await fsp.readFile(pathMod.join(tmpDir, f));
         try {
+          // forceOcr is always false here: extract() already decided the whole
+          // document's verdict before routing into the split path (see above) —
+          // this path is only reached for a non-scanned document, so no per-page
+          // re-detection (and no per-page async OCR job) happens.
           const r = await this.extractWhole({
             fileBytes: pageBytes,
             mimeType: 'application/pdf',
             fileName: `${fileName}#page-${pageNum}`,
             skipPictureDescription,
-          });
+          }, { forceOcr: false });
           if (r.text && r.text.trim().length > 0) {
             sections.push(`--- page ${pageNum} ---\n\n${r.text}`);
             successful++;
@@ -334,6 +370,75 @@ interface DoclingResponse {
     md_content?: string | null;
     text_content?: string | null;
   };
+}
+
+interface TaskStatusResponse {
+  task_id: string;
+  task_status: 'pending' | 'started' | 'failure' | 'success' | 'partial_success' | 'skipped' | string;
+  error_message?: string | null;
+}
+
+/**
+ * docling-serve async conversion: submit -> poll -> fetch result. Used only for
+ * forced-OCR scans (see `forceOcr` in extractWhole above) — those measured
+ * ~150s on the Spark, past the sync endpoint's 120s DOCLING_SERVE_MAX_SYNC_WAIT
+ * (which otherwise 504s; see next.log, 2026-10-05). Confirmed live against the
+ * Spark's docling-serve 1.36 (openapi.json + a real submit/poll/result round
+ * trip): same request fields as `/v1/convert/file`, and `/v1/result/{task_id}`
+ * returns the identical `ConvertDocumentResponse` shape the sync endpoint
+ * returns directly, so the same `DoclingResponse` parsing applies to both.
+ *
+ * Polls client-side on a fixed interval rather than relying solely on the
+ * poll endpoint's `wait` query param (sent as a hint) — live testing showed
+ * the Spark can return from a `wait=N` call well before N seconds elapse
+ * while the task is merely 'started', so a bare wait-param loop would hammer
+ * the server. `partial_success` and `skipped` are treated as terminal
+ * alongside `success`/`failure` (docling-serve's own documented sample loop
+ * only checks success/failure, which would hang on the other two).
+ */
+const ASYNC_POLL_INTERVAL_MS = 3000;
+const ASYNC_POLL_WAIT_SECONDS = 5; // hint to the server's long-poll; see comment above
+// Worst case per attempt is the poll wait PLUS the client-side sleep (the server
+// can hold the connection for up to ASYNC_POLL_WAIT_SECONDS before responding, even
+// when it isn't honoring `wait` as a hint — see comment above), so the real ceiling
+// is attempts x (poll wait + sleep) = 100 x (5 + 3)s = 800s, comfortably above the
+// observed ~150s.
+const ASYNC_MAX_POLL_ATTEMPTS = 100;
+
+async function convertAsync(base: string, form: FormData): Promise<DoclingResponse> {
+  return withDoclingSlot(async () => {
+    const submitRes = await fetch(`${base}/v1/convert/file/async`, { method: 'POST', body: form });
+    if (!submitRes.ok) {
+      const body = await submitRes.text().catch(() => '');
+      throw new Error(`docling-serve ${submitRes.status}: ${body.slice(0, 200)}`);
+    }
+    const { task_id } = (await submitRes.json()) as TaskStatusResponse;
+
+    let last: TaskStatusResponse = { task_id, task_status: 'pending' };
+    for (let attempt = 0; attempt < ASYNC_MAX_POLL_ATTEMPTS; attempt++) {
+      const pollRes = await fetch(`${base}/v1/status/poll/${task_id}?wait=${ASYNC_POLL_WAIT_SECONDS}`);
+      if (!pollRes.ok) {
+        const body = await pollRes.text().catch(() => '');
+        throw new Error(`docling-serve ${pollRes.status}: ${body.slice(0, 200)}`);
+      }
+      last = (await pollRes.json()) as TaskStatusResponse;
+      if (['success', 'partial_success', 'failure', 'skipped'].includes(last.task_status)) break;
+      await new Promise(resolve => setTimeout(resolve, ASYNC_POLL_INTERVAL_MS));
+    }
+    if (last.task_status === 'failure' || last.task_status === 'skipped') {
+      throw new Error(`docling-serve async task ${task_id} ${last.task_status}: ${last.error_message ?? 'no error message'}`);
+    }
+    if (last.task_status !== 'success' && last.task_status !== 'partial_success') {
+      throw new Error(`docling-serve async task ${task_id} timed out polling (last status: ${last.task_status})`);
+    }
+
+    const resultRes = await fetch(`${base}/v1/result/${task_id}`);
+    if (!resultRes.ok) {
+      const body = await resultRes.text().catch(() => '');
+      throw new Error(`docling-serve ${resultRes.status}: ${body.slice(0, 200)}`);
+    }
+    return (await resultRes.json()) as DoclingResponse;
+  });
 }
 
 /**
