@@ -62,7 +62,8 @@ export async function scrubForRecord(text: string, opts: ScrubOptions): Promise<
 }
 
 async function runNamePass(text: string): Promise<string> {
-  const chunks = splitForNamePass(text);
+  // Smaller chunks than the 6000 default: the model's recall drops on long, name-dense pieces.
+  const chunks = splitForNamePass(text, 3000);
 
   // Dynamic imports: importing this module (via course-materials-queries)
   // must not load the AI SDKs for every DB caller. Resolved ONCE, before the
@@ -78,9 +79,14 @@ async function runNamePass(text: string): Promise<string> {
   const provider = await getProviderForFunction('privacy-scrub');
   const systemPrompt = await loadPrompt('privacy-scrub');
 
-  const results = await mapWithConcurrency(chunks, NAME_PASS_CONCURRENCY, async (chunk, idx) => {
+  // Several rounds per chunk, names unioned: a single model run is not
+  // reliable on name-dense text (2026-10-06, GC 4900bl roster: one run listed
+  // 62 names, the next 19). PRIVACY_SCRUB_ROUNDS overrides (tests use 1).
+  const rounds = Math.max(1, Number(process.env.PRIVACY_SCRUB_ROUNDS ?? 3));
+  const jobs = chunks.flatMap((chunk, idx) => Array.from({ length: rounds }, () => ({ chunk, idx })));
+  const results = await mapWithConcurrency(jobs, NAME_PASS_CONCURRENCY, async ({ chunk, idx }) => {
     const where = `chunk ${idx + 1}/${chunks.length}`;
-    // One retry per chunk (same pattern as chunkLlmComplete, commit edd59b6):
+    // One retry per call (same pattern as chunkLlmComplete, commit edd59b6):
     // a provider blip would otherwise fail the whole material and store no
     // text. Only the second failure throws.
     try {

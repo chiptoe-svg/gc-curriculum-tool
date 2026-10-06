@@ -15,6 +15,8 @@ vi.mock('@/lib/rate-limit/daily-cap', () => ({ recordSpend }));
 import { scrubForRecord, needsNamePass, ScrubError } from '@/lib/privacy/scrub';
 
 process.env.PRIVACY_SCRUB_RETRY_DELAY_MS = '0';
+// One round per chunk unless a test says otherwise (call-count assertions below assume it).
+process.env.PRIVACY_SCRUB_ROUNDS = '1';
 
 /** A fake model that lists the given names. */
 function modelListing(names: string[]) {
@@ -174,6 +176,23 @@ describe('scrubForRecord — one retry per chunk', () => {
     await expect(p).rejects.toBeInstanceOf(ScrubError);
     await expect(p).rejects.not.toThrow(/Jane/);
     expect(complete).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('scrubForRecord — several rounds per chunk', () => {
+  it('unions the names from every round, because one model run misses names (seen 2026-10-06: 62 vs 19)', async () => {
+    process.env.PRIVACY_SCRUB_ROUNDS = '3';
+    try {
+      complete
+        .mockImplementationOnce(modelListing(['Jane Doe']))
+        .mockImplementationOnce(modelListing(['Raj Patel']))
+        .mockImplementationOnce(modelListing([]));
+      const r = await scrubForRecord('Submitted by Jane Doe\nSubmitted by Raj Patel\nbody', { fileName: 'x.pdf', isSyllabus: false });
+      expect(complete).toHaveBeenCalledTimes(3);
+      expect(r.text).toBe('Submitted by [student]\nSubmitted by [student]\nbody');
+    } finally {
+      process.env.PRIVACY_SCRUB_ROUNDS = '1';
+    }
   });
 });
 
