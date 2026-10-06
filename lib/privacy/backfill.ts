@@ -35,3 +35,38 @@ export async function scanWikiForIdentifiers(root: string): Promise<Array<{ path
   }
   return found;
 }
+
+export interface BackfillArgs {
+  mode: 'dry-run' | 'apply';
+  course: string | null;
+  wiki: boolean;
+}
+
+/**
+ * Pure CLI-argument parser for scripts/privacy/backfill-scrub.ts (fix round 1,
+ * 2026-10-05): a script that overwrites production data must not silently
+ * treat a malformed flag as "no filter" (= whole DB). A bare trailing
+ * `--course` or one immediately followed by another flag is an error, not a
+ * null course.
+ */
+export function parseBackfillArgs(argv: string[]): BackfillArgs | { error: string } {
+  const dry = argv.includes('--dry-run');
+  const apply = argv.includes('--apply');
+  if (dry === apply) {
+    return { error: 'Pass exactly one of --dry-run or --apply.' };
+  }
+  const wiki = argv.includes('--wiki');
+  if (wiki && dry) {
+    return { error: '--wiki republishes pages; use it only with --apply.' };
+  }
+  const ci = argv.indexOf('--course');
+  let course: string | null = null;
+  if (ci >= 0) {
+    const value = argv[ci + 1];
+    if (value === undefined || value.startsWith('--')) {
+      return { error: '--course requires a value, e.g. --course "GC 3620".' };
+    }
+    course = value;
+  }
+  return { mode: dry ? 'dry-run' : 'apply', course, wiki };
+}

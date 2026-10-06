@@ -13,9 +13,14 @@
  *   4. Scans the published wiki for email/CUID patterns; with --wiki,
  *      republishes those pages through writeAndPush (which scrubs them).
  *
- * Usage (from the deploy checkout, after migration 0052 + deploy):
+ * Usage:
  *   pnpm exec tsx --env-file=.env.local scripts/privacy/backfill-scrub.ts --dry-run [--course "GC 3620"]
+ *     (--dry-run reads only, via an explicit-column select that never
+ *     mentions `redactions`, so it works today even before migration 0052
+ *     is applied to production)
  *   pnpm exec tsx --env-file=.env.local scripts/privacy/backfill-scrub.ts --apply [--course "GC 3620"] [--wiki]
+ *     (--apply requires migration 0052 applied to production AND this script
+ *     deployed from the deploy checkout first)
  *
  * --dry-run writes nothing (it does make the privacy-scrub AI calls for
  * flagged materials so the counts are real). --apply needs the owner's
@@ -34,34 +39,25 @@ import {
 } from '@/lib/db/course-materials-queries';
 import { scrubForRecord } from '@/lib/privacy/scrub';
 import { countRedactionMarkers } from '@/lib/privacy/deterministic';
-import { isRetiredPrivacyHold, scanWikiForIdentifiers } from '@/lib/privacy/backfill';
+import { isRetiredPrivacyHold, scanWikiForIdentifiers, parseBackfillArgs } from '@/lib/privacy/backfill';
 import { isSyllabusFileName } from '@/lib/capture/materials-policy';
 import { enqueue } from '@/lib/capture/ingest-queue';
 import { createVectorStore, tenantForCourse } from '@/lib/capture/vector-store';
 import { refreshProgramIndex } from '@/lib/capture/program-index';
 import { readWikiPage, writeAndPush, wikiRepoPath, WikiPagesWithheldError } from '@/lib/wiki/git-ops';
 
-type Mode = 'dry-run' | 'apply';
-
 interface Tally {
   scanned: number; textChanged: number; digestChanged: number; failed: number;
   released: number; reindexed: number; names: number; ids: number; emails: number;
 }
 
-function parseArgs(argv: string[]): { mode: Mode; course: string | null; wiki: boolean } {
-  const dry = argv.includes('--dry-run');
-  const apply = argv.includes('--apply');
-  if (dry === apply) {
-    console.error('Pass exactly one of --dry-run or --apply.');
+function parseArgs(argv: string[]) {
+  const parsed = parseBackfillArgs(argv);
+  if ('error' in parsed) {
+    console.error(parsed.error);
     process.exit(2);
   }
-  const ci = argv.indexOf('--course');
-  const wiki = argv.includes('--wiki');
-  if (wiki && dry) {
-    console.error('--wiki republishes pages; use it only with --apply.');
-    process.exit(2);
-  }
-  return { mode: dry ? 'dry-run' : 'apply', course: ci >= 0 ? argv[ci + 1] ?? null : null, wiki };
+  return parsed;
 }
 
 const msg = (err: unknown) => (err instanceof Error ? err.message : String(err));

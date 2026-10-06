@@ -3,7 +3,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { isRetiredPrivacyHold, listWikiFiles, scanWikiForIdentifiers } from '@/lib/privacy/backfill';
+import { isRetiredPrivacyHold, listWikiFiles, scanWikiForIdentifiers, parseBackfillArgs } from '@/lib/privacy/backfill';
 
 describe('isRetiredPrivacyHold', () => {
   it('matches the FERPA hold and the Discussions rule', () => {
@@ -42,5 +42,43 @@ describe('wiki scan', () => {
       { path: 'courses/a.md', hits: 1 },
       { path: 'raw/snapshots/s.json', hits: 2 },
     ]);
+  });
+});
+
+describe('parseBackfillArgs', () => {
+  it('errors when neither --dry-run nor --apply is given', () => {
+    expect(parseBackfillArgs([])).toEqual({ error: expect.any(String) });
+  });
+
+  it('errors when both --dry-run and --apply are given', () => {
+    expect(parseBackfillArgs(['--dry-run', '--apply'])).toEqual({ error: expect.any(String) });
+  });
+
+  it('errors when --wiki is combined with --dry-run', () => {
+    expect(parseBackfillArgs(['--dry-run', '--wiki'])).toEqual({ error: expect.any(String) });
+  });
+
+  it('errors when --course is the last argument (no value)', () => {
+    expect(parseBackfillArgs(['--dry-run', '--course'])).toEqual({ error: expect.any(String) });
+  });
+
+  it('errors when --course is immediately followed by another flag', () => {
+    expect(parseBackfillArgs(['--dry-run', '--course', '--apply'])).toEqual({ error: expect.any(String) });
+  });
+
+  it('sets course when given a real value', () => {
+    expect(parseBackfillArgs(['--dry-run', '--course', 'GC 3620'])).toEqual({
+      mode: 'dry-run',
+      course: 'GC 3620',
+      wiki: false,
+    });
+  });
+
+  it('allows --apply with --wiki and no --course (whole-DB run)', () => {
+    expect(parseBackfillArgs(['--apply', '--wiki'])).toEqual({
+      mode: 'apply',
+      course: null,
+      wiki: true,
+    });
   });
 });
