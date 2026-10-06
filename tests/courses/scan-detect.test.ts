@@ -6,7 +6,7 @@
 // the point of this port is verifying the heuristic against real PDF
 // structure (Producer/Creator metadata, XObject image dimensions).
 import { describe, it, expect } from 'vitest';
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument, PDFRawStream, degrees } from 'pdf-lib';
 import sharp from 'sharp';
 import { detectScan } from '@/lib/courses/scan-detect';
 
@@ -72,6 +72,53 @@ describe('detectScan', () => {
     page.drawImage(img, { x: 0, y: 0, width: 1700, height: 2200 });
     const verdict = await detectScan(await doc.save());
     expect(verdict.kind).toBe('digital');
+  });
+
+  it('a rotated page (/Rotate 90) with a full-page image is still scanned — geometry must use the unrotated MediaBox, matching pypdf', async () => {
+    // The image fills the page's own (unrotated) MediaBox exactly. /Rotate is a
+    // display instruction only; it must not be consulted when comparing the
+    // image's aspect ratio to the page's aspect ratio (review finding #1 —
+    // getViewport({scale:1}) is rotation-adjusted and swaps width/height for a
+    // 90/270 rotation, which breaks the aspect match pypdf's page.mediabox does
+    // not have this problem with).
+    const doc = await PDFDocument.create();
+    const png = await sharp({
+      create: { width: 1700, height: 2200, channels: 3, background: { r: 255, g: 255, b: 255 } },
+    }).png().toBuffer();
+    const img = await doc.embedPng(png);
+    const page = doc.addPage([1700, 2200]);
+    page.drawImage(img, { x: 0, y: 0, width: 1700, height: 2200 });
+    page.setRotation(degrees(90));
+    const verdict = await detectScan(await doc.save());
+    expect(verdict.kind).toBe('scanned');
+  });
+
+  it('reads image dimensions from the XObject dict without decoding the stream (an undecodable DCTDecode blob with a correct dict is still scanned)', async () => {
+    // Review findings #3/#4: dimensions must come from /Width and /Height in the
+    // XObject dictionary, never from actually decoding the image bitmap. Prove it
+    // by giving a page an "image" whose declared Filter is DCTDecode (JPEG) but
+    // whose stream bytes are garbage — not valid JPEG at all. A decode-based
+    // implementation would fail to decode (and either throw or silently miss the
+    // image); a dict-only implementation reads Width/Height straight off the
+    // dictionary and never touches the stream bytes.
+    const doc = await PDFDocument.create();
+    const page = doc.addPage([1700, 2200]);
+    const garbage = new Uint8Array(64).map((_, i) => i * 7 + 1); // not valid JPEG data
+    const dict = doc.context.obj({
+      Type: 'XObject',
+      Subtype: 'Image',
+      Width: 1700,
+      Height: 2200,
+      ColorSpace: 'DeviceRGB',
+      BitsPerComponent: 8,
+      Filter: 'DCTDecode',
+      Length: garbage.length,
+    });
+    const stream = PDFRawStream.of(dict, garbage);
+    const ref = doc.context.register(stream);
+    page.node.newXObject('FakeScan', ref);
+    const verdict = await detectScan(await doc.save());
+    expect(verdict.kind).toBe('scanned');
   });
 
   it('a truncated PDF is unknown, not a thrown exception', async () => {
