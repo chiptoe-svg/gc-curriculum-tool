@@ -47,6 +47,20 @@ export const PLAIN_DEPTH: Record<Dimension, Six> = {
   ],
 };
 
+/**
+ * One- or two-word levels for the rolled-up one-line card rows, where the full
+ * phrases would push the competency statement off the line. Same scale, same
+ * order as PLAIN_DEPTH; the full phrase goes in the row's hover title.
+ */
+export const PLAIN_DEPTH_SHORT: Record<Dimension, Six> = {
+  k: ['not covered', 'has met it', 'recognizes', 'recalls', 'uses the terms', 'fluent'],
+  u: ['not yet', 'restates', 'explains', 'predicts', 'handles new cases', 'critiques'],
+  d: ['not yet', 'with direction', 'with a reference', 'independently', 'adapts', 'creatively'],
+};
+
+/** Plain dimension names used across the review UI. */
+export const DIM_WORD: Record<Dimension, string> = { k: 'Knowing', u: 'Reasoning', d: 'Doing' };
+
 export function plainDepthPhrase(dim: Dimension, level: number): string {
   return PLAIN_DEPTH[dim][level] ?? '';
 }
@@ -60,6 +74,14 @@ export function plainScores(s: { k?: number | null; u?: number | null; d?: numbe
   if (ku.length > 0) parts.push(ku.join(' and '));
   if (s.d !== null && s.d !== undefined) parts.push(plainDepthPhrase('d', s.d));
   return parts.join('; ');
+}
+
+/** Compact one-line form: "Knowing: recalls · Reasoning: restates · Doing: with a reference". */
+export function plainScoresShort(s: { k?: number | null; u?: number | null; d?: number | null }): string {
+  return (['k', 'u', 'd'] as const)
+    .filter((dim) => s[dim] !== null && s[dim] !== undefined)
+    .map((dim) => `${DIM_WORD[dim]}: ${PLAIN_DEPTH_SHORT[dim][s[dim] as number] ?? ''}`)
+    .join(' · ');
 }
 
 const HIGH_LOW: Record<string, string> = {
@@ -85,7 +107,7 @@ const TOKEN = '[KUD][0-5]';
 const COMBO_RE = new RegExp(`\\b${TOKEN}(?:\\s*[/·]\\s*${TOKEN})+\\b`, 'g');
 // Range: D4–5, D3–D4, U1-2.
 const RANGE_RE = /\b([KUD])([0-5])\s*[–-]\s*(?:\1)?([0-5])\b/g;
-// Equals: D=0, K = 3.
+// Equals: D=0, K = 3 — the rationale form ("K=3 because …"); names the dimension.
 const EQUALS_RE = /\b([KUD])\s*=\s*([0-5])\b/g;
 const SINGLE_RE = /\b([KUD])([0-5])\b/g;
 // "via {Assignment}" that follows a rewritten score, up to punctuation or end.
@@ -117,7 +139,7 @@ export function plainDepth(text: string): string {
     const dim = dimOf(l);
     return `${plainDepthPhrase(dim, Number(a))} or ${plainDepthPhrase(dim, Number(b))}\u0000`;
   });
-  out = out.replace(EQUALS_RE, (_m, l: string, n: string) => plainDepthPhrase(dimOf(l), Number(n)) + '\u0000');
+  out = out.replace(EQUALS_RE, (_m, l: string, n: string) => `${DIM_WORD[dimOf(l)]} (${plainDepthPhrase(dimOf(l), Number(n))})\u0000`);
   out = out.replace(SINGLE_RE, (_m, l: string, n: string) => plainDepthPhrase(dimOf(l), Number(n)) + '\u0000');
 
   out = out.replace(VIA_RE, (_m, name: string) => viaClause(name));

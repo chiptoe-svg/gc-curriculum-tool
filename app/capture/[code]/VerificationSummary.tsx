@@ -11,6 +11,10 @@ interface Props {
   isLegacy?: boolean;
   /** When supplied, SourceBadge becomes interactive. */
   onCitationClick?: (c: CaptureProfileCitationType) => void;
+  /** Exactly what the approve button says in this state. */
+  approveLabel?: string;
+  /** True once a snapshot exists: approving records an update. */
+  isUpdate?: boolean;
 }
 
 const HEADING = 'text-sm font-semibold text-foreground';
@@ -39,7 +43,7 @@ function BulletList({ items, label }: { items: string[]; label: string }) {
  * ("— D3 via Budget", "K2/U2/D1") read as words, including on profiles
  * generated before the prompt asked for plain language.
  */
-export function VerificationSummary({ summary, isLegacy, onCitationClick }: Props) {
+export function VerificationSummary({ summary, isLegacy, onCitationClick, approveLabel = 'Approve the profile', isUpdate = false }: Props) {
   return (
     <section className="rounded-md border bg-amber-50/50 px-4 py-4 shadow-sm space-y-4">
       {isLegacy && <LegacyBanner />}
@@ -57,7 +61,7 @@ export function VerificationSummary({ summary, isLegacy, onCitationClick }: Prop
         <p className="mt-1 text-sm text-muted-foreground">
           This is the AI&apos;s reading of your course — please check it. If anything is off, use
           &ldquo;← Back to the interview&rdquo; to tell the interviewer; when it reads right, use
-          &ldquo;Approve the profile&rdquo; to record it.
+          &ldquo;{approveLabel}&rdquo; to record {isUpdate ? 'this version as a new snapshot — earlier snapshots are kept' : 'it'}.
         </p>
       </header>
 

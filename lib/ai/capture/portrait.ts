@@ -6,7 +6,7 @@
  */
 import type { CaptureCompetency } from '@/lib/ai/capture/schema';
 import { describeDepth, type Dimension } from '@/lib/ai/capture/depth-anchors';
-import { plainDepthPhrase } from '@/lib/capture/plain-depth';
+import { plainDepthPhrase, DIM_WORD } from '@/lib/capture/plain-depth';
 
 export interface PortraitClause {
   dim: Dimension;
@@ -17,8 +17,9 @@ export interface PortraitClause {
 }
 
 // "Knowing" (was "Naming") so the card's labeled clauses and the adjust rows
-// use one plain vocabulary: Knowing / Reasoning / Doing.
-const DIM_LABEL: Record<Dimension, string> = { k: 'Knowing', u: 'Reasoning', d: 'Doing' };
+// use one plain vocabulary: Knowing / Reasoning / Doing (single source:
+// DIM_WORD in lib/capture/plain-depth).
+const DIM_LABEL: Record<Dimension, string> = DIM_WORD;
 export function dimLabel(dim: Dimension): string {
   return DIM_LABEL[dim];
 }

@@ -4,7 +4,7 @@ import { useState, type ReactNode } from 'react';
 import type { CaptureCompetency } from '@/lib/ai/capture/schema';
 import { describeDepth, type Dimension } from '@/lib/ai/capture/depth-anchors';
 import { portraitClauses, lowerAnchorOptions, evidencePromptFor, dimLabel, labeledClause } from '@/lib/ai/capture/portrait';
-import { plainDepthPhrase } from '@/lib/capture/plain-depth';
+import { plainDepth, plainDepthPhrase } from '@/lib/capture/plain-depth';
 
 /** The dimensions that are scored for this competency (foundational → Do only). */
 function scoredDims(c: CaptureCompetency): Dimension[] {
@@ -223,7 +223,7 @@ export function CompetencyPortrait({
           })}
 
           {competency.rationale && (
-            <p className="border-t pt-3 text-sm leading-snug text-muted-foreground">{competency.rationale}</p>
+            <p data-testid="rationale" className="border-t pt-3 text-sm leading-snug text-muted-foreground">{plainDepth(competency.rationale)}</p>
           )}
 
           <div className="flex items-center justify-between gap-2">

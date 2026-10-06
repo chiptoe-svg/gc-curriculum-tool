@@ -37,7 +37,7 @@ describe('VerificationSummary — plain language', () => {
   it('rewrites combos in every section (patterns, shape, foundationals)', () => {
     render(<VerificationSummary summary={summary} />);
     expect(screen.getByText(/recognizes it and explains it in their own words; does it with step-by-step direction/)).toBeInTheDocument();
-    expect(screen.getByText(/Resilience scored no evidence students do it yet/)).toBeInTheDocument();
+    expect(screen.getByText(/Resilience scored Doing \(no evidence students do it yet\)/)).toBeInTheDocument();
     expect(screen.getByText(/anchors the deepest does it independently/)).toBeInTheDocument();
   });
 

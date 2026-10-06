@@ -116,7 +116,7 @@ describe('automatic stress test in the review panel', () => {
     expect(buttons).toHaveLength(1);
     expect(screen.getByText(/does it with a reference or checklist rests on a single layout exercise\./)).toBeInTheDocument();
     expect(screen.queryByText(/The AI inferred this/)).toBeNull();
-    expect(screen.getByText('1 card left to review — confirm or adjust each to approve')).toBeInTheDocument();
+    expect(screen.getByText('1 card left to review — confirm or adjust each to unlock “Approve the profile”')).toBeInTheDocument();
   });
 
   it('a card already confirmed before the result arrives stays put (confirmed)', () => {
@@ -145,13 +145,13 @@ describe('automatic stress test in the review panel', () => {
 describe('approve count line', () => {
   it('shows "N cards left to review", counts down live, and enables Approve at zero', async () => {
     renderPanel(st({}));
-    expect(screen.getByText('2 cards left to review — confirm or adjust each to approve')).toBeInTheDocument();
+    expect(screen.getByText('2 cards left to review — confirm or adjust each to unlock “Approve the profile”')).toBeInTheDocument();
     expect(screen.queryByText(/hover for what counts/i)).toBeNull();
     expect(approveBtn().disabled).toBe(true);
 
     const [first, second] = screen.getAllByRole('button', { name: /looks right/i });
     await act(async () => { fireEvent.click(first!); });
-    expect(screen.getByText('1 card left to review — confirm or adjust each to approve')).toBeInTheDocument();
+    expect(screen.getByText('1 card left to review — confirm or adjust each to unlock “Approve the profile”')).toBeInTheDocument();
     expect(approveBtn().disabled).toBe(true);
 
     await act(async () => { fireEvent.click(second!); });

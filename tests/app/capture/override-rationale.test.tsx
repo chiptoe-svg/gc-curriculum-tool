@@ -80,7 +80,7 @@ describe('K/U/D override rationale gate', () => {
     // Approve lock message names the bump count
     expect(screen.getByText(/raised score.*need a reason/i)).toBeTruthy();
     // Fill in a reason
-    fireEvent.change(screen.getByPlaceholderText(/Reason for the higher depth/i), { target: { value: 'capstone press checks' } });
+    fireEvent.change(screen.getByPlaceholderText(/Reason for the higher level/i), { target: { value: 'capstone press checks' } });
     // Lock message should be gone
     expect(screen.queryByText(/raised score.*need a reason/i)).toBeNull();
   });

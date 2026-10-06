@@ -1,5 +1,6 @@
 'use client';
 
+import { plainDepth, plainScores, plainScoresShort, DIM_WORD } from '@/lib/capture/plain-depth';
 import { useState } from 'react';
 import type { CaptureProfile } from '@/lib/ai/capture/schema';
 import type { ReconcileProposal, ReconcileSection, ReconciliationLogEntry } from '@/lib/ai/schemas';
@@ -45,10 +46,6 @@ const STEP_DESCRIPTIONS: Record<ReconcileSection, string> = {
     'The skills and competencies this course assumes students already have walking in — what it builds on. Not the formal catalog prerequisite (e.g. “GC 1040”); these are the working capabilities the course expects, surfaced from the interview. Anything obvious that came up is pre-filled below; add what’s missing.',
   outgoing: '',
 };
-
-function depthStr(n: number | null | undefined): string {
-  return n !== null && n !== undefined ? String(n) : '–';
-}
 
 function buildItemsPayload(
   section: ReconcileSection,
@@ -119,7 +116,7 @@ function ProposalCard({
             </span>
           </label>
         </div>
-        <p className="text-xs text-muted-foreground italic flex-1 text-right">{p.rationale}</p>
+        <p className="text-xs text-muted-foreground italic flex-1 text-right">{plainDepth(p.rationale)}</p>
       </div>
 
       {/* Before / after */}
@@ -141,9 +138,10 @@ function ProposalCard({
               />
               <div className="flex gap-1">
                 {(['k', 'u', 'd'] as const).map(dim => (
-                  <label key={dim} className="flex items-center gap-1 text-xs uppercase">
-                    <span className="font-mono font-medium">{dim.toUpperCase()}</span>
+                  <label key={dim} className="flex items-center gap-1 text-xs">
+                    <span className="font-medium">{DIM_WORD[dim]}</span>
                     <input
+                      aria-label={`${DIM_WORD[dim]} level`}
                       type="number"
                       min={0}
                       max={5}
@@ -215,8 +213,8 @@ export function ReconciliationStepper({ profile, slug, courseCode, onComplete }:
           {items.map((e, i) => (
             <li key={i} className="flex items-start gap-2">
               <span className="flex-1">{e.statement}</span>
-              <span className="font-mono text-xs text-muted-foreground whitespace-nowrap">
-                K{depthStr(e.expected_depth.k)} U{depthStr(e.expected_depth.u)} D{e.expected_depth.d}
+              <span className="text-xs text-muted-foreground whitespace-nowrap" title={plainScores(e.expected_depth)}>
+                {plainScoresShort(e.expected_depth)}
               </span>
             </li>
           ))}
@@ -231,8 +229,11 @@ export function ReconciliationStepper({ profile, slug, courseCode, onComplete }:
         {items.map((c, i) => (
           <li key={i} className="flex items-start gap-2">
             <span className="flex-1">{c.statement}</span>
-            <span className="font-mono text-xs text-muted-foreground whitespace-nowrap">
-              K{depthStr(c.k_depth)} U{depthStr(c.u_depth)} D{c.d_depth}
+            <span
+              className="text-xs text-muted-foreground whitespace-nowrap"
+              title={plainScores({ k: c.k_depth, u: c.u_depth, d: c.d_depth })}
+            >
+              {plainScoresShort({ k: c.k_depth, u: c.u_depth, d: c.d_depth })}
             </span>
           </li>
         ))}

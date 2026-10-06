@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { plainDepth, plainDepthPhrase, plainScores, PLAIN_DEPTH } from '@/lib/capture/plain-depth';
+import { plainDepth, plainDepthPhrase, plainScores, plainScoresShort, PLAIN_DEPTH } from '@/lib/capture/plain-depth';
 
 describe('PLAIN_DEPTH phrase tables', () => {
   it('has six levels per dimension', () => {
@@ -65,7 +65,10 @@ describe('plainDepth — rewriting score codes inside AI-written text', () => {
     ['maps to D3–D4', 'maps to does it independently in familiar situations or adapts it to new conditions'],
     ['U1-2', 'can restate the explanation or explains it in their own words'],
     // equals form the prompt itself uses ("scored D=0")
-    ['Resilience scored D=0', 'Resilience scored no evidence students do it yet'],
+    ['Resilience scored D=0', 'Resilience scored Doing (no evidence students do it yet)'],
+    // rationale form: "K=3 because …" names the dimension, then the level in words
+    ['K=3 because students recall it', 'Knowing (recalls it without prompting) because students recall it'],
+    ['U = 1 since', 'Reasoning (can restate the explanation) since'],
     // dissociation shorthand
     ['Kerning is K1-only', 'Kerning is only mentioned, never practiced'],
     ['K-high with U-low', 'knows the terms well with little reasoning about why'],
@@ -87,6 +90,11 @@ describe('plainDepth — rewriting score codes inside AI-written text', () => {
     [
       'Attention to Detail — D3 via Courselineup/Budget grading',
       'Attention to Detail — does it independently in familiar situations (Courselineup/Budget grading)',
+    ],
+    // real GC 3800 rationale (2026-10-06 screenshot)
+    [
+      'K=3 because students must recall required profile components on cue in order to complete the assignment. U=1 because the course intends framing and positioning, but the instructor reports that this aspect is not substantially feedbacked. D=2 because students perform the task using a detailed reference/tutorial rather than showing independent adaptation.',
+      'Knowing (recalls it without prompting) because students must recall required profile components on cue in order to complete the assignment. Reasoning (can restate the explanation) because the course intends framing and positioning, but the instructor reports that this aspect is not substantially feedbacked. Doing (does it with a reference or checklist) because students perform the task using a detailed reference/tutorial rather than showing independent adaptation.',
     ],
     // two separate tokens joined by prose stay separate
     ['D3 and D4', 'does it independently in familiar situations and adapts it to new conditions'],
@@ -115,5 +123,20 @@ describe('plainDepth — rewriting score codes inside AI-written text', () => {
   it('is idempotent (rewriting twice changes nothing more)', () => {
     const once = plainDepth('Color K2/U2/D1 — D3 via Budget');
     expect(plainDepth(once)).toBe(once);
+  });
+});
+
+describe('plainScoresShort (one-line rolled-up rows)', () => {
+  it('labels each dimension with a one- or two-word level', () => {
+    expect(plainScoresShort({ k: 3, u: 1, d: 2 })).toBe('Knowing: recalls · Reasoning: restates · Doing: with a reference');
+  });
+  it('covers every level with a short word', () => {
+    expect(plainScoresShort({ k: 0, u: 0, d: 0 })).toBe('Knowing: not covered · Reasoning: not yet · Doing: not yet');
+    expect(plainScoresShort({ k: 5, u: 5, d: 5 })).toBe('Knowing: fluent · Reasoning: critiques · Doing: creatively');
+    expect(plainScoresShort({ k: 4, u: 4, d: 4 })).toBe('Knowing: uses the terms · Reasoning: handles new cases · Doing: adapts');
+    expect(plainScoresShort({ k: 1, u: 3, d: 3 })).toBe('Knowing: has met it · Reasoning: predicts · Doing: independently');
+  });
+  it('foundational (Do only)', () => {
+    expect(plainScoresShort({ k: null, u: null, d: 1 })).toBe('Doing: with direction');
   });
 });
