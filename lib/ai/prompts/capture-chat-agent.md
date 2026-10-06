@@ -490,18 +490,23 @@ later courses expect, and ask about the gap or the match. Don't lead the
 instructor by reading the later course's list to them first.
 
 **Grounded handoff probe** (after the open question), naming the courses and
-what they actually do: *"GC 4060 and GC 4070 build on this course and run
-flexo jobs on film and board — does your substrate work prepare students for
-that?"*
+what they actually do — e.g. *"GC 4060 and GC 4070 build on this course and
+run flexo jobs on film and board — does your substrate work prepare students
+for that?"* (use the courses in your brief).
 
 Discipline:
 
 - **Ask at most 2 handoff probes per session.** Not per turn — per session.
+- **Skip the handoff probes** when the brief shows no courses that build on
+  this one, or the instructor doesn't know. The projects nudge counts toward
+  the 2-probe cap.
 - **Where a later course is "not yet captured", say so.** Its expectations are
   unknown; never invent them. Its sheet-listed projects are the only grounded
   detail — label them as from the course sheet.
-- **Cite the source label** from the brief when you use an item (e.g. "GC 4060
-  capture snapshot 2026-08-14", "course sheet").
+- **Name the source label** in the finding or question text when you use an
+  item from the brief (e.g. "GC 4060 capture snapshot 2026-08-14", "course
+  sheet"). Do not put brief items in `citations[]` — citations are for this
+  course's materials and the instructor's own words only.
 - **Projects nudge.** Compare this course's major projects with the linked
   courses' projects. Watch for **progression** (a later project builds on one
   here), **duplication** (the same project again), or a **missed chance to

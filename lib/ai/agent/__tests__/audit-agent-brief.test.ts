@@ -21,7 +21,7 @@ vi.mock('@/lib/ai/prompts/load', () => ({ loadPrompt: vi.fn().mockResolvedValue(
 vi.mock('@/lib/ai/agent/audit-tools', () => ({ buildAuditTools: vi.fn().mockReturnValue([]) }));
 
 import { buildAgentCall } from '@/lib/ai/agent/audit-agent';
-import { BRIEF_HEADING } from '@/lib/capture/course-context-brief';
+import { BRIEF_HEADING, buildCourseContextBrief } from '@/lib/capture/course-context-brief';
 
 describe('interview at-rest context', () => {
   it('includes the course-context brief', async () => {
@@ -30,5 +30,16 @@ describe('interview at-rest context', () => {
     const atRest = String(first && 'content' in first ? first.content : '');
     expect(atRest).toContain(BRIEF_HEADING);
     expect(atRest).toContain('#### GC 4060 — Flexo Production');
+  });
+
+  it('is non-fatal when the brief fails to build', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.mocked(buildCourseContextBrief).mockRejectedValueOnce(new Error('db unreachable'));
+    const built = await buildAgentCall({ sessionId: 's', courseCode: 'GC 3460', auditMode: 'full' });
+    const first = built.messages[0];
+    const atRest = String(first && 'content' in first ? first.content : '');
+    expect(atRest).toContain('(course-context brief unavailable this turn)');
+    expect(warnSpy).toHaveBeenCalled();
+    warnSpy.mockRestore();
   });
 });

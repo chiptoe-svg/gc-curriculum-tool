@@ -76,8 +76,28 @@ describe('course-context brief', () => {
     const full = renderCourseContextBrief(brief);
     const capped = renderCourseContextBrief(brief, 300);
     expect(capped.length).toBeLessThanOrEqual(300);
-    expect(capped).toMatch(/_\(\d+ more line\(s\) left out to stay within the size cap\.\)_$/);
+    expect(capped).toMatch(/_\(\d+ more line\(s\) left out to stay within the size cap(; courses not shown: [^)]+)?\.\)_$/);
     expect(full).not.toContain('left out');
+  });
+  it('names a fully-dropped dependent course in the size-cap note', async () => {
+    const brief = await buildCourseContextBrief('GC 3460');
+    const full = renderCourseContextBrief(brief);
+    const idx4060 = full.indexOf('#### GC 4060 — Flexo Production');
+    const idx4400 = full.indexOf('#### GC 4400 — Packaging');
+    expect(idx4060).toBeGreaterThan(-1);
+    expect(idx4400).toBeGreaterThan(idx4060);
+    // Search upward for the smallest cap that keeps GC 4060's header but
+    // cuts before GC 4400's header ever gets emitted.
+    let maxChars = idx4400;
+    let capped = renderCourseContextBrief(brief, maxChars);
+    while (!capped.includes('#### GC 4060 — Flexo Production') && maxChars < full.length) {
+      maxChars += 5;
+      capped = renderCourseContextBrief(brief, maxChars);
+    }
+    expect(capped).toContain('#### GC 4060 — Flexo Production');
+    expect(capped).not.toContain('#### GC 4400');
+    expect(capped).toMatch(/courses not shown: GC 4400\.\)_$/);
+    expect(capped.length).toBeLessThanOrEqual(maxChars);
   });
   it('gives a course with no links a one-line note', async () => {
     const md = renderCourseContextBrief(await buildCourseContextBrief('GC 9000'));

@@ -62,38 +62,59 @@ export function renderCourseContextBrief(brief: CourseContextBrief, maxChars: nu
   if (brief.prerequisites.length === 0 && brief.dependents.length === 0) {
     return `${head}\nNo linked courses: the course sheet lists no prerequisites for ${brief.courseCode}, and no course lists it as a prerequisite.`;
   }
-  const lines: string[] = ['### Students arrive from'];
-  if (brief.prerequisites.length === 0) lines.push('- (none on the course sheet)');
+  // Each entry carries the course `code` when it is that course's OWN line
+  // (the prereq's single line, or a dependent's `####` header) — the line
+  // whose omission means the course itself was dropped from the brief, not
+  // just one of its sub-items.
+  const lines: { text: string; code?: string }[] = [{ text: '### Students arrive from' }];
+  if (brief.prerequisites.length === 0) lines.push({ text: '- (none on the course sheet)' });
   for (const p of brief.prerequisites) {
-    lines.push(`- ${p.code} — ${p.title}: ${p.captureLabel ? `captured (${p.captureLabel})` : 'not yet captured'}`);
+    lines.push({
+      text: `- ${p.code} — ${p.title}: ${p.captureLabel ? `captured (${p.captureLabel})` : 'not yet captured'}`,
+      code: p.code,
+    });
   }
-  lines.push('### Courses that build on this one');
-  if (brief.dependents.length === 0) lines.push('- (none on the course sheet)');
+  lines.push({ text: '### Courses that build on this one' });
+  if (brief.dependents.length === 0) lines.push({ text: '- (none on the course sheet)' });
   for (const d of brief.dependents) {
-    lines.push(`#### ${d.code} — ${d.title}`);
+    lines.push({ text: `#### ${d.code} — ${d.title}`, code: d.code });
     if (d.expectations) {
-      lines.push(`- Expects students to arrive with (${d.expectations.source}):`);
-      for (const it of d.expectations.items) lines.push(`  - ${it}`);
+      lines.push({ text: `- Expects students to arrive with (${d.expectations.source}):` });
+      for (const it of d.expectations.items) lines.push({ text: `  - ${it}` });
     } else {
-      lines.push('- Expects students to arrive with: not yet captured');
+      lines.push({ text: '- Expects students to arrive with: not yet captured' });
     }
     if (d.projects.items.length > 0) {
-      lines.push(`- Major projects (${d.projects.source}):`);
-      for (const it of d.projects.items) lines.push(`  - ${it}`);
+      lines.push({ text: `- Major projects (${d.projects.source}):` });
+      for (const it of d.projects.items) lines.push({ text: `  - ${it}` });
     } else {
-      lines.push('- Major projects: none listed');
+      lines.push({ text: '- Major projects: none listed' });
     }
   }
-  const note = (n: number) => `_(${n} more line(s) left out to stay within the size cap.)_`;
-  const reserve = note(lines.length).length + 1;
+  const note = (n: number, droppedCodes: string[]) => droppedCodes.length > 0
+    ? `_(${n} more line(s) left out to stay within the size cap; courses not shown: ${droppedCodes.join(', ')}.)_`
+    : `_(${n} more line(s) left out to stay within the size cap.)_`;
+  // Size the reserve for the worst case — a note naming every linked course
+  // — so the loop never overshoots maxChars regardless of where the cut
+  // actually lands.
+  const allLinkedCodes = [...brief.prerequisites.map(p => p.code), ...brief.dependents.map(d => d.code)];
+  const reserve = note(lines.length, allLinkedCodes).length + 1;
   let out = head;
   let i = 0;
   for (; i < lines.length; i++) {
-    const next = `${out}\n${lines[i]}`;
+    const line = lines[i]!;
+    const next = `${out}\n${line.text}`;
     const remainingAfter = lines.length - i - 1;
     if (next.length + (remainingAfter > 0 ? reserve : 0) > maxChars) break;
     out = next;
   }
-  if (i < lines.length) out = `${out}\n${note(lines.length - i)}`;
+  if (i < lines.length) {
+    const droppedCodes: string[] = [];
+    for (let j = i; j < lines.length; j++) {
+      const c = lines[j]!.code;
+      if (c && !droppedCodes.includes(c)) droppedCodes.push(c);
+    }
+    out = `${out}\n${note(lines.length - i, droppedCodes)}`;
+  }
   return out;
 }
