@@ -71,6 +71,23 @@ describe('plainDepth — rewriting score codes inside AI-written text', () => {
     ['K-high with U-low', 'knows the terms well with little reasoning about why'],
     ['D-high, U-low on press work', 'strong hands-on work, little reasoning about why on press work'],
     ['where the K/U/D scores cluster', 'where the knowing / reasoning / doing scores cluster'],
+    // real GC 3800 summary strings (2026-10-06 screenshot)
+    [
+      'LinkedIn profile development — D2/U1: profile construction with limited feedback on rationale',
+      'LinkedIn profile development — can restate the explanation; does it with a reference or checklist: profile construction with limited feedback on rationale',
+    ],
+    [
+      'Career-development services participation — K1/U0/D1: exposure and attendance',
+      "Career-development services participation — has met it and doesn't yet reason about why; does it with step-by-step direction: exposure and attendance",
+    ],
+    [
+      'Communication — D3 via Internship Fair',
+      'Communication — does it independently in familiar situations (Internship Fair)',
+    ],
+    [
+      'Attention to Detail — D3 via Courselineup/Budget grading',
+      'Attention to Detail — does it independently in familiar situations (Courselineup/Budget grading)',
+    ],
     // two separate tokens joined by prose stay separate
     ['D3 and D4', 'does it independently in familiar situations and adapts it to new conditions'],
   ];

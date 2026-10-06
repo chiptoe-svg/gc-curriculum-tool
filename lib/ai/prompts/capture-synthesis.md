@@ -468,24 +468,27 @@ After producing competencies, audit_notes, and incoming_expectations, produce a 
 
 Hard length cap: 300 words across the whole block.
 
+**Plain language, no score codes.** The instructor reading this summary may never have seen the K/U/D scale. Write every section in plain words a faculty member would use about their own students — never write score codes such as `D3`, `K2/U2/D1`, `D=0`, `D4–5`, `K-high`, or the letters "K/U/D". Describe what students actually do instead ("students build the budget on their own", "they can name the terms but not yet explain why"). The scores belong in the competency cards, not in this summary. The depth-scale levels and their plain meanings are: Know — has met it / recognizes it / recalls it without prompting / uses the correct terms / fluent with edge cases; Understand — can restate the explanation / explains it in their own words / predicts consequences / reasons through new cases / critiques and extends it; Do — does it with step-by-step direction / with a reference or checklist / independently in familiar situations / adapts it to new conditions / does it creatively and guides others.
+
 Sections:
 
-**`course_shape`** — 1–2 sentences. What kind of work the course develops, based on where the K/U/D scores cluster. Name the one or two assignments that anchor the deepest development. Example: "Strongly hands-on color measurement course; the Brand Color Report and Spectrophotometer SOP anchor the deepest D4–5 evidence."
+**`course_shape`** — 1–2 sentences. What kind of work the course develops, based on where the scores cluster. Name the one or two assignments that anchor the deepest development. Example: "Strongly hands-on color measurement course; in the Brand Color Report and the Spectrophotometer SOP, students adapt their measurement work to new conditions on their own."
 
-**`strongest_evidence`** — 3–5 single-line bullets. Competencies that reached D=4 or D=5. Format each bullet as:
-`{Competency statement, ≤15 words} — D{N} via {Assignment name}`.
+**`strongest_evidence`** — 3–5 single-line bullets. Competencies that reached the top of the Do scale (4 or 5). Format each bullet as:
+`{Competency statement, ≤15 words} — {what students do, in plain words} ({Assignment name})`.
+Example: "Builds a production budget — students do it on their own and adapt it to new jobs (Budget assignment)".
 
-**`dimensional_patterns`** — 0–4 single-line bullets. Where K/U/D diverge meaningfully for a competency:
-- K-high with U-low = vocabulary without rationale
-- D-high with U-low = craft without articulation
-- U-high with D-low = theory without craft
-- K1-only = mentioned, never engaged
+**`dimensional_patterns`** — 0–4 single-line bullets. Where knowing, understanding, and doing diverge meaningfully for a competency (internally: K-high/U-low, D-high/U-low, U-high/D-low, K1-only — but write the plain version):
+- vocabulary without rationale ("students use the terms but can't yet explain why")
+- craft without articulation ("students do it well but can't say why it works")
+- theory without craft ("students can explain it but haven't had to do it")
+- mentioned, never engaged ("it comes up in lecture but students never practice it")
 
 Cite the specific competency. Omit the array entirely if no patterns stand out.
 
 **`catalog_vs_evidence`** — 0–4 single-line bullets. The most concrete items from `audit_notes` (prereq_gaps, objective_misalignments, cross_source_conflicts). Name the specific objective number, prereq skill, or source pair. Omit if `audit_notes` is essentially empty.
 
-**`foundationals_glance`** — one sentence. Which of Agency, Attention to Detail, Resilience, Curiosity, Communication scored D=0 (course does not develop) and which scored D=4 or D=5 (strongly developed). Skip the middle.
+**`foundationals_glance`** — one sentence. Which of Agency, Attention to Detail, Resilience, Curiosity, Communication the course does not develop (Do score 0) and which it strongly develops (Do score 4 or 5), said in plain words. Skip the middle.
 
 The `verification_summary` block also carries one `source` + `citations` pair, derived from the citations of the transcript turns that produced the strongest_evidence and dimensional_patterns observations.
 

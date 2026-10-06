@@ -72,7 +72,8 @@ const HIGH_LOW: Record<string, string> = {
 };
 
 // Assignment names that already say what kind of work they are.
-const WORK_NOUN = /\b(assignment|project|report|lab|exam|quiz|test|portfolio|paper|sop|critique|presentation|brief|exercise|case study|capstone|final)s?$/i;
+// Events and graded activities also read fine without "assignment".
+const WORK_NOUN = /\b(assignment|project|report|lab|exam|quiz|quizze|test|portfolio|paper|sop|critique|presentation|brief|exercise|case study|capstone|final|grading|fair|event|visit|interview|workshop|session|activity|discussion|reflection|survey|module|unit)s?$/i;
 
 function viaClause(name: string): string {
   const n = name.trim();
