@@ -55,8 +55,11 @@ export type ModelTier = 'light' | 'default' | 'heavy' | 'custom';
  */
 export const TIER_TO_MODEL: Record<Exclude<ModelTier, 'custom'>, string> = {
   light: 'gpt-5.4-mini',
-  default: 'gpt-5.4',
-  heavy: 'gpt-5.5',
+  // Owner decision 2026-10-06: default and heavy move to gpt-6.1-sol (low
+  // reasoning effort, set in lib/ai/openai.ts). See
+  // docs/superpowers/audits/2026-10-05-model-evaluation.md.
+  default: 'gpt-6.1-sol',
+  heavy: 'gpt-6.1-sol',
 };
 
 /**

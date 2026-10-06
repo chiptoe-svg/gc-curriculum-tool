@@ -56,6 +56,15 @@ export const LAST_MEASURED: Record<string, ReliabilityEntry> = {
     source:
       'docs/superpowers/audits/2026-06-12-reliability-study.md (Part 2b)',
   },
+  'gpt-6.1-sol': {
+    date: '2026-10-05',
+    k: 0.833,
+    u: 0.8,
+    d: 0.933,
+    withinOneD: 1.0,
+    source:
+      'docs/superpowers/audits/2026-10-05-model-evaluation.md (low effort, 5 pairs x 5 runs)',
+  },
 };
 
 /**
