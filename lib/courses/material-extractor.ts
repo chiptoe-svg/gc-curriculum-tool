@@ -250,7 +250,10 @@ class DoclingExtractor implements MaterialExtractor {
       console.warn(`[docling] primary ${this.baseUrl} failed (${err instanceof Error ? err.message : err}); falling back to ${fallbackUrl}`);
       data = await post(fallbackUrl);
     }
-    if (data.status && data.status !== 'success') {
+    // 'partial_success' (the async path's ConversionStatus can return it — e.g. a
+    // forced-OCR job that completed with some pages degraded) is accepted here too:
+    // best-effort content beats throwing away a result that mostly worked.
+    if (data.status && data.status !== 'success' && data.status !== 'partial_success') {
       const reason = data.errors?.[0]?.error_message ?? 'unknown failure';
       throw new Error(`docling-serve conversion failed: ${reason}`);
     }
@@ -395,7 +398,12 @@ interface TaskStatusResponse {
  */
 const ASYNC_POLL_INTERVAL_MS = 3000;
 const ASYNC_POLL_WAIT_SECONDS = 5; // hint to the server's long-poll; see comment above
-const ASYNC_MAX_POLL_ATTEMPTS = 100; // ~100 * 3s = 300s ceiling, well above the observed ~150s
+// Worst case per attempt is the poll wait PLUS the client-side sleep (the server
+// can hold the connection for up to ASYNC_POLL_WAIT_SECONDS before responding, even
+// when it isn't honoring `wait` as a hint — see comment above), so the real ceiling
+// is attempts x (poll wait + sleep) = 100 x (5 + 3)s = 800s, comfortably above the
+// observed ~150s.
+const ASYNC_MAX_POLL_ATTEMPTS = 100;
 
 async function convertAsync(base: string, form: FormData): Promise<DoclingResponse> {
   return withDoclingSlot(async () => {

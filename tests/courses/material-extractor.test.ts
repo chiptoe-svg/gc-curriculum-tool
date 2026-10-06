@@ -363,6 +363,116 @@ describe('DoclingExtractor', () => {
         fileBytes: Buffer.from('x'), mimeType: PDF, fileName: 'scan.pdf',
       })).rejects.toThrow(/docling-serve 500.*async submit failed/);
     });
+
+    describe('polling loop (review finding #5 — fake timers, no real sleeps)', () => {
+      afterEach(() => {
+        vi.useRealTimers();
+      });
+
+      it('polls through several non-terminal statuses (pending -> started -> started -> success) before fetching the result', async () => {
+        vi.useFakeTimers();
+        detectScan.mockResolvedValue({ kind: 'scanned', reason: "x" });
+        const statuses = ['pending', 'started', 'started', 'success'];
+        let pollCalls = 0;
+        (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(async (url: string) => {
+          if (url.endsWith('/v1/convert/file/async')) {
+            return { ok: true, json: async () => ({ task_id: 'multi', task_status: 'pending' }) };
+          }
+          if (url.includes('/v1/status/poll/multi')) {
+            const status = statuses[pollCalls] ?? 'success';
+            pollCalls++;
+            return { ok: true, json: async () => ({ task_id: 'multi', task_status: status }) };
+          }
+          if (url.endsWith('/v1/result/multi')) {
+            return { ok: true, json: async () => ({ status: 'success', document: { md_content: 'multi-poll result' } }) };
+          }
+          throw new Error(`unexpected fetch: ${url}`);
+        });
+
+        const promise = new DoclingExtractor('http://localhost:5001').extract({
+          fileBytes: Buffer.from('x'), mimeType: PDF, fileName: 'scan.pdf',
+        });
+        await vi.runAllTimersAsync();
+        const r = await promise;
+
+        expect(r.text).toBe('multi-poll result');
+        expect(pollCalls).toBe(statuses.length); // one poll per status, no extra/missing iterations
+      });
+
+      it('throws after exhausting max poll attempts on a task that never reaches a terminal status', async () => {
+        vi.useFakeTimers();
+        detectScan.mockResolvedValue({ kind: 'scanned', reason: "x" });
+        let pollCalls = 0;
+        (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(async (url: string) => {
+          if (url.endsWith('/v1/convert/file/async')) {
+            return { ok: true, json: async () => ({ task_id: 'stuck', task_status: 'pending' }) };
+          }
+          if (url.includes('/v1/status/poll/stuck')) {
+            pollCalls++;
+            return { ok: true, json: async () => ({ task_id: 'stuck', task_status: 'started' }) }; // never terminal
+          }
+          throw new Error(`unexpected fetch: ${url}`); // /v1/result must never be called
+        });
+
+        const promise = new DoclingExtractor('http://localhost:5001').extract({
+          fileBytes: Buffer.from('x'), mimeType: PDF, fileName: 'scan.pdf',
+        }).catch((err: unknown) => err as Error);
+        await vi.runAllTimersAsync();
+        const err = await promise;
+
+        expect(err).toBeInstanceOf(Error);
+        expect((err as Error).message).toMatch(/timed out polling/);
+        expect(pollCalls).toBe(100); // ASYNC_MAX_POLL_ATTEMPTS — confirms the loop actually caps, not just "eventually throws"
+      });
+
+      it('treats partial_success as terminal and proceeds to fetch the result', async () => {
+        vi.useFakeTimers();
+        detectScan.mockResolvedValue({ kind: 'scanned', reason: "x" });
+        (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(async (url: string) => {
+          if (url.endsWith('/v1/convert/file/async')) {
+            return { ok: true, json: async () => ({ task_id: 'partial', task_status: 'pending' }) };
+          }
+          if (url.includes('/v1/status/poll/partial')) {
+            return { ok: true, json: async () => ({ task_id: 'partial', task_status: 'partial_success' }) };
+          }
+          if (url.endsWith('/v1/result/partial')) {
+            return { ok: true, json: async () => ({ status: 'partial_success', document: { md_content: 'best effort' } }) };
+          }
+          throw new Error(`unexpected fetch: ${url}`);
+        });
+
+        const promise = new DoclingExtractor('http://localhost:5001').extract({
+          fileBytes: Buffer.from('x'), mimeType: PDF, fileName: 'scan.pdf',
+        });
+        await vi.runAllTimersAsync();
+        const r = await promise;
+
+        expect(r.text).toBe('best effort');
+      });
+
+      it('treats skipped as terminal and throws (ambiguous outcome, not silently treated as success)', async () => {
+        vi.useFakeTimers();
+        detectScan.mockResolvedValue({ kind: 'scanned', reason: "x" });
+        (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(async (url: string) => {
+          if (url.endsWith('/v1/convert/file/async')) {
+            return { ok: true, json: async () => ({ task_id: 'skip', task_status: 'pending' }) };
+          }
+          if (url.includes('/v1/status/poll/skip')) {
+            return { ok: true, json: async () => ({ task_id: 'skip', task_status: 'skipped' }) };
+          }
+          throw new Error(`unexpected fetch: ${url}`); // /v1/result must never be called for 'skipped'
+        });
+
+        const promise = new DoclingExtractor('http://localhost:5001').extract({
+          fileBytes: Buffer.from('x'), mimeType: PDF, fileName: 'scan.pdf',
+        }).catch((err: unknown) => err as Error);
+        await vi.runAllTimersAsync();
+        const err = await promise;
+
+        expect(err).toBeInstanceOf(Error);
+        expect((err as Error).message).toMatch(/task skip skipped/);
+      });
+    });
   });
 
   describe('large-PDF routing: scanned skips the split, digital keeps it (review finding #2)', () => {
