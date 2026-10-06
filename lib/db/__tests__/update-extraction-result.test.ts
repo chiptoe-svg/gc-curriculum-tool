@@ -117,6 +117,24 @@ describe('updateExtractionResult — the single writer of extracted_text', () =>
     expect(scrubForRecord).toHaveBeenCalledOnce();
   });
 
+  it('re-scrubs already-scrubbed text when rescrub is set (backfill catching names an earlier pass missed)', async () => {
+    const red = { counts: { 'student-name': 1, 'student-id': 0, email: 0 }, failedReason: null };
+    selectLimit.mockResolvedValue([{ fileName: 'roster.xlsx', extractedText: '[student], Raj Patel', redactions: red }]);
+    scrubForRecord.mockResolvedValue({ text: '[student], [student]', redactions: { 'student-name': 2, 'student-id': 0, email: 0 } });
+    const r = await updateExtractionResult({ id: 'm1', extractionStatus: 'ok', extractedText: '[student], Raj Patel', rescrub: true });
+    expect(scrubForRecord).toHaveBeenCalledOnce();
+    expect(r).toEqual({ outcome: 'stored', extractedText: '[student], [student]' });
+  });
+
+  it('keeps the existing scrubbed text when a rescrub fails, instead of clearing it', async () => {
+    const red = { counts: { 'student-name': 1, 'student-id': 0, email: 0 }, failedReason: null };
+    selectLimit.mockResolvedValue([{ fileName: 'roster.xlsx', extractedText: '[student], Raj Patel', redactions: red }]);
+    scrubForRecord.mockRejectedValue(new Error('privacy-scrub call failed on chunk 1/1 (Error)'));
+    const r = await updateExtractionResult({ id: 'm1', extractionStatus: 'ok', extractedText: '[student], Raj Patel', rescrub: true });
+    expect(r).toEqual({ outcome: 'stored', extractedText: '[student], Raj Patel' });
+    for (const [patch] of updateSet.mock.calls) expect((patch as Record<string, unknown>).extractedText).not.toBeNull();
+  });
+
   it('throws when the material does not exist', async () => {
     selectLimit.mockResolvedValue([]);
     await expect(updateExtractionResult({ id: 'nope', extractionStatus: 'ok', extractedText: 'x' }))

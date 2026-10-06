@@ -121,6 +121,8 @@ async function main(): Promise<void> {
       id: r.id,
       extractionStatus: r.extractionStatus as ExtractionStatus,
       extractedText: r.extractedText!,
+      // Re-run the name pass on already-scrubbed text: one pass misses names.
+      rescrub: true,
     }),
     scrubDigest: async (d, opts) => (await scrubForRecord(d, opts)).text,
     setDigest: (id, d) => setScrubbedDigest(id, d),

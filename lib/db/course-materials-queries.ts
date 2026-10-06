@@ -102,6 +102,10 @@ export interface UpdateExtractionInput {
   extractionMethod?: ExtractionMethod;
   extractedText?: string;
   pageCount?: number;
+  /** Re-run the scrub on text that is already the scrubber's output (privacy
+   *  backfill only: one name-pass run misses names). On failure the existing
+   *  scrubbed text is kept, never cleared. */
+  rescrub?: boolean;
 }
 
 export type PersistedExtraction =
@@ -138,7 +142,20 @@ export async function updateExtractionResult(input: UpdateExtractionInput): Prom
     // successful redactions record IS the scrubber's output. Re-scrubbing it
     // (re-index, backfill re-run) would put good text through the AI name pass
     // again, where a provider blip or guard reject would clear it. Store as is.
-    if (row.redactions !== null && row.redactions.failedReason === null && row.extractedText === input.extractedText) {
+    const alreadyScrubbed = row.redactions !== null && row.redactions.failedReason === null && row.extractedText === input.extractedText;
+    if (alreadyScrubbed && input.rescrub) {
+      try {
+        const scrubbed = await scrubForRecord(input.extractedText, {
+          fileName: row.fileName,
+          isSyllabus: row.isSyllabus === true || isSyllabusFileName(row.fileName),
+        });
+        stored = { extractedText: scrubbed.text, redactions: { counts: scrubbed.redactions, failedReason: null } };
+      } catch (err) {
+        // The stored text is already scrubbed; a failed extra pass keeps it.
+        console.warn(`[privacy] rescrub failed for material ${input.id}; keeping the existing scrubbed text: ${err instanceof Error ? err.message : String(err)}`);
+      }
+      if (stored === undefined) return { outcome: 'stored', extractedText: row.extractedText ?? undefined };
+    } else if (alreadyScrubbed) {
       await db
         .update(courseMaterials)
         .set({
@@ -147,9 +164,9 @@ export async function updateExtractionResult(input: UpdateExtractionInput): Prom
           ...(input.pageCount !== undefined && { pageCount: input.pageCount }),
         })
         .where(eq(courseMaterials.id, input.id));
-      return { outcome: 'stored', extractedText: row.extractedText };
+      return { outcome: 'stored', extractedText: row.extractedText ?? undefined };
     }
-    try {
+    if (stored === undefined) try {
       const scrubbed = await scrubForRecord(input.extractedText, {
         fileName: row.fileName,
         isSyllabus: row.isSyllabus === true || isSyllabusFileName(row.fileName),
