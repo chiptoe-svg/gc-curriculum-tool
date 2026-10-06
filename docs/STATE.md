@@ -175,13 +175,13 @@ Setup details: [`docs/superpowers/running-locally.md`](./superpowers/running-loc
 | `material-digest` | light | Per-material structured digest generated at extraction for every material (supersedes `material-summary`); loaded into audit agent's at-rest context |
 | `chunk-contextualize` | light | Per-chunk position blurb prepended before embedding so the vector encodes position + content (Anthropic contextual-retrieval pattern) |
 | `ingestion-checkin` | light | Per-page-open curation review; one call before audit chat begins; silent most of the time |
-| `capture-chat-agent` | default | Stage 3 audit-chat per-turn loop; tool-using retrieval against Weaviate per-course tenants; returns structured finding + question + citations + readiness |
+| `capture-chat-agent` | **custom: gpt-6.1-sol (low effort)** | Stage 3 audit-chat per-turn loop; tool-using retrieval against Weaviate per-course tenants; returns structured finding + question + citations + readiness Moved to Sol 2026-10-06 (owner); agents on gpt-6.x use the stateless Responses API (`store: false`). |
 | `wiki-update` | heavy | Wiki narrative updater (v1 wired fire-and-forget on snapshot creation; writes course + concept pages + index). Tier is `heavy` in `function-settings.ts` |
-| `curriculum-chat` | default | Curriculum chat over the wiki; tool-using navigation + verbatim-excerpt citations |
+| `curriculum-chat` | **custom: gpt-6.1-sol (low effort)** | Curriculum chat over the wiki; tool-using navigation + verbatim-excerpt citations Moved to Sol 2026-10-06 (owner); agents on gpt-6.x use the stateless Responses API (`store: false`). |
 | `capture-stress-test` | heavy | Adversarial reviewer over a produced profile; on-demand only |
 | `jd-extract` | light | One-shot extraction of structured fields from a JD (Docling markdown or pasted text); per-field confidence scores |
 | `position-rated-items` | default | Generates 10 "experiences worth having" candidates from pages 1–4 inputs + career-target sub-competencies |
-| `position-interview-agent` | default | Per-turn interview agent for page 6 of Position Capture; anchor-probe-confirm posture using pages 1–5 context |
+| `position-interview-agent` | **custom: gpt-6.1-sol (low effort)** | Per-turn interview agent for page 6 of Position Capture; anchor-probe-confirm posture using pages 1–5 context Moved to Sol 2026-10-06 (owner); agents on gpt-6.x use the stateless Responses API (`store: false`). |
 | `position-synthesis` | default | Synthesis over a completed page-6 interview transcript + upstream inputs; produces a structured `PositionProfile` |
 | `prereq-edge-seed` | default | One-shot extraction of skill-tagged prerequisite edges from `courses.prerequisites` free text + incoming-expectations; returns `(prereqCode, subCompetencyId, expectedK, expectedU, expectedD)` rows for faculty to confirm or edit |
 | `intended-skills-extract` | default | One-shot extraction of intended (syllabus-asserted) K/U/D per sub-competency from catalog fields (`description`/`learningObjectives`/`majorProjects`/`skillsRequired`); stored in `course_intended_coverage` (migration `0031_clumsy_selene.sql`), banded `claimed`, never merged into measured attainment |
