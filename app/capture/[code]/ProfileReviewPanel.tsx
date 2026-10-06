@@ -75,7 +75,7 @@ export function SourceBadge({
 
   const interactive = onCitationClick && citations && citations.length > 0;
   const className =
-    `inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider ${palette}` +
+    `inline-flex items-center rounded border px-1.5 py-0.5 text-xs font-mono uppercase tracking-wider ${palette}` +
     (interactive ? ' hover:opacity-80 cursor-pointer' : '');
 
   if (interactive) {
@@ -141,7 +141,7 @@ export function EvidenceBandChip({ claim }: { claim: EvidenceClaim }) {
       tabIndex={0}
       role="note"
       aria-label={`Evidence band — ${tooltip}`}
-      className={`inline-flex items-center rounded border px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider focus:outline-none focus:ring-1 focus:ring-ring ${palette}`}
+      className={`inline-flex items-center rounded border px-1.5 py-0.5 text-xs font-mono uppercase tracking-wider focus:outline-none focus:ring-1 focus:ring-ring ${palette}`}
     >
       {label}
     </span>
@@ -289,7 +289,7 @@ export function CompetencyFlagButton({
         type="button"
         onClick={() => setOpen(true)}
         title="Dispute this AI reading — flags persist until explicitly resolved"
-        className="inline-flex items-center rounded border border-input bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground hover:text-foreground hover:bg-muted"
+        className="inline-flex items-center rounded border border-input bg-background px-1.5 py-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted"
       >
         ⚑ flag
       </button>
@@ -350,10 +350,10 @@ function CompetencyRow({
     >
       <span aria-hidden className="text-muted-foreground">▸</span>
       <span className="flex-1 truncate font-medium">{competency.statement}</span>
-      <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+      <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
         {humanizeSource(competency.source)}
       </span>
-      <span className="shrink-0 font-mono text-[11px] text-muted-foreground">
+      <span className="shrink-0 font-mono text-xs text-muted-foreground">
         {isTechnical ? `K${competency.k_depth ?? '–'} U${competency.u_depth ?? '–'} ` : ''}D{competency.d_depth}
       </span>
     </button>
@@ -367,6 +367,8 @@ function CompetencyCard({
   onCitationClick,
   courseCode,
   slug,
+  onConfirm,
+  confirmed,
 }: {
   competency: CaptureCompetency;
   index: number;
@@ -374,6 +376,9 @@ function CompetencyCard({
   onCitationClick?: (c: CaptureProfileCitationType) => void;
   courseCode: string;
   slug: string;
+  /** "Worth a look" rows only: makes the card confirmable ("✓ Looks right"). */
+  onConfirm?: () => void;
+  confirmed?: boolean;
 }) {
   const isTechnical = competency.type === 'technical';
   const evidenceBand = deriveEvidenceBand({
@@ -396,7 +401,7 @@ function CompetencyCard({
           <div className="flex items-center gap-1.5 flex-wrap">
             <span
               className={
-                'inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide '
+                'inline-block rounded px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide '
                 + (isTechnical
                   ? 'bg-blue-50 text-blue-700'
                   : 'bg-amber-50 text-amber-700')
@@ -410,7 +415,7 @@ function CompetencyCard({
             {isUnverifiedHighScore && (
               <span
                 title="High score (D/U≥3) resting on instructor claim — no course material cited. Review whether assignment/rubric evidence could be added."
-                className="inline-flex items-center gap-0.5 rounded border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-[10px] font-mono text-amber-700"
+                className="inline-flex items-center gap-0.5 rounded border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-xs font-mono text-amber-700"
               >
                 ⚠ unverified
               </span>
@@ -428,46 +433,21 @@ function CompetencyCard({
 
       {!isTechnical && (
         <p
-          className="text-[11px] italic leading-snug text-muted-foreground"
+          className="text-xs italic leading-snug text-muted-foreground"
           title="Foundational dispositions show up in what students do, not in what they can recall or explain, so Know and Understand are left unscored (—) rather than zero — a zero would wrongly read as 'the course tried to build this and failed.' The rationale below says why the Do score landed where it did."
         >
           Foundational disposition — scored on <span className="font-medium not-italic">Do</span> only (K/U shown as —, not zero).
         </p>
       )}
 
-      <CompetencyPortrait competency={competency} onChange={onChange} />
-
-      {(competency.evidence_k || competency.evidence_u || competency.evidence_d) && (
-        <details className="text-xs" open={!isTechnical}>
-          <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-            Evidence
-          </summary>
-          <div className="mt-2 space-y-1.5 border-l-2 border-muted pl-3 text-muted-foreground">
-            {competency.evidence_k && (
-              <p>
-                <span className="font-semibold">K:</span> {competency.evidence_k}
-              </p>
-            )}
-            {competency.evidence_u && (
-              <p>
-                <span className="font-semibold">U:</span> {competency.evidence_u}
-              </p>
-            )}
-            {competency.evidence_d && (
-              <p>
-                <span className="font-semibold">D:</span> {competency.evidence_d}
-              </p>
-            )}
-          </div>
-        </details>
-      )}
-
-      <details className="text-xs" open={!isTechnical}>
-        <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-          Rationale
-        </summary>
-        <p className="mt-2 leading-snug text-muted-foreground">{competency.rationale}</p>
-      </details>
+      {/* Evidence and rationale live inside the portrait's "Needs adjusting"
+          view (per dimension), not behind separate fold-outs. */}
+      <CompetencyPortrait
+        competency={competency}
+        onChange={onChange}
+        onConfirm={onConfirm}
+        confirmed={confirmed}
+      />
     </div>
   );
 }
@@ -549,7 +529,7 @@ function CourseEmphasis({ items }: { items: ReadonlyArray<{
     <section className="rounded-md border bg-card px-4 py-3">
       <div className="flex items-baseline justify-between gap-2">
         <h3 className="text-sm font-semibold">Course emphasis — by point weight</h3>
-        <p className="text-[10px] text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           Independent of depth scoring; reflects what the course&apos;s graded work weights.
         </p>
       </div>
@@ -559,11 +539,11 @@ function CourseEmphasis({ items }: { items: ReadonlyArray<{
           return (
             <li key={i} className="space-y-0.5">
               <div className="flex items-baseline gap-2">
-                <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium ${chipTone(it.centrality)}`}>
+                <span className={`shrink-0 rounded px-1.5 py-0.5 text-xs font-medium ${chipTone(it.centrality)}`}>
                   {it.centrality}
                 </span>
                 <span className="flex-1 text-xs leading-snug">{it.competency}</span>
-                <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">
+                <span className="shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
                   {it.points} pts · {it.share_pct}%
                 </span>
               </div>
@@ -669,7 +649,7 @@ function PasteReadyList({ title, items, footnote }: { title: string; items: stri
         <button
           type="button"
           onClick={() => copy(items.join('\n'), 'all')}
-          className="text-[10px] text-muted-foreground hover:text-foreground"
+          className="text-xs text-muted-foreground hover:text-foreground"
           title="Copy all (one per line — paste into a Sheets cell to fill multiple rows; paste into a doc and apply numbered list there)"
         >
           {copiedIdx === 'all' ? 'Copied ✓' : 'Copy all'}
@@ -683,7 +663,7 @@ function PasteReadyList({ title, items, footnote }: { title: string; items: stri
             <button
               type="button"
               onClick={() => copy(obj, i)}
-              className="shrink-0 text-[10px] text-muted-foreground hover:text-foreground"
+              className="shrink-0 text-xs text-muted-foreground hover:text-foreground"
               title="Copy this objective to your clipboard"
             >
               {copiedIdx === i ? 'Copied ✓' : 'Copy'}
@@ -691,11 +671,11 @@ function PasteReadyList({ title, items, footnote }: { title: string; items: stri
           </li>
         ))}
       </ol>
-      <p className="mt-2 text-[10px] italic text-muted-foreground">
+      <p className="mt-2 text-xs italic text-muted-foreground">
         {footnote}
       </p>
       {copyError && (
-        <p className="mt-1 text-[10px] text-destructive">{copyError}</p>
+        <p className="mt-1 text-xs text-destructive">{copyError}</p>
       )}
     </div>
   );
@@ -775,20 +755,20 @@ function MergeGapIntoSkillsButton({
           onClick={handleMerge}
           disabled={state === 'loading'}
           title="Decompose this gap into KUD+ competencies and merge with the course's existing Skills/Competencies Required list — output is the unified replacement list to paste back into the Sheet."
-          className="shrink-0 rounded border border-muted bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
+          className="shrink-0 rounded border border-muted bg-background px-1.5 py-0.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
         >
           {state === 'loading' ? 'merging…' : state === 'done' ? 'regenerate' : 'merge into skills'}
         </button>
       </div>
       {state === 'error' && (
-        <p className="mt-1 text-[10px] text-destructive">{error}</p>
+        <p className="mt-1 text-xs text-destructive">{error}</p>
       )}
       {state === 'done' && merged.length > 0 && (
         <div className="mt-2 rounded border border-muted bg-muted/20 p-2 space-y-1.5">
-          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">
             Replace your Skills/Competencies Required cell with:
           </p>
-          <ul className="space-y-0.5 font-mono text-[11px]">
+          <ul className="space-y-0.5 font-mono text-xs">
             {merged.map((m, i) => (
               <li
                 key={i}
@@ -800,8 +780,8 @@ function MergeGapIntoSkillsButton({
                 title={m.rationale}
               >
                 {m.text}
-                {m.from === 'gap' && <span className="ml-2 text-[9px] text-green-700 font-sans">+new</span>}
-                {m.from === 'merged' && <span className="ml-2 text-[9px] text-blue-700 font-sans">~clarified</span>}
+                {m.from === 'gap' && <span className="ml-2 text-xs text-green-700 font-sans">+new</span>}
+                {m.from === 'merged' && <span className="ml-2 text-xs text-blue-700 font-sans">~clarified</span>}
               </li>
             ))}
           </ul>
@@ -809,7 +789,7 @@ function MergeGapIntoSkillsButton({
             <button
               type="button"
               onClick={handleCopy}
-              className="rounded bg-primary px-2 py-0.5 text-[10px] font-medium text-primary-foreground hover:bg-primary/90"
+              className="rounded bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
             >
               {copied ? '✓ copied' : 'copy merged list'}
             </button>
@@ -1026,7 +1006,7 @@ export function ProfileReviewPanel({
   const unjustifiedBumpCount = bumps.filter(b => (overrideReasons.get(b.index) ?? '').trim().length === 0).length;
   const allUpwardBumpsJustified = unjustifiedBumpCount === 0;
   const approveUnlocked = (dirty || allWorthLookReviewed || noteSubstantive) && allUpwardBumpsJustified;
-  const approveLockTitle = "Review before approving — for each 'Worth a look' card, mark ✓ Sounds like them or use 'Something's off' to correct a dimension, or add a departmental-context note. (Approval is an epistemic act, not a click-through.)";
+  const approveLockTitle = "Review before approving — for each 'Worth a look' card, mark ✓ Looks right or use 'Needs adjusting' to correct a dimension, or add a departmental-context note. (Approval is an epistemic act, not a click-through.)";
 
   async function persist(status: 'confirmed' | 'edited') {
     if (validationError) {
@@ -1086,7 +1066,7 @@ export function ProfileReviewPanel({
     const missing = (overrideReasons.get(i) ?? '').trim().length === 0;
     return (
       <div className={'mt-1 rounded-md border p-2 ' + (missing ? 'border-amber-400 bg-amber-50' : 'border-muted bg-muted/30')}>
-        <label className="block text-[11px] font-medium text-amber-900">
+        <label className="block text-xs font-medium text-amber-900">
           ⚑ You raised a score ({summary}) — why? <span className="font-normal text-amber-700">{hint}</span>
         </label>
         <textarea
@@ -1145,7 +1125,7 @@ export function ProfileReviewPanel({
 
       {/* ── STEP HEADER — Step 2 of 2 (mirrors Step 1's design language) ── */}
       <div className="rounded-lg border bg-card p-6">
-        <div className="mb-1 flex items-center gap-2 font-mono-plex text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+        <div className="mb-1 flex items-center gap-2 font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
           <span>Step 2 of 2 · Review &amp; Approve</span>
           <span aria-hidden className="text-foreground">○</span><span aria-hidden>──</span><span aria-hidden className="text-foreground">●</span>
         </div>
@@ -1161,12 +1141,12 @@ export function ProfileReviewPanel({
           <div className="flex shrink-0 items-center gap-2">
             {/* Status chip — absorbs the standalone DRAFT/CAPTURED banner */}
             {isCaptured ? (
-              <span className="rounded border border-teal-300 bg-teal-50 px-2 py-0.5 text-[11px] font-semibold text-teal-900">
+              <span className="rounded border border-teal-300 bg-teal-50 px-2 py-0.5 text-xs font-semibold text-teal-900">
                 CAPTURED ✓
                 {dirty && <span className="ml-1 font-normal text-amber-700">(unsaved edits)</span>}
               </span>
             ) : (
-              <span className="rounded border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-900">
+              <span className="rounded border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-900">
                 DRAFT
               </span>
             )}
@@ -1253,7 +1233,7 @@ export function ProfileReviewPanel({
                         : new Set(confidentIndices),
                     )
                   }
-                  className="text-[11px] text-muted-foreground underline hover:text-foreground"
+                  className="text-xs text-muted-foreground underline hover:text-foreground"
                 >
                   {confidentIndices.every(i => expanded.has(i)) ? 'Roll up all ▴' : 'Open all ▾'}
                 </button>
@@ -1264,8 +1244,8 @@ export function ProfileReviewPanel({
             <p className="text-xs text-muted-foreground">
               Listed in course order. The highlighted rows are the ones the interviewer was less
               sure about — they rest on your word, sit high on the scale, were inferred without a
-              direct source, or carry the most graded weight. Adjust a score if it&apos;s off, then
-              mark each ✓ Sounds like them. The confident rows are rolled up — click any to edit.
+              direct source, or carry the most graded weight. Use Needs adjusting if a score is off,
+              then mark each ✓ Looks right. The confident rows are rolled up — click any to edit.
             </p>
           )}
 
@@ -1283,39 +1263,28 @@ export function ProfileReviewPanel({
                     + (reviewed.has(i) ? ' opacity-60' : '')
                   }
                 >
-                  {reason && <p className="text-[11px] font-medium text-amber-800">⚑ {reason}</p>}
+                  {reason && <p className="text-xs font-medium text-amber-800">⚑ {reason}</p>}
                   <CompetencyCard
                     competency={c}
                     index={i}
                     // Editing a score is NOT confirmation. Using the portrait's
-                    // "Something's off → too high/too low" correction only mutates
+                    // "Needs adjusting → Lower/Higher" correction only mutates
                     // the draft + unlocks approval via the `dirty` guard; clearing
-                    // the row requires the explicit "✓ Sounds like them" button
-                    // below. (A stray portrait edit used to auto-confirm the row —
+                    // the row requires the explicit "✓ Looks right" button.
+                    // (A stray portrait edit used to auto-confirm the row —
                     // 2026-06-16 operator report.)
                     onChange={next => updateCompetency(i, next)}
                     onCitationClick={handleCitationClick}
                     courseCode={courseCode}
                     slug={slug}
+                    onConfirm={() => markReviewed(i)}
+                    confirmed={reviewed.has(i)}
                   />
                   <StressTestBadge
                     annotation={stressTestResult?.per_competency.find(a => a.competency_index === i) ?? null}
                   />
                   {renderOverrideReason(i)}
-                  <div className="flex justify-end gap-2">
-                    {renderInlineSave()}
-                    <button
-                      type="button"
-                      onClick={() => markReviewed(i)}
-                      className={
-                        reviewed.has(i)
-                          ? 'inline-flex items-center gap-1.5 rounded-md border border-green-300 bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-800'
-                          : 'inline-flex items-center gap-1.5 rounded-md border border-amber-600 bg-amber-500 px-4 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-amber-600'
-                      }
-                    >
-                      {reviewed.has(i) ? '✓ Confirmed' : '✓ Sounds like them'}
-                    </button>
-                  </div>
+                  {dirty && <div className="flex justify-end">{renderInlineSave()}</div>}
                 </div>
               );
             }
@@ -1331,7 +1300,7 @@ export function ProfileReviewPanel({
                       return next;
                     })
                   }
-                  className="text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                  className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
                 >
                   ▴ roll this one up
                 </button>
@@ -1625,7 +1594,7 @@ export function ProfileReviewPanel({
       <div className="sticky bottom-0 z-10 border-t bg-card px-4 py-3 shadow-[0_-1px_4px_rgba(0,0,0,0.06)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Summary chip */}
-          <span className="rounded border border-muted bg-muted/40 px-2.5 py-1 text-[11px] font-mono text-muted-foreground">
+          <span className="rounded border border-muted bg-muted/40 px-2.5 py-1 text-xs font-mono text-muted-foreground">
             {needsReview.size} to review · {confidentIndices.length} confident
           </span>
 
@@ -1653,7 +1622,7 @@ export function ProfileReviewPanel({
 
             {/* Approve — guard prevents rubber-stamping (A15) */}
             {!approveUnlocked && (
-              <span className="text-[11px] text-muted-foreground">
+              <span className="text-xs text-muted-foreground">
                 {unjustifiedBumpCount > 0
                   ? `${unjustifiedBumpCount} raised score${unjustifiedBumpCount === 1 ? '' : 's'} need a reason before you can approve.`
                   : 'Locked until reviewed — hover for what counts.'}

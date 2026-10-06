@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { CaptureCompetency } from '@/lib/ai/capture/schema';
-import type { Dimension } from '@/lib/ai/capture/depth-anchors';
+import { describeDepth, type Dimension } from '@/lib/ai/capture/depth-anchors';
 import { portraitClauses, lowerAnchorOptions, evidencePromptFor, dimLabel } from '@/lib/ai/capture/portrait';
 
 /** The dimensions that are scored for this competency (foundational → Do only). */
@@ -30,16 +30,33 @@ function ratingLabel(c: CaptureCompetency): string {
   return c.type === 'foundational' ? `D${c.d_depth}` : `K${k} · U${u} · D${c.d_depth}`;
 }
 
+function evidenceOf(c: CaptureCompetency, dim: Dimension): string {
+  return (dim === 'k' ? c.evidence_k : dim === 'u' ? c.evidence_u : c.evidence_d) ?? '';
+}
+
 type Mode = null | { dim: Dimension; dir: 'high' | 'low' };
 
+/**
+ * The review card's score block. Compact by default: the portrait sentence and
+ * two stacked actions — "✓ Looks right" (only when the card is confirmable,
+ * i.e. a "Worth a look" row) and "Needs adjusting". "Needs adjusting" opens the
+ * card in place: one readable row per scored dimension (score in words,
+ * evidence, Lower / Higher), then the rationale. Adjusting a score only calls
+ * onChange — it never confirms; confirming is the explicit "Looks right".
+ */
 export function CompetencyPortrait({
   competency,
   onChange,
+  onConfirm,
+  confirmed = false,
 }: {
   competency: CaptureCompetency;
   onChange: (next: CaptureCompetency) => void;
+  /** When provided, the card is confirmable and shows "✓ Looks right". */
+  onConfirm?: () => void;
+  confirmed?: boolean;
 }) {
-  const [flagsOpen, setFlagsOpen] = useState(false);
+  const [adjusting, setAdjusting] = useState(false);
   const [mode, setMode] = useState<Mode>(null);
   const [evidence, setEvidence] = useState('');
 
@@ -58,6 +75,14 @@ export function CompetencyPortrait({
     setMode(null);
     setEvidence('');
   }
+  function toggleAdjusting() {
+    if (adjusting) { setMode(null); setEvidence(''); }
+    setAdjusting(!adjusting);
+  }
+
+  const choiceClass =
+    'rounded-md border border-input bg-background px-2.5 py-1 text-xs font-medium hover:bg-muted';
+  const choiceActive = ' border-foreground/60 bg-muted';
 
   return (
     <div className="space-y-3">
@@ -69,7 +94,7 @@ export function CompetencyPortrait({
             </span>
           ))}
         </p>
-        <span className="shrink-0 font-mono text-[11px] text-muted-foreground">{ratingLabel(competency)}</span>
+        <span className="shrink-0 font-mono text-xs text-muted-foreground">{ratingLabel(competency)}</span>
       </div>
 
       {competency.intended_target && (() => {
@@ -80,7 +105,7 @@ export function CompetencyPortrait({
         if (it.u !== null && it.u !== undefined && it.u !== competency.u_depth) parts.push(`U${it.u}`);
         if (parts.length === 0) return null;
         return (
-          <p className="text-[10px] text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             <span className="font-medium text-amber-600">target</span>{' '}
             {parts.join(' · ')}{' '}
             <span className="opacity-70">· measured {ratingLabel(competency)}</span>
@@ -88,66 +113,89 @@ export function CompetencyPortrait({
         );
       })()}
 
-      <button
-        type="button"
-        onClick={() => {
-          if (flagsOpen) { setMode(null); setEvidence(''); }
-          setFlagsOpen(!flagsOpen);
-        }}
-        className="text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-      >
-        Something&apos;s off {flagsOpen ? '▴' : '▾'}
-      </button>
+      {/* Stacked, same-width actions, right-aligned: confirm on top, adjust below. */}
+      <div className="flex justify-end">
+        <div className="flex w-48 flex-col gap-2">
+          {onConfirm && (
+            <button
+              type="button"
+              onClick={onConfirm}
+              className={
+                confirmed
+                  ? 'w-full rounded-md border border-success/30 bg-success/10 px-3 py-1.5 text-sm font-semibold text-success'
+                  : 'w-full rounded-md border border-success bg-success px-3 py-1.5 text-sm font-semibold text-success-foreground shadow-sm hover:bg-success/90'
+              }
+            >
+              {confirmed ? '✓ Confirmed' : '✓ Looks right'}
+            </button>
+          )}
+          <button
+            type="button"
+            aria-expanded={adjusting}
+            onClick={toggleAdjusting}
+            className="w-full rounded-md border border-amber-600 bg-amber-500 px-3 py-1.5 text-sm font-semibold text-amber-950 shadow-sm hover:bg-amber-600"
+          >
+            Needs adjusting
+          </button>
+        </div>
+      </div>
 
-      {flagsOpen && (
-        <div className="space-y-2 rounded-md border border-muted bg-muted/30 p-2">
-          <p className="text-[11px] font-medium text-muted-foreground">Which part?</p>
+      {adjusting && (
+        <div className="space-y-4 rounded-md border bg-background p-3">
           {dims.map((dim) => {
+            const depth = depthOf(competency, dim);
+            const ev = evidenceOf(competency, dim).trim();
             const isActive = mode?.dim === dim;
             return (
-              <div key={dim} data-testid={`flag-row-${dim}`} className="space-y-1">
-                <div className="flex items-center gap-2 text-xs">
-                  <span className="w-20 font-medium">{dimLabel(dim)}</span>
-                  {depthOf(competency, dim) > 0 && (
+              <div key={dim} data-testid={`flag-row-${dim}`} className="space-y-1.5">
+                <p className="text-sm font-medium">
+                  {`${dimLabel(dim)}: ${depth}. ${describeDepth(dim, depth)}`}
+                </p>
+                {ev && <p className="text-sm leading-snug text-muted-foreground">{ev}</p>}
+                <div className="flex flex-wrap gap-2 pt-0.5">
+                  {depth > 0 && (
                     <button
                       type="button"
                       onClick={() => setMode(isActive && mode?.dir === 'high' ? null : { dim, dir: 'high' })}
-                      className="rounded border border-input px-2 py-0.5 hover:bg-background"
+                      className={choiceClass + (isActive && mode?.dir === 'high' ? choiceActive : '')}
                     >
-                      too high
+                      Lower: pick a better description
                     </button>
                   )}
-                  {depthOf(competency, dim) < 5 && (
+                  {depth < 5 && (
                     <button
                       type="button"
                       onClick={() => { setEvidence(''); setMode(isActive && mode?.dir === 'low' ? null : { dim, dir: 'low' }); }}
-                      className="rounded border border-input px-2 py-0.5 hover:bg-background"
+                      className={choiceClass + (isActive && mode?.dir === 'low' ? choiceActive : '')}
                     >
-                      too low
+                      Higher: tell us what shows it
                     </button>
                   )}
                 </div>
 
                 {isActive && mode?.dir === 'high' && (
-                  <div className="ml-20 space-y-1">
-                    <p className="text-[11px] text-muted-foreground">More like:</p>
-                    {lowerAnchorOptions(dim, depthOf(competency, dim)).map((opt) => (
+                  <div className="space-y-1.5 border-l-2 border-muted pl-3">
+                    <p className="text-xs text-muted-foreground">Students in this course are more like:</p>
+                    {lowerAnchorOptions(dim, depth).map((opt) => (
                       <button
                         key={opt.level}
                         type="button"
                         data-testid={`lower-opt-${dim}-${opt.level}`}
                         onClick={() => chooseLower(dim, opt.level)}
-                        className="block w-full rounded border border-input px-2 py-1 text-left text-[11px] hover:bg-background"
+                        className="block w-full rounded border border-input px-2.5 py-1.5 text-left text-sm hover:bg-muted"
                       >
-                        {opt.text}
+                        {opt.level}. {opt.text}
                       </button>
                     ))}
                   </div>
                 )}
 
                 {isActive && mode?.dir === 'low' && (
-                  <div className="ml-20 space-y-1">
-                    <label className="block text-[11px] text-muted-foreground" htmlFor={`ev-${dim}`}>
+                  <div className="space-y-1.5 border-l-2 border-muted pl-3">
+                    <p className="text-xs text-muted-foreground">
+                      A higher score needs evidence of what students actually do, not what the syllabus intends.
+                    </p>
+                    <label className="block text-xs text-muted-foreground" htmlFor={`ev-${dim}`}>
                       {evidencePromptFor(dim)}
                     </label>
                     <textarea
@@ -156,13 +204,13 @@ export function CompetencyPortrait({
                       value={evidence}
                       onChange={(e) => setEvidence(e.target.value)}
                       rows={2}
-                      className="w-full resize-none rounded border border-input bg-background px-2 py-1 text-[11px]"
+                      className="w-full resize-none rounded border border-input bg-background px-2 py-1 text-sm"
                     />
                     <button
                       type="button"
                       disabled={evidence.trim().length === 0}
                       onClick={() => raiseWithEvidence(dim)}
-                      className="rounded border border-amber-600 bg-amber-500 px-2 py-0.5 text-[11px] font-semibold text-white disabled:opacity-40"
+                      className="rounded-md border border-amber-600 bg-amber-500 px-2.5 py-1 text-xs font-semibold text-amber-950 disabled:opacity-40"
                     >
                       Raise {dimLabel(dim)}
                     </button>
@@ -171,6 +219,20 @@ export function CompetencyPortrait({
               </div>
             );
           })}
+
+          {competency.rationale && (
+            <p className="border-t pt-3 text-sm leading-snug text-muted-foreground">{competency.rationale}</p>
+          )}
+
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={toggleAdjusting}
+              className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            >
+              Collapse
+            </button>
+          </div>
         </div>
       )}
     </div>

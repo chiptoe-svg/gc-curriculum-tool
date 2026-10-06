@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import type { CaptureProfile } from '@/lib/ai/capture/schema';
 
 vi.mock('@/app/capture/[code]/VerificationSummary', () => ({
@@ -74,26 +74,21 @@ function renderPanel() {
   );
 }
 
-// Helper: open the portrait "Something's off" panel and apply a score correction.
-// Uses "too high → first lower option" to trigger a downward adjustment (onChange).
+// Helper: open "Needs adjusting" and apply a downward score correction via
+// "Lower: pick a better description" → the first offered lower anchor.
 function applyPortraitCorrection() {
-  fireEvent.click(screen.getByRole('button', { name: /something.s off/i }));
-  // Click "too high" for the Do dimension to open the lower-anchor options.
-  const flagRow = document.querySelector('[data-testid="flag-row-d"]')!;
-  const tooHighBtn = Array.from(flagRow.querySelectorAll('button')).find(b => b.textContent?.includes('too high'))!;
-  fireEvent.click(tooHighBtn);
-  // Pick the first offered lower option to commit the change.
-  const lowerOptions = document.querySelectorAll('[data-testid="flag-row-d"] button');
-  const lowerOpt = Array.from(lowerOptions).find(b => b.textContent && !b.textContent.includes('too high') && !b.textContent.includes('too low'))!;
-  fireEvent.click(lowerOpt);
+  fireEvent.click(screen.getByRole('button', { name: /needs adjusting/i }));
+  const flagRow = screen.getByTestId('flag-row-d');
+  fireEvent.click(within(flagRow).getByRole('button', { name: /^lower/i }));
+  fireEvent.click(within(flagRow).getByTestId('lower-opt-d-0'));
 }
 
 describe('ProfileReviewPanel — adjusting a portrait score does not auto-confirm', () => {
-  it('keeps the "Worth a look" row at "✓ Sounds like them" after a score correction', () => {
+  it('keeps the "Worth a look" row unconfirmed ("✓ Looks right") after a score correction', () => {
     renderPanel();
 
-    // The flagged row starts unreviewed: button reads "✓ Sounds like them".
-    expect(screen.getByRole('button', { name: /sounds like them/i })).toBeTruthy();
+    // The flagged row starts unreviewed: button reads "✓ Looks right".
+    expect(screen.getByRole('button', { name: /looks right/i })).toBeTruthy();
     expect(screen.queryByRole('button', { name: /✓ Confirmed/i })).toBeNull();
 
     // Apply a portrait correction on the flagged competency.
@@ -101,13 +96,13 @@ describe('ProfileReviewPanel — adjusting a portrait score does not auto-confir
 
     // The portrait correction must NOT flip the row to confirmed — confirmation is the
     // explicit button click, not a side effect of correcting a score.
-    expect(screen.getByRole('button', { name: /sounds like them/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /looks right/i })).toBeTruthy();
     expect(screen.queryByRole('button', { name: /✓ Confirmed/i })).toBeNull();
   });
 
   it('marks the row confirmed only when the explicit button is clicked', () => {
     renderPanel();
-    fireEvent.click(screen.getByRole('button', { name: /sounds like them/i }));
+    fireEvent.click(screen.getByRole('button', { name: /looks right/i }));
     expect(screen.getByRole('button', { name: /✓ Confirmed/i })).toBeTruthy();
   });
 
@@ -115,14 +110,14 @@ describe('ProfileReviewPanel — adjusting a portrait score does not auto-confir
     renderPanel();
     // The flagged row starts expanded with a reason label + confirm button.
     expect(screen.getByText(/resting on your word/i)).toBeTruthy();
-    expect(screen.getByRole('button', { name: /sounds like them/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /looks right/i })).toBeTruthy();
 
     // Apply a portrait correction to change a score.
     applyPortraitCorrection();
 
     // Membership is frozen at load — the row stays a full, confirmable card and
     // never rolls up into the confident zone. The portrait is still present.
-    expect(screen.getByRole('button', { name: /sounds like them/i })).toBeTruthy();
-    expect(screen.getByRole('button', { name: /something.s off/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /looks right/i })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /needs adjusting/i })).toBeTruthy();
   });
 });
