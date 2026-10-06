@@ -38,7 +38,7 @@ describe('mapMaterialRow — redactions', () => {
 
 describe('updateExtractionResult — the single writer of extracted_text', () => {
   it('scrubs the text before writing it, with the row\'s file name', async () => {
-    selectLimit.mockResolvedValue([{ fileName: 'Canvas File: critiques.pdf' }]);
+    selectLimit.mockResolvedValue([{ fileName: 'Canvas File: critiques.pdf', extractedText: null, redactions: null }]);
     scrubForRecord.mockResolvedValue({ text: 'Submitted by [student]', redactions: { 'student-name': 1, 'student-id': 0, email: 0 } });
     const r = await updateExtractionResult({ id: 'm1', extractionStatus: 'ok', extractionMethod: 'text', extractedText: 'Submitted by Jane Doe' });
     expect(scrubForRecord).toHaveBeenCalledWith('Submitted by Jane Doe', { fileName: 'Canvas File: critiques.pdf', isSyllabus: false });
@@ -53,21 +53,21 @@ describe('updateExtractionResult — the single writer of extracted_text', () =>
   });
 
   it('marks a syllabus so its emails are kept', async () => {
-    selectLimit.mockResolvedValue([{ fileName: 'Canvas: Syllabus' }]);
+    selectLimit.mockResolvedValue([{ fileName: 'Canvas: Syllabus', extractedText: null, redactions: null }]);
     scrubForRecord.mockResolvedValue({ text: 't', redactions: {} });
     await updateExtractionResult({ id: 'm1', extractionStatus: 'ok', extractedText: 't' });
     expect(scrubForRecord).toHaveBeenCalledWith('t', { fileName: 'Canvas: Syllabus', isSyllabus: true });
   });
 
   it('marks a syllabus via the is_syllabus column even when the file name does not say so (R4)', async () => {
-    selectLimit.mockResolvedValue([{ fileName: 'GC 4800 course outline.pdf', isSyllabus: true }]);
+    selectLimit.mockResolvedValue([{ fileName: 'GC 4800 course outline.pdf', isSyllabus: true, extractedText: null, redactions: null }]);
     scrubForRecord.mockResolvedValue({ text: 't', redactions: {} });
     await updateExtractionResult({ id: 'm1', extractionStatus: 'ok', extractedText: 't' });
     expect(scrubForRecord).toHaveBeenCalledWith('t', { fileName: 'GC 4800 course outline.pdf', isSyllabus: true });
   });
 
   it('stores NO text when the scrub fails: status failed, text cleared, reason recorded', async () => {
-    selectLimit.mockResolvedValue([{ fileName: 'Canvas: Discussions' }]);
+    selectLimit.mockResolvedValue([{ fileName: 'Canvas: Discussions', extractedText: 'Posted by Jane Doe on May 2', redactions: null }]);
     scrubForRecord.mockRejectedValue(new Error('privacy-scrub guard rejected chunk 1/1: text changed at input token 4'));
     const r = await updateExtractionResult({ id: 'm1', extractionStatus: 'ok', extractedText: 'Posted by Jane Doe on May 2' });
     expect(r).toEqual({ outcome: 'scrub_failed', extractedText: undefined, reason: 'privacy-scrub guard rejected chunk 1/1: text changed at input token 4' });
@@ -86,6 +86,35 @@ describe('updateExtractionResult — the single writer of extracted_text', () =>
     expect(scrubForRecord).not.toHaveBeenCalled();
     expect(updateSet).toHaveBeenCalledWith({ extractionStatus: 'failed', extractionMethod: 'text' });
     expect(r).toEqual({ outcome: 'stored', extractedText: undefined });
+  });
+
+  it('does not re-scrub text that is already the scrubber\'s output (identical text, successful redactions)', async () => {
+    const red = { counts: { 'student-name': 1, 'student-id': 0, email: 0 }, failedReason: null };
+    selectLimit.mockResolvedValue([{ fileName: 'Canvas: Discussions', extractedText: 'Posted by [student] on May 2', redactions: red }]);
+    const r = await updateExtractionResult({ id: 'm1', extractionStatus: 'ok', extractedText: 'Posted by [student] on May 2' });
+    expect(scrubForRecord).not.toHaveBeenCalled();
+    expect(r).toEqual({ outcome: 'stored', extractedText: 'Posted by [student] on May 2' });
+    expect(updateSet).toHaveBeenCalledOnce();
+    const patch = updateSet.mock.calls[0]![0] as Record<string, unknown>;
+    expect(patch.extractionStatus).toBe('ok');
+    expect(patch.extractedText).not.toBeNull();
+    expect('redactions' in patch ? patch.redactions : red).toEqual(red);
+  });
+
+  it('still scrubs identical text when the previous scrub failed or never ran (redactions null / failedReason set)', async () => {
+    scrubForRecord.mockResolvedValue({ text: 'x', redactions: {} });
+    selectLimit.mockResolvedValue([{ fileName: 'f.pdf', extractedText: 'x', redactions: null }]);
+    await updateExtractionResult({ id: 'm1', extractionStatus: 'ok', extractedText: 'x' });
+    selectLimit.mockResolvedValue([{ fileName: 'f.pdf', extractedText: 'x', redactions: { counts: {}, failedReason: 'boom' } }]);
+    await updateExtractionResult({ id: 'm1', extractionStatus: 'ok', extractedText: 'x' });
+    expect(scrubForRecord).toHaveBeenCalledTimes(2);
+  });
+
+  it('scrubs when the stored text differs from the input even if redactions are set', async () => {
+    scrubForRecord.mockResolvedValue({ text: 'new', redactions: {} });
+    selectLimit.mockResolvedValue([{ fileName: 'f.pdf', extractedText: 'old', redactions: { counts: {}, failedReason: null } }]);
+    await updateExtractionResult({ id: 'm1', extractionStatus: 'ok', extractedText: 'new raw' });
+    expect(scrubForRecord).toHaveBeenCalledOnce();
   });
 
   it('throws when the material does not exist', async () => {
