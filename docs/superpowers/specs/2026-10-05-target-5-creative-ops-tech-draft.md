@@ -1,6 +1,6 @@
 # Target 5 redefinition — Creative Technology & Systems
 
-> **Revision 2026-10-06 (owner):** AI must be prominent in this target, well beyond usage: implementation, benchmarking and evaluation. `ai-tool-evaluation` is kept and broadened into an eighth sub-competency, and the definition and descriptors now say so. Nine sub-competencies is above the usual 5–7; folding colour management into packaging (open question 5) would bring it to eight.
+> **Revision 2026-10-06 (owner):** AI must be prominent in this target, well beyond usage: implementation, benchmarking and evaluation. `ai-tool-evaluation` is kept and broadened into an eighth sub-competency, and the definition and descriptors now say so. Nine sub-competencies is above the usual 5–7; folding color management into packaging (open question 5) would bring it to eight.
 > **Revision 2026-10-06 (owner):** `domain-grounding` is kept as its own competency: domain knowledge is why this target belongs in a GC major.
 > **Revision 2026-10-06 (owner, later same day):** target 5 renamed again, from "Creative Operations & Technology" to **Creative Technology & Systems** (id stays `ai-workflow`), as part of a same-day rename of all five targets and a full walkthrough that settled canonical definitions for all five — `ai_career_impact/targets/DEFINITIONS.md`. Target 5's core test is now explicit: **"does this person build or run something other people use to do the work?"** — "the enabling layer." Scope also widened to include IT support and management/systems analyst roles, and logistics was moved out to target 1. See §0 and §3a below for what's new; §1–§7 are the 2026-10-05 draft, superseded only where §3a says so (the seven strands, the nine sub-competencies, and the open questions otherwise stand).
 
@@ -30,7 +30,7 @@ On 2026-10-06, after this draft's first pass, the owner did a full walkthrough o
 
 All five renames are names-only and already applied on `dev` in `lib/domain/seed-targets.ts` (commit `28eca9d`) and in the live DB and wiki. **This worktree's branch point predates that commit**, so the copy of `lib/domain/seed-targets.ts` read for this draft (and quoted in §4 below) still shows the pre-rename names (`Account Management`, `Brand Strategy`, `AI Workflow / Orchestrator`); the content — ids, descriptors, sub-competencies — is unaffected and current. Don't be alarmed by the mismatch if you diff this draft against that file directly; it's a branch-timing artifact, not a contradiction.
 
-**A numbering note.** This draft's own §2 and Appendix, written 2026-10-05, refer to the account-management target as "target 3" in one heading ("Narrowed, target 3 (`account-management`)"). Per the canonical numbering settled 2026-10-06 above, `account-management` is **target 2** and `brand-strategy` is **target 3**. The heading in the Appendix is left as originally written (existing sections aren't edited), but should be read as target 2. The content of that Appendix entry — narrowing `project-oversight` to client-facing coordination — is correct regardless of the number attached to it.
+**A numbering note.** This draft's own §2 and Appendix, written 2026-10-05, refer to the account-management target as "target 3" in one heading ("Narrowed, target 2 (`account-management`)"). Per the canonical numbering settled 2026-10-06 above, `account-management` is **target 2** and `brand-strategy` is **target 3**. The heading in the Appendix is left as originally written (existing sections aren't edited), but should be read as target 2. The content of that Appendix entry — narrowing `project-oversight` to client-facing coordination — is correct regardless of the number attached to it.
 
 **Decisions that reach beyond target 5, settled the same day:**
 - Target 1 (`production-operations`) scope confirmed: estimating, process engineering, equipment justification, people management (including HR, decided earlier), at printers, packaging converters, brand-side production/procurement, and agency production departments. Project management (SOC 13-1082) belongs here — already handled in this draft's Appendix.
@@ -62,7 +62,7 @@ The owner's 2026-10-05 decision (made in the `ai_career` session): target `ai-wo
 3. Managing digital assets: metadata, rights, taxonomy, the DAM platform.
 4. Owning the packaging graphics workflow: artwork management, regulatory and print-quality compliance, versioning.
 5. Scripting and integration: automating handoffs between systems, including generative-AI pipelines.
-6. Colour management: process control and colour accuracy across print processes and devices.
+6. Color management: process control and color accuracy across print processes and devices.
 7. Governing AI output: checking it against brand, legal, and quality standards, and staying accountable for it.
 
 Those seven strands map one-to-one onto the seven proposed sub-competencies in §3.
@@ -73,10 +73,10 @@ Those seven strands map one-to-one onto the seven proposed sub-competencies in �
 
 These came from the ai_career session (STATE.md and evidence-file §8, commits `a524bbd`/`81a4b8a`) and are treated here as settled, not as open questions:
 
-1. **Prepress vs. colour management vs. workflow/automation.** Line prepress stays in target 1 (Production & Operations). Workflow or automation administration goes to target 5. **Colour management also goes to target 5**, even though colour-management job titles currently share SOC code 51-5111 with prepress in placement data. Placement tracking will need to split that family by title — out of scope for this draft, flagged for whoever owns the alumni-placement pipeline.
-2. **Target 5 is both a direct entry point and a grow-into destination.** Today's alumni evidence is almost entirely the destination route (0.3% of first jobs; 15 of 17 people who ever hold a target-5-vocabulary role got there after starting elsewhere). The owner wants GC to build a direct entry route too — early-career workflow, creative-ops, colour-management, and automation roles — not present target 5 as only an advanced specialization.
+1. **Prepress vs. color management vs. workflow/automation.** Line prepress stays in target 1 (Production & Operations). Workflow or automation administration goes to target 5. **Color management also goes to target 5**, even though color-management job titles currently share SOC code 51-5111 with prepress in placement data. Placement tracking will need to split that family by title — out of scope for this draft, flagged for whoever owns the alumni-placement pipeline.
+2. **Target 5 is both a direct entry point and a grow-into destination.** Today's alumni evidence is almost entirely the destination route (0.3% of first jobs; 15 of 17 people who ever hold a target-5-vocabulary role got there after starting elsewhere). The owner wants GC to build a direct entry route too — early-career workflow, creative-ops, color-management, and automation roles — not present target 5 as only an advanced specialization.
 
-**What decision 2 means for this draft, concretely:** the KUD+ framework already separates *what the sub-competency is* (the K/U/D descriptors, written at a competent "full" level, same as every other target in the seed file) from *how deep a given course's evidence reaches* (the depth scale, scored 0–5 per course). Decision 2 doesn't change the descriptors — it changes **which courses are expected to carry evidence and at what depth**. It implies Do-evidence for target 5 should start showing up at D1–D2 ("performs with direction," "performs with reference") in early/mid-curriculum courses — prepress, colour management, production, intro packaging — not only at D4–D5 in a capstone. See §5's re-scoring note and §6 Q4.
+**What decision 2 means for this draft, concretely:** the KUD+ framework already separates *what the sub-competency is* (the K/U/D descriptors, written at a competent "full" level, same as every other target in the seed file) from *how deep a given course's evidence reaches* (the depth scale, scored 0–5 per course). Decision 2 doesn't change the descriptors — it changes **which courses are expected to carry evidence and at what depth**. It implies Do-evidence for target 5 should start showing up at D1–D2 ("performs with direction," "performs with reference") in early/mid-curriculum courses — prepress, color management, production, intro packaging — not only at D4–D5 in a capstone. See §5's re-scoring note and §6 Q4.
 
 ---
 
@@ -94,7 +94,7 @@ These came from the ai_career session (STATE.md and evidence-file §8, commits `
 **industryContexts:**
 - Creative or marketing workflow technologist configuring intake, approvals, and reporting on a platform like Workfront or Monday
 - Packaging workflow or compliance specialist managing artwork versioning and regulatory/print-quality sign-off
-- DAM specialist, creative-ops coordinator, or colour-management technician governing a brand's asset library, colour accuracy, or AI-assisted output quality
+- DAM specialist, creative-ops coordinator, or color-management technician governing a brand's asset library, color accuracy, or AI-assisted output quality
 - AI implementation lead selecting, piloting, benchmarking and rolling out AI models and tools across a creative or production operation
 
 **knowDescriptors:**
@@ -107,13 +107,13 @@ These came from the ai_career session (STATE.md and evidence-file §8, commits `
 - Why systems and workflow design is what lets creative and production work scale without proportional headcount growth
 - Why someone has to stay accountable for AI-assisted and automated output against brand, legal, and quality standards
 - Why an AI tool has to be measured on the organisation's own work before it is adopted, and re-measured after, rather than trusted on vendor claims
-- Why colour, metadata, and versioning discipline compound in value as volume grows — and compound in cost when missing
+- Why color, metadata, and versioning discipline compound in value as volume grows — and compound in cost when missing
 
 **doDescriptors:**
 - Configure or design a workflow, template system, or automation for a real creative or production context
 - Check a packaging, brand, or AI-assisted output against a defined compliance or quality standard and catch failure modes
 - Implement an AI step in a real workflow and benchmark it against the current process on quality, cost and turnaround, then recommend adopt, adjust or drop
-- Manage a digital asset library or a colour-management process so output stays accurate, findable, and reusable at scale
+- Manage a digital asset library or a color-management process so output stays accurate, findable, and reusable at scale
 
 **defensibilityNote:**
 > AI can execute steps inside these workflows, but someone has to design the system, decide what the templates and automations should do, and stay accountable when output is checked against brand, legal, or print-quality standards. That accountability, and the judgment behind it, doesn't automate.
@@ -131,7 +131,7 @@ Same format as `lib/domain/seed-targets.ts`: each has `id`, `name`, `knowDescrip
 | 3 | `digital-asset-management` | Digital asset management |
 | 4 | `packaging-artwork-compliance` | Packaging artwork workflow and compliance |
 | 5 | `systems-automation-integration` | Systems automation and integration |
-| 6 | `colour-management` | Colour management |
+| 6 | `color-management` | Color management |
 | 7 | `quality-frameworks` *(kept)* | AI and quality governance |
 | 8 | `ai-tool-evaluation` *(kept, broadened)* | AI implementation, benchmarking and evaluation |
 | 9 | `domain-grounding` *(kept, broadened)* | Domain grounding: creative, brand and production knowledge |
@@ -161,10 +161,10 @@ Same format as `lib/domain/seed-targets.ts`: each has `id`, `name`, `knowDescrip
 - Understand: Understands why automating a handoff between systems requires understanding both systems' data and failure modes, not just the happy path.
 - Do: Builds or configures an automation — a script, an API integration, or a low-code workflow — that handles a real handoff between two systems, including a generative-AI step.
 
-**6. `colour-management` — Colour management**
-- Know: Knows colour-management fundamentals — profiles, calibration, and process control — across the print processes and devices used in GC production.
-- Understand: Understands why colour drifts across devices and substrates without active process control, and why colour accuracy is a measurable, auditable standard, not a subjective preference.
-- Do: Sets up or audits colour management — calibration, profiling, or process control — for a real print or packaging job and demonstrates the job meets a defined colour standard.
+**6. `color-management` — Color management**
+- Know: Knows color-management fundamentals — profiles, calibration, and process control — across the print processes and devices used in GC production.
+- Understand: Understands why color drifts across devices and substrates without active process control, and why color accuracy is a measurable, auditable standard, not a subjective preference.
+- Do: Sets up or audits color management — calibration, profiling, or process control — for a real print or packaging job and demonstrates the job meets a defined color standard.
 
 **7. `quality-frameworks` — AI and quality governance** *(id kept; descriptors broadened from "AI output quality" to brand/legal/print-quality governance generally)*
 - Know: Knows the dimensions on which creative, production, and AI-assisted output is evaluated — brand, legal/regulatory, and print-quality standards — and where each kind of check belongs in a workflow.
@@ -183,7 +183,7 @@ Same format as `lib/domain/seed-targets.ts`: each has `id`, `name`, `knowDescrip
 ---
 
 **9. `domain-grounding` — Domain grounding: creative, brand and production knowledge** *(id kept; broadened from AI output to all systems work, owner 2026-10-06)*
-- Know: Knows enough of the creative, brand and print/production domain (substrates, colour, finishing, brand standards, how creative work is made and approved) to judge whether a workflow, template, automation or AI output is fit for purpose.
+- Know: Knows enough of the creative, brand and print/production domain (substrates, color, finishing, brand standards, how creative work is made and approved) to judge whether a workflow, template, automation or AI output is fit for purpose.
 - Understand: Understands why systems built without domain knowledge look correct but fail at the point of use, and why that knowledge is what separates this role from a general IT or automation role.
 - Do: Designs or evaluates a workflow, template system, automation or AI step and shows, with specific domain reasons, where it would succeed or fail in a real creative or production setting.
 
@@ -203,7 +203,7 @@ Same format as `lib/domain/seed-targets.ts`: each has `id`, `name`, `knowDescrip
 | *(none)* | **New** | `digital-asset-management` | New evidenced strand (#3). |
 | *(none)* | **New** | `packaging-artwork-compliance` | New evidenced strand (#4). |
 | *(none)* | **New** | `systems-automation-integration` | New evidenced strand (#5). |
-| *(none)* | **New** | `colour-management` | New evidenced strand (#6), added by owner decision 2026-10-05 after the first draft of the evidence file. |
+| *(none)* | **New** | `color-management` | New evidenced strand (#6), added by owner decision 2026-10-05 after the first draft of the evidence file. |
 
 **Net:** 2 of 6 old ids kept (descriptors changed on both); 4 retired with no replacement id; 5 new ids added. Final count: 7 sub-competencies.
 
@@ -227,7 +227,7 @@ Read-only counts from the live database (2026-10-05), scoped to `career_target_i
 - **All 36 existing rows are stale** once this ships, regardless of whether their sub-competency id is kept or retired:
   - 24 rows (`workflow-architecture`, `quality-frameworks`, `ai-tool-evaluation` and `domain-grounding`, 6 each) sit under ids that are *kept* but whose descriptors changed — these need a fresh AI coverage run against the new rubric, not a mechanical carry-forward.
   - 12 rows (`prompt-design`, `change-management` — 6 each) sit under ids that are *retired*. They become historical-only: still valid rows (the FK and `retired` flag handle this safely, same soft-delete pattern used elsewhere in the schema), but any current coverage view or program-matrix read for target 5 needs to exclude retired sub-competencies, or those 4 retired slots will silently show stale data forever.
-- **5 new sub-competencies start at zero rows.** First-time scoring is needed for any course judged in scope, and decision 2 (§2) means that scope is **broader than the current 5 courses** — colour-management, prepress, production, and packaging courses that were never captured against this target at all are now plausibly in scope, since those are exactly where early-career Do-evidence should appear. There are 18 distinct captured courses today and 50 in the catalog; which of those are actually in scope for target 5 is an open call (§7 Q4), not something this draft can determine from the schema alone.
+- **5 new sub-competencies start at zero rows.** First-time scoring is needed for any course judged in scope, and decision 2 (§2) means that scope is **broader than the current 5 courses** — color-management, prepress, production, and packaging courses that were never captured against this target at all are now plausibly in scope, since those are exactly where early-career Do-evidence should appear. There are 18 distinct captured courses today and 50 in the catalog; which of those are actually in scope for target 5 is an open call (§7 Q4), not something this draft can determine from the schema alone.
 - **Tables touched by applying this draft** (not done here — read-only task):
   - `career_targets`: 1 row updated (`name`, `shortDefinition`, descriptor arrays, `defensibilityNote`; `id` and `socCode` unchanged).
   - `sub_competencies`: 4 rows updated in place (`workflow-architecture`, `quality-frameworks`, `ai-tool-evaluation`, `domain-grounding`), 2 rows set `retired=true` (`prompt-design`, `change-management`), 5 rows inserted.
@@ -241,8 +241,8 @@ Read-only counts from the live database (2026-10-05), scoped to `career_target_i
 1. **`change-management` — keep, drop, or fold in?** This draft retires it with no replacement, since it isn't one of the evidence file's seven strands. But "train a small team to operate a documented workflow" does appear in the job-description paraphrase for the senior AI-integration-lead role. Keep retired, or restore as an eighth sub-competency (pushing past the 5–7 target band)?
 2. ~~`domain-grounding` — distribute or keep standalone?~~ **Decided 2026-10-06: keep standalone** (owner: "otherwise why have it in this major").
 3. **`prompt-design` — any coverage-continuity concern?** The old target-5 `prompt-design` rows (6, across the same 5 courses) are retired with no target-5 replacement, on the theory that target 4's `ai-tool-direction` already covers this. Those 5 courses have likely never been scored against target 4 at all — worth confirming whether that gap should be closed (i.e., run those 5 courses against target 4 too) as part of applying this change, or left for a separate pass.
-4. **Which courses are in scope for first-time target-5 scoring, and at what depth?** Decision 2 (§2) means Do-evidence should appear early in the curriculum (colour management, prepress, intro production, packaging courses), not only in an advanced/capstone course. This draft doesn't have a course list — someone with curriculum knowledge needs to name candidate courses for each of the 7 sub-competencies, especially `colour-management` and `packaging-artwork-compliance`, before any AI coverage run.
-5. **Sub-competency wording review.** Confirm the 7 names and descriptors in §4 match intent — in particular whether `colour-management` should stand alone (as the evidence file's owner decision implies) or be folded into `packaging-artwork-compliance`, since colour process control is heavily packaging/print-adjacent.
+4. **Which courses are in scope for first-time target-5 scoring, and at what depth?** Decision 2 (§2) means Do-evidence should appear early in the curriculum (color management, prepress, intro production, packaging courses), not only in an advanced/capstone course. This draft doesn't have a course list — someone with curriculum knowledge needs to name candidate courses for each of the 7 sub-competencies, especially `color-management` and `packaging-artwork-compliance`, before any AI coverage run.
+5. **Sub-competency wording review.** Confirm the 7 names and descriptors in §4 match intent — in particular whether `color-management` should stand alone (as the evidence file's owner decision implies) or be folded into `packaging-artwork-compliance`, since color process control is heavily packaging/print-adjacent.
 6. **id churn.** This draft proposes keeping 4 of 6 old ids, retiring 2, and adding 5 new ones (net 9). If the owner would rather preserve more continuity (e.g., rename ids in place instead of retiring + adding new), that changes which existing coverage rows can be mechanically carried forward vs. need a fresh AI run — worth deciding before anyone touches the seed file.
 
 ---
@@ -258,7 +258,7 @@ Decision: project management (SOC 13-1082) belongs to target 1. The owner chose 
 
 Overlap to watch: target 1 already has `timeline-management` (schedule under pressure), `cost-management` (estimating and budgets) and `team-coordination`. The new competency is the end-to-end discipline that ties them together; it should not re-score the same evidence those three already capture. If the owner prefers fewer competencies, the alternative is to broaden `timeline-management` into project management instead of adding a seventh target-1 competency.
 
-**Narrowed, target 3 (`account-management`): `project-oversight` (id kept) — Client-facing project coordination**
+**Narrowed, target 2 (`account-management`): `project-oversight` (id kept) — Client-facing project coordination**
 - Know: Knows the handoff points between brief, creative, prepress, production and delivery, and which of them need client sign-off.
 - Understand: Understands why the client's expectations on timeline, quality and cost have to be managed continuously, and how to communicate trade-offs before they become surprises.
 - Do: Keeps the client and the internal creative and production teams aligned through a project, managing approvals, changes and expectations, while the production side runs the plan.
@@ -276,7 +276,7 @@ Driven only by the 2026-10-06 owner decisions in §0 and `ai_career_impact/targe
 No name change (already correct). DEFINITIONS.md's explicit list — estimating, process engineering, equipment justification, people management including HR, across printers, packaging converters, brand-side production/procurement, and agency production departments — is mostly already covered by the current seven sub-competencies plus the Appendix's new `project-management`. Two gaps: **equipment justification** (a capital-investment business case, distinct from per-job cost estimation) and **process engineering** (re-engineering a production process itself, distinct from designing a single project's workflow) aren't currently named anywhere. Rather than add two more ids on top of the Appendix's `project-management` (which would bring the target to nine — well past the 5–7 band), this draft folds both into the two closest existing competencies by broadening their descriptors, and makes the agency setting and HR scope explicit in `shortDefinition`.
 
 **Proposed `shortDefinition`** (replaces the current field; added language in *italics* for review — remove italics on apply):
-> The role that makes creative and brand work actually happen — on time, on spec, and within budget, *at printers and packaging converters, brand-side production and procurement, and agency production departments*. Production managers design and oversee the workflows, quality systems, vendor relationships, equipment and process decisions, and team and people-management responsibilities *(including HR)* that translate a creative brief into a finished physical or digital product.
+> The role that makes creative and brand work actually happen — on time, on spec, and within budget, *at printers and packaging converters, brand-side production and procurement, and agency production departments*. Production managers design and oversee the workflows, quality systems, vendor relationships, *logistics,* equipment and process decisions, and team and people-management responsibilities *(including HR)* that translate a creative brief into a finished physical or digital product, *and get it delivered*.
 
 **Broadened, id kept — `workflow-design` → "Production workflow design, process engineering, and optimization"**
 - Know: Knows the standard workflow patterns for offset, digital, flexo, and packaging production, *and the basics of process engineering — re-sequencing, automating, or re-tooling a production process itself to change its throughput, quality, or cost profile*.
@@ -353,7 +353,7 @@ This resolves part of open question 3 (§7, carried to §11): the retirement of 
 This supersedes only the **name** and the **framing sentences** in §3 above; the shortDefinition, descriptors, and all nine sub-competencies in §3/§4 stand as written — none of them conflict with the 2026-10-06 walkthrough; they're confirmed, not revised.
 
 - **Name:** Creative Operations & Technology → **Creative Technology & Systems**. Id unchanged (`ai-workflow`).
-- **Core definition, now explicit:** "the enabling layer — building or running the tools, systems and processes the other targets use to get creative-related work done." Membership test: *does this person build or run something other people use to do the work?* This is the same idea §3's shortDefinition already expressed ("Builds and runs the templates, workflow platforms, asset libraries, automations, and compliance checks that creative and production work flows through") — the 2026-10-06 wording just sharpens it into a one-line test, and confirms the §4 sub-competencies (workflow platforms, DAM, packaging compliance, automation, colour, AI governance, AI evaluation, domain grounding) all pass that test.
+- **Core definition, now explicit:** "the enabling layer — building or running the tools, systems and processes the other targets use to get creative-related work done." Membership test: *does this person build or run something other people use to do the work?* This is the same idea §3's shortDefinition already expressed ("Builds and runs the templates, workflow platforms, asset libraries, automations, and compliance checks that creative and production work flows through") — the 2026-10-06 wording just sharpens it into a one-line test, and confirms the §4 sub-competencies (workflow platforms, DAM, packaging compliance, automation, color, AI governance, AI evaluation, domain grounding) all pass that test.
 - **Scope widened, confirmed in scope:** IT support (SOC 15-1232), management and systems analysts (13-1111, 15-1211), platform/integration roles, and AI implementation/evaluation roles. None of these require a new sub-competency: IT support and systems-analyst work is carried by `workflow-architecture` (platform configuration and operation) and `systems-automation-integration` (scripting, APIs, integration) already drafted in §4; AI implementation/evaluation is exactly `ai-tool-evaluation`.
 - **Scope narrowed:** **logistics moves out, to target 1.** Logistics was never one of the evidence file's seven strands or one of the nine §4 sub-competencies, so nothing in §3/§4 needs to change to reflect this — it's a classification confirmation, not a content change. (Target 1's §8.1 shortDefinition doesn't call out logistics explicitly either; if the owner wants it named there, that's a one-line addition, flagged in §11.)
 
@@ -371,7 +371,7 @@ Read-only counts from the live database, via a throwaway `tsx` script (`lib/db/c
 | 2 `account-management` | 30 (5 ids × 6) | 18 (`proposal-development`, `gc-production-literacy`, `project-oversight` — 6 each) | 12 (`client-needs-diagnosis`, `results-interpretation`) | none |
 | 3 `brand-strategy` | 36 (6 ids × 6) | 0 — no sub-competency changes | 36 (all six) | none |
 | 4 `creative-generalist` | 36 (6 ids × 6) | 6 (`ai-tool-direction`) | 30 (the other five) | none |
-| 5 `ai-workflow` | 36 (6 ids × 6) | 36 — all six current ids become stale on apply (4 kept-but-broadened: 24 rows; 2 retired: 12 rows, see §6) | 0 | 5 (`brand-system-templating`, `digital-asset-management`, `packaging-artwork-compliance`, `systems-automation-integration`, `colour-management`) |
+| 5 `ai-workflow` | 36 (6 ids × 6) | 36 — all six current ids become stale on apply (4 kept-but-broadened: 24 rows; 2 retired: 12 rows, see §6) | 0 | 5 (`brand-system-templating`, `digital-asset-management`, `packaging-artwork-compliance`, `systems-automation-integration`, `color-management`) |
 | **Catalog totals** | **180** rows across all 5 targets, 26 capture snapshots (18 distinct courses), 50 courses total | **78** rows need a fresh AI scoring pass against changed descriptors | **102** rows stay valid as-is | **6** new ids start at zero (5 in target 5, 1 in target 1) |
 
 Every sub-competency across every target currently has exactly 6 coverage rows, across the same 6 snapshots — the catalog's AI-scoring passes have so far run evenly across all targets and all of a given target's sub-competencies, never partially. That evenness is worth preserving: a re-score batch that covers all 78 affected rows in one pass (rather than target-by-target over time) keeps the catalog in the same consistent state it's in today.
@@ -387,9 +387,18 @@ Supersedes §7's list (kept above for the record; items 2 is resolved there alre
 1. **`change-management` — keep, drop, or fold in?** *(carried from §7.1, unresolved.)* Still open: restore as an eighth target-5 sub-competency, or leave retired with its "train a team" language folded into `brand-system-templating`?
 2. **`prompt-design` retirement — close the coverage gap now or later?** *(carried from §7.3, sharpened by §8.4.)* §8.4 confirms target 4's `ai-tool-direction` is the right home and broadens it slightly to cover personal tool-building. The 5 courses previously scored against the now-retired target-5 `prompt-design` have likely never been scored against target-4 `ai-tool-direction` at all. Close that gap in the same batch as the rest of this re-score, or leave it for a separate pass?
 3. **Target-5 course scope at each depth.** *(carried from §7.4, unresolved.)* Decision 2 (§2) means early/mid-curriculum Do-evidence is expected, not only capstone evidence. Still needs someone with curriculum knowledge to name candidate courses per sub-competency — now across 14 sub-competency ids total if targets 1, 2, and 4's broadened ones are included in the same pass.
-4. **`colour-management` — standalone or folded?** *(carried from §7.5, unresolved.)*
+4. **`color-management` — standalone or folded?** *(carried from §7.5, unresolved.)*
 5. **id churn at target 5.** *(carried from §7.6, unresolved.)*
 6. **Target 1 — new, or broadened?** §8.1 folds "equipment justification" into `cost-management` and "process engineering" into `workflow-design` rather than adding two more ids on top of the Appendix's `project-management` (which would make 9 total). Is that the right call, or should either stand alone? Separately: target 1 is at 7 ids before the Appendix addition, 8 after — above the usual 5–7 band, same issue target 5 already has. Worth deciding once, for both targets, rather than target-by-target.
 7. **Target 1 — name logistics explicitly?** Target 5's scope narrowing (§9) moves logistics to target 1, but §8.1's proposed `shortDefinition` doesn't name it. Add a clause, or leave it implicit in "production and operations"?
 8. **Re-score batching.** §10 shows 78 rows across 4 targets need a fresh AI pass and 6 new ids need first-time scoring. Confirm whether to run this as one consolidated batch (preserving the catalog's current even-coverage pattern) or split by target as each target's draft is separately approved.
-9. **Appendix heading correction.** §0 flags that the Appendix's "target 3 (`account-management`)" heading should read "target 2" under the canonical numbering. Harmless as analysis, but worth fixing before this draft is applied, so no one copies the wrong number into `lib/domain/seed-targets.ts` or a commit message.
+9. **Appendix heading correction.** §0 flags that the Appendix's "target 2 (`account-management`)" heading should read "target 2" under the canonical numbering. Harmless as analysis, but worth fixing before this draft is applied, so no one copies the wrong number into `lib/domain/seed-targets.ts` or a commit message.
+
+## 12. Owner decisions on §11 — 2026-10-06
+
+- **Above the 5–7 band (§11.6):** accepted for both target 1 (8 competencies) and target 5 (9). Equipment justification and process engineering stay folded into `cost-management` and `workflow-design`.
+- **`color-management` (§11.4):** stays its own competency. (US spelling throughout: `color`, not `colour`; the id is `color-management`.)
+- **`change-management` (§11.1):** stays retired; training and rollout are covered by `ai-tool-evaluation` (implementation).
+- **Logistics (§11.7):** named in target 1's shortDefinition.
+- **Appendix numbering (§11.9):** fixed — account management is target 2.
+- **Still open:** course scope per new or broadened competency (§11.3; a candidate list is being drafted), the `prompt-design` coverage gap and re-score batching (§11.2, §11.8; recommended: close it in one consolidated re-score after the model decision), and target 5 id churn (§11.5).
