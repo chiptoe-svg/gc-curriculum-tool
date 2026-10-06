@@ -1,7 +1,8 @@
-# Target 5 redefinition — Creative Operations & Technology
+# Target 5 redefinition — Creative Technology & Systems
 
 > **Revision 2026-10-06 (owner):** AI must be prominent in this target, well beyond usage: implementation, benchmarking and evaluation. `ai-tool-evaluation` is kept and broadened into an eighth sub-competency, and the definition and descriptors now say so. Nine sub-competencies is above the usual 5–7; folding colour management into packaging (open question 5) would bring it to eight.
 > **Revision 2026-10-06 (owner):** `domain-grounding` is kept as its own competency: domain knowledge is why this target belongs in a GC major.
+> **Revision 2026-10-06 (owner, later same day):** target 5 renamed again, from "Creative Operations & Technology" to **Creative Technology & Systems** (id stays `ai-workflow`), as part of a same-day rename of all five targets and a full walkthrough that settled canonical definitions for all five — `ai_career_impact/targets/DEFINITIONS.md`. Target 5's core test is now explicit: **"does this person build or run something other people use to do the work?"** — "the enabling layer." Scope also widened to include IT support and management/systems analyst roles, and logistics was moved out to target 1. See §0 and §3a below for what's new; §1–§7 are the 2026-10-05 draft, superseded only where §3a says so (the seven strands, the nine sub-competencies, and the open questions otherwise stand).
 
 **STATUS: DRAFT FOR OWNER REVIEW.** Nothing here has been applied. `lib/domain/seed-targets.ts` and the live database are unchanged. This file is read-only analysis plus a proposal.
 
@@ -10,6 +11,34 @@
 **Source of the redefinition:** `ai_career_impact/targets/5-creative-operations-technology.md` (commit `bbc53b6`, independently fact-checked; owner decisions layered in on top by commits `a524bbd` and `81a4b8a`) and `ai_career_impact/STATE.md`. Quotes and figures below are paraphrased from that file's §1, §3, §4, §6, and §8 — see those sections for full sourcing and caveats. The five job descriptions cited there are confidential (marked so by the employer): this draft paraphrases them, as the evidence file does, and never names the employer or quotes the postings directly.
 
 The career target's database id stays `ai-workflow` — only the name and descriptors change. Target 4's id and content (`creative-generalist`) are not touched by this draft; they're read here only to avoid overlap.
+
+---
+
+## 0. Value chain and names — Revision 2026-10-06
+
+On 2026-10-06, after this draft's first pass, the owner did a full walkthrough of all five targets and settled canonical names, numbering, and definitions for all of them in one sitting. Source of truth: `ai_career_impact/targets/DEFINITIONS.md` and the matching `ai_career_impact/STATE.md` entries dated 2026-10-06. This section (and §3a below) layer that walkthrough onto the 2026-10-05 target-5 draft; §1–§7 are otherwise unchanged.
+
+**The frame: one value chain.** Each target is a link; GC's distinctive thread across all five is *understanding the downstream consequences* of the work — what happens to it after it leaves your hands, in production, in the market, in the systems.
+
+| # | id | Name (2026-10-06) | Role in the chain | Changed from |
+|---|---|---|---|---|
+| 1 | `production-operations` | Production & Operations | **Makes it real** | unchanged |
+| 2 | `account-management` | Sales Solutions & Account Management | **Supplies** the solutions production and brands need, on the vendor side | "Account Management" |
+| 3 | `brand-strategy` | Brand Strategy & Experience | **Decides** what to do, on the brand or agency side | "Brand Strategy" |
+| 4 | `creative-generalist` | Purposeful Design & Creative Generalist | **Designs** how it will look and work, across media | "Creative Generalist" (itself a 2026-10-05 rename from "Creative Generalist / AI-Native") |
+| 5 | `ai-workflow` | Creative Technology & Systems | **Enables** all of the above with the tools and systems others use | "Creative Operations & Technology" (itself a 2026-10-05 rename from "AI Workflow / Orchestrator") |
+
+All five renames are names-only and already applied on `dev` in `lib/domain/seed-targets.ts` (commit `28eca9d`) and in the live DB and wiki. **This worktree's branch point predates that commit**, so the copy of `lib/domain/seed-targets.ts` read for this draft (and quoted in §4 below) still shows the pre-rename names (`Account Management`, `Brand Strategy`, `AI Workflow / Orchestrator`); the content — ids, descriptors, sub-competencies — is unaffected and current. Don't be alarmed by the mismatch if you diff this draft against that file directly; it's a branch-timing artifact, not a contradiction.
+
+**A numbering note.** This draft's own §2 and Appendix, written 2026-10-05, refer to the account-management target as "target 3" in one heading ("Narrowed, target 3 (`account-management`)"). Per the canonical numbering settled 2026-10-06 above, `account-management` is **target 2** and `brand-strategy` is **target 3**. The heading in the Appendix is left as originally written (existing sections aren't edited), but should be read as target 2. The content of that Appendix entry — narrowing `project-oversight` to client-facing coordination — is correct regardless of the number attached to it.
+
+**Decisions that reach beyond target 5, settled the same day:**
+- Target 1 (`production-operations`) scope confirmed: estimating, process engineering, equipment justification, people management (including HR, decided earlier), at printers, packaging converters, brand-side production/procurement, and agency production departments. Project management (SOC 13-1082) belongs here — already handled in this draft's Appendix.
+- Target 2 (`account-management`) scope confirmed: **all** sales, account management, technical sales, and customer-service roles — nothing excluded. What sets it apart is the skill emphasis: technical and fiscal — understanding the technology and process, building the ROI case, making the numbers work — not relationship skills alone. Entry-level customer service is this target's on-ramp.
+- Target 4 (`creative-generalist`) builds AI tools **for its own use**; target 5 builds them **for others**. That's the line between the two targets. One consequence: some tool-building — scripting, assembling a small AI workflow — is a target-4 requirement too, not purely a target-5 one. See §3a's revisit of the `prompt-design` retirement below.
+- Target 5 (`ai-workflow`) scope widened: IT support, management/systems analysts, platform/integration roles, and AI implementation/evaluation are explicitly included; logistics is explicitly moved **out**, to target 1. Core test: *"does this person build or run something other people use to do the work?"*
+
+§2 below (target 1 / target 3-labeled-as-2 appendix) and §3a (targets 1, 2, 3, 4 proposed changes) carry these decisions into the seed-file shape. §3/§4 (target 5's own definition and sub-competencies) are revised in §3a's final subsection to the new name and scope.
 
 ---
 
@@ -235,3 +264,132 @@ Overlap to watch: target 1 already has `timeline-management` (schedule under pre
 - Do: Keeps the client and the internal creative and production teams aligned through a project, managing approvals, changes and expectations, while the production side runs the plan.
 
 Re-scoring: target 3's `project-oversight` descriptors change, so its existing coverage rows need a fresh run; target 1's new competency starts with none. Both go in the same batch as the target 5 re-score.
+
+---
+
+## 8. Proposed changes to targets 1, 2, 3, 4 — Revision 2026-10-06
+
+Driven only by the 2026-10-06 owner decisions in §0 and `ai_career_impact/targets/DEFINITIONS.md`. Conservative throughout: every id below is **kept** — nothing is retired or added for these four targets — and descriptors change only where a decision requires it. Current content is quoted from `lib/domain/seed-targets.ts` as it reads on this branch (pre-rename names; see §0's note). All four `shortDefinition` edits below are proposed rewrites of the live field, shown as a full replacement rather than a diff, since the changes touch more than a clause.
+
+### 8.1 Target 1 — `production-operations` (Production & Operations)
+
+No name change (already correct). DEFINITIONS.md's explicit list — estimating, process engineering, equipment justification, people management including HR, across printers, packaging converters, brand-side production/procurement, and agency production departments — is mostly already covered by the current seven sub-competencies plus the Appendix's new `project-management`. Two gaps: **equipment justification** (a capital-investment business case, distinct from per-job cost estimation) and **process engineering** (re-engineering a production process itself, distinct from designing a single project's workflow) aren't currently named anywhere. Rather than add two more ids on top of the Appendix's `project-management` (which would bring the target to nine — well past the 5–7 band), this draft folds both into the two closest existing competencies by broadening their descriptors, and makes the agency setting and HR scope explicit in `shortDefinition`.
+
+**Proposed `shortDefinition`** (replaces the current field; added language in *italics* for review — remove italics on apply):
+> The role that makes creative and brand work actually happen — on time, on spec, and within budget, *at printers and packaging converters, brand-side production and procurement, and agency production departments*. Production managers design and oversee the workflows, quality systems, vendor relationships, equipment and process decisions, and team and people-management responsibilities *(including HR)* that translate a creative brief into a finished physical or digital product.
+
+**Broadened, id kept — `workflow-design` → "Production workflow design, process engineering, and optimization"**
+- Know: Knows the standard workflow patterns for offset, digital, flexo, and packaging production, *and the basics of process engineering — re-sequencing, automating, or re-tooling a production process itself to change its throughput, quality, or cost profile*.
+- Understand: Understands why workflow design must balance throughput, quality, and adaptability — and why optimizing one trades off another — *and why a process re-engineering change (not just a project's workflow) needs validation before it replaces a working process*.
+- Do: Designs a production workflow for a multi-component project that meets quality, timeline, and budget constraints*, or re-engineers a step in an existing production process and validates the change before it replaces what's running*.
+
+**Broadened, id kept — `cost-management` → "Cost estimation, budget management, and equipment justification"**
+- Know: Knows the cost structures of major print and packaging processes, *and how to build a capital-equipment business case — purchase cost, throughput or quality gain, and payback period — distinct from a per-job estimate*.
+- Understand: Understands why cost estimation requires reconciling specification, vendor capability, and run-length economics, *and why an equipment decision is judged over a multi-year payback horizon, not a single job's margin*.
+- Do: Produces a defensible cost estimate for a complex production project and manages spend through to delivery*, or builds an equipment-justification case (cost, gain, payback) for a real or proposed purchase*.
+
+**Broadened, id kept — `team-coordination` → "Team coordination, performance management, and people management (incl. HR)"**
+- Know: Knows how production teams are structured and the typical responsibilities at each role, *and the basics of the people-management functions that sit alongside day-to-day coordination — hiring, onboarding, and performance/HR policy*.
+- Understand: Understands why coordination breaks down under stress and what practices preserve communication, *and why hiring and performance-policy decisions have consequences that outlast any single project*.
+- Do: Coordinates a production team through a high-pressure project and addresses performance gaps in real time*, and carries out at least one people-management task end-to-end (a hire, an onboarding plan, or a documented performance review) for a real or simulated team*.
+
+No change: `quality-control`, `vendor-management`, `timeline-management`, `domain-knowledge`. These aren't touched by the 2026-10-06 decisions.
+
+Net effect: target 1 stays at 7 ids plus the Appendix's `project-management` = 8 total, three of the seven broadened, none added or retired for this section. (The Appendix already flagged that 8 is above the usual band and offered broadening `timeline-management` instead as an alternative — that trade-off is unchanged by this section.)
+
+### 8.2 Target 2 — `account-management` → rename to **Sales Solutions & Account Management**
+
+This is the one target where the 2026-10-06 decision changes the frame, not just the scope. The current `shortDefinition` and sub-competencies read as brand/agency-side account management (bridging "a brand's marketing intent" to production). The owner's decision reframes it as the **vendor-side solution seller**: all of sales, account management, technical sales, and customer service, with a technical-and-fiscal skill emphasis (understanding the technology/equipment/process, building the ROI case, making the numbers work) rather than relationship skills alone. Boundary with target 3: target 3 decides (brand/agency side); target 2 serves those decisions with solutions (vendor side).
+
+**Proposed `shortDefinition`** (full replacement):
+> The solution-seller on the vendor side — sales, account management, technical sales, and customer-service roles at printers, packaging converters, and equipment or technology suppliers. Acts as liaison between the creative/production side and the people deciding what to buy: understands the buyer's problem, builds the ROI case, makes the numbers work, and justifies the purchase. Entry-level customer service is this target's on-ramp, not a separate track.
+
+**Proposed `industryContexts`** (add a fourth; keep the existing three):
+- *(existing)* Agency account team serving brand clients across print and digital deliverables
+- *(existing)* In-house brand marketing coordinator translating creative briefs to vendors
+- *(existing)* Print/packaging sales representative consulting on production specifications
+- **(new)** Technical sales or customer-service representative at an equipment or technology supplier, building the ROI case for a prospective buyer
+
+**Broadened, id kept — `proposal-development` → "Proposal development, consultative communication, and the ROI case"**
+- Know: Knows the structural elements of a client proposal and the rhythm of consultative communication, *and how to build a cost/benefit or ROI case — payback, total cost of ownership, cost-per-unit — that quantifies why a purchase pays for itself*.
+- Understand: Understands why a proposal must justify scope, sequence, and cost in business terms — not creative terms — *and why a buying decision ultimately rests on a quantified business case, not the relationship alone*.
+- Do: Writes and presents a proposal that wins client commitment and sets accurate expectations for delivery*, including a quantified ROI or TCO case for the solution being proposed*.
+
+**Broadened, id kept — `gc-production-literacy` → "Domain literacy in production technology, equipment, and process"**
+- Know: Knows what print, packaging, and brand production processes can and cannot accommodate*, and what the equipment or technology being sold can and cannot do, well enough to speak to it credibly on the vendor side*.
+- Understand: Understands why this knowledge is what differentiates a credible account manager *or technical sales rep* from an order-taker.
+- Do: Holds a substantive conversation with a brand director *or a prospective buyer* and turns to brief a production team *or a sales engineer* accurately.
+
+No change: `client-needs-diagnosis`, `results-interpretation`. `project-oversight` is already narrowed by this file's Appendix (labeled "target 3" there — per §0's numbering note, read as target 2/`account-management`); not touched again here.
+
+Net effect: still 5 ids, two broadened, none added or retired.
+
+### 8.3 Target 3 — `brand-strategy` → rename to **Brand Strategy & Experience**
+
+No sub-competency changes required by the 2026-10-06 decisions — DEFINITIONS.md's target-3 description ("decides what to do next... communicates with all those parties and gets the best out of them... mostly a destination, usual entry a marketing coordinator or specialist role") is consistent with the current shortDefinition and all six sub-competencies. This is a name-only change for target 3's core content; the one piece of target-3-adjacent content that *does* change is the Appendix's `project-oversight` narrowing — but that competency lives on `account-management` (target 2), not here (see §0's numbering note).
+
+**Proposed `shortDefinition`** (light touch only — added language in *italics*):
+> The analytical and strategic layer of marketing — understanding consumers, competitors, and market conditions well enough to define where a brand should position itself and how, *and to direct and get the best out of the creative, production, and vendor parties who carry that decision out*. *Mostly a destination role: the usual entry is a marketing coordinator or specialist position that grows into strategy.*
+
+No change: all six sub-competencies (`consumer-research`, `competitive-analysis`, `brand-positioning`, `campaign-measurement`, `quantitative-literacy`, `cross-channel-translation`).
+
+### 8.4 Target 4 — `creative-generalist` → rename to **Purposeful Design & Creative Generalist** *(name already set 2026-10-05; unchanged here)*
+
+One decision reaches target 4 directly: it **builds AI tools for its own use**, where target 5 builds them **for others** — that's the line between the two targets (§0). This confirms the original draft's call (§5) that retiring target 5's `prompt-design` into target 4's `ai-tool-direction` was the right move, since content-making-with-AI is target 4's territory either way. But it also means `ai-tool-direction` needs to be read — and described — a little more broadly than "prompt design, iteration, quality evaluation" for *content*: it should also cover the lightweight tool-building (a prompt chain, a small script, a personal automation) that a generalist assembles for their own workflow, short of building systems other people run (target 5's job).
+
+**Broadened, id kept — `ai-tool-direction` → "AI tool direction and personal tool-building: prompt design, iteration, quality evaluation"**
+- Know: Knows the capabilities and failure modes of major generative AI tools across image, copy, and video, *and how to script or assemble a lightweight personal AI workflow or tool (a prompt chain, a small automation) to speed their own work*.
+- Understand: Understands why AI outputs require iteration grounded in human judgment about what good looks like, *and why building a small tool for one's own workflow is now baseline fluency for this target — distinct from building a system other people run, which is target 5's job*.
+- Do: Directs an AI workflow from prompt through final output that meets brand quality standards*, and, where useful, builds or configures a small AI tool or automation for their own workflow and documents it well enough to reuse*.
+
+No change: `conceptual-development`, `aesthetic-judgment`, `cross-medium-production`, `brand-standards-application`, `brief-translation`. DEFINITIONS.md's classification note that developers who build a *client-deliverable* website or product (as opposed to internal tools) belong here is a classification clarification only — it doesn't require a new sub-competency, since `cross-medium-production` and `brief-translation` already cover that work generically.
+
+This resolves part of open question 3 (§7, carried to §11): the retirement of target-5 `prompt-design` into target-4 `ai-tool-direction` is confirmed correct, with slightly broadened scope. The coverage-continuity gap it flagged — the 5 courses captured under the retired `prompt-design` have likely never been scored against `ai-tool-direction` at all — still stands and still needs a decision (see §11).
+
+---
+
+## 9. Target 5 update — name and scope — Revision 2026-10-06
+
+This supersedes only the **name** and the **framing sentences** in §3 above; the shortDefinition, descriptors, and all nine sub-competencies in §3/§4 stand as written — none of them conflict with the 2026-10-06 walkthrough; they're confirmed, not revised.
+
+- **Name:** Creative Operations & Technology → **Creative Technology & Systems**. Id unchanged (`ai-workflow`).
+- **Core definition, now explicit:** "the enabling layer — building or running the tools, systems and processes the other targets use to get creative-related work done." Membership test: *does this person build or run something other people use to do the work?* This is the same idea §3's shortDefinition already expressed ("Builds and runs the templates, workflow platforms, asset libraries, automations, and compliance checks that creative and production work flows through") — the 2026-10-06 wording just sharpens it into a one-line test, and confirms the §4 sub-competencies (workflow platforms, DAM, packaging compliance, automation, colour, AI governance, AI evaluation, domain grounding) all pass that test.
+- **Scope widened, confirmed in scope:** IT support (SOC 15-1232), management and systems analysts (13-1111, 15-1211), platform/integration roles, and AI implementation/evaluation roles. None of these require a new sub-competency: IT support and systems-analyst work is carried by `workflow-architecture` (platform configuration and operation) and `systems-automation-integration` (scripting, APIs, integration) already drafted in §4; AI implementation/evaluation is exactly `ai-tool-evaluation`.
+- **Scope narrowed:** **logistics moves out, to target 1.** Logistics was never one of the evidence file's seven strands or one of the nine §4 sub-competencies, so nothing in §3/§4 needs to change to reflect this — it's a classification confirmation, not a content change. (Target 1's §8.1 shortDefinition doesn't call out logistics explicitly either; if the owner wants it named there, that's a one-line addition, flagged in §11.)
+
+No change to the §3 `shortDefinition` text is proposed beyond the name itself — "the detail-oriented systems and workflow side of creative and production work... counterpart to Creative Generalist's maker side" already reads consistently with "the enabling layer." Whoever applies this draft should use the new name (**Creative Technology & Systems**) wherever this file's earlier sections say "Creative Operations & Technology."
+
+---
+
+## 10. Consolidated re-scoring table — Revision 2026-10-06
+
+Read-only counts from the live database, via a throwaway `tsx` script (`lib/db/client`, `--env-file=.env.local`; deleted after use, nothing written). Confirms and extends §6's target-5-only numbers to all five targets:
+
+| Target (id) | Total `snapshot_target_coverage` rows | Rows under **affected** sub-competencies (descriptors changed or id retired) | Rows under **unaffected** sub-competencies | New ids (0 rows, first-time scoring) |
+|---|---|---|---|---|
+| 1 `production-operations` | 42 (7 ids × 6) | 18 (`workflow-design`, `cost-management`, `team-coordination` — 6 each) | 24 (`quality-control`, `vendor-management`, `timeline-management`, `domain-knowledge`) | `project-management` (Appendix) |
+| 2 `account-management` | 30 (5 ids × 6) | 18 (`proposal-development`, `gc-production-literacy`, `project-oversight` — 6 each) | 12 (`client-needs-diagnosis`, `results-interpretation`) | none |
+| 3 `brand-strategy` | 36 (6 ids × 6) | 0 — no sub-competency changes | 36 (all six) | none |
+| 4 `creative-generalist` | 36 (6 ids × 6) | 6 (`ai-tool-direction`) | 30 (the other five) | none |
+| 5 `ai-workflow` | 36 (6 ids × 6) | 36 — all six current ids become stale on apply (4 kept-but-broadened: 24 rows; 2 retired: 12 rows, see §6) | 0 | 5 (`brand-system-templating`, `digital-asset-management`, `packaging-artwork-compliance`, `systems-automation-integration`, `colour-management`) |
+| **Catalog totals** | **180** rows across all 5 targets, 26 capture snapshots (18 distinct courses), 50 courses total | **78** rows need a fresh AI scoring pass against changed descriptors | **102** rows stay valid as-is | **6** new ids start at zero (5 in target 5, 1 in target 1) |
+
+Every sub-competency across every target currently has exactly 6 coverage rows, across the same 6 snapshots — the catalog's AI-scoring passes have so far run evenly across all targets and all of a given target's sub-competencies, never partially. That evenness is worth preserving: a re-score batch that covers all 78 affected rows in one pass (rather than target-by-target over time) keeps the catalog in the same consistent state it's in today.
+
+None of targets 1–4's *existing* rows need deletion — same soft-delete-safe pattern as target 5 (§6): a kept-but-broadened id's old rows are stale evidence against a new rubric, not invalid rows, and get overwritten by the idempotent `UNIQUE(snapshot, target, sub_competency)` re-score, same as any other re-score.
+
+---
+
+## 11. Updated open questions for the owner — Revision 2026-10-06
+
+Supersedes §7's list (kept above for the record; items 2 is resolved there already). Renumbered and consolidated:
+
+1. **`change-management` — keep, drop, or fold in?** *(carried from §7.1, unresolved.)* Still open: restore as an eighth target-5 sub-competency, or leave retired with its "train a team" language folded into `brand-system-templating`?
+2. **`prompt-design` retirement — close the coverage gap now or later?** *(carried from §7.3, sharpened by §8.4.)* §8.4 confirms target 4's `ai-tool-direction` is the right home and broadens it slightly to cover personal tool-building. The 5 courses previously scored against the now-retired target-5 `prompt-design` have likely never been scored against target-4 `ai-tool-direction` at all. Close that gap in the same batch as the rest of this re-score, or leave it for a separate pass?
+3. **Target-5 course scope at each depth.** *(carried from §7.4, unresolved.)* Decision 2 (§2) means early/mid-curriculum Do-evidence is expected, not only capstone evidence. Still needs someone with curriculum knowledge to name candidate courses per sub-competency — now across 14 sub-competency ids total if targets 1, 2, and 4's broadened ones are included in the same pass.
+4. **`colour-management` — standalone or folded?** *(carried from §7.5, unresolved.)*
+5. **id churn at target 5.** *(carried from §7.6, unresolved.)*
+6. **Target 1 — new, or broadened?** §8.1 folds "equipment justification" into `cost-management` and "process engineering" into `workflow-design` rather than adding two more ids on top of the Appendix's `project-management` (which would make 9 total). Is that the right call, or should either stand alone? Separately: target 1 is at 7 ids before the Appendix addition, 8 after — above the usual 5–7 band, same issue target 5 already has. Worth deciding once, for both targets, rather than target-by-target.
+7. **Target 1 — name logistics explicitly?** Target 5's scope narrowing (§9) moves logistics to target 1, but §8.1's proposed `shortDefinition` doesn't name it. Add a clause, or leave it implicit in "production and operations"?
+8. **Re-score batching.** §10 shows 78 rows across 4 targets need a fresh AI pass and 6 new ids need first-time scoring. Confirm whether to run this as one consolidated batch (preserving the catalog's current even-coverage pattern) or split by target as each target's draft is separately approved.
+9. **Appendix heading correction.** §0 flags that the Appendix's "target 3 (`account-management`)" heading should read "target 2" under the canonical numbering. Harmless as analysis, but worth fixing before this draft is applied, so no one copies the wrong number into `lib/domain/seed-targets.ts` or a commit message.
