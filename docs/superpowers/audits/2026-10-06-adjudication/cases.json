@@ -1,0 +1,362 @@
+[
+ {
+  "id": "c1",
+  "course": "GC 3460",
+  "profileFile": "profile-GC3460.json",
+  "competency": "Production workflow design and optimization",
+  "dimension": "Know",
+  "descriptor": "Knows the standard workflow patterns for offset, digital, flexo, and packaging production.",
+  "scorerX": {
+   "score": 1,
+   "band": "low",
+   "excerpt": ""
+  },
+  "scorerY": {
+   "score": 0,
+   "band": "none",
+   "excerpt": ""
+  }
+ },
+ {
+  "id": "c2",
+  "course": "GC 3460",
+  "profileFile": "profile-GC3460.json",
+  "competency": "Quality control systems and standards enforcement",
+  "dimension": "Know",
+  "descriptor": "Knows industry quality standards (G7, ISO 12647, FTA FIRST) and the instruments used to measure conformance.",
+  "scorerX": {
+   "score": 4,
+   "band": "high",
+   "excerpt": "\"Measure a control wedge on a print sample ... Measure a control wedge on an ICC profiled proof ... Compare the two measurements with Delta E 2000.\""
+  },
+  "scorerY": {
+   "score": 3,
+   "band": "working",
+   "excerpt": "“Measure a control wedge on a print sample ... Measure a control wedge on an ICC profiled proof ... Compare the two measurements with Delta E 2000.” “The final step asks students to repeat the process with an ICC profiled proof and judge the degree of improvement gained by loading CxF data into Serendipity.”"
+  }
+ },
+ {
+  "id": "c3",
+  "course": "GC 3460",
+  "profileFile": "profile-GC3460.json",
+  "competency": "Quality control systems and standards enforcement",
+  "dimension": "Do",
+  "descriptor": "Sets up and operates a quality control system that prevents predictable failure modes for a specific production context.",
+  "scorerX": {
+   "score": 2,
+   "band": "low",
+   "excerpt": "“Measure a control wedge on a print sample ... Measure a control wedge on an ICC profiled proof ... Compare the two measurements with Delta E 2000.”"
+  },
+  "scorerY": {
+   "score": 3,
+   "band": "working",
+   "excerpt": "\"Measure a control wedge on a print sample ... Measure a control wedge on an ICC profiled proof ... Compare the two measurements with Delta E 2000.\""
+  }
+ },
+ {
+  "id": "c4",
+  "course": "GC 3460",
+  "profileFile": "profile-GC3460.json",
+  "competency": "Cost estimation and budget management",
+  "dimension": "Understand",
+  "descriptor": "Understands why cost estimation requires reconciling specification, vendor capability, and run-length economics.",
+  "scorerX": {
+   "score": 0,
+   "band": "none",
+   "excerpt": "“They also utilize a component cost sheet to calculate the cost to make a 9 lb. batch of this ink.”"
+  },
+  "scorerY": {
+   "score": 1,
+   "band": "low",
+   "excerpt": "\"They also utilize a component cost sheet to calculate the cost to make a 9 lb. batch of this ink.\""
+  }
+ },
+ {
+  "id": "c5",
+  "course": "GC 3460",
+  "profileFile": "profile-GC3460.json",
+  "competency": "Domain knowledge: substrates, color, materials",
+  "dimension": "Do",
+  "descriptor": "Makes substantive specification decisions on substrate, color, and finishing for a real production project.",
+  "scorerX": {
+   "score": 2,
+   "band": "low",
+   "excerpt": "“The purpose of this project will be to thoroughly examine a color, establishing a color standard and exploring the reproduction of those colors across various outputs.” “students do have graded analysis of how paper properties affect print behavior”"
+  },
+  "scorerY": {
+   "score": 3,
+   "band": "working",
+   "excerpt": "\"The purpose of this project will be to thoroughly examine a color, establishing a color standard and exploring the reproduction of those colors across various outputs.\""
+  }
+ },
+ {
+  "id": "c6",
+  "course": "GC 3700",
+  "profileFile": "profile-GC3700.json",
+  "competency": "Consumer research and insight synthesis",
+  "dimension": "Know",
+  "descriptor": "Knows the major qualitative and quantitative research methods and when each is appropriate.",
+  "scorerX": {
+   "score": 2,
+   "band": "low",
+   "excerpt": "\"the grading of this project is based on how they translate kind of the quality of their research and the consumer insight into a potential opportunity for this brand\""
+  },
+  "scorerY": {
+   "score": 0,
+   "band": "none",
+   "excerpt": "“we're trying to look for something that's a little bit deeper in terms of how do they emotionally think about beauty or confidence and what role does that play”; “the grading of this project is based on how they translate kind of the quality of their research and the consumer insight into a potential opportunity for this brand”"
+  }
+ },
+ {
+  "id": "c7",
+  "course": "GC 3700",
+  "profileFile": "profile-GC3700.json",
+  "competency": "Consumer research and insight synthesis",
+  "dimension": "Understand",
+  "descriptor": "Understands why insight synthesis is interpretive work that requires more than reporting findings.",
+  "scorerX": {
+   "score": 3,
+   "band": "working",
+   "excerpt": "\"the grading of this project is based on how they translate kind of the quality of their research and the consumer insight into a potential opportunity for this brand\""
+  },
+  "scorerY": {
+   "score": 2,
+   "band": "low",
+   "excerpt": "“we're trying to look for something that's a little bit deeper in terms of how do they emotionally think about beauty or confidence and what role does that play”; “the grading of this project is based on how they translate kind of the quality of their research and the consumer insight into a potential opportunity for this brand”"
+  }
+ },
+ {
+  "id": "c8",
+  "course": "GC 3700",
+  "profileFile": "profile-GC3700.json",
+  "competency": "Cross-channel brand translation (print, packaging, digital)",
+  "dimension": "Understand",
+  "descriptor": "Understands why cross-channel consistency requires deliberate translation, not duplication.",
+  "scorerX": {
+   "score": 2,
+   "band": "low",
+   "excerpt": "\"They then have to do a consumer journey... They do a loose media plan based on these channels connected to the consumer.\""
+  },
+  "scorerY": {
+   "score": 0,
+   "band": "none",
+   "excerpt": "“They have to work through brand assets... They do have to outline the brand's tone and voice and the clear emotion in that tone and voice.”"
+  }
+ },
+ {
+  "id": "c9",
+  "course": "GC 3730",
+  "profileFile": "profile-GC3730.json",
+  "competency": "Client needs diagnosis",
+  "dimension": "Know",
+  "descriptor": "Knows how to ask questions that surface unstated client needs and how to read project briefs critically.",
+  "scorerX": {
+   "score": 0,
+   "band": "none",
+   "excerpt": ""
+  },
+  "scorerY": {
+   "score": 2,
+   "band": "low",
+   "excerpt": "\"Week 11 Homework: Business Challenge, Desired Response, Who/What/Where/When/Why (10 pts)\""
+  }
+ },
+ {
+  "id": "c10",
+  "course": "GC 3730",
+  "profileFile": "profile-GC3730.json",
+  "competency": "Client needs diagnosis",
+  "dimension": "Understand",
+  "descriptor": "Understands why stated needs often diverge from underlying business problems and how to navigate that gap.",
+  "scorerX": {
+   "score": 0,
+   "band": "none",
+   "excerpt": ""
+  },
+  "scorerY": {
+   "score": 1,
+   "band": "low",
+   "excerpt": "\"Week 11 Homework: Business Challenge, Desired Response, Who/What/Where/When/Why (10 pts)\""
+  }
+ },
+ {
+  "id": "c11",
+  "course": "GC 3730",
+  "profileFile": "profile-GC3730.json",
+  "competency": "Client needs diagnosis",
+  "dimension": "Do",
+  "descriptor": "Conducts a discovery conversation that produces a written needs assessment distinct from the original brief.",
+  "scorerX": {
+   "score": 0,
+   "band": "none",
+   "excerpt": ""
+  },
+  "scorerY": {
+   "score": 1,
+   "band": "low",
+   "excerpt": "\"Week 11 Homework: Business Challenge, Desired Response, Who/What/Where/When/Why (10 pts)\""
+  }
+ },
+ {
+  "id": "c12",
+  "course": "GC 3730",
+  "profileFile": "profile-GC3730.json",
+  "competency": "Proposal development and consultative communication",
+  "dimension": "Know",
+  "descriptor": "Knows the structural elements of a client proposal and the rhythm of consultative communication.",
+  "scorerX": {
+   "score": 2,
+   "band": "low",
+   "excerpt": "Instructor: \"the third section is Media strategy and budget allocation, worth up to 25 points and includes identifying the Campaign Objective, the Media strategy statement, the media channel details ... and the budget allocation\""
+  },
+  "scorerY": {
+   "score": 3,
+   "band": "working",
+   "excerpt": "“the third section is Media strategy and budget allocation ... includes identifying the Campaign Objective”; “I prompt the students to make sure they are providing a \"why\" behind each recommendation”; “they get graded on both the ability to explain thier section and answer questions”"
+  }
+ },
+ {
+  "id": "c13",
+  "course": "GC 3730",
+  "profileFile": "profile-GC3730.json",
+  "competency": "Proposal development and consultative communication",
+  "dimension": "Do",
+  "descriptor": "Writes and presents a proposal that wins client commitment and sets accurate expectations for delivery.",
+  "scorerX": {
+   "score": 3,
+   "band": "working",
+   "excerpt": "“the third section is Media strategy and budget allocation ... includes identifying the Campaign Objective”; “I prompt the students to make sure they are providing a \"why\" behind each recommendation”; “they get graded on both the ability to explain thier section and answer questions”"
+  },
+  "scorerY": {
+   "score": 2,
+   "band": "low",
+   "excerpt": "Instructor: \"the third section is Media strategy and budget allocation, worth up to 25 points and includes identifying the Campaign Objective, the Media strategy statement, the media channel details ... and the budget allocation\""
+  }
+ },
+ {
+  "id": "c14",
+  "course": "GC 3730",
+  "profileFile": "profile-GC3730.json",
+  "competency": "Results interpretation and client reporting",
+  "dimension": "Do",
+  "descriptor": "Produces a post-project report a client uses to justify continued investment.",
+  "scorerX": {
+   "score": 1,
+   "band": "low",
+   "excerpt": "Instructor: \"the final section is the summary, worth up to 5 more points and should include a re-stated campaign objective, the measurement plan, and a statement around why the recommendation should work\""
+  },
+  "scorerY": {
+   "score": 0,
+   "band": "none",
+   "excerpt": "“Students create a basic measurement plan that connects campaign objectives to how success will be assessed.”"
+  }
+ },
+ {
+  "id": "c15",
+  "course": "GC 1050",
+  "profileFile": "profile-GC1050.json",
+  "competency": "Conceptual development and creative ideation across disciplines",
+  "dimension": "Know",
+  "descriptor": "Knows ideation methods and how to translate a brief into a creative direction.",
+  "scorerX": {
+   "score": 2,
+   "band": "low",
+   "excerpt": "“create a fictional food company logo and label using Adobe Illustrator”; “They do all three, describe what they made, justify design decisions, and print choices.”"
+  },
+  "scorerY": {
+   "score": 3,
+   "band": "working",
+   "excerpt": "\"create a fictional food company logo and label using Adobe Illustrator\""
+  }
+ },
+ {
+  "id": "c16",
+  "course": "GC 1050",
+  "profileFile": "profile-GC1050.json",
+  "competency": "Cross-medium creative production (copy, design, image, video, print)",
+  "dimension": "Understand",
+  "descriptor": "Understands why generalism requires fluency across disciplines, not specialization in any one.",
+  "scorerX": {
+   "score": 1,
+   "band": "low",
+   "excerpt": "\"Project 2: DTG T-Shirt (75 pts)\"; \"Project 3: Mug Design Dye Sublimation (75 pts)\"; \"Project 8: Brochure (75 pts)\""
+  },
+  "scorerY": {
+   "score": 0,
+   "band": "none",
+   "excerpt": "“Students produce finished artifacts through introductory digital print, dye sublimation, and direct-to-garment workflows.”; “Photo of your printed shirt and upload to Canvas.”"
+  }
+ },
+ {
+  "id": "c17",
+  "course": "GC 3400",
+  "profileFile": "profile-GC3400.json",
+  "competency": "Conceptual development and creative ideation across disciplines",
+  "dimension": "Understand",
+  "descriptor": "Understands why conceptual development requires constraint and how to use the brief as the discipline.",
+  "scorerX": {
+   "score": 1,
+   "band": "low",
+   "excerpt": "\"Students produce a bulleted list of take-aways and explain how they will translate those insights into visual elements for the final shoot.\""
+  },
+  "scorerY": {
+   "score": 0,
+   "band": "none",
+   "excerpt": "Students produce a bulleted list of take-aways and explain how they will translate those insights into visual elements for the final shoot."
+  }
+ },
+ {
+  "id": "c18",
+  "course": "GC 3400",
+  "profileFile": "profile-GC3400.json",
+  "competency": "Aesthetic judgment and brand visual literacy",
+  "dimension": "Understand",
+  "descriptor": "Understands why aesthetic judgment requires accumulated reference and cannot be reduced to a checklist.",
+  "scorerX": {
+   "score": 0,
+   "band": "none",
+   "excerpt": "Revisit the location and reshoot your top 4 photographs based on the Critique."
+  },
+  "scorerY": {
+   "score": 1,
+   "band": "low",
+   "excerpt": "\"Revisit the location and reshoot your top 4 photographs based on the Critique.\""
+  }
+ },
+ {
+  "id": "c19",
+  "course": "GC 3400",
+  "profileFile": "profile-GC3400.json",
+  "competency": "AI tool direction: prompt design, iteration, quality evaluation",
+  "dimension": "Do",
+  "descriptor": "Directs an AI workflow from prompt through final output that meets brand quality standards.",
+  "scorerX": {
+   "score": 2,
+   "band": "low",
+   "excerpt": "They do submit their full chat with the GPT ... they go out and reshoot the top images that were decided between them and the AI tool."
+  },
+  "scorerY": {
+   "score": 3,
+   "band": "working",
+   "excerpt": "\"They do submit their full chat with the GPT\" and \"they go out and reshoot the top images that were decided between them and the AI tool.\""
+  }
+ },
+ {
+  "id": "c20",
+  "course": "GC 3400",
+  "profileFile": "profile-GC3400.json",
+  "competency": "Cross-medium creative production (copy, design, image, video, print)",
+  "dimension": "Understand",
+  "descriptor": "Understands why generalism requires fluency across disciplines, not specialization in any one.",
+  "scorerX": {
+   "score": 1,
+   "band": "low",
+   "excerpt": "\"Students must locate and use at least one Creative Commons clip and at least one self-shot clip ... create a storyboard ... export the video to YouTube (Unlisted) and provide a link.\""
+  },
+  "scorerY": {
+   "score": 0,
+   "band": "none",
+   "excerpt": "Students must locate and use at least one Creative Commons clip and at least one self-shot clip ... create a storyboard ... export the video to YouTube (Unlisted) and provide a link."
+  }
+ }
+]

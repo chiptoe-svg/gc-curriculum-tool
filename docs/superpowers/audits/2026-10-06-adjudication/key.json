@@ -1,0 +1,102 @@
+[
+ {
+  "id": "c1",
+  "X": "gpt-5.5",
+  "Y": "sol-low"
+ },
+ {
+  "id": "c2",
+  "X": "gpt-5.5",
+  "Y": "sol-low"
+ },
+ {
+  "id": "c3",
+  "X": "sol-low",
+  "Y": "gpt-5.5"
+ },
+ {
+  "id": "c4",
+  "X": "sol-low",
+  "Y": "gpt-5.5"
+ },
+ {
+  "id": "c5",
+  "X": "sol-low",
+  "Y": "gpt-5.5"
+ },
+ {
+  "id": "c6",
+  "X": "gpt-5.5",
+  "Y": "sol-low"
+ },
+ {
+  "id": "c7",
+  "X": "gpt-5.5",
+  "Y": "sol-low"
+ },
+ {
+  "id": "c8",
+  "X": "gpt-5.5",
+  "Y": "sol-low"
+ },
+ {
+  "id": "c9",
+  "X": "sol-low",
+  "Y": "gpt-5.5"
+ },
+ {
+  "id": "c10",
+  "X": "sol-low",
+  "Y": "gpt-5.5"
+ },
+ {
+  "id": "c11",
+  "X": "sol-low",
+  "Y": "gpt-5.5"
+ },
+ {
+  "id": "c12",
+  "X": "gpt-5.5",
+  "Y": "sol-low"
+ },
+ {
+  "id": "c13",
+  "X": "sol-low",
+  "Y": "gpt-5.5"
+ },
+ {
+  "id": "c14",
+  "X": "gpt-5.5",
+  "Y": "sol-low"
+ },
+ {
+  "id": "c15",
+  "X": "sol-low",
+  "Y": "gpt-5.5"
+ },
+ {
+  "id": "c16",
+  "X": "gpt-5.5",
+  "Y": "sol-low"
+ },
+ {
+  "id": "c17",
+  "X": "gpt-5.5",
+  "Y": "sol-low"
+ },
+ {
+  "id": "c18",
+  "X": "sol-low",
+  "Y": "gpt-5.5"
+ },
+ {
+  "id": "c19",
+  "X": "sol-low",
+  "Y": "gpt-5.5"
+ },
+ {
+  "id": "c20",
+  "X": "gpt-5.5",
+  "Y": "sol-low"
+ }
+]
