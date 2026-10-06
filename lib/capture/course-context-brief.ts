@@ -10,11 +10,15 @@ import { getLatestSnapshotByCourse } from '@/lib/db/capture-snapshots-queries';
 import { getCaptureProfileByCourse } from '@/lib/db/course-capture-profiles-queries';
 import { loadSheetPrereqPairs, prereqsOf, dependentsOf } from '@/lib/curriculum/sheet-prereq-graph';
 import type { CaptureProfile } from '@/lib/ai/capture/schema';
+import { capLines } from '@/lib/capture/cap-lines';
 
 export const BRIEF_HEADING = "Neighboring courses — context for better questions, never evidence for this course's scores.";
 export const BRIEF_MAX_CHARS = 6000;
 
-export interface BriefPrereq { code: string; title: string; captureLabel: string | null } // null = not yet captured
+// profile: null = not yet captured; otherwise the same CaptureProfile the
+// prerequisite-profiles block renders from (set from the same latestCapture
+// call as captureLabel, so the two never disagree about which capture this is).
+export interface BriefPrereq { code: string; title: string; captureLabel: string | null; profile: CaptureProfile | null }
 export interface BriefDependent {
   code: string;
   title: string;
@@ -37,7 +41,7 @@ export async function buildCourseContextBrief(courseCode: string): Promise<Cours
   const pairs = await loadSheetPrereqPairs();
   const prerequisites = await Promise.all(prereqsOf(pairs, courseCode).map(async (code): Promise<BriefPrereq> => {
     const [c, cap] = await Promise.all([getCourseByCode(code), latestCapture(code)]);
-    return { code, title: c?.title ?? '', captureLabel: cap?.label ?? null };
+    return { code, title: c?.title ?? '', captureLabel: cap?.label ?? null, profile: cap?.profile ?? null };
   }));
   const dependents = await Promise.all(dependentsOf(pairs, courseCode).map(async (code): Promise<BriefDependent> => {
     const [c, cap] = await Promise.all([getCourseByCode(code), latestCapture(code)]);
@@ -91,30 +95,5 @@ export function renderCourseContextBrief(brief: CourseContextBrief, maxChars: nu
       lines.push({ text: '- Major projects: none listed' });
     }
   }
-  const note = (n: number, droppedCodes: string[]) => droppedCodes.length > 0
-    ? `_(${n} more line(s) left out to stay within the size cap; courses not shown: ${droppedCodes.join(', ')}.)_`
-    : `_(${n} more line(s) left out to stay within the size cap.)_`;
-  // Size the reserve for the worst case — a note naming every linked course
-  // — so the loop never overshoots maxChars regardless of where the cut
-  // actually lands.
-  const allLinkedCodes = [...brief.prerequisites.map(p => p.code), ...brief.dependents.map(d => d.code)];
-  const reserve = note(lines.length, allLinkedCodes).length + 1;
-  let out = head;
-  let i = 0;
-  for (; i < lines.length; i++) {
-    const line = lines[i]!;
-    const next = `${out}\n${line.text}`;
-    const remainingAfter = lines.length - i - 1;
-    if (next.length + (remainingAfter > 0 ? reserve : 0) > maxChars) break;
-    out = next;
-  }
-  if (i < lines.length) {
-    const droppedCodes: string[] = [];
-    for (let j = i; j < lines.length; j++) {
-      const c = lines[j]!.code;
-      if (c && !droppedCodes.includes(c)) droppedCodes.push(c);
-    }
-    out = `${out}\n${note(lines.length - i, droppedCodes)}`;
-  }
-  return out;
+  return capLines(head, lines, maxChars);
 }

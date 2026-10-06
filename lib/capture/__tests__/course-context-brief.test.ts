@@ -66,6 +66,10 @@ describe('course-context brief', () => {
     expect(md.indexOf('### Students arrive from')).toBeLessThan(md.indexOf('### Courses that build on this one'));
     expect(md.indexOf('GC 4060 — Flexo')).toBeLessThan(md.indexOf('GC 4400 — Packaging'));
   });
+  it('carries the captured profile on the prerequisite entry', async () => {
+    const brief = await buildCourseContextBrief('GC 3460');
+    expect(brief.prerequisites[0]!.profile).toEqual({ incoming_expectations: [], major_projects: [] });
+  });
   it('starts with the never-evidence heading', async () => {
     const md = renderCourseContextBrief(await buildCourseContextBrief('GC 3460'));
     expect(md.split('\n')[0]).toBe(`## ${BRIEF_HEADING}`);

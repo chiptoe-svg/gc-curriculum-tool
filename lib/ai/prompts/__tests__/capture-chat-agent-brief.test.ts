@@ -7,12 +7,23 @@ const section1b = md.slice(md.indexOf('## 1b. Downstream connections'), md.index
 // Prose wraps at ~80 cols in the source file; normalize whitespace so
 // assertions about multi-word phrases aren't sensitive to line wrapping.
 const norm1b = section1b.replace(/\s+/g, ' ');
+const atRestNorm = md.slice(md.indexOf('# What you have at rest'), md.indexOf('# Tools you can call')).replace(/\s+/g, ' ');
 
 describe('capture-chat-agent prompt — course-context brief', () => {
   it('describes the brief at rest as never evidence', () => {
     const atRest = md.slice(md.indexOf('# What you have at rest'), md.indexOf('# Tools you can call'));
     expect(atRest).toContain('Neighboring courses');
     expect(atRest).toMatch(/never evidence/i);
+  });
+  it('replaces the stale "Course Outcome Profiles" bullet with the prerequisite-profiles block description', () => {
+    expect(atRestNorm).toContain("Prerequisite courses' captured profiles");
+    expect(atRestNorm).not.toContain('Course Outcome Profiles for captured prerequisite courses');
+  });
+  it('points Audit Area 1 Step 3 at the prerequisite-profiles block, with the uncaptured-probe nudge', () => {
+    const step3 = md.slice(md.indexOf('**Step 3 — resolve arrival'), md.indexOf('**Step 4'));
+    const norm = step3.replace(/\s+/g, ' ');
+    expect(norm).toContain('A prerequisite course\'s captured profile, from the "Prerequisite courses\' captured profiles" block in your at-rest context.');
+    expect(norm).toMatch(/not yet captured.*probe instead/i);
   });
   it('caps handoff probes at 2 and forbids inventing expectations', () => {
     expect(section1b).toMatch(/at most 2 handoff probes per session/);

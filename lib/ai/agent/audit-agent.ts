@@ -34,7 +34,8 @@ import {
 } from '@/lib/db/capture-messages-queries';
 import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
 import { getCourseByCode } from '@/lib/db/courses-queries';
-import { buildCourseContextBrief, renderCourseContextBrief } from '@/lib/capture/course-context-brief';
+import { buildCourseContextBrief, renderCourseContextBrief, type CourseContextBrief } from '@/lib/capture/course-context-brief';
+import { renderPrerequisiteProfiles } from '@/lib/capture/prereq-profiles-block';
 
 export interface AuditAgentInput {
   sessionId: string;
@@ -78,12 +79,27 @@ interface BuiltAgentCall {
 
 // Interview-only (spec 2026-10-06): neighbors' expectations + projects as
 // context for better handoff questions — never evidence, never in scoring.
+// Also carries prerequisites' captured profiles (owner-approved follow-up,
+// 2026-10-06): the interview previously only got the brief's capture-status
+// line ("captured (...)") for a prerequisite, not the profile content itself
+// — only the scores/stress-test context loaded that. Each failure is scoped
+// independently so one never blocks the other, and a failure never blocks
+// the turn.
 async function loadBriefBlock(courseCode: string): Promise<string> {
+  let brief: CourseContextBrief;
+  let briefText: string;
   try {
-    return renderCourseContextBrief(await buildCourseContextBrief(courseCode));
+    brief = await buildCourseContextBrief(courseCode);
+    briefText = renderCourseContextBrief(brief);
   } catch (err) {
     console.warn(`[audit-agent] course-context brief failed for ${courseCode}; continuing without it`, err);
     return '(course-context brief unavailable this turn)';
+  }
+  try {
+    return `${briefText}\n\n${renderPrerequisiteProfiles(brief.prerequisites)}`;
+  } catch (err) {
+    console.warn(`[audit-agent] prerequisite profiles rendering failed for ${courseCode}; continuing without it`, err);
+    return `${briefText}\n\n(prerequisite profiles unavailable this turn)`;
   }
 }
 
