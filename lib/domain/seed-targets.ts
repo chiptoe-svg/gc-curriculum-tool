@@ -1,15 +1,25 @@
 import type { CareerTarget } from './types';
 
+// Definitions as of the 2026-10-06 target batch (owner-approved; spec
+// docs/superpowers/specs/2026-10-05-target-5-creative-ops-tech-draft.md §4, §8,
+// §9, §12). The live DB is brought to this state by
+// scripts/targets/apply-target-batch.ts; scripts/seed-career-targets.ts only
+// inserts into an empty DB. Retired sub-competencies are NOT listed under their
+// target (they are not current); they live in RETIRED_SUB_COMPETENCIES so the
+// apply script can set sub_competencies.retired = true. Rows are never deleted:
+// old snapshot_target_coverage cells keep their FK target.
+
 export const CAREER_TARGETS: CareerTarget[] = [
   {
     id: 'account-management',
     name: 'Sales Solutions & Account Management',
     shortDefinition:
-      'The consultative client-facing role that bridges a brand\'s marketing intent and the production or creative execution required to realize it.',
+      'The solution-seller on the vendor side — sales, account management, technical sales, and customer-service roles at printers, packaging converters, and equipment or technology suppliers. Acts as liaison between the creative/production side and the people deciding what to buy: understands the buyer\'s problem, builds the ROI case, makes the numbers work, and justifies the purchase. Entry-level customer service is this target\'s on-ramp, not a separate track.',
     industryContexts: [
       'Agency account team serving brand clients across print and digital deliverables',
       'In-house brand marketing coordinator translating creative briefs to vendors',
       'Print/packaging sales representative consulting on production specifications',
+      'Technical sales or customer-service representative at an equipment or technology supplier, building the ROI case for a prospective buyer',
     ],
     knowDescriptors: [
       'How print and packaging production processes work',
@@ -39,17 +49,17 @@ export const CAREER_TARGETS: CareerTarget[] = [
       },
       {
         id: 'proposal-development',
-        name: 'Proposal development and consultative communication',
-        knowDescriptor: 'Knows the structural elements of a client proposal and the rhythm of consultative communication.',
-        understandDescriptor: 'Understands why a proposal must justify scope, sequence, and cost in business terms — not creative terms.',
-        doDescriptor: 'Writes and presents a proposal that wins client commitment and sets accurate expectations for delivery.',
+        name: 'Proposal development, consultative communication, and the ROI case',
+        knowDescriptor: 'Knows the structural elements of a client proposal and the rhythm of consultative communication, and how to build a cost/benefit or ROI case — payback, total cost of ownership, cost-per-unit — that quantifies why a purchase pays for itself.',
+        understandDescriptor: 'Understands why a proposal must justify scope, sequence, and cost in business terms — not creative terms — and why a buying decision ultimately rests on a quantified business case, not the relationship alone.',
+        doDescriptor: 'Writes and presents a proposal that wins client commitment and sets accurate expectations for delivery, including a quantified ROI or TCO case for the solution being proposed.',
       },
       {
         id: 'project-oversight',
-        name: 'Project oversight across creative and production workflows',
-        knowDescriptor: 'Knows the standard handoff points between brief, creative, prepress, production, and delivery.',
-        understandDescriptor: 'Understands why timeline and quality trade-offs are continuous decisions, not one-time choices.',
-        doDescriptor: 'Manages a project through its full cycle while keeping client, creative, and production teams aligned.',
+        name: 'Client-facing project coordination',
+        knowDescriptor: 'Knows the handoff points between brief, creative, prepress, production and delivery, and which of them need client sign-off.',
+        understandDescriptor: 'Understands why the client\'s expectations on timeline, quality and cost have to be managed continuously, and how to communicate trade-offs before they become surprises.',
+        doDescriptor: 'Keeps the client and the internal creative and production teams aligned through a project, managing approvals, changes and expectations, while the production side runs the plan.',
       },
       {
         id: 'results-interpretation',
@@ -60,10 +70,10 @@ export const CAREER_TARGETS: CareerTarget[] = [
       },
       {
         id: 'gc-production-literacy',
-        name: 'Domain literacy in print, packaging, and brand production',
-        knowDescriptor: 'Knows what print, packaging, and brand production processes can and cannot accommodate.',
-        understandDescriptor: 'Understands why this knowledge is what differentiates a credible account manager from an order-taker.',
-        doDescriptor: 'Holds a substantive conversation with a brand director and turns to brief a production team accurately.',
+        name: 'Domain literacy in production technology, equipment, and process',
+        knowDescriptor: 'Knows what print, packaging, and brand production processes can and cannot accommodate, and what the equipment or technology being sold can and cannot do, well enough to speak to it credibly on the vendor side.',
+        understandDescriptor: 'Understands why this knowledge is what differentiates a credible account manager or technical sales rep from an order-taker.',
+        doDescriptor: 'Holds a substantive conversation with a brand director or a prospective buyer and turns to brief a production team or a sales engineer accurately.',
       },
     ],
   },
@@ -71,7 +81,7 @@ export const CAREER_TARGETS: CareerTarget[] = [
     id: 'brand-strategy',
     name: 'Brand Strategy & Experience',
     shortDefinition:
-      'The analytical and strategic layer of marketing — understanding consumers, competitors, and market conditions well enough to define where a brand should position itself and how.',
+      'The analytical and strategic layer of marketing — understanding consumers, competitors, and market conditions well enough to define where a brand should position itself and how, and to direct and get the best out of the creative, production, and vendor parties who carry that decision out. Mostly a destination role: the usual entry is a marketing coordinator or specialist position that grows into strategy.',
     industryContexts: [
       'Brand strategist at an agency producing positioning recommendations',
       'In-house brand manager defining campaign objectives and measurement frameworks',
@@ -145,7 +155,7 @@ export const CAREER_TARGETS: CareerTarget[] = [
     id: 'production-operations',
     name: 'Production & Operations',
     shortDefinition:
-      'The role that makes creative and brand work actually happen — on time, on spec, and within budget. Production managers design and oversee the workflows, quality systems, vendor relationships, and team coordination that translate a creative brief into a finished physical or digital product.',
+      'The role that makes creative and brand work actually happen — on time, on spec, and within budget, at printers and packaging converters, brand-side production and procurement, and agency production departments. Production managers design and oversee the workflows, quality systems, vendor relationships, logistics, equipment and process decisions, and team and people-management responsibilities (including HR) that translate a creative brief into a finished physical or digital product, and get it delivered.',
     industryContexts: [
       'Production manager at a printer overseeing offset and digital press workflows',
       'In-house operations lead at a brand managing vendor selection and quality',
@@ -173,10 +183,10 @@ export const CAREER_TARGETS: CareerTarget[] = [
     subCompetencies: [
       {
         id: 'workflow-design',
-        name: 'Production workflow design and optimization',
-        knowDescriptor: 'Knows the standard workflow patterns for offset, digital, flexo, and packaging production.',
-        understandDescriptor: 'Understands why workflow design must balance throughput, quality, and adaptability — and why optimizing one trades off another.',
-        doDescriptor: 'Designs a production workflow for a multi-component project that meets quality, timeline, and budget constraints.',
+        name: 'Production workflow design, process engineering, and optimization',
+        knowDescriptor: 'Knows the standard workflow patterns for offset, digital, flexo, and packaging production, and the basics of process engineering — re-sequencing, automating, or re-tooling a production process itself to change its throughput, quality, or cost profile.',
+        understandDescriptor: 'Understands why workflow design must balance throughput, quality, and adaptability — and why optimizing one trades off another — and why a process re-engineering change (not just a project\'s workflow) needs validation before it replaces a working process.',
+        doDescriptor: 'Designs a production workflow for a multi-component project that meets quality, timeline, and budget constraints, or re-engineers a step in an existing production process and validates the change before it replaces what\'s running.',
       },
       {
         id: 'quality-control',
@@ -201,17 +211,17 @@ export const CAREER_TARGETS: CareerTarget[] = [
       },
       {
         id: 'cost-management',
-        name: 'Cost estimation and budget management',
-        knowDescriptor: 'Knows the cost structures of major print and packaging processes.',
-        understandDescriptor: 'Understands why cost estimation requires reconciling specification, vendor capability, and run-length economics.',
-        doDescriptor: 'Produces a defensible cost estimate for a complex production project and manages spend through to delivery.',
+        name: 'Cost estimation, budget management, and equipment justification',
+        knowDescriptor: 'Knows the cost structures of major print and packaging processes, and how to build a capital-equipment business case — purchase cost, throughput or quality gain, and payback period — distinct from a per-job estimate.',
+        understandDescriptor: 'Understands why cost estimation requires reconciling specification, vendor capability, and run-length economics, and why an equipment decision is judged over a multi-year payback horizon, not a single job\'s margin.',
+        doDescriptor: 'Produces a defensible cost estimate for a complex production project and manages spend through to delivery, or builds an equipment-justification case (cost, gain, payback) for a real or proposed purchase.',
       },
       {
         id: 'team-coordination',
-        name: 'Team coordination and performance management',
-        knowDescriptor: 'Knows how production teams are structured and the typical responsibilities at each role.',
-        understandDescriptor: 'Understands why coordination breaks down under stress and what practices preserve communication.',
-        doDescriptor: 'Coordinates a production team through a high-pressure project and addresses performance gaps in real time.',
+        name: 'Team coordination, performance management, and people management (incl. HR)',
+        knowDescriptor: 'Knows how production teams are structured and the typical responsibilities at each role, and the basics of the people-management functions that sit alongside day-to-day coordination — hiring, onboarding, and performance/HR policy.',
+        understandDescriptor: 'Understands why coordination breaks down under stress and what practices preserve communication, and why hiring and performance-policy decisions have consequences that outlast any single project.',
+        doDescriptor: 'Coordinates a production team through a high-pressure project and addresses performance gaps in real time, and carries out at least one people-management task end-to-end (a hire, an onboarding plan, or a documented performance review) for a real or simulated team.',
       },
       {
         id: 'domain-knowledge',
@@ -219,6 +229,13 @@ export const CAREER_TARGETS: CareerTarget[] = [
         knowDescriptor: 'Knows the major substrate categories, color management systems, and materials used in print and packaging production.',
         understandDescriptor: 'Understands why substrate and ink interactions constrain creative possibility and how to advise designers accordingly.',
         doDescriptor: 'Makes substantive specification decisions on substrate, color, and finishing for a real production project.',
+      },
+      {
+        id: 'project-management',
+        name: 'Project management across creative and production work',
+        knowDescriptor: 'Knows the project life cycle (scope, plan, schedule, budget, risk, change control, close-out) and the standard tools for each: work breakdown, dependencies, critical path, status reporting.',
+        understandDescriptor: 'Understands why projects fail at scope and handoff rather than at execution, and why a plan has to be re-baselined when scope, budget or dates change rather than quietly absorbed.',
+        doDescriptor: 'Plans and runs a real creative or production project from brief to delivery: defines scope, builds the schedule and budget, tracks risks and changes, reports status, and closes it out with a lessons-learned record.',
       },
     ],
   },
@@ -267,10 +284,10 @@ export const CAREER_TARGETS: CareerTarget[] = [
       },
       {
         id: 'ai-tool-direction',
-        name: 'AI tool direction: prompt design, iteration, quality evaluation',
-        knowDescriptor: 'Knows the capabilities and failure modes of major generative AI tools across image, copy, and video.',
-        understandDescriptor: 'Understands why AI outputs require iteration grounded in human judgment about what good looks like.',
-        doDescriptor: 'Directs an AI workflow from prompt through final output that meets brand quality standards.',
+        name: 'AI tool direction and personal tool-building: prompt design, iteration, quality evaluation',
+        knowDescriptor: 'Knows the capabilities and failure modes of major generative AI tools across image, copy, and video, and how to script or assemble a lightweight personal AI workflow or tool (a prompt chain, a small automation) to speed their own work.',
+        understandDescriptor: 'Understands why AI outputs require iteration grounded in human judgment about what good looks like, and why building a small tool for one\'s own workflow is now baseline fluency for this target — distinct from building a system other people run, which is target 5\'s job.',
+        doDescriptor: 'Directs an AI workflow from prompt through final output that meets brand quality standards, and, where useful, builds or configures a small AI tool or automation for their own workflow and documents it well enough to reuse.',
       },
       {
         id: 'cross-medium-production',
@@ -299,73 +316,126 @@ export const CAREER_TARGETS: CareerTarget[] = [
     id: 'ai-workflow',
     name: 'Creative Technology & Systems',
     shortDefinition:
-      'The person who designs, builds, and manages the AI-augmented workflows that allow creative and production organizations to scale output without proportionally scaling headcount.',
+      'The detail-oriented systems and workflow side of creative and production work — the counterpart to Creative Generalist\'s maker side. Builds and runs the templates, workflow platforms, asset libraries, automations, and compliance checks that creative and production work flows through. Implementing, benchmarking and evaluating AI in those systems is a central part of the role, well beyond using AI tools.',
     industryContexts: [
-      'Workflow designer at an agency rolling out AI-assisted production',
-      'Operations lead at a brand integrating AI tools into existing creative workflows',
-      'Independent consultant building AI workflows for small creative shops',
+      'Creative or marketing workflow technologist configuring intake, approvals, and reporting on a platform like Workfront or Monday',
+      'Packaging workflow or compliance specialist managing artwork versioning and regulatory/print-quality sign-off',
+      'DAM specialist, creative-ops coordinator, or color-management technician governing a brand\'s asset library, color accuracy, or AI-assisted output quality',
+      'AI implementation lead selecting, piloting, benchmarking and rolling out AI models and tools across a creative or production operation',
     ],
     knowDescriptors: [
-      'How major AI tools (generative image, copy, video, layout) work and where they fail',
-      'What workflow design principles apply to creative production contexts',
-      'How to document workflows so they can be maintained and improved',
+      'How workflow platforms, DAM systems, and packaging-artwork pipelines structure creative and production work',
+      'What brand, regulatory, and print-quality compliance standards govern packaging and brand asset output',
+      'How scripting, APIs, and low-code automation connect creative, workflow, and AI systems',
+      'How AI models and tools are selected, implemented, benchmarked and evaluated: test sets, quality and cost measures, failure modes, drift',
     ],
     understandDescriptors: [
-      'Why AI tool outputs require domain-expert evaluation',
-      'Why workflow design is a continuous improvement process, not a one-time build',
-      'Why change management is the hardest part of AI adoption',
+      'Why systems and workflow design is what lets creative and production work scale without proportional headcount growth',
+      'Why someone has to stay accountable for AI-assisted and automated output against brand, legal, and quality standards',
+      'Why an AI tool has to be measured on the organization\'s own work before it is adopted, and re-measured after, rather than trusted on vendor claims',
+      'Why color, metadata, and versioning discipline compound in value as volume grows — and compound in cost when missing',
     ],
     doDescriptors: [
-      'Design and document an AI-augmented workflow for a specific creative or production context',
-      'Evaluate the output of an AI-assisted workflow against a quality standard and identify where revision is needed',
-      'Train a small team to operate a documented AI workflow',
+      'Configure or design a workflow, template system, or automation for a real creative or production context',
+      'Check a packaging, brand, or AI-assisted output against a defined compliance or quality standard and catch failure modes',
+      'Implement an AI step in a real workflow and benchmark it against the current process on quality, cost and turnaround, then recommend adopt, adjust or drop',
+      'Manage a digital asset library or a color-management process so output stays accurate, findable, and reusable at scale',
     ],
     defensibilityNote:
-      'This role requires both domain expertise and technical fluency — the combination is rare. An AI workflow designer who doesn\'t understand creative and production work will build workflows that produce technically correct but creatively wrong outputs.',
+      'AI can execute steps inside these workflows, but someone has to design the system, decide what the templates and automations should do, and stay accountable when output is checked against brand, legal, or print-quality standards. That accountability, and the judgment behind it, doesn\'t automate.',
     socCode: null,
     subCompetencies: [
       {
-        id: 'ai-tool-evaluation',
-        name: 'AI tool evaluation: capabilities, limitations, and appropriate use cases',
-        knowDescriptor: 'Knows the major categories of generative and analytical AI tools and their current capabilities.',
-        understandDescriptor: 'Understands why tool selection must match the specific creative or production problem, and why default tool choices fail in specialized contexts.',
-        doDescriptor: 'Evaluates a set of AI tools against a specific use case and recommends a stack with defensible rationale.',
+        id: 'brand-system-templating',
+        name: 'Brand system templating',
+        knowDescriptor: 'Knows how brand and campaign rules translate into reusable templates, components, and platform settings — including generative-AI presets — that scale compliant variation.',
+        understandDescriptor: 'Understands why templates must encode brand rules precisely enough to produce compliant output automatically, and why they need ongoing monitoring and maintenance as brand rules change.',
+        doDescriptor: 'Builds and maintains a template or settings system, in a design tool, workflow platform, or generative-AI platform, that produces on-brand variations at scale, and documents it for others to run.',
       },
       {
         id: 'workflow-architecture',
-        name: 'Workflow architecture: sequencing human and AI work',
-        knowDescriptor: 'Knows workflow design patterns and the role of handoff points in maintaining quality.',
-        understandDescriptor: 'Understands why workflows fail at handoff points and why sequencing matters more than tool choice.',
-        doDescriptor: 'Designs a workflow for a real creative or production context that sequences human and AI work for both quality and efficiency.',
+        name: 'Workflow platform configuration and operation',
+        knowDescriptor: 'Knows workflow design patterns and how workflow platforms (e.g., Workfront, Monday) structure intake, approvals, proofing, and reporting, and the role of handoff points in maintaining quality.',
+        understandDescriptor: 'Understands why workflows fail at handoff points, and why platform configuration and sequencing matter more than any single tool choice, including AI tools.',
+        doDescriptor: 'Configures or designs a workflow — on a real platform or on paper — for a creative or production context, sequencing human and AI work through intake, approval, and reporting steps, for both quality and efficiency.',
       },
       {
-        id: 'prompt-design',
-        name: 'Prompt design, testing, and documentation',
-        knowDescriptor: 'Knows the principles of effective prompt design and how prompts behave across models.',
-        understandDescriptor: 'Understands why prompts are versioned artifacts that require testing and maintenance, not one-time text.',
-        doDescriptor: 'Writes, tests, and documents prompts that produce consistent outputs across a real production workflow.',
+        id: 'digital-asset-management',
+        name: 'Digital asset management',
+        knowDescriptor: 'Knows how DAM platforms organize assets by metadata, taxonomy, and rights, and what makes an asset findable and reusable at scale.',
+        understandDescriptor: 'Understands why poor metadata and taxonomy decisions compound as an asset library grows, and why rights tracking is a compliance requirement, not a convenience.',
+        doDescriptor: 'Sets up or maintains a metadata/taxonomy structure in a DAM (or DAM-like) system for a real asset library and demonstrates that assets can be found and reused correctly.',
+      },
+      {
+        id: 'packaging-artwork-compliance',
+        name: 'Packaging artwork workflow and compliance',
+        knowDescriptor: 'Knows the packaging artwork production pipeline — artwork management, versioning, and the regulatory and print-quality requirements that govern packaging graphics.',
+        understandDescriptor: 'Understands why packaging compliance failures (labeling errors, missed regulatory requirements) are costly, and why versioning discipline prevents them.',
+        doDescriptor: 'Manages a packaging artwork file through versioning and a compliance check — regulatory, brand, or print-quality — using a defined checklist or an AI-assisted review tool.',
+      },
+      {
+        id: 'systems-automation-integration',
+        name: 'Systems automation and integration',
+        knowDescriptor: 'Knows the basics of scripting, APIs, and low-code automation tools used to connect creative, workflow, and AI systems, and where automation commonly breaks.',
+        understandDescriptor: 'Understands why automating a handoff between systems requires understanding both systems\' data and failure modes, not just the happy path.',
+        doDescriptor: 'Builds or configures an automation — a script, an API integration, or a low-code workflow — that handles a real handoff between two systems, including a generative-AI step.',
+      },
+      {
+        id: 'color-management',
+        name: 'Color management',
+        knowDescriptor: 'Knows color-management fundamentals — profiles, calibration, and process control — across the print processes and devices used in GC production.',
+        understandDescriptor: 'Understands why color drifts across devices and substrates without active process control, and why color accuracy is a measurable, auditable standard, not a subjective preference.',
+        doDescriptor: 'Sets up or audits color management — calibration, profiling, or process control — for a real print or packaging job and demonstrates the job meets a defined color standard.',
       },
       {
         id: 'quality-frameworks',
-        name: 'Quality evaluation frameworks for AI output',
-        knowDescriptor: 'Knows the dimensions on which AI output quality is evaluated in creative and production contexts.',
-        understandDescriptor: 'Understands why quality evaluation requires domain expertise and cannot be fully automated.',
-        doDescriptor: 'Builds a quality review process for an AI-assisted workflow that catches failure modes consistently.',
+        name: 'AI and quality governance',
+        knowDescriptor: 'Knows the dimensions on which creative, production, and AI-assisted output is evaluated — brand, legal/regulatory, and print-quality standards — and where each kind of check belongs in a workflow.',
+        understandDescriptor: 'Understands why quality and compliance checking requires domain expertise and can\'t be fully automated, and why someone must stay accountable for AI-assisted output specifically.',
+        doDescriptor: 'Builds or operates a quality/compliance review step in a real workflow — a brand check, a legal/regulatory check, or a print-quality check — that catches failure modes consistently, including checks on AI-assisted output.',
       },
       {
-        id: 'change-management',
-        name: 'Change management for AI workflow adoption',
-        knowDescriptor: 'Knows the standard models of change management and the typical resistance patterns in creative teams.',
-        understandDescriptor: 'Understands why adoption fails when the workflow is technically sound but socially unsupported.',
-        doDescriptor: 'Manages a small team through adoption of a new AI workflow without losing output quality.',
+        id: 'ai-tool-evaluation',
+        name: 'AI implementation, benchmarking and evaluation',
+        knowDescriptor: 'Knows how AI models and tools are chosen and deployed in creative and production operations, and the measures used to judge them: output quality against a reference set, error and failure-mode rates, cost per item, turnaround, and consistency across runs.',
+        understandDescriptor: 'Understands why an AI tool must be benchmarked on the organization\'s own work, not vendor demos; why results drift as models change; and how to weigh quality, cost, risk and staff workload in an adopt-or-drop decision.',
+        doDescriptor: 'Implements an AI step in a real workflow, builds a small benchmark (a test set and scoring rule) comparing it with the current process, runs it, and writes a recommendation to adopt, adjust or drop, with the evidence.',
       },
       {
         id: 'domain-grounding',
-        name: 'Domain grounding: creative, brand, and production knowledge',
-        knowDescriptor: 'Knows enough of the underlying creative and production domain to evaluate whether an AI output is fit for purpose.',
-        understandDescriptor: 'Understands why domain ignorance produces workflows that look correct but fail at the point of use.',
-        doDescriptor: 'Designs an AI workflow that reflects credible domain knowledge of the creative or production context it serves.',
+        name: 'Domain grounding: creative, brand and production knowledge',
+        knowDescriptor: 'Knows enough of the creative, brand and print/production domain (substrates, color, finishing, brand standards, how creative work is made and approved) to judge whether a workflow, template, automation or AI output is fit for purpose.',
+        understandDescriptor: 'Understands why systems built without domain knowledge look correct but fail at the point of use, and why that knowledge is what separates this role from a general IT or automation role.',
+        doDescriptor: 'Designs or evaluates a workflow, template system, automation or AI step and shows, with specific domain reasons, where it would succeed or fail in a real creative or production setting.',
       },
     ],
+  },
+];
+
+/**
+ * Sub-competencies retired by an owner decision. They stay in the DB with
+ * `retired = true` (never deleted — snapshot_target_coverage, intended
+ * coverage and other rows reference them by FK) and are excluded from every
+ * current view. Not re-listed under their target above.
+ */
+export interface RetiredSubCompetency {
+  id: string;
+  careerTargetId: string;
+  retiredOn: string; // ISO date of the decision
+  reason: string;
+}
+
+export const RETIRED_SUB_COMPETENCIES: RetiredSubCompetency[] = [
+  {
+    id: 'prompt-design',
+    careerTargetId: 'ai-workflow',
+    retiredOn: '2026-10-06',
+    reason: 'Content-making with AI is target 4\'s territory; covered by creative-generalist/ai-tool-direction (spec §5, §8.4).',
+  },
+  {
+    id: 'change-management',
+    careerTargetId: 'ai-workflow',
+    retiredOn: '2026-10-06',
+    reason: 'Not one of the evidenced strands; training and rollout are covered by ai-tool-evaluation (implementation) (spec §5, §12).',
   },
 ];
