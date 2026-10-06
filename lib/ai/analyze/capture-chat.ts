@@ -31,6 +31,14 @@ export interface ChatMessage {
    * captureChatTurn ignores it (it only reads role + content).
    */
   citations?: ChatMessageCitation[];
+  /**
+   * The interviewer's follow-up question, kept separate from the finding on
+   * new v2 turns so the UI can render it as its own block. `content` still
+   * holds the full merged text (finding + question). UI-only — not persisted
+   * (saved conversations keep role + content; rehydrated turns re-derive the
+   * question from the final "?" paragraph).
+   */
+  question?: string;
 }
 
 export interface CaptureChatMaterial {
