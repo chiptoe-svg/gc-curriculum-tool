@@ -1,4 +1,4 @@
-import { pgTable, pgEnum, uuid, text, jsonb, timestamp, integer, bigint, real, boolean, primaryKey, index, unique, foreignKey } from 'drizzle-orm/pg-core';
+import { pgTable, pgEnum, uuid, text, jsonb, timestamp, integer, smallint, bigint, real, boolean, primaryKey, index, unique, foreignKey } from 'drizzle-orm/pg-core';
 import type { CaptureProfile, CaptureReadiness, CaptureReviewerStatus } from '@/lib/ai/capture/schema';
 import type { ReconciliationLogEntry } from '@/lib/ai/schemas';
 import type { ObjectiveGuide } from '@/lib/objective-guide/schema';
@@ -686,6 +686,37 @@ export const prerequisiteEdges = pgTable('prerequisite_edges', {
   uniq: unique('uq_prerequisite_edges_focal_prereq_subcomp').on(t.focalCourseCode, t.prereqCourseCode, t.subCompetencyId),
   focalIdx: index('idx_prerequisite_edges_focal').on(t.focalCourseCode),
   prereqIdx: index('idx_prerequisite_edges_prereq').on(t.prereqCourseCode),
+}));
+
+/**
+ * Clemson catalog prerequisites, copied from the clemson-advising project's
+ * catalog.db by scripts/catalog/sync-catalog-prereqs.ts (never read at
+ * runtime). Migration 0053 (hand-written). Precedence over the course sheet:
+ * lib/curriculum/prereq-map.ts. An entries row with no edges = "catalog lists
+ * no course prerequisites" (no sheet fallback for that course).
+ */
+export const courseCatalogEntries = pgTable('course_catalog_entries', {
+  courseCode: text('course_code').primaryKey(),
+  title: text('title'),
+  prereqText: text('prereq_text'),
+  coreqText: text('coreq_text'),
+  notes: jsonb('notes').$type<string[]>().notNull().default([]),
+  catalogYear: text('catalog_year').notNull(),
+  sourceUrl: text('source_url'),
+  catalogLastSynced: text('catalog_last_synced'),
+  syncedAt: timestamp('synced_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const courseCatalogPrereqs = pgTable('course_catalog_prereqs', {
+  courseCode: text('course_code').notNull(),
+  prereqCode: text('prereq_code').notNull(),
+  kind: text('kind').$type<'prereq' | 'concurrent_ok' | 'coreq'>().notNull(),
+  anyOfGroup: smallint('any_of_group'),
+  catalogYear: text('catalog_year').notNull(),
+  syncedAt: timestamp('synced_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.courseCode, t.prereqCode, t.kind] }),
+  prereqIdx: index('idx_course_catalog_prereqs_prereq').on(t.prereqCode),
 }));
 
 /**
