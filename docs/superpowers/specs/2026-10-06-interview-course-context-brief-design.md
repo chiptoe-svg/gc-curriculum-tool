@@ -21,7 +21,7 @@ These are context for sharper handoff questions, **never evidence** for this cou
 
 New module `lib/curriculum/sheet-prereq-graph.ts`.
 
-- **`loadSheetPrereqPairs()`** reads every course's `courses.prerequisites` and returns `{ focal, prereq }` pairs, one per course code found. It uses `extractPrereqCodes(text, selfCode)`, which today is copied privately into each capture route that needs it (`scores`, `stress-test`, and the chat route's context assembly). This change moves it into one shared module, `lib/capture/prereq-codes.ts`, and the routes import it. That is the only change to those routes, so so self-references and text without a course code ("Sophomore standing") give no pair. Only codes that exist in `courses` are kept.
+- **`loadSheetPrereqPairs()`** reads every course's `courses.prerequisites` and returns `{ focal, prereq }` pairs, one per course code found. It uses `extractPrereqCodes(text, selfCode)`, which today is copied privately into each capture route that needs it (`scores` and `stress-test`; the chat route finds prerequisite profiles its own way and is checked during the build). This change moves it into one shared module, `lib/capture/prereq-codes.ts`, and the routes import it. That is the only change to those routes. Self-references and text without a course code ("Sophomore standing") give no pair. Only codes that exist in `courses` are kept.
 - **`prereqsOf(pairs, code)`** and **`dependentsOf(pairs, code)`** are pure helpers.
 - **`prereq_chain` fix.** The tool in `lib/ai/wiki/graph-tools.ts` reads `prerequisite_edges`, which has 0 rows, so it always returns an empty neighborhood. It now uses the union of `prerequisite_edges` pairs and sheet pairs, deduplicated. The pure `prereqNeighborhood(pairs, code)` is unchanged.
 
