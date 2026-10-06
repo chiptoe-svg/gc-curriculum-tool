@@ -5,12 +5,12 @@ import { getObjectiveGuide, type StoredObjectiveGuide } from '@/lib/db/objective
 import { getLatestSnapshotByCourse } from '@/lib/db/capture-snapshots-queries';
 import { listSyllabusMaterials } from '@/lib/db/course-materials-queries';
 import { pickSyllabus, type SyllabusPick } from '@/lib/objective-guide/inputs';
-import { renderGuideText } from '@/lib/objective-guide/render';
+import { renderGuideText, renderGuideCanvasPrompt } from '@/lib/objective-guide/render';
 import type { ObjectiveGuide } from '@/lib/objective-guide/schema';
 import { findResidualIdentifiers } from '@/lib/privacy/deterministic';
 
 export type ObjectiveGuideSection =
-  | { kind: 'guide'; guide: ObjectiveGuide; text: string; capturedOn: string }
+  | { kind: 'guide'; guide: ObjectiveGuide; text: string; canvasPrompt: string; capturedOn: string }
   | { kind: 'no-syllabus' }
   | { kind: 'syllabus-set-aside' };
 
@@ -40,7 +40,13 @@ export function decideGuideSection(args: {
   }
   if (stored) {
     const capturedOn = (stored.snapshotCreatedAt ?? stored.generatedAt).toISOString().slice(0, 10);
-    return { kind: 'guide', guide: stored.guide, text: renderGuideText(stored.guide, course), capturedOn };
+    return {
+      kind: 'guide',
+      guide: stored.guide,
+      text: renderGuideText(stored.guide, course),
+      canvasPrompt: renderGuideCanvasPrompt(stored.guide, course),
+      capturedOn,
+    };
   }
   if (!hasSnapshot) return null;
   if (syllabus.status === 'syllabus-set-aside') return { kind: 'syllabus-set-aside' };

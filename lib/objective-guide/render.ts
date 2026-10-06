@@ -44,3 +44,53 @@ export function renderGuideText(guide: ObjectiveGuide, course: { code: string; t
   lines.push(CLASS_LEVEL_NOTE);
   return lines.join('\n');
 }
+
+function formatCanvasPullItem(e: GuideEvidence): string {
+  return e.rubric_row ? `${e.assignment} (rubric row: ${e.rubric_row})` : `${e.assignment} (assignment score)`;
+}
+
+/**
+ * Deterministic (no AI call) prompt built from the stored guide, for a
+ * faculty member to paste into a Canvas-connected AI agent. "[term]" is a
+ * literal placeholder left for the instructor to fill in — it is not
+ * substituted here. Unlike renderGuideText, this never carries guide.intro
+ * or guide.checklist; it is addressed to the AI agent, not the instructor.
+ */
+export function renderGuideCanvasPrompt(guide: ObjectiveGuide, course: { code: string; title: string }): string {
+  const lines: string[] = [
+    `You have access to my Canvas course "${course.code} ${course.title}" for the [term] semester. ` +
+      'Produce an objective-attainment report using class-level data only. ' +
+      'Never include student names, IDs, or individual scores.',
+    '',
+    'Method: for each objective below, pull the listed items and compute the number of students with a score, ' +
+      'the class mean, the median, and the score distribution — by rubric rating level where a rubric row is named, ' +
+      'otherwise in 10% bands — and the share of students at or above 80% (or "Proficient" or higher where a rubric row ' +
+      'is named). Judge the objective MET if at least 70% of students are at or above that level, PARTLY MET if 50-69%, ' +
+      'and NOT MET if below 50%.',
+    '',
+  ];
+
+  guide.objectives.forEach((o, i) => {
+    lines.push(`${i + 1}. ${o.objective}`);
+    if (o.evidence.length > 0) {
+      lines.push('Pull:');
+      for (const e of o.evidence) lines.push(`- ${formatCanvasPullItem(e)}`);
+    }
+    if (o.measure === 'partial') {
+      lines.push(`Note: ${o.gather.trim()}`);
+    }
+    if (o.measure === 'none') {
+      let line = 'No graded evidence yet — report "no graded evidence" for this objective and do not estimate.';
+      if (o.suggestion) line += ` Suggested fix: ${o.suggestion.trim()}`;
+      lines.push(line);
+    }
+    lines.push('');
+  });
+
+  lines.push(
+    'Output: one table (objective | items used | n | mean | % at or above level | judgment), then one sentence per ' +
+      'objective on what the evidence shows, then a list of anything not found in Canvas (instead of guessing).'
+  );
+
+  return lines.join('\n');
+}

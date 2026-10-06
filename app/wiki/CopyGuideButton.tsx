@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 
-/** Copies the plain-text guide. Clipboard needs a secure context (campus
- *  HTTPS); on plain HTTP it reports failure and the "Show as plain text"
- *  disclosure below is the fallback. */
-export function CopyGuideButton({ text }: { text: string }) {
+/** Copies the given text (the plain-text guide, or the Canvas AI prompt).
+ *  Clipboard needs a secure context (campus HTTPS); on plain HTTP it reports
+ *  failure and the disclosure's visible text block below is the fallback. */
+export function CopyGuideButton({ text, label = 'Copy as text' }: { text: string; label?: string }) {
   const [state, setState] = useState<'idle' | 'copied' | 'failed'>('idle');
 
   async function copy() {
@@ -19,7 +19,7 @@ export function CopyGuideButton({ text }: { text: string }) {
 
   return (
     <button type="button" className="wiki-assess__copy" onClick={() => void copy()}>
-      {state === 'copied' ? 'Copied' : state === 'failed' ? 'Copy failed' : 'Copy as text'}
+      {state === 'copied' ? 'Copied' : state === 'failed' ? 'Copy failed' : label}
     </button>
   );
 }
