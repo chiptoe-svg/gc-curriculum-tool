@@ -165,12 +165,12 @@ Setup details: [`docs/superpowers/running-locally.md`](./superpowers/running-loc
 | Function ID | Default tier | Note |
 | ----------- | ------------ | ---- |
 | `capture-chat` | default | Bumped from light when audit bundle outgrew gpt-5.4-mini's 272k input cap |
-| `capture-scores` | default | |
+| `capture-scores` | **custom: gpt-6.1-sol (low effort)** | Course profile. Moved from gpt-5.4 on 2026-10-06 (owner); see `superpowers/audits/2026-10-05-model-evaluation.md`. |
 | `materials-analysis` | default | |
 | `explore-draft-target` | default | |
 | `explore-compare` | default | |
 | `explore-what-if` | default | |
-| `program-score-coverage` | heavy | Heaviest scorer; batches by target for cache reuse |
+| `program-score-coverage` | **custom: gpt-6.1-sol (low effort)** | Heaviest scorer; batches by target for cache reuse. Moved from gpt-5.5 on 2026-10-06 (owner): blind evidence check 14–5 for Sol, gpt-5.5 over-credited 8/20; see `superpowers/audits/2026-10-05-model-evaluation.md`. Existing coverage rows are gpt-5.5 scores until the re-score. |
 | `decompose-prereq-gap` | default | |
 | `material-digest` | light | Per-material structured digest generated at extraction for every material (supersedes `material-summary`); loaded into audit agent's at-rest context |
 | `chunk-contextualize` | light | Per-chunk position blurb prepended before embedding so the vector encodes position + content (Anthropic contextual-retrieval pattern) |
