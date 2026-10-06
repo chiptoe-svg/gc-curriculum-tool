@@ -224,7 +224,7 @@ export const CAREER_TARGETS: CareerTarget[] = [
   },
   {
     id: 'creative-generalist',
-    name: 'Creative Generalist / AI-Native',
+    name: 'Creative Generalist',
     shortDefinition:
       'A practitioner with broad creative capability across copy, design, photography, video, and print — who uses AI as a force multiplier that makes generalism viable at a professional level.',
     industryContexts: [
