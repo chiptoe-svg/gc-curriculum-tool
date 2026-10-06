@@ -46,6 +46,19 @@ function toCents(usd: number): number {
 export const OPENAI_TIMEOUT_MS = 5 * 60_000;
 export const OPENAI_MAX_RETRIES = 1;
 
+/**
+ * Reasoning effort a model runs at when the caller sets none. Owner decision
+ * 2026-10-06: gpt-6.1-sol runs at low (the 2026-10-05 evaluation and blind
+ * evidence check: as consistent as medium/high, closest to the evidence,
+ * cheapest). Models not listed get no reasoning_effort, so their requests
+ * are unchanged.
+ */
+const DEFAULT_REASONING_EFFORT: Record<string, string> = { 'gpt-6.1-sol': 'low' };
+
+export function effectiveReasoningEffort(model: string, explicit: string | undefined): string | undefined {
+  return explicit ?? process.env.OPENAI_REASONING_EFFORT?.trim() ?? DEFAULT_REASONING_EFFORT[model];
+}
+
 export class OpenAIProvider implements AIProvider {
   readonly name = 'openai';
   readonly model: string;
@@ -71,10 +84,8 @@ export class OpenAIProvider implements AIProvider {
     documents?: Array<{ bytes: Buffer; mimeType: string }>;
   }): Promise<{ data: T } & CompletionTelemetry> {
     const started = Date.now();
-    // Evaluation-only knob (2026-10-05 model evaluation): when OPENAI_REASONING_EFFORT
-    // is set (low | medium | high | xhigh), it is forwarded as `reasoning_effort`.
-    // Unset in production, so production requests are unchanged.
-    const effort = this.reasoningEffort ?? process.env.OPENAI_REASONING_EFFORT?.trim();
+    // Explicit effort, then the evaluation env knob, then the model's default.
+    const effort = effectiveReasoningEffort(this.model, this.reasoningEffort);
     const response = await this.client.chat.completions.create({
       model: this.model,
       ...(effort ? { reasoning_effort: effort as 'low' | 'medium' | 'high' } : {}),
