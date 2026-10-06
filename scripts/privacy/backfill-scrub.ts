@@ -5,8 +5,13 @@
  *      and digest on every active material — including the rows the retired
  *      FERPA hold set aside, whose raw text is stored today.
  *   2. Releases those holds (and the retired Canvas: Discussions set-aside).
- *   3. Re-indexes every material whose text or digest changed or whose hold
- *      was released, waits for the queue, then refreshes the program index
+ *   3. Per row in --apply (lib/privacy/backfill.ts applyBackfillRow): re-reads
+ *      the row and skips it if it was retired or re-extracted during the run;
+ *      after the scrubbed write and before enqueue, deletes the material's
+ *      vectors and clears its digest for every row whose text or digest
+ *      changed, whose hold was released, or whose stored text already holds a
+ *      placeholder (convergence after a crashed earlier run). Re-indexes those
+ *      rows, waits for the queue, then refreshes the program index
  *      (cross-course spine) for each touched course. Program chunks are
  *      restamped with snapshotId = null, as rebuildProgramIndex does; the next
  *      snapshot restamps them.
@@ -39,7 +44,7 @@ import {
 } from '@/lib/db/course-materials-queries';
 import { scrubForRecord } from '@/lib/privacy/scrub';
 import { countRedactionMarkers } from '@/lib/privacy/deterministic';
-import { isRetiredPrivacyHold, scanWikiForIdentifiers, parseBackfillArgs } from '@/lib/privacy/backfill';
+import { isRetiredPrivacyHold, scanWikiForIdentifiers, parseBackfillArgs, applyBackfillRow, type BackfillDeps } from '@/lib/privacy/backfill';
 import { isSyllabusFileName } from '@/lib/capture/materials-policy';
 import { enqueue } from '@/lib/capture/ingest-queue';
 import { createVectorStore, tenantForCourse } from '@/lib/capture/vector-store';
@@ -47,7 +52,7 @@ import { refreshProgramIndex } from '@/lib/capture/program-index';
 import { readWikiPage, writeAndPush, wikiRepoPath, WikiPagesWithheldError } from '@/lib/wiki/git-ops';
 
 interface Tally {
-  scanned: number; textChanged: number; digestChanged: number; failed: number;
+  scanned: number; skipped: number; textChanged: number; digestChanged: number; failed: number;
   released: number; reindexed: number; names: number; ids: number; emails: number;
 }
 
@@ -105,37 +110,64 @@ async function main(): Promise<void> {
   const reindexIds: string[] = [];
   const touchedCourses = new Set<string>();
   const vectorStore = mode === 'apply' ? createVectorStore() : null;
+  const deps: BackfillDeps | null = vectorStore === null ? null : {
+    getMaterial: id => getMaterialById(id),
+    writeText: r => updateExtractionResult({
+      id: r.id,
+      extractionStatus: r.extractionStatus as ExtractionStatus,
+      extractedText: r.extractedText!,
+    }),
+    scrubDigest: async (d, opts) => (await scrubForRecord(d, opts)).text,
+    setDigest: (id, d) => setScrubbedDigest(id, d),
+    deleteVectors: (code, id) => vectorStore.deleteByMaterial(tenantForCourse(code), id),
+    markIndexFailed: id => updateIndexingStatus({ id, status: 'failed' }),
+    releaseHold: id => updateAutoSetAside({ id, autoSetAside: false, setAsideReason: null, ignored: false }),
+    enqueue: id => enqueue(id),
+  };
 
   for (const row of rows) {
-    const t = tallies.get(row.courseCode) ?? { scanned: 0, textChanged: 0, digestChanged: 0, failed: 0, released: 0, reindexed: 0, names: 0, ids: 0, emails: 0 };
+    const t = tallies.get(row.courseCode) ?? { scanned: 0, skipped: 0, textChanged: 0, digestChanged: 0, failed: 0, released: 0, reindexed: 0, names: 0, ids: 0, emails: 0 };
     tallies.set(row.courseCode, t);
     t.scanned++;
     const opts = { fileName: row.fileName, isSyllabus: row.isSyllabus === true || isSyllabusFileName(row.fileName) };
+
+    if (deps !== null) {
+      // --apply: per-row logic (re-read, scrubbed write, vector delete +
+      // digest clear before enqueue, crash convergence) in applyBackfillRow.
+      const o = await applyBackfillRow(row, deps);
+      if (o.kind === 'skipped') {
+        t.skipped++;
+        console.log(`  - ${row.courseCode} ${row.id}: skipped (changed/retired during run)`);
+        continue;
+      }
+      if (o.failed) console.log(`  ! ${row.courseCode} ${row.id}: scrub failed, text cleared — ${o.failReason}`);
+      if (o.digestError) console.log(`  ! ${row.courseCode} ${row.id}: digest scrub failed, digest cleared — ${o.digestError}`);
+      if (o.storedText !== undefined) {
+        const c = countRedactionMarkers(o.storedText);
+        t.names += c['student-name'];
+        t.ids += c['student-id'];
+        t.emails += c.email;
+      }
+      if (o.textChanged) t.textChanged++;
+      if (o.digestChanged) t.digestChanged++;
+      if (o.failed) t.failed++;
+      if (o.released) t.released++;
+      if (o.reindex) { t.reindexed++; reindexIds.push(row.id); }
+      if (o.touched) touchedCourses.add(row.courseCode);
+      continue;
+    }
+
+    // --dry-run: reads only. Mirrors applyBackfillRow's decisions.
     let textChanged = false;
     let digestChanged = false;
     let failed = false;
     let storedText: string | undefined;
-
     if (row.extractedText !== null) {
-      if (mode === 'dry-run') {
-        try {
-          storedText = (await scrubForRecord(row.extractedText, opts)).text;
-        } catch (err) {
-          failed = true;
-          console.log(`  ! ${row.courseCode} ${row.id}: scrub would fail — ${msg(err)}`);
-        }
-      } else {
-        const p = await updateExtractionResult({
-          id: row.id,
-          extractionStatus: row.extractionStatus as ExtractionStatus,
-          extractedText: row.extractedText,
-        });
-        if (p.outcome === 'scrub_failed') {
-          failed = true;
-          console.log(`  ! ${row.courseCode} ${row.id}: scrub failed, text cleared — ${p.reason}`);
-        } else {
-          storedText = p.extractedText;
-        }
+      try {
+        storedText = (await scrubForRecord(row.extractedText, opts)).text;
+      } catch (err) {
+        failed = true;
+        console.log(`  ! ${row.courseCode} ${row.id}: scrub would fail — ${msg(err)}`);
       }
       if (storedText !== undefined) {
         textChanged = storedText !== row.extractedText;
@@ -145,53 +177,28 @@ async function main(): Promise<void> {
         t.emails += c.email;
       }
     }
-
     if (row.digest !== null) {
       try {
-        const s = await scrubForRecord(row.digest, opts);
-        digestChanged = s.text !== row.digest;
-        if (mode === 'apply' && digestChanged) await setScrubbedDigest(row.id, s.text);
+        digestChanged = (await scrubForRecord(row.digest, opts)).text !== row.digest;
       } catch (err) {
         digestChanged = true;
-        console.log(`  ! ${row.courseCode} ${row.id}: digest scrub ${mode === 'apply' ? 'failed, digest cleared' : 'would fail'} — ${msg(err)}`);
-        if (mode === 'apply') await setScrubbedDigest(row.id, null);
+        console.log(`  ! ${row.courseCode} ${row.id}: digest scrub would fail — ${msg(err)}`);
       }
     }
-
     if (textChanged) t.textChanged++;
     if (digestChanged) t.digestChanged++;
-
-    if (failed) {
-      t.failed++;
-      if (mode === 'apply') {
-        await vectorStore!.deleteByMaterial(tenantForCourse(row.courseCode), row.id);
-        await updateIndexingStatus({ id: row.id, status: 'failed' });
-        touchedCourses.add(row.courseCode);
-      }
-      continue;
-    }
-
+    if (failed) { t.failed++; continue; }
     const release = isRetiredPrivacyHold(row);
-    if (release) {
-      t.released++;
-      if (mode === 'apply') {
-        await updateAutoSetAside({ id: row.id, autoSetAside: false, setAsideReason: null, ignored: false });
-      }
-    }
-
-    if (row.extractedText !== null && (textChanged || digestChanged || release)) {
-      t.reindexed++;
-      if (mode === 'apply') {
-        await enqueue(row.id);
-        reindexIds.push(row.id);
-        touchedCourses.add(row.courseCode);
-      }
-    }
+    if (release) t.released++;
+    // A stored text that already holds a placeholder is re-indexed too (see
+    // applyBackfillRow: convergence after a crashed earlier run).
+    const leftover = storedText !== undefined && !textChanged && Object.values(countRedactionMarkers(storedText)).some(n => n > 0);
+    if (row.extractedText !== null && (textChanged || digestChanged || release || leftover)) t.reindexed++;
   }
 
-  console.log('\ncourse | scanned | text changed | digest changed | failed | holds released | re-index | [student] | [student ID] | [email]');
+  console.log('\ncourse | scanned | skipped (changed/retired during run) | text changed | digest changed | failed | holds released | re-index | [student] | [student ID] | [email]');
   for (const [code, t] of [...tallies.entries()].sort()) {
-    console.log(`${code} | ${t.scanned} | ${t.textChanged} | ${t.digestChanged} | ${t.failed} | ${t.released} | ${t.reindexed} | ${t.names} | ${t.ids} | ${t.emails}`);
+    console.log(`${code} | ${t.scanned} | ${t.skipped} | ${t.textChanged} | ${t.digestChanged} | ${t.failed} | ${t.released} | ${t.reindexed} | ${t.names} | ${t.ids} | ${t.emails}`);
   }
 
   if (mode === 'apply' && reindexIds.length > 0) {
