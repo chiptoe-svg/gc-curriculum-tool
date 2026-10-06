@@ -36,6 +36,16 @@ type Pending = Partial<Record<Dimension, { level: number; evidence: string }>>;
 type Change = { dim: Dimension; from: number; to: number };
 
 /**
+ * Extra context for a saved adjustment: the evidence typed for each RAISED
+ * dimension ("What shows students reach this?"). The review panel stores it
+ * as the approval-time override reason, so the reviewer isn't asked "why?"
+ * a second time for the same raise.
+ */
+export interface AdjustmentMeta {
+  raiseEvidence: Partial<Record<Dimension, string>>;
+}
+
+/**
  * The review card's score block.
  *
  * Compact: the labeled portrait and two stacked actions — "✓ Looks right"
@@ -60,7 +70,7 @@ export function CompetencyPortrait({
   adjustExtras,
 }: {
   competency: CaptureCompetency;
-  onChange: (next: CaptureCompetency) => void;
+  onChange: (next: CaptureCompetency, meta?: AdjustmentMeta) => void;
   /** When provided, the card is confirmable ("✓ Looks right", and Save changes confirms). */
   onConfirm?: () => void;
   confirmed?: boolean;
@@ -102,13 +112,18 @@ export function CompetencyPortrait({
   function saveChanges() {
     if (!canSave) return;
     let next = competency;
+    const raiseEvidence: Partial<Record<Dimension, string>> = {};
     for (const c of changes) {
       next = withDepth(next, c.dim, c.to);
       // Raising replaces the evidence with what the reviewer says shows it —
       // the schema requires evidence for any level above the floor.
-      if (c.to > c.from) next = withEvidence(next, c.dim, pending[c.dim]!.evidence.trim());
+      if (c.to > c.from) {
+        const ev = pending[c.dim]!.evidence.trim();
+        next = withEvidence(next, c.dim, ev);
+        raiseEvidence[c.dim] = ev;
+      }
     }
-    onChange(next);
+    onChange(next, { raiseEvidence });
     onConfirm?.();
     setLastAdjustment(changes);
     close();

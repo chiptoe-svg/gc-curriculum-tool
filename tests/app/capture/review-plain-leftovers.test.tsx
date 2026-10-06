@@ -89,19 +89,8 @@ describe('other review text', () => {
     expect(screen.getByText(/Objective 2 claims adapts it to new conditions but only Doing \(does it with step-by-step direction\) is evidenced/)).toBeInTheDocument();
   });
 
-  it('the raised-score prompt names the change in words', () => {
-    renderPanel(profile([comp()]));
-    fireEvent.click(screen.getByRole('button', { name: /Builds a LinkedIn profile/ }));
-    fireEvent.click(screen.getByRole('button', { name: /needs adjusting/i }));
-    const row = screen.getByTestId('flag-row-d');
-    fireEvent.click(within(row).getByRole('button', { name: /change/i }));
-    fireEvent.click(within(row).getByRole('radio', { name: /does it independently in familiar situations/ }));
-    fireEvent.change(within(row).getByRole('textbox'), { target: { value: 'capstone press check' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
-    const prompt = screen.getByText(/You raised a score/);
-    expect(prompt.textContent).toMatch(/Doing: does it with a reference or checklist → does it independently in familiar situations/);
-    expect(prompt.textContent).not.toMatch(CODE);
-  });
+  // The raised-score prompt's wording is covered in override-other-path.test.tsx
+  // (a Change-flow raise no longer shows the prompt — its evidence is the reason).
 
   it('the validation banner explains the cause without codes', () => {
     renderPanel(profile([comp({ evidence_d: null })]));

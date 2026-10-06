@@ -68,18 +68,13 @@ function raiseDoDepthViaPortrait() {
 }
 
 describe('K/U/D override rationale gate', () => {
-  it('shows a required reason on an upward bump and blocks approve until filled', () => {
+  it('a raise saved through Change with evidence is not asked "why?" again (evidence is the reason)', () => {
     renderPanel();
     raiseDoDepthViaPortrait();
-    // Reason field appears
-    expect(screen.getByText(/You raised a score/i)).toBeTruthy();
-    // Approve lock message names the bump count
-    expect(screen.getByText(/raised score.*need a reason/i)).toBeTruthy();
-    // Fill in a reason
-    fireEvent.change(screen.getByPlaceholderText(/Reason for the higher level/i), { target: { value: 'capstone press checks' } });
-    // Lock message should be gone
+    expect(screen.queryByText(/You raised a score/i)).toBeNull();
     expect(screen.queryByText(/raised score.*need a reason/i)).toBeNull();
   });
+  // A raise from any other path still needs the reason: override-other-path.test.tsx.
 
   it('no reason field for a downward edit', () => {
     renderPanel();

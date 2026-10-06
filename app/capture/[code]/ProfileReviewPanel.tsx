@@ -15,7 +15,7 @@ import { formatIncomingRequirements } from '@/lib/capture/incoming-requirements'
 import { VerificationSummary } from './VerificationSummary';
 import { LegacyBanner } from './LegacyBanner';
 import { CitationDrawer, type CitationTarget } from './CitationDrawer';
-import { CompetencyPortrait } from './CompetencyPortrait';
+import { CompetencyPortrait, type AdjustmentMeta } from './CompetencyPortrait';
 import { CourseOverview } from './CourseOverview';
 import { ClassStructureSection } from './ClassStructureSection';
 import { MajorProjectsSection } from './MajorProjectsSection';
@@ -401,7 +401,7 @@ function CompetencyCard({
 }: {
   competency: CaptureCompetency;
   index: number;
-  onChange: (next: CaptureCompetency) => void;
+  onChange: (next: CaptureCompetency, meta?: AdjustmentMeta) => void;
   onCitationClick?: (c: CaptureProfileCitationType) => void;
   courseCode: string;
   slug: string;
@@ -951,6 +951,13 @@ export function ProfileReviewPanel({
   function setReason(i: number, text: string) {
     setOverrideReasons(prev => { const n = new Map(prev); n.set(i, text); return n; });
   }
+  // Raises saved through the card's Change flow come with evidence ("What shows
+  // students reach this?"). Per competency, the dimensions covered that way and
+  // their text. That text IS the override reason (stored in overrideReasons, so
+  // it persists into reviewer_overrides exactly like a typed reason), and those
+  // dimensions never get the approval-time "why?" box. Raises arriving any other
+  // way still need the box. (Owner-approved 2026-10-06.)
+  const [evidencedRaises, setEvidencedRaises] = useState<Map<number, Partial<Record<'k' | 'u' | 'd', string>>>>(new Map());
 
   function handleCitationClick(c: CaptureProfileCitationType) {
     setDrawerTarget({
@@ -1013,10 +1020,21 @@ export function ProfileReviewPanel({
 
   const dirty = useMemo(() => JSON.stringify(working) !== JSON.stringify(profile), [working, profile]);
 
-  function updateCompetency(i: number, next: CaptureCompetency) {
+  function updateCompetency(i: number, next: CaptureCompetency, meta?: AdjustmentMeta) {
     const competencies = working.competencies.slice();
     competencies[i] = next;
     setWorking({ ...working, competencies });
+    const raised = meta?.raiseEvidence ?? {};
+    if (Object.keys(raised).length > 0) {
+      const merged = { ...(evidencedRaises.get(i) ?? {}), ...raised };
+      setEvidencedRaises(prev => new Map(prev).set(i, merged));
+      // Knowing, Reasoning, Doing order; one raise → exactly the typed text.
+      const reason = (['k', 'u', 'd'] as const)
+        .map(d => merged[d])
+        .filter((t): t is string => !!t && t.length > 0)
+        .join('; ');
+      setReason(i, reason);
+    }
   }
 
   function markReviewed(i: number) {
@@ -1172,6 +1190,9 @@ export function ProfileReviewPanel({
   function renderOverrideReason(i: number) {
     const bump = bumpByIndex.get(i);
     if (!bump) return null;
+    // Every raised dimension already explained by Change-flow evidence → no box.
+    const covered = evidencedRaises.get(i) ?? {};
+    if (bump.changes.every(c => (covered[c.dim] ?? '').length > 0)) return null;
     const summary = bump.changes
       .map(c => `${DIM_WORD[c.dim]}: ${plainDepthPhrase(c.dim, c.from)} → ${plainDepthPhrase(c.dim, c.to)}`)
       .join('; ');
@@ -1397,7 +1418,7 @@ export function ProfileReviewPanel({
                     // text only marks the draft dirty. (2026-06-16 operator
                     // report: a stray portrait edit used to auto-confirm a row —
                     // that must stay impossible.)
-                    onChange={next => updateCompetency(i, next)}
+                    onChange={(next, meta) => updateCompetency(i, next, meta)}
                     onCitationClick={handleCitationClick}
                     courseCode={courseCode}
                     slug={slug}
@@ -1428,7 +1449,7 @@ export function ProfileReviewPanel({
                 <CompetencyCard
                   competency={c}
                   index={i}
-                  onChange={next => updateCompetency(i, next)}
+                  onChange={(next, meta) => updateCompetency(i, next, meta)}
                   onCitationClick={handleCitationClick}
                   courseCode={courseCode}
                   slug={slug}

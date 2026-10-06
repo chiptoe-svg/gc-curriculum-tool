@@ -98,7 +98,7 @@ describe('Change list', () => {
     expect(save().disabled).toBe(false);
     fireEvent.click(save());
     expect(onChange).toHaveBeenCalledTimes(1);
-    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ d_depth: 2, evidence_d: 'die-line project' }));
+    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ d_depth: 2, evidence_d: 'die-line project' }), { raiseEvidence: {} });
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });
 
@@ -113,7 +113,10 @@ describe('Change list', () => {
     fireEvent.change(box, { target: { value: 'unit-3 exam Q7' } });
     expect(save().disabled).toBe(false);
     fireEvent.click(save());
-    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ u_depth: 4, evidence_u: 'unit-3 exam Q7' }));
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({ u_depth: 4, evidence_u: 'unit-3 exam Q7' }),
+      { raiseEvidence: { u: 'unit-3 exam Q7' } }, // the panel turns this into the override reason
+    );
   });
 
   it('Cancel discards pending picks and returns to the compact card', () => {
