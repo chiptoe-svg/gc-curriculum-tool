@@ -443,9 +443,9 @@
 </section>
 
 <section id="cc-stresstest">
-  <h2><span class="num">§ 9</span>CourseCapture · Stress-testing the profile before you approve</h2>
+  <h2><span class="num">§ 9</span>CourseCapture · The automatic second review (stress test)</h2>
 
-  <p>After the profile has been generated but before you save a snapshot, you can run an adversarial review of it. The <strong>Stress-test this profile</strong> button appears on the review panel. Click it and a separate, heavier-tier AI agent reads the produced profile alongside the full audit transcript and all materials, then returns a structured critique — not an editorial rewrite, but a targeted search for places where the profile's claims outrun its evidence.</p>
+  <p>As soon as a profile is generated, a second, heavier-tier AI reviewer reads it automatically, in the background — you can start reviewing right away; a small <em>Checking the profile…</em> line shows it is running. The reviewer reads the produced profile alongside the full audit transcript and all materials, then returns a structured critique — not an editorial rewrite, but a targeted search for places where the profile's claims outrun its evidence.</p>
 
   <h3>What the reviewer looks at</h3>
   <p>The reviewer works at two levels:</p>
@@ -456,12 +456,12 @@
   <p>The reviewer also returns an overall assessment — a one-sentence judgment of whether the profile is ready to publish, needs minor refinement, or has substantive problems that warrant another audit conversation.</p>
 
   <h3>How the results appear</h3>
-  <p>Competency rows that have concerns get an inline colored badge next to the row — the badge shows the concern count and opens the annotation on click. Rows the reviewer found acceptable show nothing. Profile-level concerns appear as a collapsible list below the competency table. The overall assessment appears at the top of the review panel.</p>
+  <p>The cards the reviewer doubts become the highlighted <strong>Worth a look</strong> cards, each with the reviewer's short reason (and its suggested level, in words) above the card. Confirm each with <strong>✓ Looks right</strong> or correct it with <strong>Needs adjusting</strong>; the line next to <strong>Approve the profile</strong> counts how many are left. The overall assessment and profile-level concerns appear below the cards. If the check can't run (for example, an outage), the review still works: the highlighted cards fall back to the interviewer's own signals, and a note says so.</p>
 
-  <p>The results are ephemeral: they're shown for this session only and are cleared the moment you make any edit to the profile. They don't persist into the snapshot. If you edit a depth value in response to a suggestion and want a fresh read on the revised profile, click the button again.</p>
+  <p>The results are shown for this session only and don't persist into the snapshot. Opening a saved profile later does not re-run the check; use the quiet <strong>Re-check</strong> (or <strong>Check this profile</strong>) link above the cards if you want a fresh read.</p>
 
   <h3>Cost and cadence</h3>
-  <p>Each stress-test call costs roughly $0.05–$0.20, depending on course size. It's an on-demand tool — run it once when the profile looks mostly done, read the concerns, make adjustments you agree with, and ignore the rest. You don't need to run it to convergence; your judgment about the course is the ground truth the reviewer is challenging, not replacing.</p>
+  <p>Each check costs roughly $0.11 per profile and runs once per generation. Read the concerns, make adjustments you agree with, and ignore the rest. You don't need to run it to convergence; your judgment about the course is the ground truth the reviewer is challenging, not replacing.</p>
 
   <div class="callout tip">
     <div class="callout-title">The AI's job is to find problems</div>

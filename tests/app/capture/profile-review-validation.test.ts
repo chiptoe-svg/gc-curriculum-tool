@@ -22,12 +22,12 @@ describe('humanizeValidationIssue', () => {
         'String must contain at least 1 character',
         comps,
       ),
-    ).toBe('Competency #2 ("Production file preparation") — Know evidence: String must contain at least 1 character');
+    ).toBe('Competency #2 ("Production file preparation") — Knowing evidence: String must contain at least 1 character');
   });
 
   it('handles depth fields and a missing competency name', () => {
     expect(humanizeValidationIssue(['competencies', 2, 'd_depth'], 'Expected number', comps)).toBe(
-      'Competency #3 — Do depth: Expected number',
+      'Competency #3 — Doing level: Expected number',
     );
   });
 
@@ -35,7 +35,7 @@ describe('humanizeValidationIssue', () => {
     const long = [{ statement: 'x'.repeat(80) }];
     const out = humanizeValidationIssue(['competencies', 0, 'evidence_u'], 'required', long);
     expect(out).toContain('…');
-    expect(out).toContain('— Understand evidence:');
+    expect(out).toContain('— Reasoning evidence:');
   });
 
   it('falls back to a prettified path for non-competency fields', () => {

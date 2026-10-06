@@ -1,6 +1,7 @@
 'use client';
 
 import type { CaptureVerificationSummary, CaptureProfileCitationType } from '@/lib/ai/capture/schema';
+import { plainDepth } from '@/lib/capture/plain-depth';
 import { SourceBadge } from './ProfileReviewPanel';
 import { LegacyBanner } from './LegacyBanner';
 
@@ -10,18 +11,22 @@ interface Props {
   isLegacy?: boolean;
   /** When supplied, SourceBadge becomes interactive. */
   onCitationClick?: (c: CaptureProfileCitationType) => void;
+  /** Exactly what the approve button says in this state. */
+  approveLabel?: string;
+  /** True once a snapshot exists: approving records an update. */
+  isUpdate?: boolean;
 }
+
+const HEADING = 'text-sm font-semibold text-foreground';
 
 function BulletList({ items, label }: { items: string[]; label: string }) {
   if (items.length === 0) return null;
   return (
     <div>
-      <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        {label}
-      </h4>
-      <ul className="mt-1 space-y-1">
+      <h4 className={HEADING}>{label}</h4>
+      <ul className="mt-1.5 space-y-1.5">
         {items.map((it, i) => (
-          <li key={i} className="text-sm leading-snug border-l-2 border-muted pl-3">{it}</li>
+          <li key={i} className="text-sm leading-snug border-l-2 border-amber-200 pl-3">{plainDepth(it)}</li>
         ))}
       </ul>
     </div>
@@ -33,30 +38,36 @@ function BulletList({ items, label }: { items: string[]; label: string }) {
  * the competency cards on the review panel. The instructor reads each
  * section and decides whether the system has captured the course faithfully
  * — strict description, no recommendations.
+ *
+ * Every string passes through plainDepth() so score codes the AI wrote
+ * ("— D3 via Budget", "K2/U2/D1") read as words, including on profiles
+ * generated before the prompt asked for plain language.
  */
-export function VerificationSummary({ summary, isLegacy, onCitationClick }: Props) {
+export function VerificationSummary({ summary, isLegacy, onCitationClick, approveLabel = 'Approve the profile', isUpdate = false }: Props) {
   return (
     <section className="rounded-md border bg-amber-50/50 px-4 py-4 shadow-sm space-y-4">
       {isLegacy && <LegacyBanner />}
       <header>
         <div className="flex items-center gap-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+          <h3 className="font-display text-lg font-semibold tracking-tight text-foreground">
             Does this capture your course?
-          </p>
-          <SourceBadge source={summary.source} citations={summary.citations} onCitationClick={onCitationClick} />
+          </h3>
+          {/* An "inferred" chip only repeated what the copy below says; keep the
+              badge for summaries that cite the instructor or materials. */}
+          {summary.source !== 'inferred' && (
+            <SourceBadge source={summary.source} citations={summary.citations} onCitationClick={onCitationClick} />
+          )}
         </div>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          Read each section and decide whether the system got it right. Use
-          &ldquo;Back to chat&rdquo; if anything looks off, or &ldquo;Confirm and snapshot&rdquo;
-          when ready to lock this in as a permanent record.
+        <p className="mt-1 text-sm text-muted-foreground">
+          This is the AI&apos;s reading of your course — please check it. If anything is off, use
+          &ldquo;← Back to the interview&rdquo; to tell the interviewer; when it reads right, use
+          &ldquo;{approveLabel}&rdquo; to record {isUpdate ? 'this version as a new snapshot — earlier snapshots are kept' : 'it'}.
         </p>
       </header>
 
       <div>
-        <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Course shape
-        </h4>
-        <p className="mt-1 text-sm leading-snug">{summary.course_shape}</p>
+        <h4 className={HEADING}>Course shape</h4>
+        <p className="mt-1.5 text-sm leading-snug">{plainDepth(summary.course_shape)}</p>
       </div>
 
       <BulletList items={summary.strongest_evidence} label="What the course is developing" />
@@ -64,10 +75,8 @@ export function VerificationSummary({ summary, isLegacy, onCitationClick }: Prop
       <BulletList items={summary.catalog_vs_evidence} label="Where catalog and evidence disagree" />
 
       <div>
-        <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Foundationals
-        </h4>
-        <p className="mt-1 text-sm leading-snug">{summary.foundationals_glance}</p>
+        <h4 className={HEADING}>Foundational habits</h4>
+        <p className="mt-1.5 text-sm leading-snug">{plainDepth(summary.foundationals_glance)}</p>
       </div>
     </section>
   );

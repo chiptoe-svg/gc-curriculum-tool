@@ -20,7 +20,9 @@ describe('CompetencyPortrait — compact state', () => {
   it('shows the portrait sentence, a muted rating, and exactly two actions', () => {
     render(<CompetencyPortrait competency={comp} onChange={() => {}} onConfirm={() => {}} />);
     expect(screen.getByText(/They use the right terms\./)).toBeInTheDocument();
-    expect(screen.getByText(/K4 · U2 · D3/)).toBeInTheDocument();
+    // No score-code corner label: the labeled clauses already say each level in words.
+    expect(screen.queryByText(/K4 · U2 · D3/)).toBeNull();
+    expect(document.body.textContent).not.toMatch(/\b[KUD][0-5]\b/);
     const buttons = screen.getAllByRole('button');
     expect(buttons.map(b => b.textContent?.trim())).toEqual(['✓ Looks right', 'Needs adjusting']);
     // No evidence, rationale or per-dimension rows until asked for.
@@ -49,72 +51,37 @@ describe('CompetencyPortrait — compact state', () => {
   });
 });
 
-describe('CompetencyPortrait — Needs adjusting', () => {
-  it('expands into readable rows: score in words, evidence under it, rationale below; collapses again', () => {
-    render(<CompetencyPortrait competency={comp} onChange={() => {}} onConfirm={() => {}} />);
-    expand();
-    const u = screen.getByTestId('flag-row-u');
-    expect(within(u).getByText('Reasoning: 2. Explains the rationale in own words')).toBeInTheDocument();
-    expect(within(u).getByText('design memo')).toBeInTheDocument();
-    expect(within(screen.getByTestId('flag-row-k')).getByText(/Naming: 4\. Use correct terminology/)).toBeInTheDocument();
-    expect(within(screen.getByTestId('flag-row-d')).getByText('die-line project')).toBeInTheDocument();
-    expect(screen.getByText('Rubric grades the die-line project independently.')).toBeInTheDocument();
-    expect(document.querySelector('details')).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: /^collapse$/i }));
-    expect(screen.queryByTestId('flag-row-u')).toBeNull();
+describe('CompetencyPortrait — labeled, punctuated clauses', () => {
+  it('labels each AI sentence by dimension', () => {
+    render(<CompetencyPortrait competency={comp} onChange={() => {}} />);
+    const p = screen.getByTestId('portrait');
+    expect(p.textContent).toBe('Knowing: They use the right terms. Reasoning: They explain why. Doing: They do it on familiar cases.');
   });
 
-  it('"Lower" lists the lower anchors as full sentences and applies one without confirming', () => {
-    const onChange = vi.fn();
-    const onConfirm = vi.fn();
-    render(<CompetencyPortrait competency={comp} onChange={onChange} onConfirm={onConfirm} />);
-    expand();
-    const row = screen.getByTestId('flag-row-u');
-    fireEvent.click(within(row).getByRole('button', { name: 'Lower: pick a better description' }));
-    fireEvent.click(within(row).getByRole('button', { name: /Restates the explanation as given/i }));
-    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ u_depth: 1 }));
-    expect(onConfirm).not.toHaveBeenCalled();
+  it('turns the generic fallback (no *_says) into labeled sentences, not a run-on', () => {
+    const bare = { ...comp, k_says: null, u_says: null, d_says: null } as unknown as CaptureCompetency;
+    render(<CompetencyPortrait competency={bare} onChange={() => {}} />);
+    expect(screen.getByTestId('portrait').textContent).toBe(
+      'Knowing: uses the correct terms. Reasoning: explains it in their own words. Doing: does it independently in familiar situations.',
+    );
   });
 
-  it('"Higher" explains that it needs evidence and is gated on it; writes evidence_u; does not confirm', () => {
-    const onChange = vi.fn();
-    const onConfirm = vi.fn();
-    render(<CompetencyPortrait competency={comp} onChange={onChange} onConfirm={onConfirm} />);
-    expand();
-    const row = screen.getByTestId('flag-row-u');
-    fireEvent.click(within(row).getByRole('button', { name: 'Higher: tell us what shows it' }));
-    expect(within(row).getByText(/higher score needs evidence of what students actually do/i)).toBeInTheDocument();
-    const commit = within(row).getByRole('button', { name: /raise reasoning/i });
-    expect(commit).toBeDisabled();
-    fireEvent.change(within(row).getByRole('textbox', { name: /evidence/i }), { target: { value: 'unit-3 exam Q7, class mean 82%' } });
-    expect(commit).toBeEnabled();
-    fireEvent.click(commit);
-    expect(onChange).toHaveBeenCalledWith(expect.objectContaining({ u_depth: 3, evidence_u: 'unit-3 exam Q7, class mean 82%' }));
-    expect(onConfirm).not.toHaveBeenCalled();
+  it('adds a period to an AI sentence that lacks one', () => {
+    const c = { ...comp, k_says: 'They name the parts', u_says: 'They explain why!', d_says: 'They do it.' } as unknown as CaptureCompetency;
+    render(<CompetencyPortrait competency={c} onChange={() => {}} />);
+    expect(screen.getByTestId('portrait').textContent).toBe('Knowing: They name the parts. Reasoning: They explain why! Doing: They do it.');
   });
 
-  it('renders Do-only rows for a foundational competency', () => {
-    const f: CaptureCompetency = { ...comp, type: 'foundational', k_depth: null, u_depth: null, k_says: null, u_says: null, d_says: 'Consistently attends to detail.' };
+  it('a foundational card shows only the Doing clause', () => {
+    const f = { ...comp, type: 'foundational', k_depth: null, u_depth: null, d_says: null, d_depth: 2 } as unknown as CaptureCompetency;
     render(<CompetencyPortrait competency={f} onChange={() => {}} />);
-    expand();
-    expect(screen.getByTestId('flag-row-d')).toBeInTheDocument();
-    expect(screen.queryByTestId('flag-row-k')).toBeNull();
-    expect(screen.queryByTestId('flag-row-u')).toBeNull();
+    expect(screen.getByTestId('portrait').textContent).toBe('Doing: does it with a reference or checklist.');
   });
 
-  it('hides "Higher" for a dimension already at depth 5 (ceiling)', () => {
-    render(<CompetencyPortrait competency={{ ...comp, d_depth: 5 }} onChange={() => {}} />);
+  it('shows extra controls (e.g. the dispute flag) only inside "Needs adjusting"', () => {
+    render(<CompetencyPortrait competency={comp} onChange={() => {}} adjustExtras={<button type="button">Flag this reading</button>} />);
+    expect(screen.queryByRole('button', { name: /flag this reading/i })).toBeNull();
     expand();
-    const row = screen.getByTestId('flag-row-d');
-    expect(within(row).queryByRole('button', { name: /^higher/i })).toBeNull();
-    expect(within(row).getByRole('button', { name: /^lower/i })).toBeInTheDocument();
-  });
-
-  it('hides "Lower" for a dimension at depth 0 (floor)', () => {
-    render(<CompetencyPortrait competency={{ ...comp, d_depth: 0 }} onChange={() => {}} />);
-    expand();
-    const row = screen.getByTestId('flag-row-d');
-    expect(within(row).queryByRole('button', { name: /^lower/i })).toBeNull();
-    expect(within(row).getByRole('button', { name: /^higher/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /flag this reading/i })).toBeInTheDocument();
   });
 });

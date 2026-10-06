@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   captureProfileSchema,
   type CaptureProfile,
@@ -15,14 +15,16 @@ import { formatIncomingRequirements } from '@/lib/capture/incoming-requirements'
 import { VerificationSummary } from './VerificationSummary';
 import { LegacyBanner } from './LegacyBanner';
 import { CitationDrawer, type CitationTarget } from './CitationDrawer';
-import { CompetencyPortrait } from './CompetencyPortrait';
+import { CompetencyPortrait, type AdjustmentMeta } from './CompetencyPortrait';
 import { CourseOverview } from './CourseOverview';
 import { ClassStructureSection } from './ClassStructureSection';
 import { MajorProjectsSection } from './MajorProjectsSection';
-import { StressTestPanel, type StressTestHandle } from './StressTestPanel';
+import { StressTestPanel } from './StressTestPanel';
 import { StressTestBadge } from './StressTestBadge';
-import type { StressTestResultType } from '@/lib/ai/stress-test/schema';
-import { deriveEvidenceBand, type EvidenceBand, type EvidenceClaim } from '@/lib/program/evidence-ladder';
+import type { StressTestState } from './useStressTest';
+import { stressTestFlags } from '@/lib/capture/stress-flags';
+import { plainDepth, plainDepthPhrase, plainScores, plainScoresShort, DIM_WORD } from '@/lib/capture/plain-depth';
+import { deriveEvidenceBand } from '@/lib/program/evidence-ladder';
 import { FlagDialog } from '@/components/FlagDialog';
 import { upwardBumps, assembleOverrides } from '@/lib/ai/capture/score-overrides';
 
@@ -101,61 +103,23 @@ export function SourceBadge({
   );
 }
 
-/**
- * Evidence-band chip — small read-time credibility annotation derived from
- * the claim's existing source + citations fields.  Sits next to SourceBadge.
- * Never gates or changes a score; purely a transparency annotation.
- *
- * Bands:
- *   claimed           → gray  "claim"     (≈L0 — instructor testimony / no material cite)
- *   materials_supported → green "materials" (≈L1-L2 — cites a course-material chunk)
- *   artifact_verified   → teal  "artifact"  (≈L3-L4 — student-produced evidence; unreachable today)
- */
-export function EvidenceBandChip({ claim }: { claim: EvidenceClaim }) {
-  const band: EvidenceBand = deriveEvidenceBand(claim);
-
-  const palette =
-    band === 'materials_supported'
-      ? 'bg-green-100 text-green-900 border-green-300'
-      : band === 'artifact_verified'
-        ? 'bg-teal-100 text-teal-800 border-teal-400'
-        : 'bg-stone-100 text-stone-500 border-stone-300';
-
-  const label =
-    band === 'materials_supported'
-      ? 'materials'
-      : band === 'artifact_verified'
-        ? 'artifact'
-        : 'claim';
-
-  const tooltip =
-    band === 'materials_supported'
-      ? 'Cites a course-material chunk (assignment/rubric/syllabus). ≈ ladder L1–L2.'
-      : band === 'artifact_verified'
-        ? 'Cites student-produced evidence. ≈ ladder L3–L4.'
-        : 'Instructor claim — no course-material citation. ≈ ladder L0.';
-
-  return (
-    <span
-      title={tooltip}
-      tabIndex={0}
-      role="note"
-      aria-label={`Evidence band — ${tooltip}`}
-      className={`inline-flex items-center rounded border px-1.5 py-0.5 text-xs font-mono uppercase tracking-wider focus:outline-none focus:ring-1 focus:ring-ring ${palette}`}
-    >
-      {label}
-    </span>
-  );
-}
-
 const VALIDATION_FIELD_LABELS: Record<string, string> = {
-  evidence_k: 'Know evidence',
-  evidence_u: 'Understand evidence',
-  evidence_d: 'Do evidence',
-  k_depth: 'Know depth',
-  u_depth: 'Understand depth',
-  d_depth: 'Do depth',
+  evidence_k: 'Knowing evidence',
+  evidence_u: 'Reasoning evidence',
+  evidence_d: 'Doing evidence',
+  k_depth: 'Knowing level',
+  u_depth: 'Reasoning level',
+  d_depth: 'Doing level',
   statement: 'statement',
+};
+
+// The schema's evidence rules (lib/ai/capture/schema.ts) speak in field names;
+// say the same rule in the review's vocabulary.
+const VALIDATION_MESSAGES: Record<string, { field: string; text: string }> = {
+  'k_depth > 1 requires an evidence_k excerpt.': { field: 'evidence_k', text: 'a Knowing level above "has met it" needs a supporting excerpt.' },
+  'u_depth > 0 requires an evidence_u excerpt.': { field: 'evidence_u', text: 'a Reasoning level above zero needs a supporting excerpt.' },
+  'd_depth > 0 requires an evidence_d excerpt.': { field: 'evidence_d', text: 'a Doing level above zero needs a supporting excerpt.' },
+  'Foundational competencies must have null k_depth and u_depth.': { field: '', text: 'a foundational habit is scored on Doing only.' },
 };
 
 /**
@@ -173,6 +137,11 @@ export function humanizeValidationIssue(
     const idx = path[1];
     const name = competencies[idx]?.statement?.trim();
     const namePart = name ? ` ("${name.length > 50 ? `${name.slice(0, 50)}…` : name}")` : '';
+    const known = VALIDATION_MESSAGES[message];
+    if (known) {
+      const f = known.field ? VALIDATION_FIELD_LABELS[known.field] : null;
+      return `Competency #${idx + 1}${namePart}${f ? ` — ${f}` : ''}: ${known.text}`;
+    }
     const fieldKey = typeof path[2] === 'string' ? path[2] : undefined;
     const field = fieldKey ? (VALIDATION_FIELD_LABELS[fieldKey] ?? fieldKey) : null;
     return `Competency #${idx + 1}${namePart}${field ? ` — ${field}` : ''}: ${message}`;
@@ -212,10 +181,10 @@ export function triageCompetency(
     return { flagged: true, reason: 'High score resting on your word — no rubric/material cited yet.' };
   }
   if (u !== null && u >= 3 && d <= 1) {
-    return { flagged: true, reason: 'Theory without craft — high Understand, low Do.' };
+    return { flagged: true, reason: 'Theory without craft — strong reasoning, little hands-on doing.' };
   }
   if (d >= 3 && u !== null && u <= 1) {
-    return { flagged: true, reason: 'Craft without articulation — high Do, low Understand.' };
+    return { flagged: true, reason: 'Craft without articulation — strong doing, little reasoning about why.' };
   }
   if (c.source === 'inferred') {
     return { flagged: true, reason: 'The AI inferred this — no direct source.' };
@@ -265,6 +234,13 @@ interface Props {
    * returns 200 vs 404). Gates the "↓ Markdown" OKF download link.
    */
   hasSnapshot?: boolean;
+  /**
+   * The automatic stress test (owned by CaptureClient, started right after a
+   * profile is generated). When its result arrives, its flags become the
+   * "Worth a look" cards. Absent/idle/error → the interviewer's own triage
+   * flags stand.
+   */
+  stressTest?: StressTestState;
 }
 
 /**
@@ -291,7 +267,7 @@ export function CompetencyFlagButton({
         title="Dispute this AI reading — flags persist until explicitly resolved"
         className="inline-flex items-center rounded border border-input bg-background px-1.5 py-0.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted"
       >
-        ⚑ flag
+        ⚑ Flag this reading
       </button>
       <FlagDialog
         open={open}
@@ -340,7 +316,9 @@ function CompetencyRow({
   competency: CaptureCompetency;
   onExpand: () => void;
 }) {
-  const isTechnical = competency.type === 'technical';
+  const levels = competency.type === 'technical'
+    ? { k: competency.k_depth, u: competency.u_depth, d: competency.d_depth }
+    : { d: competency.d_depth };
   return (
     <button
       type="button"
@@ -353,11 +331,62 @@ function CompetencyRow({
       <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
         {humanizeSource(competency.source)}
       </span>
-      <span className="shrink-0 font-mono text-xs text-muted-foreground">
-        {isTechnical ? `K${competency.k_depth ?? '–'} U${competency.u_depth ?? '–'} ` : ''}D{competency.d_depth}
+      {/* Compact plain levels so the statement keeps the line; the full
+          phrase is on hover and in the card when opened. */}
+      <span
+        data-testid="row-depth"
+        title={plainScores(levels)}
+        className="shrink-0 text-xs text-muted-foreground"
+      >
+        {plainScoresShort(levels)}
       </span>
     </button>
   );
+}
+
+/**
+ * One quiet line about the automatic stress test: running → "Checking the
+ * profile…"; failed → a note that the interviewer's own flags stand; done →
+ * how many cards it flagged. A small "Re-check" / "Run the check" link reruns
+ * it (each run is a paid heavy-tier call, so it is never automatic on load).
+ */
+function StressTestStatus({ stressTest, flaggedCount }: { stressTest?: StressTestState; flaggedCount: number }) {
+  if (!stressTest) return null;
+  const link = (label: string) => (
+    <button
+      type="button"
+      onClick={stressTest.run}
+      className="text-muted-foreground underline underline-offset-2 hover:text-foreground"
+    >
+      {label}
+    </button>
+  );
+  if (stressTest.status === 'running') {
+    return (
+      <p role="status" className="flex items-center gap-2 text-sm text-muted-foreground">
+        <span aria-hidden className="inline-block h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+        Checking the profile… a second AI reviewer is reading it. You can start reviewing now.
+      </p>
+    );
+  }
+  if (stressTest.status === 'error') {
+    return (
+      <p role="status" className="text-sm text-amber-900">
+        The automatic check didn&apos;t finish ({stressTest.error ?? 'unknown error'}). The highlighted
+        cards use the interviewer&apos;s own signals instead. {link('Re-check')}
+      </p>
+    );
+  }
+  if (stressTest.status === 'done') {
+    return (
+      <p role="status" className="text-sm text-muted-foreground">
+        Checked by a second AI reviewer —{' '}
+        {flaggedCount === 0 ? 'nothing stood out.' : `${flaggedCount} card${flaggedCount === 1 ? '' : 's'} worth a look.`}{' '}
+        {link('Re-check')}
+      </p>
+    );
+  }
+  return <p className="text-sm text-muted-foreground">{link('Check this profile')}</p>;
 }
 
 function CompetencyCard({
@@ -372,7 +401,7 @@ function CompetencyCard({
 }: {
   competency: CaptureCompetency;
   index: number;
-  onChange: (next: CaptureCompetency) => void;
+  onChange: (next: CaptureCompetency, meta?: AdjustmentMeta) => void;
   onCitationClick?: (c: CaptureProfileCitationType) => void;
   courseCode: string;
   slug: string;
@@ -397,30 +426,12 @@ function CompetencyCard({
       }
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="flex-1 space-y-1">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span
-              className={
-                'inline-block rounded px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide '
-                + (isTechnical
-                  ? 'bg-blue-50 text-blue-700'
-                  : 'bg-amber-50 text-amber-700')
-              }
-            >
-              {competency.type}
-            </span>
-            <SourceBadge source={competency.source} citations={competency.citations} onCitationClick={onCitationClick} />
-            <EvidenceBandChip claim={{ source: competency.source, citations: competency.citations }} />
-            <CompetencyFlagButton courseCode={courseCode} slug={slug} competency={competency} />
-            {isUnverifiedHighScore && (
-              <span
-                title="High score (D/U≥3) resting on instructor claim — no course material cited. Review whether assignment/rubric evidence could be added."
-                className="inline-flex items-center gap-0.5 rounded border border-amber-300 bg-amber-50 px-1.5 py-0.5 text-xs font-mono text-amber-700"
-              >
-                ⚠ unverified
-              </span>
-            )}
-          </div>
+        <div className="flex-1 space-y-1.5">
+          <StatusTag
+            competency={competency}
+            unverifiedHighScore={isUnverifiedHighScore}
+            onCitationClick={onCitationClick}
+          />
           <textarea
             value={competency.statement}
             onChange={e => onChange({ ...competency, statement: e.target.value })}
@@ -433,22 +444,100 @@ function CompetencyCard({
 
       {!isTechnical && (
         <p
-          className="text-xs italic leading-snug text-muted-foreground"
-          title="Foundational dispositions show up in what students do, not in what they can recall or explain, so Know and Understand are left unscored (—) rather than zero — a zero would wrongly read as 'the course tried to build this and failed.' The rationale below says why the Do score landed where it did."
+          className="text-sm leading-snug text-muted-foreground"
+          title="Foundational habits show up in what students do, not in what they can recall or explain, so Knowing and Reasoning are left unscored rather than zero — a zero would wrongly read as 'the course tried to build this and failed.'"
         >
-          Foundational disposition — scored on <span className="font-medium not-italic">Do</span> only (K/U shown as —, not zero).
+          A habit, not a body of knowledge — only Doing is scored.
         </p>
       )}
 
       {/* Evidence and rationale live inside the portrait's "Needs adjusting"
-          view (per dimension), not behind separate fold-outs. */}
+          view (per dimension), not behind separate fold-outs. The dispute flag
+          sits there too — it is a secondary action, not a status. */}
       <CompetencyPortrait
         competency={competency}
         onChange={onChange}
         onConfirm={onConfirm}
         confirmed={confirmed}
+        adjustExtras={<CompetencyFlagButton courseCode={courseCode} slug={slug} competency={competency} />}
       />
     </div>
+  );
+}
+
+/**
+ * The card's single status tag — the one thing a faculty reviewer needs from
+ * the old row of chips (type / source / evidence band / "unverified"): where
+ * this reading comes from, in plain words, with a tooltip saying what it means.
+ * Clickable through to the cited passage when there is one.
+ */
+export function statusTagFor(
+  c: Pick<CaptureCompetency, 'source' | 'citations'>,
+  unverifiedHighScore: boolean,
+): { label: string; title: string; tone: string } | null {
+  if (!c.source) return null; // pre-provenance profile: nothing truthful to say
+  if (unverifiedHighScore) {
+    return {
+      label: 'Needs evidence',
+      title: 'A high score resting on your interview answers alone — no assignment or rubric is cited yet. If one exists, mention it under Needs adjusting.',
+      tone: 'border-amber-400 bg-amber-50 text-amber-900',
+    };
+  }
+  const band = deriveEvidenceBand({ source: c.source, citations: c.citations });
+  if (band === 'artifact_verified') {
+    return { label: 'From student work', title: 'Backed by student-produced work.', tone: 'border-teal-300 bg-teal-50 text-teal-900' };
+  }
+  if (band === 'materials_supported') {
+    return {
+      label: 'From course materials',
+      title: 'Backed by a course document (assignment, rubric, or syllabus).',
+      tone: 'border-green-300 bg-green-50 text-green-900',
+    };
+  }
+  if (c.source === 'instructor') {
+    return {
+      label: 'From your interview',
+      title: 'Based on what you said in the interview; no course document is cited.',
+      tone: 'border-stone-300 bg-stone-50 text-stone-800',
+    };
+  }
+  return {
+    label: "AI's inference",
+    title: 'The AI inferred this — no assignment, rubric, or interview answer points to it directly. Check it carefully.',
+    tone: 'border-stone-300 bg-stone-50 text-stone-800',
+  };
+}
+
+function StatusTag({
+  competency,
+  unverifiedHighScore,
+  onCitationClick,
+}: {
+  competency: CaptureCompetency;
+  unverifiedHighScore: boolean;
+  onCitationClick?: (c: CaptureProfileCitationType) => void;
+}) {
+  const tag = statusTagFor(competency, unverifiedHighScore);
+  if (!tag) return null;
+  const cites = competency.citations ?? [];
+  const className = `inline-flex items-center rounded border px-2 py-0.5 text-xs font-medium ${tag.tone}`;
+  if (onCitationClick && cites.length > 0) {
+    return (
+      <button
+        type="button"
+        data-testid="status-tag"
+        title={`${tag.title} Click to see the passage.`}
+        className={className + ' hover:opacity-80'}
+        onClick={() => onCitationClick(cites[0]!)}
+      >
+        {tag.label}
+      </button>
+    );
+  }
+  return (
+    <span data-testid="status-tag" title={tag.title} className={className}>
+      {tag.label}
+    </span>
   );
 }
 
@@ -481,7 +570,7 @@ function AuditNotesList({
       <ul className="mt-1 space-y-2 text-xs leading-snug">
         {items.map((it, i) => (
           <li key={i} className="border-l-2 border-muted pl-2 space-y-1">
-            <p>{it}</p>
+            <p>{plainDepth(it)}</p>
             {rowAction?.(it, i)}
           </li>
         ))}
@@ -813,19 +902,25 @@ export function ProfileReviewPanel({
   onSnapshotCreated,
   reconciliationLog,
   hasSnapshot,
+  stressTest,
 }: Props) {
   const [working, setWorking] = useState<CaptureProfile>(profile);
   const [reviewerNote, setReviewerNote] = useState<string>(initialReviewerNote ?? '');
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [lastSavedStatus, setLastSavedStatus] = useState<CaptureReviewerStatus>(reviewerStatus);
+  // The approve button's label carries meaning: the first approval records the
+  // course's first snapshot; once captured, approving records an UPDATE (a new
+  // snapshot; earlier ones are kept). Every mention of the button — summary
+  // copy, header, count line, tooltips, the dialog — uses exactly this label.
+  const approveLabel = lastSavedStatus === 'confirmed' ? 'Approve update' : 'Approve the profile';
+  const approveQuoted = `“${approveLabel}”`;
   const [snapshotOpen, setSnapshotOpen] = useState(false);
   // Anchor for scroll-to-snapshot-panel. Used by both the top-banner
   // "Approve" button and the bottom "Done reviewing" button so they
   // land you ON the snapshot caption/note inputs rather than at y=0
   // (which is above the modal, since the modal sits mid-page).
   const snapshotPanelRef = useRef<HTMLDivElement | null>(null);
-  const stressTestRef = useRef<StressTestHandle | null>(null);
   const [auditNotesOpen, setAuditNotesOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [snapshotCaption, setSnapshotCaption] = useState('');
@@ -833,13 +928,10 @@ export function ProfileReviewPanel({
   const [snapshotting, setSnapshotting] = useState(false);
   const [snapshotMessage, setSnapshotMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
   const [drawerTarget, setDrawerTarget] = useState<CitationTarget | null>(null);
-  // Adversarial reviewer result — ephemeral. Cleared whenever the user
-  // edits the profile (mutating `working` via setWorking), so stale
-  // annotations don't linger after the underlying scores change.
-  const [stressTestResult, setStressTestResult] = useState<StressTestResultType | null>(null);
-  // Mirrors StressTestPanel's running state so the sticky-bar trigger can
-  // be disabled and labelled while a run is in progress.
-  const [stressRunning, setStressRunning] = useState(false);
+  // Automatic stress test result (advisory; never modifies the draft). Kept
+  // through edits: it describes the generated profile, and its flags — like
+  // the triage below — must not vanish mid-review.
+  const stressTestResult = stressTest?.result ?? null;
   // Quick-review triage: which "worth a look" rows the faculty has eyeballed,
   // and which "confident" rows they've expanded to full edit. Advisory only —
   // never gates save/approve.
@@ -859,6 +951,13 @@ export function ProfileReviewPanel({
   function setReason(i: number, text: string) {
     setOverrideReasons(prev => { const n = new Map(prev); n.set(i, text); return n; });
   }
+  // Raises saved through the card's Change flow come with evidence ("What shows
+  // students reach this?"). Per competency, the dimensions covered that way and
+  // their text. That text IS the override reason (stored in overrideReasons, so
+  // it persists into reviewer_overrides exactly like a typed reason), and those
+  // dimensions never get the approval-time "why?" box. Raises arriving any other
+  // way still need the box. (Owner-approved 2026-10-06.)
+  const [evidencedRaises, setEvidencedRaises] = useState<Map<number, Partial<Record<'k' | 'u' | 'd', string>>>>(new Map());
 
   function handleCitationClick(c: CaptureProfileCitationType) {
     setDrawerTarget({
@@ -873,7 +972,7 @@ export function ProfileReviewPanel({
     if (validationError) {
       setSnapshotMessage({
         kind: 'error',
-        text: `Can't approve — ${validationError}. Fix the offending row above, then try again.`,
+        text: `${approveQuoted} can't go through — ${validationError}. Fix the offending row above, then try again.`,
       });
       return;
     }
@@ -921,11 +1020,21 @@ export function ProfileReviewPanel({
 
   const dirty = useMemo(() => JSON.stringify(working) !== JSON.stringify(profile), [working, profile]);
 
-  function updateCompetency(i: number, next: CaptureCompetency) {
+  function updateCompetency(i: number, next: CaptureCompetency, meta?: AdjustmentMeta) {
     const competencies = working.competencies.slice();
     competencies[i] = next;
     setWorking({ ...working, competencies });
-    setStressTestResult(null);
+    const raised = meta?.raiseEvidence ?? {};
+    if (Object.keys(raised).length > 0) {
+      const merged = { ...(evidencedRaises.get(i) ?? {}), ...raised };
+      setEvidencedRaises(prev => new Map(prev).set(i, merged));
+      // Knowing, Reasoning, Doing order; one raise → exactly the typed text.
+      const reason = (['k', 'u', 'd'] as const)
+        .map(d => merged[d])
+        .filter((t): t is string => !!t && t.length > 0)
+        .join('; ');
+      setReason(i, reason);
+    }
   }
 
   function markReviewed(i: number) {
@@ -967,7 +1076,7 @@ export function ProfileReviewPanel({
   // row jumped sections on a Do 4→1→2 portrait correction). The list always renders in
   // course order; these frozen indices only decide which rows are highlighted +
   // expanded vs. rolled up.
-  const [{ needsReview, reasonOf }] = useState(() => {
+  const [{ needsReview, reasonOf }, setTriage] = useState(() => {
     const triaged = profile.competencies.map((c, i) => ({
       c,
       i,
@@ -982,6 +1091,29 @@ export function ProfileReviewPanel({
       reasonOf: new Map<number, string | null>(flagged.map(t => [t.i, t.reason])),
     };
   });
+  // When the automatic stress test finishes, ITS flags become the "Worth a
+  // look" set (each with the reviewer's short reason in plain words). This is
+  // a one-time swap per result, not a reshuffle on edit. Cards already
+  // confirmed keep their place so nothing moves out from under the reviewer.
+  // If the check fails or never runs, the frozen interviewer triage stands.
+  useEffect(() => {
+    if (!stressTestResult) return;
+    const flags = stressTestFlags(stressTestResult, working.competencies);
+    setTriage(prev => {
+      const nextSet = new Set<number>(flags.keys());
+      const nextReasons = new Map<number, string | null>(flags);
+      for (const i of reviewed) {
+        if (!nextSet.has(i) && prev.needsReview.has(i)) {
+          nextSet.add(i);
+          nextReasons.set(i, prev.reasonOf.get(i) ?? null);
+        }
+      }
+      return { needsReview: nextSet, reasonOf: nextReasons };
+    });
+    // Only a NEW result re-derives the set — edits and confirmations must not.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stressTestResult]);
+
   const confidentIndices = useMemo(
     () => working.competencies.map((_, i) => i).filter(i => !needsReview.has(i)),
     [working.competencies, needsReview],
@@ -1006,7 +1138,7 @@ export function ProfileReviewPanel({
   const unjustifiedBumpCount = bumps.filter(b => (overrideReasons.get(b.index) ?? '').trim().length === 0).length;
   const allUpwardBumpsJustified = unjustifiedBumpCount === 0;
   const approveUnlocked = (dirty || allWorthLookReviewed || noteSubstantive) && allUpwardBumpsJustified;
-  const approveLockTitle = "Review before approving — for each 'Worth a look' card, mark ✓ Looks right or use 'Needs adjusting' to correct a dimension, or add a departmental-context note. (Approval is an epistemic act, not a click-through.)";
+  const approveLockTitle = `Before ${approveQuoted}: for each 'Worth a look' card, mark ✓ Looks right or use 'Needs adjusting' to correct it, or add a departmental-context note. (Approving is a judgment, not a click-through.)`;
 
   async function persist(status: 'confirmed' | 'edited') {
     if (validationError) {
@@ -1026,7 +1158,7 @@ export function ProfileReviewPanel({
     }
   }
 
-  // Inline "Save edits" rendered right under any expanded competency card once
+  // Inline "Save draft" rendered right under any expanded competency card once
   // there are unsaved edits — so correcting a score via the portrait on a
   // rolled-up "confident" (e.g. found-in-materials) row has an obvious save at
   // the point of editing, not just the global one in the sticky bar (operator:
@@ -1039,10 +1171,10 @@ export function ProfileReviewPanel({
         type="button"
         onClick={() => persist('edited')}
         disabled={saving || validationError !== null}
-        title={validationError ? `Fix validation issue first: ${validationError}` : 'Save your edits to this profile'}
+        title={validationError ? `Fix validation issue first: ${validationError}` : `Save your changes to the draft. Nothing is recorded until you use ${approveQuoted}.`}
         className="inline-flex items-center gap-1.5 rounded-md border border-input bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {saving ? 'Saving…' : '💾 Save edits'}
+        {saving ? 'Saving…' : 'Save draft'}
       </button>
     );
   }
@@ -1058,7 +1190,12 @@ export function ProfileReviewPanel({
   function renderOverrideReason(i: number) {
     const bump = bumpByIndex.get(i);
     if (!bump) return null;
-    const summary = bump.changes.map(c => `${c.dim.toUpperCase()} ${c.from} → ${c.to}`).join(' · ');
+    // Every raised dimension already explained by Change-flow evidence → no box.
+    const covered = evidencedRaises.get(i) ?? {};
+    if (bump.changes.every(c => (covered[c.dim] ?? '').length > 0)) return null;
+    const summary = bump.changes
+      .map(c => `${DIM_WORD[c.dim]}: ${plainDepthPhrase(c.dim, c.from)} → ${plainDepthPhrase(c.dim, c.to)}`)
+      .join('; ');
     const high = bump.changes.some(c => c.to >= 3);
     const hint = courseLevelBand !== null && courseLevelBand <= 2000 && high
       ? `This is a ${courseLevelBand}-level course — a depth of 3+ is unusual here. Cite the assignment, rubric, or graded artifact that supports it.`
@@ -1073,7 +1210,7 @@ export function ProfileReviewPanel({
           value={overrideReasons.get(i) ?? ''}
           onChange={e => setReason(i, e.target.value)}
           rows={2}
-          placeholder="Reason for the higher depth (required to approve)"
+          placeholder={`Reason for the higher level (required before ${approveQuoted})`}
           className="mt-1 w-full resize-none rounded border border-input bg-background px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
         />
       </div>
@@ -1135,7 +1272,7 @@ export function ProfileReviewPanel({
               Here&apos;s what the interviewer concluded.
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Check it, adjust it, approve it — nothing is recorded until you approve.
+              Check it, adjust it, approve it — nothing is recorded until you use {approveQuoted}.
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
@@ -1183,7 +1320,13 @@ export function ProfileReviewPanel({
 
       {/* ── 1. VERIFICATION SUMMARY — the orienting question, first in content ── */}
       {working.verification_summary && (
-        <VerificationSummary summary={working.verification_summary} isLegacy={legacy} onCitationClick={handleCitationClick} />
+        <VerificationSummary
+          summary={working.verification_summary}
+          isLegacy={legacy}
+          onCitationClick={handleCitationClick}
+          approveLabel={approveLabel}
+          isUpdate={isCaptured}
+        />
       )}
 
       {legacy && <LegacyBanner onReaudit={onResumeChat} />}
@@ -1191,7 +1334,7 @@ export function ProfileReviewPanel({
       {validationError && (
         <div className="rounded-md border border-amber-300 bg-amber-50 px-4 py-2 text-xs text-amber-900">
           <span className="font-semibold">Profile has a validation issue:</span> {validationError}
-          <span className="ml-1 text-amber-700">— Save and Approve are disabled until this is fixed. Typical cause: a K/U/D score was raised above its evidence threshold (K ≥ 2, U ≥ 1, or D ≥ 1 requires evidence text the AI didn&apos;t generate). Lower the score, regenerate from chat, or edit the cited row manually.</span>
+          <span className="ml-1 text-amber-700">— &ldquo;Save draft&rdquo; and {approveQuoted} are disabled until this is fixed. Typical cause: a level was raised and now needs a supporting excerpt the AI didn&apos;t write (any Reasoning or Doing level above zero, and Knowing above &ldquo;has met it&rdquo;, needs one). Lower the level, regenerate from the interview, or add the evidence in the row.</span>
         </div>
       )}
 
@@ -1240,12 +1383,12 @@ export function ProfileReviewPanel({
               )}
             </div>
           </div>
+          <StressTestStatus stressTest={stressTest} flaggedCount={needsReview.size} />
           {needsReview.size > 0 && (
-            <p className="text-xs text-muted-foreground">
-              Listed in course order. The highlighted rows are the ones the interviewer was less
-              sure about — they rest on your word, sit high on the scale, were inferred without a
-              direct source, or carry the most graded weight. Use Needs adjusting if a score is off,
-              then mark each ✓ Looks right. The confident rows are rolled up — click any to edit.
+            <p className="text-sm text-muted-foreground">
+              Listed in course order. The highlighted cards are worth a look — each says why. Mark
+              each ✓ Looks right, or use Needs adjusting to change a score and save it. The rest
+              are rolled up — click any to open it.
             </p>
           )}
 
@@ -1267,21 +1410,20 @@ export function ProfileReviewPanel({
                   <CompetencyCard
                     competency={c}
                     index={i}
-                    // Editing a score is NOT confirmation. Using the portrait's
-                    // "Needs adjusting → Lower/Higher" correction only mutates
-                    // the draft + unlocks approval via the `dirty` guard; clearing
-                    // the row requires the explicit "✓ Looks right" button.
-                    // (A stray portrait edit used to auto-confirm the row —
-                    // 2026-06-16 operator report.)
-                    onChange={next => updateCompetency(i, next)}
+                    // Confirming is always an EXPLICIT act: "✓ Looks right", or —
+                    // since 2026-10-06 (owner rule) — "Save changes" in the opened
+                    // card, which applies the picked levels and then calls
+                    // onConfirm. Implicit edits never confirm: picking a level
+                    // without saving changes nothing, and editing the statement
+                    // text only marks the draft dirty. (2026-06-16 operator
+                    // report: a stray portrait edit used to auto-confirm a row —
+                    // that must stay impossible.)
+                    onChange={(next, meta) => updateCompetency(i, next, meta)}
                     onCitationClick={handleCitationClick}
                     courseCode={courseCode}
                     slug={slug}
                     onConfirm={() => markReviewed(i)}
                     confirmed={reviewed.has(i)}
-                  />
-                  <StressTestBadge
-                    annotation={stressTestResult?.per_competency.find(a => a.competency_index === i) ?? null}
                   />
                   {renderOverrideReason(i)}
                   {dirty && <div className="flex justify-end">{renderInlineSave()}</div>}
@@ -1307,7 +1449,7 @@ export function ProfileReviewPanel({
                 <CompetencyCard
                   competency={c}
                   index={i}
-                  onChange={next => updateCompetency(i, next)}
+                  onChange={(next, meta) => updateCompetency(i, next, meta)}
                   onCitationClick={handleCitationClick}
                   courseCode={courseCode}
                   slug={slug}
@@ -1325,15 +1467,10 @@ export function ProfileReviewPanel({
         </section>
       </div>
 
-      {/* ── 3. STRESS TEST RESULTS — trigger is in sticky bar; results render here ── */}
-      <StressTestPanel
-        ref={stressTestRef}
-        courseCode={courseCode}
-        slug={slug}
-        onResult={setStressTestResult}
-        onRunningChange={setStressRunning}
-        hideTrigger={true}
-      />
+      {/* ── 3. STRESS TEST — profile-level findings from the automatic check ── */}
+      {stressTestResult && (
+        <StressTestPanel result={stressTestResult} telemetry={stressTest?.telemetry ?? null} />
+      )}
 
       {/* ── 4. AUDIT NOTES — full-width collapsible ──
           The SourceBadge can render as a <button> (citation click-through),
@@ -1443,7 +1580,7 @@ export function ProfileReviewPanel({
                 courseCode={courseCode}
                 courseTitle={courseTitle}
                 overview={working.overview ?? null}
-                onOverviewChange={(next) => { setWorking({ ...working, overview: next }); setStressTestResult(null); }}
+                onOverviewChange={(next) => { setWorking({ ...working, overview: next }); }}
                 editable={true}
                 onCitationClick={handleCitationClick}
               />
@@ -1455,7 +1592,6 @@ export function ProfileReviewPanel({
               editable={true}
               onChange={(next) => {
                 setWorking({ ...working, class_structure: next ?? undefined });
-                setStressTestResult(null);
               }}
               onCitationClick={handleCitationClick}
             />
@@ -1466,7 +1602,6 @@ export function ProfileReviewPanel({
               editable={true}
               onChange={(next) => {
                 setWorking({ ...working, major_projects: next ?? undefined });
-                setStressTestResult(null);
               }}
               onCitationClick={handleCitationClick}
             />
@@ -1542,9 +1677,11 @@ export function ProfileReviewPanel({
           className="scroll-mt-4 rounded-md border-2 border-amber-400 bg-card px-4 py-4 space-y-3 shadow-md"
         >
           <header>
-            <h3 className="text-sm font-semibold">Approve this profile</h3>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Captures the current draft as a permanent, dated, immutable record. The draft stays editable; later edits create a new draft you can approve again.
+            <h3 className="text-sm font-semibold">{approveLabel}</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {isCaptured
+                ? 'Records the current draft as a new permanent, dated snapshot. The earlier snapshots stay in the history; the draft stays editable.'
+                : 'Records the current draft as a permanent, dated snapshot. The draft stays editable; later edits can be recorded as an update.'}
             </p>
           </header>
           <div className="space-y-1">
@@ -1577,7 +1714,7 @@ export function ProfileReviewPanel({
               title={!approveUnlocked ? approveLockTitle : undefined}
               className="rounded-md bg-foreground px-4 py-1.5 text-sm font-semibold text-background shadow-sm hover:bg-foreground/85 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {snapshotting ? 'Capturing…' : 'Approve & capture'}
+              {snapshotting ? 'Recording…' : approveLabel}
             </button>
           </div>
           {/* kind is already narrowed to 'error' here — the 'ok' case renders
@@ -1591,41 +1728,33 @@ export function ProfileReviewPanel({
       )}
 
       {/* ── 7. STICKY ACTION BAR ── */}
-      <div className="sticky bottom-0 z-10 border-t bg-card px-4 py-3 shadow-[0_-1px_4px_rgba(0,0,0,0.06)]">
+      <div data-testid="action-bar" className="sticky bottom-0 z-10 border-t bg-card px-4 py-3 shadow-[0_-1px_4px_rgba(0,0,0,0.06)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Summary chip */}
-          <span className="rounded border border-muted bg-muted/40 px-2.5 py-1 text-xs font-mono text-muted-foreground">
-            {needsReview.size} to review · {confidentIndices.length} confident
+          <span className="rounded border border-muted bg-muted/40 px-2.5 py-1 text-xs text-muted-foreground">
+            {needsReview.size} worth a look · {confidentIndices.length} rolled up
           </span>
 
-          <div className="flex items-center gap-2">
-            {/* Stress-test trigger */}
-            <button
-              type="button"
-              onClick={() => stressTestRef.current?.run()}
-              disabled={stressRunning}
-              className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {stressRunning ? 'Stress-testing…' : 'Stress-test this profile'}
-            </button>
-
-            {/* Save edits */}
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {/* Save draft — persists edits to the working draft. It does NOT
+                approve or snapshot; that is the approve button. */}
             <button
               type="button"
               onClick={() => persist('edited')}
               disabled={!dirty || saving || validationError !== null}
-              title={validationError ? `Fix validation issue first: ${validationError}` : undefined}
+              title={validationError ? `Fix validation issue first: ${validationError}` : `Save your changes to the draft. Nothing is recorded until you use ${approveQuoted}.`}
               className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {saving ? 'Saving…' : 'Save edits'}
+              {saving ? 'Saving…' : 'Save draft'}
             </button>
 
-            {/* Approve — guard prevents rubber-stamping (A15) */}
+            {/* Approve — guard prevents rubber-stamping (A15). The live count
+                says exactly what is left, instead of a hover-only hint. */}
             {!approveUnlocked && (
-              <span className="text-xs text-muted-foreground">
+              <span className="text-sm text-muted-foreground" title={approveLockTitle}>
                 {unjustifiedBumpCount > 0
-                  ? `${unjustifiedBumpCount} raised score${unjustifiedBumpCount === 1 ? '' : 's'} need a reason before you can approve.`
-                  : 'Locked until reviewed — hover for what counts.'}
+                  ? `${unjustifiedBumpCount} raised score${unjustifiedBumpCount === 1 ? '' : 's'} need a reason before ${approveQuoted}.`
+                  : `${unreviewedCount} card${unreviewedCount === 1 ? '' : 's'} left to review — confirm or adjust each to unlock ${approveQuoted}`}
               </span>
             )}
             <button
@@ -1641,7 +1770,7 @@ export function ProfileReviewPanel({
               }
               className="rounded-md bg-amber-700 px-4 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-amber-800 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isCaptured ? 'Approve update' : 'Approve the profile'}
+              {approveLabel}
             </button>
           </div>
         </div>

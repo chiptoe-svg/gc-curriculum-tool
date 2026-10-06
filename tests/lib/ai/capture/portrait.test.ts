@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { CaptureCompetency } from '@/lib/ai/capture/schema';
-import { portraitClauses, lowerAnchorOptions, evidencePromptFor, dimLabel } from '@/lib/ai/capture/portrait';
+import { portraitClauses, dimLabel } from '@/lib/ai/capture/portrait';
 
 const technical: CaptureCompetency = {
   statement: 'Analyze packaging requirements',
@@ -29,7 +29,7 @@ describe('portraitClauses', () => {
     const legacy: CaptureCompetency = { ...technical, u_says: null };
     const cs = portraitClauses(legacy);
     const u = cs.find(c => c.dim === 'u')!;
-    expect(u.text).toBe('Explains the rationale in own words'); // describeDepth('u', 2)
+    expect(u.text).toBe('explains it in their own words'); // plainDepthPhrase('u', 2)
     expect(u.fallback).toBe(true);
   });
 
@@ -38,32 +38,12 @@ describe('portraitClauses', () => {
     const cs = portraitClauses(zeroWithSays);
     const d = cs.find(c => c.dim === 'd')!;
     expect(d.fallback).toBe(true);
-    expect(d.text).toBe('Not evidenced in the materials'); // describeDepth('d', 0)
-  });
-});
-
-describe('lowerAnchorOptions', () => {
-  it('lists every level below the current one, with anchor text', () => {
-    const opts = lowerAnchorOptions('u', 2);
-    expect(opts.map(o => o.level)).toEqual([0, 1]);
-    expect(opts[1]!.text).toBe('Restates the explanation as given'); // describeDepth('u', 1)
-  });
-
-  it('returns empty when the current level is 0', () => {
-    expect(lowerAnchorOptions('d', 0)).toEqual([]);
-  });
-});
-
-describe('evidencePromptFor', () => {
-  it('is dimension-specific', () => {
-    expect(evidencePromptFor('k')).toMatch(/exam|quiz|item/i);
-    expect(evidencePromptFor('u')).toMatch(/explanation|reasoning/i);
-    expect(evidencePromptFor('d')).toMatch(/artifact|rubric|graded/i);
+    expect(d.text).toBe('no evidence students do it yet'); // plainDepthPhrase('d', 0)
   });
 });
 
 describe('dimLabel', () => {
   it('maps k/u/d to friendly labels', () => {
-    expect([dimLabel('k'), dimLabel('u'), dimLabel('d')]).toEqual(['Naming', 'Reasoning', 'Doing']);
+    expect([dimLabel('k'), dimLabel('u'), dimLabel('d')]).toEqual(['Knowing', 'Reasoning', 'Doing']);
   });
 });

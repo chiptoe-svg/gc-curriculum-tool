@@ -74,13 +74,15 @@ function renderPanel() {
   );
 }
 
-// Helper: open "Needs adjusting" and apply a downward score correction via
-// "Lower: pick a better description" → the first offered lower anchor.
+// Helper: open "Needs adjusting" and pick a lower Doing level WITHOUT saving,
+// then Cancel. An unsaved pick must never confirm the card (2026-06-16 rule,
+// kept 2026-10-06: only "✓ Looks right" or an explicit "Save changes" confirm).
 function applyPortraitCorrection() {
   fireEvent.click(screen.getByRole('button', { name: /needs adjusting/i }));
   const flagRow = screen.getByTestId('flag-row-d');
-  fireEvent.click(within(flagRow).getByRole('button', { name: /^lower/i }));
-  fireEvent.click(within(flagRow).getByTestId('lower-opt-d-0'));
+  fireEvent.click(within(flagRow).getByRole('button', { name: /change/i }));
+  fireEvent.click(within(flagRow).getAllByRole('radio')[0]!);
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 }
 
 describe('ProfileReviewPanel — adjusting a portrait score does not auto-confirm', () => {

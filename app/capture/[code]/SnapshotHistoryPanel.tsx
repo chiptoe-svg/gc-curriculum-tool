@@ -1,5 +1,6 @@
 'use client';
 
+import { plainDepth } from '@/lib/capture/plain-depth';
 import { useCallback, useEffect, useState } from 'react';
 import type { CaptureVerificationSummary } from '@/lib/ai/capture/schema';
 
@@ -154,7 +155,7 @@ export function SnapshotHistoryPanel({ courseCode, slug, onUseAsDraft, refreshKe
                   )}
                   {s.verificationSummary?.course_shape && (
                     <p className="mt-1 text-xs leading-snug text-muted-foreground">
-                      {s.verificationSummary.course_shape}
+                      {plainDepth(s.verificationSummary.course_shape)}
                     </p>
                   )}
                 </div>
@@ -194,7 +195,7 @@ export function SnapshotHistoryPanel({ courseCode, slug, onUseAsDraft, refreshKe
                     </p>
                     <ul className="mt-1 space-y-0.5">
                       {s.verificationSummary.strongest_evidence.map((it, i) => (
-                        <li key={i} className="border-l-2 border-muted pl-2">{it}</li>
+                        <li key={i} className="border-l-2 border-muted pl-2">{plainDepth(it)}</li>
                       ))}
                     </ul>
                   </div>
@@ -205,7 +206,7 @@ export function SnapshotHistoryPanel({ courseCode, slug, onUseAsDraft, refreshKe
                       </p>
                       <ul className="mt-1 space-y-0.5">
                         {s.verificationSummary.dimensional_patterns.map((it, i) => (
-                          <li key={i} className="border-l-2 border-muted pl-2">{it}</li>
+                          <li key={i} className="border-l-2 border-muted pl-2">{plainDepth(it)}</li>
                         ))}
                       </ul>
                     </div>
@@ -217,12 +218,12 @@ export function SnapshotHistoryPanel({ courseCode, slug, onUseAsDraft, refreshKe
                       </p>
                       <ul className="mt-1 space-y-0.5">
                         {s.verificationSummary.catalog_vs_evidence.map((it, i) => (
-                          <li key={i} className="border-l-2 border-muted pl-2">{it}</li>
+                          <li key={i} className="border-l-2 border-muted pl-2">{plainDepth(it)}</li>
                         ))}
                       </ul>
                     </div>
                   )}
-                  <p className="text-muted-foreground">{s.verificationSummary.foundationals_glance}</p>
+                  <p className="text-muted-foreground">{plainDepth(s.verificationSummary.foundationals_glance)}</p>
                 </div>
               )}
               {isExpanded && !s.verificationSummary && (

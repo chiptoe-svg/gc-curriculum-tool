@@ -1,194 +1,59 @@
 'use client';
 
-import { useEffect, useImperativeHandle, forwardRef, useState } from 'react';
 import type { StressTestResultType } from '@/lib/ai/stress-test/schema';
-
-export interface StressTestHandle {
-  /** Programmatically trigger a stress-test run (used by the sticky bar). */
-  run: () => void;
-  running: boolean;
-}
+import type { StressTestTelemetry } from './useStressTest';
+import { plainDepth } from '@/lib/capture/plain-depth';
 
 interface Props {
-  courseCode: string;
-  slug: string;
-  /**
-   * Called when a stress-test run completes successfully with the new
-   * result. Lets the parent (ProfileReviewPanel) thread per-competency
-   * annotations down to each row.
-   */
-  onResult: (result: StressTestResultType | null) => void;
-  /**
-   * When true the built-in trigger button + description header are
-   * suppressed — the parent supplies the trigger via `StressTestHandle.run`.
-   * Results (overall assessment, concerns, telemetry) still render here.
-   */
-  hideTrigger?: boolean;
-  /**
-   * Fires whenever the running state changes. Lets the parent disable its
-   * own trigger button while a run is in progress.
-   */
-  onRunningChange?: (running: boolean) => void;
+  result: StressTestResultType;
+  telemetry: StressTestTelemetry | null;
 }
 
+const OVERALL: Record<string, { label: string; tone: string }> = {
+  sound: { label: 'The profile holds up', tone: 'bg-emerald-50 text-emerald-900 border-emerald-300 dark:bg-emerald-900/30 dark:text-emerald-200 dark:border-emerald-800' },
+  mixed: { label: 'Mostly holds up, with some doubts', tone: 'bg-amber-50 text-amber-900 border-amber-300 dark:bg-amber-900/30 dark:text-amber-200 dark:border-amber-800' },
+  questionable: { label: 'Several scores look doubtful', tone: 'bg-red-50 text-red-900 border-red-300 dark:bg-red-900/30 dark:text-red-200 dark:border-red-800' },
+};
+
 /**
- * Stand-alone panel that owns the stress-test button + the profile-level
- * concerns display. Per-competency annotations are rendered by
- * ProfileReviewPanel via the onResult callback (the parent holds the
- * result and threads per-row annotations to <StressTestBadge>).
- *
- * The result is ephemeral — held only in the parent's state, cleared
- * when the user edits the profile (parent clears via onResult(null)).
+ * Profile-level findings from the automatic stress test (a second AI reviewer
+ * that reads the generated profile). Display only — the request lives in
+ * useStressTest (owned by CaptureClient); per-card findings become the
+ * "Worth a look" flags. Advisory: never modifies the draft. Text passes
+ * through plainDepth so score codes the reviewer writes read as words.
  */
-export const StressTestPanel = forwardRef<StressTestHandle, Props>(function StressTestPanel({ courseCode, slug, onResult, hideTrigger, onRunningChange }, ref) {
-  const [running, setRunning] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<StressTestResultType | null>(null);
-  const [telemetry, setTelemetry] = useState<{ costUsdCents: number; durationMs: number; model: string } | null>(null);
-  const [elapsed, setElapsed] = useState(0);
-
-  // Tick elapsed-seconds counter while running.
-  useEffect(() => {
-    if (!running) {
-      setElapsed(0);
-      return;
-    }
-    const id = setInterval(() => setElapsed(s => s + 1), 1000);
-    return () => clearInterval(id);
-  }, [running]);
-
-  useImperativeHandle(ref, () => ({
-    run: () => void handleRun(),
-    get running() { return running; },
-  }));
-
-  async function handleRun() {
-    if (running) return;
-    setRunning(true);
-    onRunningChange?.(true);
-    setError(null);
-    try {
-      const res = await fetch(
-        `/api/capture/${encodeURIComponent(courseCode)}/stress-test?slug=${encodeURIComponent(slug)}`,
-        { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' },
-      );
-      const json = await res.json() as { result?: StressTestResultType; telemetry?: { costUsdCents: number; durationMs: number; model: string }; error?: string; detail?: string };
-      if (!res.ok || !json.result) {
-        setError(json.error ? `${json.error}${json.detail ? ' — ' + json.detail : ''}` : `Stress-test failed (${res.status})`);
-        setResult(null);
-        onResult(null);
-        return;
-      }
-      setResult(json.result);
-      onResult(json.result);
-      if (json.telemetry) setTelemetry(json.telemetry);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Network error');
-      setResult(null);
-      onResult(null);
-    } finally {
-      setRunning(false);
-      onRunningChange?.(false);
-    }
-  }
-
-  const toneByOverall: Record<string, string> = {
-    sound: 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-900/30 dark:text-emerald-200 dark:border-emerald-800',
-    mixed: 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-900/30 dark:text-amber-200 dark:border-amber-800',
-    questionable: 'bg-red-100 text-red-900 border-red-300 dark:bg-red-900/30 dark:text-red-200 dark:border-red-800',
-  };
-
-  // When hideTrigger is true, only render results (the trigger is in the sticky bar).
-  if (hideTrigger && !running && !error && !result) return null;
-
+export function StressTestPanel({ result, telemetry }: Props) {
+  const overall = OVERALL[result.overall_assessment] ?? OVERALL.mixed!;
   return (
-    <section className="rounded-md border bg-card px-4 py-3 shadow-sm">
-      {!hideTrigger && (
-        <div className="flex items-baseline justify-between gap-3">
-          <div>
-            <h3 className="text-sm font-semibold">Stress-test this profile</h3>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Runs an adversarial reviewer agent over this profile. Heavy-tier
-              model; results are advisory and never modify the draft. One click
-              ≈ $0.05–0.20.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => void handleRun()}
-            disabled={running}
-            className="shrink-0 rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted disabled:opacity-50"
-          >
-            {running ? 'Reviewing…' : result ? 'Re-run' : 'Stress-test'}
-          </button>
-        </div>
-      )}
+    <section className="rounded-md border bg-card px-4 py-3 shadow-sm space-y-3">
+      <h3 className="text-sm font-semibold text-foreground">What the second reviewer noticed</h3>
+      <div className={`rounded border px-3 py-2 text-sm ${overall.tone}`}>
+        <p className="font-semibold">{overall.label}</p>
+        <p className="mt-1 leading-relaxed">{plainDepth(result.summary)}</p>
+      </div>
 
-      {running && (
-        <div className={`${hideTrigger ? '' : 'mt-3 '}flex items-center gap-2 text-xs text-muted-foreground`}>
-          <span
-            className="inline-block h-3.5 w-3.5 shrink-0 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent"
-            aria-hidden="true"
-          />
-          <span>{elapsed}s elapsed · Heavy model — usually 10–30s.</span>
-        </div>
-      )}
+      <ConcernList label="Catalog versus evidence" items={result.profile_level.catalog_vs_evidence_concerns} />
+      <ConcernList label="Consistency" items={result.profile_level.consistency_concerns} />
+      <ConcernList label="Coverage" items={result.profile_level.coverage_concerns} />
 
-      {error && (
-        <p className={`${hideTrigger ? '' : 'mt-3 '}rounded border border-red-300 bg-red-50 px-2 py-1 text-xs text-red-800 dark:border-red-900/40 dark:bg-red-900/10 dark:text-red-200`}>
-          {error}
+      {telemetry && (
+        <p className="text-xs text-muted-foreground">
+          {telemetry.model} · ${(telemetry.costUsdCents / 10000).toFixed(4)} · {(telemetry.durationMs / 1000).toFixed(1)}s
         </p>
-      )}
-
-      {result && (
-        <div className={`${hideTrigger ? '' : 'mt-3 '}space-y-3`}>
-          <div className={`rounded border px-3 py-2 text-xs ${toneByOverall[result.overall_assessment] ?? ''}`}>
-            <p className="font-mono-plex text-xs uppercase tracking-[0.18em]">
-              Overall: {result.overall_assessment}
-            </p>
-            <p className="mt-1 leading-relaxed">{result.summary}</p>
-          </div>
-
-          <ProfileConcernList
-            label="Catalog-vs-evidence concerns"
-            items={result.profile_level.catalog_vs_evidence_concerns}
-          />
-          <ProfileConcernList
-            label="Consistency concerns"
-            items={result.profile_level.consistency_concerns}
-          />
-          <ProfileConcernList
-            label="Coverage concerns"
-            items={result.profile_level.coverage_concerns}
-          />
-
-          {telemetry && (
-            <p className="text-xs text-muted-foreground">
-              {telemetry.model} · ${(telemetry.costUsdCents / 10000).toFixed(4)} · {(telemetry.durationMs / 1000).toFixed(1)}s
-            </p>
-          )}
-        </div>
       )}
     </section>
   );
-});
+}
 
-function ProfileConcernList({ label, items }: { label: string; items: string[] }) {
-  if (items.length === 0) {
-    return (
-      <div>
-        <p className="font-mono-plex text-xs uppercase tracking-[0.16em] text-muted-foreground">{label}</p>
-        <p className="mt-0.5 text-xs italic text-muted-foreground">(none surfaced)</p>
-      </div>
-    );
-  }
+function ConcernList({ label, items }: { label: string; items: string[] }) {
+  if (items.length === 0) return null;
   return (
     <div>
-      <p className="font-mono-plex text-xs uppercase tracking-[0.16em] text-muted-foreground">{label}</p>
-      <ul className="mt-0.5 space-y-1">
+      <p className="text-sm font-semibold text-foreground">{label}</p>
+      <ul className="mt-1 space-y-1">
         {items.map((it, i) => (
-          <li key={i} className="text-xs leading-relaxed text-foreground">
-            — {it}
+          <li key={i} className="border-l-2 border-muted pl-3 text-sm leading-relaxed text-foreground">
+            {plainDepth(it)}
           </li>
         ))}
       </ul>

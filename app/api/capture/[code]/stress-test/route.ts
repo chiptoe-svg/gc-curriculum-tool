@@ -7,7 +7,7 @@ import { getCaptureProfileByCourse } from '@/lib/db/course-capture-profiles-quer
 import { getLatestSnapshotByCourse } from '@/lib/db/capture-snapshots-queries';
 import { getLatestSessionId, getSessionMessages } from '@/lib/db/capture-messages-queries';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
-import { checkDailyCap } from '@/lib/rate-limit/daily-cap';
+import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
 import { hashIp } from '@/lib/ip-hash';
 import { runStressTest } from '@/lib/ai/stress-test/run';
 import type { CaptureChatContext } from '@/lib/ai/analyze/capture-chat';
@@ -121,6 +121,14 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
       chatContext,
       transcript,
     });
+    // The stress test now runs automatically after every profile generation
+    // (~$0.11 each on the heavy tier), so its cost must reach daily_cost like
+    // every other paid call. A spend-log failure must not lose the paid result.
+    try {
+      await recordSpend(out.telemetry.costUsdCents);
+    } catch (e) {
+      console.error(`stress-test ${courseCode}: recordSpend failed`, e);
+    }
     return NextResponse.json({
       result: out.result,
       telemetry: { ...out.telemetry, model: out.model },

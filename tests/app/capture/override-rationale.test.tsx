@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import type { CaptureProfile } from '@/lib/ai/capture/schema';
 
 vi.mock('@/app/capture/[code]/VerificationSummary', () => ({
@@ -56,46 +56,35 @@ function ensureExpanded() {
   fireEvent.click(row);
 }
 
-// Raise Do depth by 1 using the portrait "Needs adjusting → Higher → evidence → Raise Do" flow.
+// Raise Do depth by 1: Needs adjusting → Change (Doing) → next level → evidence → Save changes.
 function raiseDoDepthViaPortrait() {
   ensureExpanded();
-  // Open the card's "Needs adjusting" view.
   fireEvent.click(screen.getByRole('button', { name: /needs adjusting/i }));
-  // Choose "Higher" for Do.
-  const flagRow = document.querySelector('[data-testid="flag-row-d"]')!;
-  const higherBtn = Array.from(flagRow.querySelectorAll('button')).find(b => b.textContent?.startsWith('Higher'))!;
-  fireEvent.click(higherBtn);
-  // Fill in evidence text (required to unlock the Raise button).
-  fireEvent.change(screen.getByLabelText(/evidence for do/i), { target: { value: 'capstone press checks' } });
-  // Submit.
-  fireEvent.click(screen.getByRole('button', { name: /raise do/i }));
+  const flagRow = screen.getByTestId('flag-row-d');
+  fireEvent.click(within(flagRow).getByRole('button', { name: /change/i }));
+  fireEvent.click(within(flagRow).getAllByRole('radio')[3]!); // fixture d_depth is 2 → 3
+  fireEvent.change(screen.getByLabelText(/what shows students reach this/i), { target: { value: 'capstone press checks' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 }
 
 describe('K/U/D override rationale gate', () => {
-  it('shows a required reason on an upward bump and blocks approve until filled', () => {
+  it('a raise saved through Change with evidence is not asked "why?" again (evidence is the reason)', () => {
     renderPanel();
     raiseDoDepthViaPortrait();
-    // Reason field appears
-    expect(screen.getByText(/You raised a score/i)).toBeTruthy();
-    // Approve lock message names the bump count
-    expect(screen.getByText(/raised score.*need a reason/i)).toBeTruthy();
-    // Fill in a reason
-    fireEvent.change(screen.getByPlaceholderText(/Reason for the higher depth/i), { target: { value: 'capstone press checks' } });
-    // Lock message should be gone
+    expect(screen.queryByText(/You raised a score/i)).toBeNull();
     expect(screen.queryByText(/raised score.*need a reason/i)).toBeNull();
   });
+  // A raise from any other path still needs the reason: override-other-path.test.tsx.
 
   it('no reason field for a downward edit', () => {
     renderPanel();
     ensureExpanded();
-    // Lower Do depth via "Needs adjusting → Lower" and picking a lower option.
+    // Lower Do depth: Change → level 0 → Save changes.
     fireEvent.click(screen.getByRole('button', { name: /needs adjusting/i }));
-    const flagRow = document.querySelector('[data-testid="flag-row-d"]')!;
-    const lowerBtn = Array.from(flagRow.querySelectorAll('button')).find(b => b.textContent?.startsWith('Lower'))!;
-    fireEvent.click(lowerBtn);
-    // d_depth is 2 in the fixture; level 0 is the first lower-anchor option.
-    const lowerOpt = document.querySelector('[data-testid="lower-opt-d-0"]') as HTMLButtonElement | null;
-    if (lowerOpt) fireEvent.click(lowerOpt);
+    const flagRow = screen.getByTestId('flag-row-d');
+    fireEvent.click(within(flagRow).getByRole('button', { name: /change/i }));
+    fireEvent.click(within(flagRow).getAllByRole('radio')[0]!);
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
     expect(screen.queryByText(/You raised a score/i)).toBeNull();
   });
 });

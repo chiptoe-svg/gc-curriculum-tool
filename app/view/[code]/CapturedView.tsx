@@ -1,3 +1,4 @@
+import { plainDepth } from '@/lib/capture/plain-depth';
 import type { PfCond, Area7Block } from '@/lib/ai/capture/area7-types';
 import { problemSolvingBand } from '@/lib/program/problem-solving-band';
 
@@ -187,13 +188,15 @@ export function CapturedView({ profile, capturedAt }: Props) {
   const whoFor = profile.overview?.who_for ?? '';
   const arc = profile.overview?.arc ?? '';
   // Fallback essence sentence when overview.narrative is empty (legacy v1)
-  const essence = !narrative ? profile.verification_summary?.course_shape : null;
+  const rawEssence = !narrative ? profile.verification_summary?.course_shape : null;
+  // Score codes the AI wrote ("D3 via Budget") read as words — see lib/capture/plain-depth.
+  const essence = rawEssence ? plainDepth(rawEssence) : null;
 
   const outcomes = (profile.competencies ?? []).filter(c => c.statement);
-  const catalogDelta = profile.verification_summary?.catalog_vs_evidence ?? [];
+  const catalogDelta = (profile.verification_summary?.catalog_vs_evidence ?? []).map(plainDepth);
   const suggestedRewrites = profile.audit_notes?.suggested_objective_revisions ?? [];
   const incoming = (profile.incoming_expectations ?? []).filter(e => e.statement);
-  const strongest = profile.verification_summary?.strongest_evidence ?? [];
+  const strongest = (profile.verification_summary?.strongest_evidence ?? []).map(plainDepth);
   const apparentOutcomes = profile.revised_objectives_draft ?? [];
   const classStructure = profile.class_structure ?? null;
   const majorProjects = (profile.major_projects ?? []).filter(p => p.title);
