@@ -22,22 +22,22 @@ export const CAREER_TARGETS: CareerTarget[] = [
       'Technical sales or customer-service representative at an equipment or technology supplier, building the ROI case for a prospective buyer',
     ],
     knowDescriptors: [
-      'How print and packaging production processes work',
-      'What brand standards govern visual consistency',
-      'How agency and client organizations are structured',
+      'How print, packaging, and production equipment and processes work, and what they can and cannot do',
+      'How to build a cost and ROI case: pricing, total cost of ownership, and payback',
+      'How buyers, brand clients, and supplier organizations are structured and make purchasing decisions',
     ],
     understandDescriptors: [
-      'Why client relationships require ongoing trust investment',
-      'Why production constraints shape creative possibility',
-      'Why the account manager\'s credibility depends on domain knowledge',
+      'Why a sale rests on solving the buyer\'s real problem, not on the relationship alone',
+      'Why production and technical constraints shape what can be promised',
+      'Why credibility with buyers depends on technical and financial fluency',
     ],
     doDescriptors: [
-      'Manage a client relationship through a full project cycle',
-      'Translate a brand brief into a production specification',
-      'Present results in terms that matter to the client',
+      'Diagnose a buyer\'s or client\'s need and recommend a solution that fits it',
+      'Build and present a quantified ROI or cost case for a proposed solution',
+      'Manage an account or customer through a full order or project cycle, keeping production aligned',
     ],
     defensibilityNote:
-      'Trust, relationship continuity, and organizational navigation are not automatable. Understanding what a client actually needs (as opposed to what they asked for) requires human judgment and accumulated context that AI cannot replicate.',
+      'Buyers trust people who understand both their problem and the technology well enough to make the numbers work. Diagnosing what a customer actually needs, standing behind a cost case, and keeping the relationship through problems takes technical judgment and accountability that AI can support but not replace.',
     socCode: '41-4012.00',
     subCompetencies: [
       {
@@ -322,6 +322,8 @@ export const CAREER_TARGETS: CareerTarget[] = [
       'Packaging workflow or compliance specialist managing artwork versioning and regulatory/print-quality sign-off',
       'DAM specialist, creative-ops coordinator, or color-management technician governing a brand\'s asset library, color accuracy, or AI-assisted output quality',
       'AI implementation lead selecting, piloting, benchmarking and rolling out AI models and tools across a creative or production operation',
+      'IT support specialist keeping the platforms, tools, and data that a creative, marketing, or production team depends on running',
+      'Management or systems analyst mapping creative and production processes and specifying the systems that improve them',
     ],
     knowDescriptors: [
       'How workflow platforms, DAM systems, and packaging-artwork pipelines structure creative and production work',
