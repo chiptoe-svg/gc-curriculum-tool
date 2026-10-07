@@ -522,4 +522,41 @@ describe('TriageStep completion gate', () => {
     // A clean run goes on to the interview by itself.
     expect(onIngested).toHaveBeenCalledOnce();
   });
+
+  // G4 (security re-review, 2026-10-07): a 429 means a co-instructor's
+  // concurrent ingest call already started reading the same materials —
+  // not a real failure. The UI should poll the (already-known) unread
+  // rows for completion instead of showing an error and bailing to idle.
+  it('on a 429 cooldown response, polls the unread materials instead of showing an error', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({ error: 'Reading already started a moment ago — try again in 42 seconds' }),
+        { status: 429 },
+      ),
+    );
+    let status = 'indexing';
+    const fetchMaterials = await import('@/lib/capture/fetch-course-materials');
+    vi.spyOn(fetchMaterials, 'fetchCourseMaterials').mockImplementation(
+      async () => [{ id: 'm1', fileName: 'f.pdf', mimeType: 'application/pdf', indexingStatus: status, ignored: false }] as never,
+    );
+
+    const onIngested = vi.fn();
+    render(
+      <TriageStep
+        courseCode="GC 1010" slug="s"
+        materials={[{ id: 'm1', fileName: 'f.pdf', mimeType: 'application/pdf', tier: 'high', indexingStatus: 'pending', ignored: false, pageCount: 2 }] as never}
+        onIngested={onIngested} onBack={() => {}}
+      />,
+    );
+
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /read files & continue/i })); });
+
+    // No error surfaced — a 429 reads as "already being read," not a failure.
+    expect(screen.queryByText(/try again in 42 seconds/i)).toBeNull();
+    expect(screen.queryByText(/^failed/i)).toBeNull();
+
+    status = 'ready';
+    await act(async () => { await vi.advanceTimersByTimeAsync(3000); }); // poll sees 'ready'
+    expect(onIngested).toHaveBeenCalledOnce();
+  });
 });

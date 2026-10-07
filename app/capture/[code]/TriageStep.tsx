@@ -362,6 +362,16 @@ export function TriageStep({ courseCode, slug, materials, onIngested, onBack }: 
           body: JSON.stringify({ mode: useLocal ? 'local' : 'hybrid' }),
         },
       );
+      if (res.status === 429) {
+        // G4 (security re-review, 2026-10-07): a 429 here means the
+        // per-course ingest cooldown is active — almost always a
+        // co-instructor's concurrent "Read files & continue" already
+        // started reading these same materials. That's not a failure:
+        // poll the unread rows we already know about for completion,
+        // same as if our own call had queued them.
+        void pollUntilDone(unreadRows.map(r => r.id));
+        return;
+      }
       if (!res.ok) {
         const body = await res.json().catch(() => ({})) as { error?: string };
         setIngestError(body.error ?? `Failed (${res.status})`);
