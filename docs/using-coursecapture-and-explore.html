@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Using CourseCapture &amp; Explore — A Faculty Guide</title>
+<title>Using CourseCapture &amp; Explore — Detailed Guide</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Mono:wght@300;400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300&display=swap" rel="stylesheet">
@@ -150,32 +150,26 @@
   <div class="rail-header">
     <div class="rail-dept">Clemson · Graphic Communications</div>
     <div class="rail-title">GC Curriculum Tool</div>
-    <div class="rail-doc-type">Faculty Guide</div>
+    <div class="rail-doc-type">Detailed Guide</div>
   </div>
   <nav class="rail-nav">
-    <div class="nav-group-label">Guide</div>
+    <div class="nav-group-label">Start here</div>
+    <a class="nav-link" href="https://gcworkflow.clemson.edu:8443/curriculum/howto">Step-by-step how-to ↗</a>
     <a class="nav-link" href="#overview">Overview</a>
     <a class="nav-link" href="#access">How you reach the tool</a>
     <a class="nav-link" href="#before">Before you start</a>
     <div class="nav-group-label" style="margin-top: 10px;">CourseCapture</div>
-    <a class="nav-link" href="#cc-materials">1 · Confirming materials</a>
-    <a class="nav-link" href="#cc-instructor">2 · Identifying yourself</a>
-    <a class="nav-link" href="#cc-audit">3 · The audit chat</a>
-    <a class="nav-link" href="#cc-generate">4 · Generate &amp; confirm</a>
-    <a class="nav-link" href="#cc-snapshots">5 · Snapshots &amp; revisions</a>
-    <a class="nav-link" href="#cc-stresstest">6 · Stress-test the profile</a>
-    <div class="nav-group-label" style="margin-top: 10px;">Explore</div>
-    <a class="nav-link" href="#ex-modes">7 · Pick a snapshot and a mode</a>
-    <a class="nav-link" href="#ex-custom">8 · Custom target</a>
-    <a class="nav-link" href="#ex-downstream">9 · Downstream target</a>
-    <a class="nav-link" href="#ex-analysis">10 · Reading the analysis</a>
-    <a class="nav-link" href="#ex-whatif">11 · What-if scenarios</a>
-    <div class="nav-group-label" style="margin-top: 10px;">Course Roster</div>
-    <a class="nav-link" href="#roster-overview">15 · The /courses roster</a>
-    <a class="nav-link" href="#roster-prereq">16 · Prerequisite confirm &amp; gap view</a>
+    <a class="nav-link" href="#cc-materials">1 · Check your materials</a>
+    <a class="nav-link" href="#cc-triage">2 · How closely to read each file</a>
+    <a class="nav-link" href="#cc-interview">3 · The interview</a>
+    <a class="nav-link" href="#cc-generate">4 · Generate, review, approve</a>
+    <a class="nav-link" href="#cc-snapshots">Snapshots &amp; re-capturing</a>
+    <div class="nav-group-label" style="margin-top: 10px;">Beyond the capture</div>
+    <a class="nav-link" href="#explore">Explore</a>
+    <a class="nav-link" href="#roster">Course list &amp; prerequisites</a>
+    <a class="nav-link" href="#readonly">The public profile</a>
     <div class="nav-group-label" style="margin-top: 10px;">Reference</div>
-    <a class="nav-link" href="#tips">Tips &amp; gotchas</a>
-    <a class="nav-link" href="#readonly">Sharing the read-only view</a>
+    <a class="nav-link" href="#tips">Tips</a>
     <a class="nav-link" href="#scope">What these tools don't do</a>
     <div class="nav-group-label" style="margin-top: 18px;">See also</div>
     <a class="nav-link" href="./superpowers/vision/gc-curriculum-tool-vision.html">Vision document</a>
@@ -189,575 +183,242 @@
 <main>
 
 <header class="doc-head">
-  <div class="doc-eyebrow">Faculty Guide</div>
+  <div class="doc-eyebrow">Detailed Guide</div>
   <h1 class="doc-title">Using CourseCapture &amp; Explore</h1>
-  <p class="doc-subtitle">A practical walkthrough of the per-course audit workflow that produces a Course Outcome Profile, and the Explore module that turns that snapshot into prescriptive alignment analysis and what-if scenarios.</p>
+  <p class="doc-subtitle">What each step of capturing a course does and why, and how Explore, the course list and the public profile fit around it. For the screen-by-screen steps, use the <a href="https://gcworkflow.clemson.edu:8443/curriculum/howto">how-to</a>.</p>
   <div class="doc-meta">
-    <span><strong>Audience</strong> GC faculty using the tool on their own courses</span>
+    <span><strong>Audience</strong> faculty capturing their own courses</span>
     <span><strong>Time per course</strong> 20–45 minutes for a first capture</span>
-    <span><strong>Date</strong> 2026-06-12</span>
+    <span><strong>Updated</strong> 2026-10-07</span>
   </div>
 </header>
 
 <section id="overview">
   <h2><span class="num">§ 1</span>Overview</h2>
 
-  <p>The two tools work as a pair. <strong>CourseCapture</strong> is <em>descriptive</em>: it produces an evidence-backed Course Outcome Profile that describes what the course is evidenced to require, assess, and support — competencies with K/U/D depth ratings, evidence excerpts from materials, and audit notes about prerequisites, objective alignment, and cross-source conflicts. <strong>Explore</strong> is <em>prescriptive</em>: given a confirmed snapshot, it compares the course to a target (instructor-defined goals, or what downstream courses expect from incoming students), surfaces gaps, and proposes ranked recommendations. Explore also supports what-if scenarios: propose a change to the course and see how the alignment numbers would shift.</p>
+  <p><strong>CourseCapture</strong> builds an evidence-backed record of what a course actually develops in students. You check the course materials, an AI interviewer asks you about the course, and the tool drafts a <strong>Course Outcome Profile</strong>: the course's competencies, each scored for <em>Knowing</em>, <em>Reasoning</em> and <em>Doing</em> at a depth backed by student evidence, plus the five foundational habits (Agency, Attention to Detail, Resilience, Curiosity, Communication), scored for Doing only. You review the draft, adjust what is wrong, and approve it. Approval records a permanent, dated snapshot.</p>
 
-  <p>Both tools are per-course. You open them through the same session, on the same course code. CourseCapture lives at <code>/capture/&lt;course-code&gt;</code>; Explore at <code>/explore/&lt;course-code&gt;</code>. Each course's page links to the other (top-right of the header).</p>
+  <p><strong>Explore</strong> is for thinking about changes to a course once it has been captured. See §9.</p>
 
-  <div class="callout note">
-    <div class="callout-title">Read in this order</div>
-    <p>You only need to read sections about Explore (§10–14) once you have at least one confirmed snapshot for a course. Explore refuses to open if there's no snapshot — it sends you back to CourseCapture first. Sections §15–16 cover the <code>/courses</code> roster and the prerequisite-gap view — useful once several courses have been captured.</p>
+  <div class="callout tip">
+    <div class="callout-title">Just want the steps?</div>
+    <p>The <a href="https://gcworkflow.clemson.edu:8443/curriculum/howto">step-by-step how-to</a> walks through a capture screen by screen, with screenshots. This guide explains what each step does and why.</p>
   </div>
 </section>
 
 <section id="access">
   <h2><span class="num">§ 2</span>How you reach the tool</h2>
 
-  <p>The tool lives on two surfaces that serve different purposes. Understanding which URL to use for which task will save you a frustrating moment the first time a browser blocks the microphone.</p>
+  <p>The tool runs on the Clemson network. There is no off-campus access; use the campus VPN when you are away.</p>
 
-  <h3>The public landing — browse without logging in</h3>
-  <p>Point any browser on the Clemson LAN (or VPN) to <code>http://gcworkflow.clemson.edu:3000/</code>. No username, no password. You land on a course listing that shows every course in the catalog with its current capture status and "by [instructor]" attribution. Each row has a <strong>View</strong> link that opens the read-only profile for that course — useful for quickly checking whether a course has been captured and what it says, or for sharing a profile link with a chair, colleague, or accreditor without giving anyone edit access. View links stay on HTTP and require no authentication.</p>
-
-  <h3>Edit pages — HTTPS via Tailscale, Basic Auth once per browser</h3>
-  <p>Edit links go to <code>https://admins-mac-studio-2.tailb723c1.ts.net/capture/&lt;code&gt;?slug=…</code>. This address uses Tailscale Funnel, which means it's a proper HTTPS secure context reachable from anywhere — off-campus, over VPN, or from a phone. The first time your browser visits this host it will prompt for a username and password (HTTP Basic Auth). Enter the credentials your administrator provided; the browser remembers them for subsequent visits, so this is a one-time prompt per browser. Edit pages cover CourseCapture, Explore, Program, Admin, and Settings — anything that writes data.</p>
-
-  <h3>Why the split matters for the microphone</h3>
-  <p>Browsers enforce a rule: microphone access is only permitted on secure contexts (HTTPS). The <code>http://gcworkflow.clemson.edu…</code> address is plain HTTP, so the mic button on that surface will always be blocked by the browser. If you want to use voice input during the audit chat, use the edit-surface URL (<code>https://admins-mac-studio-2…</code>) — the mic works there because it's a top-level HTTPS context. This replaces an earlier approach that tried to proxy mic access through an iframe, which browser security rules ultimately blocked.</p>
-
-  <div class="callout note">
-    <div class="callout-title">Bookmark the edit address</div>
-    <p>The slug is part of the edit URL — keep that link handy. If you lose it, ask your administrator to regenerate it or look it up on the Admin page. The public landing (<code>http://gcworkflow.clemson.edu:3000/</code>) never needs a slug; the edit surface always does.</p>
-  </div>
+  <ul>
+    <li><strong>Home page:</strong> <code>https://gcworkflow.clemson.edu:8443/</code> lists every course with its capture status. Anyone on the network can browse it and open a course's read-only public profile.</li>
+    <li><strong>Faculty pages</strong> (CourseCapture, Explore, the course list, the program matrix) need a login. GC faculty use the shared faculty username and password, asked once per browser. Faculty who edit only their own course get a <strong>personal link</strong> from the administrator: clicking it signs them in on that browser for 30 days at a time, and they can change only the courses it lists. Don't share a personal link.</li>
+    <li><strong>Voice input</strong> works on the <code>https://…:8443</code> address. Browsers block the microphone on plain <code>http://</code> pages, so if the Voice button is refused, check that the address starts with <code>https</code>.</li>
+  </ul>
 </section>
 
 <section id="before">
   <h2><span class="num">§ 3</span>Before you start</h2>
 
-  <h3>Access</h3>
-  <p>The tool is slug-gated: you open it through the access URL your administrator shared. The slug is part of the URL (<code>?slug=…</code>). All pages — CourseCapture, Explore, Program, Settings — pass the same slug forward; just keep the tab open and the navigation will preserve it.</p>
-
-  <h3>The course must exist in the catalog</h3>
-  <p>The 120-course GC catalog is seeded into the tool. If you're capturing a course that isn't in the catalog (a new course, a renamed special-topics section), contact the administrator before you start — the capture page expects a catalog row to attach the snapshot to. If your course is a lecture/lab pair (e.g. GC 3460 lecture + GC 3461 lab), it's set up as a single <em>bundled</em> course — one capture, one profile, one snapshot — with the lab imported alongside the lecture; mention both codes when you ask for it to be added.</p>
-
-  <h3>Have your materials handy</h3>
-  <p>The richer the materials the auditor can read, the less work the audit chat has to do. When you open <code>/capture/&lt;course-code&gt;</code>, the first thing you see is <strong>Step 1: "Confirm materials"</strong> — a review screen showing exactly what evidence the auditor will read before the interview begins. Three source boxes are presented, each a collapsible accordion:</p>
   <ul>
-    <li><strong>Syllabus &amp; course info</strong> — catalog values synced from the shared GC Google Sheet (description, objectives, projects, prerequisites, required skills). Shows how long ago it was last synced with a Re-sync button; you can also attach a syllabus PDF if your course doesn't have a sheet tab.</li>
-    <li><strong>Canvas</strong> — everything imported from Canvas (assignments, quizzes, modules, the Canvas syllabus page, Canvas Files). Use Import from Canvas / Reimport (requires a Canvas API token). <strong>Scan linked docs</strong> chases Google Docs, Drive PDFs, and YouTube links <em>inside</em> your Canvas content and pulls in their text (captions or Whisper audio-transcription for video).</li>
-    <li><strong>Other materials</strong> — uploaded PDFs, DOCX files, and any linked documents the scan found.</li>
+    <li><strong>The course must be on the course list.</strong> If it is missing, use <em>+ Add a course</em> on the course list, or ask the administrator. A lecture/lab pair (e.g. GC 3460 + GC 3461) is captured as one bundled course.</li>
+    <li><strong>Have the syllabus ready.</strong> A syllabus is required: it is the source of the course's stated objectives. Canvas's syllabus page counts, or upload a PDF or Word file.</li>
+    <li><strong>Gather what students actually do:</strong> assignment sheets, rubrics, project briefs, quizzes, lecture slides. The profile can only score what it can see evidence for, so thin materials make a thin record.</li>
+    <li><strong>Allow 20–45 minutes</strong> for a first capture. You can stop at any point; the interview is saved and picks up where you left off.</li>
   </ul>
-  <p>Each item shows a readiness status — <em>ready</em>, <em>not indexed yet</em>, or <em>not readable</em> (with a reason, such as a Google Doc that isn't shared or a video with no captions) — and an <strong>Index now</strong> action where fixable. When the sources look complete, <strong>Continue to interview →</strong> starts the audit conversation.</p>
 </section>
 
 <section id="cc-materials">
-  <h2><span class="num">§ 4</span>CourseCapture · Confirming materials</h2>
+  <h2><span class="num">§ 4</span>Step 1 · Check your materials</h2>
 
-  <p>Open <code>/capture/&lt;course-code&gt;</code>. The page opens on <strong>Step 1: "Confirm materials — here's what the auditor will read."</strong> This is the evidence-review screen: confirm the sources are complete before the interview starts. Every item loaded here is evidence the auditor reads directly, rather than asking you to recall.</p>
+  <p>The first screen shows everything the interviewer will read, in three boxes. Open each one to see what is inside and add what is missing.</p>
 
-  <h3>The three source boxes</h3>
-
-  <p>Three collapsible accordion boxes each represent a source of evidence. Collapsed, each shows a one-line summary; expand it to see and manage everything inside.</p>
-
-  <div class="step">
-    <div class="step-num">1</div>
-    <div class="step-body">
-      <strong>Syllabus &amp; course info.</strong> Course catalog values synced from the shared GC curriculum Google Sheet — description, learning objectives, major projects, prerequisites, and required incoming skills. Shows <em>synced X ago</em> with a <strong>Re-sync</strong> button to pull the latest from the sheet. If your course doesn't have a sheet tab, use <strong>Attach a syllabus</strong> to upload a PDF instead.
-    </div>
-  </div>
-
-  <div class="step">
-    <div class="step-num">2</div>
-    <div class="step-body">
-      <strong>Canvas.</strong> Everything imported from Canvas: assignments (with rubrics and point values), quizzes (Classic and New Quizzes), modules, the Canvas syllabus page, and Canvas Files. Click <strong>Import from Canvas</strong> (or <strong>Reimport</strong>) to pull the latest — you'll need a Canvas API token the first time. Expand the box to see the individual items imported; any you don't want to count as evidence can be unchecked. If your course is a bundled lecture/lab, the Canvas box shows a separate <strong>import slot for each code</strong> (the lecture page and the lab page are different Canvas courses) — import each independently; both sets of materials feed the one shared audit, grouped by source so you can tell which page each item came from.
-      <br><br>
-      <strong>Scan linked docs</strong> chases Google Docs, Drive PDFs, and YouTube links that appear <em>inside</em> your Canvas content and pulls in their text — YouTube videos are handled via captions or Whisper audio-transcription. Run the scan after importing to pick up any linked content you haven't loaded directly.
-      <br><br>
-      By default, unpublished Canvas items are skipped. Uncheck <strong>Skip unpublished items</strong> in the import dialog to include drafts — they'll arrive tagged <code>[unpublished]</code> so the auditor scores them accordingly.
-    </div>
-  </div>
-
-  <div class="step">
-    <div class="step-num">3</div>
-    <div class="step-body">
-      <strong>Other materials.</strong> Uploaded files (PDFs, DOCX, PPTX, XLSX, CSV, HTML, images, TXT, MD) plus any linked documents the scan found. Drag-and-drop rubrics, project briefs, lab handouts, exam keys — anything the auditor needs that isn't in Canvas or the catalog. Legacy Office formats (<code>.doc</code>, <code>.ppt</code>, <code>.xls</code>) are auto-converted via LibreOffice on upload.
-    </div>
-  </div>
-
-  <h3>Readiness status per item</h3>
-  <p>Each material shows an honest readiness status:</p>
   <ul>
-    <li><strong>Ready</strong> — extracted and indexed; the auditor can read it.</li>
-    <li><strong>Not indexed yet</strong> — uploaded or imported but extraction is still running. An <strong>Index now</strong> action is shown.</li>
-    <li><strong>Not readable</strong> — with a reason (e.g., a Google Doc that isn't shared with "Anyone with the link," or a video with no captions available). Fix the underlying issue and use <strong>Index now</strong> to retry.</li>
+    <li><strong>Canvas</strong> — assignments, quizzes, pages, modules, the Canvas syllabus and Canvas files. <em>Import from Canvas</em> / <em>Reimport</em> needs a Canvas API token. <em>Scan linked docs</em> follows Google Docs, Drive PDFs and YouTube links inside your Canvas content and pulls them in.</li>
+    <li><strong>Syllabus &amp; course info</strong> — the syllabus (required) and, for courses that have one, the course's row on the GC course sheet. Upload a syllabus here if Canvas doesn't have one.</li>
+    <li><strong>Other materials</strong> — anything else: slides, rubrics, handouts, exemplars. PDF, Word, PowerPoint and Excel files are read; scanned PDFs are read with OCR.</li>
   </ul>
 
-  <h3>Proceeding to the interview</h3>
-  <p>When the sources look complete, click <strong>Continue to interview →</strong>. This starts the tool-using audit conversation (described in §6). You don't need every possible material loaded before continuing — the auditor will surface what's missing as the conversation progresses. A reasonable minimum before starting:</p>
-  <ul>
-    <li>Catalog row up to date (Re-sync if you've edited the sheet recently).</li>
-    <li>Canvas imported if the course uses Canvas substantively.</li>
-    <li>Major project briefs and rubrics uploaded (the highest-stakes assignments).</li>
-    <li>The syllabus PDF attached if your course doesn't have a sheet tab.</li>
-  </ul>
-
-  <h3>Manage all materials in detail</h3>
-  <p>A low-key <strong>Manage all materials in detail</strong> link at the bottom of the screen opens the full materials manager — compression controls, FERPA options, digest settings, and per-material detail. This is a power-user surface for large or complex courses. The three source boxes above cover everything most captures need.</p>
-
-  <h4>Material compression (full panel)</h4>
-  <p>The auditor's prompt has a hard upper size limit. For courses with many or lengthy materials, the system automatically generates a structured summary of long reference-style materials at upload time — so the auditor retains a faithful view of every piece of content even for the largest courses. In the full panel:</p>
-  <ul>
-    <li>Each row shows an estimated token count. Rows at or above 20,000 tokens are marked in amber; rows at or above 50,000 in red.</li>
-    <li>A <code>summary (~Xk tok)</code> chip shows how much a summarised row was compressed.</li>
-    <li>A per-row <strong>summarize</strong> checkbox lets you fall back to verbatim text for any material when the auditor needs to read every word — e.g., a course reader with rubric language embedded in prose.</li>
-    <li>The panel header shows a running total: <code>Audit prompt: ~Xk from materials</code>. Grey = under 150k (plenty of headroom); amber = 150k–220k (consider compressing); red = 220k+ (approaching the 272k cap, compress or ignore materials).</li>
-  </ul>
-  <p>The <strong>Compress existing materials</strong> button summarises all eligible long rows in one pass. The <strong>ignore</strong> checkbox on any row excludes it from the audit prompt entirely (keeps it in the database, reversible). For Canvas-list materials, expand the row to uncheck individual items rather than ignoring the whole list.</p>
-
-  <div class="callout warn">
-    <div class="callout-title">Content the system can't read</div>
-    <p>Canvas imports pull the syllabus body, assignment descriptions and rubrics, module item titles, Canvas Pages, file attachments (PDF/DOCX/PPTX/XLSX/CSV/HTML/images; legacy Office formats are auto-converted), discussion prompts, quiz content from both Classic and New Quizzes, and YouTube captions for linked videos. The system does <em>not</em> read: video content on non-YouTube platforms (Vimeo, Panopto, Canvas Studio, Loom, Kaltura), discussion replies, or external LTI tool content. The auditor will notice references to these in the materials it <em>can</em> read and surface each one with its title or URL — but scoring stays conservative until you tell it what's in the inaccessible content. The full source-coverage table is in the <a href="./background.html#course-impl">Background document</a>.</p>
-  </div>
+  <p>Pick your name under <strong>I'm the instructor</strong> so the capture is attributed to you, then click <strong>Continue →</strong>. The step won't continue without a syllabus.</p>
 
   <div class="callout note">
-    <div class="callout-title">Figure descriptions on the LAN deploy</div>
-    <p>The PDF extractor (Docling) is paired with a local vision-language model that writes a one- or two-sentence description for each chart, diagram, or figure into the extracted markdown. This closes a real evidence gap on lecture slides and research papers, where meaning often lives in the figure rather than the prose.</p>
+    <div class="callout-title">Privacy</div>
+    <p>Before anything is stored, the tool removes email addresses, Social Security numbers and CU ID numbers from the text it reads (instructor contact details in a syllabus are kept). The original files are not changed. The AI service is covered by Clemson's education contract.</p>
   </div>
 </section>
 
-<section id="cc-instructor">
-  <h2><span class="num">§ 5</span>CourseCapture · Identifying yourself as the auditor</h2>
+<section id="cc-triage">
+  <h2><span class="num">§ 5</span>Step 2 · Choose how closely to read each file</h2>
 
-  <p>Because the same course code can be taught very differently by different faculty members, depth scores are now recorded per instructor. A GC 3550 taught by one person with a heavy press-lab emphasis produces a different profile than a GC 3550 taught another way — averaging those together would erase information worth preserving. The instructor identity is captured at the start of every session and stamped on every snapshot and audit message.</p>
-
-  <h3>The session-start chooser</h3>
-  <p>After you click <strong>Continue to interview →</strong> on the materials screen, a modal appears before the audit panel loads. It presents two choices:</p>
-  <ul>
-    <li><strong>Instructor dropdown.</strong> Select your name from the list of faculty associated with this course. If your name isn't there, ask the administrator to add it — the list comes from the course's instructor roster in the system.</li>
-    <li><strong>Fresh start vs. Build on prior session.</strong> <em>Fresh start</em> opens a clean audit chat with no prior transcript. <em>Build on prior session</em> loads the most recent audit session for this instructor on this course, so you can pick up where you left off without replaying the whole conversation. Choose Build on prior session when you're returning to a course you've already partially audited; choose Fresh start for a new semester's capture or a major revision where the prior session's context would mislead the auditor.</li>
-  </ul>
-  <p>Confirm your choices and the audit panel loads.</p>
-
-  <h3>The Auditor badge</h3>
-  <p>Once the session is open, an <strong>Auditor: [your name] · change</strong> badge appears at the top of the audit panel. It stays visible throughout the session so you always know whose lens the auditor is using. Click <strong>change</strong> to return to the chooser — for example, if you're an administrator stepping through multiple instructors' captures in sequence, or if you opened the wrong name by mistake. Changing the auditor identity mid-session starts a fresh chat for the new instructor; the prior session's messages are preserved under the previous instructor's name.</p>
-
-  <div class="callout note">
-    <div class="callout-title">Why this matters for scoring</div>
-    <p>Scores in the Program Coverage Matrix and in Explore reflect whose profile is the most recent snapshot. If two instructors have both captured GC 3550, the matrix shows both rows separately — one per instructor — rather than merging them. When a downstream course asks "does GC 3550 cover X?", the answer can differ by instructor. The split is intentional: it surfaces real variation instead of hiding it in an average.</p>
-  </div>
-</section>
-
-<section id="cc-audit">
-  <h2><span class="num">§ 6</span>CourseCapture · The audit chat</h2>
-
-  <p>Once you've confirmed materials and identified yourself, the audit chat panel opens. The auditor opens by reading everything in the materials and writing three short paragraphs:</p>
-
-  <ol>
-    <li><strong>A one-sentence summary</strong> of what the materials show overall.</li>
-    <li><strong>A finding</strong> — the single most consequential gap, contradiction, or missing piece, with specific evidence cited (assignment name, rubric criterion, objective number).</li>
-    <li><strong>One focused question</strong> that follows up on that finding.</li>
-  </ol>
-
-  <p>From there it's a conversation: you reply (typing or voice), the auditor acknowledges what you said and asks one new question. The discipline is deliberate — one question per turn, finding-and-question always on the same topic, no batched lists.</p>
-
-  <h3>What the auditor is checking</h3>
-  <p>Across the conversation, the auditor systematically covers seven audit areas. You don't need to drive these in order — the auditor weaves them in based on what the materials surface — but it helps to know what's coming:</p>
+  <p>Reading every file in full is slow and not always useful, so each file gets a level. The tool makes a first guess; your job is to check it.</p>
 
   <table class="compact">
-    <thead><tr><th>Audit area</th><th>What it's probing</th></tr></thead>
+    <thead><tr><th>Level</th><th>What the tool does</th><th>Use it for</th></tr></thead>
     <tbody>
-      <tr><td><strong>Prerequisite sufficiency</strong></td><td>For each catalog-listed required incoming skill: does an assignment require it, and do students actually arrive with it? If a prereq course has its own captured profile, the auditor cites that profile directly instead of asking you to recall.</td></tr>
-      <tr><td><strong>Objectives vs. evidence</strong></td><td>Two directions. Objectives without material evidence ("syllabus says students will <em>analyze</em> X but no assignment requires analysis"). Material outcomes not captured in objectives ("the capstone teaches Z, which isn't in the listed objectives").</td></tr>
-      <tr><td><strong>Cross-source conflicts</strong></td><td>Point values that disagree between syllabus and Canvas, assignments listed in one source but not the other, outcomes language that drifts. The auditor asks which source is current.</td></tr>
-      <tr><td><strong>Bloom's-level probe</strong></td><td>For the highest-stakes assignments, what cognitive level students actually operate at — remembering vs. applying vs. analyzing vs. creating — and what evidence supports the classification.</td></tr>
-      <tr><td><strong>Threshold concept</strong></td><td>The one conceptual shift that separates students who truly get this course from students who memorized it. What students consistently misunderstand before the shift happens.</td></tr>
-      <tr><td><strong>Foundational dispositions</strong></td><td>For each of the five baselines — Agency, Attention to Detail, Resilience, Curiosity, Communication — what conditions the course creates (or doesn't) to develop the disposition. <em>Develop</em>, not <em>teach</em> — dispositions are demonstrated through behavior, so the question is whether assignments demand the behavior.</td></tr>
-      <tr><td><strong>Inaccessible references</strong></td><td>Videos on platforms other than YouTube (Vimeo, Panopto, Canvas Studio, Kaltura, Loom), external LTI tool content, and file attachments in formats the extractor can't read — named in the materials but not extractable. The auditor surfaces each with its title or URL and asks what's in it, so scoring isn't blind.</td></tr>
+      <tr><td><strong>High: read in full</strong></td><td>Every passage is stored and can be quoted as evidence; pictures are described.</td><td>The syllabus and anything graded: assignments, rubrics, quizzes, exams.</td></tr>
+      <tr><td><strong>Middle: summarized slide by slide</strong></td><td>Each slide or section becomes a short note of what it teaches; title-only and image-only slides are dropped.</td><td>Lecture slides, class pages.</td></tr>
+      <tr><td><strong>Background: one summary</strong></td><td>The whole file becomes one paragraph. The tool knows what it covers but can't quote it.</td><td>Readings, references.</td></tr>
     </tbody>
   </table>
 
-  <h3>Voice input</h3>
-  <p>The microphone icon in the chat composer records via OpenAI Whisper. Useful when you're walking the auditor through what a project actually requires — easier to explain a year-long capstone aloud than to type it out. Recording stops on click; transcription replaces your in-progress text. You can edit the transcription before sending.</p>
+  <p><strong>Why it matters:</strong> a score above the basics needs evidence that students actually did the work, so anything graded must be High or it can't count as evidence. Use ▲ ▼ to move a file, <em>ignore</em> to leave it out, <em>delete</em> to remove it. Moving a file that was already read re-reads it at the new level.</p>
 
-  <h3>The readiness signal</h3>
-  <p>On every turn, the auditor returns a structured <strong>readiness</strong> block that drives a progress strip below the chat. It shows:</p>
+  <p>Click <strong>Read files &amp; continue</strong>. The estimate beside the button counts only files not yet read. When reading finishes you go on to the interview automatically; the step stops only if a file couldn't be read, so you can go back and replace it or continue without it.</p>
+</section>
+
+<section id="cc-interview">
+  <h2><span class="num">§ 6</span>Step 3 · The interview</h2>
+
+  <p>Choose <strong>Build on prior capture</strong> (the interviewer starts from the last approved snapshot) or <strong>Fresh capture</strong> (it starts from the materials only), then <strong>Start the interview</strong>.</p>
+
+  <h3>What the interviewer is doing</h3>
+  <p>It has read your materials and can search them during the conversation. It also knows the profiles of the courses that feed into yours and the courses that build on it, from the Clemson catalog's prerequisites, so it can ask about hand-offs ("GC 4060 expects students to arrive able to … — does your course prepare them for that?"). Those neighboring courses are context for its questions, never evidence for your scores. It checks:</p>
   <ul>
-    <li><strong>Score, 0–100</strong> — the auditor's honest estimate of how defensibly the Course Outcome Profile could be generated right now.</li>
-    <li><strong>Covered</strong> — short labels for audit areas or competencies already locked in.</li>
-    <li><strong>Remaining</strong> — what the auditor is still probing.</li>
-    <li><strong>Good enough to generate</strong> — a boolean that flips to true at ~75.</li>
+    <li>what students actually produce and how it is graded, as opposed to what the syllabus aspires to;</li>
+    <li>how deeply students know, reason about and do each thing;</li>
+    <li>whether the stated objectives match the evidence;</li>
+    <li>where students struggle, fail and revise.</li>
   </ul>
-  <p>The score is advisory, not gating. You can generate the profile at any score, and you can keep going past 90 if you have more to say. Most captures land in the 75–90 range; chasing 95+ usually means the auditor is asking refinement questions that won't materially change the scores.</p>
 
-  <div class="callout tip">
-    <div class="callout-title">When to stop</div>
-    <p>Stop when the auditor's questions are no longer surfacing things you'd care to defend at a curriculum meeting. If the next question is about a marginal sub-competency or a rubric line you'd score the same way regardless of how the conversation went, you have what you need.</p>
-  </div>
+  <h3>Answering</h3>
+  <p>Each turn ends with a highlighted <strong>Question for you</strong>. Type a reply (Enter sends, Shift+Enter adds a line) or click <strong>Voice</strong> to speak it; the first recording can take a few seconds to start. Specific answers ("students submit a press-ready PDF and I grade it against this preflight checklist") produce a much stronger profile than general ones. If a document the interviewer can't open (a video, an external tool) matters, describe what is in it.</p>
+
+  <h3>The readiness bar</h3>
+  <p>Below the reply box, the readiness bar shows how much the interviewer thinks it has covered, with the topics covered so far and those still being probed. It is a guide, not a gate.</p>
+
+  <h3>Stopping and resuming</h3>
+  <p>Your answers are saved after each turn. Open the course again and you return to the conversation. <strong>Where we left off</strong> summarizes earlier sessions.</p>
+
+  <h3>Finishing</h3>
+  <p>Click <strong>I'm done — give me one last question</strong>. The interviewer looks back over the conversation and asks the single most important question still missing. Answer it, then click <strong>Generate Profile</strong>.</p>
 </section>
 
 <section id="cc-generate">
-  <h2><span class="num">§ 7</span>CourseCapture · Generate &amp; confirm the profile</h2>
+  <h2><span class="num">§ 7</span>Step 4 · Generate, check outcomes, review and approve</h2>
 
-  <p>When you're ready, click <strong>Generate Course Outcome Profile</strong> in the chat header. The system reads the full audit transcript plus all the materials and produces a structured profile in one pass. This is a separate AI call from the chat — it's the <em>scoring</em> step, not more conversation.</p>
+  <h3>Generating</h3>
+  <p>Generating takes about two minutes. One pass reads the whole interview and your materials, identifies the course's competencies (typically 5–15) and scores each one. Any score above the basics must carry an evidence excerpt that traces back to a real passage in your materials or a turn in the interview; results that don't check out are rejected and redone. The result is a draft. Nothing is recorded yet.</p>
 
-  <h3>What you get</h3>
-  <p>The profile renders below the chat as a structured editor with several sections:</p>
-
+  <h3>Checking the outcomes</h3>
+  <p>Two short screens come first: <strong>Apparent outcomes</strong> (what students can do by the end, as the interview read it) and <strong>Incoming skills</strong> (what the course assumes students arrive with). Each has three choices:</p>
   <ul>
-    <li><strong>Competencies (5–15 technical + 5 baseline foundational + any others evidenced).</strong> Each row is a one-sentence statement of what the course is evidenced to require, assess, and support, with K/U/D depth values (0–5 per dimension), evidence excerpts (verbatim quotes from materials or the transcript), and a short rationale. Foundational competencies (Agency, Attention to Detail, Resilience, Curiosity, Communication) score on Do only — K and U are null, not zero. A foundational with D=0 means the course doesn't create the conditions that develop the disposition, which is a valid and informative finding.</li>
-    <li><strong>Incoming expectations (0–10).</strong> Skills the course assumes students arrive already able to do, with expected K/U/D depth and which assignments evidence the expectation. The downstream side of this — what later courses expect — feeds Explore's downstream-target mode.</li>
-    <li><strong>Verification summary.</strong> A short fidelity-check block: course shape, strongest evidence, dimensional patterns (where K/U/D diverge meaningfully), catalog-vs-evidence findings, and a one-sentence foundationals glance. Read this section first — it's the "yes, that's my course" or "no, the system missed something" surface.</li>
-    <li><strong>Audit notes.</strong> Prerequisite gaps, objective misalignments, cross-source conflicts, and (if any) suggested objective revisions, each as a one-sentence finding.</li>
-    <li><strong>Revised objectives draft (optional).</strong> Only present if you explicitly asked for one during the chat. Informational only — it doesn't write back to the catalog.</li>
+    <li><strong>✓ Looks good — proceed</strong>;</li>
+    <li><strong>Add or change something</strong> — describe the change and the tool suggests the edit for you to accept or discard;</li>
+    <li><strong>← Back to the interview</strong> — if it missed something important.</li>
   </ul>
 
-  <h3>Review the editor</h3>
-  <p>Every depth value is editable: sliders adjust K, U, or D per competency, with evidence excerpts visible next to each cell. If a depth value looks wrong, edit it directly and note why in the rationale field. The audit notes section accepts edits too — keep what's useful, discard what isn't.</p>
+  <h3>Reviewing the profile</h3>
+  <p>The review page starts with <strong>Does this capture your course?</strong>, an overview of what the interview found. Below it, the competencies are listed in course order. A second AI review runs automatically after generating and checks each score against the evidence; the cards it, or the interviewer, was least sure about are highlighted as <strong>worth a look</strong>, each with the reason.</p>
+  <p>Each highlighted card needs a decision:</p>
+  <ul>
+    <li><strong>✓ Looks right</strong> if it is correct;</li>
+    <li><strong>Needs adjusting</strong> to change a score: click <em>Change</em> beside Knowing, Reasoning or Doing, pick the description that fits, and <em>Save changes</em>. Raising a score asks you for the evidence, which is stored as the reason.</li>
+  </ul>
+  <p>Tags on each card say where a reading came from: <em>From your interview</em>, <em>From course materials</em> or <em>AI's inference</em>. Click a citation to see the passage. <em>Flag this reading</em> records a disagreement that stays visible until someone resolves it. <em>Save draft</em> keeps your changes without approving.</p>
+  <p>If the overview gets the course badly wrong (not just a score or two), use <strong>← Back to the interview</strong>, tell the interviewer what it missed, and generate again.</p>
 
-  <h3>Closing prerequisite gaps back into the catalog</h3>
-  <p>Each surfaced prerequisite gap in the audit notes carries a <strong>merge into skills</strong> button. Click it and the AI decomposes the gap into KUD+-tagged competencies, merges them with the course's existing Skills/Competencies Required list, and shows the unified replacement list inline (with new and clarified items color-coded). Hit <strong>copy merged list</strong> and paste it back into your course's Skills/Competencies Required cell on the shared sheet — that closes the loop between what the audit found missing and what the catalog says students need to arrive with. Re-clicking the button re-runs the merge if you've reworded the gap in the meantime.</p>
-
-  <h3>Save Snapshot</h3>
-  <p>Click <strong>Save Snapshot</strong> when the profile is faithful enough to publish. This writes an immutable, versioned record to the database, timestamped and tagged with the AI model that produced it. Snapshots are the historical record; the draft profile remains mutable for further edits. You can save multiple snapshots over time — each snapshot represents a confirmed view of the course at that point.</p>
-
-  <div class="callout note">
-    <div class="callout-title">Snapshots vs. drafts</div>
-    <p>A snapshot is the artifact downstream views consume (the Program Coverage Matrix, Explore alignment, prereq-gap analysis if/when those views ship). A draft is your workspace — edit it freely, but it doesn't feed any downstream view until you save it as a snapshot. The draft persists between sessions; you don't lose work by closing the tab.</p>
-  </div>
+  <h3>Approving</h3>
+  <p>When every highlighted card is done, <strong>Approve the profile</strong> unlocks at the bottom of the page (it reads <strong>Approve update</strong> for a course that already has a snapshot). Add an optional caption and note. Approval records a permanent, dated snapshot; the green <strong>Captured</strong> card confirms it. The course's public profile, the program coverage matrix and the curriculum wiki update from it automatically.</p>
 </section>
 
 <section id="cc-snapshots">
-  <h2><span class="num">§ 8</span>CourseCapture · Snapshots &amp; revisions</h2>
+  <h2><span class="num">§ 8</span>Snapshots and re-capturing</h2>
+  <p>Every approval adds a dated snapshot; nothing is overwritten. The working draft stays editable after approval, and later changes are recorded with <strong>Approve update</strong> as a new snapshot.</p>
 
-  <h3>Multiple snapshots over time</h3>
-  <p>You can re-capture the same course as many times as you like. Each Save Snapshot creates a new versioned record; older snapshots are not overwritten. This is the unit of historical comparison: a "spring 2026 capture" and a "fall 2026 capture" of the same course can both exist, with their differences visible to anyone reading the snapshot list.</p>
-
-  <h3>The Snapshots panel</h3>
-  <p>The Snapshots panel on the capture page lists every saved snapshot for the course, newest first, with its caption, date, and the AI model that generated it. Click any row to view that snapshot's full profile in read-only form, including the verification summary and audit notes. Snapshots can be soft-retired (hidden from downstream views) but not edited or deleted in the prototype — they're a permanent record.</p>
+  <p>The <strong>Snapshots</strong> panel (under <em>Setup &amp; history</em> on the interview step, or the <em>N versions</em> link on the course list) lists them. For each one:</p>
+  <ul>
+    <li><strong>view</strong> opens a read-only summary;</li>
+    <li><strong>use as draft</strong> replaces the current working draft with that snapshot's profile (the snapshots themselves are untouched);</li>
+    <li><strong>retire</strong> hides a snapshot that no longer describes the course; <em>restore</em> brings it back.</li>
+  </ul>
 
   <h3>When to re-capture</h3>
-  <p>Re-capture when something material has changed: a new project added, a major rubric overhauled, the prerequisites revised, the syllabus restructured. Cosmetic changes (a tightened sentence in the description) don't warrant a new snapshot. The Program Coverage Matrix automatically rescores against the newest snapshot per course, so a re-capture propagates into program-level views without further action.</p>
-
-  <p>Re-importing from Canvas before a re-capture is safe — file attachments upsert by <code>(course, fileName)</code>, so existing rows are updated in place rather than duplicated. You don't need to clear old materials before clicking <strong>Import from Canvas</strong> again.</p>
+  <p>Re-capture after a substantive change: new or redesigned assignments, a change of instructor, a shift in what the course emphasizes. Open the course, choose <strong>Build on prior capture</strong>, and the interviewer starts from the last snapshot and asks what has changed.</p>
 </section>
 
-<section id="cc-stresstest">
-  <h2><span class="num">§ 9</span>CourseCapture · The automatic second review (stress test)</h2>
+<section id="explore">
+  <h2><span class="num">§ 9</span>Explore · thinking through a change</h2>
 
-  <p>As soon as a profile is generated, a second, heavier-tier AI reviewer reads it automatically, in the background — you can start reviewing right away; a small <em>Checking the profile…</em> line shows it is running. The reviewer reads the produced profile alongside the full audit transcript and all materials, then returns a structured critique — not an editorial rewrite, but a targeted search for places where the profile's claims outrun its evidence.</p>
-
-  <h3>What the reviewer looks at</h3>
-  <p>The reviewer works at two levels:</p>
+  <p><strong>Explore</strong> (<code>/explore/&lt;course-code&gt;</code>, the <em>Explore Changes</em> link on the course list) is a conversation about a course that has been captured. It is anchored to the course but can draw on the whole program record. Starter questions include:</p>
   <ul>
-    <li><strong>Per-competency annotations.</strong> For each competency, it returns a confidence indicator, any specific concerns (for example: a D=4 score where the only evidence is a single low-stakes exercise), and — optionally — a suggested score adjustment with a one-sentence rationale. It only annotates rows where it found something worth flagging; competencies it considers solidly evidenced show nothing.</li>
-    <li><strong>Profile-level concerns.</strong> Three categories: <em>catalog-vs-evidence mismatches</em> (the catalog description implies something the materials don't support, or vice versa), <em>internal consistency</em> (K/U/D patterns within or across competencies that look contradictory), and <em>coverage gaps</em> (things the materials clearly develop that the profile doesn't capture). Each profile-level concern is a short finding with an explanation.</li>
+    <li>What does this course set up for downstream courses?</li>
+    <li>Which career targets does this course support best?</li>
+    <li>What concepts are anchored in this course?</li>
+    <li>How does this compare to its prerequisites?</li>
   </ul>
-  <p>The reviewer also returns an overall assessment — a one-sentence judgment of whether the profile is ready to publish, needs minor refinement, or has substantive problems that warrant another audit conversation.</p>
+  <p>Type or use <strong>Voice</strong>, then <strong>Send</strong>. Answers cite the curriculum wiki pages they draw on.</p>
 
-  <h3>How the results appear</h3>
-  <p>The cards the reviewer doubts become the highlighted <strong>Worth a look</strong> cards, each with the reviewer's short reason (and its suggested level, in words) above the card. Confirm each with <strong>✓ Looks right</strong> or correct it with <strong>Needs adjusting</strong>; the line next to <strong>Approve the profile</strong> counts how many are left. The overall assessment and profile-level concerns appear below the cards. If the check can't run (for example, an outage), the review still works: the highlighted cards fall back to the interviewer's own signals, and a note says so.</p>
-
-  <p>The results are shown for this session only and don't persist into the snapshot. Opening a saved profile later does not re-run the check; use the quiet <strong>Re-check</strong> (or <strong>Check this profile</strong>) link above the cards if you want a fresh read.</p>
-
-  <h3>Cost and cadence</h3>
-  <p>Each check costs roughly $0.11 per profile and runs once per generation. Read the concerns, make adjustments you agree with, and ignore the rest. You don't need to run it to convergence; your judgment about the course is the ground truth the reviewer is challenging, not replacing.</p>
-
-  <div class="callout tip">
-    <div class="callout-title">The AI's job is to find problems</div>
-    <p>The reviewer is designed to be skeptical. Its concerns will sometimes be wrong — it may not know your course's context the way you do. Treat each concern as a question worth considering, not an authoritative verdict. If you read a suggestion and disagree, ignore it and move on. If a concern identifies something genuine you hadn't noticed, adjust the profile before saving. Either outcome is a good use of the tool.</p>
-  </div>
-</section>
-
-<section id="ex-modes">
-  <h2><span class="num">§ 10</span>Explore · Pick a snapshot and a mode</h2>
-
-  <p>Open <code>/explore/&lt;course-code&gt;</code> — the same course code as in CourseCapture. The header shows a snapshot picker (defaults to the newest) and a mode toggle.</p>
-
-  <h3>Snapshot picker</h3>
-  <p>Pick which snapshot to analyze. If you have multiple snapshots for a course, this lets you run Explore against any of them — useful for asking "did our spring revision actually close the gaps Explore surfaced in fall?" Most of the time you'll work with the newest.</p>
-
-  <h3>Two modes</h3>
-  <table class="compact">
-    <thead><tr><th>Mode</th><th>What it compares against</th><th>When to use</th></tr></thead>
-    <tbody>
-      <tr><td><strong>Custom target</strong></td><td>A target you author in plain language — desired goals, capabilities, depths the course <em>should</em> reach. The AI structures your prose into a typed target spec.</td><td>Course-revision conversations. "Should this course develop X to depth Y?" — answer that by writing the target and seeing where the current snapshot falls short.</td></tr>
-      <tr><td><strong>Downstream target</strong></td><td>The union of <code>incoming_expectations</code> from every captured downstream course (courses that list this one as a prereq). Auto-detected; no authoring required.</td><td>Prereq-sufficiency conversations. "Are we producing what the next courses in the sequence need?" — answer by running this mode and reading the gaps.</td></tr>
-    </tbody>
-  </table>
-
-  <p>A session runs in one mode at a time. Combined-mode comparisons (custom <em>and</em> downstream in one view) are a future enhancement. Career-path alignment is intentionally deferred until graduate-outcome data is wired in.</p>
-</section>
-
-<section id="ex-custom">
-  <h2><span class="num">§ 11</span>Explore · Authoring a custom target</h2>
-
-  <div class="step">
-    <div class="step-num">1</div>
-    <div class="step-body">
-      <strong>Pick the mode.</strong> Click <strong>Custom target</strong> in the mode toggle.
-    </div>
-  </div>
-
-  <div class="step">
-    <div class="step-num">2</div>
-    <div class="step-body">
-      <strong>Type your goals in prose.</strong> One paragraph is fine; a bulleted list is fine. Describe what you want this course to develop, at what depth, with whatever framing comes naturally — you don't need to write in KUD+ format. Examples: <em>"I want students to leave this course able to operate a press independently on standard substrates, and to articulate why each press setting matters."</em> Or: <em>"By the end of this course, students should be at a Do-4 level on color management for packaging work, and should have developed enough resilience to handle real client revisions."</em>
-    </div>
-  </div>
-
-  <div class="step">
-    <div class="step-num">3</div>
-    <div class="step-body">
-      <strong>Generate the target.</strong> Click <strong>Generate target spec</strong>. The AI proposes a structured target — a list of target competencies, each with K/U/D depth values, derived from your prose. You see it side-by-side with what you wrote.
-    </div>
-  </div>
-
-  <div class="step">
-    <div class="step-num">4</div>
-    <div class="step-body">
-      <strong>Amend, then confirm.</strong> Edit the proposed target inline if it missed anything or interpreted you differently than intended. A short caption (optional) lets you label this target — "Spring 2026 redesign target" — so you can come back to it later. Click <strong>Save target</strong> to persist it.
-    </div>
-  </div>
-
-  <div class="step">
-    <div class="step-num">5</div>
-    <div class="step-body">
-      <strong>Run the analysis.</strong> Click <strong>Generate analysis</strong>. The AI compares the snapshot to the saved target and produces the alignment output described in §13.
-    </div>
-  </div>
-
-  <div class="callout tip">
-    <div class="callout-title">Multiple targets per course</div>
-    <p>You can save multiple custom targets attached to the same course — e.g., one for an aspirational long-term redesign and one for the more immediate next-revision target. Each shows up in the target list with its caption and date; running an analysis picks which target to analyze against.</p>
-  </div>
-</section>
-
-<section id="ex-downstream">
-  <h2><span class="num">§ 12</span>Explore · Downstream target auto-detection</h2>
-
-  <p>This mode works when at least one downstream course — a course that lists this one as a prereq — has itself been captured. Click <strong>Downstream target</strong>; the system queries the catalog for downstream courses, checks which have snapshots, and proposes a target derived from the union of their <code>incoming_expectations</code>.</p>
-
-  <h3>What the proposed target looks like</h3>
-  <p>Each downstream course's incoming expectations describe what it assumes students arrive able to do, at what K/U/D depth, with which of its assignments evidence the assumption. The union is what your course collectively needs to produce — if it serves as a prereq to GC 3400 and GC 4060, and those two have captured profiles, the target is the merged set of their incoming demands.</p>
-
-  <h3>What if no downstream course is captured yet?</h3>
-  <p>The mode tells you which downstream courses exist and which are missing snapshots. If none have been captured, the mode can't run — capture at least one downstream course first, or use the custom-target mode instead.</p>
-
-  <div class="callout note">
-    <div class="callout-title">The chicken-and-egg of downstream mode</div>
-    <p>Downstream mode gets more useful as more courses are captured. Early in the program's adoption, your downstream courses might not have snapshots yet, so this mode shows partial coverage. As the captured-course list grows, the auto-detected target becomes richer — and the mode becomes the load-bearing one for prereq-sufficiency conversations.</p>
-  </div>
-</section>
-
-<section id="ex-analysis">
-  <h2><span class="num">§ 13</span>Explore · Reading the analysis output</h2>
-
-  <p>The analysis renders below the target with three sections.</p>
-
-  <h3>Alignment table</h3>
-  <p>One row per target competency, with how the current snapshot covers it. Status uses a four-level taxonomy:</p>
-
-  <table class="compact">
-    <thead><tr><th>Status</th><th>What it means</th></tr></thead>
-    <tbody>
-      <tr><td><span class="status-chip status-covered">✓ covered</span></td><td>The snapshot develops this competency at or above the target's depth on every dimension the target specifies. No action needed.</td></tr>
-      <tr><td><span class="status-chip status-partial">◐ partial</span></td><td>The snapshot addresses this competency but at lower depth than the target, or covers only some of the target's dimensions. Some closing work needed.</td></tr>
-      <tr><td><span class="status-chip status-under">↓ underdeveloped</span></td><td>The snapshot touches the competency but the depth is so much shallower than the target that the course as currently structured won't reach it without substantive change.</td></tr>
-      <tr><td><span class="status-chip status-missing">✕ missing</span></td><td>The snapshot has no competency that addresses this target item. The course doesn't develop it at all.</td></tr>
-    </tbody>
-  </table>
-
-  <p>Each row shows the target's required K/U/D, the snapshot's actual K/U/D, the matched snapshot competency (or "no match"), and a short rationale explaining the call.</p>
-
-  <h3>Recommendations (2–4)</h3>
-  <p>Ranked by impact on the most consequential gaps. Each recommendation is a one-sentence proposed change to the course — a new assignment, a depth increase on an existing competency, a structural shift in how a project is sequenced — followed by which target items it would address and an effort estimate. Recommendations are surfaced for instructor deliberation; they don't modify anything.</p>
-
-  <h3>Audit notes</h3>
-  <p>Three lists: <em>gaps addressed by recommendations</em>, <em>gaps not addressed</em> (the recommendations are best-effort but won't close everything), and <em>strengths vs. target</em> (where the snapshot is meeting or exceeding the target, worth preserving in any revision).</p>
-
-  <p>Analyses persist. Each saved analysis appears in the analyses list with its date, target, and snapshot — so you can revisit a months-old reading without re-running it, and so the historical thread of "we explored X against Y on date Z" is visible.</p>
-</section>
-
-<section id="ex-whatif">
-  <h2><span class="num">§ 14</span>Explore · What-if scenarios</h2>
-
-  <p>What-if scenarios let you propose a change to the course without actually re-capturing it, and see how the analysis would shift. Useful for course-revision deliberation: "if we added project X with depth Y on competency Z, would it close the gap on target item W?"</p>
-
-  <h3>How to run one</h3>
-
-  <div class="step">
-    <div class="step-num">1</div>
-    <div class="step-body">
-      <strong>Open an existing analysis.</strong> What-if scenarios attach to an analysis — pick the one whose target and snapshot you want to vary against.
-    </div>
-  </div>
-
-  <div class="step">
-    <div class="step-num">2</div>
-    <div class="step-body">
-      <strong>Describe the proposed change in prose.</strong> "Add a 4-week packaging color project, scored on a substrate-management rubric, lifting Color Management to D=4." Or: "Drop the lecture-heavy first three weeks and replace with a press lab, shifting Resilience from D=1 to D=3."
-    </div>
-  </div>
-
-  <div class="step">
-    <div class="step-num">3</div>
-    <div class="step-body">
-      <strong>Generate the scenario.</strong> The AI re-runs the alignment as if the proposed change were in the snapshot, and rates the change.
-    </div>
-  </div>
-
-  <h3>The worth_doing rating</h3>
-  <p>Each what-if result includes a categorical judgment:</p>
+  <h3>Trying a change</h3>
+  <p>Once the course has been captured, describe a change ("What if the capstone required a written rationale for every design decision?") and Explore predicts its effect against the course's latest snapshot: which competencies would move, and the ripple on downstream courses and career fit. Each prediction appears as a <strong>scenario card</strong> with three buttons:</p>
   <ul>
-    <li><strong>worth doing</strong> — the change closes consequential gaps and the effort is proportionate.</li>
-    <li><strong>worth considering</strong> — the change has merit but trade-offs or effort are non-trivial; faculty deliberation warranted.</li>
-    <li><strong>not worth doing</strong> — the change doesn't materially shift the alignment, or addresses a peripheral gap at high cost.</li>
+    <li><strong>Save</strong> names the scenario so you can come back to it;</li>
+    <li><strong>Compare</strong> asks Explore to compare your saved scenarios;</li>
+    <li><strong>Adopt</strong> makes the scenario the course's next planned version: it <em>replaces the current working draft</em> with the scenario's intended targets and revised design. Measured scores and snapshots are not changed.</li>
   </ul>
-  <p>Plus a short rationale and the specific target items the scenario would address vs. fail to address.</p>
 
   <div class="callout warn">
-    <div class="callout-title">What-if is speculative</div>
-    <p>The scenario re-rates against a hypothetical snapshot you described in prose, not against actual student work or actual assignment evidence. It's a thinking aid, not a substitute for re-capturing the course after the change has actually been implemented. Use it to filter candidate changes before doing the work; use a fresh capture to confirm the change had the effect you wanted.</p>
+    <div class="callout-title">After adopting</div>
+    <p>The capture page doesn't yet mark a draft as adopted from a scenario. If you adopt one, you'll see the changed targets in the draft but no note explaining where they came from. Adopt only when you mean to plan the next version from it.</p>
   </div>
 </section>
 
-<section id="roster-overview">
-  <h2><span class="num">§ 15</span>The <code>/courses</code> roster</h2>
+<section id="roster">
+  <h2><span class="num">§ 10</span>The course list and prerequisites</h2>
 
-  <p>The <strong>Course Catalog</strong> at <code>/courses</code> is the program-wide control panel for capture status and prerequisite work. It lists all 120 GC catalog courses grouped by level (1000 / 2000 / 3000 / 4000), with a data-state badge per row and controls for bulk-loading courses and adding new entries.</p>
-
-  <h3>Data-state badges</h3>
-  <p>Every row shows one of three badges:</p>
-  <table class="compact">
-    <thead><tr><th>Badge</th><th>What it means</th></tr></thead>
-    <tbody>
-      <tr><td><strong>captured</strong></td><td>The course has at least one confirmed, non-retired snapshot. The prerequisite-gap view is available at <code>/courses/[code]</code>.</td></tr>
-      <tr><td><strong>in-audit</strong></td><td>A capture session is in progress (audit messages exist in the last 24 hours) but no snapshot has been confirmed yet.</td></tr>
-      <tr><td><strong>not-started</strong></td><td>No capture session has begun. The course exists in the catalog but has no materials or audit history.</td></tr>
-    </tbody>
-  </table>
-
-  <h3>Bulk preload</h3>
-  <p>The <strong>Preload all</strong> button at the top of the roster runs a bulk sync of catalog data (from the shared Google Sheet) for every course in the list in one pass, rather than requiring you to visit each course's Materials panel individually. Use this at the start of a new semester to ensure the catalog row for every course is current before captures begin. The button shows a progress indicator as it processes courses in batches; it can be stopped mid-run.</p>
-
-  <h3>Add a class</h3>
-  <p>If a course exists in the program but is not yet in the catalog (a new course number, a new special-topics section), use the <strong>Add a class</strong> form at the bottom of the roster. Enter the course code, title, level, and a short description. The course row is created immediately; you can then open <code>/capture/[code]</code> and begin a capture session as with any existing course. Coordinate with the administrator before adding courses — the roster is shared across all faculty using the tool.</p>
-</section>
-
-<section id="roster-prereq">
-  <h2><span class="num">§ 16</span>Prerequisite confirm &amp; gap view</h2>
-
-  <p>Click any captured course row in the roster to open <code>/courses/[code]</code>, the per-course prerequisite surface. This is where you seed the skill-tagged prerequisite edges for the course, confirm or edit them, and read the computed prerequisite-gap view.</p>
-
-  <h3>Step 1 — Seed edges from the syllabus prerequisites</h3>
-  <p>The course's catalog entry lists its declared prerequisites as free text (e.g., "GC 2150 and GC 2800 or consent of instructor"). The <strong>Seed prerequisite edges</strong> button runs the <code>prereq-edge-seed</code> AI function, which reads that free text alongside the course's <code>incoming_expectations</code> from any existing capture and proposes a structured list of edges: for each prerequisite course code it identifies, it names the specific sub-competency it believes the focal course's assignments depend on, along with the expected K/U/D depths. One pass is usually sufficient; run it again if you add materials or re-run the audit.</p>
-
-  <h3>Step 2 — Confirm or edit the edges</h3>
-  <p>The proposed edges appear in an editable list. For each row:</p>
+  <h3>The course list (<code>/courses</code>)</h3>
+  <p>Courses are grouped by level, with counts by status at the top. Each row shows:</p>
   <ul>
-    <li><strong>Prerequisite course code</strong> — the upstream course the edge links to. If the seeder misread the free-text prereqs (course codes can be ambiguous), correct this here.</li>
-    <li><strong>Sub-competency</strong> — the specific program sub-competency this edge is tagged to. You can change this if the seeder chose a different sub-competency than you'd pick.</li>
-    <li><strong>Expected K / U / D</strong> — the depth this course's assignments presuppose from incoming students. Adjust if the seeded values don't match what you'd actually grade students on.</li>
+    <li>a <strong>data badge</strong>: <em>Measured</em> (captured from evidence), <em>Syllabus</em> or <em>No data</em>;</li>
+    <li>a <strong>status</strong>: Captured, Reviewed, AI drafted, In audit or Not started, and the last capture date;</li>
+    <li>the main action: <strong>Capture Course</strong> if not started, <strong>Edit Course</strong> otherwise;</li>
+    <li><strong>View Course</strong> (the public profile), <strong>Explore Changes</strong>, <strong>N versions</strong> (the Snapshots panel) and <strong>Prereqs</strong>.</li>
   </ul>
-  <p>Click <strong>Confirm edges</strong> to persist the list. You can re-seed at any time to regenerate the proposals, or edit individual rows by hand at any point.</p>
+  <p><strong>+ Add a course</strong> adds one course (code, title, level, track, catalog URL). <strong>Preload courses</strong> adds many at once, one per line.</p>
 
-  <h3>Step 3 — Read the gap view</h3>
-  <p>Once edges are confirmed, the gap view renders below the edge list. For each confirmed edge, it shows:</p>
-  <table class="compact">
-    <thead><tr><th>Column</th><th>What it means</th></tr></thead>
-    <tbody>
-      <tr><td><strong>Prerequisite course</strong></td><td>The upstream course the edge links to.</td></tr>
-      <tr><td><strong>Sub-competency</strong></td><td>The specific skill the gap is about.</td></tr>
-      <tr><td><strong>Expected K / U / D</strong></td><td>What this course's assignments presuppose.</td></tr>
-      <tr><td><strong>Attained K / U / D</strong></td><td>The depth the prerequisite course actually reached, per its confirmed snapshot (or intended estimate).</td></tr>
-      <tr><td><strong>Gap (per dimension)</strong></td><td>Expected minus attained, per dimension. Positive = gap; zero or negative = met or exceeded.</td></tr>
-      <tr><td><strong>Basis</strong></td><td>How the attained depth was determined — see below.</td></tr>
-    </tbody>
-  </table>
-
-  <h4>What "syllabus-promise" means</h4>
-  <p>The <code>basis</code> field distinguishes the quality of evidence behind the attained depth:</p>
-  <ul>
-    <li><strong>measured</strong> — the prerequisite course has a confirmed Course Outcome Profile. The attained depth comes from a real capture backed by assignments and instructor confirmation.</li>
-    <li><strong>syllabus-promise</strong> (also labeled <code>intended</code> in the tool) — the prerequisite course has not been captured, but a depth estimate was derived from its catalog description or your course's <code>incoming_expectations</code> field. This is what the course <em>claims</em> to develop, not what it's been confirmed to produce. It is marked as unverified; treat it as a placeholder pending a real capture of that course.</li>
-  </ul>
-
-  <h4>What "not yet captured" means</h4>
-  <p>When the basis reads <strong>not yet captured</strong> (displayed as a <code>no_data</code> state in the tool), the prerequisite course has no snapshot and no intended estimate was available. The gap engine explicitly returns <em>no data</em> for that edge — it does not assume the gap is zero (which would hide a real problem) or assume the gap is maximal (which would generate false alarms). The only resolution is to capture the prerequisite course. Until then, the gap for that edge is genuinely unknown.</p>
-
+  <h3>Prerequisites</h3>
+  <p>The tool takes prerequisites from the <strong>Clemson catalog</strong>, falling back to the GC course sheet only for a course the catalog doesn't list. The interviewer, the profile and the wiki all use this.</p>
+  <p>The <strong>Prereqs</strong> page for a course (<code>/courses/&lt;code&gt;</code>) lets you record skill-level prerequisite links: which competency, at what Knowing / Reasoning / Doing depth, a course needs from each prerequisite. <em>Seed from syllabus prerequisites</em> drafts them with AI; you confirm, edit or delete each one. The gap view below compares what each prerequisite delivers (from its captured profile) with what this course needs, using confirmed links only: <em>Met</em>, <em>Gap</em> or <em>No data</em>.</p>
   <div class="callout note">
-    <div class="callout-title">No double-counting across multiple prereqs</div>
-    <p>If two prerequisite courses both develop the same sub-competency, the gap engine takes the <strong>maximum attained depth</strong> across the two, not the sum. This is intentional: KUD+ depth values are ordinal levels (not additive quantities), and a student who practiced a skill in two courses at depth 3 each has attained depth 3 — not depth 6. The maximum reflects the best preparation available from any prerequisite; supplementary coverage adds practice value but doesn't change the attained level for gap purposes.</p>
+    <div class="callout-title">Note</div>
+    <p>The text headed "Catalog prerequisites" on that page is still the GC course sheet's wording, not the Clemson catalog list used everywhere else.</p>
   </div>
-
-  <div class="callout tip">
-    <div class="callout-title">Most useful once prereqs are captured</div>
-    <p>Like Explore's downstream mode, the gap view gets richer as more courses are captured. Early on, many edges will show "not yet captured" for the upstream course. As the captured-course list grows, the basis improves from "not yet captured" → "syllabus-promise" → "measured," and the gap judgments become increasingly reliable.</p>
-  </div>
-</section>
-
-<section id="tips">
-  <h2><span class="num">§ 17</span>Tips &amp; gotchas</h2>
-
-  <h3>For CourseCapture</h3>
-  <ul>
-    <li><strong>Complete Step 1 before continuing to the interview.</strong> The "Confirm materials" screen exists precisely to prevent a thin-evidence audit. Import Canvas and check readiness statuses before clicking <strong>Continue to interview →</strong> — the auditor's opening turn is much sharper when it can see actual assignment text and point values. Loading materials mid-interview sometimes triggers the auditor to revise earlier findings, which can be confusing.</li>
-    <li><strong>Trust the readiness signal — but verify the verification summary.</strong> A score of 80+ usually means the profile will be solid, but the verification summary is the last fidelity check. Read it before clicking Save Snapshot.</li>
-    <li><strong>Don't pad foundational competencies.</strong> A foundational with D=0 is a real finding — it means the course doesn't develop that disposition. Inflating it to D=2 because "every course teaches communication a little" undercuts the signal. The point of scoring is to surface where dispositions actually live in the program.</li>
-    <li><strong>Inaccessible content gets flagged conservatively.</strong> When the auditor sees a YouTube link or Canvas Page it can't read, it surfaces the reference and asks what's in it. If you don't tell it, the score stays low — the auditor explicitly avoids over-scoring on inaccessible content.</li>
-    <li><strong>Voice input is most useful for narrative explanations.</strong> When the auditor asks "what does the capstone actually require?" — easier to talk through than to type. For one-word answers or specific corrections, typing is faster.</li>
-  </ul>
-
-  <h3>For Explore</h3>
-  <ul>
-    <li><strong>Custom-target mode is the higher-value mode early on.</strong> Downstream mode requires other courses to have been captured; custom mode is self-contained and drives most course-revision conversations.</li>
-    <li><strong>Write your custom target in your own words.</strong> The AI structures the prose into KUD+ format; you don't need to think in K/U/D depths to author a target. Concrete examples (which assignment, what depth, why) produce better structured targets than abstract goal statements.</li>
-    <li><strong>The recommendations are a starting point.</strong> They're 2–4 ranked, evidence-aware suggestions — not a complete redesign. Use them as the agenda for a faculty conversation, not as the answer.</li>
-    <li><strong>What-if scenarios are cheap.</strong> Run multiple scenarios per analysis to compare candidate changes. The cost per scenario is small (the model runs are quick); the value is in filtering the space of possible changes.</li>
-  </ul>
 </section>
 
 <section id="readonly">
-  <h2><span class="num">§ 18</span>Sharing the read-only view</h2>
+  <h2><span class="num">§ 11</span>The public profile</h2>
 
-  <p>Every captured course has a public profile page at <code>/view/&lt;course-code&gt;</code>. This address requires no authentication and works over plain HTTP on the LAN — anyone who can reach <code>http://gcworkflow.clemson.edu:3000/</code> can open it. The page shows the course's captured essence, outcomes, and the "how it differs from the catalog" notes when a snapshot exists; if the course hasn't been captured yet, it falls back to the catalog description.</p>
+  <p>Every captured course has a public page at <code>/view/&lt;course-code&gt;</code> (<em>View Course</em> on the course list). Anyone on the Clemson network can open it without logging in, which makes it the link to share with a chair, a colleague or an accreditation reviewer. It shows the latest snapshot's outcomes and what the course develops, with a Markdown download and a print button. Courses not yet captured show their catalog description instead.</p>
+  <p>It does not show the interview transcript, the review notes or individual scoring evidence. Those stay on the faculty pages. Student emails and ID numbers never appear: they are removed before anything is stored.</p>
+  <p>The curriculum wiki (<code>/wiki</code>) is also public and is rebuilt from each new snapshot.</p>
+</section>
 
-  <h3>What the read-only view is for</h3>
-  <p>Share <code>/view/&lt;course-code&gt;</code> links with people who need to read what a course is actually evidenced to do but shouldn't be in the edit flow:</p>
+<section id="tips">
+  <h2><span class="num">§ 12</span>Tips</h2>
   <ul>
-    <li><strong>Department chairs and associate deans</strong> reviewing the curriculum ahead of an accreditation visit. They can open every course's profile without needing a slug or credentials.</li>
-    <li><strong>Accreditation reviewers.</strong> A link to the public landing (<code>http://gcworkflow.clemson.edu:3000/</code>) gives auditors a live, browsable view of every captured course with its status. The catalog-vs-evidence notes in each profile speak directly to the kind of currency and alignment evidence accreditors typically request.</li>
-    <li><strong>Students</strong> researching what a course actually develops, beyond the catalog blurb.</li>
-    <li><strong>Colleagues at other institutions</strong> you'd like to share a profile with informally — point them to the view link; they don't need access to the full tool.</li>
+    <li><strong>Put graded work in High.</strong> It is the evidence the scores rest on.</li>
+    <li><strong>Be concrete.</strong> "Students preflight their own files against a checklist and fix every error before submission" beats "students learn preflight."</li>
+    <li><strong>Don't pad the habits.</strong> A foundational habit (Agency, Attention to Detail, Resilience, Curiosity, Communication) at Doing "not yet" is a real finding: it shows where in the program the habit is and isn't developed.</li>
+    <li><strong>Describe what the tool can't open.</strong> Videos on Vimeo, Panopto, Kaltura or Canvas Studio, and external tools, are noted but not read. Tell the interviewer what is in them.</li>
+    <li><strong>Use Voice for long explanations</strong> and typing for short corrections.</li>
+    <li><strong>If a page acts strangely</strong> right after the tool was updated, reload it (Shift-Reload).</li>
   </ul>
-
-  <h3>What the read-only view does not show</h3>
-  <p>The view page shows the confirmed snapshot's outcomes and essence. It does not show the raw audit transcript, individual competency K/U/D scores, audit notes, or the review panel — those are internal working documents that live on the edit surface. The intent is a clean, faculty-authored statement of what the course does, not the full analytical machinery behind it.</p>
-
-  <div class="callout note">
-    <div class="callout-title">Transparent curriculum framing</div>
-    <p>The public landing and read-only views embody a principle: the curriculum itself is public. Anyone can read what the GC program claims each course develops; only faculty can change the record. This gives chairs, accreditors, and students a reliable, up-to-date reference without creating an edit-access management problem. The Basic Auth gate on the edit surface protects the writing; nothing protects the reading.</p>
-  </div>
 </section>
 
 <section id="scope">
-  <h2><span class="num">§ 19</span>What these tools don't do</h2>
-
+  <h2><span class="num">§ 13</span>What these tools don't do</h2>
   <ul>
-    <li><strong>Not student or faculty evaluation.</strong> Depth scores describe what the course's materials and assignments require, not how well any instructor delivers the course or how well any student performs in it.</li>
-    <li><strong>Not automated curriculum redesign.</strong> Explore proposes recommendations; faculty deliberation and CourseCapture re-runs are how revisions actually happen.</li>
-    <li><strong>Not a replacement for faculty judgment.</strong> The auditor drafts, the instructor confirms. Every depth value is editable; every recommendation is a starting point.</li>
-    <li><strong>Not career-path alignment in Explore.</strong> Career destinations are addressed in the Program Coverage Matrix (live at <code>/program</code>) — Explore's career-path mode is deferred until graduate-outcome data is wired in.</li>
-    <li><strong>Not a snapshot diff.</strong> You can read multiple snapshots side by side from the Snapshots panel, but the system doesn't yet produce a structured diff highlighting what changed between captures. That's a planned Phase 2 view.</li>
-    <li><strong>Not extensible to video on non-YouTube platforms or external-tool content automatically.</strong> Vimeo, Panopto, Canvas Studio, Kaltura, Loom, and external LTI items are flagged as inaccessible references; the auditor will ask you what's in them, but the system can't read them itself in the current build. (Canvas Pages, file attachments, and quiz content on both Classic and New Quizzes are all read — see the source-coverage table in the <a href="./background.html#course-impl">Background document</a>.)</li>
+    <li><strong>Not an evaluation</strong> of any instructor or student. Scores describe what the course's work requires and evidences.</li>
+    <li><strong>Not automatic redesign.</strong> Explore predicts and suggests; faculty decide, and a re-capture records the change.</li>
+    <li><strong>Not a replacement for your judgment.</strong> The AI drafts; you confirm. Every score is editable.</li>
+    <li><strong>No snapshot comparison yet.</strong> You can read snapshots one at a time, but there is no side-by-side view of what changed.</li>
   </ul>
 
-  <p>For the underlying framework — what K/U/D depth means, why the scoring is structured this way, what counts as evidence — see the <a href="./background.html">KUD+ Background document</a>. For the program's overall direction and what's coming next, see the <a href="./superpowers/vision/gc-curriculum-tool-vision.html">Vision document</a>.</p>
+  <p>For what Knowing, Reasoning and Doing depth mean and what counts as evidence, see the <a href="./background.html">KUD+ Background document</a>. For where the program is heading, see the <a href="./superpowers/vision/gc-curriculum-tool-vision.html">Vision document</a>.</p>
 </section>
 
 <div class="doc-foot">
-  Faculty guide · 2026-06-12 · GC Curriculum Tool · <a href="https://github.com/chiptoe-svg/gc-curriculum-tool" target="_blank" rel="noopener noreferrer">source</a>
+  Detailed guide · updated 2026-10-07 · GC Curriculum Tool · <a href="https://github.com/chiptoe-svg/gc-curriculum-tool" target="_blank" rel="noopener noreferrer">source</a>
 </div>
 
 </main>
