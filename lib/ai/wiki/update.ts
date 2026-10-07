@@ -31,6 +31,7 @@ import {
 import type { CaptureProfile, ProductiveFailureConditions } from '@/lib/ai/capture/schema';
 import { loadPrompt } from '@/lib/ai/prompts/load';
 import { getProviderForFunction } from '@/lib/ai/provider';
+import { prereqCodesFor } from '@/lib/curriculum/prereq-map';
 import { fetchLiveCourseFromSheet } from '@/lib/sheets/fetchLiveCourse';
 import type { ParsedCourse } from '@/lib/sheets/parseCourseTab';
 import { writeAndPush, readWikiPage, wikiRepoPath } from '@/lib/wiki/git-ops';
@@ -703,7 +704,7 @@ export function mergeCourseInfo(
   };
 }
 
-async function loadCourseInfo(courseCode: string): Promise<CourseInfo> {
+export async function loadCourseInfo(courseCode: string): Promise<CourseInfo> {
   // 1. Try the live sheet first (5s timeout, 60s in-process cache, fails silently).
   const sheetData = await fetchLiveCourseFromSheet(courseCode);
 
@@ -719,7 +720,11 @@ async function loadCourseInfo(courseCode: string): Promise<CourseInfo> {
     .limit(1);
 
   const row = rows[0] ?? { title: courseCode, level: 0, prerequisites: null };
-  return mergeCourseInfo(row, sheetData);
+  // Prerequisites come from the shared map (Clemson catalog first, the course
+  // sheet only where the catalog has no row), not the raw sheet line, which is
+  // wrong for many courses (2026-10-06; lib/curriculum/prereq-map.ts).
+  const prereqCodes = await prereqCodesFor(courseCode);
+  return mergeCourseInfo({ ...row, prerequisites: prereqCodes }, sheetData);
 }
 
 // ---------------------------------------------------------------------------
