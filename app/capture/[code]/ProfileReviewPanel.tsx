@@ -72,12 +72,13 @@ export function SourceBadge({
       : source === 'materials'
         ? 'bg-amber-100 text-amber-900 border-amber-300'
         : 'bg-stone-100 text-stone-700 border-stone-300';
+  // Plain words (owner, 2026-10-07), matching the review cards' status tags.
   const label =
-    source === 'instructor' ? 'instructor' : source === 'materials' ? 'materials' : 'inferred';
+    source === 'instructor' ? 'From your interview' : source === 'materials' ? 'From course materials' : "AI's inference";
 
   const interactive = onCitationClick && citations && citations.length > 0;
   const className =
-    `inline-flex items-center rounded border px-1.5 py-0.5 text-xs font-mono uppercase tracking-wider ${palette}` +
+    `inline-flex items-center rounded border px-2 py-0.5 text-xs font-medium ${palette}` +
     (interactive ? ' hover:opacity-80 cursor-pointer' : '');
 
   if (interactive) {
