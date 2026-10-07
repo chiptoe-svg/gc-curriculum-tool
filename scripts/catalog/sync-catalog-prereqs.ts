@@ -5,7 +5,12 @@
  *
  * Scope: every active GC course in the catalog, plus the non-GC courses our
  * `courses` table holds (when the catalog has them). Full replace on --apply,
- * in one transaction.
+ * in one transaction, SCOPED to that set of course codes (2026-10-07 fix —
+ * the delete used to be unscoped and would wipe every row
+ * scripts/catalog/sync-catalog-courses.ts had added for a course outside
+ * this scope; it is now `WHERE course_code = ANY(<codes this run is about
+ * to rewrite>)`, so the two syncs can run in either order without losing
+ * rows — see applyCatalogSync below and tests/catalog/sync-order-independence.test.ts).
  *
  * Usage (from the repo root):
  *   tsx scripts/catalog/sync-catalog-prereqs.ts            # dry run (default): print, write nothing
@@ -15,8 +20,41 @@
  * Re-sync is manual for now: run after the advising project re-ingests the catalog.
  */
 import { Pool } from 'pg';
-import { buildCatalogSyncRows, formatCatalogPrereqs } from '@/lib/catalog/catalog-sync';
+import { buildCatalogSyncRows, formatCatalogPrereqs, type CatalogEntryInsert, type CatalogEdgeInsert } from '@/lib/catalog/catalog-sync';
 import { DEFAULT_CATALOG_DB, loadAppEnv, openCatalogReadOnly, readCatalogRows, readCatalogYears, argValue } from './catalog-source';
+
+export interface QueryClient { query(sql: string, params?: unknown[]): Promise<unknown> }
+
+/**
+ * Replaces entries + edges for exactly the course codes in `entries` —
+ * never the whole table. `edges` is always a subset of those same codes
+ * (buildCatalogSyncRows only ever produces an edge whose `courseCode` is
+ * one of `entries`' codes), so scoping both deletes to `entries`' codes is
+ * correct and keeps the two deletes consistent with each other.
+ */
+export async function applyCatalogSync(
+  client: QueryClient,
+  entries: ReadonlyArray<CatalogEntryInsert>,
+  edges: ReadonlyArray<CatalogEdgeInsert>,
+): Promise<void> {
+  const codes = entries.map((e) => e.courseCode);
+  await client.query('DELETE FROM course_catalog_prereqs WHERE course_code = ANY($1)', [codes]);
+  await client.query('DELETE FROM course_catalog_entries WHERE course_code = ANY($1)', [codes]);
+  for (const e of entries) {
+    await client.query(
+      `INSERT INTO course_catalog_entries (course_code, title, prereq_text, coreq_text, notes, catalog_year, source_url, catalog_last_synced)
+       VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8)`,
+      [e.courseCode, e.title, e.prereqText, e.coreqText, JSON.stringify(e.notes), e.catalogYear, e.sourceUrl, e.catalogLastSynced],
+    );
+  }
+  for (const x of edges) {
+    await client.query(
+      `INSERT INTO course_catalog_prereqs (course_code, prereq_code, kind, any_of_group, catalog_year)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [x.courseCode, x.prereqCode, x.kind, x.anyOfGroup, x.catalogYear],
+    );
+  }
+}
 
 async function main() {
   const apply = process.argv.includes('--apply');
@@ -64,22 +102,7 @@ async function main() {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      await client.query('DELETE FROM course_catalog_prereqs');
-      await client.query('DELETE FROM course_catalog_entries');
-      for (const e of entries) {
-        await client.query(
-          `INSERT INTO course_catalog_entries (course_code, title, prereq_text, coreq_text, notes, catalog_year, source_url, catalog_last_synced)
-           VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8)`,
-          [e.courseCode, e.title, e.prereqText, e.coreqText, JSON.stringify(e.notes), e.catalogYear, e.sourceUrl, e.catalogLastSynced],
-        );
-      }
-      for (const x of edges) {
-        await client.query(
-          `INSERT INTO course_catalog_prereqs (course_code, prereq_code, kind, any_of_group, catalog_year)
-           VALUES ($1, $2, $3, $4, $5)`,
-          [x.courseCode, x.prereqCode, x.kind, x.anyOfGroup, x.catalogYear],
-        );
-      }
+      await applyCatalogSync(client, entries, edges);
       await client.query('COMMIT');
       console.log(`\nAPPLIED: ${entries.length} entries, ${edges.length} edges.`);
     } catch (err) {
@@ -93,4 +116,6 @@ async function main() {
   }
 }
 
-main().catch(err => { console.error(err); process.exit(1); });
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main().catch(err => { console.error(err); process.exit(1); });
+}
