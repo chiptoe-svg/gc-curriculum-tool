@@ -178,13 +178,13 @@ export default async function CapturePage({ params, searchParams }: Props) {
               Course List
             </a>
             <a
-              href="https://chiptoe-svg.github.io/gc-curriculum-tool/docs/using-coursecapture-and-explore.html"
+              href="/curriculum/howto"
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-muted-foreground hover:text-foreground"
-              title="How-to guide for CourseCapture & Explore (opens in new tab)"
+              title="Step-by-step how-to with screenshots; links to the detailed guide (opens in new tab)"
             >
-              Guide ↗
+              How-to ↗
             </a>
             <FeedbackLink />
           </div>

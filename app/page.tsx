@@ -93,6 +93,13 @@ export default async function HomePage() {
             </h1>
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            <CaptureLink
+              path="/curriculum/howto"
+              className="rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
+              title="Step-by-step: how to capture a course, with screenshots (requires login)"
+            >
+              How to capture a course
+            </CaptureLink>
             {askHref && (
               <a
                 href={askHref}
