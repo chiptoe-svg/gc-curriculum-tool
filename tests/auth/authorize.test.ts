@@ -81,9 +81,13 @@ describe('C1 — the admin surface is not readable by scoped grants (2026-09-30 
   it.each(adminReads)('GET/HEAD %s is admin-kind', p => {
     for (const m of ['GET', 'HEAD']) expect(classify(m, p)).toEqual({ kind: 'admin' });
   });
-  it.each(adminReads)('scoped grant GET %s → not ok; faculty ok; creator not ok', p => {
+  // 2026-10-07 (owner-approved): the shared department login no longer
+  // carries 'admin' (lib/auth/grants.ts builtinGrant) — the owner now holds
+  // a separate personal admin-capable grant for these operator-only
+  // surfaces. So scoped, faculty, AND creator are all refused here now.
+  it.each(adminReads)('scoped grant, faculty, and creator all → not ok (admin removed from the department login)', p => {
     expect(authorize(scoped, 'GET', p)).toEqual({ ok: false, reason: 'needs-admin' });
-    expect(authorize(faculty, 'GET', p)).toEqual({ ok: true });
+    expect(authorize(faculty, 'GET', p)).toEqual({ ok: false, reason: 'needs-admin' });
     expect(authorize(creatorB, 'GET', p)).toEqual({ ok: false, reason: 'needs-admin' });
   });
   it('GET on course data under /api/admin/courses/<code>/… stays a read', () => {

@@ -30,10 +30,10 @@ describe('session cookie', () => {
 });
 
 describe('built-ins and liveness', () => {
-  it('faculty is department-wide, creator is create-only', () => {
+  it('faculty is department-wide (capture + create, no admin — 2026-10-07 owner-approved), creator is create-only', () => {
     const S = 's'.repeat(32);
     const fp = (c: string) => createHmac('sha256', S).update(c).digest('hex').slice(0, 16);
-    expect(builtinGrant('faculty', 'gcfaculty:pw', S)).toEqual({ id: `builtin:faculty:${fp('gcfaculty:pw')}`, label: 'Department login', scope: ['*'], can: ['capture', 'create', 'admin'] });
+    expect(builtinGrant('faculty', 'gcfaculty:pw', S)).toEqual({ id: `builtin:faculty:${fp('gcfaculty:pw')}`, label: 'Department login', scope: ['*'], can: ['capture', 'create'] });
     expect(builtinGrant('creator', 'creator:pw', S)).toEqual({ id: `builtin:creator:${fp('creator:pw')}`, label: 'Create-only login', scope: [], can: ['create'] });
     expect(builtinGrant('faculty', 'a:1', S).id).not.toBe(builtinGrant('faculty', 'a:2', S).id);
   });

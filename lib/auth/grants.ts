@@ -43,7 +43,11 @@ export function credentialFingerprint(credential: string, secret: string): strin
 export function builtinGrant(role: BuiltinRole, credential: string, secret: string | undefined): Grant {
   const id = secret ? `builtin:${role}:${credentialFingerprint(credential, secret)}` : `builtin:${role}`;
   return role === 'faculty'
-    ? { id, label: 'Department login', scope: ['*'], can: ['capture', 'create', 'admin'] }
+    // 'admin' removed 2026-10-07 (owner-approved): the owner now holds a
+    // personal admin-capable access grant for the operator-only surfaces
+    // (/admin, /admin/partners, /admin/synthesis, sandbox grants, resync —
+    // see docs/STATE.md). The shared department login no longer needs it.
+    ? { id, label: 'Department login', scope: ['*'], can: ['capture', 'create'] }
     : { id, label: 'Create-only login', scope: [], can: ['create'] };
 }
 
