@@ -9,7 +9,7 @@ interface Props {
 
 /**
  * Focused add-a-course page.  POSTs to the same roster endpoint that
- * CourseRosterControls uses, then redirects into /capture/[code] Step 1.
+ * the roster route uses, then redirects into /capture/[code] Step 1.
  */
 export default async function NewCoursePage({ searchParams }: Props) {
   const { slug = '' } = await searchParams;

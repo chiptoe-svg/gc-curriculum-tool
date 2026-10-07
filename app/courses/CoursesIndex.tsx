@@ -5,7 +5,6 @@ import type { CourseStatusRow, CaptureStatus } from '@/lib/db/capture-status-que
 import type { CourseRosterRow, CourseDataState } from '@/lib/db/courses-queries';
 import { formatCourseLabel } from '@/lib/courses/parse-course-code';
 import { partitionRosterRows } from '@/lib/courses/group-by-scope-status';
-import { CourseRosterControls } from './CourseRosterControls';
 import { CourseClassControls } from './CourseClassControls';
 
 interface Props {
@@ -321,9 +320,6 @@ export function CoursesIndex({ rows, rosterRows, slug, pairedByCode, snapshotCou
 
   return (
     <div>
-      {/* Roster controls (preload + add-a-course) */}
-      <CourseRosterControls slug={slug} />
-
       {/* Status counters — reflect the GC roster (the segregated sections are separate) */}
       <StatusCounters rows={partition.gc} />
 
