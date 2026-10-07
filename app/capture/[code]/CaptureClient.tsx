@@ -601,7 +601,7 @@ export function CaptureClient({
               generateCaptureProfileV2: transcript+materials bundle → one heavy
               scoring pass → schema/citation validation → editable draft. */}
           <ol className="mx-auto max-w-xl space-y-2 text-xs text-muted-foreground">
-            <li><span className="font-medium text-foreground">1 · Gathering the evidence.</span> Your full interview transcript (every answer, with citations) is bundled with the Google-Sheet catalog and the active course materials.</li>
+            <li><span className="font-medium text-foreground">1 · Gathering the evidence.</span> Your full interview transcript (every answer, with citations) is bundled with your syllabus and the other course materials you included.</li>
             <li><span className="font-medium text-foreground">2 · Scoring against the depth rubric.</span> One synthesis pass discovers the course&apos;s technical competencies (typically 5–15) and scores each on Know / Understand / Do, 0–5 — plus the five foundational dispositions (Do only).</li>
             <li><span className="font-medium text-foreground">3 · Enforcing the evidence rules.</span> Any score above the floor must carry an evidence excerpt, and every finding needs a source plus citations that resolve to a real material chunk or interview turn — results that don&apos;t validate are rejected and retried.</li>
             <li><span className="font-medium text-foreground">4 · Filling out the record.</span> Incoming expectations, course emphasis (where the graded points actually go), class structure, major projects, and a verification summary.</li>
