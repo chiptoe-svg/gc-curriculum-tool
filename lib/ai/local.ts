@@ -92,7 +92,8 @@ export class LocalProvider implements AIProvider {
     // a dense page) regardless of the cap, so a generous ceiling costs nothing on normal
     // requests. 3000 (not 1500) so the densest scanned pages (≤ ~2000 tokens at the 1120
     // soft-token budget) never TRUNCATE, while still bounding a pathological runaway well
-    // below unbounded. repetition_penalty:1.3 (sent below) is the primary runaway guard.
+    // below unbounded. repetition_penalty (1.05 on the Spark, 1.3 on local omlx — sent below) is
+    // the primary runaway guard.
     const OCR_MAX_TOKENS = 3000;
     const maxPages = args.maxPages ?? 40;
     const txBudget = visionModel('docTranscribe').budget ?? 1120;
@@ -152,7 +153,9 @@ export class LocalProvider implements AIProvider {
               // Pin thinking OFF on the DGX (vLLM honors it) — no reasoning preamble, ~7-8×
               // fewer decode tokens on transcription.
               chat_template_kwargs: { enable_thinking: false },
-              repetition_penalty: 1.3,
+              // 1.05 on the Spark/vLLM (2026-10-07 A/B): 1.3 caused runaways to the token
+              // cap with fabricated text and broke temp-0 determinism; 1.05 had none.
+              repetition_penalty: 1.05,
               stream: true,
             } as Parameters<typeof this.client.chat.completions.create>[0])) as unknown as AsyncIterable<{ choices?: Array<{ delta?: { content?: string } }> }>;
             let text = '';

@@ -146,7 +146,10 @@ async function describeSlideOn(png: Buffer, be: SlideBackend): Promise<SlideNote
         ? { max_soft_tokens: be.budget }
         : softTokenKnob(be.model, be.budget)
       : {}),
-    repetition_penalty: 1.3,
+    // Spark/vLLM: 1.05 — the 2026-10-07 A/B found 1.3 corrupts JSON keys (vLLM penalizes
+    // prompt tokens too) and doubles 'low' verdicts (34.5% vs 16.7%). Local omlx keeps 1.3
+    // (gemma decode-loop guard; untested at 1.05).
+    repetition_penalty: be.offload ? 1.05 : 1.3,
     // gcspark's loopback forwarder stalls NON-streamed responses ~15s — stream the
     // offload path (accumulated text is identical). Local omlx (loopback, no
     // forwarder) stays non-streamed. See lib/ai/sse-accumulate.ts.

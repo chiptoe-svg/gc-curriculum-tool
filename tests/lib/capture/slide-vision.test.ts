@@ -163,6 +163,16 @@ describe('describeSlide — request shape', () => {
     expect(url).toBe('http://localhost:9999/v1/chat/completions');
   });
 
+  it('keeps repetition_penalty 1.3 on the local omlx fallback (untested at 1.05)', async () => {
+    fetchSpy.mockResolvedValueOnce(
+      makeOkResponse({ topic: 't', teaches: 'x', keyVisual: '', text: '', contentLevel: 'low' }),
+    );
+    await describeSlide(SAMPLE_PNG);
+    const [_url, init] = fetchSpy.mock.calls[0]!;
+    const body = JSON.parse((init as RequestInit).body as string);
+    expect(body.repetition_penalty).toBe(1.3);
+  });
+
   it('uses SLIDE_VISION_MODEL env override when set', async () => {
     process.env.SLIDE_VISION_MODEL = 'my-custom-vision-model';
     fetchSpy.mockResolvedValueOnce(
@@ -386,6 +396,20 @@ describe('describeSlides — canonical render + per-backend budget', () => {
     expect(bodies.every((b: Record<string, unknown>) => b['vision_soft_tokens_per_image'] === undefined)).toBe(true);
     expect(bodies.every((b: Record<string, unknown>) =>
       (b['chat_template_kwargs'] as { enable_thinking?: boolean })?.enable_thinking === false)).toBe(true);
+  });
+
+  // 2026-10-07 A/B (owner-approved switch): 1.3 corrupted Spark/vLLM JSON (6/84) and
+  // doubled 'low' verdicts (34.5% vs 16.7%); 1.05 had no corruption.
+  it('sends repetition_penalty 1.05 to the Spark offload', async () => {
+    fetchSpy.mockImplementation(() =>
+      Promise.resolve(makeSseResponse({ topic: 't', teaches: 'x', keyVisual: '', contentLevel: 'low' })),
+    );
+    await describeSlides([SAMPLE_PNG]);
+    const bodies = fetchSpy.mock.calls
+      .filter((c: unknown[]) => (c[1] as { body?: string })?.body)
+      .map((c: unknown[]) => JSON.parse((c[1] as { body: string }).body) as Record<string, unknown>);
+    expect(bodies.length).toBeGreaterThan(0);
+    expect(bodies.every((b: Record<string, unknown>) => b['repetition_penalty'] === 1.05)).toBe(true);
   });
 });
 
