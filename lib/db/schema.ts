@@ -175,6 +175,9 @@ export const accessGrants = pgTable('access_grants', {
   id: uuid('id').primaryKey().defaultRandom(),
   tokenHash: text('token_hash').notNull().unique(),
   label: text('label').notNull(),
+  // Faculty access panel (2026-10-07, migration 0054). Nullable: existing
+  // CLI-minted grants (scripts/access/grant.ts) have no email.
+  email: text('email'),
   scope: jsonb('scope').$type<string[]>().notNull().default([]),
   can: jsonb('can').$type<('capture' | 'create' | 'admin')[]>().notNull().default([]),
   expiresAt: timestamp('expires_at', { withTimezone: true }),

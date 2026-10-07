@@ -1,4 +1,8 @@
 import { normalizeCode, type Capability } from '@/lib/auth/authorize';
+// checkCourses moved to lib/auth/grant-admin.ts (the /api/admin/access routes
+// need it too); re-exported here so this script and its existing test keep
+// importing it from '@/scripts/access/lib' unchanged.
+export { checkCourses } from '@/lib/auth/grant-admin';
 export interface GrantArgs { label: string; scope: string[]; can: Capability[]; expiresAt: Date | null }
 const CAPS: Capability[] = ['capture', 'create', 'admin'];
 
@@ -17,8 +21,4 @@ export function parseGrantArgs(argv: string[], now = new Date()): GrantArgs {
   const expiresAt = noExpiry ? null : new Date(now.getTime() + Number(days) * 86400_000);
   if (!noExpiry && !(Number(days) > 0)) throw new Error('--days must be a positive number');
   return { label: label.trim(), scope, can, expiresAt };
-}
-export function checkCourses(scope: string[], known: string[]): string[] {
-  const k = new Set(known.map(normalizeCode));
-  return scope.filter(s => s !== '*' && !k.has(normalizeCode(s)));
 }
