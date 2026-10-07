@@ -68,7 +68,11 @@ async function main() {
       return { pages: [...r.raw, ...r.wiki], logEntry: r.logEntry };
     },
     generateProgramBatch: async (batch, manifest) => {
-      const r = await generateProgramWikiBatch(batch, { manifest, programCourses });
+      const r = await generateProgramWikiBatch(batch, {
+        manifest,
+        programCourses,
+        totals: { totalSnapshots: inputs.snapshots.length, totalCoursesWithSnapshots: allLatest.length },
+      });
       return { pages: r.wiki, logEntry: r.logEntry };
     },
     write: writeAndPush,

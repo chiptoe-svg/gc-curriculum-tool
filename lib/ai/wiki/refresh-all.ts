@@ -16,6 +16,12 @@
  *      program-wide substrate (generateProgramWikiBatch — no triggering
  *      snapshot), in WIKI_PAGES_PER_CALL batches with the index last.
  *
+ * Course scope (deliberate): every course with a non-retired snapshot, GC or
+ * not (e.g. MKT 3310/4320), matching the old seed path. Course pages,
+ * programCourses (index + concept pages) and the productive-failure concept
+ * substrate ('all-captured') all use this same scope. The per-capture path's
+ * concept substrate keeps its GC/offered filter.
+ *
  * Writes: one writeAndPush per course and one per program batch, strictly
  * sequential (awaited), so progress lands incrementally and a late failure
  * doesn't lose earlier work. The per-capture path is unchanged.
@@ -33,7 +39,7 @@ import {
   type ProgramPageRef,
   type WikiPageWrite,
 } from '@/lib/ai/wiki/update';
-import type { WikiCommit } from '@/lib/wiki/git-ops';
+import { WikiPagesWithheldError, type WikiCommit } from '@/lib/wiki/git-ops';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -206,6 +212,24 @@ export function parseRefreshArgs(argv: ReadonlyArray<string>): RefreshOptions & 
 // Runner
 // ---------------------------------------------------------------------------
 
+/** Commit one unit; a privacy-withheld page still means the rest committed. */
+async function commitUnit(
+  deps: RefreshDeps,
+  label: string,
+  commit: WikiCommit,
+): Promise<void> {
+  try {
+    const { sha } = await deps.write(commit);
+    deps.log(`${label} → committed ${sha}`);
+  } catch (err) {
+    if (err instanceof WikiPagesWithheldError) {
+      deps.log(`${label} → committed ${err.sha} with ${err.withheld.length} withheld: ${err.withheld.map(w => w.path).join(', ')}`);
+      return;
+    }
+    throw err;
+  }
+}
+
 export async function runRefresh(
   plan: RefreshPlan,
   deps: RefreshDeps,
@@ -241,12 +265,11 @@ export async function runRefresh(
     const label = `[course ${i + 1}/${plan.courses.length}] ${c.courseCode}`;
     try {
       const { pages, logEntry } = await deps.generateCourse(c.snapshotId);
-      const { sha } = await deps.write({
+      await commitUnit(deps, label, {
         pages,
         logEntry,
         commitMessage: `feat(${c.page.slug}): one-pass refresh from latest snapshot ${c.createdAt.toISOString().slice(0, 10)}`,
       });
-      deps.log(`${label} → committed ${sha}`);
       result.succeeded++;
     } catch (err) {
       deps.log(`${label} ⚠ failed: ${err instanceof Error ? err.message : String(err)}`);
@@ -259,12 +282,11 @@ export async function runRefresh(
     const label = `[program batch ${i + 1}/${nb}]`;
     try {
       const { pages, logEntry } = await deps.generateProgramBatch(batch, plan.manifest);
-      const { sha } = await deps.write({
+      await commitUnit(deps, label, {
         pages,
         logEntry,
         commitMessage: `feat(program): one-pass refresh batch ${i + 1}/${nb} — ${batch.map(p => p.slug).join(', ')}`,
       });
-      deps.log(`${label} → committed ${sha}`);
       result.succeeded++;
     } catch (err) {
       deps.log(`${label} ⚠ failed: ${err instanceof Error ? err.message : String(err)}`);
@@ -344,7 +366,11 @@ export async function loadRefreshInputs(): Promise<RefreshInputs & {
   };
 }
 
-/** Course summaries (latest snapshot per course) for the index + concept pages. */
+/**
+ * Course summaries (latest snapshot per course) for the index + concept pages.
+ * Scope: every captured course (no GC/offered filter) — deliberately the same
+ * scope as the course pass and the 'all-captured' concept substrate.
+ */
 export async function loadProgramCourseSummaries(
   planned: ReadonlyArray<{ courseCode: string; snapshotId: string; createdAt: Date }>,
   latestProfiles: ReadonlyMap<string, CaptureProfile>,

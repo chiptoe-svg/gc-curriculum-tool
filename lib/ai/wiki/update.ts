@@ -487,8 +487,20 @@ async function loadTargetSubstrate(targetId: string): Promise<{
   };
 }
 
+/**
+ * Course scope for the productive-failure concept substrate:
+ *   'gc-offered'   — per-capture default: GC-scope, offered courses only.
+ *   'all-captured' — one-pass program refresh: every course with a non-retired
+ *                    snapshot. Deliberate: the old seed path regenerated pages
+ *                    for every captured course (MKT courses included), and the
+ *                    refresh keeps that scope so its concept pages agree with
+ *                    its course pages and programCourses.
+ */
+type ConceptScope = 'gc-offered' | 'all-captured';
+
 async function loadConceptSubstrate(
   slug: string,
+  scope: ConceptScope = 'gc-offered',
 ): Promise<{ coursesWithConditions: Array<{ courseCode: string; courseSlug: string; conditions: ProductiveFailureConditions }> }> {
   if (slug !== 'productive-failure') {
     // three-act-structure and scaffolding-analysis don't need a special substrate query
@@ -498,23 +510,29 @@ async function loadConceptSubstrate(
 
   // Load all non-retired snapshots that have productive_failure_conditions populated.
   // We use a raw SQL cast to check the JSONB field.
-  const rows = await db
+  const hasPfc = sql`${courseCaptureSnapshots.profile}->'audit_notes'->'productive_failure_conditions' IS NOT NULL`;
+  const base = db
     .select({
       courseCode: courseCaptureSnapshots.courseCode,
       profile: courseCaptureSnapshots.profile,
     })
-    .from(courseCaptureSnapshots)
-    // scope/status: exclude non-GC / non-offered courses — see lib/courses/program-visibility.ts
-    .innerJoin(courses, eq(courses.code, courseCaptureSnapshots.courseCode))
-    .where(
-      and(
-        isNull(courseCaptureSnapshots.retiredAt),
-        eq(courses.scope, 'gc'),
-        eq(courses.status, 'offered'),
-        sql`${courseCaptureSnapshots.profile}->'audit_notes'->'productive_failure_conditions' IS NOT NULL`,
-      ),
-    )
-    .orderBy(desc(courseCaptureSnapshots.createdAt));
+    .from(courseCaptureSnapshots);
+  const rows = scope === 'all-captured'
+    ? await base
+      .where(and(isNull(courseCaptureSnapshots.retiredAt), hasPfc))
+      .orderBy(desc(courseCaptureSnapshots.createdAt))
+    : await base
+      // scope/status: exclude non-GC / non-offered courses — see lib/courses/program-visibility.ts
+      .innerJoin(courses, eq(courses.code, courseCaptureSnapshots.courseCode))
+      .where(
+        and(
+          isNull(courseCaptureSnapshots.retiredAt),
+          eq(courses.scope, 'gc'),
+          eq(courses.status, 'offered'),
+          hasPfc,
+        ),
+      )
+      .orderBy(desc(courseCaptureSnapshots.createdAt));
 
   // De-duplicate by course code (keep newest).
   const seen = new Set<string>();
@@ -805,6 +823,11 @@ export function missingPagePaths(
  * whose inputs have since changed (stale) or that was never written (missing)
  * without re-running the LLM. Stable across runs given the same inputs because
  * the substrate is built from deterministically-ordered queries.
+ *
+ * `snapshotId` is the hash SEED: the triggering snapshot's id on the
+ * per-capture path, or PROGRAM_REFRESH_HASH_SEED for program-wide pages from
+ * the one-pass refresh (no triggering snapshot; the hash then depends on the
+ * page substrate alone).
  */
 export function computeInputHash(
   snapshotId: string,
@@ -1044,7 +1067,10 @@ async function healResourceOrigins(wiki: WikiPageWrite[], logEntries: string[]):
 }
 
 /** Load one wiki page's existing markdown + Postgres substrate. */
-async function loadPageWithSubstrate(page: AffectedWikiPage): Promise<PageWithSubstrate> {
+async function loadPageWithSubstrate(
+  page: AffectedWikiPage,
+  conceptScope: ConceptScope = 'gc-offered',
+): Promise<PageWithSubstrate> {
   const existingContent = await readExistingWikiPage(page.path);
   let substrate: unknown = undefined;
 
@@ -1056,7 +1082,7 @@ async function loadPageWithSubstrate(page: AffectedWikiPage): Promise<PageWithSu
       substrate = await loadTargetSubstrate(page.slug);
       break;
     case 'concept':
-      substrate = await loadConceptSubstrate(page.slug);
+      substrate = await loadConceptSubstrate(page.slug, conceptScope);
       break;
     case 'course':
     case 'index':
@@ -1124,7 +1150,7 @@ export async function updateWikiForSnapshot(
   // (c.1) Index ordering: the index goes LAST with a manifest of every other
   //     affected page (see placeIndexLast).
   const pagesWithSubstrate = placeIndexLast(
-    await Promise.all(affectedWikiPages.map(loadPageWithSubstrate)),
+    await Promise.all(affectedWikiPages.map(p => loadPageWithSubstrate(p))),
   );
 
   // (d) Load the prompt + provider once.
@@ -1272,13 +1298,15 @@ export async function generateProgramWikiBatch(
   ctx: {
     manifest: ReadonlyArray<ProgramPageRef>;
     programCourses: ProgramCourseSummary[];
+    /** Index frontmatter counts (total_snapshots / total_courses_with_snapshots). */
+    totals: { totalSnapshots: number; totalCoursesWithSnapshots: number };
     provider?: WikiProvider;
     systemPrompt?: string;
     now?: Date;
   },
 ): Promise<{ wiki: WikiPageWrite[]; logEntry: string }> {
   const loaded = await Promise.all(
-    batch.map(p => loadPageWithSubstrate({ ...p, existingContent: null })),
+    batch.map(p => loadPageWithSubstrate({ ...p, existingContent: null }, 'all-captured')),
   );
   for (const p of loaded) {
     if (p.type === 'concept') {
@@ -1287,6 +1315,8 @@ export async function generateProgramWikiBatch(
   }
   const pages = placeIndexLast(loaded, ctx.manifest.filter(p => p.type !== 'index'), {
     programCourses: ctx.programCourses,
+    totalSnapshots: ctx.totals.totalSnapshots,
+    totalCoursesWithSnapshots: ctx.totals.totalCoursesWithSnapshots,
   });
 
   const [provider, systemPrompt] = await Promise.all([

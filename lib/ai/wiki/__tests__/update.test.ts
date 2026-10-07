@@ -10,6 +10,14 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+// Hermetic wiki root. The node:fs/promises mock below does not intercept
+// update.ts's readFile under this config, so without this the suite reads the
+// LIVE wiki clone (existingContent + the resource-origin heal pass), which is
+// nondeterministic while anything else is writing to it.
+vi.hoisted(() => {
+  process.env.WIKI_REPO_PATH = '/nonexistent/wiki-repo-for-tests';
+});
+
 // ---------------------------------------------------------------------------
 // Mocks — must be hoisted before any imports that transitively use them.
 // ---------------------------------------------------------------------------
@@ -67,6 +75,7 @@ import {
   generateProgramPagesFromSubstrate,
   PROGRAM_REFRESH_HASH_SEED,
   computeInputHash,
+  generateProgramWikiBatch,
   type WikiUpdateResult,
 } from '../update';
 import { FakeProvider } from '@/lib/ai/fake-provider';
@@ -659,5 +668,143 @@ describe('generateProgramPagesFromSubstrate', () => {
     });
     expect(spy).toHaveBeenCalledTimes(2);
     expect(wiki.map(p => p.path).sort()).toEqual(['competencies/color-mgmt.md', 'index.md']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Pin: the per-capture user message + stamped output (refactor guard)
+// ---------------------------------------------------------------------------
+
+describe('per-capture path is pinned', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (getSnapshotById as ReturnType<typeof vi.fn>).mockResolvedValue(mockSnapshot);
+    (db.select as ReturnType<typeof vi.fn>).mockReturnValue(makeDbChain([]));
+    (loadPrompt as ReturnType<typeof vi.fn>).mockResolvedValue('sys');
+  });
+
+  it('sends exactly the pre-refactor user message and stamps the same frontmatter', async () => {
+    const complete = vi.fn().mockResolvedValue({ data: mockLLMResponse });
+    (getProviderForFunction as ReturnType<typeof vi.fn>).mockResolvedValue({ model: 'm', complete });
+
+    const { wiki } = await updateWikiForSnapshot(SNAPSHOT_ID);
+
+    // Captured from origin/dev's update.ts (before the one-pass refactor).
+    expect(JSON.parse(complete.mock.calls[0]![0].userMessage)).toEqual({
+      snapshot: {
+        id: SNAPSHOT_ID,
+        courseCode: 'GC 4800',
+        courseSlug: 'gc-4800',
+        courseTitle: 'GC 4800',
+        courseLevel: 0,
+        coursePrerequisites: [],
+        caption: 'Spring 2026',
+        reviewerNote: 'Faculty approved this profile.',
+        createdAt: '2026-05-25T14:00:00.000Z',
+        profile: JSON.parse(JSON.stringify(mockProfile)),
+        courseDescription: null,
+        courseLearningObjectives: [],
+        courseMajorProjects: [],
+        courseSkillsRequired: [],
+        syllabusUrl: null,
+        sheetSourceUrl: null,
+      },
+      rawPaths: {
+        snapshotJson: 'raw/snapshots/gc-4800/2026-05-25_aaaaaaa.json',
+        transcriptMd: 'raw/transcripts/gc-4800/2026-05-25_aaaaaaa.md',
+      },
+      allSnapshotsForCourse: [],
+      competencyBands: [{ statement: 'Manages client relationships', band: 'materials_supported' }],
+      competencyLinks: [],
+      affectedWikiPages: [
+        { type: 'course', slug: 'gc-4800', path: 'courses/gc-4800.md', existingContent: null },
+        {
+          type: 'concept', slug: 'productive-failure', path: 'concepts/productive-failure.md',
+          existingContent: null, substrate: { coursesWithConditions: [] },
+        },
+        {
+          type: 'concept', slug: 'three-act-structure', path: 'concepts/three-act-structure.md',
+          existingContent: null, substrate: { coursesWithConditions: [] },
+        },
+        {
+          type: 'index', slug: 'index', path: 'index.md', existingContent: null,
+          substrate: {
+            affectedPages: [
+              { type: 'course', slug: 'gc-4800', path: 'courses/gc-4800.md' },
+              { type: 'concept', slug: 'productive-failure', path: 'concepts/productive-failure.md' },
+              { type: 'concept', slug: 'three-act-structure', path: 'concepts/three-act-structure.md' },
+            ],
+          },
+        },
+      ],
+    });
+
+    expect(wiki.find(p => p.path === 'courses/gc-4800.md')!.content).toBe([
+      '---',
+      'type: course',
+      'slug: gc-4800',
+      'input_hash: 7c834abcb4ac',
+      'evidence_bands: [materials_supported]',
+      'timestamp: 2026-05-25T14:00:00.000Z',
+      'tags: [course]',
+      'resource: https://gcworkflow.clemson.edu:8443/wiki/courses/gc-4800',
+      '---',
+      '# GC 4800 — Senior Capstone',
+      '',
+    ].join('\n'));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// generateProgramWikiBatch — substrate assembly with mocked db
+// ---------------------------------------------------------------------------
+
+describe('generateProgramWikiBatch', () => {
+  const programCourses = [{
+    courseCode: 'MKT 3310', courseSlug: 'mkt-3310', title: 'Marketing', level: 3,
+    lastSnapshotId: 's1', lastSnapshotDate: '2026-08-11', courseShape: 'shape',
+  }];
+  const manifest = [
+    { type: 'course' as const, slug: 'mkt-3310', path: 'courses/mkt-3310.md' },
+    { type: 'concept' as const, slug: 'productive-failure', path: 'concepts/productive-failure.md' },
+    { type: 'index' as const, slug: 'index', path: 'index.md' },
+  ];
+  const batch = [
+    { type: 'concept' as const, slug: 'productive-failure', path: 'concepts/productive-failure.md' },
+    { type: 'index' as const, slug: 'index', path: 'index.md' },
+  ];
+
+  it('index gets {affectedPages: manifest minus index, programCourses, totals}; concepts keep their substrate + programCourses', async () => {
+    const innerJoin = vi.fn();
+    const chain = makeDbChain([{ courseCode: 'MKT 3310', profile: mockProfile }]);
+    const origJoin = chain.innerJoin!;
+    chain.innerJoin = (...a: unknown[]) => { innerJoin(...a); return origJoin(...a); };
+    (db.select as ReturnType<typeof vi.fn>).mockReturnValue(chain);
+
+    const provider = new FakeProvider([{
+      pages: batch.map(p => ({ path: p.path, content: '# x', operation: 'update' })),
+      log_entry: 'program refresh',
+    }]);
+    const spy = vi.spyOn(provider, 'complete');
+
+    await generateProgramWikiBatch(batch, {
+      manifest, programCourses, provider, systemPrompt: 'sys',
+      totals: { totalSnapshots: 26, totalCoursesWithSnapshots: 18 },
+      now: new Date('2026-10-06T00:00:00Z'),
+    });
+
+    const pages = JSON.parse(spy.mock.calls[0]![0].userMessage).affectedWikiPages;
+    const index = pages.find((p: { type: string }) => p.type === 'index');
+    expect(index.substrate).toEqual({
+      affectedPages: manifest.filter(p => p.type !== 'index'),
+      programCourses,
+      totalSnapshots: 26,
+      totalCoursesWithSnapshots: 18,
+    });
+    const pf = pages.find((p: { slug: string }) => p.slug === 'productive-failure');
+    expect(pf.substrate.programCourses).toEqual(programCourses);
+    // Program scope = every captured course (MKT included): no gc/offered join.
+    expect(pf.substrate.coursesWithConditions.map((c: { courseCode: string }) => c.courseCode)).toEqual(['MKT 3310']);
+    expect(innerJoin).not.toHaveBeenCalled();
   });
 });

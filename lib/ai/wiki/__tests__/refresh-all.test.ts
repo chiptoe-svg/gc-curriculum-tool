@@ -5,6 +5,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
+import { WikiPagesWithheldError } from '@/lib/wiki/git-ops';
 
 vi.mock('@/lib/db/client', () => ({ db: { select: vi.fn() } }));
 
@@ -220,5 +221,13 @@ describe('runRefresh', () => {
     });
     await runRefresh(planRefresh(inputs, {}), deps, { dryRun: false });
     expect(maxInFlight).toBe(1);
+  });
+
+  it('a privacy-withheld write counts as committed, not failed', async () => {
+    const { deps, write, lines } = fakeDeps();
+    write.mockRejectedValueOnce(new WikiPagesWithheldError([{ path: 'courses/a.md', reason: 'r' }, { path: 'b', reason: 'r' }], 'deadbee'));
+    const res = await runRefresh(planRefresh(inputs, { only: 'courses' }), deps, { dryRun: false });
+    expect(res).toMatchObject({ succeeded: 3, failed: 0 });
+    expect(lines.join('\n')).toContain('committed deadbee with 2 withheld');
   });
 });
