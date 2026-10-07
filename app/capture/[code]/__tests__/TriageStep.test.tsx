@@ -142,7 +142,7 @@ describe('TriageStep', () => {
     expect(screen.queryByText(/add your lecture slides/i)).toBeNull();
   });
 
-  it('clicking Read files & continue POSTs to /api/admin/v2-backfill and goes on when nothing was queued', async () => {
+  it('clicking Read files & continue POSTs to the course-scoped /api/capture/[code]/ingest and goes on when nothing was queued', async () => {
     const onIngested = vi.fn();
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ results: [], queued: 0 }) });
     vi.stubGlobal('fetch', fetchMock);
@@ -161,10 +161,11 @@ describe('TriageStep', () => {
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
 
     const [url, init] = fetchMock.mock.calls[0]!;
-    expect(url).toContain('/api/admin/v2-backfill');
+    expect(url).toContain('/api/capture/GC%203800/ingest');
+    expect(url).toContain('slug=test-slug');
     expect((init as RequestInit).method).toBe('POST');
     const body = JSON.parse((init as RequestInit).body as string);
-    expect(body).toMatchObject({ courseCode: 'GC 3800', slug: 'test-slug' });
+    expect(body).toMatchObject({ mode: 'hybrid' });
 
     // Nothing was queued → it goes straight on (owner 2026-10-07: no second click).
     await waitFor(() => expect(onIngested).toHaveBeenCalled());
@@ -488,7 +489,7 @@ describe('TriageStep use-local checkbox', () => {
     fireEvent.click(screen.getByLabelText(/use local/i));
     fireEvent.click(screen.getByRole('button', { name: /read files & continue/i }));
     await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
-    const call = fetchSpy.mock.calls.find(c => String(c[0]).includes('v2-backfill'))!;
+    const call = fetchSpy.mock.calls.find(c => String(c[0]).includes('/ingest'))!;
     expect(JSON.parse((call[1] as RequestInit).body as string).mode).toBe('local');
   });
 });
@@ -520,5 +521,174 @@ describe('TriageStep completion gate', () => {
     await act(async () => { await vi.advanceTimersByTimeAsync(3000); }); // poll sees 'ready'
     // A clean run goes on to the interview by itself.
     expect(onIngested).toHaveBeenCalledOnce();
+  });
+
+  // G4 (security re-review, 2026-10-07): a cooldown 429 means a
+  // co-instructor's concurrent ingest call already started reading the
+  // same materials — not a real failure. The UI should poll for
+  // completion instead of showing an error and bailing to idle.
+  it("on a 429 with reason:'cooldown', polls the actively-reading row instead of showing an error", async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({ error: 'Reading already started a moment ago — try again in 42 seconds', reason: 'cooldown', retryAfter: 42 }),
+        { status: 429 },
+      ),
+    );
+    // H1 (re-review #3): the row must already be 'queued'/'indexing' to be
+    // polled — a merely 'pending' row (nothing actually in flight for it)
+    // is excluded. 'indexing' here stands in for "actively being read by
+    // the other caller."
+    let status = 'indexing';
+    const fetchMaterials = await import('@/lib/capture/fetch-course-materials');
+    vi.spyOn(fetchMaterials, 'fetchCourseMaterials').mockImplementation(
+      async () => [{ id: 'm1', fileName: 'f.pdf', mimeType: 'application/pdf', indexingStatus: status, ignored: false }] as never,
+    );
+
+    const onIngested = vi.fn();
+    render(
+      <TriageStep
+        courseCode="GC 1010" slug="s"
+        materials={[{ id: 'm1', fileName: 'f.pdf', mimeType: 'application/pdf', tier: 'high', indexingStatus: 'indexing', ignored: false, pageCount: 2 }] as never}
+        onIngested={onIngested} onBack={() => {}}
+      />,
+    );
+
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /read files & continue/i })); });
+
+    // No error surfaced — a cooldown reads as "already being read," not a failure.
+    expect(screen.queryByText(/try again in 42 seconds/i)).toBeNull();
+    expect(screen.queryByText(/^failed/i)).toBeNull();
+
+    status = 'ready';
+    await act(async () => { await vi.advanceTimersByTimeAsync(3000); }); // poll sees 'ready'
+    expect(onIngested).toHaveBeenCalledOnce();
+  });
+
+  // ── H1 (security re-review #3, 2026-10-07) ──────────────────────────────
+
+  it("a 'pending' row (never actually queued) is excluded from the cooldown poll, so a 'queued' sibling finishing still advances", async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({ error: 'cooldown', reason: 'cooldown', retryAfter: 42 }),
+        { status: 429 },
+      ),
+    );
+    let queuedStatus = 'queued';
+    const fetchMaterials = await import('@/lib/capture/fetch-course-materials');
+    vi.spyOn(fetchMaterials, 'fetchCourseMaterials').mockImplementation(
+      async () => [
+        { id: 'queued-row', fileName: 'q.pdf', mimeType: 'application/pdf', indexingStatus: queuedStatus, ignored: false },
+        // Stays 'pending' for the whole test — must never block completion.
+        { id: 'pending-row', fileName: 'p.pdf', mimeType: 'application/pdf', indexingStatus: 'pending', ignored: false },
+      ] as never,
+    );
+
+    const onIngested = vi.fn();
+    render(
+      <TriageStep
+        courseCode="GC 1010" slug="s"
+        materials={[
+          { id: 'queued-row', fileName: 'q.pdf', mimeType: 'application/pdf', tier: 'high', indexingStatus: 'queued', ignored: false, pageCount: 2 },
+          { id: 'pending-row', fileName: 'p.pdf', mimeType: 'application/pdf', tier: 'high', indexingStatus: 'pending', ignored: false, pageCount: 2 },
+        ] as never}
+        onIngested={onIngested} onBack={() => {}}
+      />,
+    );
+
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /read files & continue/i })); });
+
+    queuedStatus = 'ready';
+    await act(async () => { await vi.advanceTimersByTimeAsync(3000); });
+    // The queued row finished; the perpetually-pending one was never
+    // waited on, so the step advances anyway.
+    expect(onIngested).toHaveBeenCalledOnce();
+  });
+
+  it('a cooldown 429 with nothing actually queued/indexing (everything still pending) advances immediately — nothing to wait for', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({ error: 'cooldown', reason: 'cooldown', retryAfter: 42 }),
+        { status: 429 },
+      ),
+    );
+    const fetchMaterials = await import('@/lib/capture/fetch-course-materials');
+    const materialsSpy = vi.spyOn(fetchMaterials, 'fetchCourseMaterials').mockResolvedValue(null as never);
+
+    const onIngested = vi.fn();
+    render(
+      <TriageStep
+        courseCode="GC 1010" slug="s"
+        materials={[{ id: 'm1', fileName: 'f.pdf', mimeType: 'application/pdf', tier: 'high', indexingStatus: 'pending', ignored: false, pageCount: 2 }] as never}
+        onIngested={onIngested} onBack={() => {}}
+      />,
+    );
+    await act(async () => {}); // flush the mount-time tier-sync effect's own call
+    materialsSpy.mockClear();
+
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /read files & continue/i })); });
+
+    expect(onIngested).toHaveBeenCalledOnce();
+    // No polling happened — nothing was queued/indexing to poll for.
+    expect(materialsSpy).not.toHaveBeenCalled();
+  });
+
+  it('caps cooldown polling at ~5 minutes, then shows a "still reading" message and re-enables the button', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({ error: 'cooldown', reason: 'cooldown', retryAfter: 42 }),
+        { status: 429 },
+      ),
+    );
+    const fetchMaterials = await import('@/lib/capture/fetch-course-materials');
+    // Never reaches a terminal state — simulates a stuck/long-running job.
+    vi.spyOn(fetchMaterials, 'fetchCourseMaterials').mockImplementation(
+      async () => [{ id: 'm1', fileName: 'f.pdf', mimeType: 'application/pdf', indexingStatus: 'indexing', ignored: false }] as never,
+    );
+
+    const onIngested = vi.fn();
+    render(
+      <TriageStep
+        courseCode="GC 1010" slug="s"
+        materials={[{ id: 'm1', fileName: 'f.pdf', mimeType: 'application/pdf', tier: 'high', indexingStatus: 'indexing', ignored: false, pageCount: 2 }] as never}
+        onIngested={onIngested} onBack={() => {}}
+      />,
+    );
+
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /read files & continue/i })); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(6 * 60 * 1000); }); // past the ~5 min cap
+
+    expect(onIngested).not.toHaveBeenCalled();
+    expect(screen.getByText(/still reading.*check back in a few minutes or reload/i)).toBeTruthy();
+    // Button re-enabled (phase back to idle).
+    expect(screen.getByRole('button', { name: /read files & continue/i })).toBeTruthy();
+  });
+
+  it("on any OTHER 429 (not reason:'cooldown', e.g. the IP rate limit), shows a generic message and re-enables the button without polling", async () => {
+    const fetchSpy = vi.spyOn(global, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ error: 'rate limit exceeded' }), { status: 429 }),
+    );
+    const fetchMaterials = await import('@/lib/capture/fetch-course-materials');
+    const materialsSpy = vi.spyOn(fetchMaterials, 'fetchCourseMaterials').mockResolvedValue(null as never);
+
+    const onIngested = vi.fn();
+    render(
+      <TriageStep
+        courseCode="GC 1010" slug="s"
+        materials={[{ id: 'm1', fileName: 'f.pdf', mimeType: 'application/pdf', tier: 'high', indexingStatus: 'pending', ignored: false, pageCount: 2 }] as never}
+        onIngested={onIngested} onBack={() => {}}
+      />,
+    );
+    await act(async () => {}); // flush the mount-time tier-sync effect's own call
+    materialsSpy.mockClear();
+    fetchSpy.mockClear();
+
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /read files & continue/i })); });
+
+    expect(screen.getByText(/too many requests.*wait a minute and try again/i)).toBeTruthy();
+    expect(onIngested).not.toHaveBeenCalled();
+    expect(fetchSpy).toHaveBeenCalledTimes(1); // the ingest POST only — no polling
+    expect(materialsSpy).not.toHaveBeenCalled();
+    // Button re-enabled (phase back to idle).
+    expect(screen.getByRole('button', { name: /read files & continue/i })).toBeTruthy();
   });
 });

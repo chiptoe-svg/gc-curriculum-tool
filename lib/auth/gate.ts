@@ -1,6 +1,6 @@
 import type { NextRequest } from 'next/server';
 import { authorize, type Grant } from '@/lib/auth/authorize';
-import { SESSION_COOKIE, builtinGrant, cookieMaxAge, grantFromSessionCookie, isLive, signSession, type StoredGrant } from '@/lib/auth/grants';
+import { SESSION_COOKIE, builtinGrant, cookieMaxAge, grantFromSessionCookie, isLive, pickActiveGrant, signSession, type StoredGrant } from '@/lib/auth/grants';
 import { forbiddenPage, unauthorizedPage } from '@/lib/auth/pages';
 import { requiresBasicAuth, resolveRole } from '@/lib/auth/basic-auth';
 
@@ -124,10 +124,13 @@ export async function gate(req: NextRequest, deps: GateDeps): Promise<GateResult
     }
     if (!gated) return { kind: 'next' };
 
-    // 2. Cookie, then Basic.
-    if (c && c !== 'dead') return decide(req, c.grant, undefined, deps, false);
+    // 2. Cookie, then Basic — the ordering is the shared `pickActiveGrant`
+    // rule (security re-review G1), so this can't drift from
+    // getViewerAccess's resolution of the same two credentials.
     const b = fromBasic(req, deps);
-    if (b) return decide(req, b.grant, b.setCookie, deps, c === 'dead');
+    const picked = pickActiveGrant(c === 'dead' ? 'dead' : (c ? c.grant : null), b ? b.grant : null);
+    if (picked.source === 'cookie') return decide(req, picked.grant, undefined, deps, false);
+    if (picked.source === 'basic') return decide(req, picked.grant, b!.setCookie, deps, c === 'dead');
     return { kind: 'response', status: 401, body: unauthorizedPage(), headers: CHALLENGE, ...(c === 'dead' ? { clearCookie: true as const } : {}) };
   } catch {
     return { kind: 'response', status: 503, body: 'Sign-in is temporarily unavailable.', headers: HTML };

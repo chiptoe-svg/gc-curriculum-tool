@@ -34,6 +34,11 @@ function selectChain(result: unknown[]) {
     where: () => chain,
     orderBy: () => chain,
     limit: (_n: number) => Promise.resolve(result),
+    // revokeGrant (G3, security re-review 2026-10-07) locks the admin rows
+    // it reads with `.for('update')` inside a transaction; the mock doesn't
+    // model real row locking (see grant-admin-revoke-atomic.test.ts for
+    // that), it just needs to resolve the same way `.limit()` does.
+    for: () => chain,
     then: (resolve: (v: unknown) => unknown, reject: (e: unknown) => unknown) =>
       Promise.resolve(result).then(resolve, reject),
   };
@@ -214,22 +219,129 @@ describe('patchGrant', () => {
 });
 
 describe('revokeGrant', () => {
+  // G3 (security re-review 2026-10-07): revokeGrant now runs entirely
+  // inside db.transaction, reading via `tx.select().for('update')` (row
+  // locking — see grant-admin-revoke-atomic.test.ts for the interleaving
+  // proof) and writing via `tx.update()`, so these assertions use the
+  // tx-scoped mock state (txSelectResult/txUpdateSetMock), not the
+  // top-level db.select/db.update ones other describe blocks use.
   it('returns not-found when the id does not exist', async () => {
-    selectResult = [];
+    txSelectResult = [];
     expect(await revokeGrant('nope')).toBe('not-found');
-    expect(updateSetMock).not.toHaveBeenCalled();
+    expect(txUpdateSetMock).not.toHaveBeenCalled();
   });
-  it('revokes a live grant (idempotent — a second call does not re-fire the update)', async () => {
-    selectResult = [row({ revokedAt: null })];
+  it('revokes a live (non-admin) grant (idempotent — a second call does not re-fire the update)', async () => {
+    txSelectResult = [row({ revokedAt: null })];
     expect(await revokeGrant('g1')).toBe('ok');
-    expect(updateSetMock).toHaveBeenCalledTimes(1);
-    const arg = updateSetMock.mock.calls[0]![0] as { revokedAt: Date };
+    expect(txUpdateSetMock).toHaveBeenCalledTimes(1);
+    const arg = txUpdateSetMock.mock.calls[0]![0] as { revokedAt: Date };
     expect(arg.revokedAt).toBeInstanceOf(Date);
   });
   it('is a no-op (still ok) when already revoked, and does not overwrite the original revoke time', async () => {
-    selectResult = [row({ revokedAt: new Date('2020-01-01T00:00:00Z') })];
+    txSelectResult = [row({ revokedAt: new Date('2020-01-01T00:00:00Z') })];
     expect(await revokeGrant('g1')).toBe('ok');
-    expect(updateSetMock).not.toHaveBeenCalled();
+    expect(txUpdateSetMock).not.toHaveBeenCalled();
+  });
+
+  // ── F3/G3 (security review + re-review, 2026-10-07): refuse to revoke
+  // the LAST live, scope-['*'] admin grant — the owner could otherwise
+  // lock themselves out of every /admin surface (no built-in Basic Auth
+  // carries admin anymore, so a DB grant is the only way back in;
+  // CLI-only repair otherwise). "Live" for this purpose excludes a grant
+  // expiring within 5 minutes (G3c) and excludes a course-scoped "admin"
+  // grant, which `authorize()` never treats as admin at all (G3b).
+  it('refuses (last-admin) to revoke the only live, scope-[*] admin grant, and never calls update', async () => {
+    txSelectResult = [row({ id: 'admin1', scope: ['*'], can: ['capture', 'create', 'admin'], revokedAt: null })];
+    expect(await revokeGrant('admin1')).toBe('last-admin');
+    expect(txUpdateSetMock).not.toHaveBeenCalled();
+  });
+
+  it('allows revoking an admin grant when ANOTHER live scope-[*] admin grant exists', async () => {
+    txSelectResult = [
+      row({ id: 'admin1', scope: ['*'], can: ['capture', 'create', 'admin'], revokedAt: null }),
+      row({ id: 'admin2', scope: ['*'], can: ['capture', 'create', 'admin'], revokedAt: null }),
+    ];
+    expect(await revokeGrant('admin1')).toBe('ok');
+    expect(txUpdateSetMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('a REVOKED other admin grant does not count as "another live admin" — still last-admin', async () => {
+    txSelectResult = [
+      row({ id: 'admin1', scope: ['*'], can: ['capture', 'create', 'admin'], revokedAt: null }),
+      row({ id: 'admin2', scope: ['*'], can: ['capture', 'create', 'admin'], revokedAt: new Date('2020-01-01T00:00:00Z') }),
+    ];
+    expect(await revokeGrant('admin1')).toBe('last-admin');
+    expect(txUpdateSetMock).not.toHaveBeenCalled();
+  });
+
+  it('an EXPIRED other admin grant does not count as "another live admin" — still last-admin', async () => {
+    txSelectResult = [
+      row({ id: 'admin1', scope: ['*'], can: ['capture', 'create', 'admin'], revokedAt: null }),
+      row({ id: 'admin2', scope: ['*'], can: ['capture', 'create', 'admin'], revokedAt: null, expiresAt: new Date('2020-01-01T00:00:00Z') }),
+    ];
+    expect(await revokeGrant('admin1')).toBe('last-admin');
+    expect(txUpdateSetMock).not.toHaveBeenCalled();
+  });
+
+  it('a non-admin grant never triggers the last-admin check, even alone', async () => {
+    txSelectResult = [row({ id: 'g1', can: ['capture'], revokedAt: null })];
+    expect(await revokeGrant('g1')).toBe('ok');
+    expect(txUpdateSetMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('revoking an ALREADY-EXPIRED admin grant is allowed (not currently live, so nothing to protect)', async () => {
+    txSelectResult = [row({ id: 'admin1', scope: ['*'], can: ['capture', 'create', 'admin'], revokedAt: null, expiresAt: new Date('2020-01-01T00:00:00Z') })];
+    expect(await revokeGrant('admin1')).toBe('ok');
+    expect(txUpdateSetMock).toHaveBeenCalledTimes(1);
+  });
+
+  // ── G3(b): a COURSE-SCOPED "admin" grant (CLI-mintable: --can
+  // …,admin --courses "GC 1010") gives no real admin access — authorize()
+  // requires scope '*' — so it must never count as a protecting "other
+  // admin", and revoking IT must never itself be guarded either.
+  it('a course-scoped "admin" grant (scope != [\'*\']) does NOT count as another live admin', async () => {
+    txSelectResult = [
+      row({ id: 'admin1', scope: ['*'], can: ['capture', 'create', 'admin'], revokedAt: null }),
+      row({ id: 'course-admin', scope: ['GC 1010'], can: ['capture', 'create', 'admin'], revokedAt: null }),
+    ];
+    expect(await revokeGrant('admin1')).toBe('last-admin');
+    expect(txUpdateSetMock).not.toHaveBeenCalled();
+  });
+
+  it('revoking a course-scoped "admin" grant itself is never guarded, even when it is the only "admin" row', async () => {
+    txSelectResult = [row({ id: 'course-admin', scope: ['GC 1010'], can: ['capture', 'create', 'admin'], revokedAt: null })];
+    expect(await revokeGrant('course-admin')).toBe('ok');
+    expect(txUpdateSetMock).toHaveBeenCalledTimes(1);
+  });
+
+  // ── G3(c): a grant expiring within 5 minutes is treated as not-live
+  // "for this purpose" — both as a target (nothing to protect) and as an
+  // "other" (not a reliable protector).
+  it('a target admin grant expiring in 4 minutes is not protected (treated as not-live for this purpose)', async () => {
+    const now = new Date('2026-10-07T12:00:00Z');
+    txSelectResult = [row({ id: 'admin1', scope: ['*'], can: ['capture', 'create', 'admin'], revokedAt: null, expiresAt: new Date(now.getTime() + 4 * 60 * 1000) })];
+    expect(await revokeGrant('admin1', now)).toBe('ok');
+    expect(txUpdateSetMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('the only OTHER admin expiring in 4 minutes does not count as a reliable protector — still last-admin', async () => {
+    const now = new Date('2026-10-07T12:00:00Z');
+    txSelectResult = [
+      row({ id: 'admin1', scope: ['*'], can: ['capture', 'create', 'admin'], revokedAt: null }),
+      row({ id: 'admin2', scope: ['*'], can: ['capture', 'create', 'admin'], revokedAt: null, expiresAt: new Date(now.getTime() + 4 * 60 * 1000) }),
+    ];
+    expect(await revokeGrant('admin1', now)).toBe('last-admin');
+    expect(txUpdateSetMock).not.toHaveBeenCalled();
+  });
+
+  it('an OTHER admin expiring in 6 minutes DOES count as a reliable protector — ok', async () => {
+    const now = new Date('2026-10-07T12:00:00Z');
+    txSelectResult = [
+      row({ id: 'admin1', scope: ['*'], can: ['capture', 'create', 'admin'], revokedAt: null }),
+      row({ id: 'admin2', scope: ['*'], can: ['capture', 'create', 'admin'], revokedAt: null, expiresAt: new Date(now.getTime() + 6 * 60 * 1000) }),
+    ];
+    expect(await revokeGrant('admin1', now)).toBe('ok');
+    expect(txUpdateSetMock).toHaveBeenCalledTimes(1);
   });
 });
 

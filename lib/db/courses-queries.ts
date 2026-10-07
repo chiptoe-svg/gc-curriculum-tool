@@ -45,6 +45,27 @@ export async function getCourseByCode(code: string) {
 }
 
 /**
+ * Resolves `code` to the course's STORED spelling via a case-insensitive
+ * match, or null if no course matches at all (security re-review G2,
+ * 2026-10-07). Callers that need an exact string to match other rows
+ * (course_materials.course_code, course_capture_profiles.course_code,
+ * etc.) must use the returned stored spelling, not `code` itself and not
+ * a guessed canonical form — `lib/curriculum/catalog-lookup.ts`'s
+ * `canonicalizeCourseCode` always lower-cases the suffix, which silently
+ * stopped matching any live course whose stored code has an upper-case
+ * suffix (e.g. `GC 1010L`) once the capture/ingest and capture/reset
+ * routes started canonicalizing the path segment before use.
+ */
+export async function resolveCourseCodeCaseInsensitive(code: string): Promise<string | null> {
+  const [row] = await db
+    .select({ code: courses.code })
+    .from(courses)
+    .where(sql`lower(${courses.code}) = lower(${code})`)
+    .limit(1);
+  return row?.code ?? null;
+}
+
+/**
  * Sets the per-course audit mode. 'simple' tells the audit pipeline to
  * skip chunk indexing and feed digests inline; 'full' (default) enables
  * retrieval over indexed chunks. Returns false if the course code was

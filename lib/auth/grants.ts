@@ -43,7 +43,11 @@ export function credentialFingerprint(credential: string, secret: string): strin
 export function builtinGrant(role: BuiltinRole, credential: string, secret: string | undefined): Grant {
   const id = secret ? `builtin:${role}:${credentialFingerprint(credential, secret)}` : `builtin:${role}`;
   return role === 'faculty'
-    ? { id, label: 'Department login', scope: ['*'], can: ['capture', 'create', 'admin'] }
+    // 'admin' removed 2026-10-07 (owner-approved): the owner now holds a
+    // personal admin-capable access grant for the operator-only surfaces
+    // (/admin, /admin/partners, /admin/synthesis, sandbox grants, resync —
+    // see docs/STATE.md). The shared department login no longer needs it.
+    ? { id, label: 'Department login', scope: ['*'], can: ['capture', 'create'] }
     : { id, label: 'Create-only login', scope: [], can: ['create'] };
 }
 
@@ -108,6 +112,26 @@ export async function findGrantById(id: string): Promise<StoredGrant | null> {
   const rows = await db.select().from(accessGrants).where(eq(accessGrants.id, id)).limit(1);
   return rows[0] ? toStored(rows[0]) : null;
 }
+/**
+ * The single ordering rule for "which grant does this request carry" —
+ * shared by `gate()` (lib/auth/gate.ts) and `getViewerAccess()`
+ * (lib/auth/viewer.ts) so they can't drift (security re-review G1,
+ * 2026-10-07: the two had resolved Basic-before-cookie and cookie-before-
+ * Basic respectively, so a browser holding both a personal admin cookie
+ * AND the cached department Basic password got different answers from
+ * each). A live cookie grant always wins; Basic is consulted only when
+ * there is no live cookie — absent, or `'dead'` (tampered, expired,
+ * revoked, unverifiable). Pure — no I/O, callers resolve each side first.
+ */
+export function pickActiveGrant(
+  cookieGrant: Grant | null | 'dead',
+  basicGrant: Grant | null,
+): { grant: Grant; source: 'cookie' | 'basic' } | { grant: null; source: null } {
+  if (cookieGrant && cookieGrant !== 'dead') return { grant: cookieGrant, source: 'cookie' };
+  if (basicGrant) return { grant: basicGrant, source: 'basic' };
+  return { grant: null, source: null };
+}
+
 export async function touchLastUsed(id: string, now = new Date()): Promise<void> {
   const g = await findGrantById(id);
   if (!g) return;

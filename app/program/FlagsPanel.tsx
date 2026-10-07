@@ -28,9 +28,14 @@ function driftLabel(d: DriftEntry): string {
   return `was ${dim}=${d.was ?? '—'} → now ${dim}=${d.now ?? '—'}`;
 }
 
-export function FlagsPanel({ flags, slug, onChanged }: {
+export function FlagsPanel({ flags, slug, isAdmin, onChanged }: {
   flags: AnnotatedFlag[];
   slug: string;
+  /** F1 (owner decision, 2026-10-07): resolving a flag is admin-only — the
+   *  server already enforces this (PATCH /api/flags/<id> is admin-kind in
+   *  lib/auth/authorize.ts classify()); this just hides the control for a
+   *  non-admin viewer instead of letting it 403. */
+  isAdmin: boolean;
   onChanged: () => void;
 }) {
   const [resolving, setResolving] = useState<string | null>(null);   // flag id with open resolve form
@@ -98,7 +103,7 @@ export function FlagsPanel({ flags, slug, onChanged }: {
           )}
           {f.status === 'resolved' ? (
             <p className="text-xs text-muted-foreground">↳ {f.resolutionNote} — {f.resolvedBy}, {f.resolvedAt ? new Date(f.resolvedAt).toLocaleDateString() : ''}</p>
-          ) : resolving === f.id ? (
+          ) : !isAdmin ? null : resolving === f.id ? (
             <div className="space-y-1.5 rounded border bg-muted/30 p-2">
               <label htmlFor={`resolve-name-${f.id}`} className="block text-xs text-muted-foreground">
                 Resolving as

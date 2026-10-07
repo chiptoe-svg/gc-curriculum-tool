@@ -1,6 +1,7 @@
 import { createHash, createHmac } from 'node:crypto';
 import { describe, it, expect } from 'vitest';
-import { newToken, hashToken, signSession, verifySession, builtinGrant, builtinFromId, credentialFingerprint, isLive, cookieMaxAge, MAX_COOKIE_AGE_S } from '@/lib/auth/grants';
+import { newToken, hashToken, signSession, verifySession, builtinGrant, builtinFromId, credentialFingerprint, isLive, cookieMaxAge, MAX_COOKIE_AGE_S, pickActiveGrant } from '@/lib/auth/grants';
+import type { Grant } from '@/lib/auth/authorize';
 
 describe('tokens', () => {
   it('are 43-char base64url and unique', () => {
@@ -30,10 +31,10 @@ describe('session cookie', () => {
 });
 
 describe('built-ins and liveness', () => {
-  it('faculty is department-wide, creator is create-only', () => {
+  it('faculty is department-wide (capture + create, no admin — 2026-10-07 owner-approved), creator is create-only', () => {
     const S = 's'.repeat(32);
     const fp = (c: string) => createHmac('sha256', S).update(c).digest('hex').slice(0, 16);
-    expect(builtinGrant('faculty', 'gcfaculty:pw', S)).toEqual({ id: `builtin:faculty:${fp('gcfaculty:pw')}`, label: 'Department login', scope: ['*'], can: ['capture', 'create', 'admin'] });
+    expect(builtinGrant('faculty', 'gcfaculty:pw', S)).toEqual({ id: `builtin:faculty:${fp('gcfaculty:pw')}`, label: 'Department login', scope: ['*'], can: ['capture', 'create'] });
     expect(builtinGrant('creator', 'creator:pw', S)).toEqual({ id: `builtin:creator:${fp('creator:pw')}`, label: 'Create-only login', scope: [], can: ['create'] });
     expect(builtinGrant('faculty', 'a:1', S).id).not.toBe(builtinGrant('faculty', 'a:2', S).id);
   });
@@ -63,5 +64,29 @@ describe('built-ins and liveness', () => {
     expect(cookieMaxAge({ expiresAt: null }, now)).toBe(MAX_COOKIE_AGE_S);
     expect(cookieMaxAge({ expiresAt: new Date('2026-09-30T13:00:00Z') }, now)).toBe(3600);
     expect(cookieMaxAge({ expiresAt: new Date('2026-09-30T11:00:00Z') }, now)).toBe(0);
+  });
+});
+
+// G1 (security re-review, 2026-10-07): the single shared ordering rule —
+// a live cookie wins; Basic is used only when there is no live cookie —
+// used by BOTH gate() and getViewerAccess() so they can't drift.
+describe('pickActiveGrant', () => {
+  const adminGrant: Grant = { id: 'a', label: 'admin', scope: ['*'], can: ['capture', 'create', 'admin'] };
+  const deptGrant: Grant = { id: 'd', label: 'dept', scope: ['*'], can: ['capture', 'create'] };
+
+  it('a live cookie grant wins over a present Basic grant', () => {
+    expect(pickActiveGrant(adminGrant, deptGrant)).toEqual({ grant: adminGrant, source: 'cookie' });
+  });
+  it("'dead' cookie (tampered/revoked/expired) falls through to Basic", () => {
+    expect(pickActiveGrant('dead', deptGrant)).toEqual({ grant: deptGrant, source: 'basic' });
+  });
+  it('no cookie at all falls through to Basic', () => {
+    expect(pickActiveGrant(null, deptGrant)).toEqual({ grant: deptGrant, source: 'basic' });
+  });
+  it('neither present → null, no source', () => {
+    expect(pickActiveGrant(null, null)).toEqual({ grant: null, source: null });
+  });
+  it("'dead' cookie and no Basic → null", () => {
+    expect(pickActiveGrant('dead', null)).toEqual({ grant: null, source: null });
   });
 });

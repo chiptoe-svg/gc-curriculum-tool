@@ -82,7 +82,7 @@ describe('OtherMaterialsBox', () => {
     await waitFor(() => expect(onMaterialsChange).toHaveBeenCalled());
   });
 
-  it('Index now appears for a fixably-unindexed row and POSTs v2-backfill', async () => {
+  it('Index now appears for a fixably-unindexed row and POSTs to the course-scoped ingest route', async () => {
     const onMaterialsChange = vi.fn();
     const { fetchCourseMaterials } = await import('@/lib/capture/fetch-course-materials');
     (fetchCourseMaterials as ReturnType<typeof vi.fn>).mockResolvedValue([mat({})]);
@@ -91,7 +91,7 @@ describe('OtherMaterialsBox', () => {
     render(<OtherMaterialsBox course={course} materials={[mat({ id: 'p1', fileName: 'pending.pdf', indexingStatus: 'pending' })]} slug="s" onMaterialsChange={onMaterialsChange} />);
     fireEvent.click(screen.getByRole('button', { name: /other materials/i }));
     fireEvent.click(screen.getByRole('button', { name: /index now/i }));
-    await waitFor(() => expect(fetchMock.mock.calls[0]![0]).toContain('/v2-backfill'));
+    await waitFor(() => expect(fetchMock.mock.calls[0]![0]).toContain('/api/capture/GC%203800/ingest'));
     await waitFor(() => expect(onMaterialsChange).toHaveBeenCalled());
   });
 

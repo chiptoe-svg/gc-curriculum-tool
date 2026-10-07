@@ -369,11 +369,10 @@ export function OtherMaterialsBox({ course, materials, slug, onMaterialsChange, 
     setIndexing(true);
     setError(null);
     try {
-      const res = await fetch(`/api/admin/v2-backfill?slug=${encodeURIComponent(slug)}`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ courseCode: course.code, slug }),
-      });
+      const res = await fetch(
+        `/api/capture/${encodeURIComponent(course.code)}/ingest?slug=${encodeURIComponent(slug)}`,
+        { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({}) },
+      );
       if (!res.ok) {
         setError('indexing failed');
         return;

@@ -73,7 +73,9 @@ describe('gated paths — resolution order', () => {
     expect(r.kind).toBe('response'); if (r.kind === 'response') { expect(r.status).toBe(401); expect(r.clearCookie).toBe(true); }
   });
   it('Basic faculty → allowed and a cookie is set', async () => {
-    const r = await gate(req('/admin', { auth: basic('gcfaculty:pw') }), deps());
+    // A gated-but-non-admin page — faculty no longer carries 'admin' (2026-10-07
+    // owner-approved), so /admin itself would 403 here; see the C1 block below.
+    const r = await gate(req('/courses', { auth: basic('gcfaculty:pw') }), deps());
     expect(r.kind).toBe('rewrite'); if (r.kind === 'rewrite') expect(r.setCookie?.value.startsWith(`builtin:faculty:${fp('gcfaculty:pw')}.`)).toBe(true);
   });
   it('no SESSION_SECRET → key still authorizes this request but no cookie is issued', async () => {
@@ -111,7 +113,8 @@ describe('gated paths — resolution order', () => {
     expect(r.url.searchParams.has('key')).toBe(false);
   });
   it('stale cookie + Basic → cookie replaced', async () => {
-    const r = await gate(req('/admin', { cookie: 'gc_session=' + danita.id + '.bad', auth: basic('gcfaculty:pw') }), deps());
+    // Non-admin gated page — see note above on why /admin itself isn't used here.
+    const r = await gate(req('/courses', { cookie: 'gc_session=' + danita.id + '.bad', auth: basic('gcfaculty:pw') }), deps());
     expect(r.kind).toBe('rewrite'); if (r.kind !== 'rewrite') return;
     expect(r.setCookie?.value.startsWith(`builtin:faculty:${fp('gcfaculty:pw')}.`)).toBe(true);
     expect(r.clearCookie).toBe(true);
@@ -163,9 +166,9 @@ describe('gated paths — authorization', () => {
     expect(r.kind).toBe('response'); if (r.kind !== 'response') return;
     expect(r.status).toBe(403); expect(r.body).toContain('GC 1010'); expect(r.body).toContain('Danita');
   });
-  it('unclassified write → 403 for a scoped grant, allowed for department', async () => {
+  it('unclassified write → 403 for a scoped grant AND for the department login (admin removed 2026-10-07)', async () => {
     expect((await gate(req('/api/admin/synthesis', { cookie, method: 'POST' }), deps())).kind).toBe('response');
-    expect((await gate(req('/api/admin/synthesis', { auth: basic('gcfaculty:pw'), method: 'POST' }), deps())).kind).toBe('next');
+    expect((await gate(req('/api/admin/synthesis', { auth: basic('gcfaculty:pw'), method: 'POST' }), deps())).kind).toBe('response');
   });
   it('DB failure → 503, never a pass', async () => {
     const d = deps({ findGrantById: async () => { throw new Error('db down'); } });
@@ -223,9 +226,10 @@ describe('C1 — admin surface through the gate', () => {
     const r = await gate(req('/api/admin/sandbox-grants', { cookie }), deps());
     expect(r.kind).toBe('response'); if (r.kind === 'response') expect(r.status).toBe(403);
   });
-  it('creator Basic GET /admin → 403; faculty Basic → allowed', async () => {
+  it('creator Basic GET /admin → 403; faculty Basic GET /admin → also 403 (admin removed 2026-10-07)', async () => {
     const c = await gate(req('/admin', { auth: basic('creator:pw') }), deps());
     expect(c.kind).toBe('response'); if (c.kind === 'response') expect(c.status).toBe(403);
-    expect((await gate(req('/admin', { auth: basic('gcfaculty:pw') }), deps())).kind).toBe('rewrite');
+    const f = await gate(req('/admin', { auth: basic('gcfaculty:pw') }), deps());
+    expect(f.kind).toBe('response'); if (f.kind === 'response') expect(f.status).toBe(403);
   });
 });

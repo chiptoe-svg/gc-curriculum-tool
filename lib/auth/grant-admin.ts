@@ -259,16 +259,78 @@ export async function patchGrant(id: string, patch: GrantPatch): Promise<'ok' | 
   return 'ok';
 }
 
-/** Sets `revoked_at`. Idempotent: a grant already revoked is left alone (its
- * original revoke time is never overwritten) and still reports `'ok'`. */
-export async function revokeGrant(id: string): Promise<'ok' | 'not-found'> {
-  const rows = (await db.select().from(accessGrants).where(eq(accessGrants.id, id)).limit(1)) as GrantRow[];
-  const existing = rows[0];
-  if (!existing) return 'not-found';
-  if (!existing.revokedAt) {
-    await db.update(accessGrants).set({ revokedAt: new Date() }).where(eq(accessGrants.id, id));
-  }
-  return 'ok';
+/** 5-minute grace window (G3c, security re-review 2026-10-07): a grant
+ * expiring within this window is treated as NOT live "for this purpose" —
+ * neither as a target worth protecting, nor as an "other" admin reliable
+ * enough to cover someone else's revoke. Prevents the sequence "revoke A,
+ * because B still has 60s left" from leaving zero working admins moments
+ * later. */
+const ADMIN_GUARD_GRACE_MS = 5 * 60 * 1000;
+
+/**
+ * Whether `g` is a REAL, currently-live admin grant for last-admin-guard
+ * purposes: not revoked, `can` includes `admin`, `scope` is exactly `['*']`
+ * (G3b — a course-scoped grant with `admin` in `can` gives no actual admin
+ * access; `authorize()` requires `scope.includes('*')`, so such a grant
+ * must never count as a protector, nor be protected itself), and not
+ * expiring within `ADMIN_GUARD_GRACE_MS`.
+ */
+function isGuardedAdmin(g: { revokedAt: Date | null; expiresAt: Date | null; scope: string[]; can: Capability[] }, now: Date): boolean {
+  if (g.revokedAt) return false;
+  if (!g.scope.includes('*')) return false;
+  if (!g.can.includes('admin')) return false;
+  if (g.expiresAt && g.expiresAt.getTime() <= now.getTime() + ADMIN_GUARD_GRACE_MS) return false;
+  return true;
+}
+
+/**
+ * Sets `revoked_at`. Idempotent: a grant already revoked is left alone (its
+ * original revoke time is never overwritten) and still reports `'ok'`.
+ *
+ * `'last-admin'` (security review F3, re-reviewed G3, 2026-10-07): refuses
+ * to revoke a currently-guarded admin grant (see `isGuardedAdmin` — scope
+ * `['*']`, `can` includes `admin`, live, not expiring within 5 minutes)
+ * when no OTHER guarded admin grant exists. Built-in Basic Auth no longer
+ * carries `admin` for anyone (2026-10-07, department login), so a DB grant
+ * is the only remaining way into `/admin`/`/api/admin/**` — the owner
+ * revoking their own last one would lock out every admin surface,
+ * recoverable only from the CLI (`pnpm access:grant … --can
+ * capture,create,admin`; note `scripts/access/revoke.ts` bypasses this
+ * guard entirely — see STATE.md). A grant that isn't currently guarded
+ * (already expired, expiring imminently, or course-scoped) is never
+ * itself protected, and never counts as protecting another.
+ *
+ * ATOMIC (G3a): the whole decide-then-update runs inside one
+ * `db.transaction`, reading every row with `.for('update')` — a real
+ * Postgres row lock that blocks a second concurrent `revokeGrant` call's
+ * own `SELECT … FOR UPDATE` on the same rows until this transaction
+ * commits or rolls back. Without it, two concurrent revokes of two
+ * different admin grants could each see the OTHER as live (both reading
+ * before either writes) and both succeed, leaving zero admins — verified
+ * with a forced interleaving in grant-admin-revoke-atomic.test.ts.
+ */
+export async function revokeGrant(id: string, now: Date = new Date()): Promise<'ok' | 'not-found' | 'last-admin'> {
+  return db.transaction(async (tx) => {
+    // One query for the whole table rather than two (target + "any other
+    // live admin") — the table is small (faculty access grants) and this
+    // avoids a second round trip under the same lock. `can`/`scope` are
+    // jsonb columns, not filterable by a simple SQL predicate without a
+    // dedicated operator, so the "does another live admin grant exist"
+    // check is done in JS over all rows. `.for('update')` locks every row
+    // read here for the duration of this transaction.
+    const rows = (await tx.select().from(accessGrants).for('update')) as GrantRow[];
+    const existing = rows.find((r) => r.id === id);
+    if (!existing) return 'not-found';
+    if (existing.revokedAt) return 'ok'; // idempotent — nothing to check or change
+
+    if (isGuardedAdmin(existing, now)) {
+      const anotherGuardedAdmin = rows.some((r) => r.id !== id && isGuardedAdmin(r, now));
+      if (!anotherGuardedAdmin) return 'last-admin';
+    }
+
+    await tx.update(accessGrants).set({ revokedAt: now }).where(eq(accessGrants.id, id));
+    return 'ok';
+  });
 }
 
 export type ReissueResult = { grant: AdminGrant; token: string } | 'not-found' | 'revoked' | 'admin-managed' | 'expired';

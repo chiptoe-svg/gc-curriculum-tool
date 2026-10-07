@@ -1,9 +1,11 @@
 import Link from 'next/link';
+import { headers } from 'next/headers';
 import { isValidSlug } from '@/lib/slug';
 import { getMatrixData } from '@/lib/db/program-coverage-queries';
 import { ProgramCoverageClient } from './ProgramCoverageClient';
 import { FeedbackLink } from '@/app/FeedbackLink';
 import { listFlags } from '@/lib/db/flag-queries';
+import { getViewerAccess } from '@/lib/auth/viewer';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,6 +25,7 @@ export default async function ProgramPage({ searchParams }: Props) {
     );
   }
 
+  const { isAdmin } = await getViewerAccess(await headers());
   const data = await getMatrixData();
   const flagRows = await listFlags({});
   // Server-side: no drift annotation needed for first paint (the client
@@ -61,7 +64,7 @@ export default async function ProgramPage({ searchParams }: Props) {
       </header>
 
       <main className="mx-auto max-w-6xl px-6 py-6">
-        <ProgramCoverageClient slug={slug} initialData={data} initialFlags={initialFlags} />
+        <ProgramCoverageClient slug={slug} initialData={data} initialFlags={initialFlags} isAdmin={isAdmin} />
       </main>
     </div>
   );
