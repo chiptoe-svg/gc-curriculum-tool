@@ -142,7 +142,7 @@ describe('TriageStep', () => {
     expect(screen.queryByText(/add your lecture slides/i)).toBeNull();
   });
 
-  it('clicking Read files & continue POSTs to /api/admin/v2-backfill and goes on when nothing was queued', async () => {
+  it('clicking Read files & continue POSTs to the course-scoped /api/capture/[code]/ingest and goes on when nothing was queued', async () => {
     const onIngested = vi.fn();
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ results: [], queued: 0 }) });
     vi.stubGlobal('fetch', fetchMock);
@@ -161,10 +161,11 @@ describe('TriageStep', () => {
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
 
     const [url, init] = fetchMock.mock.calls[0]!;
-    expect(url).toContain('/api/admin/v2-backfill');
+    expect(url).toContain('/api/capture/GC%203800/ingest');
+    expect(url).toContain('slug=test-slug');
     expect((init as RequestInit).method).toBe('POST');
     const body = JSON.parse((init as RequestInit).body as string);
-    expect(body).toMatchObject({ courseCode: 'GC 3800', slug: 'test-slug' });
+    expect(body).toMatchObject({ mode: 'hybrid' });
 
     // Nothing was queued → it goes straight on (owner 2026-10-07: no second click).
     await waitFor(() => expect(onIngested).toHaveBeenCalled());
@@ -488,7 +489,7 @@ describe('TriageStep use-local checkbox', () => {
     fireEvent.click(screen.getByLabelText(/use local/i));
     fireEvent.click(screen.getByRole('button', { name: /read files & continue/i }));
     await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
-    const call = fetchSpy.mock.calls.find(c => String(c[0]).includes('v2-backfill'))!;
+    const call = fetchSpy.mock.calls.find(c => String(c[0]).includes('/ingest'))!;
     expect(JSON.parse((call[1] as RequestInit).body as string).mode).toBe('local');
   });
 });

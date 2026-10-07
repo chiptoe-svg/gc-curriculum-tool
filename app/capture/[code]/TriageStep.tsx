@@ -354,11 +354,14 @@ export function TriageStep({ courseCode, slug, materials, onIngested, onBack }: 
     setPhase('ingesting');
     setIngestError(null);
     try {
-      const res = await fetch('/api/admin/v2-backfill', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ courseCode, slug, mode: useLocal ? 'local' : 'hybrid' }),
-      });
+      const res = await fetch(
+        `/api/capture/${encodeURIComponent(courseCode)}/ingest?slug=${encodeURIComponent(slug)}`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ mode: useLocal ? 'local' : 'hybrid' }),
+        },
+      );
       if (!res.ok) {
         const body = await res.json().catch(() => ({})) as { error?: string };
         setIngestError(body.error ?? `Failed (${res.status})`);

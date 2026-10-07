@@ -251,12 +251,15 @@ export function CaptureClient({
     ) return;
     setResetState('resetting');
     try {
-      const res = await fetch('/api/admin/v2-reset', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ courseCode, scope: 'session', slug }),
-      });
-      if (!res.ok) throw new Error(`v2-reset ${res.status}`);
+      const res = await fetch(
+        `/api/capture/${encodeURIComponent(courseCode)}/reset?slug=${encodeURIComponent(slug)}`,
+        {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ scope: 'session' }),
+        },
+      );
+      if (!res.ok) throw new Error(`reset ${res.status}`);
       // Also drop the legacy v1 conversation row so they stay in sync.
       await fetch(
         `/api/capture/${encodeURIComponent(courseCode)}/conversation?slug=${encodeURIComponent(slug)}`,

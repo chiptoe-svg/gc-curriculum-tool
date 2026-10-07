@@ -73,7 +73,7 @@ describe('CanvasBox', () => {
     expect(body).toHaveProperty('ignoredItems');
   });
 
-  it('Index now POSTs v2-backfill then refetches materials', async () => {
+  it('Index now POSTs to the course-scoped ingest route then refetches materials', async () => {
     const onMaterialsChange = vi.fn();
     const { fetchCourseMaterials } = await import('@/lib/capture/fetch-course-materials');
     (fetchCourseMaterials as ReturnType<typeof vi.fn>).mockResolvedValue([mat({ id: 'f', fileName: 'Canvas File: rubric.pdf', indexingStatus: 'ready' })]);
@@ -81,7 +81,7 @@ describe('CanvasBox', () => {
     vi.stubGlobal('fetch', fetchMock);
     render(<CanvasBox course={course} materials={[mat({ id: 'f', fileName: 'Canvas File: rubric.pdf', indexingStatus: 'pending' })]} slug="s" onMaterialsChange={onMaterialsChange} />);
     fireEvent.click(screen.getByRole('button', { name: /index now/i }));
-    await waitFor(() => expect(fetchMock.mock.calls[0]![0]).toContain('/v2-backfill'));
+    await waitFor(() => expect(fetchMock.mock.calls[0]![0]).toContain('/api/capture/GC%203800/ingest'));
     await waitFor(() => expect(onMaterialsChange).toHaveBeenCalled());
   });
 

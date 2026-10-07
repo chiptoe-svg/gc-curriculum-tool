@@ -525,11 +525,10 @@ export function CanvasBox({ course, materials, slug, onMaterialsChange, triageEn
     setIndexing(true);
     setIndexError(null);
     try {
-      const res = await fetch(`/api/admin/v2-backfill?slug=${encodeURIComponent(slug)}`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ courseCode: course.code, slug }),
-      });
+      const res = await fetch(
+        `/api/capture/${encodeURIComponent(course.code)}/ingest?slug=${encodeURIComponent(slug)}`,
+        { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({}) },
+      );
       if (!res.ok) { setIndexError('indexing failed — try the materials manager'); return; }
       const fresh = await fetchCourseMaterials(course.code, slug);
       if (fresh) onMaterialsChange(fresh);
