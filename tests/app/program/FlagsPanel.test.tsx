@@ -17,12 +17,12 @@ function flag(o: Partial<AnnotatedFlag>): AnnotatedFlag {
 
 describe('FlagsPanel', () => {
   it('renders drift line when the score moved since flagging', () => {
-    render(<FlagsPanel flags={[flag({ drift: [{ dim: 'd', was: 4, now: 2 }] })]} slug="s" onChanged={() => {}} />);
+    render(<FlagsPanel flags={[flag({ drift: [{ dim: 'd', was: 4, now: 2 }] })]} slug="s" isAdmin onChanged={() => {}} />);
     expect(screen.getByText(/was D=4 → now D=2/i)).toBeTruthy();
   });
 
   it('annotates flags whose cell left the matrix', () => {
-    render(<FlagsPanel flags={[flag({ stillInMatrix: false })]} slug="s" onChanged={() => {}} />);
+    render(<FlagsPanel flags={[flag({ stillInMatrix: false })]} slug="s" isAdmin onChanged={() => {}} />);
     expect(screen.getByText(/no longer in matrix/i)).toBeTruthy();
   });
 
@@ -30,7 +30,7 @@ describe('FlagsPanel', () => {
     const onChanged = vi.fn();
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
     vi.stubGlobal('fetch', fetchMock);
-    render(<FlagsPanel flags={[flag({})]} slug="s" onChanged={onChanged} />);
+    render(<FlagsPanel flags={[flag({})]} slug="s" isAdmin onChanged={onChanged} />);
     fireEvent.click(screen.getByRole('button', { name: /resolve/i }));
     fireEvent.change(screen.getByLabelText(/resolving as/i), { target: { value: 'Chip Tonkin' } });
     fireEvent.change(screen.getByPlaceholderText(/resolution note/i), { target: { value: 'agree after re-score' } });
@@ -38,5 +38,23 @@ describe('FlagsPanel', () => {
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
     expect(String(fetchMock.mock.calls[0]![0])).toContain('/api/flags/f1');
     await waitFor(() => expect(onChanged).toHaveBeenCalled());
+  });
+
+  // ── F1 (owner decision 2026-10-07): flag resolution is admin-only ──────
+  describe('isAdmin=false (F1)', () => {
+    it('shows no Resolve control for an open flag', () => {
+      render(<FlagsPanel flags={[flag({})]} slug="s" isAdmin={false} onChanged={() => {}} />);
+      expect(screen.queryByRole('button', { name: /resolve/i })).toBeNull();
+    });
+
+    it('still shows an already-resolved flag\'s resolution note (read-only, not a control)', () => {
+      render(
+        <FlagsPanel
+          flags={[flag({ status: 'resolved', resolvedBy: 'Chip', resolutionNote: 'fixed', resolvedAt: new Date().toISOString() })]}
+          slug="s" isAdmin={false} onChanged={() => {}}
+        />,
+      );
+      expect(screen.getByText(/fixed/i)).toBeTruthy();
+    });
   });
 });

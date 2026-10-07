@@ -19,6 +19,12 @@ interface Props {
   costHistory: Array<{ day: string; spentCents: number }>;
   /** Daily cap in 1/100-of-a-cent units (matches spentCents unit). */
   capCents: number;
+  /** F1 (owner decision, 2026-10-07): changing AI model settings is
+   *  admin-only — the server already enforces this (PUT/DELETE
+   *  /api/settings/ai-models are admin-kind in lib/auth/authorize.ts
+   *  classify()). A non-admin viewer sees everything read-only with a
+   *  note, instead of a save/reset click 403ing in front of them. */
+  isAdmin: boolean;
 }
 
 /**
@@ -116,6 +122,7 @@ export function SettingsClient({
   functionIds,
   costHistory,
   capCents,
+  isAdmin,
 }: Props) {
   const [settings, setSettings] = useState<FunctionSettingRow[]>(initialSettings);
   const [busy, setBusy] = useState<AIFunctionId | null>(null);
@@ -207,6 +214,12 @@ export function SettingsClient({
     <div className="space-y-6">
       <DailyCostPanel history={costHistory} capCents={capCents} />
 
+      {!isAdmin && (
+        <p className="rounded-md border border-amber-300 bg-amber-50 px-4 py-2.5 text-xs text-amber-900">
+          Only an admin can change AI model settings. Shown read-only below.
+        </p>
+      )}
+
       <section className="rounded-md border bg-card px-4 py-3 text-xs leading-snug text-muted-foreground">
         <p className="font-medium text-foreground">How tiers work</p>
         <p className="mt-1">
@@ -258,19 +271,19 @@ export function SettingsClient({
               </header>
 
               <div className="flex items-center gap-2 flex-wrap">
-                <TierButton tier="light" current={s.tier} disabled={isBusy} onClick={() => setTier(functionId, 'light')} />
-                <TierButton tier="default" current={s.tier} disabled={isBusy} onClick={() => setTier(functionId, 'default')} />
-                <TierButton tier="heavy" current={s.tier} disabled={isBusy} onClick={() => setTier(functionId, 'heavy')} />
+                <TierButton tier="light" current={s.tier} disabled={isBusy || !isAdmin} onClick={() => setTier(functionId, 'light')} />
+                <TierButton tier="default" current={s.tier} disabled={isBusy || !isAdmin} onClick={() => setTier(functionId, 'default')} />
+                <TierButton tier="heavy" current={s.tier} disabled={isBusy || !isAdmin} onClick={() => setTier(functionId, 'heavy')} />
 
                 <ModelDropdown
                   isCustom={s.tier === 'custom'}
                   currentValue={s.customModel ?? ''}
                   availableModels={availableModels}
-                  disabled={isBusy}
+                  disabled={isBusy || !isAdmin}
                   onSet={(value) => setTier(functionId, 'custom', value)}
                 />
 
-                {isModified && (
+                {isModified && isAdmin && (
                   <button
                     type="button"
                     onClick={() => resetToDefault(functionId)}

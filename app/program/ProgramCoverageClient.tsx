@@ -25,6 +25,13 @@ interface Props {
   slug: string;
   initialData: MatrixData;
   initialFlags: AnnotatedFlag[];
+  /** F1 (owner decision, 2026-10-07): coverage refresh (bulk + per-pair) and
+   *  flag resolution are admin-only — the server already enforces this
+   *  (POST /api/program/coverage/refresh* and PATCH /api/flags/<id> are
+   *  admin-kind in lib/auth/authorize.ts classify()). This hides the
+   *  refresh/score controls for a non-admin viewer instead of letting them
+   *  403, and is threaded down to FlagsPanel for the same reason. */
+  isAdmin: boolean;
 }
 
 interface SelectedCell {
@@ -115,7 +122,7 @@ type Lens = 'coverage' | 'problem-solving';
 // (or one cell-click) away; nothing stored changes.
 type DepthDisplay = 'bands' | 'exact';
 
-export function ProgramCoverageClient({ slug, initialData, initialFlags }: Props) {
+export function ProgramCoverageClient({ slug, initialData, initialFlags, isAdmin }: Props) {
   const [data, setData] = useState<MatrixData>(initialData);
   const [activeTargetId, setActiveTargetId] = useState<string>(
     initialData.targets[0]?.id ?? '',
@@ -296,14 +303,16 @@ export function ProgramCoverageClient({ slug, initialData, initialFlags }: Props
           ) : null}
         </div>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleRefresh}
-            disabled={refreshing || scoredCount === totalPairs}
-            className="rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50"
-          >
-            {refreshing ? 'Scoring…' : scoredCount === totalPairs ? 'Up to date' : `Score ${totalPairs - scoredCount} stale pair${totalPairs - scoredCount === 1 ? '' : 's'}`}
-          </button>
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={handleRefresh}
+              disabled={refreshing || scoredCount === totalPairs}
+              className="rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50"
+            >
+              {refreshing ? 'Scoring…' : scoredCount === totalPairs ? 'Up to date' : `Score ${totalPairs - scoredCount} stale pair${totalPairs - scoredCount === 1 ? '' : 's'}`}
+            </button>
+          )}
           <button
             type="button"
             onClick={() => setFlagsOpen(o => !o)}
@@ -317,7 +326,7 @@ export function ProgramCoverageClient({ slug, initialData, initialFlags }: Props
       {flagsOpen && (
         <section className="rounded-md border bg-card">
           <header className="border-b px-4 py-2 text-xs font-semibold">Dispute flags</header>
-          <FlagsPanel flags={flags} slug={slug} onChanged={() => void refetchFlags()} />
+          <FlagsPanel flags={flags} slug={slug} isAdmin={isAdmin} onChanged={() => void refetchFlags()} />
         </section>
       )}
 
@@ -576,6 +585,7 @@ export function ProgramCoverageClient({ slug, initialData, initialFlags }: Props
           targetName={data.targets.find(t => t.id === activeTargetId)?.name ?? ''}
           slug={slug}
           scoring={scoringCell === `${selected.course.snapshotId}:${activeTargetId}`}
+          isAdmin={isAdmin}
           onClose={() => setSelected(null)}
           onScore={() => handleScoreCell(selected.course.snapshotId, activeTargetId)}
           onFlag={() => { setFlagTarget({ sel: selected, targetId: activeTargetId }); setFlagDialogOpen(true); }}
@@ -624,6 +634,7 @@ function CellDetailDrawer({
   targetName,
   slug,
   scoring,
+  isAdmin,
   onClose,
   onScore,
   onFlag,
@@ -633,6 +644,7 @@ function CellDetailDrawer({
   targetName: string;
   slug: string;
   scoring: boolean;
+  isAdmin: boolean;
   onClose: () => void;
   onScore: () => void;
   onFlag: () => void;
@@ -749,27 +761,31 @@ function CellDetailDrawer({
               >
                 ⚑ Flag this reading{openFlagCount > 0 ? ` (${openFlagCount} open)` : ''}
               </button>
-              <button
-                type="button"
-                onClick={onScore}
-                disabled={scoring}
-                className="ml-auto rounded-md border border-input bg-background px-2.5 py-1 text-xs hover:bg-muted disabled:opacity-50"
-              >
-                {scoring ? 'Re-scoring…' : 'Re-score this pair'}
-              </button>
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={onScore}
+                  disabled={scoring}
+                  className="ml-auto rounded-md border border-input bg-background px-2.5 py-1 text-xs hover:bg-muted disabled:opacity-50"
+                >
+                  {scoring ? 'Re-scoring…' : 'Re-score this pair'}
+                </button>
+              )}
             </div>
           </>
         ) : (
           <div className="space-y-3">
             <p className="italic text-muted-foreground">This (snapshot, target) pair has not been scored yet.</p>
-            <button
-              type="button"
-              onClick={onScore}
-              disabled={scoring}
-              className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-            >
-              {scoring ? 'Scoring…' : 'Score this pair'}
-            </button>
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={onScore}
+                disabled={scoring}
+                className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+              >
+                {scoring ? 'Scoring…' : 'Score this pair'}
+              </button>
+            )}
             <button
               type="button"
               onClick={onFlag}

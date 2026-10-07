@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { headers } from 'next/headers';
 import { isValidSlug } from '@/lib/slug';
 import {
   AI_FUNCTION_IDS,
@@ -9,6 +10,7 @@ import {
   listAllFunctionSettings,
 } from '@/lib/ai/function-settings';
 import { getDailyCapCents, getDailyCostHistory } from '@/lib/rate-limit/daily-cap';
+import { getViewerAccess } from '@/lib/auth/viewer';
 import { SettingsClient } from './SettingsClient';
 
 export const dynamic = 'force-dynamic';
@@ -29,9 +31,10 @@ export default async function SettingsPage({ searchParams }: Props) {
     );
   }
 
-  const [settings, costHistory] = await Promise.all([
+  const [settings, costHistory, { isAdmin }] = await Promise.all([
     listAllFunctionSettings(),
     getDailyCostHistory(14),
+    getViewerAccess(await headers()),
   ]);
   const capCents = getDailyCapCents();
 
@@ -59,6 +62,7 @@ export default async function SettingsPage({ searchParams }: Props) {
           functionIds={[...AI_FUNCTION_IDS]}
           costHistory={costHistory}
           capCents={capCents}
+          isAdmin={isAdmin}
         />
       </main>
     </div>
