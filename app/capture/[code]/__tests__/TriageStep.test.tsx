@@ -142,10 +142,8 @@ describe('TriageStep', () => {
     expect(screen.queryByText(/add your lecture slides/i)).toBeNull();
   });
 
-  it('clicking Ingest & continue POSTs to /api/admin/v2-backfill and gates onIngested behind Continue', async () => {
+  it('clicking Read files & continue POSTs to /api/admin/v2-backfill and goes on when nothing was queued', async () => {
     const onIngested = vi.fn();
-    // No queued results → the gate goes straight to 'done' and surfaces the
-    // Continue button rather than auto-advancing.
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ results: [], queued: 0 }) });
     vi.stubGlobal('fetch', fetchMock);
 
@@ -168,11 +166,8 @@ describe('TriageStep', () => {
     const body = JSON.parse((init as RequestInit).body as string);
     expect(body).toMatchObject({ courseCode: 'GC 3800', slug: 'test-slug' });
 
-    // Gate: onIngested fires only after the explicit Continue click.
-    const cont = await screen.findByRole('button', { name: /continue to interview/i });
-    expect(onIngested).not.toHaveBeenCalled();
-    fireEvent.click(cont);
-    expect(onIngested).toHaveBeenCalled();
+    // Nothing was queued → it goes straight on (owner 2026-10-07: no second click).
+    await waitFor(() => expect(onIngested).toHaveBeenCalled());
   });
 
   it('shows an error message and re-enables button when ingest fails', async () => {
@@ -502,7 +497,7 @@ describe('TriageStep completion gate', () => {
   beforeEach(() => { vi.restoreAllMocks(); vi.useFakeTimers(); });
   afterEach(() => { vi.useRealTimers(); });
 
-  it('gates Continue until all queued materials are terminal', async () => {
+  it('waits until all queued materials are terminal, then continues', async () => {
     vi.spyOn(global, 'fetch').mockResolvedValue(
       new Response(JSON.stringify({ results: [{ id: 'm1', status: 'queued' }], queued: 1 }), { status: 200 }),
     );
@@ -523,10 +518,7 @@ describe('TriageStep completion gate', () => {
     expect(screen.queryByRole('button', { name: /continue to interview/i })).toBeNull();
     status = 'ready';
     await act(async () => { await vi.advanceTimersByTimeAsync(3000); }); // poll sees 'ready'
-    // Phase flips to 'done' synchronously after the timer+microtasks above flush,
-    // so the button is present without findByRole's (now-faked) retry loop.
-    const cont = screen.getByRole('button', { name: /continue to interview/i });
-    fireEvent.click(cont);
+    // A clean run goes on to the interview by itself.
     expect(onIngested).toHaveBeenCalledOnce();
   });
 });

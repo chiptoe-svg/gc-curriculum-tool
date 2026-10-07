@@ -339,10 +339,15 @@ export function TriageStep({ courseCode, slug, materials, onIngested, onBack }: 
   // Slides nudge: show when no material has tier==='middle'.
   const showSlidesNudge = middleRows.length === 0;
 
-  // Total ingest estimate — derived inline from live row state, recomputes on every render.
-  const total = estimateTotal(rows);
+  // Only files not yet read count toward the estimate (owner, 2026-10-07: an
+  // already-read course showed "~1–3 min" and then "Done reading (0 ready)").
+  const unreadRows = rows.filter((r) => !r.ignored && r.indexingStatus !== 'ready');
+  const allRead = unreadRows.length === 0;
+  const total = estimateTotal(unreadRows);
 
   async function handleIngest(): Promise<void> {
+    // Nothing left to read: go straight on — no second click.
+    if (allRead) { onIngested(); return; }
     setPhase('ingesting');
     setIngestError(null);
     try {
@@ -360,8 +365,8 @@ export function TriageStep({ courseCode, slug, materials, onIngested, onBack }: 
       const data = await res.json().catch(() => ({})) as { results?: Array<{ id: string; status: string }> };
       const queuedIds = (data.results ?? []).filter(r => r.status === 'queued').map(r => r.id);
       if (queuedIds.length === 0) {
-        setProgress({ total: 0, terminal: 0, ready: 0, failed: 0, skipped: 0 });
-        setPhase('done');
+        // Nothing needed reading after all — go on to the interview.
+        onIngested();
         return;
       }
       void pollUntilDone(queuedIds);
@@ -383,7 +388,12 @@ export function TriageStep({ courseCode, slug, materials, onIngested, onBack }: 
         else if (s === 'skipped') { skipped++; terminal++; }
       }
       setProgress({ total: ids.length, terminal, ready, failed, skipped });
-      if (terminal >= ids.length) { setPhase('done'); return; }
+      if (terminal >= ids.length) {
+        // Clean run: carry on by itself. Stop only when a file needs attention.
+        if (failed === 0 && skipped === 0) { onIngested(); return; }
+        setPhase('done');
+        return;
+      }
       setTimeout(() => { void tick(); }, 3000);
     };
     await tick();
@@ -488,23 +498,31 @@ export function TriageStep({ courseCode, slug, materials, onIngested, onBack }: 
 
       {/* Total estimate + primary action */}
       <div className="mt-6 flex flex-col items-end gap-1.5">
-        <label className="flex items-center gap-2 text-xs text-muted-foreground">
-          <input
-            type="checkbox"
-            checked={useLocal}
-            onChange={(e) => setUseLocal(e.target.checked)}
-            disabled={phase !== 'idle'}
-          />
-          <span>Use local/free models — no API cost, nothing leaves campus</span>
-        </label>
-        {useLocal && (
+        {!allRead && (
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={useLocal}
+              onChange={(e) => setUseLocal(e.target.checked)}
+              disabled={phase !== 'idle'}
+            />
+            <span>Use local/free models — no API cost, nothing leaves campus</span>
+          </label>
+        )}
+        {useLocal && !allRead && (
           <p className="text-xs text-amber-700/80">May run longer for scanned/image PDFs.</p>
         )}
         {phase === 'idle' && (
           <p className="max-w-md text-right text-sm text-muted-foreground">
-            When you click <strong>Read files &amp; continue</strong>, this takes about{' '}
-            <span className="font-medium">{total.label}</span> (a rough estimate, 2 files at a time).
-            When it finishes, you&apos;ll go on to the interview.
+            {allRead ? (
+              <>All files are already read. If you moved a file to a different level, it keeps the reading it already has.</>
+            ) : (
+              <>
+                When you click <strong>Read files &amp; continue</strong>, this takes about{' '}
+                <span className="font-medium">{total.label}</span> (a rough estimate, 2 files at a time).
+                When it finishes, you&apos;ll go on to the interview automatically.
+              </>
+            )}
           </p>
         )}
         {phase === 'idle' && (
@@ -513,7 +531,7 @@ export function TriageStep({ courseCode, slug, materials, onIngested, onBack }: 
             onClick={() => void handleIngest()}
             className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
           >
-            Read files &amp; continue →
+            {allRead ? 'Continue to interview →' : <>Read files &amp; continue →</>}
           </button>
         )}
         {phase === 'ingesting' && (
@@ -531,8 +549,11 @@ export function TriageStep({ courseCode, slug, materials, onIngested, onBack }: 
         )}
         {phase === 'done' && (
           <div className="flex flex-col items-end gap-1.5">
-            <p className="text-sm text-emerald-700">
-              ✓ Done reading ({progress.ready} ready{progress.skipped ? `, ${progress.skipped} skipped` : ''}{progress.failed ? `, ${progress.failed} failed` : ''})
+            <p className="max-w-md text-right text-sm text-amber-800">
+              Done reading: {progress.ready} read
+              {progress.failed ? `, ${progress.failed} file${progress.failed === 1 ? '' : 's'} couldn't be read` : ''}
+              {progress.skipped ? `, ${progress.skipped} skipped` : ''}. You can go back to fix
+              {progress.failed + progress.skipped === 1 ? ' it' : ' them'}, or continue without.
             </p>
             <button
               type="button"
