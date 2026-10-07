@@ -44,7 +44,7 @@ function CurriculumPathIcon({ className, ...rest }: SVGProps<SVGSVGElement>) {
  *   - View -> /view/[code] (read-only, public)
  *   - Edit -> /capture/[code]?slug=<PROTOTYPE_SLUG> (Basic Auth)
  *
- * The capture-flow faculty links (Edit, "+ Add a course") are <CaptureLink>s:
+ * The capture-flow faculty links (Edit) are <CaptureLink>s:
  * they prefer the voice-capable HTTPS origin (NEXT_PUBLIC_VOICE_ORIGIN, the
  * Funnel) and fall back to a reliable direct origin (NEXT_PUBLIC_FALLBACK_ORIGIN
  * — on-campus HTTP, typed) when the voice origin isn't reachable, giving
@@ -65,13 +65,6 @@ export default async function HomePage() {
     pairedByCode.set(pc.courseCode, arr);
   }
   const groups = groupByCategory(rows.filter(r => isProgramVisible({ scope: r.scope, status: r.courseStatus })));
-
-  // Dedicated add-a-course page → straight into CourseCapture (which uses the
-  // mic), so it's a capture-flow link (<CaptureLink>): voice origin with a
-  // reliable direct fallback. Path only; CaptureLink resolves the origin.
-  const addCourseHref = slug
-    ? `/courses/new?slug=${encodeURIComponent(slug)}`
-    : null;
 
   // Curriculum adviser chat (/ask — streaming Q&A). Faculty surface (Basic Auth
   // + slug). Plain same-origin <a> (NOT a CaptureLink): text chat, no mic, so it
@@ -122,15 +115,6 @@ export default async function HomePage() {
             than syllabus aspiration. It will assemble these profiles into a program-wide picture of how the
             curriculum should build toward the careers it aims to prepare students for.
           </p>
-          {addCourseHref && (
-            <CaptureLink
-              path={addCourseHref}
-              className="shrink-0 rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted"
-              title="Add a course (requires login)"
-            >
-              + Add a course
-            </CaptureLink>
-          )}
         </div>
 
         <div className="space-y-10">
