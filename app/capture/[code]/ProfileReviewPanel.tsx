@@ -1728,7 +1728,9 @@ export function ProfileReviewPanel({
         </div>
       )}
 
-      {/* ── 7. STICKY ACTION BAR ── */}
+      {/* ── 7. STICKY ACTION BAR ── hidden once this session's approval succeeded and
+          nothing new was edited: the faculty member is done (owner, 2026-10-07). */}
+      {!(snapshotMessage?.kind === 'ok' && !dirty) && (
       <div data-testid="action-bar" className="sticky bottom-0 z-10 border-t bg-card px-4 py-3 shadow-[0_-1px_4px_rgba(0,0,0,0.06)]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Summary chip */}
@@ -1776,6 +1778,7 @@ export function ProfileReviewPanel({
           </div>
         </div>
       </div>
+      )}
 
       <CitationDrawer
         courseCode={courseCode}
