@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { isValidSlug } from '@/lib/slug';
 import { authorizedForBasicAuth } from '@/lib/auth/basic-auth';
+import { hasCaptureGrantCookie } from '@/lib/sandbox/access';
 import { transcribeAudio, isSupportedAudioMime, estimateWhisperCostCents } from '@/lib/ai/transcribe';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
@@ -41,8 +42,14 @@ async function handleTranscribe(req: Request): Promise<Response> {
   // middleware matcher (see middleware.ts — the Node-middleware body
   // buffering broke multipart uploads). Same gate, same env var, same
   // no-op-when-unset semantics as the middleware.
+  // Also accepts a scoped access link's session cookie with the capture
+  // capability (owner, 2026-10-07): link holders could not use Voice before.
   const expectedAuth = process.env.FACULTY_BASIC_AUTH;
-  if (expectedAuth && !authorizedForBasicAuth(req.headers.get('authorization'), expectedAuth)) {
+  if (
+    expectedAuth
+    && !authorizedForBasicAuth(req.headers.get('authorization'), expectedAuth)
+    && !(await hasCaptureGrantCookie(req))
+  ) {
     return new NextResponse('Authentication required', {
       status: 401,
       headers: { 'WWW-Authenticate': 'Basic realm="GC Curriculum Tool"' },

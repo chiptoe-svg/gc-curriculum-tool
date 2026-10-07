@@ -107,6 +107,37 @@ async function resolveGrantSession(
   }
 }
 
+/**
+ * Voice transcription for scoped-access-link holders (owner, 2026-10-07).
+ * `/api/transcribe` is outside the middleware matcher and not tied to a course,
+ * so it can't use resolveGrantSession. True when the request carries a valid,
+ * live `gc_session` cookie whose grant has the `capture` capability on any
+ * course (built-in faculty cookies qualify; the create-only role does not).
+ * Any failure is false — the route then falls back to Basic Auth.
+ */
+export async function hasCaptureGrantCookie(
+  req: { headers: { get(name: string): string | null } },
+): Promise<boolean> {
+  const cookie = req.headers.get('cookie') ?? '';
+  const m = cookie.match(new RegExp(`(?:^|; )${GRANT_SESSION_COOKIE}=([^;]+)`));
+  if (!m?.[1]) return false;
+  let raw: string;
+  try { raw = decodeURIComponent(m[1]); } catch { return false; }
+  try {
+    const grant = await grantFromSessionCookie(raw, {
+      findGrantById,
+      env: {
+        sessionSecret: process.env.SESSION_SECRET?.trim() || undefined,
+        faculty: process.env.FACULTY_BASIC_AUTH,
+        creator: process.env.CREATE_ONLY_AUTH,
+      },
+    });
+    return !!grant && grant !== 'dead' && grant.can.includes('capture');
+  } catch {
+    return false;
+  }
+}
+
 /** Read the scoped-session cookie, validate the session AND its grant, return
  * the binding. Falls back to a scoped-access-link `gc_session` cookie on the
  * matcher-excluded upload routes (resolveGrantSession). */
