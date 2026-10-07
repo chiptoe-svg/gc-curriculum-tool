@@ -285,12 +285,14 @@ export function VoiceRecorder({ slug, endpoint, onTranscript, disabled, maxDurat
   const ss = Math.floor((elapsedMs % 60000) / 1000).toString().padStart(2, '0');
   const timer = `${mm}:${ss}`;
 
+  // Plain words (owner, 2026-10-07): "Voice" to start, "Done" to finish —
+  // finishing turns the recording into text, so "Stop" undersold it.
   const label =
-    status === 'recording' ? `Stop · ${timer}`
+    status === 'recording' ? `Done · ${timer}`
       : status === 'transcribing' ? 'Transcribing…'
       : status === 'error' && pendingRetryable ? 'Retry upload'
       : status === 'error' ? 'Retry'
-      : 'Record';
+      : 'Voice';
 
   const icon =
     status === 'recording' ? '⏹'
@@ -311,7 +313,12 @@ export function VoiceRecorder({ slug, endpoint, onTranscript, disabled, maxDurat
         onClick={handleClick}
         disabled={disabled || status === 'transcribing'}
         aria-label={label}
-        title={preflightHint ?? label}
+        title={
+          preflightHint
+            ?? (status === 'recording' ? 'Finish and turn your recording into text'
+              : status === 'idle' ? 'Speak your reply; it is typed into the box for you to check'
+              : label)
+        }
         className={
           'inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm font-medium shadow-sm transition '
           + (status === 'recording'
@@ -323,7 +330,7 @@ export function VoiceRecorder({ slug, endpoint, onTranscript, disabled, maxDurat
         }
       >
         <span aria-hidden="true">{icon}</span>
-        <span>{label}</span>
+        <span>{label}{status === 'idle' ? '*' : ''}</span>
       </button>
       {(message || preflightHint) && (
         <div
@@ -337,6 +344,11 @@ export function VoiceRecorder({ slug, endpoint, onTranscript, disabled, maxDurat
         >
           {message || preflightHint}
         </div>
+      )}
+      {status === 'idle' && !message && !preflightHint && (
+        <p className="text-xs text-muted-foreground">
+          * The first recording can take a few extra seconds to start. After that it&apos;s quick.
+        </p>
       )}
       {pendingRetryable && (
         <button
