@@ -6,15 +6,24 @@
  * letting the button 403 in front of them.
  *
  * Resolves the viewer EXACTLY the way lib/auth/gate.ts does for a live
- * request: (1) an `Authorization: Basic` header against the current
- * FACULTY_BASIC_AUTH/CREATE_ONLY_AUTH env values → a built-in grant, or
- * else (2) a verified `gc_session` cookie → grantFromSessionCookie/
- * findGrantById. Both are credential-bearing headers already relied on
- * everywhere else in this app (never a generic client-settable header
- * like X-Forwarded-*, which carries no auth meaning here). Any failure —
- * no credential, a dead/tampered cookie, a DB error — resolves to the
- * fully-denied `ViewerAccess`, never a thrown error and never "admin" by
- * default. Fails closed, always.
+ * request: a live `gc_session` cookie wins (via `grantFromSessionCookie`/
+ * `findGrantById`); `Authorization: Basic` against the current
+ * FACULTY_BASIC_AUTH/CREATE_ONLY_AUTH env values is consulted only when
+ * there is no live cookie. Both are credential-bearing headers already
+ * relied on everywhere else in this app (never a generic client-settable
+ * header like X-Forwarded-*, which carries no auth meaning here). Any
+ * failure — no credential, a dead/tampered cookie, a DB error — resolves
+ * to the fully-denied `ViewerAccess`, never a thrown error and never
+ * "admin" by default. Fails closed, always.
+ *
+ * The cookie-before-Basic ORDER is the shared `pickActiveGrant`
+ * (lib/auth/grants.ts), the same function `gate()` uses for its own
+ * cookie-vs-Basic decision (security re-review G1, 2026-10-07 — this file
+ * previously checked Basic first, the reverse of `gate()`, which hid the
+ * admin controls from the owner whenever their browser also held the
+ * cached department Basic password alongside their personal admin
+ * cookie). Centralizing the order in one function means the two call
+ * sites can't drift apart again.
  *
  * `deps` is injectable (defaults to the real lib/auth/grants functions) so
  * tests can exercise failure paths — e.g. the DB throwing while resolving
@@ -32,6 +41,7 @@ import {
   builtinGrant as realBuiltinGrant,
   findGrantById as realFindGrantById,
   grantFromSessionCookie as realGrantFromSessionCookie,
+  pickActiveGrant,
   type BuiltinRole,
 } from '@/lib/auth/grants';
 
@@ -86,30 +96,33 @@ export async function getViewerAccess(
   deps: ViewerAccessDeps = defaultDeps,
 ): Promise<ViewerAccess> {
   try {
+    const raw = sessionCookieValue(headersLike.get('cookie'));
+    const cookieGrant = raw
+      ? await deps.grantFromSessionCookie(raw, {
+          findGrantById: deps.findGrantById,
+          env: {
+            sessionSecret: process.env.SESSION_SECRET?.trim() || undefined,
+            faculty: process.env.FACULTY_BASIC_AUTH,
+            creator: process.env.CREATE_ONLY_AUTH,
+          },
+        })
+      : null;
+
     const role = resolveRole(headersLike.get('authorization'), {
       faculty: process.env.FACULTY_BASIC_AUTH,
       creator: process.env.CREATE_ONLY_AUTH,
     });
+    let basicGrant: Grant | null = null;
     if (role) {
       const credential = role === 'faculty' ? process.env.FACULTY_BASIC_AUTH : process.env.CREATE_ONLY_AUTH;
       if (credential) {
-        return toAccess(deps.builtinGrant(role, credential, process.env.SESSION_SECRET?.trim() || undefined));
+        basicGrant = deps.builtinGrant(role, credential, process.env.SESSION_SECRET?.trim() || undefined);
       }
     }
 
-    const raw = sessionCookieValue(headersLike.get('cookie'));
-    if (!raw) return DENIED;
-
-    const grant = await deps.grantFromSessionCookie(raw, {
-      findGrantById: deps.findGrantById,
-      env: {
-        sessionSecret: process.env.SESSION_SECRET?.trim() || undefined,
-        faculty: process.env.FACULTY_BASIC_AUTH,
-        creator: process.env.CREATE_ONLY_AUTH,
-      },
-    });
-    if (!grant || grant === 'dead') return DENIED;
-    return toAccess(grant);
+    const picked = pickActiveGrant(cookieGrant, basicGrant);
+    if (!picked.grant) return DENIED;
+    return toAccess(picked.grant);
   } catch {
     return DENIED;
   }

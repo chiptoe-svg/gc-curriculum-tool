@@ -128,10 +128,35 @@ describe('getViewerAccess', () => {
     expect(out).toEqual({ isAdmin: false, scope: [], can: [] });
   });
 
-  it('Basic auth takes priority over a present but unrelated cookie', async () => {
+  it('Basic auth is used when the cookie present is not a gc_session cookie at all', async () => {
     const out = await withEnv({ FACULTY_BASIC_AUTH: FACULTY, SESSION_SECRET: SECRET }, () =>
       getViewerAccess(headersWith({ authorization: basic(FACULTY), cookie: 'some_other_cookie=x' }), depsWith(neverCalled)));
     expect(out.can).toEqual(['capture', 'create']);
+  });
+
+  // G1 (security re-review, 2026-10-07): getViewerAccess must resolve in
+  // the SAME order as gate() — a live gc_session cookie wins; Basic is
+  // used only when there is no live cookie. Scenario: the owner signs in
+  // via their personal admin link (sets the cookie) in a browser that also
+  // has the department Basic password cached, so BOTH headers arrive on
+  // every gated request. gate() already resolves this to the owner's
+  // admin grant (cookie first); getViewerAccess must match, or it hides
+  // the admin controls from the one person who should see them.
+  it('owner admin cookie + department Basic header together → isAdmin true (cookie wins)', async () => {
+    const cookie = `gc_session=${signSession(adminGrant.id, SECRET)}`;
+    const out = await withEnv({ FACULTY_BASIC_AUTH: FACULTY, CREATE_ONLY_AUTH: CREATOR, SESSION_SECRET: SECRET }, () =>
+      getViewerAccess(
+        headersWith({ authorization: basic(FACULTY), cookie }),
+        depsWith(async (id) => (id === adminGrant.id ? adminGrant : null)),
+      ));
+    expect(out).toEqual({ isAdmin: true, scope: ['*'], can: ['capture', 'create', 'admin'] });
+  });
+
+  it('a DEAD cookie (tampered) plus department Basic together still falls through to Basic (not admin)', async () => {
+    const cookie = `gc_session=${adminGrant.id}.bad`;
+    const out = await withEnv({ FACULTY_BASIC_AUTH: FACULTY, CREATE_ONLY_AUTH: CREATOR, SESSION_SECRET: SECRET }, () =>
+      getViewerAccess(headersWith({ authorization: basic(FACULTY), cookie }), depsWith(neverCalled)));
+    expect(out).toEqual({ isAdmin: false, scope: ['*'], can: ['capture', 'create'] });
   });
 
   it('calling with no deps override uses the real functions (defaults wired correctly) and still denies with no credential', async () => {

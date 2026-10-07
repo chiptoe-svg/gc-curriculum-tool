@@ -3,7 +3,7 @@ import { authorizeCourseWrite } from '@/lib/sandbox/access';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { checkDailyCap } from '@/lib/rate-limit/daily-cap';
 import { hashIp } from '@/lib/ip-hash';
-import { canonicalizeCourseCode } from '@/lib/curriculum/catalog-lookup';
+import { resolveCourseCodeCaseInsensitive } from '@/lib/db/courses-queries';
 import { checkIngestCooldown, recordIngestStart } from '@/lib/capture/ingest-cooldown';
 import { runCourseIngest, type IngestMode } from '@/lib/capture/run-course-ingest';
 
@@ -17,27 +17,34 @@ interface RouteContext { params: Promise<{ code: string }> }
  * (lib/capture/run-course-ingest.ts), but classified 'course-write' by
  * lib/auth/authorize.ts so a scoped access-link holder (capture capability,
  * scope = this course) can trigger it, not just an admin/operator credential.
- * The course code comes from the PATH, canonicalized (F4, security review
- * 2026-10-07) via canonicalizeCourseCode before any use — so `GC%204900AP`
- * acts on the DB's actual `GC 4900ap` row instead of a string match no row
- * has. A body `courseCode` that disagrees (also canonicalized before the
- * comparison) is rejected rather than silently followed.
+ *
+ * The course code comes from the PATH, resolved against the DB
+ * case-insensitively (G2, security re-review 2026-10-07) via
+ * resolveCourseCodeCaseInsensitive and then used in its STORED spelling
+ * everywhere — so `GC%201010l` acts on the DB's actual `GC 1010L` row.
+ * This REPLACES blindly lower-casing the suffix (canonicalizeCourseCode,
+ * F4), which broke any live course with an upper-case-suffix code: the
+ * guessed form matched no row, so ingest 404'd a real course. If no course
+ * matches at all, this route 404s before doing anything else — a body
+ * `courseCode` that disagrees (matched case-insensitively against the
+ * resolved code, not a second DB lookup) is rejected rather than silently
+ * followed.
  *
  * Cost backstops added in the same review (F2): a 60s per-course cooldown
- * (lib/capture/ingest-cooldown.ts, keyed by the canonical code) refuses a
- * repeat call on the same course before it starts; the daily cost cap
- * (lib/rate-limit/daily-cap.ts, same check /api/transcribe uses) refuses
- * queueing anything once the day's spend is over the cap. Both run AFTER
- * body validation so a malformed request never consumes either check — and
- * the cooldown is recorded only once every other check has passed, right
- * before the call that actually starts work.
+ * (lib/capture/ingest-cooldown.ts, keyed by the resolved/stored code)
+ * refuses a repeat call on the same course before it starts; the daily
+ * cost cap (lib/rate-limit/daily-cap.ts, same check /api/transcribe uses)
+ * refuses queueing anything once the day's spend is over the cap. Both run
+ * AFTER body validation so a malformed request never consumes either
+ * check — and the cooldown is recorded only once every other check has
+ * passed, right before the call that actually starts work.
  */
 export async function POST(req: Request, { params }: RouteContext): Promise<Response> {
   const url = new URL(req.url);
   const slug = url.searchParams.get('slug') ?? '';
   const { code: rawCode } = await params;
-  const courseCode = canonicalizeCourseCode(decodeURIComponent(rawCode));
-  if (!(await authorizeCourseWrite(req, courseCode, slug))) {
+  const pathCode = decodeURIComponent(rawCode);
+  if (!(await authorizeCourseWrite(req, pathCode, slug))) {
     return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
   }
 
@@ -45,10 +52,12 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   const { allowed } = await checkIpRateLimit(ipHash);
   if (!allowed) return NextResponse.json({ error: 'rate limit exceeded' }, { status: 429 });
 
+  const courseCode = await resolveCourseCodeCaseInsensitive(pathCode);
+  if (!courseCode) return NextResponse.json({ error: 'course not found' }, { status: 404 });
+
   const body = await req.json().catch(() => ({})) as { courseCode?: unknown; mode?: unknown };
   if (typeof body.courseCode === 'string' && body.courseCode.trim()) {
-    const bodyCourseCode = canonicalizeCourseCode(body.courseCode.trim());
-    if (bodyCourseCode !== courseCode) {
+    if (body.courseCode.trim().toLowerCase() !== courseCode.toLowerCase()) {
       return NextResponse.json({ error: 'courseCode does not match the path' }, { status: 400 });
     }
   }

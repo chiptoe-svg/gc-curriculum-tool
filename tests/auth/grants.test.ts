@@ -1,6 +1,7 @@
 import { createHash, createHmac } from 'node:crypto';
 import { describe, it, expect } from 'vitest';
-import { newToken, hashToken, signSession, verifySession, builtinGrant, builtinFromId, credentialFingerprint, isLive, cookieMaxAge, MAX_COOKIE_AGE_S } from '@/lib/auth/grants';
+import { newToken, hashToken, signSession, verifySession, builtinGrant, builtinFromId, credentialFingerprint, isLive, cookieMaxAge, MAX_COOKIE_AGE_S, pickActiveGrant } from '@/lib/auth/grants';
+import type { Grant } from '@/lib/auth/authorize';
 
 describe('tokens', () => {
   it('are 43-char base64url and unique', () => {
@@ -63,5 +64,29 @@ describe('built-ins and liveness', () => {
     expect(cookieMaxAge({ expiresAt: null }, now)).toBe(MAX_COOKIE_AGE_S);
     expect(cookieMaxAge({ expiresAt: new Date('2026-09-30T13:00:00Z') }, now)).toBe(3600);
     expect(cookieMaxAge({ expiresAt: new Date('2026-09-30T11:00:00Z') }, now)).toBe(0);
+  });
+});
+
+// G1 (security re-review, 2026-10-07): the single shared ordering rule —
+// a live cookie wins; Basic is used only when there is no live cookie —
+// used by BOTH gate() and getViewerAccess() so they can't drift.
+describe('pickActiveGrant', () => {
+  const adminGrant: Grant = { id: 'a', label: 'admin', scope: ['*'], can: ['capture', 'create', 'admin'] };
+  const deptGrant: Grant = { id: 'd', label: 'dept', scope: ['*'], can: ['capture', 'create'] };
+
+  it('a live cookie grant wins over a present Basic grant', () => {
+    expect(pickActiveGrant(adminGrant, deptGrant)).toEqual({ grant: adminGrant, source: 'cookie' });
+  });
+  it("'dead' cookie (tampered/revoked/expired) falls through to Basic", () => {
+    expect(pickActiveGrant('dead', deptGrant)).toEqual({ grant: deptGrant, source: 'basic' });
+  });
+  it('no cookie at all falls through to Basic', () => {
+    expect(pickActiveGrant(null, deptGrant)).toEqual({ grant: deptGrant, source: 'basic' });
+  });
+  it('neither present → null, no source', () => {
+    expect(pickActiveGrant(null, null)).toEqual({ grant: null, source: null });
+  });
+  it("'dead' cookie and no Basic → null", () => {
+    expect(pickActiveGrant('dead', null)).toEqual({ grant: null, source: null });
   });
 });

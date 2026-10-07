@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { authorizeCourseWrite } from '@/lib/sandbox/access';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { hashIp } from '@/lib/ip-hash';
-import { canonicalizeCourseCode } from '@/lib/curriculum/catalog-lookup';
+import { resolveCourseCodeCaseInsensitive } from '@/lib/db/courses-queries';
 import { runCourseReset } from '@/lib/capture/run-course-reset';
 
 interface RouteContext { params: Promise<{ code: string }> }
@@ -15,8 +15,6 @@ interface RouteContext { params: Promise<{ code: string }> }
  * (lib/capture/run-course-reset.ts), but classified 'course-write' by
  * lib/auth/authorize.ts so a scoped access-link holder (capture capability,
  * scope = this course) can trigger it, not just an admin/operator credential.
- * The course code comes from the PATH; a body `courseCode` that disagrees is
- * rejected rather than silently followed.
  *
  * SESSION-ONLY, BY DESIGN (owner must-fix, 2026-10-07 follow-up review): this
  * route accepts ONLY scope 'session' (the working-draft-only delete the
@@ -31,17 +29,23 @@ interface RouteContext { params: Promise<{ code: string }> }
  * admin-only via POST /api/admin/v2-reset, which is unchanged. See
  * run-course-reset.ts for exactly what each scope deletes.
  *
- * The path code is canonicalized (F4, security review 2026-10-07) via
- * canonicalizeCourseCode before any use — so `GC%204900AP` acts on the DB's
- * actual `GC 4900ap` row instead of a string match no row has. A body
- * `courseCode` is canonicalized the same way before the comparison.
+ * The course code comes from the PATH, resolved against the DB
+ * case-insensitively (G2, security re-review 2026-10-07) via
+ * resolveCourseCodeCaseInsensitive and used in its STORED spelling
+ * everywhere — so `GC%201010l` acts on the DB's actual `GC 1010L` row.
+ * This REPLACES blindly lower-casing the suffix (canonicalizeCourseCode,
+ * F4): `runCourseReset` doesn't check whether the course exists, so a
+ * mis-cased/guessed code used to delete zero rows and still return 200 —
+ * a FALSE SUCCESS. Resolving first means an unknown course 404s before
+ * `runCourseReset` is ever called; a body `courseCode` that disagrees
+ * (matched case-insensitively against the resolved code) is rejected.
  */
 export async function POST(req: Request, { params }: RouteContext): Promise<Response> {
   const url = new URL(req.url);
   const slug = url.searchParams.get('slug') ?? '';
   const { code: rawCode } = await params;
-  const courseCode = canonicalizeCourseCode(decodeURIComponent(rawCode));
-  if (!(await authorizeCourseWrite(req, courseCode, slug))) {
+  const pathCode = decodeURIComponent(rawCode);
+  if (!(await authorizeCourseWrite(req, pathCode, slug))) {
     return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
   }
 
@@ -49,14 +53,16 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   const { allowed } = await checkIpRateLimit(ipHash);
   if (!allowed) return NextResponse.json({ error: 'rate limit exceeded' }, { status: 429 });
 
+  const courseCode = await resolveCourseCodeCaseInsensitive(pathCode);
+  if (!courseCode) return NextResponse.json({ error: 'course not found' }, { status: 404 });
+
   const body = await req.json().catch(() => ({})) as {
     courseCode?: unknown;
     scope?: unknown;
     includeSnapshots?: unknown;
   };
   if (typeof body.courseCode === 'string' && body.courseCode.trim()) {
-    const bodyCourseCode = canonicalizeCourseCode(body.courseCode.trim());
-    if (bodyCourseCode !== courseCode) {
+    if (body.courseCode.trim().toLowerCase() !== courseCode.toLowerCase()) {
       return NextResponse.json({ error: 'courseCode does not match the path' }, { status: 400 });
     }
   }

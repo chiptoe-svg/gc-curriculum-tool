@@ -8,6 +8,12 @@ vi.mock('@/lib/capture/ingest-cooldown', () => ({
   checkIngestCooldown: vi.fn().mockReturnValue({ allowed: true }),
   recordIngestStart: vi.fn(),
 }));
+// Defaults to "whatever path segment it's given, decoded, is the real
+// course" — individual tests override this to exercise the case-
+// insensitive-resolution and not-found paths (G2, security re-review).
+vi.mock('@/lib/db/courses-queries', () => ({
+  resolveCourseCodeCaseInsensitive: vi.fn(async (code: string) => code),
+}));
 
 const { runCourseIngest } = vi.hoisted(() => ({ runCourseIngest: vi.fn() }));
 vi.mock('@/lib/capture/run-course-ingest', () => ({ runCourseIngest }));
@@ -17,12 +23,14 @@ import { authorizeCourseWrite } from '@/lib/sandbox/access';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { checkDailyCap } from '@/lib/rate-limit/daily-cap';
 import { checkIngestCooldown, recordIngestStart } from '@/lib/capture/ingest-cooldown';
+import { resolveCourseCodeCaseInsensitive } from '@/lib/db/courses-queries';
 
 const authMock = authorizeCourseWrite as unknown as ReturnType<typeof vi.fn>;
 const rateMock = checkIpRateLimit as unknown as ReturnType<typeof vi.fn>;
 const capMock = checkDailyCap as unknown as ReturnType<typeof vi.fn>;
 const cooldownMock = checkIngestCooldown as unknown as ReturnType<typeof vi.fn>;
 const recordMock = recordIngestStart as unknown as ReturnType<typeof vi.fn>;
+const resolveMock = resolveCourseCodeCaseInsensitive as unknown as ReturnType<typeof vi.fn>;
 
 function reqFor(code: string, body: unknown, slug = 's') {
   return new Request(`http://x/api/capture/${code}/ingest?slug=${slug}`, {
@@ -45,6 +53,7 @@ describe('POST /api/capture/[code]/ingest', () => {
     capMock.mockReset().mockResolvedValue({ ok: true });
     cooldownMock.mockReset().mockReturnValue({ allowed: true });
     recordMock.mockReset();
+    resolveMock.mockReset().mockImplementation(async (code: string) => code);
     runCourseIngest.mockReset().mockResolvedValue({
       courseCode: 'GC 1010', count: 0, queued: 0, skipped: 0, failed: 0, results: [],
     });
@@ -96,10 +105,11 @@ describe('POST /api/capture/[code]/ingest', () => {
     expect(runCourseIngest).toHaveBeenCalledWith('GC 1010', { mode: 'hybrid' });
   });
 
-  it('404s when the course does not exist', async () => {
-    runCourseIngest.mockResolvedValue(null);
+  it('404s when the course does not exist (runCourseIngest never reached)', async () => {
+    resolveMock.mockResolvedValue(null);
     const res = await call({});
     expect(res.status).toBe(404);
+    expect(runCourseIngest).not.toHaveBeenCalled();
   });
 
   it('returns the ingest result on success', async () => {
@@ -124,7 +134,7 @@ describe('POST /api/capture/[code]/ingest', () => {
     expect(runCourseIngest).not.toHaveBeenCalled();
   });
 
-  it('checks the cooldown using the canonical course code', async () => {
+  it('checks the cooldown using the resolved (stored) course code', async () => {
     await call({});
     expect(cooldownMock).toHaveBeenCalledWith('GC 1010');
   });
@@ -144,7 +154,7 @@ describe('POST /api/capture/[code]/ingest', () => {
     expect(capMock).not.toHaveBeenCalled();
   });
 
-  it('records the cooldown start (canonical code) right before calling runCourseIngest', async () => {
+  it('records the cooldown start (resolved code) right before calling runCourseIngest', async () => {
     await call({});
     expect(recordMock).toHaveBeenCalledWith('GC 1010');
     expect(runCourseIngest).toHaveBeenCalled();
@@ -156,35 +166,56 @@ describe('POST /api/capture/[code]/ingest', () => {
     expect(recordMock).not.toHaveBeenCalled();
   });
 
-  // ── F4 (security review 2026-10-07): canonicalize the path code ────────
-
-  describe('canonicalizes the path course code before use', () => {
-    it('GC%204900AP canonicalizes to GC 4900ap before calling runCourseIngest', async () => {
-      const res = await POST(reqFor('GC%204900AP', {}), { params: Promise.resolve({ code: 'GC%204900AP' }) });
+  // ── G2 (security re-review 2026-10-07): resolve the stored course code
+  // case-insensitively instead of blindly canonicalizing. GC 1010L (an
+  // upper-case-suffix course on the live roster) must not be broken by a
+  // path spelled with a different case.
+  describe('resolves the stored course code case-insensitively', () => {
+    it('GC%201010l resolves to the stored GC 1010L and that spelling reaches runCourseIngest', async () => {
+      resolveMock.mockImplementation(async (code: string) =>
+        code.toLowerCase() === 'gc 1010l' ? 'GC 1010L' : code);
+      const res = await POST(reqFor('GC%201010l', {}), { params: Promise.resolve({ code: 'GC%201010l' }) });
       expect(res.status).toBe(200);
-      expect(runCourseIngest).toHaveBeenCalledWith('GC 4900ap', { mode: 'hybrid' });
+      expect(resolveMock).toHaveBeenCalledWith('GC 1010l');
+      expect(runCourseIngest).toHaveBeenCalledWith('GC 1010L', { mode: 'hybrid' });
     });
 
-    it('a body courseCode matching the canonical form is accepted', async () => {
-      const res = await POST(reqFor('GC%204900AP', { courseCode: 'GC 4900ap' }), { params: Promise.resolve({ code: 'GC%204900AP' }) });
-      expect(res.status).toBe(200);
-    });
-
-    it('a body courseCode matching the raw (un-canonicalized) path spelling is also accepted', async () => {
-      const res = await POST(reqFor('GC%204900AP', { courseCode: 'GC 4900AP' }), { params: Promise.resolve({ code: 'GC%204900AP' }) });
+    it('a body courseCode matching case-insensitively is accepted', async () => {
+      resolveMock.mockImplementation(async (code: string) =>
+        code.toLowerCase() === 'gc 1010l' ? 'GC 1010L' : code);
+      const res = await POST(
+        reqFor('GC%201010l', { courseCode: 'gc 1010l' }),
+        { params: Promise.resolve({ code: 'GC%201010l' }) },
+      );
       expect(res.status).toBe(200);
     });
 
     it('a genuinely different course in the body still 400s', async () => {
-      const res = await POST(reqFor('GC%204900AP', { courseCode: 'GC 1010' }), { params: Promise.resolve({ code: 'GC%204900AP' }) });
+      resolveMock.mockImplementation(async (code: string) =>
+        code.toLowerCase() === 'gc 1010l' ? 'GC 1010L' : code);
+      const res = await POST(
+        reqFor('GC%201010l', { courseCode: 'GC 1010' }),
+        { params: Promise.resolve({ code: 'GC%201010l' }) },
+      );
       expect(res.status).toBe(400);
       expect(runCourseIngest).not.toHaveBeenCalled();
     });
 
-    it('the cooldown is keyed by the canonical code too', async () => {
-      await POST(reqFor('GC%204900AP', {}), { params: Promise.resolve({ code: 'GC%204900AP' }) });
-      expect(cooldownMock).toHaveBeenCalledWith('GC 4900ap');
-      expect(recordMock).toHaveBeenCalledWith('GC 4900ap');
+    it('the cooldown is keyed by the resolved (stored) code too', async () => {
+      resolveMock.mockImplementation(async (code: string) =>
+        code.toLowerCase() === 'gc 1010l' ? 'GC 1010L' : code);
+      await POST(reqFor('GC%201010l', {}), { params: Promise.resolve({ code: 'GC%201010l' }) });
+      expect(cooldownMock).toHaveBeenCalledWith('GC 1010L');
+      expect(recordMock).toHaveBeenCalledWith('GC 1010L');
+    });
+
+    it('an unknown course 404s before touching the cooldown or cap', async () => {
+      resolveMock.mockResolvedValue(null);
+      const res = await POST(reqFor('GC%209999', {}), { params: Promise.resolve({ code: 'GC%209999' }) });
+      expect(res.status).toBe(404);
+      expect(cooldownMock).not.toHaveBeenCalled();
+      expect(capMock).not.toHaveBeenCalled();
+      expect(runCourseIngest).not.toHaveBeenCalled();
     });
   });
 });
