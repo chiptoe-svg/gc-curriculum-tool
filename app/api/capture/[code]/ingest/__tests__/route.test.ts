@@ -66,10 +66,12 @@ describe('POST /api/capture/[code]/ingest', () => {
     expect(runCourseIngest).not.toHaveBeenCalled();
   });
 
-  it('429s when the IP rate limit is exceeded', async () => {
+  it('429s when the IP rate limit is exceeded, with a plain body (no reason field)', async () => {
     rateMock.mockResolvedValue({ allowed: false });
     const res = await call({});
     expect(res.status).toBe(429);
+    const json = await res.json();
+    expect(json).toEqual({ error: 'rate limit exceeded' });
     expect(runCourseIngest).not.toHaveBeenCalled();
   });
 
@@ -125,12 +127,20 @@ describe('POST /api/capture/[code]/ingest', () => {
 
   // ── F2 (security review 2026-10-07): cooldown + daily cap ──────────────
 
-  it('429s with a cooldown message when the same course was ingested recently', async () => {
+  // H1 (security re-review #3, 2026-10-07): the cooldown 429 must carry a
+  // DISTINCT body from the IP-rate-limit 429, so the client can tell "a
+  // concurrent caller is already reading" (poll) apart from "you're being
+  // throttled" (back off) instead of treating every 429 the same way.
+  it("429s with a distinct { reason: 'cooldown', retryAfter } body when the same course was ingested recently", async () => {
     cooldownMock.mockReturnValue({ allowed: false, retryAfterSeconds: 42 });
     const res = await call({});
     expect(res.status).toBe(429);
     const json = await res.json();
-    expect(json.error).toBe('Reading already started a moment ago — try again in 42 seconds');
+    expect(json).toEqual({
+      error: 'Reading already started a moment ago — try again in 42 seconds',
+      reason: 'cooldown',
+      retryAfter: 42,
+    });
     expect(runCourseIngest).not.toHaveBeenCalled();
   });
 

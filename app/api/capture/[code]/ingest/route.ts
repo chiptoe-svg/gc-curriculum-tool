@@ -68,8 +68,15 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
 
   const cooldown = checkIngestCooldown(courseCode);
   if (!cooldown.allowed) {
+    // H1 (security re-review #3, 2026-10-07): a distinct body — `reason:
+    // 'cooldown'` — so the client can tell this apart from the generic
+    // IP-rate-limit 429 below and poll instead of showing a raw error.
     return NextResponse.json(
-      { error: `Reading already started a moment ago — try again in ${cooldown.retryAfterSeconds} seconds` },
+      {
+        error: `Reading already started a moment ago — try again in ${cooldown.retryAfterSeconds} seconds`,
+        reason: 'cooldown',
+        retryAfter: cooldown.retryAfterSeconds,
+      },
       { status: 429 },
     );
   }

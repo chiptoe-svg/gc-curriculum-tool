@@ -22,6 +22,10 @@ export interface TriageStepProps {
 
 const TIER_ORDER: Tier[] = ['background', 'middle', 'high'];
 
+// H1 (security re-review #3, 2026-10-07): how long to poll on a cooldown
+// 429 before giving up and handing control back to the user.
+const COOLDOWN_POLL_CAP_MS = 5 * 60 * 1000;
+
 function tierUp(current: Tier): Tier {
   const idx = TIER_ORDER.indexOf(current);
   return TIER_ORDER[Math.min(idx + 1, TIER_ORDER.length - 1)] ?? current;
@@ -363,13 +367,33 @@ export function TriageStep({ courseCode, slug, materials, onIngested, onBack }: 
         },
       );
       if (res.status === 429) {
-        // G4 (security re-review, 2026-10-07): a 429 here means the
-        // per-course ingest cooldown is active — almost always a
-        // co-instructor's concurrent "Read files & continue" already
-        // started reading these same materials. That's not a failure:
-        // poll the unread rows we already know about for completion,
-        // same as if our own call had queued them.
-        void pollUntilDone(unreadRows.map(r => r.id));
+        const body = await res.json().catch(() => ({})) as { error?: string; reason?: string };
+        if (body.reason === 'cooldown') {
+          // G4/H1 (security re-review, 2026-10-07): the per-course ingest
+          // cooldown is active — almost always a co-instructor's
+          // concurrent "Read files & continue" already started reading
+          // these same materials. That's not a failure: poll for
+          // completion. Only rows actually 'queued'/'indexing' right now
+          // are worth waiting on — a merely 'pending' row was never
+          // queued by anyone (e.g. it has neither text nor a local blob
+          // to read) and would otherwise poll forever (H1).
+          const activeIds = unreadRows
+            .filter(r => r.indexingStatus === 'queued' || r.indexingStatus === 'indexing')
+            .map(r => r.id);
+          if (activeIds.length === 0) {
+            // Nothing is actually in flight to wait for.
+            onIngested();
+            return;
+          }
+          void pollUntilDone(activeIds, { maxWaitMs: COOLDOWN_POLL_CAP_MS });
+          return;
+        }
+        // Any other 429 (e.g. the shared per-IP rate limit) is a real
+        // "come back later," not "someone else is reading" — show a
+        // generic message and re-enable the button rather than polling
+        // indefinitely for work nobody queued (H1).
+        setIngestError('Too many requests — wait a minute and try again');
+        setPhase('idle');
         return;
       }
       if (!res.ok) {
@@ -392,7 +416,8 @@ export function TriageStep({ courseCode, slug, materials, onIngested, onBack }: 
     }
   }
 
-  async function pollUntilDone(ids: string[]): Promise<void> {
+  async function pollUntilDone(ids: string[], opts: { maxWaitMs?: number } = {}): Promise<void> {
+    const deadline = opts.maxWaitMs !== undefined ? Date.now() + opts.maxWaitMs : null;
     const tick = async (): Promise<void> => {
       const fresh = await fetchCourseMaterials(courseCode, slug);
       const byId = new Map((fresh ?? []).map(m => [m.id, m.indexingStatus]));
@@ -408,6 +433,16 @@ export function TriageStep({ courseCode, slug, materials, onIngested, onBack }: 
         // Clean run: carry on by itself. Stop only when a file needs attention.
         if (failed === 0 && skipped === 0) { onIngested(); return; }
         setPhase('done');
+        return;
+      }
+      // H1 (security re-review #3, 2026-10-07): a capped poll (the
+      // cooldown path) must not spin forever if the other caller's job
+      // never finishes (stuck worker, crashed process, etc.) — give up
+      // after the cap and hand control back to the user instead of
+      // showing "Reading…" indefinitely with no way out.
+      if (deadline !== null && Date.now() >= deadline) {
+        setIngestError('Still reading — check back in a few minutes or reload');
+        setPhase('idle');
         return;
       }
       setTimeout(() => { void tick(); }, 3000);
