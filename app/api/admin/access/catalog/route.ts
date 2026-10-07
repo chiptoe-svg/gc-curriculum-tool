@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { checkAdminAuth } from '@/lib/auth/admin-auth';
 import { courseExists } from '@/lib/db/courses-queries';
-import { lookupCatalogCourse, baseCodeOf } from '@/lib/curriculum/catalog-lookup';
+import { lookupCatalogCourse, baseCodeOf, canonicalizeCourseCode } from '@/lib/curriculum/catalog-lookup';
 
 const NO_STORE = { 'Cache-Control': 'no-store' };
 
@@ -18,7 +18,12 @@ export async function GET(req: Request): Promise<Response> {
   const code = raw?.trim() ?? '';
   if (!code) return NextResponse.json({ error: 'code is required' }, { status: 400, headers: NO_STORE });
 
-  const onCourseList = await courseExists(code);
+  // Canonicalize before checking the roster (fix round 2, N3) — the live
+  // roster stores section suffixes lower-case (GC 4900ap), so an exact,
+  // case-sensitive match against the raw typed code would miss a
+  // case-variant of an existing one (gc 4900AP) and let the UI invite a
+  // duplicate.
+  const onCourseList = await courseExists(canonicalizeCourseCode(code));
 
   const exact = await lookupCatalogCourse(code);
   if (exact) {

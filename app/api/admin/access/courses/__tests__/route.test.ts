@@ -100,4 +100,28 @@ describe('POST /api/admin/access/courses', () => {
     expect(res.status).toBe(400);
     expect(mockCreateCourse).not.toHaveBeenCalled();
   });
+
+  it('400s on every malformed code shape the review demonstrated creating a row (fix round 2, N2)', async () => {
+    for (const code of ['*', 'GC 1010/../ADMIN', 'AB\u00001234', '<SCRIPT>ALERT(1)</SCRIPT>', 'Q'.repeat(10000), '%E0%A4%A']) {
+      const res = await POST(req({ code, title: 'Whatever' }));
+      expect(res.status).toBe(400);
+    }
+    expect(mockCreateCourse).not.toHaveBeenCalled();
+  });
+
+  it('canonicalizes a section suffix to lower-case, matching the live data convention (fix round 2, N3)', async () => {
+    const res = await POST(req({ code: 'gc 4900AP', title: 'Special Topics' }));
+    expect(res.status).toBe(200);
+    expect(mockCourseExists).toHaveBeenCalledWith('GC 4900ap');
+    expect(mockCreateCourse).toHaveBeenCalledWith(expect.objectContaining({ code: 'GC 4900ap' }));
+  });
+
+  it('detects a case-variant duplicate of an existing section code as already on the list (fix round 2, N3)', async () => {
+    // courseExists is mocked exact-match like real PG `=`; the duplicate is
+    // only caught because the route canonicalizes BEFORE calling it.
+    mockCourseExists.mockImplementation(async (code: string) => code === 'GC 4900ap');
+    const res = await POST(req({ code: 'GC 4900AP', title: 'Special Topics' }));
+    expect(res.status).toBe(409);
+    expect(mockCreateCourse).not.toHaveBeenCalled();
+  });
 });

@@ -24,6 +24,9 @@ function makeFakeClient() {
       if (/WHERE course_code = ANY/i.test(s)) {
         const codes = new Set(params[0] as string[]);
         for (let i = prereqs.length - 1; i >= 0; i--) if (codes.has(prereqs[i]!.course_code as string)) prereqs.splice(i, 1);
+      } else if (/WHERE course_code <> ALL/i.test(s)) {
+        const codes = new Set(params[0] as string[]);
+        for (let i = prereqs.length - 1; i >= 0; i--) if (!codes.has(prereqs[i]!.course_code as string)) prereqs.splice(i, 1);
       } else {
         prereqs.length = 0;
       }
@@ -131,7 +134,7 @@ describe('sync-catalog-prereqs applyCatalogSync — scoped delete (coordinator f
     });
   });
 
-  it('the prereqs sync replacement is itself scoped: a stale prereq edge for a course no longer in scope is untouched, a scoped one is replaced', async () => {
+  it('re-running for the same scoped code replaces its edge (old prereq gone, new one present, nothing duplicated)', async () => {
     const { client, prereqs } = makeFakeClient();
     await applyFullCatalogEntries(client, buildFullCatalogEntries(fullRows, years));
     const first = buildCatalogSyncRows([scopedCatalogRow('GC 3460', 'GC 2070')], years);
@@ -143,5 +146,25 @@ describe('sync-catalog-prereqs applyCatalogSync — scoped delete (coordinator f
     await applyCatalogSync(client, second.entries, second.edges);
     expect(prereqs).toHaveLength(1);
     expect(prereqs[0]).toMatchObject({ course_code: 'GC 3460', prereq_code: 'GC 3500' });
+  });
+
+  it('removes prerequisite edges for a tracked code the catalog no longer lists (fix round 2, N6 — restores pre-upsert cleanup behavior)', async () => {
+    const { client, prereqs, entries } = makeFakeClient();
+    await applyFullCatalogEntries(client, buildFullCatalogEntries(fullRows, years));
+
+    // Run 1: GC 3460 and GC 3700 are both in scope, each with an edge.
+    const run1 = buildCatalogSyncRows([scopedCatalogRow('GC 3460', 'GC 2070'), scopedCatalogRow('GC 3700', 'GC 1010')], years);
+    await applyCatalogSync(client, run1.entries, run1.edges);
+    expect(prereqs).toHaveLength(2);
+
+    // Run 2: GC 3700 dropped out of the catalog/tracked scope — only GC 3460 remains.
+    const run2 = buildCatalogSyncRows([scopedCatalogRow('GC 3460', 'GC 2070')], years);
+    await applyCatalogSync(client, run2.entries, run2.edges);
+
+    // GC 3700's stale edge is gone; GC 3460's edge survives.
+    expect(prereqs.map((p) => p.course_code)).toEqual(['GC 3460']);
+    // Entries rows keep the upsert behavior — GC 3700's course_catalog_entries
+    // row (if any existed) is untouched by this cleanup; only edges are pruned.
+    expect(entries.has('ACCT 2010')).toBe(true); // unrelated full-sync row still untouched
   });
 });

@@ -415,4 +415,9 @@ describe('isValidGrantId', () => {
     expect(isValidGrantId("1' OR '1'='1")).toBe(false);
     expect(isValidGrantId('../../x')).toBe(false);
   });
+  it('rejects a 36-char string of the right length but wrong shape (fix round 2, N5)', () => {
+    expect(isValidGrantId('------------------------------------')).toBe(false); // 36 hyphens
+    expect(isValidGrantId('a'.repeat(36))).toBe(false); // 36 hex-alphabet chars, no hyphens at all
+    expect(isValidGrantId('123e4567e89b12d3a456426614174000gg')).toBe(false); // right length, missing dashes
+  });
 });

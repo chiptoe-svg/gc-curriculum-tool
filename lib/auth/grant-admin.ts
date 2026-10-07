@@ -72,13 +72,15 @@ export function buildCan(canCreate: boolean): Capability[] {
 /** C0 controls + DEL — rejected in label/email (fix round 1, L6). */
 const CONTROL_CHARS = /[\u0000-\u001f\u007f]/;
 
-/** 36-char hyphenated UUID shape, matching the pattern `findGrantById`
- * already uses (lib/auth/grants.ts) — validate before any query touches the
- * DB (fix round 1, L3), so a malformed id 400s instead of risking a raw
+/** Strict `8-4-4-4-12` hex UUID shape — validate before any query touches
+ * the DB (fix round 1, L3), so a malformed id 400s instead of risking a raw
  * Postgres `22P02 invalid input syntax for type uuid` 500 (which would also
- * skip the route's `no-store` header). */
+ * skip the route's `no-store` header). Tightened in fix round 2 (N5): the
+ * previous `/^[0-9a-f-]{36}$/i` accepted any 36-char mix of hex digits and
+ * hyphens regardless of placement — 36 bare hyphens, or 36 `a`s with none —
+ * which still reach the DB and 500 the same way. */
 export function isValidGrantId(id: string): boolean {
-  return /^[0-9a-f-]{36}$/i.test(id);
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 }
 
 /** Codes in `scope` not present in `known` (case/whitespace-normalized); `'*'` never flags. */

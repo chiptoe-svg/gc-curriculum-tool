@@ -22,7 +22,7 @@
  */
 import { Pool } from 'pg';
 import { buildFullCatalogEntries, type CatalogEntryInsert } from '@/lib/catalog/catalog-sync';
-import { DEFAULT_CATALOG_DB, loadAppEnv, openCatalogReadOnly, readAllCatalogCourses, readCatalogYears, argValue } from './catalog-source';
+import { DEFAULT_CATALOG_DB, loadAppEnv, openCatalogReadOnly, readAllCatalogCourses, readCatalogYears, argValue, isMainModule } from './catalog-source';
 
 export interface QueryClient { query(sql: string, params?: unknown[]): Promise<unknown> }
 
@@ -90,6 +90,6 @@ async function main() {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isMainModule(import.meta.url, process.argv[1])) {
   main().catch(err => { console.error(err); process.exit(1); });
 }

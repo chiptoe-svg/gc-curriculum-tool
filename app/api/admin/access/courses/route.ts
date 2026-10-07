@@ -2,8 +2,7 @@ import { NextResponse } from 'next/server';
 import { checkAdminAuth } from '@/lib/auth/admin-auth';
 import { hasJsonContentType } from '@/lib/http/require-json';
 import { courseExists, createCourse, updateCourseClassification } from '@/lib/db/courses-queries';
-import { lookupCatalogCourse, validateCourseTitle, levelFromCode } from '@/lib/curriculum/catalog-lookup';
-import { normalizeCode } from '@/lib/auth/authorize';
+import { lookupCatalogCourse, validateCourseTitle, validateCourseCode, levelFromCode } from '@/lib/curriculum/catalog-lookup';
 import { CATEGORY_ORDER, CATEGORY_LABELS, type CourseCategory } from '@/lib/db/course-category-seed';
 
 const NO_STORE = { 'Cache-Control': 'no-store' };
@@ -22,13 +21,14 @@ export async function POST(req: Request): Promise<Response> {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401, headers: NO_STORE });
   }
 
-  const rawCode = typeof body.code === 'string' ? body.code.trim() : '';
-  if (!rawCode) return NextResponse.json({ error: 'code is required' }, { status: 400, headers: NO_STORE });
-  // Normalized the same way every other course-code entry point in this
-  // admin surface is (resolveScope, checkCourses) — so a code typed in any
-  // case/spacing lines up with both the catalog's row and a later duplicate
-  // check, rather than inventing a third convention.
-  const code = normalizeCode(rawCode);
+  // Trims, canonicalizes (uppercase subject, lower-case suffix — matching
+  // the live data convention) and validates against the exact shape
+  // authorize() accepts, capped at 16 chars with no control characters
+  // (fix round 2, N2/N3 — rejects '*', slashes, NUL, HTML, 10,000-char
+  // strings, and un-decodable escapes, all of which previously created a row).
+  const codeR = validateCourseCode(body.code);
+  if ('error' in codeR) return NextResponse.json({ error: codeR.error }, { status: 400, headers: NO_STORE });
+  const code = codeR.code;
 
   if (await courseExists(code)) {
     return NextResponse.json({ error: `${code} is already on the course list` }, { status: 409, headers: NO_STORE });

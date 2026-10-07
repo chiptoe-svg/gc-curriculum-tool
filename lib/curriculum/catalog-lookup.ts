@@ -8,7 +8,7 @@
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { courseCatalogEntries } from '@/lib/db/schema';
-import { normalizeCode } from '@/lib/auth/authorize';
+import { normalizeCode, COURSE_CODE } from '@/lib/auth/authorize';
 import { parseCourseCode, composeCourseCode } from '@/lib/courses/parse-course-code';
 
 export interface CatalogLookupResult {
@@ -64,4 +64,48 @@ export function baseCodeOf(code: string): string | null {
   const parsed = parseCourseCode(code);
   if (parsed.number === null || !parsed.suffix) return null;
   return composeCourseCode({ ...parsed, suffix: '' });
+}
+
+const MAX_CODE_LENGTH = 16;
+
+/**
+ * Canonical stored form: uppercase subject + number, LOWER-case section
+ * suffix — matching the live data convention (`GC 4900ap`, `GC 4990ta`,
+ * not `GC 4900AP`), via `composeCourseCode(parseCourseCode(...))` (which
+ * already uppercases the prefix and lower-cases the suffix). This makes
+ * `gc 4900ap` / `GC 4900AP` / `GC 4900ap` all canonicalize to the identical
+ * string, so a plain `=` duplicate check against our own canonically-stored
+ * rows is case-insensitive in effect without needing a SQL-level
+ * `lower()` comparison (fix round 2, N3).
+ *
+ * Falls back to the trimmed input unchanged when it doesn't parse as a
+ * `SUBJECT NUMBER[suffix]` shape (e.g. an `EXT-xxxxxxxx` sandbox code,
+ * which has no case-sensitive suffix to canonicalize) — `validateCourseCode`
+ * below is what actually rejects anything that still isn't a real code.
+ */
+export function canonicalizeCourseCode(raw: string): string {
+  const parsed = parseCourseCode(raw);
+  return parsed.number === null ? raw : composeCourseCode(parsed);
+}
+
+/**
+ * Trims, canonicalizes, and validates a course code for the "Add a
+ * course" feature (fix round 2, N2/N3): rejects anything over
+ * `MAX_CODE_LENGTH` chars or containing a control character BEFORE any
+ * parsing (so a 10,000-char string or an embedded NUL never reaches
+ * `parseCourseCode`), then requires the canonicalized form to match the
+ * exact shape `authorize()` accepts (`COURSE_CODE`, exported from
+ * lib/auth/authorize.ts) — the same regex that decides whether a scoped
+ * grant can ever write to the course at all. Rejects `*`, slashes, HTML,
+ * un-decodable percent escapes, and anything else that isn't a real code.
+ */
+export function validateCourseCode(raw: unknown): { code: string } | { error: string } {
+  if (typeof raw !== 'string') return { error: 'code must be a string' };
+  const trimmed = raw.trim();
+  if (!trimmed) return { error: 'code is required' };
+  if (trimmed.length > MAX_CODE_LENGTH) return { error: `code must be at most ${MAX_CODE_LENGTH} characters` };
+  if (CONTROL_CHARS.test(trimmed)) return { error: 'code must not contain control characters' };
+  const code = canonicalizeCourseCode(trimmed);
+  if (!COURSE_CODE.test(code)) return { error: 'code must look like a course code (e.g. "ENTR 4080")' };
+  return { code };
 }

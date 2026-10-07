@@ -72,4 +72,15 @@ describe('GET /api/admin/access/catalog', () => {
     const json = await res.json();
     expect(json.onCourseList).toBe(true);
   });
+
+  it('reports onCourseList:true for a case-variant of an existing section code (fix round 2, N3)', async () => {
+    // courseExists is mocked exact-match like real PG `=`; the lookup only
+    // detects it because the route canonicalizes BEFORE calling courseExists.
+    mockLookupCatalogCourse.mockResolvedValue(null);
+    mockCourseExists.mockImplementation(async (code: string) => code === 'GC 4900ap');
+    const res = await GET(req('gc 4900AP'));
+    const json = await res.json() as { onCourseList: boolean };
+    expect(mockCourseExists).toHaveBeenCalledWith('GC 4900ap');
+    expect(json.onCourseList).toBe(true);
+  });
 });

@@ -5,15 +5,22 @@
  *
  * Scope: every active GC course in the catalog, plus the non-GC courses our
  * `courses` table holds (when the catalog has them). SCOPED to that set of
- * course codes (2026-10-07 fix, then hardened further the same day):
- *   - `course_catalog_prereqs` edges are still a scoped delete-then-insert
- *     (`WHERE course_code = ANY(<codes this run is about to rewrite>)`) —
- *     there is nothing on an edge row worth preserving across a re-sync.
+ * course codes (2026-10-07 fix, then hardened twice more the same week):
+ *   - `course_catalog_prereqs` edges are the one table this script
+ *     EXCLUSIVELY owns (sync-catalog-courses.ts never writes it), so it
+ *     fully owns cleanup too: a scoped `= ANY` delete clears this run's own
+ *     old edges before reinserting them, and a `<> ALL` delete removes
+ *     edges for any code that dropped out of scope entirely (a course that
+ *     left the catalog or the tracked set) — restoring the pre-upsert
+ *     behavior where stale prerequisite edges don't live forever (fix
+ *     round 2, N6).
  *   - `course_catalog_entries` is an UPSERT (`ON CONFLICT (course_code) DO
  *     UPDATE`), not a delete-then-insert, and only ever SETs the columns
  *     this sync owns (title, prereq_text, coreq_text, notes, catalog_year,
  *     source_url, catalog_last_synced, synced_at) — never `description`/
- *     `credits`, which scripts/catalog/sync-catalog-courses.ts owns. The two
+ *     `credits`, which scripts/catalog/sync-catalog-courses.ts owns (a
+ *     stale entries row for a course that left scope is left in place, on
+ *     purpose — the full sync still owns and refreshes that row). The two
  *     syncs can therefore run in either order without either one resetting
  *     the other's columns on a row they both touch (e.g. any GC course), or
  *     losing a row outside its own scope — see applyCatalogSync below and
@@ -28,20 +35,28 @@
  */
 import { Pool } from 'pg';
 import { buildCatalogSyncRows, formatCatalogPrereqs, type CatalogEntryInsert, type CatalogEdgeInsert } from '@/lib/catalog/catalog-sync';
-import { DEFAULT_CATALOG_DB, loadAppEnv, openCatalogReadOnly, readCatalogRows, readCatalogYears, argValue } from './catalog-source';
+import { DEFAULT_CATALOG_DB, loadAppEnv, openCatalogReadOnly, readCatalogRows, readCatalogYears, argValue, isMainModule } from './catalog-source';
 
 export interface QueryClient { query(sql: string, params?: unknown[]): Promise<unknown> }
 
 /**
- * Replaces edges for exactly the course codes in `entries` (edges have
- * nothing worth preserving across a re-sync, so a scoped delete-then-insert
- * is fine there), and UPSERTs entries — never deletes them. The upsert only
- * SETs the columns this sync owns, so a row sync-catalog-courses.ts also
- * wrote (any GC course, since GC is always in this sync's scope) keeps its
- * `description`/`credits` regardless of which sync ran more recently.
- * `edges` is always a subset of `entries`' codes (buildCatalogSyncRows only
- * ever produces an edge whose `courseCode` is one of `entries`' codes), so
- * scoping the edges delete to `entries`' codes is correct.
+ * UPSERTs entries (never deletes them) and fully owns `course_catalog_prereqs`:
+ * this script is the ONLY writer of that table (sync-catalog-courses.ts
+ * never touches it), so it's safe and correct for this run to clean up
+ * EVERY edge not in its current scope, not just replace the ones it's
+ * about to rewrite — restoring the pre-upsert behavior where a tracked
+ * course that leaves the catalog, or drops out of the tracked set, loses
+ * its stale prerequisite edges (fix round 2, N6) instead of keeping them
+ * forever. Two deletes together cover the whole table: `= ANY` clears this
+ * run's own old edges before reinserting them, `<> ALL` clears edges for
+ * codes no longer in scope at all.
+ *
+ * The entries upsert only SETs the columns this sync owns, so a row
+ * sync-catalog-courses.ts also wrote (any GC course, since GC is always in
+ * this sync's scope) keeps its `description`/`credits` regardless of which
+ * sync ran more recently. `edges` is always a subset of `entries`' codes
+ * (buildCatalogSyncRows only ever produces an edge whose `courseCode` is
+ * one of `entries`' codes).
  */
 export async function applyCatalogSync(
   client: QueryClient,
@@ -50,6 +65,7 @@ export async function applyCatalogSync(
 ): Promise<void> {
   const codes = entries.map((e) => e.courseCode);
   await client.query('DELETE FROM course_catalog_prereqs WHERE course_code = ANY($1)', [codes]);
+  await client.query('DELETE FROM course_catalog_prereqs WHERE course_code <> ALL($1)', [codes]);
   for (const e of entries) {
     await client.query(
       `INSERT INTO course_catalog_entries (course_code, title, prereq_text, coreq_text, notes, catalog_year, source_url, catalog_last_synced)
@@ -135,6 +151,6 @@ async function main() {
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isMainModule(import.meta.url, process.argv[1])) {
   main().catch(err => { console.error(err); process.exit(1); });
 }

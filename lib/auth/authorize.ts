@@ -36,8 +36,12 @@ const ADMIN_COURSES = '/api/admin/courses/';
  * `courses.code` data (2026-09-30): subjects of 2–4 capitals (GC, ACCT, PKSC),
  * suffixes of up to two letters in either case (GC 1010L, GC 4900ap,
  * GC 4990ta), plus the generated sandbox namespace `EXT-<8 hex>`.
+ *
+ * Exported (fix round 2, N2) so lib/curriculum/catalog-lookup.ts can
+ * validate a newly-added course code against this exact shape rather than
+ * duplicating the pattern.
  */
-const COURSE_CODE = /^(?:[A-Z]{2,4} \d{4}[A-Za-z]{0,2}|EXT-[0-9a-f]{8})$/;
+export const COURSE_CODE = /^(?:[A-Z]{2,4} \d{4}[A-Za-z]{0,2}|EXT-[0-9a-f]{8})$/;
 
 /** The course code a course-prefixed path is bound to (upper-cased for scope
  * comparison), or null when the path is not under a course prefix or its
@@ -56,8 +60,10 @@ function courseOf(path: string): string | null {
 
 /** The admin surface: /admin, /admin/**, /api/admin/**. Its GETs render
  * secrets (partner magic links, sandbox tokens), so it is NOT part of
- * "everything readable" (2026-09-30 final review, C1). */
-function isAdminSurface(path: string): boolean {
+ * "everything readable" (2026-09-30 final review, C1). Exported (fix round
+ * 2, N1) so middleware.ts's CSRF guard can reuse this exact decode-and-test
+ * logic instead of duplicating a path-prefix check of its own. */
+export function isAdminSurface(path: string): boolean {
   const test = (p: string) => p === '/admin' || p.startsWith('/admin/') || p === '/api/admin' || p.startsWith('/api/admin/');
   // Defense in depth: also test the once-decoded form, so an encoded spelling
   // (`/%61dmin/partners`) can only ever be MORE restricted, never less.

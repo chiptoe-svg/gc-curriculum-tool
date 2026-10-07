@@ -117,21 +117,50 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  // --- CSRF guard for state-changing /api/admin/** requests -----------------
-  // Security review fix round 1, M2. A scoped (non-admin) faculty grant
-  // holder learns PROTOTYPE_SLUG — it's rewritten into every gated page they
-  // view (see the slug-rewrite note in decide(), lib/auth/gate.ts) — so the
-  // slug second factor alone is not a cross-site defense: a simple
-  // cross-site <form method=POST> targeting these routes rides the admin's
-  // cached Basic Auth credentials straight past it. This runs in middleware,
-  // before gate()/auth, so it applies uniformly and can't be skipped by a
-  // route that forgets to add its own check.
+  // --- CSRF guard for state-changing requests on any gated path -------------
+  // Security review fix round 1 (M2), broadened in fix round 2 (N1). A
+  // scoped (non-admin) faculty grant holder learns PROTOTYPE_SLUG — it's
+  // rewritten into every gated page they view (see the slug-rewrite note in
+  // decide(), lib/auth/gate.ts) — so the slug second factor alone is not a
+  // cross-site defense: a simple cross-site <form method=POST> targeting a
+  // gated route rides the admin's cached Basic Auth credentials straight
+  // past it. This runs in middleware, before gate()/auth, so it applies
+  // uniformly and can't be skipped by a route that forgets to add its own
+  // check.
+  //
+  // Round 1 scoped this to a literal `path.startsWith('/api/admin/')`
+  // prefix test. The round-2 review showed that's bypassable by
+  // percent-encoding the path (`/api/%61dmin/...`, `/api%2Fadmin/...`) —
+  // Next's own router still resolves those to the real admin route, but the
+  // literal-prefix test never matched, so the guard silently didn't fire,
+  // while 14 OTHER mutating /api/admin/** routes (v2-reset, sandbox-grants,
+  // courses/roster, …) have no JSON-content-type check of their own to fall
+  // back on. Scoping by `requiresBasicAuth(path)` instead closes that class
+  // structurally rather than by decoding: it is a DEFAULT-DENY check (gated
+  // unless the path *literally* matches one of a short public allowlist —
+  // lib/auth/basic-auth.ts's PUBLIC_PREFIXES), so no encoding of a gated
+  // path can make it look public; at worst it makes an already-public path
+  // look gated, which fails closed, not open. This also broadens the guard
+  // to every gated surface, not just `/api/admin/**`, per the review's
+  // "prefer the broader safe rule."
+  //
+  // Exemptions, all via requiresBasicAuth's own PUBLIC_PREFIXES (not
+  // re-listed here so there's one place to keep in sync): `/partners/**` +
+  // `/api/partners/**` (their own magic-link auth model, not Basic Auth);
+  // `/sandbox/**` (scoped session tokens, handled above this block anyway);
+  // `/api/mcp` + `/api/curriculum/search` (bearer-token self-auth for
+  // non-browser machine callers that may legitimately be cross-origin);
+  // `/wiki/**`, `/view/**`, and the static procurement/sme-questions pages
+  // + `/api/procurement-intake` (public by design). The matcher-excluded
+  // routes (api/transcribe, imscc-import, materials, vision-proxy) never
+  // reach this function at all — see `config.matcher` below — so they need
+  // no exemption here; each self-authenticates in its own route handler.
   //
   // GET/HEAD are exempt (reads aren't state-changing). A request with
   // neither header (curl, server-to-server, most non-browser HTTP clients)
   // is allowed through — browsers always send at least one of the two on a
   // cross-origin request, so their absence is not itself suspicious.
-  if (path.startsWith('/api/admin/') && !['GET', 'HEAD'].includes(req.method.toUpperCase())) {
+  if (requiresBasicAuth(path) && !['GET', 'HEAD'].includes(req.method.toUpperCase())) {
     const secFetchSite = req.headers.get('sec-fetch-site');
     const blocked =
       secFetchSite === 'cross-site' || secFetchSite === 'same-site'

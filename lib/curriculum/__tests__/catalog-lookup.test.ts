@@ -19,7 +19,7 @@ function selectChain(result: unknown[]) {
 
 vi.mock('@/lib/db/client', () => ({ db: { select: () => selectChain(selectResult) } }));
 
-import { lookupCatalogCourse, validateCourseTitle, levelFromCode, baseCodeOf } from '@/lib/curriculum/catalog-lookup';
+import { lookupCatalogCourse, validateCourseTitle, levelFromCode, baseCodeOf, canonicalizeCourseCode, validateCourseCode } from '@/lib/curriculum/catalog-lookup';
 
 beforeEach(() => { vi.clearAllMocks(); selectResult = []; selectWhereArg = null; });
 
@@ -69,5 +69,42 @@ describe('baseCodeOf', () => {
   it('returns null when there is no suffix to strip, or no number', () => {
     expect(baseCodeOf('GC 4900')).toBeNull();
     expect(baseCodeOf('nonsense')).toBeNull();
+  });
+});
+
+describe('canonicalizeCourseCode (fix round 2, N3)', () => {
+  it('uppercases the subject, keeps the number, lower-cases the suffix regardless of input case', () => {
+    expect(canonicalizeCourseCode('GC 4900AP')).toBe('GC 4900ap');
+    expect(canonicalizeCourseCode('gc 4900ap')).toBe('GC 4900ap');
+    expect(canonicalizeCourseCode('Gc 4900Ap')).toBe('GC 4900ap');
+  });
+  it('canonicalizes a code with no suffix the same way', () => {
+    expect(canonicalizeCourseCode('econ 2120')).toBe('ECON 2120');
+  });
+  it('falls back to the input unchanged when it does not parse as subject+number (e.g. an EXT- code)', () => {
+    expect(canonicalizeCourseCode('EXT-deadbeef')).toBe('EXT-deadbeef');
+  });
+});
+
+describe('validateCourseCode (fix round 2, N2/N3)', () => {
+  it('accepts a well-shaped code, returning it canonicalized', () => {
+    expect(validateCourseCode('entr 4080')).toEqual({ code: 'ENTR 4080' });
+    expect(validateCourseCode('GC 4900AP')).toEqual({ code: 'GC 4900ap' });
+    expect(validateCourseCode(' GC 4990ta ')).toEqual({ code: 'GC 4990ta' });
+    expect(validateCourseCode('EXT-deadbeef')).toEqual({ code: 'EXT-deadbeef' });
+  });
+  it('rejects every shape the review demonstrated creating a row (fix round 2, N2)', () => {
+    expect(validateCourseCode('*')).toHaveProperty('error');
+    expect(validateCourseCode('GC 1010/../ADMIN')).toHaveProperty('error');
+    expect(validateCourseCode('AB\u00001234')).toHaveProperty('error');
+    expect(validateCourseCode('<SCRIPT>ALERT(1)</SCRIPT>')).toHaveProperty('error');
+    expect(validateCourseCode('Q'.repeat(10000))).toHaveProperty('error');
+    expect(validateCourseCode('%E0%A4%A')).toHaveProperty('error');
+  });
+  it('rejects a code over 16 characters (checked before any parsing), a non-string, and an empty/whitespace-only string', () => {
+    expect(validateCourseCode('Q'.repeat(17))).toHaveProperty('error');
+    expect(validateCourseCode(42)).toHaveProperty('error');
+    expect(validateCourseCode('')).toHaveProperty('error');
+    expect(validateCourseCode('   ')).toHaveProperty('error');
   });
 });

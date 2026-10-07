@@ -8,13 +8,27 @@ import { NextRequest } from 'next/server';
 import { middleware } from '@/middleware';
 
 /**
- * CSRF defense for state-changing /api/admin/** requests (security review
- * fix round 1, M2). A scoped faculty grant-holder knows PROTOTYPE_SLUG (it's
+ * CSRF defense for state-changing requests on any Basic-Auth-gated path
+ * (security review fix round 1, M2; broadened in fix round 2, N2 — the
+ * review's "N1"). A scoped faculty grant-holder knows PROTOTYPE_SLUG (it's
  * rewritten into every gated page they view), so the slug alone is not a
- * cross-site defense; a simple cross-site <form method=POST> targeting
- * these routes rides the admin's cached Basic Auth credentials. This block
+ * cross-site defense; a simple cross-site <form method=POST> targeting a
+ * gated route rides the admin's cached Basic Auth credentials. This block
  * runs in middleware, before gate()/auth, so it applies uniformly and can't
  * be bypassed by a route that forgets to add it.
+ *
+ * Fix round 1 scoped this to a literal `path.startsWith('/api/admin/')`
+ * prefix test, which the round-2 review showed is itself bypassable by
+ * percent-encoding the path (`/api/%61dmin/access`, `/api%2Fadmin/access`)
+ * — Next's own router still resolves those to the real admin route, but
+ * the literal-prefix test never matched, so the guard silently didn't
+ * fire. The fix scopes the guard by `requiresBasicAuth(path)` instead: a
+ * DEFAULT-DENY check (gated unless the path *literally* matches one of a
+ * short public allowlist), so no encoding of a gated path can make it look
+ * public — at worst it makes an already-public path look gated, which
+ * fails closed, not open. This also broadens the guard to every gated
+ * surface, not just `/api/admin/**`, per the review's "prefer the broader
+ * safe rule."
  */
 const HOST = 'gcworkflow.clemson.edu:8443';
 const PUBLIC_ORIGIN = `https://${HOST}`;
@@ -77,8 +91,43 @@ describe('CSRF guard on non-GET /api/admin/**', () => {
     expect(res.status).not.toBe(403);
   });
 
-  it('does not apply the guard outside /api/admin/**', async () => {
+  it('applies the guard to any gated path, not just /api/admin/** (fix round 2, N1 — the "broader safe rule")', async () => {
     const res = await middleware(reqFor('/api/ask', { secFetchSite: 'cross-site' }));
-    expect(res.status).not.toBe(403);
+    expect(res.status).toBe(403);
+  });
+
+  it('exempts the explicitly public prefixes (their own auth model), even cross-site', async () => {
+    expect((await middleware(reqFor('/api/partners/some-token', { secFetchSite: 'cross-site' }))).status).not.toBe(403);
+    expect((await middleware(reqFor('/api/mcp', { secFetchSite: 'cross-site' }))).status).not.toBe(403);
+    expect((await middleware(reqFor('/api/curriculum/search', { secFetchSite: 'cross-site' }))).status).not.toBe(403);
+  });
+
+  describe('N1 red-proof: percent-encoded admin paths must not bypass the guard', () => {
+    it('blocks /api/%61dmin/access (encoded "a") cross-site', async () => {
+      const res = await middleware(reqFor('/api/%61dmin/access', { secFetchSite: 'cross-site' }));
+      expect(res.status).toBe(403);
+    });
+
+    it('blocks /api%2Fadmin/access (encoded slash) cross-site', async () => {
+      const res = await middleware(reqFor('/api%2Fadmin/access', { secFetchSite: 'cross-site' }));
+      expect(res.status).toBe(403);
+    });
+
+    it('blocks a double-encoded admin path cross-site', async () => {
+      const res = await middleware(reqFor('/api/%2561dmin/access', { secFetchSite: 'cross-site' })); // %25 61 -> %61 -> a
+      expect(res.status).toBe(403);
+    });
+
+    it('blocks a mixed-case-encoded admin path cross-site', async () => {
+      const res = await middleware(reqFor('/api/%61DMIN/access', { secFetchSite: 'cross-site' }));
+      expect(res.status).toBe(403);
+    });
+
+    it('blocks the review\'s representative non-access admin route (v2-reset) under every encoded form', async () => {
+      for (const path of ['/api/admin/v2-reset', '/api/%61dmin/v2-reset', '/api%2Fadmin/v2-reset']) {
+        const res = await middleware(reqFor(path, { secFetchSite: 'cross-site' }));
+        expect(res.status).toBe(403);
+      }
+    });
   });
 });
