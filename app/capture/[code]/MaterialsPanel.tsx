@@ -294,7 +294,6 @@ function MaterialRow({
   onDelete,
   onToggleUseDigest,
   onIncludeAnyway,
-  onDowngradeFerpa,
   onSetIgnoredItems,
   onToggleRetired,
   busy,
@@ -304,18 +303,14 @@ function MaterialRow({
   onDelete: () => void;
   onToggleUseDigest: (next: boolean) => void;
   onIncludeAnyway: () => Promise<void>;
-  onDowngradeFerpa: () => Promise<void>;
   onSetIgnoredItems: (next: string[]) => Promise<void>;
   onToggleRetired: (next: boolean) => void;
   busy: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [itemsExpanded, setItemsExpanded] = useState(false);
-  const [ferpaWidgetOpen, setFerpaWidgetOpen] = useState(false);
   const [overrideError, setOverrideError] = useState<string | null>(null);
-  const [ferpaError, setFerpaError] = useState<string | null>(null);
   const [overrideBusy, setOverrideBusy] = useState(false);
-  const [ferpaBusy, setFerpaBusy] = useState(false);
   const isCanvasList = isCanvasListMaterial(material.fileName);
   const items = useMemo(
     () => (isCanvasList && material.extractedText ? parseCanvasBlob(material.extractedText) : []),
@@ -370,19 +365,6 @@ function MaterialRow({
       setOverrideError(e instanceof Error ? e.message : 'Failed to include');
     } finally {
       setOverrideBusy(false);
-    }
-  }
-
-  async function handleDowngradeFerpa() {
-    setFerpaError(null);
-    setFerpaBusy(true);
-    try {
-      await onDowngradeFerpa();
-      setFerpaWidgetOpen(false);
-    } catch (e) {
-      setFerpaError(e instanceof Error ? e.message : 'Failed to downgrade');
-    } finally {
-      setFerpaBusy(false);
     }
   }
 
@@ -444,18 +426,6 @@ function MaterialRow({
                 ignored
               </span>
             )}
-            {material.ferpaRisk !== 'low' && (
-              <button
-                type="button"
-                onClick={() => setFerpaWidgetOpen(o => !o)}
-                title="FERPA risk band — click to review or downgrade if it's a false positive."
-                className="rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-xs font-medium text-amber-800 hover:bg-amber-100"
-              >
-                {material.ferpaRisk === 'high'
-                  ? 'Student names + IDs detected'
-                  : 'Student names detected — FERPA review'}
-              </button>
-            )}
           </div>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {summary && <span>{summary} · </span>}
@@ -502,35 +472,6 @@ function MaterialRow({
           )}
           {overrideError && (
             <p className="mt-1 text-xs text-destructive">{overrideError}</p>
-          )}
-          {ferpaWidgetOpen && (
-            <div className="mt-1 flex flex-wrap items-center gap-2 rounded border border-amber-200 bg-amber-50/50 px-2 py-1.5 text-xs">
-              <button
-                type="button"
-                onClick={handleDowngradeFerpa}
-                disabled={ferpaBusy}
-                className="rounded border border-amber-300 bg-white px-1.5 py-0.5 font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-50"
-              >
-                {ferpaBusy ? 'Saving…' : 'Mark as low (false positive)'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setFerpaWidgetOpen(false)}
-                disabled={ferpaBusy}
-                className="rounded border border-amber-300 bg-white px-1.5 py-0.5 font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-50"
-              >
-                Keep the flag
-              </button>
-              <button
-                type="button"
-                onClick={() => setFerpaWidgetOpen(false)}
-                disabled={ferpaBusy}
-                className="text-amber-700 underline hover:text-amber-900 disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              {ferpaError && <span className="text-destructive">{ferpaError}</span>}
-            </div>
           )}
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
@@ -964,32 +905,6 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
           method: 'PATCH',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({ ignored: false }),
-        },
-      );
-      if (!res.ok) {
-        pushMaterials(previous);
-        const body = await res.json().catch(() => ({})) as { error?: string };
-        throw new Error(body.error ?? `Failed (${res.status})`);
-      }
-    } catch (e) {
-      pushMaterials(previous);
-      throw e;
-    }
-  }
-
-  // Faculty downgrade of a FERPA flag — typically a false positive.
-  // Optimistic, with revert on failure.
-  async function downgradeFerpa(id: string): Promise<void> {
-    const previous = materials;
-    const next = materials.map(m => (m.id === id ? { ...m, ferpaRisk: 'low' as const } : m));
-    pushMaterials(next);
-    try {
-      const res = await fetch(
-        `/api/courses/${encodeURIComponent(course.code)}/materials/${encodeURIComponent(id)}?slug=${encodeURIComponent(slug)}`,
-        {
-          method: 'PATCH',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ ferpaRisk: 'low' }),
         },
       );
       if (!res.ok) {
@@ -1459,7 +1374,6 @@ The materials themselves — and their per-item controls (ignore, preview, AI su
                         onDelete={() => deleteMaterial(m.id)}
                         onToggleUseDigest={next => toggleUseDigest(m.id, next)}
                         onIncludeAnyway={() => includeAutoSetAside(m.id)}
-                        onDowngradeFerpa={() => downgradeFerpa(m.id)}
                         onSetIgnoredItems={next => setIgnoredItems(m.id, next)}
                         onToggleRetired={next => toggleRetired(m.id, next)}
                         busy={busy === m.id}

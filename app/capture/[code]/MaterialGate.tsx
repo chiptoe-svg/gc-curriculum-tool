@@ -4,15 +4,15 @@ import type { FlaggedMaterial, FlagKind } from '@/lib/capture/flag-materials';
 
 const GROUP_LABEL: Record<FlagKind, string> = {
   'extraction-failed': "Couldn't read these files",
-  'ferpa-held': 'Held for FERPA review (excluded from scoring)',
+  'set-aside': 'Set aside automatically (excluded from scoring)',
   'inaccessible-link': 'Referenced but not accessible',
 };
-const ORDER: FlagKind[] = ['extraction-failed', 'ferpa-held', 'inaccessible-link'];
+const ORDER: FlagKind[] = ['extraction-failed', 'set-aside', 'inaccessible-link'];
 
 /**
  * Pre-interview material-failure gate (issue #4 follow-up). Rendered only when
  * flagMaterials() returns flags. Faculty optionally note each flagged material,
- * optionally override FERPA-held ones (Include anyway), then Continue (one button)
+ * optionally override automatic set-asides (Include anyway), then Continue (one button)
  * or go Back to materials. Presentational — persistence + advancing is the caller's.
  */
 export function MaterialGate({
@@ -45,7 +45,7 @@ export function MaterialGate({
             <div key={f.id} className="rounded border bg-muted/10 p-3 text-sm">
               <div className="flex items-center justify-between gap-2">
                 <span className="truncate">{f.fileName}</span>
-                {kind === 'ferpa-held' && (
+                {kind === 'set-aside' && (
                   <button
                     type="button"
                     className="shrink-0 rounded border px-2 py-1 text-xs hover:bg-muted"

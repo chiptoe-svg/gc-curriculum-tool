@@ -33,7 +33,6 @@ const sampleInput = {
   materials: [
     {
       fileName: 'Canvas: Syllabus',
-      ferpaRisk: 'low' as const,
       autoSetAside: false,
       setAsideReason: null,
       digestSnippet: 'A syllabus covering all capstone expectations.',
@@ -62,19 +61,19 @@ describe('generateIngestionCheckIn', () => {
 
   it('returns the model structured output when highlights are populated', async () => {
     const stub = makeStub({
-      message: 'One material has a high FERPA risk but was not set aside.',
+      message: 'Three materials were set aside automatically.',
       highlights: [
-        { kind: 'ferpa', text: 'gradebook-export.xlsx — high FERPA risk, not set aside' },
+        { kind: 'set-aside', text: 'gradebook-export.xlsx — set aside automatically' },
       ],
     });
     vi.mocked(getProviderForFunction).mockResolvedValueOnce(stub as never);
 
     const result = await generateIngestionCheckIn(sampleInput);
 
-    expect(result.message).toContain('FERPA');
+    expect(result.message).toContain('set aside');
     expect(result.highlights).toHaveLength(1);
     const first = result.highlights[0];
-    expect(first?.kind).toBe('ferpa');
+    expect(first?.kind).toBe('set-aside');
     expect(result.model).toBe('test-model');
   });
 

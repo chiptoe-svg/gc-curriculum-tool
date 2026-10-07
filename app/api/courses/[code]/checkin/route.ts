@@ -67,7 +67,6 @@ export async function GET(req: Request, { params }: RouteContext): Promise<Respo
     },
     materials: materials.map(m => ({
       fileName: m.fileName,
-      ferpaRisk: (m.ferpaRisk ?? 'low') as 'low' | 'medium' | 'high',
       autoSetAside: !!m.autoSetAside,
       setAsideReason: m.setAsideReason ?? null,
       digestSnippet: (m.digest ?? m.extractedText ?? '').slice(0, 400),

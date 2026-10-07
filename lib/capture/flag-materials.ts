@@ -3,7 +3,7 @@
  * follow-up). Pure, no I/O. Returns [] for a clean capture (no gate shown).
  *
  * Buckets (checked in this order):
- *  - ferpa-held:        auto-set-aside (ignored && autoSetAside) — held from scoring,
+ *  - set-aside:         auto-set-aside (ignored && autoSetAside) — held from scoring,
  *                       faculty decides to override or leave.
  *  - inaccessible-link: a linked reference (Drive/YouTube/Google) we couldn't fetch.
  *  - extraction-failed: an uploaded/canvas file that couldn't be read.
@@ -11,7 +11,7 @@
  */
 import { materialProvenance } from '@/lib/capture/material-display';
 
-export type FlagKind = 'extraction-failed' | 'ferpa-held' | 'inaccessible-link';
+export type FlagKind = 'extraction-failed' | 'set-aside' | 'inaccessible-link';
 
 export interface FlaggedMaterial {
   id: string;
@@ -38,7 +38,7 @@ export function flagMaterials(materials: FlagInput[]): FlaggedMaterial[] {
     const linked = materialProvenance(m) === 'linked';
 
     if (m.ignored && m.autoSetAside) {
-      out.push({ id: m.id, fileName: m.fileName, kind: 'ferpa-held', facultyNote });
+      out.push({ id: m.id, fileName: m.fileName, kind: 'set-aside', facultyNote });
       continue;
     }
     if (m.ignored) continue; // manual ignore = deliberate, not flagged

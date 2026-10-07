@@ -10,7 +10,6 @@ export interface CheckInInput {
   };
   materials: Array<{
     fileName: string;
-    ferpaRisk: 'low' | 'medium' | 'high';
     autoSetAside: boolean;
     setAsideReason: string | null;
     digestSnippet: string;
@@ -40,7 +39,7 @@ export interface CheckInInput {
 }
 
 export type CheckInHighlight = {
-  kind: 'missing' | 'set-aside' | 'ferpa';
+  kind: 'missing' | 'set-aside';
   text: string;
 };
 
@@ -53,7 +52,7 @@ export interface CheckInResult {
 /**
  * Pre-audit curation review. Returns either silence (message=null) or a
  * short heads-up about a specific materials issue (missing core source,
- * stacked auto-set-asides, kept high-FERPA risk, near-empty digest clusters).
+ * stacked auto-set-asides, near-empty digest clusters).
  * Light-tier; one call per page open.
  */
 export async function generateIngestionCheckIn(input: CheckInInput): Promise<CheckInResult> {
@@ -69,7 +68,7 @@ export async function generateIngestionCheckIn(input: CheckInInput): Promise<Che
         items: {
           type: 'object',
           properties: {
-            kind: { enum: ['missing', 'set-aside', 'ferpa'] },
+            kind: { enum: ['missing', 'set-aside'] },
             text: { type: 'string' },
           },
           required: ['kind', 'text'],

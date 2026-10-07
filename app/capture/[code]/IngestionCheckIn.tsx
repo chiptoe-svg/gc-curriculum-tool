@@ -8,8 +8,7 @@ interface Props {
   slug: string;
 }
 
-const KIND_LABEL: Record<'missing' | 'set-aside' | 'ferpa', string> = {
-  ferpa: 'FERPA',
+const KIND_LABEL: Record<'missing' | 'set-aside', string> = {
   'set-aside': 'SET-ASIDE',
   missing: 'MISSING',
 };

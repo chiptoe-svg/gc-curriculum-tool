@@ -4,7 +4,7 @@ import { MaterialGate } from '../MaterialGate';
 
 const flags = [
   { id: 'a', fileName: 'deck.pdf', kind: 'extraction-failed' as const, facultyNote: null },
-  { id: 'b', fileName: 'WK1.pdf', kind: 'ferpa-held' as const, facultyNote: null },
+  { id: 'b', fileName: 'WK1.pdf', kind: 'set-aside' as const, facultyNote: null },
 ];
 
 describe('MaterialGate', () => {
@@ -18,7 +18,7 @@ describe('MaterialGate', () => {
     expect(onContinue).toHaveBeenCalledWith({ a: 'ok to skip' }, []);
   });
 
-  it('ferpa item exposes an include-anyway control that adds to the include list', () => {
+  it('set-aside item exposes an include-anyway control that adds to the include list', () => {
     const onContinue = vi.fn();
     render(<MaterialGate flags={flags} onContinue={onContinue} onBack={() => {}} />);
     fireEvent.click(screen.getByRole('button', { name: /include anyway/i }));

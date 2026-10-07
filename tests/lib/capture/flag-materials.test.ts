@@ -12,9 +12,9 @@ describe('flagMaterials', () => {
     expect(r).toEqual([{ id: 'x', fileName: 'deck.pdf', kind: 'extraction-failed', facultyNote: null }]);
   });
 
-  it('flags an auto-set-aside material as ferpa-held', () => {
+  it('flags an auto-set-aside material as set-aside', () => {
     const r = flagMaterials([{ ...base, ignored: true, autoSetAside: true }]);
-    expect(r[0]!.kind).toBe('ferpa-held');
+    expect(r[0]!.kind).toBe('set-aside');
   });
 
   it('does NOT flag a manual ignore (autoSetAside false)', () => {

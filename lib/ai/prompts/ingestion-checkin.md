@@ -20,7 +20,6 @@ In the user message you will receive a JSON payload with:
 - `catalog` — `{ code, title, learningObjectives[], majorProjects[] }`
 - `materials` — a list of every included material with:
   - `fileName`
-  - `ferpaRisk` (`'low' | 'medium' | 'high'`)
   - `autoSetAside` (boolean)
   - `setAsideReason` (string | null)
   - `digestSnippet` (first ~400 chars of the material's digest)
@@ -48,7 +47,7 @@ Return JSON of the shape:
 {
   "message": string | null,
   "highlights": [
-    { "kind": "missing" | "set-aside" | "ferpa", "text": "<≤120 chars>" },
+    { "kind": "missing" | "set-aside", "text": "<≤120 chars>" },
     ...
   ]
 }
@@ -74,9 +73,7 @@ Return JSON of the shape:
 2. **Multiple auto-set-asides in a row.** Three or more materials with
    `autoSetAside: true` — likely an import issue (e.g., bulk
    `Canvas File: *.xlsx` because the Canvas course is gradebook-heavy).
-3. **High-FERPA-risk material kept.** A material with
-   `ferpaRisk: 'high'` that is NOT auto-set-aside. Flag it.
-4. **Near-empty digests cluster.** Two or more materials whose
+3. **Near-empty digests cluster.** Two or more materials whose
    `digestSnippet` is shorter than ~100 chars — extraction may have
    failed silently.
 
@@ -85,7 +82,7 @@ Return JSON of the shape:
 - Max 2 sentences in `message`. Matter-of-fact tone.
 - Max 3 entries in `highlights`. Each ≤120 chars.
 - Do NOT speak just because the materials list is short — small courses
-  legitimately have few materials. Speak only when one of the four
+  legitimately have few materials. Speak only when one of the three
   conditions above is met.
 - If you speak, name the specific files in `highlights`, not categories.
 
