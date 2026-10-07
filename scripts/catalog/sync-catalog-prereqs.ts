@@ -4,8 +4,27 @@
  * course_catalog_entries + course_catalog_prereqs (migration 0053).
  *
  * Scope: every active GC course in the catalog, plus the non-GC courses our
- * `courses` table holds (when the catalog has them). Full replace on --apply,
- * in one transaction.
+ * `courses` table holds (when the catalog has them). SCOPED to that set of
+ * course codes (2026-10-07 fix, then hardened twice more the same week):
+ *   - `course_catalog_prereqs` edges are the one table this script
+ *     EXCLUSIVELY owns (sync-catalog-courses.ts never writes it), so it
+ *     fully owns cleanup too: a scoped `= ANY` delete clears this run's own
+ *     old edges before reinserting them, and a `<> ALL` delete removes
+ *     edges for any code that dropped out of scope entirely (a course that
+ *     left the catalog or the tracked set) — restoring the pre-upsert
+ *     behavior where stale prerequisite edges don't live forever (fix
+ *     round 2, N6).
+ *   - `course_catalog_entries` is an UPSERT (`ON CONFLICT (course_code) DO
+ *     UPDATE`), not a delete-then-insert, and only ever SETs the columns
+ *     this sync owns (title, prereq_text, coreq_text, notes, catalog_year,
+ *     source_url, catalog_last_synced, synced_at) — never `description`/
+ *     `credits`, which scripts/catalog/sync-catalog-courses.ts owns (a
+ *     stale entries row for a course that left scope is left in place, on
+ *     purpose — the full sync still owns and refreshes that row). The two
+ *     syncs can therefore run in either order without either one resetting
+ *     the other's columns on a row they both touch (e.g. any GC course), or
+ *     losing a row outside its own scope — see applyCatalogSync below and
+ *     tests/catalog/sync-order-independence.test.ts.
  *
  * Usage (from the repo root):
  *   tsx scripts/catalog/sync-catalog-prereqs.ts            # dry run (default): print, write nothing
@@ -15,8 +34,62 @@
  * Re-sync is manual for now: run after the advising project re-ingests the catalog.
  */
 import { Pool } from 'pg';
-import { buildCatalogSyncRows, formatCatalogPrereqs } from '@/lib/catalog/catalog-sync';
-import { DEFAULT_CATALOG_DB, loadAppEnv, openCatalogReadOnly, readCatalogRows, readCatalogYears, argValue } from './catalog-source';
+import { buildCatalogSyncRows, formatCatalogPrereqs, type CatalogEntryInsert, type CatalogEdgeInsert } from '@/lib/catalog/catalog-sync';
+import { DEFAULT_CATALOG_DB, loadAppEnv, openCatalogReadOnly, readCatalogRows, readCatalogYears, argValue, isMainModule } from './catalog-source';
+
+export interface QueryClient { query(sql: string, params?: unknown[]): Promise<unknown> }
+
+/**
+ * UPSERTs entries (never deletes them) and fully owns `course_catalog_prereqs`:
+ * this script is the ONLY writer of that table (sync-catalog-courses.ts
+ * never touches it), so it's safe and correct for this run to clean up
+ * EVERY edge not in its current scope, not just replace the ones it's
+ * about to rewrite — restoring the pre-upsert behavior where a tracked
+ * course that leaves the catalog, or drops out of the tracked set, loses
+ * its stale prerequisite edges (fix round 2, N6) instead of keeping them
+ * forever. Two deletes together cover the whole table: `= ANY` clears this
+ * run's own old edges before reinserting them, `<> ALL` clears edges for
+ * codes no longer in scope at all.
+ *
+ * The entries upsert only SETs the columns this sync owns, so a row
+ * sync-catalog-courses.ts also wrote (any GC course, since GC is always in
+ * this sync's scope) keeps its `description`/`credits` regardless of which
+ * sync ran more recently. `edges` is always a subset of `entries`' codes
+ * (buildCatalogSyncRows only ever produces an edge whose `courseCode` is
+ * one of `entries`' codes).
+ */
+export async function applyCatalogSync(
+  client: QueryClient,
+  entries: ReadonlyArray<CatalogEntryInsert>,
+  edges: ReadonlyArray<CatalogEdgeInsert>,
+): Promise<void> {
+  const codes = entries.map((e) => e.courseCode);
+  await client.query('DELETE FROM course_catalog_prereqs WHERE course_code = ANY($1)', [codes]);
+  await client.query('DELETE FROM course_catalog_prereqs WHERE course_code <> ALL($1)', [codes]);
+  for (const e of entries) {
+    await client.query(
+      `INSERT INTO course_catalog_entries (course_code, title, prereq_text, coreq_text, notes, catalog_year, source_url, catalog_last_synced)
+       VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8)
+       ON CONFLICT (course_code) DO UPDATE SET
+         title = EXCLUDED.title,
+         prereq_text = EXCLUDED.prereq_text,
+         coreq_text = EXCLUDED.coreq_text,
+         notes = EXCLUDED.notes,
+         catalog_year = EXCLUDED.catalog_year,
+         source_url = EXCLUDED.source_url,
+         catalog_last_synced = EXCLUDED.catalog_last_synced,
+         synced_at = now()`,
+      [e.courseCode, e.title, e.prereqText, e.coreqText, JSON.stringify(e.notes), e.catalogYear, e.sourceUrl, e.catalogLastSynced],
+    );
+  }
+  for (const x of edges) {
+    await client.query(
+      `INSERT INTO course_catalog_prereqs (course_code, prereq_code, kind, any_of_group, catalog_year)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [x.courseCode, x.prereqCode, x.kind, x.anyOfGroup, x.catalogYear],
+    );
+  }
+}
 
 async function main() {
   const apply = process.argv.includes('--apply');
@@ -64,22 +137,7 @@ async function main() {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      await client.query('DELETE FROM course_catalog_prereqs');
-      await client.query('DELETE FROM course_catalog_entries');
-      for (const e of entries) {
-        await client.query(
-          `INSERT INTO course_catalog_entries (course_code, title, prereq_text, coreq_text, notes, catalog_year, source_url, catalog_last_synced)
-           VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8)`,
-          [e.courseCode, e.title, e.prereqText, e.coreqText, JSON.stringify(e.notes), e.catalogYear, e.sourceUrl, e.catalogLastSynced],
-        );
-      }
-      for (const x of edges) {
-        await client.query(
-          `INSERT INTO course_catalog_prereqs (course_code, prereq_code, kind, any_of_group, catalog_year)
-           VALUES ($1, $2, $3, $4, $5)`,
-          [x.courseCode, x.prereqCode, x.kind, x.anyOfGroup, x.catalogYear],
-        );
-      }
+      await applyCatalogSync(client, entries, edges);
       await client.query('COMMIT');
       console.log(`\nAPPLIED: ${entries.length} entries, ${edges.length} edges.`);
     } catch (err) {
@@ -93,4 +151,6 @@ async function main() {
   }
 }
 
-main().catch(err => { console.error(err); process.exit(1); });
+if (isMainModule(import.meta.url, process.argv[1])) {
+  main().catch(err => { console.error(err); process.exit(1); });
+}

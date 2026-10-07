@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildCatalogSyncRows, catalogYearOf, formatCatalogPrereqs } from '@/lib/catalog/catalog-sync';
+import { buildCatalogSyncRows, buildFullCatalogEntries, catalogYearOf, formatCatalogPrereqs } from '@/lib/catalog/catalog-sync';
 
 const years = new Map([[49, '2026-2027'], [46, '2025-2026']]);
 const row = (code: string, prereq: string | null, coreq: string | null = null) => ({
@@ -29,6 +29,29 @@ describe('buildCatalogSyncRows', () => {
       .toEqual(['GC 2070:prereq', 'GC 3500:prereq', 'GC 3460:concurrent_ok', 'GC 4061:coreq']);
     expect(out.edges.filter(e => e.courseCode === 'GC 3460').map(e => `${e.prereqCode}:${e.kind}`))
       .toEqual(['GC 2070:prereq', 'GC 3461:coreq']);
+  });
+});
+
+describe('buildFullCatalogEntries (access-panel addendum, 2026-10-07)', () => {
+  const fullRow = (code: string, title: string | null, credits: string | null, description: string | null) => ({
+    code, title, credits, description, last_synced: '2026-10-06',
+    source_url: 'https://catalog.clemson.edu/preview_course_nopop.php?catoid=49&coid=2',
+  });
+  it('maps every row to an entry carrying title/description/credits, with prereq/coreq/notes left empty', () => {
+    const out = buildFullCatalogEntries([
+      fullRow('ECON 2120', 'Principles of Macroeconomics', '3', 'Continuation of ECON 2110…'),
+      fullRow('ENTR 4080', 'Family Business', '1-3', 'Study of family-owned enterprise.'),
+    ], years);
+    expect(out).toEqual([
+      { courseCode: 'ECON 2120', title: 'Principles of Macroeconomics', description: 'Continuation of ECON 2110…', credits: '3', prereqText: null, coreqText: null, notes: [], catalogYear: '2026-2027', sourceUrl: fullRow('x', null, null, null).source_url, catalogLastSynced: '2026-10-06' },
+      { courseCode: 'ENTR 4080', title: 'Family Business', description: 'Study of family-owned enterprise.', credits: '1-3', prereqText: null, coreqText: null, notes: [], catalogYear: '2026-2027', sourceUrl: fullRow('x', null, null, null).source_url, catalogLastSynced: '2026-10-06' },
+    ]);
+  });
+  it('is a pure 1:1 map — same row count in and out, every code preserved (idempotence precondition)', () => {
+    const rows = [fullRow('A 100', 't', '3', 'd'), fullRow('B 200', 't2', '3', 'd2'), fullRow('C 300', null, null, null)];
+    const out = buildFullCatalogEntries(rows, years);
+    expect(out).toHaveLength(3);
+    expect(out.map(e => e.courseCode)).toEqual(['A 100', 'B 200', 'C 300']);
   });
 });
 
