@@ -1,6 +1,6 @@
-# Chin & Martin Richmond (2026) — *Work at the Frontier* (OpenAI Economic Research)
+# Chin & Richmond (2026) — *Work at the Frontier* (OpenAI Economic Research)
 
-**Full citation:** Chin, C., & Martin Richmond, A. (2026). *Work at the Frontier: How AI is Expanding What People Do at Work*. OpenAI Economic Research, July 2026.
+**Full citation:** Chin, C., & Richmond, A. M. (2026). *Work at the Frontier: How AI is Expanding What People Do at Work*. OpenAI Economic Research, July 2026.
 
 **Also carded in:** `ai_career_impact/library/cards/chin-richmond-2026.md` (private) — read through the career-impact lens; this card reads it for KUD+ / §16. Interpretations may differ; **factual corrections (citation, version, figures, page refs) are mirrored to the other card and announced to the other repo.**
 
@@ -39,3 +39,5 @@ Also useful: Table 2's recurring cross-occupation tasks, where "Create marketing
 **Limits.** Not peer-reviewed; single-vendor usage data from self-selected ChatGPT Business users; occupation is self-reported at signup; one DWA per message forces multi-task messages into a single bucket; and "generic" is doing a lot of work in the denominator — the 61.5% share is itself a modelling choice about what counts as occupation-specific.
 
 **Verdict:** Consistent, with one qualifier that must never be dropped. §16's "roughly 44% of *occupation-specific* AI use" is exact as written; the absolute 16.8% is now stated beside it as structural protection. Do not paraphrase to "nearly half of AI use." The travellers-vs-borrowers direction and the leading-indicator framing are both the report's own and both strengthen the §11 argument rather than complicating it.
+
+**Citation correction (2026-10-06, mirrored from ai_career_impact 09c040f):** the author is cited as "Richmond, A. M.", not "Martin Richmond, A.". Both AI Jobs Transition Framework reports give their own suggested citation as "Richmond, Alex Martin" (verified against the local PDF), and Work at the Frontier is bylined "Caroline Chin and Alex Martin Richmond".

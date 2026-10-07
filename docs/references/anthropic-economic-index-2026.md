@@ -19,7 +19,7 @@
 
 **What it actually says (synthesis):**
 
-Methodologically this is the direct counterpart to Chin & Martin Richmond (2026): both sample real conversations and classify them against **O*NET tasks**, and both report at the task rather than occupation level. This report samples "1 million conversations from both Claude.ai... and our first-party API," covering 5–12 February 2026, through a privacy-preserving aggregation system that "allows us to describe behavior at an aggregated level without revealing the content of individual transcripts."
+Methodologically this is the direct counterpart to Chin & Richmond (2026): both sample real conversations and classify them against **O*NET tasks**, and both report at the task rather than occupation level. This report samples "1 million conversations from both Claude.ai... and our first-party API," covering 5–12 February 2026, through a privacy-preserving aggregation system that "allows us to describe behavior at an aggregated level without revealing the content of individual transcripts."
 
 Headline findings:
 - **Breadth of task coverage.** "About 49% of jobs have seen at least a quarter of their tasks performed using Claude." Coding dominates: "tasks associated with Computer and Mathematical occupations account[] for 35% of conversations on Claude.ai."
