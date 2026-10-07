@@ -21,6 +21,10 @@ const updateSetMock = vi.fn();
 let txSelectResult: unknown[] = [];
 let txInsertValuesCapture: Record<string, unknown> | null = null;
 let txInsertResult: unknown[] = [];
+// The conditional-claim UPDATE inside reissueGrant calls .returning(); default
+// to echoing back whatever txSelectResult held (i.e. "the claim succeeded"),
+// overridable per-test to simulate "someone else already revoked it" (empty).
+let txUpdateReturning: unknown[] | null = null;
 const txUpdateSetMock = vi.fn();
 const txInsertCalledMock = vi.fn();
 
@@ -64,7 +68,13 @@ vi.mock('@/lib/db/client', () => ({
         update: () => ({
           set: (v: Record<string, unknown>) => {
             txUpdateSetMock(v);
-            return { where: () => Promise.resolve(undefined) };
+            return {
+              where: () => ({
+                returning: () => Promise.resolve(txUpdateReturning ?? txSelectResult),
+                then: (resolve: (v: unknown) => unknown, reject: (e: unknown) => unknown) =>
+                  Promise.resolve(undefined).then(resolve, reject),
+              }),
+            };
           },
         }),
       }),
@@ -84,6 +94,7 @@ import {
   validateEmail,
   validateExpiresAt,
   resolveScope,
+  isValidGrantId,
 } from '@/lib/auth/grant-admin';
 
 beforeEach(() => {
@@ -94,6 +105,7 @@ beforeEach(() => {
   txSelectResult = [];
   txInsertResult = [];
   txInsertValuesCapture = null;
+  txUpdateReturning = null;
 });
 
 const row = (over: Partial<Record<string, unknown>> = {}) => ({
@@ -189,6 +201,11 @@ describe('patchGrant', () => {
     expect(await patchGrant('g1', { label: 'New' })).toBe('revoked');
     expect(updateSetMock).not.toHaveBeenCalled();
   });
+  it('refuses (admin-managed) to edit a CLI admin grant, and never calls update', async () => {
+    selectResult = [row({ can: ['capture', 'create', 'admin'], revokedAt: null })];
+    expect(await patchGrant('g1', { label: 'New' })).toBe('admin-managed');
+    expect(updateSetMock).not.toHaveBeenCalled();
+  });
   it('applies only the provided fields on a live grant', async () => {
     selectResult = [row({ revokedAt: null })];
     expect(await patchGrant('g1', { scope: ['GC 1010'] })).toBe('ok');
@@ -227,6 +244,10 @@ describe('validateLabel', () => {
     expect(validateLabel('x'.repeat(121))).toHaveProperty('error');
     expect(validateLabel('x'.repeat(120))).toEqual({ label: 'x'.repeat(120) });
   });
+  it('rejects control characters (fix round 1, L6)', () => {
+    expect(validateLabel('A\r\nBcc: evil@x.com\u0000<script>')).toHaveProperty('error');
+    expect(validateLabel('Danita\u007f')).toHaveProperty('error');
+  });
 });
 
 describe('validateEmail', () => {
@@ -246,6 +267,9 @@ describe('validateEmail', () => {
     expect(validateEmail('a'.repeat(250) + '@b.edu')).toHaveProperty('error');
     expect(validateEmail(42)).toHaveProperty('error');
   });
+  it('rejects control characters (fix round 1, L6)', () => {
+    expect(validateEmail('a\u0000b@x.com')).toHaveProperty('error');
+  });
 });
 
 describe('validateExpiresAt', () => {
@@ -261,6 +285,15 @@ describe('validateExpiresAt', () => {
   it('rejects a non-date string and a non-string', () => {
     expect(validateExpiresAt('not-a-date')).toHaveProperty('error');
     expect(validateExpiresAt(123)).toHaveProperty('error');
+  });
+  it('interprets a date-only string as end of that day in America/New_York (fix round 1, L5)', () => {
+    const winter = validateExpiresAt('2026-01-15') as { expiresAt: Date };
+    expect(winter.expiresAt.toISOString()).toBe('2026-01-16T04:59:59.999Z'); // EST, UTC-5
+    const summer = validateExpiresAt('2026-07-15') as { expiresAt: Date };
+    expect(summer.expiresAt.toISOString()).toBe('2026-07-16T03:59:59.999Z'); // EDT, UTC-4
+  });
+  it('rejects a date-only string that is not a real calendar date', () => {
+    expect(validateExpiresAt('2026-02-30')).toHaveProperty('error');
   });
 });
 
@@ -281,17 +314,58 @@ describe('resolveScope', () => {
     expect(resolveScope(undefined, known)).toHaveProperty('error');
     expect(resolveScope([1, 2], known)).toHaveProperty('error');
   });
+  it('rejects "*" mixed into an array of courses (fix round 1, L2)', () => {
+    expect(resolveScope(['*', 'GC 1010'], known)).toHaveProperty('error');
+  });
+  it('rejects a percent-encoded wildcard, even alone (fix round 1, L2)', () => {
+    expect(resolveScope(['%2A'], known)).toHaveProperty('error');
+  });
+  it('dedupes equivalent codes after normalizing (fix round 1, L2)', () => {
+    expect(resolveScope(['gc 1010', ' GC  1010 ', 'GC%201010'], known)).toEqual({ scope: ['GC 1010'] });
+  });
 });
 
 describe('reissueGrant', () => {
-  it('returns null when the grant does not exist, touching neither update nor insert', async () => {
+  it('returns not-found when the grant does not exist, touching neither update nor insert', async () => {
     txSelectResult = [];
-    expect(await reissueGrant('nope')).toBeNull();
+    expect(await reissueGrant('nope')).toBe('not-found');
     expect(txUpdateSetMock).not.toHaveBeenCalled();
     expect(txInsertCalledMock).not.toHaveBeenCalled();
   });
 
-  it('revokes the old grant and creates a new one with the same label/email/scope/can/expiresAt, atomically', async () => {
+  it("refuses (admin-managed) a CLI admin grant without touching it (fix round 1, L1)", async () => {
+    txSelectResult = [row({ can: ['capture', 'create', 'admin'], revokedAt: null })];
+    expect(await reissueGrant('old')).toBe('admin-managed');
+    expect(txUpdateSetMock).not.toHaveBeenCalled();
+    expect(txInsertCalledMock).not.toHaveBeenCalled();
+  });
+
+  it('refuses (revoked) a grant that is already revoked, leaving its revokedAt untouched (fix round 1, M1 scenario B)', async () => {
+    const revokedAt = new Date('2020-01-01T00:00:00Z');
+    txSelectResult = [row({ revokedAt })];
+    expect(await reissueGrant('old')).toBe('revoked');
+    expect(txUpdateSetMock).not.toHaveBeenCalled();
+    expect(txInsertCalledMock).not.toHaveBeenCalled();
+  });
+
+  it('refuses (expired) a grant whose expiry has already passed (fix round 1, L5)', async () => {
+    txSelectResult = [row({ expiresAt: new Date('2020-01-01T00:00:00Z'), revokedAt: null })];
+    expect(await reissueGrant('old')).toBe('expired');
+    expect(txUpdateSetMock).not.toHaveBeenCalled();
+    expect(txInsertCalledMock).not.toHaveBeenCalled();
+  });
+
+  it('returns revoked (no insert) when the conditional claim matches zero rows — the race-safety path (fix round 1, M1)', async () => {
+    // Pre-check SELECT still sees it live (a concurrent reissue claimed it
+    // first, between our read and our conditional UPDATE), so the UPDATE …
+    // WHERE revoked_at IS NULL … RETURNING finds nothing to claim.
+    txSelectResult = [row({ revokedAt: null })];
+    txUpdateReturning = [];
+    expect(await reissueGrant('old')).toBe('revoked');
+    expect(txInsertCalledMock).not.toHaveBeenCalled();
+  });
+
+  it('revokes the old grant and creates a new one with the same label/email/scope/expiresAt, can rebuilt via buildCan, atomically', async () => {
     const existing = row({ id: 'old', label: 'Danita Swaney', email: 'danita@example.edu', scope: ['GC 3730'], can: ['capture'], expiresAt: null, revokedAt: null });
     txSelectResult = [existing];
     txInsertResult = [row({ id: 'new' })];
@@ -303,10 +377,12 @@ describe('reissueGrant', () => {
     expect(revokeArg.revokedAt).toBeInstanceOf(Date);
 
     expect(txInsertValuesCapture).toMatchObject({ label: 'Danita Swaney', email: 'danita@example.edu', scope: ['GC 3730'], can: ['capture'], expiresAt: null });
-    expect(result).not.toBeNull();
-    expect(result!.grant.id).toBe('new');
-    expect(result!.token).toMatch(/^[A-Za-z0-9_-]{43}$/);
-    expect(hashToken(result!.token)).toBe(txInsertValuesCapture!.tokenHash);
+    expect(result).not.toBe('not-found');
+    expect(result).not.toBe('revoked');
+    const minted = result as { grant: { id: string }; token: string };
+    expect(minted.grant.id).toBe('new');
+    expect(minted.token).toMatch(/^[A-Za-z0-9_-]{43}$/);
+    expect(hashToken(minted.token)).toBe(txInsertValuesCapture!.tokenHash);
 
     // Red-proof the core security property (spec Testing section): a session
     // cookie signed for the OLD grant id must resolve 'dead' once the DB
@@ -320,5 +396,23 @@ describe('reissueGrant', () => {
       env: { sessionSecret: secret },
     });
     expect(resolved).toBe('dead');
+  });
+
+  it('rebuilds can from the create flag rather than copying verbatim (defense in depth; admin is already excluded upstream)', async () => {
+    txSelectResult = [row({ can: ['capture', 'create'], revokedAt: null })];
+    txInsertResult = [row({ id: 'new' })];
+    await reissueGrant('old');
+    expect(txInsertValuesCapture!.can).toEqual(['capture', 'create']);
+  });
+});
+
+describe('isValidGrantId', () => {
+  it('accepts a 36-char hyphenated UUID shape', () => {
+    expect(isValidGrantId('123e4567-e89b-12d3-a456-426614174000')).toBe(true);
+  });
+  it('rejects built-in ids, SQL-injection-shaped strings, and path traversal (fix round 1, L3)', () => {
+    expect(isValidGrantId('builtin:faculty:deadbeefdeadbeef')).toBe(false);
+    expect(isValidGrantId("1' OR '1'='1")).toBe(false);
+    expect(isValidGrantId('../../x')).toBe(false);
   });
 });

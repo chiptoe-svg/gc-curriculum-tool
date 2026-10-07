@@ -15,11 +15,13 @@ vi.mock('@/lib/auth/grant-admin', async () => {
 import { PATCH } from '../route';
 import { authorize, type Grant } from '@/lib/auth/authorize';
 
-function patchReq(body: Record<string, unknown>) {
-  return new Request('http://h/api/admin/access/g1', { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+const VALID_ID = '123e4567-e89b-12d3-a456-426614174000';
+
+function patchReq(body: Record<string, unknown>, contentType = 'application/json') {
+  return new Request(`http://h/api/admin/access/${VALID_ID}`, { method: 'PATCH', headers: { 'content-type': contentType }, body: JSON.stringify(body) });
 }
-function call(body: Record<string, unknown>) {
-  return PATCH(patchReq(body), { params: Promise.resolve({ id: 'g1' }) });
+function call(body: Record<string, unknown>, id = VALID_ID) {
+  return PATCH(patchReq(body), { params: Promise.resolve({ id }) });
 }
 
 beforeEach(() => {
@@ -29,10 +31,23 @@ beforeEach(() => {
 });
 
 describe('PATCH /api/admin/access/[id]', () => {
+  it('415s a non-JSON content-type, before even checking auth (fix round 1, M2)', async () => {
+    const res = await PATCH(patchReq({ label: 'New' }, 'text/plain'), { params: Promise.resolve({ id: VALID_ID }) });
+    expect(res.status).toBe(415);
+    expect(mockAdminAuth).not.toHaveBeenCalled();
+    expect(mockPatchGrant).not.toHaveBeenCalled();
+  });
+
   it('401s when the admin second factor fails, and never patches', async () => {
     mockAdminAuth.mockReturnValue(false);
     const res = await call({ label: 'New' });
     expect(res.status).toBe(401);
+    expect(mockPatchGrant).not.toHaveBeenCalled();
+  });
+
+  it('400s a malformed id before any query (fix round 1, L3)', async () => {
+    const res = await call({ label: 'New' }, 'g1');
+    expect(res.status).toBe(400);
     expect(mockPatchGrant).not.toHaveBeenCalled();
   });
 
@@ -48,6 +63,14 @@ describe('PATCH /api/admin/access/[id]', () => {
     expect(res.status).toBe(409);
   });
 
+  it('409s (refuses) to edit a CLI admin grant, with a command-line note (fix round 1, L1)', async () => {
+    mockPatchGrant.mockResolvedValue('admin-managed');
+    const res = await call({ label: 'New' });
+    expect(res.status).toBe(409);
+    const json = await res.json() as { error: string };
+    expect(json.error).toMatch(/command line/i);
+  });
+
   it('400s on an unknown course code in a courses patch, naming it', async () => {
     const res = await call({ courses: ['GC 9999'] });
     expect(res.status).toBe(400);
@@ -60,7 +83,7 @@ describe('PATCH /api/admin/access/[id]', () => {
     mockPatchGrant.mockResolvedValue('ok');
     const res = await call({ courses: ['GC 1010'], canCreate: true });
     expect(res.status).toBe(200);
-    expect(mockPatchGrant).toHaveBeenCalledWith('g1', expect.objectContaining({ scope: ['GC 1010'], can: ['capture', 'create'] }));
+    expect(mockPatchGrant).toHaveBeenCalledWith(VALID_ID, expect.objectContaining({ scope: ['GC 1010'], can: ['capture', 'create'] }));
     const sentPatch = mockPatchGrant.mock.calls[0]![1] as { can: string[] };
     expect(sentPatch.can).not.toContain('admin');
   });

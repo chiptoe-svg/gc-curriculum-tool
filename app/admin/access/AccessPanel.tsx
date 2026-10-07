@@ -89,6 +89,13 @@ export function AccessPanel({ slug, courses }: { slug: string; courses: AccessCo
     });
   }
 
+  // The server's error message is more useful than the bare status (e.g.
+  // "this grant is expired — edit the expiry first" vs "Save failed: 409").
+  async function serverError(res: Response, fallback: string): Promise<string> {
+    const json = (await res.json().catch(() => ({}))) as { error?: string };
+    return json.error ?? `${fallback} (${res.status})`;
+  }
+
   async function saveEdit(id: string, patch: Record<string, unknown>) {
     const res = await fetch(`/api/admin/access/${id}`, {
       method: 'PATCH',
@@ -96,7 +103,7 @@ export function AccessPanel({ slug, courses }: { slug: string; courses: AccessCo
       body: JSON.stringify({ ...patch, slug }),
     });
     if (!res.ok) {
-      alert(`Save failed: ${res.status}`);
+      alert(await serverError(res, 'Save failed'));
       return;
     }
     setEditingId(null);
@@ -111,7 +118,7 @@ export function AccessPanel({ slug, courses }: { slug: string; courses: AccessCo
       body: JSON.stringify({ slug }),
     });
     if (!res.ok) {
-      alert(`Send a new link failed: ${res.status}`);
+      alert(await serverError(res, 'Send a new link failed'));
       return;
     }
     const minted = (await res.json()) as Minted;
@@ -127,7 +134,7 @@ export function AccessPanel({ slug, courses }: { slug: string; courses: AccessCo
       body: JSON.stringify({ slug }),
     });
     if (!res.ok) {
-      alert(`Revoke failed: ${res.status}`);
+      alert(await serverError(res, 'Revoke failed'));
       return;
     }
     await load();
@@ -387,6 +394,12 @@ function AccessRow({
   }
 
   const revoked = grant.status === 'revoked';
+  // CLI-minted admin grants are read-only in the panel (fix round 1, L1):
+  // the server refuses to edit or reissue them (409 "managed from the
+  // command line"), so disable those two actions here too rather than
+  // letting the admin discover it only after a failed click. Revoke stays
+  // enabled — killing access is always safe.
+  const adminManaged = grant.can.includes('admin');
   return (
     <tr className={`border-t border-slate-200 ${revoked ? 'opacity-50' : ''}`}>
       <td className="py-2 font-medium">{grant.label}</td>
@@ -395,11 +408,14 @@ function AccessRow({
       <td className="text-xs">{grant.can.includes('create') ? 'Yes' : 'No'}</td>
       <td className="text-xs">{grant.expiresAt ? new Date(grant.expiresAt).toLocaleDateString() : 'Never'}</td>
       <td className="text-xs">{grant.lastUsedAt ? new Date(grant.lastUsedAt).toLocaleDateString() : '—'}</td>
-      <td className="text-xs">{grant.status}</td>
+      <td className="text-xs">
+        {grant.status}
+        {adminManaged && <div className="text-slate-400">Managed from the command line</div>}
+      </td>
       <td>
         <div className="flex flex-wrap gap-2 text-xs">
-          <button type="button" disabled={revoked} className="rounded border border-slate-300 px-2 py-0.5 disabled:opacity-40" onClick={onEdit}>Edit</button>
-          <button type="button" disabled={revoked} className="rounded border border-slate-300 px-2 py-0.5 disabled:opacity-40" onClick={onReissue}>Send a new link</button>
+          <button type="button" disabled={revoked || adminManaged} className="rounded border border-slate-300 px-2 py-0.5 disabled:opacity-40" onClick={onEdit}>Edit</button>
+          <button type="button" disabled={revoked || adminManaged} className="rounded border border-slate-300 px-2 py-0.5 disabled:opacity-40" onClick={onReissue}>Send a new link</button>
           <button type="button" disabled={revoked} className="rounded border border-slate-300 px-2 py-0.5 text-red-700 disabled:opacity-40" onClick={onRevoke}>Revoke</button>
         </div>
       </td>

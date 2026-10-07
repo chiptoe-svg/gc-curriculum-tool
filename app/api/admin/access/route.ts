@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { checkAdminAuth } from '@/lib/auth/admin-auth';
+import { hasJsonContentType } from '@/lib/http/require-json';
 import { listCourses } from '@/lib/db/courses-queries';
 import {
   createGrant,
@@ -31,6 +32,12 @@ export async function GET(req: Request): Promise<Response> {
 
 // POST body: { label, email, courses: string[] | '*', canCreate: boolean, expiresAt: string | null, slug }
 export async function POST(req: Request): Promise<Response> {
+  // Content-type gate before auth/parsing (fix round 1, M2) — a plain HTML
+  // form can never set this content type, so this alone blocks the
+  // simple-form CSRF vector regardless of cached Basic Auth credentials.
+  if (!hasJsonContentType(req)) {
+    return NextResponse.json({ error: 'content-type must be application/json' }, { status: 415, headers: NO_STORE });
+  }
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
   if (!checkAdminAuth(req, { slug: typeof body.slug === 'string' ? body.slug : '' })) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401, headers: NO_STORE });

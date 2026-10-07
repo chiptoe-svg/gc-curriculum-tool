@@ -88,4 +88,36 @@ describe('AccessPanel', () => {
     expect(bodyParam).toContain('all courses');
     expect(bodyParam).toContain('https://gcworkflow.clemson.edu:8443/?key=tok123');
   });
+
+  it('shows a CLI admin row read-only with a note, and disables Edit / Send a new link (Revoke stays enabled) — fix round 1, L1', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ grants: [grantRow({ id: 'admin1', label: 'Owner CLI Grant', can: ['capture', 'create', 'admin'] })] }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<AccessPanel slug="s" courses={courses} />);
+    await waitFor(() => expect(screen.getByText('Owner CLI Grant')).toBeInTheDocument());
+
+    expect(screen.getByText(/managed from the command line/i)).toBeInTheDocument();
+    const table = within(screen.getByRole('table'));
+    expect(table.getByRole('button', { name: /^edit$/i })).toBeDisabled();
+    expect(table.getByRole('button', { name: /send a new link/i })).toBeDisabled();
+    expect(table.getByRole('button', { name: /revoke/i })).not.toBeDisabled();
+  });
+
+  it('surfaces the server error message on a failed reissue (e.g. 409 admin-managed or expired)', async () => {
+    const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {});
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ grants: [grantRow()] }) }) // initial load
+      .mockResolvedValueOnce({ ok: false, status: 409, json: async () => ({ error: 'this grant is expired — edit the expiry first' }) }); // reissue
+    vi.stubGlobal('fetch', fetchMock);
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+
+    render(<AccessPanel slug="s" courses={courses} />);
+    await waitFor(() => expect(screen.getByText('Danita Swaney')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /send a new link/i }));
+
+    await waitFor(() => expect(alertMock).toHaveBeenCalledWith(expect.stringMatching(/expired/i)));
+  });
 });

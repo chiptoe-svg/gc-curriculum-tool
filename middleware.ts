@@ -117,6 +117,41 @@ export async function middleware(req: NextRequest) {
     }
   }
 
+  // --- CSRF guard for state-changing /api/admin/** requests -----------------
+  // Security review fix round 1, M2. A scoped (non-admin) faculty grant
+  // holder learns PROTOTYPE_SLUG — it's rewritten into every gated page they
+  // view (see the slug-rewrite note in decide(), lib/auth/gate.ts) — so the
+  // slug second factor alone is not a cross-site defense: a simple
+  // cross-site <form method=POST> targeting these routes rides the admin's
+  // cached Basic Auth credentials straight past it. This runs in middleware,
+  // before gate()/auth, so it applies uniformly and can't be skipped by a
+  // route that forgets to add its own check.
+  //
+  // GET/HEAD are exempt (reads aren't state-changing). A request with
+  // neither header (curl, server-to-server, most non-browser HTTP clients)
+  // is allowed through — browsers always send at least one of the two on a
+  // cross-origin request, so their absence is not itself suspicious.
+  if (path.startsWith('/api/admin/') && !['GET', 'HEAD'].includes(req.method.toUpperCase())) {
+    const secFetchSite = req.headers.get('sec-fetch-site');
+    const blocked =
+      secFetchSite === 'cross-site' || secFetchSite === 'same-site'
+        ? true
+        : (() => {
+            const origin = req.headers.get('origin');
+            if (!origin) return false;
+            const originHost = hostOf(origin);
+            const requestHost = req.headers.get('host') ?? req.nextUrl.host;
+            const publicHost = process.env.PUBLIC_HTTPS_ORIGIN ? hostOf(process.env.PUBLIC_HTTPS_ORIGIN) : null;
+            return !(originHost && (originHost === requestHost || (publicHost && originHost === publicHost)));
+          })();
+    if (blocked) {
+      return NextResponse.json(
+        { error: 'cross_origin_blocked', message: 'This request looks cross-site; admin changes must come from the app itself.' },
+        { status: 403, headers: { 'Cache-Control': 'no-store' } },
+      );
+    }
+  }
+
   const result = await gate(req, {
     findGrantByToken, findGrantById, touch: touchLastUsed,
     env: {
@@ -163,6 +198,11 @@ export async function middleware(req: NextRequest) {
  * re-send it. Landing path always mints a fresh session (re-clicked
  * magic link works); sub-paths only mint if no cookie is present.
  */
+/** The `host` (hostname[:port]) of a URL/origin string, or null if it doesn't parse. */
+function hostOf(value: string): string | null {
+  try { return new URL(value).host; } catch { return null; }
+}
+
 async function handlePartnerSession(req: NextRequest): Promise<NextResponse> {
   const segments = req.nextUrl.pathname.split('/'); // ['', 'partners', token, ...]
   const token = segments[2];

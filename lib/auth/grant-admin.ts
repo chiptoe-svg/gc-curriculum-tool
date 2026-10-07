@@ -12,7 +12,7 @@
  * optional `'create'`. No caller ever threads a user-supplied `can` array
  * through to the DB, so there is no body shape that can produce `admin`.
  */
-import { eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { accessGrants } from '@/lib/db/schema';
 import { newToken, hashToken } from '@/lib/auth/grants';
@@ -69,6 +69,18 @@ export function buildCan(canCreate: boolean): Capability[] {
   return canCreate ? ['capture', 'create'] : ['capture'];
 }
 
+/** C0 controls + DEL — rejected in label/email (fix round 1, L6). */
+const CONTROL_CHARS = /[\u0000-\u001f\u007f]/;
+
+/** 36-char hyphenated UUID shape, matching the pattern `findGrantById`
+ * already uses (lib/auth/grants.ts) — validate before any query touches the
+ * DB (fix round 1, L3), so a malformed id 400s instead of risking a raw
+ * Postgres `22P02 invalid input syntax for type uuid` 500 (which would also
+ * skip the route's `no-store` header). */
+export function isValidGrantId(id: string): boolean {
+  return /^[0-9a-f-]{36}$/i.test(id);
+}
+
 /** Codes in `scope` not present in `known` (case/whitespace-normalized); `'*'` never flags. */
 export function checkCourses(scope: string[], known: string[]): string[] {
   const k = new Set(known.map(normalizeCode));
@@ -104,45 +116,93 @@ function toAdminGrant(row: GrantRow, now = new Date()): AdminGrant {
   };
 }
 
-/** Trimmed, 1-120 chars. */
+/** Trimmed, 1-120 chars, no control characters. */
 export function validateLabel(raw: unknown): { label: string } | { error: string } {
   if (typeof raw !== 'string') return { error: 'label must be a string' };
   const label = raw.trim();
   if (label.length < 1 || label.length > 120) return { error: 'label must be 1-120 characters' };
+  if (CONTROL_CHARS.test(label)) return { error: 'label must not contain control characters' };
   return { label };
 }
 
 /** Optional. Empty/whitespace/undefined/null all mean "no email" (not an
- * error). Otherwise: one '@', no whitespace, <=254 chars. */
+ * error). Otherwise: one '@', no whitespace, no control characters, <=254 chars. */
 export function validateEmail(raw: unknown): { email: string | null } | { error: string } {
   if (raw === undefined || raw === null) return { email: null };
   if (typeof raw !== 'string') return { error: 'email must be a string' };
   const email = raw.trim();
   if (email === '') return { email: null };
+  if (CONTROL_CHARS.test(email)) return { error: 'email must not contain control characters' };
   if (email.length > 254 || /\s/.test(email) || email.split('@').length !== 2 || email.startsWith('@') || email.endsWith('@')) {
     return { error: 'email must look like an email address' };
   }
   return { email };
 }
 
-/** Optional ISO-ish date string; undefined/null means never expires. */
+const DATE_ONLY = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+/** The UTC instant for 23:59:59.999 America/New_York on the given
+ * `YYYY-MM-DD` date, DST-aware via Intl (no tz library installed). Returns
+ * null for a string that isn't a real calendar date (e.g. 2026-02-30). */
+function endOfDayEastern(dateStr: string): Date | null {
+  const m = DATE_ONLY.exec(dateStr);
+  if (!m) return null;
+  const year = Number(m[1]);
+  const month = Number(m[2]);
+  const day = Number(m[3]);
+  // Reject non-calendar dates: Date.UTC normalizes overflow (e.g. day 30 of
+  // a 28-day February rolls into March), so round-tripping catches it.
+  const probe = new Date(Date.UTC(year, month - 1, day));
+  if (probe.getUTCFullYear() !== year || probe.getUTCMonth() !== month - 1 || probe.getUTCDate() !== day) return null;
+
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    timeZoneName: 'longOffset',
+    hour: '2-digit',
+  }).formatToParts(new Date(Date.UTC(year, month - 1, day, 12)));
+  const offsetValue = parts.find((p) => p.type === 'timeZoneName')?.value ?? '';
+  const offsetMatch = /GMT([+-]\d{2}):?(\d{2})?/.exec(offsetValue);
+  const offsetMinutes = offsetMatch
+    ? (offsetMatch[1]!.startsWith('-') ? -1 : 1) * (Math.abs(Number(offsetMatch[1])) * 60 + Number(offsetMatch[2] ?? 0))
+    : -300; // fall back to standard EST if Intl ever fails to report an offset
+
+  return new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999) - offsetMinutes * 60_000);
+}
+
+/** Optional date string; undefined/null/empty means never expires. A plain
+ * `YYYY-MM-DD` date (what an `<input type="date">` sends) is interpreted as
+ * end of that day in America/New_York (fix round 1, L5) — not UTC midnight,
+ * which would make a link entered as "expires Oct 10" die the evening of
+ * Oct 9 Eastern. A full ISO/date-time string is parsed as given. */
 export function validateExpiresAt(raw: unknown): { expiresAt: Date | null } | { error: string } {
   if (raw === undefined || raw === null) return { expiresAt: null };
   if (typeof raw !== 'string') return { error: 'expiresAt must be a date string or null' };
+  if (raw.trim() === '') return { expiresAt: null };
+  if (DATE_ONLY.test(raw)) {
+    const expiresAt = endOfDayEastern(raw);
+    if (!expiresAt) return { error: 'expiresAt must be a valid date' };
+    return { expiresAt };
+  }
   const expiresAt = new Date(raw);
   if (isNaN(expiresAt.getTime())) return { error: 'expiresAt must be a valid date' };
   return { expiresAt };
 }
 
-/** `'*'` or a non-empty array of course codes, all present in `known`
- * (normalized before comparing and before storing). Unknown codes are named
- * in the error so the caller can 400 with a useful message. */
+/** `'*'` or a non-empty, deduped array of course codes, all present in
+ * `known` (normalized before comparing and before storing). `'*'` can never
+ * be mixed into the array, nor smuggled in percent-encoded (fix round 1,
+ * L2) — use the literal string `'*'` for "all courses" instead. Unknown
+ * codes are named in the error so the caller can 400 with a useful message. */
 export function resolveScope(courses: unknown, known: string[]): { scope: string[] } | { error: string } {
   if (courses === '*') return { scope: ['*'] };
   if (!Array.isArray(courses) || courses.length === 0 || !courses.every((c) => typeof c === 'string')) {
     return { error: "courses must be '*' or a non-empty array of course codes" };
   }
-  const scope = courses.map((c) => normalizeCode(c));
+  const normalized = courses.map((c) => normalizeCode(c));
+  if (normalized.some((c) => c === '*')) {
+    return { error: "'*' cannot be mixed with course codes — use the All-courses option for every course" };
+  }
+  const scope = Array.from(new Set(normalized));
   const unknown = checkCourses(scope, known);
   if (unknown.length) return { error: `not in the roster: ${unknown.join(', ')}` };
   return { scope };
@@ -174,12 +234,15 @@ export async function listGrantsForAdmin(now = new Date()): Promise<AdminGrant[]
 }
 
 /** Edits fields in place. `'revoked'` when the grant is revoked (refuse to
- * edit, per spec) and `'not-found'` when the id doesn't exist. Only the keys
- * present in `patch` are written. */
-export async function patchGrant(id: string, patch: GrantPatch): Promise<'ok' | 'not-found' | 'revoked'> {
+ * edit, per spec), `'admin-managed'` when the grant's `can` includes `admin`
+ * (those are CLI-minted and the panel must not touch them — fix round 1,
+ * L1), and `'not-found'` when the id doesn't exist. Only the keys present in
+ * `patch` are written. */
+export async function patchGrant(id: string, patch: GrantPatch): Promise<'ok' | 'not-found' | 'revoked' | 'admin-managed'> {
   const rows = (await db.select().from(accessGrants).where(eq(accessGrants.id, id)).limit(1)) as GrantRow[];
   const existing = rows[0];
   if (!existing) return 'not-found';
+  if (existing.can.includes('admin')) return 'admin-managed';
   if (existing.revokedAt) return 'revoked';
 
   const set: Partial<GrantRow> = {};
@@ -206,22 +269,51 @@ export async function revokeGrant(id: string): Promise<'ok' | 'not-found'> {
   return 'ok';
 }
 
+export type ReissueResult = { grant: AdminGrant; token: string } | 'not-found' | 'revoked' | 'admin-managed' | 'expired';
+
 /**
  * "Send a new link": revoke the old grant and mint a replacement with the
- * same label/email/scope/can/expiresAt, in one transaction — so there is
+ * same label/email/scope/expiresAt (and `can` rebuilt from the create flag,
+ * never copied verbatim — fix round 1, L1), in one transaction — so there is
  * never a moment with two live grants for one person, nor zero rows if the
  * insert fails. Revoking (not rotating the old row's hash) is deliberate:
  * sessions are keyed by grant id, so a rotated hash would leave the old
  * link's already-signed-in browsers alive; revoking kills them via
- * `isLive`/`grantFromSessionCookie`. Returns null if `id` doesn't exist.
+ * `isLive`/`grantFromSessionCookie`.
+ *
+ * Refuses (no mutation) before attempting any write:
+ *   - `'not-found'` — no such id.
+ *   - `'admin-managed'` — the grant's `can` includes `admin`; those are
+ *     CLI-minted and the panel must not re-mint them (fix round 1, L1).
+ *   - `'revoked'` — already revoked.
+ *   - `'expired'` — already past its expiry; reissuing it would hand back a
+ *     link that's dead on arrival (fix round 1, L5) — edit the expiry first.
+ *
+ * The actual atomicity guard against a double reissue (two requests for the
+ * same id, sequential or concurrent) is the conditional
+ * `UPDATE … WHERE id = $1 AND revoked_at IS NULL RETURNING *` below, not the
+ * read above (which only decides which 409 to show without mutating). Under
+ * READ COMMITTED a second UPDATE for the same id blocks on the first
+ * transaction's row lock, then re-evaluates `revoked_at IS NULL` against the
+ * now-committed row and matches zero rows — so at most one caller ever
+ * reaches the insert (fix round 1, M1).
  */
-export async function reissueGrant(id: string): Promise<{ grant: AdminGrant; token: string } | null> {
+export async function reissueGrant(id: string): Promise<ReissueResult> {
   return db.transaction(async (tx) => {
     const rows = (await tx.select().from(accessGrants).where(eq(accessGrants.id, id)).limit(1)) as GrantRow[];
     const existing = rows[0];
-    if (!existing) return null;
+    if (!existing) return 'not-found';
+    if (existing.can.includes('admin')) return 'admin-managed';
+    const status = computeStatus(existing);
+    if (status === 'revoked') return 'revoked';
+    if (status === 'expired') return 'expired';
 
-    await tx.update(accessGrants).set({ revokedAt: new Date() }).where(eq(accessGrants.id, id));
+    const claimed = (await tx
+      .update(accessGrants)
+      .set({ revokedAt: new Date() })
+      .where(and(eq(accessGrants.id, id), isNull(accessGrants.revokedAt)))
+      .returning()) as GrantRow[];
+    if (!claimed[0]) return 'revoked';
 
     const token = newToken();
     const [row] = await tx
@@ -231,7 +323,7 @@ export async function reissueGrant(id: string): Promise<{ grant: AdminGrant; tok
         label: existing.label,
         email: existing.email,
         scope: existing.scope,
-        can: existing.can,
+        can: buildCan(existing.can.includes('create')),
         expiresAt: existing.expiresAt,
       })
       .returning();

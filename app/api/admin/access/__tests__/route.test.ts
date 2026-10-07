@@ -51,6 +51,13 @@ describe('GET /api/admin/access', () => {
 });
 
 describe('POST /api/admin/access', () => {
+  it('415s a non-JSON content-type (the simple-form CSRF vector), and never mints (fix round 1, M2)', async () => {
+    const res = await POST(req('http://h/api/admin/access', { method: 'POST', headers: { 'content-type': 'text/plain' }, body: JSON.stringify({ label: 'X', courses: '*', canCreate: false }) }));
+    expect(res.status).toBe(415);
+    expect(mockCreateGrant).not.toHaveBeenCalled();
+    expect(mockAdminAuth).not.toHaveBeenCalled();
+  });
+
   it('401s when the admin second factor fails, and never mints', async () => {
     mockAdminAuth.mockReturnValue(false);
     const res = await POST(postReq({ label: 'X', courses: '*', canCreate: false, slug: 'bad' }));
