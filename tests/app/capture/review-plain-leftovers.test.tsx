@@ -122,6 +122,7 @@ describe('reconciliation step lists', () => {
     fireEvent.click(screen.getByRole('button', { name: /proceed/i }));
     expect(screen.getByText('Knowing: recognizes · Reasoning: restates · Doing: not yet')).toBeInTheDocument();
     // a proposal: rationale + edit inputs in words
+    fireEvent.click(screen.getByRole('button', { name: /add or change something/i }));
     fireEvent.change(screen.getByRole('textbox'), { target: { value: 'lower it' } });
     fireEvent.click(screen.getByRole('button', { name: /make suggested change/i }));
     expect(await screen.findByText(/does it with a reference or checklist is generous; Doing \(does it with step-by-step direction\) fits/)).toBeInTheDocument();

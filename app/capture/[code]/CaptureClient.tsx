@@ -608,7 +608,7 @@ export function CaptureClient({
             <li><span className="font-medium text-foreground">5 · Returning a draft — not a record.</span> Everything lands as an editable draft for your review. Nothing becomes an immutable snapshot until you confirm it.</li>
           </ol>
           <p className="mt-4 text-center text-xs uppercase tracking-[0.18em] text-muted-foreground/70">
-            Usually 15–60 seconds — please don&apos;t close this tab
+            This usually takes about 2 minutes — please don&apos;t close this tab
           </p>
         </div>
       )}
@@ -618,6 +618,7 @@ export function CaptureClient({
           profile={profile}
           slug={slug}
           courseCode={courseCode}
+          onBackToInterview={resumeChat}
           onComplete={async (reconciled, log) => {
             setReconciliationLog(log);
             try {

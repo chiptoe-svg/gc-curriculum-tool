@@ -24,6 +24,8 @@ interface Props {
   slug: string;
   courseCode: string;
   onComplete: (reconciled: CaptureProfile, log: ReconciliationLogEntry[]) => void;
+  /** Return to the interview chat (owner, 2026-10-07: one of the three choices). */
+  onBackToInterview?: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -180,7 +182,7 @@ function ProposalCard({
 // Main component
 // ---------------------------------------------------------------------------
 
-export function ReconciliationStepper({ profile, slug, courseCode, onComplete }: Props) {
+export function ReconciliationStepper({ profile, slug, courseCode, onComplete, onBackToInterview }: Props) {
   const [working, setWorking] = useState<CaptureProfile>(profile);
   const [step, setStep] = useState<0 | 1>(0);
   const [feedback, setFeedback] = useState('');
@@ -189,6 +191,8 @@ export function ReconciliationStepper({ profile, slug, courseCode, onComplete }:
   const [pending, setPending] = useState(false);
   const [log, setLog] = useState<ReconciliationLogEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
+  // The feedback box opens only when "Add or change something" is chosen.
+  const [changing, setChanging] = useState(false);
 
   const section = STEPS[step]!;
   const title = STEP_TITLES[step]!;
@@ -327,6 +331,12 @@ export function ReconciliationStepper({ profile, slug, courseCode, onComplete }:
     setProposals(null);
     setFeedback('');
     setDecisions([]);
+    setChanging(false);
+  }
+
+  function handleDiscardSuggestions() {
+    setProposals(null);
+    setDecisions([]);
   }
 
   // ── Navigation ─────────────────────────────────────────────────────────────
@@ -336,6 +346,7 @@ export function ReconciliationStepper({ profile, slug, courseCode, onComplete }:
     setFeedback('');
     setDecisions([]);
     setError(null);
+    setChanging(false);
     setStep(s => Math.max(0, Math.min(STEPS.length - 1, s + direction)) as 0 | 1);
   }
 
@@ -367,7 +378,10 @@ export function ReconciliationStepper({ profile, slug, courseCode, onComplete }:
       </div>
 
       {/* Section panel */}
-      <div className="rounded-md border bg-card px-6 py-5 space-y-4">
+      <section
+        aria-label={title}
+        className="rounded-md border bg-card px-6 py-5 space-y-4"
+      >
         <h2 className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">
           {title}
         </h2>
@@ -381,11 +395,42 @@ export function ReconciliationStepper({ profile, slug, courseCode, onComplete }:
         {/* Current items */}
         <div>{renderItems()}</div>
 
-        {/* Feedback area */}
+        {/* Three choices (owner, 2026-10-07): proceed, add or change something,
+            or go back to the interview. Hidden while suggestions await a decision. */}
         {!proposals && (
+          <div className="flex flex-wrap items-center gap-3 border-t pt-4">
+            <button
+              type="button"
+              onClick={isLast ? handleContinueToReview : () => moveStep(1)}
+              className="rounded-md border border-green-600 bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700"
+            >
+              {isLast ? '✓ Looks good — continue to review' : '✓ Looks good — proceed'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setChanging(c => !c)}
+              aria-expanded={changing}
+              className="rounded-md border border-orange-400 bg-orange-50 px-4 py-2 text-sm font-semibold text-orange-900 hover:bg-orange-100"
+            >
+              Add or change something
+            </button>
+            {onBackToInterview && (
+              <button
+                type="button"
+                onClick={onBackToInterview}
+                className="rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-muted"
+              >
+                ← Back to the interview
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Feedback area */}
+        {!proposals && changing && (
           <div className="space-y-3">
             <label className="block text-xs font-medium text-muted-foreground" htmlFor="reconcile-feedback">
-              Faculty feedback — what feels off? (optional)
+              What should be added or changed? Describe it and the tool will suggest the edit for you to accept.
             </label>
             <textarea
               id="reconcile-feedback"
@@ -448,50 +493,51 @@ export function ReconciliationStepper({ profile, slug, courseCode, onComplete }:
               />
             ))}
 
-            <button
-              type="button"
-              onClick={handleApplyAccepted}
-              className="rounded-md border border-stone-700 bg-stone-800 px-4 py-1.5 text-sm font-medium text-white hover:bg-stone-700"
-            >
-              Apply accepted
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleApplyAccepted}
+                className="rounded-md border border-stone-700 bg-stone-800 px-4 py-1.5 text-sm font-medium text-white hover:bg-stone-700"
+              >
+                Apply accepted
+              </button>
+              <button
+                type="button"
+                onClick={handleDiscardSuggestions}
+                className="rounded-md border border-input bg-background px-4 py-1.5 text-sm font-medium hover:bg-muted"
+              >
+                Discard suggestions
+              </button>
+            </div>
           </div>
         )}
 
         {proposals && proposals.length === 0 && (
-          <p className="text-sm text-muted-foreground italic">No changes suggested — this section looks good.</p>
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground italic">No changes suggested — this section looks good.</p>
+            <button
+              type="button"
+              onClick={handleDiscardSuggestions}
+              className="rounded-md border border-input bg-background px-4 py-1.5 text-sm font-medium hover:bg-muted"
+            >
+              OK
+            </button>
+          </div>
         )}
-      </div>
+      </section>
 
-      {/* Navigation */}
-      <div className="flex items-center justify-between">
-        <button
-          type="button"
-          onClick={() => moveStep(-1)}
-          disabled={step === 0}
-          className="rounded border border-stone-300 px-3 py-1.5 text-sm text-stone-700 hover:bg-stone-50 disabled:opacity-40"
-        >
-          ← Back
-        </button>
-
-        {isLast ? (
+      {/* Previous step (the forward choices live inside the box above). */}
+      {step > 0 && (
+        <div>
           <button
             type="button"
-            onClick={handleContinueToReview}
-            className="rounded-md bg-stone-800 px-4 py-1.5 text-sm font-medium text-white hover:bg-stone-700"
+            onClick={() => moveStep(-1)}
+            className="rounded border border-stone-300 px-3 py-1.5 text-sm text-stone-700 hover:bg-stone-50"
           >
-            Continue to review
+            ← Previous step
           </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() => moveStep(1)}
-            className="rounded-md bg-stone-800 px-4 py-1.5 text-sm font-medium text-white hover:bg-stone-700"
-          >
-            Looks good — proceed →
-          </button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
