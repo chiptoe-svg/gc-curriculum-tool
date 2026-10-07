@@ -56,7 +56,18 @@ describe('VerificationSummary — plain language', () => {
   it('replaces the INFERRED chip with plain copy saying this is the AI\'s reading', () => {
     render(<VerificationSummary summary={summary} />);
     expect(screen.queryByText(/^inferred$/i)).toBeNull();
-    expect(screen.getByText(/AI.s reading of your course/i)).toBeInTheDocument();
+    expect(screen.getByText(/what the interview found/i)).toBeInTheDocument();
+  });
+
+  it('sends reviewers to Looks right / Needs adjusting first, and to the interview only when it is way off (owner, 2026-10-07)', () => {
+    const { container } = render(<VerificationSummary summary={summary} />);
+    const text = container.textContent ?? '';
+    expect(screen.getByRole('note', { name: /how to review/i })).toBeInTheDocument();
+    expect(text).toMatch(/Looks right/);
+    expect(text).toMatch(/Needs adjusting/);
+    // Adjusting comes before going back to the interview.
+    expect(text.indexOf('Needs adjusting')).toBeLessThan(text.indexOf('Back to the interview'));
+    expect(text).toMatch(/badly wrong/i);
   });
 
   it('names the real buttons ("Back to the interview", "Approve the profile")', () => {

@@ -58,11 +58,28 @@ export function VerificationSummary({ summary, isLegacy, onCitationClick, approv
             <SourceBadge source={summary.source} citations={summary.citations} onCitationClick={onCitationClick} />
           )}
         </div>
-        <p className="mt-1 text-sm text-muted-foreground">
-          This is the AI&apos;s reading of your course — please check it. If anything is off, use
-          &ldquo;← Back to the interview&rdquo; to tell the interviewer; when it reads right, use
-          &ldquo;{approveLabel}&rdquo; to record {isUpdate ? 'this version as a new snapshot — earlier snapshots are kept' : 'it'}.
-        </p>
+        <div
+          role="note"
+          aria-label="How to review"
+          className="mt-3 rounded-md border-l-4 border-amber-500 bg-background px-4 py-3 text-base leading-relaxed text-foreground shadow-sm"
+        >
+          <p className="font-semibold">How to review</p>
+          <ol className="mt-1.5 list-decimal space-y-1 pl-5">
+            <li>Read the overview below: what the interview found about your course.</li>
+            <li>
+              Under it are the areas the AI was least sure about. For each one, choose{' '}
+              <strong>&#10003; Looks right</strong> or <strong>Needs adjusting</strong> to change a score.
+            </li>
+            <li>
+              When every card is done, use &ldquo;{approveLabel}&rdquo; to record{' '}
+              {isUpdate ? 'this version as a new snapshot — earlier snapshots are kept' : 'it'}.
+            </li>
+          </ol>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Only if the overview gets the course badly wrong — not just a score or two — go{' '}
+            &ldquo;← Back to the interview&rdquo; and tell the interviewer what it missed.
+          </p>
+        </div>
       </header>
 
       <div>
