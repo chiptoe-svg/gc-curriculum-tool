@@ -18,12 +18,30 @@ export interface CatalogCourseRow {
 export interface CatalogEntryInsert {
   courseCode: string;
   title: string | null;
+  // Full-catalog course info (2026-10-07 access-panel addendum, migration
+  // 0055) — null from buildCatalogSyncRows (it never reads these columns);
+  // populated by buildFullCatalogEntries below.
+  description: string | null;
+  credits: string | null;
   prereqText: string | null;
   coreqText: string | null;
   notes: string[];
   catalogYear: string;
   sourceUrl: string | null;
   catalogLastSynced: string | null;
+}
+
+/** A full catalog.db `course` row (code, title, credits, description, plus
+ * the provenance fields `buildFullCatalogEntries` needs) — the shape
+ * scripts/catalog/sync-catalog-courses.ts reads for EVERY course, not just
+ * GC + tracked ones. */
+export interface FullCatalogCourseRow {
+  code: string;
+  title: string | null;
+  credits: string | null;
+  description: string | null;
+  last_synced: string | null;
+  source_url: string | null;
 }
 
 export interface CatalogEdgeInsert {
@@ -58,7 +76,8 @@ export function buildCatalogSyncRows(
     const catalogYear = catalogYearOf(r.source_url, yearByCatoid);
     const parsed = catalogEdgesOf(r);
     entries.push({
-      courseCode: r.code, title: r.title, prereqText: r.prereq_text, coreqText: r.coreq_text,
+      courseCode: r.code, title: r.title, description: null, credits: null,
+      prereqText: r.prereq_text, coreqText: r.coreq_text,
       notes: parsed.notes, catalogYear, sourceUrl: r.source_url, catalogLastSynced: r.last_synced,
     });
     for (const e of parsed.edges) {
@@ -66,6 +85,34 @@ export function buildCatalogSyncRows(
     }
   }
   return { entries, edges };
+}
+
+/**
+ * The full-catalog counterpart to buildCatalogSyncRows: one entry per row,
+ * every Clemson course (not scoped to GC + tracked). Carries title/
+ * description/credits; leaves prereqText/coreqText/notes null/empty — that
+ * data is sync-catalog-prereqs.ts's to own for its scoped subset, and this
+ * sync's upsert never overwrites those columns on an existing row (see the
+ * script) so the two syncs layer safely regardless of run order, EXCEPT
+ * that sync-catalog-prereqs.ts's unscoped `DELETE FROM course_catalog_entries`
+ * would wipe rows this sync added — run this sync AFTER sync-catalog-prereqs.ts.
+ */
+export function buildFullCatalogEntries(
+  rows: ReadonlyArray<FullCatalogCourseRow>,
+  yearByCatoid: ReadonlyMap<number, string>,
+): CatalogEntryInsert[] {
+  return rows.map((r) => ({
+    courseCode: r.code,
+    title: r.title,
+    description: r.description,
+    credits: r.credits,
+    prereqText: null,
+    coreqText: null,
+    notes: [],
+    catalogYear: catalogYearOf(r.source_url, yearByCatoid),
+    sourceUrl: r.source_url,
+    catalogLastSynced: r.last_synced,
+  }));
 }
 
 /** "GC 3500, (GC 4060 | GC 4400), COOP 2020 (or concurrent)" — prereq + concurrent_ok only. */

@@ -106,6 +106,89 @@ describe('AccessPanel', () => {
     expect(table.getByRole('button', { name: /revoke/i })).not.toBeDisabled();
   });
 
+  it('Add a course: a catalog code shows the catalog title read-only and Add creates it with that title (access-panel addendum)', async () => {
+    const fetchMock = vi.fn(async (url: string, _init?: RequestInit) => {
+      if (url.includes('/api/admin/access/catalog')) {
+        return { ok: true, json: async () => ({ found: true, code: 'ECON 2120', title: 'Principles of Macroeconomics', description: 'd', onCourseList: false, baseCode: null, baseTitle: null }) };
+      }
+      if (url.includes('/api/admin/access/courses')) {
+        return { ok: true, json: async () => ({ code: 'ECON 2120', title: 'Principles of Macroeconomics', category: 'other', categoryLabel: 'Other courses' }) };
+      }
+      return { ok: true, json: async () => ({ grants: [] }) };
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<AccessPanel slug="s" courses={courses} />);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+
+    const codeInput = screen.getByLabelText(/add.*course.*code|course code/i);
+    fireEvent.change(codeInput, { target: { value: 'econ 2120' } });
+    fireEvent.blur(codeInput);
+
+    await waitFor(() => expect(screen.getByText('Principles of Macroeconomics')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole('button', { name: /^add$/i }));
+
+    await waitFor(() => expect(screen.getByText(/Added ECON 2120 — Principles of Macroeconomics to Other courses/)).toBeInTheDocument());
+
+    const createCall = fetchMock.mock.calls.find((c) => (c[0] as string).includes('/api/admin/access/courses'))!;
+    const createBody = JSON.parse((createCall[1] as RequestInit).body as string) as Record<string, unknown>;
+    expect(createBody.code).toBe('econ 2120');
+  });
+
+  it('Add a course: a non-catalog code requires a title and shows the "not in catalog" hint', async () => {
+    const fetchMock = vi.fn(async (url: string, _init?: RequestInit) => {
+      if (url.includes('/api/admin/access/catalog')) {
+        return { ok: true, json: async () => ({ found: false, code: 'ENTR 4080', title: null, description: null, onCourseList: false, baseCode: null, baseTitle: null }) };
+      }
+      if (url.includes('/api/admin/access/courses')) {
+        return { ok: true, json: async () => ({ code: 'ENTR 4080', title: 'Family Business', category: 'other', categoryLabel: 'Other courses' }) };
+      }
+      return { ok: true, json: async () => ({ grants: [] }) };
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<AccessPanel slug="s" courses={courses} />);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+
+    const codeInput = screen.getByLabelText(/add.*course.*code|course code/i);
+    fireEvent.change(codeInput, { target: { value: 'ENTR 4080' } });
+    fireEvent.blur(codeInput);
+
+    await waitFor(() => expect(screen.getByText(/not in the clemson catalog/i)).toBeInTheDocument());
+
+    fireEvent.change(screen.getByLabelText(/^title$/i), { target: { value: 'Family Business' } });
+    fireEvent.click(screen.getByRole('button', { name: /^add$/i }));
+
+    await waitFor(() => expect(screen.getByText(/Added ENTR 4080 — Family Business to Other courses/)).toBeInTheDocument());
+  });
+
+  it('picker shortcut: typing an unlisted catalog-shaped code in the course filter offers to add it, and choosing it creates + selects the course', async () => {
+    const fetchMock = vi.fn(async (url: string, _init?: RequestInit) => {
+      if (url.includes('/api/admin/access/catalog')) {
+        return { ok: true, json: async () => ({ found: true, code: 'ECON 2120', title: 'Principles of Macroeconomics', description: 'd', onCourseList: false, baseCode: null, baseTitle: null }) };
+      }
+      if (url.includes('/api/admin/access/courses')) {
+        return { ok: true, json: async () => ({ code: 'ECON 2120', title: 'Principles of Macroeconomics', category: 'other', categoryLabel: 'Other courses' }) };
+      }
+      return { ok: true, json: async () => ({ grants: [] }) };
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<AccessPanel slug="s" courses={courses} />);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+
+    fireEvent.change(screen.getByPlaceholderText(/search courses/i), { target: { value: 'ECON 2120' } });
+
+    await waitFor(
+      () => expect(screen.getByRole('button', { name: /add econ 2120.*principles of macroeconomics/i })).toBeInTheDocument(),
+      { timeout: 2000 },
+    );
+    fireEvent.click(screen.getByRole('button', { name: /add econ 2120/i }));
+
+    await waitFor(() => expect(screen.getByRole('checkbox', { name: /ECON 2120/i })).toBeChecked());
+  }, 10000);
+
   it('surfaces the server error message on a failed reissue (e.g. 409 admin-managed or expired)', async () => {
     const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => {});
     const fetchMock = vi.fn()

@@ -9,7 +9,7 @@ import { createRequire } from 'node:module';
 import { readdirSync, existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import path from 'node:path';
-import type { CatalogCourseRow } from '@/lib/catalog/catalog-sync';
+import type { CatalogCourseRow, FullCatalogCourseRow } from '@/lib/catalog/catalog-sync';
 
 export const DEFAULT_CATALOG_DB = path.join(homedir(), 'projects/clemson-advising-mcp/core/db/catalog.db');
 
@@ -45,6 +45,21 @@ export function readCatalogRows(db: SqliteDb, extraCodes: ReadonlyArray<string>)
       WHERE status = 'active' AND (subject = 'GC' OR code IN (${placeholders}))
       ORDER BY subject, number`,
   ).all(...extraCodes) as CatalogCourseRow[];
+}
+
+/**
+ * EVERY course in the catalog (no subject/code filter) — the full roster
+ * (access-panel addendum, 2026-10-07): ~4,085 rows, all `status = 'active'`
+ * as of the 2026-10-06 sync (kept as a filter for safety against future
+ * inactive rows, not because it currently excludes any).
+ */
+export function readAllCatalogCourses(db: SqliteDb): FullCatalogCourseRow[] {
+  return db.prepare(
+    `SELECT code, title, credits, description, last_synced, source_url
+       FROM course
+      WHERE status = 'active'
+      ORDER BY subject, number`,
+  ).all() as FullCatalogCourseRow[];
 }
 
 export function readCatalogYears(db: SqliteDb): Map<number, string> {

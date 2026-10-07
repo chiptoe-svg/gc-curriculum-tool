@@ -1,8 +1,23 @@
 'use client';
 
 import { useEffect, useMemo, useState, useTransition } from 'react';
+import { CATEGORY_ORDER, CATEGORY_LABELS, type CourseCategory } from '@/lib/db/course-category-seed';
 
 export interface AccessCourse { code: string; title: string; }
+
+interface CatalogLookup {
+  found: boolean;
+  code: string;
+  title: string | null;
+  description: string | null;
+  onCourseList: boolean;
+  baseCode: string | null;
+  baseTitle: string | null;
+}
+
+/** A course code shape loose enough for "should we try a catalog lookup",
+ * not a validator — the server is the source of truth either way. */
+const CODE_SHAPE = /^[A-Za-z]{2,6}\s*\d{3,4}[A-Za-z]{0,2}$/;
 
 export interface AccessGrant {
   id: string;
@@ -30,6 +45,11 @@ export function AccessPanel({ slug, courses }: { slug: string; courses: AccessCo
   const [grants, setGrants] = useState<AccessGrant[]>([]);
   const [showRevoked, setShowRevoked] = useState(false);
 
+  // The course list starts from the server-rendered prop but grows locally
+  // when "Add a course" (or the picker shortcut below) creates one, so it
+  // shows up immediately without a full page reload.
+  const [courseOptions, setCourseOptions] = useState<AccessCourse[]>(courses);
+
   // Add-faculty form state.
   const [label, setLabel] = useState('');
   const [email, setEmail] = useState('');
@@ -45,6 +65,18 @@ export function AccessPanel({ slug, courses }: { slug: string; courses: AccessCo
 
   // Inline-edit state: at most one row open at a time.
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  // Add-a-course section state (access-panel addendum, 2026-10-07).
+  const [newCode, setNewCode] = useState('');
+  const [newLookup, setNewLookup] = useState<CatalogLookup | null>(null);
+  const [newTitle, setNewTitle] = useState('');
+  const [newCategory, setNewCategory] = useState<CourseCategory>('other');
+  const [addCourseError, setAddCourseError] = useState<string | null>(null);
+  const [addCourseSuccess, setAddCourseSuccess] = useState<string | null>(null);
+
+  // The course-picker shortcut: when the filter box matches nothing and
+  // looks code-shaped, offer to add it (debounced).
+  const [pickerHint, setPickerHint] = useState<CatalogLookup | null>(null);
 
   async function load() {
     const res = await fetch(`/api/admin/access?slug=${encodeURIComponent(slug)}`);
@@ -182,14 +214,90 @@ export function AccessPanel({ slug, courses }: { slug: string; courses: AccessCo
 
   const visibleCourses = useMemo(() => {
     const f = courseFilter.trim().toLowerCase();
-    if (!f) return courses;
-    return courses.filter((c) => c.code.toLowerCase().includes(f) || c.title.toLowerCase().includes(f));
-  }, [courses, courseFilter]);
+    if (!f) return courseOptions;
+    return courseOptions.filter((c) => c.code.toLowerCase().includes(f) || c.title.toLowerCase().includes(f));
+  }, [courseOptions, courseFilter]);
 
   const visibleGrants = showRevoked ? grants : grants.filter((g) => g.status !== 'revoked');
 
   function toggleCourse(code: string) {
     setSelectedCourses((prev) => (prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code]));
+  }
+
+  async function lookupCourseCode(code: string): Promise<CatalogLookup | null> {
+    const trimmed = code.trim();
+    if (!trimmed) return null;
+    const res = await fetch(`/api/admin/access/catalog?code=${encodeURIComponent(trimmed)}&slug=${encodeURIComponent(slug)}`);
+    if (!res.ok) return null;
+    return (await res.json()) as CatalogLookup;
+  }
+
+  async function onNewCodeBlur() {
+    const code = newCode.trim();
+    if (!code) { setNewLookup(null); return; }
+    const r = await lookupCourseCode(code);
+    setNewLookup(r);
+    if (r?.found && r.title) setNewTitle(r.title);
+  }
+
+  async function addCourse() {
+    setAddCourseError(null);
+    setAddCourseSuccess(null);
+    const code = newCode.trim();
+    if (!code) { setAddCourseError('Course code is required'); return; }
+    const body: Record<string, unknown> = { code, category: newCategory, slug };
+    if (!newLookup?.found) body.title = newTitle;
+    const res = await fetch('/api/admin/access/courses', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      setAddCourseError(await serverError(res, 'Add failed'));
+      return;
+    }
+    const created = (await res.json()) as { code: string; title: string; category: string; categoryLabel: string };
+    setCourseOptions((prev) => [...prev, { code: created.code, title: created.title }]);
+    setAddCourseSuccess(`Added ${created.code} — ${created.title} to ${created.categoryLabel}.`);
+    setNewCode(''); setNewLookup(null); setNewTitle(''); setNewCategory('other');
+  }
+
+  // Picker shortcut: debounce a catalog check while the filter box matches
+  // no existing course and looks code-shaped.
+  useEffect(() => {
+    if (allCourses) { setPickerHint(null); return; }
+    const text = courseFilter.trim();
+    if (!CODE_SHAPE.test(text) || visibleCourses.length > 0) { setPickerHint(null); return; }
+    let cancelled = false;
+    const t = setTimeout(() => {
+      void lookupCourseCode(text).then((r) => { if (!cancelled) setPickerHint(r); });
+    }, 300);
+    return () => { cancelled = true; clearTimeout(t); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- lookupCourseCode is stable per render; re-running on it would just re-debounce identically.
+  }, [courseFilter, allCourses, visibleCourses.length]);
+
+  async function handlePickerAdd() {
+    if (!pickerHint) return;
+    if (pickerHint.found) {
+      const res = await fetch('/api/admin/access/courses', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ code: pickerHint.code, category: 'other', slug }),
+      });
+      if (!res.ok) { alert(await serverError(res, 'Add course failed')); return; }
+      const created = (await res.json()) as { code: string; title: string };
+      setCourseOptions((prev) => [...prev, { code: created.code, title: created.title }]);
+      setSelectedCourses((prev) => [...prev, created.code]);
+      setCourseFilter('');
+      setPickerHint(null);
+    } else {
+      // Not in the catalog — open the Add-a-course section prefilled rather
+      // than creating blind (it needs a title).
+      setNewCode(pickerHint.code);
+      setNewLookup(pickerHint);
+      setCourseFilter('');
+      setPickerHint(null);
+    }
   }
 
   return (
@@ -199,6 +307,66 @@ export function AccessPanel({ slug, courses }: { slug: string; courses: AccessCo
         <p className="text-sm text-slate-600">
           Add a person, see who has access, change their courses, send a new link, or revoke.
         </p>
+      </div>
+
+      {/* Add a course (access-panel addendum, 2026-10-07) */}
+      <div className="space-y-3 border-b border-slate-200 pb-6">
+        <h3 className="text-sm font-medium text-slate-700">Add a course</h3>
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1">
+            <label htmlFor="new-course-code" className="text-xs text-slate-500">Course code</label>
+            <input
+              id="new-course-code"
+              className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+              value={newCode}
+              onChange={(e) => { setNewCode(e.target.value); setNewLookup(null); }}
+              onBlur={onNewCodeBlur}
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void onNewCodeBlur(); } }}
+              placeholder="ENTR 4080"
+            />
+          </div>
+          {newLookup?.found ? (
+            <div className="flex flex-col gap-1">
+              <span className="text-xs text-slate-500">Title (from the Clemson catalog)</span>
+              <p className="rounded border border-slate-200 bg-slate-50 px-2 py-1.5 text-sm text-slate-700">{newLookup.title}</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-1">
+              <label htmlFor="new-course-title" className="text-xs text-slate-500">Title</label>
+              <input
+                id="new-course-title"
+                className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+                value={newTitle}
+                onChange={(e) => setNewTitle(e.target.value)}
+                placeholder="Family Business"
+              />
+            </div>
+          )}
+          <div className="flex flex-col gap-1">
+            <label htmlFor="new-course-category" className="text-xs text-slate-500">Section</label>
+            <select
+              id="new-course-category"
+              className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+              value={newCategory}
+              onChange={(e) => setNewCategory(e.target.value as CourseCategory)}
+            >
+              {CATEGORY_ORDER.map((c) => <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>)}
+            </select>
+          </div>
+          <button type="button" onClick={addCourse} className="rounded bg-slate-800 px-4 py-1.5 text-sm text-white">Add</button>
+        </div>
+        {newLookup && !newLookup.found && (
+          <p className="text-xs text-slate-500">
+            {newLookup.baseCode
+              ? `Sections of ${newLookup.baseCode} are titled "${newLookup.baseTitle}" — give this section its own title.`
+              : 'Not in the Clemson catalog — add it with your own title.'}
+          </p>
+        )}
+        {newLookup?.onCourseList && (
+          <p className="text-xs text-amber-700">{newLookup.code} is already on the course list.</p>
+        )}
+        {addCourseError && <p className="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">{addCourseError}</p>}
+        {addCourseSuccess && <p className="rounded border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-800">{addCourseSuccess}</p>}
       </div>
 
       {/* Add faculty */}
@@ -241,6 +409,15 @@ export function AccessPanel({ slug, courses }: { slug: string; courses: AccessCo
                   </label>
                 ))}
                 {visibleCourses.length === 0 && <p className="text-xs text-slate-400">No matching courses.</p>}
+                {pickerHint && (
+                  <button
+                    type="button"
+                    onClick={handlePickerAdd}
+                    className="mt-1 rounded border border-blue-300 bg-blue-50 px-2 py-1 text-xs text-blue-800 hover:bg-blue-100"
+                  >
+                    Add {pickerHint.code}{pickerHint.found && pickerHint.title ? ` — ${pickerHint.title}` : ' (not in catalog)'}
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -310,7 +487,7 @@ export function AccessPanel({ slug, courses }: { slug: string; courses: AccessCo
               <AccessRow
                 key={g.id}
                 grant={g}
-                courses={courses}
+                courses={courseOptions}
                 editing={editingId === g.id}
                 onEdit={() => setEditingId(g.id)}
                 onCancelEdit={() => setEditingId(null)}

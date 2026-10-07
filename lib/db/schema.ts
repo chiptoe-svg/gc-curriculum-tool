@@ -701,6 +701,11 @@ export const prerequisiteEdges = pgTable('prerequisite_edges', {
 export const courseCatalogEntries = pgTable('course_catalog_entries', {
   courseCode: text('course_code').primaryKey(),
   title: text('title'),
+  // Full-catalog course info (2026-10-07 access-panel addendum, migration
+  // 0055): populated for EVERY Clemson course by scripts/catalog/sync-catalog-courses.ts,
+  // not just the GC+tracked subset sync-catalog-prereqs.ts scopes itself to.
+  description: text('description'),
+  credits: text('credits'), // text: catalog credits can be a range, e.g. "1-3"
   prereqText: text('prereq_text'),
   coreqText: text('coreq_text'),
   notes: jsonb('notes').$type<string[]>().notNull().default([]),
