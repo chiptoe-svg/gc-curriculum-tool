@@ -10,6 +10,14 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+// Hermetic wiki root. The node:fs/promises mock below does not intercept
+// update.ts's readFile under this config, so without this the suite reads the
+// LIVE wiki clone (existingContent + the resource-origin heal pass), which is
+// nondeterministic while anything else is writing to it.
+vi.hoisted(() => {
+  process.env.WIKI_REPO_PATH = '/nonexistent/wiki-repo-for-tests';
+});
+
 // ---------------------------------------------------------------------------
 // Mocks — must be hoisted before any imports that transitively use them.
 // ---------------------------------------------------------------------------
@@ -63,8 +71,14 @@ import {
   courseCodeToSlug,
   computeAffectedPages,
   updateWikiForSnapshot,
+  placeIndexLast,
+  generateProgramPagesFromSubstrate,
+  PROGRAM_REFRESH_HASH_SEED,
+  computeInputHash,
+  generateProgramWikiBatch,
   type WikiUpdateResult,
 } from '../update';
+import { FakeProvider } from '@/lib/ai/fake-provider';
 
 import type { SnapshotRow } from '@/lib/db/capture-snapshots-queries';
 import type { CaptureProfile } from '@/lib/ai/capture/schema';
@@ -542,5 +556,255 @@ describe('updateWikiForSnapshot', () => {
     (getProviderForFunction as ReturnType<typeof vi.fn>).mockResolvedValue(badProvider);
 
     await expect(updateWikiForSnapshot(SNAPSHOT_ID)).rejects.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// One-pass refresh support (scripts/wiki/refresh-all.ts)
+// ---------------------------------------------------------------------------
+
+describe('updateWikiForSnapshot pageTypes filter', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (getSnapshotById as ReturnType<typeof vi.fn>).mockResolvedValue(mockSnapshot);
+    (db.select as ReturnType<typeof vi.fn>).mockReturnValue(makeDbChain([]));
+    (readFile as ReturnType<typeof vi.fn>).mockRejectedValue(
+      Object.assign(new Error('ENOENT'), { code: 'ENOENT' }),
+    );
+    (loadPrompt as ReturnType<typeof vi.fn>).mockResolvedValue('You are the wiki maintainer.');
+  });
+
+  it("pageTypes ['course'] requests only the course page and keeps the raw layer", async () => {
+    const complete = vi.fn().mockResolvedValue({ data: mockLLMResponse });
+    (getProviderForFunction as ReturnType<typeof vi.fn>).mockResolvedValue({ model: 'm', complete });
+
+    const { raw, wiki } = await updateWikiForSnapshot(SNAPSHOT_ID, { pageTypes: ['course'] });
+
+    expect(complete).toHaveBeenCalledTimes(1);
+    const msg = JSON.parse(complete.mock.calls[0]![0].userMessage);
+    expect(msg.affectedWikiPages.map((p: { path: string }) => p.path)).toEqual(['courses/gc-4800.md']);
+    // The model's extra pages (index, concept) were not requested → dropped.
+    expect(wiki.map(p => p.path)).toEqual(['courses/gc-4800.md']);
+    expect(raw.some(p => p.path.startsWith('raw/snapshots/'))).toBe(true);
+  });
+
+  it('no pageTypes = the unchanged per-capture page set (course + index + concepts)', async () => {
+    const complete = vi.fn().mockResolvedValue({ data: mockLLMResponse });
+    (getProviderForFunction as ReturnType<typeof vi.fn>).mockResolvedValue({ model: 'm', complete });
+    await updateWikiForSnapshot(SNAPSHOT_ID);
+    const msg = JSON.parse(complete.mock.calls[0]![0].userMessage);
+    const paths = msg.affectedWikiPages.map((p: { path: string }) => p.path);
+    expect(paths).toContain('courses/gc-4800.md');
+    expect(paths[paths.length - 1]).toBe('index.md');
+  });
+});
+
+describe('placeIndexLast', () => {
+  const page = (type: 'course' | 'index' | 'competency', slug: string) => ({
+    type, slug, path: type === 'index' ? 'index.md' : `${type}/${slug}.md`, existingContent: null,
+  });
+
+  it('moves the index to the end with a manifest of the other pages', () => {
+    const out = placeIndexLast([page('index', 'index'), page('competency', 'a'), page('course', 'b')]);
+    expect(out.map(p => p.slug)).toEqual(['a', 'b', 'index']);
+    expect((out[2]!.substrate as { affectedPages: unknown[] }).affectedPages).toHaveLength(2);
+  });
+
+  it('uses an explicit manifest and merges extra substrate when given', () => {
+    const manifest = [{ type: 'course' as const, slug: 'x', path: 'courses/x.md' }];
+    const out = placeIndexLast([page('index', 'index')], manifest, { programCourses: [1] });
+    expect(out[0]!.substrate).toEqual({ affectedPages: manifest, programCourses: [1] });
+  });
+});
+
+describe('generateProgramPagesFromSubstrate', () => {
+  const now = new Date('2026-10-06T00:00:00Z');
+  const compPage = {
+    type: 'competency' as const,
+    slug: 'color-mgmt',
+    path: 'competencies/color-mgmt.md',
+    existingContent: null,
+    substrate: { contributingCells: [{ band: 'materials_supported' }, { band: 'claimed' }] },
+  };
+  const indexPage = {
+    type: 'index' as const, slug: 'index', path: 'index.md', existingContent: null,
+    substrate: { affectedPages: [] },
+  };
+
+  it('sends no triggering snapshot, stamps program-seeded input_hash + bands, drops unrequested paths', async () => {
+    const provider = new FakeProvider([{
+      pages: [
+        { path: 'competencies/color-mgmt.md', content: '---\ntitle: "Color"\n---\n# Color\n', operation: 'update' },
+        { path: 'index.md', content: '---\ntitle: "Index"\n---\n# Index\n', operation: 'update' },
+        { path: 'log.md', content: 'steered', operation: 'create' },
+      ],
+      log_entry: 'program refresh',
+    }]);
+    const spy = vi.spyOn(provider, 'complete');
+
+    const { wiki, logEntry } = await generateProgramPagesFromSubstrate([compPage, indexPage], {
+      provider, systemPrompt: 'sys', now,
+    });
+
+    const msg = JSON.parse(spy.mock.calls[0]![0].userMessage);
+    expect(msg.mode).toBe('program-refresh');
+    expect(msg.snapshot).toBeNull();
+    expect(wiki.map(p => p.path)).toEqual(['competencies/color-mgmt.md', 'index.md']);
+    const comp = wiki[0]!.content;
+    expect(comp).toContain(`input_hash: ${computeInputHash(PROGRAM_REFRESH_HASH_SEED, compPage)}`);
+    expect(comp).toMatch(/evidence_bands:/);
+    expect(comp).toContain('2026-10-06');
+    expect(logEntry).toBe('program refresh');
+  });
+
+  it('re-requests an omitted page once (reconcile)', async () => {
+    const provider = new FakeProvider([
+      { pages: [{ path: 'index.md', content: '# I', operation: 'update' }], log_entry: 'a' },
+      { pages: [{ path: 'competencies/color-mgmt.md', content: '# C', operation: 'update' }], log_entry: 'b' },
+    ]);
+    const spy = vi.spyOn(provider, 'complete');
+    const { wiki } = await generateProgramPagesFromSubstrate([compPage, indexPage], {
+      provider, systemPrompt: 'sys', now,
+    });
+    expect(spy).toHaveBeenCalledTimes(2);
+    expect(wiki.map(p => p.path).sort()).toEqual(['competencies/color-mgmt.md', 'index.md']);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Pin: the per-capture user message + stamped output (refactor guard)
+// ---------------------------------------------------------------------------
+
+describe('per-capture path is pinned', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (getSnapshotById as ReturnType<typeof vi.fn>).mockResolvedValue(mockSnapshot);
+    (db.select as ReturnType<typeof vi.fn>).mockReturnValue(makeDbChain([]));
+    (loadPrompt as ReturnType<typeof vi.fn>).mockResolvedValue('sys');
+  });
+
+  it('sends exactly the pre-refactor user message and stamps the same frontmatter', async () => {
+    const complete = vi.fn().mockResolvedValue({ data: mockLLMResponse });
+    (getProviderForFunction as ReturnType<typeof vi.fn>).mockResolvedValue({ model: 'm', complete });
+
+    const { wiki } = await updateWikiForSnapshot(SNAPSHOT_ID);
+
+    // Captured from origin/dev's update.ts (before the one-pass refactor).
+    expect(JSON.parse(complete.mock.calls[0]![0].userMessage)).toEqual({
+      snapshot: {
+        id: SNAPSHOT_ID,
+        courseCode: 'GC 4800',
+        courseSlug: 'gc-4800',
+        courseTitle: 'GC 4800',
+        courseLevel: 0,
+        coursePrerequisites: [],
+        caption: 'Spring 2026',
+        reviewerNote: 'Faculty approved this profile.',
+        createdAt: '2026-05-25T14:00:00.000Z',
+        profile: JSON.parse(JSON.stringify(mockProfile)),
+        courseDescription: null,
+        courseLearningObjectives: [],
+        courseMajorProjects: [],
+        courseSkillsRequired: [],
+        syllabusUrl: null,
+        sheetSourceUrl: null,
+      },
+      rawPaths: {
+        snapshotJson: 'raw/snapshots/gc-4800/2026-05-25_aaaaaaa.json',
+        transcriptMd: 'raw/transcripts/gc-4800/2026-05-25_aaaaaaa.md',
+      },
+      allSnapshotsForCourse: [],
+      competencyBands: [{ statement: 'Manages client relationships', band: 'materials_supported' }],
+      competencyLinks: [],
+      affectedWikiPages: [
+        { type: 'course', slug: 'gc-4800', path: 'courses/gc-4800.md', existingContent: null },
+        {
+          type: 'concept', slug: 'productive-failure', path: 'concepts/productive-failure.md',
+          existingContent: null, substrate: { coursesWithConditions: [] },
+        },
+        {
+          type: 'concept', slug: 'three-act-structure', path: 'concepts/three-act-structure.md',
+          existingContent: null, substrate: { coursesWithConditions: [] },
+        },
+        {
+          type: 'index', slug: 'index', path: 'index.md', existingContent: null,
+          substrate: {
+            affectedPages: [
+              { type: 'course', slug: 'gc-4800', path: 'courses/gc-4800.md' },
+              { type: 'concept', slug: 'productive-failure', path: 'concepts/productive-failure.md' },
+              { type: 'concept', slug: 'three-act-structure', path: 'concepts/three-act-structure.md' },
+            ],
+          },
+        },
+      ],
+    });
+
+    expect(wiki.find(p => p.path === 'courses/gc-4800.md')!.content).toBe([
+      '---',
+      'type: course',
+      'slug: gc-4800',
+      'input_hash: 7c834abcb4ac',
+      'evidence_bands: [materials_supported]',
+      'timestamp: 2026-05-25T14:00:00.000Z',
+      'tags: [course]',
+      'resource: https://gcworkflow.clemson.edu:8443/wiki/courses/gc-4800',
+      '---',
+      '# GC 4800 — Senior Capstone',
+      '',
+    ].join('\n'));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// generateProgramWikiBatch — substrate assembly with mocked db
+// ---------------------------------------------------------------------------
+
+describe('generateProgramWikiBatch', () => {
+  const programCourses = [{
+    courseCode: 'MKT 3310', courseSlug: 'mkt-3310', title: 'Marketing', level: 3,
+    lastSnapshotId: 's1', lastSnapshotDate: '2026-08-11', courseShape: 'shape',
+  }];
+  const manifest = [
+    { type: 'course' as const, slug: 'mkt-3310', path: 'courses/mkt-3310.md' },
+    { type: 'concept' as const, slug: 'productive-failure', path: 'concepts/productive-failure.md' },
+    { type: 'index' as const, slug: 'index', path: 'index.md' },
+  ];
+  const batch = [
+    { type: 'concept' as const, slug: 'productive-failure', path: 'concepts/productive-failure.md' },
+    { type: 'index' as const, slug: 'index', path: 'index.md' },
+  ];
+
+  it('index gets {affectedPages: manifest minus index, programCourses, totals}; concepts keep their substrate + programCourses', async () => {
+    const innerJoin = vi.fn();
+    const chain = makeDbChain([{ courseCode: 'MKT 3310', profile: mockProfile }]);
+    const origJoin = chain.innerJoin!;
+    chain.innerJoin = (...a: unknown[]) => { innerJoin(...a); return origJoin(...a); };
+    (db.select as ReturnType<typeof vi.fn>).mockReturnValue(chain);
+
+    const provider = new FakeProvider([{
+      pages: batch.map(p => ({ path: p.path, content: '# x', operation: 'update' })),
+      log_entry: 'program refresh',
+    }]);
+    const spy = vi.spyOn(provider, 'complete');
+
+    await generateProgramWikiBatch(batch, {
+      manifest, programCourses, provider, systemPrompt: 'sys',
+      totals: { totalSnapshots: 26, totalCoursesWithSnapshots: 18 },
+      now: new Date('2026-10-06T00:00:00Z'),
+    });
+
+    const pages = JSON.parse(spy.mock.calls[0]![0].userMessage).affectedWikiPages;
+    const index = pages.find((p: { type: string }) => p.type === 'index');
+    expect(index.substrate).toEqual({
+      affectedPages: manifest.filter(p => p.type !== 'index'),
+      programCourses,
+      totalSnapshots: 26,
+      totalCoursesWithSnapshots: 18,
+    });
+    const pf = pages.find((p: { slug: string }) => p.slug === 'productive-failure');
+    expect(pf.substrate.programCourses).toEqual(programCourses);
+    // Program scope = every captured course (MKT included): no gc/offered join.
+    expect(pf.substrate.coursesWithConditions.map((c: { courseCode: string }) => c.courseCode)).toEqual(['MKT 3310']);
+    expect(innerJoin).not.toHaveBeenCalled();
   });
 });

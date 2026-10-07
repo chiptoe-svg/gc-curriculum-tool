@@ -6,6 +6,13 @@
  * writeAndPush(). Idempotent — re-running regenerates wiki pages from the
  * current snapshot state; the raw layer is deterministic from profile JSON.
  *
+ * Cost: O(captures × pages). Every snapshot's affected set includes the
+ * program-wide competency/target/concept pages and the index, so after a
+ * program-wide re-score each of those is regenerated once PER SNAPSHOT. For a
+ * bulk refresh use scripts/wiki/refresh-all.ts instead, which regenerates each
+ * course page once (latest snapshot) and each program-wide page once
+ * (`--dry-run` shows the plan and call estimate).
+ *
  * Usage:
  *   pnpm exec tsx --env-file=.env.local scripts/wiki/seed.ts
  */
