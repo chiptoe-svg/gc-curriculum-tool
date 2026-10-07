@@ -1,4 +1,5 @@
 import { eq, and, asc, isNull, sql } from 'drizzle-orm';
+import { tierChangeNeedsReread } from '@/lib/capture/ingest-selection';
 import { db } from '@/lib/db/client';
 import { courseMaterials } from '@/lib/db/schema';
 import { scrubForRecord } from '@/lib/privacy/scrub';
@@ -273,6 +274,31 @@ export async function deleteMaterial(id: string): Promise<void> {
  */
 export async function updateMaterialTier(id: string, tier: string): Promise<void> {
   await db.update(courseMaterials).set({ tier }).where(eq(courseMaterials.id, id));
+}
+
+/**
+ * Faculty level change from the triage step. A file already read at its old
+ * level is set back to 'pending' so the triage step reads it again at the new
+ * depth (each reading path deletes the old vectors before writing new ones).
+ * Returns the row's indexing status after the change, or null if no row.
+ */
+export async function changeMaterialTierByFaculty(id: string, tier: string): Promise<string | null> {
+  const [row] = await db
+    .select({
+      tier: courseMaterials.tier,
+      indexingStatus: courseMaterials.indexingStatus,
+      extractedText: courseMaterials.extractedText,
+      blobUrl: courseMaterials.blobUrl,
+    })
+    .from(courseMaterials)
+    .where(eq(courseMaterials.id, id));
+  if (!row) return null;
+  const reread = tierChangeNeedsReread(row, tier);
+  await db
+    .update(courseMaterials)
+    .set(reread ? { tier, indexingStatus: 'pending' } : { tier })
+    .where(eq(courseMaterials.id, id));
+  return reread ? 'pending' : row.indexingStatus;
 }
 
 /**

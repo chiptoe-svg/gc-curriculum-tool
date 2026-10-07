@@ -40,3 +40,18 @@ export function ingestAction(m: IngestCandidate): IngestAction {
   const hasBlob = keyFromLocalUrl(m.blobUrl) !== null;
   return hasText || hasBlob ? 'queue' : 'skip';
 }
+
+/**
+ * Owner, 2026-10-07: when faculty move an already-read file to a different
+ * level in triage, it must be read again at the new depth — otherwise the
+ * arrows change only the label. Only a real change on a 'ready' row that can
+ * be re-read (it has text or a local file) qualifies. A null tier is 'high'.
+ */
+export function tierChangeNeedsReread(
+  m: IngestCandidate & { tier: string | null },
+  newTier: string,
+): boolean {
+  if ((m.tier ?? 'high') === newTier) return false;
+  if (m.indexingStatus !== 'ready') return false;
+  return ingestAction({ ...m, indexingStatus: null }) === 'queue';
+}

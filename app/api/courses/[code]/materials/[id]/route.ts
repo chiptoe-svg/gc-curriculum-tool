@@ -10,7 +10,7 @@ import {
   setMaterialRetired,
   setMaterialUseDigest,
   updateFerpaRisk,
-  updateMaterialTier,
+  changeMaterialTierByFaculty,
 } from '@/lib/db/course-materials-queries';
 
 interface RouteContext {
@@ -127,8 +127,12 @@ export async function PATCH(req: Request, { params }: RouteContext): Promise<Res
     const updated = await setMaterialIgnoredItems(id, body.ignoredItems as string[]);
     if (!updated) return NextResponse.json({ error: 'no row updated' }, { status: 404 });
   }
+  // Faculty level change: an already-read file goes back to 'pending' so the
+  // triage step re-reads it at the new level (owner, 2026-10-07).
+  let indexingStatus: string | null | undefined;
   if (hasTier) {
-    await updateMaterialTier(id, body.tier as string);
+    indexingStatus = await changeMaterialTierByFaculty(id, body.tier as string);
+    if (indexingStatus === null) return NextResponse.json({ error: 'no row updated' }, { status: 404 });
   }
   if (hasRetired) {
     const updated = await setMaterialRetired(id, body.retired as boolean);
@@ -139,5 +143,5 @@ export async function PATCH(req: Request, { params }: RouteContext): Promise<Res
     if (!updated) return NextResponse.json({ error: 'no row updated' }, { status: 404 });
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json(indexingStatus !== undefined ? { ok: true, indexingStatus } : { ok: true });
 }

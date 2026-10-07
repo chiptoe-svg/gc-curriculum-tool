@@ -87,7 +87,10 @@ function TriageRow({ row, courseCode, slug, onUpdate, onRemove }: TriageRowProps
         },
       );
       if (!res.ok) { setRowError(`Failed (${res.status})`); return; }
-      onUpdate(row.id, { tier: newTier });
+      // The server sets an already-read file back to unread when its level
+      // changes, so the step reads it again at the new depth.
+      const json = (await res.json().catch(() => ({}))) as { indexingStatus?: RowState['indexingStatus'] | null };
+      onUpdate(row.id, json.indexingStatus ? { tier: newTier, indexingStatus: json.indexingStatus } : { tier: newTier });
     } finally {
       setBusy(false);
     }
@@ -515,7 +518,7 @@ export function TriageStep({ courseCode, slug, materials, onIngested, onBack }: 
         {phase === 'idle' && (
           <p className="max-w-md text-right text-sm text-muted-foreground">
             {allRead ? (
-              <>All files are already read. If you moved a file to a different level, it keeps the reading it already has.</>
+              <>All files are already read.</>
             ) : (
               <>
                 When you click <strong>Read files &amp; continue</strong>, this takes about{' '}

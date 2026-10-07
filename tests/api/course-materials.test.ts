@@ -22,6 +22,7 @@ const {
   updateFerpaRisk,
   setMaterialIgnoredItems,
   updateMaterialTier,
+  changeMaterialTierByFaculty,
   setMaterialRetired,
   setMaterialFacultyNote,
   isTriageEnabled,
@@ -50,6 +51,7 @@ const {
   updateFerpaRisk: vi.fn(),
   setMaterialIgnoredItems: vi.fn(),
   updateMaterialTier: vi.fn(),
+  changeMaterialTierByFaculty: vi.fn(),
   setMaterialRetired: vi.fn(),
   setMaterialFacultyNote: vi.fn(),
   isTriageEnabled: vi.fn(),
@@ -80,6 +82,7 @@ vi.mock('@/lib/db/course-materials-queries', () => ({
   updateFerpaRisk,
   setMaterialIgnoredItems,
   updateMaterialTier,
+  changeMaterialTierByFaculty,
   setMaterialRetired,
   setMaterialFacultyNote,
 }));
@@ -473,7 +476,7 @@ describe('PATCH /api/courses/[code]/materials/[id]', () => {
     setMaterialUseDigest.mockResolvedValue(true);
     updateFerpaRisk.mockResolvedValue(undefined);
     setMaterialIgnoredItems.mockResolvedValue(true);
-    updateMaterialTier.mockResolvedValue(undefined);
+    changeMaterialTierByFaculty.mockResolvedValue('ready');
     setMaterialRetired.mockResolvedValue(true);
     setMaterialFacultyNote.mockResolvedValue(true);
   });
@@ -517,27 +520,28 @@ describe('PATCH /api/courses/[code]/materials/[id]', () => {
     expect(json.error).toMatch(/tier/i);
   });
 
-  it('accepts tier:"background" → 200 and calls updateMaterialTier', async () => {
+  it('accepts tier:"background" → 200 and calls changeMaterialTierByFaculty', async () => {
     const [req, ctx] = makePatchReq({ tier: 'background' });
     const res = await PATCH(req, ctx);
     expect(res.status).toBe(200);
     const json = await res.json();
     expect(json.ok).toBe(true);
-    expect(updateMaterialTier).toHaveBeenCalledWith('mat-1', 'background');
+    expect(json.indexingStatus).toBe('ready');
+    expect(changeMaterialTierByFaculty).toHaveBeenCalledWith('mat-1', 'background');
   });
 
-  it('accepts tier:"high" → 200 and calls updateMaterialTier', async () => {
+  it('accepts tier:"high" → 200 and calls changeMaterialTierByFaculty', async () => {
     const [req, ctx] = makePatchReq({ tier: 'high' });
     const res = await PATCH(req, ctx);
     expect(res.status).toBe(200);
-    expect(updateMaterialTier).toHaveBeenCalledWith('mat-1', 'high');
+    expect(changeMaterialTierByFaculty).toHaveBeenCalledWith('mat-1', 'high');
   });
 
-  it('accepts tier:"middle" → 200 and calls updateMaterialTier', async () => {
+  it('accepts tier:"middle" → 200 and calls changeMaterialTierByFaculty', async () => {
     const [req, ctx] = makePatchReq({ tier: 'middle' });
     const res = await PATCH(req, ctx);
     expect(res.status).toBe(200);
-    expect(updateMaterialTier).toHaveBeenCalledWith('mat-1', 'middle');
+    expect(changeMaterialTierByFaculty).toHaveBeenCalledWith('mat-1', 'middle');
   });
 
   it('tier-only body is sufficient (presence guard passes)', async () => {
@@ -560,7 +564,7 @@ describe('PATCH /api/courses/[code]/materials/[id]', () => {
     const res = await PATCH(req, ctx);
     expect(res.status).toBe(200);
     expect(updateFerpaRisk).toHaveBeenCalledWith({ id: 'mat-1', risk: 'low' });
-    expect(updateMaterialTier).toHaveBeenCalledWith('mat-1', 'middle');
+    expect(changeMaterialTierByFaculty).toHaveBeenCalledWith('mat-1', 'middle');
   });
 
   it('accepts retired:true → 200 and calls setMaterialRetired(id, true)', async () => {
@@ -593,6 +597,6 @@ describe('PATCH /api/courses/[code]/materials/[id]', () => {
     const res = await PATCH(req, ctx);
     expect(res.status).toBe(200);
     expect(setMaterialIgnored).not.toHaveBeenCalled();
-    expect(updateMaterialTier).not.toHaveBeenCalled();
+    expect(changeMaterialTierByFaculty).not.toHaveBeenCalled();
   });
 });
