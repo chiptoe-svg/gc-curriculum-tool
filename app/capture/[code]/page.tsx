@@ -11,6 +11,7 @@ import { getCaptureConversation } from '@/lib/db/capture-conversations-queries';
 import { getLatestSnapshotByCourse, getSnapshotById } from '@/lib/db/capture-snapshots-queries';
 import { getLatestSessionId, getSessionInstructor, listPriorSessionSummaries } from '@/lib/db/capture-messages-queries';
 import { composeSessionBriefing } from '@/lib/ai/agent/session-briefing';
+import { sessionToExcludeFromRecap } from '@/lib/capture/session-recap';
 import type { SessionBriefingView } from './CaptureChatPanel';
 import { CaptureClient } from './CaptureClient';
 import { DraftStatusStrip } from './DraftStatusStrip';
@@ -95,9 +96,14 @@ export default async function CapturePage({ params, searchParams }: Props) {
     ? await getSessionInstructor(code, currentSessionId)
     : null;
 
-  // Distilled recap of prior sessions (excludes the in-flight one). Serializable
+  // Distilled recap of prior sessions (excludes the in-flight one — only when a
+  // saved conversation is actually being resumed). Serializable
   // view: Date -> ISO string, citations dropped (not surfaced in the card).
-  const priorSummaries = await listPriorSessionSummaries(code, currentSessionId ?? '', 3);
+  const priorSummaries = await listPriorSessionSummaries(
+    code,
+    sessionToExcludeFromRecap(currentSessionId, savedConversation),
+    3,
+  );
   const priorBriefings: SessionBriefingView[] = composeSessionBriefing(priorSummaries).map(b => ({
     sessionId: b.sessionId,
     startedAt: b.startedAt.toISOString(),
