@@ -190,7 +190,7 @@ export function buildCaptureChatUserMessage(context: CaptureChatContext): string
   const parts: string[] = [
     `**Course:** ${course.code} — ${course.title}`,
     `**Description:** ${course.description || '(none)'}`,
-    `**Prerequisites (catalog):** ${course.prerequisites || '(none listed)'}`,
+    `**Prerequisites as written on the GC course sheet (may be out of date; the Clemson catalog is authoritative, and the prerequisite profiles below follow it):** ${course.prerequisites || '(none listed)'}`,
     '',
     formatList('**Catalog learning objectives:**', course.learningObjectives),
     '',

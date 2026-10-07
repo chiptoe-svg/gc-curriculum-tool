@@ -151,7 +151,7 @@ export async function buildAgentCall(input: AuditAgentInput): Promise<BuiltAgent
   const catalogBlock = [
     `Course: ${course.code} — ${course.title}`,
     `Description: ${course.description || '(none)'}`,
-    `Prerequisites: ${course.prerequisites || '(none)'}`,
+    `Prerequisites as written on the GC course sheet (may be out of date; the Clemson catalog list in the Neighboring courses brief is authoritative): ${course.prerequisites || '(none)'}`,
     `Learning objectives: ${learningObjectives.join('; ') || '(none)'}`,
     `Major projects: ${majorProjects.join('; ') || '(none)'}`,
     `Declared incoming skills: ${skillsRequired.join('; ') || '(none)'}`,
