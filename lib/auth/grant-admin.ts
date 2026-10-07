@@ -104,6 +104,50 @@ function toAdminGrant(row: GrantRow, now = new Date()): AdminGrant {
   };
 }
 
+/** Trimmed, 1-120 chars. */
+export function validateLabel(raw: unknown): { label: string } | { error: string } {
+  if (typeof raw !== 'string') return { error: 'label must be a string' };
+  const label = raw.trim();
+  if (label.length < 1 || label.length > 120) return { error: 'label must be 1-120 characters' };
+  return { label };
+}
+
+/** Optional. Empty/whitespace/undefined/null all mean "no email" (not an
+ * error). Otherwise: one '@', no whitespace, <=254 chars. */
+export function validateEmail(raw: unknown): { email: string | null } | { error: string } {
+  if (raw === undefined || raw === null) return { email: null };
+  if (typeof raw !== 'string') return { error: 'email must be a string' };
+  const email = raw.trim();
+  if (email === '') return { email: null };
+  if (email.length > 254 || /\s/.test(email) || email.split('@').length !== 2 || email.startsWith('@') || email.endsWith('@')) {
+    return { error: 'email must look like an email address' };
+  }
+  return { email };
+}
+
+/** Optional ISO-ish date string; undefined/null means never expires. */
+export function validateExpiresAt(raw: unknown): { expiresAt: Date | null } | { error: string } {
+  if (raw === undefined || raw === null) return { expiresAt: null };
+  if (typeof raw !== 'string') return { error: 'expiresAt must be a date string or null' };
+  const expiresAt = new Date(raw);
+  if (isNaN(expiresAt.getTime())) return { error: 'expiresAt must be a valid date' };
+  return { expiresAt };
+}
+
+/** `'*'` or a non-empty array of course codes, all present in `known`
+ * (normalized before comparing and before storing). Unknown codes are named
+ * in the error so the caller can 400 with a useful message. */
+export function resolveScope(courses: unknown, known: string[]): { scope: string[] } | { error: string } {
+  if (courses === '*') return { scope: ['*'] };
+  if (!Array.isArray(courses) || courses.length === 0 || !courses.every((c) => typeof c === 'string')) {
+    return { error: "courses must be '*' or a non-empty array of course codes" };
+  }
+  const scope = courses.map((c) => normalizeCode(c));
+  const unknown = checkCourses(scope, known);
+  if (unknown.length) return { error: `not in the roster: ${unknown.join(', ')}` };
+  return { scope };
+}
+
 /** Mints a token, inserts the grant, and returns it with the token — the ONLY
  * place the raw token is ever available (never stored, never logged again). */
 export async function createGrant(input: CreateGrantInput): Promise<AdminGrant & { token: string }> {

@@ -80,6 +80,10 @@ import {
   patchGrant,
   revokeGrant,
   reissueGrant,
+  validateLabel,
+  validateEmail,
+  validateExpiresAt,
+  resolveScope,
 } from '@/lib/auth/grant-admin';
 
 beforeEach(() => {
@@ -209,6 +213,73 @@ describe('revokeGrant', () => {
     selectResult = [row({ revokedAt: new Date('2020-01-01T00:00:00Z') })];
     expect(await revokeGrant('g1')).toBe('ok');
     expect(updateSetMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('validateLabel', () => {
+  it('trims and accepts 1-120 chars', () => {
+    expect(validateLabel('  Danita Swaney  ')).toEqual({ label: 'Danita Swaney' });
+  });
+  it('rejects empty, whitespace-only, non-string, and over-120', () => {
+    expect(validateLabel('')).toHaveProperty('error');
+    expect(validateLabel('   ')).toHaveProperty('error');
+    expect(validateLabel(42)).toHaveProperty('error');
+    expect(validateLabel('x'.repeat(121))).toHaveProperty('error');
+    expect(validateLabel('x'.repeat(120))).toEqual({ label: 'x'.repeat(120) });
+  });
+});
+
+describe('validateEmail', () => {
+  it('accepts undefined/null/empty as no email', () => {
+    expect(validateEmail(undefined)).toEqual({ email: null });
+    expect(validateEmail(null)).toEqual({ email: null });
+    expect(validateEmail('')).toEqual({ email: null });
+    expect(validateEmail('  ')).toEqual({ email: null });
+  });
+  it('accepts a plausible email, trimmed', () => {
+    expect(validateEmail('  danita@example.edu  ')).toEqual({ email: 'danita@example.edu' });
+  });
+  it('rejects spaces, missing/extra @, and over-254 chars', () => {
+    expect(validateEmail('danita @example.edu')).toHaveProperty('error');
+    expect(validateEmail('not-an-email')).toHaveProperty('error');
+    expect(validateEmail('a@b@c.edu')).toHaveProperty('error');
+    expect(validateEmail('a'.repeat(250) + '@b.edu')).toHaveProperty('error');
+    expect(validateEmail(42)).toHaveProperty('error');
+  });
+});
+
+describe('validateExpiresAt', () => {
+  it('undefined/null means never expires', () => {
+    expect(validateExpiresAt(undefined)).toEqual({ expiresAt: null });
+    expect(validateExpiresAt(null)).toEqual({ expiresAt: null });
+  });
+  it('parses a valid ISO date string', () => {
+    const r = validateExpiresAt('2027-01-01T00:00:00.000Z') as { expiresAt: Date };
+    expect(r.expiresAt).toBeInstanceOf(Date);
+    expect(r.expiresAt.toISOString()).toBe('2027-01-01T00:00:00.000Z');
+  });
+  it('rejects a non-date string and a non-string', () => {
+    expect(validateExpiresAt('not-a-date')).toHaveProperty('error');
+    expect(validateExpiresAt(123)).toHaveProperty('error');
+  });
+});
+
+describe('resolveScope', () => {
+  const known = ['GC 3730', 'GC 1010'];
+  it('accepts the literal wildcard', () => {
+    expect(resolveScope('*', known)).toEqual({ scope: ['*'] });
+  });
+  it('accepts and normalizes a non-empty array of known codes', () => {
+    expect(resolveScope(['gc 3730', 'GC%201010'], known)).toEqual({ scope: ['GC 3730', 'GC 1010'] });
+  });
+  it('rejects unknown codes, naming them', () => {
+    const r = resolveScope(['GC 3730', 'GC 9999'], known) as { error: string };
+    expect(r.error).toMatch(/GC 9999/);
+  });
+  it('rejects an empty array, non-array, and non-string entries', () => {
+    expect(resolveScope([], known)).toHaveProperty('error');
+    expect(resolveScope(undefined, known)).toHaveProperty('error');
+    expect(resolveScope([1, 2], known)).toHaveProperty('error');
   });
 });
 
