@@ -57,11 +57,6 @@ describe('POST /api/capture/[code]/reset', () => {
     expect(runCourseReset).not.toHaveBeenCalled();
   });
 
-  it('passes scope and includeSnapshots through', async () => {
-    await call({ scope: 'materials', includeSnapshots: true });
-    expect(runCourseReset).toHaveBeenCalledWith('GC 1010', { scope: 'materials', includeSnapshots: true });
-  });
-
   it('rejects an invalid scope with 400', async () => {
     const res = await call({ scope: 'bogus' });
     expect(res.status).toBe(400);
@@ -73,5 +68,49 @@ describe('POST /api/capture/[code]/reset', () => {
     const res = await call({});
     const json = await res.json();
     expect(json.workingDraftDeleted).toBe(1);
+  });
+
+  // ── Deeper resets are admin-only (owner must-fix, follow-up to the ── //
+  // ── scoped-ingest-reset review) — this route accepts ONLY scope      //
+  // ── 'session' with includeSnapshots false/absent. Anything else 403s //
+  // ── rather than silently passing through to runCourseReset.          //
+  describe('deeper resets are admin-only (403, not passed to runCourseReset)', () => {
+    it("200s for the default (no scope, no includeSnapshots) — equivalent to scope 'session'", async () => {
+      const res = await call({});
+      expect(res.status).toBe(200);
+      expect(runCourseReset).toHaveBeenCalledWith('GC 1010', { scope: 'session', includeSnapshots: false });
+    });
+
+    it("200s for explicit scope:'session', includeSnapshots:false", async () => {
+      const res = await call({ scope: 'session', includeSnapshots: false });
+      expect(res.status).toBe(200);
+      expect(runCourseReset).toHaveBeenCalledWith('GC 1010', { scope: 'session', includeSnapshots: false });
+    });
+
+    it("403s for scope:'materials'", async () => {
+      const res = await call({ scope: 'materials' });
+      expect(res.status).toBe(403);
+      expect(runCourseReset).not.toHaveBeenCalled();
+      const json = await res.json();
+      expect(json.error).toBe('Deeper resets are admin-only — use /api/admin/v2-reset');
+    });
+
+    it("403s for scope:'everything'", async () => {
+      const res = await call({ scope: 'everything' });
+      expect(res.status).toBe(403);
+      expect(runCourseReset).not.toHaveBeenCalled();
+    });
+
+    it('403s for includeSnapshots:true, even with scope session', async () => {
+      const res = await call({ scope: 'session', includeSnapshots: true });
+      expect(res.status).toBe(403);
+      expect(runCourseReset).not.toHaveBeenCalled();
+    });
+
+    it('403s for includeSnapshots:true with no scope given', async () => {
+      const res = await call({ includeSnapshots: true });
+      expect(res.status).toBe(403);
+      expect(runCourseReset).not.toHaveBeenCalled();
+    });
   });
 });
