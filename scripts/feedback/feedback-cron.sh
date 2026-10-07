@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Feedback widget Phase 2 — cron wrapper. Runs every 15 min via launchd.
+# Since 2026-10-07: TRIAGE ONLY by default (see AUTO_IMPLEMENT below).
 #
 # For each open `gc-feedback` issue:
 #   - Untriaged → run `/triage-feedback <N> auto-post` in a fresh worktree
@@ -13,6 +14,15 @@
 # Logs to ~/.local/state/gc-curriculum-tool/feedback-cron.log
 
 set -uo pipefail
+
+# launchd starts with a bare PATH; `claude` lives in ~/.local/bin. Without this
+# every run failed with "claude: command not found" from 2026-06-02 to
+# 2026-10-07, so no feedback was triaged for four months.
+export PATH="$HOME/.local/bin:$PATH"
+
+# TRIAGE ONLY (owner, 2026-10-07): label + comment each new item; never write
+# code or open PRs unattended. Set FEEDBACK_AUTO_IMPLEMENT=1 to re-enable.
+AUTO_IMPLEMENT="${FEEDBACK_AUTO_IMPLEMENT:-0}"
 
 REPO_DIR="/Users/admin/projects/curriculum_developer"
 LOG_DIR="$HOME/.local/state/gc-curriculum-tool"
@@ -110,7 +120,9 @@ for i in $(seq 0 $((count - 1))); do
   if (( has_triaged == 0 )); then
     dispatch_triage "$num"
   else
-    if [[ $(should_implement "$labels") == "yes" ]]; then
+    if [[ "$AUTO_IMPLEMENT" != "1" ]]; then
+      echo "#$num skip: triaged (auto-implement off — triage only)"
+    elif [[ $(should_implement "$labels") == "yes" ]]; then
       dispatch_implement "$num"
     else
       echo "#$num skip: triaged but ineligible (labels: $labels)"
