@@ -66,7 +66,7 @@ describe('TriageStep', () => {
         onIngested={noop} onBack={noop}
       />,
     );
-    expect(screen.getByText(/high value/i)).toBeTruthy();
+    expect(screen.getByText('High: read in full')).toBeTruthy();
     expect(screen.getAllByText(/middle/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText(/background/i).length).toBeGreaterThanOrEqual(1);
   });
@@ -127,7 +127,7 @@ describe('TriageStep', () => {
       />,
     );
     expect(screen.getByText(/add your lecture slides/i)).toBeTruthy();
-    expect(screen.getByRole('button', { name: /add slides/i })).toBeTruthy();
+    expect(screen.getAllByRole('button', { name: /back to materials/i }).length).toBe(2);
   });
 
   it('hides the slides nudge when a middle-tier material is present', () => {
@@ -158,7 +158,7 @@ describe('TriageStep', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /ingest & continue/i }));
+    fireEvent.click(screen.getByRole('button', { name: /read files & continue/i }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
 
@@ -192,9 +192,9 @@ describe('TriageStep', () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /ingest & continue/i }));
+    fireEvent.click(screen.getByRole('button', { name: /read files & continue/i }));
     await waitFor(() => expect(screen.getByText(/server error/i)).toBeTruthy());
-    expect(screen.getByRole('button', { name: /ingest & continue/i })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: /read files & continue/i })).not.toBeDisabled();
   });
 
   it('move-up button PATCHes with next higher tier and the row moves to the high section', async () => {
@@ -342,7 +342,7 @@ describe('TriageStep', () => {
         />,
       );
       // Should show "Estimated:" label
-      expect(screen.getByText(/estimated:/i)).toBeTruthy();
+      expect(screen.getByText(/this takes about/i)).toBeTruthy();
     });
 
     it('total estimate contains a duration or "—"', () => {
@@ -354,7 +354,7 @@ describe('TriageStep', () => {
           onIngested={noop} onBack={noop}
         />,
       );
-      const estimatedEl = screen.getByText(/estimated:/i).parentElement ?? screen.getByText(/estimated:/i);
+      const estimatedEl = screen.getByText(/this takes about/i);
       const text = estimatedEl.textContent ?? '';
       // Matches ~Xs, ~N min, ~N.M hr, or a range like ~30s–1 min, or '—'
       expect(text).toMatch(/~\d|—/);
@@ -369,7 +369,7 @@ describe('TriageStep', () => {
           onIngested={noop} onBack={noop}
         />,
       );
-      expect(screen.getByText(/rough estimate/i)).toBeTruthy();
+      expect(screen.getByText(/a rough estimate/i)).toBeTruthy();
     });
 
     it('shows "2 at a time" concurrency note near the Ingest button', () => {
@@ -381,7 +381,7 @@ describe('TriageStep', () => {
           onIngested={noop} onBack={noop}
         />,
       );
-      expect(screen.getByText(/2 at a time/i)).toBeTruthy();
+      expect(screen.getByText(/2 files at a time/i)).toBeTruthy();
     });
 
     it('renders at least one per-row estimate chip using formatDuration format', () => {
@@ -491,7 +491,7 @@ describe('TriageStep use-local checkbox', () => {
     );
     render(<TriageStep courseCode="GC 1010" slug="s" materials={[makeMaterial({ id: 'm1', tier: 'high', pageCount: 2 })] as never} onIngested={() => {}} onBack={() => {}} />);
     fireEvent.click(screen.getByLabelText(/use local/i));
-    fireEvent.click(screen.getByRole('button', { name: /ingest/i }));
+    fireEvent.click(screen.getByRole('button', { name: /read files & continue/i }));
     await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
     const call = fetchSpy.mock.calls.find(c => String(c[0]).includes('v2-backfill'))!;
     expect(JSON.parse((call[1] as RequestInit).body as string).mode).toBe('local');
@@ -517,7 +517,7 @@ describe('TriageStep completion gate', () => {
     const onIngested = vi.fn();
     render(<TriageStep courseCode="GC 1010" slug="s" materials={[{ id: 'm1', fileName: 'f.pdf', mimeType: 'application/pdf', tier: 'high', indexingStatus: 'pending', ignored: false, pageCount: 2 }] as never} onIngested={onIngested} onBack={() => {}} />);
 
-    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /ingest/i })); });
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /read files & continue/i })); });
     // While indexing: no Continue button.
     await act(async () => { await vi.advanceTimersByTimeAsync(3000); }); // poll sees 'indexing'
     expect(screen.queryByRole('button', { name: /continue to interview/i })).toBeNull();

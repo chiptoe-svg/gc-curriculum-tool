@@ -162,7 +162,7 @@ function TriageRow({ row, courseCode, slug, onUpdate, onRemove }: TriageRowProps
             onClick={() => void moveTier(tierUp(row.tier))}
             disabled={busy}
             className="shrink-0 text-xs text-muted-foreground hover:text-foreground disabled:opacity-30"
-            title="Move to higher tier"
+            title="Read this more closely"
           >
             ▲
           </button>
@@ -176,7 +176,7 @@ function TriageRow({ row, courseCode, slug, onUpdate, onRemove }: TriageRowProps
             onClick={() => void moveTier(tierDown(row.tier))}
             disabled={busy}
             className="shrink-0 text-xs text-muted-foreground hover:text-foreground disabled:opacity-30"
-            title="Move to lower tier"
+            title="Read this more lightly"
           >
             ▼
           </button>
@@ -223,10 +223,21 @@ function TriageRow({ row, courseCode, slug, onUpdate, onRemove }: TriageRowProps
 // Tier section card
 // ---------------------------------------------------------------------------
 
+// Plain words (owner, 2026-10-07): each level is named by what the tool does
+// with the file, and says what it is for.
 const TIER_CONFIG: Record<Tier, { label: string; sublabel: string }> = {
-  high: { label: 'HIGH VALUE', sublabel: 'full detail' },
-  middle: { label: 'MIDDLE', sublabel: 'per-slide / per-section summaries' },
-  background: { label: 'BACKGROUND', sublabel: 'one summary each' },
+  high: {
+    label: 'High: read in full',
+    sublabel: 'Every detail is kept and can be quoted as evidence. Use for the syllabus and anything graded.',
+  },
+  middle: {
+    label: 'Middle: summarized slide by slide',
+    sublabel: 'Each slide or section becomes a short note of what it teaches. Use for lecture slides and class pages.',
+  },
+  background: {
+    label: 'Background: one summary',
+    sublabel: "The tool knows what the file covers but won't quote it. Use for readings and references.",
+  },
 };
 
 interface TierSectionProps {
@@ -243,10 +254,8 @@ function TierSection({ tier, rows, courseCode, slug, onUpdate, onRemove }: TierS
   return (
     <section className="rounded-md border bg-card">
       <header className="px-3 py-2 border-b bg-muted/30">
-        <span className="font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
-          {cfg.label}
-        </span>
-        <span className="ml-1 text-xs text-muted-foreground">— {cfg.sublabel}</span>
+        <h3 className="text-sm font-semibold text-foreground">{cfg.label}</h3>
+        <p className="mt-0.5 text-sm text-muted-foreground">{cfg.sublabel}</p>
       </header>
       {rows.length === 0 ? (
         <p className="px-3 py-3 text-xs text-muted-foreground italic">No materials in this tier.</p>
@@ -387,7 +396,7 @@ export function TriageStep({ courseCode, slug, materials, onIngested, onBack }: 
           nothing is lost on the round trip. */}
       <div className="mb-1 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 font-mono-plex text-xs uppercase tracking-[0.18em] text-muted-foreground">
-          <span>Step 2 of 3 · Triage materials</span>
+          <span>Step 2 of 3 · Choose how closely to read each file</span>
           <span aria-hidden className="text-foreground">●</span>
           <span aria-hidden>──</span>
           <span aria-hidden>○</span>
@@ -404,9 +413,26 @@ export function TriageStep({ courseCode, slug, materials, onIngested, onBack }: 
       <h2 className="font-display text-xl font-semibold tracking-tight">
         What should we pull in, and how deeply?
       </h2>
-      <p className="mt-2 text-sm text-muted-foreground">
-        High = every detail · Middle = per-slide/section summaries · Background = one summary
-      </p>
+      <div
+        role="note"
+        aria-label="About this step"
+        className="mt-3 space-y-2 rounded-md border-l-4 border-amber-500 bg-background px-4 py-3 text-base leading-relaxed"
+      >
+        <p>
+          <strong>What happens next:</strong> the tool reads each file below so the interview can ask
+          about your course, and the profile can point to real evidence.
+        </p>
+        <p>
+          <strong>Your job:</strong> check that each file sits at the right level. We&apos;ve made a first
+          guess. Use ▲ ▼ to move a file, <em>ignore</em> to leave it out, and <em>delete</em> to remove it.
+        </p>
+        <p>
+          <strong>Why it matters:</strong> scores above the basics need evidence that students actually
+          did the work. Anything graded (the syllabus, assignments, rubrics, quizzes, exams) should be{' '}
+          <strong>High</strong>, or it can&apos;t count as evidence. Deeper reading takes longer, so leave
+          readings and reference files at Background.
+        </p>
+      </div>
 
       {/* Tier sections */}
       <div className="mt-4 space-y-3">
@@ -442,16 +468,15 @@ export function TriageStep({ courseCode, slug, materials, onIngested, onBack }: 
           <span aria-hidden>💡</span>
           <p className="text-sm text-amber-800">
             For the strongest, most complete capture, add your lecture slides — they&apos;re the richest
-            evidence of what you actually taught in class.{' '}
+            evidence of what you actually taught in class. Go{' '}
             <button
               type="button"
-              /* TODO (deferred to-do): wire to the real file-upload flow — reuse the
-                 Other-materials add-files handler. Stubbed (no-op) for now. */
-              title="Add-slides upload is a deferred to-do — not yet wired"
+              onClick={onBack}
               className="font-medium underline underline-offset-2 hover:text-amber-700"
             >
-              Add slides
-            </button>
+              ← Back to materials
+            </button>{' '}
+            to upload them.
           </p>
         </div>
       )}
@@ -475,25 +500,26 @@ export function TriageStep({ courseCode, slug, materials, onIngested, onBack }: 
         {useLocal && (
           <p className="text-xs text-amber-700/80">May run longer for scanned/image PDFs.</p>
         )}
-        <div className="text-right">
-          <p className="text-xs text-muted-foreground">
-            <span className="font-medium">Estimated:</span> {total.label} · 2 at a time
+        {phase === 'idle' && (
+          <p className="max-w-md text-right text-sm text-muted-foreground">
+            When you click <strong>Read files &amp; continue</strong>, this takes about{' '}
+            <span className="font-medium">{total.label}</span> (a rough estimate, 2 files at a time).
+            When it finishes, you&apos;ll go on to the interview.
           </p>
-          <p className="text-xs text-muted-foreground/70">rough estimate</p>
-        </div>
+        )}
         {phase === 'idle' && (
           <button
             type="button"
             onClick={() => void handleIngest()}
             className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
           >
-            Ingest &amp; continue →
+            Read files &amp; continue →
           </button>
         )}
         {phase === 'ingesting' && (
           <div className="w-full max-w-xs text-right">
             <p className="text-sm text-muted-foreground">
-              Ingesting {progress.terminal} of {progress.total}…
+              Reading file {progress.terminal} of {progress.total}…
             </p>
             <div className="mt-1 h-1.5 w-full overflow-hidden rounded bg-muted">
               <div
@@ -506,7 +532,7 @@ export function TriageStep({ courseCode, slug, materials, onIngested, onBack }: 
         {phase === 'done' && (
           <div className="flex flex-col items-end gap-1.5">
             <p className="text-sm text-emerald-700">
-              ✓ Ingestion complete ({progress.ready} ready{progress.skipped ? `, ${progress.skipped} skipped` : ''}{progress.failed ? `, ${progress.failed} failed` : ''})
+              ✓ Done reading ({progress.ready} ready{progress.skipped ? `, ${progress.skipped} skipped` : ''}{progress.failed ? `, ${progress.failed} failed` : ''})
             </p>
             <button
               type="button"
