@@ -95,7 +95,9 @@ export async function getDailyCostHistory(days: number = 7): Promise<DailyCostRo
   const result = await db.execute(sql`
     SELECT day::text AS day, COALESCE(total_cost_usd_cents, 0) AS spent
     FROM daily_cost
-    WHERE day >= CURRENT_DATE - MAKE_INTERVAL(days => ${days - 1}::int)
+    -- day is TEXT 'YYYY-MM-DD': compare against a text bound (text >= timestamp is a
+    -- Postgres type error — /settings 500'd until 2026-10-07).
+    WHERE day >= to_char(CURRENT_DATE - MAKE_INTERVAL(days => ${days - 1}::int), 'YYYY-MM-DD')
     ORDER BY day ASC
   `);
   const byDay = new Map<string, number>();
