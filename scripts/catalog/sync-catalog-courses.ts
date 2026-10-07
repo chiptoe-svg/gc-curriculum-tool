@@ -6,13 +6,11 @@
  * catalog.db (~4,085 rows, opened READ-ONLY), not just GC + our tracked
  * courses. Prerequisite text/edges stay sync-catalog-prereqs.ts's job —
  * this sync never writes prereq_text/coreq_text/notes on an existing row,
- * only on first insert (as null/empty), so the two layer safely.
- *
- * IMPORTANT run-order note: sync-catalog-prereqs.ts does an UNSCOPED
- * `DELETE FROM course_catalog_entries` before its scoped re-insert. Running
- * it AFTER this sync would wipe every row this sync added that isn't GC or
- * tracked. Always run this sync AFTER sync-catalog-prereqs.ts (or re-run
- * this one again afterward) — see STATE.md.
+ * only on first insert (as null/empty); sync-catalog-prereqs.ts's own
+ * upsert is symmetric (never writes description/credits on an existing
+ * row), and its edges delete is scoped to its own codes — so the two syncs
+ * layer safely and can run in either order (see
+ * tests/catalog/sync-order-independence.test.ts).
  *
  * Usage (from the repo root):
  *   tsx scripts/catalog/sync-catalog-courses.ts            # dry run (default): print counts, write nothing

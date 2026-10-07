@@ -4,13 +4,20 @@
  * course_catalog_entries + course_catalog_prereqs (migration 0053).
  *
  * Scope: every active GC course in the catalog, plus the non-GC courses our
- * `courses` table holds (when the catalog has them). Full replace on --apply,
- * in one transaction, SCOPED to that set of course codes (2026-10-07 fix —
- * the delete used to be unscoped and would wipe every row
- * scripts/catalog/sync-catalog-courses.ts had added for a course outside
- * this scope; it is now `WHERE course_code = ANY(<codes this run is about
- * to rewrite>)`, so the two syncs can run in either order without losing
- * rows — see applyCatalogSync below and tests/catalog/sync-order-independence.test.ts).
+ * `courses` table holds (when the catalog has them). SCOPED to that set of
+ * course codes (2026-10-07 fix, then hardened further the same day):
+ *   - `course_catalog_prereqs` edges are still a scoped delete-then-insert
+ *     (`WHERE course_code = ANY(<codes this run is about to rewrite>)`) —
+ *     there is nothing on an edge row worth preserving across a re-sync.
+ *   - `course_catalog_entries` is an UPSERT (`ON CONFLICT (course_code) DO
+ *     UPDATE`), not a delete-then-insert, and only ever SETs the columns
+ *     this sync owns (title, prereq_text, coreq_text, notes, catalog_year,
+ *     source_url, catalog_last_synced, synced_at) — never `description`/
+ *     `credits`, which scripts/catalog/sync-catalog-courses.ts owns. The two
+ *     syncs can therefore run in either order without either one resetting
+ *     the other's columns on a row they both touch (e.g. any GC course), or
+ *     losing a row outside its own scope — see applyCatalogSync below and
+ *     tests/catalog/sync-order-independence.test.ts.
  *
  * Usage (from the repo root):
  *   tsx scripts/catalog/sync-catalog-prereqs.ts            # dry run (default): print, write nothing
@@ -26,11 +33,15 @@ import { DEFAULT_CATALOG_DB, loadAppEnv, openCatalogReadOnly, readCatalogRows, r
 export interface QueryClient { query(sql: string, params?: unknown[]): Promise<unknown> }
 
 /**
- * Replaces entries + edges for exactly the course codes in `entries` —
- * never the whole table. `edges` is always a subset of those same codes
- * (buildCatalogSyncRows only ever produces an edge whose `courseCode` is
- * one of `entries`' codes), so scoping both deletes to `entries`' codes is
- * correct and keeps the two deletes consistent with each other.
+ * Replaces edges for exactly the course codes in `entries` (edges have
+ * nothing worth preserving across a re-sync, so a scoped delete-then-insert
+ * is fine there), and UPSERTs entries — never deletes them. The upsert only
+ * SETs the columns this sync owns, so a row sync-catalog-courses.ts also
+ * wrote (any GC course, since GC is always in this sync's scope) keeps its
+ * `description`/`credits` regardless of which sync ran more recently.
+ * `edges` is always a subset of `entries`' codes (buildCatalogSyncRows only
+ * ever produces an edge whose `courseCode` is one of `entries`' codes), so
+ * scoping the edges delete to `entries`' codes is correct.
  */
 export async function applyCatalogSync(
   client: QueryClient,
@@ -39,11 +50,19 @@ export async function applyCatalogSync(
 ): Promise<void> {
   const codes = entries.map((e) => e.courseCode);
   await client.query('DELETE FROM course_catalog_prereqs WHERE course_code = ANY($1)', [codes]);
-  await client.query('DELETE FROM course_catalog_entries WHERE course_code = ANY($1)', [codes]);
   for (const e of entries) {
     await client.query(
       `INSERT INTO course_catalog_entries (course_code, title, prereq_text, coreq_text, notes, catalog_year, source_url, catalog_last_synced)
-       VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8)`,
+       VALUES ($1, $2, $3, $4, $5::jsonb, $6, $7, $8)
+       ON CONFLICT (course_code) DO UPDATE SET
+         title = EXCLUDED.title,
+         prereq_text = EXCLUDED.prereq_text,
+         coreq_text = EXCLUDED.coreq_text,
+         notes = EXCLUDED.notes,
+         catalog_year = EXCLUDED.catalog_year,
+         source_url = EXCLUDED.source_url,
+         catalog_last_synced = EXCLUDED.catalog_last_synced,
+         synced_at = now()`,
       [e.courseCode, e.title, e.prereqText, e.coreqText, JSON.stringify(e.notes), e.catalogYear, e.sourceUrl, e.catalogLastSynced],
     );
   }

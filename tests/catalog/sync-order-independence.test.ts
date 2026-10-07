@@ -38,7 +38,10 @@ function makeFakeClient() {
       return;
     }
     if (/^INSERT INTO course_catalog_entries/i.test(s)) {
-      if (/ON CONFLICT/i.test(s)) {
+      const isUpsert = /ON CONFLICT/i.test(s);
+      const isCoursesSyncShape = /description/i.test(s); // column appears in the courses-sync's column list, never the prereqs-sync's
+      if (isUpsert && isCoursesSyncShape) {
+        // courses-sync upsert: never touches prereq_text/coreq_text/notes on an existing row.
         const [courseCode, title, description, credits, catalogYear, sourceUrl, catalogLastSynced] = params;
         const existing = entries.get(courseCode as string);
         entries.set(courseCode as string, {
@@ -46,7 +49,18 @@ function makeFakeClient() {
           prereq_text: existing?.prereq_text ?? null, coreq_text: existing?.coreq_text ?? null, notes: existing?.notes ?? [],
           catalog_year: catalogYear, source_url: sourceUrl, catalog_last_synced: catalogLastSynced,
         });
+      } else if (isUpsert) {
+        // prereqs-sync upsert: never touches description/credits on an existing row.
+        const [courseCode, title, prereqText, coreqText, notesJson, catalogYear, sourceUrl, catalogLastSynced] = params;
+        const existing = entries.get(courseCode as string);
+        entries.set(courseCode as string, {
+          course_code: courseCode, title, prereq_text: prereqText, coreq_text: coreqText, notes: JSON.parse(notesJson as string),
+          description: existing?.description ?? null, credits: existing?.credits ?? null,
+          catalog_year: catalogYear, source_url: sourceUrl, catalog_last_synced: catalogLastSynced,
+        });
       } else {
+        // plain (non-upsert) insert — the old prereqs-sync shape, kept so the red-proof (reverting to
+        // the pre-fix delete+insert) still exercises this fake correctly.
         const [courseCode, title, prereqText, coreqText, notesJson, catalogYear, sourceUrl, catalogLastSynced] = params;
         entries.set(courseCode as string, {
           course_code: courseCode, title, prereq_text: prereqText, coreq_text: coreqText,
@@ -98,6 +112,23 @@ describe('sync-catalog-prereqs applyCatalogSync — scoped delete (coordinator f
     expect(entries.get('ACCT 2010')).toMatchObject({ title: 'Financial Accounting Concepts', description: 'd-acct' });
     // GC 3460 — inside scope — got its prereq data written.
     expect(entries.get('GC 3460')).toMatchObject({ prereq_text: 'GC 2070' });
+  });
+
+  it("a shared row's description/credits (written by the full-courses sync) survive the prereqs sync running afterward (residual fix)", async () => {
+    const { client, entries } = makeFakeClient();
+
+    // Full-catalog sync writes GC 3460's description/credits first.
+    await applyFullCatalogEntries(client, buildFullCatalogEntries([fullRows[1]!], years));
+    expect(entries.get('GC 3460')).toMatchObject({ description: 'd-gc', credits: '3' });
+
+    // Prereqs sync then rewrites GC 3460's prereq data — description/credits must survive.
+    const { entries: scopedEntries, edges } = buildCatalogSyncRows([scopedCatalogRow('GC 3460', 'GC 2070')], years);
+    await applyCatalogSync(client, scopedEntries, edges);
+
+    expect(entries.get('GC 3460')).toMatchObject({
+      description: 'd-gc', credits: '3', // untouched
+      prereq_text: 'GC 2070', // the prereqs sync's own write still landed
+    });
   });
 
   it('the prereqs sync replacement is itself scoped: a stale prereq edge for a course no longer in scope is untouched, a scoped one is replaced', async () => {
