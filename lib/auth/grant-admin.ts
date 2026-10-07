@@ -259,15 +259,41 @@ export async function patchGrant(id: string, patch: GrantPatch): Promise<'ok' | 
   return 'ok';
 }
 
-/** Sets `revoked_at`. Idempotent: a grant already revoked is left alone (its
- * original revoke time is never overwritten) and still reports `'ok'`. */
-export async function revokeGrant(id: string): Promise<'ok' | 'not-found'> {
-  const rows = (await db.select().from(accessGrants).where(eq(accessGrants.id, id)).limit(1)) as GrantRow[];
-  const existing = rows[0];
+/**
+ * Sets `revoked_at`. Idempotent: a grant already revoked is left alone (its
+ * original revoke time is never overwritten) and still reports `'ok'`.
+ *
+ * `'last-admin'` (security review F3, 2026-10-07): refuses to revoke a
+ * currently-live grant whose `can` includes `admin` when no OTHER live
+ * (not revoked, not expired) admin grant exists. Built-in Basic Auth no
+ * longer carries `admin` for anyone (2026-10-07, department login), so a
+ * DB grant is the only remaining way into `/admin`/`/api/admin/**` — the
+ * owner revoking their own last one would lock out every admin surface,
+ * recoverable only from the CLI (`pnpm access:grant … --can
+ * capture,create,admin`). An admin grant that is already expired (not
+ * currently live) is NOT protected — revoking it changes nothing about who
+ * currently has live admin access, so it's allowed through like any other
+ * grant.
+ */
+export async function revokeGrant(id: string): Promise<'ok' | 'not-found' | 'last-admin'> {
+  // One query for the whole table rather than two (target + "any other live
+  // admin") — the table is small (faculty access grants) and this avoids a
+  // second round trip. `can` is a jsonb/array column, not filterable by a
+  // simple SQL predicate without a dedicated operator, so the "does another
+  // live admin grant exist" check is done in JS over all rows.
+  const rows = (await db.select().from(accessGrants)) as GrantRow[];
+  const existing = rows.find((r) => r.id === id);
   if (!existing) return 'not-found';
-  if (!existing.revokedAt) {
-    await db.update(accessGrants).set({ revokedAt: new Date() }).where(eq(accessGrants.id, id));
+  if (existing.revokedAt) return 'ok'; // idempotent — nothing to check or change
+
+  if (existing.can.includes('admin') && computeStatus(existing) === 'active') {
+    const anotherLiveAdmin = rows.some(
+      (r) => r.id !== id && r.can.includes('admin') && computeStatus(r) === 'active',
+    );
+    if (!anotherLiveAdmin) return 'last-admin';
   }
+
+  await db.update(accessGrants).set({ revokedAt: new Date() }).where(eq(accessGrants.id, id));
   return 'ok';
 }
 

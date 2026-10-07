@@ -14,12 +14,15 @@ import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 const authMock = authorizeCourseWrite as unknown as ReturnType<typeof vi.fn>;
 const rateMock = checkIpRateLimit as unknown as ReturnType<typeof vi.fn>;
 
-function req(body: unknown, slug = 's') {
-  return new Request(`http://x/api/capture/GC%201010/reset?slug=${slug}`, {
+function reqFor(code: string, body: unknown, slug = 's') {
+  return new Request(`http://x/api/capture/${code}/reset?slug=${slug}`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
   });
+}
+function req(body: unknown, slug = 's') {
+  return reqFor('GC%201010', body, slug);
 }
 function call(body: unknown, slug = 's') {
   return POST(req(body, slug), { params: Promise.resolve({ code: 'GC%201010' }) });
@@ -110,6 +113,31 @@ describe('POST /api/capture/[code]/reset', () => {
     it('403s for includeSnapshots:true with no scope given', async () => {
       const res = await call({ includeSnapshots: true });
       expect(res.status).toBe(403);
+      expect(runCourseReset).not.toHaveBeenCalled();
+    });
+  });
+
+  // ── F4 (security review 2026-10-07): canonicalize the path code ────────
+  describe('canonicalizes the path course code before use', () => {
+    it('GC%204900AP canonicalizes to GC 4900ap before calling runCourseReset', async () => {
+      const res = await POST(reqFor('GC%204900AP', {}), { params: Promise.resolve({ code: 'GC%204900AP' }) });
+      expect(res.status).toBe(200);
+      expect(runCourseReset).toHaveBeenCalledWith('GC 4900ap', { scope: 'session', includeSnapshots: false });
+    });
+
+    it('a body courseCode matching the canonical form is accepted', async () => {
+      const res = await POST(reqFor('GC%204900AP', { courseCode: 'GC 4900ap' }), { params: Promise.resolve({ code: 'GC%204900AP' }) });
+      expect(res.status).toBe(200);
+    });
+
+    it('a body courseCode matching the raw (un-canonicalized) path spelling is also accepted', async () => {
+      const res = await POST(reqFor('GC%204900AP', { courseCode: 'GC 4900AP' }), { params: Promise.resolve({ code: 'GC%204900AP' }) });
+      expect(res.status).toBe(200);
+    });
+
+    it('a genuinely different course in the body still 400s', async () => {
+      const res = await POST(reqFor('GC%204900AP', { courseCode: 'GC 1010' }), { params: Promise.resolve({ code: 'GC%204900AP' }) });
+      expect(res.status).toBe(400);
       expect(runCourseReset).not.toHaveBeenCalled();
     });
   });

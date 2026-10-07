@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { authorizeCourseWrite } from '@/lib/sandbox/access';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { hashIp } from '@/lib/ip-hash';
+import { canonicalizeCourseCode } from '@/lib/curriculum/catalog-lookup';
 import { runCourseReset } from '@/lib/capture/run-course-reset';
 
 interface RouteContext { params: Promise<{ code: string }> }
@@ -29,12 +30,17 @@ interface RouteContext { params: Promise<{ code: string }> }
  * system of record) without an admin credential. Deeper resets stay
  * admin-only via POST /api/admin/v2-reset, which is unchanged. See
  * run-course-reset.ts for exactly what each scope deletes.
+ *
+ * The path code is canonicalized (F4, security review 2026-10-07) via
+ * canonicalizeCourseCode before any use — so `GC%204900AP` acts on the DB's
+ * actual `GC 4900ap` row instead of a string match no row has. A body
+ * `courseCode` is canonicalized the same way before the comparison.
  */
 export async function POST(req: Request, { params }: RouteContext): Promise<Response> {
   const url = new URL(req.url);
   const slug = url.searchParams.get('slug') ?? '';
   const { code: rawCode } = await params;
-  const courseCode = decodeURIComponent(rawCode);
+  const courseCode = canonicalizeCourseCode(decodeURIComponent(rawCode));
   if (!(await authorizeCourseWrite(req, courseCode, slug))) {
     return NextResponse.json({ error: 'invalid slug' }, { status: 401 });
   }
@@ -48,8 +54,11 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     scope?: unknown;
     includeSnapshots?: unknown;
   };
-  if (typeof body.courseCode === 'string' && body.courseCode.trim() && body.courseCode.trim() !== courseCode) {
-    return NextResponse.json({ error: 'courseCode does not match the path' }, { status: 400 });
+  if (typeof body.courseCode === 'string' && body.courseCode.trim()) {
+    const bodyCourseCode = canonicalizeCourseCode(body.courseCode.trim());
+    if (bodyCourseCode !== courseCode) {
+      return NextResponse.json({ error: 'courseCode does not match the path' }, { status: 400 });
+    }
   }
   if (body.scope !== undefined && body.scope !== 'session' && body.scope !== 'materials' && body.scope !== 'everything') {
     return NextResponse.json({ error: "scope must be 'session', 'materials', or 'everything'" }, { status: 400 });

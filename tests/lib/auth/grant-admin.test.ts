@@ -231,6 +231,55 @@ describe('revokeGrant', () => {
     expect(await revokeGrant('g1')).toBe('ok');
     expect(updateSetMock).not.toHaveBeenCalled();
   });
+
+  // ── F3 (security review 2026-10-07): refuse to revoke the LAST live
+  // admin grant — the owner could otherwise lock themselves out of every
+  // /admin surface (no built-in Basic Auth carries admin anymore, so a DB
+  // grant is the only way back in; CLI-only repair otherwise).
+  it('refuses (last-admin) to revoke the only live admin grant, and never calls update', async () => {
+    selectResult = [row({ id: 'admin1', can: ['capture', 'create', 'admin'], revokedAt: null })];
+    expect(await revokeGrant('admin1')).toBe('last-admin');
+    expect(updateSetMock).not.toHaveBeenCalled();
+  });
+
+  it('allows revoking an admin grant when ANOTHER live admin grant exists', async () => {
+    selectResult = [
+      row({ id: 'admin1', can: ['capture', 'create', 'admin'], revokedAt: null }),
+      row({ id: 'admin2', can: ['capture', 'create', 'admin'], revokedAt: null }),
+    ];
+    expect(await revokeGrant('admin1')).toBe('ok');
+    expect(updateSetMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('a REVOKED other admin grant does not count as "another live admin" — still last-admin', async () => {
+    selectResult = [
+      row({ id: 'admin1', can: ['capture', 'create', 'admin'], revokedAt: null }),
+      row({ id: 'admin2', can: ['capture', 'create', 'admin'], revokedAt: new Date('2020-01-01T00:00:00Z') }),
+    ];
+    expect(await revokeGrant('admin1')).toBe('last-admin');
+    expect(updateSetMock).not.toHaveBeenCalled();
+  });
+
+  it('an EXPIRED other admin grant does not count as "another live admin" — still last-admin', async () => {
+    selectResult = [
+      row({ id: 'admin1', can: ['capture', 'create', 'admin'], revokedAt: null }),
+      row({ id: 'admin2', can: ['capture', 'create', 'admin'], revokedAt: null, expiresAt: new Date('2020-01-01T00:00:00Z') }),
+    ];
+    expect(await revokeGrant('admin1')).toBe('last-admin');
+    expect(updateSetMock).not.toHaveBeenCalled();
+  });
+
+  it('a non-admin grant never triggers the last-admin check, even alone', async () => {
+    selectResult = [row({ id: 'g1', can: ['capture'], revokedAt: null })];
+    expect(await revokeGrant('g1')).toBe('ok');
+    expect(updateSetMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('revoking an ALREADY-EXPIRED admin grant is allowed (not currently live, so nothing to protect)', async () => {
+    selectResult = [row({ id: 'admin1', can: ['capture', 'create', 'admin'], revokedAt: null, expiresAt: new Date('2020-01-01T00:00:00Z') })];
+    expect(await revokeGrant('admin1')).toBe('ok');
+    expect(updateSetMock).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('validateLabel', () => {

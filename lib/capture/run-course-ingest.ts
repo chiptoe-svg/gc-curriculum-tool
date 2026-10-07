@@ -50,6 +50,15 @@ export async function runCourseIngest(courseCode: string, opts: { mode?: IngestM
   const results: IngestMaterialResult[] = [];
 
   for (const m of materials) {
+    // Security review F2 (2026-10-07): a row already 'queued' or 'indexing'
+    // is in flight — re-enqueuing it restarts paid extraction/vision/digest
+    // work a second time on top of the run already underway. This matters
+    // more now that a single-course scoped grant (not just the shared admin
+    // credential) can trigger ingest repeatedly on their own course.
+    if (m.indexingStatus === 'queued' || m.indexingStatus === 'indexing') {
+      results.push({ id: m.id, fileName: m.fileName, status: 'skipped' });
+      continue;
+    }
     // Enqueue anything the worker can process — a row with extracted text OR a
     // readable local blob it can extract from disk (incl. vision OCR for
     // image-based slide decks). Skip already-'ready' rows and rows with neither

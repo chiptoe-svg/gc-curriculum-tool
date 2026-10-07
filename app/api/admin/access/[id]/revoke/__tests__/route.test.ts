@@ -58,4 +58,14 @@ describe('POST /api/admin/access/[id]/revoke', () => {
     expect(mockRevokeGrant).toHaveBeenCalledTimes(2);
     expect(mockRevokeGrant).toHaveBeenCalledWith(VALID_ID);
   });
+
+  // F3 (security review 2026-10-07): refuse to revoke the last live admin grant.
+  it("409s with the exact message when revokeGrant reports 'last-admin'", async () => {
+    mockRevokeGrant.mockResolvedValue('last-admin');
+    const res = await call();
+    expect(res.status).toBe(409);
+    const json = await res.json();
+    expect(json.error).toBe('This is the last admin link — create another admin link from the command line first');
+    expect(res.headers.get('cache-control')).toBe('no-store');
+  });
 });
