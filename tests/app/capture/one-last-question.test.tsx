@@ -55,14 +55,14 @@ describe('CaptureChatPanel — one last question', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(streamRes(FINAL_EVENT)));
   });
 
-  function setup() {
+  function setup(messages: Array<{ role: 'user' | 'assistant'; content: string }> = [{ role: 'assistant', content: 'Opening question?' }], onGenerate = () => {}) {
     render(
       <CaptureChatPanel
         courseCode="GC 2400"
         slug="s"
-        messages={[{ role: 'assistant', content: 'Opening question?' }]}
+        messages={messages}
         onMessagesChange={() => {}}
-        onGenerate={() => {}}
+        onGenerate={onGenerate}
         chooserInstructor="Instructor A"
         onInstructorChange={() => {}}
         chooserMode="fresh"
@@ -76,13 +76,41 @@ describe('CaptureChatPanel — one last question', () => {
     expect(screen.queryByText(/didn.t cover problem-solving/i)).toBeNull();
   });
 
-  it('clicking "Ask me one more important question" sends the canned turn', async () => {
+  it('before the last question there is ONE finish button, and it asks for the last question', async () => {
     setup();
-    fireEvent.click(screen.getByRole('button', { name: /one more important question/i }));
+    expect(screen.queryByRole('button', { name: /generate profile/i })).toBeNull();
+    expect(screen.queryByRole('button', { name: /one more important question/i })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /i.m done — give me one last question/i }));
     await waitFor(() => expect(fetch).toHaveBeenCalled());
     const body = String(
       (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0]![1]!.body,
     );
     expect(body).toMatch(/single most important question still missing/i);
+  });
+
+  it('after the last question is asked, the button becomes Generate Profile with an answer-first hint', () => {
+    const onGenerate = vi.fn();
+    const CANNED = "I think I'm about ready to finish. Before I generate, look back over everything we've covered and ask me the single most important question still missing for an accurate profile. If we haven't explored how students struggle, fail, and revise — productive failure / problem-solving — that's a strong candidate. Ask just one question, in your own words.";
+    setup([
+      { role: 'assistant', content: 'Opening question?' },
+      { role: 'user', content: CANNED },
+      { role: 'assistant', content: 'Last: how do students revise?' },
+    ], onGenerate);
+    expect(screen.queryByRole('button', { name: /one last question/i })).toBeNull();
+    expect(screen.getByText(/answer the last question above/i)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /generate profile/i }));
+    expect(onGenerate).toHaveBeenCalled();
+  });
+
+  it('once the last question is answered, the hint goes away', () => {
+    const CANNED = "I think I'm about ready to finish. Before I generate, look back over everything we've covered and ask me the single most important question still missing for an accurate profile. If we haven't explored how students struggle, fail, and revise — productive failure / problem-solving — that's a strong candidate. Ask just one question, in your own words.";
+    setup([
+      { role: 'assistant', content: 'Opening question?' },
+      { role: 'user', content: CANNED },
+      { role: 'assistant', content: 'Last: how do students revise?' },
+      { role: 'user', content: 'They redo the run.' },
+    ]);
+    expect(screen.getByRole('button', { name: /generate profile/i })).toBeTruthy();
+    expect(screen.queryByText(/answer the last question above/i)).toBeNull();
   });
 });

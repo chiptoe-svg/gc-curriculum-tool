@@ -350,6 +350,13 @@ export function CaptureChatPanel({
   }
 
   const canGenerate = messages.some(m => m.role === 'assistant');
+  // One finish button (owner, 2026-10-07): "I'm done — give me one last
+  // question" first; once that canned turn is in the transcript (so it
+  // survives a reload), the same spot becomes "Generate Profile".
+  const lastQuestionIndex = messages.findIndex(m => m.role === 'user' && m.content === ONE_LAST_QUESTION);
+  const lastQuestionAsked = lastQuestionIndex >= 0;
+  const lastQuestionAnswered =
+    lastQuestionAsked && messages.slice(lastQuestionIndex + 1).some(m => m.role === 'user');
   // The current interviewer turn is the visual focus; older turns stay compact.
   const lastAssistantIndex = messages.map(m => m.role).lastIndexOf('assistant');
 
@@ -599,16 +606,7 @@ export function CaptureChatPanel({
           <div>
             <button
               type="button"
-              onClick={handleOneLastQuestion}
-              disabled={!canGenerate || busy}
-              className="mb-2 w-full rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Let the interviewer review what's been covered and ask one final, high-value question before you finish."
-            >
-              Ask me one more important question
-            </button>
-            <button
-              type="button"
-              onClick={handleGenerateClick}
+              onClick={lastQuestionAsked ? handleGenerateClick : handleOneLastQuestion}
               disabled={!canGenerate || busy}
               className={
                 'w-full rounded-md border px-4 py-2.5 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed '
@@ -621,15 +619,20 @@ export function CaptureChatPanel({
               title={
                 !canGenerate
                   ? 'Send at least one reply first'
-                  : readiness?.good_enough_to_generate
-                  ? `Interviewer reports ${readiness.score}% readiness — ready to generate.`
+                  : !lastQuestionAsked
+                  ? "The interviewer reviews what's been covered and asks one final, high-value question. Then you can generate the profile."
                   : readiness
-                  ? `Interviewer reports ${readiness.score}% readiness — you can still generate, but more questions would tighten the profile.`
-                  : 'Generate the Course Outcome Profile from the current conversation'
+                  ? `Interviewer reports ${readiness.score}% readiness. Generate the Course Outcome Profile from this conversation.`
+                  : 'Generate the Course Outcome Profile from this conversation'
               }
             >
-              I&rsquo;m done — Generate Profile
+              {lastQuestionAsked ? 'Generate Profile' : <>I&rsquo;m done — give me one last question</>}
             </button>
+            {lastQuestionAsked && !lastQuestionAnswered && (
+              <p className="mt-2 text-center text-sm text-muted-foreground">
+                Answer the last question above first, then generate the profile.
+              </p>
+            )}
           </div>
         </div>
       )}
