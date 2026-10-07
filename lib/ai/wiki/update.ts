@@ -771,7 +771,7 @@ function validateWikiUpdateOutput(raw: unknown): WikiUpdateOutput {
  * streaming progress — the call just never returns). Splitting the affected
  * pages into bounded batches keeps every call small and reliable.
  */
-const WIKI_PAGES_PER_CALL = 6;
+export const WIKI_PAGES_PER_CALL = 6;
 
 function chunkPages<T>(items: T[], size: number): T[][] {
   const out: T[][] = [];
@@ -864,6 +864,220 @@ export function stampInputHash(content: string, inputHash: string): string {
   return `---\n${line}\n---\n\n${content}`;
 }
 
+type PageWithSubstrate = AffectedWikiPage & { substrate?: unknown };
+type WikiProvider = Awaited<ReturnType<typeof getProviderForFunction>>;
+
+/**
+ * Pure: move the index page (if present) to the END of the list so it lands in
+ * the final batch, and hand it a manifest of every other page so its navigation
+ * is complete regardless of how the batches split (fixes index-stale-in-first-
+ * batch). `extraSubstrate` lets the one-pass program refresh add program-wide
+ * fields (e.g. the course summaries) and a wider manifest.
+ */
+export function placeIndexLast(
+  pages: PageWithSubstrate[],
+  manifest?: ReadonlyArray<{ type: AffectedWikiPage['type']; slug: string; path: string }>,
+  extraSubstrate?: Record<string, unknown>,
+): PageWithSubstrate[] {
+  const out = [...pages];
+  const indexIdx = out.findIndex(p => p.type === 'index');
+  if (indexIdx >= 0) {
+    const [indexPage] = out.splice(indexIdx, 1);
+    indexPage!.substrate = {
+      affectedPages: (manifest ?? out).map(p => ({ type: p.type, slug: p.slug, path: p.path })),
+      ...(extraSubstrate ?? {}),
+    };
+    out.push(indexPage!);
+  }
+  return out;
+}
+
+/**
+ * Shared generation core for the per-snapshot path and the one-pass program
+ * refresh: bounded batches (WIKI_PAGES_PER_CALL), reconcile-retry of omitted
+ * pages, the requested-path security filter (F8), and the deterministic stamps
+ * (input_hash, evidence_bands, OKF frontmatter). `buildMessage` assembles the
+ * user message for one batch; everything else is identical across callers.
+ */
+async function generateStampedPages(args: {
+  pages: PageWithSubstrate[];
+  buildMessage: (batch: PageWithSubstrate[]) => string;
+  provider: WikiProvider;
+  systemPrompt: string;
+  /** First input to computeInputHash: the snapshot id, or a fixed program seed. */
+  hashSeed: string;
+  /** ISO timestamp stamped into OKF frontmatter. */
+  timestampIso: string;
+  /** Evidence bands for a course page in this run (per-snapshot path only). */
+  courseBands?: EvidenceBand[];
+  /** Short label for log lines. */
+  tag: string;
+}): Promise<{ wiki: WikiPageWrite[]; logEntries: string[] }> {
+  const { pages, buildMessage, provider, systemPrompt, hashSeed, timestampIso, courseBands, tag } = args;
+  const batches = chunkPages(pages, WIKI_PAGES_PER_CALL);
+  const generatedPages: WikiUpdateOutput['pages'] = [];
+  const logEntries: string[] = [];
+
+  const generateBatch = async (batch: PageWithSubstrate[]): Promise<WikiUpdateOutput> => {
+    const { data } = await provider.complete<WikiUpdateOutput>({
+      systemPrompt,
+      userMessage: buildMessage(batch),
+      schemaName: 'wiki_update',
+      jsonSchema: wikiUpdateJsonSchema,
+      validate: validateWikiUpdateOutput,
+    });
+    return data;
+  };
+
+  for (const batch of batches) {
+    const data = await generateBatch(batch);
+    generatedPages.push(...data.pages);
+    if (data.log_entry) logEntries.push(data.log_entry);
+
+    // Reconcile: a batch where the model silently dropped a requested page is
+    // the known `batch-page-dropped` debt (myKG's "loses things"). Diff
+    // requested vs produced, re-request the missing pages ONCE, and if any are
+    // still absent, log a hard reconcile failure rather than let them vanish.
+    const missing = missingPagePaths(batch, data.pages);
+    if (missing.length > 0) {
+      console.error(
+        `[wiki-update] batch omitted ${missing.length} requested page(s); re-requesting once (${tag}): ${missing.join(', ')}`,
+      );
+      const retryBatch = batch.filter(p => missing.includes(p.path));
+      const retry = await generateBatch(retryBatch);
+      generatedPages.push(...retry.pages);
+      if (retry.log_entry) logEntries.push(retry.log_entry);
+
+      const stillMissing = missingPagePaths(retryBatch, retry.pages);
+      if (stillMissing.length > 0) {
+        console.error(
+          `[wiki-update] RECONCILE FAILURE: ${stillMissing.length} page(s) still missing after retry (${tag}): ${stillMissing.join(', ')}`,
+        );
+      }
+    }
+  }
+
+  // Build the final wiki write list (filter out 'unchanged' pages).
+  //   SECURITY (F8): the model returns page paths as free-form strings. The
+  //   traversal guard in git-ops only stops paths escaping the repo — it still
+  //   permits ANY in-repo path (log.md, .git-adjacent files, pages outside
+  //   this run's scope). So trust a returned path only if it is in the
+  //   caller-owned, deterministic requested set. Anything else is a
+  //   steered/hallucinating model and is dropped with a hard log rather than
+  //   written. The raw/ layer is written by the caller, not the model, so it
+  //   isn't in this set by design.
+  const requestedPaths = new Set(pages.map(p => p.path));
+  // Per-page input watermark: hash of the (hash seed + page substrate) that
+  // produced each requested page. Stamped into frontmatter so a later
+  // reconcile pass can detect stale/missing pages deterministically.
+  const inputHashByPath = new Map(pages.map(p => [p.path, computeInputHash(hashSeed, p)]));
+  // Per-page evidence-band set (structured counterpart to the prose markers):
+  //   course page    → the snapshot's own competency bands
+  //   competency page→ the bands of every cell contributing to that competency
+  // Stamped into frontmatter so search_wiki's bandFloor reads structured data
+  // instead of scraping ·markers (deterministic; mirrors input_hash).
+  const evidenceBandsByPath = new Map<string, EvidenceBand[]>();
+  for (const p of pages) {
+    if (p.type === 'course' && courseBands) {
+      evidenceBandsByPath.set(p.path, dedupeBands(courseBands));
+    } else if (p.type === 'competency') {
+      const cells = (p.substrate as { contributingCells?: Array<{ band: EvidenceBand | null }> })?.contributingCells ?? [];
+      evidenceBandsByPath.set(p.path, dedupeBands(cells.map(c => c.band)));
+    }
+  }
+  // Dedup by path keeping the LAST occurrence — a reconcile retry can re-emit a
+  // page the first pass also returned; the retry is the authoritative copy.
+  const latestByPath = new Map<string, WikiUpdateOutput['pages'][number]>();
+  for (const p of generatedPages) latestByPath.set(p.path, p);
+
+  const wiki: WikiPageWrite[] = [];
+  for (const p of latestByPath.values()) {
+    if (p.operation === 'unchanged') continue;
+    if (!requestedPaths.has(p.path)) {
+      console.error(`[wiki-update] dropping unrequested page path from model output: "${p.path}" (${tag})`);
+      continue;
+    }
+    let content = stampInputHash(p.content, inputHashByPath.get(p.path) ?? '');
+    const bands = evidenceBandsByPath.get(p.path);
+    if (bands) content = stampEvidenceBands(content, bands);
+    // OKF machine-fields (title/timestamp/tags/resource/slug) for every
+    // LLM-generated page, including the root index.md (the dashboard).
+    // Per-section index.md files are built deterministically in git-ops and
+    // never flow through this loop.
+    {
+      const slug = p.path.replace(/^.*\//, '').replace(/\.md$/, '');
+      content = stampOkfFrontmatter(content, { slug, timestamp: timestampIso });
+    }
+    wiki.push({ path: p.path, content });
+  }
+
+  return { wiki, logEntries };
+}
+
+/**
+ * SELF-HEAL the `resource:` origin across pages this compile did NOT touch.
+ *
+ * `resource:` is an absolute URL frozen into frontmatter, and read_wiki hands
+ * raw markdown to MCP clients — so when the origin moves, every page that
+ * isn't regenerated keeps serving a dead link with nothing to surface it (the
+ * endpoint stays healthy; only the link inside the reply is wrong). That is
+ * how 44 pages ended up pointing at an IP this host no longer held.
+ *
+ * Pages flowing through generateStampedPages already heal via
+ * stampOkfFrontmatter. This catches the rest: any page whose origin disagrees
+ * with the current base joins THIS commit. normalizeResourceOrigin returns the
+ * input unchanged when correct, so in steady state this adds zero writes — it
+ * only does work on the one compile after an origin actually changes.
+ */
+async function healResourceOrigins(wiki: WikiPageWrite[], logEntries: string[]): Promise<void> {
+  const alreadyWriting = new Set(wiki.map(w => w.path));
+  for (const relPath of await listWikiPagesForHeal()) {
+    if (alreadyWriting.has(relPath)) continue;
+    const before = await readWikiPage(relPath);
+    if (before === null) continue;
+    const after = normalizeResourceOrigin(before);
+    if (after !== before) {
+      wiki.push({ path: relPath, content: after });
+      logEntries.push(`healed stale resource origin: ${relPath}`);
+    }
+  }
+}
+
+/** Load one wiki page's existing markdown + Postgres substrate. */
+async function loadPageWithSubstrate(page: AffectedWikiPage): Promise<PageWithSubstrate> {
+  const existingContent = await readExistingWikiPage(page.path);
+  let substrate: unknown = undefined;
+
+  switch (page.type) {
+    case 'competency':
+      substrate = await loadCompetencySubstrate(page.slug);
+      break;
+    case 'target':
+      substrate = await loadTargetSubstrate(page.slug);
+      break;
+    case 'concept':
+      substrate = await loadConceptSubstrate(page.slug);
+      break;
+    case 'course':
+    case 'index':
+      // No external substrate needed — everything comes from the snapshot.
+      break;
+  }
+
+  return { ...page, existingContent, substrate };
+}
+
+export interface UpdateWikiOptions {
+  /**
+   * Restrict the regenerated wiki pages to these types. Omitted = every
+   * affected page (the per-capture default, unchanged). The one-pass refresh
+   * (scripts/wiki/refresh-all.ts) passes ['course'] so each course page is
+   * regenerated from its latest snapshot without re-generating the
+   * program-wide pages once per course.
+   */
+  pageTypes?: ReadonlyArray<AffectedWikiPage['type']>;
+}
+
 /**
  * Main entry point. Loads the snapshot, builds raw-layer writes, assembles
  * wiki-page substrate, calls the LLM (in bounded batches so a full-coverage
@@ -872,7 +1086,10 @@ export function stampInputHash(content: string, inputHash: string): string {
  *
  * The caller (Task A3/A4) is responsible for writing files and committing.
  */
-export async function updateWikiForSnapshot(snapshotId: string): Promise<WikiUpdateResult> {
+export async function updateWikiForSnapshot(
+  snapshotId: string,
+  opts: UpdateWikiOptions = {},
+): Promise<WikiUpdateResult> {
   // (a) Load the snapshot.
   const snapshot = await getSnapshotById(snapshotId);
   if (!snapshot) throw new Error(`wiki-update: snapshot ${snapshotId} not found`);
@@ -889,7 +1106,10 @@ export async function updateWikiForSnapshot(snapshotId: string): Promise<WikiUpd
     );
   }
 
-  const { raw, wiki: affectedWikiPages } = await computeAffectedPages(snapshot, transcriptMarkdown);
+  const { raw, wiki: allAffected } = await computeAffectedPages(snapshot, transcriptMarkdown);
+  const affectedWikiPages = opts.pageTypes
+    ? allAffected.filter(p => opts.pageTypes!.includes(p.type))
+    : allAffected;
 
   // (c) For each affected wiki page: load existing markdown + substrate.
   const courseInfo = await loadCourseInfo(snapshot.courseCode);
@@ -901,45 +1121,11 @@ export async function updateWikiForSnapshot(snapshotId: string): Promise<WikiUpd
     transcriptMd: raw.find(p => p.path.startsWith('raw/transcripts/'))?.path ?? null,
   };
 
-  const pagesWithSubstrate: Array<AffectedWikiPage & { substrate?: unknown }> = await Promise.all(
-    affectedWikiPages.map(async page => {
-      const existingContent = await readExistingWikiPage(page.path);
-      let substrate: unknown = undefined;
-
-      switch (page.type) {
-        case 'competency':
-          substrate = await loadCompetencySubstrate(page.slug);
-          break;
-        case 'target':
-          substrate = await loadTargetSubstrate(page.slug);
-          break;
-        case 'concept':
-          substrate = await loadConceptSubstrate(page.slug);
-          break;
-        case 'course':
-        case 'index':
-          // No external substrate needed — everything comes from the snapshot.
-          break;
-      }
-
-      return { ...page, existingContent, substrate };
-    }),
+  // (c.1) Index ordering: the index goes LAST with a manifest of every other
+  //     affected page (see placeIndexLast).
+  const pagesWithSubstrate = placeIndexLast(
+    await Promise.all(affectedWikiPages.map(loadPageWithSubstrate)),
   );
-
-  // (c.1) Index ordering (fixes index-stale-in-first-batch): the index lists
-  //     every page in the run, so in a multi-batch compile it must NOT ride the
-  //     first batch (it would miss pages generated in later batches). Move it to
-  //     the END so it lands in the final batch, and hand it a manifest of every
-  //     other affected page so its navigation is complete regardless of how the
-  //     batches split.
-  const indexIdx = pagesWithSubstrate.findIndex(p => p.type === 'index');
-  if (indexIdx >= 0) {
-    const [indexPage] = pagesWithSubstrate.splice(indexIdx, 1);
-    indexPage!.substrate = {
-      affectedPages: pagesWithSubstrate.map(p => ({ type: p.type, slug: p.slug, path: p.path })),
-    };
-    pagesWithSubstrate.push(indexPage!);
-  }
 
   // (d) Load the prompt + provider once.
   const [provider, systemPrompt] = await Promise.all([
@@ -947,27 +1133,16 @@ export async function updateWikiForSnapshot(snapshotId: string): Promise<WikiUpd
     loadPrompt('wiki-update'),
   ]);
 
-  // (e) Generate pages in bounded batches (see WIKI_PAGES_PER_CALL). Each batch
-  //     is its own LLM call over the SAME snapshot context but only its slice of
-  //     affected pages, so no single response can overrun and stall. When the
-  //     affected set fits in one batch this is identical to the old one-shot
-  //     path. The index is forced into the LAST batch (see c.1) with a manifest
-  //     of all affected pages so its navigation is never stale.
-  const batches = chunkPages(pagesWithSubstrate, WIKI_PAGES_PER_CALL);
-  const generatedPages: WikiUpdateOutput['pages'] = [];
-  const logEntries: string[] = [];
-
   // Evidence band per competency (increment A): derived deterministically from
   // the profile's source + citations so the course page renders a credibility
   // marker per competency line rather than flattening every claim to fact.
   const competencyBands = deriveCompetencyBands(snapshot.profile.competencies);
 
-  // One LLM call over the SAME snapshot context but only the given slice of
-  // affected pages. Used for the primary batch pass and the reconcile retry.
-  const generateBatch = async (
-    batch: Array<AffectedWikiPage & { substrate?: unknown }>,
-  ): Promise<WikiUpdateOutput> => {
-    const userMessage = JSON.stringify({
+  // (e)+(f) Generate in bounded batches over the SAME snapshot context, each
+  //     batch carrying only its slice of affected pages; reconcile, filter and
+  //     stamp (see generateStampedPages).
+  const buildMessage = (batch: PageWithSubstrate[]): string =>
+    JSON.stringify({
       snapshot: {
         id: snapshot.id,
         courseCode: snapshot.courseCode,
@@ -994,138 +1169,138 @@ export async function updateWikiForSnapshot(snapshotId: string): Promise<WikiUpd
       affectedWikiPages: batch,
     });
 
-    const { data } = await provider.complete<WikiUpdateOutput>({
-      systemPrompt,
-      userMessage,
-      schemaName: 'wiki_update',
-      jsonSchema: wikiUpdateJsonSchema,
-      validate: validateWikiUpdateOutput,
-    });
-    return data;
-  };
+  const { wiki, logEntries } = await generateStampedPages({
+    pages: pagesWithSubstrate,
+    buildMessage,
+    provider,
+    systemPrompt,
+    hashSeed: snapshot.id,
+    timestampIso: typeof snapshot.createdAt === 'string'
+      ? snapshot.createdAt : snapshot.createdAt.toISOString(),
+    courseBands: competencyBands.map(b => b.band),
+    tag: `course ${snapshot.courseCode}, snapshot ${snapshot.id.slice(0, 8)}`,
+  });
 
-  for (const batch of batches) {
-    const data = await generateBatch(batch);
-    generatedPages.push(...data.pages);
-    if (data.log_entry) logEntries.push(data.log_entry);
-
-    // Reconcile: a batch where the model silently dropped a requested page is
-    // the known `batch-page-dropped` debt (myKG's "loses things"). Diff
-    // requested vs produced, re-request the missing pages ONCE, and if any are
-    // still absent, log a hard reconcile failure rather than let them vanish.
-    const missing = missingPagePaths(batch, data.pages);
-    if (missing.length > 0) {
-      const tag = `course ${snapshot.courseCode}, snapshot ${snapshot.id.slice(0, 8)}`;
-      console.error(
-        `[wiki-update] batch omitted ${missing.length} requested page(s); re-requesting once (${tag}): ${missing.join(', ')}`,
-      );
-      const retryBatch = batch.filter(p => missing.includes(p.path));
-      const retry = await generateBatch(retryBatch);
-      generatedPages.push(...retry.pages);
-      if (retry.log_entry) logEntries.push(retry.log_entry);
-
-      const stillMissing = missingPagePaths(retryBatch, retry.pages);
-      if (stillMissing.length > 0) {
-        console.error(
-          `[wiki-update] RECONCILE FAILURE: ${stillMissing.length} page(s) still missing after retry (${tag}): ${stillMissing.join(', ')}`,
-        );
-      }
-    }
-  }
-
-  // (f) Build the final wiki write list (filter out 'unchanged' pages).
-  //     SECURITY (F8): the model returns page paths as free-form strings. The
-  //     traversal guard in git-ops only stops paths escaping the repo — it still
-  //     permits ANY in-repo path (log.md, .git-adjacent files, pages outside
-  //     this run's scope). So trust a returned path only if it is in the
-  //     caller-owned, deterministic requested set (affectedWikiPages, built by
-  //     computeAffectedPages). Anything else is a steered/hallucinating model
-  //     and is dropped with a hard log rather than written. The raw/ layer is
-  //     written by the caller, not the model, so it isn't in this set by design.
-  const requestedPaths = new Set(pagesWithSubstrate.map(p => p.path));
-  // Per-page input watermark: hash of the (immutable snapshot id + page
-  // substrate) that produced each requested page. Stamped into frontmatter so a
-  // later reconcile pass can detect stale/missing pages deterministically.
-  const inputHashByPath = new Map(
-    pagesWithSubstrate.map(p => [p.path, computeInputHash(snapshot.id, p)]),
-  );
-  // Per-page evidence-band set (structured counterpart to the prose markers):
-  //   course page    → the snapshot's own competency bands
-  //   competency page→ the bands of every cell contributing to that competency
-  // Stamped into frontmatter so search_wiki's bandFloor reads structured data
-  // instead of scraping ·markers (deterministic; mirrors input_hash).
-  const evidenceBandsByPath = new Map<string, EvidenceBand[]>();
-  for (const p of pagesWithSubstrate) {
-    if (p.type === 'course') {
-      evidenceBandsByPath.set(p.path, dedupeBands(competencyBands.map(b => b.band)));
-    } else if (p.type === 'competency') {
-      const cells = (p.substrate as { contributingCells?: Array<{ band: EvidenceBand | null }> })?.contributingCells ?? [];
-      evidenceBandsByPath.set(p.path, dedupeBands(cells.map(c => c.band)));
-    }
-  }
-  // Dedup by path keeping the LAST occurrence — a reconcile retry can re-emit a
-  // page the first pass also returned; the retry is the authoritative copy.
-  const latestByPath = new Map<string, WikiUpdateOutput['pages'][number]>();
-  for (const p of generatedPages) latestByPath.set(p.path, p);
-
-  const wiki: WikiPageWrite[] = [];
-  for (const p of latestByPath.values()) {
-    if (p.operation === 'unchanged') continue;
-    if (!requestedPaths.has(p.path)) {
-      console.error(
-        `[wiki-update] dropping unrequested page path from model output: "${p.path}" ` +
-        `(course ${snapshot.courseCode}, snapshot ${snapshot.id.slice(0, 8)})`,
-      );
-      continue;
-    }
-    let content = stampInputHash(p.content, inputHashByPath.get(p.path) ?? '');
-    const bands = evidenceBandsByPath.get(p.path);
-    if (bands) content = stampEvidenceBands(content, bands);
-    // OKF machine-fields (title/timestamp/tags/resource/slug) for every
-    // LLM-generated page, including the root index.md (the dashboard).
-    // Per-section index.md files are built deterministically in git-ops and
-    // never flow through this loop.
-    {
-      const slug = p.path.replace(/^.*\//, '').replace(/\.md$/, '');
-      const tsIso = typeof snapshot.createdAt === 'string'
-        ? snapshot.createdAt : snapshot.createdAt.toISOString();
-      content = stampOkfFrontmatter(content, { slug, timestamp: tsIso });
-    }
-    wiki.push({ path: p.path, content });
-  }
-
-  // SELF-HEAL the `resource:` origin across pages this compile did NOT touch.
-  //
-  // `resource:` is an absolute URL frozen into frontmatter, and read_wiki hands
-  // raw markdown to MCP clients — so when the origin moves, every page that
-  // isn't regenerated keeps serving a dead link with nothing to surface it (the
-  // endpoint stays healthy; only the link inside the reply is wrong). That is
-  // how 44 pages ended up pointing at an IP this host no longer held.
-  //
-  // Pages flowing through the loop above already heal via stampOkfFrontmatter.
-  // This catches the rest: any page whose origin disagrees with the current
-  // base joins THIS commit. normalizeResourceOrigin returns the input unchanged
-  // when correct, so in steady state this adds zero writes — it only does work
-  // on the one compile after an origin actually changes.
-  {
-    const alreadyWriting = new Set(wiki.map(w => w.path));
-    for (const relPath of await listWikiPagesForHeal()) {
-      if (alreadyWriting.has(relPath)) continue;
-      const before = await readWikiPage(relPath);
-      if (before === null) continue;
-      const after = normalizeResourceOrigin(before);
-      if (after !== before) {
-        wiki.push({ path: relPath, content: after });
-        logEntries.push(`healed stale resource origin: ${relPath}`);
-      }
-    }
-  }
+  await healResourceOrigins(wiki, logEntries);
 
   return {
     raw,
     wiki,
     logEntry: logEntries.join(' · ') || `wiki-update: ${snapshot.courseCode} (${snapshot.id.slice(0, 8)})`,
   };
+}
+
+// ---------------------------------------------------------------------------
+// One-pass program refresh (scripts/wiki/refresh-all.ts)
+// ---------------------------------------------------------------------------
+
+/**
+ * Hash seed for program-wide pages generated by the one-pass refresh. Those
+ * pages have no triggering snapshot, so their input_hash is a function of the
+ * page substrate alone (which is what actually determines them).
+ */
+export const PROGRAM_REFRESH_HASH_SEED = 'program-refresh';
+
+/** One course's summary for the program-wide index + concept pages. */
+export interface ProgramCourseSummary {
+  courseCode: string;
+  courseSlug: string;
+  title: string | null;
+  level: number | null;
+  lastSnapshotId: string;
+  lastSnapshotDate: string;
+  courseShape: string | null;
+}
+
+export interface ProgramPageRef {
+  type: AffectedWikiPage['type'];
+  slug: string;
+  path: string;
+}
+
+/**
+ * Pure (given the loaded pages): generate one batch-set of PROGRAM-WIDE pages
+ * (competency / target / concept / index) with no triggering snapshot. The
+ * user message carries `mode: "program-refresh"` and `snapshot: null`; the
+ * prompt's program-refresh section tells the model to derive these pages from
+ * their substrate alone. Competency and target substrate are already
+ * program-wide (every non-retired snapshot's coverage cells), so nothing here
+ * depends on any one course.
+ */
+export async function generateProgramPagesFromSubstrate(
+  pages: PageWithSubstrate[],
+  deps: { provider: WikiProvider; systemPrompt: string; now: Date },
+): Promise<{ wiki: WikiPageWrite[]; logEntry: string }> {
+  const nowIso = deps.now.toISOString();
+  const buildMessage = (batch: PageWithSubstrate[]): string =>
+    JSON.stringify({
+      mode: 'program-refresh',
+      refreshedAt: nowIso,
+      snapshot: null,
+      rawPaths: null,
+      allSnapshotsForCourse: [],
+      competencyBands: [],
+      competencyLinks: [],
+      affectedWikiPages: batch,
+    });
+
+  const { wiki, logEntries } = await generateStampedPages({
+    pages,
+    buildMessage,
+    provider: deps.provider,
+    systemPrompt: deps.systemPrompt,
+    hashSeed: PROGRAM_REFRESH_HASH_SEED,
+    timestampIso: nowIso,
+    tag: 'program refresh',
+  });
+  return {
+    wiki,
+    logEntry: logEntries.join(' · ') || `${nowIso} — program refresh: ${pages.map(p => p.path).join(', ')}`,
+  };
+}
+
+/**
+ * Generate one batch of program-wide pages: load each page's existing
+ * markdown + program-wide substrate, attach the course summaries (index +
+ * concept pages) and the full manifest (index), then generate. The caller
+ * (refresh-all) sizes the batch to WIKI_PAGES_PER_CALL and puts the index in
+ * the last batch, so this makes exactly one LLM call per batch (plus at most
+ * one reconcile retry).
+ */
+export async function generateProgramWikiBatch(
+  batch: ReadonlyArray<ProgramPageRef>,
+  ctx: {
+    manifest: ReadonlyArray<ProgramPageRef>;
+    programCourses: ProgramCourseSummary[];
+    provider?: WikiProvider;
+    systemPrompt?: string;
+    now?: Date;
+  },
+): Promise<{ wiki: WikiPageWrite[]; logEntry: string }> {
+  const loaded = await Promise.all(
+    batch.map(p => loadPageWithSubstrate({ ...p, existingContent: null })),
+  );
+  for (const p of loaded) {
+    if (p.type === 'concept') {
+      p.substrate = { ...((p.substrate as object) ?? {}), programCourses: ctx.programCourses };
+    }
+  }
+  const pages = placeIndexLast(loaded, ctx.manifest.filter(p => p.type !== 'index'), {
+    programCourses: ctx.programCourses,
+  });
+
+  const [provider, systemPrompt] = await Promise.all([
+    ctx.provider ?? getProviderForFunction('wiki-update'),
+    ctx.systemPrompt ?? loadPrompt('wiki-update'),
+  ]);
+  const result = await generateProgramPagesFromSubstrate(pages, {
+    provider,
+    systemPrompt,
+    now: ctx.now ?? new Date(),
+  });
+  const logEntries = [result.logEntry];
+  await healResourceOrigins(result.wiki, logEntries);
+  return { wiki: result.wiki, logEntry: logEntries.join(' · ') };
 }
 
 // ---------------------------------------------------------------------------

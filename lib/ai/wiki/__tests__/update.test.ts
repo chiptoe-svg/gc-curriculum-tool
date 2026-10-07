@@ -63,8 +63,13 @@ import {
   courseCodeToSlug,
   computeAffectedPages,
   updateWikiForSnapshot,
+  placeIndexLast,
+  generateProgramPagesFromSubstrate,
+  PROGRAM_REFRESH_HASH_SEED,
+  computeInputHash,
   type WikiUpdateResult,
 } from '../update';
+import { FakeProvider } from '@/lib/ai/fake-provider';
 
 import type { SnapshotRow } from '@/lib/db/capture-snapshots-queries';
 import type { CaptureProfile } from '@/lib/ai/capture/schema';
@@ -542,5 +547,117 @@ describe('updateWikiForSnapshot', () => {
     (getProviderForFunction as ReturnType<typeof vi.fn>).mockResolvedValue(badProvider);
 
     await expect(updateWikiForSnapshot(SNAPSHOT_ID)).rejects.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// One-pass refresh support (scripts/wiki/refresh-all.ts)
+// ---------------------------------------------------------------------------
+
+describe('updateWikiForSnapshot pageTypes filter', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (getSnapshotById as ReturnType<typeof vi.fn>).mockResolvedValue(mockSnapshot);
+    (db.select as ReturnType<typeof vi.fn>).mockReturnValue(makeDbChain([]));
+    (readFile as ReturnType<typeof vi.fn>).mockRejectedValue(
+      Object.assign(new Error('ENOENT'), { code: 'ENOENT' }),
+    );
+    (loadPrompt as ReturnType<typeof vi.fn>).mockResolvedValue('You are the wiki maintainer.');
+  });
+
+  it("pageTypes ['course'] requests only the course page and keeps the raw layer", async () => {
+    const complete = vi.fn().mockResolvedValue({ data: mockLLMResponse });
+    (getProviderForFunction as ReturnType<typeof vi.fn>).mockResolvedValue({ model: 'm', complete });
+
+    const { raw, wiki } = await updateWikiForSnapshot(SNAPSHOT_ID, { pageTypes: ['course'] });
+
+    expect(complete).toHaveBeenCalledTimes(1);
+    const msg = JSON.parse(complete.mock.calls[0]![0].userMessage);
+    expect(msg.affectedWikiPages.map((p: { path: string }) => p.path)).toEqual(['courses/gc-4800.md']);
+    // The model's extra pages (index, concept) were not requested → dropped.
+    expect(wiki.map(p => p.path)).toEqual(['courses/gc-4800.md']);
+    expect(raw.some(p => p.path.startsWith('raw/snapshots/'))).toBe(true);
+  });
+
+  it('no pageTypes = the unchanged per-capture page set (course + index + concepts)', async () => {
+    const complete = vi.fn().mockResolvedValue({ data: mockLLMResponse });
+    (getProviderForFunction as ReturnType<typeof vi.fn>).mockResolvedValue({ model: 'm', complete });
+    await updateWikiForSnapshot(SNAPSHOT_ID);
+    const msg = JSON.parse(complete.mock.calls[0]![0].userMessage);
+    const paths = msg.affectedWikiPages.map((p: { path: string }) => p.path);
+    expect(paths).toContain('courses/gc-4800.md');
+    expect(paths[paths.length - 1]).toBe('index.md');
+  });
+});
+
+describe('placeIndexLast', () => {
+  const page = (type: 'course' | 'index' | 'competency', slug: string) => ({
+    type, slug, path: type === 'index' ? 'index.md' : `${type}/${slug}.md`, existingContent: null,
+  });
+
+  it('moves the index to the end with a manifest of the other pages', () => {
+    const out = placeIndexLast([page('index', 'index'), page('competency', 'a'), page('course', 'b')]);
+    expect(out.map(p => p.slug)).toEqual(['a', 'b', 'index']);
+    expect((out[2]!.substrate as { affectedPages: unknown[] }).affectedPages).toHaveLength(2);
+  });
+
+  it('uses an explicit manifest and merges extra substrate when given', () => {
+    const manifest = [{ type: 'course' as const, slug: 'x', path: 'courses/x.md' }];
+    const out = placeIndexLast([page('index', 'index')], manifest, { programCourses: [1] });
+    expect(out[0]!.substrate).toEqual({ affectedPages: manifest, programCourses: [1] });
+  });
+});
+
+describe('generateProgramPagesFromSubstrate', () => {
+  const now = new Date('2026-10-06T00:00:00Z');
+  const compPage = {
+    type: 'competency' as const,
+    slug: 'color-mgmt',
+    path: 'competencies/color-mgmt.md',
+    existingContent: null,
+    substrate: { contributingCells: [{ band: 'materials_supported' }, { band: 'claimed' }] },
+  };
+  const indexPage = {
+    type: 'index' as const, slug: 'index', path: 'index.md', existingContent: null,
+    substrate: { affectedPages: [] },
+  };
+
+  it('sends no triggering snapshot, stamps program-seeded input_hash + bands, drops unrequested paths', async () => {
+    const provider = new FakeProvider([{
+      pages: [
+        { path: 'competencies/color-mgmt.md', content: '---\ntitle: "Color"\n---\n# Color\n', operation: 'update' },
+        { path: 'index.md', content: '---\ntitle: "Index"\n---\n# Index\n', operation: 'update' },
+        { path: 'log.md', content: 'steered', operation: 'create' },
+      ],
+      log_entry: 'program refresh',
+    }]);
+    const spy = vi.spyOn(provider, 'complete');
+
+    const { wiki, logEntry } = await generateProgramPagesFromSubstrate([compPage, indexPage], {
+      provider, systemPrompt: 'sys', now,
+    });
+
+    const msg = JSON.parse(spy.mock.calls[0]![0].userMessage);
+    expect(msg.mode).toBe('program-refresh');
+    expect(msg.snapshot).toBeNull();
+    expect(wiki.map(p => p.path)).toEqual(['competencies/color-mgmt.md', 'index.md']);
+    const comp = wiki[0]!.content;
+    expect(comp).toContain(`input_hash: ${computeInputHash(PROGRAM_REFRESH_HASH_SEED, compPage)}`);
+    expect(comp).toMatch(/evidence_bands:/);
+    expect(comp).toContain('2026-10-06');
+    expect(logEntry).toBe('program refresh');
+  });
+
+  it('re-requests an omitted page once (reconcile)', async () => {
+    const provider = new FakeProvider([
+      { pages: [{ path: 'index.md', content: '# I', operation: 'update' }], log_entry: 'a' },
+      { pages: [{ path: 'competencies/color-mgmt.md', content: '# C', operation: 'update' }], log_entry: 'b' },
+    ]);
+    const spy = vi.spyOn(provider, 'complete');
+    const { wiki } = await generateProgramPagesFromSubstrate([compPage, indexPage], {
+      provider, systemPrompt: 'sys', now,
+    });
+    expect(spy).toHaveBeenCalledTimes(2);
+    expect(wiki.map(p => p.path).sort()).toEqual(['competencies/color-mgmt.md', 'index.md']);
   });
 });
