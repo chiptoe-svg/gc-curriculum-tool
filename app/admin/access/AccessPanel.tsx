@@ -196,7 +196,10 @@ export function AccessPanel({ slug, courses }: { slug: string; courses: AccessCo
     const courseList = allCourses ? 'all courses' : grant.scope.join(', ');
     // One line per course with its title, so the invitee sees exactly which
     // classes the link opens (owner request, 2026-10-08).
-    const titleOf = (code: string) => courses.find((c) => c.code === code)?.title;
+    // Codes differ in case/spacing between grant scopes and the course list
+    // ("GC 4900OR" vs "GC 4900or"), so compare them normalized.
+    const norm = (s: string) => s.replace(/\s+/g, ' ').trim().toUpperCase();
+    const titleOf = (code: string) => courses.find((c) => norm(c.code) === norm(code))?.title;
     const courseLines = allCourses
       ? ['- All courses in the tool']
       : grant.scope.map((code) => { const t = titleOf(code); return t ? `- ${code}: ${t}` : `- ${code}`; });

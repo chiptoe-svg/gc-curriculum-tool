@@ -5,6 +5,7 @@ import { AccessPanel, type AccessCourse, type AccessGrant } from '../AccessPanel
 const courses: AccessCourse[] = [
   { code: 'GC 3730', title: 'Account Management' },
   { code: 'GC 1010', title: 'Intro to GC' },
+  { code: 'GC 4900or', title: 'Special Topics: Outreach and Recruitment' },
 ];
 
 function grantRow(over: Partial<AccessGrant> = {}): AccessGrant {
@@ -96,7 +97,7 @@ describe('AccessPanel', () => {
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          grant: grantRow({ id: 'new', label: 'Pat Faculty', email: 'pat@example.edu', scope: ['GC 3730', 'GC 1010', 'GC 9999'] }),
+          grant: grantRow({ id: 'new', label: 'Pat Faculty', email: 'pat@example.edu', scope: ['GC 3730', 'GC 1010', 'GC 9999', 'GC 4900OR'] }),
           link: 'https://gcworkflow.clemson.edu:8443/?key=tok456',
         }),
       })
@@ -113,8 +114,8 @@ describe('AccessPanel', () => {
 
     const composeLink = screen.getByRole('link', { name: /compose email/i }) as HTMLAnchorElement;
     const bodyParam = new URLSearchParams(new URL(composeLink.href).search).get('body') ?? '';
-    expect(bodyParam).toContain('for GC 3730, GC 1010, GC 9999.');
-    expect(bodyParam).toContain('Your courses:\n- GC 3730: Account Management\n- GC 1010: Intro to GC\n- GC 9999\n');
+    expect(bodyParam).toContain('for GC 3730, GC 1010, GC 9999, GC 4900OR.');
+    expect(bodyParam).toContain('Your courses:\n- GC 3730: Account Management\n- GC 1010: Intro to GC\n- GC 9999\n- GC 4900OR: Special Topics: Outreach and Recruitment\n');
   });
 
   it('shows a CLI admin row read-only with a note, and disables Edit / Send a new link (Revoke stays enabled) — fix round 1, L1', async () => {
