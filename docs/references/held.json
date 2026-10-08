@@ -1,0 +1,336 @@
+{
+  "version": 1,
+  "roots": {
+    "pdfs": "docs/references/_pdfs",
+    "ai_career": "~/projects/ai_career_impact/library/pdfs"
+  },
+  "pages": {
+    "background.html": {
+      "ref-aacu": {
+        "file": "pdfs:aacu-integrative-learning-value-rubric.pdf",
+        "note": "card has no Local copy line (pre-dates PDF acquisition)"
+      },
+      "ref-biggs-1996": {
+        "file": "pdfs:biggs-1996-constructive-alignment.pdf",
+        "note": "card has no Local copy line (pre-dates PDF acquisition)"
+      },
+      "ref-krathwohl-2002": {
+        "file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
+        "note": "no standalone card yet (backfill pending per STATE.md)"
+      },
+      "ref-tuning": {
+        "file": "pdfs:tuning-2009-reference-points-education.pdf",
+        "note": "card has no Local copy line (pre-dates PDF acquisition); card title matches the Reference Points volume, not the executive summary"
+      },
+      "ref-neche": {
+        "file": "pdfs:neche-2015-cbe-statement.pdf",
+        "note": "card has no Local copy line (pre-dates PDF acquisition)"
+      },
+      "ref-dlm-2017": {
+        "file": "pdfs:kingston-broaddus-2017-dlm.pdf",
+        "note": "card has no Local copy line (pre-dates PDF acquisition)"
+      },
+      "ref-willingham-2007": {
+        "file": "ai_career:future_of_gc/load_bearing/Willingham_2007_Critical_Thinking_Why_So_Hard_to_Teach.pdf",
+        "note": "card has no Local copy line (pre-dates PDF acquisition)"
+      },
+      "ref-abrami-2015": {
+        "file": "ai_career:future_of_gc/load_bearing/Abrami_etal_2015_Teaching_Critical_Thinking_Meta-Analysis.pdf"
+      },
+      "ref-xu-2026": {
+        "file": "pdfs:xu-2026-21c-competencies.pdf",
+        "note": "card is stale — says held only in a non-repo workspace, but this file is in _pdfs"
+      },
+      "ref-javadian-sabet-2024": {
+        "file": "ai_career:future_of_gc/architecture/Javadian_Sabet_etal_2024_Course-Skill_Atlas.pdf"
+      },
+      "ref-xu-2025": {
+        "file": "ai_career:future_of_gc/architecture/Xu_etal_2025_From_Course_to_Skill_LLM_Curricular_Analytics.pdf"
+      },
+      "ref-musazade-2026": {
+        "file": "pdfs:musazade-2026-uniskill.pdf",
+        "note": "card is stale — says not held anywhere, but this file is in _pdfs"
+      },
+      "ref-senger-2024": {
+        "file": "ai_career:future_of_gc/architecture/Senger_etal_2024_Computational_Job_Market_Analysis_Survey.pdf"
+      },
+      "ref-le-2017": {
+        "file": "pdfs:le-2017-skill2vec.pdf"
+      },
+      "ref-liu-2024": {
+        "file": "pdfs:liu-2024-cooccurrent-skills.pdf"
+      },
+      "ref-kim-2025": {
+        "file": "pdfs:kim-2025-correlated-errors.pdf"
+      },
+      "ref-kohli-2025": {
+        "file": "pdfs:kohli-2025-nine-judges.pdf",
+        "note": "card kohli-2026.md; filename retains stale 2025 dating"
+      },
+      "ref-hullermeier-2021": {
+        "file": "ai_career:future_of_gc/load_bearing/Hullermeier_Waegeman_2021_Aleatoric_Epistemic_Uncertainty_ML.pdf"
+      },
+      "ref-cohen-2017": {
+        "file": "pdfs:cohen-2017-essay-rater-reliability.pdf"
+      },
+      "ref-lyness-2021": {
+        "file": "pdfs:lyness-peterson-yates-2021-edtpa-irr.pdf",
+        "note": "no standalone card yet (backfill pending per STATE.md)"
+      },
+      "ref-landis-koch-1977": {
+        "file": "ai_career:future_of_gc/load_bearing/Landis_Koch_1977_Observer_Agreement_Categorical_Data.pdf"
+      },
+      "ref-chi-1981": {
+        "file": "ai_career:future_of_gc/load_bearing/Chi_Feltovich_Glaser_1981_Categorization_Physics_Experts_Novices.pdf",
+        "note": "card has no Local copy line (pre-dates PDF acquisition)"
+      },
+      "ref-larkin-1980": {
+        "file": "ai_career:future_of_gc/load_bearing/Larkin_etal_1980_Models_of_Competence_Solving_Physics_Problems.pdf",
+        "note": "card has no Local copy line (pre-dates PDF acquisition)"
+      },
+      "ref-sweller-1988": {
+        "file": "ai_career:future_of_gc/load_bearing/Sweller_1988_Cognitive_Load_During_Problem_Solving.pdf",
+        "note": "card has no Local copy line (pre-dates PDF acquisition)"
+      },
+      "ref-kapur-2008": {
+        "file": "ai_career:future_of_gc/load_bearing/Kapur_2008_Productive_Failure.pdf",
+        "note": "card has no Local copy line (pre-dates PDF acquisition)"
+      },
+      "ref-kapur-2016": {
+        "file": "ai_career:future_of_gc/load_bearing/Kapur_2016_Productive_Failure_Success_2x2.pdf",
+        "note": "card has no Local copy line (pre-dates PDF acquisition)"
+      },
+      "ref-sinha-kapur-2021": {
+        "file": "ai_career:future_of_gc/load_bearing/Sinha_Kapur_2021_Problem_Solving_Followed_by_Instruction.pdf",
+        "note": "card has no Local copy line (pre-dates PDF acquisition)"
+      },
+      "ref-npj-2023": {
+        "file": "pdfs:kapur-saba-roll-2023.pdf"
+      },
+      "ref-bjork-1994": {
+        "file": "ai_career:future_of_gc/load_bearing/Bjork_1994_Desirable_Difficulties.pdf",
+        "note": "card has no Local copy line (pre-dates PDF acquisition)"
+      },
+      "ref-tannenbaum-cerasoli-2013": {
+        "file": "ai_career:future_of_gc/load_bearing/Tannenbaum_Cerasoli_2013_Debriefs_Meta-Analysis.pdf",
+        "note": "card has no Local copy line (pre-dates PDF acquisition)"
+      },
+      "ref-perkins-salomon-1992": {
+        "file": "ai_career:future_of_gc/load_bearing/Perkins_Salomon_1992_Transfer_of_Learning.pdf",
+        "note": "card has no Local copy line (pre-dates PDF acquisition)"
+      },
+      "ref-salomon-perkins-1989": {
+        "file": "ai_career:future_of_gc/load_bearing/Salomon_Perkins_1989_Rocky_Roads_to_Transfer.pdf"
+      },
+      "ref-bransford-schwartz-1999": {
+        "file": "ai_career:future_of_gc/load_bearing/Bransford_Schwartz_1999_Rethinking_Transfer.pdf"
+      },
+      "ref-schwartz-martin-2004": {
+        "file": "ai_career:future_of_gc/load_bearing/Schwartz_Martin_2004_Inventing_to_Prepare_for_Future_Learning.pdf"
+      },
+      "ref-belenky-2012": {
+        "file": "ai_career:future_of_gc/load_bearing/Belenky_Nokes-Malach_2012_Motivation_and_Transfer.pdf"
+      },
+      "ref-gick-holyoak-1980-1983": {
+        "file": "ai_career:future_of_gc/load_bearing/Gick_Holyoak_1980_Analogical_Problem_Solving.pdf",
+        "note": "bundles 1980 + 1983; both held — 1983 companion at ai_career:future_of_gc/load_bearing/Gick_Holyoak_1983_Schema_Induction_and_Analogical_Transfer.pdf"
+      },
+      "ref-gentner-loewenstein-thompson-2003": {
+        "file": "ai_career:future_of_gc/load_bearing/Gentner_Loewenstein_Thompson_2003_Analogical_Encoding.pdf"
+      },
+      "ref-loewenstein-1999": {
+        "file": "pdfs:loewenstein-thompson-gentner-1999-analogical-encoding.pdf"
+      },
+      "ref-barnett-ceci-2002": {
+        "file": "ai_career:future_of_gc/load_bearing/Barnett_Ceci_2002_When_and_Where_Far_Transfer.pdf"
+      },
+      "ref-bilalic-2009": {
+        "file": "ai_career:future_of_gc/load_bearing/Bilalic_McLeod_Gobet_2009_Specialization_Effect_Chess.pdf"
+      },
+      "ref-hatano-inagaki-1986": {
+        "file": "ai_career:future_of_gc/load_bearing/Hatano_Inagaki_Two_Courses_of_Expertise.pdf"
+      },
+      "ref-sala-gobet-2017": {
+        "file": "ai_career:future_of_gc/load_bearing/Sala_Gobet_2017_Does_Far_Transfer_Exist.pdf"
+      },
+      "ref-sala-2019": {
+        "file": "ai_career:future_of_gc/load_bearing/Sala_etal_2019_Near_and_Far_Transfer_Meta-Analysis.pdf"
+      },
+      "ref-thorndike-woodworth-1901": {
+        "file": "ai_career:future_of_gc/load_bearing/Thorndike_Woodworth_1901_Influence_of_Improvement_Transfer.pdf"
+      },
+      "ref-detterman-1993": {
+        "file": "pdfs:detterman-1993-case-prosecution.pdf",
+        "note": "card is stale — says \"no local copy\" but the PDF was obtained 2026-10-07"
+      },
+      "ref-donker-2014": {
+        "file": "ai_career:future_of_gc/load_bearing/Donker_etal_2014_Learning_Strategy_Instruction_(NRO_report).pdf"
+      },
+      "ref-veenman-2006": {
+        "file": "ai_career:future_of_gc/load_bearing/Veenman_etal_2006_Metacognition_and_Learning.pdf"
+      },
+      "ref-schoenfeld-1992": {
+        "file": "ai_career:future_of_gc/load_bearing/Schoenfeld_1992_Learning_to_Think_Mathematically.pdf"
+      },
+      "ref-nisbett-wilson-1977": {
+        "file": "ai_career:future_of_gc/load_bearing/Nisbett_Wilson_1977_Telling_More_Than_We_Can_Know.pdf"
+      },
+      "ref-camerer-1989": {
+        "file": "ai_career:future_of_gc/load_bearing/Camerer_Loewenstein_Weber_1989_Curse_of_Knowledge.pdf"
+      },
+      "ref-ericsson-1993": {
+        "file": "pdfs:ericsson-krampe-tesch-romer-1993.pdf"
+      },
+      "ref-macnamara-2014": {
+        "file": "pdfs:macnamara-hambrick-oswald-2014.pdf"
+      },
+      "ref-arthur-1998": {
+        "file": "ai_career:future_of_gc/load_bearing/Arthur_etal_1998_Skill_Decay_and_Retention_Meta-Analysis.pdf"
+      },
+      "ref-bahrick-1984": {
+        "file": "pdfs:bahrick-1984-permastore.pdf"
+      },
+      "ref-murre-2015": {
+        "file": "ai_career:future_of_gc/load_bearing/Murre_Dros_2015_Ebbinghaus_Forgetting_Curve_Replication.pdf"
+      },
+      "ref-settles-2016": {
+        "file": "pdfs:settles-meeder-2016-hlr.pdf"
+      },
+      "ref-nrc-onet-2010": {
+        "file": "ai_career:future_of_gc/load_bearing/National_Research_Council_2010_O-NET_Review_Database_for_Changing_Economy.pdf"
+      },
+      "ref-gonczi-1994": {
+        "file": "ai_career:future_of_gc/load_bearing/Gonczi_1994_Competency_Based_Assessment_Professions_Australia.pdf"
+      },
+      "ref-brockmann-clarke-winch-2008": {
+        "file": "ai_career:future_of_gc/load_bearing/Brockmann_Clarke_Winch_2008_Knowledge_Skills_Competence_VET.pdf"
+      },
+      "ref-dearden-2004": {
+        "file": "ai_career:future_of_gc/load_bearing/Dearden_etal_2004_Returns_to_NVQ_Level2_(CEE_DP46).pdf"
+      },
+      "ref-anthropic-economic-index-2026": {
+        "file": "pdfs:anthropic-economic-index-2026-learning-curves.pdf"
+      },
+      "ref-eloundou-2024": {
+        "file": "ai_career:eloundou-2024-gpts-are-gpts-arxiv.pdf"
+      },
+      "ref-autor-thompson-2025": {
+        "file": "pdfs:autor-thompson-2025-expertise.pdf"
+      },
+      "ref-brynjolfsson-2025": {
+        "file": "pdfs:brynjolfsson-2026-canaries.pdf",
+        "note": "card brynjolfsson-2026-response.md; background.html id predates the 2026 relabel"
+      },
+      "ref-openai-transition-2026": {
+        "file": "ai_career:openai-2026-ai-jobs-transition-framework.pdf"
+      },
+      "ref-ajtf-data-2026": {
+        "file": "ai_career:openai-2026-ajtf-occupation-archetype-spreadsheet.csv",
+        "note": "AJTF per-occupation data download; card at openai-transition-2026.md"
+      },
+      "ref-chin-richmond-2026": {
+        "file": "pdfs:openai-2026-work-at-the-frontier.pdf"
+      },
+      "ref-dellacqua-2026": {
+        "file": "pdfs:dellacqua-2025-cybernetic-teammate.pdf"
+      },
+      "ref-lee-2025": {
+        "file": "pdfs:lee-2025-critical-thinking.pdf"
+      },
+      "ref-hosseini-lichtinger-2026": {
+        "file": "pdfs:hosseini-lichtinger-2026-seniority-biased.pdf"
+      },
+      "ref-orr-tucker-warren-2026": {
+        "file": "pdfs:orr-tucker-warren-2026-majors.pdf"
+      },
+      "ref-vossos-2026": {
+        "file": "pdfs:vossos-2026-uk-applications.pdf"
+      },
+      "ref-hernaes-kostol-2026": {
+        "file": "pdfs:hernaes-kostol-2026-norway.pdf"
+      },
+      "ref-frank-2026": {
+        "file": "pdfs:frank-2026-ai-exposed-curricula.pdf"
+      },
+      "ref-lambert-schindler-2026": {
+        "file": "pdfs:lambert-schindler-2026-remote-work.pdf"
+      }
+    },
+    "measurement-hypotheses-deep-dive.html": {
+      "ref-javadian-sabet-2024": {
+        "file": "ai_career:future_of_gc/architecture/Javadian_Sabet_etal_2024_Course-Skill_Atlas.pdf"
+      },
+      "ref-xu-2025": {
+        "file": "ai_career:future_of_gc/architecture/Xu_etal_2025_From_Course_to_Skill_LLM_Curricular_Analytics.pdf"
+      },
+      "ref-xu-2026": {
+        "file": "pdfs:xu-2026-21c-competencies.pdf"
+      },
+      "ref-musazade-2026": {
+        "file": "pdfs:musazade-2026-uniskill.pdf"
+      },
+      "ref-le-2017": {
+        "file": "pdfs:le-2017-skill2vec.pdf"
+      },
+      "ref-liu-2024": {
+        "file": "pdfs:liu-2024-cooccurrent-skills.pdf"
+      },
+      "ref-senger-2024": {
+        "file": "ai_career:future_of_gc/architecture/Senger_etal_2024_Computational_Job_Market_Analysis_Survey.pdf"
+      },
+      "ref-decorte-2023": {
+        "file": "ai_career:future_of_gc/architecture/Decorte_etal_2023_Extreme_Multi-Label_Skill_Extraction_LLMs.pdf"
+      },
+      "ref-tang-2024": {
+        "file": "pdfs:tang-yang-2024-domain-embedding.pdf",
+        "note": "bundles Tang & Yang 2024 + the 2025 FinMTEB follow-up; both held (2025 at pdfs:tang-yang-2025-finmteb.pdf)"
+      },
+      "ref-voyage-2024": {
+        "file": "pdfs:web/voyage-2024-law-2.html",
+        "note": "bundles the Legal + Finance posts; both held (Finance at pdfs:web/voyage-2024-finance-2.html)"
+      },
+      "ref-murre-2015": {
+        "file": "ai_career:future_of_gc/load_bearing/Murre_Dros_2015_Ebbinghaus_Forgetting_Curve_Replication.pdf"
+      },
+      "ref-arthur-1998": {
+        "file": "ai_career:future_of_gc/load_bearing/Arthur_etal_1998_Skill_Decay_and_Retention_Meta-Analysis.pdf"
+      },
+      "ref-bahrick-1984": {
+        "file": "pdfs:bahrick-1984-permastore.pdf"
+      },
+      "ref-cepeda-2006": {
+        "file": "ai_career:future_of_gc/load_bearing/Cepeda_etal_2006_Distributed_Practice_Verbal_Recall_Meta-Analysis.pdf",
+        "note": "bundles Cepeda 2006 + Cepeda 2008; both held (2008 at ai_career:future_of_gc/load_bearing/Cepeda_etal_2008_Spacing_Effects_in_Learning.pdf)"
+      },
+      "ref-adesope-2017": {
+        "file": "ai_career:future_of_gc/load_bearing/Adesope_etal_2017_Practice_Testing_Meta-Analysis.pdf"
+      },
+      "ref-roediger-2006": {
+        "file": "ai_career:future_of_gc/load_bearing/Roediger_Karpicke_2006_Test-Enhanced_Learning.pdf"
+      },
+      "ref-bjork-1994": {
+        "file": "ai_career:future_of_gc/load_bearing/Bjork_1994_Desirable_Difficulties.pdf",
+        "note": "scanned PDF with no text layer; identity confirmed via the OCR sidecar .md next to it"
+      },
+      "ref-landis-koch-1977": {
+        "file": "ai_career:future_of_gc/load_bearing/Landis_Koch_1977_Observer_Agreement_Categorical_Data.pdf",
+        "note": "bundles Landis & Koch 1977 + Cohen 2017 + Lyness 2021 + Lyness 2024; all four held (Cohen at pdfs:cohen-2017-essay-rater-reliability.pdf, Lyness 2021 at pdfs:lyness-peterson-yates-2021-edtpa-irr.pdf, Lyness 2024 at pdfs:lyness-2024-edtpa-irr.pdf)"
+      },
+      "ref-hullermeier-2021": {
+        "file": "ai_career:future_of_gc/load_bearing/Hullermeier_Waegeman_2021_Aleatoric_Epistemic_Uncertainty_ML.pdf"
+      },
+      "ref-tschirschwitz-2024": {
+        "file": "ai_career:future_of_gc/load_bearing/Tschirschwitz_Rodehorst_2024_Label_Convergence_Performance_Bound.pdf"
+      },
+      "ref-wang-2022": {
+        "file": "pdfs:wang-2022-self-consistency.pdf",
+        "note": "bundles Wang 2022 + Verga 2024 + Guo 2017 + Geifman 2017/2019; all held (Verga at ai_career:future_of_gc/architecture/Verga_etal_2024_Panel_of_LLM_Judges_PoLL.pdf, Guo at ai_career:future_of_gc/architecture/Guo_etal_2017_On_Calibration_of_Modern_Neural_Networks.pdf, Geifman at pdfs:geifman-elyaniv-2017-selective-classification.pdf and pdfs:geifman-elyaniv-2019-selectivenet.pdf)"
+      },
+      "ref-kim-2025": {
+        "file": "pdfs:kim-2025-correlated-errors.pdf",
+        "note": "bundles Kim et al. 2025 + Kohli 2026; both held (Kohli at pdfs:kohli-2025-nine-judges.pdf)"
+      }
+    },
+    "problem-solving-deep-dive.html": {}
+  }
+}

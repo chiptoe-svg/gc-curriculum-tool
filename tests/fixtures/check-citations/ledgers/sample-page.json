@@ -1,0 +1,21 @@
+{
+  "page": "sample-page.html",
+  "claims": [
+    {
+      "id": "claim-1",
+      "location": "§1",
+      "claim_text": "The effect is robust and replicates everywhere.",
+      "held_file": "fixture:held-2021-source.txt",
+      "quote": "the result is surprising and robust … replication succeeded in every site tested",
+      "page": 4
+    },
+    {
+      "id": "claim-2-missing",
+      "location": "§2",
+      "claim_text": "A claim whose quote does not appear in the source.",
+      "held_file": "fixture:held-2021-source.txt",
+      "quote": "this exact sentence does not appear anywhere in the source text",
+      "page": 1
+    }
+  ]
+}
