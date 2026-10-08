@@ -441,6 +441,38 @@
       "held_file": "pdfs:piech-2015-deep-knowledge-tracing.pdf",
       "quote": "The formulation of the original model assumed that once a skill is learned it is never forgotten.",
       "page": "p.2 (Piech et al. 2015, §2.1 Bayesian Knowledge Tracing)"
+    },
+    {
+      "id": "mh-chembed-1",
+      "location": "§3 domain embedders",
+      "claim_text": "ChEmbed reports a similar result for chemistry (MRR@10 from 0.781 for the best general embedder to 0.882)",
+      "held_file": "pdfs:chembed-2025.pdf",
+      "quote": "Evaluated on our newly introduced ChemRxiv Retrieval benchmark, ChEmbed outperforms state-of-the-art general embedding models, raising MRR@10 from 0.781 to 0.882 (+10.1 pp). It also substantially outperforms domain-specific embedding models such as Chemical-BERT, improving MRR@10 from 0.096 to 0.882.",
+      "page": "PDF p.1 (Abstract); figures repeated in Table 4, PDF p.8 (no"
+    },
+    {
+      "id": "mh-melt-1",
+      "location": "§3 adjacent options",
+      "claim_text": "materials-science models (MatSciBERT, MatBERT, MELT)",
+      "held_file": "pdfs:melt-2024.pdf",
+      "quote": "MELT: Materials-aware Continued Pre-training for Language Model Adaptation to Materials Science",
+      "page": "PDF p.1 (title and abstract). Preprint (arXiv:2410.15126), n"
+    },
+    {
+      "id": "mh-cprp-1",
+      "location": "refs",
+      "claim_text": "Concept Prerequisite Relation Prediction by Using Permutation-Equivariant Directed Graph Neural Networks (arXiv:2312.09802)",
+      "held_file": "pdfs:cprp-2023.pdf",
+      "quote": "Concept Prerequisite Relation Prediction by Using Permutation-Equivariant Directed Graph Neural Networks",
+      "page": "PDF p.1 (title and abstract); arXiv:2312.09802v2 [cs.LG] 21 "
+    },
+    {
+      "id": "mh-basile-1",
+      "location": "refs",
+      "claim_text": "We further reject the notion that we should remove annotation noise from datasets (Basile et al., 2021, p. 19)",
+      "held_file": "pdfs:basile-2021-disagreement.pdf",
+      "quote": "We further reject the notion that we should remove annotation noise from datasets.",
+      "page": "PDF p.5 = printed page 19 (Conclusion, §4). Full citation as"
     }
   ]
 }

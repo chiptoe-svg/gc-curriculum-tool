@@ -329,6 +329,18 @@
       "ref-kim-2025": {
         "file": "pdfs:kim-2025-correlated-errors.pdf",
         "note": "bundles Kim et al. 2025 + Kohli 2026; both held (Kohli at pdfs:kohli-2025-nine-judges.pdf)"
+      },
+      "ref-gupta-2022": {
+        "file": "pdfs:gupta-2022-matscibert.pdf",
+        "note": "also held: melt-2024.pdf, chembed-2025.pdf"
+      },
+      "ref-domain-adaptation-2023": {
+        "file": "pdfs:adapter-sentence-embedding-2023.pdf",
+        "note": "also held: contrastive-small-lm-2024.pdf"
+      },
+      "ref-plank-2022": {
+        "file": "pdfs:plank-2022-human-label-variation.pdf",
+        "note": "also held: aroyo-welty-2015-truth-is-a-lie.pdf, basile-2021-disagreement.pdf"
       }
     },
     "problem-solving-deep-dive.html": {}
