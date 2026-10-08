@@ -114,8 +114,9 @@ describe('AccessPanel', () => {
 
     const composeLink = screen.getByRole('link', { name: /compose email/i }) as HTMLAnchorElement;
     const bodyParam = new URLSearchParams(new URL(composeLink.href).search).get('body') ?? '';
-    expect(bodyParam).toContain('for GC 3730, GC 1010, GC 9999, GC 4900OR.');
-    expect(bodyParam).toContain('Your courses:\n- GC 3730: Account Management\n- GC 1010: Intro to GC\n- GC 9999\n- GC 4900OR: Special Topics: Outreach and Recruitment\n');
+    expect(bodyParam).toContain('for GC 3730, GC 1010, GC 9999, GC 4900.');
+    expect(bodyParam).toContain('Your courses:\n- GC 3730: Account Management\n- GC 1010: Intro to GC\n- GC 9999\n- GC 4900: Special Topics: Outreach and Recruitment\n');
+    expect(bodyParam).not.toContain('4900OR');
   });
 
   it('shows a CLI admin row read-only with a note, and disables Edit / Send a new link (Revoke stays enabled) — fix round 1, L1', async () => {

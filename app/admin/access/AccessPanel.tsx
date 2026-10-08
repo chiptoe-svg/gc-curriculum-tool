@@ -193,7 +193,11 @@ export function AccessPanel({ slug, courses }: { slug: string; courses: AccessCo
     const subject = 'Your access to the GC Curriculum Tool';
     const firstName = grant.label.trim().split(/\s+/)[0] || grant.label;
     const allCourses = grant.scope.includes('*');
-    const courseList = allCourses ? 'all courses' : grant.scope.join(', ');
+    // Section letters after the number (GC 4900or, GC 4990pc) are internal
+    // only; emails show the plain number and let the title carry the
+    // distinction (owner, 2026-10-08).
+    const display = (code: string) => code.trim().replace(/^([A-Za-z]+\s*\d{4})[A-Za-z]+$/, '$1');
+    const courseList = allCourses ? 'all courses' : grant.scope.map(display).join(', ');
     // One line per course with its title, so the invitee sees exactly which
     // classes the link opens (owner request, 2026-10-08).
     // Codes differ in case/spacing between grant scopes and the course list
@@ -202,7 +206,7 @@ export function AccessPanel({ slug, courses }: { slug: string; courses: AccessCo
     const titleOf = (code: string) => courses.find((c) => norm(c.code) === norm(code))?.title;
     const courseLines = allCourses
       ? ['- All courses in the tool']
-      : grant.scope.map((code) => { const t = titleOf(code); return t ? `- ${code}: ${t}` : `- ${code}`; });
+      : grant.scope.map((code) => { const t = titleOf(code); return t ? `- ${display(code)}: ${t}` : `- ${display(code)}`; });
     const howto = `${typeof window !== 'undefined' ? window.location.origin : ''}/curriculum/howto`;
     const body = [
       `Hi ${firstName},`,
