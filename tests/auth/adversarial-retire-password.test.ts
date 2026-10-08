@@ -187,8 +187,9 @@ describe('DEPARTMENT_LOGIN parsing', () => {
     expect(departmentLoginEnabled('on')).toBe(true);
     expect(departmentLoginEnabled(undefined)).toBe(true);
   });
-  it('DOCUMENTS should-fix: near-miss spellings of "off" leave the shared password ENABLED (only a log warning)', () => {
-    for (const v of ['OFF', 'Off', ' off', 'off ', 'off\n', '"off"', 'false', '0', 'no', 'disabled']) expect(departmentLoginEnabled(v), JSON.stringify(v)).toBe(true);
+  it('near-miss spellings of "off" also turn the shared password off (should-fix applied)', () => {
+    for (const v of ['OFF', 'Off', ' off', 'off ', 'off\n', '"off"', 'false', '0', 'no', 'disabled']) expect(departmentLoginEnabled(v), JSON.stringify(v)).toBe(false);
+    for (const v of [undefined, '', 'on', 'ON', ' on ', 'yes', 'offf']) expect(departmentLoginEnabled(v), JSON.stringify(v)).toBe(true);
   });
 });
 

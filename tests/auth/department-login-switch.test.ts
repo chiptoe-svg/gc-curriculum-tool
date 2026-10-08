@@ -35,8 +35,8 @@ describe('departmentLoginEnabled', () => {
   });
   it('any other value stays enabled and logs a warning (once)', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    expect(departmentLoginEnabled('OFF')).toBe(true);
-    expect(departmentLoginEnabled('false')).toBe(true);
+    expect(departmentLoginEnabled('offf')).toBe(true);
+    expect(departmentLoginEnabled('maybe')).toBe(true);
     expect(warn).toHaveBeenCalledTimes(1);
   });
   it('on / unset never warn', () => {
@@ -117,7 +117,7 @@ describe('middleware wiring', () => {
   });
   it('a junk DEPARTMENT_LOGIN value keeps today’s behavior', async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
-    vi.stubEnv('DEPARTMENT_LOGIN', 'disabled');
+    vi.stubEnv('DEPARTMENT_LOGIN', 'maybe');
     expect((await middleware(reqFor('/capture/GC%201040', { authorization: basic(FACULTY) }))).status).toBe(200);
   });
 });
