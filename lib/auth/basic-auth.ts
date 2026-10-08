@@ -11,10 +11,12 @@
  * deployment-planning phase — see
  * docs/superpowers/plans/2026-05-25-phase2-hybrid-deploy.md.
  *
- * The Vercel deploy leaves FACULTY_BASIC_AUTH unset → these helpers
- * are no-ops there (the middleware skips the gate entirely). Public
- * preview / partner routes are excluded by `requiresBasicAuth`
- * regardless of env var, since they have their own auth model.
+ * Since 2026-09-30 the gate is grant-based (lib/auth/gate.ts) and fails
+ * closed: with FACULTY_BASIC_AUTH unset, Basic is simply never a
+ * credential. DEPARTMENT_LOGIN=off retires it everywhere (spec
+ * 2026-10-08). Public preview / partner routes are excluded by
+ * `requiresBasicAuth` regardless of env var, since they have their own
+ * auth model.
  */
 
 /** Paths whose prefixes are intentionally public or self-authenticating. */
@@ -73,6 +75,11 @@ export function requiresBasicAuth(pathname: string): boolean {
 }
 
 /**
+ * DO NOT use this to authorize a route: it ignores DEPARTMENT_LOGIN and the
+ * caller's capabilities, and the old "skip when the env var is unset"
+ * pattern around it failed open. Routes use lib/auth/route-auth.ts instead
+ * (spec 2026-10-08 §4). Kept only for its unit tests.
+ *
  * Returns true if the request carries an `Authorization: Basic <b64>`
  * header that decodes to exactly the expected `user:password` string.
  *

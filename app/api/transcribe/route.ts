@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { isValidSlug } from '@/lib/slug';
-import { authorizedForBasicAuth } from '@/lib/auth/basic-auth';
-import { hasCaptureGrantCookie } from '@/lib/sandbox/access';
+import { getRequestGrant } from '@/lib/auth/viewer';
+import { unauthorized } from '@/lib/auth/route-auth';
 import { transcribeAudio, isSupportedAudioMime, estimateWhisperCostCents } from '@/lib/ai/transcribe';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
@@ -16,9 +16,10 @@ const MAX_AUDIO_BYTES = 5 * 1024 * 1024;
 // Body: multipart/form-data with field `audio` (the recording blob).
 // Returns: { text: string }
 //
-// Reached only from faculty pages over the Tailscale Funnel HTTPS origin.
-// Auth model: Basic Auth (middleware) is the gate; per-IP rate limit +
-// daily cost cap remain as backstops. The earlier voice-session token +
+// Reached only from faculty pages over the campus HTTPS origin.
+// Auth model: the request's grant (personal-link cookie, or the department
+// Basic credential while DEPARTMENT_LOGIN is on) must carry the capture
+// capability; per-IP rate limit + daily cost cap remain as backstops. The earlier voice-session token +
 // origin-pinning layer was needed when this route had to bypass Basic
 // Auth for cross-origin iframe access — no longer the architecture.
 export async function POST(req: Request): Promise<Response> {
@@ -38,23 +39,15 @@ export async function POST(req: Request): Promise<Response> {
 }
 
 async function handleTranscribe(req: Request): Promise<Response> {
-  // Basic Auth enforced HERE because this route is excluded from the
+  // Sign-in enforced HERE because this route is excluded from the
   // middleware matcher (see middleware.ts — the Node-middleware body
-  // buffering broke multipart uploads). Same gate, same env var, same
-  // no-op-when-unset semantics as the middleware.
-  // Also accepts a scoped access link's session cookie with the capture
-  // capability (owner, 2026-10-07): link holders could not use Voice before.
-  const expectedAuth = process.env.FACULTY_BASIC_AUTH;
-  if (
-    expectedAuth
-    && !authorizedForBasicAuth(req.headers.get('authorization'), expectedAuth)
-    && !(await hasCaptureGrantCookie(req))
-  ) {
-    return new NextResponse('Authentication required', {
-      status: 401,
-      headers: { 'WWW-Authenticate': 'Basic realm="GC Curriculum Tool"' },
-    });
-  }
+  // buffering broke multipart uploads). Not tied to one course, so the rule
+  // is the one Voice has had since 2026-10-07: a grant with the capture
+  // capability on any course (the department login qualifies while
+  // DEPARTMENT_LOGIN is on; the create-only role never does). Fails closed —
+  // no grant → 401, whatever env is set (spec 2026-10-08 §4).
+  const grant = await getRequestGrant(req.headers);
+  if (!grant || !grant.can.includes('capture')) return unauthorized();
 
   const url = new URL(req.url);
   const slug = url.searchParams.get('slug') ?? '';

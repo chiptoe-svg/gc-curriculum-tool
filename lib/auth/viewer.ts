@@ -35,6 +35,7 @@
  * sidesteps that entirely and matches the existing gate() test style).
  */
 import { resolveRole } from '@/lib/auth/basic-auth';
+import { authEnv } from '@/lib/auth/auth-env';
 import type { Grant } from '@/lib/auth/authorize';
 import {
   SESSION_COOKIE,
@@ -88,6 +89,41 @@ function sessionCookieValue(cookieHeader: string | null): string | undefined {
 }
 
 /**
+ * The grant a request carries, resolved exactly as gate() resolves it: a live
+ * `gc_session` cookie wins; `Authorization: Basic` (the shared department
+ * credential) is consulted only when there is no live cookie AND
+ * DEPARTMENT_LOGIN is on. With DEPARTMENT_LOGIN=off a built-in cookie is dead
+ * and Basic is ignored (spec 2026-10-08). null on no credential or ANY
+ * failure — never throws, never a default grant. Used by the routes that sit
+ * outside the middleware matcher (or that need the caller's capabilities) so
+ * they authorize with the same grant + authorize() rules as the gate and
+ * fail closed when no credential env is set.
+ */
+export async function getRequestGrant(
+  headersLike: { get(name: string): string | null },
+  deps: ViewerAccessDeps = defaultDeps,
+): Promise<Grant | null> {
+  try {
+    const env = authEnv();
+    const raw = sessionCookieValue(headersLike.get('cookie'));
+    const cookieGrant = raw
+      ? await deps.grantFromSessionCookie(raw, { findGrantById: deps.findGrantById, env })
+      : null;
+
+    let basicGrant: Grant | null = null;
+    if (env.departmentLogin) {
+      const role = resolveRole(headersLike.get('authorization'), { faculty: env.faculty, creator: env.creator });
+      const credential = role === 'faculty' ? env.faculty : role === 'creator' ? env.creator : undefined;
+      if (role && credential) basicGrant = deps.builtinGrant(role, credential, env.sessionSecret);
+    }
+
+    return pickActiveGrant(cookieGrant, basicGrant).grant;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * `headersLike` is anything with a `.get(name)` — pass the result of
  * Next's `headers()` directly from a server component or route handler.
  */
@@ -95,35 +131,6 @@ export async function getViewerAccess(
   headersLike: { get(name: string): string | null },
   deps: ViewerAccessDeps = defaultDeps,
 ): Promise<ViewerAccess> {
-  try {
-    const raw = sessionCookieValue(headersLike.get('cookie'));
-    const cookieGrant = raw
-      ? await deps.grantFromSessionCookie(raw, {
-          findGrantById: deps.findGrantById,
-          env: {
-            sessionSecret: process.env.SESSION_SECRET?.trim() || undefined,
-            faculty: process.env.FACULTY_BASIC_AUTH,
-            creator: process.env.CREATE_ONLY_AUTH,
-          },
-        })
-      : null;
-
-    const role = resolveRole(headersLike.get('authorization'), {
-      faculty: process.env.FACULTY_BASIC_AUTH,
-      creator: process.env.CREATE_ONLY_AUTH,
-    });
-    let basicGrant: Grant | null = null;
-    if (role) {
-      const credential = role === 'faculty' ? process.env.FACULTY_BASIC_AUTH : process.env.CREATE_ONLY_AUTH;
-      if (credential) {
-        basicGrant = deps.builtinGrant(role, credential, process.env.SESSION_SECRET?.trim() || undefined);
-      }
-    }
-
-    const picked = pickActiveGrant(cookieGrant, basicGrant);
-    if (!picked.grant) return DENIED;
-    return toAccess(picked.grant);
-  } catch {
-    return DENIED;
-  }
+  const grant = await getRequestGrant(headersLike, deps);
+  return grant ? toAccess(grant) : DENIED;
 }

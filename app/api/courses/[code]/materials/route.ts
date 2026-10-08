@@ -1,6 +1,6 @@
 import { NextResponse, after } from 'next/server';
 import { authorizeCourseWrite, resolveScopedSession } from '@/lib/sandbox/access';
-import { authorizedForBasicAuth } from '@/lib/auth/basic-auth';
+import { authorizeRequest } from '@/lib/auth/route-auth';
 import { putLocal, courseSlug, safeFilename, keyFromLocalUrl, deleteLocal } from '@/lib/storage/local-storage';
 import { getCourseByCode, clearCourseCanvasImport } from '@/lib/db/courses-queries';
 import { hashIp } from '@/lib/ip-hash';
@@ -37,28 +37,23 @@ interface RouteContext {
 }
 
 /**
- * Basic-Auth gate, enforced HERE because the bare /materials path is EXCLUDED
+ * Sign-in gate, enforced HERE because the bare /materials path is EXCLUDED
  * from the middleware matcher (see middleware.ts): Node-runtime middleware
  * buffers/replays the request body, and on real-size multipart PDF uploads
  * that replay throws "Response body object should not be disturbed or locked"
  * before the route runs (intermittent, worsens under concurrent load — the
- * GC 2400 500s). Same gate + FACULTY_BASIC_AUTH env var + no-op-when-unset
- * semantics as the middleware. A scoped external-tester session bound to THIS
- * course authorizes in place of faculty Basic Auth (this route is on the
- * sandbox allowlist). The slug second factor is still checked separately by
- * authorizeCourseWrite. Mirrors imscc-import + transcribe.
+ * GC 2400 500s). A scoped external-tester session bound to THIS course
+ * authorizes (this route is on the sandbox allowlist); otherwise the
+ * request's grant must pass the same authorize() course-write rule the gate
+ * applies (spec 2026-10-08 §4). Fails closed: no grant → 401, whatever env is
+ * set. The slug second factor is still checked separately by
+ * authorizeCourseWrite. Mirrors imscc-import.
  */
-async function gateBasicAuth(req: Request, code: string): Promise<Response | null> {
+async function gateGrant(req: Request, code: string): Promise<Response | null> {
   const scoped = await resolveScopedSession(req);
   if (scoped?.courseCode === code) return null;
-  const expectedAuth = process.env.FACULTY_BASIC_AUTH;
-  if (expectedAuth && !authorizedForBasicAuth(req.headers.get('authorization'), expectedAuth)) {
-    return new NextResponse('Authentication required', {
-      status: 401,
-      headers: { 'WWW-Authenticate': 'Basic realm="GC Curriculum Tool - Faculty"' },
-    });
-  }
-  return null;
+  const auth = await authorizeRequest(req);
+  return auth.response ?? null;
 }
 
 // DELETE /api/courses/[code]/materials?slug=...
@@ -71,7 +66,7 @@ async function gateBasicAuth(req: Request, code: string): Promise<Response | nul
 // manager, behind a typed confirmation.
 export async function DELETE(req: Request, { params }: RouteContext): Promise<Response> {
   const { code } = await params;
-  const authFail = await gateBasicAuth(req, code);
+  const authFail = await gateGrant(req, code);
   if (authFail) return authFail;
   const url = new URL(req.url);
   const slug = url.searchParams.get('slug') ?? '';
@@ -110,7 +105,7 @@ export async function DELETE(req: Request, { params }: RouteContext): Promise<Re
 
 export async function POST(req: Request, { params }: RouteContext): Promise<Response> {
   const { code } = await params;
-  const authFail = await gateBasicAuth(req, code);
+  const authFail = await gateGrant(req, code);
   if (authFail) return authFail;
 
   // Parse multipart form data.

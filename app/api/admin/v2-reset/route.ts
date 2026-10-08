@@ -20,7 +20,7 @@ import { runCourseReset, type ResetScope } from '@/lib/capture/run-course-reset'
  * differently than this one does; both call the same function with the
  * same semantics.
  *
- * Gated by /api/admin/* middleware (FACULTY_BASIC_AUTH) + checkAdminAuth —
+ * Gated by the middleware grant gate (lib/auth/gate.ts — admin grant) + checkAdminAuth —
  * this is a one-request, irrecoverable data-loss endpoint (scope='everything'
  * or includeSnapshots=true can delete the system of record), so the slug
  * second factor matters.

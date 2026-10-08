@@ -36,6 +36,12 @@ vi.mock('@/lib/courses/extract-text', async (importOriginal) => {
     extractText: vi.fn().mockResolvedValue({ status: 'ok', text: 'Extracted PDF text content.' }),
   };
 });
+// The route authorizes with the request's grant (spec 2026-10-08 §4, fails
+// closed). This suite tests the route's own logic, not sign-in, so the
+// request carries an all-courses capture grant.
+vi.mock('@/lib/auth/viewer', () => ({
+  getRequestGrant: async () => ({ id: 'test-grant', label: 'Test', scope: ['*'], can: ['capture', 'create'] }),
+}));
 const mockResolveScoped = vi.fn();
 vi.mock('@/lib/sandbox/access', () => ({ resolveScopedSession: (...a: unknown[]) => mockResolveScoped(...a) }));
 
@@ -104,10 +110,6 @@ function makeSampleFile() {
 
 beforeEach(() => {
   vi.resetAllMocks();
-  // imscc-import self-enforces Basic Auth (matcher-excluded). This suite tests
-  // import/queue logic, not the gate; .env.local sets FACULTY_BASIC_AUTH, so
-  // neutralize it to keep the gate a no-op here.
-  delete process.env.FACULTY_BASIC_AUTH;
   mockParseImscc.mockResolvedValue(SAMPLE_PARSE_RESULT);
   mockInsert.mockResolvedValue({ id: 'mat-1' });
   mockEnqueue.mockResolvedValue(undefined);

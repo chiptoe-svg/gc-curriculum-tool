@@ -78,7 +78,8 @@ export function cookieMaxAge(g: { expiresAt: Date | null }, now = new Date()): n
 /**
  * Resolve a raw `gc_session` cookie value to its grant. null = no cookie;
  * 'dead' = present but unusable (bad MAC, unknown/revoked/expired grant, or a
- * built-in cookie whose credential has since rotated or been unset — I1).
+ * built-in cookie whose credential has since rotated or been unset — I1 — or
+ * any built-in cookie while DEPARTMENT_LOGIN=off).
  * DB errors propagate. Shared by gate() and the upload routes that sit
  * outside the middleware matcher (lib/sandbox/access.ts). `findGrantById` is
  * injected so callers (and tests) control the lookup.
@@ -87,14 +88,20 @@ export async function grantFromSessionCookie(
   raw: string | undefined,
   deps: {
     findGrantById(id: string): Promise<StoredGrant | null>;
-    env: { sessionSecret?: string; faculty?: string; creator?: string };
+    env: { sessionSecret?: string; faculty?: string; creator?: string; departmentLogin?: boolean };
     now?: () => Date;
   },
 ): Promise<Grant | null | 'dead'> {
   if (!raw) return null;
   const id = deps.env.sessionSecret ? verifySession(raw, deps.env.sessionSecret) : null;
   if (!id) return 'dead';
-  if (id.startsWith('builtin:')) return builtinFromId(id, deps.env) ?? 'dead';
+  if (id.startsWith('builtin:')) {
+    // DEPARTMENT_LOGIN=off (spec 2026-10-08): every built-in session is dead,
+    // so those browsers fall through to sign-in. Only an explicit `false`
+    // disables it; an absent flag keeps today's behavior.
+    if (deps.env.departmentLogin === false) return 'dead';
+    return builtinFromId(id, deps.env) ?? 'dead';
+  }
   const stored = await deps.findGrantById(id);
   if (!stored || !isLive(stored, deps.now?.())) return 'dead';
   return stored;

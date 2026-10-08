@@ -50,9 +50,14 @@ describe('roster bulk gating by role', () => {
 });
 
 describe('roster one-add with paired course', () => {
+  // The route fails closed with no grant (spec 2026-10-08 §4): send the
+  // department Basic credential, as the faculty form's browser does.
+  beforeEach(() => vi.stubEnv('FACULTY_BASIC_AUTH', 'gcfaculty:godfrey'));
+  afterEach(() => vi.unstubAllEnvs());
   it('passes pairedCode/pairedRole through to createCourse', async () => {
     const res = await POST(new Request('http://x/api/admin/courses/roster?slug=good', {
       method: 'POST',
+      headers: { authorization: FACULTY_AUTH },
       body: JSON.stringify({ mode: 'one', code: 'GC 3460', title: 'Lecture', pairedCode: 'GC 3461', pairedRole: 'lab' }),
     }));
     expect(res.status).toBe(200);
@@ -61,6 +66,7 @@ describe('roster one-add with paired course', () => {
   it('rejects an invalid pairedRole when a pairedCode is given', async () => {
     const res = await POST(new Request('http://x/api/admin/courses/roster?slug=good', {
       method: 'POST',
+      headers: { authorization: FACULTY_AUTH },
       body: JSON.stringify({ mode: 'one', code: 'GC 3460', title: 'L', pairedCode: 'GC 3461', pairedRole: 'bogus' }),
     }));
     expect(res.status).toBe(400);
@@ -68,6 +74,7 @@ describe('roster one-add with paired course', () => {
   it('still works for a plain course with no paired code', async () => {
     const res = await POST(new Request('http://x/api/admin/courses/roster?slug=good', {
       method: 'POST',
+      headers: { authorization: FACULTY_AUTH },
       body: JSON.stringify({ mode: 'one', code: 'GC 1010', title: 'Intro' }),
     }));
     expect(res.status).toBe(200);

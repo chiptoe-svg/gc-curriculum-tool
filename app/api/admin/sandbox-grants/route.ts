@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server';
 import { createGrant, listGrants, revokeGrant } from '@/lib/sandbox/grants';
 import { checkAdminAuth } from '@/lib/auth/admin-auth';
 
-// Auth: two factors, like every /api/admin/* route. (1) middleware HTTP Basic
-// Auth (FACULTY_BASIC_AUTH) is the primary gate; (2) checkAdminAuth is the
+// Auth: two factors, like every /api/admin/* route. (1) the middleware grant
+// gate (lib/auth/gate.ts: the request's grant must pass authorize(), i.e. an
+// admin-capable personal link) is the primary gate; (2) checkAdminAuth is the
 // in-route second factor that tests/api/admin-routes-gated.test.ts asserts every
 // admin route enforces. The slug is passed in the BODY (POST) / query (GET,
 // DELETE) — NOT an Authorization: Bearer header, which would override the

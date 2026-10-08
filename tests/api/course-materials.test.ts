@@ -62,6 +62,9 @@ const {
   afterCallbacks: [] as Array<() => unknown>,
 }));
 
+const requestGrant = vi.hoisted(() => ({ current: null as null | { id: string; label: string; scope: string[]; can: ('capture' | 'create' | 'admin')[] } }));
+const ALL_COURSES_GRANT = { id: 'test-grant', label: 'Test', scope: ['*'], can: ['capture' as const, 'create' as const] };
+vi.mock('@/lib/auth/viewer', () => ({ getRequestGrant: async () => requestGrant.current }));
 vi.mock('@/lib/slug', () => ({ isValidSlug }));
 vi.mock('@/lib/db/courses-queries', () => ({ getCourseByCode }));
 vi.mock('@/lib/storage/local-storage', () => ({
@@ -152,12 +155,12 @@ function makeDeleteReq(slug: string, materialId: string): [Request, { params: Pr
 
 beforeEach(() => {
   vi.clearAllMocks();
-  // The materials route self-enforces Basic Auth (the bare /materials path is
-  // excluded from the middleware matcher). These tests exercise slug / course /
-  // rate-limit logic, not the Basic-Auth gate, so neutralize the ambient env
-  // var (.env.local sets FACULTY_BASIC_AUTH) to keep the gate a no-op here. The
-  // two dedicated gate tests set + restore it themselves.
-  delete process.env.FACULTY_BASIC_AUTH;
+  // The materials route self-enforces sign-in (the bare /materials path is
+  // excluded from the middleware matcher) and fails closed with no grant
+  // (spec 2026-10-08 §4). These tests exercise slug / course / rate-limit
+  // logic, so the request carries an all-courses capture grant by default;
+  // the dedicated gate tests below swap it out.
+  requestGrant.current = ALL_COURSES_GRANT;
   // Likewise neutralize v2 ingestion: with it on, the route's (current,
   // pre-Phase-A) synchronous finalizeExtraction runs the real v2 pipeline and
   // reaches DB helpers this test only partially mocks. This test covers the
@@ -380,37 +383,23 @@ describe('POST /api/courses/[code]/materials', () => {
 
   // The bare /materials path is excluded from the middleware matcher (the
   // Node-runtime body-replay 500), so the route MUST self-enforce Basic Auth.
-  it('returns 401 when FACULTY_BASIC_AUTH is set and no Authorization header (route self-enforces)', async () => {
-    const prev = process.env.FACULTY_BASIC_AUTH;
-    process.env.FACULTY_BASIC_AUTH = 'faculty:secret';
-    try {
-      const [req, ctx] = makeUploadReq();
-      const res = await POST(req, ctx);
-      expect(res.status).toBe(401);
-      expect(res.headers.get('www-authenticate')).toMatch(/Basic/i);
-    } finally {
-      if (prev === undefined) delete process.env.FACULTY_BASIC_AUTH;
-      else process.env.FACULTY_BASIC_AUTH = prev;
-    }
+  it('returns 401 when the request carries no grant (route self-enforces, fails closed)', async () => {
+    requestGrant.current = null;
+    const [req, ctx] = makeUploadReq();
+    const res = await POST(req, ctx);
+    expect(res.status).toBe(401);
   });
 
-  it('passes the Basic-Auth gate with a correct Authorization header', async () => {
-    const prev = process.env.FACULTY_BASIC_AUTH;
-    process.env.FACULTY_BASIC_AUTH = 'faculty:secret';
-    try {
-      const [base] = makeUploadReq();
-      const form = await base.formData();
-      const req = new Request('http://test/api/courses/GC%203460/materials', {
-        method: 'POST',
-        body: form,
-        headers: { authorization: `Basic ${Buffer.from('faculty:secret').toString('base64')}` },
-      });
-      const res = await POST(req, { params: Promise.resolve({ code: CODE }) });
-      expect(res.status).toBe(200);
-    } finally {
-      if (prev === undefined) delete process.env.FACULTY_BASIC_AUTH;
-      else process.env.FACULTY_BASIC_AUTH = prev;
-    }
+  it('returns 403 for a grant on another course', async () => {
+    requestGrant.current = { id: 'g', label: 'Other', scope: ['GC 1010'], can: ['capture'] };
+    const [req, ctx] = makeUploadReq();
+    expect((await POST(req, ctx)).status).toBe(403);
+  });
+
+  it('passes the gate with a capture grant for this course', async () => {
+    requestGrant.current = { id: 'g', label: 'This course', scope: [CODE], can: ['capture'] };
+    const [req, ctx] = makeUploadReq();
+    expect((await POST(req, ctx)).status).toBe(200);
   });
 });
 

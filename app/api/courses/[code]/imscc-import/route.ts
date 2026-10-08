@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { writeFile, unlink } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { isValidSlug } from '@/lib/slug';
-import { authorizedForBasicAuth } from '@/lib/auth/basic-auth';
+import { authorizeRequest } from '@/lib/auth/route-auth';
 import { hashIp } from '@/lib/ip-hash';
 import { getCourseByCode, updateCourseCanvasImport } from '@/lib/db/courses-queries';
 import { insertMaterial, findMaterialByFileName, updateMaterialMetadata, updateExtractionResult } from '@/lib/db/course-materials-queries';
@@ -37,21 +37,19 @@ async function runImport(req: Request, params: Ctx['params']): Promise<Response>
   const { code } = await params;
 
   // A scoped external-tester session bound to THIS course authorizes the
-  // import in place of faculty Basic-Auth + slug (this route is excluded
+  // import in place of a faculty grant + slug (this route is excluded
   // from the middleware matcher, so middleware injection can't reach it).
   const scoped = await resolveScopedSession(req);
   const scopedOk = scoped?.courseCode === code;
 
-  // Basic Auth enforced HERE because this route is excluded from the
+  // Sign-in enforced HERE because this route is excluded from the
   // middleware matcher (see middleware.ts — Node-middleware body buffering
-  // broke real-size multipart .imscc uploads). Same gate, same env var,
-  // same no-op-when-unset semantics as the middleware.
-  const expectedAuth = process.env.FACULTY_BASIC_AUTH;
-  if (!scopedOk && expectedAuth && !authorizedForBasicAuth(req.headers.get('authorization'), expectedAuth)) {
-    return new NextResponse('Authentication required', {
-      status: 401,
-      headers: { 'WWW-Authenticate': 'Basic realm="GC Curriculum Tool"' },
-    });
+  // broke real-size multipart .imscc uploads). The request's grant must pass
+  // the same authorize() course-write rule as the gate (spec 2026-10-08 §4);
+  // fails closed — no grant → 401, whatever env is set.
+  if (!scopedOk) {
+    const auth = await authorizeRequest(req);
+    if (auth.response) return auth.response;
   }
 
   const form = await req.formData();

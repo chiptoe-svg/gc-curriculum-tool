@@ -32,6 +32,13 @@ vi.mock('@/lib/capture/finalize-extraction', () => ({ finalizeExtraction: vi.fn(
 vi.mock('@/lib/courses/extract-text', () => ({ extractText: vi.fn() }));
 vi.mock('@/lib/courses/material-extractor', () => ({ SUPPORTED_MIME_TYPES: [], LEGACY_OFFICE_MIME_TYPES: [] }));
 
+// The route authorizes with the request's grant (spec 2026-10-08 §4, fails
+// closed). This suite tests the route's own logic, not sign-in, so the
+// request carries an all-courses capture grant.
+vi.mock('@/lib/auth/viewer', () => ({
+  getRequestGrant: async () => ({ id: 'test-grant', label: 'Test', scope: ['*'], can: ['capture', 'create'] }),
+}));
+
 import { DELETE } from '../route';
 
 function req(slug = 'valid-slug') {
@@ -43,11 +50,6 @@ function req(slug = 'valid-slug') {
 
 beforeEach(() => {
   vi.resetAllMocks();
-  // The bulk-wipe DELETE self-enforces Basic Auth (bare /materials path is
-  // excluded from the middleware matcher). This suite tests wipe logic, not the
-  // gate; .env.local sets FACULTY_BASIC_AUTH, so neutralize it to keep the gate
-  // a no-op here.
-  delete process.env.FACULTY_BASIC_AUTH;
   mockGetCourse.mockResolvedValue({ code: 'GC 1010' });
   mockList.mockResolvedValue([
     { id: 'm1', blobUrl: 'local:key1' },

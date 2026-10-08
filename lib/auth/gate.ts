@@ -1,7 +1,8 @@
 import type { NextRequest } from 'next/server';
 import { authorize, type Grant } from '@/lib/auth/authorize';
 import { SESSION_COOKIE, builtinGrant, cookieMaxAge, grantFromSessionCookie, isLive, pickActiveGrant, signSession, type StoredGrant } from '@/lib/auth/grants';
-import { forbiddenPage, unauthorizedPage } from '@/lib/auth/pages';
+import { forbiddenPage, signinPage, unauthorizedPage } from '@/lib/auth/pages';
+import { DEFAULT_SIGNIN_CONTACT } from '@/lib/auth/auth-env';
 import { requiresBasicAuth, resolveRole } from '@/lib/auth/basic-auth';
 
 export interface CookieSpec { name: string; value: string; maxAge: number }
@@ -9,7 +10,10 @@ export interface GateDeps {
   findGrantByToken(token: string): Promise<StoredGrant | null>;
   findGrantById(id: string): Promise<StoredGrant | null>;
   touch(id: string): Promise<void>;
-  env: { sessionSecret?: string; faculty?: string; creator?: string; slug?: string; publicOrigin?: string };
+  /** `departmentLogin`: the DEPARTMENT_LOGIN switch (spec 2026-10-08).
+   * Absent = on (today's behavior); only an explicit `false` retires the
+   * shared password. `signinContact`: SIGNIN_CONTACT for the sign-in page. */
+  env: { sessionSecret?: string; faculty?: string; creator?: string; slug?: string; publicOrigin?: string; departmentLogin?: boolean; signinContact?: string };
   now?: () => Date;
 }
 export type GateResult =
@@ -20,6 +24,9 @@ export type GateResult =
 
 const CHALLENGE = { 'WWW-Authenticate': 'Basic realm="GC Curriculum Tool - Faculty"', 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' };
 const HTML = { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' };
+const JSON_HEADERS = { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' };
+
+const departmentOn = (deps: GateDeps) => deps.env.departmentLogin !== false;
 
 type Resolved = { grant: Grant; setCookie?: CookieSpec };
 
@@ -34,7 +41,7 @@ function cookieFor(grant: Grant, live: { expiresAt: Date | null }, deps: GateDep
  * ?key= → grant, or null. `?slug=` is NEVER a credential (2026-09-30 spec
  * amendment) — PROTOTYPE_SLUG grants nothing by itself.
  * Caller (`gate`) has already confirmed eligibility (GET/HEAD, non-/api/,
- * no live session cookie already present) before calling this.
+ * no live personal session cookie already present) before calling this.
  * On a public path a DB failure during the lookup is swallowed (key
  * treated as absent, `next`); on a gated path it propagates so the
  * request fails closed (503).
@@ -64,6 +71,7 @@ async function fromCookie(req: NextRequest, deps: GateDeps): Promise<Resolved | 
 }
 
 function fromBasic(req: NextRequest, deps: GateDeps): Resolved | null {
+  if (!departmentOn(deps)) return null; // DEPARTMENT_LOGIN=off: Basic is never a credential
   const role = resolveRole(req.headers.get('authorization'), { faculty: deps.env.faculty, creator: deps.env.creator });
   if (!role) return null;
   const credential = role === 'faculty' ? deps.env.faculty : deps.env.creator;
@@ -107,13 +115,17 @@ export async function gate(req: NextRequest, deps: GateDeps): Promise<GateResult
     } else if (keyEligible) {
       try { c = await fromCookie(req, deps); } catch { c = null; }
     }
-    const liveCookie = !!c && c !== 'dead';
+    // A live PERSONAL session — the only kind a stray ?key= must never swap.
+    // A built-in ("Department login") session is not one: a personal link
+    // replaces it (spec 2026-10-08 §1 — the owner's fresh admin link was
+    // ignored in a browser holding a department cookie).
+    const livePersonal = !!c && c !== 'dead' && !c.grant.id.startsWith('builtin:');
 
     // 1. Magic-link exchange — GET/HEAD, non-/api/ only, and only when no
-    // live session cookie is already present (a stray ?key= must never
-    // swap an established session). Runs on public paths too (the link
-    // lands on the public /).
-    if (keyEligible && !liveCookie) {
+    // live personal session cookie is already present. Runs on public paths
+    // too (the link lands on the public /). A key that does not resolve
+    // leaves an existing built-in session in place.
+    if (keyEligible && !livePersonal) {
       const keyed = await fromKey(req, gated, deps);
       if (keyed) {
         if (keyed.setCookie) return { kind: 'redirect', url: redirectUrl(req, deps), setCookie: keyed.setCookie };
@@ -131,7 +143,14 @@ export async function gate(req: NextRequest, deps: GateDeps): Promise<GateResult
     const picked = pickActiveGrant(c === 'dead' ? 'dead' : (c ? c.grant : null), b ? b.grant : null);
     if (picked.source === 'cookie') return decide(req, picked.grant, undefined, deps, false);
     if (picked.source === 'basic') return decide(req, picked.grant, b!.setCookie, deps, c === 'dead');
-    return { kind: 'response', status: 401, body: unauthorizedPage(), headers: CHALLENGE, ...(c === 'dead' ? { clearCookie: true as const } : {}) };
+    const clear = c === 'dead' ? { clearCookie: true as const } : {};
+    if (departmentOn(deps)) return { kind: 'response', status: 401, body: unauthorizedPage(), headers: CHALLENGE, ...clear };
+    // DEPARTMENT_LOGIN=off: no WWW-Authenticate anywhere, so no browser
+    // password box. Pages get the sign-in page; APIs get JSON.
+    if (isApi) {
+      return { kind: 'response', status: 401, body: JSON.stringify({ error: 'unauthorized', message: 'Sign in with your personal link.' }), headers: JSON_HEADERS, ...clear };
+    }
+    return { kind: 'response', status: 401, body: signinPage(deps.env.signinContact || DEFAULT_SIGNIN_CONTACT), headers: HTML, ...clear };
   } catch {
     return { kind: 'response', status: 503, body: 'Sign-in is temporarily unavailable.', headers: HTML };
   }
