@@ -192,12 +192,22 @@ export function AccessPanel({ slug, courses }: { slug: string; courses: AccessCo
   function composeEmailHref(grant: AccessGrant, link: string): string {
     const subject = 'Your access to the GC Curriculum Tool';
     const firstName = grant.label.trim().split(/\s+/)[0] || grant.label;
-    const courseList = grant.scope.includes('*') ? 'all courses' : grant.scope.join(', ');
+    const allCourses = grant.scope.includes('*');
+    const courseList = allCourses ? 'all courses' : grant.scope.join(', ');
+    // One line per course with its title, so the invitee sees exactly which
+    // classes the link opens (owner request, 2026-10-08).
+    const titleOf = (code: string) => courses.find((c) => c.code === code)?.title;
+    const courseLines = allCourses
+      ? ['- All courses in the tool']
+      : grant.scope.map((code) => { const t = titleOf(code); return t ? `- ${code}: ${t}` : `- ${code}`; });
     const howto = `${typeof window !== 'undefined' ? window.location.origin : ''}/curriculum/howto`;
     const body = [
       `Hi ${firstName},`,
       '',
       `You now have access to the GC Curriculum Tool for ${courseList}.`,
+      '',
+      `Your courses:`,
+      ...courseLines,
       '',
       `Your personal link:`,
       link,

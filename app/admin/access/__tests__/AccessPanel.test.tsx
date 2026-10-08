@@ -86,7 +86,35 @@ describe('AccessPanel', () => {
     const bodyParam = params.get('body') ?? '';
     expect(bodyParam).toContain('Pat');
     expect(bodyParam).toContain('all courses');
+    expect(bodyParam).toContain('Your courses:\n- All courses in the tool');
     expect(bodyParam).toContain('https://gcworkflow.clemson.edu:8443/?key=tok123');
+  });
+
+  it('the Compose email lists each course with its title (code only when the title is unknown)', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ grants: [] }) })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          grant: grantRow({ id: 'new', label: 'Pat Faculty', email: 'pat@example.edu', scope: ['GC 3730', 'GC 1010', 'GC 9999'] }),
+          link: 'https://gcworkflow.clemson.edu:8443/?key=tok456',
+        }),
+      })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ grants: [] }) });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<AccessPanel slug="s" courses={courses} />);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+    fireEvent.change(screen.getByLabelText(/^name$/i), { target: { value: 'Pat Faculty' } });
+    fireEvent.change(screen.getByLabelText(/^email$/i), { target: { value: 'pat@example.edu' } });
+    fireEvent.click(screen.getByLabelText(/all courses/i));
+    fireEvent.click(screen.getByRole('button', { name: /add faculty/i }));
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(3));
+
+    const composeLink = screen.getByRole('link', { name: /compose email/i }) as HTMLAnchorElement;
+    const bodyParam = new URLSearchParams(new URL(composeLink.href).search).get('body') ?? '';
+    expect(bodyParam).toContain('for GC 3730, GC 1010, GC 9999.');
+    expect(bodyParam).toContain('Your courses:\n- GC 3730: Account Management\n- GC 1010: Intro to GC\n- GC 9999\n');
   });
 
   it('shows a CLI admin row read-only with a note, and disables Edit / Send a new link (Revoke stays enabled) — fix round 1, L1', async () => {
