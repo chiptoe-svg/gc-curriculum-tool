@@ -1,0 +1,446 @@
+{
+  "page": "measurement-hypotheses-deep-dive.html",
+  "generated": "2026-10-07",
+  "claims": [
+    {
+      "id": "mh-landis-1",
+      "location": "§4 oracle",
+      "claim_text": "while noting that \"these divisions are clearly arbitrary\"",
+      "held_file": "ai_career:future_of_gc/load_bearing/Landis_Koch_1977_Observer_Agreement_Categorical_Data.pdf",
+      "quote": "Although these divisions are clearly arbitrary, they do provide useful \"benchmarks\" for the discussion of the specific example in Table 1.",
+      "page": "PDF p. 8 (printed p. 165)"
+    },
+    {
+      "id": "mh-liu-1",
+      "location": "§5",
+      "claim_text": "Liu et al. (2024) measured on sixty-five million adverts",
+      "held_file": "pdfs:liu-2024-cooccurrent-skills.pdf",
+      "quote": "we construct a skills network based on their co-occurrence in a national level data set of 65 million job postings from the UK spanning 2016 to 2022.",
+      "page": "PDF p. 1 (Abstract); also p. 2: \"Our analysis is carried out on a curated and deduplicated data set containing 65 million job adverts posted in the UK collected weekly during 2016 ... 2018 ... 2020 ... and 2022.\""
+    },
+    {
+      "id": "mh-liu-2",
+      "location": "§5",
+      "claim_text": "Expert-authored groupings miss co-occurrence links",
+      "held_file": "pdfs:liu-2024-cooccurrent-skills.pdf",
+      "quote": "We also show that our data-driven clusters differ from expert-authored categorisations of skills, indicating that important relationships between skills are not captured by expert assessment alone.",
+      "page": "PDF p. 1 (Abstract)"
+    },
+    {
+      "id": "mh-hullermeier-1",
+      "location": "§4 residual",
+      "claim_text": "Aleatoric uncertainty described as \"the irreducible part of the uncertainty\" (p. 8), as opposed to epistemic uncertainty, which more data or knowledge could reduce",
+      "held_file": "ai_career:future_of_gc/load_bearing/Hullermeier_Waegeman_2021_Aleatoric_Epistemic_Uncertainty_ML.pdf",
+      "quote": "Aleatoric uncertainty refers to the irreducible part of the uncertainty, which is due to the non-deterministic nature of the sought input/output dependency, that is, to the stochastic dependency between instances x and outcomes y, as expressed by the conditional probability (6).",
+      "page": "PDF p. 8 (printed page number 8, §2.3 \"Reducible versus irreducible uncertainty\")"
+    },
+    {
+      "id": "mh-hullermeier-2",
+      "location": "§4 residual",
+      "claim_text": "The two \"should not be seen as absolute notions\" but are \"context-dependent\" (p. 9)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Hullermeier_Waegeman_2021_Aleatoric_Epistemic_Uncertainty_ML.pdf",
+      "quote": "What this example shows is that aleatoric and epistemic uncertainty should not be seen as absolute notions. Instead, they are context-dependent in the sense of depending on the setting (X , Y, H, P ).",
+      "page": "PDF p. 9 (printed page number 9, end of §2.3)"
+    },
+    {
+      "id": "mh-wang-1",
+      "location": "§4 machinery",
+      "claim_text": "Self-consistency: sample several outputs and use their agreement, which the authors call \"consistency,\" as the uncertainty estimate",
+      "held_file": "pdfs:wang-2022-self-consistency.pdf",
+      "quote": "Additionally, we found that the consistency (in terms of % of decodes agreeing with the final aggregated answer) is highly correlated with accuracy (Figure 5, over GSM8K). This suggests that one can use self-consistency to provide an uncertainty estimate of the model in its generated solutions. In other words, one can use low consistency as an indicator that the model has low confidence; i.e., self-consistency confers some ability for the model to \"know when it doesn't know\".",
+      "page": "PDF p. 8 (printed page 8, §3.5 Additional Studies, subsection \"Self-Consistency Improves Robustness to Imperfect Prompts\")"
+    },
+    {
+      "id": "mh-witherby-1",
+      "location": "§2 pull-up",
+      "claim_text": "with one exception (truthful football items in Experiment 1)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Witherby_Carpenter_2021_Rich-Get-Richer_Prior_Knowledge.pdf",
+      "quote": "The outcomes for the football domain were consistent across experiments, whereas the outcomes for the cooking domain were less consistent. In all experiments, students demonstrated relatively low cooking prior knowledge, which is consistent with the findings of Rawson and Van Overschelde (2008). Even so, in Experiments 1 and 3, cooking prior knowledge significantly predicted new learning of cooking information but not football information (except for truthful football items in Experiment 1).",
+      "page": "PDF p. 10 (General Discussion)"
+    },
+    {
+      "id": "mh-guo-1",
+      "location": "§4 machinery",
+      "claim_text": "Calibration and Expected Calibration Error (Guo et al., 2017)",
+      "held_file": "ai_career:future_of_gc/architecture/Guo_etal_2017_On_Calibration_of_Modern_Neural_Networks.pdf",
+      "quote": "Expected Calibration Error (ECE). While reliability diagrams are useful visual tools, it is more convenient to have a scalar summary statistic of calibration. ... We use ECE as the primary empirical metric to measure calibration.",
+      "page": "PDF p. 2"
+    },
+    {
+      "id": "mh-guo-2",
+      "location": "§8 refs",
+      "claim_text": "Guo et al. (2017), Calibration / ECE (ICML)",
+      "held_file": "ai_career:future_of_gc/architecture/Guo_etal_2017_On_Calibration_of_Modern_Neural_Networks.pdf",
+      "quote": "On Calibration of Modern Neural Networks ... Proceedings of the 34th International Conference on Machine Learning, Sydney, Australia, PMLR 70, 2017. Copyright 2017 by the author(s).",
+      "page": "PDF p. 1"
+    },
+    {
+      "id": "mh-chi-1",
+      "location": "§2 pull-up",
+      "claim_text": "\"experts categorize physics problems by the underlying physics principles, a kind of 'deep structure,' whereas novices categorize problems by the surface structure of the problem\"",
+      "held_file": "ai_career:future_of_gc/load_bearing/Chi_Feltovich_Glaser_1981_Categorization_Physics_Experts_Novices.pdf",
+      "quote": "To summarize the second study, we were able to replicate the initial finding that experts categorize physics problems by the underlying physics principles, a kind of \"deep structure,\" whereas novices categorize problems by the surface structure of the problem.",
+      "page": "PDF p. 16 (printed p. 12)"
+    },
+    {
+      "id": "mh-chi-2",
+      "location": "§2 pull-up",
+      "claim_text": "Chi et al. do not test whether this organization makes knowledge more durable or more transferable",
+      "held_file": "ai_career:future_of_gc/load_bearing/Chi_Feltovich_Glaser_1981_Categorization_Physics_Experts_Novices.pdf",
+      "quote": "Four experiments examine (1) the existence of problem categories as a basis for representation, (2) differences in the categories used by experts and novices, (3) differences in the knowledge associated with the categories and (4) features in the problems that contribute to problem categorization and representation.",
+      "page": "PDF p. 2 (Abstract)"
+    },
+    {
+      "id": "mh-kohli-1",
+      "location": "§4 correlated",
+      "claim_text": "The best single judge \"matches or outperforms the full panel across all conditions\"",
+      "held_file": "pdfs:kohli-2025-nine-judges.pdf",
+      "quote": "the best single judge matches or outperforms the full panel across all conditions",
+      "page": "PDF p. 1 (Abstract)"
+    },
+    {
+      "id": "mh-kohli-2",
+      "location": "§4 correlated",
+      "claim_text": "Any bias all LLM judges share survives every panel size (doc inference; check that source supports diminishing/bounded returns from adding judges)",
+      "held_file": "pdfs:kohli-2025-nine-judges.pdf",
+      "quote": "The diminishing returns are severe: the first 5 judges contribute 90% of the achievable independence (neff = 1.96 vs. 2.18). Adding judges 6–9 provides only +0.22 effective votes. ... The asymptote at 1/ϕ̄ ≈ 2.6 means no panel of current models can exceed ∼2.6 effective independent votes.",
+      "page": "PDF p. 6 (§4.4 Scaling: neff(k) vs. k; Figure 2 caption)"
+    },
+    {
+      "id": "mh-adesope-1",
+      "location": "§2 consolidation",
+      "claim_text": "Practice tests beat restudying (g = 0.51) and beat filler or no activity (g = 0.93)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Adesope_etal_2017_Practice_Testing_Meta-Analysis.pdf",
+      "quote": "As expected, testing effects were much stronger for comparison conditions in which participants did not perform any study activity or performed some filler activity unrelated to the final test (g = 0.93) compared to conditions using a non-retrieval study activity such as restudying or rereading (g = 0.51).",
+      "page": "p. 682 (also Table 1, p. 672: Restudying/rereading g+ = 0.51*, k=195; Filler or no activity g+ = 0.93*, k=58)"
+    },
+    {
+      "id": "mh-label-convergence-1",
+      "location": "§4 residual",
+      "claim_text": "In object recognition, Tschirschwitz and Rodehorst (2024) estimate the bound as mAP ~ 0.836*alpha + 0.197, where alpha is annotation agreement",
+      "held_file": "ai_career:future_of_gc/load_bearing/Tschirschwitz_Rodehorst_2024_Label_Convergence_Performance_Bound.pdf",
+      "quote": "mAP = 0.836 · α + 0.197",
+      "page": "PDF p. 6"
+    },
+    {
+      "id": "mh-label-convergence-2",
+      "location": "§4 residual",
+      "claim_text": "They note that language differs from vision because \"language inherently involves ambiguities\" (p. 8)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Tschirschwitz_Rodehorst_2024_Label_Convergence_Performance_Bound.pdf",
+      "quote": "We believe these domains differ significantly, as language inherently involves ambiguities, while computer vision often aims for a single, but sometimes unattainable, ground truth.",
+      "page": "PDF p. 8 (printed page 8, §7 Outlook)"
+    },
+    {
+      "id": "mh-bjork-1",
+      "location": "§2 consolidation",
+      "claim_text": "massing practice \"produces better short-term performance or recall ... but markedly inferior long-term performance or recall\"",
+      "held_file": "ai_career:future_of_gc/load_bearing/Bjork_1994_Desirable_Difficulties.pdf",
+      "quote": "In general, compared to distributing practice sessions on a given task over time, massing practice or study sessions on to-be-learned procedures or information produces better short-term performance or recall of that procedure or information, but markedly inferior long-term performance or recall.",
+      "page": "PDF p. 190 (printed p. 190, section \"Distributing Practice on a Given Task\")"
+    },
+    {
+      "id": "mh-bjork-2",
+      "location": "§2 consolidation",
+      "claim_text": "\"introducing variation and/or unpredictability in the training environment causes difficulty for the learner but enhances long-term performance\"",
+      "held_file": "ai_career:future_of_gc/load_bearing/Bjork_1994_Desirable_Difficulties.pdf",
+      "quote": "It has now been demonstrated in a variety of ways, and with a variety of motor, verbal, and problem-solving tasks, that introducing variation and/or unpredictability in the training environment causes difficulty for the learner but enhances long-term performance — particularly the ability to transfer training to novel but related task environments.",
+      "page": "PDF p. 189 (printed p. 189, section \"Varying the Conditions of Practice\")"
+    },
+    {
+      "id": "mh-sala-gobet-1",
+      "location": "§2 pull-up",
+      "claim_text": "Sala and Gobet (2017) report that when training groups were compared with active control groups, \"the overall effect sizes were minimal or null\"",
+      "held_file": "ai_career:future_of_gc/load_bearing/Sala_Gobet_2017_Does_Far_Transfer_Exist.pdf",
+      "quote": "Specifically, when the experimental groups were compared with active control groups—other filler activities to rule out possible placebo effects such as positive expectations about the training (Boot, Simons, Stothart, & Stutts, 2013) and the excitement induced by a novel activity—the overall effect sizes were minimal or null.",
+      "page": "PDF p. 4; printed p. 517"
+    },
+    {
+      "id": "mh-skill2vec-1",
+      "location": "§5 Stage 3",
+      "claim_text": "Skill2vec treats \"every skills in the same job description\" as related (co-occurrence as relatedness)",
+      "held_file": "pdfs:le-2017-skill2vec.pdf",
+      "quote": "In this study, with the documents contain only the skills, we chose the maximum window size, implied that every skills in the same job description are related to each other.",
+      "page": "PDF p. 2"
+    },
+    {
+      "id": "mh-roediger-1",
+      "location": "§2 consolidation",
+      "claim_text": "Roediger and Karpicke (2006) found that extra studying helped more on a test five minutes later, but prior testing helped more on delayed tests",
+      "held_file": "ai_career:future_of_gc/load_bearing/Roediger_Karpicke_2006_Test-Enhanced_Learning.pdf",
+      "quote": "When the final test was given after 5 min, repeated studying improved recall relative to repeated testing. However, on the delayed tests, prior testing produced substantially greater retention than studying, even though repeated studying increased students’ confidence in their ability to remember the material.",
+      "page": "PDF p. 1 (printed p. 249, Abstract)"
+    },
+    {
+      "id": "mh-cepeda-1",
+      "location": "§2 consolidation",
+      "claim_text": "\"there is no hint that massed presentation was preferable to spaced, whether retention interval was very short (less than 1 min) or very long (over 30 days)\"",
+      "held_file": "ai_career:future_of_gc/load_bearing/Cepeda_etal_2006_Distributed_Practice_Verbal_Recall_Meta-Analysis.pdf",
+      "quote": "there is no hint that massed presentation was preferable to spaced, whether retention interval was very short (less than 1 min) or very long (over 30 days)",
+      "page": "p. 359"
+    },
+    {
+      "id": "mh-musazade-1",
+      "location": "§5 domain",
+      "claim_text": "UniSkill is a dataset: \"the first open-source dataset for aligning course learning goals to standardized occupational skills\"",
+      "held_file": "pdfs:musazade-2026-uniskill.pdf",
+      "quote": "UniSkill: The first open-source dataset for aligning course learning goals to standardized occupational skills, consisting of 2,192 annotations: 1,096 sentence-skill pairs and 1,096 course title-skill pairs.",
+      "page": "PDF p. 2"
+    },
+    {
+      "id": "mh-musazade-2",
+      "location": "§5 callout",
+      "claim_text": "Cohen kappa ~ 0.45, \"moderate agreement,\" on 300 doubly annotated course-sentence/skill pairs, most of them high-similarity \"hard\" pairs",
+      "held_file": "pdfs:musazade-2026-uniskill.pdf",
+      "quote": "For the 300 course sentence-skill pairs annotated by both annotators, we achieved a Cohen's kappa of approximately 0.45, indicating moderate agreement.",
+      "page": "PDF p. 4"
+    },
+    {
+      "id": "mh-xu2026-1",
+      "location": "§4 oracle",
+      "claim_text": "On mapping curricula to 21st-century competency frameworks, LLMs \"perform well in coarse-grained classifications, achieving over 70% agreement with human annotations,\" but \"fall short of human-level performance in fine-grained assessments of competency coverage\" (p. 22)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Xu_etal_2026_Evaluating_21st-Century_Competencies_LLMs.pdf",
+      "quote": "While both proprietary and open-weight models perform well in coarse-grained classifications, achieving over 70% agreement with human annotations, they fall short of human-level performance in fine-grained assessments of competency coverage.",
+      "page": "PDF p. 22 (printed p. 22, Conclusion)"
+    },
+    {
+      "id": "mh-xu2026-2",
+      "location": "§4 oracle",
+      "claim_text": "Two trained annotators began at Cohen kappa = 0.29 and 0.17 on two of three frameworks (O*NET and ESDC), against 0.84 on the third",
+      "held_file": "ai_career:future_of_gc/load_bearing/Xu_etal_2026_Evaluating_21st-Century_Competencies_LLMs.pdf",
+      "quote": "The two annotators achieve a Cohen’s κ of 0.841 in the framework of EU (Key Competences), a κ of 0.288 in the framework of O*NET (Workforce Competencies), and a κ of 0.168 in the framework of ESDC (Success Model).",
+      "page": "PDF p. 7 (printed p. 7, Annotation and inter-rater reliability)"
+    },
+    {
+      "id": "mh-xu2026-3",
+      "location": "§4 oracle",
+      "claim_text": "Most disagreements came from confusion between \"clearly irrelevant\" (0) and \"insufficient information\" (NA)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Xu_etal_2026_Evaluating_21st-Century_Competencies_LLMs.pdf",
+      "quote": "Follow-up discussions reveal that most disagreements stem from differing interpretations of whether course context (e.g., subject matter and course type) should inform competency inference, leading to confusion between codes 0 (clearly irrelevant) and NA (insufficient information).",
+      "page": "PDF p. 7"
+    },
+    {
+      "id": "mh-xu2026-4",
+      "location": "§4 oracle",
+      "claim_text": "Once coding guidelines spelled out that rule and annotators re-coded, agreement rose to kappa = 0.94 and 0.92 (p. 7)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Xu_etal_2026_Evaluating_21st-Century_Competencies_LLMs.pdf",
+      "quote": "After aligning this understanding, the two annotators re-annotate all samples in the calibration round. The final inter-rater reliability on these two frameworks is κ = 0.94 in O*NET (Workforce Competencies), and κ = 0.92 in ESDC (Success Model).",
+      "page": "PDF p. 7"
+    },
+    {
+      "id": "mh-xu2026-5",
+      "location": "§4 residual",
+      "claim_text": "Xu et al. trace LLM errors to the model side: \"systematic over-interpretation of instructional keywords and difficulty identifying relevant pedagogical evidence in long, unstructured texts\" (p. 22)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Xu_etal_2026_Evaluating_21st-Century_Competencies_LLMs.pdf",
+      "quote": "We identify two primary sources of error: systematic over-interpretation of instructional keywords and difficulty identifying relevant pedagogical evidence in long, unstructured texts.",
+      "page": "PDF p. 22 (Conclusion)"
+    },
+    {
+      "id": "mh-xu2026-6",
+      "location": "§4 residual + §5",
+      "claim_text": "Their reasoning-based prompting strategy gave \"modest but consistent performance improvements\" (p. 22)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Xu_etal_2026_Evaluating_21st-Century_Competencies_LLMs.pdf",
+      "quote": "This approach yields modest but consistent performance improvements across data types and competency frameworks, consistent with the Chain-of-Thought principle that decomposing complex reasoning tasks enhances model performance.",
+      "page": "PDF p. 22 (Conclusion)"
+    },
+    {
+      "id": "mh-xu2026-7",
+      "location": "§5 Stage 1 + callout",
+      "claim_text": "\"incorporating human-defined competency descriptions into prompts does not improve LLM performance\" (p. 21)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Xu_etal_2026_Evaluating_21st-Century_Competencies_LLMs.pdf",
+      "quote": "Interestingly, incorporating human-defined competency descriptions into prompts does not improve LLM performance.",
+      "page": "PDF p. 21 (Discussion)"
+    },
+    {
+      "id": "mh-xu2026-8",
+      "location": "§5 callout",
+      "claim_text": "No model reaches human-level precision on fine-grained pedagogical reasoning",
+      "held_file": "ai_career:future_of_gc/load_bearing/Xu_etal_2026_Evaluating_21st-Century_Competencies_LLMs.pdf",
+      "quote": "However, no model reaches human-level precision in fine-grained pedagogical reasoning.",
+      "page": "PDF p. 1 (Abstract)"
+    },
+    {
+      "id": "mh-arthur-1",
+      "location": "§2 decay",
+      "claim_text": "Arthur et al. (1998) meta-analysis found \"substantial skill loss with nonpractice or nonuse\"",
+      "held_file": "ai_career:future_of_gc/load_bearing/Arthur_etal_1998_Skill_Decay_and_Retention_Meta-Analysis.pdf",
+      "quote": "Results indicate that there is substantial skill loss with nonpractice or nonuse, with the amount of skill loss ranging from an effect size (d) of -0.01 immediately after training to a d of -1.4 after more than 365 days of nonuse.",
+      "page": "p. 57 (abstract)"
+    },
+    {
+      "id": "mh-arthur-2",
+      "location": "§2 decay",
+      "claim_text": "Summarized (abstract) as ranging from d = -0.01 immediately after training to d = -1.4 after more than 365 days",
+      "held_file": "ai_career:future_of_gc/load_bearing/Arthur_etal_1998_Skill_Decay_and_Retention_Meta-Analysis.pdf",
+      "quote": "the amount of skill loss ranging from an effect size (d) of -0.01 immediately after training to a d of -1.4 after more than 365 days of nonuse.",
+      "page": "p. 57 (abstract)"
+    },
+    {
+      "id": "mh-arthur-3",
+      "location": "§2 caveat",
+      "claim_text": "Earlier reviews proposed a negatively accelerated curve; Arthur et al. set out to test it and could not (\"We were unable, however, to do this,\" p. 88)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Arthur_etal_1998_Skill_Decay_and_Retention_Meta-Analysis.pdf",
+      "quote": "First, our initial intention was to generate skill retention curves for the results presented in Table 3 and Table 4 in an attempt to test the negatively accelerated function suggested by prior reviews. ... We were unable, however, to do this because these analyses required the use of parametric statistical procedures...",
+      "page": "p. 88"
+    },
+    {
+      "id": "mh-murre-1",
+      "location": "§2 decay",
+      "claim_text": "Murre & Dros (2015) replicated Ebbinghaus forgetting curve with one subject relearning lists after intervals from 20 minutes to 31 days",
+      "held_file": "ai_career:future_of_gc/load_bearing/Murre_Dros_2015_Ebbinghaus_Forgetting_Curve_Replication.pdf",
+      "quote": "We present a successful replication of Ebbinghaus' classic forgetting curve from 1880 based on the method of savings. One subject spent 70 hours learning lists and relearning them after 20 min, 1 hour, 9 hours, 1 day, 2 days, or 31 days.",
+      "page": "PDF p. 1 (Abstract); see also Procedure, PDF p. 5 for the full interval list (20 min, 1 hour, 9 hours, 1 day, 2 days, 6 days, 31 days) and Subject, PDF p. 4 (single subject, J. Dros)"
+    },
+    {
+      "id": "mh-murre-2",
+      "location": "§2 decay",
+      "claim_text": "The measure is savings (share of original learning time saved when relearning), not percent recalled",
+      "held_file": "ai_career:future_of_gc/load_bearing/Murre_Dros_2015_Ebbinghaus_Forgetting_Curve_Replication.pdf",
+      "quote": "In 1885, Ebbinghaus introduces the savings measure of learning and memory... Savings is defined as the relative amount of time saved on the second learning trial as a result of having had the first.",
+      "page": "PDF p. 3"
+    },
+    {
+      "id": "mh-murre-3",
+      "location": "§2 decay",
+      "claim_text": "the curve \"is not completely smooth but most probably shows a jump upwards starting at the 24 hour data point\"",
+      "held_file": "ai_career:future_of_gc/load_bearing/Murre_Dros_2015_Ebbinghaus_Forgetting_Curve_Replication.pdf",
+      "quote": "We conclude that the Ebbinghaus forgetting curve has indeed been replicated and that it is not completely smooth but most probably shows a jump upwards starting at the 24 hour data point.",
+      "page": "PDF p. 1 (Abstract)"
+    },
+    {
+      "id": "mh-murre-4",
+      "location": "§2 decay",
+      "claim_text": "Current research on sleep would predict such a jump, though for this kind of experiment it \"remains to be established\"",
+      "held_file": "ai_career:future_of_gc/load_bearing/Murre_Dros_2015_Ebbinghaus_Forgetting_Curve_Replication.pdf",
+      "quote": "The formal analysis above suggests that the classic forgetting curve is not completely smooth but does show a jump at the 1 day retention interval. Current research on the effects of sleep on memory would predict such a jump, but for this particular type of experiment this remains to be established.",
+      "page": "PDF p. 21 (Concluding Remark, final paragraph)"
+    },
+    {
+      "id": "mh-murre-5",
+      "location": "§2 caveat",
+      "claim_text": "Murre and Dros found a jump at one day rather than a smooth curve",
+      "held_file": "ai_career:future_of_gc/load_bearing/Murre_Dros_2015_Ebbinghaus_Forgetting_Curve_Replication.pdf",
+      "quote": "The formal analysis above suggests that the classic forgetting curve is not completely smooth but does show a jump at the 1 day retention interval.",
+      "page": "PDF p. 21; consistent with Abstract (PDF p. 1) and Discussion \"The 24-hour point in Ebbinghaus' forgetting curve\" section (PDF p. 19-20)"
+    },
+    {
+      "id": "mh-perkins-1",
+      "location": "§2 pull-up",
+      "claim_text": "High-road transfer depends on \"mindful abstraction ... and a deliberate search for connections\"",
+      "held_file": "ai_career:future_of_gc/load_bearing/Perkins_Salomon_1992_Transfer_of_Learning.pdf",
+      "quote": "High road transfer, in contrast, depends on mindful abstraction from the context of learning or application and a deliberate search for connections:",
+      "page": "PDF p. 7 (printed \"7 of 11\"), section 5 \"High road and low road transfer.\""
+    },
+    {
+      "id": "mh-perkins-2",
+      "location": "§2 pull-up",
+      "claim_text": "Instruction can encourage high-road transfer by \"bridging\"",
+      "held_file": "ai_career:future_of_gc/load_bearing/Perkins_Salomon_1992_Transfer_of_Learning.pdf",
+      "quote": "Bridging exploits the high road to transfer. In bridging, the instruction encourages the making of abstractions, searches for possible connections, mindfulness, and metacognition.",
+      "page": "PDF p. 8 (printed \"8 of 11\"), section 6 \"Teaching for Transfer.\""
+    },
+    {
+      "id": "mh-perkins-3",
+      "location": "§2 pull-up",
+      "claim_text": "Conclude that \"the conditions for transfer are stringent\"",
+      "held_file": "ai_career:future_of_gc/load_bearing/Perkins_Salomon_1992_Transfer_of_Learning.pdf",
+      "quote": "This analysis along with the views and findings of Luria, Scribner and Cole, Greeno, and others emphasizes that the conditions for transfer are stringent.",
+      "page": "PDF p. 8 (printed \"8 of 11\"), start of section 6, sentence spans end of section 5."
+    },
+    {
+      "id": "mh-kim-1",
+      "location": "§4 correlated",
+      "claim_text": "On the HELM leaderboard, pairs of models \"agree on average about 60% of the time when both models are incorrect\"",
+      "held_file": "pdfs:kim-2025-correlated-errors.pdf",
+      "quote": "For example, on Helm, pairs of models agree on average about 60% of the time when both models are incorrect (choosing between incorrect answers uniformly at random would lead to an agreement rate of 1/3).",
+      "page": "PDF p. 1 (Abstract); also consistent with body text on PDF p. 4, Section 3.2: \"The mean agreement rate across pairs is 0.423 on HuggingFace and 0.6 on Helm, about double or higher than the baselines.\""
+    },
+    {
+      "id": "mh-kim-2",
+      "location": "§4 correlated",
+      "claim_text": "\"larger and more accurate models have highly correlated errors, even with distinct architectures and providers\"",
+      "held_file": "pdfs:kim-2025-correlated-errors.pdf",
+      "quote": "Crucially, however, larger and more accurate models have highly correlated errors, even with distinct architectures and providers.",
+      "page": "PDF p. 1 (Abstract)"
+    },
+    {
+      "id": "mh-kim-3",
+      "location": "§8 refs",
+      "claim_text": "Kim, E., Garg, A., Peng, K., & Garg, N. (2025). Correlated Errors in Large Language Models. ICML 2025 (arXiv:2506.07962)",
+      "held_file": "pdfs:kim-2025-correlated-errors.pdf",
+      "quote": "Elliot Kim * 1 Avi Garg * 2 Kenny Peng * 1 Nikhil Garg 1 ... Correlated Errors in Large Language Models ... Proceedings of the 42 nd International Conference on Machine Learning, Vancouver, Canada. PMLR 267, 2025. Copyright 2025 by the author(s). ... arXiv:2506.07962v1 [cs.CL] 9 Jun 2025",
+      "page": "PDF p. 1 (title/byline/venue block and arXiv banner)"
+    },
+    {
+      "id": "mh-settles-1",
+      "location": "§B2",
+      "claim_text": "The most reusable form from the literature is Half-Life Regression (Settles & Meeder, 2016, ACL, from Duolingo)",
+      "held_file": "pdfs:settles-meeder-2016-hlr.pdf",
+      "quote": "We present half-life regression (HLR), a novel model for spaced repetition practice with applications to second language acquisition. ... We use data from Duolingo — a popular online language learning application — to fit HLR models",
+      "page": "1848 (printed; abstract)"
+    },
+    {
+      "id": "mh-tang-1",
+      "location": "§3",
+      "claim_text": "Per the FinMTEB benchmark (Tang & Yang, 2024/2025), a model's general-benchmark (MTEB) rank does not predict its domain performance (Spearman rank insignificant, p > 0.05",
+      "held_file": "pdfs:tang-yang-2024-domain-embedding.pdf",
+      "quote": "The results, shown in Table 5, indicate that the ranking correlation is not statistically significant (p-values all greater than 0.05). In other words, a general-purpose embedding model performing well on MTEB does not necessarily perform well on domain-specific tasks.",
+      "page": "tang-yang-2024-domain-embedding.pdf, printed/PDF p.9 (Section 5, Table 5). Identical sentence and identical correlation/p-value table appear in tang-yang-2025-finmteb.pdf, PDF p.16 (Appendix F intro) and PDF p.19 (Table 12)."
+    },
+    {
+      "id": "mh-voyage-1",
+      "location": "§3",
+      "claim_text": "voyage-law-2 with gains of more than 10% on legal sets",
+      "held_file": "pdfs:web/voyage-2024-law-2.html",
+      "quote": "voyage-law-2 outperforms OpenAI v3 large by more than 10% in three datasets (LeCaRDv2, LegalQuAD, and GerDaLIR).",
+      "page": "voyage-2024-law-2.html, section \"Legal retrieval\" (Results), also restated in TL;DR"
+    },
+    {
+      "id": "mh-geifman-1",
+      "location": "§5",
+      "claim_text": "selective prediction (Geifman & El-Yaniv, 2017/2019 — the rigorous version of 'flag low-confidence rather than guess')",
+      "held_file": "pdfs:geifman-elyaniv-2017-selective-classification.pdf",
+      "quote": "The main motivation for selective prediction is to reduce the error rate by abstaining from prediction when in doubt, while keeping coverage as high as possible.",
+      "page": "p.1 (printed page 1, 2017 paper, geifman-elyaniv-2017-selective-classification.pdf)"
+    },
+    {
+      "id": "mh-perspectivism-1",
+      "location": "§4",
+      "claim_text": "The data-perspectivism program (Plank, 2022; Aroyo & Welty, 2015) makes this point: the distribution over raters is itself a finding — disagreement signals genuine ambiguity in the underlying construct, not noise to be averaged away.",
+      "held_file": "pdfs:plank-2022-human-label-variation.pdf",
+      "quote": "Aggregation obfuscates this real-world complexity",
+      "page": "Aroyo & Welty 2015 p.17 (printed, AI Magazine footer 'SPRING 2015 17'); Plank 2022 printed pp.10672-10673 (EMNLP page numbers printed on page)"
+    },
+    {
+      "id": "mh-perspectivism-2",
+      "location": "refs",
+      "claim_text": "Data perspectivism (Basile et al.)",
+      "held_file": "pdfs:plank-2022-human-label-variation.pdf",
+      "quote": "often discussed more generally as different perceptions in data perspectivisim (Basile et al., 2021a; Wich et al., 2021).",
+      "page": "Plank 2022 printed p.10672 (PDF page 2)"
+    },
+    {
+      "id": "mh-encoders-1",
+      "location": "§3",
+      "claim_text": "Job- and skill-specific encoders exist (JobBERT, ESCOXLM-R, CareerBERT) and could be adapted for curriculum-to-career matching.",
+      "held_file": "pdfs:decorte-2021-jobbert.pdf",
+      "quote": "we propose a neural representation model for job titles, by augmenting a pre-trained language model with co-occurrence information from skill labels extracted from vacancies",
+      "page": "JobBERT PDF p.1; ESCOXLM-R PDF p.1; CareerBERT PDF p.1-2"
+    },
+    {
+      "id": "mh-kt-1",
+      "location": "§B2",
+      "claim_text": "DKT-family models need far more interaction events than a curriculum produces",
+      "held_file": "pdfs:piech-2015-deep-knowledge-tracing.pdf",
+      "quote": "One disadvantage of RNNs over simple hidden Markov methods is that they require large amounts of training data, and so are well suited to an online education environment, but not a small classroom environment.",
+      "page": "p.8 (Piech et al. 2015; printed page number matches PDF index)"
+    },
+    {
+      "id": "mh-kt-2",
+      "location": "§B2",
+      "claim_text": "By contrast, Bayesian Knowledge Tracing has no forgetting term",
+      "held_file": "pdfs:piech-2015-deep-knowledge-tracing.pdf",
+      "quote": "The formulation of the original model assumed that once a skill is learned it is never forgotten.",
+      "page": "p.2 (Piech et al. 2015, §2.1 Bayesian Knowledge Tracing)"
+    }
+  ]
+}
