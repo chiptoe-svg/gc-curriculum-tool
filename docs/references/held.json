@@ -232,7 +232,8 @@
         "file": "pdfs:openai-2026-work-at-the-frontier.pdf"
       },
       "ref-dellacqua-2026": {
-        "file": "pdfs:dellacqua-2025-cybernetic-teammate.pdf"
+        "file": "pdfs:dellacqua-2026-cybernetic-teammate-orgsci.pdf",
+        "note": "published Organization Science version (browser print, no figure images); figure claims checked against the working paper dellacqua-2025-cybernetic-teammate.pdf"
       },
       "ref-lee-2025": {
         "file": "pdfs:lee-2025-critical-thinking.pdf"
