@@ -26,3 +26,7 @@ The transfer test then either did or did not embed a *learning resource* — a w
 **Study 2 — replication by classroom teachers.** The second design experiment had regular classroom teachers (not the researchers) deliver the IPL curriculum and replicated the pattern, addressing the practicality worry that such student-centered activities can't be implemented in ordinary schools within a short time frame.
 
 **Verdict:** Consistent. The doc's claim is accurately supported: this is an experimental demonstration that pre-instruction invention/struggle (students who, by design, did *not* reach the correct method) builds readiness to learn from later instruction, and that this benefit is invisible to a standard cold-application test — it surfaces only when the assessment itself includes an opportunity to learn (the double-transfer / embedded-resource design). The crossover interaction (parity with no resource; invention advantage with a resource) is exactly the evidence that anchors the PFL construct, so calling this the empirical anchor for PFL is faithful, not overstated.
+
+**Re-audited 2026-10-07 (background audit, SM3, minor).** The printed title carries a subtitle this card's Full Citation line already includes in full ("The Hidden Efficiency of Encouraging Original Student Production in Statistics Instruction," confirmed against the journal masthead, p. 129). No change needed.
+
+**Audited 2026-10-07 against held full text (citation-audit skill).**
