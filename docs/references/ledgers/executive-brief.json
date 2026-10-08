@@ -6,7 +6,7 @@
       "id": "br-korinek-1",
       "location": "Why this matters, timing paragraph",
       "claim_text": "a scenario in which AI adds less than half a point to GDP growth by 2030",
-      "held_file": "pdfs:korinek-2026-economic-scenarios-STAGED-not-cited.pdf",
+      "held_file": "pdfs:korinek-2026-economic-scenarios.pdf",
       "quote": "Under modest change, AI adds less than half a point to GDP growth by 2030 and raises unemployment by a tenth of a point.",
       "page": "PDF p. 1 (Abstract)"
     },
@@ -14,7 +14,7 @@
       "id": "br-korinek-2",
       "location": "Why this matters, timing paragraph",
       "claim_text": "to one in which AI performs almost half of today's cognitive work",
-      "held_file": "pdfs:korinek-2026-economic-scenarios-STAGED-not-cited.pdf",
+      "held_file": "pdfs:korinek-2026-economic-scenarios.pdf",
       "quote": "In the extreme change scenario, AI has transformative effects, with AI performing almost half of today’s cognitive work by 2030.",
       "page": "PDF p. 1 (Abstract)"
     },
@@ -22,7 +22,7 @@
       "id": "br-korinek-3",
       "location": "Why this matters, timing paragraph",
       "claim_text": "its authors are explicit that these are scenarios, not predictions, with no probabilities attached",
-      "held_file": "pdfs:korinek-2026-economic-scenarios-STAGED-not-cited.pdf",
+      "held_file": "pdfs:korinek-2026-economic-scenarios.pdf",
       "quote": "The scenarios are not predictions, and we attach no probabilities to them",
       "page": "PDF p. 3 (§1 Introduction)"
     },
@@ -30,7 +30,7 @@
       "id": "br-korinek-4",
       "location": "Why this matters, timing paragraph",
       "claim_text": "Korinek, Jones, Sacher, Cotter & McCrory, Economic Scenarios for Transformative AI, The Anthropic Institute working paper, 2026",
-      "held_file": "pdfs:korinek-2026-economic-scenarios-STAGED-not-cited.pdf",
+      "held_file": "pdfs:korinek-2026-economic-scenarios.pdf",
       "quote": "Anton Korinek, Charles I. Jones, Szymon Sacher, Tess Cotter, and Peter McCrory",
       "page": "PDF p. 1 (title block; also \"Working Paper No. 2026-02, September 2026\")"
     },
