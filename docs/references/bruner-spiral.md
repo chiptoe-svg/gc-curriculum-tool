@@ -17,7 +17,7 @@
 
 **What it actually says (synthesis):**
 
-*The Process of Education* (1960) emerged from the 1959 Woods Hole Conference and argued that curriculum should be built around the **structure of a discipline** — its central, generative ideas — rather than around accumulated facts. Bruner's most-quoted claim is that **"any subject can be taught effectively in some intellectually honest form to any child at any stage of development"**: the same fundamental ideas can be introduced early in a simplified-but-not-falsified form and returned to later in fuller form.
+*The Process of Education* (1960) emerged from the 1959 Woods Hole Conference and argued that curriculum should be built around the **structure of a discipline** — its central, generative ideas — rather than around accumulated facts. Bruner's most-quoted claim is that **"any subject can be taught in some intellectually honest form to any child at any stage of development"** (as quoted in Gibbs, 2014, citing Bruner 1960, p. 30; this card previously added "effectively", which the held secondary source does not print — the original wording and page remain unconfirmed until Bruner 1960 is held): the same fundamental ideas can be introduced early in a simplified-but-not-falsified form and returned to later in fuller form.
 
 The **spiral curriculum** is the structural consequence of that claim. It has three characteristics, consistently summarized as:
 1. **Cyclical / revisiting** — learners return to the same core ideas repeatedly across the program rather than meeting each topic once.
