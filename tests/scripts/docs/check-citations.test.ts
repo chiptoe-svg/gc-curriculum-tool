@@ -19,7 +19,7 @@ const DOCS_DIR = path.join(FIXTURES, 'pages');
 const LEDGERS_DIR = path.join(FIXTURES, 'ledgers');
 const HELD_ROOT = path.join(FIXTURES, 'held-root');
 
-function heldJsonFor(pages) {
+function heldJsonFor(pages: Record<string, unknown>) {
   return {
     version: 1,
     roots: { fixture: HELD_ROOT },
