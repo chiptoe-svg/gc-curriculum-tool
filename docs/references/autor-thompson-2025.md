@@ -33,3 +33,7 @@ Empirically, over four decades, they "document that automation has raised wages 
 **Verdict:** Consistent, with the extrapolation flagged. The §16 sentence must attribute the *empirical* finding to four decades of automation and present the AI application as an inference about mechanism, not a demonstrated AI result. Do not cite it as evidence about generative AI specifically.
 
 **Quotation correction (2026-10-06, mirrored from ai_career_impact 82bcda1; verified against the local PDF):** an earlier version quoted Dell'Acqua et al. as saying "AI substitutes for the guidance an experienced colleague provides". That wording is a paraphrase found in neither the Cybernetic Teammate working paper nor the jagged-frontier article; the authors' own sentence is quoted above.
+
+**Re-audited 2026-10-07 (background audit, key-passage probe AT7).** Confirmed by independent full-text search: nothing in this paper addresses creative occupations, graphic-communication-type work, "production execution," "comping," or generative AI specifically, and no passage frames "evaluative judgment" as the surviving expert residue — "creative design" appears exactly once, as an example item inside an Appendix A.2 GPT-4.1 task-classification prompt, not as an analytical claim. `background.html` §16 already states this application as "our reading, not theirs" (per the 2026-10-07 correction pass). No change needed to this card; its existing extrapolation flag already covers this.
+
+**Audited 2026-10-07 against held full text (citation-audit skill).**
