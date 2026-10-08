@@ -737,6 +737,166 @@
       "held_file": "ai_career:future_of_gc/load_bearing/Sala_Gobet_2017_Does_Far_Transfer_Exist.pdf",
       "quote": "training chess, music, or WM capacity does not reliably enhance any skill beyond the skills they train",
       "page": "517 (printed); PDF page 4"
+    },
+    {
+      "id": "bg-wiggins-1",
+      "location": "§2 Backward Design",
+      "claim_text": "Understanding by Design defines a three-stage planning sequence: identify desired results, determine acceptable evidence, plan learning experiences and instruction",
+      "held_file": "pdfs:wiggins-mctighe-2005-understanding-by-design.pdf",
+      "quote": "We call this three-stage approach to planning \"backward design.\"",
+      "page": "printed p. 17 (PDF p. 29); Figure 1.1, printed p. 18"
+    },
+    {
+      "id": "bg-wiggins-2",
+      "location": "§2 Backward Design",
+      "claim_text": "Stage 2: outcome claims must be backed by demonstrable evidence",
+      "held_file": "pdfs:wiggins-mctighe-2005-understanding-by-design.pdf",
+      "quote": "How will we know if students have achieved the desired results? What will we accept as evidence of student understanding and proficiency?",
+      "page": "printed p. 18 (PDF p. 30)"
+    },
+    {
+      "id": "bg-wiggins-3",
+      "location": "§5 The KUD model",
+      "claim_text": "structurally similar separation of desired understandings, knowledge, and skills in Stage 1 (template)",
+      "held_file": "pdfs:wiggins-mctighe-2005-understanding-by-design.pdf",
+      "quote": "Students will know . . .",
+      "page": "printed p. 22 (PDF p. 34), Figure 1.2"
+    },
+    {
+      "id": "bg-wiggins-4",
+      "location": "§7 anchors",
+      "claim_text": "second stage of backward design: outcomes are paired with the evidence that would demonstrate them",
+      "held_file": "pdfs:wiggins-mctighe-2005-understanding-by-design.pdf",
+      "quote": "we are obligated to consider the assessment evidence implied by the outcomes sought, rather than thinking about assessment primarily as a means for generating grades",
+      "page": "printed p. 148 (PDF p. 160)"
+    },
+    {
+      "id": "bg-tomlinson-1",
+      "location": "§5 The KUD model",
+      "claim_text": "Tomlinson uses the K/U/D structure as a categorical pre-unit planning aid",
+      "held_file": "pdfs:tomlinson-1999-differentiated-classroom.pdf",
+      "quote": "During planning, a teacher should generate specific lists of what students should know (facts), understand (concepts and principles), and be able to do (skills) by the time the unit ends.",
+      "page": "printed p. 40 (PDF p. 47)"
+    },
+    {
+      "id": "bg-tomlinson-2",
+      "location": "References (Tomlinson 1999)",
+      "claim_text": "Establishes the K/U/D three-category planning vocabulary",
+      "held_file": "pdfs:tomlinson-1999-differentiated-classroom.pdf",
+      "quote": "Content is what a student should come to know (facts), understand (concepts and principles), and be able to do (skills) as a result of a given segment of study (a lesson, a learning experience, a unit).",
+      "page": "printed pp. 42-43 (PDF pp. 49-50)"
+    },
+    {
+      "id": "bg-mcpeck-1990-1",
+      "location": "§4 problem-solving",
+      "claim_text": "McPeck's 1990 reply: he does not assume there are no general thinking skills and believes there are some very limited ones",
+      "held_file": "pdfs:mcpeck-1990-reply-to-ennis.pdf",
+      "quote": "Thus, I do not assume that there are no general thinking skills as Ennis asserts—I argue the point. For what it is worth, I believe there are, in fact, some very limited general thinking skills.",
+      "page": "printed p. 12 (PDF p. 4)"
+    },
+    {
+      "id": "bg-mcpeck-1990-2",
+      "location": "§4 problem-solving",
+      "claim_text": "while adding that \"these skills offer little to get excited about\"",
+      "held_file": "pdfs:mcpeck-1990-reply-to-ennis.pdf",
+      "quote": "these skills offer little to get excited about",
+      "page": "printed p. 12 (PDF p. 4)"
+    },
+    {
+      "id": "bg-mcpeck-1990-3",
+      "location": "References (McPeck 1990)",
+      "claim_text": "he restates that \"there can be no completely general set of thinking skills\" (pp. 11-12)",
+      "held_file": "pdfs:mcpeck-1990-reply-to-ennis.pdf",
+      "quote": "that there can be no completely general set of thinking skills",
+      "page": "printed pp. 11-12 (PDF pp. 3-4)"
+    },
+    {
+      "id": "bg-gibbs-1",
+      "location": "§9 spiral curriculum",
+      "claim_text": "Bruner (1960, p. 30), as quoted in Gibbs (2014): \"any subject can be taught in some intellectually honest form to any child at any stage of development\"",
+      "held_file": "pdfs:gibbs-2014-reconfiguring-bruner-kappan.pdf",
+      "quote": "any subject can be taught in some intellectually honest form to any child at any stage of development” (1960, p. 30)",
+      "page": "held web copy, single PDF page"
+    },
+    {
+      "id": "bg-gibbs-2",
+      "location": "§9 spiral curriculum",
+      "claim_text": "spiral curriculum summary (Gibbs, 2014)",
+      "held_file": "pdfs:gibbs-2014-reconfiguring-bruner-kappan.pdf",
+      "quote": "students revisit a topic, theme, or subject several times throughout their schooling, where the complexity of the topic is increased with each visit so the new learning is connected to the old learning",
+      "page": "held web copy, single PDF page"
+    },
+    {
+      "id": "bg-bijker-1",
+      "location": "§7 tacit knowledge",
+      "claim_text": "somatic tacit knowledge \"is tacit because it is tied to the human body,\" as summarized by Bijker (2011)",
+      "held_file": "pdfs:review-2011-collins-tacit-explicit-knowledge.pdf",
+      "quote": "Medium, or somatic, tacit knowledge is tacit because it is tied to the human body.",
+      "page": "held copy p. 1 (page printed \"2\")"
+    },
+    {
+      "id": "bg-bijker-2",
+      "location": "References (Collins 2010)",
+      "claim_text": "Chicago: University of Chicago Press, 2010, xiv + 186 pp.",
+      "held_file": "pdfs:review-2011-collins-tacit-explicit-knowledge.pdf",
+      "quote": "Pp. xiv+186.",
+      "page": "held copy p. 1, review header"
+    },
+    {
+      "id": "bg-doignon2015-1",
+      "location": "§2 skill-tree paragraph",
+      "claim_text": "the outer fringe of a state is the set of items the learner is now ready to learn",
+      "held_file": "pdfs:doignon-falmagne-2015-knowledge-spaces-learning-spaces.pdf",
+      "quote": "it tells us exactly what the student is ready to learn",
+      "page": "printed p. 16 (Definition 20 on p. 15)"
+    },
+    {
+      "id": "bg-doignon2015-2",
+      "location": "§2 skill-tree paragraph",
+      "claim_text": "ALEKS deploys KST to millions of students",
+      "held_file": "pdfs:doignon-falmagne-2015-knowledge-spaces-learning-spaces.pdf",
+      "quote": "these methods have been used by millions of students in schools and colleges",
+      "page": "printed p. 1 (Abstract)"
+    },
+    {
+      "id": "bg-doignon2015-3",
+      "location": "References (Doignon & Falmagne 1985 entry)",
+      "claim_text": "the 2015 chapter \"summarizes key concepts and results from two books\"",
+      "held_file": "pdfs:doignon-falmagne-2015-knowledge-spaces-learning-spaces.pdf",
+      "quote": "This chapter summarizes key concepts and results from two books.",
+      "page": "printed p. 3"
+    },
+    {
+      "id": "bg-cbn-1",
+      "location": "§9 3-Act parallels",
+      "claim_text": "cognitive apprenticeship addresses school knowledge \"abstracted from their uses in the world\"",
+      "held_file": "pdfs:collins-brown-newman-1987-cognitive-apprenticeship-tr403.pdf",
+      "quote": "skills and knowledge taught in schools have become abstracted from their uses in the world",
+      "page": "printed p. 1 (PDF p. 3, Abstract) and printed p. 2"
+    },
+    {
+      "id": "bg-cbn-2",
+      "location": "§9 3-Act parallels",
+      "claim_text": "drawing on Jean Lave's ethnography of craft apprenticeship",
+      "held_file": "pdfs:collins-brown-newman-1987-cognitive-apprenticeship-tr403.pdf",
+      "quote": "practiced in a West African tailoring shop for many of our insights into the nature of apprenticeship",
+      "page": "printed p. 2 (PDF p. 4)"
+    },
+    {
+      "id": "bg-manning-1",
+      "location": "§10 auditor reasoning",
+      "claim_text": "the library itself cautions that the prompts have not been empirically validated as AI interventions",
+      "held_file": "pdfs:web/manning-2025-education-agent-skills-readme.md",
+      "quote": "the prompts themselves have not been empirically validated as AI interventions",
+      "page": "README, \"What Makes This Different\""
+    },
+    {
+      "id": "bg-manning-2",
+      "location": "References (Manning)",
+      "claim_text": "an open-source GitHub library of \"165 evidence-based pedagogical skills across 20 domains\"",
+      "held_file": "pdfs:web/manning-2025-education-agent-skills-readme.md",
+      "quote": "An open-source library of 165 evidence-based pedagogical skills across 20 domains",
+      "page": "README, opening paragraph"
     }
   ]
 }

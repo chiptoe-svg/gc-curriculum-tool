@@ -473,6 +473,38 @@
       "held_file": "pdfs:basile-2021-disagreement.pdf",
       "quote": "We further reject the notion that we should remove annotation noise from datasets.",
       "page": "PDF p.5 = printed page 19 (Conclusion, §4). Full citation as"
+    },
+    {
+      "id": "mh-ebbinghaus-1",
+      "location": "§ decay",
+      "claim_text": "Ebbinghaus's own table gives 58.2% savings after 0.33 hours",
+      "held_file": "pdfs:ebbinghaus-1885-memory-1913-translation.pdf",
+      "quote": "So much of the series learned was retained that in relearning a saving of",
+      "page": "printed p. 76 (PDF p. 90), table header; row 1: X = 0.33, Q = 58.2"
+    },
+    {
+      "id": "mh-ebbinghaus-2",
+      "location": "References (Ebbinghaus)",
+      "claim_text": "savings measured as a percentage of the original learning time",
+      "held_file": "pdfs:ebbinghaus-1885-memory-1913-translation.pdf",
+      "quote": "the relation of this saving of work to the time necessary for the first learning",
+      "page": "printed p. 67 (PDF p. 81)"
+    },
+    {
+      "id": "mh-ebbinghaus-3",
+      "location": "References (Ebbinghaus)",
+      "claim_text": "\"The tests were all made upon myself\" (p. v)",
+      "held_file": "pdfs:ebbinghaus-1885-memory-1913-translation.pdf",
+      "quote": "The tests were all made upon myself and have primarily only individual significance.",
+      "page": "printed p. v (PDF p. 11), Author's Preface"
+    },
+    {
+      "id": "mh-pavlik-1",
+      "location": "References (Pavlik 2009)",
+      "claim_text": "PFA = Performance Factors Analysis, an alternative to knowledge tracing",
+      "held_file": "pdfs:pavlik-cen-koedinger-2009-pfa.pdf",
+      "quote": "We call this model PFA (Performance Factors Analysis).",
+      "page": "PDF p. 4 (no printed page numbers)"
     }
   ]
 }

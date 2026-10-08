@@ -1,0 +1,30 @@
+{
+  "page": "superpowers/vision/gc-curriculum-tool-vision.html",
+  "generated": "2026-10-08",
+  "claims": [
+    {
+      "id": "vi-krathwohl-1",
+      "location": "Why Know / Understand / Do",
+      "claim_text": "its authors intend it for aligning objectives, activities, and assessments across a unit, course, or curriculum (Krathwohl, 2002, p. 212)",
+      "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
+      "quote": "means for determining the congruence of educational objectives, activities, and assessments in a unit, course, or curriculum",
+      "page": "p. 212"
+    },
+    {
+      "id": "vi-krathwohl-2",
+      "location": "Why Know / Understand / Do",
+      "claim_text": "Bloom has no performance dimension at all",
+      "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
+      "quote": "A taxonomy for the psychomotor domain was never published by the originating group",
+      "page": "p. 218 (Note 1)"
+    },
+    {
+      "id": "vi-kohli-1",
+      "location": "Operational realities, Failure modes",
+      "claim_text": "a nine-model panel behaves like roughly two independent votes (Kohli, 2026)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Kohli_2025_Nine_Judges_Two_Effective_Votes.pdf",
+      "quote": "we find that the 9 judges effectively provide only about 2 independent votes' worth of information",
+      "page": "p. 1 (abstract)"
+    }
+  ]
+}

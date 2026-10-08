@@ -641,6 +641,22 @@
       "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
       "quote": "The Taxonomy of Educational Objectives: Handbook II, The Affective Domain was published later (Krathwohl, Bloom, & Masia, 1964). A taxonomy for the psychomotor domain was never published by the originating group, but some were published by Simpson (1966), Dave (1970), and Harrow (1972).",
       "page": "218 (Note 1)"
+    },
+    {
+      "id": "ps-mcpeck-1990-1",
+      "location": "§2 McPeck",
+      "claim_text": "McPeck's reply to Ennis: does not assume there are no general thinking skills; believes in some very limited ones",
+      "held_file": "pdfs:mcpeck-1990-reply-to-ennis.pdf",
+      "quote": "For what it is worth, I believe there are, in fact, some very limited general thinking skills.",
+      "page": "printed p. 12 (PDF p. 4)"
+    },
+    {
+      "id": "ps-mcpeck-1990-2",
+      "location": "§2 McPeck",
+      "claim_text": "adding at once that \"these skills offer little to get excited about\"",
+      "held_file": "pdfs:mcpeck-1990-reply-to-ennis.pdf",
+      "quote": "these skills offer little to get excited about",
+      "page": "printed p. 12 (PDF p. 4)"
     }
   ]
 }

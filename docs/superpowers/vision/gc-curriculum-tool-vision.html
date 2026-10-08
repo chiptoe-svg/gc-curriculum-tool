@@ -820,6 +820,7 @@
     main { margin-left: 0; padding: 32px 24px 64px; }
     .doc-title { font-size: 36px; }
   }
+  sup.nv { font-family: var(--mono); font-size: 0.72em; color: var(--text-faint, #9E9B94); margin-left: 1px; cursor: help; }
 </style>
 </head>
 <body>
@@ -1137,8 +1138,8 @@
     </p>
     <p style="margin-bottom:0;">
       These are faculty hypotheses about what the analysis will surface once
-      captures are confirmed — not findings from actual snapshots (zero confirmed
-      snapshots exist at this writing). The tool makes that work visible once
+      captures are confirmed — not findings from actual snapshots (none of these courses has a
+      confirmed snapshot at this writing). The tool makes that work visible once
       courses are captured — and when a non-GC course <em>isn't</em> contributing,
       that's visible too.
     </p>
@@ -1226,13 +1227,13 @@
   </p>
   <p>
     KUD is the native vocabulary of career competence: occupational models
-    describe roles in terms of required knowledge, tasks a person must perform,
-    and the judgment to apply both in unfamiliar situations — which is Know, Do,
-    and Understand almost one-to-one. Mapping curriculum coverage onto a career
+    describe roles by the knowledge they require and the work they perform —
+    which is Know and Do, with Understand the reasoning that carries a graduate
+    into unfamiliar situations. Mapping curriculum coverage onto a career
     destination is then a same-axis comparison rather than a translation. Bloom's
     Taxonomy remains a valuable tool — its authors intend it for aligning
     objectives, activities, and assessments across a unit, course, or
-    curriculum (Krathwohl, 2002), not only for single assignments — but its six
+    curriculum (Krathwohl, 2002, p. 212), not only for single assignments — but its six
     cognitive levels — Analyze vs. Evaluate vs. Create — don't map cleanly onto
     what a course builds or what a job requires, and Bloom has no performance
     dimension at all. That performance
@@ -2468,7 +2469,8 @@
     <a class="inline-link" href="../../graduate-outcome-validation.html">Validation proposal</a>.
     Crucially, every one of those mitigations is <em>internal</em>: because the auditor
     is itself an LLM, and LLM judges share correlated errors (a nine-model panel behaves
-    like roughly two independent votes), no amount of conservative prompting, dispute
+    like roughly two independent votes &mdash; Kohli, 2026; see the
+    <a class="inline-link" href="../../background.html#anchors">Background document, &sect;7</a>), no amount of conservative prompting, dispute
     trail, or multi-faculty review can fully cancel a bias the judges hold in common —
     for instance, crediting a competency because a syllabus uses its vocabulary. The only
     check on that error class is comparison against a signal the models did not generate,
@@ -2606,7 +2608,7 @@
       curve showing the program produced that growth, and documented evidence that data
       changed the curriculum. The gate framework produces all three as a byproduct of
       running the program — internal accountability and external reporting draw from
-      the same underlying evidence.
+      the same underlying evidence.<sup class="nv" title="Needs confirmation: source not held in full text">&dagger;</sup>
     </p>
   </div>
 </section>

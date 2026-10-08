@@ -255,6 +255,38 @@
       },
       "ref-lambert-schindler-2026": {
         "file": "pdfs:lambert-schindler-2026-remote-work.pdf"
+      },
+      "ref-wiggins-2005": {
+        "file": "pdfs:wiggins-mctighe-2005-understanding-by-design.pdf",
+        "note": "acquired 2026-10-08; audited against held copy 2026-10-08"
+      },
+      "ref-tomlinson-1999": {
+        "file": "pdfs:tomlinson-1999-differentiated-classroom.pdf",
+        "note": "acquired 2026-10-08; audited against held copy 2026-10-08"
+      },
+      "ref-mcpeck-1990": {
+        "file": "pdfs:mcpeck-1990-reply-to-ennis.pdf",
+        "note": "acquired 2026-10-08; audited against held copy 2026-10-08"
+      },
+      "ref-gibbs-2014": {
+        "file": "pdfs:gibbs-2014-reconfiguring-bruner-kappan.pdf",
+        "note": "acquired 2026-10-08; audited against held copy 2026-10-08"
+      },
+      "ref-bijker-2011": {
+        "file": "pdfs:review-2011-collins-tacit-explicit-knowledge.pdf",
+        "note": "acquired 2026-10-08; audited against held copy 2026-10-08"
+      },
+      "ref-doignon-falmagne-2015": {
+        "file": "pdfs:doignon-falmagne-2015-knowledge-spaces-learning-spaces.pdf",
+        "note": "acquired 2026-10-08; audited against held copy 2026-10-08"
+      },
+      "ref-collins-brown-newman-1987": {
+        "file": "pdfs:collins-brown-newman-1987-cognitive-apprenticeship-tr403.pdf",
+        "note": "acquired 2026-10-08; audited against held copy 2026-10-08"
+      },
+      "ref-manning-skills": {
+        "file": "pdfs:web/manning-2025-education-agent-skills-readme.md",
+        "note": "acquired 2026-10-08; audited against held copy 2026-10-08"
       }
     },
     "measurement-hypotheses-deep-dive.html": {
@@ -342,8 +374,18 @@
       "ref-plank-2022": {
         "file": "pdfs:plank-2022-human-label-variation.pdf",
         "note": "also held: aroyo-welty-2015-truth-is-a-lie.pdf, basile-2021-disagreement.pdf"
+      },
+      "ref-ebbinghaus": {
+        "file": "pdfs:ebbinghaus-1885-memory-1913-translation.pdf",
+        "note": "acquired 2026-10-08; audited against held copy 2026-10-08 (1913 English translation)"
+      },
+      "ref-pavlik-2009": {
+        "file": "pdfs:pavlik-cen-koedinger-2009-pfa.pdf",
+        "note": "acquired 2026-10-08; audited against held copy 2026-10-08"
       }
     },
-    "problem-solving-deep-dive.html": {}
+    "problem-solving-deep-dive.html": {},
+    "executive-brief.html": {},
+    "superpowers/vision/gc-curriculum-tool-vision.html": {}
   }
 }

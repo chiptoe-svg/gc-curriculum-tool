@@ -277,7 +277,10 @@ export function checkPage(pageName, held, docsDir, ledgersDir) {
   const markerCount = countMarkers(html);
 
   // (b) ledger quote check.
-  const ledgerPath = path.join(ledgersDir, pageBasenameNoExt(pageName) + '.json');
+  // Ledgers are flat: a page in a docs subdirectory (e.g.
+  // "superpowers/vision/gc-curriculum-tool-vision.html") uses
+  // ledgers/<basename>.json.
+  const ledgerPath = path.join(ledgersDir, path.basename(pageBasenameNoExt(pageName)) + '.json');
   let ledgerCoverage = null;
   if (!existsSync(ledgerPath)) {
     notes.push(`${pageName}: no ledger at ${path.relative(REPO_ROOT, ledgerPath)} (note, not an error)`);

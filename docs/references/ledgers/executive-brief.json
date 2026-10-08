@@ -1,0 +1,110 @@
+{
+  "page": "executive-brief.html",
+  "generated": "2026-10-08",
+  "claims": [
+    {
+      "id": "br-korinek-1",
+      "location": "Why this matters, timing paragraph",
+      "claim_text": "a scenario in which AI adds less than half a point to GDP growth by 2030",
+      "held_file": "pdfs:korinek-2026-economic-scenarios-STAGED-not-cited.pdf",
+      "quote": "Under modest change, AI adds less than half a point to GDP growth by 2030 and raises unemployment by a tenth of a point.",
+      "page": "PDF p. 1 (Abstract)"
+    },
+    {
+      "id": "br-korinek-2",
+      "location": "Why this matters, timing paragraph",
+      "claim_text": "to one in which AI performs almost half of today's cognitive work",
+      "held_file": "pdfs:korinek-2026-economic-scenarios-STAGED-not-cited.pdf",
+      "quote": "In the extreme change scenario, AI has transformative effects, with AI performing almost half of today’s cognitive work by 2030.",
+      "page": "PDF p. 1 (Abstract)"
+    },
+    {
+      "id": "br-korinek-3",
+      "location": "Why this matters, timing paragraph",
+      "claim_text": "its authors are explicit that these are scenarios, not predictions, with no probabilities attached",
+      "held_file": "pdfs:korinek-2026-economic-scenarios-STAGED-not-cited.pdf",
+      "quote": "The scenarios are not predictions, and we attach no probabilities to them",
+      "page": "PDF p. 3 (§1 Introduction)"
+    },
+    {
+      "id": "br-korinek-4",
+      "location": "Why this matters, timing paragraph",
+      "claim_text": "Korinek, Jones, Sacher, Cotter & McCrory, Economic Scenarios for Transformative AI, The Anthropic Institute working paper, 2026",
+      "held_file": "pdfs:korinek-2026-economic-scenarios-STAGED-not-cited.pdf",
+      "quote": "Anton Korinek, Charles I. Jones, Szymon Sacher, Tess Cotter, and Peter McCrory",
+      "page": "PDF p. 1 (title block; also \"Working Paper No. 2026-02, September 2026\")"
+    },
+    {
+      "id": "br-tomlinson-1",
+      "location": "The framework",
+      "claim_text": "KUD+ framework, drawn from Carol Ann Tomlinson's work on differentiated instruction",
+      "held_file": "pdfs:tomlinson-1999-differentiated-classroom.pdf",
+      "quote": "Ms. Johnson’s clarity about what students must know, understand, and be able to do as a result of a unit promotes engagement.",
+      "page": "printed p. 46 (PDF p. 53)"
+    },
+    {
+      "id": "br-wiggins-1",
+      "location": "The framework",
+      "claim_text": "compatible with Wiggins & McTighe's Understanding by Design",
+      "held_file": "pdfs:wiggins-mctighe-2005-understanding-by-design.pdf",
+      "quote": "What should students know, understand, and be able to do?",
+      "page": "printed p. 17 (PDF p. 29), Stage 1"
+    },
+    {
+      "id": "br-krathwohl-1",
+      "location": "The framework",
+      "claim_text": "Bloom's authors intend it for aligning objectives, activities, and assessments across a unit, course, or curriculum (Krathwohl, 2002, p. 212)",
+      "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
+      "quote": "means for determining the congruence of educational objectives, activities, and assessments in a unit, course, or curriculum",
+      "page": "p. 212"
+    },
+    {
+      "id": "br-krathwohl-2",
+      "location": "The framework",
+      "claim_text": "the taxonomy has no performance dimension at all",
+      "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
+      "quote": "A taxonomy for the psychomotor domain was never published by the originating group",
+      "page": "p. 218 (Note 1)"
+    },
+    {
+      "id": "br-brynjolfsson-1",
+      "location": "The framework",
+      "claim_text": "tacit craft that early labor-market evidence suggests AI complements rather than substitutes for",
+      "held_file": "pdfs:brynjolfsson-2026-canaries.pdf",
+      "quote": "One possible mechanism is that AI substitutes more effectively for codified knowledge",
+      "page": "printed p. 19"
+    },
+    {
+      "id": "br-brynjolfsson-2",
+      "location": "The framework",
+      "claim_text": "AI complements tacit knowledge (the paper's own word)",
+      "held_file": "pdfs:brynjolfsson-2026-canaries.pdf",
+      "quote": "while complementing tacit knowledge acquired through practice, mentorship, and repeated exposure to real situations",
+      "page": "printed p. 19"
+    },
+    {
+      "id": "br-brynjolfsson-3",
+      "location": "The framework",
+      "claim_text": "who call their own estimates \"non-causal and purely suggestive\"",
+      "held_file": "pdfs:brynjolfsson-2026-canaries.pdf",
+      "quote": "We caution that these estimates are non-causal and purely … suggestive, and more empirical work may help assess",
+      "page": "printed p. 19"
+    },
+    {
+      "id": "br-onet-1",
+      "location": "The framework, O*NET paragraph",
+      "claim_text": "O*NET catalogs jobs by required knowledge, skills, and work activities",
+      "held_file": "ai_career:future_of_gc/load_bearing/National_Research_Council_2010_O-NET_Review_Database_for_Changing_Economy.pdf",
+      "quote": "The O*NET content model includes hundreds of descriptors of work and workers organized into domains, such as skills, knowledge, and work activities.",
+      "page": "printed p. 1 (PDF p. 15)"
+    },
+    {
+      "id": "br-onet-2",
+      "location": "The framework, O*NET paragraph",
+      "claim_text": "O*NET's Level scale rates the level \"needed to perform\" a job",
+      "held_file": "ai_career:future_of_gc/load_bearing/National_Research_Council_2010_O-NET_Review_Database_for_Changing_Economy.pdf",
+      "quote": "of the descriptor needed “to perform the job.”",
+      "page": "printed p. 64 (PDF p. 78)"
+    }
+  ]
+}

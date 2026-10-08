@@ -153,6 +153,13 @@ describe('checkPage', () => {
     expect(r.errors.some(e => e.includes('claim-1'))).toBe(false);
   });
 
+  it('finds the ledger for a page in a docs subdirectory by its basename (ledgers stay flat)', () => {
+    const held = heldJsonFor({ 'sub/nested-page.html': {} });
+    const r = checkPage('sub/nested-page.html', held, DOCS_DIR, LEDGERS_DIR);
+    expect(r.errors).toEqual([]);
+    expect(r.ledgerCoverage).toEqual({ total: 1, ok: 1, failed: 0 });
+  });
+
   it('reports the needs-confirmation marker count for a page', () => {
     const held = heldJsonFor({ 'no-ledger-page.html': {} });
     const r = checkPage('no-ledger-page.html', held, DOCS_DIR, LEDGERS_DIR);

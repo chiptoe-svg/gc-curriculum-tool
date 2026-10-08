@@ -1,0 +1,13 @@
+{
+  "page": "sub/nested-page.html",
+  "claims": [
+    {
+      "id": "nested-1",
+      "location": "§1",
+      "claim_text": "The result is surprising and robust.",
+      "held_file": "fixture:held-2021-source.txt",
+      "quote": "the result is surprising and robust",
+      "page": 4
+    }
+  ]
+}
