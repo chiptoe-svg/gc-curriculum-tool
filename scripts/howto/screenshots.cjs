@@ -16,28 +16,36 @@
  *   mkdir /tmp/pw && cd /tmp/pw && npm i playwright-core@1.58
  *   NODE_PATH=/tmp/pw/node_modules node scripts/howto/screenshots.cjs <slug> [stop] 
  * Env: HOWTO_DATA (default ./howto-data), HOWTO_OUT (default public/howto).
- * Faculty login is read from FACULTY_BASIC_AUTH via ~/.claude/dashboard/read-env.mjs.
+ * Sign-in: a personal access link's key in env HOWTO_KEY (the part after
+ * `?key=`), exchanged for a session cookie on the first page load — no shared
+ * department password (spec 2026-10-08). Use a link with capture rights on
+ * GC 1010. Never commit or print the key.
  */
 const path = require('path');
 const fs = require('fs');
 const DATA = process.env.HOWTO_DATA || 'howto-data';
 const OUT = process.env.HOWTO_OUT || 'public/howto';
 const { chromium } = require('playwright-core');
-const { execFileSync } = require('child_process');
-const APP = '/Users/admin/projects/curriculum_developer';
-const env = k => execFileSync('node', [process.env.HOME + '/.claude/dashboard/read-env.mjs', APP, k]).toString().trim();
 const ORIGIN = 'https://gcworkflow.clemson.edu:8443';
 
 async function open() {
-  const [username, ...rest] = env('FACULTY_BASIC_AUTH').split(':');
+  const key = (process.env.HOWTO_KEY || '').trim();
+  if (!key) throw new Error('HOWTO_KEY is not set (a personal access link key)');
   const browser = await chromium.launch({
     executablePath: process.env.HOME + '/Library/Caches/ms-playwright/chromium-1234/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing',
   });
   const context = await browser.newContext({
-    httpCredentials: { username, password: rest.join(':') },
     viewport: { width: 1280, height: 900 }, deviceScaleFactor: 2,
   });
   const page = await context.newPage();
+  // Exchange the key for the gc_session cookie: the gate redirects to the
+  // same path without ?key= and sets the cookie on this browser context.
+  const signin = await page.goto(`${ORIGIN}/?key=${encodeURIComponent(key)}`, { waitUntil: 'load' });
+  const cookies = await context.cookies(ORIGIN);
+  if (!signin || !signin.ok() || !cookies.some(c => c.name === 'gc_session')) {
+    await browser.close();
+    throw new Error('HOWTO_KEY did not sign in (no gc_session cookie) — is the link live?');
+  }
   const blocked = [];
   // SAFETY: no write ever reaches the server. Any non-GET to /api is answered
   // here unless a step installs a more specific mock first.

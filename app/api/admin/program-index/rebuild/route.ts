@@ -16,7 +16,7 @@ export const maxDuration = 300;
  * a full rebuild across ~30 courses takes a while. Progress is in server
  * logs. Idempotent — repeated runs converge.
  *
- * Gated by /api/admin/* middleware (FACULTY_BASIC_AUTH) and checkAdminAuth
+ * Gated by the middleware grant gate (lib/auth/gate.ts — admin grant) and checkAdminAuth
  * (Bearer ADMIN_TOKEN, or legacy slug second factor).
  */
 export async function POST(req: Request): Promise<Response> {

@@ -16,7 +16,7 @@ import { runCourseIngest, type IngestMode } from '@/lib/capture/run-course-inges
  * flag is off, finalizeExtraction runs the legacy compression path and
  * indexing_status is never set to 'ready'. The route still succeeds.
  *
- * Gated by /api/admin/* middleware (FACULTY_BASIC_AUTH) + checkAdminAuth.
+ * Gated by the middleware grant gate (lib/auth/gate.ts — admin grant) + checkAdminAuth.
  */
 export async function POST(req: Request): Promise<Response> {
   const body = await req.json().catch(() => ({})) as { courseCode?: unknown; slug?: unknown; mode?: unknown };

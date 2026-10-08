@@ -6,6 +6,7 @@ import { createSession, SESSION_COOKIE } from '@/lib/partners/sessions';
 import { requiresBasicAuth } from '@/lib/auth/basic-auth';
 import { courseFromScopedPath, resolveScopedSession } from '@/lib/sandbox/access';
 import { gate } from '@/lib/auth/gate';
+import { authEnv } from '@/lib/auth/auth-env';
 import { findGrantByToken, findGrantById, touchLastUsed, SESSION_COOKIE as GRANT_SESSION_COOKIE } from '@/lib/auth/grants';
 
 /**
@@ -14,13 +15,12 @@ import { findGrantByToken, findGrantById, touchLastUsed, SESSION_COOKIE as GRANT
  *   1. `/partners/*` — issues the partner session cookie for the
  *      magic-link survey (see handlePartnerSession).
  *
- *   2. Faculty surfaces (everything not under /partners, /view, or
- *      their /api/* equivalents) — gated by HTTP Basic Auth when
- *      FACULTY_BASIC_AUTH env var is set. This is the stopgap that
- *      protects the local Mac deploy (the only deploy now — Vercel was
- *      retired 2026-06-04). The HTTPS Tailscale Funnel serves it; if
- *      FACULTY_BASIC_AUTH is ever unset the gate no-ops, so it must stay
- *      set. See docs/superpowers/plans/2026-05-25-phase2-hybrid-deploy.md
+ *   2. Faculty surfaces (everything not public per requiresBasicAuth) —
+ *      gated by gate() (lib/auth/gate.ts): a personal-link session cookie,
+ *      or, while DEPARTMENT_LOGIN is on, the shared department Basic
+ *      credential. The gate fails closed: with no credential env set,
+ *      nothing gated is reachable. DEPARTMENT_LOGIN=off retires the shared
+ *      password (spec 2026-10-08).
  */
 export async function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
@@ -184,9 +184,8 @@ export async function middleware(req: NextRequest) {
   const result = await gate(req, {
     findGrantByToken, findGrantById, touch: touchLastUsed,
     env: {
-      sessionSecret: process.env.SESSION_SECRET?.trim() || undefined,
-      faculty: process.env.FACULTY_BASIC_AUTH,
-      creator: process.env.CREATE_ONLY_AUTH,
+      ...authEnv(),
+      signinContact: process.env.SIGNIN_CONTACT?.trim() || undefined,
       slug: process.env.PROTOTYPE_SLUG?.trim(),
       publicOrigin: process.env.PUBLIC_HTTPS_ORIGIN?.trim() || undefined,
     },
@@ -272,20 +271,21 @@ export const config = {
   // replay deterministically breaks real-size multipart mic uploads with
   // "Response body object should not be disturbed or locked" BEFORE the
   // route runs (tiny clips pass; real recordings fail). The route enforces
-  // Basic Auth itself (authorizedForBasicAuth) + slug + rate/cost caps —
-  // same protection, no body proxying.
+  // sign-in itself (getRequestGrant: a capture-capable grant; fails closed)
+  // + slug + rate/cost caps — no body proxying.
   //
   // api/courses/<code>/imscc-import EXCLUDED (2026-06-15): identical issue —
   // real .imscc cartridge uploads are tens of MB (e.g. a 65 MB Canvas
   // export), and the body replay 500'd them with the same TypeError before
-  // the route ran. The route enforces Basic Auth itself (authorizedForBasicAuth)
-  // + slug, mirroring transcribe. (<code> may contain %20, so [^/]+.)
+  // the route ran. The route enforces sign-in itself (lib/auth/route-auth.ts:
+  // the request's grant + authorize(), fails closed) + slug.
+  // (<code> may contain %20, so [^/]+.)
   //
   // api/courses/<code>/materials EXCLUDED (2026-06-16): same body-replay
   // TypeError, hit intermittently on real PDF uploads (worsens under
   // concurrent load — the GC 2400 500s). The route's POST + DELETE enforce
-  // Basic Auth themselves (authorizedForBasicAuth) + slug/scoped, mirroring
-  // imscc-import. The trailing (?!/) makes this EXACT-PATH ONLY: the bare
+  // sign-in themselves (lib/auth/route-auth.ts, fails closed) + slug/scoped,
+  // mirroring imscc-import. The trailing (?!/) makes this EXACT-PATH ONLY: the bare
   // /materials path is excluded, but its subpaths (/materials/<id>,
   // /materials/compress) still pass through middleware Basic Auth — they have
   // no large-body problem and do NOT self-auth, so they must stay gated.

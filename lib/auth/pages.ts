@@ -8,6 +8,14 @@ export function unauthorizedPage(): string {
     `<p>Faculty: open the access link you were given, or sign in with the department login when your browser asks.</p>` +
     `<p>Students and visitors: the <a href="/">course list</a>, course pages and the <a href="/wiki">curriculum wiki</a> need no login.</p>`);
 }
+/** The sign-in page served when DEPARTMENT_LOGIN=off (spec 2026-10-08 §3):
+ * personal links only, no department password, no browser password box. */
+export function signinPage(contact: string): string {
+  return page('Sign in with your link',
+    `<p>Open the personal link in your invitation email. It signs in this browser.</p>` +
+    `<p>Lost it, or it isn’t working? Email ${esc(contact)} for a new one.</p>` +
+    `<p>Students and visitors: the <a href="/">course list</a>, course pages and the <a href="/wiki">curriculum wiki</a> need no sign-in.</p>`);
+}
 export function forbiddenPage(label: string, code?: string): string {
   const what = code ? `can edit ${esc(code)}` : 'has the access it was given';
   return page("This link can’t do that",

@@ -14,8 +14,9 @@ import {
 } from '@/lib/auth/grant-admin';
 
 // Faculty access panel (spec: docs/superpowers/specs/2026-10-07-faculty-access-panel-design.md).
-// Auth: two factors, like every /api/admin/* route — (1) middleware HTTP Basic
-// Auth (FACULTY_BASIC_AUTH) is the primary gate; (2) checkAdminAuth is the
+// Auth: two factors, like every /api/admin/* route — (1) the middleware grant
+// gate (lib/auth/gate.ts: the request's grant must pass authorize(), i.e. an
+// admin-capable personal link) is the primary gate; (2) checkAdminAuth is the
 // in-route second factor (tests/api/admin-routes-gated.test.ts asserts every
 // admin route enforces it). Slug goes in the query (GET) / body (POST) — NEVER
 // an Authorization: Bearer header, which would override the browser's

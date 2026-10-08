@@ -1,7 +1,7 @@
 // app/api/admin/courses/roster/route.ts
 import { NextResponse } from 'next/server';
 import { checkAdminAuth } from '@/lib/auth/admin-auth';
-import { resolveRole } from '@/lib/auth/basic-auth';
+import { authorizeRequest } from '@/lib/auth/route-auth';
 import {
   bulkCreateCourses,
   createCourse,
@@ -22,7 +22,10 @@ import { isHttpUrl } from '@/lib/http/is-http-url';
 //     Insert a single course (no-op if code already exists).
 //     Returns { ok: true }.
 //
-// Auth: checkAdminAuth (Bearer ADMIN_TOKEN / slug-in-header, or legacy ?slug=).
+// Auth: the request's grant must pass authorize() for this path (the `create`
+// capability) — fails closed with no grant (spec 2026-10-08 §4); bulk also
+// needs that grant to cover all courses. Plus checkAdminAuth (Bearer
+// ADMIN_TOKEN / slug-in-header, or legacy ?slug=) as the second factor.
 // ---------------------------------------------------------------------------
 
 /** Light parser: `GC 1234` / `GC1234` / `GC 1234L` etc. */
@@ -44,6 +47,8 @@ function parseCourseLines(text: string): NewCourseInput[] {
 }
 
 export async function POST(req: Request): Promise<Response> {
+  const auth = await authorizeRequest(req);
+  if (auth.response) return auth.response;
   const url = new URL(req.url);
   const slug = url.searchParams.get('slug') ?? '';
   if (!checkAdminAuth(req, { slug })) {
@@ -53,12 +58,10 @@ export async function POST(req: Request): Promise<Response> {
   const body = await req.json().catch(() => ({})) as Record<string, unknown>;
   const mode = body.mode;
 
-  // Create-only role (CREATE_ONLY_AUTH) may add a single course but not bulk-preload.
-  const role = resolveRole(req.headers.get('authorization'), {
-    faculty: process.env.FACULTY_BASIC_AUTH,
-    creator: process.env.CREATE_ONLY_AUTH,
-  });
-  if (mode === 'bulk' && role === 'creator') {
+  // A create grant scoped to fewer than all courses (the create-only role,
+  // or a personal create-only link) may add a single course but not
+  // bulk-preload. Same outcome as the old role check for both built-in roles.
+  if (mode === 'bulk' && !auth.grant.scope.includes('*')) {
     return NextResponse.json({ error: 'create-only role cannot bulk-preload' }, { status: 403 });
   }
 

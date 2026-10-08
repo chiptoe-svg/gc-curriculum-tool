@@ -5,6 +5,7 @@ import { lookupScopedSession, SCOPED_SESSION_COOKIE } from '@/lib/sandbox/sessio
 import { isProgramVisible, type CourseVisibilityFields } from '@/lib/courses/program-visibility';
 import { authorize, classify } from '@/lib/auth/authorize';
 import { findGrantById, grantFromSessionCookie, SESSION_COOKIE as GRANT_SESSION_COOKIE } from '@/lib/auth/grants';
+import { authEnv } from '@/lib/auth/auth-env';
 
 /**
  * Operator override credential — presented as `Authorization: Bearer <token>`
@@ -71,7 +72,7 @@ const EXCLUDED_UPLOAD_ROUTE = /^\/api\/courses\/([^/]+)\/(?:materials|imscc-impo
  * (`authorize`): only a live grant whose classification is a course write it
  * is allowed on binds, to the route's own (decoded, un-normalised) [code].
  * Any failure — no url, bad MAC, dead grant, DB error — is null (the route
- * then falls back to Basic Auth, i.e. fails closed).
+ * then falls back to getRequestGrant + authorize(), i.e. fails closed).
  */
 async function resolveGrantSession(
   req: { headers: { get(name: string): string | null }; url?: string; method?: string },
@@ -92,11 +93,7 @@ async function resolveGrantSession(
   try {
     const grant = await grantFromSessionCookie(raw, {
       findGrantById,
-      env: {
-        sessionSecret: process.env.SESSION_SECRET?.trim() || undefined,
-        faculty: process.env.FACULTY_BASIC_AUTH,
-        creator: process.env.CREATE_ONLY_AUTH,
-      },
+      env: authEnv(),
     });
     if (!grant || grant === 'dead') return null;
     if (classify(req.method, pathname).kind !== 'course-write') return null;
@@ -104,37 +101,6 @@ async function resolveGrantSession(
     return { courseCode: decodeURIComponent(route[1]), instructorName: grant.label };
   } catch {
     return null;
-  }
-}
-
-/**
- * Voice transcription for scoped-access-link holders (owner, 2026-10-07).
- * `/api/transcribe` is outside the middleware matcher and not tied to a course,
- * so it can't use resolveGrantSession. True when the request carries a valid,
- * live `gc_session` cookie whose grant has the `capture` capability on any
- * course (built-in faculty cookies qualify; the create-only role does not).
- * Any failure is false — the route then falls back to Basic Auth.
- */
-export async function hasCaptureGrantCookie(
-  req: { headers: { get(name: string): string | null } },
-): Promise<boolean> {
-  const cookie = req.headers.get('cookie') ?? '';
-  const m = cookie.match(new RegExp(`(?:^|; )${GRANT_SESSION_COOKIE}=([^;]+)`));
-  if (!m?.[1]) return false;
-  let raw: string;
-  try { raw = decodeURIComponent(m[1]); } catch { return false; }
-  try {
-    const grant = await grantFromSessionCookie(raw, {
-      findGrantById,
-      env: {
-        sessionSecret: process.env.SESSION_SECRET?.trim() || undefined,
-        faculty: process.env.FACULTY_BASIC_AUTH,
-        creator: process.env.CREATE_ONLY_AUTH,
-      },
-    });
-    return !!grant && grant !== 'dead' && grant.can.includes('capture');
-  } catch {
-    return false;
   }
 }
 

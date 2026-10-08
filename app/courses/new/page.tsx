@@ -1,6 +1,7 @@
 import { headers } from 'next/headers';
 import { isValidSlug } from '@/lib/slug';
-import { resolveRole } from '@/lib/auth/basic-auth';
+import { authorize } from '@/lib/auth/authorize';
+import { getRequestGrant } from '@/lib/auth/viewer';
 import { NewCourseForm } from './NewCourseForm';
 
 interface Props {
@@ -26,13 +27,24 @@ export default async function NewCoursePage({ searchParams }: Props) {
     );
   }
 
-  const role = resolveRole((await headers()).get('authorization'), {
-    faculty: process.env.FACULTY_BASIC_AUTH,
-    creator: process.env.CREATE_ONLY_AUTH,
-  });
-  // Faculty (or no gate configured → null) keep the capture redirect;
-  // the create-only role gets the confirmation flow.
-  const canCapture = role !== 'creator';
+  // The request's grant, resolved like the gate (spec 2026-10-08 §4). The
+  // form is shown only to a grant that may add a course — the same
+  // authorize() rule the create API enforces — and fails closed: no grant,
+  // no form, whatever env is set.
+  const grant = await getRequestGrant(await headers());
+  if (!grant || !authorize(grant, 'POST', '/courses/new').ok) {
+    return (
+      <div className="mx-auto max-w-2xl px-6 py-16 text-center">
+        <h1 className="text-2xl font-semibold">This link can’t add courses</h1>
+        <p className="mt-3 text-muted-foreground">
+          Open this page with a personal link that is allowed to add courses.
+        </p>
+      </div>
+    );
+  }
+  // A grant that can also capture keeps the capture redirect; a create-only
+  // grant gets the confirmation flow.
+  const canCapture = grant.can.includes('capture');
 
   return (
     <div className="min-h-screen bg-background">
