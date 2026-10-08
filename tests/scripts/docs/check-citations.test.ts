@@ -36,8 +36,13 @@ describe('normalizeText', () => {
     expect(normalizeText('condi-\ntions')).toBe('conditions');
   });
 
-  it('unifies en/em dashes to a plain hyphen', () => {
-    expect(normalizeText('pp. 10–20')).toContain('10-20');
+  it('treats en/em dashes and hyphens alike', () => {
+    expect(normalizeText('pp. 10–20')).toBe(normalizeText('pp. 10-20'));
+    expect(normalizeText('a — b')).toBe(normalizeText('a - b'));
+  });
+
+  it('compares intra-word hyphens insensitively (line-break de-hyphenation joins real compounds)', () => {
+    expect(normalizeText('the non-\ndeterministic nature')).toBe(normalizeText('the non-deterministic nature'));
   });
 
   it('strips "[p. N]" page markers', () => {

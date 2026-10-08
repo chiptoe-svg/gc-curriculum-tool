@@ -62,6 +62,10 @@ export function normalizeText(s) {
     .replace(/ﬄ/g, 'ffl');
   // De-hyphenate line-break hyphens: "exam-\nple" -> "example".
   t = t.replace(/(\w)-\s*\n\s*(\w)/g, '$1$2');
+  // Then drop every remaining intra-word hyphen on both sides: line-break
+  // de-hyphenation can't tell "exam-ple" from a real "non-deterministic", so
+  // compare hyphen-insensitively ("non-deterministic" == "nondeterministic").
+  t = t.replace(/(\w)-(\w)/g, '$1$2');
   // Strip "[p. N]" / "[pp. N-M]" page markers.
   t = t.replace(/\[pp?\.?\s*\d+[–—-]?\d*\]/gi, '');
   // Collapse whitespace (including newlines) to single spaces.
@@ -140,12 +144,27 @@ export function extractText(absPath) {
     } catch {
       return '';
     }
-    const cacheFile = path.join(CACHE_DIR, key + '.txt');
+    const cacheFile = path.join(CACHE_DIR, key + '.v2.txt');
     if (existsSync(cacheFile)) {
       return readFileSync(cacheFile, 'utf8');
     }
-    const result = spawnSync('pdftotext', [absPath, '-'], { encoding: 'utf8', maxBuffer: 1024 * 1024 * 64 });
-    const text = result.status === 0 ? (result.stdout ?? '') : '';
+    // Two pdftotext modes (reading order differs on multi-column layouts),
+    // plus a sibling OCR/markdown extraction (<stem>.md) when one exists —
+    // scanned PDFs often have a poor or missing text layer.
+    const parts = [];
+    for (const args of [[absPath, '-'], ['-raw', absPath, '-']]) {
+      const result = spawnSync('pdftotext', args, { encoding: 'utf8', maxBuffer: 1024 * 1024 * 64 });
+      if (result.status === 0 && result.stdout) parts.push(result.stdout);
+    }
+    const sidecar = absPath.slice(0, -ext.length) + '.md';
+    if (existsSync(sidecar)) {
+      try {
+        parts.push(readFileSync(sidecar, 'utf8'));
+      } catch {
+        // Unreadable sidecar: fall back to the pdftotext text alone.
+      }
+    }
+    const text = parts.join('\n\n');
     try {
       mkdirSync(CACHE_DIR, { recursive: true });
       writeFileSync(cacheFile, text, 'utf8');
