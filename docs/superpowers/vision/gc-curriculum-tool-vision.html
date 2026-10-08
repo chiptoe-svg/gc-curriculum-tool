@@ -879,8 +879,8 @@
     scheduled for Phase 2.
   </div>
   <div class="doc-meta">
-    <span><strong>Date</strong> 2026-05-20</span>
-    <span><strong>Status</strong> Draft for review</span>
+    <span><strong>Date</strong> First drafted 2026-05-20 · Updated 2026-10-08</span>
+    <span><strong>Status</strong> Living document — faculty trial underway</span>
     <span><strong>Implementation</strong> <a class="inline-link" href="../specs/2026-05-17-gc-curriculum-tool-v1-design.html">v1 design</a></span>
   </div>
 </header>
@@ -1230,10 +1230,12 @@
     and the judgment to apply both in unfamiliar situations — which is Know, Do,
     and Understand almost one-to-one. Mapping curriculum coverage onto a career
     destination is then a same-axis comparison rather than a translation. Bloom's
-    Taxonomy remains the right tool for analyzing the cognitive demand of
-    individual assessment tasks, but its six cognitive levels — Analyze vs.
-    Evaluate vs. Create — don't map cleanly onto what a course builds or what a
-    job requires, and Bloom has no performance dimension at all. That performance
+    Taxonomy remains a valuable tool — its authors intend it for aligning
+    objectives, activities, and assessments across a unit, course, or
+    curriculum (Krathwohl, 2002), not only for single assignments — but its six
+    cognitive levels — Analyze vs. Evaluate vs. Create — don't map cleanly onto
+    what a course builds or what a job requires, and Bloom has no performance
+    dimension at all. That performance
     axis is also what lets the tool <em>capture problem-solving</em>: it develops as
     performance under novelty accumulated across a program — not a level any single
     task certifies — so the upper Do and Understand depths are exactly where the
@@ -1819,8 +1821,10 @@
 
     <div style="margin-top: 14px; padding: 10px 14px; background: var(--bg-alt); border: 1px solid var(--border); border-radius: 4px; font-size: 12.5px; color: var(--text-muted);">
       Try the real thing:
-      <a href="http://gcworkflow.clemson.edu:3000/">open the live tool</a>
-      — running locally on the Clemson LAN (Basic Auth, LAN-only).
+      <a href="https://gcworkflow.clemson.edu:8443/">open the live tool</a>
+      — running locally, reachable on the Clemson campus network only.
+      Faculty sign in with a personal access link; the shared department
+      password is being retired.
     </div>
 
     <div class="heatmap" style="margin-top: 14px;">
@@ -2317,10 +2321,11 @@
   <p><strong>The current workflow:</strong></p>
   <ul>
     <li><code>/capture/&lt;code&gt;</code> — <strong>CourseCapture.</strong> <span class="status-tag status-live">Live (faculty trial)</span> The instructor-facing audit conversation that produces a Course Outcome Profile. Pulls catalog values, Canvas sources, linked materials, and direct uploads. Full ingestion surface documented in the <a class="inline-link" href="../../background.html">Background document</a>. Voice input via Whisper. Snapshots are immutable and versioned; the draft remains mutable.</li>
-    <li><code>/explore/&lt;code&gt;</code> — <strong>Explore module.</strong> <span class="status-tag status-live">Live (faculty trial)</span> Alignment analyses (custom target / downstream target) and what-if scenarios run against any saved snapshot. Custom-target authoring; downstream-target auto-detection from captured prereq courses.</li>
-    <li><code>/courses</code> + <code>/courses/&lt;code&gt;</code> — <strong>Course catalog &amp; prerequisite view.</strong> <span class="status-tag status-live">Live (faculty trial)</span> A typeset index of every catalog course with its capture status and click-through to capture, plus a per-course prerequisite view that seeds skill-tagged prerequisite edges and reads a computed gap report — does what each course expects on day one actually get built upstream, and at what depth? Uncaptured prerequisites show as no-data, never an assumed gap.</li>
-    <li><code>/program</code> — <strong>Program Coverage Matrix.</strong> <span class="status-tag status-live">Live (faculty trial)</span> Confirmed snapshots × career-target sub-competencies, rendered as a depth-aware heat map with a problem-solving lens. On-demand AI scoring per cell; full rationale and evidence excerpt visible in a drawer. The coverage-matrix view from the end state, in a snapshot-grid form — the self-updating machinery and the cross-snapshot diff that would make it a true "living" view are Phase 2 work. A companion <code>/program/scaffolding</code> Scaffolding Strip (live) reads the same snapshots for introduce / practice / integrate sequencing and flags brittle scaffolds — a downstream course expecting mastery of a competency no upstream course introduces.</li>
-    <li><code>/settings</code> — <strong>Per-function AI model tuning.</strong> <span class="status-tag status-live">Live (faculty trial)</span> Tier-based selection (Light / Default / Heavy) plus per-function model dropdowns sourced from the OpenAI provider's available models.</li>
+    <li><code>/explore/&lt;code&gt;</code> — <strong>Explore module.</strong> <span class="status-tag status-live">Live (faculty trial)</span> A course-anchored thinking-partner chat: it grounds in the course's wiki page, its place in the sequence, and its neighbors, then predicts and suggests directions for a proposed change. Asking it to estimate impact produces an inline scenario card (predicted deltas and ripple effects) that can be saved, compared against another scenario, or adopted — adopting seeds a CourseCapture draft with the revised design for faculty to review and confirm.</li>
+    <li><code>/courses</code> + <code>/courses/&lt;code&gt;</code> — <strong>Course catalog &amp; prerequisite view.</strong> <span class="status-tag status-live">Live (faculty trial)</span> A typeset index of every catalog course with its capture status and click-through to capture, plus a per-course prerequisite view that seeds skill-tagged prerequisite edges and reads a computed gap report — does what each course expects on day one actually get built upstream, and at what depth? Uncaptured prerequisites show as no-data, never an assumed gap. Course titles and prerequisite data are now sourced from the official Clemson course catalog rather than the department's shared spreadsheet; a plain-language, screenshot-illustrated how-to for running a capture lives at <code>/curriculum/howto</code>.</li>
+    <li><code>/program</code> — <strong>Program Coverage Matrix.</strong> <span class="status-tag status-live">Live (faculty trial)</span> Confirmed snapshots × career-target sub-competencies, rendered as a depth-aware heat map with a problem-solving lens. On-demand AI scoring per cell; full rationale and evidence excerpt visible in a drawer. The coverage-matrix view from the end state, in a snapshot-grid form — the self-updating machinery and the cross-snapshot diff that would make it a true "living" view are Phase 2 work. A companion <code>/program/scaffolding</code> Scaffolding Strip (live) reads the same snapshots for introduce / practice / integrate sequencing and flags brittle scaffolds — a downstream course expecting mastery of a competency no upstream course introduces. Scoring a stale pair is an admin action.</li>
+    <li><code>/settings</code> — <strong>Per-function AI model tuning.</strong> <span class="status-tag status-live">Live (faculty trial)</span> Tier-based selection (Light / Default / Heavy) plus per-function model dropdowns sourced from the OpenAI provider's available models. Changing a model setting is an admin action; other faculty can see the per-function cost and model information read-only.</li>
+    <li><code>/admin/access</code> — <strong>Faculty access panel.</strong> <span class="status-tag status-live">Live</span> Add a person with name, email, and either specific courses or all courses; issue a personal sign-in link; edit, reissue, or revoke access. Replaces the department-wide shared password as the way faculty reach the tool — see Faculty access, below.</li>
     <li><code>/wiki</code> + <code>/ask</code> — <strong>Curriculum knowledge base.</strong> <span class="status-tag status-live">Live (faculty trial)</span> A self-maintaining markdown knowledge base (the <code>gc-curriculum-wiki</code> sibling repo) that regenerates course, competency, career-target, and concept pages from confirmed snapshots — browsable at <code>/wiki</code> and answerable in plain language at <code>/ask</code>, where a chat agent navigates the pages and cites verbatim excerpts. It fills in as captures accumulate. This is v1; the self-reconciling compile loop (concept promotion, broken-link/staleness lint, a scheduled reconcile) is Phase 2.</li>
     <li><code>/partners/&lt;token&gt;</code> — <strong>Position Capture (the demand side).</strong> <span class="status-tag status-live">Live</span> The employer-facing counterpart to CourseCapture: a magic-linked, multi-page flow where an industry partner captures one role at a time — job-description ingest, an AI-led interview, and AI-rated "experiences worth having" — keyed to career-target sub-competencies. This is what makes the career-target definitions empirical rather than hypothetical. Faculty distribute the links from the partner admin; the survey runs on the same Mac. <em>Captured</em> demand is live; the sufficiency comparison that differences employer-required depth against the matrix's evidenced attainment is built end-to-end but switched off behind a flag pending activation.</li>
   </ul>
@@ -2347,15 +2352,14 @@
       </div>
     </div>
     <div class="feedback-card">
-      <div class="feedback-card-eyebrow">On the shared sheet</div>
-      <div class="feedback-card-title">Open feedback tab</div>
+      <div class="feedback-card-eyebrow">In-tool</div>
+      <div class="feedback-card-title">General feedback</div>
       <div class="feedback-card-body">
-        Open the
-        <a class="inline-link" href="https://docs.google.com/spreadsheets/d/12aPhgrIlhDYjKD0-Gt97glf1d9fKtwKmL4FwM8iTz7Q/edit?gid=1820124586#gid=1820124586" target="_blank" rel="noopener noreferrer">Feedback tab on the shared sheet</a>
-        and add your name, the topic, and your thought. Everyone in the department
-        can see it and react. Best for cross-cutting questions
-        (<em>"should we add a career target for X?"</em>) and anything worth other
-        faculty seeing.
+        The <strong>Feedback</strong> link in the header (beside Hub/Guide/Settings)
+        opens a modal — name and a freeform note — that files a GitHub issue,
+        auto-triaged and tagged. Best for cross-cutting questions
+        (<em>"should we add a career target for X?"</em>) and anything not tied
+        to one specific score.
       </div>
     </div>
   </div>
@@ -2367,6 +2371,18 @@
     A research tool that runs on real institutional data sits inside an institutional
     context, and the Vision should be honest about the parts of that context that
     determine whether the tool will actually be useful.
+  </p>
+
+  <h3>Faculty access</h3>
+  <p>
+    Faculty reach the tool over the Clemson campus network at a dedicated HTTPS
+    address; there is no off-campus path. Each faculty member is issued a
+    personal sign-in link from the admin access panel — add a person, scope
+    their access to specific courses or grant all courses, reissue a lost link,
+    or revoke it. The department-wide shared login still works during the
+    rollout so nothing breaks mid-invitation, but it is being retired once
+    every invited faculty member has signed in with their own link; after that,
+    a personal link is the only way in.
   </p>
 
   <h3>Career-target governance</h3>
@@ -2480,7 +2496,7 @@
       <div class="phase-tag">Done · CourseCapture + Explore + Settings</div>
       <div class="phase-name">Per-course audit and snapshot workflow</div>
       <div class="phase-body">
-        Per-course audit conversation at <code>/capture/&lt;code&gt;</code> producing immutable confirmed Course Outcome Profiles. Custom-target and downstream-target alignment + what-if scenarios at <code>/explore</code>. Per-function AI model tuning at <code>/settings</code>.
+        Per-course audit conversation at <code>/capture/&lt;code&gt;</code> producing immutable confirmed Course Outcome Profiles. Course-anchored thinking-partner chat with saveable, comparable, adoptable change scenarios at <code>/explore</code>. Per-function AI model tuning at <code>/settings</code>.
       </div>
     </div>
     <div class="phase current">
@@ -2612,10 +2628,17 @@
       <div class="cap-title">First-Job Alignment</div>
       <div class="cap-body">
         For each SOC occupation in the graduate employment dataset, pull the
-        O*NET competency profile (Knowledge → Know, Skills → Understand,
-        Work Activities → Do). Compare those profiles against the baseline KUDs
-        generated from current course materials. Score alignment per course × career
-        destination. Surface gaps and coverage maps at the program level.
+        O*NET competency profile. How those O*NET elements enter the comparison
+        is being redesigned (as of 2026-10-08, design pending): rather than a
+        one-to-one category crosswalk, each O*NET element (Knowledge, Skills,
+        Work Activities) is treated as its own competency scored on all three
+        KUD axes; broad elements such as Critical Thinking are tracked as
+        program-level qualities rather than scored per course; and O*NET's
+        Importance and Level ratings serve as demand-side signals alongside
+        attainment, not as attainment scores themselves. Once built, the module
+        would compare those profiles against the baseline KUDs generated from
+        current course materials, score alignment per course × career
+        destination, and surface gaps and coverage maps at the program level.
       </div>
     </div>
     <div class="cap">
