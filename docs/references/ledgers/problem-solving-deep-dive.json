@@ -1,0 +1,646 @@
+{
+  "page": "problem-solving-deep-dive.html",
+  "generated": "2026-10-07",
+  "claims": [
+    {
+      "id": "ps-tannenbaum-1",
+      "location": "§4 ¶2",
+      "claim_text": "with similar results across teams and individuals, simulated and real settings, and medical and nonmedical participants; they call the efficacy of debriefs “quite robust.”",
+      "held_file": "ai_career:future_of_gc/load_bearing/Tannenbaum_Cerasoli_2013_Debriefs_Meta-Analysis.pdf",
+      "quote": "Overall, the efficacy of debriefs appears quite robust. Effect sizes averaged in the range of 20% to 26%, showing similar results across teams and individuals, across simulated and real settings, for within- or between-group control designs, and for medical and nonmedical participants.",
+      "page": 240
+    },
+    {
+      "id": "ps-tannenbaum-2",
+      "location": "§4 ¶2",
+      "claim_text": "facilitated debriefs were “about 3 times as effective” as nonfacilitated ones",
+      "held_file": "ai_career:future_of_gc/load_bearing/Tannenbaum_Cerasoli_2013_Debriefs_Meta-Analysis.pdf",
+      "quote": "In line with Hypothesis 3, we found that facilitated debriefs (d = .75, or 27%) were about 3 times as effective as nonfacilitated debriefs (d = .25, or 10%) but the number of studies without facilitation was quite low.",
+      "page": 239
+    },
+    {
+      "id": "ps-tannenbaum-3",
+      "location": "§4 ¶2",
+      "claim_text": "team debriefs did much better when team rather than individual performance was measured (d = 1.20, or 38%, versus d = 0.41, or 16%)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Tannenbaum_Cerasoli_2013_Debriefs_Meta-Analysis.pdf",
+      "quote": "At the team level, when the focus of the debrief was team improvement, observed effectiveness was greater when team performance was measured (d = 1.20, or 38%) than when individual performance was measured (d = 0.41, or 16%).",
+      "page": 240
+    },
+    {
+      "id": "ps-tannenbaum-4",
+      "location": "§4 ¶2",
+      "claim_text": "What the meta-analysis treats as defining a debrief is specific: active self-learning rather than passive receipt of feedback, a developmental rather than judgmental intent, reflection on specific events rather than general strengths and weaknesses, and input from more than one source (their Table 1).",
+      "held_file": "ai_career:future_of_gc/load_bearing/Tannenbaum_Cerasoli_2013_Debriefs_Meta-Analysis.pdf",
+      "quote": "Developmental (vs. administrative) intent. Debriefs are intended primarily to serve developmental purposes rather than evaluative or judgmental purposes. ... Part of what defines a debrief is a focus on specific activities, episodes, and events rather than on general performance or competencies. ... For the purposes of our meta-analysis, a debrief cannot be a solitary experience. It must involve either a team sharing members' perceptions or a focal participant and at least one external information source, such as an observer, facilitator, and/or objective data source (e.g., video).",
+      "page": 233
+    },
+    {
+      "id": "ps-tannenbaum-5",
+      "location": "§4 ¶3",
+      "claim_text": "Generic reflection prompts — \"reflect on your learning,\" \"what did you take away from this course\" — fall outside that definition: the meta-analysis excluded reflection on general performance or competencies, so it reports no effect for such prompts either way.",
+      "held_file": "ai_career:future_of_gc/load_bearing/Tannenbaum_Cerasoli_2013_Debriefs_Meta-Analysis.pdf",
+      "quote": "Part of what defines a debrief is a focus on specific activities, episodes, and events rather than on general performance or competencies.",
+      "page": 232
+    },
+    {
+      "id": "ps-bjork-1",
+      "location": "§3 Degrees ¶2",
+      "claim_text": "Varied practice (for example, a random rather than blocked schedule across several tasks) makes practice harder but enhances long-term performance, particularly “the ability to transfer training to novel but related task environments.”",
+      "held_file": "ai_career:future_of_gc/load_bearing/Bjork_1994_Desirable_Difficulties.pdf",
+      "quote": "It has now been demonstrated in a variety of ways, and with a variety of motor, verbal, and problem-solving tasks, that introducing variation and/or unpredictability in the training environment causes difficulty for the learner but enhances long-term performance — particularly the ability to transfer training to novel but related task environments. Where several differing motor-movement tasks are to be learned, for example, scheduling the practice trials on those tasks in random fashion, rather than blocking the trials by task type, has been shown to impair performance during training but enhance long-term performance",
+      "page": 189
+    },
+    {
+      "id": "ps-barnett-1",
+      "location": "§5 skill ¶",
+      "claim_text": "Barnett and Ceci's far-transfer taxonomy (2002) takes a more hopeful line on the same question: far transfer, “although not frequent,” is “documentable and may even be predictable once the relevant dimensions are specified.”",
+      "held_file": "ai_career:future_of_gc/load_bearing/Barnett_Ceci_2002_When_and_Where_Far_Transfer.pdf",
+      "quote": "In this review, we have tried to make the case that transfer is indeed a salvageable concept and that instances of far transfer, although not frequent, are documentable and may even be predictable once the relevant dimensions are specified.",
+      "page": 634
+    },
+    {
+      "id": "ps-sinha-1",
+      "location": "§3 ¶2",
+      "claim_text": "the later research compares problem-solving followed by instruction with the reverse order",
+      "held_file": "ai_career:future_of_gc/load_bearing/Sinha_Kapur_2021_Problem_Solving_Followed_by_Instruction.pdf",
+      "quote": "When learning a new concept, should students engage in problem solving followed by instruction (PS-I) or instruction followed by problem solving (I-PS)? ... we report evidence from a meta-analysis of 53 studies with 166 comparisons that compared PS-I with I-PS design.",
+      "page": 761
+    },
+    {
+      "id": "ps-sinha-2",
+      "location": "§3 Effect sizes (PS); §4 productive failure ¶ (BG)",
+      "claim_text": "The effect is larger when designs follow productive-failure principles closely: the review's overall fidelity score predicted effect size, and instruction that builds on the students' own solutions was among its strongest single predictors.",
+      "held_file": "ai_career:future_of_gc/load_bearing/Sinha_Kapur_2021_Problem_Solving_Followed_by_Instruction.pdf",
+      "quote": "The overall PF fidelity score (computed as a percentage) was a significant predictor of the effect size (β = 0.0065, p < .001, 95% CI [0.0044, 0.0087]). ... Our first model building approach (stepwise regression) revealed instruction building on student solutions, group work as the participation structure in the problem-solving phase, evidence for multiple RSM generation in the article, and dialogue-dominant social surround facilitation in the instruction phase as the top four most important predictors.",
+      "page": "778, 781"
+    },
+    {
+      "id": "ps-sinha-3",
+      "location": "§3 Effect sizes",
+      "claim_text": "It did study domain-general skills (the control-of-variables strategy, water-jug problems, the Rubik's cube), and that was the one learning domain in which effects favored instruction first (g = −0.17; Sinha & Kapur, 2021, p. 779).",
+      "held_file": "ai_career:future_of_gc/load_bearing/Sinha_Kapur_2021_Problem_Solving_Followed_by_Instruction.pdf",
+      "quote": "Domain-general skills (−0.17 [−1.11, −0.02])",
+      "page": 779
+    },
+    {
+      "id": "ps-sinha-4",
+      "location": "§3 framework ¶",
+      "claim_text": "The productive-failure evidence base is concentrated in mathematics and physics: nearly 75% of the comparisons in the review, whose authors say more studies are needed in other STEM and non-STEM domains “before we can generalize the effectiveness of PS-I”",
+      "held_file": "ai_career:future_of_gc/load_bearing/Sinha_Kapur_2021_Problem_Solving_Followed_by_Instruction.pdf",
+      "quote": "First, nearly 75% of all included comparisons (see Table 1) targeted learning concepts of math and physics, which were, in turn, skewed with particular subtopics (e.g., variance). ... Clearly, more studies are also needed in other STEM domains as well as in non-STEM domains (e.g., psychology, arts, history) before we can generalize the effectiveness of PS-I, even with high PF fidelity.",
+      "page": 788
+    },
+    {
+      "id": "ps-sinha-5",
+      "location": "Figure 4 cell",
+      "claim_text": "Technical-diagnostic core: \"Closest — conceptual knowledge & transfer (evidence mostly from math and physics)\"",
+      "held_file": "ai_career:future_of_gc/load_bearing/Sinha_Kapur_2021_Problem_Solving_Followed_by_Instruction.pdf",
+      "quote": "First, nearly 75% of all included comparisons (see Table 1) targeted learning concepts of math and physics ... Since nearly 90% of PS-I versus I-PS experimental comparisons assessed only conceptual knowledge or transfer outcomes (and not both), we did not use a multivariate model.",
+      "page": "788, 791"
+    },
+    {
+      "id": "ps-kapur2023-1",
+      "location": "§3 Degrees ¶1",
+      "claim_text": "Students from a high- and a medium-achieving school both learned from productive failure, and the variety of solutions they generated (inventive production) had a stronger association with learning than prior math achievement.",
+      "held_file": "ai_career:future_of_gc/load_bearing/Kapur_Saba_Roll_2023_Productive_Failure_npj.pdf",
+      "quote": "Interestingly, it was inventive production that had a stronger association with learning from PF than pre-existing differences in math achievement. These findings, consistent across both topics, demonstrate the value of engaging students in opportunities for inventive production while learning math, regardless of prior math achievement.",
+      "page": 1
+    },
+    {
+      "id": "ps-kapur2023-2",
+      "location": "§3 Degrees ¶1",
+      "claim_text": "The two schools had similar topic-specific prerequisite knowledge, so the study does not show what happens without it",
+      "held_file": "ai_career:future_of_gc/load_bearing/Kapur_Saba_Roll_2023_Productive_Failure_npj.pdf",
+      "quote": "An ANOVA did not reveal any significant difference between the two schools on their topic-specific prerequisite knowledge ... These results indicate that both schools have similar relevant topic-specific prerequisite knowledge of the target concepts.",
+      "page": 4
+    },
+    {
+      "id": "ps-kapur2023-3",
+      "location": "§3 Degrees ¶1",
+      "claim_text": "the authors caution that the findings “may not extend to the lower end of the spectrum.”",
+      "held_file": "ai_career:future_of_gc/load_bearing/Kapur_Saba_Roll_2023_Productive_Failure_npj.pdf",
+      "quote": "The study contrasted high- and medium-level schools related to students' prior math achievement and thus may not extend to the lower end of the spectrum or to other topics.",
+      "page": 5
+    },
+    {
+      "id": "ps-kapur2023-4",
+      "location": "§3 Degrees ¶1",
+      "claim_text": "How much prior knowledge is “enough” is therefore this framework's working assumption, not a finding ... No study we hold names a specific depth.",
+      "held_file": "ai_career:future_of_gc/load_bearing/Kapur_Saba_Roll_2023_Productive_Failure_npj.pdf",
+      "quote": "The study contrasted high- and medium-level schools related to students' prior math achievement and thus may not extend to the lower end of the spectrum or to other topics.",
+      "page": 5
+    },
+    {
+      "id": "ps-kapur2023-5",
+      "location": "§3 Degrees ¶4",
+      "claim_text": "In the 2023 npj study, the number of different solution ideas groups generated during the struggle phase (inventive production) was “by far the main factor influencing learning from PF outcomes” among the factors measured, while prior math achievement had a small effect or none.",
+      "held_file": "ai_career:future_of_gc/load_bearing/Kapur_Saba_Roll_2023_Productive_Failure_npj.pdf",
+      "quote": "Furthermore, the number of RSMs was by far the main factor influencing learning from PF outcomes of the factors that were measured in the current study; prior math achievement had only a small effect (in the topic of ratios) or no effect (in the topic of variance) on learning outcomes.",
+      "page": 5
+    },
+    {
+      "id": "ps-kapur2023-6",
+      "location": "§3 Degrees ¶4",
+      "claim_text": "topic-specific prerequisite knowledge, by contrast, “did not have any significant effect on learning from PF,” though both schools had similar, high levels of it; and it did not test the lower end of the prior-achievement range.",
+      "held_file": "ai_career:future_of_gc/load_bearing/Kapur_Saba_Roll_2023_Productive_Failure_npj.pdf",
+      "quote": "Topic-specific prerequisite knowledge, too, did not have any significant effect on learning from PF.",
+      "page": 5
+    },
+    {
+      "id": "ps-kapur2023-7",
+      "location": "§7 First",
+      "claim_text": "the 2023 npj paper found inventive production more strongly associated with learning than prior math achievement, in high- and medium-achieving schools only",
+      "held_file": "ai_career:future_of_gc/load_bearing/Kapur_Saba_Roll_2023_Productive_Failure_npj.pdf",
+      "quote": "Second, we found that the association between inventive production and learning from PF was much stronger than that of pre-existing differences in prior math achievement in both topics. ... The study contrasted high- and medium-level schools related to students' prior math achievement and thus may not extend to the lower end of the spectrum or to other topics.",
+      "page": 5
+    },
+    {
+      "id": "ps-perkins1992-1",
+      "location": "§5 ¶2",
+      "claim_text": "Perkins and Salomon's 1992 chapter ... distinguishes low-road transfer (relatively reflexive, triggered when a new situation resembles the context of learning, and figuring “most often in near transfer”) from high-road transfer (deliberate, depending on “mindful abstraction” and able to reach far transfer).",
+      "held_file": "ai_career:future_of_gc/load_bearing/Perkins_Salomon_1992_Transfer_of_Learning.pdf",
+      "quote": "low road transfer figures most often in near transfer ... High road transfer, in contrast, depends on mindful abstraction from the context of learning or application",
+      "page": "7 of 11 (printout page number; no journal pagination in this source)"
+    },
+    {
+      "id": "ps-perkins1992-2",
+      "location": "§5 ¶4",
+      "claim_text": "Perkins and Salomon themselves do not take the strong local-knowledge position: the research on expertise, they argue, “does not really force such a position,” because the importance of local knowledge “does not imply the unimportance of rather general knowledge that works together with local knowledge.”",
+      "held_file": "ai_career:future_of_gc/load_bearing/Perkins_Salomon_1992_Transfer_of_Learning.pdf",
+      "quote": "the research on expertise does not really force such a position: The importance of local knowledge does not imply the unimportance of rather general knowledge that works together with local knowledge (Perkins and Salomon 1989)",
+      "page": "5 of 11"
+    },
+    {
+      "id": "ps-salomon1989-1",
+      "location": "§5 mechanism ¶; §7 Third; §9",
+      "claim_text": "Salomon and Perkins (1989)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Salomon_Perkins_1989_Rocky_Roads_to_Transfer.pdf",
+      "quote": "SALOMON AND PERKINS",
+      "page": "136 (running head, and throughout the article's header)"
+    },
+    {
+      "id": "ps-salomon1989-2",
+      "location": "§5 mechanism ¶",
+      "claim_text": "Salomon and Perkins (1989) name the design moves: low-road transfer rides on surface similarity and varied practice; high-road (far) transfer requires mindful abstraction of the principle and deliberate bridging to new contexts.",
+      "held_file": "ai_career:future_of_gc/load_bearing/Salomon_Perkins_1989_Rocky_Roads_to_Transfer.pdf",
+      "quote": "Low-road transfer primarily reflects extended practice; distance of transfer depends on amount of practice and the variability of contexts in which the practice has occurred. High-road transfer, on the other hand, depends on the mindful abstracting of knowledge from a context.",
+      "page": "115 (core definitions); mechanism detail on pp. ~120-123 (the 'car to truck' low-road example and 'the bridge from one context to the other' for mindful abstraction)"
+    },
+    {
+      "id": "ps-salomon1989-3",
+      "location": "§5 mechanism ¶",
+      "claim_text": "They also caution that it does not follow on its own: a teacher “uninformed about the difficulties of transfer” “might presume that students would spontaneously make some illuminating connections and might be puzzled when, for the most part, they do not.”",
+      "held_file": "ai_career:future_of_gc/load_bearing/Salomon_Perkins_1989_Rocky_Roads_to_Transfer.pdf",
+      "quote": "Uninformed about the difficulties of transfer, the history teacher might presume that students would spontaneously make some illuminating connections and might be puzzled when, for the most part, they do not.",
+      "page": "136"
+    },
+    {
+      "id": "ps-gentner-1",
+      "location": "§5 mechanism ¶",
+      "claim_text": "Gentner, Loewenstein, and Thompson (2003) found the same comparison effect with undergraduates learning negotiation strategies, where comparing two cases gave “a two-fold transfer advantage,” and report earlier studies with experienced learners such as MBA students, consultants and managers",
+      "held_file": "ai_career:future_of_gc/load_bearing/Gentner_Loewenstein_Thompson_2003_Analogical_Encoding.pdf",
+      "quote": "In sum, the comparison group showed a two-fold transfer advantage over the separate-cases group. ... instructors at top-rated business schools routinely find that even highly motivated MBA students often fail to make optimal negotiation agreements ... We have replicated this finding of a two- or three-fold advantage for analogical encoding using a variety of instruction sets and several groups of advanced learners (e.g., accountants, consultants, managers, and executives)",
+      "page": "400 (two-fold transfer advantage, Experiment 2 with 128 undergraduates); 395 (MBA/consultants/managers passage)"
+    },
+    {
+      "id": "ps-gentner-2",
+      "location": "§5 mechanism ¶; References",
+      "claim_text": "see also Loewenstein, Thompson, & Gentner, 1999",
+      "held_file": "ai_career:future_of_gc/load_bearing/Gentner_Loewenstein_Thompson_2003_Analogical_Encoding.pdf",
+      "quote": "Loewenstein, J., Thompson, L., & Gentner, D. (1999). Analogical encoding facilitates knowledge transfer in negotiation. Psychonomic Bulletin and Review, 6, 586-597.",
+      "page": "405 (reference list); also cited in-text in this exact author order and year on p. 394"
+    },
+    {
+      "id": "ps-hatano-1",
+      "location": "§6 ¶3",
+      "claim_text": "on Hatano and Inagaki's account, they develop under three conditions: variation that forces the procedure to be adjusted, a low-stakes context that leaves room for playful experimentation, and a culture that values understanding even at some cost to efficiency.",
+      "held_file": "ai_career:future_of_gc/load_bearing/Hatano_Inagaki_Two_Courses_of_Expertise.pdf",
+      "quote": "a variation in critical parameters which often occurs because of the system's built-in randomness, may make the original version of the skill ineffective, thereby motivating one to modify the skill ... When the results obtained through performing the skill have no vital importance or usefulness, people tend to produce minor variations in procedural skill and to examine their effects, often playfully ... In a culture where understanding the system is emphasized as a goal, people are encouraged to engage in active experimentation ... even at the cost of efficiency to some extent",
+      "page": "33-34"
+    },
+    {
+      "id": "ps-chi-1",
+      "location": "§2 ¶4",
+      "claim_text": "Chi and colleagues gave the same set of physics problems to experts (advanced physics PhD students) and novices (undergraduates who had just completed a semester of mechanics) and asked them to sort the problems into groups.",
+      "held_file": "ai_career:future_of_gc/load_bearing/Chi_Feltovich_Glaser_1981_Categorization_Physics_Experts_Novices.pdf",
+      "quote": "we asked eight advanced Ph.D. students from the physics department (experts) and eight undergraduates (novices) who had just completed a semester of mechanics, to categorize 24 problems ... Instructions were to sort the 24 problems into groups based on similarities in how they would be solved.",
+      "page": "5"
+    },
+    {
+      "id": "ps-chi-2",
+      "location": "§8 Claim 1",
+      "claim_text": "D-5 names creative judgment and the ability to guide others — this framework's own marker for the top of the scale, not Chi's. Chi's markers of principle-level rather than surface-level understanding are different: sorting problems by the underlying principle, and solution knowledge stored with “explicit conditions for applicability.”",
+      "held_file": "ai_career:future_of_gc/load_bearing/Chi_Feltovich_Glaser_1981_Categorization_Physics_Experts_Novices.pdf",
+      "quote": "Experts' schemata contain a great deal of procedural knowledge, with explicit conditions for applicability.",
+      "page": "30"
+    },
+    {
+      "id": "ps-larkin-1",
+      "location": "§2 ¶5",
+      "claim_text": "Larkin, McDermott, Simon, and Simon's 1980 paper, published the year before Chi and colleagues'",
+      "held_file": "ai_career:future_of_gc/load_bearing/Larkin_etal_1980_Models_of_Competence_Solving_Physics_Problems.pdf",
+      "quote": "COGNITIVE SCIENCE 4, 317-345 (1980) ... Models of Competence in Solving Physics Problems ... Jill H. Larkin, John McDermott, Dorothea P. Simon, and Herbert A. Simon",
+      "page": "317"
+    },
+    {
+      "id": "ps-larkin-2",
+      "location": "§2 ¶5",
+      "claim_text": "In their models, skilled solvers work forward from the known quantities (“knowledge development”), while “many novice solvers” work backward from the quantity to be found, by means-ends analysis.",
+      "held_file": "ai_career:future_of_gc/load_bearing/Larkin_etal_1980_Models_of_Competence_Solving_Physics_Problems.pdf",
+      "quote": "Knowledge-development (forward chaining) begins with the known quantities in the problem statement and applies appropriate equations to derive new quantities from them ... The means-ends model, corresponding to the work of many novice solvers, focuses on the quantity to be found, writes an equation involving that quantity, and then works backward, writing expressions for quantities that remain unknown.",
+      "page": "324, 343"
+    },
+    {
+      "id": "ps-sweller-1",
+      "location": "§2 ¶6",
+      "claim_text": "conventional problem-solving (working backward from a goal by means-ends search) imposes a cognitive load that may “leave little for schema acquisition, even if the problem is solved,”",
+      "held_file": "ai_career:future_of_gc/load_bearing/Sweller_1988_Cognitive_Load_During_Problem_Solving.pdf",
+      "quote": "The cognitive-processing capacity needed to handle this information may be of such a magnitude as to leave little for schema acquisition, even if the problem is solved.",
+      "page": "261"
+    },
+    {
+      "id": "ps-sweller-2",
+      "location": "§2 ¶6",
+      "claim_text": "schema acquisition is, Sweller argues, “possibly the most important component of problem solving expertise.”",
+      "held_file": "ai_career:future_of_gc/load_bearing/Sweller_1988_Cognitive_Load_During_Problem_Solving.pdf",
+      "quote": "Since schema acquisition is possibly the most important component of problem solving expertise, the development of expertise may be retarded by a heavy emphasis on problem solving",
+      "page": "284"
+    },
+    {
+      "id": "ps-schoenfeld-1",
+      "location": "§7 Third",
+      "claim_text": "in mathematics Schoenfeld's synthesis reports Lester and colleagues' conclusion that metacognition instruction “is most effective when it takes place in a domain specific context” (Schoenfeld, 1992)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Schoenfeld_1992_Learning_to_Think_Mathematically.pdf",
+      "quote": "Metacognition instruction is most effective when it takes place in a domain specific context.",
+      "page": 66
+    },
+    {
+      "id": "ps-veenman-1",
+      "location": "§7 Third",
+      "claim_text": "whether metacognitive skill is general or domain-specific is still unresolved: studies across tasks and domains “yielded inconclusive results.”",
+      "held_file": "ai_career:future_of_gc/load_bearing/Veenman_etal_2006_Metacognition_and_Learning.pdf",
+      "quote": "studies with multiple tasks or domains yielded inconclusive results.",
+      "page": 7
+    },
+    {
+      "id": "ps-veenman-2",
+      "location": "§7 Third",
+      "claim_text": "The vast majority of students “spontaneously pick up” some metacognitive knowledge and skill, but a substantial group does not, and metacognitive instruction, best embedded in the content matter, is “of particular relevance to poor students” (Veenman et al., 2006).",
+      "held_file": "ai_career:future_of_gc/load_bearing/Veenman_etal_2006_Metacognition_and_Learning.pdf",
+      "quote": "spontaneously pick up metacognitive knowledge and skills ... it is of particular relevance to poor students",
+      "page": 9
+    },
+    {
+      "id": "ps-kim-1",
+      "location": "§7 LLM ¶",
+      "claim_text": "LLM errors are correlated across models: more so for models from the same developer or architecture, and “larger and more accurate models have highly correlated errors, even with distinct architectures and providers” (Kim et al., 2025)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Kim_etal_2025_Correlated_Errors_in_LLMs.pdf",
+      "quote": "larger and more accurate models have highly correlated errors, even with distinct architectures and providers",
+      "page": "1"
+    },
+    {
+      "id": "ps-kohli-1",
+      "location": "§7 LLM ¶",
+      "claim_text": "a nine-model judge panel behaves like roughly two independent votes (Kohli, 2026)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Kohli_2025_Nine_Judges_Two_Effective_Votes.pdf",
+      "quote": "we find that the 9 judges effectively provide only about 2 independent votes' worth of information",
+      "page": "PDF index 1 (printed page number not visible on this preprint; no running page numbers appear in the PDF)"
+    },
+    {
+      "id": "ps-kohli-2",
+      "location": "§7 LLM ¶; References",
+      "claim_text": "Kohli (2026)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Kohli_2025_Nine_Judges_Two_Effective_Votes.pdf",
+      "quote": "arXiv:2605.29800v1 [cs.CL] 28 May 2026",
+      "page": "PDF index 1 (arXiv header line, no printed page number)"
+    },
+    {
+      "id": "ps-kohli-3",
+      "location": "§7 LLM ¶",
+      "claim_text": "So a larger panel of model judges cannot cancel a bias the judges hold in common. The same logic, which is ours rather than these papers', applies to self-consistency passes",
+      "held_file": "ai_career:future_of_gc/load_bearing/Kohli_2025_Nine_Judges_Two_Effective_Votes.pdf",
+      "quote": "The bottleneck is correlated judges, not the aggregation algorithm, implying that scaling up panels cannot substitute for genuinely independent evaluation.",
+      "page": "PDF index 1 (Abstract)"
+    },
+    {
+      "id": "ps-hullermeier-1",
+      "location": "§7 LLM ¶",
+      "claim_text": "Some of the residual disagreement ... is likely genuine ambiguity in the construct, what Hüllermeier and Waegeman call aleatoric uncertainty, “the irreducible part of the uncertainty”; how much of it is of that kind is an open question, and the same authors caution that the aleatoric/epistemic split is “context-dependent” and “should not be seen as absolute”",
+      "held_file": "ai_career:future_of_gc/load_bearing/Hullermeier_Waegeman_2021_Aleatoric_Epistemic_Uncertainty_ML.pdf",
+      "quote": "Aleatoric uncertainty refers to the irreducible part of the uncertainty ... What this example shows is that aleatoric and epistemic uncertainty should not be seen as absolute notions. Instead, they are context-dependent in the sense of depending on the setting",
+      "page": "8 (irreducible part of the uncertainty); 9 (context-dependent / should not be seen as absolute)"
+    },
+    {
+      "id": "ps-camerer-1",
+      "location": "§7 Sixth",
+      "claim_text": "A related bias is documented between people: better-informed agents predicting what less-informed others will judge are “unable to ignore the additional information they possess,” and this curse of knowledge “makes personal expertise seem more widely shared than it is” (Camerer, Loewenstein & Weber, 1989). That is, experts misjudge what others know.",
+      "held_file": "ai_career:future_of_gc/load_bearing/Camerer_Loewenstein_Weber_1989_Curse_of_Knowledge.pdf",
+      "quote": "In predicting the judgments of others, agents are unable to ignore the additional information they possess. ... The curse of knowledge makes personal expertise seem more widely shared than it is",
+      "page": "1233 (unable to ignore...); 1247 (makes personal expertise seem more widely shared...)"
+    },
+    {
+      "id": "ps-macnamara-1",
+      "location": "§6 ¶2",
+      "claim_text": "the authors conclude that deliberate practice, though important, “is not as important as Ericsson and his colleagues have argued.”",
+      "held_file": "ai_career:future_of_gc/load_bearing/Macnamara_Hambrick_Oswald_2014_Deliberate_Practice_Meta-Analysis.pdf",
+      "quote": "amount of deliberate practice—although unquestionably important as a predictor of individual differences in performance from both a statistical and a practical perspective—is not as important as Ericsson and his colleagues have argued.",
+      "page": "8"
+    },
+    {
+      "id": "ps-macnamara-2",
+      "location": "§7 Sixth",
+      "claim_text": "deliberate practice explains only a minority of performance variance (Macnamara, Hambrick & Oswald, 2014)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Macnamara_Hambrick_Oswald_2014_Deliberate_Practice_Meta-Analysis.pdf",
+      "quote": "26% of the variance in performance for games, 21% for music, 18% for sports, 4% for education, and less than 1% for professions. We conclude that deliberate practice is important, but not as important as has been argued.",
+      "page": "1"
+    },
+    {
+      "id": "ps-arthur-1",
+      "location": "§10 durability",
+      "claim_text": "a meta-analysis summarizes the loss in its abstract as ranging from d = −0.01 immediately after training to d = −1.4 after more than a year of non-use, across all task types, with cognitive tasks decaying more than physical ones (δ = −1.15 vs. −0.75 across all retention intervals)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Arthur_etal_1998_Skill_Decay_and_Retention_Meta-Analysis.pdf",
+      "quote": "the amount of skill loss ranging from an effect size (d) of -0.01 immediately after training to a d of -1.4 after more than 365 days of nonuse",
+      "page": "57"
+    },
+    {
+      "id": "ps-abrami-1",
+      "location": "§1 ¶2",
+      "claim_text": "a large meta-analysis of critical-thinking instruction (341 effect sizes) found reliable gains, and the four course types it compared (general, infusion, immersion and mixed) all produced positive effects and did not differ significantly from one another (p = .25)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Abrami_etal_2015_Teaching_Critical_Thinking_Meta-Analysis.pdf",
+      "quote": "All four of the methods in Table 4, coded according to Ennis’s (1989) classification, produced significantly positive average effect sizes, but the categories did not differ from one another.",
+      "page": "296"
+    },
+    {
+      "id": "ps-kapur2016-1",
+      "location": "§3 2×2 list",
+      "claim_text": "Productive success — students succeed at problem-solving that is guided toward success, and the success itself produces learning (Kapur's examples are problem-based learning and guided inquiry)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Kapur_2016_Productive_Failure_Success_2x2.pdf",
+      "quote": "Productive success involves structuring problem-solving and learning activities with the goal of achieving both improved performance on problem solving and sustainable learning. For example, constructivist approaches that fall into the genres of problem-based learning (PBL) and guided inquiry involve scaffolded problem-solving activities initially to engender learning, with a gradual fading of the scaffolds as learners gain expertise",
+      "page": 289
+    },
+    {
+      "id": "ps-kapur2016-2",
+      "location": "§3 2×2 list",
+      "claim_text": "Unproductive failure — students struggle without guidance or a later consolidation phase, in designs that, in Kapur's words, “maximize neither performance nor learning” (his example is pure discovery learning)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Kapur_2016_Productive_Failure_Success_2x2.pdf",
+      "quote": "there is the possibility of designing conditions that maximize neither performance nor learning in the short or long terms. I refer to such design efforts as unproductive failure. A well-studied example of unproductive failure is pure discovery learning, where students are expected to learn (or discover) the targeted concepts by engaging in solving problems without any guidance or support whatsoever.",
+      "page": 290
+    },
+    {
+      "id": "ps-kapur2016-3",
+      "location": "§3 after list",
+      "claim_text": "Kapur treats it as the “obvious low-hanging fruit,” the point of broad agreement that unguided discovery “often leads to dismal learning outcomes.”",
+      "held_file": "ai_career:future_of_gc/load_bearing/Kapur_2016_Productive_Failure_Success_2x2.pdf",
+      "quote": "I start with the obvious low-hanging fruit in unproductive failure. ... There is consensus among instructivists (e.g., Kirschner, Sweller, & Clark, 2006) and constructivists (e.g., Hmelo-Silver, Duncan, & Chinn, 2007) that unguided problem solving or discovery learning often leads to dismal learning outcomes.",
+      "page": 290
+    },
+    {
+      "id": "ps-kapur2016-4",
+      "location": "Figure 1 caption",
+      "claim_text": "Kapur treats productive success as a second route and says “it is not clear if one is better than the other.”",
+      "held_file": "ai_career:future_of_gc/load_bearing/Kapur_2016_Productive_Failure_Success_2x2.pdf",
+      "quote": "Even though both productive failure and productive success can lead to productive learning outcomes, it is not clear if one is better than the other.",
+      "page": 294
+    },
+    {
+      "id": "ps-kapur2016-5",
+      "location": "Figure 1 caption",
+      "claim_text": "Nor does he equate productive success with direct instruction: his examples are problem-based learning and guided inquiry, and he asks whether direct instruction could be “a form of unproductive success,” finding it “wanting against productive failure and productive success” while calling that label “rather harsh.”",
+      "held_file": "ai_career:future_of_gc/load_bearing/Kapur_2016_Productive_Failure_Success_2x2.pdf",
+      "quote": "COULD DIRECT INSTRUCTION BE A FORM OF UNPRODUCTIVE SUCCESS? One one hand, given direct instruction's consistently superior performance against discovery learning, it would be rather harsh to categorize it as an unproductive success. On the other hand, as the preceding analyses showed, direct instruction was found wanting against productive failure and productive success.",
+      "page": 295
+    },
+    {
+      "id": "ps-kapur2016-6",
+      "location": "Figure 1 caption",
+      "claim_text": "Unproductive success: high performance with what Kapur calls “an illusion of learning.”",
+      "held_file": "ai_career:future_of_gc/load_bearing/Kapur_2016_Productive_Failure_Success_2x2.pdf",
+      "quote": "there is an illusion of learning in initial high performance. I refer to such design efforts as unproductive success.",
+      "page": 290
+    },
+    {
+      "id": "ps-kapur2008-1",
+      "location": "§3 ¶2",
+      "claim_text": "Kapur's original 2008 paper documented a counterintuitive finding: students who first worked in groups on ill-structured problems, with no scaffolds, outperformed peers who had worked in groups on well-structured problems, on later individual near- and far-transfer problems.",
+      "held_file": "ai_career:future_of_gc/load_bearing/Kapur_2008_Productive_Failure.pdf",
+      "quote": "Groups who solved ill-structured problems expectedly struggled with defining and analyzing the problems, resulting in poor quality of solutions. However, despite failing in their collaborative efforts, these students outperformed their counterparts in the well-structured condition on individual near- and far-transfer measures subsequently, suggesting a latent productivity in what initially seemed to be failure.",
+      "page": 379
+    },
+    {
+      "id": "ps-kapur2008-2",
+      "location": "§3 ¶2",
+      "claim_text": "(That study had no instruction phase and no direct-instruction comparison; ...)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Kapur_2008_Productive_Failure.pdf",
+      "quote": "A randomized experimental design was used ... These groups were then randomly assigned to one of two conditions to solve either ill-structured problems (50 groups) or well-structured problems (53 groups). ... No help or support was provided to any group during problem solving.",
+      "page": 385
+    },
+    {
+      "id": "ps-kapur2008-3",
+      "location": "§3 ¶2",
+      "claim_text": "The struggling groups' solutions were poor during the intervention. Their later individual performance was better.",
+      "held_file": "ai_career:future_of_gc/load_bearing/Kapur_2008_Productive_Failure.pdf",
+      "quote": "Groups who solved ill-structured problems expectedly struggled with defining and analyzing the problems, resulting in poor quality of solutions. However, despite failing in their collaborative efforts, these students outperformed their counterparts in the well-structured condition on individual near- and far-transfer measures subsequently",
+      "page": 379
+    },
+    {
+      "id": "ps-belenky-1",
+      "location": "§5 readiness ¶ parenthesis",
+      "claim_text": "Belenky & Nokes-Malach, 2012",
+      "held_file": "ai_career:future_of_gc/load_bearing/Belenky_Nokes-Malach_2012_Motivation_and_Transfer.pdf",
+      "quote": "Daniel M. Belenky and Timothy J. Nokes-Malach ... THE JOURNAL OF THE LEARNING SCIENCES, 00: 1–34, 2012",
+      "page": "1 (printed article page 1; PDF page 3)"
+    },
+    {
+      "id": "ps-belenky-2",
+      "location": "§5 readiness ¶",
+      "claim_text": "a mastery-approach orientation predicts transfer",
+      "held_file": "ai_career:future_of_gc/load_bearing/Belenky_Nokes-Malach_2012_Motivation_and_Transfer.pdf",
+      "quote": "As expected, we found evidence that more endorsement of a mastery-approach orientation predicted better transfer (H1).",
+      "page": "25 (printed)"
+    },
+    {
+      "id": "ps-belenky-3",
+      "location": "§5 readiness ¶",
+      "claim_text": "invention/PFL reduced learners' dependence on that incoming disposition — the activity induced mastery engagement in-task, levelling the field rather than simply rewarding students who already had mastery goals",
+      "held_file": "ai_career:future_of_gc/load_bearing/Belenky_Nokes-Malach_2012_Motivation_and_Transfer.pdf",
+      "quote": "the initial mastery-approach orientation of participants who invented had a much smaller role in determining the likelihood of transfer. Students who completed invention activities generally transferred with about the same likelihood, regardless of mastery-approach orientation.",
+      "page": "25 (printed)"
+    },
+    {
+      "id": "ps-bilalic-1",
+      "location": "§5 skill ¶",
+      "claim_text": "On this evidence depth increases specificity, not portability — chess masters pushed just outside their specialty reason like much weaker players (Bilalić et al., 2009)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Bilalic_McLeod_Gobet_2009_Specialization_Effect_Chess.pdf",
+      "quote": "We will show that the effect of memory, that is familiarity with the sort of problem they are facing, is so strong that the problem solving performance of expert chess players resembles that of players one standard deviation below their skill level when they are taken out of their area of specialization.",
+      "page": "4 (printed page number; PDF page index 4)"
+    },
+    {
+      "id": "ps-bransford-1",
+      "location": "§5 readiness ¶",
+      "claim_text": "Bransford and Schwartz's \"preparation for future learning\" (1999)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Bransford_Schwartz_1999_Rethinking_Transfer.pdf",
+      "quote": "preparation for future learning",
+      "page": "JSTOR cover page (PDF p.1, unpaginated) for authors/year/title; printed p.68 for the PFL term"
+    },
+    {
+      "id": "ps-bransford-2",
+      "location": "§5 readiness ¶",
+      "claim_text": "argues that the standard transfer test — drop a person into a new domain and check whether prior skill fires unaided — systematically under-detects transfer, because it measures cold application",
+      "held_file": "ai_career:future_of_gc/load_bearing/Bransford_Schwartz_1999_Rethinking_Transfer.pdf",
+      "quote": "There are no opportunities for them to demonstrate their abilities to learn to solve new problems by seeking help from other resources such as texts or colleagues or by trying things out, receiving feedback, and getting opportunities to revise. Accompanying the SPS paradigm is a theory that characterizes transfer as the ability to directly apply one's previous learning to a new setting or problem (we call this the direct application [DA] theory of transfer). ... We have argued that the PFL perspective reveals evidence of transfer that is easy to miss when one adopts a DA theory and its accompanying SPS methodology.",
+      "page": "68 (SPS/DA description); 92-93 (Summary, 'easy to miss')"
+    },
+    {
+      "id": "ps-bransford-3",
+      "location": "§5 readiness ¶",
+      "claim_text": "Measure instead how fast the person learns the new domain, and deep prior problem-solving shows up clearly: prepared learners extract more from each new learning opportunity than unprepared peers do.",
+      "held_file": "ai_career:future_of_gc/load_bearing/Bransford_Schwartz_1999_Rethinking_Transfer.pdf",
+      "quote": "summarize plus lecture",
+      "page": "68 (speed/quality framing); 77 (Figure 8 study)"
+    },
+    {
+      "id": "ps-donker-1",
+      "location": "§7 Third",
+      "claim_text": "Metacognitive- and self-regulated-learning-strategy instruction shows reliable cross-domain effects in meta-analysis (Donker et al., 2014)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Donker_etal_2014_Learning_Strategy_Instruction_(NRO_report).pdf",
+      "quote": "In each subject domain, strategy instruction had, on average, substantial positive effects on student performance. In reading comprehension it had an average effect size of Hedges' g = 0.36 (SE = 0.08), which is a small to moderate effect. With respect to writing, strategy instruction produced a very high average effect size of 1.25 (SE = 0.12), and in the case of mathematics and science, its average effect size was medium to high, namely 0.66 (SE = 0.06) and 0.73 (SE = 0.13), respectively.",
+      "page": "58 (printed page number; matches PDF page index)"
+    },
+    {
+      "id": "ps-gick-1",
+      "location": "§5 mechanism ¶ + Fig 2",
+      "claim_text": "spontaneous transfer ... ≈10% base rate (no-analog control)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Gick_Holyoak_1983_Schema_Induction_and_Analogical_Transfer.pdf",
+      "quote": "about 75% of those subjects who received the appropriate military analog produced the convergence solution to the radiation problem, as compared to less than 10% of control subjects who did not receive the analogy",
+      "page": "1983, p.4"
+    },
+    {
+      "id": "ps-gick-2",
+      "location": "§5 mechanism ¶ + Fig 2",
+      "claim_text": "~20–30% when learners must notice the analogy unaided (single analog, no hint); Fig 2 bar \"~30%\"",
+      "held_file": "ai_career:future_of_gc/load_bearing/Gick_Holyoak_1983_Schema_Induction_and_Analogical_Transfer.pdf",
+      "quote": "Under these conditions only about 30% of our subjects produced the convergence solution, as opposed to about 75% who produced it when a hint was given.",
+      "page": "1983, p.4"
+    },
+    {
+      "id": "ps-gick-3",
+      "location": "§5 mechanism ¶ + Fig 2",
+      "claim_text": "an explicit hint lifts single-case transfer sharply, to ~75–90%",
+      "held_file": "ai_career:future_of_gc/load_bearing/Gick_Holyoak_1980_Analogical_Problem_Solving.pdf",
+      "quote": "For the Hint condition, 11 out of 12 subjects (92%) produced the complete dispersion solution. This percentage is, of course, far higher than would be expected for subjects who did not receive the Attack-Dispersion story (under 10% in both Experiments I and II).",
+      "page": "1980, p.342 (Experiment IV, Hint condition)"
+    },
+    {
+      "id": "ps-gick-4",
+      "location": "§5 mechanism ¶ + Fig 2",
+      "claim_text": "having learners compare two surface-different cases and articulate what they share induces a schema and roughly doubles spontaneous transfer (≈45–50%); Fig 2 bar \"~50%\"",
+      "held_file": "ai_career:future_of_gc/load_bearing/Gick_Holyoak_1983_Schema_Induction_and_Analogical_Transfer.pdf",
+      "quote": "Forty-five percent of subjects in the two-analog conditions generated the convergence solution prior to the hint, as opposed to only 21% of subjects in the one-analog condition, G2(1) = 6.35, p < .01.",
+      "page": "1983, p.23 (Experiment 4)"
+    },
+    {
+      "id": "ps-nisbett-1",
+      "location": "§7 Sixth",
+      "claim_text": "Introspective reports of one's own cognitive processes are reconstructed after the fact, not read off directly (Nisbett & Wilson, 1977)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Nisbett_Wilson_1977_Telling_More_Than_We_Can_Know.pdf",
+      "quote": "We propose that when people are asked to report how a particular stimulus influenced a particular response, they do so not by consulting a memory of the mediating process, but by applying or generating causal theories about the effects of that type of stimulus on that type of response.",
+      "page": 248
+    },
+    {
+      "id": "ps-sala2019-1",
+      "location": "§5 skill ¶",
+      "claim_text": "second-order meta-analysis, Sala et al., 2019, placing the far-transfer effect at ≈zero after correcting for bias",
+      "held_file": "ai_career:future_of_gc/load_bearing/Sala_etal_2019_Near_and_Far_Transfer_Meta-Analysis.pdf",
+      "quote": "once publication bias and placebo effects are ruled out, far-transfer effects are null regardless of the type of far-transfer measure, type of cognitive training program, and population.",
+      "page": "15 (printed, 'Art. 18, page 15 of 22'; General Discussion)"
+    },
+    {
+      "id": "ps-sala2019-2",
+      "location": "§5 Fig 3",
+      "claim_text": "far transfer of decontextualised skill is ≈ zero (... → Sala et al. 2019)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Sala_etal_2019_Near_and_Far_Transfer_Meta-Analysis.pdf",
+      "quote": "once publication bias and placebo effects are ruled out, far-transfer effects are null regardless of the type of far-transfer measure, type of cognitive training program, and population.",
+      "page": "15 (printed, 'Art. 18, page 15 of 22'; General Discussion)"
+    },
+    {
+      "id": "ps-salagobet-1",
+      "location": "§5 skill ¶",
+      "claim_text": "finds that trained skills stay near their training context",
+      "held_file": "ai_career:future_of_gc/load_bearing/Sala_Gobet_2017_Does_Far_Transfer_Exist.pdf",
+      "quote": "training chess, music, or WM capacity does not reliably enhance any skill beyond the skills they train",
+      "page": "517 (printed); PDF page 4"
+    },
+    {
+      "id": "ps-schwartz-1",
+      "location": "§5 readiness ¶",
+      "claim_text": "empirically anchored in Schwartz & Martin, 2004",
+      "held_file": "ai_career:future_of_gc/load_bearing/Schwartz_Martin_2004_Inventing_to_Prepare_for_Future_Learning.pdf",
+      "quote": "Two studies examined the prospect of instruction and assessments that target students' preparation for future learning.",
+      "page": "168 (printed; General Discussion, Summary of Findings)"
+    },
+    {
+      "id": "ps-schwartz-2",
+      "location": "§5 readiness ¶",
+      "claim_text": "prepared learners extract more from each new learning opportunity than unprepared peers do (jointly cited with Bransford & Schwartz)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Schwartz_Martin_2004_Inventing_to_Prepare_for_Future_Learning.pdf",
+      "quote": "However, when students in both conditions received a learning resource in the form of a follow-up lecture, the results reversed themselves. On a subsequent assessment, the invention students showed that they learned much more deeply from the lecture. The invention students made twice as many correct predictions about a novel experiment than the summarize students.",
+      "page": "147 (printed)"
+    },
+    {
+      "id": "ps-willingham-1",
+      "location": "§2 ¶2",
+      "claim_text": "Willingham argues that \"the processes of thinking are intertwined with the content of thought\"",
+      "held_file": "ai_career:future_of_gc/load_bearing/Willingham_2007_Critical_Thinking_Why_So_Hard_to_Teach.pdf",
+      "quote": "The processes of thinking are intertwined with the content of thought (that is, domain knowledge).",
+      "page": "8 (printed page; right column, opening paragraphs)"
+    },
+    {
+      "id": "ps-willingham-2",
+      "location": "§2 ¶2",
+      "claim_text": "His implication for instruction is direct: it makes no sense to try to teach critical thinking devoid of factual content (unquoted paraphrase)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Willingham_2007_Critical_Thinking_Why_So_Hard_to_Teach.pdf",
+      "quote": "Just as it makes no sense to try to teach factual content without giving students opportunities to practice using it, it also makes no sense to try to teach critical thinking devoid of factual content.",
+      "page": "10 (printed page; left column)"
+    },
+    {
+      "id": "ps-willingham-3",
+      "location": "§2 ¶2",
+      "claim_text": "because critical thinking is the operation of disciplinary knowledge under the conditions where it matters",
+      "held_file": "ai_career:future_of_gc/load_bearing/Willingham_2007_Critical_Thinking_Why_So_Hard_to_Teach.pdf",
+      "quote": "First, critical thinking (as well as scientific thinking and other domain-based thinking) is not a skill. There is not a set of critical thinking skills that can be acquired and deployed regardless of context. ... teaching students to think critically probably lies in small part in showing them new ways of thinking, and in large part in enabling them to deploy the right type of thinking at the right time.",
+      "page": "17 (first sentence, concluding summary paragraph) and 16 (second clause)"
+    },
+    {
+      "id": "ps-willingham-4",
+      "location": "§2 ¶2 + References",
+      "claim_text": "Willingham (2007), a synthesis published in American Educator",
+      "held_file": "ai_career:future_of_gc/load_bearing/Willingham_2007_Critical_Thinking_Why_So_Hard_to_Teach.pdf",
+      "quote": "By Daniel T. Willingham ... 8 AMERICAN EDUCATOR ... SUMMER 2007",
+      "page": "8 (byline/title page) and 19 (final page, masthead/footer, also dated SUMMER 2007)"
+    },
+    {
+      "id": "ps-xu2026-1",
+      "location": "§7 LLM limit ¶",
+      "claim_text": "keyword-inference inflation Xu et al. (2026) document — crediting a competency because its vocabulary appears in a syllabus",
+      "held_file": "ai_career:future_of_gc/load_bearing/Xu_etal_2026_Evaluating_21st-Century_Competencies_LLMs.pdf",
+      "quote": "LLMs tend to over-infer or hallucinate based on some keywords (e.g., assuming any \"final exam\" implies writing comprehension), likely due to patterns learned from historical training data. ... We identify two primary sources of error: systematic over-interpretation of instructional keywords and difficulty identifying relevant pedagogical evidence in long, unstructured texts.",
+      "page": "21-22"
+    },
+    {
+      "id": "ps-xu2026-2",
+      "location": "§7; References",
+      "claim_text": "Xu et al. (2026)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Xu_etal_2026_Evaluating_21st-Century_Competencies_LLMs.pdf",
+      "quote": "Due to appear in Journal of Learning Analytics Special Section on Advancing 21st-century Professional Competencies with Learning Analytics in the Age of Generative AI",
+      "page": 1
+    },
+    {
+      "id": "ps-krathwohl-1",
+      "location": "§8 key passage",
+      "claim_text": "Bloom's revised hierarchy is purely cognitive: Remember through Create are operations of thought, and it carries no behavioral or performance axis.",
+      "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
+      "quote": "The Taxonomy of Educational Objectives: Handbook II, The Affective Domain was published later (Krathwohl, Bloom, & Masia, 1964). A taxonomy for the psychomotor domain was never published by the originating group, but some were published by Simpson (1966), Dave (1970), and Harrow (1972).",
+      "page": "218 (Note 1)"
+    }
+  ]
+}
