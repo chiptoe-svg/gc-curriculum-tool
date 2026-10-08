@@ -69,3 +69,6 @@ A course counts as **captured** when it has a non-retired row in `course_capture
   Steps section unchanged (the capture steps apply to the uncaptured courses).
 
 What a personal course link can do (checked 2026-10-08, `lib/auth/authorize.ts`): on its own courses — add materials, interview, revise/approve the profile, Explore incl. chat; on every other course — view pages and the wiki only.
+
+
+**Section codes (owner, 2026-10-08):** letters after a section number are internal only. In emails, show `GC 4900or` as **GC 4900** (likewise 4900ap, 4900cx, 4990pc, 4990ta) in the subject, opening paragraph and course lines; the title carries the distinction (e.g. "GC 4900: Special Topics: GC Outreach").
