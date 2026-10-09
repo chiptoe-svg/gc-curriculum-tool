@@ -2328,6 +2328,7 @@
     <li><code>/settings</code> — <strong>Per-function AI model tuning.</strong> <span class="status-tag status-live">Live (faculty trial)</span> Tier-based selection (Light / Default / Heavy) plus per-function model dropdowns sourced from the OpenAI provider's available models. Changing a model setting is an admin action; other faculty can see the per-function cost and model information read-only.</li>
     <li><code>/admin/access</code> — <strong>Faculty access panel.</strong> <span class="status-tag status-live">Live</span> Add a person with name, email, and either specific courses or all courses; issue a personal sign-in link; edit, reissue, or revoke access. Replaces the department-wide shared password as the way faculty reach the tool — see Faculty access, below.</li>
     <li><code>/wiki</code> + <code>/ask</code> — <strong>Curriculum knowledge base.</strong> <span class="status-tag status-live">Live (faculty trial)</span> A self-maintaining markdown knowledge base (the <code>gc-curriculum-wiki</code> sibling repo) that regenerates course, competency, career-target, and concept pages from confirmed snapshots — browsable at <code>/wiki</code> and answerable in plain language at <code>/ask</code>, where a chat agent navigates the pages and cites verbatim excerpts. It fills in as captures accumulate. This is v1; the self-reconciling compile loop (concept promotion, broken-link/staleness lint, a scheduled reconcile) is Phase 2.</li>
+    <li><code>/wiki/&lt;course&gt;</code> — <strong>Objective assessment guide.</strong> <span class="status-tag status-live">Live</span> A section on each public wiki course page (generated for 18 captured courses as of October 2026) that helps the instructor show the course's learning objectives were met. For each objective, quoted word for word from the syllabus, it names the graded Canvas assignment or rubric row that measures it (a clear, partial, or missing measure), says which class-level numbers to gather at the end of the semester, and, where nothing isolates the objective, suggests the smallest change that would, such as adding a rubric row. It can be pasted into a Canvas-connected AI assistant to pull those numbers, using fixed thresholds: met when at least 70% of students reach the target level, partly met at 50&ndash;69%, not met below 50%. A deterministic check removes any assignment or rubric row not found in the course's Canvas record, and it never asks for an individual student's grade. It gathers evidence for each course; it does not yet feed back into the KUD scores.</li>
     <li><code>/partners/&lt;token&gt;</code> — <strong>Position Capture (the demand side).</strong> <span class="status-tag status-live">Live</span> The employer-facing counterpart to CourseCapture: a magic-linked, multi-page flow where an industry partner captures one role at a time — job-description ingest, an AI-led interview, and AI-rated "experiences worth having" — keyed to career-target sub-competencies. This is what makes the career-target definitions empirical rather than hypothetical. Faculty distribute the links from the partner admin; the survey runs on the same Mac. <em>Captured</em> demand is live; the sufficiency comparison that differences employer-required depth against the matrix's evidenced attainment is built end-to-end but switched off behind a flag pending activation.</li>
   </ul>
   <div class="callout">
@@ -2652,6 +2653,24 @@
         curriculum KUDs appear in advanced roles but not entry-level requirements —
         the long-game competencies the program builds that don't show up until
         later in a career.
+      </div>
+    </div>
+  </div>
+
+  <div class="capabilities" style="margin-top:16px;">
+    <div class="cap">
+      <div class="cap-title">Career Readiness as a Weighted Question <span class="status-tag">Designed, not built</span></div>
+      <div class="cap-body">
+        Treat each career target as a question put to the program's accumulated
+        competencies: O*NET's Importance ratings say how much each competency
+        counts, and evidence-backed KUD depth says how far the program carries it.
+        A high-importance competency below its required depth is reported as a
+        shortfall in its own right, never averaged away by strengths elsewhere.
+        The first stage needs no fitted numbers: it counts how often later courses
+        reinforce each competency and flags skills met once and never revisited.
+        A later stage would let unreinforced depth fade over time, once outcome
+        data can calibrate the rate. Related published work, and how this differs
+        from it, is in the <a class="inline-link" href="../../measurement-hypotheses-deep-dive.html#crosswalk">Measurement Hypotheses companion</a>.
       </div>
     </div>
   </div>

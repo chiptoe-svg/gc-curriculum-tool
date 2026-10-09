@@ -287,6 +287,21 @@
       "ref-manning-skills": {
         "file": "pdfs:web/manning-2025-education-agent-skills-readme.md",
         "note": "acquired 2026-10-08; audited against held copy 2026-10-08"
+      },
+      "ref-barthakur-2024": {
+        "file": "pdfs:barthakur-2024-curriculum-analytics-ajet.pdf"
+      },
+      "ref-frej-2024": {
+        "file": "pdfs:frej-2024-course-recommenders-job-market.pdf"
+      },
+      "ref-jayalath-2026": {
+        "file": "pdfs:jayalath-2026-capturing-professional-skill-development-lak.pdf"
+      },
+      "ref-nelson-2026": {
+        "file": "pdfs:web/nelson-2026-the-curriculum-mapping.html"
+      },
+      "ref-pavlik-2021": {
+        "file": "pdfs:pavlik-2021-logistic-knowledge-tracing.pdf"
       }
     },
     "measurement-hypotheses-deep-dive.html": {
@@ -382,6 +397,18 @@
       "ref-pavlik-2009": {
         "file": "pdfs:pavlik-cen-koedinger-2009-pfa.pdf",
         "note": "acquired 2026-10-08; audited against held copy 2026-10-08"
+      },
+      "ref-frej-2024": {
+        "file": "pdfs:frej-2024-course-recommenders-job-market.pdf"
+      },
+      "ref-jayalath-2026": {
+        "file": "pdfs:jayalath-2026-capturing-professional-skill-development-lak.pdf"
+      },
+      "ref-pavlik-2021": {
+        "file": "pdfs:pavlik-2021-logistic-knowledge-tracing.pdf"
+      },
+      "ref-mehrabi-2024": {
+        "file": "pdfs:mehrabi-2024-pfa-attention.pdf"
       }
     },
     "problem-solving-deep-dive.html": {},

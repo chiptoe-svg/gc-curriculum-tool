@@ -897,6 +897,118 @@
       "held_file": "pdfs:web/manning-2025-education-agent-skills-readme.md",
       "quote": "An open-source library of 165 evidence-based pedagogical skills across 20 domains",
       "page": "README, opening paragraph"
+    },
+    {
+      "id": "bg-barthakur-1",
+      "location": "§7",
+      "claim_text": "few studies trace QA to single courses and their assessment items",
+      "held_file": "pdfs:barthakur-2024-curriculum-analytics-ajet.pdf",
+      "quote": "Few studies have adopted an analytical approach to ensure programme quality assurance steps are traceable to a fundamental level of these maps: single courses and their assessment items.",
+      "page": "PDF p. 1"
+    },
+    {
+      "id": "bg-jayalath-1",
+      "location": "§7",
+      "claim_text": "map that merely records presence/absence",
+      "held_file": "pdfs:jayalath-2026-capturing-professional-skill-development-lak.pdf",
+      "quote": "it is often applied in a simplistic, accreditation-driven manner that merely records the presence or absence of skills embedded in assessments",
+      "page": "PDF p. 1 (printed p. 589)"
+    },
+    {
+      "id": "bg-jayalath-2",
+      "location": "§7",
+      "claim_text": "weights add to 100; two coders α 0.70; consensus",
+      "held_file": "pdfs:jayalath-2026-capturing-professional-skill-development-lak.pdf",
+      "quote": "Two human coders independently annotated the curriculum data, achieving a Krippendorff’s 𝛼 of 0.70, and finalised the weighted mapping through consensus discussion. Each assessment was mapped to one or more skills, with weights adding up to 100 per assessment.",
+      "page": "PDF p. 4 (printed p. 592)"
+    },
+    {
+      "id": "bg-jayalath-3",
+      "location": "§7",
+      "claim_text": "fit grades modestly r = 0.43",
+      "held_file": "pdfs:jayalath-2026-capturing-professional-skill-development-lak.pdf",
+      "quote": "the model achieved an RMSE of 0.21 and a Pearson correlation of 0.43",
+      "page": "PDF p. 5 (printed p. 593)"
+    },
+    {
+      "id": "bg-jayalath-4",
+      "location": "§7",
+      "claim_text": "few assessments can inflate/deflate scores",
+      "held_file": "pdfs:jayalath-2026-capturing-professional-skill-development-lak.pdf",
+      "quote": "this may also reflect the limited number of assessments mapped to skills such as international perspective, ethical awareness and teamwork, which can inflate/deflate overall scores",
+      "page": "PDF p. 5 (printed p. 593)"
+    },
+    {
+      "id": "bg-nelson-1",
+      "location": "§4",
+      "claim_text": "capstone as high-stakes crash course",
+      "held_file": "pdfs:web/nelson-2026-the-curriculum-mapping.html",
+      "quote": "This made what should have been an opportunity for reinforcement and mastery into a high-stakes crash course.",
+      "page": "web article"
+    },
+    {
+      "id": "bg-atlas-fields-1",
+      "location": "§11",
+      "claim_text": "62 fields of study",
+      "held_file": "ai_career:future_of_gc/architecture/Javadian_Sabet_etal_2024_Course-Skill_Atlas.pdf",
+      "quote": "syllabi across 62 fields of study (FOS)",
+      "page": "p. 6"
+    },
+    {
+      "id": "bg-atlas-fields-2",
+      "location": "§11",
+      "claim_text": "curated subset of the CIP taxonomy",
+      "held_file": "ai_career:future_of_gc/architecture/Javadian_Sabet_etal_2024_Course-Skill_Atlas.pdf",
+      "quote": "OSP’s FOS classifier is trained and tested on a curated subset of the CIP taxonomy",
+      "page": "p. 14"
+    },
+    {
+      "id": "bg-frej-1",
+      "location": "§11",
+      "claim_text": "required skills with levels",
+      "held_file": "pdfs:frej-2024-course-recommenders-job-market.pdf",
+      "quote": "the required skills with their proficiency levels",
+      "page": "p. 5"
+    },
+    {
+      "id": "bg-frej-2",
+      "location": "§11",
+      "claim_text": "provided skills with levels",
+      "held_file": "pdfs:frej-2024-course-recommenders-job-market.pdf",
+      "quote": "the provided skills with their proficiency levels",
+      "page": "p. 5"
+    },
+    {
+      "id": "bg-frej-3",
+      "location": "§11",
+      "claim_text": "level extraction accuracy 0.68 vs one expert, 212 skills, 10 postings",
+      "held_file": "pdfs:frej-2024-course-recommenders-job-market.pdf",
+      "quote": "An expert manually annotated 212 skills from 10 job postings in the IT sector. We compared the annotations with the levels extracted by our system and obtained an accuracy of 0.68.",
+      "page": "p. 7"
+    },
+    {
+      "id": "bg-frej-4",
+      "location": "§11",
+      "claim_text": "assumption of skill acquisition (limitation)",
+      "held_file": "pdfs:frej-2024-course-recommenders-job-market.pdf",
+      "quote": "A fundamental assumption in our sequential recommendation approach is that completing a course will automatically result in the acquisition of the associated skills by the learners.",
+      "page": "p. 8"
+    },
+    {
+      "id": "bg-frej-5",
+      "location": "§11",
+      "claim_text": "job reachable above a threshold",
+      "held_file": "pdfs:frej-2024-course-recommenders-job-market.pdf",
+      "quote": "we set a threshold",
+      "page": "p. 6"
+    },
+    {
+      "id": "bg-pavlik-1",
+      "location": "§15",
+      "claim_text": "PFA-Decay weights prior successes/failures by recency",
+      "held_file": "pdfs:pavlik-2021-logistic-knowledge-tracing.pdf",
+      "quote": "counts of success and failures be exponentially weighted as a function of their recency",
+      "page": "p. 3"
     }
   ]
 }

@@ -505,6 +505,110 @@
       "held_file": "pdfs:pavlik-cen-koedinger-2009-pfa.pdf",
       "quote": "We call this model PFA (Performance Factors Analysis).",
       "page": "PDF p. 4 (no printed page numbers)"
+    },
+    {
+      "id": "mh-pavlik-2",
+      "location": "§2",
+      "claim_text": "no single learner model best (12 models, 6 datasets)",
+      "held_file": "pdfs:pavlik-2021-logistic-knowledge-tracing.pdf",
+      "quote": "we fit 12 models, some variants of well-known models and some newly devised, to 6 learning technology datasets. The results indicated that no single learner model was best in all cases",
+      "page": "p. 1"
+    },
+    {
+      "id": "mh-mehrabi-1",
+      "location": "§2",
+      "claim_text": "attention mechanisms for item similarity and decay",
+      "held_file": "pdfs:mehrabi-2024-pfa-attention.pdf",
+      "quote": "This model leverages attention mechanisms to capture item order-based similarity and decay principles",
+      "page": "p. 1"
+    },
+    {
+      "id": "mh-mehrabi-2",
+      "location": "§2",
+      "claim_text": "5,500 students physics assessment",
+      "held_file": "pdfs:mehrabi-2024-pfa-attention.pdf",
+      "quote": "authentic responses from 5,500 students who completed the Force and Motion Conceptual Evaluation (FMCE) physics assessments",
+      "page": "p. 8"
+    },
+    {
+      "id": "mh-jayalath-1",
+      "location": "§2",
+      "claim_text": "curriculum-level application novel",
+      "held_file": "pdfs:jayalath-2026-capturing-professional-skill-development-lak.pdf",
+      "quote": "its application to curriculum-level professional-skills assessment is novel",
+      "page": "PDF p. 3 (printed p. 591)"
+    },
+    {
+      "id": "mh-jayalath-2",
+      "location": "§2",
+      "claim_text": "other PFA extensions model memory decay",
+      "held_file": "pdfs:jayalath-2026-capturing-professional-skill-development-lak.pdf",
+      "quote": "explicitly modelling memory decay",
+      "page": "PDF p. 3 (printed p. 591)"
+    },
+    {
+      "id": "mh-atlas-fields-1",
+      "location": "§3",
+      "claim_text": "62 fields of study",
+      "held_file": "ai_career:future_of_gc/architecture/Javadian_Sabet_etal_2024_Course-Skill_Atlas.pdf",
+      "quote": "syllabi across 62 fields of study (FOS)",
+      "page": "p. 6"
+    },
+    {
+      "id": "mh-atlas-fields-2",
+      "location": "§3",
+      "claim_text": "curated subset of the CIP taxonomy",
+      "held_file": "ai_career:future_of_gc/architecture/Javadian_Sabet_etal_2024_Course-Skill_Atlas.pdf",
+      "quote": "trained and tested on a curated subset of the CIP taxonomy",
+      "page": "p. 14"
+    },
+    {
+      "id": "mh-frej-1",
+      "location": "§3",
+      "claim_text": "required skills with levels",
+      "held_file": "pdfs:frej-2024-course-recommenders-job-market.pdf",
+      "quote": "the required skills with their proficiency levels",
+      "page": "p. 5"
+    },
+    {
+      "id": "mh-frej-2",
+      "location": "§3",
+      "claim_text": "provided skills with levels",
+      "held_file": "pdfs:frej-2024-course-recommenders-job-market.pdf",
+      "quote": "the provided skills with their proficiency levels",
+      "page": "p. 5"
+    },
+    {
+      "id": "mh-frej-3",
+      "location": "§3",
+      "claim_text": "match score rises with more skills and higher levels",
+      "held_file": "pdfs:frej-2024-course-recommenders-job-market.pdf",
+      "quote": "UJC1: Assign a higher score to a user who possesses more skills required for a job. UJC2: Assign a higher or equal score to a user with higher proficiency levels in the skills required for a job.",
+      "page": "p. 9"
+    },
+    {
+      "id": "mh-frej-4",
+      "location": "§3",
+      "claim_text": "assumption of skill acquisition",
+      "held_file": "pdfs:frej-2024-course-recommenders-job-market.pdf",
+      "quote": "that completing a course will automatically result in the acquisition of the associated skills by the learners",
+      "page": "p. 8"
+    },
+    {
+      "id": "mh-frej-5",
+      "location": "§3",
+      "claim_text": "accuracy 0.68",
+      "held_file": "pdfs:frej-2024-course-recommenders-job-market.pdf",
+      "quote": "obtained an accuracy of 0.68",
+      "page": "p. 7"
+    },
+    {
+      "id": "mh-frej-6",
+      "location": "§3",
+      "claim_text": "threshold",
+      "held_file": "pdfs:frej-2024-course-recommenders-job-market.pdf",
+      "quote": "we set a threshold",
+      "page": "p. 6"
     }
   ]
 }
