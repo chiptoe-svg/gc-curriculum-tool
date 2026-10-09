@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Demand Elasticity and AI Jobs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a single reading column (~68ch) with a sticky contents rail on wide screens; evidence tables break out wider. */
+:root {
+  --bg: #fbfbfa;
+  --surface: #f1f0f4;
+  --fg: #1d1b22;
+  --muted: #5d5966;
+  --rule: #dcd9e2;
+  --accent: #c24f00;        /* Clemson orange, darkened for text contrast */
+  --accent-soft: #fde9da;
+  --purple: #522d80;        /* Clemson regalia */
+  --purple-soft: #ece6f4;
+  --good: #2f6b3a;
+  --warn: #8a5a00;
+  --bad: #9b2c2c;
+  --font-display: "Newsreader", "Iowan Old Style", Georgia, serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #17151b; --surface: #221f28; --fg: #ecebef; --muted: #a7a2b1; --rule: #39343f;
+    --accent: #ff8a3d; --accent-soft: #3a2414; --purple: #b9a2dc; --purple-soft: #2c2338;
+    --good: #7cc58a; --warn: #e3b453; --bad: #f08b8b; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #17151b; --surface: #221f28; --fg: #ecebef; --muted: #a7a2b1; --rule: #39343f;
+  --accent: #ff8a3d; --accent-soft: #3a2414; --purple: #b9a2dc; --purple-soft: #2c2338;
+  --good: #7cc58a; --warn: #e3b453; --bad: #f08b8b; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 16px/1.62 var(--font-body); margin: 0; }
+.wrap { max-width: 74rem; margin: 0 auto; padding-inline: 20px; padding-block: 2.5rem 5rem;
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 3rem; }
+@media (min-width: 1020px) { .wrap { grid-template-columns: 13rem minmax(0, 1fr); } }
+nav.toc { font-size: .85rem; }
+@media (min-width: 1020px) { nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 1.5rem); align-self: start; } }
+nav.toc ol { list-style: none; padding: 0; margin: 0; display: grid; gap: .45rem; counter-reset: toc; }
+nav.toc li { counter-increment: toc; display: grid; grid-template-columns: 1.4rem 1fr; }
+nav.toc li::before { content: counter(toc); font-family: var(--font-mono); color: var(--accent); }
+nav.toc a { color: var(--fg); text-decoration: none; }
+nav.toc a:hover, nav.toc a:focus-visible { text-decoration: underline; text-decoration-color: var(--accent); }
+.toc-label { font-size: .72rem; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); margin: 0 0 .7rem; }
+main { min-width: 0; }
+.col { max-width: 42rem; }
+header.doc { border-bottom: 1px solid var(--rule); padding-bottom: 1.6rem; margin-bottom: 2.2rem; }
+.eyebrow { font-size: .75rem; letter-spacing: .1em; text-transform: uppercase; color: var(--purple); font-weight: 600; margin: 0 0 .6rem; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; text-wrap: balance; line-height: 1.15; }
+h1 { font-size: clamp(2.1rem, 5vw, 3.1rem); margin: 0 0 .9rem; letter-spacing: -.01em; }
+h2 { font-size: clamp(1.55rem, 3vw, 2rem); margin: 3.4rem 0 .9rem; scroll-margin-top: 1.5rem; }
+h2 .n { font-family: var(--font-mono); font-size: .95rem; color: var(--accent); font-weight: 500; display: block; margin-bottom: .3rem; letter-spacing: .04em; }
+h3 { font-size: 1.22rem; margin: 2.1rem 0 .5rem; }
+p { margin: 0 0 1rem; }
+.lede { font-size: 1.15rem; color: var(--fg); max-width: 40rem; }
+.meta { display: flex; flex-wrap: wrap; gap: .4rem 1.4rem; font-size: .85rem; color: var(--muted); margin-top: 1rem; }
+.meta b { color: var(--fg); font-weight: 500; }
+a { color: var(--purple); text-underline-offset: 2px; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.cite { font-family: var(--font-mono); font-size: .72em; vertical-align: super; line-height: 0; text-decoration: none; color: var(--accent); margin-left: 1px; }
+.cite:hover { text-decoration: underline; }
+.takeaways { background: var(--surface); border-radius: 6px; padding: 1.4rem 1.5rem; margin: 0 0 1rem; }
+.takeaways h2 { margin: 0 0 .8rem; font-size: 1.3rem; }
+.takeaways ol { margin: 0; padding-left: 1.2rem; display: grid; gap: .65rem; }
+.takeaways li::marker { font-family: var(--font-mono); color: var(--accent); }
+.note { border-left: 3px solid var(--purple); background: var(--purple-soft); padding: .8rem 1rem; margin: 1.2rem 0; font-size: .93rem; border-radius: 0 4px 4px 0; }
+.note strong { color: var(--purple); }
+.figure-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 1rem; margin: 1.4rem 0; max-width: 46rem; }
+.fig { border-top: 2px solid var(--accent); padding-top: .6rem; }
+.fig .v { font-family: var(--font-display); font-size: 2rem; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.fig .l { font-size: .85rem; color: var(--muted); }
+.tbl { overflow-x: auto; margin: 1.2rem 0 1.4rem; }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; min-width: 34rem; }
+th, td { text-align: left; vertical-align: top; padding: .55rem .8rem .55rem 0; border-bottom: 1px solid var(--rule); }
+th { font-weight: 600; font-size: .78rem; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); border-bottom: 1.5px solid var(--fg); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--font-mono); font-size: .86rem; }
+tr.hl td { background: var(--accent-soft); }
+caption { caption-side: bottom; text-align: left; font-size: .8rem; color: var(--muted); padding-top: .5rem; }
+.chip { display: inline-block; font-size: .72rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; padding: .12rem .45rem; border-radius: 3px; border: 1px solid currentColor; white-space: nowrap; }
+.chip.good { color: var(--good); } .chip.warn { color: var(--warn); } .chip.bad { color: var(--bad); } .chip.mixed { color: var(--purple); }
+.split { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 1.4rem; margin: 1.2rem 0; max-width: 46rem; }
+.split > div { min-width: 0; }
+.split h4 { margin: 0 0 .4rem; font-size: .8rem; letter-spacing: .07em; text-transform: uppercase; }
+.split .lose h4 { color: var(--bad); } .split .gain h4 { color: var(--good); }
+.split ul { margin: 0; padding-left: 1.1rem; font-size: .93rem; display: grid; gap: .3rem; }
+.target { border-top: 1px solid var(--rule); padding-top: 1.1rem; margin-top: 1.6rem; max-width: 46rem; }
+.target h3 { margin: 0 0 .35rem; display: flex; flex-wrap: wrap; gap: .5rem .8rem; align-items: baseline; }
+.target h3 .tn { font-family: var(--font-mono); color: var(--accent); font-size: .95rem; font-weight: 500; }
+.target dl { display: grid; grid-template-columns: minmax(0, 9rem) minmax(0, 1fr); gap: .35rem 1rem; margin: .6rem 0 0; font-size: .93rem; }
+.target dt { color: var(--muted); font-size: .8rem; letter-spacing: .04em; text-transform: uppercase; padding-top: .15rem; }
+.target dd { margin: 0; }
+@media (max-width: 520px) { .target dl { grid-template-columns: minmax(0, 1fr); } .target dd { margin-bottom: .5rem; } }
+ol.sources { padding-left: 0; list-style: none; font-size: .88rem; display: grid; gap: .8rem; counter-reset: s; }
+ol.sources li { display: grid; grid-template-columns: 2.2rem minmax(0, 1fr); counter-increment: s; scroll-margin-top: 1.5rem; }
+ol.sources li::before { content: counter(s); font-family: var(--font-mono); color: var(--accent); }
+ol.sources li:target { background: var(--accent-soft); border-radius: 4px; }
+.links { display: flex; flex-wrap: wrap; gap: .3rem .9rem; margin-top: .2rem; font-size: .82rem; }
+.links a { font-family: var(--font-mono); }
+.links .na { color: var(--muted); font-family: var(--font-mono); }
+footer.doc { margin-top: 3.5rem; padding-top: 1.2rem; border-top: 1px solid var(--rule); font-size: .82rem; color: var(--muted); max-width: 46rem; }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+<nav class="toc" aria-label="Contents">
+  <p class="toc-label">Contents</p>
+  <ol>
+    <li><a href="#decides">What demand elasticity decides</a></li>
+    <li><a href="#history">What history shows</a></li>
+    <li><a href="#models">How the AI-era models use it</a></li>
+    <li><a href="#measure">What we can and can't measure</a></li>
+    <li><a href="#gc">GC's markets through this lens</a></li>
+    <li><a href="#open">Open questions</a></li>
+    <li><a href="#sources">Sources</a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="doc">
+  <p class="eyebrow">Graphic Communications · Clemson University</p>
+  <h1>Demand elasticity and AI jobs</h1>
+  <p class="lede">When AI makes work faster, whether jobs grow or shrink depends on how much more of the output buyers want once it gets cheaper. This page sets out what is known about that response, where the published numbers come from, and what it suggests for the markets Graphic Communications graduates enter.</p>
+  <div class="meta">
+    <span><b>For</b> university, college and industry leaders</span>
+    <span><b>Evidence as of</b> October 2026</span>
+    <span><b>Status</b> working draft</span>
+    <span><b>Companion to</b> <a class="paper" href="ai-and-gc-careers.html">AI and GC Careers</a> (the main paper)</span>
+  </div>
+</header>
+
+<section class="takeaways col" aria-labelledby="tk">
+  <h2 id="tk">The short version</h2>
+  <ol>
+    <li><strong>In Bessen's industry model, productivity sets the pace of job change and demand sets its direction.</strong> In US textiles, steel and autos, jobs grew while cheaper output drew in much more demand. Growth stopped once demand was largely met.<a class="cite" href="#s-bessen">1</a> That evidence is for whole industries over decades.</li>
+    <li><strong>We found no measurement of AI-era demand elasticity for any GC occupation.</strong> The published numbers are either industry-level history or answers a language model gave to a hypothetical question. OpenAI's own report calls its elasticity "the least directly observed object" in its framework.<a class="cite" href="#s-ajtf">2</a></li>
+    <li><strong>Autor and Salomons estimate that from 1970 to 2007, productivity growth cut jobs where it happened and added more elsewhere.</strong> In 19 countries, own-industry job losses were more than offset by gains in customer industries and through wider demand. The same estimates predict a fall in labour's share of value added.<a class="cite" href="#s-as">3</a></li>
+    <li><strong>Early AI-era data show pressure on the entry rung.</strong> They show no economy-wide job loss. Hiring of young workers into AI-exposed work has weakened in US data. How much of that AI caused is unresolved.<a class="cite" href="#s-bryn">4</a><a class="cite" href="#s-hernaes">5</a><a class="cite" href="#s-frank">6</a></li>
+    <li><strong>Our reading for GC: demand for output may be elastic while demand for headcount is not.</strong> Assets, package versions and analysis can multiply as they get cheaper. Budgets and cost shares limit how much of that becomes jobs. On that reading, growth is most likely in roles that specify, govern and run the systems that produce the output.</li>
+  </ol>
+</section>
+
+<p class="note col"><strong>About this page.</strong> It replaces an earlier library report that used untraceable figures and misread several results. Every figure here comes from a source archived for this project or is marked "not archived" in the source list. "Our reading" marks the program's inferences, and "our tabulation" marks calculations made for this page.</p>
+
+<!-- ============================================================ -->
+<section class="col" aria-labelledby="decides">
+<h2 id="decides"><span class="n">1</span>What demand elasticity decides</h2>
+
+<p>Demand elasticity measures how much more of something buyers take when it gets cheaper. An elasticity of 0.6 means a 10% fall in price raises the quantity bought by about 6%. An elasticity above 1 means quantity rises by more than the price falls.</p>
+
+<h3>The identity</h3>
+<p>James Bessen writes the employment arithmetic for an industry as a single identity.<a class="cite" href="#s-bessen">1</a> An industry's employment equals its output divided by output per worker. So the change in jobs follows from two rates:</p>
+<p class="note"><strong>∂ln L / ∂ln A = ∂ln D / ∂ln A − 1</strong><br>L is industry employment, A is output per worker, and D is demand for the industry's output. The right-hand term is the elasticity of demand <em>with respect to productivity</em>.</p>
+<p>If productivity rises 10% and demand rises more than 10%, the industry needs more workers. If demand rises less, it needs fewer. In Bessen's words, "the rate of productivity growth determines the pace of employment change, but the elasticity of demand determines the sign."<a class="cite" href="#s-bessen">1</a> Bessen reaches that line as the conclusion of a conditional argument about industries that have seen little automation so far.</p>
+
+<h3>Three cautions before applying it</h3>
+<p><strong>It is an industry identity.</strong> Bessen argues the industry is the right level because broader aggregates miss workers moving between industries. Bessen never applies the identity to an occupation.<a class="cite" href="#s-bessen">1</a> A graphic designer or prepress technician supplies an input to many industries' products.</p>
+<p><strong>It uses the elasticity with respect to productivity.</strong> Bessen links that to the familiar price elasticity through a labour-share term.<a class="cite" href="#s-bessen">1</a> Our reading: when an occupation's labour is only part of a product's cost, or firms keep savings as margin, prices fall by less than labour per unit. Demand then has to respond more strongly for jobs to hold steady.</p>
+<p><strong>Demand is one route among several.</strong> David Autor stresses complementarity: "tasks that cannot be substituted by automation are generally complemented by it." Autor names three forces that decide who gains: whether workers supply the complemented or the substituted tasks, how freely new workers enter, and "the output elasticity of demand combined with income elasticity of demand."<a class="cite" href="#s-autor15">7</a> A shrinking industry does not mean a shrinking economy: "the surplus income can be spent elsewhere."<a class="cite" href="#s-autor15">7</a></p>
+
+<h3>Displacement, productivity and reinstatement</h3>
+<p>Daron Acemoglu and Pascual Restrepo split automation's effect on labour demand into a <em>displacement effect</em> and a <em>productivity effect</em>. "There is no guarantee that the productivity effect is greater than the displacement effect."<a class="cite" href="#s-ar">8</a> New tasks add a <em>reinstatement effect</em>. In their model the productivity effect is "proportional to cost-savings." Their warning is about "so-so technologies" that replace workers while saving little, possibly including "several of the applications of artificial intelligence technology to tasks that are currently challenging for machines."<a class="cite" href="#s-ar">8</a> Demand elasticity enters their framework only when automation shifts activity between sectors.</p>
+<div class="tbl">
+<table>
+  <thead><tr><th>US industries, per year</th><th class="num">1947–1987</th><th class="num">1987–2017</th></tr></thead>
+  <tbody>
+    <tr><td>Productivity effect</td><td class="num">+2.4%</td><td class="num">+1.54%</td></tr>
+    <tr class="hl"><td>Displacement</td><td class="num">−0.48%</td><td class="num">−0.7%</td></tr>
+    <tr class="hl"><td>Reinstatement</td><td class="num">+0.47%</td><td class="num">+0.35%</td></tr>
+    <tr><td>Wage bill per capita</td><td class="num">+2.5%</td><td class="num">+1.33%</td></tr>
+  </tbody>
+  <caption>Acemoglu &amp; Restrepo's decomposition of labour demand. Displacement and reinstatement are lower bounds by construction. Industry data only; no occupations.<a class="cite" href="#s-ar">8</a></caption>
+</table>
+</div>
+<p>After 1987, displacement grew and new-task creation weakened, cutting labour demand by about 10% cumulatively.<a class="cite" href="#s-ar">8</a></p>
+</section>
+
+<!-- ============================================================ -->
+<section class="col" aria-labelledby="history">
+<h2 id="history"><span class="n">2</span>What history shows</h2>
+
+<h3>Industries rise, then level off or shrink</h3>
+<p>Bessen tracks US cotton textiles, primary steel and motor vehicles from the early 1800s to the 2000s. Employment in textiles and steel rose for a century or more, peaked and then fell: an "inverted U."<a class="cite" href="#s-bessen">1</a> Auto employment rose from 1910 to the 1950s and then levelled off through 2007. It did not fall.</p>
+<div class="tbl">
+<table>
+  <thead><tr><th>Elasticity of demand with respect to productivity</th><th class="num">Cotton textiles</th><th class="num">Primary steel</th><th class="num">Autos</th></tr></thead>
+  <tbody>
+    <tr><td>Early (data)</td><td class="num">1.3 (1820)</td><td class="num">2.2 (1870)</td><td class="num">2.0 (1910)</td></tr>
+    <tr class="hl"><td>Around 1950 (data)</td><td class="num">0.2</td><td class="num">−1.3</td><td class="num">0.4</td></tr>
+    <tr><td>Early (model)</td><td class="num">1.5</td><td class="num">2.4</td><td class="num">9.2</td></tr>
+    <tr><td>Around 1950 (model)</td><td class="num">0.2</td><td class="num">0.3</td><td class="num">1.1</td></tr>
+  </tbody>
+  <caption>Bessen (2019), Table 1, Panels C and D. Above 1, productivity gains add jobs; below 1, they remove them. Bessen suggests the negative steel figure may reflect a poor fit. The model puts autos slightly above 1 around 1950.<a class="cite" href="#s-bessen">1</a></caption>
+</table>
+</div>
+<p>Bessen's explanation is satiation. Early on, "there were large unmet needs," and demand grew faster than productivity. "Later, however, demand was satiated; ongoing automation still reduced prices, but these reductions did little to spur demand."<a class="cite" href="#s-bessen">1</a> Bessen adds two points that matter for planning. Elasticities change slowly: "for many industries, the demand elasticity in ten or twenty years will be similar to the demand elasticity today." And whether productivity-improving technology is increasing employment in a given industry "can, and must, be determined empirically."<a class="cite" href="#s-bessen">1</a></p>
+
+<h3>The middle of the job market thinned</h3>
+<p>Autor's 2015 survey documents job polarization. Sales, office, production and operative jobs fell from 60% of US employment in 1979 to 49% in 2007 and 46% in 2012.<a class="cite" href="#s-autor15">7</a> The European data Autor presents, from Goos, Manning and Salomons, place "craft printing" within the middle-paying group of occupations, whose share of employment fell. Computers took over routine, codifiable tasks. Tacit work resisted, which Autor calls Polanyi's paradox: "We know more than we can tell."<a class="cite" href="#s-autor15">7</a> In 2015 Autor judged that for professions including design, demand "has more than kept pace" with technology-boosted output.<a class="cite" href="#s-autor15">7</a> That judgment predates generative AI.</p>
+
+<h3>The bank teller case, with its warning</h3>
+<p>The ATM is the best-known case of demand offsetting automation. ATMs roughly quadrupled between 1995 and 2010, yet US teller employment "rose modestly from 500,000 to approximately 550,000" between 1980 and 2010.<a class="cite" href="#s-autor15">7</a> Tellers per branch fell by more than a third from 1988 to 2004, while urban branches rose by more than 40%, helped by deregulation. Tellers became relationship sellers. Autor adds: "This example should not be taken as paradigmatic; technological change is not necessarily employment-increasing or Pareto-improving." In other words, it can leave some people worse off.<a class="cite" href="#s-autor15">7</a></p>
+
+<h3>The composing room</h3>
+<p>In our reading, the closest history to GC is the composing room. The Bureau of Labor Statistics' 1999 review of its <em>Occupational Outlook Handbook</em> traces it through successive editions.<a class="cite" href="#s-mlr">9</a> The 1959 edition described phototypesetting. The 1968–69 edition described tape-fed automatic typesetting machines. Later editions added electronic phototypesetting and electronic pagination. The 1998–99 edition, as quoted in the review, said "much of the typesetting and page layout work is increasingly done by customers on their computers," a change "called 'desktop publishing.'" The review's own summary: "Technology that hammered away at composing-room occupations in the printing industry eventually created a need for desktop-publishing specialists."<a class="cite" href="#s-mlr">9</a> Hand compositor and Linotype descriptions last appeared in the 1986–87 edition. The review gives no employment counts for any of these occupations.</p>
+<p>Our reading: the composing room shows that the elasticity question has a second half. Cheaper typesetting moved much of the work to customers and created a new occupation elsewhere. A demand elasticity for typeset pages would not have told anyone where the jobs went.</p>
+<p>Autor's 2024 essay names typesetting among forms of expertise that once "commanded a substantial market premium" and are now "antiquated or automated."<a class="cite" href="#s-autor24">10</a> The essay is explicit about both sides: "Demand for healthcare, education and computer code appears almost limitless … But in other domains, yes, rapid productivity growth will erode employment."<a class="cite" href="#s-autor24">10</a> Autor's case that AI could extend expertise to more workers is, in the essay's words, "not a forecast."<a class="cite" href="#s-autor24">10</a></p>
+</section>
+
+<!-- ============================================================ -->
+<section class="col" aria-labelledby="models">
+<h2 id="models"><span class="n">3</span>How the AI-era models use elasticity</h2>
+
+<h3>OpenAI's AI Jobs Transition Framework</h3>
+<p>OpenAI's framework sorts occupations into four archetypes. It builds them in steps.<a class="cite" href="#s-ajtf">2</a><a class="cite" href="#s-ajtfeu">11</a></p>
+<ol>
+  <li><strong>Exposure.</strong> Task-level AI exposure ratings from a 2023 study, weighted by time spent. The US report draws a line where strongly AI-applicable tasks fill roughly 15 hours of a 40-hour week. The EU extension uses a 50% exposure cut-off instead. Occupations below the line go to "less immediate change."</li>
+  <li><strong>Net effect.</strong> For exposed occupations, a model estimates the net employment effect of a 10% productivity gain: a direct labour-saving effect plus a scale effect from expanded output. A positive net effect means "grow with AI."</li>
+  <li><strong>Human necessity.</strong> A language model assigns a necessity category: physical, regulatory or accountability, or relational. Exposed occupations with a nonpositive net effect "reorganize" if necessity is high. The EU report adds a band: low-necessity occupations with a small decline, from −0.5% up to 0%, also reorganize. The rest are labelled higher automation risk (US) or potential (EU). The −0.5% band appears only in the EU report.</li>
+</ol>
+<p>The elasticity feeds the scale effect. It is a language model's answer to one question per occupation: if the price of this occupation's output fell 10% because costs fell, how much more would buyers want over two to three years? The US report calls the result a "price-response prior" and "the least directly observed object in the current framework."<a class="cite" href="#s-ajtf">2</a> The EU report states plainly: "Estimates describe output demand, not labour demand."<a class="cite" href="#s-ajtfeu">11</a></p>
+<div class="figure-row">
+  <div class="fig"><div class="v">~0.6</div><div class="l">median elasticity across the 923 occupations in OpenAI's public US data file (our tabulation)<a class="cite" href="#s-ajtfdata">12</a></div></div>
+  <div class="fig"><div class="v">~0.7</div><div class="l">median European elasticity, which "would not fully offset labour-saving productivity gains"<a class="cite" href="#s-ajtfeu">11</a></div></div>
+  <div class="fig"><div class="v">1.45 vs 1.08</div><div class="l">graphic designers: US report chart vs public data file<a class="cite" href="#s-ajtf">2</a><a class="cite" href="#s-ajtfdata">12</a></div></div>
+</div>
+<p>The US report names graphic designers among "the most elastic occupations" and plots them at about 1.45, the highest labelled point on its chart.<a class="cite" href="#s-ajtf">2</a> The public data file gives 1.08.<a class="cite" href="#s-ajtfdata">12</a> The two disagree elsewhere too, by 0.1 to 0.4 in every case we checked (our tabulation). The report's text gives home health aides −0.8, childcare workers −0.7 and maids and housekeeping cleaners −0.8. The file gives 0.61, 0.51 and 0.63. (The report's text writes elasticities as negative numbers. Its chart, the data file and this page use positive values.)<a class="cite" href="#s-ajtf">2</a><a class="cite" href="#s-ajtfdata">12</a> Any use of a graphic-designer elasticity has to say which source it uses.</p>
+<p>Elasticity alone does not fix the archetype. In the EU charts, architects sit at about 0.5 yet "grow with AI," while travel agents are labelled elastic and still face "higher automation potential."<a class="cite" href="#s-ajtfeu">11</a> In the US data file, elasticity ranges overlap across all four archetypes (our tabulation).<a class="cite" href="#s-ajtfdata">12</a> The deciding values are the exposure and net-effect scores, which are not published.</p>
+<div class="tbl">
+<table>
+  <thead><tr><th>Occupation (US data file)</th><th>Archetype</th><th class="num">Elasticity</th></tr></thead>
+  <tbody>
+    <tr><td>Graphic designers</td><td>Grow with AI</td><td class="num">1.08</td></tr>
+    <tr><td>Market research analysts and marketing specialists</td><td>Grow with AI</td><td class="num">1.03</td></tr>
+    <tr><td>Marketing managers</td><td>Grow with AI</td><td class="num">1.03</td></tr>
+    <tr><td>Customer service representatives</td><td>Higher automation risk</td><td class="num">0.68</td></tr>
+    <tr><td>Printing press operators</td><td>Less immediate change</td><td class="num">0.65</td></tr>
+    <tr><td>Desktop publishers</td><td>Higher automation risk</td><td class="num">0.61</td></tr>
+    <tr><td>Prepress technicians and workers</td><td>Higher automation risk</td><td class="num">0.56</td></tr>
+  </tbody>
+  <caption>Values from OpenAI's public data file (absolute values; range 0.25–1.15).<a class="cite" href="#s-ajtfdata">12</a> These are model priors. None is a measurement. The authors say the categories "are not job-loss forecasts."<a class="cite" href="#s-ajtf">2</a></caption>
+</table>
+</div>
+
+<h3>What the cited validation does and doesn't cover</h3>
+<p>The US report says it estimates elasticities "in the spirit of" Asirvatham, Mokski and Shleifer (2026).<a class="cite" href="#s-ajtf">2</a> That paper tests whether GPT can rate attributes of existing text, such as formality or democracy codes, as well as human coders. It finds correlations with consensus human labels of 0.55–0.78.<a class="cite" href="#s-asirvatham">13</a> It does not test occupations, exposure or elasticities. Every benchmark is a label of content that already exists. In our reading, an elasticity is a hypothetical with no such label. The paper's own rule of thumb asks: "could you measure what you are asking GPT to measure?"<a class="cite" href="#s-asirvatham">13</a> The research was supported by OpenAI, and two of its three authors worked there.</p>
+
+<h3>Acemoglu's macro estimate</h3>
+<p>Acemoglu's "Simple Macroeconomics of AI" asks how large the productivity shock itself is likely to be.<a class="cite" href="#s-acemoglu24">14</a></p>
+<div class="figure-row">
+  <div class="fig"><div class="v">4.6%</div><div class="l">of all tasks profitably affected by AI within ten years (20% exposed × 23% feasible)</div></div>
+  <div class="fig"><div class="v">14.4%</div><div class="l">average cost saving on those tasks (27% labour saving × 0.535 labour share)</div></div>
+  <div class="fig"><div class="v">≤0.66%</div><div class="l">total factor productivity gain over ten years; GDP gain 0.93–1.16%<a class="cite" href="#s-acemoglu24">14</a></div></div>
+</div>
+<p>Acemoglu calls 0.66% "likely to be an upper bound." Product demand elasticity appears only qualitatively: labour demand in a task may rise or fall depending on displacement, productivity, substitution between tasks, and "the demand elasticity for the product that is ultimately being produced."<a class="cite" href="#s-acemoglu24">14</a> The paper does use a parameter η = 0.2. It is the elasticity of substitution between sectors' outputs in consumption, borrowed from earlier work. It enters only the section 3.6 exercise, which covers wages, inequality and an upper-bound GDP gain of 1.4–1.56% if there is a large investment boom. It does not enter the 0.66% productivity figure. It is not a demand elasticity for any product or occupation.<a class="cite" href="#s-acemoglu24">14</a></p>
+<p>Other estimates of the shock run higher. An Anthropic exercise using Claude's own estimates of task times finds that AI could raise US labour productivity by 1.8% a year if current models reached universal adoption over ten years. The authors say that would nearly double the long-run growth rate, and they call the exercise "not a prediction."<a class="cite" href="#s-tamkin">15</a> Our reading: the size of the productivity gain is as uncertain as the demand response. Both enter Bessen's identity.</p>
+
+<h3>Autor and Salomons: the aggregate evidence</h3>
+<p>Autor and Anna Salomons study 28 industries in 19 countries from 1970 to 2007. They measure "automation" as industry productivity growth (total factor productivity, or TFP) in the same industry abroad.<a class="cite" href="#s-as">3</a> In their words, own-industry employment losses "are reversed by indirect gains in customer industries and induced increases in aggregate demand," while "own-industry labor share losses are not recouped elsewhere."<a class="cite" href="#s-as">3</a></p>
+<p>Their estimates imply that productivity growth reduced employment in its own industry by about 0.22 log points a year, roughly 8% over the 37 years. Gains in linked industries and through final demand more than offset that, for a predicted net gain of about 0.48 a year. The same model predicts a fall in labour's share of value added of about 6 percentage points over the period.<a class="cite" href="#s-as">3</a></p>
+<p>The authors turn one own-industry estimate into an elasticity of employment with respect to productivity. In their least-controlled specification, a one standard deviation rise in own-industry TFP (2.58 log points) predicts a fall of about 2.07 log points in own-industry employment. That is an elasticity of 0.80. Because it is below one, they note, there is "a partial industry-level demand offset."<a class="cite" href="#s-as">3</a> The models they carry forward give a smaller own-industry effect. Adding sector-group trends brings it to −1.13 per standard deviation (Table 5). Adding supplier and customer links brings it to −0.95 (Table 9, panel A).<a class="cite" href="#s-as">3</a></p>
+<p>Autor and Salomons do not convert any of these own-industry figures into a price elasticity of demand, and this page does not either. Our reading: a conversion would rest on assumptions the paper does not support. TFP growth is not the same as growth in output per worker. An elasticity with respect to productivity is not a price elasticity. And the data describe broad industries, not occupations. So these numbers cannot be compared with OpenAI's priors.</p>
+</section>
+
+<!-- ============================================================ -->
+<section class="col" aria-labelledby="measure">
+<h2 id="measure"><span class="n">4</span>What we can and can't measure</h2>
+
+<h3>What the early AI-era data show</h3>
+<p>The labour-market evidence on AI and early careers, now more than a dozen studies, is summarised in the companion paper, <em><a class="paper" href="ai-and-gc-careers.html">AI and GC Careers</a></em> (section 1). In brief: US payroll data show weaker hiring of 22–25-year-olds into AI-exposed work, with no economy-wide displacement.<a class="cite" href="#s-bryn">4</a> Several 2026 studies point to remote work and the general hiring slowdown as larger causes so far: recent graduates' unemployment in summer 2026 stayed within the range seen since 2022, and Denmark's early-career decline is not at the firms that adopted AI chatbots.<a class="cite" href="#s-emanuel">16</a><a class="cite" href="#s-fairlie">17</a><a class="cite" href="#s-humlum">18</a> Others, in Texas and Sweden, find AI-linked declines.<a class="cite" href="#s-dodini">19</a><a class="cite" href="#s-lodefalk">20</a> Every one of these is a working paper, preprint, central-bank analysis or vendor research. None of them measures a demand elasticity.</p>
+
+<h3>What we could not find</h3>
+<p>No archived source estimates the AI-era demand elasticity for graphic design, prepress, packaging, marketing or print sales work. Bessen's elasticities cover three manufacturing industries up to about 1950. Autor and Salomons' estimates cover broad industries before 2008, and none is a price elasticity of demand for a product.</p>
+<p class="note"><strong>The honest bottom line.</strong> We found no measurement of AI-era demand elasticity for GC occupations. The published elasticities are model priors or industry-level history. In our reading, they are useful for asking the right question about each market but cannot answer it.</p>
+<p>Our reading of the early data: the pattern so far, fewer young hires in exposed work with no economy-wide job loss, fits the Autor and Salomons picture of losses where productivity rises and gains elsewhere. It also fits the tech and interest-rate downturn. The data cannot yet separate the two.</p>
+</section>
+
+<!-- ============================================================ -->
+<section class="col" aria-labelledby="gc">
+<h2 id="gc"><span class="n">5</span>GC's markets through this lens</h2>
+<p>This section applies the elasticity question to GC's four markets and five career targets. The figures are cited. Every conclusion drawn from them is our reading.</p>
+
+<h3>Design and visual content</h3>
+<p>Marketing budgets held at about 7.7% of company revenue in 2025 and 7.8% in 2026, by Gartner's survey of chief marketing officers. Labour's share of those budgets rose from 21.9% to 24.5%.<a class="cite" href="#s-gartner">21</a> BLS projects graphic designers to decline 1.7% over 2025–35 and names AI tools as a reason.<a class="cite" href="#s-bls">22</a> OpenAI's prior puts graphic designers among the most elastic occupations.<a class="cite" href="#s-ajtf">2</a></p>
+<p>Our reading: demand for design <em>output</em> is probably elastic. When assets get cheaper, firms want many more of them. A flat budget limits how much of that becomes paid designer time. The elastic part is the number of assets. The constrained part is per-asset execution. That fits the BLS projection and the Census earnings data better than the OpenAI label does. For <strong>Purposeful Design &amp; Creative Generalist</strong> graduates, the protected work is the part AI complements: direction, judgment across media, and design decisions that carry cost, production and compliance consequences. Autor's 2024 point applies: AI helps those with foundational expertise.<a class="cite" href="#s-autor24">10</a></p>
+
+<h3>Marketing</h3>
+<p>BLS projects market research analysts and marketing specialists to grow 7% over 2025–35, driven by "increasing use of data and market research."<a class="cite" href="#s-bls">22</a> The same occupation is among the most AI-exposed in Anthropic's usage data, with observed exposure of 64.8%. Its leading AI-covered task is preparing reports of findings.<a class="cite" href="#s-massenkoff">23</a></p>
+<p>Our reading: analysis is a case where cheaper output may bring in new buyers, such as smaller firms that could not afford measurement before. That is Bessen's elastic case. Report production is the exposed layer. For <strong>Brand Strategy &amp; Experience</strong>, the growth path runs through deciding what to test and what the results mean. The usual entry role sits in the exposed layer, so graduates need evidence of judgment from the start.</p>
+
+<h3>Print and packaging</h3>
+<p>Our reading: package demand follows the physical goods being sold and shipped. US e-commerce reached 17.1% of retail in the second quarter of 2026, up 12.2% from a year earlier against 6.7% for all retail.<a class="cite" href="#s-census">24</a> BLS projects prepress technicians to decline 15.3% over 2025–35.<a class="cite" href="#s-bls">22</a> In a 2025 PMMI survey, 95% of consumer-packaged-goods companies said they were struggling to hire skilled operators and technicians.<a class="cite" href="#s-pmmi">25</a></p>
+<p>Our reading: for a standing product, artwork and prepress are a small part of a package's delivered cost. No archived source gives that share. If it holds, cheaper prepress barely moves the number of packages sold. Demand for prepress hours per package is inelastic, and AI shows up as fewer hours per SKU. This is the closest GC case to Bessen's mature industries. Bessen's work cannot tell us where print sits on that curve.<a class="cite" href="#s-bessen">1</a></p>
+<p>Our reading: the elastic exception is <em>versions</em>. Each new SKU, regional pack or promotion carries a fixed artwork and setup cost. Cut that cost and brands can afford more variety. Smithers, a market-research firm, projects digitally printed packaging and labels to grow from $22 billion in 2025 to $36.9 billion in 2030, about 11% a year, with corrugated the most significant opportunity.<a class="cite" href="#s-smithers">26</a> Its release does not attribute that growth to versioning, and no source yet shows cheaper prepress causing more versions.</p>
+<p>Our reading: compliance work behaves differently again. Regulatory artwork changes happen whatever they cost, and a person has to sign off. For <strong>Production &amp; Operations</strong>, the durable roles are process engineering, quality systems, equipment justification and managing people through automation. Openings will come mostly from retirements and the shortage.</p>
+
+<h3>Sales and client roles</h3>
+<p>Customer service representatives are among the most exposed occupations in Anthropic's data, at 70.1%. Wholesale and manufacturing sales representatives are at 62.8%.<a class="cite" href="#s-massenkoff">23</a> BLS projects customer service representatives to decline 5.3%.<a class="cite" href="#s-bls">22</a> The EU framework labels customer service "unit elastic" and still assigns "greater automation pressure."<a class="cite" href="#s-ajtfeu">11</a></p>
+<p>Our reading: quoting, reorders and order handling form an inelastic, substitutable layer. Technical selling is different. Its demand grows with the complexity of what customers buy: substrates, versioning programs, digital versus conventional economics. That is complementarity. Price response plays a smaller part. The teller case is the nearest precedent: routine work shrank and the role shifted toward selling, with Autor's warning that the case is not a general rule.<a class="cite" href="#s-autor15">7</a> For <strong>Sales Solutions &amp; Account Management</strong>, the technical and fiscal core (understanding the process, building the ROI case) is the part to build. No independent study yet covers AI in print and packaging sales.</p>
+
+<h3>The systems behind all four</h3>
+<p>Our reading: when output demand is elastic and budgets cap headcount, value moves to whoever builds and runs the system that produces the output. That is the <strong>Creative Technology &amp; Systems</strong> target: templates, workflow automation, asset management, colour management and AI evaluation. Autor, citing other work, notes that new job titles cluster around new technologies.<a class="cite" href="#s-autor15">7</a> Acemoglu and Restrepo's evidence is the caution: reinstatement through new tasks weakened after 1987.<a class="cite" href="#s-ar">8</a> New work is not automatic. In US payroll data, employment holds up where AI complements workers.<a class="cite" href="#s-bryn">4</a> Graduates whose curricula covered more AI-relevant tasks had better first-job outcomes after ChatGPT, an association its authors say is not causal.<a class="cite" href="#s-frank">6</a></p>
+
+<div class="tbl">
+<table>
+  <thead><tr><th>Target</th><th>Likely elastic</th><th>Likely inelastic or substituted</th></tr></thead>
+  <tbody>
+    <tr><td>1 Production &amp; Operations</td><td>Package versions; process and quality systems</td><td>Prepress hours per standing SKU; routine estimating and scheduling</td></tr>
+    <tr><td>2 Sales Solutions &amp; Account Management</td><td>Technical solution selling as complexity grows</td><td>Quotes, reorders, order handling</td></tr>
+    <tr><td>3 Brand Strategy &amp; Experience</td><td>Measurement and insight for more buyers</td><td>Routine reporting and first-draft content</td></tr>
+    <tr><td>4 Purposeful Design &amp; Creative Generalist</td><td>Number of assets; direction and design judgment</td><td>Per-asset execution under a flat budget</td></tr>
+    <tr><td>5 Creative Technology &amp; Systems</td><td>Systems that produce variants and keep them accurate</td><td>Few known; evidence thin</td></tr>
+  </tbody>
+  <caption>Our reading throughout. None of these classifications rests on a measured elasticity.</caption>
+</table>
+</div>
+</section>
+
+<!-- ============================================================ -->
+<section class="col" aria-labelledby="open">
+<h2 id="open"><span class="n">6</span>Open questions</h2>
+<ul>
+  <li><strong>What share of a package's cost is prepress and artwork?</strong> The inelastic reading for packaging rests on it, and no archived source gives it. Industry cost-structure data would settle it.</li>
+  <li><strong>Has cheaper prepress produced more versions?</strong> The versioning case is a mechanism. Data from converters or artwork-management systems on versions per brand over time would test it.</li>
+  <li><strong>Do budgets stay flat?</strong> If marketing budgets grow as assets get cheaper, the design reading changes. The annual Gartner survey is the indicator to watch.</li>
+  <li><strong>How elastic is demand for technical print and packaging sales?</strong> No study exists. Industry panel interviews and postings data are the candidates.</li>
+  <li><strong>Is the entry-rung effect AI, the economy, or both?</strong> The studies disagree. The quarterly review of new research will track it.</li>
+</ul>
+</section>
+
+<!-- ============================================================ -->
+<section class="col" aria-labelledby="sources">
+<h2 id="sources"><span class="n">7</span>Sources</h2>
+<p>Each source has a link to the official publication and, where available, a link to the copy archived for this project. Working papers revise in place, so the archived copy records the version cited. Vendor, trade and analyst sources are marked.</p>
+<ol class="sources">
+<li id="s-bessen"><div>Bessen, J. (2019). Automation and jobs: When technology boosts employment. <em>Economic Policy</em>, 34(100), 589–626. Figures and Table 1 from the archived accepted manuscript.<div class="links"><a href="https://doi.org/10.1093/epolic/eiaa001" target="_blank" rel="noopener noreferrer">doi:10.1093/epolic/eiaa001</a></div></div></li>
+<li id="s-ajtf"><div>Richmond, A. M. (2026). <em>The AI Jobs Transition Framework: Mapping AI's Near-Term Impact on Jobs</em>. OpenAI Economic Research, April 2026 (corrected 30 April 2026). Vendor research; not peer-reviewed. The author's name follows the report's own suggested citation ("Richmond, Alex Martin"). Chart positions read from Fig. 2.<div class="links"><a href="https://openai.com/index/modeling-ai-jobs-transition/" target="_blank" rel="noopener noreferrer">openai.com</a><a href="https://cdn.openai.com/pdf/the-ai-jobs-transition-framework_report.pdf" target="_blank" rel="noopener noreferrer">report PDF</a><span class="na">archived in the project library (too large to attach here)</span></div></div></li>
+<li id="s-as"><div>Autor, D., &amp; Salomons, A. (2018). Is automation labor share–displacing? Productivity growth, employment, and the labor share. <em>Brookings Papers on Economic Activity</em>, 2018(1), 1–87. Figures and table numbers from NBER Working Paper 24871 (titled "Is Automation Labor-Displacing?").<div class="links"><a href="https://doi.org/10.1353/eca.2018.0000" target="_blank" rel="noopener noreferrer">doi:10.1353/eca.2018.0000</a><a href="https://www.nber.org/papers/w24871" target="_blank" rel="noopener noreferrer">NBER w24871</a></div></div></li>
+<li id="s-bryn"><div>Brynjolfsson, E., Chandar, B., &amp; Chen, R. (2026). <em>Canaries in the Coal Mine? Six Facts about the Recent Employment Effects of Artificial Intelligence</em>. Stanford Digital Economy Lab working paper, August 2026 revision (payroll data through June 2026).<div class="links"><a href="https://digitaleconomy.stanford.edu/publication/canaries-in-the-coal-mine-six-facts-about-the-recent-employment-effects-of-artificial-intelligence/" target="_blank" rel="noopener noreferrer">Stanford DEL</a><a href="https://digitaleconomy.stanford.edu/app/uploads/2026/08/Canaries_August2026.pdf" target="_blank" rel="noopener noreferrer">Aug 2026 PDF</a></div></div></li>
+<li id="s-hernaes"><div>Hernæs, Ø., &amp; Kostøl, A. R. (2026). <em>Has AI Widened Employment Gaps? Tracking Early-Career Employment by Occupational Exposure in Norway</em>. RFBerlin Discussion Paper 179/26.<div class="links"><a href="https://www.rfberlin.com/wp-content/uploads/2026/07/26179.pdf" target="_blank" rel="noopener noreferrer">rfberlin.com</a></div></div></li>
+<li id="s-frank"><div>Frank, M. R., Javadian Sabet, A., Simon, L., Bana, S. H., &amp; Yu, R. (2026). <em>AI-exposed jobs deteriorated before ChatGPT</em>. arXiv:2601.02554.<div class="links"><a href="https://arxiv.org/abs/2601.02554" target="_blank" rel="noopener noreferrer">arXiv:2601.02554</a></div></div></li>
+<li id="s-autor15"><div>Autor, D. H. (2015). Why are there still so many jobs? The history and future of workplace automation. <em>Journal of Economic Perspectives</em>, 29(3), 3–30.<div class="links"><a href="https://doi.org/10.1257/jep.29.3.3" target="_blank" rel="noopener noreferrer">doi:10.1257/jep.29.3.3</a></div></div></li>
+<li id="s-ar"><div>Acemoglu, D., &amp; Restrepo, P. (2019). Automation and new tasks: How technology displaces and reinstates labor. <em>Journal of Economic Perspectives</em>, 33(2), 3–30. Figures cited from NBER Working Paper 25684.<div class="links"><a href="https://doi.org/10.1257/jep.33.2.3" target="_blank" rel="noopener noreferrer">doi:10.1257/jep.33.2.3</a><a href="https://www.nber.org/papers/w25684" target="_blank" rel="noopener noreferrer">NBER w25684</a></div></div></li>
+<li id="s-mlr"><div>Pilot, M. J. (1999). Occupational Outlook Handbook: a review of 50 years of change. <em>Monthly Labor Review</em>, May 1999, 8–26. U.S. Bureau of Labor Statistics. Qualitative history; contains no typesetting or prepress employment figures.<div class="links"><a href="https://www.bls.gov/opub/mlr/1999/05/art2full.pdf" target="_blank" rel="noopener noreferrer">bls.gov</a></div></div></li>
+<li id="s-autor24"><div>Autor, D. (2024). <em>Applying AI to Rebuild Middle Class Jobs</em>. NBER Working Paper 32140. An essay; not peer-reviewed.<div class="links"><a href="https://doi.org/10.3386/w32140" target="_blank" rel="noopener noreferrer">doi:10.3386/w32140</a></div></div></li>
+<li id="s-ajtfeu"><div>Richmond, A. M. (2026). <em>The AI Jobs Transition Framework for the EU</em>. OpenAI Economic Research, June 2026. Vendor research; not peer-reviewed. The author's name follows the report's own suggested citation. Occupation positions read from its charts.<div class="links"><a href="https://cdn.openai.com/pdf/the-ai-jobs-transition-framework-for-the-eu.pdf" target="_blank" rel="noopener noreferrer">report PDF</a></div></div></li>
+<li id="s-ajtfdata"><div>OpenAI (2026). <em>AI Jobs Transition Framework: occupation classifications public release</em>. The data file for the US report: one row for each of 923 occupations, giving its archetype, human-necessity category, estimated 2024 employment and elasticity input. The file's README calls that input "the AI scale-response elasticity-equivalent used as a mechanism input." Vendor data. The archived copy was downloaded on 6 October 2026 and is identical to a copy the GC Alumni study downloaded on 10 September 2026. Medians, ranges and the archetype overlap are our tabulation.<div class="links"><a href="https://cdn.openai.com/signals/ai-job-transition-framework-data-download.zip" target="_blank" rel="noopener noreferrer">data download (zip)</a></div></div></li>
+<li id="s-asirvatham"><div>Asirvatham, H., Mokski, E., &amp; Shleifer, A. (2026). <em>GPT as a Measurement Tool</em>. NBER Working Paper 34834. Not peer-reviewed. Supported by OpenAI; two of three authors were at OpenAI.<div class="links"><a href="https://www.nber.org/papers/w34834" target="_blank" rel="noopener noreferrer">NBER w34834</a></div></div></li>
+<li id="s-acemoglu24"><div>Acemoglu, D. (2025). The simple macroeconomics of AI. <em>Economic Policy</em>, 40(121), 13–58. Earlier version: NBER Working Paper 32487 (2024).<div class="links"><a href="https://doi.org/10.1093/epolic/eiae042" target="_blank" rel="noopener noreferrer">doi:10.1093/epolic/eiae042</a><a href="https://www.nber.org/papers/w32487" target="_blank" rel="noopener noreferrer">NBER w32487</a></div></div></li>
+<li id="s-tamkin"><div>Tamkin, A., &amp; McCrory, P. (2025). <em>Estimating AI productivity gains from Claude conversations</em>. Anthropic, 5 November 2025. Vendor research; not peer-reviewed. Task times are Claude's own estimates.<div class="links"><a href="https://www.anthropic.com/research/estimating-productivity-gains" target="_blank" rel="noopener noreferrer">anthropic.com</a></div></div></li>
+<li id="s-emanuel"><div>Emanuel, N., Harrington, E., &amp; Pallais, A. (2026). Remote Work Leaves Younger Workers Sidelined. Federal Reserve Bank of New York, <em>Liberty Street Economics</em>, 1 June 2026; based on <em>The Power of Proximity to Coworkers</em>, NBER Working Paper 31880 (revised June 2026). The 64% is the authors' scaled, back-of-envelope estimate.<div class="links"><a href="https://libertystreeteconomics.newyorkfed.org/2026/06/remote-work-leaves-younger-workers-sidelined/" target="_blank" rel="noopener noreferrer">newyorkfed.org</a></div></div></li>
+<li id="s-fairlie"><div>Fairlie, R. W., &amp; Wu, J. (2026). <em>The Early Impacts of AI on Employment among Recent College Graduates</em>. NBER Working Paper 35796, September 2026. Not peer-reviewed; CPS data through August 2026.<div class="links"><a href="https://www.nber.org/papers/w35796" target="_blank" rel="noopener noreferrer">NBER w35796</a></div></div></li>
+<li id="s-humlum"><div>Humlum, A., &amp; Vestergaard, E. (2026). <em>Still Waters, Rapid Currents: Early Labor Market Transformation under Generative AI</em>. NBER Working Paper 33777 (May 2025, revised March 2026); summarised by the authors for Brookings, 6 October 2026. Not peer-reviewed; Danish data.<div class="links"><a href="https://www.nber.org/papers/w33777" target="_blank" rel="noopener noreferrer">NBER w33777</a></div></div></li>
+<li id="s-dodini"><div>Dodini, S., &amp; Smith, T. (2026). AI plays a role in weak labor market for college graduates. Federal Reserve Bank of Dallas, <em>Dallas Fed Economics</em>, 22 September 2026. Texas public-university records; employment is measured only for jobs held in Texas.<div class="links"><a href="https://www.dallasfed.org/research/economics/2026/0922" target="_blank" rel="noopener noreferrer">dallasfed.org</a></div></div></li>
+<li id="s-lodefalk"><div>Lodefalk, M., Löthman, L., Koch, M., &amp; Engberg, E. (2026). <em>Same Storm, Different Boats: Generative AI and the Age Gradient Within Firms</em>. Preprint, version of 30 September 2026 (Örebro University Working Paper 2026:2). Swedish payroll data. Its mechanism differs from the authors' June 2026 ProMarket article; the paper is cited.<div class="links"><a href="https://github.com/Magnus-L/canaries-sweden/blob/main/paper/main.pdf" target="_blank" rel="noopener noreferrer">author repository</a></div></div></li>
+<li id="s-gartner"><div>Gartner CMO Spend Surveys, 2025 and 2026 (about 400 chief marketing officers each), as reported by Chief Marketer on 25 May 2025 and 24 June 2026. <strong>Analyst source</strong>, read through trade-press coverage; Gartner's own releases refused automated download.<div class="links"><a href="https://www.gartner.com/en/newsroom/press-releases/2025-05-12-gartner-2025-cmo-spend-survey-reveals-marketing-budgets-have-flatlined-at-seven-percent-of-overall-company-revenue" target="_blank" rel="noopener noreferrer">Gartner 2025</a><a href="https://www.chiefmarketer.com/gartner-39-of-cmos-plan-to-reduce-labor-costs-and-cut-agency-allocations/" target="_blank" rel="noopener noreferrer">Chief Marketer, 2025</a><a href="https://www.chiefmarketer.com/gartner-cmo-spend-survey-budgets-reflect-increase-in-consumption-based-martech-paid-media-spend/" target="_blank" rel="noopener noreferrer">Chief Marketer, 2026</a></div></div></li>
+<li id="s-bls"><div>U.S. Bureau of Labor Statistics (2026). Employment Projections 2025–35 and Occupational Outlook Handbook entries for graphic designers and market research analysts. Projections, not observed counts. Projection figures are checked against an archived copy of BLS's projections table, and the Handbook text against browser-saved copies (7 October 2026).<div class="links"><a href="https://www.bls.gov/news.release/archives/ecopro_08272026.htm" target="_blank" rel="noopener noreferrer">projections release</a><a href="https://www.bls.gov/ooh/arts-and-design/graphic-designers.htm" target="_blank" rel="noopener noreferrer">graphic designers</a><a href="https://www.bls.gov/ooh/business-and-financial/market-research-analysts.htm" target="_blank" rel="noopener noreferrer">market research</a></div></div></li>
+<li id="s-massenkoff"><div>Massenkoff, M., &amp; McCrory, P. (2026). <em>Labor market impacts of AI: A new measure and early evidence</em>. Anthropic, 5 March 2026. Vendor research; not peer-reviewed.<div class="links"><a href="https://www.anthropic.com/research/labor-market-impacts" target="_blank" rel="noopener noreferrer">anthropic.com</a></div></div></li>
+<li id="s-census"><div>U.S. Census Bureau (2026). Quarterly Retail E-Commerce Sales, 2nd Quarter 2026 (release CB26-133, 18 August 2026). Seasonally adjusted, preliminary estimates. Since 28 September 2026 Census marks this release as superseded; revised Q2 figures come with the Q3 release on 19 November 2026.<div class="links"><a href="https://www.census.gov/retail/mrts/www/data/pdf/ec_current.pdf" target="_blank" rel="noopener noreferrer">census.gov (replaced each quarter)</a></div></div></li>
+<li id="s-pmmi"><div>PMMI, the Association for Packaging and Processing Technologies (2025). <em>Finding skilled workers remains a major challenge that may worsen</em>. Press release, 10 December 2025, reporting PMMI's <em>2025 Inside the Workforce Gap</em> survey (136 end users and equipment makers, June–July 2025). <strong>Trade association source.</strong><div class="links"><a href="https://www.pmmi.org/news/finding-skilled-workers-remains-a-major-challenge-that-may-worsen" target="_blank" rel="noopener noreferrer">pmmi.org</a></div></div></li>
+<li id="s-smithers"><div>Smithers (2025). <em>The Future of Digital Print for Packaging to 2030</em>, as reported by the Flexographic Technical Association and <em>Digital Labels &amp; Packaging</em> from Smithers' November 2025 release. <strong>Analyst source</strong>; Smithers sells these market reports. Smithers' own site refused automated download, so the archived copy is a reprint.<div class="links"><a href="https://www.flexography.org/industry-news/corrugated-flexibles-drive-22-billion-digital-print-for-packaging-market/" target="_blank" rel="noopener noreferrer">flexography.org</a><a href="https://www.dlpmag.com/news/102279/digital-packaging-market-to-reach-22-billion/" target="_blank" rel="noopener noreferrer">dlpmag.com</a></div></div></li>
+</ol>
+</section>
+
+<footer class="doc">
+  Prepared by the Graphic Communications program, Clemson University, October 2026. Evidence is drawn from the program's AI career-impact source library. Statements marked "our reading" are the program's inferences. Calculations made for this page are marked "our tabulation".
+</footer>
+</main>
+</div>
+
+</body>
+</html>

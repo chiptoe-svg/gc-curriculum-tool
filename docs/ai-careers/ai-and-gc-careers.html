@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>AI and GC Careers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a single reading column (~68ch) with a sticky contents rail on wide screens; evidence tables break out wider. */
+:root {
+  --bg: #fbfbfa;
+  --surface: #f1f0f4;
+  --fg: #1d1b22;
+  --muted: #5d5966;
+  --rule: #dcd9e2;
+  --accent: #c24f00;        /* Clemson orange, darkened for text contrast */
+  --accent-soft: #fde9da;
+  --purple: #522d80;        /* Clemson regalia */
+  --purple-soft: #ece6f4;
+  --good: #2f6b3a;
+  --warn: #8a5a00;
+  --bad: #9b2c2c;
+  --font-display: "Newsreader", "Iowan Old Style", Georgia, serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #17151b; --surface: #221f28; --fg: #ecebef; --muted: #a7a2b1; --rule: #39343f;
+    --accent: #ff8a3d; --accent-soft: #3a2414; --purple: #b9a2dc; --purple-soft: #2c2338;
+    --good: #7cc58a; --warn: #e3b453; --bad: #f08b8b; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #17151b; --surface: #221f28; --fg: #ecebef; --muted: #a7a2b1; --rule: #39343f;
+  --accent: #ff8a3d; --accent-soft: #3a2414; --purple: #b9a2dc; --purple-soft: #2c2338;
+  --good: #7cc58a; --warn: #e3b453; --bad: #f08b8b; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 16px/1.62 var(--font-body); margin: 0; }
+.wrap { max-width: 74rem; margin: 0 auto; padding-inline: 20px; padding-block: 2.5rem 5rem;
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 3rem; }
+@media (min-width: 1020px) { .wrap { grid-template-columns: 13rem minmax(0, 1fr); } }
+nav.toc { font-size: .85rem; }
+@media (min-width: 1020px) { nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 1.5rem); align-self: start; } }
+nav.toc ol { list-style: none; padding: 0; margin: 0; display: grid; gap: .45rem; counter-reset: toc; }
+nav.toc li { counter-increment: toc; display: grid; grid-template-columns: 1.4rem 1fr; }
+nav.toc li::before { content: counter(toc); font-family: var(--font-mono); color: var(--accent); }
+nav.toc a { color: var(--fg); text-decoration: none; }
+nav.toc a:hover, nav.toc a:focus-visible { text-decoration: underline; text-decoration-color: var(--accent); }
+.toc-label { font-size: .72rem; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); margin: 0 0 .7rem; }
+main { min-width: 0; }
+.col { max-width: 42rem; }
+header.doc { border-bottom: 1px solid var(--rule); padding-bottom: 1.6rem; margin-bottom: 2.2rem; }
+.eyebrow { font-size: .75rem; letter-spacing: .1em; text-transform: uppercase; color: var(--purple); font-weight: 600; margin: 0 0 .6rem; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; text-wrap: balance; line-height: 1.15; }
+h1 { font-size: clamp(2.1rem, 5vw, 3.1rem); margin: 0 0 .9rem; letter-spacing: -.01em; }
+h2 { font-size: clamp(1.55rem, 3vw, 2rem); margin: 3.4rem 0 .9rem; scroll-margin-top: 1.5rem; }
+h2 .n { font-family: var(--font-mono); font-size: .95rem; color: var(--accent); font-weight: 500; display: block; margin-bottom: .3rem; letter-spacing: .04em; }
+h3 { font-size: 1.22rem; margin: 2.1rem 0 .5rem; }
+p { margin: 0 0 1rem; }
+.lede { font-size: 1.15rem; color: var(--fg); max-width: 40rem; }
+.meta { display: flex; flex-wrap: wrap; gap: .4rem 1.4rem; font-size: .85rem; color: var(--muted); margin-top: 1rem; }
+.meta b { color: var(--fg); font-weight: 500; }
+a { color: var(--purple); text-underline-offset: 2px; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.cite { font-family: var(--font-mono); font-size: .72em; vertical-align: super; line-height: 0; text-decoration: none; color: var(--accent); margin-left: 1px; }
+.cite:hover { text-decoration: underline; }
+.takeaways { background: var(--surface); border-radius: 6px; padding: 1.4rem 1.5rem; margin: 0 0 1rem; }
+.takeaways h2 { margin: 0 0 .8rem; font-size: 1.3rem; }
+.takeaways ol { margin: 0; padding-left: 1.2rem; display: grid; gap: .65rem; }
+.takeaways li::marker { font-family: var(--font-mono); color: var(--accent); }
+.note { border-left: 3px solid var(--purple); background: var(--purple-soft); padding: .8rem 1rem; margin: 1.2rem 0; font-size: .93rem; border-radius: 0 4px 4px 0; }
+.note strong { color: var(--purple); }
+.figure-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); gap: 1rem; margin: 1.4rem 0; max-width: 46rem; }
+.fig { border-top: 2px solid var(--accent); padding-top: .6rem; }
+.fig .v { font-family: var(--font-display); font-size: 2rem; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.fig .l { font-size: .85rem; color: var(--muted); }
+.tbl { overflow-x: auto; margin: 1.2rem 0 1.4rem; }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; min-width: 34rem; }
+th, td { text-align: left; vertical-align: top; padding: .55rem .8rem .55rem 0; border-bottom: 1px solid var(--rule); }
+th { font-weight: 600; font-size: .78rem; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); border-bottom: 1.5px solid var(--fg); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--font-mono); font-size: .86rem; }
+tr.hl td { background: var(--accent-soft); }
+caption { caption-side: bottom; text-align: left; font-size: .8rem; color: var(--muted); padding-top: .5rem; }
+.chip { display: inline-block; font-size: .72rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; padding: .12rem .45rem; border-radius: 3px; border: 1px solid currentColor; white-space: nowrap; }
+.chip.good { color: var(--good); } .chip.warn { color: var(--warn); } .chip.bad { color: var(--bad); } .chip.mixed { color: var(--purple); }
+.split { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 1.4rem; margin: 1.2rem 0; max-width: 46rem; }
+.split > div { min-width: 0; }
+.split h4 { margin: 0 0 .4rem; font-size: .8rem; letter-spacing: .07em; text-transform: uppercase; }
+.split .lose h4 { color: var(--bad); } .split .gain h4 { color: var(--good); }
+.split ul { margin: 0; padding-left: 1.1rem; font-size: .93rem; display: grid; gap: .3rem; }
+.target { border-top: 1px solid var(--rule); padding-top: 1.1rem; margin-top: 1.6rem; max-width: 46rem; }
+.target h3 { margin: 0 0 .35rem; display: flex; flex-wrap: wrap; gap: .5rem .8rem; align-items: baseline; }
+.target h3 .tn { font-family: var(--font-mono); color: var(--accent); font-size: .95rem; font-weight: 500; }
+.target dl { display: grid; grid-template-columns: minmax(0, 9rem) minmax(0, 1fr); gap: .35rem 1rem; margin: .6rem 0 0; font-size: .93rem; }
+.target dt { color: var(--muted); font-size: .8rem; letter-spacing: .04em; text-transform: uppercase; padding-top: .15rem; }
+.target dd { margin: 0; }
+@media (max-width: 520px) { .target dl { grid-template-columns: minmax(0, 1fr); } .target dd { margin-bottom: .5rem; } }
+ol.sources { padding-left: 0; list-style: none; font-size: .88rem; display: grid; gap: .8rem; counter-reset: s; }
+ol.sources li { display: grid; grid-template-columns: 2.2rem minmax(0, 1fr); counter-increment: s; scroll-margin-top: 1.5rem; }
+ol.sources li::before { content: counter(s); font-family: var(--font-mono); color: var(--accent); }
+ol.sources li:target { background: var(--accent-soft); border-radius: 4px; }
+.links { display: flex; flex-wrap: wrap; gap: .3rem .9rem; margin-top: .2rem; font-size: .82rem; }
+.links a { font-family: var(--font-mono); }
+.links .na { color: var(--muted); font-family: var(--font-mono); }
+footer.doc { margin-top: 3.5rem; padding-top: 1.2rem; border-top: 1px solid var(--rule); font-size: .82rem; color: var(--muted); max-width: 46rem; }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+
+</head>
+<body>
+<div class="wrap">
+<nav class="toc" aria-label="Contents">
+  <p class="toc-label">Contents</p>
+  <ol>
+    <li><a href="#broad">AI and careers, broadly</a></li>
+    <li><a href="#field">AI in GC's field</a></li>
+    <li><a href="#targets">The five career targets</a></li>
+    <li><a href="#now">The curriculum today</a></li>
+    <li><a href="#future">The curriculum ahead</a></li>
+    <li><a href="#open">Open questions</a></li>
+    <li><a href="#sources">Sources</a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="doc">
+  <p class="eyebrow">Graphic Communications · Clemson University</p>
+  <h1>AI and GC careers</h1>
+  <p class="lede">What the evidence says about AI and early careers, what it means for the markets Graphic Communications graduates enter, and how the GC curriculum fits now and needs to change.</p>
+  <div class="meta">
+    <span><b>For</b> university, college and industry leaders</span>
+    <span><b>Evidence as of</b> October 2026</span>
+    <span><b>Status</b> working draft</span>
+    <span><b>Companion</b> <a class="paper" href="demand-elasticity-and-ai-jobs.html">Demand Elasticity and AI Jobs</a></span>
+  </div>
+</header>
+
+<section class="takeaways col" aria-labelledby="tk">
+  <h2 id="tk">The short version</h2>
+  <ol>
+    <li><strong>AI is changing tasks faster than it is changing headcount.</strong> In US data, early-career hiring into AI-exposed work has weakened. How much of that AI caused is unresolved, and economy-wide employment shows no widespread displacement yet.</li>
+    <li><strong>The pressure falls on the entry rung.</strong> AI absorbs well-specified execution work, which is where new graduates have always learned. What remains asks for judgment that people used to build on the job.</li>
+    <li><strong>GC graduates work where AI is active.</strong> About 64% of recent GC first jobs are in occupations OpenAI's framework labels "grows with AI," against 12% nationally. That is a label, not a forecast. Their share in high-automation-risk occupations is close to the national rate.</li>
+    <li><strong>In each GC market the evidence points the same way</strong>, though it is thin for sales roles. Executing variants is being squeezed. Specifying, governing and integrating the systems that produce them is growing.</li>
+    <li><strong>The curriculum needs re-weighting more than replacing.</strong> Teach judgment as the scarce skill, require evidence that AI can't fake, and build the Creative Technology &amp; Systems target, whose systems-and-workflow side the curriculum barely covers today.</li>
+  </ol>
+</section>
+
+<!-- ============================================================ -->
+<section class="col" aria-labelledby="broad">
+<h2 id="broad"><span class="n">1</span>AI and careers, broadly</h2>
+
+<h3>What is measured, and what is assumed</h3>
+<p>Most claims about "jobs AI will replace" start from an <em>exposure score</em>: a rating of how much of an occupation's task list a language model could speed up. Most exposure scores built for the language-model era, including those behind OpenAI's framework and the payroll and Census studies below, descend from one 2023 exercise in which GPT-4 and human raters scored O*NET task descriptions.<a class="cite" href="#s-eloundou">1</a> Frameworks built on top of it add more model judgments. OpenAI's AI Jobs Transition Framework, for example, layers an AI-generated estimate of demand elasticity and net effect on that score.<a class="cite" href="#s-ajtf">2</a> Its authors say its categories "are not job-loss forecasts."</p>
+<p>Exposure scores are useful for <strong>ranking</strong> which jobs involve a lot of screen-based, language- or image-heavy work. They are weak at <strong>forecasting</strong> whether an occupation grows or shrinks. Because most studies use the same underlying ratings, their agreement is less independent than their number suggests.</p>
+
+<h3>AI use is task-level and crosses job boundaries</h3>
+<p>Two AI platforms that classify real usage against O*NET, the federal occupational database (Anthropic to its tasks, OpenAI to its detailed work activities) both find AI use spread widely across tasks. In ChatGPT work messages, about 44% of occupation-specific use concerns tasks that historically belonged to <em>another</em> occupation (16.8% of all work messages).<a class="cite" href="#s-chin">3</a> In Anthropic's data, about 49% of jobs have seen at least a quarter of their tasks done with Claude.<a class="cite" href="#s-aei">4</a> Design draws heavily on other occupations' tasks, and marketing tasks travel furthest into other roles.<a class="cite" href="#s-chin">3</a> GC sits on both sides of that flow.</p>
+<p>This matters for how careers are described. Usage shows how jobs change before job titles and federal occupation codes catch up. Emerging GC-adjacent roles, such as workflow and creative technologists, have no dedicated occupation code.</p>
+
+<h3>The entry rung is where the pressure shows</h3>
+<p>The most consequential and least settled signal is about new graduates.</p>
+<div class="figure-row">
+  <div class="fig"><div class="v">19%</div><div class="l">relative employment gap for workers aged 22–25 in the two most AI-exposed fifths of occupations vs the three least exposed, late 2022 to June 2026 (US payroll data)<a class="cite" href="#s-bryn">5</a></div></div>
+  <div class="fig"><div class="v">~9%</div><div class="l">lower junior employment at firms that adopted generative AI, within six quarters, through slower hiring<a class="cite" href="#s-hosseini">6</a></div></div>
+  <div class="fig"><div class="v">13% → 3–5%</div><div class="l">lower starting pay for graduates of the most AI-exposed tenth of majors after ChatGPT, relative to the least-exposed majors, narrowing by year two (Census, 6.7M graduate records)<a class="cite" href="#s-orr">7</a></div></div>
+</div>
+<p>Other studies push back. Norway's whole private-sector workforce shows only a small gap between the most and least exposed occupations through February 2026 (0.1% vs 0.3% growth since October 2022), which is not statistically significant.<a class="cite" href="#s-hernaes">8</a> Unemployment risk in AI-exposed occupations began rising in early 2022, and graduates from 2021 on entered those jobs at lower rates, both before ChatGPT. That timing fits the tech and interest-rate downturn as well as AI.<a class="cite" href="#s-frank">9</a> One team finds the AI effect shrinks sharply, often to statistically indistinguishable from zero, once remote work is accounted for; another, using payroll data, finds it survives the same control.<a class="cite" href="#s-lambert">10</a><a class="cite" href="#s-bryn">5</a></p>
+<p>Several of the newest studies find little sign of AI in young graduates' outcomes so far. In US survey data, recent graduates' unemployment in summer 2026 was 7.3%, within the range seen since 2022, and its gap with older graduates was stable at 4.5 percentage points; the authors note this does not rule out larger effects later.<a class="cite" href="#s-fairlie">11</a> A New York Fed analysis estimates that remote work can explain 64% of the rise in young graduates' unemployment, and the rise predates the spread of AI.<a class="cite" href="#s-emanuel">12</a> In Denmark, early-career employment in exposed occupations did fall, but not at the firms that adopted AI chatbots, and effects on earnings and hours above 2% are ruled out.<a class="cite" href="#s-humlum">13</a> In US job postings, the relative decline in AI-exposed occupations began before ChatGPT, and the authors find it "difficult to attribute the recent slowdown in entry-level hiring to AI alone."<a class="cite" href="#s-audoly">14</a> In Sweden, the ratio of 22–25-year-olds to older colleagues fell 3.9% more at AI-exposed employers; separations of the young rose (imprecisely estimated) and relative hiring showed no significant change.<a class="cite" href="#s-lodefalk">15</a> A vendor study of company spending finds heavy AI adopters grew entry-level headcount 12%, though they were already growing faster.<a class="cite" href="#s-ramp">16</a></p>
+<p>One new study looks at majors directly. In Texas, after ChatGPT, a 10-point higher share of automatable tasks in a major went with a 1.7-percentage-point relative decline in graduates finding work in the state within a year; among those who found work, first-year pay for more-exposed majors fell about 5% from 2021 to 2024 relative to less-exposed majors. The authors conclude that generative AI caused declines for new graduates with automatable skill sets.<a class="cite" href="#s-dodini">17</a> Every study in these two paragraphs is a working paper, preprint, central-bank analysis or vendor research.</p>
+<p>The same study scores each major's exposure. Graphic Communications sits with design, communication and PR, at about a third of computer science's exposure.<a class="cite" href="#s-dodini">17</a></p>
+<div class="tbl"><svg viewBox="0 0 680 260" width="100%" style="max-width:680px;min-width:560px;display:block" role="img" aria-label="Share of automatable tasks by college major: Computer Science 31.7%, Journalism 15.6%, Graphic Communications 10.2%, Design and Applied Arts 9.7%, Public Relations and Advertising 9.5%, Communication and Media Studies 9.1%, Marketing 5.9%."><line x1="300.0" y1="4" x2="300.0" y2="236" style="stroke:var(--rule)"/><text x="300.0" y="252" font-size="11" text-anchor="middle" style="fill:var(--muted)">0%</text><line x1="391.4" y1="4" x2="391.4" y2="236" style="stroke:var(--rule)"/><text x="391.4" y="252" font-size="11" text-anchor="middle" style="fill:var(--muted)">10%</text><line x1="482.9" y1="4" x2="482.9" y2="236" style="stroke:var(--rule)"/><text x="482.9" y="252" font-size="11" text-anchor="middle" style="fill:var(--muted)">20%</text><line x1="574.3" y1="4" x2="574.3" y2="236" style="stroke:var(--rule)"/><text x="574.3" y="252" font-size="11" text-anchor="middle" style="fill:var(--muted)">30%</text><text x="292" y="23.4" text-anchor="end" font-size="13" style="fill:var(--fg)">Computer Science (11.07)</text><rect x="300" y="8" width="290.0" height="22" rx="2" style="fill:var(--purple)" opacity="0.55"/><text x="596.0" y="23.4" font-size="13" style="fill:var(--fg)">31.7%</text><text x="292" y="55.4" text-anchor="end" font-size="13" style="fill:var(--fg)">Journalism (09.04)</text><rect x="300" y="40" width="142.9" height="22" rx="2" style="fill:var(--purple)" opacity="0.55"/><text x="448.9" y="55.4" font-size="13" style="fill:var(--fg)">15.6%</text><text x="292" y="87.4" text-anchor="end" font-size="13" style="fill:var(--fg)" font-weight="600">Graphic Communications (10.03)</text><rect x="300" y="72" width="93.6" height="22" rx="2" style="fill:var(--accent)" opacity="1"/><text x="399.6" y="87.4" font-size="13" style="fill:var(--fg)" font-weight="600">10.2%</text><text x="292" y="119.4" text-anchor="end" font-size="13" style="fill:var(--fg)">Design and Applied Arts (50.04)</text><rect x="300" y="104" width="89.1" height="22" rx="2" style="fill:var(--purple)" opacity="0.55"/><text x="395.1" y="119.4" font-size="13" style="fill:var(--fg)">9.7%</text><text x="292" y="151.4" text-anchor="end" font-size="13" style="fill:var(--fg)">PR, Advertising &amp; Applied Comm. (09.09)</text><rect x="300" y="136" width="86.5" height="22" rx="2" style="fill:var(--purple)" opacity="0.55"/><text x="392.5" y="151.4" font-size="13" style="fill:var(--fg)">9.5%</text><text x="292" y="183.4" text-anchor="end" font-size="13" style="fill:var(--fg)">Communication &amp; Media Studies (09.01)</text><rect x="300" y="168" width="83.5" height="22" rx="2" style="fill:var(--purple)" opacity="0.55"/><text x="389.5" y="183.4" font-size="13" style="fill:var(--fg)">9.1%</text><text x="292" y="215.4" text-anchor="end" font-size="13" style="fill:var(--fg)">Marketing (52.14)</text><rect x="300" y="200" width="54.3" height="22" rx="2" style="fill:var(--purple)" opacity="0.55"/><text x="360.3" y="215.4" font-size="13" style="fill:var(--fg)">5.9%</text></svg><p class="caption" style="font-size:.8rem;color:var(--muted);margin:.4rem 0 0">Share of a major's associated jobs' tasks that generative AI can automate, by four-digit CIP code (in brackets). Dallas Fed exposure measure: Anthropic's task-based occupation metric, averaged over the occupations of job postings that ask for each field of study. Major names from the NCES CIP 2020 list. Exposure only: the study reports no employment or pay results for individual majors. A comparison of fields, not of programs.<a class="cite" href="#s-dodini">17</a></p></div>
+
+<p class="note"><strong>The defensible reading.</strong> In US data, early-career hiring into AI-exposed work has weakened. How much of that AI caused is unresolved. Economy-wide there is no sign of widespread displacement. Among 22–25-year-olds, total employment slipped 1.9% as growth in less-exposed occupations offset most, but not all, of the decline.<a class="cite" href="#s-bryn">5</a> Our reading of the 2026 studies: on most of the evidence, remote work and the general hiring slowdown explain more of the weak entry rung so far than AI does. Two studies, from Texas and Sweden, do find AI-linked declines, and none rules out a growing AI role.</p>
+
+<h3>Why it lands on the entry rung</h3>
+<p>The mechanism is clearer than the size of the effect. When automation removes an occupation's less-expert tasks, the job that remains demands more expertise: wages rise, employment falls, and fewer people qualify to enter.<a class="cite" href="#s-autor">18</a> Their evidence covers earlier automation, not generative AI, so applying it here is an inference about mechanism. The payroll study offers suggestive, non-causal evidence that AI substitutes for <em>codified</em> knowledge, the kind taught from textbooks and procedures, and complements <em>tacit</em> knowledge built through practice and mentorship.<a class="cite" href="#s-bryn">5</a></p>
+<p>Two workplace studies suggest what this does to judgment. In a field experiment with 791 experienced professionals at Procter &amp; Gamble, AI raised the quality of the solutions people produced, yet participants using AI were 9.2 percentage points less likely to expect their work to rank in the top 10%, a drop that came from those working alone with AI (the paper's Figure 10). What they made and what they judged it to be came apart.<a class="cite" href="#s-dellacqua">19</a> In a survey of 319 knowledge workers describing 936 of their own AI-assisted tasks, those with more confidence in the AI reported applying less critical thinking.<a class="cite" href="#s-lee">20</a></p>
+<p>Taken together: AI absorbs execution work, which was the traditional apprenticeship where judgment was learned after hiring. Employers increasingly expect new hires to arrive with some of that judgment already.</p>
+</section>
+
+<!-- ============================================================ -->
+<section class="col" aria-labelledby="field">
+<h2 id="field"><span class="n">2</span>AI in GC's field</h2>
+<p class="note"><strong>Companion paper.</strong> For the economics of why cheaper output can mean more or fewer jobs in these markets, see <em><a class="paper" href="demand-elasticity-and-ai-jobs.html">Demand Elasticity and AI Jobs</a></em>.</p>
+<p>GC graduates enter four connected markets: design and visual content, marketing, print and packaging production, and the sales and client roles around them. In each, the evidence shows the same split between work that is shrinking and work that is growing.</p>
+
+<h3>Design and visual content</h3>
+<p>Marketing budgets averaged about 7.7% of company revenue in 2025 and 7.8% in 2026, down from 9.5% in 2022.<a class="cite" href="#s-gartner">21</a> In a vendor survey, most marketers expect the number of assets they need to multiply, driven by personalization and video.<a class="cite" href="#s-adobecontent">22</a> Under a flat budget, cheaper assets pay for more volume rather than more designers. Ad platforms now generate commodity variants directly, so much of that work never becomes paid design.<a class="cite" href="#s-meta">23</a></p>
+<p>The outcome data agree. BLS's 2025–35 projections turned graphic designers negative (−1.7%) and named AI tools as a reason.<a class="cite" href="#s-bls">24</a> Real wages for web and digital interface designers rose 17.8% over 2015–25 while graphic designers' fell 1.2%.<a class="cite" href="#s-adobe">25</a> In Census data, graduates in Commercial Art and Graphic Design saw one of the largest relative earnings declines among creative and communications majors in 2022–24, even though the study's exposure index places that major mid-distribution (6th of 10 deciles), in its less-exposed comparison group.<a class="cite" href="#s-orr">7</a> Those figures cannot separate AI from the advertising slowdown of the same years.</p>
+
+<h3>Marketing</h3>
+<p>Marketing is the GC destination where growth is best supported. BLS projects market research analysts and marketing specialists to grow 7% over 2025–35, with about 82,000 openings a year.<a class="cite" href="#s-bls">24</a> It is also among the most AI-exposed occupations.<a class="cite" href="#s-bryn">5</a><a class="cite" href="#s-bls">24</a> In one survey roughly a third of marketers report cuts to entry-level hiring.<a class="cite" href="#s-cmi">26</a> A trade association's 2026 careers report puts marketing jobs 27% below pre-pandemic levels, with senior and strategic roles holding steady while execution-focused roles decline, and rates graphic design and copywriting among the skills most disrupted by AI.<a class="cite" href="#s-ama">27</a> The work that grows is measurement, testing and running marketing technology. Routine reporting and first-draft copy shrink.</p>
+
+<h3>Print and packaging</h3>
+<p>Package demand follows physical goods and e-commerce, not the cost of artwork. AI savings in prepress therefore mean fewer hours per package, not more packages. BLS projects prepress jobs to fall 15.3% and desktop publishers 14.5% over 2025–35.<a class="cite" href="#s-bls">24</a></p>
+<p>The growth is in <em>versions</em>, in our reading. Smithers projects digitally printed packaging and labels to grow from $22 billion in 2025 to $36.9 billion in 2030, with corrugated the most significant opportunity; its release does not tie that growth to shorter runs or more SKUs. Regulatory artwork is a second growth area: one vendor's analysis of FDA data attributes 45% of 2024 US food recall events to labeling errors.<a class="cite" href="#s-smithers">28</a> In production, the industry frames AI as relief for a labor shortage: PMMI says packaging manufacturers "are recognizing that AI can help address some of their most pressing challenges, from workforce knowledge gaps to operational efficiency," and in its 2025 survey 95% of consumer-packaged-goods companies said they were struggling to hire skilled operators and technicians.<a class="cite" href="#s-pmmi">29</a></p>
+
+<h3>Sales and client roles</h3>
+<p>Quoting, estimating, reorders and customer service are the exposed layer. In a March 2024 survey of 81 commercial printers, 1.2% used AI for customer service and another 21.0% planned to within a year (22.2% in total).<a class="cite" href="#s-napco">30</a> Technical, consultative selling grows with complexity: substrates, sustainability rules, digital-versus-flexo economics, and transitions such as the 2027 move to 2D barcodes.</p>
+
+<h3>The common pattern</h3>
+<div class="split">
+  <div class="lose">
+    <h4>Shrinking: executing variants</h4>
+    <ul>
+      <li>Resizes, ad variants, production art</li>
+      <li>Routine reporting, first-draft copy</li>
+      <li>Routine preflight, trapping, standard edits</li>
+      <li>Estimating, order handling, file fixing</li>
+      <li>Quotes, reorders, inside sales</li>
+    </ul>
+  </div>
+  <div class="gain">
+    <h4>Growing: specifying, governing, integrating</h4>
+    <ul>
+      <li>Brand systems and templates that AI varies; art direction; quality control of AI output</li>
+      <li>Experiment design, measurement, marketing-technology operation</li>
+      <li>Artwork-management systems, regulatory sign-off, versioning strategy</li>
+      <li>Workflow automation, lean plant management</li>
+      <li>Technical solution selling, key accounts</li>
+    </ul>
+  </div>
+</div>
+<p>The left column is where juniors have always learned. If AI absorbs it, firms hire fewer juniors and expect new hires to start partly in the right column.</p>
+
+<h3>Where GC graduates land</h3>
+<p>Matching validated GC graduates' first jobs to the OpenAI framework's occupation categories gives a GC-specific picture. It differs sharply from the national one.</p>
+<div class="tbl">
+<table>
+  <thead><tr><th>Framework category</th><th class="num">US employment</th><th class="num">GC first jobs, 2016–26</th></tr></thead>
+  <tbody>
+    <tr class="hl"><td>Grows with AI</td><td class="num">11.9%</td><td class="num">64.0%</td></tr>
+    <tr><td>Higher automation risk</td><td class="num">17.7%</td><td class="num">17.1%</td></tr>
+    <tr><td>Will reorganize</td><td class="num">23.2%</td><td class="num">15.6%</td></tr>
+    <tr><td>Less immediate change</td><td class="num">47.3%</td><td class="num">3.3%</td></tr>
+  </tbody>
+  <caption>GC: shares of the 642 first jobs (97.0% of 662) whose occupation code OpenAI's file scores. GC Alumni study, gc_alumni commit cb39913, data stamp 77cb46d1d20a5dd1, 7 Oct 2026; an occupation code whose O*NET rows split evenly takes its base occupation's archetype. National shares are employment-weighted, recomputed from OpenAI's public data; the report prints 12/18/24/46. Categories are a map, not forecasts.<a class="cite" href="#s-ajtf">2</a><a class="cite" href="#s-alumni">31</a> The job coding has not yet had its independent second-coder check, so these shares are descriptive.</caption>
+</table>
+</div>
+<p>About 97% of recent GC first jobs are in the three categories where OpenAI expects near-term change (grow, reorganize or higher risk), against about 53% nationally. Most of that is in categories expected to grow. GC graduates are <strong>not</strong> unusually exposed to automation risk: 17.1% against 17.7% nationally.</p>
+<p>One caution. OpenAI's data file labels graphic designers "grow with AI," while BLS projects decline and freelance job posts for graphic design fell 18.5% relative to manual-intensive jobs after image generators launched.<a class="cite" href="#s-bls">24</a><a class="cite" href="#s-demirci">32</a> The categories rank work. They should not be read as promises.</p>
+<p>The alumni data also show why federal codes undercount new roles. Thirty-four GC graduates have held 42 positions with workflow, automation or technologist in the title, and coders have scattered those jobs across seven unrelated occupation groups.<a class="cite" href="#s-alumni">31</a></p>
+</section>
+
+<!-- ============================================================ -->
+<section class="col" aria-labelledby="targets">
+<h2 id="targets"><span class="n">3</span>The five career targets</h2>
+<p>GC is organizing around five career targets. Together they cover the whole value chain of the work GC graduates do. They are a working frame and remain open to revision.</p>
+<div class="tbl">
+<table>
+  <thead><tr><th>Target</th><th>Role in the chain</th></tr></thead>
+  <tbody>
+    <tr><td>3. Brand Strategy &amp; Experience</td><td><strong>Decides</strong> what to do, on the brand or agency side</td></tr>
+    <tr><td>4. Purposeful Design &amp; Creative Generalist</td><td><strong>Designs</strong> how it will look and work, across media, and builds tools for their own use</td></tr>
+    <tr><td>1. Production &amp; Operations</td><td><strong>Makes it real</strong>, at printers and converters, brand production and procurement, or agency production</td></tr>
+    <tr><td>2. Sales Solutions &amp; Account Management</td><td><strong>Supplies</strong> the solutions production and brands need, on the vendor side</td></tr>
+    <tr><td>5. Creative Technology &amp; Systems</td><td><strong>Enables</strong> all of the above with the tools and systems other people use</td></tr>
+  </tbody>
+  <caption>The thread GC adds across all five is an understanding of the downstream consequences: what happens to the work after it leaves each person's hands.</caption>
+</table>
+</div>
+<p>Where GC graduates' first jobs fall today:<a class="cite" href="#s-alumni">31</a></p>
+<div class="tbl">
+<table>
+  <thead><tr><th>Target</th><th class="num">Share of first jobs</th></tr></thead>
+  <tbody>
+    <tr><td>1. Production &amp; Operations</td><td class="num">19.8%</td></tr>
+    <tr><td>2. Sales Solutions &amp; Account Management</td><td class="num">20.0%</td></tr>
+    <tr><td>3. Brand Strategy &amp; Experience</td><td class="num">19.7%</td></tr>
+    <tr><td>4. Purposeful Design &amp; Creative Generalist</td><td class="num">27.5%</td></tr>
+    <tr><td>5. Creative Technology &amp; Systems</td><td class="num">3.9%</td></tr>
+    <tr><td>Outside the five targets</td><td class="num">9.1%</td></tr>
+  </tbody>
+  <caption>661 validated GC graduates, 2016–26, first career job (19 more are in re-review). Classified by title and occupation code against the owner's target definitions. Descriptive; the job coding has not yet had its independent second-coder check.</caption>
+</table>
+</div>
+
+<div class="target">
+  <h3><span class="tn">1</span>Production &amp; Operations <span class="chip mixed">reshaping</span></h3>
+  <dl>
+    <dt>Who</dt><dd>Makes it real: process control, quality, estimating, planning and scheduling, process engineering, equipment justification and managing people. At printers and converters, brand production and procurement, or agency production.</dd>
+    <dt>Outlook</dt><dd>Routine prepress (−15.3%) and press work (−8.7%) are projected to decline. The industry reports a shortage of skilled people, and packaging is forecast to be the growth segment.</dd>
+    <dt>AI's role</dt><dd>Vendors are building AI into equipment and workflow software (presetting, compliance checking; vendor claims), and printers report using it for estimating, scheduling and preflight. Much routine estimating and scheduling is expected to be automated; process engineering, equipment justification and managing people are not named AI uses.</dd>
+    <dt>GC graduates today</dt><dd>About 20% of first jobs, about half of them project management and line prepress, and nearly two-thirds at printers and packaging manufacturers. About a fifth of line-prepress starters later move into the systems or sales targets.<a class="cite" href="#s-alumni">31</a></dd>
+    <dt>Evidence</dt><dd>Strong on the decline of routine work; moderate on the shortage and AI uses (trade surveys and vendors).</dd>
+  </dl>
+</div>
+<div class="target">
+  <h3><span class="tn">2</span>Sales Solutions &amp; Account Management <span class="chip mixed">splitting</span></h3>
+  <dl>
+    <dt>Who</dt><dd>The vendor-side solution seller: sales, account management, technical sales and customer service. The skills are technical and fiscal: understanding the process, building the ROI case, making the numbers work.</dd>
+    <dt>Outlook</dt><dd>Technical sales pays about twice the median and holds steady (BLS +1.2%); customer service, the on-ramp, is projected to shrink (−5.3%).</dd>
+    <dt>AI's role</dt><dd>The conversational and clerical layer is the most exposed: customer service ranks second of all occupations on one observed-exposure measure.<a class="cite" href="#s-massenkoff">33</a> Sales shows among the lowest estimated AI time savings (third-lowest of 22 occupation groups),<a class="cite" href="#s-tamkin">34</a> which fits the technical and fiscal emphasis, though the savings are model estimates and BLS puts technical sales in its top AI-exposure category, "Very high".</dd>
+    <dt>GC graduates today</dt><dd>About 20% of first jobs, over half at printers and packaging companies. In pilot ACCGC data from nine GC programs, where Clemson supplies 268 of 603 records, 35 of the 38 sales records were Clemson's. About a quarter of customer-service starters later move into account or sales roles.<a class="cite" href="#s-alumni">31</a></dd>
+    <dt>Evidence</dt><dd>The thinnest of the five. No independent study of AI and print or packaging sales exists; this target needs its own research.</dd>
+  </dl>
+</div>
+<div class="target">
+  <h3><span class="tn">3</span>Brand Strategy &amp; Experience <span class="chip good">growing, squeezed entry</span></h3>
+  <dl>
+    <dt>Who</dt><dd>The decision-maker at a brand or agency: directs creative work, channels, markets and technology in a business-driven strategy role.</dd>
+    <dt>Outlook</dt><dd>Marketing specialists and managers are projected to grow about 7% (2025–35), and pay roughly doubles from specialist to manager. Agencies are consolidating.</dd>
+    <dt>AI's role</dt><dd>Marketing is among the most AI-exposed occupations, and the signs of pressure point at entry roles such as report production. Strategy itself looks augmented rather than replaced, on limited evidence.</dd>
+    <dt>GC graduates today</dt><dd>About 20% of first jobs, three-quarters of them entry marketing roles. Strategy is a destination: 98 graduates later reached senior brand or marketing titles (matched on title words); more than half (55) started outside this target, most often in design or sales.<a class="cite" href="#s-alumni">31</a></dd>
+    <dt>Evidence</dt><dd>Moderate to strong on occupational growth; limited and indirect on the entry squeeze.</dd>
+  </dl>
+</div>
+<div class="target">
+  <h3><span class="tn">4</span>Purposeful Design &amp; Creative Generalist <span class="chip warn">under pressure</span></h3>
+  <dl>
+    <dt>Who</dt><dd>A designer with depth in one specialty (graphic, UX/UI or package design) who understands the business and technology consequences of their decisions, works fluidly across media, and builds AI tools for their own use.</dd>
+    <dt>Outlook</dt><dd>The most sobering evidence. Graphic designers are projected to decline (−1.7%) with AI named as a factor, design graduates' relative pay fell, and freelance design work shrank. Digital and interface design is projected to grow (+6.0%) and pays far more.</dd>
+    <dt>AI's role</dt><dd>Appears to substitute for per-asset execution. In one field experiment with experienced staff at one firm, it raised the quality of individuals' work, but those working alone with AI were less confident it would rank highly: what they made and how they judged it came apart. That suggests judgment is the skill to train.</dd>
+    <dt>GC graduates today</dt><dd>The largest target, about 28% of first jobs; graphic designers are the largest group, about half, and UX/UI/web is under 3% of all first jobs. No sign yet of a decline in GC graduates' graphic-design first jobs, though the numbers are too small to read as a trend. About a quarter of designers later broaden into art direction, UX/web or video.<a class="cite" href="#s-alumni">31</a></dd>
+    <dt>Evidence</dt><dd>Strong that graphic design is under pressure; the case for the cross-media designer who directs AI is reasoned, not yet measured.</dd>
+  </dl>
+</div>
+<div class="target">
+  <h3><span class="tn">5</span>Creative Technology &amp; Systems <span class="chip good">emerging</span></h3>
+  <dl>
+    <dt>Who</dt><dd>The enabler: builds and runs the tools, systems and processes the other four targets use. Workflow, creative operations, asset management, colour management, IT support, systems analysis, platforms and integration. AI is central: implementing, benchmarking and evaluating it, not just using it.</dd>
+    <dt>Outlook</dt><dd>BLS projects strong growth for systems analysts (+7.9%), management analysts (+10.1%) and software developers (+10.2%), all rated very highly AI-exposed, though young developers' employment has fallen. IT support is projected to shrink (−3.5%), with automated tools such as chatbots named as a cause. It is better treated as a bridge than a destination.</dd>
+    <dt>Routes in</dt><dd>A direct route through early-career workflow, creative-operations, colour-management and automation roles, which the program intends to build; and a later move from production, operations or creative jobs, which is how most graduates reach the workflow side today.</dd>
+    <dt>Pay</dt><dd>Entry postings, which are few, about $52k–$90k; senior AI creative-technologist roles $120k–$226k after 4–10 years.<a class="cite" href="#s-ct">35</a></dd>
+    <dt>GC graduates today</dt><dd>About 4% of first jobs, most of them IT support, analyst and platform roles; creative operations and colour management are 6 of the 26. Colour management is already a direct entry route; most workflow and creative-ops roles are reached later in a career.<a class="cite" href="#s-alumni">31</a></dd>
+    <dt>Evidence</dt><dd>Strongest qualitative case, weakest data. No dedicated federal occupation code exists, so these jobs are scattered across codes. Growth of the category is unproven.</dd>
+  </dl>
+</div>
+</section>
+
+<!-- ============================================================ -->
+<section class="col" aria-labelledby="now">
+<h2 id="now"><span class="n">4</span>The curriculum today</h2>
+<p>The GC core is 16 courses across four levels. They run from orientation and digital graphics, through imaging, inks and substrates, to packaging, commercial printing, planning and control, and two seminars and two internships. A further 14 specialty courses, including the brand sequence, sit outside the program's career-target matrix today.</p>
+<p>The GC curriculum tool records two different kinds of coverage, and they must not be merged. <em>Intended</em> coverage is what course catalog text claims. <em>Captured</em> coverage is what faculty interviews show students actually do, scored on a 0–5 depth scale. Captured evidence exists so far for only five courses. Intended counts include specialty courses whose catalog text claims a target, not only the 16 core courses.</p>
+<div class="tbl">
+<table>
+  <thead><tr><th>Career target</th><th class="num">Courses claiming hands-on depth (intended)</th><th>Hands-on depth shown in captured evidence</th></tr></thead>
+  <tbody>
+    <tr><td>Production &amp; Operations</td><td class="num">15</td><td>GC 3460, GC 4440</td></tr>
+    <tr><td>Sales Solutions &amp; Account Management</td><td class="num">16</td><td>GC 3460, GC 4440</td></tr>
+    <tr><td>Brand Strategy &amp; Experience</td><td class="num">12</td><td>GC 3460, GC 4440</td></tr>
+    <tr><td>Purposeful Design &amp; Creative Generalist</td><td class="num">17</td><td>GC 3460, GC 4440</td></tr>
+    <tr class="hl"><td>Creative Technology &amp; Systems*</td><td class="num">1</td><td>GC 4440 only</td></tr>
+  </tbody>
+  <caption>"Hands-on depth" means a Do score of 3 or more on the tool's 0–5 scale. Source: GC Curriculum Tool, live record read 5 Oct 2026 (commit ffc589e). Captured evidence comes from June 2026 interviews covering 5 courses. Depth scores are model-assisted judgments from faculty interviews, not student assessment data. *Scored against the earlier, narrower "AI Workflow / Orchestrator" definition of this target; rescoring under the broader definition may change it.</caption>
+</table>
+</div>
+<p><strong>What this shows.</strong> On paper the curriculum covers four of the five targets broadly. Target 5 is the clear gap in both sources, though it was scored under its earlier, AI-centred definition: one course claims hands-on depth (GC 3790, Brand Agency Leadership Practicum), and one course shows it in captured evidence (GC 4440, Current Developments &amp; Trends). In GC 3460 (Ink &amp; Substrates) students know and understand workflow concepts well but rarely practise them, a "theory without craft" pattern.</p>
+<p><strong>AI itself.</strong> AI appears in the learning objectives of one course (GC 3780, Brand Agency Practicum: "build skills with AI to ensure thoughtful and responsible inclusion of the technology") and in the projects or descriptions of two more (GC 1050 and GC 3790).</p>
+<p class="note"><strong>How far to trust this picture.</strong> It is partial. Five captured courses are not the curriculum, coverage scoring has not run since mid-June, twelve courses have no captured evidence yet, and the two internships have no recorded objectives. The direction is clear. The precise counts will change when scoring is rerun.<a class="cite" href="#s-tool">36</a></p>
+</section>
+
+<!-- ============================================================ -->
+<section class="col" aria-labelledby="future">
+<h2 id="future"><span class="n">5</span>The curriculum ahead</h2>
+<p>GC's curriculum framework separates what students <em>know</em>, what they <em>understand</em> (can explain and judge), and what they can <em>do</em>, and requires evidence for each. The AI evidence does not call for a new framework. It changes the weights.</p>
+
+<h3>Three shifts in emphasis</h3>
+<ol>
+  <li><strong>Treat judgment as the scarce skill.</strong> As AI makes production cheap, the differentiating capability is evaluating, selecting and directing work. A program that certifies polished output without the judgment behind it certifies the half of the job the market is de-pricing.</li>
+  <li><strong>Require evidence AI can't fake.</strong> A finished artifact no longer proves a student can do the work. Assessment should lean on reasoning through new cases, adapting to changed conditions, and critiquing and extending work.</li>
+  <li><strong>Describe careers from evidence, not from occupation codes.</strong> The roles GC graduates grow into cross federal categories. Destinations should be defined from postings, alumni outcomes and industry input.</li>
+</ol>
+
+<h3>What to build</h3>
+<ul>
+  <li><strong>Teach the content supply chain, not just content.</strong> Design systems, variable-data templates and scripting, generative pipelines, digital asset management and brand governance.</li>
+  <li><strong>Lean into packaging versioning and compliance.</strong> Artwork-management platforms, regulatory labeling, 2D barcode standards, color across flexo and digital, and the cost of short digital runs.</li>
+  <li><strong>Pair marketing with measurement.</strong> Testing and attribution are the work that grows when variants get cheap.</li>
+  <li><strong>Build the missing first rung into the program.</strong> Internships, co-ops and capstones should leave students with evidence of systems and judgment work: a template system, an automated versioning workflow, a compliance-checked line extension.</li>
+  <li><strong>Build the Creative Technology &amp; Systems target.</strong> It is the highest priority and the least covered.</li>
+</ul>
+</section>
+
+<!-- ============================================================ -->
+<section class="col" aria-labelledby="open">
+<h2 id="open"><span class="n">6</span>Open questions</h2>
+<ul>
+  <li><strong>How does industry define Creative Technology &amp; Systems roles?</strong> An industry panel would set the role's tasks, entry path and what counts as evidence of readiness.</li>
+  <li><strong>What does AI do to print and packaging sales?</strong> No independent study exists yet. The Sales Solutions &amp; Account Management target depends on it.</li>
+  <li><strong>Is the entry-rung effect AI, the economy, or both?</strong> The studies disagree. The quarterly review of new research, next due by 9 December 2026, will track this.</li>
+  <li><strong>Are GC's placement figures confirmed?</strong> The alumni job coding needs its independent second-coder check before any figure here is used as a confirmed finding.</li>
+</ul>
+</section>
+
+<!-- ============================================================ -->
+<section class="col" aria-labelledby="sources">
+<h2 id="sources"><span class="n">7</span>Sources</h2>
+<p>Each source has a link to the official publication and, where available, a link to the copy archived for this project. Working papers revise in place, so the archived copy records the version cited.</p>
+<ol class="sources">
+<li id="s-eloundou"><div>Eloundou, T., Manning, S., Mishkin, P., &amp; Rock, D. (2024). GPTs are GPTs: Labor market impact potential of LLMs. <em>Science</em>, 384(6702), 1306–1308. Method cited from the arXiv version (2303.10130v5), which is the copy held.<div class="links"><a href="https://doi.org/10.1126/science.adj0998" target="_blank" rel="noopener noreferrer">doi:10.1126/science.adj0998</a><a href="https://arxiv.org/abs/2303.10130" target="_blank" rel="noopener noreferrer">arXiv</a></div></div></li>
+<li id="s-ajtf"><div>Richmond, A. M. (2026). <em>The AI Jobs Transition Framework: Mapping AI's Near-Term Impact on Jobs</em>. OpenAI Economic Research, April 2026. The author's name follows the report's own suggested citation ("Richmond, Alex Martin").<div class="links"><a href="https://openai.com/index/modeling-ai-jobs-transition/" target="_blank" rel="noopener noreferrer">openai.com</a><a href="https://cdn.openai.com/pdf/the-ai-jobs-transition-framework_report.pdf" target="_blank" rel="noopener noreferrer">report PDF</a><a href="https://cdn.openai.com/signals/ai-job-transition-framework-data-download.zip" target="_blank" rel="noopener noreferrer">data</a><span class="na">archived in the project library (too large to attach here)</span></div></div></li>
+<li id="s-chin"><div>Chin, C., &amp; Richmond, A. M. (2026). <em>Work at the Frontier: How AI Is Expanding What People Do at Work</em>. OpenAI Economic Research, July 2026.<div class="links"><a href="https://cdn.openai.com/pdf/work-at-the-frontier-report.pdf" target="_blank" rel="noopener noreferrer">report PDF</a></div></div></li>
+<li id="s-aei"><div>Massenkoff, M., Lyubich, E., McCrory, P., Appel, R., &amp; Heller, R. (2026). <em>The Anthropic Economic Index report: Learning curves</em>. Anthropic, 24 March 2026.<div class="links"><a href="https://www.anthropic.com/research/economic-index-march-2026-report" target="_blank" rel="noopener noreferrer">anthropic.com</a></div></div></li>
+<li id="s-bryn"><div>Brynjolfsson, E., Chandar, B., &amp; Chen, R. (2026). <em>Canaries in the Coal Mine? Six Facts about the Recent Employment Effects of Artificial Intelligence</em>. Stanford Digital Economy Lab working paper, August 2026 revision (payroll data through June 2026).<div class="links"><a href="https://digitaleconomy.stanford.edu/publication/canaries-in-the-coal-mine-six-facts-about-the-recent-employment-effects-of-artificial-intelligence/" target="_blank" rel="noopener noreferrer">Stanford DEL</a><a href="https://digitaleconomy.stanford.edu/app/uploads/2026/08/Canaries_August2026.pdf" target="_blank" rel="noopener noreferrer">Aug 2026 PDF</a></div></div></li>
+<li id="s-hosseini"><div>Hosseini, S. M., &amp; Lichtinger, G. (2026). <em>Generative AI as Seniority-Biased Technological Change: Evidence from U.S. Résumé and Job Posting Data</em>. SSRN Working Paper 5425555 (version of 25 May 2026). Cited by other studies as Hosseini Maasoum and Lichtinger.<div class="links"><a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=5425555" target="_blank" rel="noopener noreferrer">SSRN 5425555</a></div></div></li>
+<li id="s-orr"><div>Orr, C., Tucker, L. C., &amp; Warren, L. (2026). <em>Graduating into Disruption: Labor Market Outcomes for AI-Exposed College Majors</em>. U.S. Census Bureau CES Working Paper 26-56.<div class="links"><a href="https://www.census.gov/library/working-papers/2026/adrm/CES-WP-26-56.html" target="_blank" rel="noopener noreferrer">census.gov</a></div></div></li>
+<li id="s-hernaes"><div>Hernæs, Ø., &amp; Kostøl, A. R. (2026). <em>Has AI Widened Employment Gaps? Tracking Early-Career Employment by Occupational Exposure in Norway</em>. RFBerlin Discussion Paper 179/26.<div class="links"><a href="https://www.rfberlin.com/network-paper/has-ai-widened-employment-gaps-tracking-early-career-employment-by-occupational-exposure-in-norway/" target="_blank" rel="noopener noreferrer">rfberlin.com</a></div></div></li>
+<li id="s-frank"><div>Frank, M. R., Javadian Sabet, A., Simon, L., Bana, S. H., &amp; Yu, R. (2026). <em>AI-exposed jobs deteriorated before ChatGPT</em>. arXiv:2601.02554.<div class="links"><a href="https://arxiv.org/abs/2601.02554" target="_blank" rel="noopener noreferrer">arXiv:2601.02554</a></div></div></li>
+<li id="s-lambert"><div>Lambert, P. J., &amp; Schindler, Y. (2026). <em>The Broken Ladder: AI, Remote Work, and Early-Career Hiring</em>. CAGE Working Paper 808/2026.<div class="links"><a href="https://warwick.ac.uk/fac/soc/economics/research/centres/cage/publications/workingpapers/2026/the_broken_ladder_ai_remote_work_and_early_career_hiring/" target="_blank" rel="noopener noreferrer">CAGE</a><a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=6787638" target="_blank" rel="noopener noreferrer">SSRN 6787638</a></div></div></li>
+<li id="s-fairlie"><div>Fairlie, R. W., &amp; Wu, J. (2026). <em>The Early Impacts of AI on Employment among Recent College Graduates</em>. NBER Working Paper 35796, September 2026. Not peer-reviewed; CPS data through August 2026.<div class="links"><a href="https://www.nber.org/papers/w35796" target="_blank" rel="noopener noreferrer">NBER w35796</a></div></div></li>
+<li id="s-emanuel"><div>Emanuel, N., Harrington, E., &amp; Pallais, A. (2026). Remote Work Leaves Younger Workers Sidelined. Federal Reserve Bank of New York, <em>Liberty Street Economics</em>, 1 June 2026; based on <em>The Power of Proximity to Coworkers</em>, NBER Working Paper 31880 (revised June 2026). The 64% is the authors' scaled, back-of-envelope estimate.<div class="links"><a href="https://libertystreeteconomics.newyorkfed.org/2026/06/remote-work-leaves-younger-workers-sidelined/" target="_blank" rel="noopener noreferrer">newyorkfed.org</a></div></div></li>
+<li id="s-humlum"><div>Humlum, A., &amp; Vestergaard, E. (2026). <em>Still Waters, Rapid Currents: Early Labor Market Transformation under Generative AI</em>. NBER Working Paper 33777 (May 2025, revised March 2026); summarised by the authors for Brookings, 6 October 2026. Not peer-reviewed; Danish data.<div class="links"><a href="https://www.nber.org/papers/w33777" target="_blank" rel="noopener noreferrer">NBER w33777</a></div></div></li>
+<li id="s-audoly"><div>Audoly, R., Guerin, M., &amp; Topa, G. (2026). Do Job Postings Show Early Labor-Market Effects of AI? Federal Reserve Bank of New York, <em>Liberty Street Economics</em>, 14 May 2026. Lightcast postings with an Anthropic exposure measure.<div class="links"><a href="https://libertystreeteconomics.newyorkfed.org/2026/05/do-job-postings-show-early-labor-market-effects-of-ai/" target="_blank" rel="noopener noreferrer">newyorkfed.org</a></div></div></li>
+<li id="s-lodefalk"><div>Lodefalk, M., Löthman, L., Koch, M., &amp; Engberg, E. (2026). <em>Same Storm, Different Boats: Generative AI and the Age Gradient Within Firms</em>. Preprint, version of 30 September 2026 (Örebro University Working Paper 2026:2). Swedish payroll data. Its mechanism differs from the authors' June 2026 ProMarket article; the paper is cited.<div class="links"><a href="https://github.com/Magnus-L/canaries-sweden/blob/main/paper/main.pdf" target="_blank" rel="noopener noreferrer">author repository</a></div></div></li>
+<li id="s-ramp"><div>Kharazian, A., Simon, L., &amp; Stevens, R. (2026). <em>A New Look at AI's Impact on Jobs: Firm-Level AI Spending and Workforce Adjustment</em>. Ramp and Revelio Labs, 30 June 2026. <strong>Vendor research</strong>; adopters were already growing faster before adoption.<div class="links"><a href="https://ramp.com/data/ai-jobs-impact/paper" target="_blank" rel="noopener noreferrer">ramp.com</a></div></div></li>
+<li id="s-dodini"><div>Dodini, S., &amp; Smith, T. (2026). AI plays a role in weak labor market for college graduates. Federal Reserve Bank of Dallas, <em>Dallas Fed Economics</em>, 22 September 2026. Texas public-university records; employment is measured only for jobs held in Texas.<div class="links"><a href="https://www.dallasfed.org/research/economics/2026/0922" target="_blank" rel="noopener noreferrer">dallasfed.org</a></div></div></li>
+<li id="s-autor"><div>Autor, D., &amp; Thompson, N. (2025). Expertise. <em>Journal of the European Economic Association</em>, 23(4), 1203–1271.<div class="links"><a href="https://doi.org/10.1093/jeea/jvaf023" target="_blank" rel="noopener noreferrer">doi:10.1093/jeea/jvaf023</a><a href="https://www.nber.org/papers/w33941" target="_blank" rel="noopener noreferrer">NBER w33941</a></div></div></li>
+<li id="s-dellacqua"><div>Dell'Acqua, F., Ayoubi, C., Lifshitz, H., Sadun, R., Mollick, E., Mollick, L., Han, Y., Goldman, J., Nair, H., Taub, S., &amp; Lakhani, K. R. (2026). The Cybernetic Teammate: A Field Experiment on Generative AI and Teamwork. <em>Organization Science</em>, 37(4), 1217–1242 (published online 12 June 2026; open access). Figures from the published version.<div class="links"><a href="https://doi.org/10.1287/orsc.2025.20702" target="_blank" rel="noopener noreferrer">doi:10.1287/orsc.2025.20702</a></div></div></li>
+<li id="s-lee"><div>Lee, H.-P., Sarkar, A., Tankelevitch, L., et al. (2025). The Impact of Generative AI on Critical Thinking. <em>Proceedings of CHI 2025</em>. Microsoft Research &amp; Carnegie Mellon University.<div class="links"><a href="https://doi.org/10.1145/3706598.3713778" target="_blank" rel="noopener noreferrer">doi:10.1145/3706598.3713778</a></div></div></li>
+<li id="s-gartner"><div>Gartner CMO Spend Surveys, 2025 and 2026 (about 400 chief marketing officers each), as reported by Chief Marketer on 25 May 2025 and 24 June 2026. Analyst source, read through trade-press coverage; Gartner's own releases refused automated download.<div class="links"><a href="https://www.gartner.com/en/newsroom/press-releases/2025-05-12-gartner-2025-cmo-spend-survey-reveals-marketing-budgets-have-flatlined-at-seven-percent-of-overall-company-revenue" target="_blank" rel="noopener noreferrer">Gartner 2025</a><a href="https://www.chiefmarketer.com/gartner-39-of-cmos-plan-to-reduce-labor-costs-and-cut-agency-allocations/" target="_blank" rel="noopener noreferrer">Chief Marketer, 2025</a><a href="https://www.chiefmarketer.com/gartner-cmo-spend-survey-budgets-reflect-increase-in-consumption-based-martech-paid-media-spend/" target="_blank" rel="noopener noreferrer">Chief Marketer, 2026</a></div></div></li>
+<li id="s-adobecontent"><div>Adobe. 71% of marketers say content demand will increase fivefold by 2027. Vendor survey; Adobe sells content-production tools.<div class="links"><a href="https://business.adobe.com/blog/71-percent-of-marketers-say-content-demand-to-increase-5x" target="_blank" rel="noopener noreferrer">business.adobe.com</a></div></div></li>
+<li id="s-meta"><div>Meta Platforms (2026). <em>First Quarter 2026 Results Conference Call</em>, 29 April 2026, transcript; CFO Susan Li's remarks: "more than 8 million advertisers using at least one of our gen AI ad creative tools" (PDF p. 7). Company statement. Also summarised by PPC Land.<div class="links"><a href="https://s21.q4cdn.com/399680738/files/doc_financials/2026/q1/META-Q1-2026-Earnings-Call-Transcript.pdf" target="_blank" rel="noopener noreferrer">investor.atmeta.com transcript</a><a href="https://ppc.land/meta-q1-2026-56-3b-revenue-as-ai-tools-double-advertiser-adoption/" target="_blank" rel="noopener noreferrer">ppc.land</a></div></div></li>
+<li id="s-bls"><div>U.S. Bureau of Labor Statistics (2026). Employment Projections 2025–35 (released 27 August 2026), and Occupational Outlook Handbook entries for graphic designers and market research analysts.<div class="links"><a href="https://www.bls.gov/news.release/archives/ecopro_08272026.htm" target="_blank" rel="noopener noreferrer">projections release</a><a href="https://www.bls.gov/ooh/arts-and-design/graphic-designers.htm" target="_blank" rel="noopener noreferrer">graphic designers</a><a href="https://www.bls.gov/ooh/business-and-financial/market-research-analysts.htm" target="_blank" rel="noopener noreferrer">market research</a><a href="https://www.bls.gov/emp/publications/ai-exposure-categories.htm" target="_blank" rel="noopener noreferrer">AI exposure categories</a></div></div></li>
+<li id="s-adobe"><div>Adobe (2026). <em>The Economic State of the Creative Professions</em>, tabulating BLS wage data. Vendor source.<div class="links"><a href="https://www.adobe.com/ai/research/202606/economic-state-of-creative-professions.html" target="_blank" rel="noopener noreferrer">adobe.com</a></div></div></li>
+<li id="s-cmi"><div>Content Marketing Institute (8 September 2026). The missing generation: how AI is reshaping content and marketing roles, citing CMI's 2026 career outlook research. Survey methodology not stated.<div class="links"><a href="https://contentmarketinginstitute.com/content-operations/missing-generation-ai" target="_blank" rel="noopener noreferrer">contentmarketinginstitute.com</a></div></div></li>
+<li id="s-ama"><div>O'Brien, J., &amp; Heisler, S. (2026). <em>The 2026 AMA State of Marketing Careers Report</em>. American Marketing Association, 31 July 2026. <strong>Trade association</strong>; survey of 1,412 marketing practitioners plus job-posting data. Figures from the public summary; the full report is for members.<div class="links"><a href="https://www.ama.org/marketing-news/2026-career-report/" target="_blank" rel="noopener noreferrer">ama.org</a></div></div></li>
+<li id="s-smithers"><div>Smithers (2025), <em>The Future of Digital Print for Packaging to 2030</em>, as reported by the Flexographic Technical Association; and Loftware's analysis of FDA recall data, as reported by <em>New Food</em> (27 January 2025): label errors caused 45.5% (192 of 422) of 2024 US food recall events. Analyst and vendor sources.<div class="links"><a href="https://www.flexography.org/industry-news/corrugated-flexibles-drive-22-billion-digital-print-for-packaging-market/" target="_blank" rel="noopener noreferrer">flexography.org</a><a href="https://www.newfoodmagazine.com/label-errors-dominate-2024-us-food-recalls-costing-industry-192-billion/837701.article" target="_blank" rel="noopener noreferrer">New Food (Loftware)</a></div></div></li>
+<li id="s-pmmi"><div>PMMI, the Association for Packaging and Processing Technologies. <em>AI gains ground in packaging industry</em> (press release, 24 March 2026), and <em>Finding skilled workers remains a major challenge that may worsen</em> (press release, 10 December 2025), which reports PMMI's <em>2025 Inside the Workforce Gap</em> survey. Trade association source.<div class="links"><a href="https://www.pmmi.org/news/ai-gains-ground-in-packaging-industry" target="_blank" rel="noopener noreferrer">pmmi.org (AI, 2026)</a><a href="https://www.pmmi.org/news/finding-skilled-workers-remains-a-major-challenge-that-may-worsen" target="_blank" rel="noopener noreferrer">pmmi.org (workforce, 2025)</a></div></div></li>
+<li id="s-napco"><div>Printing Impressions (9 October 2024). Artificial intelligence in the printing industry: the journey begins. Reports a March 2024 survey by NAPCO Research and PRINTING United Alliance. Trade survey.<div class="links"><a href="https://www.piworld.com/post/artificial-intelligence-in-the-printing-industry-the-journey-begins/" target="_blank" rel="noopener noreferrer">piworld.com</a></div></div></li>
+<li id="s-alumni"><div>GC Alumni outcome study (2026). Validated first jobs of Clemson GC graduates, (a) joined to the AI Jobs Transition Framework (snapshot of 5 October 2026), and (b) classified into the five career targets by a tested rule module (gc_alumni commit f545652, n = 661, 6 October 2026). Descriptive; second-coder check pending. Internal; summary figures only.<div class="links"><span class="na">internal, aggregates only</span></div></div></li>
+<li id="s-demirci"><div>Demirci, O., Hannane, J., &amp; Zhu, X. Who Is AI Replacing? The Impact of Generative AI on Online Freelancing Platforms. SSRN Working Paper 4602944 (version of 22 June 2024). Not peer-reviewed. Graphic design figure from p. 2: "a 17.01% decrease in the number of job posts for graphic design (18.49%) and 3D modeling (15.57%) relative to manual-intensive jobs."<div class="links"><a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4602944" target="_blank" rel="noopener noreferrer">SSRN 4602944</a></div></div></li>
+<li id="s-massenkoff"><div>Massenkoff, M., &amp; McCrory, P. (2026). <em>Labor market impacts of AI: A new measure and early evidence</em>. Anthropic, 5 March 2026. Vendor research; not peer-reviewed. Fig. 3: customer service representatives rank second on observed exposure.<div class="links"><a href="https://www.anthropic.com/research/labor-market-impacts" target="_blank" rel="noopener noreferrer">anthropic.com</a></div></div></li>
+<li id="s-tamkin"><div>Tamkin, A., &amp; McCrory, P. (2025). <em>Estimating AI productivity gains from Claude conversations</em>. Anthropic, 5 November 2025. Vendor research; time savings are Claude's own estimates. Table, p. 11: Sales &amp; related 66.2%, third-lowest of 22 groups.<div class="links"><a href="https://www.anthropic.com/research/estimating-productivity-gains" target="_blank" rel="noopener noreferrer">anthropic.com</a></div></div></li>
+<li id="s-ct"><div>GC program research brief (2026). <em>AI-native creative technologist, creative ops and martech roles: career-path brief</em>. Compiles employer postings and pay surveys; internal.<div class="links"><span class="na">internal report, ai_career_impact library</span></div></div></li>
+<li id="s-tool"><div>GC Curriculum Tool (2026). Live record read 5 October 2026, commit ffc589e; captured coverage from June 2026 faculty interviews. Internal.<div class="links"><span class="na">internal</span></div></div></li>
+</ol>
+</section>
+
+<footer class="doc">
+  Prepared by the Graphic Communications program, Clemson University, October 2026. Evidence is drawn from the program's AI career-impact source library, the GC Alumni outcome study and the GC curriculum framework. GC placement figures are descriptive until the alumni coding is independently checked.
+</footer>
+</main>
+</div>
+
+</body>
+</html>
