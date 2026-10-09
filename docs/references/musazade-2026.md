@@ -6,7 +6,7 @@
 
 **Where it lives:**
 - arXiv:2603.03134 (cs.CL), open access.
-- **Local copy:** not held in this repo's `_pdfs/`. Not found in `ai_career_impact/library/pdfs/` either (checked `find -iname "*musazade*" -o -iname "*uniskill*"`, no hits) — **this card is written from the verified quotes recorded in the 2026-10-07 citation audit of `measurement-hypotheses-deep-dive.html`, not from an independently read local PDF.** Treat page numbers below as the audit's, not an independent re-read.
+- **Local copy:** `docs/references/_pdfs/musazade-2026-uniskill.pdf` (arXiv v1, 14 pp; held, mapped in held.json). The card text below was first written from the 2026-10-07 audit's verified quotes before the PDF was held; confirmed held 2026-10-09.
 
 **Accessibility:** Open access (arXiv); not independently re-read for this card — see above.
 
