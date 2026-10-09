@@ -1009,6 +1009,46 @@
       "held_file": "pdfs:pavlik-2021-logistic-knowledge-tracing.pdf",
       "quote": "counts of success and failures be exponentially weighted as a function of their recency",
       "page": "p. 3"
+    },
+    {
+      "id": "bg-zamecnik-1",
+      "location": "§7",
+      "claim_text": "71% average accuracy",
+      "held_file": "pdfs:zamecnik-2024-mapping-employable-skills-llms.pdf",
+      "quote": "the LLM achieved an average of 71% accuracy",
+      "page": "p. 3"
+    },
+    {
+      "id": "bg-zamecnik-2",
+      "location": "§7",
+      "claim_text": "LLM-expert kappa mostly Fair",
+      "held_file": "pdfs:zamecnik-2024-mapping-employable-skills-llms.pdf",
+      "quote": "indicating Kappa results to be mostly Fair",
+      "page": "p. 10"
+    },
+    {
+      "id": "bg-zamecnik-3",
+      "location": "§7",
+      "claim_text": "not yet human baseline",
+      "held_file": "pdfs:zamecnik-2024-mapping-employable-skills-llms.pdf",
+      "quote": "LLMs have not yet achieved the average human baseline data annotation performance",
+      "page": "p. 10"
+    },
+    {
+      "id": "bg-zamecnik-4",
+      "location": "§7",
+      "claim_text": "expert-expert kappa mostly moderate",
+      "held_file": "pdfs:zamecnik-2024-mapping-employable-skills-llms.pdf",
+      "quote": "indicating Kappa results to be mostly moderate",
+      "page": "p. 9"
+    },
+    {
+      "id": "bg-zamecnik-5",
+      "location": "§7",
+      "claim_text": "26 courses",
+      "held_file": "pdfs:zamecnik-2024-mapping-employable-skills-llms.pdf",
+      "quote": "extracting course outline data from a total of 26 courses",
+      "page": "p. 6"
     }
   ]
 }
