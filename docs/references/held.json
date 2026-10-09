@@ -306,6 +306,10 @@
       "ref-zamecnik-2024": {
         "file": "pdfs:zamecnik-2024-mapping-employable-skills-llms.pdf",
         "note": "owner-supplied authors' manuscript (2026-10-09)"
+      },
+      "ref-jayalath-2025": {
+        "file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
+        "note": "owner-supplied image-only PDF; text via OCR sidecar jayalath-2025-scaling-curriculum-mapping.md"
       }
     },
     "measurement-hypotheses-deep-dive.html": {

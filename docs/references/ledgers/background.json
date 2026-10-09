@@ -1049,6 +1049,78 @@
       "held_file": "pdfs:zamecnik-2024-mapping-employable-skills-llms.pdf",
       "quote": "extracting course outline data from a total of 26 courses",
       "page": "p. 6"
+    },
+    {
+      "id": "bg-jayalath25-1",
+      "location": "§7",
+      "claim_text": "19 courses, three years",
+      "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
+      "quote": "we analyzed all curriculum data from 19 courses in the program",
+      "page": "PDF p. 6 (printed p. 299)"
+    },
+    {
+      "id": "bg-jayalath25-2",
+      "location": "§7",
+      "claim_text": "alpha 0.76 vs 0.65",
+      "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
+      "quote": "alpha of 0.76, compared to the overall Krippendorff's alpha value of the ML model",
+      "page": "PDF p. 8 (printed p. 301)"
+    },
+    {
+      "id": "bg-jayalath25-3",
+      "location": "§7",
+      "claim_text": "experts 0.70",
+      "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
+      "quote": "The overall Krippendorff's alpha value for the reviewers' labelling was 0.70",
+      "page": "PDF p. 6 (printed p. 299)"
+    },
+    {
+      "id": "bg-jayalath25-4",
+      "location": "§7",
+      "claim_text": "gold standard by discussion",
+      "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
+      "quote": "this study was developed collaboratively by domain experts through discussion",
+      "page": "PDF p. 10 (printed p. 303)"
+    },
+    {
+      "id": "bg-jayalath25-5",
+      "location": "§7",
+      "claim_text": "oral comm near-perfect",
+      "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
+      "quote": "Oral Communication stands out with near-perfect agreement",
+      "page": "PDF p. 8 (printed p. 301)"
+    },
+    {
+      "id": "bg-jayalath25-6",
+      "location": "§7",
+      "claim_text": "written comm / int perspective lower",
+      "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
+      "quote": "Written Communication and International Perspectives had lower alpha values",
+      "page": "PDF p. 9 (printed p. 302)"
+    },
+    {
+      "id": "bg-jayalath25-7",
+      "location": "§7",
+      "claim_text": "year 2 least consistent",
+      "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
+      "quote": "Year 2 had the most inconsistency",
+      "page": "PDF p. 11 (printed p. 304)"
+    },
+    {
+      "id": "bg-jayalath25-8",
+      "location": "§7",
+      "claim_text": "less explicitly defined skills",
+      "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
+      "quote": "less explicitly defined in course documents",
+      "page": "PDF p. 12 (printed p. 305)"
+    },
+    {
+      "id": "bg-jayalath25-9",
+      "location": "§7",
+      "claim_text": "human-in-the-loop future work",
+      "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
+      "quote": "integrating a human-in-the-loop process would refine and rank the usefulness of justifications",
+      "page": "PDF p. 12 (printed p. 305)"
     }
   ]
 }
