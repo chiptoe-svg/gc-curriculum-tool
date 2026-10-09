@@ -3,38 +3,6 @@
   "generated": "2026-10-08",
   "claims": [
     {
-      "id": "br-korinek-1",
-      "location": "Why this matters, timing paragraph",
-      "claim_text": "a scenario in which AI adds less than half a point to GDP growth by 2030",
-      "held_file": "pdfs:korinek-2026-economic-scenarios.pdf",
-      "quote": "Under modest change, AI adds less than half a point to GDP growth by 2030 and raises unemployment by a tenth of a point.",
-      "page": "PDF p. 1 (Abstract)"
-    },
-    {
-      "id": "br-korinek-2",
-      "location": "Why this matters, timing paragraph",
-      "claim_text": "to one in which AI performs almost half of today's cognitive work",
-      "held_file": "pdfs:korinek-2026-economic-scenarios.pdf",
-      "quote": "In the extreme change scenario, AI has transformative effects, with AI performing almost half of today’s cognitive work by 2030.",
-      "page": "PDF p. 1 (Abstract)"
-    },
-    {
-      "id": "br-korinek-3",
-      "location": "Why this matters, timing paragraph",
-      "claim_text": "its authors are explicit that these are scenarios, not predictions, with no probabilities attached",
-      "held_file": "pdfs:korinek-2026-economic-scenarios.pdf",
-      "quote": "The scenarios are not predictions, and we attach no probabilities to them",
-      "page": "PDF p. 3 (§1 Introduction)"
-    },
-    {
-      "id": "br-korinek-4",
-      "location": "Why this matters, timing paragraph",
-      "claim_text": "Korinek, Jones, Sacher, Cotter & McCrory, Economic Scenarios for Transformative AI, The Anthropic Institute working paper, 2026",
-      "held_file": "pdfs:korinek-2026-economic-scenarios.pdf",
-      "quote": "Anton Korinek, Charles I. Jones, Szymon Sacher, Tess Cotter, and Peter McCrory",
-      "page": "PDF p. 1 (title block; also \"Working Paper No. 2026-02, September 2026\")"
-    },
-    {
       "id": "br-tomlinson-1",
       "location": "The framework",
       "claim_text": "KUD+ framework, drawn from Carol Ann Tomlinson's work on differentiated instruction",
@@ -59,38 +27,6 @@
       "page": "p. 212"
     },
     {
-      "id": "br-krathwohl-2",
-      "location": "The framework",
-      "claim_text": "the taxonomy has no performance dimension at all",
-      "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
-      "quote": "A taxonomy for the psychomotor domain was never published by the originating group",
-      "page": "p. 218 (Note 1)"
-    },
-    {
-      "id": "br-brynjolfsson-1",
-      "location": "The framework",
-      "claim_text": "tacit craft that early labor-market evidence suggests AI complements rather than substitutes for",
-      "held_file": "pdfs:brynjolfsson-2026-canaries.pdf",
-      "quote": "One possible mechanism is that AI substitutes more effectively for codified knowledge",
-      "page": "printed p. 19"
-    },
-    {
-      "id": "br-brynjolfsson-2",
-      "location": "The framework",
-      "claim_text": "AI complements tacit knowledge (the paper's own word)",
-      "held_file": "pdfs:brynjolfsson-2026-canaries.pdf",
-      "quote": "while complementing tacit knowledge acquired through practice, mentorship, and repeated exposure to real situations",
-      "page": "printed p. 19"
-    },
-    {
-      "id": "br-brynjolfsson-3",
-      "location": "The framework",
-      "claim_text": "who call their own estimates \"non-causal and purely suggestive\"",
-      "held_file": "pdfs:brynjolfsson-2026-canaries.pdf",
-      "quote": "We caution that these estimates are non-causal and purely … suggestive, and more empirical work may help assess",
-      "page": "printed p. 19"
-    },
-    {
       "id": "br-onet-1",
       "location": "The framework, O*NET paragraph",
       "claim_text": "O*NET catalogs jobs by required knowledge, skills, and work activities",
@@ -105,6 +41,30 @@
       "held_file": "ai_career:future_of_gc/load_bearing/National_Research_Council_2010_O-NET_Review_Database_for_Changing_Economy.pdf",
       "quote": "of the descriptor needed “to perform the job.”",
       "page": "printed p. 64 (PDF p. 78)"
+    },
+    {
+      "id": "br-krathwohl-2",
+      "location": "The framework",
+      "claim_text": "its levels describe kinds of thinking and it has no separate performance dimension",
+      "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
+      "quote": "A taxonomy for the psychomotor domain was never published by the originating group",
+      "page": "p. 218 (Note 1)"
+    },
+    {
+      "id": "br-zamecnik-1",
+      "location": "Limits",
+      "claim_text": "agreement with experts varies by skill",
+      "held_file": "pdfs:zamecnik-2024-mapping-employable-skills-llms.pdf",
+      "quote": "indicating Kappa results to be mostly Fair",
+      "page": "p. 10"
+    },
+    {
+      "id": "br-jayalath25-1",
+      "location": "Limits",
+      "claim_text": "agreement with experts varies by skill",
+      "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
+      "quote": "who reported variability in agreement while mapping different professional skills",
+      "page": "PDF p. 10 (printed p. 303)"
     }
   ]
 }
