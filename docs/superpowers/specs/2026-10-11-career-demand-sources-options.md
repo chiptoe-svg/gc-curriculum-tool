@@ -10,7 +10,7 @@ Evidence behind this memo (local, git-ignored): `scratch/esco/coverage-report.md
 |---|---|---|---|
 | Unit | Occupation (O*NET-SOC; our alumni are SOC-coded) | Skill/knowledge concept; occupations link to skills | Contest task lists (e.g. Graphic Communications GC 1.0–7.0) |
 | Ratings | Elements: Importance 1–5, Level 0–7. **Tasks: Importance, Relevance, Frequency (no Level)** — verified in `task_ratings.csv` | **None.** Occupation–skill links are essential/optional only (verified: no numeric field on the relation) | Point weights exist only on judges' scorecards; not published |
-| Domain detail | Generic elements are coarse (120 unique across our 21 destination SOCs); GC detail lives in 814 task statements, 420 DWAs, 100 technology skills | 13,939 skills/competences; names print processes (typography, flexography, gravure, screen printing, binding, colour profiles) | Task-level, software- and process-named, performance-judged |
+| Domain detail | Generic elements are coarse (120 unique across our 21 destination SOCs); GC detail lives in 814 task statements, 420 DWAs, 100 technology skills | 13,960 skill concepts in the full v1.2.1 download (10,734 skills/competences, 3,221 knowledge; reuse level: 3,047 occupation-specific, 6,667 sector-specific, 3,788 cross-sector, 453 transversal); 3,043 occupations; names print processes (typography, flexography, gravure, screen printing, binding, colour profiles) | Task-level, software- and process-named, performance-judged |
 | Coverage of 89 GC items | strong 19% / partial 42% / none 39% | strong 58% / partial 33% / none 9% | Not scored; GC contest covers prepress, color, offset, digital, finishing, estimating — not packaging or screen printing |
 | Reuse | CC BY 4.0 | CC BY 4.0 (and reuses O*NET content) | Members only — "may not be posted or shared in any publicly accessible location" |
 
@@ -20,7 +20,7 @@ Other verified facts that shape the design:
 - **Six GC items neither source covers:** trapping, dot gain/proof-to-print measurement, variable data printing, print workflow automation (JDF/MIS), web-to-print, and career-services/personal-finance skills (a scope mismatch — both model on-the-job skills).
 - **AI work is thin in both.** ESCO has general AI knowledge concepts, no generative-AI skill; O*NET carries generative-AI technology skills for other occupations but none for GC's destination SOCs.
 - O*NET 30.3 split the old "Skills" domain into `essential_skills` (10 generic academic skills) and `transferable_skills` — queries by the old name break.
-- ESCO's bulk download needs an email form; the research used the official API (no key). Fine for lookups; a full local copy needs a department email submitted.
+- The full ESCO v1.2.1 English CSV is now held locally (owner-requested download, 2026-10-11; `scratch/esco/full/`, git-ignored). Rechecked against every label, alternative label and description: the double gaps hold (trapping matches only animal trapping; no dot gain, variable data, JDF/MIS, web-to-print or generative-AI concepts); spectrophotometry is partly covered by "inspect printing output". All 126,051 occupation–skill links are essential (67,600) or optional (58,451) — no numeric weight. Using ESCO obliges the attribution "This service uses the ESCO classification of the European Commission." and marking modified versions.
 
 ## 2. Division of labor (common to every option)
 
@@ -68,9 +68,8 @@ Re-key GC competencies to ESCO concepts (best coverage, 58% strong) and compose 
 2. **Alumni weighting:** first destination only, or first + current job? (gc_alumni holds both; the outcome study uses first jobs.)
 3. **SOC bindings for the five targets:** the app's seeds (41-4012, 13-1161, 11-3051; two none) differ from the June plan's (11-2011, 11-2021, 51-5112+51-5111, 27-1024; one none). Pick one set, or derive each target's SOC mix from the alumni data.
 4. **SkillsUSA:** ask SkillsUSA for permission to use the Graphic Communications standards (and Screen Printing, not yet obtained), or keep them internal-only?
-5. **ESCO bulk download:** OK to submit a department email on ESCO's download form for a full local copy (the API is enough for stage 1)?
-6. **Level:** given r ≈ 0.97 with Importance, drop Level as a displayed demand column and keep it only as wording that helps faculty set required depth (recommended), or still show it?
-7. **GC-authored items** for the six double gaps and AI work — who drafts (faculty, or AI draft + faculty confirm)?
+5. **Level:** given r ≈ 0.97 with Importance, drop Level as a displayed demand column and keep it only as wording that helps faculty set required depth (recommended), or still show it?
+6. **GC-authored items** for the six double gaps and AI work — who drafts (faculty, or AI draft + faculty confirm)?
 
 ## 6. Not yet verified / open
 - Whether gc_alumni's destination counts per SOC are ready to use as weights (to ask the gc_alumni session).
