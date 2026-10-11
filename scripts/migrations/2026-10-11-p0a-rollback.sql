@@ -7,11 +7,23 @@
 
 BEGIN;
 
+-- Existence-only check first (catalog metadata, no table lock needed) so an
+-- un-applied 0056 still fails with the clean message below instead of a raw
+-- "relation does not exist" from locking a table that was never created.
 DO $$
 BEGIN
   IF to_regclass('public.career_target_requirements') IS NULL THEN
     RAISE EXCEPTION 'rollback: 0056 is not applied';
   END IF;
+END $$;
+
+-- Lock before any check that reads mutable data, same reasoning as 0056's
+-- M-1 fix: a write committed between the post-checks and COMMIT would
+-- otherwise be lost.
+LOCK TABLE snapshot_competency_coverage, career_target_requirements, sub_competencies IN SHARE ROW EXCLUSIVE MODE;
+
+DO $$
+BEGIN
   IF EXISTS (SELECT 1 FROM sub_competencies WHERE career_target_id IS NULL) THEN
     RAISE EXCEPTION 'rollback: a competency has no owning target (created outside P0a); resolve by hand';
   END IF;

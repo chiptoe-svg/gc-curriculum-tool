@@ -23,8 +23,16 @@
 -- Safe to re-run while the new table still equals the backup (a no-op). Once
 -- the new code has written coverage, a re-run stops at the divergence check and
 -- changes nothing. Rollback: scripts/migrations/2026-10-11-p0a-rollback.sql.
+-- Apply with the app stopped — run scripts/migrations/2026-10-11-p0a-live-apply.sh.
 
 BEGIN;
+
+-- Lock before any check: a write committed between the post-checks and COMMIT
+-- (e.g. an UPDATE on an existing coverage cell) would otherwise be lost —
+-- found by adversarial review 2026-10-11 (I-1/M-1), reproduced with a
+-- pg_sleep before COMMIT. SHARE ROW EXCLUSIVE blocks other writers to these
+-- two tables for the rest of the transaction without blocking readers.
+LOCK TABLE snapshot_target_coverage, sub_competencies IN SHARE ROW EXCLUSIVE MODE;
 
 -- 1. Preconditions ------------------------------------------------------------
 DO $$
@@ -48,15 +56,30 @@ BEGIN
   END IF;
 
   -- After cutover the new code writes only snapshot_competency_coverage, so any
-  -- row there that is missing from, or differs in generated_at from, the backup
-  -- (or a backup row missing from it) means the new code is live.
+  -- row there that differs from the backup in ANY column (or is missing from
+  -- it, or a backup row missing from it) means the new code is live. Compare
+  -- every column, not just generated_at (M-2, adversarial review case 1c: a
+  -- depth-only change with generated_at unchanged used to pass this guard and
+  -- only fail later, at the post-check, with a confusing message). The
+  -- message itself stays neutral: either side could have written the change
+  -- (case 1g: the OLD code writing the backup after an apply looks identical
+  -- from here), so this never claims to know which code is live.
   IF to_regclass('public.snapshot_competency_coverage') IS NOT NULL THEN
     EXECUTE $q$
       SELECT EXISTS (
         SELECT 1 FROM snapshot_competency_coverage n
         LEFT JOIN snapshot_target_coverage o
           ON o.snapshot_id = n.snapshot_id AND o.sub_competency_id = n.competency_id
-        WHERE o.snapshot_id IS NULL OR o.generated_at <> n.generated_at
+        WHERE o.snapshot_id IS NULL
+           OR o.k_depth IS DISTINCT FROM n.k_depth
+           OR o.u_depth IS DISTINCT FROM n.u_depth
+           OR o.d_depth IS DISTINCT FROM n.d_depth
+           OR o.matched_competency IS DISTINCT FROM n.matched_competency
+           OR o.evidence_excerpt IS DISTINCT FROM n.evidence_excerpt
+           OR o.confidence IS DISTINCT FROM n.confidence
+           OR o.rationale IS DISTINCT FROM n.rationale
+           OR o.model IS DISTINCT FROM n.model
+           OR o.generated_at IS DISTINCT FROM n.generated_at
       ) OR EXISTS (
         SELECT 1 FROM snapshot_target_coverage o
         LEFT JOIN snapshot_competency_coverage n
@@ -65,7 +88,7 @@ BEGIN
       )
     $q$ INTO diverged;
     IF diverged THEN
-      RAISE EXCEPTION '0056: snapshot_competency_coverage has diverged from snapshot_target_coverage (the new code has written coverage); do not re-run this migration';
+      RAISE EXCEPTION '0056: the two coverage tables differ — do not re-run this migration';
     END IF;
   END IF;
 END $$;
