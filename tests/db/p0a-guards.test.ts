@@ -27,4 +27,14 @@ describe('P0a guards', () => {
       'lib/db/program-coverage-queries.ts', // TRANSITIONAL dual-write; emptied in Task 7
     ]);
   });
+
+  it('target membership is read from target_sub_competencies, not sub_competencies.career_target_id', () => {
+    expect(filesMatching('subCompetencies\\.careerTargetId')).toEqual([
+      'app/api/targets/[id]/sub-competencies/[scId]/retire/route.ts', // writers; emptied in Task 6
+      'app/api/targets/[id]/sub-competencies/[scId]/route.ts',
+      'app/api/targets/[id]/sub-competencies/reorder/route.ts',
+      'app/api/targets/[id]/sub-competencies/route.ts',
+      'scripts/targets/apply-target-batch.ts',
+    ]);
+  });
 });

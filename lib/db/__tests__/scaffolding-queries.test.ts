@@ -13,7 +13,7 @@ vi.mock('@/lib/db/client', () => ({
   db: { select: () => ({ from: (t: unknown) => chain(rowsByTable.get(t) ?? []) }) },
 }));
 
-import { careerTargets, subCompetencies, courseCaptureSnapshots, targetCoverage } from '@/lib/db/schema';
+import { careerTargets, targetSubCompetencies, courseCaptureSnapshots, targetCoverage } from '@/lib/db/schema';
 import { loadScaffoldingTarget } from '@/lib/db/scaffolding-queries';
 
 describe('loadScaffoldingTarget — retired sub-competencies (2026-10-06 target batch)', () => {
@@ -22,7 +22,7 @@ describe('loadScaffoldingTarget — retired sub-competencies (2026-10-06 target 
       id, name: id, careerTargetId: 't5', knowDescriptor: 'k', understandDescriptor: 'u', doDescriptor: 'd', displayOrder, retired,
     });
     rowsByTable.set(careerTargets, [{ id: 't5', name: 'T5' }]);
-    rowsByTable.set(subCompetencies, [sub('kept', false, 0), sub('old', true, 1)]);
+    rowsByTable.set(targetSubCompetencies, [sub('kept', false, 0), sub('old', true, 1)]);
     rowsByTable.set(courseCaptureSnapshots, []);
     rowsByTable.set(targetCoverage, []);
 

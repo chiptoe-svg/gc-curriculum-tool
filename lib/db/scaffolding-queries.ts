@@ -16,7 +16,7 @@ import {
   courseCaptureSnapshots,
   courses,
   careerTargets,
-  subCompetencies,
+  targetSubCompetencies,
 } from '@/lib/db/schema';
 import type { SnapshotCellInput, ProductiveFailureConditions } from '@/lib/program/scaffolding';
 
@@ -78,9 +78,9 @@ export async function loadScaffoldingTarget(targetId: string): Promise<Scaffoldi
   // (same rule as the coverage-refresh routes).
   const subs = (await db
     .select()
-    .from(subCompetencies)
-    .where(eq(subCompetencies.careerTargetId, targetId))
-    .orderBy(asc(subCompetencies.displayOrder)))
+    .from(targetSubCompetencies)
+    .where(eq(targetSubCompetencies.careerTargetId, targetId))
+    .orderBy(asc(targetSubCompetencies.displayOrder)))
     .filter(s => !s.retired);
 
   // All latest (non-retired) snapshots, joined with their course for level

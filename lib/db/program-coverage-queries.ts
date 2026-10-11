@@ -1,6 +1,6 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
-import { snapshotTargetCoverage, snapshotCompetencyCoverage, targetCoverage, courseCaptureSnapshots, careerTargets, subCompetencies } from '@/lib/db/schema';
+import { snapshotTargetCoverage, snapshotCompetencyCoverage, targetCoverage, courseCaptureSnapshots, careerTargets, targetSubCompetencies } from '@/lib/db/schema';
 import { listPairedCodesForCourses } from '@/lib/db/course-codes-queries';
 
 export interface CoverageCellRow {
@@ -297,13 +297,13 @@ export async function getMatrixData(): Promise<MatrixData> {
 
   const subs = await db
     .select({
-      id: subCompetencies.id,
-      name: subCompetencies.name,
-      careerTargetId: subCompetencies.careerTargetId,
-      displayOrder: subCompetencies.displayOrder,
-      retired: subCompetencies.retired,
+      id: targetSubCompetencies.id,
+      name: targetSubCompetencies.name,
+      careerTargetId: targetSubCompetencies.careerTargetId,
+      displayOrder: targetSubCompetencies.displayOrder,
+      retired: targetSubCompetencies.retired,
     })
-    .from(subCompetencies);
+    .from(targetSubCompetencies);
 
   const targetById = new Map(targets.map(t => [t.id, t]));
   const subCompetenciesOut: MatrixSubCompetency[] = subs

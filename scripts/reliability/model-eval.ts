@@ -23,7 +23,7 @@
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { asc, eq } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
-import { careerTargets, subCompetencies } from '@/lib/db/schema';
+import { careerTargets, targetSubCompetencies } from '@/lib/db/schema';
 import { getLatestSnapshotByCourse } from '@/lib/db/capture-snapshots-queries';
 import { scoreSnapshotAgainstTarget } from '@/lib/ai/analyze/program-score-coverage';
 import { recordSpend } from '@/lib/rate-limit/daily-cap';
@@ -69,7 +69,7 @@ async function main() {
     if (!snap) throw new Error(`no snapshot for ${p.course}`);
     const t = targets.find(x => x.id === p.target);
     if (!t) throw new Error(`no target ${p.target}`);
-    const subs = (await db.select().from(subCompetencies).where(eq(subCompetencies.careerTargetId, t.id)).orderBy(asc(subCompetencies.displayOrder))).filter(s => !s.retired);
+    const subs = (await db.select().from(targetSubCompetencies).where(eq(targetSubCompetencies.careerTargetId, t.id)).orderBy(asc(targetSubCompetencies.displayOrder))).filter(s => !s.retired);
     pairs.push({ key: `${p.course} × ${t.name}`, snap, t, subs, haystack: norm(JSON.stringify(snap.profile)) });
   }
   console.log(`pairs: ${pairs.map(p => p.key).join(' | ')}\nsetups: ${SETUPS.map(s => s.label).join(' | ')}\nruns: ${N_RUNS}`);

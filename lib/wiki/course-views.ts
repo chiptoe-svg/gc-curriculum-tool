@@ -14,7 +14,7 @@
  */
 import { eq, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
-import { courses, courseIntendedCoverage, subCompetencies, careerTargets } from '@/lib/db/schema';
+import { courses, courseIntendedCoverage, subCompetencies, targetSubCompetencies, careerTargets } from '@/lib/db/schema';
 import { getLatestSnapshotByCourse } from '@/lib/db/capture-snapshots-queries';
 import type { CaptureProfile } from '@/lib/ai/capture/schema';
 import { deriveEvidenceBand } from '@/lib/program/evidence-ladder';
@@ -123,11 +123,11 @@ export async function loadCourseViews(codeAnyCase: string): Promise<CourseViews 
       k: courseIntendedCoverage.intendedK,
       u: courseIntendedCoverage.intendedU,
       d: courseIntendedCoverage.intendedD,
-      retired: subCompetencies.retired,
+      retired: targetSubCompetencies.retired,
     })
     .from(courseIntendedCoverage)
-    .innerJoin(subCompetencies, eq(subCompetencies.id, courseIntendedCoverage.subCompetencyId))
-    .innerJoin(careerTargets, eq(careerTargets.id, subCompetencies.careerTargetId))
+    .innerJoin(targetSubCompetencies, eq(targetSubCompetencies.id, courseIntendedCoverage.subCompetencyId))
+    .innerJoin(careerTargets, eq(careerTargets.id, targetSubCompetencies.careerTargetId))
     .where(eq(courseIntendedCoverage.courseCode, code));
 
   return {
@@ -154,13 +154,13 @@ export async function loadTargetMap(): Promise<TargetWithCompetencies[]> {
       targetId: careerTargets.id,
       targetName: careerTargets.name,
       targetOrder: careerTargets.displayOrder,
-      id: subCompetencies.id,
-      name: subCompetencies.name,
-      order: subCompetencies.displayOrder,
-      retired: subCompetencies.retired,
+      id: targetSubCompetencies.id,
+      name: targetSubCompetencies.name,
+      order: targetSubCompetencies.displayOrder,
+      retired: targetSubCompetencies.retired,
     })
     .from(careerTargets)
-    .leftJoin(subCompetencies, eq(subCompetencies.careerTargetId, careerTargets.id));
+    .leftJoin(targetSubCompetencies, eq(targetSubCompetencies.careerTargetId, careerTargets.id));
   return groupTargets(rows);
 }
 

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { isValidSlug } from '@/lib/slug';
 import { db } from '@/lib/db/client';
 import { eq } from 'drizzle-orm';
-import { careerTargets, subCompetencies } from '@/lib/db/schema';
+import { careerTargets, targetSubCompetencies } from '@/lib/db/schema';
 import { getSnapshotById } from '@/lib/db/capture-snapshots-queries';
 import { upsertCoverageCell } from '@/lib/db/program-coverage-queries';
 import { scoreSnapshotAgainstTarget } from '@/lib/ai/analyze/program-score-coverage';
@@ -36,7 +36,11 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   const [target] = await db.select().from(careerTargets).where(eq(careerTargets.id, targetId)).limit(1);
   if (!target) return NextResponse.json({ error: 'target not found' }, { status: 404 });
 
-  const subs = await db.select().from(subCompetencies).where(eq(subCompetencies.careerTargetId, targetId));
+  const subs = await db.select().from(targetSubCompetencies).where(eq(targetSubCompetencies.careerTargetId, targetId));
+  // Cells are stored per (snapshot, competency) since P0a; a cell the scorer
+  // returns for a competency outside this target would overwrite another
+  // target's cell, so only members of this target are written.
+  const memberIds = new Set(subs.map(s => s.id));
 
   // Gate the paid scoring call on the daily cost cap.
   const cap = await checkDailyCap();
@@ -68,6 +72,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     });
 
     for (const cell of result.cells) {
+      if (!memberIds.has(cell.sub_competency_id)) continue;
       await upsertCoverageCell({
         snapshotId,
         careerTargetId: targetId,

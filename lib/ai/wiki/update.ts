@@ -22,7 +22,7 @@ import {
   snapshotCompetencyCoverage,
   targetCoverage,
   careerTargets,
-  subCompetencies,
+  targetSubCompetencies,
   courses,
 } from '@/lib/db/schema';
 import {
@@ -407,11 +407,11 @@ export async function loadTargetSubstrate(targetId: string): Promise<{
     };
   }
 
-  // All sub-competencies for this target.
+  // The target's current competencies (membership from career_target_requirements).
   const subs = await db
     .select()
-    .from(subCompetencies)
-    .where(and(eq(subCompetencies.careerTargetId, targetId), eq(subCompetencies.retired, false)));
+    .from(targetSubCompetencies)
+    .where(and(eq(targetSubCompetencies.careerTargetId, targetId), eq(targetSubCompetencies.retired, false)));
 
   if (subs.length === 0) {
     return {

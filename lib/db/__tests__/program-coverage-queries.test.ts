@@ -36,6 +36,13 @@ vi.mock('@/lib/db/schema', () => ({
     displayOrder: 'display_order',
     retired: 'retired',
   },
+  targetSubCompetencies: {
+    id: 'id',
+    name: 'name',
+    careerTargetId: 'career_target_id',
+    displayOrder: 'display_order',
+    retired: 'retired',
+  },
 }));
 
 import { invalidateCoverageForSubCompetency } from '@/lib/db/program-coverage-queries';
@@ -104,7 +111,7 @@ describe('getMatrixData — retired sub-competencies (2026-10-06 target batch)',
     });
     const byTable = new Map<unknown, unknown[]>([
       [schema.careerTargets, [{ id: 't5', name: 'T5', displayOrder: 4 }]],
-      [schema.subCompetencies, [
+      [schema.targetSubCompetencies, [
         { id: 'kept', name: 'Kept', careerTargetId: 't5', displayOrder: 0, retired: false },
         { id: 'old', name: 'Old', careerTargetId: 't5', displayOrder: 1, retired: true },
       ]],
