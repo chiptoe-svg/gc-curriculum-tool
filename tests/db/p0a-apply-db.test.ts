@@ -21,11 +21,13 @@ const LIVE_APPLY_SH = resolve(ROOT, 'scripts/migrations/2026-10-11-p0a-live-appl
 const RUN = isScratchDb() && process.env.P0A_APPLY_DB_TEST === '1';
 const DATABASE_URL = process.env.DATABASE_URL ?? '';
 
+const DB_MIGRATED_SH = resolve(ROOT, 'scripts/migrations/p0a-db-migrated.sh');
+
 interface Result { status: number; stdout: string; stderr: string }
 
-function runScript(bin: string, args: string[]): Result {
+function runScript(bin: string, args: string[], env?: Record<string, string>): Result {
   try {
-    const stdout = execFileSync(bin, args, { encoding: 'utf8' });
+    const stdout = execFileSync(bin, args, { encoding: 'utf8', env: env ? { ...process.env, ...env } : undefined });
     return { status: 0, stdout, stderr: '' };
   } catch (e) {
     const err = e as { status?: number | null; stdout?: Buffer | string; stderr?: Buffer | string };
@@ -33,9 +35,9 @@ function runScript(bin: string, args: string[]): Result {
   }
 }
 
-describe('p0a-apply-db.sh / p0a-verify-backup.sh — static checks (always run)', () => {
-  it('bash -n accepts all three scripts', () => {
-    for (const sh of [APPLY_DB_SH, VERIFY_BACKUP_SH, LIVE_APPLY_SH]) {
+describe('p0a-apply-db.sh / p0a-verify-backup.sh / p0a-db-migrated.sh — static checks (always run)', () => {
+  it('bash -n accepts all four scripts', () => {
+    for (const sh of [APPLY_DB_SH, VERIFY_BACKUP_SH, LIVE_APPLY_SH, DB_MIGRATED_SH]) {
       expect(() => execFileSync('bash', ['-n', sh], { encoding: 'utf8' })).not.toThrow();
     }
   });
@@ -97,7 +99,7 @@ describe.skipIf(!RUN)('p0a-apply-db.sh (I-1) on the scratch clone', () => {
   it('refuses when the expected database name does not match — DB untouched', async () => {
     const before = await contentHash();
     const wasApplied = await applied();
-    const res = runScript(APPLY_DB_SH, ['definitely_not_the_scratch_db', DATABASE_URL, backupDir, 'apply']);
+    const res = runScript(APPLY_DB_SH, ['definitely_not_the_scratch_db', backupDir, 'apply'], { DATABASE_URL });
     expect(res.status).not.toBe(0);
     expect(res.stderr).toMatch(/refusing: connected to database/);
     expect(await contentHash()).toBe(before);
@@ -112,7 +114,7 @@ describe.skipIf(!RUN)('p0a-apply-db.sh (I-1) on the scratch clone', () => {
     try {
       // Give the holder a moment to actually register as 'active' before probing.
       await new Promise(r => setTimeout(r, 300));
-      const res = runScript(APPLY_DB_SH, [SCRATCH_DB, DATABASE_URL, backupDir, 'apply']);
+      const res = runScript(APPLY_DB_SH, [SCRATCH_DB, backupDir, 'apply'], { DATABASE_URL });
       expect(res.status).not.toBe(0);
       expect(res.stderr).toMatch(/refusing: other sessions are connected/);
     } finally {
@@ -143,6 +145,30 @@ describe.skipIf(!RUN)('p0a-apply-db.sh (I-1) on the scratch clone', () => {
     expect(res.stderr).toMatch(/pg_restore --list could not read backup/);
   });
 
+  it('p0a-verify-backup.sh rejects a real SCHEMA-ONLY dump (M-d, round 2) — a TABLE entry with no TABLE DATA must fail', () => {
+    // Round-1 grepped for "TABLE public <t>", a schema-only TOC entry that a
+    // `pg_dump -s` (schema-only, no rows) archive still has — so it passed.
+    // A real dump of scratch with -s reproduces exactly that: the round-2
+    // reviewer found this by hand; this is the committed version.
+    const f = join(backupDir, 'schema-only.dump');
+    const dumpRes = runScript('/Applications/Postgres.app/Contents/Versions/17/bin/pg_dump',
+      ['-Fc', '--no-owner', '-s', '-f', f, DATABASE_URL]);
+    expect(dumpRes.status).toBe(0);
+    const res = runScript(VERIFY_BACKUP_SH, [f, 'apply']);
+    expect(res.status).not.toBe(0);
+    expect(res.stderr).toMatch(/no TABLE DATA for 'sub_competencies'/);
+  });
+
+  it('p0a-verify-backup.sh ACCEPTS a real full dump (sanity: the TABLE DATA check does not over-reject)', () => {
+    const f = join(backupDir, 'full-sanity.dump');
+    const dumpRes = runScript('/Applications/Postgres.app/Contents/Versions/17/bin/pg_dump',
+      ['-Fc', '--no-owner', '-f', f, DATABASE_URL]);
+    expect(dumpRes.status).toBe(0);
+    const res = runScript(VERIFY_BACKUP_SH, [f, 'apply']);
+    expect(res.status).toBe(0);
+    expect(res.stdout).toMatch(/pg_restore --list lists TABLE DATA for/);
+  });
+
   it('p0a-verify-backup.sh rejects a real archive missing a required table', () => {
     // A dump of a database that doesn't have the tables we need — point
     // pg_dump at a nonexistent database via a URL variant (no scratch DB was
@@ -171,20 +197,31 @@ describe.skipIf(!RUN)('p0a-apply-db.sh (I-1) on the scratch clone', () => {
     }
     expect(await applied()).toBe(true);
 
-    const rollbackRes = runScript(APPLY_DB_SH, [SCRATCH_DB, DATABASE_URL, backupDir, 'rollback']);
+    const rollbackRes = runScript(APPLY_DB_SH, [SCRATCH_DB, backupDir, 'rollback'], { DATABASE_URL });
     expect(rollbackRes.status).toBe(0);
-    expect(rollbackRes.stdout).toMatch(/backup verified:.*pg_restore --list lists.*snapshot_competency_coverage.*career_target_requirements/);
+    expect(rollbackRes.stdout).toMatch(/backup verified:.*pg_restore --list lists TABLE DATA for.*snapshot_competency_coverage.*career_target_requirements/);
     expect(rollbackRes.stdout).toMatch(/p0a-apply-db\.sh: rollback on '.*' complete/);
     expect(await applied()).toBe(false);
 
-    const applyRes = runScript(APPLY_DB_SH, [SCRATCH_DB, DATABASE_URL, backupDir, 'apply']);
+    const applyRes = runScript(APPLY_DB_SH, [SCRATCH_DB, backupDir, 'apply'], { DATABASE_URL });
     expect(applyRes.status).toBe(0);
-    expect(applyRes.stdout).toMatch(/backup verified:.*pg_restore --list lists.*sub_competencies.*snapshot_target_coverage/);
-    // Every "(expect 0)" verify row must have printed as 0, and none flagged FAILED.
+    expect(applyRes.stdout).toMatch(/backup verified:.*pg_restore --list lists TABLE DATA for.*sub_competencies.*snapshot_target_coverage/);
+    // Every "(expect 0" verify row (M-a: no trailing-paren requirement, so
+    // "(expect 0 right after apply)" counts too) must have printed as 0, and
+    // none flagged FAILED. Exactly 18 data rows, matching the verify SQL.
     expect(applyRes.stdout).not.toMatch(/VERIFY FAILED/);
+    let expectZeroRows = 0;
+    let dataRows = 0;
     for (const line of applyRes.stdout.split('\n')) {
-      if (line.includes('(expect 0)')) expect(line.trim().endsWith(': 0')).toBe(true);
+      if (!/: \d+$/.test(line.trim())) continue;
+      dataRows++;
+      if (line.includes('(expect 0')) {
+        expectZeroRows++;
+        expect(line.trim().endsWith(': 0')).toBe(true);
+      }
     }
+    expect(dataRows).toBe(18);
+    expect(expectZeroRows).toBeGreaterThan(0);
     expect(applyRes.stdout).toMatch(/p0a-apply-db\.sh: apply on '.*' complete/);
     expect(await applied()).toBe(true);
 

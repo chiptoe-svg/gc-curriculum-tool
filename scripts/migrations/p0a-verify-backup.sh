@@ -3,13 +3,16 @@
 #
 # Verifies a pg_dump -Fc backup is real before p0a-apply-db.sh (I-1) applies
 # or rolls back anything: the file must be non-empty, pg_restore --list must
-# succeed on it, and it must list the tables the given mode needs to have
-# existed beforehand. Exits non-zero (with a message on stderr) on any
-# failure; this is the exact gap the adversarial review reproduced — a
-# `pg_dump | gzip > file` pipeline without pipefail can exit 0 with a valid,
-# empty 20-byte gzip. Pure and side-effect-free (reads the file, nothing
-# else), so it is unit-testable on its own against a crafted bad dump file,
-# with no database connection required.
+# succeed on it, and it must list TABLE DATA (not just a schema entry — M-d,
+# round 2: a schema-only `-s` dump lists the table but carries no rows, and
+# the round-1 grep for "TABLE public <t>" passed it) for the tables the
+# given mode needs to have existed beforehand. Exits non-zero (with a
+# message on stderr) on any failure; this is the exact gap the round-1
+# adversarial review reproduced — a `pg_dump | gzip > file` pipeline
+# without pipefail can exit 0 with a valid, empty 20-byte gzip. Pure and
+# side-effect-free (reads the file, nothing else), so it is unit-testable
+# on its own against a crafted bad dump file, with no database connection
+# required.
 set -euo pipefail
 
 PGBIN=/Applications/Postgres.app/Contents/Versions/17/bin
@@ -43,10 +46,10 @@ if [ "$MODE" = rollback ]; then
   REQUIRED_TABLES+=(snapshot_competency_coverage career_target_requirements)
 fi
 for TBL in "${REQUIRED_TABLES[@]}"; do
-  if ! grep -Eq "TABLE[[:space:]]+public[[:space:]]+$TBL([[:space:]]|\$)" <<<"$DUMP_LIST"; then
-    echo "refusing: backup $DUMP_FILE does not list table '$TBL'" >&2
+  if ! grep -Eq "TABLE DATA[[:space:]]+public[[:space:]]+$TBL([[:space:]]|\$)" <<<"$DUMP_LIST"; then
+    echo "refusing: backup $DUMP_FILE has no TABLE DATA for '$TBL' (schema-only dump, or the table is empty/missing)" >&2
     exit 1
   fi
 done
 
-echo "backup verified: $DUMP_FILE ($(wc -c <"$DUMP_FILE" | tr -d ' ') bytes, pg_restore --list lists ${REQUIRED_TABLES[*]})"
+echo "backup verified: $DUMP_FILE ($(wc -c <"$DUMP_FILE" | tr -d ' ') bytes, pg_restore --list lists TABLE DATA for ${REQUIRED_TABLES[*]})"
