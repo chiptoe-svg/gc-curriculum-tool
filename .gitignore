@@ -80,3 +80,6 @@ drizzle/meta/
 # and, for most, the private ai_career_impact library.
 /docs/references/_pdfs/*.pdf
 /docs/references/_pdfs/web/
+# OCR/text sidecars of held sources (copyrighted text) — never commit
+/docs/references/_pdfs/*.md
+!/docs/references/_pdfs/README.md
