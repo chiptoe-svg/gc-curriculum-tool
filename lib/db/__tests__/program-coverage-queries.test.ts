@@ -22,6 +22,11 @@ vi.mock('@/lib/db/schema', () => ({
     snapshotId: 'snapshot_id',
     competencyId: 'competency_id',
   },
+  targetCoverage: {
+    snapshotId: 'snapshot_id',
+    careerTargetId: 'career_target_id',
+    subCompetencyId: 'sub_competency_id',
+  },
   courseCaptureSnapshots: {},
   careerTargets: { id: 'id', name: 'name', displayOrder: 'display_order' },
   subCompetencies: {
@@ -103,7 +108,7 @@ describe('getMatrixData — retired sub-competencies (2026-10-06 target batch)',
         { id: 'kept', name: 'Kept', careerTargetId: 't5', displayOrder: 0, retired: false },
         { id: 'old', name: 'Old', careerTargetId: 't5', displayOrder: 1, retired: true },
       ]],
-      [schema.snapshotTargetCoverage, [cell('kept'), cell('old')]],
+      [schema.targetCoverage, [cell('kept'), cell('old')]],
     ]);
     (mod.db.select as unknown as ReturnType<typeof vi.fn>) = vi.fn(() => ({ from: (t: unknown) => byTable.get(t) ?? [] }));
 

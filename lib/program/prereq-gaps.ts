@@ -36,7 +36,7 @@ import { and, desc, eq, isNull } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import {
   courseCaptureSnapshots,
-  snapshotTargetCoverage,
+  snapshotCompetencyCoverage,
   subCompetencies,
 } from '@/lib/db/schema';
 import { listEdgesForFocal } from '@/lib/db/prerequisite-edge-queries';
@@ -51,7 +51,7 @@ export type GapStatus = 'met' | 'gap' | 'no_data';
 
 /**
  * Measured (or intended) attainment of a specific sub-competency by a
- * specific prereq course, as sourced from `snapshotTargetCoverage`.
+ * specific prereq course, as sourced from `snapshotCompetencyCoverage`.
  */
 export interface DeliveredAttainment {
   prereqCourseCode: string;
@@ -251,10 +251,10 @@ export interface PrereqGapResult {
  *     chain traversal for program-wide diagnostics is deferred to the
  *     scaffolding-analysis increment).
  *  2. For each distinct (prereqCourseCode, subCompetencyId) pair:
- *     a. Resolve the sub-competency's careerTargetId from `sub_competencies`.
+ *     a. Confirm the competency exists in the catalog (`sub_competencies`).
  *     b. Find the prereq course's latest non-retired `courseCaptureSnapshots`
  *        row (ordered by createdAt DESC).
- *     c. Look up the matching `snapshotTargetCoverage` row for
+ *     c. Look up the matching `snapshotCompetencyCoverage` row for
  *        (snapshotId, careerTargetId, subCompetencyId).
  *     d. If found → DeliveredAttainment{ basis: 'measured', k/u/d from depths }.
  *        If not found → contributes nothing (will surface as no_data).
@@ -305,9 +305,9 @@ export async function computePrereqGaps(
   for (const pair of pairs) {
     const { prereqCourseCode, subCompetencyId } = pair;
 
-    // (a) Resolve the sub-competency's careerTargetId
+    // (a) The competency must exist in the catalog
     const [subComp] = await db
-      .select({ careerTargetId: subCompetencies.careerTargetId })
+      .select({ id: subCompetencies.id })
       .from(subCompetencies)
       .where(eq(subCompetencies.id, subCompetencyId))
       .limit(1);
@@ -347,19 +347,18 @@ export async function computePrereqGaps(
       continue;
     }
 
-    // (c) Coverage row for (snapshotId, careerTargetId, subCompetencyId)
+    // (c) Coverage row for (snapshotId, competency)
     const [coverage] = await db
       .select({
-        kDepth: snapshotTargetCoverage.kDepth,
-        uDepth: snapshotTargetCoverage.uDepth,
-        dDepth: snapshotTargetCoverage.dDepth,
+        kDepth: snapshotCompetencyCoverage.kDepth,
+        uDepth: snapshotCompetencyCoverage.uDepth,
+        dDepth: snapshotCompetencyCoverage.dDepth,
       })
-      .from(snapshotTargetCoverage)
+      .from(snapshotCompetencyCoverage)
       .where(
         and(
-          eq(snapshotTargetCoverage.snapshotId, snapshot.id),
-          eq(snapshotTargetCoverage.careerTargetId, subComp.careerTargetId),
-          eq(snapshotTargetCoverage.subCompetencyId, subCompetencyId),
+          eq(snapshotCompetencyCoverage.snapshotId, snapshot.id),
+          eq(snapshotCompetencyCoverage.competencyId, subCompetencyId),
         ),
       )
       .limit(1);

@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { canon, collectProbes } from './p0a/probes';
+import { canon, collectCoverageTieSets, collectProbes, tieAwareTargetSubstrate } from './p0a/probes';
 import { isScratchDb } from './p0a/scratch-guard';
 
 const GOLDEN = process.env.P0A_GOLDEN;
@@ -23,6 +23,19 @@ describe.skipIf(!isScratchDb() || !GOLDEN)('P0a characterization: re-pointed rea
     const golden = JSON.parse(readFileSync(GOLDEN!, 'utf8')) as Record<string, unknown>;
     expect(Object.keys(now).sort()).toEqual(Object.keys(golden).sort());
 
+    // loadTargetSubstrate only (controller ruling, 2026-10-11): widen the
+    // comparison for sub-competencies with more than one cell tied at the max
+    // dDepth, since the legacy "best cell" pick depended on unordered-SELECT
+    // row order — never a stable behavior — and now that
+    // loadTargetSubstrate's cellRows query reads the target_coverage view
+    // instead of the base table, ties can legitimately resolve to a
+    // different (but equally valid) winner. See probes.ts
+    // tieAwareTargetSubstrate's doc comment. Applied to BOTH sides with the
+    // SAME live-computed tie sets; golden.json itself is never rewritten.
+    // Non-tied entries, and any entry whose max depth itself changed, are
+    // untouched and still compared exactly.
+    const tieSets = await collectCoverageTieSets();
+
     // Collect every mismatching probe in one pass (not just the alphabetically
     // first) so a single run surfaces every broken probe, not only one of them.
     // Pass/fail semantics are unchanged: this still passes only when every key
@@ -30,6 +43,14 @@ describe.skipIf(!isScratchDb() || !GOLDEN)('P0a characterization: re-pointed rea
     const mismatches: string[] = [];
     for (const key of Object.keys(golden)) {
       try {
+        if (key === 'loadTargetSubstrate') {
+          type TSValue = Parameters<typeof tieAwareTargetSubstrate>[0];
+          expect(
+            tieAwareTargetSubstrate(now[key] as TSValue, tieSets),
+            key,
+          ).toEqual(tieAwareTargetSubstrate(golden[key] as TSValue, tieSets));
+          continue;
+        }
         expect(now[key], key).toEqual(golden[key]);
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);

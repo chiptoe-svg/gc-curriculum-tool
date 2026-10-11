@@ -13,7 +13,7 @@ vi.mock('@/lib/db/client', () => ({
   db: { select: () => ({ from: (t: unknown) => chain(rowsByTable.get(t) ?? []) }) },
 }));
 
-import { careerTargets, subCompetencies, courseCaptureSnapshots, snapshotTargetCoverage } from '@/lib/db/schema';
+import { careerTargets, subCompetencies, courseCaptureSnapshots, targetCoverage } from '@/lib/db/schema';
 import { loadScaffoldingTarget } from '@/lib/db/scaffolding-queries';
 
 describe('loadScaffoldingTarget — retired sub-competencies (2026-10-06 target batch)', () => {
@@ -24,7 +24,7 @@ describe('loadScaffoldingTarget — retired sub-competencies (2026-10-06 target 
     rowsByTable.set(careerTargets, [{ id: 't5', name: 'T5' }]);
     rowsByTable.set(subCompetencies, [sub('kept', false, 0), sub('old', true, 1)]);
     rowsByTable.set(courseCaptureSnapshots, []);
-    rowsByTable.set(snapshotTargetCoverage, []);
+    rowsByTable.set(targetCoverage, []);
 
     const out = await loadScaffoldingTarget('t5');
     expect(out!.subCompetencies.map(s => s.id)).toEqual(['kept']);

@@ -6,8 +6,9 @@
  * kept as returned. Arrays with no defined order (no ORDER BY) go through
  * sortJson, so the comparison does not depend on Postgres heap order.
  */
-import { sql } from 'drizzle-orm';
+import { and, eq, isNull, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
+import { courseCaptureSnapshots, targetCoverage } from '@/lib/db/schema';
 import { listTargets } from '@/lib/db/career-targets-queries';
 import {
   getAllCells,
@@ -177,5 +178,129 @@ export async function collectProbes(): Promise<Record<string, unknown>> {
   }
   out.loadCompetencySubstrate = compSubstrate;
 
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// Tie-aware compare-time canon for the loadTargetSubstrate probe ONLY
+// (controller ruling, 2026-10-11).
+//
+// lib/ai/wiki/update.ts:loadTargetSubstrate picks a "best" cell per
+// sub-competency with (pre-fix) no tie-break — whichever cell the unordered
+// SELECT happened to return first. That was never a stable behavior to lock
+// into the golden: it was merely stable while reading the base table
+// (snapshot_target_coverage) and visibly changed once P0a re-pointed the
+// read to the target_coverage view, whose join gives Postgres a different
+// (but equally valid) row order for cells tied on dDepth. A fix now adds a
+// deterministic tie-break to the production code (generatedAt DESC,
+// courseCode ASC, snapshotId ASC — see the comment there), but that is
+// itself a visible-behavior change versus the pre-P0a golden, which recorded
+// whichever tied cell the OLD physical order happened to pick — frequently
+// not the new deterministic winner.
+//
+// So this probe's comparison is widened, for ties only: instead of comparing
+// the arbitrary (golden) or deterministic (now) WINNER, it compares the max
+// depth plus the full sorted SET of candidates tied at that depth. A
+// non-tied entry — or any entry whose max depth itself differs — is passed
+// through untouched and still fails the comparison exactly as before; only
+// the "which equally-good cell won" dimension is widened away. Applied at
+// COMPARE TIME in p0a-characterization.test.ts to BOTH the golden and the
+// current probe output, using the SAME live-computed tie sets — golden.json
+// itself is never rewritten.
+// ---------------------------------------------------------------------------
+
+export interface TieSetEntry {
+  dDepth: number;
+  tied: Array<{ courseCode: string; snapshotId: string }>;
+}
+
+/**
+ * For every (careerTargetId, subCompetencyId) pair with at least one
+ * non-retired-snapshot cell in `target_coverage`, the max dDepth and every
+ * cell tied at that max (sorted by courseCode then snapshotId). Mirrors the
+ * cellRows join in loadTargetSubstrate, unfiltered by target/sub-ids (one
+ * query covers every target at once; callers key into the result).
+ */
+export async function collectCoverageTieSets(): Promise<Map<string, TieSetEntry>> {
+  const rows = await db
+    .select({
+      careerTargetId: targetCoverage.careerTargetId,
+      subCompetencyId: targetCoverage.subCompetencyId,
+      courseCode: courseCaptureSnapshots.courseCode,
+      snapshotId: targetCoverage.snapshotId,
+      dDepth: targetCoverage.dDepth,
+    })
+    .from(targetCoverage)
+    .innerJoin(
+      courseCaptureSnapshots,
+      and(
+        eq(targetCoverage.snapshotId, courseCaptureSnapshots.id),
+        isNull(courseCaptureSnapshots.retiredAt),
+      ),
+    );
+
+  const maxBySub = new Map<string, number>();
+  for (const r of rows) {
+    const key = `${r.careerTargetId}|${r.subCompetencyId}`;
+    const cur = maxBySub.get(key);
+    if (cur === undefined || r.dDepth > cur) maxBySub.set(key, r.dDepth);
+  }
+  const tiedBySub = new Map<string, Array<{ courseCode: string; snapshotId: string }>>();
+  for (const r of rows) {
+    const key = `${r.careerTargetId}|${r.subCompetencyId}`;
+    if (r.dDepth !== maxBySub.get(key)) continue;
+    const arr = tiedBySub.get(key) ?? [];
+    arr.push({ courseCode: r.courseCode, snapshotId: r.snapshotId });
+    tiedBySub.set(key, arr);
+  }
+  const out = new Map<string, TieSetEntry>();
+  for (const [key, dDepth] of maxBySub) {
+    const tied = (tiedBySub.get(key) ?? []).sort((a, b) =>
+      a.courseCode === b.courseCode ? cmp(a.snapshotId, b.snapshotId) : cmp(a.courseCode, b.courseCode));
+    out.set(key, { dDepth, tied });
+  }
+  return out;
+}
+
+type TargetSubstrateValue = Record<string, { coverageRollup: Array<Record<string, unknown>>; [k: string]: unknown }>;
+
+/**
+ * Pure: reduce every tied coverageRollup entry (more than one cell tied at
+ * the max dDepth for that sub-competency) to {subCompetencyId,
+ * subCompetencyName, dDepth, tied}, dropping bestCourseCode/kDepth/uDepth/
+ * evidenceExcerpt — fields that legitimately vary by WHICH tied cell won,
+ * which is exactly the dimension this comparison must not penalize. A
+ * non-tied entry (0 or 1 candidate at the max) is returned unchanged, so its
+ * every field is still compared exactly. See the module doc above.
+ */
+export function tieAwareTargetSubstrate(
+  value: TargetSubstrateValue,
+  tieSets: Map<string, TieSetEntry>,
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [targetId, ts] of Object.entries(value)) {
+    const coverageRollup = ts.coverageRollup
+      .map((entry) => {
+        const tie = tieSets.get(`${targetId}|${entry.subCompetencyId as string}`);
+        if (tie && tie.tied.length > 1) {
+          return {
+            subCompetencyId: entry.subCompetencyId,
+            subCompetencyName: entry.subCompetencyName,
+            dDepth: entry.dDepth,
+            tied: tie.tied,
+          };
+        }
+        return entry;
+      })
+      // Re-sort by subCompetencyId (stable, never touched by the tie bug) rather
+      // than keeping sortJson's original position: collectProbes() sorted
+      // coverageRollup by each entry's FULL serialized JSON, which includes the
+      // arbitrary winner fields — so golden's and now's arrays can legitimately
+      // place the SAME sub-competency at different indices whenever its winner
+      // differs. Comparing by index without re-sorting on a stable key would
+      // compare unrelated sub-competencies against each other.
+      .sort((a, b) => cmp(String(a.subCompetencyId), String(b.subCompetencyId)));
+    out[targetId] = { ...ts, coverageRollup };
+  }
   return out;
 }

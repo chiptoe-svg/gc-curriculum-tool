@@ -12,7 +12,7 @@
 import { and, asc, eq, isNull } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import {
-  snapshotTargetCoverage,
+  targetCoverage,
   courseCaptureSnapshots,
   courses,
   careerTargets,
@@ -136,8 +136,8 @@ export async function loadScaffoldingTarget(targetId: string): Promise<Scaffoldi
   // Filter by target and then filter in TS to the relevant snapshot IDs.
   const cells = await db
     .select()
-    .from(snapshotTargetCoverage)
-    .where(eq(snapshotTargetCoverage.careerTargetId, targetId));
+    .from(targetCoverage)
+    .where(eq(targetCoverage.careerTargetId, targetId));
 
   const cellMap = new Map<string, typeof cells[number]>();
   for (const c of cells) {

@@ -1,5 +1,5 @@
 // @vitest-environment node
-// P0a coverage write path (scratch DB only). Fixture course 'ZZ 9997' and the
+// P0a coverage write path (scratch DB only). Fixture course 'ZZ 9995' and the
 // fixture competency are created and removed by this file.
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { asc, eq } from 'drizzle-orm';
@@ -17,7 +17,7 @@ import { runCourseReset } from '@/lib/capture/run-course-reset';
 import { isScratchDb } from './p0a/scratch-guard';
 import { FIXTURE_COMPETENCY, addFixtureCompetency, removeFixtureCompetency } from './p0a/fixtures';
 
-const CODE = 'ZZ 9997'; // never a real course
+const CODE = 'ZZ 9995'; // never a real course — distinct from ZZ 9996/9997/9998/9999 used by other DB tests (reconciliation-log.test.ts collided on 9997)
 const PROFILE = { course_code: CODE, scale_version: 'v1' } as never;
 const INPUTS_META = { catalog: {}, builderProfilePresent: false, materials: [], prereqSnapshotsUsed: [], scanPasses: {} } as never;
 

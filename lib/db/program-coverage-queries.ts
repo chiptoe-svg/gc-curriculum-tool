@@ -1,6 +1,6 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
-import { snapshotTargetCoverage, snapshotCompetencyCoverage, courseCaptureSnapshots, careerTargets, subCompetencies } from '@/lib/db/schema';
+import { snapshotTargetCoverage, snapshotCompetencyCoverage, targetCoverage, courseCaptureSnapshots, careerTargets, subCompetencies } from '@/lib/db/schema';
 import { listPairedCodesForCourses } from '@/lib/db/course-codes-queries';
 
 export interface CoverageCellRow {
@@ -32,7 +32,7 @@ export interface UpsertCoverageCellInput {
   model: string;
 }
 
-function rowToCell(row: typeof snapshotTargetCoverage.$inferSelect): CoverageCellRow {
+function rowToCell(row: typeof targetCoverage.$inferSelect): CoverageCellRow {
   return {
     snapshotId: row.snapshotId,
     careerTargetId: row.careerTargetId,
@@ -85,23 +85,23 @@ export async function upsertCoverageCell(input: UpsertCoverageCellInput): Promis
 export async function getCellsForSnapshotTarget(snapshotId: string, careerTargetId: string): Promise<CoverageCellRow[]> {
   const rows = await db
     .select()
-    .from(snapshotTargetCoverage)
+    .from(targetCoverage)
     .where(and(
-      eq(snapshotTargetCoverage.snapshotId, snapshotId),
-      eq(snapshotTargetCoverage.careerTargetId, careerTargetId),
+      eq(targetCoverage.snapshotId, snapshotId),
+      eq(targetCoverage.careerTargetId, careerTargetId),
     ));
   return rows.map(rowToCell);
 }
 
 export async function getAllCells(): Promise<CoverageCellRow[]> {
-  const rows = await db.select().from(snapshotTargetCoverage);
+  const rows = await db.select().from(targetCoverage);
   return rows.map(rowToCell);
 }
 
 /**
  * Resolves which (snapshot, target) pairs need scoring: the cross-product of
  * (latest non-retired snapshot per course that has one) × (all non-retired
- * career targets). Returns pairs missing from snapshot_target_coverage.
+ * career targets). Returns pairs with no cell in target_coverage.
  */
 export interface PairToScore {
   snapshotId: string;
@@ -138,10 +138,10 @@ export async function listStalePairs(): Promise<PairToScore[]> {
   // partial scoring as not-yet-scored and re-run the whole pair.
   const existing = await db
     .select({
-      snapshotId: snapshotTargetCoverage.snapshotId,
-      careerTargetId: snapshotTargetCoverage.careerTargetId,
+      snapshotId: targetCoverage.snapshotId,
+      careerTargetId: targetCoverage.careerTargetId,
     })
-    .from(snapshotTargetCoverage);
+    .from(targetCoverage);
   const scored = new Set(existing.map(e => `${e.snapshotId}:${e.careerTargetId}`));
 
   const stale: PairToScore[] = [];
