@@ -207,6 +207,14 @@ export async function collectProbes(): Promise<Record<string, unknown>> {
 // COMPARE TIME in p0a-characterization.test.ts to BOTH the golden and the
 // current probe output, using the SAME live-computed tie sets — golden.json
 // itself is never rewritten.
+//
+// Membership guard (fix round 1, 2026-10-11 review): the widening above is
+// per-side, not "both sides always reduce to the same shape." Each side's
+// OWN recorded winner must still be a genuine member of the live tie set
+// (same courseCode, same dDepth) before that side's entry is reduced — see
+// tieAwareTargetSubstrate's doc comment. Otherwise a winner that no longer
+// exists among the live candidates at all (a real regression) stays in its
+// raw shape and the comparison still fails.
 // ---------------------------------------------------------------------------
 
 export interface TieSetEntry {
@@ -272,6 +280,20 @@ type TargetSubstrateValue = Record<string, { coverageRollup: Array<Record<string
  * which is exactly the dimension this comparison must not penalize. A
  * non-tied entry (0 or 1 candidate at the max) is returned unchanged, so its
  * every field is still compared exactly. See the module doc above.
+ *
+ * Membership guard (fix round 1, 2026-10-11 review): the reduction only
+ * applies when THIS side's own recorded winner is still consistent with the
+ * live tie set — `entry.bestCourseCode` must be one of `tie.tied`'s course
+ * codes (the entry shape has no snapshotId to disambiguate further), AND
+ * `entry.dDepth` must equal `tie.dDepth`. Each side (now / golden) is
+ * checked independently, since this function is called once per side with
+ * the SAME tieSets. Without this guard, a golden winner that no longer
+ * exists among the live tied candidates at all (e.g. a real regression —
+ * depth dropped, or the data moved) would still silently reduce to the same
+ * {dDepth, tied} shape as `now` and compare equal — hiding exactly the kind
+ * of change this probe exists to catch. When the guard fails, the entry is
+ * returned RAW (full original shape) so the comparison fails instead of
+ * silently passing.
  */
 export function tieAwareTargetSubstrate(
   value: TargetSubstrateValue,
@@ -282,7 +304,10 @@ export function tieAwareTargetSubstrate(
     const coverageRollup = ts.coverageRollup
       .map((entry) => {
         const tie = tieSets.get(`${targetId}|${entry.subCompetencyId as string}`);
-        if (tie && tie.tied.length > 1) {
+        const isConsistentWithLiveTie = !!tie
+          && tie.tied.some(t => t.courseCode === entry.bestCourseCode)
+          && entry.dDepth === tie.dDepth;
+        if (tie && tie.tied.length > 1 && isConsistentWithLiveTie) {
           return {
             subCompetencyId: entry.subCompetencyId,
             subCompetencyName: entry.subCompetencyName,

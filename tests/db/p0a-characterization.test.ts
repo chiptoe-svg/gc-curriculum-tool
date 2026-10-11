@@ -33,7 +33,11 @@ describe.skipIf(!isScratchDb() || !GOLDEN)('P0a characterization: re-pointed rea
     // tieAwareTargetSubstrate's doc comment. Applied to BOTH sides with the
     // SAME live-computed tie sets; golden.json itself is never rewritten.
     // Non-tied entries, and any entry whose max depth itself changed, are
-    // untouched and still compared exactly.
+    // untouched and still compared exactly. Each side's own recorded winner
+    // must also still be a genuine member of the live tie set (fix round 1,
+    // 2026-10-11 review) — tieAwareTargetSubstrate checks this per side, so a
+    // golden winner that no longer exists among the live candidates at all
+    // stays raw and the comparison still fails.
     const tieSets = await collectCoverageTieSets();
 
     // Collect every mismatching probe in one pass (not just the alphabetically
