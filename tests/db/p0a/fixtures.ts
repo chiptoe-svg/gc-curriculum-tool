@@ -5,12 +5,15 @@
  */
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
-import { careerTargetRequirements, subCompetencies } from '@/lib/db/schema';
+import { subCompetencies } from '@/lib/db/schema';
+import { insertCompetencyForTarget } from '@/lib/db/competency-catalog-queries';
 
 export const FIXTURE_COMPETENCY = 'zz-p0a-fixture-competency';
 
 export async function addFixtureCompetency(targetId: string): Promise<void> {
-  await db.insert(subCompetencies).values({
+  const [existing] = await db.select({ id: subCompetencies.id }).from(subCompetencies).where(eq(subCompetencies.id, FIXTURE_COMPETENCY));
+  if (existing) return;
+  await db.transaction((tx) => insertCompetencyForTarget(tx, {
     id: FIXTURE_COMPETENCY,
     careerTargetId: targetId,
     name: 'ZZ P0a fixture',
@@ -18,17 +21,7 @@ export async function addFixtureCompetency(targetId: string): Promise<void> {
     understandDescriptor: 'u',
     doDescriptor: 'd',
     displayOrder: 999,
-    retired: false,
-  }).onConflictDoNothing();
-  await db.insert(careerTargetRequirements).values({
-    careerTargetId: targetId,
-    competencyId: FIXTURE_COMPETENCY,
-    horizon: 'entry',
-    weight: null,
-    weightSource: 'faculty',
-    status: 'draft',
-    displayOrder: 999,
-  }).onConflictDoNothing();
+  }));
 }
 
 export async function removeFixtureCompetency(): Promise<void> {

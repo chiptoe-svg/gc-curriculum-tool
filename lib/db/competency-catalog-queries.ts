@@ -50,12 +50,12 @@ export async function nextDisplayOrderForTarget(careerTargetId: string): Promise
 export async function insertCompetencyForTarget(tx: Tx, row: NewTargetCompetency): Promise<TargetCompetencyRow> {
   await tx.insert(subCompetencies).values({
     id: row.id,
-    careerTargetId: row.careerTargetId, // deprecated mirror (P0a; never read)
+    deprecatedCareerTargetId: row.careerTargetId, // mirror for the rollback script (P0a; never read)
     name: row.name,
     knowDescriptor: row.knowDescriptor,
     understandDescriptor: row.understandDescriptor,
     doDescriptor: row.doDescriptor,
-    displayOrder: row.displayOrder,     // deprecated mirror (P0a; never read)
+    deprecatedDisplayOrder: row.displayOrder,     // mirror for the rollback script (P0a; never read)
     retired: row.retired ?? false,
     updatedAt: new Date(),
   });
@@ -88,8 +88,8 @@ export async function setCompetencyOrderInTarget(
     .where(and(eq(careerTargetRequirements.careerTargetId, careerTargetId), eq(careerTargetRequirements.competencyId, competencyId)))
     .returning({ id: careerTargetRequirements.id });
   if (updated.length > 0) {
-    // deprecated mirror (P0a; never read)
-    await tx.update(subCompetencies).set({ displayOrder, updatedAt: new Date() }).where(eq(subCompetencies.id, competencyId));
+    // mirror for the rollback script (P0a; never read)
+    await tx.update(subCompetencies).set({ deprecatedDisplayOrder: displayOrder, updatedAt: new Date() }).where(eq(subCompetencies.id, competencyId));
   }
   return updated.length;
 }

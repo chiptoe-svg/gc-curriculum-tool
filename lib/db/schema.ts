@@ -20,16 +20,20 @@ export const careerTargets = pgTable('career_targets', {
 
 export const subCompetencies = pgTable('sub_competencies', {
   id: text('id').primaryKey(),               // stable slug; never changes once created
-  // Since migration 0056 (P0a) the DB column is NULLABLE and is a deprecated
-  // mirror: target membership is career_target_requirements. Renamed and typed
-  // nullable in Task 7 of docs/superpowers/plans/2026-10-11-competency-catalog-p0a.md.
-  careerTargetId: text('career_target_id').notNull().references(() => careerTargets.id, { onDelete: 'cascade' }),
+  /**
+   * DEPRECATED (P0a, migration 0056): the owning target from before the shared
+   * catalog. Still written as a mirror for the rollback script, never read —
+   * target membership is career_target_requirements (view target_sub_competencies).
+   * Removed in P0b.
+   */
+  deprecatedCareerTargetId: text('career_target_id').references(() => careerTargets.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   knowDescriptor: text('know_descriptor').notNull(),
   understandDescriptor: text('understand_descriptor').notNull(),
   doDescriptor: text('do_descriptor').notNull(),
-  displayOrder: integer('display_order').notNull(),
-  retired: boolean('retired').default(false).notNull(),  // soft delete so old coverage_scores don't orphan
+  /** DEPRECATED (P0a): mirror of career_target_requirements.display_order, written for the rollback script only. Removed in P0b. */
+  deprecatedDisplayOrder: integer('display_order').notNull(),
+  retired: boolean('retired').default(false).notNull(),  // catalog attribute; soft delete so old coverage doesn't orphan
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
@@ -533,6 +537,10 @@ export const courseObjectiveGuides = pgTable('course_objective_guides', {
 //
 // Idempotent: UNIQUE(snapshot, target, sub_competency) means a re-score
 // overwrites the cell rather than duplicating it.
+//
+// READ-ONLY BACKUP since competency catalog P0a (migration 0056): nothing
+// writes or reads it; coverage lives in snapshot_competency_coverage (view
+// target_coverage). Kept until the live migration is verified; dropped in P0b.
 export const snapshotTargetCoverage = pgTable('snapshot_target_coverage', {
   snapshotId: uuid('snapshot_id').notNull().references(() => courseCaptureSnapshots.id, { onDelete: 'cascade' }),
   careerTargetId: text('career_target_id').notNull().references(() => careerTargets.id, { onDelete: 'cascade' }),

@@ -1,6 +1,6 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
-import { snapshotTargetCoverage, snapshotCompetencyCoverage, targetCoverage, courseCaptureSnapshots, careerTargets, targetSubCompetencies } from '@/lib/db/schema';
+import { snapshotCompetencyCoverage, targetCoverage, courseCaptureSnapshots, careerTargets, targetSubCompetencies } from '@/lib/db/schema';
 import { listPairedCodesForCourses } from '@/lib/db/course-codes-queries';
 
 export interface CoverageCellRow {
@@ -73,11 +73,6 @@ export async function upsertCoverageCell(input: UpsertCoverageCellInput): Promis
     ...values,
   }).onConflictDoUpdate({
     target: [snapshotCompetencyCoverage.snapshotId, snapshotCompetencyCoverage.competencyId],
-    set: values,
-  });
-  // TRANSITIONAL (P0a Tasks 3-6; removed in Task 7): keep the backup table in step.
-  await db.insert(snapshotTargetCoverage).values({ ...input, generatedAt: now }).onConflictDoUpdate({
-    target: [snapshotTargetCoverage.snapshotId, snapshotTargetCoverage.careerTargetId, snapshotTargetCoverage.subCompetencyId],
     set: values,
   });
 }
@@ -219,17 +214,11 @@ export async function invalidateCoverageForSubCompetency(
   careerTargetId: string,
   subCompetencyId: string,
 ): Promise<number> {
+  void careerTargetId; // kept for callers; cells are per competency since P0a
   const deleted = await db
     .delete(snapshotCompetencyCoverage)
     .where(eq(snapshotCompetencyCoverage.competencyId, subCompetencyId))
     .returning();
-  // TRANSITIONAL (P0a Tasks 3-6; removed in Task 7): keep the backup table in step.
-  await db
-    .delete(snapshotTargetCoverage)
-    .where(and(
-      eq(snapshotTargetCoverage.careerTargetId, careerTargetId),
-      eq(snapshotTargetCoverage.subCompetencyId, subCompetencyId),
-    ));
   return deleted.length;
 }
 

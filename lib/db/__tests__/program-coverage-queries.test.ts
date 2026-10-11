@@ -13,11 +13,6 @@ vi.mock('@/lib/db/client', () => ({
 }));
 
 vi.mock('@/lib/db/schema', () => ({
-  snapshotTargetCoverage: {
-    careerTargetId: 'career_target_id',
-    subCompetencyId: 'sub_competency_id',
-    snapshotId: 'snapshot_id',
-  },
   snapshotCompetencyCoverage: {
     snapshotId: 'snapshot_id',
     competencyId: 'competency_id',

@@ -66,7 +66,7 @@ describe.skipIf(!isScratchDb())('P0a catalog writers', () => {
         .where(and(eq(targetSubCompetencies.careerTargetId, m!.careerTargetId), eq(targetSubCompetencies.id, m!.id)));
       expect(v!.displayOrder).toBe(77);
       const [c] = await tx.select().from(subCompetencies).where(eq(subCompetencies.id, m!.id));
-      expect(c!.displayOrder).toBe(77);
+      expect(c!.deprecatedDisplayOrder).toBe(77);
     });
   });
 

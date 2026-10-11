@@ -62,9 +62,9 @@ describe.skipIf(!isScratchDb())('P0a coverage write path', () => {
     const viewRows = await db.select().from(targetCoverage).where(eq(targetCoverage.snapshotId, snapshotId));
     expect(viewRows.map(r => [r.careerTargetId, r.subCompetencyId, r.dDepth])).toEqual([[targetId, FIXTURE_COMPETENCY, 4]]);
 
-    // TRANSITIONAL (Tasks 3-6): the backup table is kept in step. Task 7 flips this to "untouched".
+    // The backup table is read-only since P0a Task 7: scoring never writes it.
     const old = await db.select().from(snapshotTargetCoverage).where(eq(snapshotTargetCoverage.snapshotId, snapshotId));
-    expect(old.map(r => [r.careerTargetId, r.subCompetencyId, r.dDepth])).toEqual([[targetId, FIXTURE_COMPETENCY, 4]]);
+    expect(old).toEqual([]);
   });
 
   it('invalidate removes every cell of the competency and returns the count', async () => {

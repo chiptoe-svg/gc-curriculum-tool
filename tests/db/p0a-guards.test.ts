@@ -22,10 +22,7 @@ function filesMatching(pattern: string): string[] {
 
 describe('P0a guards', () => {
   it('coverage is read from snapshot_competency_coverage / target_coverage, not the backup table', () => {
-    expect(filesMatching('snapshotTargetCoverage')).toEqual([
-      'lib/capture/run-course-reset.ts',    // TRANSITIONAL dual-write; emptied in Task 7
-      'lib/db/program-coverage-queries.ts', // TRANSITIONAL dual-write; emptied in Task 7
-    ]);
+    expect(filesMatching('snapshotTargetCoverage')).toEqual([]);
   });
 
   it('target membership is read from target_sub_competencies, not sub_competencies.career_target_id', () => {

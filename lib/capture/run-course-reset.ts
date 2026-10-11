@@ -5,7 +5,6 @@ import {
   courseMaterials,
   courseCaptureProfiles,
   courseCaptureSnapshots,
-  snapshotTargetCoverage,
   snapshotCompetencyCoverage,
 } from '@/lib/db/schema';
 import { getWeaviateClient } from '@/lib/capture/weaviate-client';
@@ -92,8 +91,6 @@ export async function runCourseReset(courseCode: string, opts: ResetOpts = {}): 
         .where(eq(snapshotCompetencyCoverage.snapshotId, id))
         .returning({ snapshotId: snapshotCompetencyCoverage.snapshotId });
       coverageDeleted += rows.length;
-      // TRANSITIONAL (P0a Tasks 3-6; removed in Task 7)
-      await db.delete(snapshotTargetCoverage).where(eq(snapshotTargetCoverage.snapshotId, id));
     }
     const snapshotsDeleted = await db
       .delete(courseCaptureSnapshots)
