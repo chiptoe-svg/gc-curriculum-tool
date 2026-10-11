@@ -1139,12 +1139,20 @@
       "page": "p. 258"
     },
     {
+      "id": "bg-collins2007-3",
+      "location": "§7 tacit knowledge",
+      "claim_text": "even where the rules of a craft can be written down, the craftsperson shows the knowledge by performing, not by stating rules",
+      "held_file": "pdfs:collins-2007-bicycling-on-the-moon.pdf",
+      "quote": "Somatic-limit tacit knowledge can often be converted into explicit rules and/or executed by mechanisms such as sieves or robots; it is just that humans cannot make use of the rules to carry out the behaviours that they represent.",
+      "page": "p. 258"
+    },
+    {
       "id": "bg-duguid-1",
       "location": "§9 Lave & Wenger",
       "claim_text": "The community-of-practice account was introduced as a theory of learning drawing on studies of apprenticeship (Lave & Wenger, 1991)",
       "held_file": "pdfs:duguid-2005-art-of-knowing-manuscript.pdf",
       "quote": "was introduced as a theory of learning, drawing much of its evidence from studies of … apprenticeship (Lave & Wenger, 1991)",
-      "page": "manuscript pp. 8-9 (PDF pp. 9-10)"
+      "page": "manuscript pp. 9-10 (footer page numbers; PDF pp. 9-10)"
     }
   ]
 }
