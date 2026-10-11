@@ -95,6 +95,10 @@ fi
 `);
     writeStub(join(stubDir, 'pnpm'), `#!/usr/bin/env bash
 echo "pnpm $* (cwd=$(pwd))" >> "\${STUB_LOG:-/dev/null}"
+if [ -n "\${STUB_PNPM_SLEEP_MS:-}" ]; then
+  echo "pnpm: sleeping"
+  sleep "\$(awk "BEGIN { print \${STUB_PNPM_SLEEP_MS} / 1000 }")"
+fi
 [ "\${STUB_PNPM_FAIL:-0}" = "1" ] && exit 1
 exit 0
 `);
@@ -266,16 +270,40 @@ exit 0
     }
   });
 
-  // --- db-done phase: DB step fails, but DB state MATCHES the new build ------
-  it('DB step fails but the DB already matches the new build — safe-to-bootstrap message (the M-a "already committed" case)', () => {
+  // --- db-done phase: committed, but verify failed afterward (M-i) ----------
+  // p0a-apply-db.sh's distinct exit code 4 means "the migration DID commit,
+  // but verify found a problem afterward" — this must NEVER say SAFE, even
+  // though the schema now matches what the build expects (that's exactly
+  // the case round 3 found contradictory: "do not deploy" right above
+  // "SAFE to bootstrap").
+  it('M-i: DB step commits but verify fails (exit 4) — never says SAFE, says investigate/rollback instead', () => {
     checkoutForTest(shaPostMatch);
     const res = run([shaPostMatch, 'apply'], {
       P0A_LIVE_APPLY_READ_ENV_MJS: writeReadEnvStub(tmp, {}),
-      P0A_LIVE_APPLY_APPLY_DB_SH: writeApplyDbStub(tmp, { exitCode: 1 }),
+      P0A_LIVE_APPLY_APPLY_DB_SH: writeApplyDbStub(tmp, { exitCode: 4 }),
       P0A_LIVE_APPLY_DB_MIGRATED_SH: writeDbMigratedStub(tmp, { output: 't' }),
     });
+    expect(res.status).toBe(4);
+    expect(res.stderr).toMatch(/committed, but verification failed afterward/);
+    expect(res.stderr).toMatch(/migration committed but verification failed — do not bootstrap; run rollback or inspect/);
+    expect(res.stderr).not.toMatch(/SAFE to bootstrap/);
+  });
+
+  // --- db-done phase: a generic (non-committing) failure, state still
+  // happens to match the build for an unrelated reason (e.g. the DB was
+  // already in that shape from an earlier successful run) — still SAFE.
+  // Uses rollback mode so it can't be confused with the exit-4 case above:
+  // a plain guard failure (wrong DB, other sessions, bad backup) never
+  // reaches 0056/the rollback SQL, so DB_RC is a generic 1, not 4.
+  it('a generic pre-commit guard failure (exit 1) with a state that already matches — still SAFE (distinct from M-i)', () => {
+    checkoutForTest(shaPre);
+    const res = run([shaPre, 'rollback'], {
+      P0A_LIVE_APPLY_READ_ENV_MJS: writeReadEnvStub(tmp, {}),
+      P0A_LIVE_APPLY_APPLY_DB_SH: writeApplyDbStub(tmp, { exitCode: 1 }),
+      P0A_LIVE_APPLY_DB_MIGRATED_SH: writeDbMigratedStub(tmp, { output: 'f' }), // f matches rollback's expectation
+    });
     expect(res.status).toBe(1);
-    expect(res.stderr).toMatch(/Queried database state: migrated=t/);
+    expect(res.stderr).toMatch(/Queried database state: migrated=f/);
     expect(res.stderr).toMatch(/SAFE to bootstrap the current build/);
     expect(res.stderr).not.toMatch(/restore the previous build first/);
   });
@@ -298,8 +326,11 @@ exit 0
     expect(res.stderr).toContain(shaPre);
   });
 
-  // --- db-done phase: DB state itself can't be determined --------------------
-  it('DB step fails and the DB state cannot be queried — fails safe (treated as mismatch, not "safe to bootstrap")', () => {
+  // --- db-done phase: DB state itself can't be determined (M-h) --------------
+  // Covers both "p0a-db-migrated.sh couldn't reach the database" and "it
+  // refused because DATABASE_URL didn't point at the expected database" —
+  // the wrapper treats them identically: state UNKNOWN, never a guess.
+  it('M-h: DB step fails and the DB state cannot be queried — "DB state UNKNOWN", never "safe to bootstrap"', () => {
     checkoutForTest(shaPostMatch);
     const res = run([shaPostMatch, 'apply'], {
       P0A_LIVE_APPLY_READ_ENV_MJS: writeReadEnvStub(tmp, {}),
@@ -307,9 +338,9 @@ exit 0
       P0A_LIVE_APPLY_DB_MIGRATED_SH: writeDbMigratedStub(tmp, { fail: true }),
     });
     expect(res.status).toBe(1);
-    expect(res.stderr).toMatch(/could not be queried afterward/);
+    expect(res.stderr).toMatch(/DB state UNKNOWN — do not bootstrap; inspect manually/);
     expect(res.stderr).not.toMatch(/SAFE to bootstrap the current build/);
-    expect(res.stderr).toMatch(/does NOT match the database\. Do not bootstrap that build/);
+    expect(res.stderr).not.toMatch(/does NOT match the database\. Do not bootstrap that build/);
   });
 
   // --- happy path: full success --------------------------------------------
@@ -322,6 +353,7 @@ exit 0
     });
     expect(res.status).toBe(0);
     expect(res.stdout).toMatch(/Smoke test/);
+    expect(res.stdout).toMatch(/update docs\/STATE\.md: P0a applied to production/);
     expect(res.stderr).toBe('');
     const log = lastLogContents();
     expect(log).toMatch(/pnpm build/);
@@ -368,15 +400,24 @@ exit 0
   });
 
   // --- Ctrl-C mid-run ---------------------------------------------------------
-  it('Ctrl-C (SIGINT) during the DB-attempt phase — exits 130, prints the stopped-phase state', async () => {
-    checkoutForTest(shaPostMatch);
-    const log = join(tmp, 'log-sigint.txt');
-    writeFileSync(log, '');
-    const readEnv = writeReadEnvStub(tmp, { sleepMs: 4000 });
-    // Defense in depth: never let this test reach a real DB connection
-    // attempt even if the SIGINT-timing race below somehow doesn't fire.
-    const applyDbStub = writeApplyDbStub(tmp, { exitCode: 0 });
-    const child = spawn('bash', [WRAPPER_SH, shaPostMatch, 'apply'], {
+  // IMPORTANT, corrected in round 3 (M-g): a signal sent with
+  // `child.kill()` only reaches the direct child (bash) — bash does NOT
+  // act on a pending trap-able signal while a foreground child (a command
+  // substitution's process, or a plain external command) is still
+  // running; it defers handling until that child returns on its own. A
+  // real terminal Ctrl-C does not have this problem, because the terminal
+  // driver sends SIGINT to the whole foreground PROCESS GROUP at once,
+  // hitting bash's child directly too. Round 2's version of this test
+  // asserted the opposite (that `child.kill()` interrupts bash immediately
+  // even mid-command-substitution) based on a run that was never actually
+  // timed — instrumenting it with timestamps during this round's work
+  // showed the signal was handled only after the full artificial delay had
+  // already elapsed. `spawnDetachedWrapper` below fixes this by giving the
+  // wrapper its own process group and signaling that group (`-pid`),
+  // matching the round-3 reviewer's own method and a real terminal Ctrl-C.
+  function spawnDetachedWrapper(args: string[], env: Record<string, string>) {
+    return spawn('bash', [WRAPPER_SH, ...args], {
+      detached: true,
       env: {
         ...process.env,
         PATH: `${stubDir}:${process.env.PATH}`,
@@ -386,35 +427,80 @@ exit 0
         P0A_LIVE_APPLY_PLIST_APP: join(tmp, 'curriculum-tool.plist'),
         P0A_LIVE_APPLY_PLIST_WATCHDOG: join(tmp, 'dev-watchdog.plist'),
         P0A_LIVE_APPLY_WAIT_SLEEP: '0.05',
-        P0A_LIVE_APPLY_READ_ENV_MJS: readEnv,
-        P0A_LIVE_APPLY_APPLY_DB_SH: applyDbStub,
-        STUB_LOG: log,
+        ...env,
       },
     });
+  }
+
+  /** Runs `child` to completion, calling `onStdoutChunk` after every stdout write and sending SIGINT to the whole process group the first time it returns true. */
+  async function runAndInterruptOnStdout(
+    child: ReturnType<typeof spawn>,
+    shouldInterrupt: (stdoutSoFar: string) => boolean,
+  ): Promise<{ exitCode: number; stdout: string; stderr: string }> {
     let stdout = '';
     let stderr = '';
-    child.stdout.on('data', (d) => { stdout += String(d); });
-    child.stderr.on('data', (d) => { stderr += String(d); });
+    child.stdout!.on('data', (d) => { stdout += String(d); });
+    child.stderr!.on('data', (d) => { stderr += String(d); });
     const exitCode = await new Promise<number>((res) => {
       let sent = false;
       const timer = setInterval(() => {
-        // "confirmed: nothing listens on :3000" is a stdout line — the
-        // wrapper is mid-read-env (stdin of the command substitution,
-        // sleeping 4s) at the moment it appears, which is a reliable window
-        // to deliver SIGINT (a signal sent via child.kill(), unlike one sent
-        // to a shell-backgrounded job, is delivered to bash immediately,
-        // even while it's blocked inside a command substitution).
-        if (!sent && stdout.includes('nothing listens on :3000')) {
+        if (!sent && shouldInterrupt(stdout)) {
           sent = true;
           clearInterval(timer);
-          child.kill('SIGINT');
+          process.kill(-child.pid!, 'SIGINT');
         }
-      }, 50);
+      }, 20);
       child.on('exit', (code) => { clearInterval(timer); res(code ?? -1); });
     });
+    return { exitCode, stdout, stderr };
+  }
+
+  it('Ctrl-C (SIGINT to the process group) during the build — exits 130, PHASE pre-stop, untouched message', async () => {
+    checkoutForTest(shaPostMatch);
+    const log = join(tmp, 'log-sigint-build.txt');
+    writeFileSync(log, '');
+    const child = spawnDetachedWrapper([shaPostMatch, 'apply'], {
+      STUB_LOG: log,
+      STUB_PNPM_SLEEP_MS: '3000',
+    });
+    const { exitCode, stderr } = await runAndInterruptOnStdout(child, (out) => out.includes('pnpm: sleeping'));
     expect(exitCode).toBe(130);
-    expect(stderr).toMatch(/The app and watchdog are STOPPED/);
-    expect(stderr).toMatch(/database is UNTOUCHED/);
+    expect(stderr).toMatch(/Nothing was stopped and nothing was touched/);
+  }, 20000);
+
+  it('Ctrl-C (SIGINT to the process group) while the DB step is genuinely running — PHASE db-attempt, queries real state (M-g)', async () => {
+    checkoutForTest(shaPostMatch);
+    const log = join(tmp, 'log-sigint-db.txt');
+    writeFileSync(log, '');
+    const child = spawnDetachedWrapper([shaPostMatch, 'apply'], {
+      P0A_LIVE_APPLY_READ_ENV_MJS: writeReadEnvStub(tmp, {}),
+      P0A_LIVE_APPLY_APPLY_DB_SH: writeApplyDbStub(tmp, { exitCode: 0, sleepMs: 3000 }),
+      P0A_LIVE_APPLY_DB_MIGRATED_SH: writeDbMigratedStub(tmp, { output: 't' }),
+      STUB_LOG: log,
+    });
+    const { exitCode, stderr } = await runAndInterruptOnStdout(child, (out) => out.includes('stub-apply-db: now sleeping'));
+    expect(exitCode).toBe(130);
+    expect(stderr).toMatch(/was interrupted or did not return — querying its actual state rather than assuming UNTOUCHED/);
+    expect(stderr).toMatch(/Queried database state: migrated=t/);
+    expect(stderr).toMatch(/SAFE to bootstrap the current build/);
+    expect(stderr).not.toMatch(/database is UNTOUCHED/);
+  }, 20000);
+
+  it('Ctrl-C (SIGINT to the process group) while the DB step is running and the state does NOT match — refuses to say SAFE (M-g)', async () => {
+    checkoutForTest(shaPostMatch);
+    const log = join(tmp, 'log-sigint-db-mismatch.txt');
+    writeFileSync(log, '');
+    const child = spawnDetachedWrapper([shaPostMatch, 'apply'], {
+      P0A_LIVE_APPLY_READ_ENV_MJS: writeReadEnvStub(tmp, {}),
+      P0A_LIVE_APPLY_APPLY_DB_SH: writeApplyDbStub(tmp, { exitCode: 0, sleepMs: 3000 }),
+      P0A_LIVE_APPLY_DB_MIGRATED_SH: writeDbMigratedStub(tmp, { output: 'f' }),
+      STUB_LOG: log,
+    });
+    const { exitCode, stderr } = await runAndInterruptOnStdout(child, (out) => out.includes('stub-apply-db: now sleeping'));
+    expect(exitCode).toBe(130);
+    expect(stderr).toMatch(/Queried database state: migrated=f/);
+    expect(stderr).toMatch(/does NOT match the database\. Do not bootstrap that build/);
+    expect(stderr).not.toMatch(/SAFE to bootstrap/);
   }, 20000);
 });
 
@@ -431,9 +517,15 @@ function writeReadEnvStub(tmp: string, opts: { fail?: boolean; sleepMs?: number 
   return p;
 }
 
-function writeApplyDbStub(tmp: string, opts: { exitCode: number }): string {
+function writeApplyDbStub(tmp: string, opts: { exitCode: number; sleepMs?: number }): string {
   const p = join(tmp, `apply-db-${Math.random().toString(36).slice(2)}.sh`);
-  writeStub(p, `#!/usr/bin/env bash\necho "stub-apply-db-called mode=$3" >> "\${STUB_LOG:-/dev/null}"\nexit ${opts.exitCode}\n`);
+  const lines = ['#!/usr/bin/env bash', 'echo "stub-apply-db-called mode=$3" >> "${STUB_LOG:-/dev/null}"'];
+  if (opts.sleepMs) {
+    lines.push('echo "stub-apply-db: now sleeping"');
+    lines.push(`sleep "$(awk 'BEGIN { print ${opts.sleepMs} / 1000 }')"`);
+  }
+  lines.push(`exit ${opts.exitCode}`);
+  writeStub(p, lines.join('\n') + '\n');
   return p;
 }
 

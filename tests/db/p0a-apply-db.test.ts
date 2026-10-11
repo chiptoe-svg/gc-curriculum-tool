@@ -22,6 +22,7 @@ const RUN = isScratchDb() && process.env.P0A_APPLY_DB_TEST === '1';
 const DATABASE_URL = process.env.DATABASE_URL ?? '';
 
 const DB_MIGRATED_SH = resolve(ROOT, 'scripts/migrations/p0a-db-migrated.sh');
+const LIB_SH = resolve(ROOT, 'scripts/migrations/p0a-lib.sh');
 
 interface Result { status: number; stdout: string; stderr: string }
 
@@ -35,9 +36,9 @@ function runScript(bin: string, args: string[], env?: Record<string, string>): R
   }
 }
 
-describe('p0a-apply-db.sh / p0a-verify-backup.sh / p0a-db-migrated.sh — static checks (always run)', () => {
-  it('bash -n accepts all four scripts', () => {
-    for (const sh of [APPLY_DB_SH, VERIFY_BACKUP_SH, LIVE_APPLY_SH, DB_MIGRATED_SH]) {
+describe('p0a-apply-db.sh / p0a-verify-backup.sh / p0a-db-migrated.sh / p0a-lib.sh — static checks (always run)', () => {
+  it('bash -n accepts all five scripts', () => {
+    for (const sh of [APPLY_DB_SH, VERIFY_BACKUP_SH, LIVE_APPLY_SH, DB_MIGRATED_SH, LIB_SH]) {
       expect(() => execFileSync('bash', ['-n', sh], { encoding: 'utf8' })).not.toThrow();
     }
   });
@@ -123,6 +124,20 @@ describe.skipIf(!RUN)('p0a-apply-db.sh (I-1) on the scratch clone', () => {
     }
     expect(await contentHash()).toBe(before);
     expect(await applied()).toBe(wasApplied);
+  });
+
+  it('M-h: p0a-db-migrated.sh refuses when DATABASE_URL points at a different database than expected', () => {
+    const res = runScript(DB_MIGRATED_SH, ['definitely_not_the_scratch_db'], { DATABASE_URL });
+    expect(res.status).not.toBe(0);
+    expect(res.stderr).toMatch(/refusing: connected to database '.*', expected 'definitely_not_the_scratch_db' — state UNKNOWN/);
+    expect(res.stdout.trim()).toBe(''); // never prints t/f for the wrong database
+  });
+
+  it('M-h: p0a-db-migrated.sh prints t/f when DATABASE_URL matches the expected database', async () => {
+    const res = runScript(DB_MIGRATED_SH, [SCRATCH_DB], { DATABASE_URL });
+    expect(res.status).toBe(0);
+    expect(['t', 'f']).toContain(res.stdout.trim());
+    expect(res.stdout.trim()).toBe((await applied()) ? 't' : 'f');
   });
 
   it('p0a-verify-backup.sh rejects an empty dump file', () => {

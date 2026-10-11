@@ -27,6 +27,16 @@
 # deploy checkout is clean and at the expected 40-character commit SHA (a
 # short/abbreviated SHA is refused).
 #
+# Where to run this FROM (final review, Minor 5): run it from a checkout of
+# THIS repo at (or past) the P0a merge commit — for example the main
+# checkout at the merge — not from -deploy, which is just the thing being
+# built and restarted. This matters most for `rollback` mode, because the
+# pre-P0a SHA you check out IN -deploy has no copy of this script at all
+# (it predates P0a) — the script you actually run, and the rollback SQL it
+# reads (2026-10-11-p0a-rollback.sql, resolved relative to ITS OWN
+# location), both come from wherever THIS script lives, never from
+# -deploy's tree.
+#
 # Testability (round 2): every external path below has an environment-
 # variable override, used only by tests/scripts/p0a-live-apply-wrapper.test.ts
 # to point at a throwaway git repo and stubbed launchctl/lsof/pnpm/
@@ -48,6 +58,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEPLOY_DIR="${P0A_LIVE_APPLY_DEPLOY_DIR:-/Users/admin/projects/curriculum_developer-deploy}"
 APPLY_DB_SH="${P0A_LIVE_APPLY_APPLY_DB_SH:-$SCRIPT_DIR/p0a-apply-db.sh}"
 DB_MIGRATED_SH="${P0A_LIVE_APPLY_DB_MIGRATED_SH:-$SCRIPT_DIR/p0a-db-migrated.sh}"
+EXPECTED_DB="${P0A_LIVE_APPLY_EXPECTED_DB:-gc_curriculum}"
 BACKUP_DIR="${P0A_LIVE_APPLY_BACKUP_DIR:-$HOME/.local/share/gc-curriculum-tool/p0a}"
 PLIST_APP="${P0A_LIVE_APPLY_PLIST_APP:-$HOME/Library/LaunchAgents/com.gc.curriculum-tool.plist}"
 PLIST_WATCHDOG="${P0A_LIVE_APPLY_PLIST_WATCHDOG:-$HOME/Library/LaunchAgents/com.gc.dev-watchdog.plist}"
@@ -62,6 +73,8 @@ PHASE="start"
 PREVIOUS_SHA=""
 DB_WAS_QUERIED=0
 DB_IS_MIGRATED=""
+DB_RC=""
+DATABASE_URL=""
 
 if [[ ! "$DEPLOY_SHA" =~ ^[0-9a-f]{40}$ ]]; then
   echo "usage: $0 <40-char-deploy-sha> {apply|rollback} [<previous_sha>]" >&2
@@ -72,6 +85,35 @@ case "$MODE" in
   apply|rollback) ;;
   *) echo "usage: $0 <40-char-deploy-sha> {apply|rollback} [<previous_sha>]" >&2; exit 2 ;;
 esac
+
+# --- shared: query the actual DB state (M-g, M-h) and print the matching
+# recovery. Never used unless $DATABASE_URL is non-empty. Sets
+# DB_WAS_QUERIED/DB_IS_MIGRATED as a side effect. M-h: p0a-db-migrated.sh
+# now refuses unless it's actually connected to $EXPECTED_DB, so "could not
+# be queried" also covers "DATABASE_URL pointed at the wrong database" —
+# both are reported identically, as UNKNOWN, never as a guess.
+report_db_state_and_recovery() {
+  if DB_IS_MIGRATED="$(DATABASE_URL="$DATABASE_URL" "$DB_MIGRATED_SH" "$EXPECTED_DB" 2>/dev/null)"; then
+    DB_WAS_QUERIED=1
+  fi
+  if [ "$DB_WAS_QUERIED" != 1 ]; then
+    echo "DB state UNKNOWN — do not bootstrap; inspect manually." >&2
+    echo "(p0a-db-migrated.sh could not confirm the database's state — unreachable, or DATABASE_URL did not point at '$EXPECTED_DB')" >&2
+    return
+  fi
+  echo "Queried database state: migrated=$DB_IS_MIGRATED." >&2
+  local expected_migrated="f"; [ "$MODE" = apply ] && expected_migrated="t"
+  if [ "$DB_IS_MIGRATED" = "$expected_migrated" ]; then
+    echo "That matches what $MODE's build ($DEPLOY_SHA, already built at $DEPLOY_DIR) expects — it should be SAFE to bootstrap the current build:" >&2
+    echo "  launchctl bootstrap gui/$UID_NUM \"$PLIST_APP\"" >&2
+    echo "  launchctl bootstrap gui/$UID_NUM \"$PLIST_WATCHDOG\"" >&2
+  else
+    echo "The build on disk at $DEPLOY_DIR (for $DEPLOY_SHA, expects migrated=$expected_migrated) does NOT match the database. Do not bootstrap that build. Investigate the database state by hand before doing anything, for example by re-running p0a-apply-db.sh's guards, or restore the previous build first:" >&2
+    echo "  git -C \"$DEPLOY_DIR\" checkout ${PREVIOUS_SHA:-<the previously deployed SHA>} && (cd \"$DEPLOY_DIR\" && pnpm build)" >&2
+    echo "  launchctl bootstrap gui/$UID_NUM \"$PLIST_APP\"" >&2
+    echo "  launchctl bootstrap gui/$UID_NUM \"$PLIST_WATCHDOG\"" >&2
+  fi
+}
 
 # --- the state-aware failure/success reporter (I-2) --------------------------
 on_exit() {
@@ -88,8 +130,8 @@ on_exit() {
     start|pre-stop)
       echo "Nothing was stopped and nothing was touched. The app and watchdog are still running whatever they were running before this invocation." >&2
       ;;
-    stopped|db-attempt)
-      echo "The app and watchdog are STOPPED. The database step was never reached (or never returned), so the database is UNTOUCHED — it still matches the code that was running before (previously-deployed SHA: ${PREVIOUS_SHA:-unknown; check \`git -C \"$DEPLOY_DIR\" reflog\`})." >&2
+    stopped)
+      echo "The app and watchdog are STOPPED. The database step was never reached, so the database is UNTOUCHED — it still matches the code that was running before (previously-deployed SHA: ${PREVIOUS_SHA:-unknown; check \`git -C \"$DEPLOY_DIR\" reflog\`})." >&2
       echo "The deploy checkout at $DEPLOY_DIR now holds a BUILD for $DEPLOY_SHA, which does NOT match the (untouched) database." >&2
       echo >&2
       echo "To restore service, either:" >&2
@@ -99,22 +141,41 @@ on_exit() {
       echo "        launchctl bootstrap gui/$UID_NUM \"$PLIST_APP\"" >&2
       echo "        launchctl bootstrap gui/$UID_NUM \"$PLIST_WATCHDOG\"" >&2
       ;;
-    db-done)
-      if [ "$DB_WAS_QUERIED" = 1 ]; then
-        echo "The database step returned failure. Queried database state: migrated=${DB_IS_MIGRATED:-unknown}." >&2
+    db-attempt)
+      # M-g (round 3): round 2 asserted UNTOUCHED here unconditionally, but
+      # by the time this phase starts, DATABASE_URL may already be in hand
+      # and p0a-apply-db.sh may already have committed — a signal landing
+      # right after its COMMIT (while verify is still running, for example)
+      # used to print a false UNTOUCHED state and the I-1-recreating
+      # "restore previous build" recovery. If DATABASE_URL was never
+      # obtained (read-env itself failed or hasn't run yet), the database
+      # genuinely cannot have been touched, so that assertion is still
+      # correct in that specific case — otherwise, query for real.
+      if [ -n "$DATABASE_URL" ]; then
+        echo "The database step was interrupted or did not return — querying its actual state rather than assuming UNTOUCHED." >&2
+        report_db_state_and_recovery
       else
-        echo "The database step returned failure, and the database state could not be queried afterward." >&2
+        echo "The app and watchdog are STOPPED. DATABASE_URL was never obtained, so the database step cannot have run — the database is UNTOUCHED (previously-deployed SHA: ${PREVIOUS_SHA:-unknown; check \`git -C \"$DEPLOY_DIR\" reflog\`})." >&2
+        echo "The deploy checkout at $DEPLOY_DIR now holds a BUILD for $DEPLOY_SHA, which does NOT match the (untouched) database." >&2
+        echo >&2
+        echo "To restore service, either:" >&2
+        echo "  (a) re-run this script to retry $MODE for $DEPLOY_SHA, or" >&2
+        echo "  (b) restore the previous build first, then start it:" >&2
+        echo "        git -C \"$DEPLOY_DIR\" checkout ${PREVIOUS_SHA:-<the previously deployed SHA>} && (cd \"$DEPLOY_DIR\" && pnpm build)" >&2
+        echo "        launchctl bootstrap gui/$UID_NUM \"$PLIST_APP\"" >&2
+        echo "        launchctl bootstrap gui/$UID_NUM \"$PLIST_WATCHDOG\"" >&2
       fi
-      EXPECTED_MIGRATED="f"; [ "$MODE" = apply ] && EXPECTED_MIGRATED="t"
-      if [ "$DB_WAS_QUERIED" = 1 ] && [ "$DB_IS_MIGRATED" = "$EXPECTED_MIGRATED" ]; then
-        echo "That matches what $MODE's build ($DEPLOY_SHA, already built at $DEPLOY_DIR) expects — despite the reported failure, it should be SAFE to bootstrap the current build:" >&2
-        echo "  launchctl bootstrap gui/$UID_NUM \"$PLIST_APP\"" >&2
-        echo "  launchctl bootstrap gui/$UID_NUM \"$PLIST_WATCHDOG\"" >&2
+      ;;
+    db-done)
+      if [ "$DB_RC" = "4" ]; then
+        # M-i (round 3): p0a-apply-db.sh's distinct exit code for "the
+        # migration committed, but verify found a problem afterward" — the
+        # schema DID change, so this must never say SAFE.
+        echo "The database $MODE committed, but verification failed afterward (p0a-apply-db.sh exit 4)." >&2
+        echo "migration committed but verification failed — do not bootstrap; run rollback or inspect" >&2
       else
-        echo "The build on disk at $DEPLOY_DIR (for $DEPLOY_SHA, expects migrated=$EXPECTED_MIGRATED) does NOT match the database. Do not bootstrap that build. Investigate the database state by hand before doing anything, for example by re-running p0a-apply-db.sh's guards, or restore the previous build first:" >&2
-        echo "  git -C \"$DEPLOY_DIR\" checkout ${PREVIOUS_SHA:-<the previously deployed SHA>} && (cd \"$DEPLOY_DIR\" && pnpm build)" >&2
-        echo "  launchctl bootstrap gui/$UID_NUM \"$PLIST_APP\"" >&2
-        echo "  launchctl bootstrap gui/$UID_NUM \"$PLIST_WATCHDOG\"" >&2
+        echo "The database step returned failure (exit ${DB_RC:-unknown})." >&2
+        report_db_state_and_recovery
       fi
       ;;
     restarting-app)
@@ -198,16 +259,16 @@ echo "=== (c) $MODE against the LIVE database ==="
 PHASE="db-attempt"
 DATABASE_URL="$(node "$READ_ENV_MJS" "$DEPLOY_DIR" DATABASE_URL)"
 DB_RC=0
-DATABASE_URL="$DATABASE_URL" "$APPLY_DB_SH" gc_curriculum "$BACKUP_DIR" "$MODE" || DB_RC=$?
+DATABASE_URL="$DATABASE_URL" "$APPLY_DB_SH" "$EXPECTED_DB" "$BACKUP_DIR" "$MODE" || DB_RC=$?
 PHASE="db-done"
-if DB_IS_MIGRATED="$(DATABASE_URL="$DATABASE_URL" "$DB_MIGRATED_SH" 2>/dev/null)"; then
-  DB_WAS_QUERIED=1
-fi
-unset DATABASE_URL
 
+# DATABASE_URL stays set until here on purpose: if DB_RC != 0, the EXIT
+# trap's db-done branch (report_db_state_and_recovery) needs it to query
+# the real state (M-g). Only unset it once we know we won't need it again.
 if [ "$DB_RC" -ne 0 ]; then
   exit "$DB_RC"
 fi
+unset DATABASE_URL
 
 echo "=== (e) DB $MODE succeeded — restarting the app, then the watchdog ==="
 PHASE="restarting-app"
@@ -223,13 +284,15 @@ done
 PHASE="restarting-watchdog"
 launchctl bootstrap "gui/$UID_NUM" "$PLIST_WATCHDOG"
 PHASE="done"
-cat <<'SMOKE'
+cat <<SMOKE
 
-DB applied. App and watchdog restarted. Smoke test (plan Task 10 Step 3) at
+DB $MODE applied. App and watchdog restarted. Smoke test (plan Task 10 Step 3) at
 https://gcworkflow.clemson.edu:8443:
   - /program — each target tab
   - a course page's prerequisite panel
   - /wiki — a target page and a competency page
   - /explore — one course
+
+Then update docs/STATE.md: P0a applied to production (date, owner go-ahead) — see plan Task 10 Step 3.
 SMOKE
 exit 0

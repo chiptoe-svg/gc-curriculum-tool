@@ -46,8 +46,13 @@ if [ "$MODE" = rollback ]; then
   REQUIRED_TABLES+=(snapshot_competency_coverage career_target_requirements)
 fi
 for TBL in "${REQUIRED_TABLES[@]}"; do
+  # A TABLE DATA entry exists for a table with 0 rows too (pg_dump always
+  # emits one, confirmed against scratch's always-empty career_target_demand)
+  # — missing here means a schema-only (-s) dump or the table not being in
+  # the archive at all, never "the table happens to be empty" (M-l, round 3:
+  # the previous wording implied the latter).
   if ! grep -Eq "TABLE DATA[[:space:]]+public[[:space:]]+$TBL([[:space:]]|\$)" <<<"$DUMP_LIST"; then
-    echo "refusing: backup $DUMP_FILE has no TABLE DATA for '$TBL' (schema-only dump, or the table is empty/missing)" >&2
+    echo "refusing: backup $DUMP_FILE has no TABLE DATA for '$TBL' (schema-only dump, or the table is missing from the archive)" >&2
     exit 1
   fi
 done
