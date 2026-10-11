@@ -91,7 +91,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     await recordSpend(costUsdCents);
 
     // Re-fire wiki-update for this snapshot now that coverage exists — lets the
-    // competency/target pages generate (they derive from snapshot_target_coverage).
+    // competency/target pages generate (they derive from snapshot_competency_coverage).
     // Fire-and-forget; only when cells were actually written.
     if (result.cells.length > 0) {
       regenerateWikiInBackground(snapshotId, 'wiki recompile after coverage scoring (single pair)');

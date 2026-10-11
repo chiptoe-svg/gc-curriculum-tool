@@ -5,7 +5,7 @@
  * STRUCTURAL / relationship questions the prose can't — "which courses build
  * toward Production Operations and at what depth", "the prerequisite chain into
  * GC 4400" — backed directly by the typed graph already in the DB
- * (snapshot_target_coverage, prerequisite_edges). Read-only.
+ * (snapshot_competency_coverage, prerequisite_edges). Read-only.
  *
  * Pure cores (shapeCoverageForTarget / prereqNeighborhood) are separated from
  * the DB-fetching tool wrappers so the graph logic is unit-testable.

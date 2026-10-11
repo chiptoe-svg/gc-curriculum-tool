@@ -385,7 +385,7 @@ export function ProgramCoverageClient({ slug, initialData, initialFlags, isAdmin
             {/* TODO(evidence-ladder): add "N of M upper-depth cells materials-supported"
                 split here once the coverage cell payload exposes per-claim source/citations.
                 Currently MatrixCoverageCell (lib/db/program-coverage-queries.ts) only carries
-                pre-computed depth scores from snapshot_target_coverage; per-claim provenance
+                pre-computed depth scores from snapshot_competency_coverage; per-claim provenance
                 would need to be joined from the raw snapshot profile JSON at query time and
                 plumbed through getMatrixData() → /api/program/coverage → this client.
                 Deferred to avoid data-plumbing scope expansion; see spec

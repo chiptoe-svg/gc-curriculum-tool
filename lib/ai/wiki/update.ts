@@ -1357,7 +1357,7 @@ export async function generateProgramWikiBatch(
  * Regenerate + push the wiki for a snapshot, fire-and-forget. Two call sites:
  *   1. snapshot creation (course + concept pages + index), and
  *   2. AFTER coverage scoring (`program-score-coverage` writes
- *      `snapshot_target_coverage`) — this is what lets the COMPETENCY and
+ *      `snapshot_competency_coverage`) — this is what lets the COMPETENCY and
  *      TARGET pages generate at all, since `computeAffectedPages` derives them
  *      from coverage rows that don't exist yet at snapshot-creation time.
  *

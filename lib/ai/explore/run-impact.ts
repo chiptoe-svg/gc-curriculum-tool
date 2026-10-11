@@ -30,7 +30,7 @@ import { getMatrixData } from '@/lib/db/program-coverage-queries';
 
 /** Normalize a competency statement for matching: trim, lowercase, collapse internal whitespace.
  *  Tolerates the formatting/casing drift between the local-delta AI's competency wording and
- *  snapshot_target_coverage.matched_competency (which the scoring AI may have re-cased/spaced). */
+ *  snapshot_competency_coverage.matched_competency (which the scoring AI may have re-cased/spaced). */
 export function normalizeCompetencyKey(s: string): string {
   return s.trim().toLowerCase().replace(/\s+/g, ' ');
 }

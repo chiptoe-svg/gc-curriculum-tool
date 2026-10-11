@@ -137,7 +137,7 @@ export async function POST(req: Request): Promise<Response> {
   const failedCount = results.length - okCount;
 
   // Re-fire wiki-update for each DISTINCT snapshot that just got fresh coverage.
-  // The competency/target wiki pages derive from snapshot_target_coverage, so
+  // The competency/target wiki pages derive from snapshot_competency_coverage, so
   // they can't generate at snapshot-creation time (wiki-update fires before
   // scoring). Now that the cells exist, regenerate once per snapshot. Deduped,
   // fire-and-forget (non-blocking; never fails the scoring response).
