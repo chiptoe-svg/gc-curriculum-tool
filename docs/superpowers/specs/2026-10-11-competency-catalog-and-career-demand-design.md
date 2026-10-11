@@ -26,8 +26,17 @@ Two problems block the career-readiness question (Q1):
   - The two horizons are reported side by side, never blended.
   - Out of scope here: testing whether GC graduates progress faster than others from the same entry roles, and what predicts it (graduate-outcome study, trajectory work).
 
-**Recommended, awaiting owner confirmation:**
-- **Each career target's occupation mix is derived from the alumni data**, using gc_alumni's tested rule that classifies first jobs into the five targets (gc_alumni commit f545652, n = 661), instead of one hand-picked SOC per target (the app's seeds and the June plan disagree, and both miss e.g. Project Management Specialists at 6.2% of first jobs). To confirm with the gc_alumni session that the rule's output is ready to consume.
+- **Each career target's occupation mix is derived from the alumni data (owner, 2026-10-11)**, instead of one hand-picked SOC per target (the app's seeds and the June plan disagree, and both miss e.g. Project Management Specialists, 26.5% of Production & Operations first jobs).
+
+**Source: gc_alumni export** `gc_alumni/exports/career_demand.json` (first release at gc_alumni `ac701e5`; produced by `db/export_career_demand.py`, tested; carries its own definitions and data stamp — cite the stamp, e.g. `e830bac6bc4949ba`, and re-read on refresh). Aggregates only. Population and definitions (from the gc_alumni session, 2026-10-11):
+- **Entry:** first jobs of validated GC graduates, 2016–2026, classified by the tested rule `career_targets.target_of`: 676 first jobs, 615 classified (61 unclassified excluded). Per target: Production & Operations 132, Sales & Account Management 135, Brand Strategy 136, Design/Creative Generalist 186, Creative Technology 26.
+- **Growth (primary):** registrar-era cohorts 2016–2021 — positions whose tenure overlaps months 60–120 after graduation (May assumed when the month is missing), attributed to the target of the graduate's first job; internships, side gigs and positions without a SOC excluded; counts positions (two jobs in the window count twice). 347 graduates, 321 with a position in the window. Only cohorts through 2021 have reached year 5; 2017–2021 windows are partly observed.
+- **Growth (sensitivity check):** all validated graduates through 2021 (785; pre-2016 cohorts from the 2019 alumni list + LinkedIn, less reliable first jobs).
+- **Coding:** single-coder. The second-coder sample (50 jobs) is drawn and blind but not yet coded, so no agreement statistic exists; readiness output must say so.
+- **Small target:** Creative Technology has n = 26 (entry) and 23 (growth); its shares are unstable and the view must flag low n.
+- Marketing Managers (11-2021) appear in growth from every target.
+
+**SOC → O*NET mapping (our documented choice):** the export codes positions to 6-digit SOC 2018; O*NET rates O*NET-SOC occupations. Rule: use the SOC's `.00` O*NET occupation when it exists; when it doesn't (e.g. 15-1299, children .01–.09), or when the `.00` is unrated, average the ratings of its rated O*NET children with equal weight. Recorded per occupation in `career_target_occupations.source_version`. Growth occupations outside the 21 destination SOCs (e.g. 11-9199, 13-1071) are loaded from the full O*NET 31.0 release, which is held locally.
 
 ## 3. Data model
 
