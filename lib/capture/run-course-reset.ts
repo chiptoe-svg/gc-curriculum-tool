@@ -6,6 +6,7 @@ import {
   courseCaptureProfiles,
   courseCaptureSnapshots,
   snapshotTargetCoverage,
+  snapshotCompetencyCoverage,
 } from '@/lib/db/schema';
 import { getWeaviateClient } from '@/lib/capture/weaviate-client';
 import {
@@ -78,7 +79,8 @@ export async function runCourseReset(courseCode: string, opts: ResetOpts = {}): 
 
   // 3. Optional: snapshots.
   if (includeSnapshots) {
-    // snapshot_target_coverage has snapshotId FK; clear it first.
+    // Coverage rows have a snapshotId FK; clear them first (counted from the
+    // per-competency table, which holds the same rows as the old one in P0a).
     const snapshotIds = await db
       .select({ id: courseCaptureSnapshots.id })
       .from(courseCaptureSnapshots)
@@ -86,10 +88,12 @@ export async function runCourseReset(courseCode: string, opts: ResetOpts = {}): 
     let coverageDeleted = 0;
     for (const { id } of snapshotIds) {
       const rows = await db
-        .delete(snapshotTargetCoverage)
-        .where(eq(snapshotTargetCoverage.snapshotId, id))
-        .returning({ snapshotId: snapshotTargetCoverage.snapshotId });
+        .delete(snapshotCompetencyCoverage)
+        .where(eq(snapshotCompetencyCoverage.snapshotId, id))
+        .returning({ snapshotId: snapshotCompetencyCoverage.snapshotId });
       coverageDeleted += rows.length;
+      // TRANSITIONAL (P0a Tasks 3-6; removed in Task 7)
+      await db.delete(snapshotTargetCoverage).where(eq(snapshotTargetCoverage.snapshotId, id));
     }
     const snapshotsDeleted = await db
       .delete(courseCaptureSnapshots)

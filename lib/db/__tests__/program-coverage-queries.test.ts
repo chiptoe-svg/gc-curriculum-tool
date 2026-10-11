@@ -18,6 +18,10 @@ vi.mock('@/lib/db/schema', () => ({
     subCompetencyId: 'sub_competency_id',
     snapshotId: 'snapshot_id',
   },
+  snapshotCompetencyCoverage: {
+    snapshotId: 'snapshot_id',
+    competencyId: 'competency_id',
+  },
   courseCaptureSnapshots: {},
   careerTargets: { id: 'id', name: 'name', displayOrder: 'display_order' },
   subCompetencies: {

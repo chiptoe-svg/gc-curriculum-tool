@@ -1,6 +1,6 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
-import { snapshotTargetCoverage, courseCaptureSnapshots, careerTargets, subCompetencies } from '@/lib/db/schema';
+import { snapshotTargetCoverage, snapshotCompetencyCoverage, courseCaptureSnapshots, careerTargets, subCompetencies } from '@/lib/db/schema';
 import { listPairedCodesForCourses } from '@/lib/db/course-codes-queries';
 
 export interface CoverageCellRow {
@@ -50,26 +50,35 @@ function rowToCell(row: typeof snapshotTargetCoverage.$inferSelect): CoverageCel
 }
 
 /**
- * Upsert one cell. Idempotent: the (snapshot, target, sub_competency) PK
- * means re-scoring overwrites instead of duplicating.
+ * Upsert one cell. One row per (snapshot, competency): re-scoring overwrites.
+ * careerTargetId is the scoring context only — which targets see the cell
+ * comes from career_target_requirements (view target_coverage).
  */
 export async function upsertCoverageCell(input: UpsertCoverageCellInput): Promise<void> {
-  await db.insert(snapshotTargetCoverage).values({
-    ...input,
-    generatedAt: new Date(),
+  const now = new Date();
+  const values = {
+    kDepth: input.kDepth,
+    uDepth: input.uDepth,
+    dDepth: input.dDepth,
+    matchedCompetency: input.matchedCompetency,
+    evidenceExcerpt: input.evidenceExcerpt,
+    confidence: input.confidence,
+    rationale: input.rationale,
+    model: input.model,
+    generatedAt: now,
+  };
+  await db.insert(snapshotCompetencyCoverage).values({
+    snapshotId: input.snapshotId,
+    competencyId: input.subCompetencyId,
+    ...values,
   }).onConflictDoUpdate({
+    target: [snapshotCompetencyCoverage.snapshotId, snapshotCompetencyCoverage.competencyId],
+    set: values,
+  });
+  // TRANSITIONAL (P0a Tasks 3-6; removed in Task 7): keep the backup table in step.
+  await db.insert(snapshotTargetCoverage).values({ ...input, generatedAt: now }).onConflictDoUpdate({
     target: [snapshotTargetCoverage.snapshotId, snapshotTargetCoverage.careerTargetId, snapshotTargetCoverage.subCompetencyId],
-    set: {
-      kDepth: input.kDepth,
-      uDepth: input.uDepth,
-      dDepth: input.dDepth,
-      matchedCompetency: input.matchedCompetency,
-      evidenceExcerpt: input.evidenceExcerpt,
-      confidence: input.confidence,
-      rationale: input.rationale,
-      model: input.model,
-      generatedAt: new Date(),
-    },
+    set: values,
   });
 }
 
@@ -200,6 +209,10 @@ export interface MatrixData {
  * one target. Called when the sub-competency's descriptor/name changes — the
  * cells were scored against the OLD prose and must be recomputed. listStalePairs()
  * then sees the pair as needing re-score; the matrix view recomputes on next load.
+ *
+ * P0a: cells are per (snapshot, competency) and shared by every target that
+ * uses the competency, so all of them go; with one target per competency
+ * (P0a) these are exactly the rows the old per-target delete removed.
  * Returns the count of deleted cells.
  */
 export async function invalidateCoverageForSubCompetency(
@@ -207,12 +220,16 @@ export async function invalidateCoverageForSubCompetency(
   subCompetencyId: string,
 ): Promise<number> {
   const deleted = await db
+    .delete(snapshotCompetencyCoverage)
+    .where(eq(snapshotCompetencyCoverage.competencyId, subCompetencyId))
+    .returning();
+  // TRANSITIONAL (P0a Tasks 3-6; removed in Task 7): keep the backup table in step.
+  await db
     .delete(snapshotTargetCoverage)
     .where(and(
       eq(snapshotTargetCoverage.careerTargetId, careerTargetId),
       eq(snapshotTargetCoverage.subCompetencyId, subCompetencyId),
-    ))
-    .returning();
+    ));
   return deleted.length;
 }
 
