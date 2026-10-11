@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db } from '@/lib/db/client';
-import { subCompetencies, prototypeTargetEdits } from '@/lib/db/schema';
+import { prototypeTargetEdits } from '@/lib/db/schema';
 import { getTargetById, clearTargetCache } from '@/lib/db/career-targets-queries';
+import { setCompetencyOrderInTarget } from '@/lib/db/competency-catalog-queries';
 import { hashIp } from '@/lib/ip-hash';
-import { eq, and } from 'drizzle-orm';
 
 const reorderSchema = z.object({
   order: z.array(z.string().min(1)),
@@ -36,13 +36,13 @@ export async function POST(
 
     const { order } = parsed.data;
 
-    // Update display_order for each sub-competency in the provided order
-    for (let i = 0; i < order.length; i++) {
-      await db
-        .update(subCompetencies)
-        .set({ displayOrder: i, updatedAt: new Date() })
-        .where(and(eq(subCompetencies.id, order[i]!), eq(subCompetencies.careerTargetId, id)));
-    }
+    // Update each competency's position in this target; ids that are not
+    // members of the target are ignored (as before).
+    await db.transaction(async (tx) => {
+      for (let i = 0; i < order.length; i++) {
+        await setCompetencyOrderInTarget(tx, id, order[i]!, i);
+      }
+    });
 
     // Single audit log entry for the reorder
     const ipHash = hashIp(req);

@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db/client';
 import { subCompetencies, prototypeTargetEdits } from '@/lib/db/schema';
 import { clearTargetCache } from '@/lib/db/career-targets-queries';
+import { getTargetCompetency } from '@/lib/db/competency-catalog-queries';
 import { hashIp } from '@/lib/ip-hash';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 export async function POST(
   req: Request,
@@ -12,11 +13,7 @@ export async function POST(
   const { id, scId } = await params;
 
   try {
-    const [current] = await db
-      .select()
-      .from(subCompetencies)
-      .where(and(eq(subCompetencies.id, scId), eq(subCompetencies.careerTargetId, id)))
-      .limit(1);
+    const current = await getTargetCompetency(id, scId);
 
     if (!current) {
       return NextResponse.json({ error: `sub-competency not found: ${scId}` }, { status: 404 });
@@ -26,10 +23,12 @@ export async function POST(
       return NextResponse.json({ error: 'sub-competency is already retired' }, { status: 409 });
     }
 
+    // retired is a catalog attribute (P0a: one target per competency, so this
+    // is exactly the old per-target retire)
     await db
       .update(subCompetencies)
       .set({ retired: true, updatedAt: new Date() })
-      .where(and(eq(subCompetencies.id, scId), eq(subCompetencies.careerTargetId, id)));
+      .where(eq(subCompetencies.id, scId));
 
     // Audit log
     const ipHash = hashIp(req);

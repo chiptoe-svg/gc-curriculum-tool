@@ -1,6 +1,6 @@
 /**
  * One-shot seed script: reads CAREER_TARGETS constant and inserts into
- * career_targets and sub_competencies tables.
+ * career_targets, sub_competencies and career_target_requirements (migration 0056).
  *
  * Uses ON CONFLICT DO NOTHING — idempotent, safe to re-run.
  * Run with: pnpm db:seed (requires DATABASE_URL in environment)
@@ -74,6 +74,15 @@ async function seed() {
         ON CONFLICT (id) DO NOTHING
       `);
       console.log(`    [${j + 1}/${t.subCompetencies.length}] Inserted sub-competency: ${sc.id}`);
+
+      await db.execute(sql`
+        INSERT INTO career_target_requirements (
+          career_target_id, competency_id, horizon, weight, weight_source, status, display_order
+        ) VALUES (
+          ${t.id}, ${sc.id}, 'entry', NULL, 'faculty', 'draft', ${j}
+        )
+        ON CONFLICT ON CONSTRAINT career_target_requirements_unique DO NOTHING
+      `);
     }
   }
 

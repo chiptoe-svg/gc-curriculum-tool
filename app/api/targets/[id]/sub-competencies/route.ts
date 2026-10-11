@@ -3,8 +3,9 @@ import { z } from 'zod';
 import { db } from '@/lib/db/client';
 import { subCompetencies, prototypeTargetEdits } from '@/lib/db/schema';
 import { getTargetById, clearTargetCache } from '@/lib/db/career-targets-queries';
+import { insertCompetencyForTarget, nextDisplayOrderForTarget } from '@/lib/db/competency-catalog-queries';
 import { hashIp } from '@/lib/ip-hash';
-import { eq, and, asc } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 const createSchema = z.object({
   name: z.string().min(1).max(200),
@@ -60,17 +61,10 @@ export async function POST(
       suffix++;
     }
 
-    // Get next display_order
-    const existing = await db
-      .select({ displayOrder: subCompetencies.displayOrder })
-      .from(subCompetencies)
-      .where(and(eq(subCompetencies.careerTargetId, id), eq(subCompetencies.retired, false)))
-      .orderBy(asc(subCompetencies.displayOrder));
-    const nextOrder = existing.length > 0
-      ? (existing[existing.length - 1]!.displayOrder + 1)
-      : 0;
+    // Next position in this target (membership from career_target_requirements)
+    const nextOrder = await nextDisplayOrderForTarget(id);
 
-    const [created] = await db.insert(subCompetencies).values({
+    const created = await db.transaction((tx) => insertCompetencyForTarget(tx, {
       id: candidateId,
       careerTargetId: id,
       name: parsed.data.name,
@@ -79,7 +73,7 @@ export async function POST(
       doDescriptor: parsed.data.doDescriptor,
       displayOrder: nextOrder,
       retired: false,
-    }).returning();
+    }));
 
     // Audit log
     const ipHash = hashIp(req);
