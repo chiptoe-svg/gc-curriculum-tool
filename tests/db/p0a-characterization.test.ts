@@ -22,6 +22,24 @@ describe.skipIf(!isScratchDb() || !GOLDEN)('P0a characterization: re-pointed rea
     }
     const golden = JSON.parse(readFileSync(GOLDEN!, 'utf8')) as Record<string, unknown>;
     expect(Object.keys(now).sort()).toEqual(Object.keys(golden).sort());
-    for (const key of Object.keys(golden)) expect(now[key], key).toEqual(golden[key]);
+
+    // Collect every mismatching probe in one pass (not just the alphabetically
+    // first) so a single run surfaces every broken probe, not only one of them.
+    // Pass/fail semantics are unchanged: this still passes only when every key
+    // deep-equals the golden.
+    const mismatches: string[] = [];
+    for (const key of Object.keys(golden)) {
+      try {
+        expect(now[key], key).toEqual(golden[key]);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        // Cap each probe's diff to a few lines — the full expect/vitest diff can
+        // be huge for a large probe, and we want a short diff per key, not a wall
+        // of text once several probes mismatch.
+        const shortDiff = message.split('\n').slice(0, 20).join('\n');
+        mismatches.push(`--- ${key} ---\n${shortDiff}`);
+      }
+    }
+    expect(mismatches.length, `${mismatches.length} probe(s) mismatched the golden:\n\n${mismatches.join('\n\n')}`).toBe(0);
   }, 300_000);
 });

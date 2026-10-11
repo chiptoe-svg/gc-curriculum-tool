@@ -64,6 +64,17 @@ export async function collectProbes(): Promise<Record<string, unknown>> {
   const targets = await listTargets();
   out.listTargets = targets; // target and sub-competency order is part of the contract
 
+  // Coverage probes differ in scope — do not assume equal coverage between them:
+  //   getAllCells        = every snapshot_target_coverage row, unfiltered.
+  //   getMatrixData.cells = getAllCells filtered to non-retired sub-competencies
+  //                    only (lib/db/program-coverage-queries.ts:302-303) — narrower
+  //                    than getAllCells by exactly the retired-sub-competency rows,
+  //                    but NOT restricted to the matrix's own course/snapshot
+  //                    selection (latest non-retired snapshot per course/instructor,
+  //                    builds_to_career, scope 'gc', status 'offered' — queries.ts:
+  //                    227-245): that filter narrows matrix.courses, not matrix.cells.
+  //                    A row can appear in getAllCells and not in getMatrixData.cells
+  //                    (retired sub-competency only).
   const matrix = await getMatrixData();
   out.getMatrixData = { ...matrix, cells: sortJson(matrix.cells) };
 
