@@ -94,7 +94,7 @@ Stage 2 (later, separate spec): recency-weighted fading (Half-Life Regression / 
 - **Link review queue** (new admin page): confirm/reject proposed O*NET and ESCO links and AI-drafted weights.
 - **Readiness view** (new page, `/program/readiness`, linked from `/program`).
 - **Prerequisite edges, intended coverage, scaffolding, flags, Explore (career-fit, ripple, scenario), wiki pages, Position Capture rated items, synthesis**: re-pointed from sub-competencies to competencies.
-- **Capture interview: unchanged.**
+- **Capture interview: unchanged through P2.** P2b adds catalog-bundle suggestions at profile review (after evidence is gathered); gentle in-interview prompts are a gated later upgrade (§8 P2b).
 
 About 60 source files and 31 test files reference sub-competencies today; the plan must sequence them so the app keeps working between steps.
 
@@ -104,6 +104,11 @@ About 60 source files and 31 test files reference sub-competencies today; the pl
 - **P0b — Merges and per-competency scoring (visible score changes; owner review).** AI-proposed merges (e.g. the three color items) confirmed by the owner/faculty, recorded in `sub_competency_map`; merged-away ids retired with a `merged_into` pointer and their references re-pointed; the scoring prompt switched from per-target to per-competency (competency descriptors only); affected snapshots re-scored, with disagreements flagged, not averaged.
 - **P1 — Occupations, O*NET store, requirements.** Alumni-derived occupation mixes for both horizons (entry: first jobs; growth: 5–10 years out); O*NET 31.0 reference store; requirements with draft weights (O*NET-seeded where linked, AI-drafted otherwise) and draft depths; business-acumen competencies added.
 - **P2 — Links and review.** Embedding shortlist + reasoning + faculty review queue for O*NET/ESCO links; golden set of confirmed links before any automatic thresholds are trusted.
+- **P2b — Catalog-guided capture mapping and bundle indexing (owner, 2026-10-11).**
+  - **Bundle cards.** Each catalog competency ("skill bundle") gets a card: name, K/U/D descriptors, boundaries (what it includes and excludes), positive and negative examples, distinctions from sibling bundles, and the descriptions of its confirmed O*NET/ESCO links. Rationale: identity matching against thin descriptions was wrong roughly 70–90% of the time (Background §11), and sharper definitions removed thematic false matches in the 7-competency pilot.
+  - **Indexing.** (a) First: embed the whole card as one vector (the embedding model's attention already weights the full text). (b) Upgrade if (a) falls short: an AI-written concise, standard-form index summary per card, embedded instead, so cards of different lengths stay comparable. (c) Only if both fall short: multi-vector late-interaction matching. Embeddings shortlist; a reasoning step and faculty decide (June principle 5).
+  - **Capture mapping, at profile review (after the evidence is gathered).** For each competency the interview found, suggest the closest catalog bundles (shortlist + reasoning) for faculty to pick, with **create new** — a new bundle enters the catalog as `draft` and is confirmed in the review queue before other courses or targets use it.
+  - **Upgrade, gated: gentle prompts during the interview.** Only after the mapping step works: the interviewer may ask about bundles a course's role implies ("courses like this often build X — does yours, and where is it assessed?"), never shows a menu, and the evidence rule still governs every score. Adopt only if a test shows it raises coverage without inflating over-crediting (the gated diagnostic in Background §11); the keyword-inference risk (Background §7) is the reason for the gate.
 - **P3 — Readiness view (stage 1).**
 - **Later:** categories (AI-proposed tags, faculty-named), employer refinements, stage 2 decay.
 
@@ -121,4 +126,4 @@ About 60 source files and 31 test files reference sub-competencies today; the pl
 - **Alumni rule readiness** and the second-coder check on alumni coding.
 - **Workload.** Faculty confirmation of merges, links, weights and depths is real work; the review queue should batch it and show AI rationale.
 - **O*NET Level redundancy** means O*NET can't independently inform required depth; depth rests on faculty and employer judgment.
-- **Out of scope:** changing the capture interview; publishing SkillsUSA content; stage 2 decay; job-posting signals.
+- **Out of scope:** changing the capture interview before P2b (and in-interview prompts until their gate passes); publishing SkillsUSA content; stage 2 decay; job-posting signals.
