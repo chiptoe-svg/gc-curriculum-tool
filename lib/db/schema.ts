@@ -1,4 +1,5 @@
-import { pgTable, pgEnum, uuid, text, jsonb, timestamp, integer, smallint, bigint, real, boolean, primaryKey, index, unique, foreignKey } from 'drizzle-orm/pg-core';
+import { pgTable, pgEnum, pgView, check, uuid, text, jsonb, timestamp, integer, smallint, bigint, real, boolean, primaryKey, index, unique, foreignKey } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 import type { CaptureProfile, CaptureReadiness, CaptureReviewerStatus } from '@/lib/ai/capture/schema';
 import type { ReconciliationLogEntry } from '@/lib/ai/schemas';
 import type { ObjectiveGuide } from '@/lib/objective-guide/schema';
@@ -19,6 +20,9 @@ export const careerTargets = pgTable('career_targets', {
 
 export const subCompetencies = pgTable('sub_competencies', {
   id: text('id').primaryKey(),               // stable slug; never changes once created
+  // Since migration 0056 (P0a) the DB column is NULLABLE and is a deprecated
+  // mirror: target membership is career_target_requirements. Renamed and typed
+  // nullable in Task 7 of docs/superpowers/plans/2026-10-11-competency-catalog-p0a.md.
   careerTargetId: text('career_target_id').notNull().references(() => careerTargets.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   knowDescriptor: text('know_descriptor').notNull(),
@@ -545,6 +549,109 @@ export const snapshotTargetCoverage = pgTable('snapshot_target_coverage', {
 }, (t) => ({
   pk: primaryKey({ columns: [t.snapshotId, t.careerTargetId, t.subCompetencyId] }),
 }));
+
+/**
+ * Competency catalog P0a (spec 2026-10-11 §3, §8): which career targets use
+ * each catalog competency (sub_competencies is the catalog). One row per
+ * (target, competency, horizon, weight_source) so horizons stay separate and
+ * sources can disagree visibly. Seeded by migration 0056 with one
+ * entry / faculty / draft row per (target, sub-competency), weight NULL.
+ * display_order = the competency's position within the target (every row of a
+ * (target, competency) pair carries the same value). Migration 0056 (hand-written).
+ */
+export const careerTargetRequirements = pgTable('career_target_requirements', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  careerTargetId: text('career_target_id').notNull(),
+  competencyId: text('competency_id').notNull(),
+  horizon: text('horizon').$type<'entry' | 'growth'>().notNull(),
+  weight: real('weight'),
+  weightSource: text('weight_source').$type<'onet' | 'employer' | 'faculty'>().notNull(),
+  requiredK: integer('required_k'),
+  requiredU: integer('required_u'),
+  requiredD: integer('required_d'),
+  depthSource: text('depth_source').$type<'onet' | 'employer' | 'faculty'>(),
+  status: text('status').$type<'draft' | 'confirmed'>().notNull().default('draft'),
+  note: text('note'),
+  contributingPositionIds: jsonb('contributing_position_ids').$type<string[]>().notNull().default([]),
+  displayOrder: integer('display_order').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  foreignKey({ name: 'career_target_requirements_target_fk', columns: [t.careerTargetId], foreignColumns: [careerTargets.id] }).onDelete('cascade'),
+  foreignKey({ name: 'career_target_requirements_competency_fk', columns: [t.competencyId], foreignColumns: [subCompetencies.id] }).onDelete('cascade'),
+  unique('career_target_requirements_unique').on(t.careerTargetId, t.competencyId, t.horizon, t.weightSource),
+  index('idx_career_target_requirements_competency').on(t.competencyId),
+  check('career_target_requirements_horizon_check', sql`${t.horizon} IN ('entry', 'growth')`),
+  check('career_target_requirements_weight_check', sql`${t.weight} IS NULL OR (${t.weight} >= 0 AND ${t.weight} <= 1)`),
+  check('career_target_requirements_weight_source_check', sql`${t.weightSource} IN ('onet', 'employer', 'faculty')`),
+  check('career_target_requirements_depth_source_check', sql`${t.depthSource} IS NULL OR ${t.depthSource} IN ('onet', 'employer', 'faculty')`),
+  check('career_target_requirements_depth_check', sql`(${t.requiredK} IS NULL OR ${t.requiredK} BETWEEN 0 AND 5) AND (${t.requiredU} IS NULL OR ${t.requiredU} BETWEEN 0 AND 5) AND (${t.requiredD} IS NULL OR ${t.requiredD} BETWEEN 0 AND 5)`),
+  check('career_target_requirements_status_check', sql`${t.status} IN ('draft', 'confirmed')`),
+]);
+
+/**
+ * A course snapshot's evidenced K/U/D depth on one catalog competency
+ * (replaces snapshot_target_coverage; spec §3). Scoring is still per target
+ * with target context in P0a — only the storage key changed. Re-scoring
+ * upserts on (snapshot, competency). Migration 0056 copied every old row.
+ */
+export const snapshotCompetencyCoverage = pgTable('snapshot_competency_coverage', {
+  snapshotId: uuid('snapshot_id').notNull(),
+  competencyId: text('competency_id').notNull(),
+  kDepth: integer('k_depth'),
+  uDepth: integer('u_depth'),
+  dDepth: integer('d_depth').notNull(),
+  matchedCompetency: text('matched_competency'),
+  evidenceExcerpt: text('evidence_excerpt'),
+  confidence: text('confidence').notNull(),
+  rationale: text('rationale').notNull(),
+  model: text('model').notNull(),
+  generatedAt: timestamp('generated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  primaryKey({ name: 'snapshot_competency_coverage_pk', columns: [t.snapshotId, t.competencyId] }),
+  foreignKey({ name: 'snapshot_competency_coverage_snapshot_fk', columns: [t.snapshotId], foreignColumns: [courseCaptureSnapshots.id] }).onDelete('cascade'),
+  foreignKey({ name: 'snapshot_competency_coverage_competency_fk', columns: [t.competencyId], foreignColumns: [subCompetencies.id] }).onDelete('cascade'),
+  index('idx_snapshot_competency_coverage_competency').on(t.competencyId),
+]);
+
+/**
+ * VIEW (migration 0056): a target's competencies in the old sub_competencies
+ * row shape — membership and display_order from career_target_requirements,
+ * name / descriptors / retired from the catalog. One row per (target,
+ * competency). Read target membership here, never from sub_competencies.
+ */
+export const targetSubCompetencies = pgView('target_sub_competencies', {
+  careerTargetId: text('career_target_id').notNull(),
+  id: text('id').notNull(),
+  name: text('name').notNull(),
+  knowDescriptor: text('know_descriptor').notNull(),
+  understandDescriptor: text('understand_descriptor').notNull(),
+  doDescriptor: text('do_descriptor').notNull(),
+  displayOrder: integer('display_order').notNull(),
+  retired: boolean('retired').notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull(),
+}).existing();
+
+/**
+ * VIEW (migration 0056): per-target coverage cells in the old
+ * snapshot_target_coverage row shape — each snapshot_competency_coverage row
+ * once per target that uses the competency. Read-only; write
+ * snapshotCompetencyCoverage.
+ */
+export const targetCoverage = pgView('target_coverage', {
+  snapshotId: uuid('snapshot_id').notNull(),
+  careerTargetId: text('career_target_id').notNull(),
+  subCompetencyId: text('sub_competency_id').notNull(),
+  kDepth: integer('k_depth'),
+  uDepth: integer('u_depth'),
+  dDepth: integer('d_depth').notNull(),
+  matchedCompetency: text('matched_competency'),
+  evidenceExcerpt: text('evidence_excerpt'),
+  confidence: text('confidence').notNull(),
+  rationale: text('rationale').notNull(),
+  model: text('model').notNull(),
+  generatedAt: timestamp('generated_at', { withTimezone: true }).notNull(),
+}).existing();
 
 // Per-function AI model settings. One row per function ID. Each row carries
 // either a tier name ('light' | 'default' | 'heavy') that resolves to a
