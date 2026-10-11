@@ -845,7 +845,7 @@ export const courseCatalogPrereqs = pgTable('course_catalog_prereqs', {
 /**
  * Syllabus-rough INTENDED coverage — "what the course says it teaches", a
  * different quantity from measured attainment. Evidence-ladder band: claimed.
- * NEVER merged into snapshot_target_coverage. Migration 0031.
+ * NEVER merged into snapshot_competency_coverage. Migration 0031.
  * Design: docs/superpowers/specs/2026-06-05-intended-skills-rough-pass-design.md
  */
 export const courseIntendedCoverage = pgTable('course_intended_coverage', {

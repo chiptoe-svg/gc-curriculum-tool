@@ -42,7 +42,7 @@ export interface ResetOpts {
  *
  * Optional flags (independent of scope):
  *   - includeSnapshots: ALSO drops course_capture_snapshots + dependent rows
- *     (snapshot_target_coverage). Snapshots are the system of record;
+ *     (snapshot_competency_coverage). Snapshots are the system of record;
  *     dropping them is destructive.
  *
  * Shared by POST /api/capture/[code]/reset (course-scoped, faculty/scoped-

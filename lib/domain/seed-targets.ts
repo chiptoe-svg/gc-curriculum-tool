@@ -7,7 +7,8 @@ import type { CareerTarget } from './types';
 // inserts into an empty DB. Retired sub-competencies are NOT listed under their
 // target (they are not current); they live in RETIRED_SUB_COMPETENCIES so the
 // apply script can set sub_competencies.retired = true. Rows are never deleted:
-// old snapshot_target_coverage cells keep their FK target.
+// snapshot_competency_coverage cells, the frozen snapshot_target_coverage
+// backup, and career_target_requirements rows all keep their FK target.
 
 export const CAREER_TARGETS: CareerTarget[] = [
   {
@@ -416,9 +417,10 @@ export const CAREER_TARGETS: CareerTarget[] = [
 
 /**
  * Sub-competencies retired by an owner decision. They stay in the DB with
- * `retired = true` (never deleted — snapshot_target_coverage, intended
- * coverage and other rows reference them by FK) and are excluded from every
- * current view. Not re-listed under their target above.
+ * `retired = true` (never deleted — snapshot_competency_coverage, the
+ * frozen snapshot_target_coverage backup, career_target_requirements,
+ * intended coverage and other rows reference them by FK) and are excluded
+ * from every current view. Not re-listed under their target above.
  */
 export interface RetiredSubCompetency {
   id: string;

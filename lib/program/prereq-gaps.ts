@@ -255,7 +255,8 @@ export interface PrereqGapResult {
  *     b. Find the prereq course's latest non-retired `courseCaptureSnapshots`
  *        row (ordered by createdAt DESC).
  *     c. Look up the matching `snapshotCompetencyCoverage` row for
- *        (snapshotId, careerTargetId, subCompetencyId).
+ *        (snapshotId, subCompetencyId) — keyed per competency since P0a,
+ *        not per (snapshot, target, competency).
  *     d. If found → DeliveredAttainment{ basis: 'measured', k/u/d from depths }.
  *        If not found → contributes nothing (will surface as no_data).
  *  3. INTENDED-BASIS SEAM (wired):

@@ -226,7 +226,7 @@ export async function invalidateCoverageForSubCompetency(
  * Read the full matrix payload in one shot: every course with a non-retired
  * snapshot, every active career target with its non-retired sub-competencies,
  * and every scored cell for those (non-retired) sub-competencies. Cells under a
- * retired sub-competency stay in snapshot_target_coverage as history but are
+ * retired sub-competency stay in snapshot_competency_coverage as history but are
  * not returned: every consumer of this payload (matrix, sufficiency, Explore
  * career-fit, wiki graph tools, flags) reads it as the current state.
  */
