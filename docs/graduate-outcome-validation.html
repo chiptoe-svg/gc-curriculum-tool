@@ -497,6 +497,9 @@
       body { background: #fff; }
       .page { box-shadow: none; }
     }
+    sup.nv { font-family: var(--mono); font-size: 0.72em; color: var(--text-faint); margin-left: 1px; cursor: help; }
+    ol.refs { margin: 14px 0 0 22px; }
+    ol.refs li { margin-bottom: 8px; font-size: 15px; }
   </style>
 </head>
 <body>
@@ -507,7 +510,7 @@
     <div class="eyebrow">Clemson University · Graphic Communications · Updated October 2026</div>
     <h1>Graduate Outcome Criterion-Relevance Study</h1>
     <p class="lede">An external-alignment check in two phases. The pilot (268 records, 2022–2025) is complete. Phase 2 data collection is complete: 1,337 validated Clemson GC graduates, with 672 coded first career jobs in the study&rsquo;s 2016–2026 window. The alignment analysis waits on a signed pre-registration and a second-coder check.</p>
-    <div class="meta">Graduate Outcome Study · Pilot complete · Phase 2 data collected · Retitled 2026-06-12 (formerly "Graduate Outcome Validation")</div>
+    <div class="meta">Graduate Outcome Study · Pilot complete · Phase 2 data collected</div>
     <p class="header-note">This is the <em>external-data</em> validation layer in the framework's three-layer validation approach (internal flag-and-dispute, external graduate-outcome comparison, faculty/advisory-board review). The full framing is in <a href="./background.html#validation">Background §12 — Validation: how we'd know if this works</a>. The pilot established the core finding — the official CIP→SOC crosswalk badly mismatches where graduates actually land — and proved the method. Phase 2 extends the dataset, adds a demand-side skills map, and runs the criterion-relevance alignment. Collection is complete. The alignment analysis runs once the design is pre-registered and the occupation coding has passed an independent second-coder check.</p>
   </div>
 
@@ -554,7 +557,7 @@
       <div class="section-label">Section 1 — Background</div>
       <h2>Classification data and documented graduate outcomes</h2>
 
-      <p>The CIP–SOC crosswalk for graphic communications programs (CIP 10.03) — a crosswalk being a mapping table that connects academic programs (CIP: Classification of Instructional Programs) to the occupations their graduates are expected to enter (SOC: Standard Occupational Classification) — was established in the late 1990s and has not been substantively updated. Career advising databases, state workforce systems, and federal reporting tools draw from this crosswalk. For CIP 10.03, it points primarily to prepress technicians and printing press operators: occupations in projected decline.</p>
+      <p>The CIP–SOC crosswalk for graphic communications programs (CIP 10.03) — a crosswalk being a mapping table that connects academic programs (CIP: Classification of Instructional Programs) to the occupations their graduates are expected to enter (SOC: Standard Occupational Classification) — is published by the National Center for Education Statistics; the current edition links CIP 2020 to SOC 2018 (<a href="#ref-nces-cip-soc">NCES</a>). For the nine CIP 10.03 codes it lists six occupations: prepress technicians and workers (under eight of the nine codes), printing press operators (under four), desktop publishers, special effects artists and animators, data entry keyers, and etchers and engravers. Most are production occupations that federal projections expect to decline (<a href="#ref-bls-ep">BLS</a><sup class="nv" title="Needs confirmation: source not held in full text">&dagger;</sup>).</p>
 
       <p>The employment dataset documented in the pilot tells a different story. Clemson GC graduates in the 2022–2025 pilot coded set entered 43 distinct occupational categories across 58 industries, including design, marketing, technology, sales, and management roles at a wide range of employers. The distribution differs substantially from what the current crosswalk would predict. Phase 2 confirms this at scale: in the 2016–2026 window, 672 first career jobs span 103 distinct occupations across 21 industry sectors, and the federal crosswalk for CIP 10.03 describes 9.2% of them.</p>
 
@@ -568,7 +571,7 @@
         <div class="callout-title">Data Methods</div>
         <ul style="margin: 0 0 0 20px; line-height: 1.7;">
           <li><strong>Source of records.</strong> Clemson Graphic Communications department alumni tracking, supplemented by the ACCGC Graduate Employment Dataset (603 records across 9 GC programs, 2018–2026). The 268 Clemson records are the program-specific subset used for the pilot. Phase 2 draws on the department&rsquo;s own alumni study (snapshot of 2026-10-05, coding scheme <code>v1-2026</code>).</li>
-          <li><strong>Collection window.</strong> The pilot covered 2022–2025 (268 records). Phase 2 validated 1,337 Clemson graduates across graduation years 1990–2026. The study&rsquo;s window is 2016–2026: 801 of the 950 rostered graduates in it are validated, and 672 have a coded first career job. Collection closed in October 2026 after a manual search; the remaining graduates in the window could not be located. The window is pre-registered before analysis begins — the same discipline as the study's pre-committed failure criteria — so collection runs against a fixed design, not ad-hoc extension. <strong>Window decision resolved 2026-09-09 — extend to ~10 years, conditioned on reporting granularity.</strong> The extension was tested rather than assumed, because older cohorts assign occupation differently: the share of validated first jobs whose SOC came from employer industry rather than job title falls monotonically across cohorts (2010–14 <strong>55.2%</strong> · 2015–19 48.2% · 2020–22 36.1% · 2023–26 <strong>26.9%</strong>; n = 172, 301, 205 and 212 first jobs with an occupation code and graduation year, snapshot of 2026-10-05. A September version of this figure was labelled n=381; its own fractions summed to 887.). Three checks decided it. <em>First</em>, that field is a <strong>disambiguation pass, not a substitute for a title</strong> — every industry-assigned first job has a title (385/385); the title fixes the occupational family and the employer&rsquo;s industry selects the detailed code within it (&ldquo;Graphic Designer&rdquo; resolves to 27-1024 under all three methods; &ldquo;Account Manager&rdquo; is where industry does the work, choosing wholesale vs services). <em>Second</em>, the two methods were compared where both apply: <strong>87.6% exact six-digit agreement, 96.8% at two-digit major group</strong> (35 title strings, 1,441 comparisons, October 2026; September&rsquo;s figures on 43 strings were 77.3% and 91.4%). Counting the AI-assisted coding methods, which now code 408 of 1,184 first jobs, as title-derived gives 73.8% and 90.4%. All are upper bounds, since only titles common enough to appear under both methods can enter, and none is inter-rater agreement. <em>Third</em>, the obvious way that ceiling could be softer for older cohorts was tested and did not materialise: the share of titles appearing exactly once was flat across cohorts in September (56–62%, non-monotonic), so rare and ambiguous titles are not concentrated in the older window. <strong>Conclusion:</strong> extending buys <em>more of the same ceiling, not a worse one</em>. The confound is material at <strong>detailed-SOC</strong> granularity (12–26% disagreement, depending on which coding methods are compared) and modest at <strong>category</strong> granularity, which is the level this study reports at — so the extension is affordable for the alignment test and any detailed-SOC analysis must handle the disagreement separately. Pre-registered as a known limitation. <strong>A standing data caution:</strong> validation is closed for the 2016–2026 window but counts outside it can still move, so every figure drawn from that database must carry the date it was read.</li>
+          <li><strong>Collection window.</strong> The pilot covered 2022–2025 (268 records). Phase 2 validated 1,337 Clemson graduates across graduation years 1990–2026. The study&rsquo;s window is 2016–2026: 801 of the 950 rostered graduates in it are validated, and 672 have a coded first career job. Collection closed in October 2026 after a manual search; the remaining graduates in the window could not be located. The window is pre-registered before analysis begins — the same discipline as the study's pre-committed failure criteria — so collection runs against a fixed design, not ad-hoc extension. <strong>Window decision resolved 2026-09-09 — extend to ~10 years, conditioned on reporting granularity.</strong> The extension was tested rather than assumed, because older cohorts assign occupation differently: the share of validated first jobs whose SOC came from employer industry rather than job title falls monotonically across cohorts (2010–14 <strong>55.2%</strong> · 2015–19 48.2% · 2020–22 36.1% · 2023–26 <strong>26.9%</strong>; n = 172, 301, 205 and 212 first jobs with an occupation code and graduation year, snapshot of 2026-10-05.). Three checks decided it. <em>First</em>, that field is a <strong>disambiguation pass, not a substitute for a title</strong> — every industry-assigned first job has a title (385/385); the title fixes the occupational family and the employer&rsquo;s industry selects the detailed code within it (&ldquo;Graphic Designer&rdquo; resolves to 27-1024 under all three methods; &ldquo;Account Manager&rdquo; is where industry does the work, choosing wholesale vs services). <em>Second</em>, the two methods were compared where both apply: <strong>87.6% exact six-digit agreement, 96.8% at two-digit major group</strong> (35 title strings, 1,441 comparisons, October 2026). Counting the AI-assisted coding methods, which now code 408 of 1,184 first jobs, as title-derived gives 73.8% and 90.4%. All are upper bounds, since only titles common enough to appear under both methods can enter, and none is inter-rater agreement. <em>Third</em>, the obvious way that ceiling could be softer for older cohorts was tested and did not materialise: the share of titles appearing exactly once was flat across cohorts in September (56–62%, non-monotonic), so rare and ambiguous titles are not concentrated in the older window. <strong>Conclusion:</strong> extending buys <em>more of the same ceiling, not a worse one</em>. The confound is material at <strong>detailed-SOC</strong> granularity (12–26% disagreement, depending on which coding methods are compared) and modest at <strong>category</strong> granularity, which is the level this study reports at — so the extension is affordable for the alignment test and any detailed-SOC analysis must handle the disagreement separately. Pre-registered as a known limitation. <strong>A standing data caution:</strong> validation is closed for the 2016–2026 window but counts outside it can still move, so every figure drawn from that database must carry the date it was read.</li>
           <li><strong>Job mapping.</strong> Every job each graduate has held is captured, with the first career-relevant job specifically labeled. All positions are coded to SOC (job title) and NAICS (employer industry).</li>
           <li><strong>Analytic anchor rule.</strong> The criterion-relevance alignment is anchored on the first (or first 1–2) career-relevant destination. Later jobs are retained as career-trajectory context in a separate analytic lane, not folded into the "where graduates land" alignment test — because later roles reflect post-graduation learning and market moves the curriculum cannot be credited or debited for. <strong>A consequence of this rule, stated up front rather than discovered at analysis (2026-09-09):</strong> evidence from the alumni corpus finds that emerging AI-native / workflow roles are overwhelmingly <em>not</em> first destinations — only 4 of 42 such positions were first jobs (October 2026 recount, 1,337 validated graduates). Anchoring on first destination therefore makes that cluster <strong>largely invisible to the primary alignment by construction</strong>, at any window length. That is accepted rather than corrected: first destination is what a curriculum can honestly be credited or debited for. But it means the <em>trajectory lane is the only place this cluster can be observed</em>, and an absence of AI-native roles in the primary results must not be read as evidence that graduates are not reaching them.</li>
           <li><strong>Definition of "first."</strong> First career-relevant full-time role; a summer or retail stopgap is not coded as a GC career destination.</li>
@@ -599,7 +602,7 @@
           <div class="card-header accent">Phase 2 — Expansion <span style="font-weight:400;letter-spacing:0;">(data collected; analysis pending)</span></div>
           <div class="card-body">
             <p>Extends the dataset to a <strong>full ~10 years of Clemson graduates</strong>, capturing every job each graduate has held with the first career-relevant destination labeled. Two analytic layers the pilot did not include:</p>
-            <p><strong>(a) Demand-side skills map.</strong> For the top destination occupations, seed each one's competency demand from its O*NET work-activity profile, then enrich and validate against real job postings.</p>
+            <p><strong>(a) Demand-side skills map.</strong> For the top destination occupations, seed each one's competency demand from its O*NET profile, then enrich and validate against real job postings.</p>
             <p><strong>(b) Criterion-relevance alignment.</strong> Compare that destination demand against the curriculum's captured KUD+ coverage, course by course.</p>
             <p>The collection window, the first-vs-all-jobs rule, and the coding method are <strong>pre-registered before analysis</strong>. Phase 2 is run with a student researcher (see Section 3).</p>
             <p><strong>Collected (October 2026):</strong> 1,337 validated graduates; 672 first career jobs coded in 2016–2026. Before the alignment runs, the pre-registration must be signed and the coding must pass the second-coder check (&kappa; &ge; 0.70).</p>
@@ -660,7 +663,7 @@
 
       <ul style="margin: 0 0 14px 22px; line-height: 1.8;">
         <li><strong>Predictor (curriculum).</strong> KUD+ coverage per competency at depth, drawn from confirmed CourseCapture snapshots for the courses that build toward a given career target.</li>
-        <li><strong>Criterion (destinations).</strong> The occupational competency demand of each graduate's first career-relevant destination — job title coded to SOC, the SOC profiled from O*NET work activities, then refined by faculty and employer input through Position Capture.</li>
+        <li><strong>Criterion (destinations).</strong> The occupational competency demand of each graduate's first career-relevant destination — job title coded to SOC, the SOC profiled from O*NET, then refined by faculty and employer input through Position Capture.</li>
         <li><strong>Independence guardrail.</strong> The criterion (where graduates actually landed, plus its occupational profile) is kept methodologically separate from the curriculum's career-target definitions. The test must not reduce to "O*NET vs. O*NET." O*NET data is used as a seed for the demand profile, then refined — it is never treated as the final truth, and it is never allowed to circularly define the curriculum's own targets.</li>
       </ul>
 
@@ -673,7 +676,7 @@
         <li><strong>Job rule.</strong> Every position per graduate is captured. The <em>first career-relevant full-time role</em> is labeled the primary destination and is the unit of the alignment test. Later positions are retained as trajectory context in a separate analytic lane and are not folded into the alignment measure.</li>
         <li><strong>"First career-relevant" defined.</strong> The first full-time role plausibly drawing on GC preparation. This definition explicitly excludes summer employment, stopgap retail or service roles, and other clearly unrelated first paychecks. Edge-case decisions are recorded in the coding scheme before analysis.</li>
         <li><strong>Coding scheme.</strong> Job title → SOC and employer → NAICS, against a documented, versioned coding scheme. "Verified" means confirmed against at least one external source: LinkedIn, an employer directory, or an alumni-office record.</li>
-        <li><strong>Inter-rater reliability.</strong> A second coder independently codes a random sample. Inter-rater agreement is computed as Cohen's κ and reported alongside the primary results. The pre-registered threshold follows the conventional standard for substantial agreement: κ ≥ 0.70. A result below threshold is reported as a finding, not adjusted away.</li>
+        <li><strong>Inter-rater reliability.</strong> A second coder independently codes a random sample. Inter-rater agreement is computed as Cohen's κ and reported alongside the primary results. The pre-registered threshold is κ ≥ 0.70. A result below threshold is reported as a finding, not adjusted away.</li>
         <li><strong>Inclusion / exclusion.</strong> Requires a verifiable employer and job title. Graduate-school enrollees, non-completers, and no-response or unfindable cases are tracked and reported in a separate accounting; they are not silently dropped from the denominator.</li>
       </ul>
 
@@ -682,7 +685,7 @@
       <ul style="margin: 0 0 14px 22px; line-height: 1.8;">
         <li><strong>Primary analysis.</strong> Per-target alignment between the curriculum's emphasized competencies and first-destination occupational demand, compared against a chance baseline. This is the headline criterion-relevance test.</li>
         <li><strong>Descriptive analysis.</strong> The full destination distribution compared against the official CIP→SOC crosswalk — scaling the pilot finding to the complete dataset.</li>
-        <li><strong>"No-clean-match" findings, pre-specified as first-class outputs.</strong> Two asymmetric absence findings are defined in advance: (a) a GC competency that has no O*NET match signals a blind spot in the occupational framework — the federal database has not caught up with what GC practitioners actually do; (b) a high-demand destination work-activity with no corresponding curriculum coverage signals a candidate gap in the program. Both are findings, not defects to paper over.</li>
+        <li><strong>"No-clean-match" findings, pre-specified as first-class outputs.</strong> Two asymmetric absence findings are defined in advance: (a) a GC competency that has no O*NET match signals a blind spot in the occupational framework — the federal database has not caught up with what GC practitioners actually do; (b) a high-demand destination O*NET element with no corresponding curriculum coverage signals a candidate gap in the program. Both are findings, not defects to paper over.</li>
       </ul>
 
       <div class="callout note">
@@ -756,7 +759,7 @@
             <th>Clemson Grads</th>
             <th>Share</th>
             <th style="width:100px;">Distribution</th>
-            <th>BLS Trend</th>
+            <th>BLS Trend<sup class="nv" title="Needs confirmation: source not held in full text">&dagger;</sup></th>
           </tr>
         </thead>
         <tbody>
@@ -955,12 +958,12 @@
       <div class="section-label">Section 6 — Classification Coverage Analysis</div>
       <h2>Crosswalk coverage relative to documented outcomes</h2>
 
-      <p>The federal CIP–SOC crosswalk for graphic communications programs (CIP 10.03) was established in the late 1990s and has not been substantively updated. Career databases used by students, counselors, and administrators draw from this crosswalk — and return occupational projections that are largely inconsistent with the documented graduate employment distribution.</p>
+      <p>The federal CIP–SOC crosswalk for graphic communications programs (CIP 10.03; the current edition links CIP 2020 to SOC 2018) lists six occupations (<a href="#ref-nces-cip-soc">NCES</a>). Measured against the documented graduate employment distribution, it describes few of the jobs graduates take.</p>
 
       <div class="coverage-compare">
         <div class="coverage-box current">
           <div class="coverage-pct">9.2%</div>
-          <div class="coverage-desc"><strong>Current crosswalk (2020)</strong><br>6 SOC codes, 5 of 6 declining<br>62 of 672 first jobs, 2016–2026 (pilot: 9 of 268, 3.4%)</div>
+          <div class="coverage-desc"><strong>Current crosswalk (2020)</strong><br>6 SOC codes, 5 of 6 declining<sup class="nv" title="Needs confirmation: source not held in full text">&dagger;</sup><br>62 of 672 first jobs, 2016–2026 (pilot: 9 of 268, 3.4%)</div>
         </div>
         <div class="coverage-box proposed">
           <div class="coverage-pct">67.9%</div>
@@ -1007,35 +1010,15 @@
           </div>
         </div>
         <div class="function-body">
-          <p>O*NET (Occupational Information Network), maintained by the Department of Labor, provides a public competency profile for each SOC code: knowledge areas, skills, abilities, and work activities. O*NET categories do not map one-to-one onto KUD — O*NET "Skills" often describe performed capabilities closer to Do than Understand; "Abilities" do not map cleanly to any KUD dimension; "Tasks" may be more directly Do-like than the generalized work activities; "Knowledge" may involve both Know and Understand. The proposed crosswalk below is a starting heuristic that the analysis module would refine with a transparent mapping rubric tested on sampled occupations before treating it as the benchmark:</p>
+          <p>O*NET (Occupational Information Network) is run for the U.S. Department of Labor&rsquo;s Employment and Training Administration (<a href="#ref-nrc-2010">NRC, 2010</a>, p. 6). It describes each occupation with &ldquo;hundreds of descriptors of work and workers organized into domains, such as skills, knowledge, and work activities&rdquo; (p. 1), and the Skills, Knowledge, Work Activities and Abilities descriptors each carry two ratings: Importance, and the Level of the descriptor needed to perform the job (p. 76).</p>
 
-          <div class="crosswalk-viz">
-            <div class="crosswalk-viz-grid">
-              <div>
-                <div class="crosswalk-top">O*NET</div>
-                <div class="crosswalk-label">Knowledge Areas</div>
-                <div class="crosswalk-arrow">↓</div>
-                <div class="crosswalk-top">KUD</div>
-                <div class="crosswalk-kud">Know</div>
-              </div>
-              <div>
-                <div class="crosswalk-top">O*NET</div>
-                <div class="crosswalk-label">Skills</div>
-                <div class="crosswalk-arrow">↓</div>
-                <div class="crosswalk-top">KUD</div>
-                <div class="crosswalk-kud">Understand</div>
-              </div>
-              <div>
-                <div class="crosswalk-top">O*NET</div>
-                <div class="crosswalk-label">Work Activities</div>
-                <div class="crosswalk-arrow">↓</div>
-                <div class="crosswalk-top">KUD</div>
-                <div class="crosswalk-kud">Do</div>
-              </div>
-            </div>
-          </div>
-
-          <p>For each SOC code in the reference set, the module would construct a KUD-structured career profile — not invented, but derived directly from the federal occupational database. Those profiles become the benchmark. Each course's AI-generated KUDs are then compared against the competency requirements of the career destinations graduates actually enter.</p>
+          <p>How those elements enter the comparison is designed but not built. The current position:</p>
+          <ul>
+            <li><strong>No category crosswalk.</strong> O*NET categories are not mapped one-to-one onto KUD (Knowledge to Know, Skills to Understand, Work Activities to Do). Each O*NET Knowledge, Skills or Work Activities element is treated as a competency in its own right, with all three KUD axes.</li>
+            <li><strong>Broad elements are program-level qualities.</strong> Broad elements such as Critical Thinking are not scored per course; they are read at program level from the domain competencies that carry them across the course sequence.</li>
+            <li><strong>Importance weights; Level is a reference.</strong> Importance weights what a career target asks for. Level describes how much of an element a job demands: a demand-side reference shown beside attainment, not an attainment score. Level is on O*NET&rsquo;s own scale, and no validated conversion to the framework&rsquo;s 0&ndash;5 depth scale exists; at most, Level seeds a draft required depth that faculty or employers confirm.</li>
+          </ul>
+          <p>The same design appears as &ldquo;career readiness as a weighted question&rdquo; in &sect;3 of the <a href="./measurement-hypotheses-deep-dive.html#crosswalk">Measurement Hypotheses companion</a>. Once built, the module would assemble a career profile for each SOC code in the reference set from its O*NET elements, used as a seed and refined by faculty and employer input (see the independence guardrail in Section 4), and compare each course&rsquo;s evidenced KUD coverage against the profiles of the destinations graduates actually enter.</p>
 
           <h3>Illustrative outputs</h3>
 
@@ -1106,7 +1089,7 @@
         <div class="card">
           <div class="card-header accent">The tuning opportunity</div>
           <div class="card-body">
-            <p>Where the KUDs and career data don't align, the methodology can be adjusted. If the AI consistently over-weights certain Bloom's levels relative to what the jobs actually require, that is a calibration signal.</p>
+            <p>Where the KUDs and career data don't align, the methodology can be adjusted. If the AI consistently over-weights certain competencies or depth levels relative to what the jobs actually require, that is a calibration signal.</p>
             <p>The historical data is the benchmark. The tool is what we tune against it.</p>
           </div>
         </div>
@@ -1139,7 +1122,7 @@
         <div class="card">
           <div class="card-header">C3 — Coverage criterion</div>
           <div class="card-body">
-            <p>At least <strong>60% of the program's central (high-emphasis) competencies</strong> must map at Direct or Partial match strength to at least one O*NET descriptor within the destination reference set. <em>(Stated as the &ldquo;21-code&rdquo; set when this criterion was written. The 21st code, Etchers and Engravers, holds no Clemson GC graduates, so the criterion is unchanged in effect.)</em> Below that, either the curriculum-to-destination claim fails for the mapped framework, or the career-target taxonomy itself is the wrong unit of analysis — both reportable findings.</p>
+            <p>At least <strong>60% of the program's central (high-emphasis) competencies</strong> must map at Direct or Partial match strength to at least one O*NET descriptor within the destination reference set. <em>(The ACCGC source lists a 21-code set; its 21st code, Etchers and Engravers, holds no Clemson GC graduates, so the 20- and 21-code sets give the same result.)</em> Below that, either the curriculum-to-destination claim fails for the mapped framework, or the career-target taxonomy itself is the wrong unit of analysis — both reportable findings.</p>
           </div>
         </div>
         <div class="card">
@@ -1176,10 +1159,23 @@
       </div>
     </div>
 
+    <!-- References -->
+    <div class="section" id="references-wrap">
+      <section id="references">
+      <div class="section-label">References</div>
+      <p class="dagger-legend" style="font-size: 14px; color: var(--text-muted);">A dagger (<sup class="nv">&dagger;</sup>) marks a work we do not hold in full text. Claims resting on it are reported from secondary sources and have not been checked against the original.</p>
+      <ol class="refs">
+        <li id="ref-nces-cip-soc">National Center for Education Statistics. <em>CIP 2020 to SOC 2018 Crosswalk</em> (CIP2020_SOC2018_Crosswalk.xlsx). U.S. Department of Education. Rows for CIP 10.03xx. (Sections 1, 6.)</li>
+        <li id="ref-nrc-2010">National Research Council. (2010). <em>A Database for a Changing Economy: Review of the Occupational Information Network (O*NET)</em>. National Academies Press. (Section 8.)</li>
+        <li id="ref-bls-ep"><sup class="nv" title="Needs confirmation: source not held in full text">&dagger;</sup> U.S. Bureau of Labor Statistics. <em>Employment Projections</em>, occupational projections table. Source of the growth and decline labels in Sections 5 and 6. (Not held: bls.gov refused automated download; figures not re-checked.)</li>
+      </ol>
+      </section>
+    </div>
+
   </div><!-- /body -->
 
   <div class="footer">
-    <span>Clemson University · Graphic Communications · Graduate Outcome Criterion-Relevance Study · Updated June 2026 (retitled June 2026)</span>
+    <span>Clemson University · Graphic Communications · Graduate Outcome Criterion-Relevance Study · Updated October 2026</span>
     <span>ACCGC Graduate Employment Dataset 2018–2026 · n=603 across 9 programs · Clemson pilot: 268 records, 2022–2025 · Phase 2: 1,337 validated graduates, snapshot 2026-10-05</span>
   </div>
 

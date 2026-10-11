@@ -1,0 +1,54 @@
+{
+  "page": "graduate-outcome-validation.html",
+  "generated": "2026-10-11",
+  "claims": [
+    {
+      "id": "go-nces-1",
+      "location": "Section 1 / Section 6",
+      "claim_text": "The current CIP-SOC crosswalk links CIP 2020 to SOC 2018",
+      "held_file": "pdfs:web/nces-cip2020-soc2018-crosswalk.txt",
+      "quote": "This file crosswalks 2020 CIP Codes to 2018 SOC Codes in ascending order by CIP Code.",
+      "page": "sheet 'File Guide'"
+    },
+    {
+      "id": "go-nces-2",
+      "location": "Section 1",
+      "claim_text": "CIP 10.03 codes map to six SOCs: 51-5111, 51-5112, 43-9031, 27-1014, 43-9021, 51-9194",
+      "held_file": "pdfs:web/nces-cip2020-soc2018-crosswalk.txt",
+      "quote": "10.0303 | Prepress/Desktop Publishing and Digital Imaging Design. | 43-9031 | Desktop Publishers … 10.0304 | Animation, Interactive Technology, Video Graphics, and Special Effects. | 27-1014 | Special Effects Artists and Animators … 10.0305 | Graphic and Printing Equipment Operator, General Production. | 43-9021 | Data Entry Keyers … 10.0305 | Graphic and Printing Equipment Operator, General Production. | 51-5112 | Printing Press Operators … 10.0399 | Graphic Communications, Other. | 51-9194 | Etchers and Engravers",
+      "page": "sheet 'CIP-SOC', rows 10.0301-10.0399"
+    },
+    {
+      "id": "go-nces-3",
+      "location": "Section 1",
+      "claim_text": "Prepress technicians appear under eight of the nine 10.03 codes (all but 10.0304)",
+      "held_file": "pdfs:web/nces-cip2020-soc2018-crosswalk.txt",
+      "quote": "10.0301 | Graphic Communications, General. | 51-5111 | Prepress Technicians and Workers … 10.0302 | Printing Management. | 51-5111 | Prepress Technicians and Workers … 10.0306 | Platemaker/Imager. | 51-5111 | Prepress Technicians and Workers … 10.0307 | Printing Press Operator. | 51-5111 | Prepress Technicians and Workers … 10.0308 | Computer Typography and Composition Equipment Operator. | 51-5111 | Prepress Technicians and Workers … 10.0399 | Graphic Communications, Other. | 51-5111 | Prepress Technicians and Workers",
+      "page": "sheet 'CIP-SOC'; the remaining 51-5111 rows (10.0303, 10.0305) sit beside the rows quoted in go-nces-2"
+    },
+    {
+      "id": "go-nrc-1",
+      "location": "Section 8, First-Job Alignment",
+      "claim_text": "O*NET is managed by DOL's Employment and Training Administration",
+      "held_file": "ai_career:future_of_gc/load_bearing/National_Research_Council_2010_O-NET_Review_Database_for_Changing_Economy.pdf",
+      "quote": "Employment and Training Administration (ETA) manages the O*NET program",
+      "page": "printed p. 6 (PDF p. 20)"
+    },
+    {
+      "id": "go-nrc-2",
+      "location": "Section 8, First-Job Alignment",
+      "claim_text": "O*NET describes occupations with descriptors in domains such as skills, knowledge and work activities",
+      "held_file": "ai_career:future_of_gc/load_bearing/National_Research_Council_2010_O-NET_Review_Database_for_Changing_Economy.pdf",
+      "quote": "The O*NET content model includes hundreds of descriptors of work and workers organized into domains, such as skills, knowledge, and work activities.",
+      "page": "printed p. 1 (PDF p. 15)"
+    },
+    {
+      "id": "go-nrc-3",
+      "location": "Section 8, First-Job Alignment",
+      "claim_text": "Skills, Knowledge, GWAs and Abilities carry Importance and Level ratings; Level = level needed to perform the job",
+      "held_file": "ai_career:future_of_gc/load_bearing/National_Research_Council_2010_O-NET_Review_Database_for_Changing_Economy.pdf",
+      "quote": "the questionnaires related to Skills, Knowledge, GWAs, and Abilities include scales for both level and importance … the importance of the descriptor and, if at least somewhat important, the level of the descriptor needed to perform the job",
+      "page": "printed p. 76 (PDF p. 90)"
+    }
+  ]
+}

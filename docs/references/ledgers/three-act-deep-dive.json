@@ -1,0 +1,190 @@
+{
+  "page": "three-act-deep-dive.html",
+  "generated": "2026-10-11",
+  "claims": [
+    {
+      "id": "ta-gibbs-1",
+      "location": "§2",
+      "claim_text": "Bruner's hypothesis (1960, p. 30), as quoted in Gibbs (2014)",
+      "held_file": "pdfs:gibbs-2014-reconfiguring-bruner-kappan.pdf",
+      "quote": "any subject can be taught in some intellectually honest form to any child at any stage of development” (1960, p. 30)",
+      "page": "held web copy, single PDF page"
+    },
+    {
+      "id": "ta-gibbs-2",
+      "location": "§2",
+      "claim_text": "Gibbs's summary of the spiral: revisit with increasing complexity, new learning connected to old",
+      "held_file": "pdfs:gibbs-2014-reconfiguring-bruner-kappan.pdf",
+      "quote": "students revisit a topic, theme, or subject several times throughout their schooling, where the complexity of the topic is increased with each visit so the new learning is connected to the old learning",
+      "page": "held web copy, single PDF page"
+    },
+    {
+      "id": "ta-gibbs-3",
+      "location": "§2",
+      "claim_text": "Gibbs argues the spiral should be compressed to the classroom or grade level, not to program stages",
+      "held_file": "pdfs:gibbs-2014-reconfiguring-bruner-kappan.pdf",
+      "quote": "Bruner was right, but his scale was wrong. His conception of spiral curriculum delivery is accurate from a broad perspective, but its implementation needs to be more compressed. It can be and is much more powerful when scaled down to fit the individual classroom or grade level.",
+      "page": "held web copy, single PDF page"
+    },
+    {
+      "id": "ta-biggs-1",
+      "location": "§3",
+      "claim_text": "Constructive alignment uses the performances of understanding in the objectives to align teaching methods and assessment",
+      "held_file": "pdfs:biggs-1996-constructive-alignment.pdf",
+      "quote": "performances of understanding … align the teaching methods and the assessment",
+      "page": "p. 347 (abstract)"
+    },
+    {
+      "id": "ta-biggs-2",
+      "location": "§3",
+      "claim_text": "Biggs says the model may be generalized to most units or programs",
+      "held_file": "pdfs:biggs-1996-constructive-alignment.pdf",
+      "quote": "the model may be generalized … to most units or programs",
+      "page": "p. 347 (abstract)"
+    },
+    {
+      "id": "ta-wiggins-1",
+      "location": "§4",
+      "claim_text": "Wiggins & McTighe advocate designing course syllabi and program frameworks with backward design",
+      "held_file": "pdfs:wiggins-mctighe-2005-understanding-by-design.pdf",
+      "quote": "the design of course syllabi and program frameworks using backward design",
+      "page": "printed p. 275 (PDF p. 287), ch. 12"
+    },
+    {
+      "id": "ta-abet-1",
+      "location": "§5",
+      "claim_text": "ABET requires a culminating major engineering design experience based on earlier course work",
+      "held_file": "pdfs:web/abet-eac-criteria-2025-2026.html",
+      "quote": "a culminating major engineering design experience that 1) incorporates appropriate engineering standards and multiple constraints, and 2) is based on the knowledge and skills acquired in earlier course work",
+      "page": "Criterion 5, Curriculum"
+    },
+    {
+      "id": "ta-cbn-1",
+      "location": "§6",
+      "claim_text": "Fading is the gradual removal of supports until students are on their own",
+      "held_file": "pdfs:collins-brown-newman-1987-cognitive-apprenticeship-tr403.pdf",
+      "quote": "Fading consists of the gradual removal of supports until students are on their own.",
+      "page": "printed p. 17 (PDF p. 19)"
+    },
+    {
+      "id": "ta-cbn-2",
+      "location": "§10",
+      "claim_text": "Six methods: modelling, coaching and scaffolding (the core); articulation and reflection; exploration",
+      "held_file": "pdfs:collins-brown-newman-1987-cognitive-apprenticeship-tr403.pdf",
+      "quote": "The first three (modelling, coaching, and scaffolding) are the core of cognitive apprenticeship … The next two (articulation and reflection) … The final method (exploration)",
+      "page": "printed p. 16 (PDF p. 18)"
+    },
+    {
+      "id": "ta-aldrich-1",
+      "location": "§6",
+      "claim_text": "Aldrich treats a catalog as a curriculum prerequisite network: courses as nodes, prerequisites as links",
+      "held_file": "pdfs:aldrich-2014-curriculum-prerequisite-network.pdf",
+      "quote": "Here I treat the curriculum as a complex system with … nodes representing courses and links between nodes the … course prerequisites as readily obtained from a course",
+      "page": "p. 1 (abstract)"
+    },
+    {
+      "id": "ta-aldrich-2",
+      "location": "§6",
+      "claim_text": "Courses serve different roles such as information sources, hubs and bridges",
+      "held_file": "pdfs:aldrich-2014-curriculum-prerequisite-network.pdf",
+      "quote": "different roles in the overall organization, such as … information sources, hubs, and bridges",
+      "page": "p. 1 (abstract)"
+    },
+    {
+      "id": "ta-bransford-1",
+      "location": "§7",
+      "claim_text": "Bransford & Schwartz introduce preparation for future learning",
+      "held_file": "ai_career:future_of_gc/load_bearing/Bransford_Schwartz_1999_Rethinking_Transfer.pdf",
+      "quote": "preparation for future learning",
+      "page": "printed p. 68"
+    },
+    {
+      "id": "ta-bransford-2",
+      "location": "§7",
+      "claim_text": "Analyzing contrasting cases before a lecture prepared students to learn from it",
+      "held_file": "ai_career:future_of_gc/load_bearing/Bransford_Schwartz_1999_Rethinking_Transfer.pdf",
+      "quote": "The act of analyzing the cases prepared the students to learn from the lecture",
+      "page": "printed p. 77"
+    },
+    {
+      "id": "ta-bransford-3",
+      "location": "§7",
+      "claim_text": "Comparison group summarized a text before the same lecture",
+      "held_file": "ai_career:future_of_gc/load_bearing/Bransford_Schwartz_1999_Rethinking_Transfer.pdf",
+      "quote": "summarize plus lecture",
+      "page": "printed p. 77 (Figure 8 study)"
+    },
+    {
+      "id": "ta-abms-1",
+      "location": "§8",
+      "claim_text": "First specialty-board proposal 1908; ABMS established 1933 to coordinate",
+      "held_file": "pdfs:web/abms-our-story.html",
+      "quote": "Since the first proposal for a specialty board in 1908, physicians have collaborated to elevate the standards of medical practice through board certification. In 1933, ABMS was officially established to coordinate these efforts",
+      "page": "web page, 'A Legacy of Leadership'"
+    },
+    {
+      "id": "ta-usmle-1",
+      "location": "§8",
+      "claim_text": "USMLE first implemented in 1992; part of the pathway to licensure",
+      "held_file": "pdfs:web/usmle-about.html",
+      "quote": "First implemented in 1992 and accepted by all state medical boards, the USMLE is part of a physician",
+      "page": "web page, 'What is the USMLE?'"
+    },
+    {
+      "id": "ta-risd-1",
+      "location": "§8",
+      "claim_text": "At RISD all first-year students follow the same studio curricula",
+      "held_file": "pdfs:web/risd-experimental-foundation-studies.html",
+      "quote": "during your first year you and your peers follow the same studio curricula",
+      "page": "web page"
+    },
+    {
+      "id": "ta-calpoly-1",
+      "location": "§8",
+      "claim_text": "Cal Poly GrC BS: common major courses plus one of five named 21-unit concentrations or an individualized course of study",
+      "held_file": "pdfs:calpoly-2026-2028-grc-bs-requirements.pdf",
+      "quote": "Concentration or Individualized Course of Study … Design Reproduction Technology … Graphic Communication Management … Graphics for Packaging … Immersive Experience Design … User Experience/User Interface … Total Units 21",
+      "page": "pp. 1, 3-7 (Catalog Edition 2026-2028)"
+    },
+    {
+      "id": "ta-aacsb-1",
+      "location": "§8",
+      "claim_text": "AACSB defines curriculum structure as how content is organized and sequenced",
+      "held_file": "pdfs:aacsb-2020-business-standards.pdf",
+      "quote": "how the content is organized and sequenced to create a … systematic, integrated program of teaching and learning",
+      "page": "p. 41 (Standard 4, Definitions)"
+    },
+    {
+      "id": "ta-sato-1",
+      "location": "§9",
+      "claim_text": "Sato et al. found the microbiology lecture prerequisite did not affect lab success",
+      "held_file": "pdfs:web/sato-2017-whats-in-a-prerequisite.html",
+      "quote": "Both sources of data provided complementary evidence that MLec does not impact success in MLab",
+      "page": "Introduction (ar16, PMC5332042)"
+    },
+    {
+      "id": "ta-sato-2",
+      "location": "§9",
+      "claim_text": "They classified exam questions by familiarity from the prerequisite rather than comparing overall grades",
+      "held_file": "pdfs:web/sato-2017-whats-in-a-prerequisite.html",
+      "quote": "we defined familiarity as the ability of a student to answer an exam question based on the content taught in a prerequisite course",
+      "page": "Introduction"
+    },
+    {
+      "id": "ta-duguid-1",
+      "location": "§10",
+      "claim_text": "Community of practice was introduced as a theory of learning drawing on studies of apprenticeship (Lave & Wenger)",
+      "held_file": "pdfs:duguid-2005-art-of-knowing-manuscript.pdf",
+      "quote": "was introduced as a theory of learning, drawing much of its evidence from studies of … apprenticeship (Lave & Wenger, 1991)",
+      "page": "manuscript pp. 8-9 (PDF pp. 9-10)"
+    },
+    {
+      "id": "ta-duguid-2",
+      "location": "§10",
+      "claim_text": "Learning about confers the ability to talk a good game but not to play one",
+      "held_file": "pdfs:duguid-2005-art-of-knowing-manuscript.pdf",
+      "quote": "which confers the ability to talk a good game, but not necessarily to play one",
+      "page": "manuscript p. 9 (PDF p. 10)"
+    }
+  ]
+}

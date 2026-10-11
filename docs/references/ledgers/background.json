@@ -1121,6 +1121,30 @@
       "held_file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
       "quote": "integrating a human-in-the-loop process would refine and rank the usefulness of justifications",
       "page": "PDF p. 12 (printed p. 305)"
+    },
+    {
+      "id": "bg-collins2007-1",
+      "location": "§7 tacit knowledge",
+      "claim_text": "Collins (2007): somatic-limit tacit knowledge has to do with the limitations of the human body and brain",
+      "held_file": "pdfs:collins-2007-bicycling-on-the-moon.pdf",
+      "quote": "‘somatic-limit tacit knowledge’, has to do with the limitations of the human body and brain",
+      "page": "p. 257 (abstract)"
+    },
+    {
+      "id": "bg-collins2007-2",
+      "location": "§7 tacit knowledge",
+      "claim_text": "Most humans can demonstrate their knowledge of bike-riding only by bike-riding",
+      "held_file": "pdfs:collins-2007-bicycling-on-the-moon.pdf",
+      "quote": "Most humans can demonstrate their knowledge of bike-riding only by bike-riding.",
+      "page": "p. 258"
+    },
+    {
+      "id": "bg-duguid-1",
+      "location": "§9 Lave & Wenger",
+      "claim_text": "The community-of-practice account was introduced as a theory of learning drawing on studies of apprenticeship (Lave & Wenger, 1991)",
+      "held_file": "pdfs:duguid-2005-art-of-knowing-manuscript.pdf",
+      "quote": "was introduced as a theory of learning, drawing much of its evidence from studies of … apprenticeship (Lave & Wenger, 1991)",
+      "page": "manuscript pp. 8-9 (PDF pp. 9-10)"
     }
   ]
 }
