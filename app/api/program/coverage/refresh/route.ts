@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { isValidSlug } from '@/lib/slug';
 import { db } from '@/lib/db/client';
-import { eq } from 'drizzle-orm';
+import { asc, eq } from 'drizzle-orm';
 import { careerTargets, targetSubCompetencies } from '@/lib/db/schema';
 import { getSnapshotById } from '@/lib/db/capture-snapshots-queries';
 import { listStalePairs, upsertCoverageCell } from '@/lib/db/program-coverage-queries';
@@ -38,7 +38,8 @@ export async function POST(req: Request): Promise<Response> {
   const targetCache = new Map<string, { target: typeof careerTargets.$inferSelect; subs: Array<typeof targetSubCompetencies.$inferSelect> }>();
   for (const tid of uniqueTargetIds) {
     const [t] = await db.select().from(careerTargets).where(eq(careerTargets.id, tid)).limit(1);
-    const subs = await db.select().from(targetSubCompetencies).where(eq(targetSubCompetencies.careerTargetId, tid));
+    const subs = await db.select().from(targetSubCompetencies).where(eq(targetSubCompetencies.careerTargetId, tid))
+      .orderBy(asc(targetSubCompetencies.displayOrder), asc(targetSubCompetencies.id));
     if (t) targetCache.set(tid, { target: t, subs });
   }
 

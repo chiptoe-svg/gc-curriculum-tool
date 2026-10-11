@@ -28,6 +28,7 @@ vi.mock('@/lib/ai/analyze/program-score-coverage', () => ({ scoreSnapshotAgainst
 function chain(rows: unknown[]) {
   const c: Record<string, unknown> = {};
   c.where = () => c;
+  c.orderBy = () => c; // M-3: route now orders the subs read
   c.limit = (n: number) => Promise.resolve(rows.slice(0, n));
   c.then = (res: (v: unknown[]) => unknown, rej?: (e: unknown) => unknown) => Promise.resolve(rows).then(res, rej);
   return c;

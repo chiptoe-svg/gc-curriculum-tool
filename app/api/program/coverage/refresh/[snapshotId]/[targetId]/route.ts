@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { isValidSlug } from '@/lib/slug';
 import { db } from '@/lib/db/client';
-import { eq } from 'drizzle-orm';
+import { asc, eq } from 'drizzle-orm';
 import { careerTargets, targetSubCompetencies } from '@/lib/db/schema';
 import { getSnapshotById } from '@/lib/db/capture-snapshots-queries';
 import { upsertCoverageCell } from '@/lib/db/program-coverage-queries';
@@ -36,7 +36,8 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   const [target] = await db.select().from(careerTargets).where(eq(careerTargets.id, targetId)).limit(1);
   if (!target) return NextResponse.json({ error: 'target not found' }, { status: 404 });
 
-  const subs = await db.select().from(targetSubCompetencies).where(eq(targetSubCompetencies.careerTargetId, targetId));
+  const subs = await db.select().from(targetSubCompetencies).where(eq(targetSubCompetencies.careerTargetId, targetId))
+    .orderBy(asc(targetSubCompetencies.displayOrder), asc(targetSubCompetencies.id));
   // Cells are stored per (snapshot, competency) since P0a; a cell the scorer
   // returns for a competency outside this target would overwrite another
   // target's cell, so only members of this target are written.

@@ -408,10 +408,14 @@ export async function loadTargetSubstrate(targetId: string): Promise<{
   }
 
   // The target's current competencies (membership from career_target_requirements).
+  // M-3 (adversarial review): ordered — the view's GROUP BY gives no defined
+  // row order otherwise, which fed the scorer/wiki prompts a different
+  // competency order than before (characterization's sortJson masked it).
   const subs = await db
     .select()
     .from(targetSubCompetencies)
-    .where(and(eq(targetSubCompetencies.careerTargetId, targetId), eq(targetSubCompetencies.retired, false)));
+    .where(and(eq(targetSubCompetencies.careerTargetId, targetId), eq(targetSubCompetencies.retired, false)))
+    .orderBy(asc(targetSubCompetencies.displayOrder), asc(targetSubCompetencies.id));
 
   if (subs.length === 0) {
     return {
