@@ -10,14 +10,17 @@
 #
 # DATABASE_URL is read from the ENVIRONMENT, not argv (M-e, round 2: a URL
 # passed as a command-line argument is visible to any local user via
-# `ps -ww` for as long as this process runs). It is parsed once into the
-# standard libpq PG* environment variables (PGHOST/PGPORT/PGDATABASE/
-# PGUSER/PGPASSWORD) and then unset; every psql/pg_dump call below takes no
-# connection argument at all, so neither this script's own argv nor any
-# child process's argv ever carries the URL or the password. `umask 077`
-# is set before anything is created, so the backup directory and the dump
-# file are private from the moment they exist (chmod 600 on the dump file
-# below is defense in depth, not the only protection).
+# `ps -ww` for as long as this process runs; M-j, round 3: that included
+# node's argv during URL parsing, closed by moving the parsing into the
+# sourced p0a-lib.sh, which reads DATABASE_URL from node's own environment
+# instead). It is parsed once into the standard libpq PG* environment
+# variables (PGHOST/PGPORT/PGDATABASE/PGUSER/PGPASSWORD) and then unset;
+# every psql/pg_dump call below takes no connection argument at all, so
+# neither this script's own argv, nor node's, nor any child process's argv
+# ever carries the URL or the password. `umask 077` is set before anything
+# is created, so the backup directory and the dump file are private from
+# the moment they exist (chmod 600 on the dump file below is defense in
+# depth, not the only protection).
 #
 # Resolves its sibling SQL files relative to this script's own location,
 # not the caller's cwd.
@@ -31,6 +34,8 @@ MIGRATION_SQL="$ROOT/drizzle/0056_competency_catalog_p0a.sql"
 ROLLBACK_SQL="$SCRIPT_DIR/2026-10-11-p0a-rollback.sql"
 VERIFY_SQL="$SCRIPT_DIR/2026-10-11-p0a-verify.sql"
 VERIFY_BACKUP_SH="$SCRIPT_DIR/p0a-verify-backup.sh"
+# shellcheck source=./p0a-lib.sh
+. "$SCRIPT_DIR/p0a-lib.sh"
 
 if [ "$#" -ne 3 ]; then
   echo "usage: DATABASE_URL=postgres://... $0 <expected_db_name> <backup_dir> {apply|rollback}" >&2
@@ -46,33 +51,9 @@ case "$MODE" in
   *) echo "mode must be 'apply' or 'rollback', got: '$MODE'" >&2; exit 2 ;;
 esac
 
-if [ -z "${DATABASE_URL:-}" ]; then
-  echo "refusing: DATABASE_URL is not set in the environment; nothing touched" >&2
-  exit 2
-fi
-
 # --- 0. Move the URL out of argv-visible territory into libpq's PG* env ----
-# bash 3.2 compatible (no mapfile/readarray): one `read` per line, in the
-# fixed order node prints them.
-{
-  IFS= read -r PGHOST
-  IFS= read -r PGPORT
-  IFS= read -r PGDATABASE
-  IFS= read -r PGUSER
-  IFS= read -r PGPASSWORD
-} < <(node -e '
-  const u = new URL(process.argv[1]);
-  const lines = [
-    u.hostname,
-    u.port || "5432",
-    decodeURIComponent(u.pathname.replace(/^\//, "")),
-    decodeURIComponent(u.username),
-    decodeURIComponent(u.password),
-  ];
-  process.stdout.write(lines.join("\n") + "\n");
-' "$DATABASE_URL")
-export PGHOST PGPORT PGDATABASE PGUSER PGPASSWORD
-unset DATABASE_URL
+# (M-j: sourced from p0a-lib.sh so p0a-db-migrated.sh doesn't duplicate it)
+p0a_url_to_pg_env
 
 PSQL=("$PGBIN/psql" -X -v ON_ERROR_STOP=1)
 
@@ -171,8 +152,12 @@ if [ "$MODE" = apply ]; then
   fi
 
   if [ "$FAILED" != "0" ]; then
+    # M-i (round 3): a distinct exit code for "committed but verify failed",
+    # so a caller (the live-apply wrapper) can tell this apart from a
+    # pre-COMMIT failure (exit 1) and never says it's SAFE to bootstrap —
+    # the schema DID change, but something about it is wrong.
     echo "refusing: verify found a problem above; the migration already committed — do not deploy, see above" >&2
-    exit 1
+    exit 4
   fi
 fi
 
