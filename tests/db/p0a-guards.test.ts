@@ -3,6 +3,10 @@
 // and the tsconfig-excluded one-off scripts are not scanned).
 import { describe, it, expect } from 'vitest';
 import { execFileSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+const ROOT = resolve(__dirname, '../..');
 
 function filesMatching(pattern: string): string[] {
   try {
@@ -30,42 +34,76 @@ describe('P0a guards', () => {
   });
 });
 
-// M-4 (adversarial review): the guards above only see the Drizzle identifiers
-// (and the P0a rename made the old identifier name disappear everywhere
-// except the untracked, gitignored one-off scripts the guard can't see
-// anyway). A raw SQL string reading the same tables isn't covered. These two
-// checks flag a tracked raw-SQL read of the backup table, or of
-// sub_competencies' membership columns, in a FROM/SELECT context — narrow
-// enough not to flag a comment or log message mentioning the names, and not
-// to flag an INSERT into the still-written deprecated mirror (migrations,
-// verify/rollback SQL and the seed script's intentional mirror write are
-// excluded below; a multi-line template literal that splits the table name
-// from the column name across lines is a known blind spot, same as the
-// existing checks above).
-function rawSqlFilesMatching(pattern: string): string[] {
+// M-4 (adversarial review round 1) / M-c (round 2): the guards above only
+// see the Drizzle identifiers (and the P0a rename made the old identifier
+// name disappear everywhere except the untracked, gitignored one-off
+// scripts the guard can't see anyway). A raw SQL string reading the same
+// tables isn't covered by them at all.
+//
+// Round 1's version of this check used `git grep -E`, which (a) has no
+// word-boundary support in its regex engine, (b) matches one line at a
+// time, so a template literal that splits `FROM sub_competencies` from
+// `WHERE career_target_id` across two lines was invisible, and (c) only
+// matched a bare `FROM`, so `JOIN`/`INSERT INTO`/`UPDATE` all slipped
+// through. The round-2 review planted exactly those six shapes in a
+// temporary probe file and confirmed none were caught. Round 2 reads each
+// file's full content in JS instead and matches with real regexes
+// (`\b`, `[\s\S]` to cross line breaks, keyword alternation), which closes
+// all three gaps at once.
+//
+// Scope: any read (FROM/JOIN) of snapshot_target_coverage OR of
+// sub_competencies combined with career_target_id/display_order within 200
+// characters. snapshot_target_coverage also flags INTO/UPDATE, because
+// nothing legitimately writes it any more either (it's a frozen backup).
+// sub_competencies does NOT flag INTO/UPDATE, because the deprecated
+// mirror columns are still intentionally WRITTEN (migration 0056's header
+// comment, STATE.md) — only reading them back via raw SQL is the guarded-
+// against regression (M-c's seed-script fix below removes the one
+// instance of that read that existed, so no file needs an exclusion here).
+const RAW_SQL_SCOPE_ARGS = [
+  'app', 'lib', 'scripts',
+  ':(exclude)scripts/_one-off',
+  ':(exclude,glob)scripts/migrations/*.sql',
+  ':(exclude)lib/db/schema.ts',
+  ':(exclude,glob)**/__tests__/**',
+];
+
+function rawSqlScopeFiles(): string[] {
   try {
     const out = execFileSync('git', [
-      'grep', '--untracked', '-l', '-E', '-i', pattern, '--',
-      'app', 'lib', 'scripts',
-      ':(exclude)scripts/_one-off',
-      ':(exclude,glob)scripts/migrations/*.sql',
-      ':(exclude)scripts/seed-career-targets.ts', // M-5: intentional raw-SQL write to the deprecated mirror
-      ':(exclude)lib/db/schema.ts',
-      ':(exclude,glob)**/__tests__/**',
+      'ls-files', '--cached', '--others', '--exclude-standard', '--',
+      ...RAW_SQL_SCOPE_ARGS,
     ], { encoding: 'utf8' });
-    return out.split('\n').filter(Boolean).sort();
+    return out.split('\n').filter(Boolean);
   } catch (e) {
     if ((e as { status?: number }).status === 1) return [];
     throw e;
   }
 }
 
-describe('P0a guards — raw SQL (M-4)', () => {
-  it('no tracked raw SQL reads the backup table snapshot_target_coverage', () => {
-    expect(rawSqlFilesMatching('FROM[[:space:]]+snapshot_target_coverage')).toEqual([]);
+function filesWithRawSqlPattern(pattern: RegExp): string[] {
+  const hits: string[] = [];
+  for (const file of rawSqlScopeFiles()) {
+    let content: string;
+    try {
+      content = readFileSync(resolve(ROOT, file), 'utf8');
+    } catch {
+      continue; // listed then removed between ls-files and read — not a match
+    }
+    if (pattern.test(content)) hits.push(file);
+  }
+  return hits.sort();
+}
+
+const BACKUP_TABLE_PATTERN = /(FROM|JOIN|INTO|UPDATE)\s+"?snapshot_target_coverage\b/i;
+const SUB_COMPETENCIES_MEMBERSHIP_PATTERN = /(FROM|JOIN)\s+"?sub_competencies\b[\s\S]{0,200}?(career_target_id|display_order)/i;
+
+describe('P0a guards — raw SQL (M-4 / M-c)', () => {
+  it('no tracked raw SQL reads or writes the backup table snapshot_target_coverage', () => {
+    expect(filesWithRawSqlPattern(BACKUP_TABLE_PATTERN)).toEqual([]);
   });
 
   it('no tracked raw SQL reads sub_competencies membership via career_target_id or display_order', () => {
-    expect(rawSqlFilesMatching('FROM[[:space:]]+sub_competencies.*(career_target_id|display_order)')).toEqual([]);
+    expect(filesWithRawSqlPattern(SUB_COMPETENCIES_MEMBERSHIP_PATTERN)).toEqual([]);
   });
 });

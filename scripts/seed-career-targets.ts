@@ -79,23 +79,37 @@ async function seed() {
         `);
         console.log(`    [${j + 1}/${t.subCompetencies.length}] Inserted sub-competency: ${sc.id}`);
 
-        // M-5 (adversarial review): only add the requirement if this
-        // sub-competency is actually owned by this target in the DB today —
-        // if CAREER_TARGETS ever lists an existing id under a different
+        // M-5 (adversarial review, round 1): only add the requirement if no
+        // OTHER target already claims this sub-competency — if
+        // CAREER_TARGETS ever lists an existing id under a different
         // target, the old (pre-0056) seed silently did nothing for the
         // conflicting career_targets/sub_competencies rows, so the
         // requirement must not silently put the competency in a second
         // target either (the view would then show it in both, and the
-        // rollback would refuse). career_target_id here is the deprecated
-        // mirror column (Drizzle's renamed deprecatedCareerTargetId) —
-        // raw SQL still names it by its physical column.
+        // rollback would refuse).
+        //
+        // M-c (round 2): this guard used to read the deprecated
+        // sub_competencies.career_target_id mirror via raw SQL — a real but
+        // easily-missed read of a column the project otherwise treats as
+        // write-only, and a case the P0a raw-SQL guard (tests/db/p0a-guards
+        // .test.ts) needed a whole-file exclusion to tolerate. Checking
+        // career_target_requirements instead (the table that's actually
+        // authoritative for membership, and the one P0b keeps once the
+        // mirror is dropped) gives the identical guarantee without reading
+        // the mirror at all: NOT EXISTS a requirement row for this
+        // competency under any OTHER target. For a brand-new competency (no
+        // requirement row yet, under any target) the NOT EXISTS is
+        // vacuously true, so first-time seeding is unaffected; for a
+        // competency already claimed by a different target, the NOT EXISTS
+        // finds that row and blocks the insert, exactly as before.
         await tx.execute(sql`
           INSERT INTO career_target_requirements (
             career_target_id, competency_id, horizon, weight, weight_source, status, display_order
           )
           SELECT ${t.id}, ${sc.id}, 'entry', NULL, 'faculty', 'draft', ${j}
-          WHERE EXISTS (
-            SELECT 1 FROM sub_competencies WHERE id = ${sc.id} AND career_target_id = ${t.id}
+          WHERE NOT EXISTS (
+            SELECT 1 FROM career_target_requirements
+            WHERE competency_id = ${sc.id} AND career_target_id <> ${t.id}
           )
           ON CONFLICT ON CONSTRAINT career_target_requirements_unique DO NOTHING
         `);
