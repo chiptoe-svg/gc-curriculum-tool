@@ -310,6 +310,14 @@
       "ref-jayalath-2025": {
         "file": "pdfs:jayalath-2025-scaling-curriculum-mapping.pdf",
         "note": "owner-supplied image-only PDF; text via OCR sidecar jayalath-2025-scaling-curriculum-mapping.md"
+      },
+      "ref-collins-2007": {
+        "file": "pdfs:collins-2007-bicycling-on-the-moon.pdf",
+        "note": "venue confirmed via Crossref 10.1177/0170840606073759"
+      },
+      "ref-duguid-2005": {
+        "file": "pdfs:duguid-2005-art-of-knowing-manuscript.pdf",
+        "note": "author's manuscript; venue confirmed via Crossref 10.1080/01972240590925311"
       }
     },
     "measurement-hypotheses-deep-dive.html": {
@@ -421,6 +429,68 @@
     },
     "problem-solving-deep-dive.html": {},
     "executive-brief.html": {},
-    "superpowers/vision/gc-curriculum-tool-vision.html": {}
+    "superpowers/vision/gc-curriculum-tool-vision.html": {},
+    "three-act-deep-dive.html": {
+      "ref-aacsb-2020": {
+        "file": "pdfs:aacsb-2020-business-standards.pdf",
+        "note": "acquired 2026-10-11 from aacsb.edu"
+      },
+      "ref-abet-2025": {
+        "file": "pdfs:web/abet-eac-criteria-2025-2026.html",
+        "note": "web page saved 2026-10-11"
+      },
+      "ref-abms": {
+        "file": "pdfs:web/abms-our-story.html",
+        "note": "web page saved 2026-10-11"
+      },
+      "ref-aldrich-2014": {
+        "file": "pdfs:aldrich-2014-curriculum-prerequisite-network.pdf",
+        "note": "arXiv, acquired 2026-10-11"
+      },
+      "ref-biggs-1996": {
+        "file": "pdfs:biggs-1996-constructive-alignment.pdf"
+      },
+      "ref-bransford-schwartz-1999": {
+        "file": "ai_career:future_of_gc/load_bearing/Bransford_Schwartz_1999_Rethinking_Transfer.pdf"
+      },
+      "ref-calpoly-2026": {
+        "file": "pdfs:calpoly-2026-2028-grc-bs-requirements.pdf",
+        "note": "catalog PDF acquired 2026-10-11"
+      },
+      "ref-collins-brown-newman-1987": {
+        "file": "pdfs:collins-brown-newman-1987-cognitive-apprenticeship-tr403.pdf"
+      },
+      "ref-duguid-2005": {
+        "file": "pdfs:duguid-2005-art-of-knowing-manuscript.pdf",
+        "note": "author's manuscript; venue confirmed via Crossref 10.1080/01972240590925311"
+      },
+      "ref-gibbs-2014": {
+        "file": "pdfs:gibbs-2014-reconfiguring-bruner-kappan.pdf"
+      },
+      "ref-risd": {
+        "file": "pdfs:web/risd-experimental-foundation-studies.html",
+        "note": "web page saved 2026-10-11"
+      },
+      "ref-sato-2017": {
+        "file": "pdfs:web/sato-2017-whats-in-a-prerequisite.html",
+        "note": "Europe PMC full-text XML (PMC5332042), saved 2026-10-11"
+      },
+      "ref-usmle": {
+        "file": "pdfs:web/usmle-about.html",
+        "note": "web page saved 2026-10-11"
+      },
+      "ref-wiggins-2005": {
+        "file": "pdfs:wiggins-mctighe-2005-understanding-by-design.pdf"
+      }
+    },
+    "graduate-outcome-validation.html": {
+      "ref-nces-cip-soc": {
+        "file": "pdfs:web/nces-cip2020-soc2018-crosswalk.txt",
+        "note": "text export of NCES CIP2020_SOC2018_Crosswalk.xlsx (xlsx held alongside in _pdfs/web/), downloaded 2026-10-11"
+      },
+      "ref-nrc-2010": {
+        "file": "ai_career:future_of_gc/load_bearing/National_Research_Council_2010_O-NET_Review_Database_for_Changing_Economy.pdf"
+      }
+    }
   }
 }
