@@ -150,7 +150,7 @@ export function assembleScenario(input: AssembleScenarioInput): Scenario {
  * negatives (no ripple for an unresolved competency) vs. false positives
  * (wrong sub-comp in the ripple). A future increment can add fuzzy matching.
  */
-async function resolveSubCompetencyDepths(
+export async function resolveSubCompetencyDepths(
   snapshotId: string,
   predictedDeltas: LocalDeltaResult['predictedDeltas'],
 ): Promise<PredictedSubCompDepth[]> {
@@ -208,7 +208,7 @@ async function resolveSubCompetencyDepths(
  * We read snapshotTargetCoverage directly (measured basis) and layer in
  * intended coverage rows the same way the gap engine does.
  */
-async function buildBaselineDelivered(
+export async function buildBaselineDelivered(
   focalCourseCode: string,
   snapshotId: string,
 ): Promise<DeliveredAttainment[]> {

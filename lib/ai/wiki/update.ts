@@ -317,7 +317,7 @@ interface ContributingCell {
   band: EvidenceBand | null;
 }
 
-async function loadCompetencySubstrate(subCompetencyId: string): Promise<{
+export async function loadCompetencySubstrate(subCompetencyId: string): Promise<{
   contributingCells: ContributingCell[];
 }> {
   // Get all non-retired snapshots' cells for this sub-competency. Join to get
@@ -383,7 +383,7 @@ interface CoverageRollupEntry {
   evidenceExcerpt: string | null;
 }
 
-async function loadTargetSubstrate(targetId: string): Promise<{
+export async function loadTargetSubstrate(targetId: string): Promise<{
   targetName: string;
   shortDefinition: string;
   industryContexts: string[];
@@ -622,7 +622,7 @@ async function loadAllSnapshotsForCourse(courseCode: string): Promise<SnapshotSu
  * page then renders competencies as plain text (no broken links), and the
  * post-scoring regeneration fills the links in.
  */
-async function loadCompetencyLinksForSnapshot(
+export async function loadCompetencyLinksForSnapshot(
   snapshotId: string,
 ): Promise<Array<{ statement: string; slug: string }>> {
   const rows = await db
