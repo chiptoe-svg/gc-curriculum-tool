@@ -15,6 +15,7 @@ Evidence behind this memo (local, git-ignored): `scratch/esco/coverage-report.md
 | Reuse | CC BY 4.0 | CC BY 4.0 (and reuses O*NET content) | Members only — "may not be posted or shared in any publicly accessible location" |
 
 Other verified facts that shape the design:
+- **Importance and Level are nearly the same signal.** The NRC review of O*NET (2010, PDF p. 90) reports responses "so highly correlated (r = .95) as to suggest that the two scales were largely redundant," and a later analysis found a mean of .92. On our own data — all 6,118 element ratings for the 21 destination SOCs in O*NET 31.0 — r = 0.97 (abilities 0.99, skills 0.98, knowledge 0.97, work activities 0.93). So Level cannot act as an independent check on Importance.
 - **Crosswalks are stale.** The official ESCO↔O*NET occupation crosswalk dates from Sep 2022 (O*NET-SOC 2019, ESCO v1.1.0); match types exactMatch/closeMatch/broadMatch, no scores. ISCO-08↔SOC exists only to SOC 2010.
 - **Six GC items neither source covers:** trapping, dot gain/proof-to-print measurement, variable data printing, print workflow automation (JDF/MIS), web-to-print, and career-services/personal-finance skills (a scope mismatch — both model on-the-job skills).
 - **AI work is thin in both.** ESCO has general AI knowledge concepts, no generative-AI skill; O*NET carries generative-AI technology skills for other occupations but none for GC's destination SOCs.
@@ -35,7 +36,7 @@ A career target is a question put to the program's accumulated competencies:
 - **What the target asks for:** the O*NET elements and tasks of the destination SOCs, weighted by Importance and by the share of GC graduates who land in each SOC (alumni weighting), plus GC-authored items.
 - **What the program supplies:** evidence-anchored K/U/D depth per GC competency, per course, in sequence.
 - **Matching:** each demand item links to GC competencies (embedding shortlist → reasoning step → faculty confirmation; links carry a match-quality stamp; "no clean match" is a finding).
-- **Output, stage 1 (no fitted parameters):** per target, the importance-weighted list of shortfalls (a high-importance item below its required depth is reported on its own, never averaged away), the "met once, never reinforced" items (reinforcement = later courses reusing the competency), and coverage of the target's demand. Required depth is a **draft** seeded from O*NET Level, shown as a labeled demand column, confirmed by faculty or employers. No single readiness percentage.
+- **Output, stage 1 (no fitted parameters):** per target, the importance-weighted list of shortfalls (a high-importance item below its required depth is reported on its own, never averaged away), the "met once, never reinforced" items (reinforcement = later courses reusing the competency), and coverage of the target's demand. Required depth is a **draft** confirmed by faculty or employers. Because Level tracks Importance almost exactly (r ≈ 0.97), it adds little as a separate demand column; its value is its anchored wording (what "level 5" of an element looks like), which can help faculty write the draft required depth. Importance does the weighting. No single readiness percentage.
 - **Stage 2 (later):** recency-weighted fading (HLR/FSRS or PFA-Decay form) once outcome data allow fitting.
 
 ## 4. Options — where the career target's structure comes from
@@ -68,7 +69,8 @@ Re-key GC competencies to ESCO concepts (best coverage, 58% strong) and compose 
 3. **SOC bindings for the five targets:** the app's seeds (41-4012, 13-1161, 11-3051; two none) differ from the June plan's (11-2011, 11-2021, 51-5112+51-5111, 27-1024; one none). Pick one set, or derive each target's SOC mix from the alumni data.
 4. **SkillsUSA:** ask SkillsUSA for permission to use the Graphic Communications standards (and Screen Printing, not yet obtained), or keep them internal-only?
 5. **ESCO bulk download:** OK to submit a department email on ESCO's download form for a full local copy (the API is enough for stage 1)?
-6. **GC-authored items** for the six double gaps and AI work — who drafts (faculty, or AI draft + faculty confirm)?
+6. **Level:** given r ≈ 0.97 with Importance, drop Level as a displayed demand column and keep it only as wording that helps faculty set required depth (recommended), or still show it?
+7. **GC-authored items** for the six double gaps and AI work — who drafts (faculty, or AI draft + faculty confirm)?
 
 ## 6. Not yet verified / open
 - Whether gc_alumni's destination counts per SOC are ready to use as weights (to ask the gc_alumni session).
