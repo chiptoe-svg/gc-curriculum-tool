@@ -247,6 +247,106 @@ describe.skipIf(!RUN)('migration 0057 (P0b) on a P0b clone, each test self-conta
     });
   });
 
+  // --- m1 (hostile review round 2, 2026-10-12): new_insert_count must use
+  // the SAME 4-column key step 8's own INSERT ... ON CONFLICT uses
+  // (career_target_id, competency_id, horizon, weight_source) — counting
+  // just (target, survivor) PAIRS under-counts whenever a merged-away row's
+  // horizon or weight_source doesn't match the survivor's existing row at
+  // that target, so a row that actually inserts gets treated as a no-op.
+  const FOUR_COL_KEY_FRAGMENT = [
+    '     SELECT DISTINCT r.career_target_id, m.survivor, r.horizon, r.weight_source',
+    '     FROM career_target_requirements r JOIN merge_plan m ON m.old_id = r.competency_id',
+    '     WHERE NOT EXISTS (',
+    '       SELECT 1 FROM career_target_requirements r2',
+    '       WHERE r2.career_target_id = r.career_target_id AND r2.competency_id = m.survivor',
+    '         AND r2.horizon = r.horizon AND r2.weight_source = r.weight_source',
+    '     )',
+  ].join('\n');
+  const PAIR_ONLY_KEY_FRAGMENT = [
+    '     SELECT DISTINCT r.career_target_id, m.survivor',
+    '     FROM career_target_requirements r JOIN merge_plan m ON m.old_id = r.competency_id',
+    '     WHERE NOT EXISTS (',
+    '       SELECT 1 FROM career_target_requirements r2',
+    '       WHERE r2.career_target_id = r.career_target_id AND r2.competency_id = m.survivor',
+    '     )',
+  ].join('\n');
+
+  it('1d (m1, hostile review round 2, d4). a second (growth) horizon row on a merged-away competency no longer makes the post-check misfire', async () => {
+    await withTx(async (c) => {
+      // gc-production-literacy gains a SECOND row at account-management
+      // (entry already exists; this adds growth) — both must insert for
+      // domain-knowledge, since neither horizon exists on it yet there.
+      await q(
+        c,
+        `INSERT INTO career_target_requirements (career_target_id, competency_id, horizon, weight_source, status, display_order)
+         VALUES ('account-management', 'gc-production-literacy', 'growth', 'faculty', 'draft', 997)`,
+      );
+      const before = (await q<{ n: string }>(c, `SELECT count(*)::text AS n FROM career_target_requirements`))[0]!.n;
+      expect(before).toBe('37');
+
+      // Must NOT throw — the pair-only (3-column) count would have
+      // collapsed both gc-production-literacy rows into ONE pair, computed
+      // new_insert_count=2, and expected 35 instead of the real 36.
+      await c.query(MIGRATION_BODY);
+
+      const after = (await q<{ n: string }>(c, `SELECT count(*)::text AS n FROM career_target_requirements`))[0]!.n;
+      expect(after).toBe('36');
+      const rows = await q<{ horizon: string }>(
+        c,
+        `SELECT horizon FROM career_target_requirements WHERE career_target_id = 'account-management' AND competency_id = 'domain-knowledge' ORDER BY horizon`,
+      );
+      expect(rows.map(r => r.horizon)).toEqual(['entry', 'growth']);
+    });
+  });
+
+  it('1e (m1, red-proof, d4). the pair-only (3-column) count misfires on the second-horizon-row fixture', async () => {
+    expect(MIGRATION_BODY.includes(FOUR_COL_KEY_FRAGMENT), 'expected marker not found — migration SQL shape changed').toBe(true);
+    const brokenMigration = MIGRATION_BODY.replace(FOUR_COL_KEY_FRAGMENT, PAIR_ONLY_KEY_FRAGMENT);
+    expect(brokenMigration, 'the replace must actually change the SQL for this red-proof to mean anything').not.toBe(MIGRATION_BODY);
+
+    await withTx(async (c) => {
+      await q(
+        c,
+        `INSERT INTO career_target_requirements (career_target_id, competency_id, horizon, weight_source, status, display_order)
+         VALUES ('account-management', 'gc-production-literacy', 'growth', 'faculty', 'draft', 997)`,
+      );
+      await expect(c.query(brokenMigration)).rejects.toThrow(/expected 35 requirement rows \(pre-migration 37 minus 4 merged-away plus 2 newly inserted\), found 36/);
+    });
+  });
+
+  it('1f (m1, hostile review round 2, d5). a merged-away row whose weight_source differs from the survivor\'s own row no longer makes the post-check misfire', async () => {
+    await withTx(async (c) => {
+      // timeline-management's single row (production-operations/entry)
+      // keeps its horizon but gets a different weight_source than
+      // project-management's own existing row at the same target/horizon —
+      // so it is still a genuinely new INSERT, not a no-op.
+      await q(c, `UPDATE career_target_requirements SET weight_source = 'onet' WHERE competency_id = 'timeline-management'`);
+      const before = (await q<{ n: string }>(c, `SELECT count(*)::text AS n FROM career_target_requirements`))[0]!.n;
+      expect(before).toBe('36');
+
+      await c.query(MIGRATION_BODY);
+
+      const after = (await q<{ n: string }>(c, `SELECT count(*)::text AS n FROM career_target_requirements`))[0]!.n;
+      expect(after).toBe('36');
+      const rows = await q<{ weight_source: string }>(
+        c,
+        `SELECT weight_source FROM career_target_requirements WHERE career_target_id = 'production-operations' AND competency_id = 'project-management' ORDER BY weight_source`,
+      );
+      expect(rows.map(r => r.weight_source)).toEqual(['faculty', 'onet']);
+    });
+  });
+
+  it('1g (m1, red-proof, d5). the pair-only (3-column) count misfires on the differing-weight_source fixture', async () => {
+    expect(MIGRATION_BODY.includes(FOUR_COL_KEY_FRAGMENT), 'expected marker not found — migration SQL shape changed').toBe(true);
+    const brokenMigration = MIGRATION_BODY.replace(FOUR_COL_KEY_FRAGMENT, PAIR_ONLY_KEY_FRAGMENT);
+    expect(brokenMigration, 'the replace must actually change the SQL for this red-proof to mean anything').not.toBe(MIGRATION_BODY);
+
+    await withTx(async (c) => {
+      await q(c, `UPDATE career_target_requirements SET weight_source = 'onet' WHERE competency_id = 'timeline-management'`);
+      await expect(c.query(brokenMigration)).rejects.toThrow(/expected 35 requirement rows \(pre-migration 36 minus 3 merged-away plus 2 newly inserted\), found 36/);
+    });
+  });
+
   it('2. coverage carry equals the highest-evidence group member per snapshot (Ruling 3)', async () => {
     await withTx(async (c) => {
       const before = await q<CovRow>(
@@ -601,7 +701,7 @@ describe.skipIf(!RUN)('migration 0057 (P0b) on a P0b clone, each test self-conta
     });
   });
 
-  it('7. faculty_flags on a merged-away id are re-pointed to the survivor', async () => {
+  it('7. faculty_flags on a merged-away id are re-pointed to the survivor, with the note prefixed to say so', async () => {
     await withTx(async (c) => {
       const { id } = (
         await q<{ id: string }>(
@@ -620,108 +720,82 @@ describe.skipIf(!RUN)('migration 0057 (P0b) on a P0b clone, each test self-conta
         [id],
       );
       expect(row!.sub_competency_id).toBe('project-management');
-      expect(row!.note).toBe('pre-existing test flag');
+      // m3 (hostile review round 2 controller ruling, reverses round 1's
+      // M-5): the note is prefixed to say the id it names moved — the
+      // original note text is kept, not replaced.
+      expect(row!.note).toBe('[moved from timeline-management by the P0b merge] pre-existing test flag');
     });
   });
 
-  it('7b (M-5, hostile review). a re-pointed flag\'s flagged_context is refreshed to the survivor\'s own carried cell for the course\'s representative snapshot, not left as the merged-away cell', async () => {
+  it('7b (m3, hostile review round 2). a re-pointed flag KEEPS its original flagged_context — the disputed reading is a frozen record, never refreshed to the survivor\'s current cell', async () => {
     await withTx(async (c) => {
-      const FLAG_COURSE = 'GC 1010'; // real fixture course with real group cells on both merge groups
-      const FLAG_SURVIVOR = 'domain-knowledge';
-      const members = new Set(groupMembersOf(FLAG_SURVIVOR));
-
-      // Independently compute (in TS, from pre-migration rows) what step 7
-      // SHOULD write: the representative snapshot (latest non-retired
-      // snapshot of FLAG_COURSE with ANY group-member cell, created_at DESC
-      // then id DESC) and that snapshot's carried winner cell — same
-      // ranking rule test 2 uses, applied to ONLY that one snapshot's rows.
-      type Row2 = CovRow & { course_code: string; retired_at: string | null; created_epoch: number };
-      const before = await q<Row2>(
-        c,
-        `SELECT c.snapshot_id::text, c.competency_id, c.k_depth, c.u_depth, c.d_depth, c.matched_competency,
-                c.evidence_excerpt, c.confidence, c.rationale, c.model, c.generated_at::text,
-                s.course_code, s.retired_at::text AS retired_at, extract(epoch FROM s.created_at)::float8 AS created_epoch
-         FROM snapshot_competency_coverage c
-         JOIN course_capture_snapshots s ON s.id = c.snapshot_id
-         WHERE s.course_code = $1 AND s.retired_at IS NULL
-           AND c.competency_id IN ('domain-knowledge','gc-production-literacy','domain-grounding')`,
-        [FLAG_COURSE],
-      );
-      const bySnapshot = new Map<string, { created_epoch: number; rows: Row2[] }>();
-      for (const row of before) {
-        if (!members.has(row.competency_id)) continue;
-        const entry = bySnapshot.get(row.snapshot_id) ?? { created_epoch: row.created_epoch, rows: [] };
-        entry.rows.push(row);
-        bySnapshot.set(row.snapshot_id, entry);
-      }
-      expect(bySnapshot.size, `fixture precondition: ${FLAG_COURSE} must have at least one non-retired snapshot with a domain-knowledge-group cell`).toBeGreaterThan(0);
-      const representative = [...bySnapshot.entries()].sort((a, b) => {
-        if (a[1].created_epoch !== b[1].created_epoch) return b[1].created_epoch - a[1].created_epoch;
-        return a[0] < b[0] ? 1 : a[0] > b[0] ? -1 : 0;
-      })[0]!;
-      const winner = pickBest(
-        FLAG_SURVIVOR,
-        (r: Row2) => r.competency_id,
-        (r: Row2) => r.confidence,
-        (r: Row2) => [r.d_depth, r.u_depth ?? -1, r.k_depth ?? -1],
-        representative[1].rows,
-      );
-      const expectedRationale = winner.competency_id === FLAG_SURVIVOR ? winner.rationale : `[P0b merge: carried from ${winner.competency_id}] ${winner.rationale}`;
-      const expectedContext = { k: winner.k_depth, u: winner.u_depth, d: winner.d_depth, matchedCompetency: winner.matched_competency, rationale: expectedRationale };
-
+      const originalContext = { k: 4, u: 4, d: 4, matchedCompetency: 'the statement a faculty member actually disputed', rationale: 'original faculty rationale' };
       const { id } = (
         await q<{ id: string }>(
           c,
           `INSERT INTO faculty_flags (target_kind, course_code, sub_competency_id, note, flagged_by, flagged_context)
-           VALUES ('coverage_cell'::flag_target_kind, $1, 'gc-production-literacy', 'pre-existing M-5 fixture flag', 'test',
-                   jsonb_build_object('k', 9, 'u', 9, 'd', 9, 'matchedCompetency', 'WRONG — the stale merged-away reading', 'rationale', 'WRONG'))
+           VALUES ('coverage_cell'::flag_target_kind, 'GC 1010', 'gc-production-literacy', 'faculty dispute', 'test',
+                   jsonb_build_object('k', 4, 'u', 4, 'd', 4, 'matchedCompetency', 'the statement a faculty member actually disputed', 'rationale', 'original faculty rationale'))
            RETURNING id::text`,
-          [FLAG_COURSE],
         )
       )[0]!;
 
       await c.query(MIGRATION_BODY);
 
-      const [row] = await q<{ sub_competency_id: string; flagged_context: typeof expectedContext }>(
+      const [row] = await q<{ sub_competency_id: string; note: string; flagged_context: typeof originalContext }>(
         c,
-        `SELECT sub_competency_id, flagged_context FROM faculty_flags WHERE id = $1::uuid`,
+        `SELECT sub_competency_id, note, flagged_context FROM faculty_flags WHERE id = $1::uuid`,
         [id],
       );
-      expect(row!.sub_competency_id).toBe(FLAG_SURVIVOR);
-      expect(row!.flagged_context).toEqual(expectedContext);
+      expect(row!.sub_competency_id).toBe('domain-knowledge');
+      expect(row!.note).toBe('[moved from gc-production-literacy by the P0b merge] faculty dispute');
+      // The frozen disputed reading is untouched — never overwritten with
+      // domain-knowledge's own (unrelated) carried cell for this course.
+      expect(row!.flagged_context).toEqual(originalContext);
     });
   });
 
-  it('7c (M-5, red-proof). without the fix, the re-pointed flag keeps its stale merged-away flagged_context', async () => {
-    const marker = `UPDATE faculty_flags f SET\n  sub_competency_id = m.survivor,`;
-    expect(MIGRATION_BODY.includes(marker), 'expected marker not found — migration SQL shape changed').toBe(true);
-    const brokenMigration = MIGRATION_BODY.replace(
-      /WITH representative AS \(\s*SELECT sc\.competency_id AS survivor[\s\S]*?WHERE f\.sub_competency_id = m\.old_id;/,
-      `UPDATE faculty_flags f SET sub_competency_id = m.survivor\nFROM merge_plan m WHERE f.sub_competency_id = m.old_id;`,
-    );
-    expect(brokenMigration, 'the regex replace must actually change the SQL for this red-proof to mean anything').not.toBe(MIGRATION_BODY);
+  it('7c (m3, red-proof). the round-1 M-5 behavior (refreshing flagged_context to the survivor\'s carried cell) WOULD have overwritten the faculty member\'s original reading', async () => {
+    const m3Fix = `UPDATE faculty_flags f SET\n  sub_competency_id = m.survivor,\n  note = '[moved from ' || m.old_id || ' by the P0b merge] ' || f.note\nFROM merge_plan m\nWHERE f.sub_competency_id = m.old_id;`;
+    expect(MIGRATION_BODY.includes(m3Fix), 'expected marker not found — migration SQL shape changed').toBe(true);
+    // The exact round-1 M-5 behavior this round-2 ruling reverses: re-point
+    // AND overwrite flagged_context with the survivor's OWN carried cell
+    // for the course (any snapshot with a survivor cell — simplified here
+    // to "any one" rather than round 1's full representative-snapshot
+    // logic, since the point of this red-proof is only "does it still get
+    // overwritten", not re-deriving round 1's exact selection rule).
+    const m5Behavior = `UPDATE faculty_flags f SET
+  sub_competency_id = m.survivor,
+  flagged_context = (
+    SELECT jsonb_build_object('k', sc.k_depth, 'u', sc.u_depth, 'd', sc.d_depth, 'matchedCompetency', sc.matched_competency, 'rationale', sc.rationale)
+    FROM snapshot_competency_coverage sc WHERE sc.competency_id = m.survivor LIMIT 1
+  )
+FROM merge_plan m
+WHERE f.sub_competency_id = m.old_id;`;
+    const brokenMigration = MIGRATION_BODY.replace(m3Fix, m5Behavior);
+    expect(brokenMigration, 'the replace must actually change the SQL for this red-proof to mean anything').not.toBe(MIGRATION_BODY);
 
     await withTx(async (c) => {
+      const originalContext = { k: 4, u: 4, d: 4, matchedCompetency: 'the statement a faculty member actually disputed', rationale: 'original faculty rationale' };
       const { id } = (
         await q<{ id: string }>(
           c,
           `INSERT INTO faculty_flags (target_kind, course_code, sub_competency_id, note, flagged_by, flagged_context)
-           VALUES ('coverage_cell'::flag_target_kind, 'GC 1010', 'gc-production-literacy', 'red-proof fixture flag', 'test',
-                   jsonb_build_object('k', 9, 'u', 9, 'd', 9, 'matchedCompetency', 'WRONG — the stale merged-away reading', 'rationale', 'WRONG'))
+           VALUES ('coverage_cell'::flag_target_kind, 'GC 1010', 'gc-production-literacy', 'faculty dispute', 'test',
+                   jsonb_build_object('k', 4, 'u', 4, 'd', 4, 'matchedCompetency', 'the statement a faculty member actually disputed', 'rationale', 'original faculty rationale'))
            RETURNING id::text`,
         )
       )[0]!;
 
       await c.query(brokenMigration);
 
-      const [row] = await q<{ sub_competency_id: string; flagged_context: { k: number } }>(
+      const [row] = await q<{ flagged_context: typeof originalContext }>(
         c,
-        `SELECT sub_competency_id, flagged_context FROM faculty_flags WHERE id = $1::uuid`,
+        `SELECT flagged_context FROM faculty_flags WHERE id = $1::uuid`,
         [id],
       );
-      expect(row!.sub_competency_id).toBe('domain-knowledge');
-      // Red-proof: WITHOUT the fix, the stale k=9 placeholder survives the re-point.
-      expect(row!.flagged_context.k, 'red-proof: without the fix, flagged_context should still be the stale placeholder').toBe(9);
+      // Red-proof: WITHOUT m3's fix, the original disputed reading is gone.
+      expect(row!.flagged_context, 'red-proof: the M-5 behavior should have overwritten the original flagged_context').not.toEqual(originalContext);
     });
   });
 

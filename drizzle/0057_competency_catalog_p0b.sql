@@ -51,29 +51,42 @@ CREATE TEMP TABLE merge_group ON COMMIT DROP AS
   SELECT survivor, old_id AS member FROM merge_plan
   UNION SELECT DISTINCT survivor, survivor FROM merge_plan;
 
--- M-1 (hostile review 2026-10-12): the post-check used to hard-code
--- "expected 35 requirement rows" — correct only for the exact scratch
--- fixture this was developed against, and guaranteed to block a real live
--- apply the moment a legitimate requirement is added on live between the
--- scratch clone and the apply window. Captured here, BEFORE any mutation,
--- so the post-check (step 11) can compare against a count that is
--- RELATIVE to whatever career_target_requirements actually held going in:
--- pre_count (every row, as-is) minus merged_away_count (the rows step 8
--- deletes) plus new_insert_count (the (target, survivor) pairs step 8's
--- INSERT ... ON CONFLICT DO NOTHING will actually add — a pair already
--- satisfied by the survivor's own pre-existing row is NOT a new insert).
+-- M-1 (hostile review round 1, 2026-10-12): the post-check used to
+-- hard-code "expected 35 requirement rows" — correct only for the exact
+-- scratch fixture this was developed against, and guaranteed to block a
+-- real live apply the moment a legitimate requirement is added on live
+-- between the scratch clone and the apply window. Captured here, BEFORE
+-- any mutation, so the post-check (step 11) can compare against a count
+-- that is RELATIVE to whatever career_target_requirements actually held
+-- going in: pre_count (every row, as-is) minus merged_away_count (the
+-- rows step 8 deletes) plus new_insert_count (the rows step 8's INSERT
+-- ... ON CONFLICT DO NOTHING will actually add).
+--
+-- m1 (hostile review round 2, 2026-10-12): new_insert_count used to count
+-- distinct (career_target_id, survivor) PAIRS, but step 8's own
+-- ON CONFLICT key is the full 4 columns — (career_target_id, competency_id,
+-- horizon, weight_source) (the career_target_requirements_unique
+-- constraint). A pair already has ONE survivor row doesn't mean every
+-- merged-away row for that pair is a no-op insert: a merged-away row with
+-- a DIFFERENT horizon or weight_source than the survivor's existing row at
+-- that target is still a genuinely new row (reproduced: a second `growth`
+-- horizon row on a merged-away competency, or a merged-away row whose
+-- weight_source differs from the survivor's, both made the post-check
+-- refuse a migration that actually applied correctly). Counted on the
+-- same 4-column key the UNIQUE constraint and the INSERT use.
 CREATE TEMP TABLE pre_counts ON COMMIT DROP AS
 SELECT
   (SELECT count(*) FROM career_target_requirements) AS pre_count,
   (SELECT count(*) FROM career_target_requirements WHERE competency_id IN (SELECT old_id FROM merge_plan)) AS merged_away_count,
   (SELECT count(*) FROM (
-     SELECT DISTINCT r.career_target_id, m.survivor
+     SELECT DISTINCT r.career_target_id, m.survivor, r.horizon, r.weight_source
      FROM career_target_requirements r JOIN merge_plan m ON m.old_id = r.competency_id
      WHERE NOT EXISTS (
        SELECT 1 FROM career_target_requirements r2
        WHERE r2.career_target_id = r.career_target_id AND r2.competency_id = m.survivor
+         AND r2.horizon = r.horizon AND r2.weight_source = r.weight_source
      )
-   ) new_pairs) AS new_insert_count;
+   ) new_rows) AS new_insert_count;
 
 -- 1. New catalog columns and tables.
 ALTER TABLE sub_competencies ADD COLUMN merged_into text REFERENCES sub_competencies(id) ON DELETE RESTRICT;
@@ -217,36 +230,24 @@ DELETE FROM prerequisite_edges WHERE id IN (SELECT id FROM ranked WHERE rn > 1);
 UPDATE prerequisite_edges e SET sub_competency_id = m.survivor, updated_at = now()
 FROM merge_plan m WHERE e.sub_competency_id = m.old_id;
 
--- 7. Faculty flags: re-point AND refresh flagged_context (M-5, hostile
--- review 2026-10-12). A flag re-pointed from a merged-away id but left with
--- the merged-away cell's K/U/D would have drift logic reading
--- flagged_context against the SURVIVOR's current cell — a different
--- competency's reading compared to a different competency's baseline,
--- showing apparent drift that was never real. flagged_context is reset to
--- the survivor's own carried cell (step 3 already ran, so
--- snapshot_competency_coverage's survivor row IS the carried value) for
--- that course's representative snapshot — the latest non-retired snapshot
--- of the flag's course that has a survivor cell, same "latest, created_at
--- DESC then id DESC" rule step 4 uses. NULL when no such cell exists (a
--- flag on a course whose representative snapshot was never carried a
--- survivor cell) rather than comparing across competencies.
-WITH representative AS (
-  SELECT sc.competency_id AS survivor, s.course_code,
-         (array_agg(sc.snapshot_id ORDER BY s.created_at DESC, sc.snapshot_id DESC))[1] AS snapshot_id
-  FROM snapshot_competency_coverage sc
-  JOIN course_capture_snapshots s ON s.id = sc.snapshot_id AND s.retired_at IS NULL
-  WHERE sc.competency_id IN (SELECT DISTINCT survivor FROM merge_plan)
-  GROUP BY sc.competency_id, s.course_code
-)
+-- 7. Faculty flags: re-point. flagged_context is KEPT exactly as the
+-- faculty member recorded it (m3, hostile review round 2 controller
+-- ruling — REVERSES round 1's M-5 fix below). flagged_context is "the
+-- reading AS DISPUTED" per the column's own schema docstring: a frozen
+-- record of what a real person flagged, not a live reading that should
+-- track the survivor's current cell. Overwriting it with the survivor's
+-- carried cell (round 1's M-5 fix) silently replaced a faculty member's
+-- disputed K4/U4/D4 with a value nobody flagged. Instead, the NOTE is
+-- prefixed so a reader knows the id it names moved and the reading
+-- predates the merge.
+--
+-- [SUPERSEDED, round 1 text, kept for history only — do not follow]: "re-
+-- point AND refresh flagged_context... reset to the survivor's own
+-- carried cell... for that course's representative snapshot... NULL when
+-- no such cell exists."
 UPDATE faculty_flags f SET
   sub_competency_id = m.survivor,
-  flagged_context = (
-    SELECT jsonb_build_object('k', sc2.k_depth, 'u', sc2.u_depth, 'd', sc2.d_depth,
-                               'matchedCompetency', sc2.matched_competency, 'rationale', sc2.rationale)
-    FROM representative r
-    JOIN snapshot_competency_coverage sc2 ON sc2.snapshot_id = r.snapshot_id AND sc2.competency_id = m.survivor
-    WHERE r.survivor = m.survivor AND r.course_code = f.course_code
-  )
+  note = '[moved from ' || m.old_id || ' by the P0b merge] ' || f.note
 FROM merge_plan m
 WHERE f.sub_competency_id = m.old_id;
 

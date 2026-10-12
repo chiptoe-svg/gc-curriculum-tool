@@ -32,12 +32,17 @@ import { isP0bMainDb, isP0bRollbackTestDb, ROLLBACK_TEST_DB, SCRATCH_DB_PRE } fr
 const ROOT = resolve(__dirname, '../..');
 const APPLY_DB_SH = resolve(ROOT, 'scripts/migrations/p0b-apply-db.sh');
 const DB_MIGRATED_SH = resolve(ROOT, 'scripts/migrations/p0b-db-migrated.sh');
+const PREFLIGHT_SH = resolve(ROOT, 'scripts/migrations/p0b-preflight.sh');
 const PGBIN = '/Applications/Postgres.app/Contents/Versions/17/bin';
 
 const RUN = isP0bMainDb() && process.env.P0B_ROLLBACK_SWAP_TEST === '1';
 // The scratch clone's own URL doubles as this file's connection source:
 // same host/role, just a different dbname per call (see withDbName).
 const SCRATCH_URL = process.env.DATABASE_URL ?? '';
+// Deliberately unreachable: proves a guard runs BEFORE any connection
+// attempt (the check fails for the guard's own reason, not because this
+// URL can't connect).
+const GARBAGE_DATABASE_URL = 'postgres://nobody:nothing@127.0.0.1:1/does-not-exist';
 
 interface Result { status: number; stdout: string; stderr: string }
 
@@ -357,5 +362,65 @@ describe.skipIf(!RUN)('p0b-apply-db.sh rollback (fix round 1): restore-into-new-
 
     // The migration never ran — still post-0057, completely untouched.
     expect(queryOne(url, "SELECT to_regclass('public.sub_competency_map') IS NOT NULL")).toBe('t');
+  });
+
+  // --- m1 (hostile review round 2): the read-only preflight. Real DB,
+  // disposable rbtest clones — never gc_curriculum_p0b_pre/_scratch
+  // themselves (not on the scripts' own allowlist anyway).
+  it('p0b-preflight.sh passes against a genuine pre-0057 clone and prints the count breakdown, touching nothing', () => {
+    const name = `${ROLLBACK_TEST_DB}_preflightok`;
+    expect(isP0bRollbackTestDb(name)).toBe(true);
+    createdDbs.add(name);
+    cloneDatabase(preUrl, name);
+    const url = withDbName(SCRATCH_URL, name);
+    const before = queryOne(url, 'SELECT count(*) FROM career_target_requirements');
+
+    const res = runScript(PREFLIGHT_SH, [name], { DATABASE_URL: url });
+
+    expect(res.status).toBe(0);
+    expect(res.stdout).toMatch(/pre_count=36 merged_away_count=3 new_insert_count=2 expected_final_count=35/);
+    expect(res.stdout).toMatch(/p0b-preflight\.sh: 0057's preconditions and count computation passed/);
+    // Read-only: nothing changed, and 0057 itself was never applied.
+    expect(queryOne(url, 'SELECT count(*) FROM career_target_requirements')).toBe(before);
+    expect(queryOne(url, "SELECT to_regclass('public.sub_competency_map') IS NOT NULL")).toBe('f');
+  });
+
+  it('p0b-preflight.sh refuses on a career_target_demand row on a merge id (M-6), touching nothing', () => {
+    const name = `${ROLLBACK_TEST_DB}_preflightm6`;
+    expect(isP0bRollbackTestDb(name)).toBe(true);
+    createdDbs.add(name);
+    cloneDatabase(preUrl, name);
+    const url = withDbName(SCRATCH_URL, name);
+    // runMaint connects to the 'postgres' maintenance DB (for CREATE/DROP/
+    // RENAME DATABASE) — this insert targets the clone itself, so it must
+    // run directly against `url`, not through runMaint.
+    execFileSync(`${PGBIN}/psql`, [url, '-X', '-q', '-v', 'ON_ERROR_STOP=1', '-c',
+      `INSERT INTO career_target_demand (career_target_id, sub_competency_id, contributing_position_ids) VALUES ('account-management', 'domain-knowledge', '[]'::jsonb)`]);
+    const before = queryOne(url, 'SELECT count(*) FROM career_target_demand');
+
+    const res = runScript(PREFLIGHT_SH, [name], { DATABASE_URL: url });
+
+    expect(res.status).not.toBe(0);
+    expect(res.stderr).toMatch(/career_target_demand has a row on a merge competency/);
+    expect(queryOne(url, 'SELECT count(*) FROM career_target_demand')).toBe(before);
+  });
+
+  it('p0b-preflight.sh refuses when 0057 is already applied, touching nothing', () => {
+    const name = `${ROLLBACK_TEST_DB}_preflightapplied`;
+    expect(isP0bRollbackTestDb(name)).toBe(true);
+    createdDbs.add(name);
+    cloneDatabase(SCRATCH_URL, name); // clone FROM the main scratch: already post-0057
+    const url = withDbName(SCRATCH_URL, name);
+
+    const res = runScript(PREFLIGHT_SH, [name], { DATABASE_URL: url });
+
+    expect(res.status).not.toBe(0);
+    expect(res.stderr).toMatch(/0057: already applied/);
+  });
+
+  it('p0b-preflight.sh enforces the same database-name allowlist before any connection', () => {
+    const res = runScript(PREFLIGHT_SH, ['gc_curriculum_p0b_pre'], { DATABASE_URL: GARBAGE_DATABASE_URL });
+    expect(res.status).not.toBe(0);
+    expect(res.stderr).toMatch(/not on the allowed database-name list/);
   });
 });

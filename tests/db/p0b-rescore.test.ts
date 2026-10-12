@@ -5,12 +5,12 @@
 // snapshot_competency_coverage keyed (snapshot, competency)), so this is
 // gated on isP0bMainDb(), same as the other post-0057 DB tests.
 //
-// The scorer (scoreSnapshotCompetencies) and the wiki writer (writeMergedStub,
-// regenerateWikiForSnapshot) are ALWAYS mocked here — this suite makes no
-// paid AI calls and never touches the wiki repo. Everything else (the scope
-// query, the catalog reads, upsertCoverageCell) runs for real against the
-// scratch database, with a fixture course+snapshot created in each test and
-// removed afterward.
+// The scorer (scoreSnapshotCompetencies) and every wiki writer
+// (writeMergedStub, regenerateCoursePage, runProgramWikiPass) are ALWAYS
+// mocked here — this suite makes no paid AI calls and never touches the
+// wiki repo. Everything else (the scope query, the catalog reads,
+// upsertCoverageCell) runs for real against the scratch database, with a
+// fixture course+snapshot created in each test and removed afterward.
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
@@ -18,10 +18,15 @@ import { courses, courseCaptureSnapshots, snapshotCompetencyCoverage } from '@/l
 import {
   main,
   runRescore,
+  parseArgs,
   findInScopeSnapshots,
+  findLatestNonRetiredSnapshot,
   shouldWriteWiki,
+  allFailures,
   LIVE_DB_NAME,
+  DEFAULT_MAX_CALLS,
   SURVIVOR_IDS,
+  type RescoreArgs,
   type RescoreDeps,
 } from '@/scripts/migrations/2026-10-12-p0b-rescore';
 import { SCRATCH_DB, isP0bMainDb } from './p0b/scratch-guard';
@@ -33,10 +38,11 @@ const TEST_CODE = 'ZZ 9992'; // never a real course — distinct from the other 
 // course — must now be IN scope (the owner's 8b decision: career views and
 // scoring count every program-visible course, not just builds_to_career).
 const OFFPATH_CODE = 'ZZ 9991';
-// I-1/M-8 fix: a course with TWO non-retired snapshots for the SAME
+// I-1/M-8/I-3 fix: a course with TWO non-retired snapshots for the SAME
 // instructor — an older one with a group-member cell, and a newer (so
 // "latest") one with no coverage at all. Scope must include the OLDER
-// snapshot even though it isn't the latest capture for that instructor.
+// snapshot even though it isn't the latest capture for that instructor
+// (M-8); the wiki course regen must use the NEWER one regardless (I-3).
 const MULTI_CODE = 'ZZ 9990';
 const PROFILE = { course_code: TEST_CODE, scale_version: 'v1' } as never;
 const INPUTS_META = { catalog: {}, builderProfilePresent: false, materials: [], prereqSnapshotsUsed: [], scanPasses: {} } as never;
@@ -129,9 +135,16 @@ function mockDeps(overrides: Partial<RescoreDeps> = {}): RescoreDeps {
     checkDailyCap: vi.fn().mockResolvedValue({ ok: true, spentCents: 0, overCap: false }),
     recordSpend: vi.fn().mockResolvedValue(undefined),
     writeMergedStub: vi.fn().mockResolvedValue({ sha: 'deadbeef' }),
-    regenerateWikiForSnapshot: vi.fn().mockResolvedValue({ sha: 'deadbeef' }),
+    regenerateCoursePage: vi.fn().mockResolvedValue({ sha: 'deadbeef' }),
+    runProgramWikiPass: vi.fn().mockResolvedValue([{ batchIndex: 0, pages: ['index.md'], ok: true }]),
+    estimateWikiCalls: vi.fn().mockResolvedValue(0),
     ...overrides,
   };
+}
+
+/** RescoreArgs builder — keeps every call site from having to spell out wikiOnly/maxCalls. */
+function args(overrides: Partial<RescoreArgs> = {}): RescoreArgs {
+  return { apply: true, expectDb: SCRATCH_DB, skipWiki: false, wikiOnly: false, maxCalls: DEFAULT_MAX_CALLS, ...overrides };
 }
 
 // Pure decision-function tests — no DB connection of any kind, so these run
@@ -140,17 +153,41 @@ function mockDeps(overrides: Partial<RescoreDeps> = {}): RescoreDeps {
 // function" for the live-named case the hard rules call for.
 describe('shouldWriteWiki (fix: wiki writes only against --expect-db gc_curriculum)', () => {
   it('is true only for the live db name with --skip-wiki not passed', () => {
-    expect(shouldWriteWiki({ apply: true, expectDb: LIVE_DB_NAME, skipWiki: false })).toBe(true);
+    expect(shouldWriteWiki(args({ expectDb: LIVE_DB_NAME, skipWiki: false }))).toBe(true);
   });
 
   it('--skip-wiki remains an explicit opt-out even against the live db name', () => {
-    expect(shouldWriteWiki({ apply: true, expectDb: LIVE_DB_NAME, skipWiki: true })).toBe(false);
+    expect(shouldWriteWiki(args({ expectDb: LIVE_DB_NAME, skipWiki: true }))).toBe(false);
   });
 
   it('is false for any non-live --expect-db, regardless of --skip-wiki (the forgotten-flag case)', () => {
-    expect(shouldWriteWiki({ apply: true, expectDb: 'gc_curriculum_p0b_scratch', skipWiki: false })).toBe(false);
-    expect(shouldWriteWiki({ apply: true, expectDb: 'gc_curriculum_p0b_scratch', skipWiki: true })).toBe(false);
-    expect(shouldWriteWiki({ apply: true, expectDb: 'gc_curriculum_p0b_pre', skipWiki: false })).toBe(false);
+    expect(shouldWriteWiki(args({ expectDb: 'gc_curriculum_p0b_scratch', skipWiki: false }))).toBe(false);
+    expect(shouldWriteWiki(args({ expectDb: 'gc_curriculum_p0b_scratch', skipWiki: true }))).toBe(false);
+    expect(shouldWriteWiki(args({ expectDb: 'gc_curriculum_p0b_pre', skipWiki: false }))).toBe(false);
+  });
+});
+
+describe('parseArgs — --wiki-only and --max-calls (hostile review round 2)', () => {
+  it('defaults maxCalls to 40 and wikiOnly to false', () => {
+    const a = parseArgs(['--dry-run', '--expect-db', 'gc_curriculum_p0b_scratch']);
+    expect(a.maxCalls).toBe(DEFAULT_MAX_CALLS);
+    expect(a.wikiOnly).toBe(false);
+  });
+
+  it('--wiki-only sets wikiOnly true', () => {
+    const a = parseArgs(['--apply', '--expect-db', 'gc_curriculum', '--wiki-only']);
+    expect(a.wikiOnly).toBe(true);
+  });
+
+  it('--max-calls <n> overrides the default', () => {
+    const a = parseArgs(['--apply', '--expect-db', 'gc_curriculum', '--max-calls', '60']);
+    expect(a.maxCalls).toBe(60);
+  });
+
+  it('rejects a non-integer or non-positive --max-calls', () => {
+    expect(() => parseArgs(['--apply', '--expect-db', 'gc_curriculum', '--max-calls', 'abc'])).toThrow(/positive integer/);
+    expect(() => parseArgs(['--apply', '--expect-db', 'gc_curriculum', '--max-calls', '0'])).toThrow(/positive integer/);
+    expect(() => parseArgs(['--apply', '--expect-db', 'gc_curriculum', '--max-calls', '-5'])).toThrow(/positive integer/);
   });
 });
 
@@ -180,10 +217,22 @@ describe.skipIf(!RUN)('findInScopeSnapshots scope (I-1 hostile-review fix: progr
   });
 });
 
+describe.skipIf(!RUN)('findLatestNonRetiredSnapshot (I-3: the wiki course regen reads from here, never from a scope item directly)', () => {
+  afterEach(cleanupFixture);
+
+  it('returns the NEWER snapshot for a course even though only the OLDER one has a group cell', async () => {
+    const { newer } = await newMultiSnapshotFixture();
+
+    const latest = await findLatestNonRetiredSnapshot(MULTI_CODE);
+
+    expect(latest).toEqual({ snapshotId: newer });
+  });
+});
+
 describe.skipIf(!RUN)('p0b rescore script (P0b Task 7, post-0057)', () => {
   afterEach(cleanupFixture);
 
-  it('--dry-run writes nothing: no scoring call, no cell upsert, no wiki write', async () => {
+  it('--dry-run writes nothing and reports both a scoring and a wiki call estimate', async () => {
     await newFixtureSnapshot();
     const deps = mockDeps();
 
@@ -194,7 +243,8 @@ describe.skipIf(!RUN)('p0b rescore script (P0b Task 7, post-0057)', () => {
     expect(deps.checkDailyCap).not.toHaveBeenCalled();
     expect(deps.recordSpend).not.toHaveBeenCalled();
     expect(deps.writeMergedStub).not.toHaveBeenCalled();
-    expect(deps.regenerateWikiForSnapshot).not.toHaveBeenCalled();
+    expect(deps.regenerateCoursePage).not.toHaveBeenCalled();
+    expect(deps.runProgramWikiPass).not.toHaveBeenCalled();
 
     const fixtureRows = await db.select({ competencyId: snapshotCompetencyCoverage.competencyId })
       .from(snapshotCompetencyCoverage)
@@ -212,11 +262,13 @@ describe.skipIf(!RUN)('p0b rescore script (P0b Task 7, post-0057)', () => {
     // overwrite its cells with this test's fixed mock score.
     const deps = mockDeps({ findInScopeSnapshots: vi.fn().mockResolvedValue([{ snapshotId, courseCode: TEST_CODE }]) });
 
-    const outcome = await runRescore({ apply: true, expectDb: SCRATCH_DB, skipWiki: true }, deps);
+    const outcome = await runRescore(args({ expectDb: SCRATCH_DB, skipWiki: true }), deps);
 
     expect(outcome.scope).toEqual([{ snapshotId, courseCode: TEST_CODE }]);
+    expect(outcome.scoreResults).toEqual([{ snapshotId, courseCode: TEST_CODE, ok: true }]);
     expect(outcome.snapshotsProcessed).toBe(1);
     expect(outcome.cappedEarly).toBe(false);
+    expect(outcome.refused).toBe(false);
 
     expect(outcome.rows).toHaveLength(2);
     expect(outcome.rows.map(r => r.competencyId).sort()).toEqual(['domain-knowledge', 'project-management']);
@@ -228,8 +280,12 @@ describe.skipIf(!RUN)('p0b rescore script (P0b Task 7, post-0057)', () => {
     expect(survivorRows.map(r => r.model)).toEqual(['test-model', 'test-model']);
 
     // skipWiki: true — no wiki writes at all, even though apply ran for real.
+    expect(outcome.courseWikiResults).toEqual([]);
+    expect(outcome.programWikiResults).toEqual([]);
+    expect(outcome.stubResults).toEqual([]);
     expect(deps.writeMergedStub).not.toHaveBeenCalled();
-    expect(deps.regenerateWikiForSnapshot).not.toHaveBeenCalled();
+    expect(deps.regenerateCoursePage).not.toHaveBeenCalled();
+    expect(deps.runProgramWikiPass).not.toHaveBeenCalled();
   });
 
   it('--apply against scratch WITHOUT --skip-wiki still makes 0 wiki calls — only --expect-db gc_curriculum writes wiki', async () => {
@@ -240,52 +296,61 @@ describe.skipIf(!RUN)('p0b rescore script (P0b Task 7, post-0057)', () => {
     // SCRATCH_DB !== LIVE_DB_NAME, so even with skipWiki left false (forgetting
     // --skip-wiki, the exact scenario this guard exists for), no wiki write may happen.
     expect(SCRATCH_DB).not.toBe(LIVE_DB_NAME);
-    const outcome = await runRescore({ apply: true, expectDb: SCRATCH_DB, skipWiki: false }, deps);
+    const outcome = await runRescore(args({ expectDb: SCRATCH_DB, skipWiki: false }), deps);
 
     expect(outcome.wikiWritesEnabled).toBe(false);
     expect(deps.writeMergedStub).not.toHaveBeenCalled();
-    expect(deps.regenerateWikiForSnapshot).not.toHaveBeenCalled();
+    expect(deps.regenerateCoursePage).not.toHaveBeenCalled();
+    expect(deps.runProgramWikiPass).not.toHaveBeenCalled();
   });
 
-  // --- I-2 (hostile review): wiki regenerations must be AWAITED, not fired
-  // and dropped by process.exit. These call runRescore directly with
-  // expectDb: LIVE_DB_NAME (shouldWriteWiki is a pure function of args —
-  // no real 'gc_curriculum' connection is involved; the executor/db
-  // connection underneath is still the real scratch database throughout).
-  it('awaits a slow wiki regeneration before returning — it is not dropped (I-2)', async () => {
+  // --- I-3 (hostile review round 2): the wiki course regen must use the
+  // course's ACTUAL latest non-retired snapshot, never a superseded
+  // snapshot that merely happened to be in the SCORING scope.
+  it("wiki course regeneration uses the course's actual latest non-retired snapshot, never a superseded in-scope snapshot (I-3)", async () => {
+    const { older, newer } = await newMultiSnapshotFixture();
+    const deps = mockDeps({
+      // Only the OLDER (superseded) snapshot is in the scoring scope —
+      // exactly GC 1010's real shape in the hostile review's reproduction.
+      findInScopeSnapshots: vi.fn().mockResolvedValue([{ snapshotId: older, courseCode: MULTI_CODE }]),
+    });
+
+    const outcome = await runRescore(args({ expectDb: LIVE_DB_NAME, skipWiki: false }), deps);
+
+    expect(outcome.scoreResults).toEqual([{ snapshotId: older, courseCode: MULTI_CODE, ok: true }]);
+    expect(deps.regenerateCoursePage).toHaveBeenCalledTimes(1);
+    expect(deps.regenerateCoursePage).toHaveBeenCalledWith(newer, expect.any(String));
+    expect(deps.regenerateCoursePage).not.toHaveBeenCalledWith(older, expect.any(String));
+    expect(outcome.courseWikiResults).toEqual([{ courseCode: MULTI_CODE, snapshotId: newer, ok: true }]);
+  });
+
+  it('awaits a slow course wiki regeneration before returning — it is not dropped (I-2/I-3)', async () => {
     const snapshotId = await newFixtureSnapshot();
     let resolved = false;
-    const regen = vi.fn().mockImplementation(() => new Promise(resolve => {
+    const regenCourse = vi.fn().mockImplementation(() => new Promise(resolve => {
       setTimeout(() => { resolved = true; resolve({ sha: 'deadbeef' }); }, 50);
     }));
     const deps = mockDeps({
       findInScopeSnapshots: vi.fn().mockResolvedValue([{ snapshotId, courseCode: TEST_CODE }]),
-      regenerateWikiForSnapshot: regen,
+      regenerateCoursePage: regenCourse,
     });
 
-    const outcome = await runRescore({ apply: true, expectDb: LIVE_DB_NAME, skipWiki: false }, deps);
+    const outcome = await runRescore(args({ expectDb: LIVE_DB_NAME, skipWiki: false }), deps);
 
-    // By the time runRescore's promise resolves, the slow regen must
-    // already have resolved too — proves it was awaited, not fired and
-    // forgotten the way a bare call to regenerateWikiInBackground would be.
     expect(resolved).toBe(true);
-    expect(regen).toHaveBeenCalledWith(snapshotId, expect.any(String));
-    expect(outcome.wikiResults).toEqual([{ snapshotId, courseCode: TEST_CODE, ok: true }]);
+    expect(outcome.courseWikiResults.every(r => r.ok)).toBe(true);
   });
 
-  it('a failed wiki regeneration does not undo the DB cell writes, is reported per snapshot, and main() exits non-zero', async () => {
+  it('a failed course wiki regeneration does not undo the DB cell writes, is reported, and main() exits non-zero', async () => {
     const snapshotId = await newFixtureSnapshot();
-    const regen = vi.fn().mockRejectedValue(new Error('simulated git push failure'));
+    const regenCourse = vi.fn().mockRejectedValue(new Error('simulated git push failure'));
     // assertExpectedDb (main()'s own db-identity check) needs a connected
     // database literally named 'gc_curriculum' to exercise the live wiki
     // path through main() — this suite only ever runs against the real
     // scratch database, so its `executor` is stubbed to answer that ONE
-    // query. Every OTHER executor-consuming read is overridden below too
-    // (getSurvivorCompetencies/getCarriedCells/getMergedAwayNames), so the
-    // stub's `.execute()` is genuinely the only method ever called on it.
-    // upsertCoverageCell is NOT parameterized by executor — it always
-    // writes through the real db singleton — so the cell writes this test
-    // checks for below are real, not stubbed.
+    // query. upsertCoverageCell is NOT parameterized by executor — it
+    // always writes through the real db singleton — so the cell writes
+    // this test checks for below are real, not stubbed.
     const fakeExecutor = { execute: vi.fn().mockResolvedValue({ rows: [{ name: LIVE_DB_NAME }] }) } as unknown as RescoreDeps['executor'];
     const deps = mockDeps({
       executor: fakeExecutor,
@@ -296,7 +361,8 @@ describe.skipIf(!RUN)('p0b rescore script (P0b Task 7, post-0057)', () => {
       ]),
       getCarriedCells: vi.fn().mockResolvedValue({}),
       getMergedAwayNames: vi.fn().mockResolvedValue({}),
-      regenerateWikiForSnapshot: regen,
+      findLatestNonRetiredSnapshot: vi.fn().mockResolvedValue({ snapshotId }),
+      regenerateCoursePage: regenCourse,
     });
 
     const code = await main(['--apply', '--expect-db', LIVE_DB_NAME], deps);
@@ -308,19 +374,18 @@ describe.skipIf(!RUN)('p0b rescore script (P0b Task 7, post-0057)', () => {
     expect(survivorRows).toHaveLength(2);
   });
 
-  it('runRescore itself reports the failed wiki regeneration per snapshot without throwing', async () => {
+  it('runRescore itself reports a failed course wiki regeneration without throwing, and scoring still fully succeeded', async () => {
     const snapshotId = await newFixtureSnapshot();
-    const regen = vi.fn().mockRejectedValue(new Error('simulated git push failure'));
+    const regenCourse = vi.fn().mockRejectedValue(new Error('simulated git push failure'));
     const deps = mockDeps({
       findInScopeSnapshots: vi.fn().mockResolvedValue([{ snapshotId, courseCode: TEST_CODE }]),
-      regenerateWikiForSnapshot: regen,
+      regenerateCoursePage: regenCourse,
     });
 
-    const outcome = await runRescore({ apply: true, expectDb: LIVE_DB_NAME, skipWiki: false }, deps);
+    const outcome = await runRescore(args({ expectDb: LIVE_DB_NAME, skipWiki: false }), deps);
 
-    expect(outcome.wikiResults).toEqual([{ snapshotId, courseCode: TEST_CODE, ok: false, error: 'simulated git push failure' }]);
-    // Scoring itself still fully succeeded despite the wiki failure.
-    expect(outcome.rows).toHaveLength(2);
+    expect(outcome.courseWikiResults).toEqual([{ courseCode: TEST_CODE, snapshotId, ok: false, error: 'simulated git push failure' }]);
+    expect(outcome.rows).toHaveLength(2); // scoring succeeded regardless
   });
 
   it('a failed merged-stub write is also reported and does not throw out of runRescore', async () => {
@@ -330,10 +395,128 @@ describe.skipIf(!RUN)('p0b rescore script (P0b Task 7, post-0057)', () => {
       writeMergedStub: vi.fn().mockRejectedValue(new Error('simulated stub push failure')),
     });
 
-    const outcome = await runRescore({ apply: true, expectDb: LIVE_DB_NAME, skipWiki: false }, deps);
+    const outcome = await runRescore(args({ expectDb: LIVE_DB_NAME, skipWiki: false }), deps);
 
     expect(outcome.stubResults.every(r => r.ok === false)).toBe(true);
     expect(outcome.stubResults).toHaveLength(3);
+  });
+
+  // --- m5 (hostile review round 2): a scoring failure on one item must not
+  // stop the rest of the run.
+  it('a scoring failure on one snapshot is caught, reported, and does not stop the rest of the run (m5)', async () => {
+    const snapshotA = await newFixtureSnapshot();
+    const snapshotB = await newOffPathFixtureSnapshot();
+    const score = vi.fn().mockImplementation(async (input: { snapshotId: string }) => {
+      if (input.snapshotId === snapshotB) throw new Error('simulated scorer failure');
+      return FIXED_SCORE_RESULT;
+    });
+    const deps = mockDeps({
+      findInScopeSnapshots: vi.fn().mockResolvedValue([
+        { snapshotId: snapshotA, courseCode: TEST_CODE },
+        { snapshotId: snapshotB, courseCode: OFFPATH_CODE },
+      ]),
+      scoreSnapshotCompetencies: score,
+    });
+
+    const outcome = await runRescore(args({ expectDb: SCRATCH_DB, skipWiki: true }), deps);
+
+    expect(outcome.scoreResults).toEqual([
+      { snapshotId: snapshotA, courseCode: TEST_CODE, ok: true },
+      { snapshotId: snapshotB, courseCode: OFFPATH_CODE, ok: false, error: 'simulated scorer failure' },
+    ]);
+    // Snapshot A's cells are still written — the failure on B didn't undo them.
+    const dbRowsA = await db.select().from(snapshotCompetencyCoverage).where(eq(snapshotCompetencyCoverage.snapshotId, snapshotA));
+    expect(dbRowsA.filter(r => SURVIVOR_IDS.includes(r.competencyId))).toHaveLength(2);
+    // Snapshot B never got a survivor cell.
+    const dbRowsB = await db.select().from(snapshotCompetencyCoverage).where(eq(snapshotCompetencyCoverage.snapshotId, snapshotB));
+    expect(dbRowsB.filter(r => SURVIVOR_IDS.includes(r.competencyId))).toHaveLength(0);
+
+    expect(allFailures(outcome)).toEqual([{ label: `scoring for ${OFFPATH_CODE} (${snapshotB})`, error: 'simulated scorer failure' }]);
+  });
+
+  // --- m6 (hostile review round 2): --wiki-only skips scoring entirely.
+  it("--wiki-only skips scoring and regenerates wiki only, from the scope's course set", async () => {
+    const snapshotId = await newFixtureSnapshot();
+    const deps = mockDeps({
+      findInScopeSnapshots: vi.fn().mockResolvedValue([{ snapshotId, courseCode: TEST_CODE }]),
+      findLatestNonRetiredSnapshot: vi.fn().mockResolvedValue({ snapshotId }),
+    });
+
+    const outcome = await runRescore(args({ expectDb: LIVE_DB_NAME, skipWiki: false, wikiOnly: true }), deps);
+
+    expect(deps.scoreSnapshotCompetencies).not.toHaveBeenCalled();
+    // m2: checkDailyCap IS called once, for the wiki phase itself — just
+    // never for a scoring call, since --wiki-only skips scoring entirely.
+    expect(deps.checkDailyCap).toHaveBeenCalledTimes(1);
+    expect(outcome.scoreResults).toEqual([]);
+    expect(outcome.rows).toEqual([]);
+    expect(outcome.totalCostUsdCents).toBe(0);
+    expect(deps.regenerateCoursePage).toHaveBeenCalledWith(snapshotId, expect.any(String));
+    expect(outcome.courseWikiResults).toEqual([{ courseCode: TEST_CODE, snapshotId, ok: true }]);
+
+    // No cells were upserted by a --wiki-only run.
+    const dbRows = await db.select().from(snapshotCompetencyCoverage).where(eq(snapshotCompetencyCoverage.snapshotId, snapshotId));
+    expect(dbRows.filter(r => SURVIVOR_IDS.includes(r.competencyId))).toHaveLength(0);
+  });
+
+  it('--wiki-only without --apply behaves like an ordinary dry run (no wiki calls either)', async () => {
+    await newFixtureSnapshot();
+    const deps = mockDeps();
+
+    const code = await main(['--dry-run', '--expect-db', SCRATCH_DB, '--wiki-only'], deps);
+
+    expect(code).toBe(0);
+    expect(deps.regenerateCoursePage).not.toHaveBeenCalled();
+    expect(deps.runProgramWikiPass).not.toHaveBeenCalled();
+  });
+
+  // --- Hard stop (hostile review round 2): --max-calls.
+  it('--apply refuses to start scoring when the planned call count exceeds --max-calls', async () => {
+    const snapshotId = await newFixtureSnapshot();
+    const deps = mockDeps({
+      findInScopeSnapshots: vi.fn().mockResolvedValue([
+        { snapshotId, courseCode: TEST_CODE },
+        { snapshotId: 'fake-2', courseCode: TEST_CODE },
+        { snapshotId: 'fake-3', courseCode: TEST_CODE },
+      ]),
+    });
+
+    const outcome = await runRescore(args({ expectDb: SCRATCH_DB, skipWiki: true, maxCalls: 2 }), deps);
+
+    expect(outcome.refused).toBe(true);
+    expect(outcome.refusedReason).toMatch(/planned 3 scoring call\(s\) exceeds --max-calls 2/);
+    expect(deps.scoreSnapshotCompetencies).not.toHaveBeenCalled();
+    expect(deps.checkDailyCap).not.toHaveBeenCalled();
+
+    const dbRows = await db.select().from(snapshotCompetencyCoverage).where(eq(snapshotCompetencyCoverage.snapshotId, snapshotId));
+    expect(dbRows.filter(r => SURVIVOR_IDS.includes(r.competencyId))).toHaveLength(0);
+  });
+
+  it('--max-calls exactly equal to the scope length does NOT refuse', async () => {
+    const snapshotId = await newFixtureSnapshot();
+    const deps = mockDeps({
+      findInScopeSnapshots: vi.fn().mockResolvedValue([{ snapshotId, courseCode: TEST_CODE }]),
+    });
+
+    const outcome = await runRescore(args({ expectDb: SCRATCH_DB, skipWiki: true, maxCalls: 1 }), deps);
+
+    expect(outcome.refused).toBe(false);
+    expect(deps.scoreSnapshotCompetencies).toHaveBeenCalledTimes(1);
+  });
+
+  it('--max-calls does not apply to --wiki-only (which does no scoring at all)', async () => {
+    const snapshotId = await newFixtureSnapshot();
+    const deps = mockDeps({
+      findInScopeSnapshots: vi.fn().mockResolvedValue([
+        { snapshotId, courseCode: TEST_CODE },
+        { snapshotId: 'fake-2', courseCode: TEST_CODE },
+      ]),
+      findLatestNonRetiredSnapshot: vi.fn().mockResolvedValue({ snapshotId }),
+    });
+
+    const outcome = await runRescore(args({ expectDb: LIVE_DB_NAME, skipWiki: false, wikiOnly: true, maxCalls: 1 }), deps);
+
+    expect(outcome.refused).toBe(false);
   });
 
   it('a wrong --expect-db exits non-zero before any read', async () => {

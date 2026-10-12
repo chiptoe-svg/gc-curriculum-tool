@@ -1434,11 +1434,19 @@ export async function generateProgramWikiBatch(
  * error (I-2 hostile-review fix, 2026-10-12: the re-score script used to
  * have no awaitable form to call and fired `regenerateWikiInBackground`
  * instead, so `process.exit` killed every regeneration still in flight —
- * 0 of 11 completed in the reviewer's reproduction).
+ * 0 of 11 completed in the reviewer's reproduction). `opts.pageTypes`
+ * forwards straight to `updateWikiForSnapshot` — the re-score script (I-3,
+ * hostile review round 2) passes `{ pageTypes: ['course'] }` so it never
+ * regenerates the program-wide pages from a snapshot that happens not to
+ * be the course's actual latest.
  */
-export async function regenerateWikiForSnapshot(snapshotId: string, reason: string): Promise<{ sha: string }> {
+export async function regenerateWikiForSnapshot(
+  snapshotId: string,
+  reason: string,
+  opts: UpdateWikiOptions = {},
+): Promise<{ sha: string }> {
   const snap = await getSnapshotById(snapshotId);
-  const { raw, wiki, logEntry } = await updateWikiForSnapshot(snapshotId);
+  const { raw, wiki, logEntry } = await updateWikiForSnapshot(snapshotId, opts);
   const allPages = [...raw, ...wiki];
   const codeSlug = (snap?.courseCode ?? 'wiki').toLowerCase().replace(/\s+/g, '-');
   const date = new Date().toISOString().slice(0, 10);

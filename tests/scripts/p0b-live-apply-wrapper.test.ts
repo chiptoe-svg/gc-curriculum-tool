@@ -30,11 +30,12 @@ function writeStub(path: string, content: string) {
 }
 
 describe('2026-10-12-p0b-live-apply.sh — static check (always runs)', () => {
-  it('bash -n accepts the wrapper, p0b-apply-db.sh and p0b-db-migrated.sh', () => {
+  it('bash -n accepts the wrapper, p0b-apply-db.sh, p0b-db-migrated.sh and p0b-preflight.sh', () => {
     for (const sh of [
       WRAPPER_SH,
       resolve(ROOT, 'scripts/migrations/p0b-apply-db.sh'),
       resolve(ROOT, 'scripts/migrations/p0b-db-migrated.sh'),
+      resolve(ROOT, 'scripts/migrations/p0b-preflight.sh'),
     ]) {
       expect(() => execFileSync('bash', ['-n', sh], { encoding: 'utf8' })).not.toThrow();
     }
@@ -50,6 +51,13 @@ describe('2026-10-12-p0b-live-apply.sh — stubbed failure paths', () => {
   let shaPostMatch: string;  // post-P0b: 0057 byte-identical to this worktree's
   let shaPostMismatch: string; // post-P0b: 0057 tampered
   let dumpPath: string;      // a plausible pre-apply-*.dump path for rollback-arg tests
+  // m1 (hostile review round 2): defaults so every test that reaches past
+  // the SHA/migration-diff check (apply mode now also runs a preflight
+  // there, before any build or stop) gets a working read-env + preflight
+  // unless it explicitly overrides one — same `...env` spread lets an
+  // explicit override win.
+  let defaultReadEnvStub: string;
+  let defaultPreflightStub: string;
 
   beforeAll(() => {
     tmp = mkdtempSync(join(tmpdir(), 'p0b-live-apply-test-'));
@@ -145,6 +153,9 @@ exit 0
     execFileSync('git', ['add', 'drizzle'], { cwd: deployDir });
     git(deployDir, ['commit', '-q', '-m', 'post-P0b-mismatch']);
     shaPostMismatch = git(deployDir, ['rev-parse', 'HEAD']);
+
+    defaultReadEnvStub = writeReadEnvStub(tmp, {});
+    defaultPreflightStub = writePreflightStub(tmp, { exitCode: 0 });
   });
 
   afterAll(() => {
@@ -170,6 +181,8 @@ exit 0
       P0B_LIVE_APPLY_PLIST_APP: join(tmp, 'curriculum-tool.plist'),
       P0B_LIVE_APPLY_PLIST_WATCHDOG: join(tmp, 'dev-watchdog.plist'),
       P0B_LIVE_APPLY_WAIT_SLEEP: '0.05',
+      P0B_LIVE_APPLY_READ_ENV_MJS: defaultReadEnvStub,
+      P0B_LIVE_APPLY_PREFLIGHT_SH: defaultPreflightStub,
       STUB_LOG: log,
       // A fresh, absent-by-default marker per call: the stop-phase wait loop
       // sees "not listening" immediately (nothing was running), and the
@@ -291,18 +304,49 @@ exit 0
     expect(lastLogContents()).toBe('');
   });
 
-  // --- stopped phase: read-env failure --------------------------------------
-  it('read-env failure — PHASE stopped: app+watchdog ARE stopped, DB untouched, previous SHA printed', () => {
+  // --- pre-stop phase: read-env failure (m1, hostile review round 2: read-env
+  // is now ALSO called for the preflight, before anything is stopped — so a
+  // failure there now surfaces EARLIER than it used to (this used to be a
+  // "stopped" case, back when read-env was first called at the DB step).
+  it('read-env failure — now surfaces at the preflight, PHASE pre-stop: nothing stopped at all', () => {
     checkoutForTest(shaPostMatch);
     const res = run([shaPostMatch, 'apply'], {
       P0B_LIVE_APPLY_READ_ENV_MJS: writeReadEnvStub(tmp, { fail: true }),
     });
     expect(res.status).not.toBe(0);
-    expect(res.stderr).toMatch(/The app and watchdog are STOPPED/);
-    expect(res.stderr).toMatch(/database is UNTOUCHED/);
-    expect(res.stderr).toContain(shaPre); // the previously-deployed SHA, from git reflog
-    expect(lastLogContents()).toMatch(/launchctl bootout.*dev-watchdog/);
-    expect(lastLogContents()).toMatch(/launchctl bootout.*curriculum-tool/);
+    expect(res.stderr).toMatch(/Nothing was stopped and nothing was touched/);
+    expect(lastLogContents()).not.toMatch(/launchctl bootout/);
+  });
+
+  // --- m1 (hostile review round 2): the preflight runs BEFORE any build or
+  // stop, in apply mode — a refusal must leave the app running and never
+  // call pnpm or any launchctl command at all.
+  it('preflight refuses — PHASE pre-stop: app never stopped, pnpm never ran, no DB script called', () => {
+    checkoutForTest(shaPostMatch);
+    const res = run([shaPostMatch, 'apply'], {
+      P0B_LIVE_APPLY_PREFLIGHT_SH: writePreflightStub(tmp, { exitCode: 1 }),
+    });
+    expect(res.status).not.toBe(0);
+    expect(res.stderr).toMatch(/refusing: preflight failed/);
+    expect(res.stderr).toMatch(/Nothing was stopped and nothing was touched/);
+    const log = lastLogContents();
+    expect(log).toMatch(/stub-preflight-called db=gc_curriculum/);
+    expect(log).not.toMatch(/launchctl/);
+    expect(log).not.toMatch(/pnpm/);
+    expect(log).not.toMatch(/stub-apply-db-called/);
+  });
+
+  // Rollback mode never runs the preflight (0057 doesn't apply during a
+  // restore) — a preflight-failure stub must have NO effect in that mode.
+  it('preflight is NOT run in rollback mode — a failing preflight stub has no effect', () => {
+    checkoutForTest(shaPre);
+    const res = run([shaPre, 'rollback', dumpPath], {
+      P0B_LIVE_APPLY_PREFLIGHT_SH: writePreflightStub(tmp, { exitCode: 1 }),
+      P0B_LIVE_APPLY_APPLY_DB_SH: writeApplyDbStub(tmp, { exitCode: 0 }),
+      P0B_LIVE_APPLY_DB_MIGRATED_SH: writeDbMigratedStub(tmp, { output: 'f' }),
+    });
+    expect(res.status).toBe(0);
+    expect(lastLogContents()).not.toMatch(/stub-preflight-called/);
   });
 
   // --- stopped phase: :3000 never closes (bootout had no effect) -------------
@@ -448,6 +492,9 @@ exit 0
     expect(res.status).toBe(0);
     expect(res.stdout).toMatch(/Smoke test/);
     expect(res.stdout).toMatch(/update docs\/STATE\.md: P0b applied to production/);
+    // m7 (hostile review round 2, cosmetic): "DB apply applied." read oddly.
+    expect(res.stdout).toMatch(/DB apply succeeded/);
+    expect(res.stdout).not.toMatch(/DB apply applied/);
     expect(res.stderr).toBe('');
     const log = lastLogContents();
     expect(log).toMatch(/pnpm build/);
@@ -561,6 +608,12 @@ exit 0
         P0B_LIVE_APPLY_PLIST_APP: join(tmp, 'curriculum-tool.plist'),
         P0B_LIVE_APPLY_PLIST_WATCHDOG: join(tmp, 'dev-watchdog.plist'),
         P0B_LIVE_APPLY_WAIT_SLEEP: '0.05',
+        // m1 (hostile review round 2): same defaults as run()'s fullEnv — the
+        // preflight (apply mode) now calls read-env BEFORE the build these
+        // SIGINT tests interrupt, so it needs a working default too, unless
+        // a test overrides one explicitly via `env`.
+        P0B_LIVE_APPLY_READ_ENV_MJS: defaultReadEnvStub,
+        P0B_LIVE_APPLY_PREFLIGHT_SH: defaultPreflightStub,
         ...env,
       },
     });
@@ -649,5 +702,14 @@ function writeDbMigratedStub(tmp: string, opts: { output?: string; fail?: boolea
   const p = join(tmp, `db-migrated-${Math.random().toString(36).slice(2)}.sh`);
   const body = opts.fail ? 'exit 1\n' : `echo "${opts.output ?? 'f'}"\n`;
   writeStub(p, `#!/usr/bin/env bash\n${body}`);
+  return p;
+}
+
+// m1 (hostile review round 2): stub for p0b-preflight.sh. Logs its one arg
+// (the expected db name) to STUB_LOG so a test can confirm it was (or
+// wasn't) called, same convention as writeApplyDbStub.
+function writePreflightStub(tmp: string, opts: { exitCode: number }): string {
+  const p = join(tmp, `preflight-${Math.random().toString(36).slice(2)}.sh`);
+  writeStub(p, `#!/usr/bin/env bash\necho "stub-preflight-called db=$1" >> "\${STUB_LOG:-/dev/null}"\nexit ${opts.exitCode}\n`);
   return p;
 }

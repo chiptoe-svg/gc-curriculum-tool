@@ -5,14 +5,22 @@
 # OWNER-RUN. Live-apply runbook for migration 0057 (P0b) — sibling to
 # 2026-10-11-p0a-live-apply.sh, same order of operations: verify the
 # deploy checkout and that its commit actually matches the requested mode
-# → build the new code while the OLD app still serves → stop the
-# watchdog and the app → apply (or restore) against the LIVE gc_curriculum
-# database through p0b-apply-db.sh → restart only on success.
+# → (apply mode only) a READ-ONLY preflight of 0057's own preconditions,
+# BEFORE anything is built or stopped → build the new code while the OLD
+# app still serves → stop the watchdog and the app → apply (or restore)
+# against the LIVE gc_curriculum database through p0b-apply-db.sh →
+# restart only on success.
 #
 # Differences from the P0a wrapper (task-8 brief):
 #   - migration is 0057 (drizzle/0057_competency_catalog_p0b.sql), verify
 #     script is 2026-10-12-p0b-verify.sql, DB-state probe is
 #     p0b-db-migrated.sh (sub_competency_map exists == 0057 applied).
+#   - m1 (hostile review round 2, 2026-10-12): apply mode runs
+#     p0b-preflight.sh (read-only; 0057's precondition checks + count
+#     computation inside BEGIN READ ONLY) BEFORE `pnpm build` and BEFORE
+#     the bootout — a refusal here means nothing was ever stopped, which
+#     closes the round-1 cost of 0057 refusing only after the app was
+#     already down for no reason.
 #   - rollback mode = RESTORE, not a rollback SQL file: the 3rd argument
 #     is a dump path (produced by a previous apply's pre-apply-*.dump
 #     backup), handed through to p0b-apply-db.sh, which validates it
@@ -52,6 +60,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEPLOY_DIR="${P0B_LIVE_APPLY_DEPLOY_DIR:-/Users/admin/projects/curriculum_developer-deploy}"
 APPLY_DB_SH="${P0B_LIVE_APPLY_APPLY_DB_SH:-$SCRIPT_DIR/p0b-apply-db.sh}"
 DB_MIGRATED_SH="${P0B_LIVE_APPLY_DB_MIGRATED_SH:-$SCRIPT_DIR/p0b-db-migrated.sh}"
+PREFLIGHT_SH="${P0B_LIVE_APPLY_PREFLIGHT_SH:-$SCRIPT_DIR/p0b-preflight.sh}"
 EXPECTED_DB="${P0B_LIVE_APPLY_EXPECTED_DB:-gc_curriculum}"
 BACKUP_DIR="${P0B_LIVE_APPLY_BACKUP_DIR:-$HOME/.local/share/gc-curriculum-tool/p0b}"
 PLIST_APP="${P0B_LIVE_APPLY_PLIST_APP:-$HOME/Library/LaunchAgents/com.gc.curriculum-tool.plist}"
@@ -296,6 +305,17 @@ if [ "$MODE" = apply ]; then
     exit 1
   fi
   echo "confirmed: $DEPLOY_SHA's drizzle/0057_competency_catalog_p0b.sql matches $MIGRATION_SQL_LOCAL byte-for-byte"
+
+  # m1 (hostile review round 2): a READ-ONLY preflight of 0057's
+  # preconditions (including M-6) and its count computation, BEFORE
+  # building or stopping anything — so a refusal here costs nothing. Still
+  # phase "pre-stop": nothing has been stopped or touched if this refuses.
+  echo "=== preflight: read-only check of 0057's preconditions (before any build or stop) ==="
+  DATABASE_URL="$(node "$READ_ENV_MJS" "$DEPLOY_DIR" DATABASE_URL)"
+  if ! DATABASE_URL="$DATABASE_URL" "$PREFLIGHT_SH" "$EXPECTED_DB"; then
+    echo "refusing: preflight failed — see above; nothing stopped, nothing touched" >&2
+    exit 1
+  fi
 else
   if git -C "$DEPLOY_DIR" cat-file -e "$DEPLOY_SHA:drizzle/0057_competency_catalog_p0b.sql" 2>/dev/null; then
     echo "refusing: $DEPLOY_SHA DOES have drizzle/0057_competency_catalog_p0b.sql — rollback mode requires a pre-P0b commit (the target you are rolling back TO); nothing stopped, nothing touched" >&2
@@ -389,7 +409,7 @@ SMOKE
 else
   cat <<SMOKE
 
-DB apply applied. App and watchdog restarted. Smoke test at
+DB apply succeeded. App and watchdog restarted. Smoke test at
 https://gcworkflow.clemson.edu:8443:
   - /program — each target tab
   - a course page's prerequisite panel

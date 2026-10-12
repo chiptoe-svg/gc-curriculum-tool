@@ -39,6 +39,7 @@ const APPLY_DB_SH = resolve(ROOT, 'scripts/migrations/p0b-apply-db.sh');
 const DB_MIGRATED_SH = resolve(ROOT, 'scripts/migrations/p0b-db-migrated.sh');
 const LIVE_APPLY_SH = resolve(ROOT, 'scripts/migrations/2026-10-12-p0b-live-apply.sh');
 const LIB_SH = resolve(ROOT, 'scripts/migrations/p0a-lib.sh');
+const PREFLIGHT_SH = resolve(ROOT, 'scripts/migrations/p0b-preflight.sh');
 const PGBIN = '/Applications/Postgres.app/Contents/Versions/17/bin';
 
 const RUN = isP0bPreDb() && process.env.P0B_APPLY_DB_TEST === '1';
@@ -61,8 +62,8 @@ function runScript(bin: string, args: string[], env?: Record<string, string>): R
 }
 
 describe('p0b-apply-db.sh / p0b-db-migrated.sh — static checks (always run)', () => {
-  it('bash -n accepts all four scripts', () => {
-    for (const sh of [APPLY_DB_SH, DB_MIGRATED_SH, LIVE_APPLY_SH, LIB_SH]) {
+  it('bash -n accepts all five scripts', () => {
+    for (const sh of [APPLY_DB_SH, DB_MIGRATED_SH, LIVE_APPLY_SH, LIB_SH, PREFLIGHT_SH]) {
       expect(() => execFileSync('bash', ['-n', sh], { encoding: 'utf8' })).not.toThrow();
     }
   });
