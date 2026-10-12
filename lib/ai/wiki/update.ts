@@ -23,6 +23,7 @@ import {
   targetCoverage,
   careerTargets,
   targetSubCompetencies,
+  subCompetencies,
   courses,
 } from '@/lib/db/schema';
 import {
@@ -39,7 +40,7 @@ import { writeAndPush, readWikiPage, wikiRepoPath } from '@/lib/wiki/git-ops';
 import { deriveEvidenceBand, type EvidenceBand } from '@/lib/program/evidence-ladder';
 import { dedupeBands, stampEvidenceBands } from '@/lib/ai/wiki/evidence-band-markers';
 export { dedupeBands, stampEvidenceBands } from '@/lib/ai/wiki/evidence-band-markers';
-import { stampOkfFrontmatter, normalizeResourceOrigin } from '@/lib/ai/wiki/okf-frontmatter';
+import { stampOkfFrontmatter, normalizeResourceOrigin, okfResource } from '@/lib/ai/wiki/okf-frontmatter';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -125,6 +126,24 @@ function shortId(id: string): string {
   return id.replace(/-/g, '').slice(0, 7);
 }
 
+/**
+ * Given a set of sub-competency ids, return the subset that are NOT retired
+ * in the catalog (shared by the per-snapshot path and refresh-all). P0b
+ * (migration 0057) retires merged-away competencies but their history
+ * coverage cells persist, carried forward to the survivor — so any code
+ * deriving "which competency pages need regeneration" from coverage cells
+ * must intersect with this before treating an id as current. No DB call for
+ * an empty input.
+ */
+export async function activeCompetencyIds(ids: ReadonlyArray<string>): Promise<Set<string>> {
+  if (ids.length === 0) return new Set();
+  const rows = await db
+    .select({ id: subCompetencies.id })
+    .from(subCompetencies)
+    .where(and(inArray(subCompetencies.id, ids), eq(subCompetencies.retired, false)));
+  return new Set(rows.map(r => r.id));
+}
+
 // ---------------------------------------------------------------------------
 // Step 1 — computeAffectedPages
 // ---------------------------------------------------------------------------
@@ -179,7 +198,16 @@ export async function computeAffectedPages(
   const uniqueSubCompetencyIds = [...new Set(coverageCells.map(c => c.subCompetencyId))];
   const uniqueTargetIds = [...new Set(coverageCells.map(c => c.careerTargetId))];
 
+  // P0b (migration 0057): a merged-away competency's history coverage cells
+  // persist (carried forward to the survivor), so `coverageCells` can still
+  // list a retired id even though its catalog row is gone from current
+  // membership. Exclude it here so the wiki never regenerates a page for a
+  // retired competency on an ordinary snapshot regen — its page becomes a
+  // one-time "merged into" stub (writeMergedStub), not a live LLM target.
+  const activeSubIds = await activeCompetencyIds(uniqueSubCompetencyIds);
+
   for (const subId of uniqueSubCompetencyIds) {
+    if (!activeSubIds.has(subId)) continue;
     wikiPages.push({
       type: 'competency',
       slug: subId,
@@ -1385,4 +1413,86 @@ export function regenerateWikiInBackground(snapshotId: string, reason: string): 
       );
     }
   })();
+}
+
+// ---------------------------------------------------------------------------
+// Step 6 — merged-into stub for a retired-and-merged competency (P0b, Task 6)
+//
+// A merged-away competency (sub_competencies.merged_into set, migration 0057)
+// keeps its OLD page slug in the wiki, but that page must stop being an LLM
+// target: its content is replaced ONCE with a deterministic stub that names
+// and links the survivor. Task 7's script is the only caller — nothing here
+// runs at import time.
+// ---------------------------------------------------------------------------
+
+/** Title-case a hyphenated slug, upper-casing short (≤2 char) segments as acronyms. */
+function titleFromSlug(slug: string): string {
+  return slug
+    .split('-')
+    .map(w => (w.length <= 2 ? w.toUpperCase() : w[0]!.toUpperCase() + w.slice(1)))
+    .join(' ');
+}
+
+/**
+ * Pure: build the "merged into" stub page for a retired-and-merged
+ * competency. Follows the same path/slug convention as a live competency
+ * page (`competencies/<oldId>.md`) so it REPLACES the old page in place, and
+ * carries the same OKF frontmatter contract (`OKF_REQUIRED_KEYS`) plus the
+ * `competencies` schema's required "Across the program" section so
+ * `pnpm wiki:lint` accepts it. No I/O, no AI — `opts.timestamp` defaults to
+ * "now" only for the convenience of a real caller; tests pass it explicitly.
+ */
+export function buildMergedStubPage(
+  oldId: string,
+  survivorId: string,
+  survivorName: string,
+  opts: { timestamp?: string } = {},
+): WikiPageWrite {
+  const title = titleFromSlug(oldId);
+  const timestamp = opts.timestamp ?? new Date().toISOString();
+  const survivorLink = `[[${survivorId}|${survivorName}]]`;
+  const lines = [
+    '---',
+    'type: competency',
+    `title: "${title}"`,
+    `description: "Retired — merged into ${survivorName}."`,
+    `merged_into: ${survivorId}`,
+    'slug: ' + oldId,
+    'tags: [competency, merged]',
+    `timestamp: ${timestamp}`,
+    `resource: ${okfResource('competency', oldId)}`,
+    '---',
+    '',
+    `# ${title}`,
+    '',
+    '## Merged',
+    '',
+    `This competency was retired and merged into ${survivorLink}. Its history (contributing courses, snapshots) is preserved; current program-wide coverage for this area is tracked on that page.`,
+    '',
+    '## Across the program',
+    '',
+    `See ${survivorLink} for current coverage.`,
+    '',
+  ];
+  return { path: `competencies/${oldId}.md`, content: lines.join('\n') };
+}
+
+/**
+ * Thin writer: build the stub (buildMergedStubPage) and write it through the
+ * existing wiki write path (writeAndPush). Makes no LLM call. Called once per
+ * merged-away id by Task 7's apply script — never from the per-snapshot or
+ * refresh-all regeneration paths.
+ */
+export async function writeMergedStub(
+  oldId: string,
+  survivorId: string,
+  survivorName: string,
+): Promise<{ sha: string }> {
+  const page = buildMergedStubPage(oldId, survivorId, survivorName);
+  const logEntry = `${new Date().toISOString()} — merged-stub: ${oldId} → ${survivorId}`;
+  return writeAndPush({
+    pages: [page],
+    logEntry,
+    commitMessage: `docs(wiki): stub ${oldId} — merged into ${survivorId}`,
+  });
 }

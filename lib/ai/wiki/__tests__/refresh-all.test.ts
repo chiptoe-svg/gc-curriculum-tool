@@ -9,8 +9,10 @@ import { WikiPagesWithheldError } from '@/lib/wiki/git-ops';
 
 vi.mock('@/lib/db/client', () => ({ db: { select: vi.fn() } }));
 
+import { db } from '@/lib/db/client';
 import {
   latestSnapshotPerCourse,
+  loadRefreshInputs,
   planRefresh,
   parseRefreshArgs,
   runRefresh,
@@ -18,6 +20,23 @@ import {
   type RefreshInputs,
   type RefreshDeps,
 } from '../refresh-all';
+
+// Chainable drizzle-style mock, same pattern as lib/ai/wiki/__tests__/update.test.ts.
+function makeDbChain(rows: unknown[]) {
+  const chain: Record<string, (...args: unknown[]) => unknown> = {};
+  const selfReturn = () => chain;
+  chain.select = selfReturn;
+  chain.from = selfReturn;
+  chain.innerJoin = selfReturn;
+  chain.where = selfReturn;
+  chain.orderBy = selfReturn;
+  chain.limit = () => Promise.resolve(rows);
+  (chain as Record<string, unknown>).then = (
+    resolve: (v: unknown) => unknown,
+    reject?: (e: unknown) => unknown,
+  ) => Promise.resolve(rows).then(resolve, reject);
+  return chain;
+}
 
 const d = (s: string) => new Date(`${s}T12:00:00Z`);
 
@@ -144,6 +163,28 @@ describe('parseRefreshArgs', () => {
 describe('oldPathCallCount', () => {
   it('sums ceil(pages / WIKI_PAGES_PER_CALL) per snapshot', () => {
     expect(oldPathCallCount([43, 2, 6, 7])).toBe(8 + 1 + 1 + 2);
+  });
+});
+
+describe('loadRefreshInputs', () => {
+  it('excludes a retired (merged-away) competency from competencySlugs even when its history coverage cell is present', async () => {
+    // P0b (migration 0057): gc-production-literacy's history coverage cell
+    // persists under its old id, but it's retired (merged into
+    // domain-knowledge) — the activeCompetencyIds lookup (2nd+ db.select
+    // call) reports only domain-knowledge as active.
+    (db.select as ReturnType<typeof vi.fn>)
+      .mockReturnValueOnce(makeDbChain([])) // snaps query — empty is fine, unrelated to this assertion
+      .mockReturnValueOnce(
+        makeDbChain([
+          { snapshotId: 's1', subCompetencyId: 'gc-production-literacy', careerTargetId: 'account-management' },
+          { snapshotId: 's1', subCompetencyId: 'domain-knowledge', careerTargetId: 'account-management' },
+        ]),
+      )
+      .mockReturnValue(makeDbChain([{ id: 'domain-knowledge' }]));
+
+    const inputs = await loadRefreshInputs();
+    expect(inputs.competencySlugs).toEqual(['domain-knowledge']);
+    expect(inputs.targetSlugs).toEqual(['account-management']);
   });
 });
 

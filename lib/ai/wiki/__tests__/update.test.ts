@@ -238,13 +238,19 @@ describe('computeAffectedPages', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
-    // coverage_cells query returns two distinct sub-competencies and targets.
-    (db.select as ReturnType<typeof vi.fn>).mockReturnValue(
-      makeDbChain([
-        { subCompetencyId: 'brand-strategy', careerTargetId: 'brand-strategist' },
-        { subCompetencyId: 'client-communication', careerTargetId: 'brand-strategist' },
-      ]),
-    );
+    // 1st db.select call: coverage_cells query returns two distinct
+    // sub-competencies and targets. 2nd+ call: activeCompetencyIds lookup —
+    // both are active (not retired) by default.
+    (db.select as ReturnType<typeof vi.fn>)
+      .mockReturnValueOnce(
+        makeDbChain([
+          { subCompetencyId: 'brand-strategy', careerTargetId: 'brand-strategist' },
+          { subCompetencyId: 'client-communication', careerTargetId: 'brand-strategist' },
+        ]),
+      )
+      .mockReturnValue(
+        makeDbChain([{ id: 'brand-strategy' }, { id: 'client-communication' }]),
+      );
   });
 
   it('always includes course page and index page in wiki list', async () => {
@@ -265,6 +271,26 @@ describe('computeAffectedPages', () => {
     const { wiki } = await computeAffectedPages(mockSnapshot, null);
     const targetPages = wiki.filter(p => p.type === 'target');
     expect(targetPages.map(p => p.slug)).toContain('brand-strategist');
+  });
+
+  it('excludes a retired (merged-away) sub-competency even when its history coverage cell is present', async () => {
+    // P0b (migration 0057): a merged-away competency's history coverage
+    // cells persist under its old id, but the catalog row is retired —
+    // gc-production-literacy here is NOT in the active-ids result.
+    (db.select as ReturnType<typeof vi.fn>)
+      .mockReset()
+      .mockReturnValueOnce(
+        makeDbChain([
+          { subCompetencyId: 'gc-production-literacy', careerTargetId: 'account-management' },
+          { subCompetencyId: 'client-communication', careerTargetId: 'brand-strategist' },
+        ]),
+      )
+      .mockReturnValue(makeDbChain([{ id: 'client-communication' }]));
+
+    const { wiki } = await computeAffectedPages(mockSnapshot, null);
+    const competencySlugs = wiki.filter(p => p.type === 'competency').map(p => p.slug);
+    expect(competencySlugs).not.toContain('gc-production-literacy');
+    expect(competencySlugs).toContain('client-communication');
   });
 
   it('includes productive-failure concept when audit_notes.productive_failure_conditions is set', async () => {
