@@ -6,12 +6,15 @@ import { describe, it, expect } from 'vitest';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { canon, collectCoverageTieSets, collectProbes, tieAwareTargetSubstrate } from './p0a/probes';
-import { isScratchDb } from './p0a/scratch-guard';
+import { isCharacterizationDb } from './p0a/scratch-guard';
 
 const GOLDEN = process.env.P0A_GOLDEN;
 const CAPTURE = process.env.P0A_CAPTURE === '1';
 
-describe.skipIf(!isScratchDb() || !GOLDEN)('P0a characterization: re-pointed reads return what they returned before', () => {
+// isCharacterizationDb() (not isScratchDb()) because P0b (Task 1) reuses
+// this read-only probe set to capture its own pre-0057 golden against its
+// scratch clones — see tests/db/p0a/scratch-guard.ts.
+describe.skipIf(!isCharacterizationDb() || !GOLDEN)('P0a characterization: re-pointed reads return what they returned before', () => {
   it(CAPTURE ? 'captures the golden' : 'matches the golden', async () => {
     const now = JSON.parse(JSON.stringify(canon(await collectProbes()))) as Record<string, unknown>;
     if (CAPTURE) {
