@@ -107,21 +107,21 @@ describe.skipIf(!RUN)('p0b rescore script (P0b Task 7, post-0057)', () => {
 
   it('--apply upserts exactly 2 cells (domain-knowledge, project-management) for the in-scope snapshot', async () => {
     const snapshotId = await newFixtureSnapshot();
-    const deps = mockDeps();
+    // Scoped to ONLY the fixture snapshot — never the real scope query.
+    // Without this override, runRescore's default findInScopeSnapshots would
+    // hit every real in-scope snapshot in the shared scratch database and
+    // overwrite its cells with this test's fixed mock score.
+    const deps = mockDeps({ findInScopeSnapshots: vi.fn().mockResolvedValue([{ snapshotId, courseCode: TEST_CODE }]) });
 
     const outcome = await runRescore({ apply: true, expectDb: SCRATCH_DB, skipWiki: true }, deps);
 
-    const scopedRow = outcome.scope.find(s => s.snapshotId === snapshotId);
-    expect(scopedRow).toBeDefined();
-    expect(scopedRow!.courseCode).toBe(TEST_CODE);
-
-    expect(outcome.snapshotsProcessed).toBeGreaterThanOrEqual(1);
+    expect(outcome.scope).toEqual([{ snapshotId, courseCode: TEST_CODE }]);
+    expect(outcome.snapshotsProcessed).toBe(1);
     expect(outcome.cappedEarly).toBe(false);
 
-    const rowsForFixture = outcome.rows.filter(r => r.snapshotId === snapshotId);
-    expect(rowsForFixture).toHaveLength(2);
-    expect(rowsForFixture.map(r => r.competencyId).sort()).toEqual(['domain-knowledge', 'project-management']);
-    for (const r of rowsForFixture) expect(r.old).toBeNull(); // fixture never had a survivor row before this run
+    expect(outcome.rows).toHaveLength(2);
+    expect(outcome.rows.map(r => r.competencyId).sort()).toEqual(['domain-knowledge', 'project-management']);
+    for (const r of outcome.rows) expect(r.old).toBeNull(); // fixture never had a survivor row before this run
 
     const dbRows = await db.select().from(snapshotCompetencyCoverage).where(eq(snapshotCompetencyCoverage.snapshotId, snapshotId));
     const survivorRows = dbRows.filter(r => SURVIVOR_IDS.includes(r.competencyId));
@@ -135,7 +135,8 @@ describe.skipIf(!RUN)('p0b rescore script (P0b Task 7, post-0057)', () => {
 
   it('--apply without --skip-wiki writes the 3 merged-away stubs and fires one wiki regen per re-scored snapshot', async () => {
     const snapshotId = await newFixtureSnapshot();
-    const deps = mockDeps();
+    // Scoped to ONLY the fixture snapshot — see note above.
+    const deps = mockDeps({ findInScopeSnapshots: vi.fn().mockResolvedValue([{ snapshotId, courseCode: TEST_CODE }]) });
 
     await runRescore({ apply: true, expectDb: SCRATCH_DB, skipWiki: false }, deps);
 
