@@ -6,7 +6,7 @@
 // against them.
 import { describe, it, expect, afterEach } from 'vitest';
 import { isScratchDb, isCharacterizationDb } from '../p0a/scratch-guard';
-import { isP0bScratchDb, isP0bPreDb, isP0bMainDb } from './scratch-guard';
+import { isP0bScratchDb, isP0bPreDb, isP0bMainDb, isP0bRollbackTestDb, ROLLBACK_TEST_DB } from './scratch-guard';
 
 const ORIGINAL = process.env.DATABASE_URL;
 afterEach(() => {
@@ -114,5 +114,39 @@ describe('isP0bMainDb (post-0057 gate — gc_curriculum_p0b_scratch only)', () =
     expect(withUrl('postgres://u:p@h:5432/gc_curriculum', isP0bMainDb)).toBe(false);
     expect(withUrl(undefined, isP0bMainDb)).toBe(false);
     expect(withUrl('not a url', isP0bMainDb)).toBe(false);
+  });
+});
+
+// Fix round 1 (task 8, 2026-10-12): rollback mode now creates and renames
+// whole databases, so its real-DB test needs its own disposable fixture
+// family and its own guard — never the shared gc_curriculum_p0b_scratch /
+// gc_curriculum_p0b_pre clones, per the controller ruling.
+describe('isP0bRollbackTestDb (rollback-swap real-DB test gate — gc_curriculum_p0b_rbtest* only)', () => {
+  it('accepts the exact base name', () => {
+    expect(isP0bRollbackTestDb(ROLLBACK_TEST_DB)).toBe(true);
+    expect(isP0bRollbackTestDb('gc_curriculum_p0b_rbtest')).toBe(true);
+  });
+
+  it('accepts names the swap itself derives from the base name', () => {
+    expect(isP0bRollbackTestDb('gc_curriculum_p0b_rbtest_rollback_20261012T000000')).toBe(true);
+    expect(isP0bRollbackTestDb('gc_curriculum_p0b_rbtest_pre_rollback_20261012T000000')).toBe(true);
+    expect(isP0bRollbackTestDb('gc_curriculum_p0b_rbtest_cleantest')).toBe(true);
+  });
+
+  it('rejects the live and shared P0a/P0b fixture databases', () => {
+    expect(isP0bRollbackTestDb('gc_curriculum')).toBe(false);
+    expect(isP0bRollbackTestDb('gc_curriculum_p0b_scratch')).toBe(false);
+    expect(isP0bRollbackTestDb('gc_curriculum_p0b_pre')).toBe(false);
+    expect(isP0bRollbackTestDb('gc_curriculum_p0a_scratch')).toBe(false);
+  });
+
+  it('rejects prefix/suffix near-matches', () => {
+    expect(isP0bRollbackTestDb('gc_curriculum_p0b_rbtest2')).toBe(false); // no separator: a different name, not a derived one
+    expect(isP0bRollbackTestDb('xgc_curriculum_p0b_rbtest')).toBe(false);
+    expect(isP0bRollbackTestDb('gc_curriculum_p0b_rbtestx')).toBe(false);
+  });
+
+  it('rejects empty/garbage input', () => {
+    expect(isP0bRollbackTestDb('')).toBe(false);
   });
 });

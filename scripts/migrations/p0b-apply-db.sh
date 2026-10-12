@@ -5,12 +5,8 @@
 # The DB half of the P0b live-apply runbook (task-8 brief,
 # competency-catalog P0b plan) — sibling to p0a-apply-db.sh. Guards the
 # connection, takes and verifies a backup, then either applies migration
-# 0057 (apply) or restores a previously-taken pre-0057 dump via pg_restore
-# (rollback). P0b has no hand-written rollback SQL: 0057 drops P0a's
-# scaffolding tables (snapshot_target_coverage, coverage_scores) outright,
-# so a reverse migration would have to resynthesize data it never kept —
-# restoring the pre-apply backup instead is both simpler and exact
-# (task-8 brief Resolution 3).
+# 0057 (apply) or restores a previously-taken pre-0057 dump by swapping in
+# a freshly-restored database (rollback — fix round 1, see below).
 #
 # DATABASE_URL is read from the ENVIRONMENT, not argv — same discipline as
 # p0a-apply-db.sh (M-e/M-j): a URL on argv is visible to any local user via
@@ -24,6 +20,25 @@
 #
 # Resolves its sibling SQL files relative to this script's own location,
 # not the caller's cwd.
+#
+# --- Fix round 1 (task-8 adversarial review): rollback no longer uses
+# `pg_restore --clean` against the live database. A pre-0057 dump
+# restored with --clean onto a POST-0057 database cannot work: 0057
+# creates sub_competency_map with an FK to sub_competencies, and the
+# pre-0057 dump has never heard of that table, so --clean's DROP of
+# sub_competencies fails on the FK, the subsequent CREATE then says
+# "already exists", COPY hits duplicate keys, and the database is left
+# half-restored and inconsistent — reviewer-reproduced, Critical. Fixed
+# per controller ruling: restore the dump into a brand-new, empty
+# database (no FK conflicts possible — nothing exists yet), verify THAT
+# database is genuinely the pre-0057 shape, then swap it into the live
+# name by renaming two whole databases. The live database is never
+# dropped or `--clean`ed; it is renamed aside (`<expected>_pre_rollback_
+# <ts>`) and kept intact as the rollback's own undo path — renaming it
+# back undoes the rollback. This also means the separate pre-restore
+# safety dump this script used to take for rollback mode is redundant (a
+# live, intact migrated database is a strictly better fallback than a
+# dump file) and has been removed.
 set -euo pipefail
 umask 077
 
@@ -43,6 +58,10 @@ if [ "$#" -lt 3 ] || [ "$#" -gt 4 ]; then
 fi
 
 EXPECTED_DB="$1"
+# BACKUP_DIR is only used by apply mode (the pre-apply-*.dump backup it
+# takes before migrating). Rollback mode no longer needs a backup
+# directory — see the fix-round-1 note above — but the argument stays
+# positional and required in both modes for a uniform, simple call shape.
 BACKUP_DIR="$2"
 MODE="$3"
 ROLLBACK_DUMP="${4:-}"
@@ -66,7 +85,7 @@ esac
 # --- rollback mode: validate the ROLLBACK TARGET dump FIRST, before this
 # script ever touches DATABASE_URL or opens a connection (task-8 brief
 # Resolution 3). These are pure filesystem/subprocess checks, so a bad dump
-# is rejected before any session guard or backup is even attempted —
+# is rejected before any session guard or restore is even attempted —
 # nothing about the live database needs to be true for these to run, and
 # nothing about the live database is touched if they fail.
 if [ "$MODE" = rollback ]; then
@@ -114,14 +133,14 @@ if [ -n "$OTHER_SESSIONS" ]; then
   exit 1
 fi
 
-# --- 3. Backup the CURRENT state, verified before anything is applied -------
-mkdir -p "$BACKUP_DIR"
-TIMESTAMP="$(date +%Y%m%dT%H%M%S)"
-DUMP_FILE="$BACKUP_DIR/pre-$MODE-$TIMESTAMP.dump"
-"$PGBIN/pg_dump" -Fc --no-owner -f "$DUMP_FILE"
-chmod 600 "$DUMP_FILE"
-
 if [ "$MODE" = apply ]; then
+  # --- 3. Backup the CURRENT (pre-0057) state, verified before anything is
+  # applied ------------------------------------------------------------------
+  mkdir -p "$BACKUP_DIR"
+  TIMESTAMP="$(date +%Y%m%dT%H%M%S)"
+  DUMP_FILE="$BACKUP_DIR/pre-$MODE-$TIMESTAMP.dump"
+  "$PGBIN/pg_dump" -Fc --no-owner -f "$DUMP_FILE"
+  chmod 600 "$DUMP_FILE"
   # Pre-0057: still carries snapshot_target_coverage (P0a scaffolding) — the
   # exact shape p0a-verify-backup.sh's "apply" check expects, and the dump
   # a later rollback would restore FROM (hence pre-apply-*.dump).
@@ -129,48 +148,84 @@ if [ "$MODE" = apply ]; then
     echo "refusing: backup verification failed; nothing applied" >&2
     exit 1
   fi
-else
-  # Pre-restore safety net (task-8 brief Resolution 3): this backup's only
-  # job is to make the restore itself reversible, so it is NOT required to
-  # match any particular pre/post-0057 shape — the live DB could genuinely
-  # be in EITHER shape depending on what is being rolled back from.
-  # p0a-verify-backup.sh unconditionally requires snapshot_target_coverage
-  # TABLE DATA (a table 0057 drops), so it cannot validate a dump of a
-  # post-0057 database; do the two schema-agnostic checks (non-empty, a
-  # real pg_restore-readable archive) directly instead of calling it.
-  if [ ! -s "$DUMP_FILE" ]; then
-    echo "refusing: pre-restore safety backup $DUMP_FILE is missing or empty; nothing restored" >&2
-    exit 1
-  fi
-  if ! "$PGBIN/pg_restore" --list "$DUMP_FILE" >/dev/null 2>&1; then
-    echo "refusing: pre-restore safety backup $DUMP_FILE is not a readable pg_dump archive; nothing restored" >&2
-    exit 1
-  fi
-fi
-echo "pre-$MODE backup of current state verified: $DUMP_FILE"
+  echo "pre-apply backup of current state verified: $DUMP_FILE"
 
-# --- 4. Apply or roll back ---------------------------------------------------
-if [ "$MODE" = apply ]; then
+  # --- 4. Apply -----------------------------------------------------------
   "${PSQL[@]}" -f "$MIGRATION_SQL"
-else
-  "$PGBIN/pg_restore" --clean --if-exists --no-owner -d "$EXPECTED_DB" "$ROLLBACK_DUMP"
-fi
 
-# --- 5. Apply mode only: verify, FAILING CLOSED ------------------------------
-# 2026-10-12-p0b-verify.sql (unlike P0a's 2026-10-11-p0a-verify.sql) fails
-# closed on its own: `\set ON_ERROR_STOP on` plus a DO block that RAISEs on
-# the first failed check, inside BEGIN READ ONLY ... ROLLBACK — a failure
-# makes psql itself exit non-zero. There is no 18-row parsing to replicate
-# here (that was P0a's M-a fix, round 2, for a verify script that only
-# printed numbers); just distinguish "committed but verify failed" (exit 4,
-# matching p0a-apply-db.sh's M-i convention so the wrapper's existing
-# reporting logic — which already special-cases exit 4 as "never say SAFE"
-# — keeps working unchanged) from a pre-commit guard failure (exit 1).
-if [ "$MODE" = apply ]; then
+  # --- 5. Verify, FAILING CLOSED -------------------------------------------
+  # 2026-10-12-p0b-verify.sql (unlike P0a's 2026-10-11-p0a-verify.sql) fails
+  # closed on its own: `\set ON_ERROR_STOP on` plus a DO block that RAISEs
+  # on the first failed check, inside BEGIN READ ONLY ... ROLLBACK — a
+  # failure makes psql itself exit non-zero. There is no 18-row parsing to
+  # replicate here (that was P0a's M-a fix, round 2, for a verify script
+  # that only printed numbers); just distinguish "committed but verify
+  # failed" (exit 4, matching p0a-apply-db.sh's M-i convention so the
+  # wrapper's existing reporting logic — which already special-cases exit 4
+  # as "never say SAFE" — keeps working unchanged) from a pre-commit guard
+  # failure (exit 1).
   if ! "${PSQL[@]}" -f "$VERIFY_SQL"; then
     echo "refusing: verify found a problem above; the migration already committed — do not deploy, see above" >&2
     exit 4
   fi
+else
+  # --- Rollback (fix round 1): restore into a brand-new database, verify
+  # THAT database, then swap it in by renaming. Never touches the live
+  # database's own tables directly — see the header note for why.
+  ROLLBACK_TS="$(date +%Y%m%dT%H%M%S)"
+  ROLLBACK_DB_NAME="${EXPECTED_DB}_rollback_${ROLLBACK_TS}"
+  PRE_ROLLBACK_NAME="${EXPECTED_DB}_pre_rollback_${ROLLBACK_TS}"
+
+  echo "=== 3. creating $ROLLBACK_DB_NAME and restoring $ROLLBACK_DUMP into it (no --clean: it's empty, so there is nothing for an FK to conflict with) ==="
+  "${PSQL[@]}" -d postgres -c "CREATE DATABASE \"$ROLLBACK_DB_NAME\""
+  if ! "$PGBIN/pg_restore" --no-owner -d "$ROLLBACK_DB_NAME" "$ROLLBACK_DUMP"; then
+    echo "refusing: restore into $ROLLBACK_DB_NAME failed; dropping it; live database '$EXPECTED_DB' was never touched" >&2
+    "${PSQL[@]}" -d postgres -c "DROP DATABASE IF EXISTS \"$ROLLBACK_DB_NAME\"" >/dev/null 2>&1 || true
+    exit 1
+  fi
+
+  echo "=== verifying $ROLLBACK_DB_NAME is genuinely pre-0057 before it goes anywhere near the live name ==="
+  HAS_MAP="$("${PSQL[@]}" -d "$ROLLBACK_DB_NAME" -At -c "SELECT to_regclass('public.sub_competency_map') IS NOT NULL;")"
+  SC_COUNT="$("${PSQL[@]}" -d "$ROLLBACK_DB_NAME" -At -c "SELECT count(*) FROM sub_competencies;")"
+  STC_COUNT="$("${PSQL[@]}" -d "$ROLLBACK_DB_NAME" -At -c "SELECT count(*) FROM snapshot_target_coverage;")"
+  if [ "$HAS_MAP" != "f" ] || [ "$SC_COUNT" -eq 0 ] || [ "$STC_COUNT" -eq 0 ]; then
+    echo "refusing: $ROLLBACK_DB_NAME failed verification (sub_competency_map exists=$HAS_MAP, sub_competencies=$SC_COUNT rows, snapshot_target_coverage=$STC_COUNT rows) — not a genuine pre-0057 restore; dropping it; live database '$EXPECTED_DB' was never touched" >&2
+    "${PSQL[@]}" -d postgres -c "DROP DATABASE IF EXISTS \"$ROLLBACK_DB_NAME\"" >/dev/null 2>&1 || true
+    exit 1
+  fi
+  echo "confirmed: $ROLLBACK_DB_NAME is pre-0057 (no sub_competency_map; $SC_COUNT sub_competencies rows; $STC_COUNT snapshot_target_coverage rows)"
+
+  echo "=== 4. swapping '$EXPECTED_DB' <-> '$ROLLBACK_DB_NAME' ==="
+  OTHER_SESSIONS2="$("${PSQL[@]}" -d postgres -At -F'|' -c \
+    "SELECT application_name, client_addr, state FROM pg_stat_activity WHERE datname = '$EXPECTED_DB' AND pid <> pg_backend_pid();")"
+  if [ -n "$OTHER_SESSIONS2" ]; then
+    echo "refusing: other sessions reconnected to '$EXPECTED_DB' right before the rename (application_name|client_addr|state); nothing renamed, live database '$EXPECTED_DB' is untouched. The verified restore is intact at $ROLLBACK_DB_NAME if you want to retry:" >&2
+    echo "$OTHER_SESSIONS2" >&2
+    "${PSQL[@]}" -d postgres -c "DROP DATABASE IF EXISTS \"$ROLLBACK_DB_NAME\"" >/dev/null 2>&1 || true
+    exit 1
+  fi
+
+  if ! "${PSQL[@]}" -d postgres -c "ALTER DATABASE \"$EXPECTED_DB\" RENAME TO \"$PRE_ROLLBACK_NAME\""; then
+    echo "refusing: could not rename '$EXPECTED_DB' to '$PRE_ROLLBACK_NAME'; live database '$EXPECTED_DB' is untouched (still the migrated database, under its original name). The verified restore is intact at $ROLLBACK_DB_NAME if you want to retry." >&2
+    exit 1
+  fi
+
+  if ! "${PSQL[@]}" -d postgres -c "ALTER DATABASE \"$ROLLBACK_DB_NAME\" RENAME TO \"$EXPECTED_DB\""; then
+    echo "CRITICAL: renamed '$EXPECTED_DB' to '$PRE_ROLLBACK_NAME' but could NOT rename '$ROLLBACK_DB_NAME' to '$EXPECTED_DB' — '$EXPECTED_DB' does not currently exist on this server. Attempting the automatic fallback (rename the migrated database back)..." >&2
+    if "${PSQL[@]}" -d postgres -c "ALTER DATABASE \"$PRE_ROLLBACK_NAME\" RENAME TO \"$EXPECTED_DB\""; then
+      echo "fallback succeeded: '$PRE_ROLLBACK_NAME' renamed back to '$EXPECTED_DB' — live is untouched (still the migrated database). The verified restore remains intact at $ROLLBACK_DB_NAME; investigate by hand before retrying." >&2
+      exit 5
+    else
+      echo "FALLBACK FAILED TOO: '$EXPECTED_DB' does not exist under ANY name right now. Fix this by hand immediately — connect to the 'postgres' maintenance database and run:" >&2
+      echo "  ALTER DATABASE \"$PRE_ROLLBACK_NAME\" RENAME TO \"$EXPECTED_DB\";" >&2
+      exit 6
+    fi
+  fi
+
+  echo "swap complete: '$EXPECTED_DB' is now the restored pre-0057 database."
+  echo "The previous (migrated) database was kept, not dropped, as '$PRE_ROLLBACK_NAME' — this rollback is itself reversible. To undo it, connect to the 'postgres' maintenance database and run:"
+  echo "  ALTER DATABASE \"$EXPECTED_DB\" RENAME TO \"$ROLLBACK_DB_NAME\";"
+  echo "  ALTER DATABASE \"$PRE_ROLLBACK_NAME\" RENAME TO \"$EXPECTED_DB\";"
 fi
 
 echo "p0b-apply-db.sh: $MODE on '$EXPECTED_DB' complete"

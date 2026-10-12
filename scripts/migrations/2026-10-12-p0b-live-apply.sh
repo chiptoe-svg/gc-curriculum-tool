@@ -178,16 +178,44 @@ on_exit() {
       fi
       ;;
     db-done)
-      if [ "$DB_RC" = "4" ]; then
-        # p0b-apply-db.sh's distinct exit code for "the migration
-        # committed, but verify found a problem afterward" — the schema DID
-        # change, so this must never say SAFE.
-        echo "The database $MODE committed, but verification failed afterward (p0b-apply-db.sh exit 4)." >&2
-        echo "migration committed but verification failed — do not bootstrap; run rollback or inspect" >&2
-      else
-        echo "The database step returned failure (exit ${DB_RC:-unknown})." >&2
-        report_db_state_and_recovery
-      fi
+      case "$DB_RC" in
+        4)
+          # apply-only: the migration committed, but verify found a problem
+          # afterward — the schema DID change, so this must never say SAFE.
+          echo "The database $MODE committed, but verification failed afterward (p0b-apply-db.sh exit 4)." >&2
+          echo "migration committed but verification failed — do not bootstrap; run rollback or inspect" >&2
+          ;;
+        5)
+          # rollback-only (fix round 1): the first rename (live -> aside)
+          # succeeded, the second (restore -> live) failed, and
+          # p0b-apply-db.sh's own automatic fallback successfully renamed
+          # the migrated database back into the live name. Live is
+          # UNTOUCHED under its original name — still the migrated
+          # database — but the verified restore is now parked under a
+          # separate name instead of being dropped. Do NOT reconstruct
+          # that name here: p0b-apply-db.sh already printed it above,
+          # since the wrapper never captures its stdout/stderr.
+          echo "The rollback's database swap failed partway, but p0b-apply-db.sh's automatic fallback already renamed the live database back — '$EXPECTED_DB' is UNTOUCHED (still the migrated database, under its original name). The attempted restore was not dropped; see the output above from p0b-apply-db.sh for its exact parked name and how to retry. Do NOT bootstrap a pre-P0b build against this still-migrated database:" >&2
+          echo "  launchctl bootstrap gui/$UID_NUM \"$PLIST_APP\"" >&2
+          echo "  launchctl kickstart \"gui/$UID_NUM/$LABEL_APP\"" >&2
+          echo "  launchctl bootstrap gui/$UID_NUM \"$PLIST_WATCHDOG\"" >&2
+          echo "  launchctl kickstart \"gui/$UID_NUM/$LABEL_WATCHDOG\"" >&2
+          ;;
+        6)
+          # rollback-only (fix round 1): BOTH renames failed — the live
+          # database name does not currently exist on the server under ANY
+          # name's worth of guessing from here. p0b-apply-db.sh already
+          # printed the exact `ALTER DATABASE ... RENAME TO` fix on stderr
+          # (it alone knows the generated names); this is a pointer to it,
+          # not a reconstruction, since reconstructing it wrong here would
+          # be worse than saying nothing.
+          echo "CRITICAL: the rollback's database swap failed catastrophically — '$EXPECTED_DB' does not currently exist on this server under its own name (both the swap and its automatic fallback failed). Scroll up to p0b-apply-db.sh's own output for the exact 'ALTER DATABASE ... RENAME TO ...;' command and run it by hand on the 'postgres' maintenance database immediately. Do not bootstrap anything until '$EXPECTED_DB' exists again and its state has been confirmed by hand." >&2
+          ;;
+        *)
+          echo "The database step returned failure (exit ${DB_RC:-unknown})." >&2
+          report_db_state_and_recovery
+          ;;
+      esac
       ;;
     restarting-app)
       echo "The database $MODE SUCCEEDED and matches the build now on disk ($DEPLOY_SHA), but the app did not come up on :3000 within the timeout (bootstrap + kickstart were both run). The watchdog has NOT been bootstrapped. Check the app log, then:" >&2
@@ -311,6 +339,10 @@ PHASE="restarting-watchdog"
 launchctl bootstrap "gui/$UID_NUM" "$PLIST_WATCHDOG"
 launchctl kickstart "gui/$UID_NUM/$LABEL_WATCHDOG"
 PHASE="done"
+if [ "$MODE" = rollback ]; then
+  echo
+  echo "'$EXPECTED_DB' is now the restored pre-0057 database (swap completed by p0b-apply-db.sh above). The previously-migrated database was kept, not dropped — see p0b-apply-db.sh's own output above for its exact name and the two 'ALTER DATABASE ... RENAME TO ...;' commands that would undo this rollback."
+fi
 cat <<SMOKE
 
 DB $MODE applied. App and watchdog restarted. Smoke test at

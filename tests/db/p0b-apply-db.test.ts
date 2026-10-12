@@ -6,16 +6,29 @@
 // Gated tests run ONLY against gc_curriculum_p0b_pre (task-8 brief
 // Resolution 5: "use ONLY gc_curriculum_p0b_pre... inside a flow that
 // leaves it pre-0057 afterwards"), AND only with P0B_APPLY_DB_TEST=1.
-// None of these tests ever call apply-db.sh in "apply" mode in a way that
-// reaches the migration SQL (the DB-name guard trips first in the one
-// apply-mode call below), and the one real restore exercised here
-// restores gc_curriculum_p0b_pre's own data back onto itself — the DB
-// stays pre-0057 both before and after this file runs, satisfying
-// Resolution 5 and the global constraint that gc_curriculum_p0b_pre must
-// remain pre-0057 forever.
+// None of these tests ever call apply-db.sh in a way that opens a real
+// connection and mutates gc_curriculum_p0b_pre's own data — the DB-name
+// and other-sessions guards trip first in the "apply" mode calls below,
+// and the "rollback" mode calls here all use a deliberately unreachable
+// DATABASE_URL, so they only ever exercise the pure dump-validation layer
+// (which runs before any connection) against dumps whose content happens
+// to be read from gc_curriculum_p0b_pre. That database is a read-only
+// SOURCE here, never a target.
+//
+// Fix round 1: rollback mode no longer restores onto the database it was
+// invoked against (see p0b-apply-db.sh's header) — it restores into a
+// brand-new database, verifies it, then swaps it in by renaming two whole
+// databases. The end-to-end real-DB exercise of that swap therefore lives
+// in tests/db/p0b-rollback-swap.test.ts, against a disposable
+// gc_curriculum_p0b_rbtest* clone created and torn down by that file —
+// never against gc_curriculum_p0b_pre or gc_curriculum_p0b_scratch, which
+// the controller ruling for fix round 1 explicitly rules out as rollback
+// targets (the swap renames whatever EXPECTED_DB names, and these two
+// fixtures are shared by other tasks that depend on their exact identity
+// persisting).
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync, readdirSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { Client } from 'pg';
@@ -187,22 +200,14 @@ describe.skipIf(!RUN)('p0b-apply-db.sh (task-8) on gc_curriculum_p0b_pre', () =>
     expect(res.stderr).not.toMatch(/does not match pre-apply/);
   });
 
-  it('rollback takes a fresh pre-restore backup of the CURRENT state before restoring, and DB content is unchanged afterward (restoring the same data back onto itself)', async () => {
-    const before = await contentHash();
-    const fixtureDump = join(backupDir, `pre-apply-fixture-${Date.now()}.dump`);
-    const dumpRes = runScript(`${PGBIN}/pg_dump`, ['-Fc', '--no-owner', '-f', fixtureDump, DATABASE_URL]);
-    expect(dumpRes.status).toBe(0);
-
-    const beforeFiles = new Set(readdirSync(backupDir));
-    const res = runScript(APPLY_DB_SH, [SCRATCH_DB_PRE, backupDir, 'rollback', fixtureDump], { DATABASE_URL });
-    expect(res.status).toBe(0);
-    expect(res.stdout).toMatch(/pre-rollback backup of current state verified:/);
-    expect(res.stdout).toMatch(/p0b-apply-db\.sh: rollback on '.*' complete/);
-
-    const newFiles = readdirSync(backupDir).filter((f) => !beforeFiles.has(f));
-    const safetyBackup = newFiles.find((f) => /^pre-rollback-.*\.dump$/.test(f));
-    expect(safetyBackup).toBeDefined();
-
-    expect(await contentHash()).toBe(before);
-  });
+  // NOTE (fix round 1): there used to be a test here that ran apply-db.sh
+  // in rollback mode for real against gc_curriculum_p0b_pre (restoring its
+  // own data back onto itself under the old `pg_restore --clean`
+  // approach). That approach is gone — rollback mode now creates a new
+  // database and swaps it in by renaming, which would rename
+  // gc_curriculum_p0b_pre itself. The controller ruling for fix round 1
+  // explicitly disallows gc_curriculum_p0b_pre (and gc_curriculum_p0b_
+  // scratch) as a rollback target, so the real end-to-end exercise of the
+  // swap moved to tests/db/p0b-rollback-swap.test.ts, against its own
+  // disposable gc_curriculum_p0b_rbtest* clone.
 });

@@ -334,6 +334,39 @@ exit 0
     expect(res.stderr).toMatch(/launchctl kickstart/);
   });
 
+  // --- db-done phase: rollback's swap failed partway, auto-fallback worked
+  // (fix round 1: p0b-apply-db.sh exit 5) --------------------------------
+  it('rollback swap fails partway but the automatic fallback rename-back succeeded (exit 5) — live untouched message, points at p0b-apply-db.sh output, never SAFE-to-bootstrap-a-new-build', () => {
+    checkoutForTest(shaPre);
+    const res = run([shaPre, 'rollback', dumpPath], {
+      P0B_LIVE_APPLY_READ_ENV_MJS: writeReadEnvStub(tmp, {}),
+      P0B_LIVE_APPLY_APPLY_DB_SH: writeApplyDbStub(tmp, { exitCode: 5 }),
+      P0B_LIVE_APPLY_DB_MIGRATED_SH: writeDbMigratedStub(tmp, { output: 't' }),
+    });
+    expect(res.status).toBe(5);
+    expect(res.stderr).toMatch(/automatic fallback already renamed the live database back/);
+    expect(res.stderr).toMatch(/UNTOUCHED \(still the migrated database, under its original name\)/);
+    expect(res.stderr).toMatch(/see the output above from p0b-apply-db\.sh/);
+    expect(res.stderr).not.toMatch(/SAFE to bootstrap/);
+    expect(res.stderr).not.toMatch(/CRITICAL/);
+  });
+
+  // --- db-done phase: rollback's swap failed catastrophically, the
+  // automatic fallback ALSO failed (fix round 1: p0b-apply-db.sh exit 6) ---
+  it('rollback swap fails catastrophically and the fallback also fails (exit 6) — CRITICAL, points at the exact manual fix printed by p0b-apply-db.sh', () => {
+    checkoutForTest(shaPre);
+    const res = run([shaPre, 'rollback', dumpPath], {
+      P0B_LIVE_APPLY_READ_ENV_MJS: writeReadEnvStub(tmp, {}),
+      P0B_LIVE_APPLY_APPLY_DB_SH: writeApplyDbStub(tmp, { exitCode: 6 }),
+      P0B_LIVE_APPLY_DB_MIGRATED_SH: writeDbMigratedStub(tmp, { output: 't' }),
+    });
+    expect(res.status).toBe(6);
+    expect(res.stderr).toMatch(/CRITICAL/);
+    expect(res.stderr).toMatch(/does not currently exist on this server under its own name/);
+    expect(res.stderr).toMatch(/Scroll up to p0b-apply-db\.sh's own output/);
+    expect(res.stderr).not.toMatch(/SAFE to bootstrap/);
+  });
+
   // --- db-done phase: DB step fails, DB state does NOT match the new build ---
   it('DB step fails and the DB does NOT match the new build — refuses to recommend bootstrap, gives the restore-previous-build recovery', () => {
     checkoutForTest(shaPostMatch);
