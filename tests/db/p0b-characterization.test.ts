@@ -39,12 +39,26 @@
 //   4. Off-path courses (GC 3620/3700/3710/3730/3740/4900ap, MKT 3310/4320):
 //      no allowance at all — every probe below is checked (after the merge-id
 //      filter) across EVERY course, on-path or off, with no separate
-//      off-path carve-out. The only off-path-looking deltas found during
-//      verification (e.g. GC 4900ap newly appearing in account-management's
-//      loadTargetSubstrate.contributingCourses) trace entirely to the
-//      domain-knowledge merge/re-score (item 1) — confirmed by checking that
-//      every OTHER (non-merge-id) sub-competency's own rollup entry for that
-//      target is untouched. Any other off-path-course delta fails this test.
+//      off-path carve-out. The only exception is loadTargetSubstrate's
+//      contributingCourses field (a target-level UNION across every
+//      sub-competency, merge-id ones included), which gets a NARROW rule
+//      instead of a blanket drop (fix round 1): a course is exempted from
+//      the exact comparison only when, on the side it appears/disappears,
+//      its only positive-depth (dDepth > 0) contributor among the target's
+//      competencies is one of the 5 merge ids — i.e. the course has no
+//      OTHER, non-merge-id sub-competency keeping it in contributingCourses.
+//      That set is reconstructed from getAllCells (raw cells, careerTargetId
+//      + subCompetencyId + dDepth) joined to a direct query for which
+//      snapshots are non-retired AND program-visible (the same two
+//      conditions loadTargetSubstrate's own cellRows query uses) — a courseCode
+//      resolved from the DB directly, not from golden (which predates the
+//      `snapshotCourses` field, item 3), since snapshot retirement and course
+//      scope/status are untouched by migration 0057 and so are valid to read
+//      from `now` for use against golden's rows too. Every OTHER course entry
+//      (on-path or off) must still match exactly. One off-path-looking delta
+//      was found during design (GC 4900ap newly appearing in
+//      account-management's contributingCourses) and traced to exactly this
+//      mechanism — domain-knowledge is its only dDepth>0 contributor there.
 //   5. listStalePairs removed (Task 5; STATE.md Deferred/debt). golden has
 //      this top-level probe key, now does not — the only allowed top-level
 //      key-set delta.
@@ -60,6 +74,10 @@
 // allowance.
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { sql } from 'drizzle-orm';
+import { db } from '@/lib/db/client';
+import { PROGRAM_VISIBLE_SQL } from '@/lib/courses/program-visibility';
+import { courseCodeToSlug } from '@/lib/ai/wiki/update';
 import { canon, collectCoverageTieSets, collectProbes, tieAwareTargetSubstrate } from './p0a/probes';
 import { isP0bMainDb } from './p0b/scratch-guard';
 
@@ -261,25 +279,51 @@ describe.skipIf(!isP0bMainDb() || !GOLDEN)('P0b characterization: post-0057 + re
     }
 
     // --- loadTargetSubstrate: tie-aware (existing infra) + merge-id filter.
-    // contributingCourses is a target-level UNION across every sub-competency
-    // (merge-id ones included) — for the 3 affected targets it legitimately
-    // changes purely through the merge survivors' widened/re-scored
-    // footprint (verified during design: every non-merge-id coverageRollup
-    // entry for these targets is byte-identical), so it is excluded from
-    // comparison there. For the 2 unaffected targets it is compared exactly
-    // (folded into the full-object equality below). ---
+    // contributingCourses gets the NARROW rule described in the module doc
+    // (item 4) instead of a blanket drop: a course is exempted only when its
+    // sole dDepth>0 contributor, on the side it differs, is one of the 5
+    // merge ids. Built from getAllCells (careerTargetId/subCompetencyId/
+    // dDepth per cell) joined to a direct query for which snapshots are
+    // non-retired AND program-visible — the same two conditions
+    // loadTargetSubstrate's own cellRows query filters on — since neither
+    // snapshot retirement nor course scope/status is touched by 0057, this
+    // mapping is valid against BOTH golden's and now's raw cells. ---
     {
+      const qualifying = await db.execute(sql`
+        SELECT s.id AS id, s.course_code AS course_code
+        FROM course_capture_snapshots s
+        JOIN courses c ON c.code = s.course_code
+        WHERE s.retired_at IS NULL AND ${PROGRAM_VISIBLE_SQL}
+      `);
+      const snapshotCourseSlug = new Map<string, string>(
+        (qualifying.rows as Array<{ id: string; course_code: string }>).map(r => [r.id, courseCodeToSlug(r.course_code)]),
+      );
+      /** Courses with a dDepth>0 cell, for target `tid`, among sub-competencies matching `idFilter`. */
+      const coursesContributedBy = (cells: Rec[], tid: string, idFilter: (id: string) => boolean): Set<string> => {
+        const out = new Set<string>();
+        for (const c of cells) {
+          if (c.careerTargetId !== tid) continue;
+          if (!((c.dDepth as number) > 0)) continue;
+          if (!idFilter(c.subCompetencyId as string)) continue;
+          const slug = snapshotCourseSlug.get(c.snapshotId as string);
+          if (slug) out.add(slug);
+        }
+        return out;
+      };
+
       const tieSets = await collectCoverageTieSets();
       const g = golden.loadTargetSubstrate as Parameters<typeof tieAwareTargetSubstrate>[0];
       const n = now.loadTargetSubstrate as Parameters<typeof tieAwareTargetSubstrate>[0];
+      const allCellsGolden = golden.getAllCells as Rec[];
+      const allCellsNow = now.getAllCells as Rec[];
       for (const tid of Object.keys(g)) {
-        const gReduced = tieAwareTargetSubstrate({ [tid]: g[tid]! }, tieSets)[tid] as Rec & { coverageRollup: Rec[] };
-        const nReduced = tieAwareTargetSubstrate({ [tid]: n[tid]! }, tieSets)[tid] as Rec & { coverageRollup: Rec[] };
+        const gReduced = tieAwareTargetSubstrate({ [tid]: g[tid]! }, tieSets)[tid] as Rec & { coverageRollup: Rec[]; contributingCourses: string[] };
+        const nReduced = tieAwareTargetSubstrate({ [tid]: n[tid]! }, tieSets)[tid] as Rec & { coverageRollup: Rec[]; contributingCourses: string[] };
         if (!AFFECTED_TARGETS.has(tid)) {
           expect(nReduced, `loadTargetSubstrate[${tid}] (unaffected, exact tie-aware)`).toEqual(gReduced);
           continue;
         }
-        const omitRollupAndCourses = (v: Rec & { coverageRollup: Rec[] }): Rec => {
+        const omitRollupAndCourses = (v: Rec & { coverageRollup: Rec[]; contributingCourses: string[] }): Rec => {
           const rest: Rec = { ...v };
           delete rest.contributingCourses;
           delete rest.coverageRollup;
@@ -293,6 +337,20 @@ describe.skipIf(!isP0bMainDb() || !GOLDEN)('P0b characterization: post-0057 + re
           dropIds(gRoll, x => x.subCompetencyId as string, MERGE_IDS),
           `loadTargetSubstrate[${tid}].coverageRollup (merge-id filtered)`,
         );
+
+        // contributingCourses: narrow rule. "merge-only" = this course's ONLY
+        // dDepth>0 contributor on this side is a merge id (a course that ALSO
+        // has a non-merge-id contributor is never exempted).
+        const nonMergeGolden = coursesContributedBy(allCellsGolden, tid, id => !MERGE_IDS.has(id));
+        const nonMergeNow = coursesContributedBy(allCellsNow, tid, id => !MERGE_IDS.has(id));
+        const mergeOnlyGolden = coursesContributedBy(allCellsGolden, tid, id => MERGE_IDS.has(id));
+        for (const c of nonMergeGolden) mergeOnlyGolden.delete(c);
+        const mergeOnlyNow = coursesContributedBy(allCellsNow, tid, id => MERGE_IDS.has(id));
+        for (const c of nonMergeNow) mergeOnlyNow.delete(c);
+
+        const gContrib = gReduced.contributingCourses.filter(c => !mergeOnlyGolden.has(c));
+        const nContrib = nReduced.contributingCourses.filter(c => !mergeOnlyNow.has(c));
+        expectSameSet(nContrib, gContrib, `loadTargetSubstrate[${tid}].contributingCourses, merge-only-explained entries excised (narrow)`);
       }
     }
 
