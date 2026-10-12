@@ -2,6 +2,7 @@ import { and, eq, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { snapshotCompetencyCoverage, targetCoverage, courseCaptureSnapshots, careerTargets, targetSubCompetencies, subCompetencies } from '@/lib/db/schema';
 import { listPairedCodesForCourses } from '@/lib/db/course-codes-queries';
+import { PROGRAM_VISIBLE_SQL } from '@/lib/courses/program-visibility';
 import type { Tx } from '@/lib/db/competency-catalog-queries';
 
 export interface CoverageCellRow {
@@ -106,10 +107,90 @@ export async function getAllCells(): Promise<CoverageCellRow[]> {
  * Resolves which latest snapshots are missing coverage cells against the
  * active catalog (P0b Task 5 — replaces listStalePairs's per-target
  * cross-product now that scoring carries no target context). "Active
- * catalog" = non-retired `sub_competencies` rows; a competency with zero
- * career_target_requirements rows is retired by the same transaction that
- * removes its last target (see retireCompetencyFromTarget), so non-retired
- * is equivalent to "used by at least one target" without a join.
+ * catalog" = non-retired `sub_competencies` rows. Since P0b Amendment 1 (A1)
+ * a non-retired competency is NOT necessarily "used by at least one
+ * target" any more — it can be unlinked (see retireCompetencyFromTarget) —
+ * but it is still part of the active catalog every program-visible snapshot
+ * is scored against, linked or not.
+ *
+ * Scoring scope (A2): every program-visible course (PROGRAM_VISIBLE_SQL —
+ * `scope = 'gc' AND status = 'offered'`), regardless of `builds_to_career`.
+ * This is the one deliberately UNRESTRICTED reader in the audit below —
+ * every other coverage reader that rolls up to a career target stays
+ * restricted to `builds_to_career = true` courses.
+ *
+ * ---- Audit (Task 8b, 2026-10-12): every reader of target_coverage /
+ * snapshot_competency_coverage in app/ and lib/, classified career-rollup
+ * (must filter builds_to_career = true) vs. per-competency/per-course
+ * (program-visible scope, no builds_to_career filter) vs. scoring/other. ----
+ *
+ *   SCORING SCOPE (this function) — program-visible, not builds_to_career-restricted:
+ *     - listStaleSnapshots (here)                     — drives the bulk refresh route.
+ *
+ *   CAREER ROLLUPS — must and do filter builds_to_career = true:
+ *     - getMatrixData (here)                           — courses query already did;
+ *       FIXED here to also drop cells for snapshots outside that course set
+ *       (getAllCells() reads the whole target_coverage view with no course
+ *       filter at all, so a cell on an off-path snapshot would otherwise
+ *       leak into every target's rollup through matrix.cells).
+ *     - app/api/program/coverage/route.ts              — reads getMatrixData; inherits the fix.
+ *     - app/api/flags/route.ts                          — reads getMatrixData; inherits the fix.
+ *     - app/program/ProgramCoverageClient.tsx           — reads data.cells from the
+ *       route above with no further course cross-reference; inherits the fix.
+ *     - lib/ai/wiki/graph-tools.ts (coverageForTargetTool) — reads getMatrixData; inherits.
+ *     - lib/program/sufficiency-read.ts (getTargetSufficiency) — reads getMatrixData's
+ *       cells directly (`matrix.cells.filter(c => c.careerTargetId === targetId)`,
+ *       no course cross-reference of its own); inherits the fix.
+ *     - lib/ai/explore/run-impact.ts (runImpact → computeCareerFit)        — reads
+ *       getMatrixData; inherits the fix.
+ *     - lib/ai/explore/career-fit.ts (computeCareerFit)  — pure, reads matrix.cells
+ *       passed in by run-impact; inherits the fix transitively.
+ *     - lib/db/scaffolding-queries.ts (loadScaffoldingTarget) — queried target_coverage
+ *       directly with NO builds_to_career filter on its course/snapshot query
+ *       (only scope='gc' AND status='offered'). FIXED: added
+ *       `courses.buildsToCareer = true` to that query.
+ *     - lib/ai/wiki/update.ts (loadTargetSubstrate — the TARGET wiki page's
+ *       coverageRollup/contributingCourses) — queried target_coverage joined
+ *       only to courseCaptureSnapshots (retiredAt IS NULL), with NO courses
+ *       join and NO builds_to_career filter at all. FIXED: joined `courses`
+ *       and added `courses.buildsToCareer = true`.
+ *
+ *   PER-COMPETENCY / PER-COURSE VIEWS — correctly include every
+ *   program-visible course; no builds_to_career filter, by design (A2):
+ *     - lib/ai/wiki/update.ts (loadCompetencySubstrate — the COMPETENCY wiki page)
+ *       — reads snapshot_competency_coverage for one competency across every
+ *       non-retired snapshot. Correct as-is.
+ *     - lib/ai/wiki/update.ts (loadCompetencyLinksForSnapshot) — per-snapshot
+ *       (course page's competency links). Correct as-is.
+ *     - lib/ai/explore/run-impact.ts (resolveSubCompetencyDepths,
+ *       buildBaselineDelivered) — per focal-course snapshot, whatever course
+ *       that is (on-path or not). Correct as-is.
+ *     - lib/program/prereq-gaps.ts — per prereq course, per competency.
+ *       Correct as-is (A2 says so explicitly).
+ *
+ *   SCHEDULING ONLY (decide which pages to regenerate, not rollup content;
+ *   the actual target-page content comes from loadTargetSubstrate above,
+ *   which IS fixed) — left unfiltered on purpose; worst case is one wasted
+ *   regeneration (an AI call) for a target page whose content doesn't
+ *   change, not an incorrect rollup:
+ *     - lib/ai/wiki/update.ts (computeAffectedPages) — targetCoverage filtered
+ *       by snapshot id only, to pick which pages to queue.
+ *     - lib/ai/wiki/refresh-all.ts (loadRefreshInputs) — targetSlugs/competencySlugs
+ *       for the one-pass program refresh's batch planning.
+ *
+ *   NOT READERS of these tables (writers, deletes, or comments only):
+ *     - lib/db/program-coverage-queries.ts upsertCoverageCell / invalidateCoverageForSubCompetency (writes).
+ *     - lib/capture/run-course-reset.ts (deletes a course's cells on reset).
+ *     - app/api/program/coverage/refresh/route.ts and
+ *       .../[snapshotId]/[targetId]/route.ts (call listStaleSnapshots/upsertCoverageCell;
+ *       the per-pair route scores one target's active members, scoped by that target's
+ *       membership, not by course — out of scope for this audit).
+ *     - lib/db/__tests__/scaffolding-queries.test.ts, program-coverage-queries.test.ts,
+ *       lib/ai/wiki/__tests__/* (test doubles).
+ *     - tests/db/p0a/probes.ts (getCellsForSnapshotTarget) — a characterization
+ *       probe that reads raw (snapshot, target) cells for before/after diffing
+ *       of DB state across a migration, not a production rollup consumer;
+ *       deliberately unfiltered so it can SEE a diff if one appears.
  */
 export interface SnapshotToScore {
   snapshotId: string;
@@ -137,8 +218,7 @@ export async function listStaleSnapshots(executor: Tx | typeof db = db): Promise
       s.id, s.course_code, s.created_at
     FROM ${courseCaptureSnapshots} s
     JOIN courses c ON c.code = s.course_code
-    WHERE s.retired_at IS NULL AND c.builds_to_career = true
-      AND c.scope = 'gc' AND c.status = 'offered'  -- scope/status: see lib/courses/program-visibility.ts
+    WHERE s.retired_at IS NULL AND ${PROGRAM_VISIBLE_SQL}
     ORDER BY s.course_code, s.instructor_name, s.created_at DESC
   `);
   const latestSnaps = (latestSnapshots.rows as Array<{ id: string; course_code: string }>);
@@ -325,7 +405,14 @@ export async function getMatrixData(): Promise<MatrixData> {
     }));
 
   const activeSubIds = new Set(subCompetenciesOut.map(s => s.id));
-  const cells = (await getAllCells()).filter(c => activeSubIds.has(c.subCompetencyId));
+  // Career-rollup scope (A2): getAllCells() reads the WHOLE target_coverage
+  // view with no course filter of its own, so without this a cell scored
+  // for an off-path course's snapshot (now in scope for scoring — A2) would
+  // leak into this target rollup. `courses` above is already
+  // builds_to_career-filtered, so restricting to its snapshot ids is
+  // sufficient — no separate course join needed here.
+  const visibleSnapshotIds = new Set(courses.map(c => c.snapshotId));
+  const cells = (await getAllCells()).filter(c => activeSubIds.has(c.subCompetencyId) && visibleSnapshotIds.has(c.snapshotId));
 
   return {
     courses: courses.sort((a, b) =>

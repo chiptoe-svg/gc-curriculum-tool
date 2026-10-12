@@ -37,6 +37,13 @@
  *    entry listed as retired that is still desired anywhere is an error.
  *  - snapshot_target_coverage and every other table are out of scope: the
  *    writer interface has no operation that could reach them.
+ *  - Unlinked catalog rows (P0b Amendment 1, A3): an active (non-retired)
+ *    sub_competencies row that is currently a member of no target AND is
+ *    not referenced anywhere in the definitions (no definition, no ref) is
+ *    reported in `competencyUnlinked`. It is never retired automatically
+ *    and never an error — the catalog is independent of career targets. To
+ *    link such a row to a target through the batch, add its definition (or
+ *    a ref to it) to seed-targets.ts; there is no other P0b write path.
  */
 import type { CareerTarget, SubCompetency } from './types';
 import { competencyEntryId, isSubCompetencyDefinition } from './types';
@@ -106,6 +113,12 @@ export interface BatchPlan {
   competencyUpdates: CatalogUpdate[];
   competencyRetires: CatalogRetire[];
   competencyUnchanged: string[];
+  /**
+   * Active DB competencies with no current target membership and no
+   * definition/ref in the batch (P0b Amendment 1, A3). Reported only — never
+   * retired, never an error, never written.
+   */
+  competencyUnlinked: string[];
   errors: string[];
   counts: {
     targetsUpdated: number;
@@ -113,6 +126,7 @@ export interface BatchPlan {
     competenciesInserted: number;
     competenciesUpdated: number;
     competenciesRetired: number;
+    competenciesUnlinked: number;
     membershipsInserted: number;
     membershipsReordered: number;
     membershipsRemoved: number;
@@ -231,6 +245,18 @@ export function planTargetBatch(
     competencyRetires.push({ id: r.id, name: existing.name, mergedInto: r.mergedInto ?? null });
   }
 
+  // ---- A3 (P0b Amendment 1): unlinked catalog rows. ------------------------
+  // An active DB competency currently a member of no target, and not
+  // referenced anywhere in the definitions (no definition, no ref), is
+  // reported here — never retired automatically, never an error. A ref
+  // without a definition is already caught by Rule 1 above, so it never
+  // reaches this check.
+  const idsWithCurrentMembership = new Set(dbMemberships.map(m => m.competencyId));
+  const competencyUnlinked = dbSubs
+    .filter(s => !s.retired && !definitionOwner.has(s.id) && !idsWithCurrentMembership.has(s.id))
+    .map(s => s.id)
+    .sort();
+
   // ---- Rule 3 + 5: per-target membership. ---------------------------------
   const targets: TargetPlan[] = [];
   for (const t of desired) {
@@ -308,6 +334,7 @@ export function planTargetBatch(
     competencyUpdates,
     competencyRetires,
     competencyUnchanged,
+    competencyUnlinked,
     errors,
     counts: {
       targetsUpdated: targets.filter(p => p.targetChanges.length > 0).length,
@@ -315,6 +342,7 @@ export function planTargetBatch(
       competenciesInserted: competencyInserts.length,
       competenciesUpdated: competencyUpdates.length,
       competenciesRetired: competencyRetires.length,
+      competenciesUnlinked: competencyUnlinked.length,
       membershipsInserted: sum(p => p.membershipInserts.length),
       membershipsReordered: sum(p => p.orderUpdates.length),
       membershipsRemoved: sum(p => p.membershipRemovals.length),
@@ -377,6 +405,9 @@ export function formatPlan(plan: BatchPlan): string {
   for (const r of plan.competencyRetires) {
     out.push(`  RETIRE ${r.id} "${r.name}"${r.mergedInto ? ` -> merged into ${r.mergedInto}` : ''} (retired = true; row and its coverage kept)`);
   }
+  if (plan.competencyUnlinked.length) {
+    out.push(`  UNLINKED (active, no target, not in the definitions — reported only): ${plan.competencyUnlinked.join(', ')}`);
+  }
 
   for (const t of plan.targets) {
     out.push('', `== ${t.targetId} (${t.targetName})`);
@@ -397,7 +428,7 @@ export function formatPlan(plan: BatchPlan): string {
     '',
     '== counts',
     `  targets updated: ${c.targetsUpdated}, targets unchanged: ${c.targetsUnchanged}`,
-    `  competencies inserted: ${c.competenciesInserted}, updated: ${c.competenciesUpdated}, retired: ${c.competenciesRetired}`,
+    `  competencies inserted: ${c.competenciesInserted}, updated: ${c.competenciesUpdated}, retired: ${c.competenciesRetired}, unlinked: ${c.competenciesUnlinked}`,
     `  memberships inserted: ${c.membershipsInserted}, reordered: ${c.membershipsReordered}, removals reported (not applied): ${c.membershipsRemoved}`,
   );
   if (plan.errors.length) out.push('', '== ERRORS (apply refused)', ...plan.errors.map(e => `  ${e}`));

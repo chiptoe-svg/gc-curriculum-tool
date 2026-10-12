@@ -58,7 +58,7 @@ describe.skipIf(!RUN)('retireCompetencyFromTarget (P0b, post-0057)', () => {
     });
   });
 
-  it('on a competency used by exactly one target, retires the catalog row, removes the requirement, and returns retired', async () => {
+  it('on a competency used by exactly one target, removing that last membership leaves the catalog row active and unlinked, with zero requirement rows', async () => {
     const [t] = await db.select({ id: careerTargets.id }).from(careerTargets).limit(1);
     await inRolledBackTx(async (tx) => {
       const created = await insertCompetencyForTarget(tx, {
@@ -72,10 +72,12 @@ describe.skipIf(!RUN)('retireCompetencyFromTarget (P0b, post-0057)', () => {
       });
 
       const result = await retireCompetencyFromTarget(tx, t!.id, created.id);
-      expect(result).toBe('retired');
+      expect(result).toBe('unlinked');
 
+      // A1 (Amendment 1): unlinked is a valid active state — removing the
+      // last target no longer retires the catalog row.
       const [sc] = await tx.select({ retired: subCompetencies.retired }).from(subCompetencies).where(eq(subCompetencies.id, created.id));
-      expect(sc!.retired).toBe(true);
+      expect(sc!.retired).toBe(false);
 
       const reqs = await tx.select().from(careerTargetRequirements).where(eq(careerTargetRequirements.competencyId, created.id));
       expect(reqs).toEqual([]);
@@ -110,18 +112,22 @@ describe.skipIf(!RUN)('retireCompetencyFromTarget (P0b, post-0057)', () => {
   // SAME shared competency from two DIFFERENT targets can each read the
   // pre-delete membership before either commits, each delete their own row,
   // each re-read and still see the other's (uncommitted) row, and both
-  // return 'removed-from-target' — orphaning the competency (0 requirement
-  // rows, retired stays false). Reproduced directly (lock disabled, two real
-  // connections, deterministic — no timing needed since neither side
-  // commits until both have run): tx1(target A) -> 'removed-from-target',
-  // tx2(target B) -> 'removed-from-target', both commit, final state 0 rows
-  // / retired=false. See task-3-report.md "Fix round 2" for that transcript.
-  // This test uses two REAL pg connections (not inRolledBackTx — a single
-  // transaction can't observe its own row lock blocking a second session)
-  // to prove the fix: tx2's lock attempt genuinely blocks on tx1's hold, and
-  // only resolves correctly once tx1 commits.
+  // return 'removed-from-target' — leaving the competency with 0
+  // requirement rows but each caller under-reporting its own result.
+  // Reproduced directly (lock disabled, two real connections, deterministic
+  // — no timing needed since neither side commits until both have run):
+  // tx1(target A) -> 'removed-from-target', tx2(target B) ->
+  // 'removed-from-target', both commit, final state 0 rows / retired=false.
+  // See task-3-report.md "Fix round 2" for that transcript. Since Amendment
+  // 1 (A1), 0 rows / retired=false is simply 'unlinked' — a valid state —
+  // but the race would still make tx2 under-report 'removed-from-target'
+  // instead of 'unlinked'. This test uses two REAL pg connections (not
+  // inRolledBackTx — a single transaction can't observe its own row lock
+  // blocking a second session) to prove the fix: tx2's lock attempt
+  // genuinely blocks on tx1's hold, and only resolves correctly (as
+  // 'unlinked') once tx1 commits.
   it(
-    "two concurrent retires of a shared competency from different targets serialize via the catalog row's FOR UPDATE lock, ending retired with zero requirement rows (not orphaned)",
+    "two concurrent retires of a shared competency from different targets serialize via the catalog row's FOR UPDATE lock, ending unlinked with zero requirement rows (not orphaned-and-misreported)",
     async () => {
       const [tA, tB] = await db.select({ id: careerTargets.id }).from(careerTargets).limit(2);
       const competencyId = 'zz-p0b-retire-race';
@@ -182,12 +188,12 @@ describe.skipIf(!RUN)('retireCompetencyFromTarget (P0b, post-0057)', () => {
         const result2 = await result2Promise;
         await client2.query('COMMIT');
 
-        expect(result2).toBe('retired');
+        expect(result2).toBe('unlinked');
 
         const reqs = await db.select().from(careerTargetRequirements).where(eq(careerTargetRequirements.competencyId, competencyId));
         expect(reqs).toEqual([]);
         const [sc] = await db.select({ retired: subCompetencies.retired }).from(subCompetencies).where(eq(subCompetencies.id, competencyId));
-        expect(sc!.retired).toBe(true);
+        expect(sc!.retired).toBe(false);
       } finally {
         await client1.end();
         await client2.end();

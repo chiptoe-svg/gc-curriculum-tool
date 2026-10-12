@@ -16,6 +16,7 @@ import path from 'node:path';
 import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 
 import { db } from '@/lib/db/client';
+import type { Tx } from '@/lib/db/competency-catalog-queries';
 import {
   courseCaptureSnapshots,
   captureMessages,
@@ -412,14 +413,20 @@ interface CoverageRollupEntry {
   evidenceExcerpt: string | null;
 }
 
-export async function loadTargetSubstrate(targetId: string): Promise<{
+/**
+ * `executor` defaults to the module-level `db` but accepts a transaction
+ * client (`Tx`) so a test can run a setup mutation and this read on the SAME
+ * connection inside one `BEGIN … ROLLBACK` (same pattern as
+ * program-coverage-queries.ts:listStaleSnapshots).
+ */
+export async function loadTargetSubstrate(targetId: string, executor: Tx | typeof db = db): Promise<{
   targetName: string;
   shortDefinition: string;
   industryContexts: string[];
   coverageRollup: CoverageRollupEntry[];
   contributingCourses: string[];
 }> {
-  const targetRows = await db
+  const targetRows = await executor
     .select()
     .from(careerTargets)
     .where(eq(careerTargets.id, targetId))
@@ -439,7 +446,7 @@ export async function loadTargetSubstrate(targetId: string): Promise<{
   // M-3 (adversarial review): ordered — the view's GROUP BY gives no defined
   // row order otherwise, which fed the scorer/wiki prompts a different
   // competency order than before (characterization's sortJson masked it).
-  const subs = await db
+  const subs = await executor
     .select()
     .from(targetSubCompetencies)
     .where(and(eq(targetSubCompetencies.careerTargetId, targetId), eq(targetSubCompetencies.retired, false)))
@@ -464,7 +471,14 @@ export async function loadTargetSubstrate(targetId: string): Promise<{
   // broke when P0a re-pointed this read to the target_coverage view (different query plan, different
   // row order for ties). The ORDER BY makes the pick deterministic regardless of read path; the
   // "highest dDepth wins" criterion itself (the reduction below) is unchanged.
-  const cellRows = await db
+  // Career-rollup scope (P0b Amendment 1, A2): the target wiki page rolls up
+  // to a career target, so — like the program matrix and scaffolding — it
+  // stays restricted to builds_to_career courses even though scoring itself
+  // (listStaleSnapshots) now covers every program-visible course. Previously
+  // this joined only courseCaptureSnapshots (retiredAt IS NULL) with no
+  // course filter at all, so an off-path course's cell would have rolled up
+  // into every target that uses its competency.
+  const cellRows = await executor
     .select({
       subCompetencyId: targetCoverage.subCompetencyId,
       courseCode: courseCaptureSnapshots.courseCode,
@@ -480,6 +494,15 @@ export async function loadTargetSubstrate(targetId: string): Promise<{
       and(
         eq(targetCoverage.snapshotId, courseCaptureSnapshots.id),
         isNull(courseCaptureSnapshots.retiredAt),
+      ),
+    )
+    .innerJoin(
+      courses,
+      and(
+        eq(courses.code, courseCaptureSnapshots.courseCode),
+        eq(courses.scope, 'gc'),
+        eq(courses.status, 'offered'),
+        eq(courses.buildsToCareer, true),
       ),
     )
     .where(

@@ -95,8 +95,10 @@ export async function setCompetencyOrderInTarget(
  * career_target_requirements row for (careerTargetId, competencyId) — all
  * horizons/weight sources for that pair, nothing belonging to any other
  * target. If no other target still uses the competency afterward, the
- * catalog row itself is retired; otherwise it stays active for the
- * remaining targets.
+ * catalog row is left ACTIVE and unlinked (P0b Amendment 1, A1: unlinked is
+ * a valid active state — the catalog is independent of career targets, so
+ * removing the last target no longer retires the row). Otherwise it stays
+ * active for the remaining targets.
  *
  * Self-correcting (fix round 1, 2026-10-12): refuses — and changes
  * nothing — if careerTargetId isn't currently a member of the competency,
@@ -111,17 +113,26 @@ export async function setCompetencyOrderInTarget(
  * targets can each read the pre-delete membership before either commits,
  * each delete their own row, each re-read and still see the other's
  * (uncommitted) row, and both return 'removed-from-target' — leaving the
- * competency with zero requirement rows and retired=false, orphaned. The
- * `SELECT ... FOR UPDATE` on the catalog row below serializes concurrent
- * retires of the same competencyId: the second caller blocks until the
- * first's transaction commits (or rolls back), then sees the first's
- * committed delete when it re-reads membership.
+ * competency with zero requirement rows and retired=false, orphaned (which,
+ * since Amendment 1, is simply 'unlinked' — a valid state, not a bug — but
+ * the race would still make each caller under-report: both see
+ * 'removed-from-target' when in fact the second delete left it with no
+ * members at all). The `SELECT ... FOR UPDATE` on the catalog row below
+ * serializes concurrent retires of the same competencyId: the second caller
+ * blocks until the first's transaction commits (or rolls back), then sees
+ * the first's committed delete when it re-reads membership, so the caller
+ * that empties the last membership correctly observes 'unlinked'.
+ *
+ * Retiring (sub_competencies.retired = true) is a separate, explicit catalog
+ * action — not a side effect of this function. P0b has no UI for it; the
+ * target-batch definitions (RETIRED_SUB_COMPETENCIES in seed-targets.ts)
+ * remain the only way to retire a competency.
  */
 export async function retireCompetencyFromTarget(
   tx: Tx,
   careerTargetId: string,
   competencyId: string,
-): Promise<'retired' | 'removed-from-target'> {
+): Promise<'unlinked' | 'removed-from-target'> {
   const [locked] = await tx.select({ id: subCompetencies.id }).from(subCompetencies).where(eq(subCompetencies.id, competencyId)).for('update');
   if (!locked) {
     throw new Error(`retireCompetencyFromTarget: ${competencyId} does not exist`);
@@ -135,8 +146,7 @@ export async function retireCompetencyFromTarget(
     .where(and(eq(careerTargetRequirements.careerTargetId, careerTargetId), eq(careerTargetRequirements.competencyId, competencyId)));
   const targetsAfter = await targetIdsForCompetency(tx, competencyId);
   if (targetsAfter.length === 0) {
-    await tx.update(subCompetencies).set({ retired: true, updatedAt: new Date() }).where(eq(subCompetencies.id, competencyId));
-    return 'retired';
+    return 'unlinked';
   }
   return 'removed-from-target';
 }

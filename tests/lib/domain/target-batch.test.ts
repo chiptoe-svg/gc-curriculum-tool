@@ -265,6 +265,46 @@ describe('planTargetBatch — Rule 4: retired entries', () => {
   });
 });
 
+// ---- A3 (P0b Amendment 1): unlinked catalog rows ---------------------------
+
+describe('planTargetBatch — A3: unlinked catalog rows (P0b Amendment 1)', () => {
+  it('reports an active DB competency with no current membership and no definition as unlinked, and writes nothing for it', () => {
+    const plan = planTargetBatch(
+      [desiredTarget({ subCompetencies: [def('kept')] })], [],
+      [dbTarget()], [dbSub('kept'), dbSub('orphan')],
+      [member('t1', 'kept', 0)],
+    );
+    expect(plan.competencyUnlinked).toEqual(['orphan']);
+    expect(plan.counts.competenciesUnlinked).toBe(1);
+    expect(plan.competencyUpdates).toEqual([]);
+    expect(plan.competencyInserts).toEqual([]);
+    expect(plan.competencyRetires).toEqual([]);
+    expect(plan.errors).toEqual([]);
+  });
+
+  it('does not report a retired DB competency as unlinked', () => {
+    const plan = planTargetBatch(
+      [desiredTarget({ subCompetencies: [def('kept')] })], [],
+      [dbTarget()], [dbSub('kept'), dbSub('gone', { retired: true })],
+      [member('t1', 'kept', 0)],
+    );
+    expect(plan.competencyUnlinked).toEqual([]);
+  });
+
+  it('does not report a competency that still has a current membership as unlinked, even without a definition in this batch', () => {
+    // 'kept' is a current member of t1 via dbMemberships, but this batch's
+    // desired list for t1 omits it — that's membershipRemovals territory
+    // (reported, not applied), not unlinked: it still has a membership row.
+    const plan = planTargetBatch(
+      [desiredTarget({ subCompetencies: [] })], [],
+      [dbTarget()], [dbSub('kept')],
+      [member('t1', 'kept', 0)],
+    );
+    expect(plan.competencyUnlinked).toEqual([]);
+    expect(plan.targets[0]!.membershipRemovals).toEqual(['kept']);
+  });
+});
+
 // ---- Rule 5: the P0a M-5 hazard can't recur --------------------------------
 
 describe('planTargetBatch — Rule 5: a moved definition is an insert + a removal, never a silent second membership', () => {

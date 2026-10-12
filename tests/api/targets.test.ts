@@ -28,7 +28,7 @@ vi.mock('@/lib/db/competency-catalog-queries', () => ({
     updatedAt: new Date(),
   })),
   getTargetCompetency: vi.fn(async () => null),
-  retireCompetencyFromTarget: vi.fn(async () => 'retired' as const),
+  retireCompetencyFromTarget: vi.fn(async () => 'unlinked' as const),
 }));
 
 // Mock the drizzle db client so PATCH/POST routes don't hit a real DB
@@ -253,7 +253,7 @@ describe('POST /api/targets/[id]/sub-competencies/[scId]/retire', () => {
     vi.clearAllMocks();
     vi.mocked(queriesModule.clearTargetCache).mockImplementation(() => undefined);
     vi.mocked(catalogModule.getTargetCompetency).mockResolvedValue(MEMBER_ROW as never);
-    vi.mocked(catalogModule.retireCompetencyFromTarget).mockResolvedValue('retired');
+    vi.mocked(catalogModule.retireCompetencyFromTarget).mockResolvedValue('unlinked');
   });
 
   it('returns 404 when the sub-competency is not a member of the target', async () => {
@@ -266,13 +266,13 @@ describe('POST /api/targets/[id]/sub-competencies/[scId]/retire', () => {
     expect(catalogModule.retireCompetencyFromTarget).not.toHaveBeenCalled();
   });
 
-  it("returns {ok, result, competencyId} with result 'retired' when the competency had no other target left", async () => {
-    vi.mocked(catalogModule.retireCompetencyFromTarget).mockResolvedValue('retired');
+  it("returns {ok, result, competencyId} with result 'unlinked' when the competency had no other target left", async () => {
+    vi.mocked(catalogModule.retireCompetencyFromTarget).mockResolvedValue('unlinked');
     const req = makeRequest('POST');
     const res = await postRetireSubComp(req, { params: makeParams({ id: 'production-operations', scId: 'domain-knowledge' }) });
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body).toEqual({ ok: true, result: 'retired', competencyId: 'domain-knowledge' });
+    expect(body).toEqual({ ok: true, result: 'unlinked', competencyId: 'domain-knowledge' });
   });
 
   it("returns {ok, result, competencyId} with result 'removed-from-target' when another target still uses the competency", async () => {
