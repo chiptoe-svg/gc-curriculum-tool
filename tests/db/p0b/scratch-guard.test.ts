@@ -128,8 +128,14 @@ describe('isP0bRollbackTestDb (rollback-swap real-DB test gate — gc_curriculum
   });
 
   it('accepts names the swap itself derives from the base name', () => {
-    expect(isP0bRollbackTestDb('gc_curriculum_p0b_rbtest_rollback_20261012T000000')).toBe(true);
-    expect(isP0bRollbackTestDb('gc_curriculum_p0b_rbtest_pre_rollback_20261012T000000')).toBe(true);
+    // Fix round 3: no uppercase "T" — p0b-apply-db.sh's ROLLBACK_TS now
+    // uses `date +%Y%m%d%H%M%S` (discovered and fixed in this same round:
+    // the previous `%Y%m%dT%H%M%S` produced a literal uppercase T, which
+    // the exact-match regex below — case-sensitive, [a-z0-9_] only —
+    // would never accept, silently defeating the leaked-database sweep
+    // for every real rollback-generated name).
+    expect(isP0bRollbackTestDb('gc_curriculum_p0b_rbtest_rollback_20261012000000')).toBe(true);
+    expect(isP0bRollbackTestDb('gc_curriculum_p0b_rbtest_pre_rollback_20261012000000')).toBe(true);
     expect(isP0bRollbackTestDb('gc_curriculum_p0b_rbtest_cleantest')).toBe(true);
   });
 
@@ -140,10 +146,20 @@ describe('isP0bRollbackTestDb (rollback-swap real-DB test gate — gc_curriculum
     expect(isP0bRollbackTestDb('gc_curriculum_p0a_scratch')).toBe(false);
   });
 
-  it('rejects prefix/suffix near-matches', () => {
-    expect(isP0bRollbackTestDb('gc_curriculum_p0b_rbtest2')).toBe(false); // no separator: a different name, not a derived one
+  it('accepts a suffix with no separator — matches the production allowlist regex exactly (fix round 3)', () => {
+    // ^gc_curriculum_p0b_rbtest[a-z0-9_]*$ allows a letter/digit directly
+    // after "rbtest", no underscore required — this predicate must agree
+    // with the scripts' own allowlist (p0b_check_allowed_db_name) exactly,
+    // so the leaked-database sweep in p0b-rollback-swap.test.ts can never
+    // miss a name the scripts would happily create/rename/accept.
+    expect(isP0bRollbackTestDb('gc_curriculum_p0b_rbtest2')).toBe(true);
+    expect(isP0bRollbackTestDb('gc_curriculum_p0b_rbtestx')).toBe(true);
+  });
+
+  it('rejects prefix near-matches and disallowed characters', () => {
     expect(isP0bRollbackTestDb('xgc_curriculum_p0b_rbtest')).toBe(false);
-    expect(isP0bRollbackTestDb('gc_curriculum_p0b_rbtestx')).toBe(false);
+    expect(isP0bRollbackTestDb('gc_curriculum_p0b_rbtest-x')).toBe(false); // hyphen not in [a-z0-9_]
+    expect(isP0bRollbackTestDb('gc_curriculum_p0b_rbtest\'; DROP DATABASE gc_curriculum; --')).toBe(false);
   });
 
   it('rejects empty/garbage input', () => {

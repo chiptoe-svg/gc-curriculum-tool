@@ -201,7 +201,18 @@ else
   # --- Rollback (fix round 1): restore into a brand-new database, verify
   # THAT database, then swap it in by renaming. Never touches the live
   # database's own tables directly — see the header note for why.
-  ROLLBACK_TS="$(date +%Y%m%dT%H%M%S)"
+  #
+  # Fix round 3: no literal "T" separator (unlike the apply-mode dump
+  # filename's TIMESTAMP above) — these two generated names are DATABASE
+  # names, and the test-side isP0bRollbackTestDb() guard that recognizes
+  # this family now matches the production allowlist regex EXACTLY
+  # (^gc_curriculum_p0b_rbtest[a-z0-9_]*$, case-sensitive, no uppercase
+  # letters). An uppercase "T" here would make every real rollback-
+  # generated database name invisible to that guard — discovered by
+  # actually running the real-DB test after making that change, which
+  # failed and leaked a database on the server, exactly the kind of gap
+  # this fix round's own leak-sweep (Minor 4, round 2) exists to close.
+  ROLLBACK_TS="$(date +%Y%m%d%H%M%S)"
   ROLLBACK_DB_NAME="${EXPECTED_DB}_rollback_${ROLLBACK_TS}"
   PRE_ROLLBACK_NAME="${EXPECTED_DB}_pre_rollback_${ROLLBACK_TS}"
 

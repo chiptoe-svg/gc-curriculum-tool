@@ -79,6 +79,12 @@ describe('p0b-apply-db.sh / p0b-db-migrated.sh — database-name allowlist enfor
     'gc_curriculum_p0b_pre',
     'rag_core',
     'gc_curriculum_p0b_rbtest"; DROP DATABASE gc_curriculum; --',
+    // Fix round 3 (Minor 4): a single-quote variant alongside the
+    // existing double-quote one — belt-and-braces proof that the
+    // allowlist regex itself (not a particular quoting style) is what's
+    // rejecting these, on top of the psql `:"var"`/`:'var'` substitution
+    // fix round 2 already applied.
+    "gc_curriculum_p0b_rbtest'; DROP DATABASE gc_curriculum; --",
     'gc_curriculum2',
   ];
 

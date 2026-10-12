@@ -26,10 +26,12 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { Pool } from 'pg';
 import { isP0bMainDb, isP0bRollbackTestDb, ROLLBACK_TEST_DB, SCRATCH_DB_PRE } from './p0b/scratch-guard';
 
 const ROOT = resolve(__dirname, '../..');
 const APPLY_DB_SH = resolve(ROOT, 'scripts/migrations/p0b-apply-db.sh');
+const DB_MIGRATED_SH = resolve(ROOT, 'scripts/migrations/p0b-db-migrated.sh');
 const PGBIN = '/Applications/Postgres.app/Contents/Versions/17/bin';
 
 const RUN = isP0bMainDb() && process.env.P0B_ROLLBACK_SWAP_TEST === '1';
@@ -80,6 +82,28 @@ function dropDatabaseForce(anyUrl: string, name: string) {
   runMaint(anyUrl, `DROP DATABASE IF EXISTS "${name}"`);
 }
 
+/**
+ * Polls until nothing else is connected to `url`'s database (besides this
+ * polling connection itself), or `timeoutMs` elapses. Discovered needed in
+ * fix round 3: the `pg_dump | psql` pipe below (and any other
+ * execFileSync'd psql) can return to Node a few milliseconds before
+ * Postgres itself has finished tearing down that backend's connection —
+ * a genuine, observed race, not a hypothetical one (it intermittently
+ * made the very next p0b-apply-db.sh invocation's own "no other
+ * sessions" guard see that still-closing connection and refuse). Blocking
+ * until the server confirms quiescence, rather than a fixed sleep, is
+ * exact and still fast on the common case (usually resolves on the first
+ * check).
+ */
+function waitForNoOtherSessions(url: string, timeoutMs = 5000): void {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    const count = queryOne(url, 'SELECT count(*) FROM pg_stat_activity WHERE datname = current_database() AND pid <> pg_backend_pid()');
+    if (count === '0') return;
+    if (Date.now() >= deadline) return; // best-effort: let the caller's own guard surface whatever is still there
+  }
+}
+
 /** Full clone of sourceUrl's database into a fresh gc_curriculum_p0b_rbtest* database. */
 function cloneDatabase(sourceUrl: string, targetName: string) {
   assertRollbackTestName(targetName);
@@ -89,6 +113,7 @@ function cloneDatabase(sourceUrl: string, targetName: string) {
   execFileSync('bash', ['-c', 'set -euo pipefail; "$PG_DUMP" --no-owner --no-privileges "$SRC" | "$PG_PSQL" "$DST" -X -q -v ON_ERROR_STOP=1'], {
     env: { ...process.env, SRC: sourceUrl, DST: targetUrl, PG_DUMP: `${PGBIN}/pg_dump`, PG_PSQL: `${PGBIN}/psql` },
   });
+  waitForNoOtherSessions(targetUrl);
 }
 
 /** Every gc_curriculum_p0b_rbtest* database currently on the server (one per line from a plain `datname` query). */
@@ -240,5 +265,54 @@ describe.skipIf(!RUN)('p0b-apply-db.sh rollback (fix round 1): restore-into-new-
     sweepLeakedRollbackTestDatabases(SCRATCH_URL);
 
     expect(listRollbackTestDatabases(SCRATCH_URL)).not.toContain(leaked);
+  });
+
+  // Fix round 3 (Minor 2): restores, against a disposable
+  // gc_curriculum_p0b_rbtest* clone (the allowlist permits that name —
+  // gc_curriculum_p0b_pre itself does not, by design since fix round 2),
+  // the real-DB coverage that round 2 had to remove when the allowlist
+  // made gc_curriculum_p0b_pre permanently unusable as a script target.
+  it('p0b-db-migrated.sh prints "f" against a real pre-0057 gc_curriculum_p0b_rbtest clone', () => {
+    const name = `${ROLLBACK_TEST_DB}_premigr`;
+    expect(isP0bRollbackTestDb(name)).toBe(true);
+    createdDbs.add(name);
+    cloneDatabase(preUrl, name); // clone FROM gc_curriculum_p0b_pre: pre-0057 shape
+    const url = withDbName(SCRATCH_URL, name);
+    const res = runScript(DB_MIGRATED_SH, [name], { DATABASE_URL: url });
+    expect(res.status).toBe(0);
+    expect(res.stdout.trim()).toBe('f');
+  });
+
+  it('p0b-db-migrated.sh prints "t" against a real post-0057 gc_curriculum_p0b_rbtest clone', () => {
+    const name = `${ROLLBACK_TEST_DB}_postmigr`;
+    expect(isP0bRollbackTestDb(name)).toBe(true);
+    createdDbs.add(name);
+    cloneDatabase(SCRATCH_URL, name); // clone FROM gc_curriculum_p0b_scratch: post-0057 shape
+    const url = withDbName(SCRATCH_URL, name);
+    const res = runScript(DB_MIGRATED_SH, [name], { DATABASE_URL: url });
+    expect(res.status).toBe(0);
+    expect(res.stdout.trim()).toBe('t');
+  });
+
+  it('p0b-apply-db.sh refuses when another session is open on the rbtest target — nothing changed', async () => {
+    const name = `${ROLLBACK_TEST_DB}_sessions`;
+    expect(isP0bRollbackTestDb(name)).toBe(true);
+    createdDbs.add(name);
+    cloneDatabase(SCRATCH_URL, name);
+    const url = withDbName(SCRATCH_URL, name);
+    const before = queryOne(url, 'SELECT count(*) FROM career_target_requirements');
+
+    const holder = new Pool({ connectionString: url, max: 1 });
+    const holderQuery = holder.query('SELECT pg_sleep(1.5)');
+    try {
+      await new Promise((r) => setTimeout(r, 300)); // give the holder time to register as 'active'
+      const res = runScript(APPLY_DB_SH, [name, tmp, 'apply'], { DATABASE_URL: url });
+      expect(res.status).not.toBe(0);
+      expect(res.stderr).toMatch(/refusing: other sessions are connected/);
+    } finally {
+      await holderQuery;
+      await holder.end();
+    }
+    expect(queryOne(url, 'SELECT count(*) FROM career_target_requirements')).toBe(before);
   });
 });

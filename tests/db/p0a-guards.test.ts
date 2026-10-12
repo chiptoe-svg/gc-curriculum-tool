@@ -128,9 +128,38 @@ const SUB_COMPETENCIES_MEMBERSHIP_PATTERN = /(FROM|JOIN)\s+"?sub_competencies\b[
 // still touch these dropped tables in raw SQL against a pre-0057 clone).
 const COVERAGE_SCORES_PATTERN = /(FROM|JOIN|INTO|UPDATE)\s+"?coverage_scores\b/i;
 
+// Fix round 3 (task 8, competency-catalog P0b plan): narrow, single-file
+// exclusion for the backup-table guard below. scripts/migrations/
+// p0b-apply-db.sh's rollback mode restores a pre-apply-*.dump into a
+// brand-new, throwaway database and then verifies THAT database before
+// swapping it in — never the live, post-0057 database. In that restored
+// (pre-0057) database, snapshot_target_coverage legitimately still
+// exists (0057 hasn't run there), so `SELECT count(*) FROM
+// snapshot_target_coverage` is the correct verification query, not a
+// regression of the P0a backup-table rule this guard enforces. Exactly
+// this one file is exempted from exactly this one check — the query
+// itself is not rephrased to dodge the grep (the controller ruling for
+// this fix round is explicit about that), and the shared
+// `rawSqlScopeFiles()` pathspec above is untouched, so the other two
+// raw-SQL guards below still scan this file in full.
+const BACKUP_TABLE_GUARD_EXCLUDED_FILES = new Set(['scripts/migrations/p0b-apply-db.sh']);
+
 describe('P0a guards — raw SQL (M-4 / M-c)', () => {
   it('no tracked raw SQL reads or writes the backup table snapshot_target_coverage', () => {
-    expect(filesWithRawSqlPattern(BACKUP_TABLE_PATTERN)).toEqual([]);
+    const hits = filesWithRawSqlPattern(BACKUP_TABLE_PATTERN)
+      .filter((f) => !BACKUP_TABLE_GUARD_EXCLUDED_FILES.has(f));
+    expect(hits).toEqual([]);
+  });
+
+  it('the backup-table exclusion above names exactly scripts/migrations/p0b-apply-db.sh and nothing else', () => {
+    // Fix round 3: confirms the exclusion doesn't quietly grow to cover
+    // some other file. If this fails because a NEW file legitimately
+    // needs the same exemption, add it by name, not by loosening the
+    // pattern. If it fails because p0b-apply-db.sh no longer matches
+    // BACKUP_TABLE_PATTERN at all, remove the now-dead exclusion.
+    const actualHits = filesWithRawSqlPattern(BACKUP_TABLE_PATTERN);
+    expect(actualHits).toEqual(['scripts/migrations/p0b-apply-db.sh']);
+    expect(BACKUP_TABLE_GUARD_EXCLUDED_FILES.size).toBe(1);
   });
 
   it('no tracked raw SQL reads sub_competencies membership via career_target_id or display_order', () => {
