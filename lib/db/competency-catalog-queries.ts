@@ -1,11 +1,12 @@
 /**
- * Competency catalog writes (P0a, migration 0056). sub_competencies is the
- * catalog; career_target_requirements records which targets use a competency
- * and its position in each (display_order). Membership is READ from the view
- * target_sub_competencies. During P0a the deprecated mirror columns
- * sub_competencies.career_target_id / display_order are still written (for the
- * rollback script) and never read. Spec §8 P0a; plan
- * docs/superpowers/plans/2026-10-11-competency-catalog-p0a.md.
+ * Competency catalog writes (P0a migration 0056; P0b migration 0057 drops
+ * the deprecated mirror columns this file used to also write). sub_competencies
+ * is the catalog; career_target_requirements records which targets use a
+ * competency and its position in each (display_order), and a competency can
+ * now be shared by more than one target (P0b merges). Membership is READ
+ * from the view target_sub_competencies. Spec §8 P0a; plan
+ * docs/superpowers/plans/2026-10-11-competency-catalog-p0a.md;
+ * docs/superpowers/plans/2026-10-12-competency-catalog-p0b.md.
  */
 import { and, asc, eq } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
@@ -50,12 +51,10 @@ export async function nextDisplayOrderForTarget(careerTargetId: string): Promise
 export async function insertCompetencyForTarget(tx: Tx, row: NewTargetCompetency): Promise<TargetCompetencyRow> {
   await tx.insert(subCompetencies).values({
     id: row.id,
-    deprecatedCareerTargetId: row.careerTargetId, // mirror for the rollback script (P0a; never read)
     name: row.name,
     knowDescriptor: row.knowDescriptor,
     understandDescriptor: row.understandDescriptor,
     doDescriptor: row.doDescriptor,
-    deprecatedDisplayOrder: row.displayOrder,     // mirror for the rollback script (P0a; never read)
     retired: row.retired ?? false,
     updatedAt: new Date(),
   });
@@ -87,11 +86,32 @@ export async function setCompetencyOrderInTarget(
     .set({ displayOrder, updatedAt: new Date() })
     .where(and(eq(careerTargetRequirements.careerTargetId, careerTargetId), eq(careerTargetRequirements.competencyId, competencyId)))
     .returning({ id: careerTargetRequirements.id });
-  if (updated.length > 0) {
-    // mirror for the rollback script (P0a; never read)
-    await tx.update(subCompetencies).set({ deprecatedDisplayOrder: displayOrder, updatedAt: new Date() }).where(eq(subCompetencies.id, competencyId));
-  }
   return updated.length;
+}
+
+/**
+ * Remove one target's claim on a competency (P0b: a competency can be
+ * shared by several targets after a merge). Deletes every
+ * career_target_requirements row for (careerTargetId, competencyId) — all
+ * horizons/weight sources for that pair, nothing belonging to any other
+ * target. If no other target still uses the competency afterward, the
+ * catalog row itself is retired; otherwise it stays active for the
+ * remaining targets.
+ */
+export async function retireCompetencyFromTarget(
+  tx: Tx,
+  careerTargetId: string,
+  competencyId: string,
+): Promise<'retired' | 'removed-from-target'> {
+  const targetsBefore = await targetIdsForCompetency(tx, competencyId);
+  await tx
+    .delete(careerTargetRequirements)
+    .where(and(eq(careerTargetRequirements.careerTargetId, careerTargetId), eq(careerTargetRequirements.competencyId, competencyId)));
+  if (targetsBefore.length <= 1) {
+    await tx.update(subCompetencies).set({ retired: true, updatedAt: new Date() }).where(eq(subCompetencies.id, competencyId));
+    return 'retired';
+  }
+  return 'removed-from-target';
 }
 
 export async function targetIdsForCompetency(tx: Tx, competencyId: string): Promise<string[]> {
@@ -148,11 +168,13 @@ export function catalogBatchWriter(tx: Tx): BatchWriter {
     },
     async updateSub(id, fields) {
       if (fields.displayOrder !== undefined) {
+        // P0b: order lives only on career_target_requirements, one value
+        // per (target, competency) — a shared competency (post-merge) gets
+        // the same position applied across every target that uses it.
         const targets = await targetIdsForCompetency(tx, id);
-        if (targets.length !== 1) {
-          throw new Error(`P0a: ${id} must be used by exactly one target to reorder it (found ${targets.length})`);
+        for (const targetId of targets) {
+          await setCompetencyOrderInTarget(tx, targetId, id, fields.displayOrder);
         }
-        await setCompetencyOrderInTarget(tx, targets[0]!, id, fields.displayOrder);
       }
       const catalogFields: Partial<typeof subCompetencies.$inferInsert> = {};
       if (fields.name !== undefined) catalogFields.name = fields.name;

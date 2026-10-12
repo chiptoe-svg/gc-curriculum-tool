@@ -2,14 +2,13 @@
 // P0a coverage write path (scratch DB only). Fixture course 'ZZ 9995' and the
 // fixture competency are created and removed by this file.
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { asc, eq } from 'drizzle-orm';
+import { asc, eq, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import {
   careerTargets,
   courseCaptureSnapshots,
   courses,
   snapshotCompetencyCoverage,
-  snapshotTargetCoverage,
   targetCoverage,
 } from '@/lib/db/schema';
 import { invalidateCoverageForSubCompetency, upsertCoverageCell } from '@/lib/db/program-coverage-queries';
@@ -62,9 +61,13 @@ describe.skipIf(!isScratchDb())('P0a coverage write path', () => {
     const viewRows = await db.select().from(targetCoverage).where(eq(targetCoverage.snapshotId, snapshotId));
     expect(viewRows.map(r => [r.careerTargetId, r.subCompetencyId, r.dDepth])).toEqual([[targetId, FIXTURE_COMPETENCY, 4]]);
 
-    // The backup table is read-only since P0a Task 7: scoring never writes it.
-    const old = await db.select().from(snapshotTargetCoverage).where(eq(snapshotTargetCoverage.snapshotId, snapshotId));
-    expect(old).toEqual([]);
+    // The backup table is read-only since P0a Task 7: scoring never writes
+    // it. Raw SQL, not the Drizzle `snapshotTargetCoverage` table: P0b
+    // (migration 0057, a later task on the main scratch) drops this table
+    // from the Drizzle schema entirely, but it's still real on
+    // gc_curriculum_p0a_scratch (0057 is never applied there).
+    const old = await db.execute(sql`SELECT 1 FROM snapshot_target_coverage WHERE snapshot_id = ${snapshotId}`);
+    expect(old.rows).toEqual([]);
   });
 
   it('invalidate removes every cell of the competency and returns the count', async () => {

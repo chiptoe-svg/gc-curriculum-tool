@@ -61,17 +61,15 @@ async function seed() {
         const sc = t.subCompetencies[j]!;
         await tx.execute(sql`
           INSERT INTO sub_competencies (
-            id, career_target_id, name,
+            id, name,
             know_descriptor, understand_descriptor, do_descriptor,
-            display_order, retired, updated_at
+            retired, updated_at
           ) VALUES (
             ${sc.id},
-            ${t.id},
             ${sc.name},
             ${sc.knowDescriptor},
             ${sc.understandDescriptor},
             ${sc.doDescriptor},
-            ${j},
             false,
             NOW()
           )

@@ -4,7 +4,7 @@
 import { describe, it, expect } from 'vitest';
 import { and, asc, eq, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
-import { careerTargetRequirements, careerTargets, subCompetencies, targetSubCompetencies } from '@/lib/db/schema';
+import { careerTargetRequirements, careerTargets, targetSubCompetencies } from '@/lib/db/schema';
 import {
   type Tx,
   catalogBatchWriter,
@@ -65,8 +65,12 @@ describe.skipIf(!isScratchDb())('P0a catalog writers', () => {
       const [v] = await tx.select().from(targetSubCompetencies)
         .where(and(eq(targetSubCompetencies.careerTargetId, m!.careerTargetId), eq(targetSubCompetencies.id, m!.id)));
       expect(v!.displayOrder).toBe(77);
-      const [c] = await tx.select().from(subCompetencies).where(eq(subCompetencies.id, m!.id));
-      expect(c!.deprecatedDisplayOrder).toBe(77);
+      // Raw SQL, not the Drizzle `subCompetencies` table: P0b (migration
+      // 0057, a later task on the main scratch) drops this mirror column
+      // from the Drizzle schema entirely, but it's still a real column on
+      // gc_curriculum_p0a_scratch (0057 is never applied there).
+      const { rows } = await tx.execute(sql`SELECT display_order FROM sub_competencies WHERE id = ${m!.id}`);
+      expect((rows[0] as { display_order: number }).display_order).toBe(77);
     });
   });
 

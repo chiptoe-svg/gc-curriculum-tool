@@ -20,21 +20,35 @@ export const careerTargets = pgTable('career_targets', {
 
 export const subCompetencies = pgTable('sub_competencies', {
   id: text('id').primaryKey(),               // stable slug; never changes once created
-  /**
-   * DEPRECATED (P0a, migration 0056): the owning target from before the shared
-   * catalog. Still written as a mirror for the rollback script, never read —
-   * target membership is career_target_requirements (view target_sub_competencies).
-   * Removed in P0b.
-   */
-  deprecatedCareerTargetId: text('career_target_id').references(() => careerTargets.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   knowDescriptor: text('know_descriptor').notNull(),
   understandDescriptor: text('understand_descriptor').notNull(),
   doDescriptor: text('do_descriptor').notNull(),
-  /** DEPRECATED (P0a): mirror of career_target_requirements.display_order, written for the rollback script only. Removed in P0b. */
-  deprecatedDisplayOrder: integer('display_order').notNull(),
   retired: boolean('retired').default(false).notNull(),  // catalog attribute; soft delete so old coverage doesn't orphan
+  /**
+   * P0b (migration 0057): the survivor competency this one was merged into,
+   * or null for an active (unmerged) competency. CHECK requires retired=true
+   * whenever this is set. The full merge history (including identity rows
+   * for every unmerged competency) lives in sub_competency_map.
+   */
+  mergedInto: text('merged_into'),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  foreignKey({ name: 'sub_competencies_merged_into_fk', columns: [t.mergedInto], foreignColumns: [t.id] }).onDelete('restrict'),
+  check('sub_competencies_merged_into_retired_check', sql`${t.mergedInto} IS NULL OR ${t.retired}`),
+]);
+
+/**
+ * Merge history (migration 0057): one row per catalog competency, ever.
+ * Unmerged competencies map to themselves (identity row). A merged-away
+ * competency maps to its survivor. Covers every sub_competencies row
+ * (count(sub_competency_map) == count(sub_competencies) as of 0057).
+ */
+export const subCompetencyMap = pgTable('sub_competency_map', {
+  oldSubCompetencyId: text('old_sub_competency_id').primaryKey().references(() => subCompetencies.id, { onDelete: 'restrict' }),
+  competencyId: text('competency_id').notNull().references(() => subCompetencies.id, { onDelete: 'restrict' }),
+  mergeNote: text('merge_note'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
 export const prototypeTargetEdits = pgTable('prototype_target_edits', {
@@ -428,18 +442,6 @@ export const courseKuds = pgTable('course_kuds', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
-export const coverageScores = pgTable('coverage_scores', {
-  courseCode: text('course_code').notNull().references(() => courses.code, { onDelete: 'cascade' }),
-  subCompetencyId: text('sub_competency_id').notNull().references(() => subCompetencies.id, { onDelete: 'cascade' }),
-  kudLevel: text('kud_level').notNull(),           // 'know' | 'understand' | 'do' | 'none'
-  confidence: integer('confidence').notNull(),     // 0–100
-  reasoning: text('reasoning').notNull().default(''),
-  sourceProfileRunId: uuid('source_profile_run_id').references(() => courseProfileRuns.id, { onDelete: 'set null' }),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
-}, (t) => ({
-  pk: primaryKey({ columns: [t.courseCode, t.subCompetencyId] }),
-}));
-
 // CourseCapture — self-contained Course Outcome Profile per course.
 // One row per course (PK is course_code). The full profile is stored as
 // JSONB so the alpha shape can evolve without per-field migrations; if a
@@ -530,34 +532,6 @@ export const courseObjectiveGuides = pgTable('course_objective_guides', {
   generatedAt: timestamp('generated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
-// Program-level coverage matrix: one row per (snapshot × career-target ×
-// sub-competency). Populated by an AI scoring pass that maps the snapshot's
-// discovered competencies to the canonical sub-competency space. Read by
-// the program coverage matrix view and the scaffolding analysis.
-//
-// Idempotent: UNIQUE(snapshot, target, sub_competency) means a re-score
-// overwrites the cell rather than duplicating it.
-//
-// READ-ONLY BACKUP since competency catalog P0a (migration 0056): nothing
-// writes or reads it; coverage lives in snapshot_competency_coverage (view
-// target_coverage). Kept until the live migration is verified; dropped in P0b.
-export const snapshotTargetCoverage = pgTable('snapshot_target_coverage', {
-  snapshotId: uuid('snapshot_id').notNull().references(() => courseCaptureSnapshots.id, { onDelete: 'cascade' }),
-  careerTargetId: text('career_target_id').notNull().references(() => careerTargets.id, { onDelete: 'cascade' }),
-  subCompetencyId: text('sub_competency_id').notNull().references(() => subCompetencies.id, { onDelete: 'cascade' }),
-  kDepth: integer('k_depth'),
-  uDepth: integer('u_depth'),
-  dDepth: integer('d_depth').notNull(),
-  matchedCompetency: text('matched_competency'),
-  evidenceExcerpt: text('evidence_excerpt'),
-  confidence: text('confidence').notNull(),
-  rationale: text('rationale').notNull(),
-  model: text('model').notNull(),
-  generatedAt: timestamp('generated_at', { withTimezone: true }).defaultNow().notNull(),
-}, (t) => ({
-  pk: primaryKey({ columns: [t.snapshotId, t.careerTargetId, t.subCompetencyId] }),
-}));
-
 /**
  * Competency catalog P0a (spec 2026-10-11 §3, §8): which career targets use
  * each catalog competency (sub_competencies is the catalog). One row per
@@ -621,6 +595,29 @@ export const snapshotCompetencyCoverage = pgTable('snapshot_competency_coverage'
   foreignKey({ name: 'snapshot_competency_coverage_competency_fk', columns: [t.competencyId], foreignColumns: [subCompetencies.id] }).onDelete('cascade'),
   index('idx_snapshot_competency_coverage_competency').on(t.competencyId),
 ]);
+
+/**
+ * Migration 0057 snapshot (CREATE TABLE AS SELECT, no constraints carried
+ * over — every column is nullable regardless of the source's nullability):
+ * each merge survivor's own snapshot_competency_coverage cells AS THEY WERE
+ * immediately before the merge carry overwrote them. Used by the
+ * disagreement-flag logic (0057 step 4) and by the verify script to confirm
+ * no non-retired snapshot lost a survivor cell. Read-only after the
+ * migration; nothing in the app writes it.
+ */
+export const p0bPremergeSurvivorCoverage = pgTable('p0b_premerge_survivor_coverage', {
+  snapshotId: uuid('snapshot_id'),
+  competencyId: text('competency_id'),
+  kDepth: integer('k_depth'),
+  uDepth: integer('u_depth'),
+  dDepth: integer('d_depth'),
+  matchedCompetency: text('matched_competency'),
+  evidenceExcerpt: text('evidence_excerpt'),
+  confidence: text('confidence'),
+  rationale: text('rationale'),
+  model: text('model'),
+  generatedAt: timestamp('generated_at', { withTimezone: true }),
+});
 
 /**
  * VIEW (migration 0056): a target's competencies in the old sub_competencies

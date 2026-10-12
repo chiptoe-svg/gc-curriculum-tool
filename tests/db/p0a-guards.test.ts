@@ -34,6 +34,30 @@ describe('P0a guards', () => {
   });
 });
 
+// P0b (Task 3): migration 0057 drops the deprecated mirror columns and the
+// two P0a scaffolding tables. These four identifiers must not appear
+// anywhere outside drizzle/ and scripts/migrations/ (both out of
+// filesMatching's scanned scope already — see its pathspec above) — any hit
+// means a file still writes a mirror or reads a dropped table that no
+// longer exists post-0057.
+describe('P0b guards — deprecated mirrors and dropped tables are gone', () => {
+  it('no file writes the deprecated career_target_id mirror (deprecatedCareerTargetId)', () => {
+    expect(filesMatching('deprecatedCareerTargetId')).toEqual([]);
+  });
+
+  it('no file writes the deprecated display_order mirror (deprecatedDisplayOrder)', () => {
+    expect(filesMatching('deprecatedDisplayOrder')).toEqual([]);
+  });
+
+  it('no file references the dropped coverageScores Drizzle table', () => {
+    // Character-class boundary (not \b — git grep -E has no \b support, per
+    // the M-4 finding above) so this doesn't false-positive on the unrelated
+    // AI schema exports coverageScoresSchema / coverageScoresJsonSchema in
+    // lib/ai/schemas.ts.
+    expect(filesMatching('coverageScores([^A-Za-z]|$)')).toEqual([]);
+  });
+});
+
 // M-4 (adversarial review round 1) / M-c (round 2): the guards above only
 // see the Drizzle identifiers (and the P0a rename made the old identifier
 // name disappear everywhere except the untracked, gitignored one-off
@@ -97,6 +121,12 @@ function filesWithRawSqlPattern(pattern: RegExp): string[] {
 
 const BACKUP_TABLE_PATTERN = /(FROM|JOIN|INTO|UPDATE)\s+"?snapshot_target_coverage\b/i;
 const SUB_COMPETENCIES_MEMBERSHIP_PATTERN = /(FROM|JOIN)\s+"?sub_competencies\b[\s\S]{0,200}?(career_target_id|display_order)/i;
+// P0b (Task 3): coverage_scores is dropped by migration 0057 alongside
+// snapshot_target_coverage — same pattern shape, same scope (app/lib/scripts,
+// excluding migrations/_one-off/schema.ts/__tests__; tests/ is out of scope
+// entirely, which is where the P0a migration-rehearsal tests legitimately
+// still touch these dropped tables in raw SQL against a pre-0057 clone).
+const COVERAGE_SCORES_PATTERN = /(FROM|JOIN|INTO|UPDATE)\s+"?coverage_scores\b/i;
 
 describe('P0a guards — raw SQL (M-4 / M-c)', () => {
   it('no tracked raw SQL reads or writes the backup table snapshot_target_coverage', () => {
@@ -105,5 +135,9 @@ describe('P0a guards — raw SQL (M-4 / M-c)', () => {
 
   it('no tracked raw SQL reads sub_competencies membership via career_target_id or display_order', () => {
     expect(filesWithRawSqlPattern(SUB_COMPETENCIES_MEMBERSHIP_PATTERN)).toEqual([]);
+  });
+
+  it('no tracked raw SQL reads or writes the dropped table coverage_scores (P0b)', () => {
+    expect(filesWithRawSqlPattern(COVERAGE_SCORES_PATTERN)).toEqual([]);
   });
 });
