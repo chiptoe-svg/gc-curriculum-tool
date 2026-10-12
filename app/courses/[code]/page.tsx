@@ -13,6 +13,7 @@ import { isValidSlug } from '@/lib/slug';
 import { getCourseByCode, courseExists } from '@/lib/db/courses-queries';
 import { listEdgesForFocal } from '@/lib/db/prerequisite-edge-queries';
 import { listTargets } from '@/lib/db/career-targets-queries';
+import { isSubCompetencyDefinition } from '@/lib/domain/types';
 import { computePrereqGaps } from '@/lib/program/prereq-gaps';
 import type { SubCompetencyGap } from '@/lib/program/prereq-gaps';
 import { depthBand } from '@/lib/program/depth-band';
@@ -233,7 +234,9 @@ export default async function CourseDetailPage({ params, searchParams }: Props) 
   const subCompNames: Record<string, string> = {};
   const allSubComps: Array<{ id: string; name: string; targetName: string }> = [];
   for (const t of targets) {
-    for (const sc of t.subCompetencies) {
+    // targets is always DB-resolved (listTargets), which never produces
+    // `{ ref }` entries — the filter is just the type guard.
+    for (const sc of t.subCompetencies.filter(isSubCompetencyDefinition)) {
       subCompNames[sc.id] = sc.name;
       allSubComps.push({ id: sc.id, name: sc.name, targetName: t.name });
     }

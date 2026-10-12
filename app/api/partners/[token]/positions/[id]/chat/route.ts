@@ -3,6 +3,7 @@ import { findPartnerByToken } from '@/lib/partners/queries';
 import { getPositionCaptureById, startPositionSession, isPositionSessionOwnedBy, getPositionSession } from '@/lib/db/position-capture-queries';
 import { runPositionInterview, generatePositionProfile } from '@/lib/ai/position-capture/run';
 import { getTargetById } from '@/lib/db/career-targets-queries';
+import { isSubCompetencyDefinition } from '@/lib/domain/types';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
 import { hashIp } from '@/lib/ip-hash';
@@ -93,7 +94,9 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
       id: target.id,
       name: target.name,
       description: target.shortDefinition ?? '',
-      subCompetencies: target.subCompetencies.map(s => ({ id: s.id, name: s.name, description: s.doDescriptor ?? '' })),
+      // target is always DB-resolved (getTargetById), which never produces
+      // `{ ref }` entries — the filter is just the type guard.
+      subCompetencies: target.subCompetencies.filter(isSubCompetencyDefinition).map(s => ({ id: s.id, name: s.name, description: s.doDescriptor ?? '' })),
     },
     structuredInputs: existing.structuredInputs ?? null,
     ratedSkills: existing.ratedSkills ?? null,

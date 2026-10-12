@@ -14,6 +14,7 @@ import {
 import { getCourseByCode, courseExists } from '@/lib/db/courses-queries';
 import { getLatestSnapshotByCourse } from '@/lib/db/capture-snapshots-queries';
 import { listTargets } from '@/lib/db/career-targets-queries';
+import { isSubCompetencyDefinition } from '@/lib/domain/types';
 import { seedPrereqEdges } from '@/lib/ai/analyze/prereq-edge-seed';
 import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
 
@@ -140,7 +141,9 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     // Load the full sub-competency catalog (all non-retired sub-competencies
     // across all targets).
     const targets = await listTargets();
-    const subCompetencies = targets.flatMap((t) => t.subCompetencies);
+    // targets is always DB-resolved, which never produces `{ ref }` entries
+    // — the filter is just the type guard.
+    const subCompetencies = targets.flatMap((t) => t.subCompetencies.filter(isSubCompetencyDefinition));
 
     // Run AI call first; recordSpend must fire even if the upsert below throws.
     let result: Awaited<ReturnType<typeof seedPrereqEdges>>;

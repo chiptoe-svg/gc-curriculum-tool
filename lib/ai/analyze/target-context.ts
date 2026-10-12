@@ -1,4 +1,5 @@
 import type { CareerTarget } from '@/lib/domain/types';
+import { isSubCompetencyDefinition } from '@/lib/domain/types';
 
 export function buildTargetContext(target: CareerTarget | null): string {
   if (!target) return '';
@@ -9,7 +10,9 @@ export function buildTargetContext(target: CareerTarget | null): string {
     '',
     'Sub-competencies:',
   ];
-  for (const sc of target.subCompetencies) {
+  // target is always DB-resolved here (lib/db/career-targets-queries.ts),
+  // which never produces `{ ref }` entries — the filter is just the type guard.
+  for (const sc of target.subCompetencies.filter(isSubCompetencyDefinition)) {
     lines.push(`- id=${sc.id} :: ${sc.name}`);
     lines.push(`    Know: ${sc.knowDescriptor}`);
     lines.push(`    Understand: ${sc.understandDescriptor}`);

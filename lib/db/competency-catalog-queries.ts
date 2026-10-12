@@ -11,7 +11,7 @@
 import { and, asc, eq } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { careerTargetRequirements, careerTargets, subCompetencies, targetSubCompetencies } from '@/lib/db/schema';
-import type { BatchWriter, DbSubRow, DbTargetRow } from '@/lib/domain/target-batch';
+import type { BatchWriter, DbMembershipRow, DbSubRow, DbTargetRow } from '@/lib/domain/target-batch';
 
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 export type TargetCompetencyRow = typeof targetSubCompetencies.$inferSelect;
@@ -149,8 +149,17 @@ export async function targetIdsForCompetency(tx: Tx, competencyId: string): Prom
   return rows.map(r => r.id).sort();
 }
 
-/** Target-batch state: targets + one DbSubRow per (target, competency) membership. */
-export async function readCatalogState(tx: Tx, lock: boolean): Promise<{ targets: DbTargetRow[]; subs: DbSubRow[] }> {
+/**
+ * Target-batch state: the catalog (one DbSubRow per competency, no target
+ * association) and membership (one DbMembershipRow per (target, competency)
+ * pair, read from the target_sub_competencies view, which already groups
+ * career_target_requirements by (career_target_id, competency_id) taking
+ * MIN(display_order) across horizons/weight sources).
+ */
+export async function readCatalogState(
+  tx: Tx,
+  lock: boolean,
+): Promise<{ targets: DbTargetRow[]; subs: DbSubRow[]; memberships: DbMembershipRow[] }> {
   if (lock) {
     // A GROUP BY view cannot be locked FOR UPDATE; lock the rows it is built from.
     await tx.select({ id: careerTargets.id }).from(careerTargets).for('update');
@@ -158,7 +167,8 @@ export async function readCatalogState(tx: Tx, lock: boolean): Promise<{ targets
     await tx.select({ id: careerTargetRequirements.id }).from(careerTargetRequirements).for('update');
   }
   const targets = await tx.select().from(careerTargets).orderBy(asc(careerTargets.displayOrder));
-  const subs = await tx
+  const subs = await tx.select().from(subCompetencies).orderBy(asc(subCompetencies.id));
+  const memberships = await tx
     .select()
     .from(targetSubCompetencies)
     .orderBy(asc(targetSubCompetencies.careerTargetId), asc(targetSubCompetencies.displayOrder), asc(targetSubCompetencies.id));
@@ -176,48 +186,76 @@ export async function readCatalogState(tx: Tx, lock: boolean): Promise<{ targets
     })),
     subs: subs.map(s => ({
       id: s.id,
-      careerTargetId: s.careerTargetId,
       name: s.name,
       knowDescriptor: s.knowDescriptor,
       understandDescriptor: s.understandDescriptor,
       doDescriptor: s.doDescriptor,
-      displayOrder: s.displayOrder,
       retired: s.retired,
+      mergedInto: s.mergedInto ?? null,
+    })),
+    memberships: memberships.map(m => ({
+      careerTargetId: m.careerTargetId,
+      competencyId: m.id,
+      displayOrder: m.displayOrder,
     })),
   };
 }
 
-/** BatchWriter for scripts/targets/apply-target-batch.ts. */
+/**
+ * BatchWriter for scripts/targets/apply-target-batch.ts. Resolution 1
+ * (Task 4): memberships are inserted, reordered and removed only through
+ * career_target_requirements; catalog field updates go only to
+ * sub_competencies. `retireCompetency` removes every membership for the id
+ * (across all targets it's a member of) as part of retiring it — the only
+ * automatic membership removal the writer performs; a plain "not desired,
+ * not retired" removal is reported by the planner only, never applied here.
+ */
 export function catalogBatchWriter(tx: Tx): BatchWriter {
   return {
     async updateTarget(id, fields) {
       await tx.update(careerTargets).set({ ...fields, updatedAt: new Date() }).where(eq(careerTargets.id, id));
     },
-    async updateSub(id, fields) {
-      if (fields.displayOrder !== undefined) {
-        // P0b: order lives only on career_target_requirements, one value
-        // per (target, competency) — a shared competency (post-merge) gets
-        // the same position applied across every target that uses it.
-        const targets = await targetIdsForCompetency(tx, id);
-        for (const targetId of targets) {
-          await setCompetencyOrderInTarget(tx, targetId, id, fields.displayOrder);
-        }
-      }
+    async insertCompetency(row) {
+      await tx.insert(subCompetencies).values({
+        id: row.id,
+        name: row.name,
+        knowDescriptor: row.knowDescriptor,
+        understandDescriptor: row.understandDescriptor,
+        doDescriptor: row.doDescriptor,
+        retired: row.retired,
+        mergedInto: row.mergedInto,
+        updatedAt: new Date(),
+      });
+    },
+    async updateCompetency(id, fields) {
       const catalogFields: Partial<typeof subCompetencies.$inferInsert> = {};
       if (fields.name !== undefined) catalogFields.name = fields.name;
       if (fields.knowDescriptor !== undefined) catalogFields.knowDescriptor = fields.knowDescriptor;
       if (fields.understandDescriptor !== undefined) catalogFields.understandDescriptor = fields.understandDescriptor;
       if (fields.doDescriptor !== undefined) catalogFields.doDescriptor = fields.doDescriptor;
       if (fields.retired !== undefined) catalogFields.retired = fields.retired;
+      if (fields.mergedInto !== undefined) catalogFields.mergedInto = fields.mergedInto;
       if (Object.keys(catalogFields).length > 0) {
         await tx.update(subCompetencies).set({ ...catalogFields, updatedAt: new Date() }).where(eq(subCompetencies.id, id));
       }
     },
-    async insertSub(row) {
-      await insertCompetencyForTarget(tx, row);
+    async retireCompetency(id, mergedInto) {
+      await tx.delete(careerTargetRequirements).where(eq(careerTargetRequirements.competencyId, id));
+      await tx.update(subCompetencies).set({ retired: true, mergedInto, updatedAt: new Date() }).where(eq(subCompetencies.id, id));
     },
-    async retireSub(id) {
-      await tx.update(subCompetencies).set({ retired: true, updatedAt: new Date() }).where(eq(subCompetencies.id, id));
+    async insertMembership(careerTargetId, competencyId, displayOrder) {
+      await tx.insert(careerTargetRequirements).values({
+        careerTargetId,
+        competencyId,
+        horizon: 'entry',
+        weight: null,
+        weightSource: 'faculty',
+        status: 'draft',
+        displayOrder,
+      });
+    },
+    async updateMembershipOrder(careerTargetId, competencyId, displayOrder) {
+      await setCompetencyOrderInTarget(tx, careerTargetId, competencyId, displayOrder);
     },
   };
 }

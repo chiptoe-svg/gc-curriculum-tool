@@ -1,20 +1,37 @@
 // @vitest-environment node
 // P0a catalog/membership writers (scratch DB only). Every write runs inside a
 // transaction that is rolled back, so the cloned rows are never changed.
+//
+// Task 4 (P0b, 2026-10-12) note: the two tests this file used to carry that
+// compared readCatalogState()/planTargetBatch() output against the P0a
+// mirror-column shape, and that asserted catalogBatchWriter.updateSub threw
+// on a two-target reorder, were removed here — not just edited — because
+// Task 4 changed the shapes they depended on in ways that make them
+// structurally incompatible with the new model, not just renamed:
+// readCatalogState() now returns catalog rows (DbSubRow) with no
+// careerTargetId/displayOrder at all (those moved to a separate
+// DbMembershipRow keyed by (target, competency), because P0b lets one
+// competency belong to several targets), and BatchWriter has no `updateSub`
+// method any more (split into updateCompetency/insertMembership/
+// updateMembershipOrder/retireCompetency). The "exactly one target" throw
+// the second test asserted was already removed in Task 3 (947e82e) — this
+// file was already runtime-broken against gc_curriculum_p0a_scratch before
+// Task 4 (see task-3-report.md Concerns #2); Task 4 just removes the two
+// cases that no longer type-check instead of leaving them to bit-rot.
+// Recorded in docs/STATE.md Deferred/debt. The remaining three cases below
+// (insertCompetencyForTarget, setCompetencyOrderInTarget's mirror-column
+// check, getTargetCompetency) don't depend on either changed shape and are
+// still valid characterizations of the P0a scratch DB.
 import { describe, it, expect } from 'vitest';
 import { and, asc, eq, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { careerTargetRequirements, careerTargets, targetSubCompetencies } from '@/lib/db/schema';
 import {
   type Tx,
-  catalogBatchWriter,
   getTargetCompetency,
   insertCompetencyForTarget,
-  readCatalogState,
   setCompetencyOrderInTarget,
 } from '@/lib/db/competency-catalog-queries';
-import { planTargetBatch, type DbSubRow } from '@/lib/domain/target-batch';
-import { CAREER_TARGETS, RETIRED_SUB_COMPETENCIES } from '@/lib/domain/seed-targets';
 import { isScratchDb } from './p0a/scratch-guard';
 
 class Rollback extends Error {}
@@ -26,23 +43,6 @@ async function inRolledBackTx(fn: (tx: Tx) => Promise<void>): Promise<void> {
 }
 
 describe.skipIf(!isScratchDb())('P0a catalog writers', () => {
-  it('readCatalogState gives the same sub rows and the same batch plan as the pre-P0a read', async () => {
-    // Pre-P0a read, from the deprecated mirror columns (identical to membership in P0a).
-    const old = await db.execute(sql`SELECT id, career_target_id, name, know_descriptor, understand_descriptor,
-      do_descriptor, display_order, retired FROM sub_competencies ORDER BY id`);
-    const oldSubs: DbSubRow[] = (old.rows as Array<Record<string, unknown>>).map(r => ({
-      id: r.id as string, careerTargetId: r.career_target_id as string, name: r.name as string,
-      knowDescriptor: r.know_descriptor as string, understandDescriptor: r.understand_descriptor as string,
-      doDescriptor: r.do_descriptor as string, displayOrder: r.display_order as number, retired: r.retired as boolean,
-    }));
-
-    const state = await db.transaction(async (tx) => readCatalogState(tx, false));
-    const byId = (a: DbSubRow, b: DbSubRow) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0); // JS order, not DB collation
-    expect([...state.subs].sort(byId)).toEqual([...oldSubs].sort(byId));
-    expect(planTargetBatch(CAREER_TARGETS, RETIRED_SUB_COMPETENCIES, state.targets, state.subs))
-      .toEqual(planTargetBatch(CAREER_TARGETS, RETIRED_SUB_COMPETENCIES, state.targets, oldSubs));
-  });
-
   it('insertCompetencyForTarget writes the catalog row and one entry/faculty/draft requirement with no weight', async () => {
     const [t] = await db.select({ id: careerTargets.id }).from(careerTargets).orderBy(asc(careerTargets.displayOrder)).limit(1);
     await inRolledBackTx(async (tx) => {
@@ -71,18 +71,6 @@ describe.skipIf(!isScratchDb())('P0a catalog writers', () => {
       // gc_curriculum_p0a_scratch (0057 is never applied there).
       const { rows } = await tx.execute(sql`SELECT display_order FROM sub_competencies WHERE id = ${m!.id}`);
       expect((rows[0] as { display_order: number }).display_order).toBe(77);
-    });
-  });
-
-  it('the batch writer refuses to reorder a competency used by two targets (P0a invariant)', async () => {
-    const targets = await db.select({ id: careerTargets.id }).from(careerTargets).orderBy(asc(careerTargets.displayOrder));
-    const [m] = await db.select().from(targetSubCompetencies).where(eq(targetSubCompetencies.careerTargetId, targets[0]!.id)).limit(1);
-    await inRolledBackTx(async (tx) => {
-      await tx.insert(careerTargetRequirements).values({
-        careerTargetId: targets[1]!.id, competencyId: m!.id, horizon: 'entry', weight: null,
-        weightSource: 'faculty', status: 'draft', displayOrder: 0,
-      });
-      await expect(catalogBatchWriter(tx).updateSub(m!.id, { displayOrder: 3 })).rejects.toThrow(/exactly one target/);
     });
   });
 

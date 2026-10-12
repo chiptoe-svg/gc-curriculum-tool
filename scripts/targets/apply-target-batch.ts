@@ -37,16 +37,19 @@ async function main() {
   await db.transaction(async (tx) => {
     if (!apply) await tx.execute(sql`SET TRANSACTION READ ONLY`);
     const state = await readCatalogState(tx, apply);
-    const plan = planTargetBatch(CAREER_TARGETS, RETIRED_SUB_COMPETENCIES, state.targets, state.subs);
+    const plan = planTargetBatch(CAREER_TARGETS, RETIRED_SUB_COMPETENCIES, state.targets, state.subs, state.memberships);
     console.log(formatPlan(plan));
     if (plan.errors.length) throw new Error('plan has errors; nothing written');
     if (!apply) return;
 
     await applyPlan(plan, catalogBatchWriter(tx));
     const after = await readCatalogState(tx, false);
-    const check = planTargetBatch(CAREER_TARGETS, RETIRED_SUB_COMPETENCIES, after.targets, after.subs);
+    const check = planTargetBatch(CAREER_TARGETS, RETIRED_SUB_COMPETENCIES, after.targets, after.subs, after.memberships);
     const c = check.counts;
-    if (c.targetsUpdated || c.subsUpdated || c.subsInserted || c.subsRetired) {
+    if (
+      c.targetsUpdated || c.competenciesUpdated || c.competenciesInserted || c.competenciesRetired ||
+      c.membershipsInserted || c.membershipsReordered
+    ) {
       throw new Error('post-apply re-plan is not empty; rolling back');
     }
     console.log('\napplied and verified (re-plan empty); committing');
