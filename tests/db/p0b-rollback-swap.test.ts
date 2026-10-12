@@ -91,6 +91,33 @@ function cloneDatabase(sourceUrl: string, targetName: string) {
   });
 }
 
+/** Every gc_curriculum_p0b_rbtest* database currently on the server (one per line from a plain `datname` query). */
+function listRollbackTestDatabases(anyUrl: string): string[] {
+  const out = queryOne(anyUrl, "SELECT datname FROM pg_database WHERE datname LIKE 'gc_curriculum_p0b_rbtest%' ORDER BY datname");
+  return out.split('\n').map((s) => s.trim()).filter(Boolean);
+}
+
+/**
+ * Fix round 2 (Minor 4, reviewer-reproduced): drops EVERY
+ * gc_curriculum_p0b_rbtest* database currently on the server, not just
+ * ones a test run happened to track by name — a failing path (a thrown
+ * assertion between CREATE and recording the name) could otherwise leak
+ * one past a plain "drop what I tracked" loop forever. Each name is
+ * still filtered through isP0bRollbackTestDb() (belt-and-braces; the
+ * LIKE pattern above already narrows to this family) before being
+ * dropped.
+ */
+function sweepLeakedRollbackTestDatabases(anyUrl: string): void {
+  for (const name of listRollbackTestDatabases(anyUrl)) {
+    if (!isP0bRollbackTestDb(name)) continue;
+    try {
+      dropDatabaseForce(anyUrl, name);
+    } catch {
+      // best-effort; move on to the next leaked name.
+    }
+  }
+}
+
 describe.skipIf(!RUN)('p0b-apply-db.sh rollback (fix round 1): restore-into-new-db-then-swap, real DB', () => {
   let preUrl: string;
   let tmp: string;
@@ -110,6 +137,14 @@ describe.skipIf(!RUN)('p0b-apply-db.sh rollback (fix round 1): restore-into-new-
         // is harmless and reusable next run (cloneDatabase/dropDatabaseForce
         // both drop-before-create anyway).
       }
+    }
+    // Belt-and-braces beyond the tracked-name loop above: sweep the
+    // server for anything matching the family that createdDbs might have
+    // missed (see sweepLeakedRollbackTestDatabases).
+    try {
+      sweepLeakedRollbackTestDatabases(SCRATCH_URL);
+    } catch {
+      // best-effort; if even the LIST query itself fails, there's nothing more to do here.
     }
     rmSync(tmp, { recursive: true, force: true });
   });
@@ -186,5 +221,24 @@ describe.skipIf(!RUN)('p0b-apply-db.sh rollback (fix round 1): restore-into-new-
     // failed the whole restore), confirming this is the half-restored
     // state the fix round 1 report described, not a clean no-op refusal.
     expect(queryOne(targetUrl, "SELECT to_regclass('public.sub_competency_map') IS NOT NULL")).toBe('t');
+  });
+
+  // Fix round 2 (Minor 4, reviewer-reproduced): simulates exactly the leak
+  // the reviewer found — a gc_curriculum_p0b_rbtest_rollback_<ts> database
+  // that exists on the server but was never recorded in createdDbs (e.g.
+  // because the test that created it threw between CREATE and tracking
+  // it) — and confirms the afterAll-style sweep finds and drops it by
+  // querying pg_database directly, not by relying on the tracked set.
+  it('the leaked-database sweep drops a gc_curriculum_p0b_rbtest* database that was never tracked by name', () => {
+    const leaked = `${ROLLBACK_TEST_DB}_rollback_${Date.now()}`; // same shape the swap itself generates
+    expect(isP0bRollbackTestDb(leaked)).toBe(true);
+    dropDatabaseForce(SCRATCH_URL, leaked); // idempotent pre-clean, in case a prior run of this exact test left one
+    runMaint(SCRATCH_URL, `CREATE DATABASE "${leaked}"`);
+    // Deliberately NOT added to createdDbs — that's the point of this test.
+    expect(listRollbackTestDatabases(SCRATCH_URL)).toContain(leaked);
+
+    sweepLeakedRollbackTestDatabases(SCRATCH_URL);
+
+    expect(listRollbackTestDatabases(SCRATCH_URL)).not.toContain(leaked);
   });
 });

@@ -62,6 +62,17 @@ WAIT_SLEEP="${P0B_LIVE_APPLY_WAIT_SLEEP:-1}"
 UID_NUM="$(id -u)"
 LABEL_APP="com.gc.curriculum-tool"
 LABEL_WATCHDOG="com.gc.dev-watchdog"
+# shellcheck source=./p0a-lib.sh
+. "$SCRIPT_DIR/p0a-lib.sh"
+
+# Fix round 2 (task 8): refuse a P0B_LIVE_APPLY_EXPECTED_DB override that
+# isn't on the allowlist (p0b_check_allowed_db_name, p0a-lib.sh) — exactly
+# "gc_curriculum" (the unconditional live default above) or
+# gc_curriculum_p0b_rbtest* (the disposable real-DB test fixture family).
+# Checked before anything else runs, same discipline as the DB scripts.
+if ! p0b_check_allowed_db_name "$EXPECTED_DB"; then
+  exit 1
+fi
 
 # --- state the trap handler reads; always defined (set -u) --------------
 PHASE="start"
@@ -191,15 +202,30 @@ on_exit() {
           # p0b-apply-db.sh's own automatic fallback successfully renamed
           # the migrated database back into the live name. Live is
           # UNTOUCHED under its original name — still the migrated
-          # database — but the verified restore is now parked under a
-          # separate name instead of being dropped. Do NOT reconstruct
-          # that name here: p0b-apply-db.sh already printed it above,
-          # since the wrapper never captures its stdout/stderr.
-          echo "The rollback's database swap failed partway, but p0b-apply-db.sh's automatic fallback already renamed the live database back — '$EXPECTED_DB' is UNTOUCHED (still the migrated database, under its original name). The attempted restore was not dropped; see the output above from p0b-apply-db.sh for its exact parked name and how to retry. Do NOT bootstrap a pre-P0b build against this still-migrated database:" >&2
-          echo "  launchctl bootstrap gui/$UID_NUM \"$PLIST_APP\"" >&2
-          echo "  launchctl kickstart \"gui/$UID_NUM/$LABEL_APP\"" >&2
-          echo "  launchctl bootstrap gui/$UID_NUM \"$PLIST_WATCHDOG\"" >&2
-          echo "  launchctl kickstart \"gui/$UID_NUM/$LABEL_WATCHDOG\"" >&2
+          # (post-P0b) database — but the verified restore is now parked
+          # under a separate name instead of being dropped. Do NOT
+          # reconstruct that parked name here: p0b-apply-db.sh already
+          # printed it above, since the wrapper never captures its
+          # stdout/stderr.
+          #
+          # Fix round 2 (Important): round 1's message here said "Do NOT
+          # bootstrap a pre-P0b build against this still-migrated
+          # database:" and then printed exactly the bootstrap/kickstart
+          # commands that DO bootstrap a pre-P0b build — in rollback mode
+          # $DEPLOY_DIR already holds the pre-P0b build this invocation
+          # was rolling back TO, so following those lines did precisely
+          # what the sentence in front of them forbade. The database that
+          # matches what's actually live right now (still migrated) is
+          # whatever was deployed BEFORE this rollback attempt —
+          # $PREVIOUS_SHA — not $DEPLOY_SHA. Reusing
+          # report_db_state_and_recovery here gets that right for free:
+          # it queries the real state (migrated=t is expected), compares
+          # against what rollback mode expects (migrated=f), finds the
+          # mismatch, and prints the checkout-$PREVIOUS_SHA-then-build
+          # step BEFORE any bootstrap/kickstart line — never bootstrap
+          # commands on their own.
+          echo "The rollback's database swap failed partway, but p0b-apply-db.sh's automatic fallback already renamed the live database back — '$EXPECTED_DB' should be UNTOUCHED under its original name. The attempted restore was not dropped; see the output above from p0b-apply-db.sh for its exact parked name if you want to retry it. Querying the real state to confirm which build actually matches live right now:" >&2
+          report_db_state_and_recovery
           ;;
         6)
           # rollback-only (fix round 1): BOTH renames failed — the live

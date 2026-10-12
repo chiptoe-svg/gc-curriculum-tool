@@ -16,6 +16,10 @@
 # <expected_db_name>. The caller is expected to treat any non-zero exit
 # (missing DATABASE_URL, wrong database, or unreachable database)
 # identically: state UNKNOWN, don't bootstrap.
+#
+# Fix round 2 (task 8): <expected_db_name> itself is checked against the
+# allowlist in p0a-lib.sh (p0b_check_allowed_db_name) BEFORE opening any
+# connection — exactly "gc_curriculum" or gc_curriculum_p0b_rbtest*.
 set -euo pipefail
 
 PGBIN=/Applications/Postgres.app/Contents/Versions/17/bin
@@ -28,6 +32,10 @@ if [ "$#" -ne 1 ]; then
   exit 2
 fi
 EXPECTED_DB="$1"
+
+if ! p0b_check_allowed_db_name "$EXPECTED_DB"; then
+  exit 1
+fi
 
 p0a_url_to_pg_env
 

@@ -32,7 +32,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { Client } from 'pg';
-import { isP0bPreDb, SCRATCH_DB_PRE } from './p0b/scratch-guard';
+import { isP0bPreDb } from './p0b/scratch-guard';
 
 const ROOT = resolve(__dirname, '../..');
 const APPLY_DB_SH = resolve(ROOT, 'scripts/migrations/p0b-apply-db.sh');
@@ -68,6 +68,46 @@ describe('p0b-apply-db.sh / p0b-db-migrated.sh — static checks (always run)', 
   });
 });
 
+// --- fix round 2 (Important, reviewer finding): the database-name
+// allowlist (p0b_check_allowed_db_name, p0a-lib.sh) must live IN the
+// scripts themselves, not only in the TS test helpers that happen to
+// call them. Checked before any connection (DATABASE_URL is garbage
+// here, so a pass-through would fail differently/later, not with this
+// message), so these run unconditionally — no DB needed.
+describe('p0b-apply-db.sh / p0b-db-migrated.sh — database-name allowlist enforced in the scripts (fix round 2, always run)', () => {
+  const refusedNames = [
+    'gc_curriculum_p0b_pre',
+    'rag_core',
+    'gc_curriculum_p0b_rbtest"; DROP DATABASE gc_curriculum; --',
+    'gc_curriculum2',
+  ];
+
+  it.each(refusedNames)("p0b-apply-db.sh refuses database name '%s' before any connection", (name) => {
+    const res = runScript(APPLY_DB_SH, [name, '/nonexistent', 'apply'], { DATABASE_URL: GARBAGE_DATABASE_URL });
+    expect(res.status).not.toBe(0);
+    expect(res.stderr).toMatch(/refusing: '.*' is not on the allowed database-name list/);
+  });
+
+  it.each(refusedNames)("p0b-db-migrated.sh refuses database name '%s' before any connection", (name) => {
+    const res = runScript(DB_MIGRATED_SH, [name], { DATABASE_URL: GARBAGE_DATABASE_URL });
+    expect(res.status).not.toBe(0);
+    expect(res.stderr).toMatch(/refusing: '.*' is not on the allowed database-name list/);
+    expect(res.stdout.trim()).toBe('');
+  });
+
+  it('p0b-apply-db.sh accepts the exact live name past the allowlist (fails later, for the unrelated reason of a garbage DATABASE_URL)', () => {
+    const res = runScript(APPLY_DB_SH, ['gc_curriculum', '/nonexistent', 'apply'], { DATABASE_URL: GARBAGE_DATABASE_URL });
+    expect(res.status).not.toBe(0);
+    expect(res.stderr).not.toMatch(/not on the allowed database-name list/);
+  });
+
+  it('p0b-apply-db.sh accepts a gc_curriculum_p0b_rbtest* name past the allowlist (fails later, for the unrelated reason of a garbage DATABASE_URL)', () => {
+    const res = runScript(APPLY_DB_SH, ['gc_curriculum_p0b_rbtest_whatever', '/nonexistent', 'apply'], { DATABASE_URL: GARBAGE_DATABASE_URL });
+    expect(res.status).not.toBe(0);
+    expect(res.stderr).not.toMatch(/not on the allowed database-name list/);
+  });
+});
+
 // --- pure, no-DB-connection-required checks: rollback mode validates the
 // dump argument BEFORE this script ever calls p0a_url_to_pg_env. These run
 // with a garbage DATABASE_URL to prove that ordering — if the dump check
@@ -81,19 +121,19 @@ describe('p0b-apply-db.sh — rollback dump validation runs before any DB connec
   it('refuses a dump whose basename does not match pre-apply-*.dump', () => {
     const badName = join(tmp, 'not-the-right-name.dump');
     writeFileSync(badName, 'anything');
-    const res = runScript(APPLY_DB_SH, [SCRATCH_DB_PRE, tmp, 'rollback', badName], { DATABASE_URL: GARBAGE_DATABASE_URL });
+    const res = runScript(APPLY_DB_SH, ['gc_curriculum', tmp, 'rollback', badName], { DATABASE_URL: GARBAGE_DATABASE_URL });
     expect(res.status).not.toBe(0);
     expect(res.stderr).toMatch(/does not match pre-apply-\*\.dump/);
   });
 
   it('rollback mode requires a 4th argument', () => {
-    const res = runScript(APPLY_DB_SH, [SCRATCH_DB_PRE, tmp, 'rollback'], { DATABASE_URL: GARBAGE_DATABASE_URL });
+    const res = runScript(APPLY_DB_SH, ['gc_curriculum', tmp, 'rollback'], { DATABASE_URL: GARBAGE_DATABASE_URL });
     expect(res.status).toBe(2);
     expect(res.stderr).toMatch(/requires <pre-apply-dump-path>/);
   });
 
   it('apply mode refuses a 4th argument', () => {
-    const res = runScript(APPLY_DB_SH, [SCRATCH_DB_PRE, tmp, 'apply', join(tmp, 'pre-apply-x.dump')], { DATABASE_URL: GARBAGE_DATABASE_URL });
+    const res = runScript(APPLY_DB_SH, ['gc_curriculum', tmp, 'apply', join(tmp, 'pre-apply-x.dump')], { DATABASE_URL: GARBAGE_DATABASE_URL });
     expect(res.status).toBe(2);
     expect(res.stderr).toMatch(/takes no 4th argument/);
   });
@@ -101,7 +141,7 @@ describe('p0b-apply-db.sh — rollback dump validation runs before any DB connec
   it('refuses an unreadable / non-pg_dump "dump" even if its name matches the pattern', () => {
     const f = join(tmp, 'pre-apply-not-a-real-dump.dump');
     execFileSync('bash', ['-c', `printf x | gzip > "${f}"`]);
-    const res = runScript(APPLY_DB_SH, [SCRATCH_DB_PRE, tmp, 'rollback', f], { DATABASE_URL: GARBAGE_DATABASE_URL });
+    const res = runScript(APPLY_DB_SH, ['gc_curriculum', tmp, 'rollback', f], { DATABASE_URL: GARBAGE_DATABASE_URL });
     expect(res.status).not.toBe(0);
     expect(res.stderr).toMatch(/failed backup verification/);
   });
@@ -143,48 +183,47 @@ describe.skipIf(!RUN)('p0b-apply-db.sh (task-8) on gc_curriculum_p0b_pre', () =>
 
   it('refuses when the expected database name does not match — nothing touched (apply mode; guard trips before any backup or SQL)', async () => {
     const before = await contentHash();
-    const res = runScript(APPLY_DB_SH, ['definitely_not_the_pre_db', backupDir, 'apply'], { DATABASE_URL });
+    // 'gc_curriculum' is on the fix-round-2 allowlist (so it passes that
+    // check) but is not what DATABASE_URL actually connects to here (the
+    // real gc_curriculum_p0b_pre) — so this still reaches and trips the
+    // "connected to X, expected Y" guard, not the allowlist.
+    const res = runScript(APPLY_DB_SH, ['gc_curriculum', backupDir, 'apply'], { DATABASE_URL });
     expect(res.status).not.toBe(0);
     expect(res.stderr).toMatch(/refusing: connected to database/);
     expect(await contentHash()).toBe(before);
   });
 
-  it('refuses when another session is open — nothing touched', async () => {
-    const before = await contentHash();
-    const { Pool } = await import('pg');
-    const holder = new Pool({ connectionString: DATABASE_URL, max: 1 });
-    const holderQuery = holder.query('SELECT pg_sleep(1.5)');
-    try {
-      await new Promise((r) => setTimeout(r, 300));
-      const res = runScript(APPLY_DB_SH, [SCRATCH_DB_PRE, backupDir, 'apply'], { DATABASE_URL });
-      expect(res.status).not.toBe(0);
-      expect(res.stderr).toMatch(/refusing: other sessions are connected/);
-    } finally {
-      await holderQuery;
-      await holder.end();
-    }
-    expect(await contentHash()).toBe(before);
-  });
-
   it('p0b-db-migrated.sh refuses when DATABASE_URL points at a different database than expected', () => {
-    const res = runScript(DB_MIGRATED_SH, ['definitely_not_the_pre_db'], { DATABASE_URL });
+    const res = runScript(DB_MIGRATED_SH, ['gc_curriculum'], { DATABASE_URL });
     expect(res.status).not.toBe(0);
-    expect(res.stderr).toMatch(/refusing: connected to database '.*', expected 'definitely_not_the_pre_db' — state UNKNOWN/);
+    expect(res.stderr).toMatch(/refusing: connected to database '.*', expected 'gc_curriculum' — state UNKNOWN/);
     expect(res.stdout.trim()).toBe('');
   });
 
-  it('p0b-db-migrated.sh prints "f" for gc_curriculum_p0b_pre (sub_competency_map never exists there)', () => {
-    const res = runScript(DB_MIGRATED_SH, [SCRATCH_DB_PRE], { DATABASE_URL });
-    expect(res.status).toBe(0);
-    expect(res.stdout.trim()).toBe('f');
-  });
+  // NOTE (fix round 2): there used to be two more tests here — "refuses
+  // when another session is open" and "p0b-db-migrated.sh prints f for
+  // gc_curriculum_p0b_pre" — that needed EXPECTED_DB to literally equal
+  // the real database DATABASE_URL connects to (gc_curriculum_p0b_pre),
+  // to get past the DB-name guard and reach the guard/probe under test.
+  // The fix-round-2 allowlist (p0b_check_allowed_db_name, checked before
+  // any connection) now refuses gc_curriculum_p0b_pre outright — by
+  // design: the controller ruling requires these scripts to accept
+  // nothing but 'gc_curriculum' and gc_curriculum_p0b_rbtest*, full stop.
+  // That makes both tests structurally impossible to run for real against
+  // gc_curriculum_p0b_pre any more. The underlying guard/probe logic
+  // itself is unchanged (identical to_regclass/pg_stat_activity queries
+  // p0a's own proven implementation uses) and is exercised for real
+  // elsewhere: tests/db/p0b-rollback-swap.test.ts's end-to-end test
+  // relies on this exact "no other sessions" guard passing and this
+  // exact verification query succeeding against its gc_curriculum_p0b_
+  // rbtest fixture on every run.
 
   it('rollback mode rejects a real SCHEMA-ONLY dump of this database — no TABLE DATA for snapshot_target_coverage', () => {
     const f = join(backupDir, 'pre-apply-schema-only.dump');
     const dumpRes = runScript(`${PGBIN}/pg_dump`, ['-Fc', '--no-owner', '-s', '-f', f, DATABASE_URL]);
     expect(dumpRes.status).toBe(0);
     // Garbage URL: proves this is still caught before any connection is made.
-    const res = runScript(APPLY_DB_SH, [SCRATCH_DB_PRE, backupDir, 'rollback', f], { DATABASE_URL: GARBAGE_DATABASE_URL });
+    const res = runScript(APPLY_DB_SH, ['gc_curriculum', backupDir, 'rollback', f], { DATABASE_URL: GARBAGE_DATABASE_URL });
     expect(res.status).not.toBe(0);
     expect(res.stderr).toMatch(/failed backup verification/);
   });
@@ -193,7 +232,7 @@ describe.skipIf(!RUN)('p0b-apply-db.sh (task-8) on gc_curriculum_p0b_pre', () =>
     const f = join(backupDir, `pre-apply-full-${Date.now()}.dump`);
     const dumpRes = runScript(`${PGBIN}/pg_dump`, ['-Fc', '--no-owner', '-f', f, DATABASE_URL]);
     expect(dumpRes.status).toBe(0);
-    const res = runScript(APPLY_DB_SH, [SCRATCH_DB_PRE, backupDir, 'rollback', f], { DATABASE_URL: GARBAGE_DATABASE_URL });
+    const res = runScript(APPLY_DB_SH, ['gc_curriculum', backupDir, 'rollback', f], { DATABASE_URL: GARBAGE_DATABASE_URL });
     expect(res.status).not.toBe(0);
     expect(res.stdout).toMatch(/confirmed: rollback dump .* matches pre-apply-\*\.dump and passes backup verification/);
     expect(res.stderr).not.toMatch(/failed backup verification/);

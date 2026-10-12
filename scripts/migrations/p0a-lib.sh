@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# p0a-lib.sh — sourced (not executed) by p0a-apply-db.sh and
-# p0a-db-migrated.sh. Not runnable on its own.
+# p0a-lib.sh — sourced (not executed) by p0a-apply-db.sh, p0a-db-migrated.sh,
+# p0b-apply-db.sh, p0b-db-migrated.sh, and 2026-10-12-p0b-live-apply.sh. Not
+# runnable on its own.
 #
 # p0a_url_to_pg_env parses $DATABASE_URL (read from the environment, never
 # argv) into libpq's standard PGHOST/PGPORT/PGDATABASE/PGUSER/PGPASSWORD,
@@ -41,4 +42,28 @@ p0a_url_to_pg_env() {
   ')
   export PGHOST PGPORT PGDATABASE PGUSER PGPASSWORD
   unset DATABASE_URL
+}
+
+# p0b_check_allowed_db_name <name> — fix round 2 (task 8, competency-
+# catalog P0b plan): the database-name allowlist must live in the SCRIPTS
+# themselves, not only in the TS test helpers that call them — a test, a
+# typo, or a future caller could otherwise point p0b-apply-db.sh's
+# CREATE/ALTER/DROP DATABASE calls (or p0b-db-migrated.sh's connection
+# guard) at an arbitrary name. Refuses (prints to stderr, returns 1)
+# unless <name> is exactly "gc_curriculum" (the only live value) or
+# matches ^gc_curriculum_p0b_rbtest[a-z0-9_]*$ (the disposable real-DB
+# rollback-swap test fixture family, tests/db/p0b-rollback-swap.test.ts).
+# Nothing else. Used by p0b-apply-db.sh, p0b-db-migrated.sh, and
+# 2026-10-12-p0b-live-apply.sh (its P0B_LIVE_APPLY_EXPECTED_DB override).
+# P0a's scripts do not call this and are unaffected.
+p0b_check_allowed_db_name() {
+  local name="$1"
+  if [ "$name" = "gc_curriculum" ]; then
+    return 0
+  fi
+  if [[ "$name" =~ ^gc_curriculum_p0b_rbtest[a-z0-9_]*$ ]]; then
+    return 0
+  fi
+  echo "refusing: '$name' is not on the allowed database-name list (exactly 'gc_curriculum', or a name matching ^gc_curriculum_p0b_rbtest[a-z0-9_]*\$); nothing touched" >&2
+  return 1
 }

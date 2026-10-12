@@ -202,6 +202,24 @@ exit 0
     expect(lastLogContents()).toBe('');
   });
 
+  // --- fix round 2 (Important): the database-name allowlist must be
+  // enforced in the wrapper too, for its P0B_LIVE_APPLY_EXPECTED_DB
+  // override — not only in the DB scripts it calls. Checked before even
+  // the DEPLOY_SHA/mode validation, so nothing is stopped or touched.
+  it('refuses a P0B_LIVE_APPLY_EXPECTED_DB override that is not on the allowlist — exit 1, nothing touched, before even the SHA format is checked', () => {
+    const res = run(['not-even-a-sha', 'apply'], { P0B_LIVE_APPLY_EXPECTED_DB: 'rag_core' });
+    expect(res.status).toBe(1);
+    expect(res.stderr).toMatch(/refusing: 'rag_core' is not on the allowed database-name list/);
+    expect(lastLogContents()).toBe('');
+  });
+
+  it('accepts a P0B_LIVE_APPLY_EXPECTED_DB override matching gc_curriculum_p0b_rbtest* past the allowlist (fails later for the unrelated reason of a short SHA)', () => {
+    const res = run(['not-even-a-sha', 'apply'], { P0B_LIVE_APPLY_EXPECTED_DB: 'gc_curriculum_p0b_rbtest_whatever' });
+    expect(res.status).toBe(2);
+    expect(res.stderr).not.toMatch(/not on the allowed database-name list/);
+    expect(res.stderr).toMatch(/must be a full 40-character lowercase hex git SHA/);
+  });
+
   it('refuses a bad mode (exit 2), calls nothing', () => {
     checkoutForTest(shaPostMatch);
     const res = run([shaPostMatch, 'destroy']);
@@ -335,9 +353,22 @@ exit 0
   });
 
   // --- db-done phase: rollback's swap failed partway, auto-fallback worked
-  // (fix round 1: p0b-apply-db.sh exit 5) --------------------------------
-  it('rollback swap fails partway but the automatic fallback rename-back succeeded (exit 5) — live untouched message, points at p0b-apply-db.sh output, never SAFE-to-bootstrap-a-new-build', () => {
-    checkoutForTest(shaPre);
+  // (p0b-apply-db.sh exit 5) ------------------------------------------------
+  // Fix round 2 (Important, reviewer finding): round 1's message here said
+  // "Do NOT bootstrap a pre-P0b build against this still-migrated
+  // database:" and then printed exactly the bootstrap/kickstart commands
+  // for $DEPLOY_SHA — which IS the pre-P0b build in rollback mode. Following
+  // those lines did precisely what the sentence in front of them forbade.
+  // The fix reuses report_db_state_and_recovery, which queries the real
+  // state and recommends checking out and building $PREVIOUS_SHA (the
+  // build that actually matches a still-migrated database) BEFORE any
+  // bootstrap/kickstart line. This test sets up a deploy history where
+  // shaPostMatch ("the P0b sha") was checked out before shaPre ("the
+  // rollback target"), so PREVIOUS_SHA == shaPostMatch is the one the
+  // message must name.
+  it('rollback swap fails partway but the automatic fallback rename-back succeeded (exit 5) — recommends checking out and building the P0b SHA before any bootstrap command, never bootstraps the pre-P0b build directly', () => {
+    git(deployDir, ['checkout', '-q', shaPostMatch]); // "the P0b sha" — what's actually live right now
+    git(deployDir, ['checkout', '-q', shaPre]); // this invocation's rollback target
     const res = run([shaPre, 'rollback', dumpPath], {
       P0B_LIVE_APPLY_READ_ENV_MJS: writeReadEnvStub(tmp, {}),
       P0B_LIVE_APPLY_APPLY_DB_SH: writeApplyDbStub(tmp, { exitCode: 5 }),
@@ -345,10 +376,20 @@ exit 0
     });
     expect(res.status).toBe(5);
     expect(res.stderr).toMatch(/automatic fallback already renamed the live database back/);
-    expect(res.stderr).toMatch(/UNTOUCHED \(still the migrated database, under its original name\)/);
     expect(res.stderr).toMatch(/see the output above from p0b-apply-db\.sh/);
     expect(res.stderr).not.toMatch(/SAFE to bootstrap/);
     expect(res.stderr).not.toMatch(/CRITICAL/);
+    expect(res.stderr).not.toMatch(/Do NOT bootstrap/); // round 1's backwards warning is gone
+
+    // Names the right SHA: the build that actually matches a still-migrated database.
+    expect(res.stderr).toContain(shaPostMatch);
+
+    // Every bootstrap/kickstart line must be preceded by the checkout+build
+    // step for that same SHA — never a bare bootstrap command on its own.
+    const checkoutLineIdx = res.stderr.indexOf(`checkout ${shaPostMatch}`);
+    expect(checkoutLineIdx).toBeGreaterThan(-1);
+    const firstBootstrapIdx = res.stderr.indexOf('launchctl bootstrap');
+    expect(firstBootstrapIdx).toBeGreaterThan(checkoutLineIdx);
   });
 
   // --- db-done phase: rollback's swap failed catastrophically, the

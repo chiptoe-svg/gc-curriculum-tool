@@ -39,6 +39,28 @@
 # safety dump this script used to take for rollback mode is redundant (a
 # live, intact migrated database is a strictly better fallback than a
 # dump file) and has been removed.
+#
+# --- Fix round 2 (task-8 adversarial re-review):
+#   1. <expected_db_name> is checked against the allowlist in p0a-lib.sh
+#      (p0b_check_allowed_db_name) BEFORE any connection is opened —
+#      exactly "gc_curriculum", or the disposable
+#      gc_curriculum_p0b_rbtest* real-DB-test fixture family. Nothing
+#      else. This makes every SQL interpolation of $EXPECTED_DB below
+#      provably safe even before the belt-and-braces psql `:"var"` /
+#      `:'var'` quoting added in this round.
+#   2. The three verification queries against the newly-restored database
+#      (sub_competency_map / sub_competencies / snapshot_target_coverage)
+#      now explicitly check for a query failure (a dropped connection, a
+#      permissions problem, anything) and drop the new database before
+#      exiting — round 1 let a query failure propagate through `set -e`
+#      silently, with no message and no cleanup, leaking the
+#      `_rollback_<ts>` database.
+#   3. The "other sessions reconnected right before the rename" refusal
+#      used to say the verified restore was "intact ... if you want to
+#      retry" while also dropping it — fixed by actually keeping it (it
+#      is still fully verified; there is no reason to throw it away over
+#      a transient reconnect), matching the sibling rename-failure
+#      message below, which was already consistent.
 set -euo pipefail
 umask 077
 
@@ -65,6 +87,13 @@ EXPECTED_DB="$1"
 BACKUP_DIR="$2"
 MODE="$3"
 ROLLBACK_DUMP="${4:-}"
+
+# --- fix round 2: the database-name allowlist lives HERE, not only in
+# the TS test helpers that happen to call this script — checked before
+# any connection, before even the mode-specific argument validation.
+if ! p0b_check_allowed_db_name "$EXPECTED_DB"; then
+  exit 1
+fi
 
 case "$MODE" in
   apply)
@@ -176,43 +205,82 @@ else
   ROLLBACK_DB_NAME="${EXPECTED_DB}_rollback_${ROLLBACK_TS}"
   PRE_ROLLBACK_NAME="${EXPECTED_DB}_pre_rollback_${ROLLBACK_TS}"
 
+  # Fix round 2: every identifier below goes through psql's own `:"var"`
+  # (quoted identifier) or `:'var'` (quoted literal) substitution, via
+  # `-v name=value`, instead of raw bash string interpolation into SQL
+  # text — belt-and-braces on top of the allowlist check above, which
+  # already makes injection structurally impossible ($EXPECTED_DB can
+  # only be "gc_curriculum" or match ^gc_curriculum_p0b_rbtest[a-z0-9_]*$,
+  # and $ROLLBACK_DB_NAME/$PRE_ROLLBACK_NAME are built from that plus a
+  # fixed suffix and a numeric timestamp). psql only expands `:'var'`/
+  # `:"var"` when reading SQL as a SCRIPT, not from `-c` — confirmed
+  # empirically (a `-c` string with `:"var"` raises a syntax error) — so
+  # every one of these goes through `-f -` with the SQL on a bash
+  # here-string instead of `-c "...interpolated by bash..."`.
+  drop_rollback_db() {
+    "${PSQL[@]}" -d postgres -v dbname="$ROLLBACK_DB_NAME" -f - >/dev/null 2>&1 <<< 'DROP DATABASE IF EXISTS :"dbname"' || true
+  }
+
   echo "=== 3. creating $ROLLBACK_DB_NAME and restoring $ROLLBACK_DUMP into it (no --clean: it's empty, so there is nothing for an FK to conflict with) ==="
-  "${PSQL[@]}" -d postgres -c "CREATE DATABASE \"$ROLLBACK_DB_NAME\""
+  "${PSQL[@]}" -d postgres -v dbname="$ROLLBACK_DB_NAME" -f - <<< 'CREATE DATABASE :"dbname"'
   if ! "$PGBIN/pg_restore" --no-owner -d "$ROLLBACK_DB_NAME" "$ROLLBACK_DUMP"; then
     echo "refusing: restore into $ROLLBACK_DB_NAME failed; dropping it; live database '$EXPECTED_DB' was never touched" >&2
-    "${PSQL[@]}" -d postgres -c "DROP DATABASE IF EXISTS \"$ROLLBACK_DB_NAME\"" >/dev/null 2>&1 || true
+    drop_rollback_db
     exit 1
   fi
 
   echo "=== verifying $ROLLBACK_DB_NAME is genuinely pre-0057 before it goes anywhere near the live name ==="
-  HAS_MAP="$("${PSQL[@]}" -d "$ROLLBACK_DB_NAME" -At -c "SELECT to_regclass('public.sub_competency_map') IS NOT NULL;")"
-  SC_COUNT="$("${PSQL[@]}" -d "$ROLLBACK_DB_NAME" -At -c "SELECT count(*) FROM sub_competencies;")"
-  STC_COUNT="$("${PSQL[@]}" -d "$ROLLBACK_DB_NAME" -At -c "SELECT count(*) FROM snapshot_target_coverage;")"
+  # Fix round 2 (Minor 5): round 1 let a query failure here (a dropped
+  # connection, a permissions problem, anything) propagate through
+  # `set -e` silently — no message, no cleanup — leaking the
+  # just-created $ROLLBACK_DB_NAME. Each query is now checked explicitly;
+  # a failure prints why, drops the new database, and exits 1. Live is
+  # untouched in every case here — nothing has renamed anything yet.
+  if ! HAS_MAP="$("${PSQL[@]}" -d "$ROLLBACK_DB_NAME" -At -c "SELECT to_regclass('public.sub_competency_map') IS NOT NULL;")"; then
+    echo "refusing: could not query $ROLLBACK_DB_NAME to verify it (sub_competency_map check failed, or the connection dropped); dropping it; live database '$EXPECTED_DB' was never touched" >&2
+    drop_rollback_db
+    exit 1
+  fi
+  if ! SC_COUNT="$("${PSQL[@]}" -d "$ROLLBACK_DB_NAME" -At -c "SELECT count(*) FROM sub_competencies;")"; then
+    echo "refusing: could not query $ROLLBACK_DB_NAME to verify it (sub_competencies count failed, or the connection dropped); dropping it; live database '$EXPECTED_DB' was never touched" >&2
+    drop_rollback_db
+    exit 1
+  fi
+  if ! STC_COUNT="$("${PSQL[@]}" -d "$ROLLBACK_DB_NAME" -At -c "SELECT count(*) FROM snapshot_target_coverage;")"; then
+    echo "refusing: could not query $ROLLBACK_DB_NAME to verify it (snapshot_target_coverage count failed, or the connection dropped); dropping it; live database '$EXPECTED_DB' was never touched" >&2
+    drop_rollback_db
+    exit 1
+  fi
   if [ "$HAS_MAP" != "f" ] || [ "$SC_COUNT" -eq 0 ] || [ "$STC_COUNT" -eq 0 ]; then
     echo "refusing: $ROLLBACK_DB_NAME failed verification (sub_competency_map exists=$HAS_MAP, sub_competencies=$SC_COUNT rows, snapshot_target_coverage=$STC_COUNT rows) — not a genuine pre-0057 restore; dropping it; live database '$EXPECTED_DB' was never touched" >&2
-    "${PSQL[@]}" -d postgres -c "DROP DATABASE IF EXISTS \"$ROLLBACK_DB_NAME\"" >/dev/null 2>&1 || true
+    drop_rollback_db
     exit 1
   fi
   echo "confirmed: $ROLLBACK_DB_NAME is pre-0057 (no sub_competency_map; $SC_COUNT sub_competencies rows; $STC_COUNT snapshot_target_coverage rows)"
 
   echo "=== 4. swapping '$EXPECTED_DB' <-> '$ROLLBACK_DB_NAME' ==="
-  OTHER_SESSIONS2="$("${PSQL[@]}" -d postgres -At -F'|' -c \
-    "SELECT application_name, client_addr, state FROM pg_stat_activity WHERE datname = '$EXPECTED_DB' AND pid <> pg_backend_pid();")"
+  OTHER_SESSIONS2="$("${PSQL[@]}" -d postgres -v dbname="$EXPECTED_DB" -At -F'|' -f - <<< \
+    "SELECT application_name, client_addr, state FROM pg_stat_activity WHERE datname = :'dbname' AND pid <> pg_backend_pid();")"
   if [ -n "$OTHER_SESSIONS2" ]; then
+    # Fix round 2 (Minor 3): round 1 said the restore was "intact ... if
+    # you want to retry" and then dropped it anyway. Fixed by actually
+    # keeping it — it is already fully verified above, so there is no
+    # reason to throw it away over a transient reconnect, matching the
+    # sibling rename-failure message right below (which never dropped
+    # anything and was already consistent).
     echo "refusing: other sessions reconnected to '$EXPECTED_DB' right before the rename (application_name|client_addr|state); nothing renamed, live database '$EXPECTED_DB' is untouched. The verified restore is intact at $ROLLBACK_DB_NAME if you want to retry:" >&2
     echo "$OTHER_SESSIONS2" >&2
-    "${PSQL[@]}" -d postgres -c "DROP DATABASE IF EXISTS \"$ROLLBACK_DB_NAME\"" >/dev/null 2>&1 || true
     exit 1
   fi
 
-  if ! "${PSQL[@]}" -d postgres -c "ALTER DATABASE \"$EXPECTED_DB\" RENAME TO \"$PRE_ROLLBACK_NAME\""; then
+  if ! "${PSQL[@]}" -d postgres -v old="$EXPECTED_DB" -v new="$PRE_ROLLBACK_NAME" -f - <<< 'ALTER DATABASE :"old" RENAME TO :"new"'; then
     echo "refusing: could not rename '$EXPECTED_DB' to '$PRE_ROLLBACK_NAME'; live database '$EXPECTED_DB' is untouched (still the migrated database, under its original name). The verified restore is intact at $ROLLBACK_DB_NAME if you want to retry." >&2
     exit 1
   fi
 
-  if ! "${PSQL[@]}" -d postgres -c "ALTER DATABASE \"$ROLLBACK_DB_NAME\" RENAME TO \"$EXPECTED_DB\""; then
+  if ! "${PSQL[@]}" -d postgres -v old="$ROLLBACK_DB_NAME" -v new="$EXPECTED_DB" -f - <<< 'ALTER DATABASE :"old" RENAME TO :"new"'; then
     echo "CRITICAL: renamed '$EXPECTED_DB' to '$PRE_ROLLBACK_NAME' but could NOT rename '$ROLLBACK_DB_NAME' to '$EXPECTED_DB' — '$EXPECTED_DB' does not currently exist on this server. Attempting the automatic fallback (rename the migrated database back)..." >&2
-    if "${PSQL[@]}" -d postgres -c "ALTER DATABASE \"$PRE_ROLLBACK_NAME\" RENAME TO \"$EXPECTED_DB\""; then
+    if "${PSQL[@]}" -d postgres -v old="$PRE_ROLLBACK_NAME" -v new="$EXPECTED_DB" -f - <<< 'ALTER DATABASE :"old" RENAME TO :"new"'; then
       echo "fallback succeeded: '$PRE_ROLLBACK_NAME' renamed back to '$EXPECTED_DB' — live is untouched (still the migrated database). The verified restore remains intact at $ROLLBACK_DB_NAME; investigate by hand before retrying." >&2
       exit 5
     else
