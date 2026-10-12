@@ -9,9 +9,9 @@
  *                        verify nothing is left, commit
  *
  * Idempotent: a second --apply finds nothing to do. Never deletes rows; retired
- * sub-competencies get retired = true. Touches ONLY career_targets and
- * sub_competencies — snapshot_target_coverage, course data and everything else
- * are out of reach of the writer (lib/domain/target-batch.ts).
+ * sub-competencies get retired = true. Touches ONLY career_targets, sub_competencies
+ * and career_target_requirements (membership + display order, P0a) — snapshot_target_coverage,
+ * course data and everything else are out of reach of the writer (lib/domain/target-batch.ts).
  *
  * scripts/seed-career-targets.ts (INSERT ... ON CONFLICT DO NOTHING) is for an
  * empty DB only; it cannot update existing rows, so it is not reused here
@@ -19,66 +19,11 @@
  *
  * Run: pnpm exec tsx --env-file=.env.local scripts/targets/apply-target-batch.ts [--dry-run|--apply]
  */
-import { asc, eq, sql } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
-import { careerTargets, subCompetencies } from '@/lib/db/schema';
 import { CAREER_TARGETS, RETIRED_SUB_COMPETENCIES } from '@/lib/domain/seed-targets';
-import {
-  planTargetBatch,
-  applyPlan,
-  formatPlan,
-  type BatchWriter,
-  type DbSubRow,
-  type DbTargetRow,
-} from '@/lib/domain/target-batch';
-
-type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
-
-async function readState(tx: Tx, lock: boolean): Promise<{ targets: DbTargetRow[]; subs: DbSubRow[] }> {
-  const tq = tx.select().from(careerTargets).orderBy(asc(careerTargets.displayOrder));
-  const sq = tx.select().from(subCompetencies).orderBy(asc(subCompetencies.careerTargetId), asc(subCompetencies.displayOrder));
-  const [targets, subs] = lock ? [await tq.for('update'), await sq.for('update')] : [await tq, await sq];
-  return {
-    targets: targets.map(t => ({
-      id: t.id,
-      name: t.name,
-      shortDefinition: t.shortDefinition,
-      industryContexts: t.industryContexts,
-      knowDescriptors: t.knowDescriptors,
-      understandDescriptors: t.understandDescriptors,
-      doDescriptors: t.doDescriptors,
-      defensibilityNote: t.defensibilityNote,
-      socCode: t.socCode ?? null,
-    })),
-    subs: subs.map(s => ({
-      id: s.id,
-      careerTargetId: s.careerTargetId,
-      name: s.name,
-      knowDescriptor: s.knowDescriptor,
-      understandDescriptor: s.understandDescriptor,
-      doDescriptor: s.doDescriptor,
-      displayOrder: s.displayOrder,
-      retired: s.retired,
-    })),
-  };
-}
-
-function drizzleWriter(tx: Tx): BatchWriter {
-  return {
-    async updateTarget(id, fields) {
-      await tx.update(careerTargets).set({ ...fields, updatedAt: new Date() }).where(eq(careerTargets.id, id));
-    },
-    async updateSub(id, fields) {
-      await tx.update(subCompetencies).set({ ...fields, updatedAt: new Date() }).where(eq(subCompetencies.id, id));
-    },
-    async insertSub(row) {
-      await tx.insert(subCompetencies).values({ ...row, updatedAt: new Date() });
-    },
-    async retireSub(id) {
-      await tx.update(subCompetencies).set({ retired: true, updatedAt: new Date() }).where(eq(subCompetencies.id, id));
-    },
-  };
-}
+import { planTargetBatch, applyPlan, formatPlan } from '@/lib/domain/target-batch';
+import { catalogBatchWriter, readCatalogState } from '@/lib/db/competency-catalog-queries';
 
 async function main() {
   const args = process.argv.slice(2);
@@ -91,14 +36,14 @@ async function main() {
 
   await db.transaction(async (tx) => {
     if (!apply) await tx.execute(sql`SET TRANSACTION READ ONLY`);
-    const state = await readState(tx, apply);
+    const state = await readCatalogState(tx, apply);
     const plan = planTargetBatch(CAREER_TARGETS, RETIRED_SUB_COMPETENCIES, state.targets, state.subs);
     console.log(formatPlan(plan));
     if (plan.errors.length) throw new Error('plan has errors; nothing written');
     if (!apply) return;
 
-    await applyPlan(plan, drizzleWriter(tx));
-    const after = await readState(tx, false);
+    await applyPlan(plan, catalogBatchWriter(tx));
+    const after = await readCatalogState(tx, false);
     const check = planTargetBatch(CAREER_TARGETS, RETIRED_SUB_COMPETENCIES, after.targets, after.subs);
     const c = check.counts;
     if (c.targetsUpdated || c.subsUpdated || c.subsInserted || c.subsRetired) {

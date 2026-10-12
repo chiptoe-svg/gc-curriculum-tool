@@ -20,7 +20,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 
 import { db } from '@/lib/db/client';
-import { courses, careerTargets, subCompetencies } from '@/lib/db/schema';
+import { courses, careerTargets, targetSubCompetencies } from '@/lib/db/schema';
 import { eq, asc, isNull } from 'drizzle-orm';
 
 import { getCourseByCode } from '@/lib/db/courses-queries';
@@ -913,14 +913,14 @@ async function main() {
 
       // Get sub-competencies for this target
       const subs = await db.select({
-        id: subCompetencies.id,
-        name: subCompetencies.name,
-        knowDescriptor: subCompetencies.knowDescriptor,
-        understandDescriptor: subCompetencies.understandDescriptor,
-        doDescriptor: subCompetencies.doDescriptor,
-        displayOrder: subCompetencies.displayOrder,
-        retired: subCompetencies.retired,
-      }).from(subCompetencies).where(eq(subCompetencies.careerTargetId, target.id)).orderBy(asc(subCompetencies.displayOrder));
+        id: targetSubCompetencies.id,
+        name: targetSubCompetencies.name,
+        knowDescriptor: targetSubCompetencies.knowDescriptor,
+        understandDescriptor: targetSubCompetencies.understandDescriptor,
+        doDescriptor: targetSubCompetencies.doDescriptor,
+        displayOrder: targetSubCompetencies.displayOrder,
+        retired: targetSubCompetencies.retired,
+      }).from(targetSubCompetencies).where(eq(targetSubCompetencies.careerTargetId, target.id)).orderBy(asc(targetSubCompetencies.displayOrder));
 
       const activeSubs = subs.filter(s => !s.retired);
       console.log(`\n  Target: "${target.name}" (${activeSubs.length} active sub-comps)`);

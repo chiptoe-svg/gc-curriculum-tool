@@ -30,7 +30,7 @@
 import { and, eq, inArray, isNull } from 'drizzle-orm';
 
 import { db } from '@/lib/db/client';
-import { courseCaptureSnapshots, courses, snapshotTargetCoverage } from '@/lib/db/schema';
+import { courseCaptureSnapshots, courses, targetCoverage } from '@/lib/db/schema';
 import type { CaptureProfile } from '@/lib/ai/capture/schema';
 import {
   WIKI_PAGES_PER_CALL,
@@ -318,15 +318,15 @@ export async function loadRefreshInputs(): Promise<RefreshInputs & {
 
   const cells = await db
     .select({
-      snapshotId: snapshotTargetCoverage.snapshotId,
-      subCompetencyId: snapshotTargetCoverage.subCompetencyId,
-      careerTargetId: snapshotTargetCoverage.careerTargetId,
+      snapshotId: targetCoverage.snapshotId,
+      subCompetencyId: targetCoverage.subCompetencyId,
+      careerTargetId: targetCoverage.careerTargetId,
     })
-    .from(snapshotTargetCoverage)
+    .from(targetCoverage)
     .innerJoin(
       courseCaptureSnapshots,
       and(
-        eq(snapshotTargetCoverage.snapshotId, courseCaptureSnapshots.id),
+        eq(targetCoverage.snapshotId, courseCaptureSnapshots.id),
         isNull(courseCaptureSnapshots.retiredAt),
       ),
     );

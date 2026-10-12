@@ -13,15 +13,16 @@ import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 
-import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 
 import { db } from '@/lib/db/client';
 import {
   courseCaptureSnapshots,
   captureMessages,
-  snapshotTargetCoverage,
+  snapshotCompetencyCoverage,
+  targetCoverage,
   careerTargets,
-  subCompetencies,
+  targetSubCompetencies,
   courses,
 } from '@/lib/db/schema';
 import {
@@ -166,14 +167,14 @@ export async function computeAffectedPages(
     { type: 'index', slug: 'index', path: 'index.md', existingContent: null },
   ];
 
-  // Competency + target pages: derive from snapshot_target_coverage for this snapshot.
+  // Competency + target pages: derive from target_coverage for this snapshot.
   const coverageCells = await db
     .select({
-      subCompetencyId: snapshotTargetCoverage.subCompetencyId,
-      careerTargetId: snapshotTargetCoverage.careerTargetId,
+      subCompetencyId: targetCoverage.subCompetencyId,
+      careerTargetId: targetCoverage.careerTargetId,
     })
-    .from(snapshotTargetCoverage)
-    .where(eq(snapshotTargetCoverage.snapshotId, snapshot.id));
+    .from(targetCoverage)
+    .where(eq(targetCoverage.snapshotId, snapshot.id));
 
   const uniqueSubCompetencyIds = [...new Set(coverageCells.map(c => c.subCompetencyId))];
   const uniqueTargetIds = [...new Set(coverageCells.map(c => c.careerTargetId))];
@@ -317,7 +318,7 @@ interface ContributingCell {
   band: EvidenceBand | null;
 }
 
-async function loadCompetencySubstrate(subCompetencyId: string): Promise<{
+export async function loadCompetencySubstrate(subCompetencyId: string): Promise<{
   contributingCells: ContributingCell[];
 }> {
   // Get all non-retired snapshots' cells for this sub-competency. Join to get
@@ -326,23 +327,23 @@ async function loadCompetencySubstrate(subCompetencyId: string): Promise<{
   const rows = await db
     .select({
       courseCode: courseCaptureSnapshots.courseCode,
-      snapshotId: snapshotTargetCoverage.snapshotId,
-      kDepth: snapshotTargetCoverage.kDepth,
-      uDepth: snapshotTargetCoverage.uDepth,
-      dDepth: snapshotTargetCoverage.dDepth,
-      matchedCompetency: snapshotTargetCoverage.matchedCompetency,
-      evidenceExcerpt: snapshotTargetCoverage.evidenceExcerpt,
+      snapshotId: snapshotCompetencyCoverage.snapshotId,
+      kDepth: snapshotCompetencyCoverage.kDepth,
+      uDepth: snapshotCompetencyCoverage.uDepth,
+      dDepth: snapshotCompetencyCoverage.dDepth,
+      matchedCompetency: snapshotCompetencyCoverage.matchedCompetency,
+      evidenceExcerpt: snapshotCompetencyCoverage.evidenceExcerpt,
       profile: courseCaptureSnapshots.profile,
     })
-    .from(snapshotTargetCoverage)
+    .from(snapshotCompetencyCoverage)
     .innerJoin(
       courseCaptureSnapshots,
       and(
-        eq(snapshotTargetCoverage.snapshotId, courseCaptureSnapshots.id),
+        eq(snapshotCompetencyCoverage.snapshotId, courseCaptureSnapshots.id),
         isNull(courseCaptureSnapshots.retiredAt),
       ),
     )
-    .where(eq(snapshotTargetCoverage.subCompetencyId, subCompetencyId));
+    .where(eq(snapshotCompetencyCoverage.competencyId, subCompetencyId));
 
   const contributingCells: ContributingCell[] = rows.map(r => {
     // Resolve the band from the producing snapshot's competency that this cell
@@ -383,7 +384,7 @@ interface CoverageRollupEntry {
   evidenceExcerpt: string | null;
 }
 
-async function loadTargetSubstrate(targetId: string): Promise<{
+export async function loadTargetSubstrate(targetId: string): Promise<{
   targetName: string;
   shortDefinition: string;
   industryContexts: string[];
@@ -406,11 +407,15 @@ async function loadTargetSubstrate(targetId: string): Promise<{
     };
   }
 
-  // All sub-competencies for this target.
+  // The target's current competencies (membership from career_target_requirements).
+  // M-3 (adversarial review): ordered — the view's GROUP BY gives no defined
+  // row order otherwise, which fed the scorer/wiki prompts a different
+  // competency order than before (characterization's sortJson masked it).
   const subs = await db
     .select()
-    .from(subCompetencies)
-    .where(and(eq(subCompetencies.careerTargetId, targetId), eq(subCompetencies.retired, false)));
+    .from(targetSubCompetencies)
+    .where(and(eq(targetSubCompetencies.careerTargetId, targetId), eq(targetSubCompetencies.retired, false)))
+    .orderBy(asc(targetSubCompetencies.displayOrder), asc(targetSubCompetencies.id));
 
   if (subs.length === 0) {
     return {
@@ -425,32 +430,42 @@ async function loadTargetSubstrate(targetId: string): Promise<{
   const subIds = subs.map(s => s.id);
 
   // For each sub-competency, find the best (highest dDepth) cell across non-retired snapshots.
+  // Tie-break (generatedAt DESC, courseCode ASC, snapshotId ASC) added 2026-10-11: the legacy
+  // "first row wins" pick depended on the unordered SELECT's physical row order, which was never
+  // a stable behavior to preserve — it just happened to be stable while reading the base table and
+  // broke when P0a re-pointed this read to the target_coverage view (different query plan, different
+  // row order for ties). The ORDER BY makes the pick deterministic regardless of read path; the
+  // "highest dDepth wins" criterion itself (the reduction below) is unchanged.
   const cellRows = await db
     .select({
-      subCompetencyId: snapshotTargetCoverage.subCompetencyId,
+      subCompetencyId: targetCoverage.subCompetencyId,
       courseCode: courseCaptureSnapshots.courseCode,
-      snapshotId: snapshotTargetCoverage.snapshotId,
-      kDepth: snapshotTargetCoverage.kDepth,
-      uDepth: snapshotTargetCoverage.uDepth,
-      dDepth: snapshotTargetCoverage.dDepth,
-      evidenceExcerpt: snapshotTargetCoverage.evidenceExcerpt,
+      snapshotId: targetCoverage.snapshotId,
+      kDepth: targetCoverage.kDepth,
+      uDepth: targetCoverage.uDepth,
+      dDepth: targetCoverage.dDepth,
+      evidenceExcerpt: targetCoverage.evidenceExcerpt,
     })
-    .from(snapshotTargetCoverage)
+    .from(targetCoverage)
     .innerJoin(
       courseCaptureSnapshots,
       and(
-        eq(snapshotTargetCoverage.snapshotId, courseCaptureSnapshots.id),
+        eq(targetCoverage.snapshotId, courseCaptureSnapshots.id),
         isNull(courseCaptureSnapshots.retiredAt),
       ),
     )
     .where(
       and(
-        eq(snapshotTargetCoverage.careerTargetId, targetId),
-        inArray(snapshotTargetCoverage.subCompetencyId, subIds),
+        eq(targetCoverage.careerTargetId, targetId),
+        inArray(targetCoverage.subCompetencyId, subIds),
       ),
-    );
+    )
+    .orderBy(desc(targetCoverage.dDepth), desc(targetCoverage.generatedAt), asc(courseCaptureSnapshots.courseCode), asc(targetCoverage.snapshotId));
 
-  // Build rollup: best dDepth per sub-competency.
+  // Build rollup: best dDepth per sub-competency. With the ORDER BY above, the first row
+  // encountered for a given sub-competency already carries its max dDepth and the deterministic
+  // tie-break, so a strict `>` here never needs to re-decide a tie — it only moves on to a new,
+  // lower-dDepth sub-competency's first row.
   const bestBySub = new Map<string, typeof cellRows[0]>();
   for (const cell of cellRows) {
     const existing = bestBySub.get(cell.subCompetencyId);
@@ -622,16 +637,16 @@ async function loadAllSnapshotsForCourse(courseCode: string): Promise<SnapshotSu
  * page then renders competencies as plain text (no broken links), and the
  * post-scoring regeneration fills the links in.
  */
-async function loadCompetencyLinksForSnapshot(
+export async function loadCompetencyLinksForSnapshot(
   snapshotId: string,
 ): Promise<Array<{ statement: string; slug: string }>> {
   const rows = await db
     .select({
-      matchedCompetency: snapshotTargetCoverage.matchedCompetency,
-      subCompetencyId: snapshotTargetCoverage.subCompetencyId,
+      matchedCompetency: snapshotCompetencyCoverage.matchedCompetency,
+      subCompetencyId: snapshotCompetencyCoverage.competencyId,
     })
-    .from(snapshotTargetCoverage)
-    .where(eq(snapshotTargetCoverage.snapshotId, snapshotId));
+    .from(snapshotCompetencyCoverage)
+    .where(eq(snapshotCompetencyCoverage.snapshotId, snapshotId));
 
   const seen = new Set<string>();
   const out: Array<{ statement: string; slug: string }> = [];
@@ -1346,7 +1361,7 @@ export async function generateProgramWikiBatch(
  * Regenerate + push the wiki for a snapshot, fire-and-forget. Two call sites:
  *   1. snapshot creation (course + concept pages + index), and
  *   2. AFTER coverage scoring (`program-score-coverage` writes
- *      `snapshot_target_coverage`) — this is what lets the COMPETENCY and
+ *      `snapshot_competency_coverage`) — this is what lets the COMPETENCY and
  *      TARGET pages generate at all, since `computeAffectedPages` derives them
  *      from coverage rows that don't exist yet at snapshot-creation time.
  *

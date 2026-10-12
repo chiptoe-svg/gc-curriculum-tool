@@ -1,6 +1,6 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
-import { snapshotTargetCoverage, courseCaptureSnapshots, careerTargets, subCompetencies } from '@/lib/db/schema';
+import { snapshotCompetencyCoverage, targetCoverage, courseCaptureSnapshots, careerTargets, targetSubCompetencies } from '@/lib/db/schema';
 import { listPairedCodesForCourses } from '@/lib/db/course-codes-queries';
 
 export interface CoverageCellRow {
@@ -32,7 +32,7 @@ export interface UpsertCoverageCellInput {
   model: string;
 }
 
-function rowToCell(row: typeof snapshotTargetCoverage.$inferSelect): CoverageCellRow {
+function rowToCell(row: typeof targetCoverage.$inferSelect): CoverageCellRow {
   return {
     snapshotId: row.snapshotId,
     careerTargetId: row.careerTargetId,
@@ -50,49 +50,53 @@ function rowToCell(row: typeof snapshotTargetCoverage.$inferSelect): CoverageCel
 }
 
 /**
- * Upsert one cell. Idempotent: the (snapshot, target, sub_competency) PK
- * means re-scoring overwrites instead of duplicating.
+ * Upsert one cell. One row per (snapshot, competency): re-scoring overwrites.
+ * careerTargetId is the scoring context only — which targets see the cell
+ * comes from career_target_requirements (view target_coverage).
  */
 export async function upsertCoverageCell(input: UpsertCoverageCellInput): Promise<void> {
-  await db.insert(snapshotTargetCoverage).values({
-    ...input,
-    generatedAt: new Date(),
+  const now = new Date();
+  const values = {
+    kDepth: input.kDepth,
+    uDepth: input.uDepth,
+    dDepth: input.dDepth,
+    matchedCompetency: input.matchedCompetency,
+    evidenceExcerpt: input.evidenceExcerpt,
+    confidence: input.confidence,
+    rationale: input.rationale,
+    model: input.model,
+    generatedAt: now,
+  };
+  await db.insert(snapshotCompetencyCoverage).values({
+    snapshotId: input.snapshotId,
+    competencyId: input.subCompetencyId,
+    ...values,
   }).onConflictDoUpdate({
-    target: [snapshotTargetCoverage.snapshotId, snapshotTargetCoverage.careerTargetId, snapshotTargetCoverage.subCompetencyId],
-    set: {
-      kDepth: input.kDepth,
-      uDepth: input.uDepth,
-      dDepth: input.dDepth,
-      matchedCompetency: input.matchedCompetency,
-      evidenceExcerpt: input.evidenceExcerpt,
-      confidence: input.confidence,
-      rationale: input.rationale,
-      model: input.model,
-      generatedAt: new Date(),
-    },
+    target: [snapshotCompetencyCoverage.snapshotId, snapshotCompetencyCoverage.competencyId],
+    set: values,
   });
 }
 
 export async function getCellsForSnapshotTarget(snapshotId: string, careerTargetId: string): Promise<CoverageCellRow[]> {
   const rows = await db
     .select()
-    .from(snapshotTargetCoverage)
+    .from(targetCoverage)
     .where(and(
-      eq(snapshotTargetCoverage.snapshotId, snapshotId),
-      eq(snapshotTargetCoverage.careerTargetId, careerTargetId),
+      eq(targetCoverage.snapshotId, snapshotId),
+      eq(targetCoverage.careerTargetId, careerTargetId),
     ));
   return rows.map(rowToCell);
 }
 
 export async function getAllCells(): Promise<CoverageCellRow[]> {
-  const rows = await db.select().from(snapshotTargetCoverage);
+  const rows = await db.select().from(targetCoverage);
   return rows.map(rowToCell);
 }
 
 /**
  * Resolves which (snapshot, target) pairs need scoring: the cross-product of
  * (latest non-retired snapshot per course that has one) × (all non-retired
- * career targets). Returns pairs missing from snapshot_target_coverage.
+ * career targets). Returns pairs with no cell in target_coverage.
  */
 export interface PairToScore {
   snapshotId: string;
@@ -129,10 +133,10 @@ export async function listStalePairs(): Promise<PairToScore[]> {
   // partial scoring as not-yet-scored and re-run the whole pair.
   const existing = await db
     .select({
-      snapshotId: snapshotTargetCoverage.snapshotId,
-      careerTargetId: snapshotTargetCoverage.careerTargetId,
+      snapshotId: targetCoverage.snapshotId,
+      careerTargetId: targetCoverage.careerTargetId,
     })
-    .from(snapshotTargetCoverage);
+    .from(targetCoverage);
   const scored = new Set(existing.map(e => `${e.snapshotId}:${e.careerTargetId}`));
 
   const stale: PairToScore[] = [];
@@ -200,18 +204,20 @@ export interface MatrixData {
  * one target. Called when the sub-competency's descriptor/name changes — the
  * cells were scored against the OLD prose and must be recomputed. listStalePairs()
  * then sees the pair as needing re-score; the matrix view recomputes on next load.
+ *
+ * P0a: cells are per (snapshot, competency) and shared by every target that
+ * uses the competency, so all of them go; with one target per competency
+ * (P0a) these are exactly the rows the old per-target delete removed.
  * Returns the count of deleted cells.
  */
 export async function invalidateCoverageForSubCompetency(
   careerTargetId: string,
   subCompetencyId: string,
 ): Promise<number> {
+  void careerTargetId; // kept for callers; cells are per competency since P0a
   const deleted = await db
-    .delete(snapshotTargetCoverage)
-    .where(and(
-      eq(snapshotTargetCoverage.careerTargetId, careerTargetId),
-      eq(snapshotTargetCoverage.subCompetencyId, subCompetencyId),
-    ))
+    .delete(snapshotCompetencyCoverage)
+    .where(eq(snapshotCompetencyCoverage.competencyId, subCompetencyId))
     .returning();
   return deleted.length;
 }
@@ -220,7 +226,7 @@ export async function invalidateCoverageForSubCompetency(
  * Read the full matrix payload in one shot: every course with a non-retired
  * snapshot, every active career target with its non-retired sub-competencies,
  * and every scored cell for those (non-retired) sub-competencies. Cells under a
- * retired sub-competency stay in snapshot_target_coverage as history but are
+ * retired sub-competency stay in snapshot_competency_coverage as history but are
  * not returned: every consumer of this payload (matrix, sufficiency, Explore
  * career-fit, wiki graph tools, flags) reads it as the current state.
  */
@@ -280,13 +286,13 @@ export async function getMatrixData(): Promise<MatrixData> {
 
   const subs = await db
     .select({
-      id: subCompetencies.id,
-      name: subCompetencies.name,
-      careerTargetId: subCompetencies.careerTargetId,
-      displayOrder: subCompetencies.displayOrder,
-      retired: subCompetencies.retired,
+      id: targetSubCompetencies.id,
+      name: targetSubCompetencies.name,
+      careerTargetId: targetSubCompetencies.careerTargetId,
+      displayOrder: targetSubCompetencies.displayOrder,
+      retired: targetSubCompetencies.retired,
     })
-    .from(subCompetencies);
+    .from(targetSubCompetencies);
 
   const targetById = new Map(targets.map(t => [t.id, t]));
   const subCompetenciesOut: MatrixSubCompetency[] = subs

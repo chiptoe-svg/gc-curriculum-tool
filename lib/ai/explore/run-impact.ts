@@ -8,7 +8,7 @@
 
 import { and, eq } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
-import { snapshotTargetCoverage, subCompetencies, prerequisiteEdges } from '@/lib/db/schema';
+import { snapshotCompetencyCoverage, subCompetencies, prerequisiteEdges } from '@/lib/db/schema';
 import { computeRipple, type PredictedSubCompDepth } from './ripple';
 import { scenarioSchema } from './scenario';
 import type { Scenario, RippleLine } from './scenario';
@@ -30,7 +30,7 @@ import { getMatrixData } from '@/lib/db/program-coverage-queries';
 
 /** Normalize a competency statement for matching: trim, lowercase, collapse internal whitespace.
  *  Tolerates the formatting/casing drift between the local-delta AI's competency wording and
- *  snapshot_target_coverage.matched_competency (which the scoring AI may have re-cased/spaced). */
+ *  snapshot_competency_coverage.matched_competency (which the scoring AI may have re-cased/spaced). */
 export function normalizeCompetencyKey(s: string): string {
   return s.trim().toLowerCase().replace(/\s+/g, ' ');
 }
@@ -125,14 +125,14 @@ export function assembleScenario(input: AssembleScenarioInput): Scenario {
 
 /**
  * Resolve a predicted delta's competency statement to sub-competency depths,
- * using the snapshot_target_coverage rows for the focal course's latest
+ * using the snapshotCompetencyCoverage rows for the focal course's latest
  * snapshot. The coverage table stores `matchedCompetency` (the profile
  * competency statement the AI matched to each sub-competency) alongside
  * `subCompetencyId` and the scored depths. This is the same linkage the
  * program coverage matrix and the scaffolding analysis use.
  *
  * Resolution logic:
- *   1. Look up all snapshotTargetCoverage rows for the focal snapshot.
+ *   1. Look up all snapshotCompetencyCoverage rows for the focal snapshot.
  *   2. For each predicted delta, find rows where matchedCompetency === competency
  *      (exact string match; the same statement the AI wrote into both the profile
  *      and the coverage table). If matched, emit PredictedSubCompDepth with the
@@ -142,7 +142,7 @@ export function assembleScenario(input: AssembleScenarioInput): Scenario {
  *      in Scenario.predictedDeltas for display, just not in the ripple engine.
  *      NEVER fabricate a sub-competency id.
  *
- * CONCERN NOTE: matchedCompetency in snapshot_target_coverage is populated by
+ * CONCERN NOTE: matchedCompetency in snapshotCompetencyCoverage is populated by
  * the program-score-coverage AI function, which may paraphrase rather than
  * copy verbatim the profile's competency statement. If the scoring AI wrote a
  * paraphrase, exact-string match will miss it; the competency will be omitted
@@ -150,7 +150,7 @@ export function assembleScenario(input: AssembleScenarioInput): Scenario {
  * negatives (no ripple for an unresolved competency) vs. false positives
  * (wrong sub-comp in the ripple). A future increment can add fuzzy matching.
  */
-async function resolveSubCompetencyDepths(
+export async function resolveSubCompetencyDepths(
   snapshotId: string,
   predictedDeltas: LocalDeltaResult['predictedDeltas'],
 ): Promise<PredictedSubCompDepth[]> {
@@ -158,18 +158,19 @@ async function resolveSubCompetencyDepths(
 
   const coverageRows = await db
     .select({
-      subCompetencyId: snapshotTargetCoverage.subCompetencyId,
-      matchedCompetency: snapshotTargetCoverage.matchedCompetency,
+      subCompetencyId: snapshotCompetencyCoverage.competencyId,
+      matchedCompetency: snapshotCompetencyCoverage.matchedCompetency,
     })
-    .from(snapshotTargetCoverage)
-    .where(eq(snapshotTargetCoverage.snapshotId, snapshotId));
+    .from(snapshotCompetencyCoverage)
+    .where(eq(snapshotCompetencyCoverage.snapshotId, snapshotId));
 
   // Build a map: competency statement → [subCompetencyId, ...] (one competency
   // can score against multiple sub-comps; emit one PredictedSubCompDepth per
   // sub-comp, all carrying the same predicted depths).
   // snapshot_target_coverage has a 3-col PK incl. careerTargetId; a course scored
   // against multiple targets yields duplicate rows per subComp with identical depths
-  // — dedup by subCompetencyId to match computePrereqGaps.
+  // — dedup by subCompetencyId to match computePrereqGaps. (one row per competency
+  // since P0a; kept as a guard)
   const byStatement = new Map<string, string[]>();
   for (const row of coverageRows) {
     if (!row.matchedCompetency) continue;
@@ -205,26 +206,27 @@ async function resolveSubCompetencyDepths(
 /**
  * Build DeliveredAttainment rows for the focal course acting as a prereq —
  * mirrors the logic in computePrereqGaps but for a single focal snapshot.
- * We read snapshotTargetCoverage directly (measured basis) and layer in
+ * We read snapshotCompetencyCoverage directly (measured basis) and layer in
  * intended coverage rows the same way the gap engine does.
  */
-async function buildBaselineDelivered(
+export async function buildBaselineDelivered(
   focalCourseCode: string,
   snapshotId: string,
 ): Promise<DeliveredAttainment[]> {
   const measuredRows = await db
     .select({
-      subCompetencyId: snapshotTargetCoverage.subCompetencyId,
-      kDepth: snapshotTargetCoverage.kDepth,
-      uDepth: snapshotTargetCoverage.uDepth,
-      dDepth: snapshotTargetCoverage.dDepth,
+      subCompetencyId: snapshotCompetencyCoverage.competencyId,
+      kDepth: snapshotCompetencyCoverage.kDepth,
+      uDepth: snapshotCompetencyCoverage.uDepth,
+      dDepth: snapshotCompetencyCoverage.dDepth,
     })
-    .from(snapshotTargetCoverage)
-    .where(eq(snapshotTargetCoverage.snapshotId, snapshotId));
+    .from(snapshotCompetencyCoverage)
+    .where(eq(snapshotCompetencyCoverage.snapshotId, snapshotId));
 
   // snapshot_target_coverage has a 3-col PK incl. careerTargetId; a course scored
   // against multiple targets yields duplicate rows per subComp with identical depths
-  // — dedup by subCompetencyId to match computePrereqGaps.
+  // — dedup by subCompetencyId to match computePrereqGaps. (one row per competency
+  // since P0a; kept as a guard)
   const dedupedMeasured = Array.from(
     new Map(measuredRows.map(r => [r.subCompetencyId, r])).values(),
   );

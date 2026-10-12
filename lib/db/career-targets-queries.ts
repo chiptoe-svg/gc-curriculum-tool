@@ -1,5 +1,5 @@
 import { db } from './client';
-import { careerTargets, subCompetencies } from './schema';
+import { careerTargets, targetSubCompetencies } from './schema';
 import { eq, asc } from 'drizzle-orm';
 import type { CareerTarget } from '@/lib/domain/types';
 
@@ -16,9 +16,9 @@ export async function listTargets(): Promise<CareerTarget[]> {
   const ts = await db.select().from(careerTargets).orderBy(asc(careerTargets.displayOrder));
   const sc = await db
     .select()
-    .from(subCompetencies)
-    .where(eq(subCompetencies.retired, false))
-    .orderBy(asc(subCompetencies.displayOrder));
+    .from(targetSubCompetencies)
+    .where(eq(targetSubCompetencies.retired, false))
+    .orderBy(asc(targetSubCompetencies.displayOrder));
 
   return ts.map((t) => ({
     id: t.id,

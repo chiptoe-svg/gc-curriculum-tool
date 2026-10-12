@@ -5,7 +5,7 @@ import {
   courseMaterials,
   courseCaptureProfiles,
   courseCaptureSnapshots,
-  snapshotTargetCoverage,
+  snapshotCompetencyCoverage,
 } from '@/lib/db/schema';
 import { getWeaviateClient } from '@/lib/capture/weaviate-client';
 import {
@@ -42,7 +42,7 @@ export interface ResetOpts {
  *
  * Optional flags (independent of scope):
  *   - includeSnapshots: ALSO drops course_capture_snapshots + dependent rows
- *     (snapshot_target_coverage). Snapshots are the system of record;
+ *     (snapshot_competency_coverage). Snapshots are the system of record;
  *     dropping them is destructive.
  *
  * Shared by POST /api/capture/[code]/reset (course-scoped, faculty/scoped-
@@ -78,7 +78,8 @@ export async function runCourseReset(courseCode: string, opts: ResetOpts = {}): 
 
   // 3. Optional: snapshots.
   if (includeSnapshots) {
-    // snapshot_target_coverage has snapshotId FK; clear it first.
+    // Coverage rows have a snapshotId FK; clear them first (counted from the
+    // per-competency table, which holds the same rows as the old one in P0a).
     const snapshotIds = await db
       .select({ id: courseCaptureSnapshots.id })
       .from(courseCaptureSnapshots)
@@ -86,9 +87,9 @@ export async function runCourseReset(courseCode: string, opts: ResetOpts = {}): 
     let coverageDeleted = 0;
     for (const { id } of snapshotIds) {
       const rows = await db
-        .delete(snapshotTargetCoverage)
-        .where(eq(snapshotTargetCoverage.snapshotId, id))
-        .returning({ snapshotId: snapshotTargetCoverage.snapshotId });
+        .delete(snapshotCompetencyCoverage)
+        .where(eq(snapshotCompetencyCoverage.snapshotId, id))
+        .returning({ snapshotId: snapshotCompetencyCoverage.snapshotId });
       coverageDeleted += rows.length;
     }
     const snapshotsDeleted = await db

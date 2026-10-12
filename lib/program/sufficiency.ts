@@ -3,7 +3,7 @@
  *
  * For each career-target sub-competency, compares employer-evidenced DEMAND
  * (partner-weighted average of position K/U/D, per the 2026-06-07 design) against
- * curriculum ATTAINMENT (ordinal MAX of snapshot_target_coverage cells), per
+ * curriculum ATTAINMENT (ordinal MAX of snapshot_competency_coverage cells), per
  * dimension. The aggregation asymmetry is deliberate: demand is "typical market
  * expectation" (weighted mean), attainment is "the deepest a course actually
  * reached" (ordinal MAX — must never be averaged, like prereq-gaps).
@@ -29,7 +29,7 @@ export interface AttainmentContribution {
   subCompetencyId: string;
   k: number | null;
   u: number | null;
-  d: number; // d_depth is non-null in snapshot_target_coverage
+  d: number; // d_depth is non-null in snapshot_competency_coverage
 }
 
 export type SufficiencyStatus = 'met' | 'gap' | 'no_coverage' | 'no_demand';

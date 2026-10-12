@@ -6,7 +6,7 @@ import { hashIp } from '@/lib/ip-hash';
 
 // GET /api/program/coverage?slug=...
 // Returns the full matrix data: courses, targets, sub-competencies, cells.
-// Pre-computed; this is a pure read from snapshot_target_coverage.
+// Pre-computed; this is a pure read from target_coverage (view over snapshot_competency_coverage).
 export async function GET(req: Request): Promise<Response> {
   const url = new URL(req.url);
   const slug = url.searchParams.get('slug') ?? '';

@@ -20,6 +20,15 @@ vi.mock('@/lib/db/career-targets-queries', () => ({
   clearTargetCache: vi.fn(),
 }));
 
+vi.mock('@/lib/db/competency-catalog-queries', () => ({
+  nextDisplayOrderForTarget: vi.fn(async () => 7),
+  insertCompetencyForTarget: vi.fn(async (_tx: unknown, row: Record<string, unknown>) => ({
+    ...row,
+    retired: false,
+    updatedAt: new Date(),
+  })),
+}));
+
 // Mock the drizzle db client so PATCH/POST routes don't hit a real DB
 vi.mock('@/lib/db/client', () => ({
   db: {
@@ -54,6 +63,7 @@ vi.mock('@/lib/db/client', () => ({
         ]),
       })),
     })),
+    transaction: vi.fn(async (fn: (tx: unknown) => unknown) => fn({})),
   },
 }));
 
@@ -63,6 +73,7 @@ import { GET as getTargets } from '@/app/api/targets/route';
 import { GET as getTarget, PATCH as patchTarget } from '@/app/api/targets/[id]/route';
 import { POST as postSubComp } from '@/app/api/targets/[id]/sub-competencies/route';
 import * as queriesModule from '@/lib/db/career-targets-queries';
+import * as catalogModule from '@/lib/db/competency-catalog-queries';
 
 function makeRequest(method: string, body?: unknown, headers: Record<string, string> = {}): Request {
   return new Request('http://localhost:3000', {
@@ -194,6 +205,11 @@ describe('POST /api/targets/[id]/sub-competencies', () => {
     expect(res.status).toBe(201);
     const body = await res.json();
     expect(body).toHaveProperty('id');
+    expect(body).toMatchObject({ careerTargetId: 'production-operations', displayOrder: 7 });
+    expect(vi.mocked(catalogModule.insertCompetencyForTarget)).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ id: 'brand-voice', careerTargetId: 'production-operations', displayOrder: 7 }),
+    );
   });
 
   it('returns 400 when descriptors are missing', async () => {

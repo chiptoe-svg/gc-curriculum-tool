@@ -12,11 +12,11 @@
 import { and, asc, eq, isNull } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import {
-  snapshotTargetCoverage,
+  targetCoverage,
   courseCaptureSnapshots,
   courses,
   careerTargets,
-  subCompetencies,
+  targetSubCompetencies,
 } from '@/lib/db/schema';
 import type { SnapshotCellInput, ProductiveFailureConditions } from '@/lib/program/scaffolding';
 
@@ -78,9 +78,9 @@ export async function loadScaffoldingTarget(targetId: string): Promise<Scaffoldi
   // (same rule as the coverage-refresh routes).
   const subs = (await db
     .select()
-    .from(subCompetencies)
-    .where(eq(subCompetencies.careerTargetId, targetId))
-    .orderBy(asc(subCompetencies.displayOrder)))
+    .from(targetSubCompetencies)
+    .where(eq(targetSubCompetencies.careerTargetId, targetId))
+    .orderBy(asc(targetSubCompetencies.displayOrder)))
     .filter(s => !s.retired);
 
   // All latest (non-retired) snapshots, joined with their course for level
@@ -136,8 +136,8 @@ export async function loadScaffoldingTarget(targetId: string): Promise<Scaffoldi
   // Filter by target and then filter in TS to the relevant snapshot IDs.
   const cells = await db
     .select()
-    .from(snapshotTargetCoverage)
-    .where(eq(snapshotTargetCoverage.careerTargetId, targetId));
+    .from(targetCoverage)
+    .where(eq(targetCoverage.careerTargetId, targetId));
 
   const cellMap = new Map<string, typeof cells[number]>();
   for (const c of cells) {

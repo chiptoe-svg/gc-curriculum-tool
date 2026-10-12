@@ -24,7 +24,7 @@
  */
 
 import { db } from '@/lib/db/client';
-import { careerTargets, subCompetencies } from '@/lib/db/schema';
+import { careerTargets, targetSubCompetencies } from '@/lib/db/schema';
 import { eq, asc } from 'drizzle-orm';
 
 import { getLatestSnapshotByCourse } from '@/lib/db/capture-snapshots-queries';
@@ -147,17 +147,17 @@ async function main() {
 
     const subs = await db
       .select({
-        id: subCompetencies.id,
-        name: subCompetencies.name,
-        knowDescriptor: subCompetencies.knowDescriptor,
-        understandDescriptor: subCompetencies.understandDescriptor,
-        doDescriptor: subCompetencies.doDescriptor,
-        displayOrder: subCompetencies.displayOrder,
-        retired: subCompetencies.retired,
+        id: targetSubCompetencies.id,
+        name: targetSubCompetencies.name,
+        knowDescriptor: targetSubCompetencies.knowDescriptor,
+        understandDescriptor: targetSubCompetencies.understandDescriptor,
+        doDescriptor: targetSubCompetencies.doDescriptor,
+        displayOrder: targetSubCompetencies.displayOrder,
+        retired: targetSubCompetencies.retired,
       })
-      .from(subCompetencies)
-      .where(eq(subCompetencies.careerTargetId, target.id))
-      .orderBy(asc(subCompetencies.displayOrder));
+      .from(targetSubCompetencies)
+      .where(eq(targetSubCompetencies.careerTargetId, target.id))
+      .orderBy(asc(targetSubCompetencies.displayOrder));
 
     const activeSubs = subs.filter(s => !s.retired);
     console.log(`[pair] "${target.name}" (${activeSubs.length} active sub-comps, ${N_RUNS} runs)`);

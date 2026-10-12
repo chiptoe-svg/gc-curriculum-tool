@@ -3,9 +3,10 @@ import { z } from 'zod';
 import { db } from '@/lib/db/client';
 import { subCompetencies, prototypeTargetEdits } from '@/lib/db/schema';
 import { clearTargetCache } from '@/lib/db/career-targets-queries';
+import { getTargetCompetency } from '@/lib/db/competency-catalog-queries';
 import { invalidateCoverageForSubCompetency } from '@/lib/db/program-coverage-queries';
 import { hashIp } from '@/lib/ip-hash';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 const patchSchema = z.object({
   name: z.string().min(1).max(200).optional(),
@@ -33,12 +34,8 @@ export async function PATCH(
   }
 
   try {
-    // Get current state for audit log
-    const [current] = await db
-      .select()
-      .from(subCompetencies)
-      .where(and(eq(subCompetencies.id, scId), eq(subCompetencies.careerTargetId, id)))
-      .limit(1);
+    // The competency must be a member of this target (old row shape, for the audit log)
+    const current = await getTargetCompetency(id, scId);
 
     if (!current) {
       return NextResponse.json({ error: `sub-competency not found: ${scId}` }, { status: 404 });
@@ -50,11 +47,9 @@ export async function PATCH(
     if (parsed.data.understandDescriptor !== undefined) updates.understandDescriptor = parsed.data.understandDescriptor;
     if (parsed.data.doDescriptor !== undefined) updates.doDescriptor = parsed.data.doDescriptor;
 
-    const [updated] = await db
-      .update(subCompetencies)
-      .set(updates)
-      .where(and(eq(subCompetencies.id, scId), eq(subCompetencies.careerTargetId, id)))
-      .returning();
+    // Name and descriptors live on the catalog row
+    await db.update(subCompetencies).set(updates).where(eq(subCompetencies.id, scId));
+    const updated = await getTargetCompetency(id, scId);
 
     // Audit log
     const ipHash = hashIp(req);

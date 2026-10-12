@@ -7,7 +7,7 @@ export interface ComputeRippleInput {
   focalCourseCode: string;
   /** Edges where a DOWNSTREAM course relies on the focal course (prereqCourseCode === focalCourseCode). */
   downstreamEdges: RelyEdge[];
-  /** Baseline delivered attainment for the focal course (from snapshotTargetCoverage). */
+  /** Baseline delivered attainment for the focal course (from snapshotCompetencyCoverage). */
   baselineDelivered: DeliveredAttainment[];
   /** The change's predicted new depths, keyed to sub-competency. */
   predictedSubCompDepths: PredictedSubCompDepth[];

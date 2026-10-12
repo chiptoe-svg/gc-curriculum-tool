@@ -13,14 +13,25 @@ vi.mock('@/lib/db/client', () => ({
 }));
 
 vi.mock('@/lib/db/schema', () => ({
-  snapshotTargetCoverage: {
+  snapshotCompetencyCoverage: {
+    snapshotId: 'snapshot_id',
+    competencyId: 'competency_id',
+  },
+  targetCoverage: {
+    snapshotId: 'snapshot_id',
     careerTargetId: 'career_target_id',
     subCompetencyId: 'sub_competency_id',
-    snapshotId: 'snapshot_id',
   },
   courseCaptureSnapshots: {},
   careerTargets: { id: 'id', name: 'name', displayOrder: 'display_order' },
   subCompetencies: {
+    id: 'id',
+    name: 'name',
+    careerTargetId: 'career_target_id',
+    displayOrder: 'display_order',
+    retired: 'retired',
+  },
+  targetSubCompetencies: {
     id: 'id',
     name: 'name',
     careerTargetId: 'career_target_id',
@@ -95,11 +106,11 @@ describe('getMatrixData — retired sub-competencies (2026-10-06 target batch)',
     });
     const byTable = new Map<unknown, unknown[]>([
       [schema.careerTargets, [{ id: 't5', name: 'T5', displayOrder: 4 }]],
-      [schema.subCompetencies, [
+      [schema.targetSubCompetencies, [
         { id: 'kept', name: 'Kept', careerTargetId: 't5', displayOrder: 0, retired: false },
         { id: 'old', name: 'Old', careerTargetId: 't5', displayOrder: 1, retired: true },
       ]],
-      [schema.snapshotTargetCoverage, [cell('kept'), cell('old')]],
+      [schema.targetCoverage, [cell('kept'), cell('old')]],
     ]);
     (mod.db.select as unknown as ReturnType<typeof vi.fn>) = vi.fn(() => ({ from: (t: unknown) => byTable.get(t) ?? [] }));
 

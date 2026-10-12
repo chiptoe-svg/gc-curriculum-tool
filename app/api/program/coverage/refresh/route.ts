@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { isValidSlug } from '@/lib/slug';
 import { db } from '@/lib/db/client';
-import { eq } from 'drizzle-orm';
-import { careerTargets, subCompetencies } from '@/lib/db/schema';
+import { asc, eq } from 'drizzle-orm';
+import { careerTargets, targetSubCompetencies } from '@/lib/db/schema';
 import { getSnapshotById } from '@/lib/db/capture-snapshots-queries';
 import { listStalePairs, upsertCoverageCell } from '@/lib/db/program-coverage-queries';
 import { scoreSnapshotAgainstTarget } from '@/lib/ai/analyze/program-score-coverage';
@@ -35,10 +35,11 @@ export async function POST(req: Request): Promise<Response> {
   // Pre-fetch target context + sub-competencies for each unique target
   // ID — the scoring helper needs them per call.
   const uniqueTargetIds = Array.from(new Set(stale.map(p => p.careerTargetId)));
-  const targetCache = new Map<string, { target: typeof careerTargets.$inferSelect; subs: Array<typeof subCompetencies.$inferSelect> }>();
+  const targetCache = new Map<string, { target: typeof careerTargets.$inferSelect; subs: Array<typeof targetSubCompetencies.$inferSelect> }>();
   for (const tid of uniqueTargetIds) {
     const [t] = await db.select().from(careerTargets).where(eq(careerTargets.id, tid)).limit(1);
-    const subs = await db.select().from(subCompetencies).where(eq(subCompetencies.careerTargetId, tid));
+    const subs = await db.select().from(targetSubCompetencies).where(eq(targetSubCompetencies.careerTargetId, tid))
+      .orderBy(asc(targetSubCompetencies.displayOrder), asc(targetSubCompetencies.id));
     if (t) targetCache.set(tid, { target: t, subs });
   }
 
@@ -104,7 +105,10 @@ export async function POST(req: Request): Promise<Response> {
       });
 
       // Upsert every cell from the response.
+      // Only competencies that belong to this target (cells are per competency since P0a).
+      const memberIds = new Set(targetCtx.subs.map(s => s.id));
       for (const cell of result.cells) {
+        if (!memberIds.has(cell.sub_competency_id)) continue;
         await upsertCoverageCell({
           snapshotId: pair.snapshotId,
           careerTargetId: pair.careerTargetId,
@@ -134,7 +138,7 @@ export async function POST(req: Request): Promise<Response> {
   const failedCount = results.length - okCount;
 
   // Re-fire wiki-update for each DISTINCT snapshot that just got fresh coverage.
-  // The competency/target wiki pages derive from snapshot_target_coverage, so
+  // The competency/target wiki pages derive from snapshot_competency_coverage, so
   // they can't generate at snapshot-creation time (wiki-update fires before
   // scoring). Now that the cells exist, regenerate once per snapshot. Deduped,
   // fire-and-forget (non-blocking; never fails the scoring response).
