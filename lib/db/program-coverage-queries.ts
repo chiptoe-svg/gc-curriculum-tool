@@ -167,21 +167,26 @@ export async function getAllCells(): Promise<CoverageCellRow[]> {
  *       passed in by run-impact; inherits the fix transitively.
  *     - lib/db/scaffolding-queries.ts (loadScaffoldingTarget) — already filtered
  *       scope='gc' AND status='offered' (program-visible) before Task 8b; a
- *       builds_to_career condition added in Task 8b fix round 1 is reverted by
- *       this decision, restoring its original (already-correct) scope.
+ *       builds_to_career condition added in Task 8b (commit fd0daf0) is
+ *       reverted (removed) by this fix round 1 decision, restoring its
+ *       original (already-correct) scope.
  *     - lib/ai/wiki/update.ts (loadTargetSubstrate — the TARGET wiki page's
  *       coverageRollup/contributingCourses) — previously (pre-Task 8b) joined
  *       only courseCaptureSnapshots (retiredAt IS NULL), with NO courses join
  *       at all — even an external/sandbox cell would have rolled up. FIXED
- *       (Task 8b): joined `courses`, filtered scope/status (program-visible);
- *       a builds_to_career condition added in fix round 1 is removed by this
- *       decision.
+ *       (Task 8b): joined `courses`, filtered scope/status (program-visible)
+ *       AND builds_to_career=true; the builds_to_career condition is removed
+ *       by this fix round 1 decision, leaving the scope/status filter.
  *
  *   PER-COMPETENCY / PER-COURSE VIEWS — correctly include every
  *   program-visible course; no builds_to_career filter, by design (A2):
  *     - lib/ai/wiki/update.ts (loadCompetencySubstrate — the COMPETENCY wiki page)
  *       — reads snapshot_competency_coverage for one competency across every
- *       non-retired snapshot. Correct as-is.
+ *       non-retired snapshot. Had NO course filter at all before fix round 1
+ *       (a real pre-existing gap, not a builds_to_career question); FIXED
+ *       (fix round 1): joined `courses`, filtered scope='gc' AND
+ *       status='offered' (program-visible) so a sandbox/external snapshot
+ *       can never reach a competency page.
  *     - lib/ai/wiki/update.ts (loadCompetencyLinksForSnapshot) — per-snapshot
  *       (course page's competency links). Correct as-is.
  *     - lib/ai/explore/run-impact.ts (resolveSubCompetencyDepths,
@@ -229,8 +234,11 @@ export interface SnapshotToScore {
  * pooled connection and would never see an uncommitted change made on `tx`.
  */
 export async function listStaleSnapshots(executor: Tx | typeof db = db): Promise<SnapshotToScore[]> {
-  // Pick the latest non-retired snapshot per (course, instructor) — only
-  // courses flagged builds_to_career. Per-instructor rows (A8 decision,
+  // Pick the latest non-retired snapshot per (course, instructor) — every
+  // PROGRAM-VISIBLE course (A2: scoring scope widened in Task 8b from
+  // builds_to_career = true to PROGRAM_VISIBLE_SQL below; this comment used
+  // to say "only courses flagged builds_to_career," which stopped being
+  // true the moment that widening landed). Per-instructor rows (A8 decision,
   // 2026-06-12): the same code taught by different faculty is scored as
   // separate matrix rows rather than newest-capture-wins, so variance stays
   // visible. NULL instructor_name groups as its own row (pre-0027 snapshots
@@ -313,11 +321,29 @@ export interface MatrixCoverageCell {
   model: string;
 }
 
+/**
+ * Course code/title for a snapshot that may or may not be a matrix ROW
+ * (fix round 2, 2026-10-12): `cells` now carries every program-visible
+ * course's snapshots (owner decision), including off-path ones and
+ * superseded (non-latest) ones for on-path courses — neither of those is
+ * in `courses` (matrix rows: builds_to_career-only, latest-per-instructor).
+ * A consumer that needs "which course did this cell's snapshot belong to"
+ * (e.g. coverage_for_target) must resolve through this, not through
+ * `courses`, or it prints '?' for every cell outside the matrix's own rows.
+ */
+export interface SnapshotCourseInfo {
+  snapshotId: string;
+  courseCode: string;
+  courseTitle: string;
+}
+
 export interface MatrixData {
   courses: MatrixCourse[];
   targets: Array<{ id: string; name: string; displayOrder: number }>;
   subCompetencies: MatrixSubCompetency[];
   cells: MatrixCoverageCell[];
+  /** Course code/title for every snapshot id that can appear in `cells` — see SnapshotCourseInfo. */
+  snapshotCourses: SnapshotCourseInfo[];
 }
 
 /**
@@ -441,15 +467,27 @@ export async function getMatrixData(): Promise<MatrixData> {
   // unrestricted query is used here (a first fix-round-1 draft wrongly
   // reused `courses`'s snapshot ids, which would have narrowed that window —
   // caught before merge, not shipped).
+  // Also carries course_code/title (fix round 2, 2026-10-12): a cell's
+  // snapshot is frequently NOT one of `courses` (matrix rows) — it may be
+  // off-path, or a superseded (non-latest) snapshot of an on-path course —
+  // so a consumer resolving "which course is this cell's snapshot" (e.g.
+  // coverage_for_target in graph-tools.ts) must look here, in
+  // `snapshotCourses` below, not in `courses`, or it prints '?' for every
+  // cell outside the matrix's own rows (measured on scratch: 88 of 188
+  // coverage_for_target entries, 64 off-path + 24 superseded on-path).
   const programVisibleSnapshotsRaw = await db.execute(sql`
-    SELECT s.id
+    SELECT s.id, s.course_code, c.title
     FROM ${courseCaptureSnapshots} s
     JOIN courses c ON c.code = s.course_code
     WHERE ${PROGRAM_VISIBLE_SQL}
   `);
-  const programVisibleSnapshotIds = new Set(
-    (programVisibleSnapshotsRaw.rows as Array<{ id: string }>).map(r => r.id),
-  );
+  const programVisibleSnapshotRows = programVisibleSnapshotsRaw.rows as Array<{ id: string; course_code: string; title: string }>;
+  const programVisibleSnapshotIds = new Set(programVisibleSnapshotRows.map(r => r.id));
+  const snapshotCourses: SnapshotCourseInfo[] = programVisibleSnapshotRows.map(r => ({
+    snapshotId: r.id,
+    courseCode: r.course_code,
+    courseTitle: r.title,
+  }));
   const cells = (await getAllCells()).filter(c => activeSubIds.has(c.subCompetencyId) && programVisibleSnapshotIds.has(c.snapshotId));
 
   return {
@@ -476,5 +514,6 @@ export async function getMatrixData(): Promise<MatrixData> {
       rationale: c.rationale,
       model: c.model,
     })),
+    snapshotCourses,
   };
 }

@@ -491,9 +491,9 @@ export async function loadTargetSubstrate(targetId: string, executor: Tx | typeo
   // the program matrix's cells and scaffolding — it counts every
   // PROGRAM-VISIBLE course (scope='gc' AND status='offered'), same as
   // scoring (listStaleSnapshots); NOT restricted to builds_to_career (a
-  // builds_to_career condition added here in fix round 1 is removed by this
-  // decision — off-path GC/offered courses are included, external/sandbox/
-  // non-offered are excluded). Previously (pre-Task 8b) this joined only
+  // builds_to_career condition added here in Task 8b, commit fd0daf0, is
+  // removed by this fix round 1 decision — off-path GC/offered courses are
+  // included, external/sandbox/non-offered are excluded). Previously (pre-Task 8b) this joined only
   // courseCaptureSnapshots (retiredAt IS NULL) with no course filter at
   // all, so even an external/sandbox course's cell would have rolled up
   // into every target that uses its competency.

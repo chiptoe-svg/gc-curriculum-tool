@@ -109,7 +109,8 @@ export async function loadScaffoldingTarget(targetId: string, executor: Tx | typ
     // 1 ruling A2): career views count every PROGRAM-VISIBLE course, same as
     // scoring (listStaleSnapshots) — not restricted to builds_to_career. This
     // was already the scope here before Task 8b; a builds_to_career filter
-    // added in fix round 1 is reverted by this decision.
+    // added in Task 8b (commit fd0daf0) is reverted (removed) by this fix
+    // round 1 decision.
     .where(and(
       isNull(courseCaptureSnapshots.retiredAt),
       eq(courses.scope, 'gc'),
