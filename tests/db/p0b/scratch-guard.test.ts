@@ -6,7 +6,7 @@
 // against them.
 import { describe, it, expect, afterEach } from 'vitest';
 import { isScratchDb, isCharacterizationDb } from '../p0a/scratch-guard';
-import { isP0bScratchDb } from './scratch-guard';
+import { isP0bScratchDb, isP0bPreDb, isP0bMainDb } from './scratch-guard';
 
 const ORIGINAL = process.env.DATABASE_URL;
 afterEach(() => {
@@ -81,5 +81,38 @@ describe('isP0bScratchDb', () => {
   it('rejects undefined/garbage DATABASE_URL', () => {
     expect(withUrl(undefined, isP0bScratchDb)).toBe(false);
     expect(withUrl('not a url', isP0bScratchDb)).toBe(false);
+  });
+});
+
+// Fix round 1 (2026-10-12): the migration-rehearsal test used to gate on
+// isP0bScratchDb(), which accepts both clones — but the main scratch was
+// migrated to post-0057 by Task 3 Step 4, so running the migration body
+// against it now fails every case instead of skipping. isP0bPreDb() /
+// isP0bMainDb() narrow to exactly one clone each.
+describe('isP0bPreDb (migration-rehearsal gate — gc_curriculum_p0b_pre only)', () => {
+  it('accepts only gc_curriculum_p0b_pre', () => {
+    expect(withUrl('postgres://u:p@h:5432/gc_curriculum_p0b_pre', isP0bPreDb)).toBe(true);
+  });
+
+  it('rejects the main scratch and everything else', () => {
+    expect(withUrl('postgres://u:p@h:5432/gc_curriculum_p0b_scratch', isP0bPreDb)).toBe(false);
+    expect(withUrl('postgres://u:p@h:5432/gc_curriculum_p0a_scratch', isP0bPreDb)).toBe(false);
+    expect(withUrl('postgres://u:p@h:5432/gc_curriculum', isP0bPreDb)).toBe(false);
+    expect(withUrl(undefined, isP0bPreDb)).toBe(false);
+    expect(withUrl('not a url', isP0bPreDb)).toBe(false);
+  });
+});
+
+describe('isP0bMainDb (post-0057 gate — gc_curriculum_p0b_scratch only)', () => {
+  it('accepts only gc_curriculum_p0b_scratch', () => {
+    expect(withUrl('postgres://u:p@h:5432/gc_curriculum_p0b_scratch', isP0bMainDb)).toBe(true);
+  });
+
+  it('rejects the pre clone and everything else', () => {
+    expect(withUrl('postgres://u:p@h:5432/gc_curriculum_p0b_pre', isP0bMainDb)).toBe(false);
+    expect(withUrl('postgres://u:p@h:5432/gc_curriculum_p0a_scratch', isP0bMainDb)).toBe(false);
+    expect(withUrl('postgres://u:p@h:5432/gc_curriculum', isP0bMainDb)).toBe(false);
+    expect(withUrl(undefined, isP0bMainDb)).toBe(false);
+    expect(withUrl('not a url', isP0bMainDb)).toBe(false);
   });
 });

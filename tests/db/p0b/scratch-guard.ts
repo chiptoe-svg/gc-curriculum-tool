@@ -19,3 +19,33 @@ export function isP0bScratchDb(): boolean {
     return false;
   }
 }
+
+/**
+ * Gate for anything that needs the PRE-0057 clone specifically (the
+ * migration rehearsal test). gc_curriculum_p0b_pre stays pre-0057 forever
+ * (controller ruling, Task 3 fix round 1) — gc_curriculum_p0b_scratch does
+ * NOT satisfy this, even though isP0bScratchDb() accepts both: the main
+ * scratch was migrated to post-0057 by Task 3 Step 4, so running the
+ * migration body against it trips its own "already applied" guard.
+ */
+export function isP0bPreDb(): boolean {
+  try {
+    return new URL(process.env.DATABASE_URL ?? '').pathname === `/${SCRATCH_DB_PRE}`;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Gate for anything that needs the MAIN (post-0057) clone specifically
+ * (e.g. retireCompetencyFromTarget tests, which need the merged, shared
+ * career_target_requirements rows that only exist after 0057).
+ * gc_curriculum_p0b_pre does NOT satisfy this.
+ */
+export function isP0bMainDb(): boolean {
+  try {
+    return new URL(process.env.DATABASE_URL ?? '').pathname === `/${SCRATCH_DB}`;
+  } catch {
+    return false;
+  }
+}

@@ -97,6 +97,14 @@ export async function setCompetencyOrderInTarget(
  * target. If no other target still uses the competency afterward, the
  * catalog row itself is retired; otherwise it stays active for the
  * remaining targets.
+ *
+ * Self-correcting (fix round 1, 2026-10-12): refuses — and changes
+ * nothing — if careerTargetId isn't currently a member of the competency,
+ * instead of silently deleting zero rows and branching on a stale
+ * pre-delete count (the old version could wrongly retire a competency that
+ * still had its one real target intact, because a no-op delete for a bogus
+ * target id still satisfied "<= 1 target before"). The post-delete
+ * membership is re-read rather than inferred from the pre-delete count.
  */
 export async function retireCompetencyFromTarget(
   tx: Tx,
@@ -104,10 +112,14 @@ export async function retireCompetencyFromTarget(
   competencyId: string,
 ): Promise<'retired' | 'removed-from-target'> {
   const targetsBefore = await targetIdsForCompetency(tx, competencyId);
+  if (!targetsBefore.includes(careerTargetId)) {
+    throw new Error(`retireCompetencyFromTarget: ${careerTargetId} is not a member of ${competencyId}`);
+  }
   await tx
     .delete(careerTargetRequirements)
     .where(and(eq(careerTargetRequirements.careerTargetId, careerTargetId), eq(careerTargetRequirements.competencyId, competencyId)));
-  if (targetsBefore.length <= 1) {
+  const targetsAfter = await targetIdsForCompetency(tx, competencyId);
+  if (targetsAfter.length === 0) {
     await tx.update(subCompetencies).set({ retired: true, updatedAt: new Date() }).where(eq(subCompetencies.id, competencyId));
     return 'retired';
   }

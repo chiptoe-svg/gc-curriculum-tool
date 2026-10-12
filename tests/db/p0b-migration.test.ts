@@ -1,7 +1,10 @@
 // @vitest-environment node
-// Migration 0057 (P0b) rehearsal. Gated on a P0b clone (either
-// gc_curriculum_p0b_scratch or gc_curriculum_p0b_pre — isP0bScratchDb()
-// accepts both), but every test runs 0057's body inside its own
+// Migration 0057 (P0b) rehearsal. Gated on gc_curriculum_p0b_pre
+// specifically (isP0bPreDb(), not isP0bScratchDb()) — fix round 1,
+// 2026-10-12: the main scratch gc_curriculum_p0b_scratch was migrated to
+// post-0057 by Task 3 Step 4 and stays there, so running the migration
+// body against it now trips its own "already applied" guard on every
+// case. Every test here runs 0057's body inside its own
 // BEGIN … ROLLBACK, so it is safe to run against gc_curriculum_p0b_pre,
 // which must stay pre-0057 forever. Never leaves any mutation behind.
 //
@@ -13,7 +16,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Pool, type PoolClient } from 'pg';
-import { isP0bScratchDb } from './p0b/scratch-guard';
+import { isP0bPreDb } from './p0b/scratch-guard';
 
 const ROOT = resolve(__dirname, '../..');
 const MIGRATION_RAW = readFileSync(resolve(ROOT, 'drizzle/0057_competency_catalog_p0b.sql'), 'utf8');
@@ -24,7 +27,7 @@ const MIGRATION_BODY = MIGRATION_RAW
   .filter((line) => line.trim() !== 'BEGIN;' && line.trim() !== 'COMMIT;')
   .join('\n');
 
-const RUN = isP0bScratchDb();
+const RUN = isP0bPreDb();
 
 // --- Merge plan, verbatim from the migration (owner decisions 2026-10-12). ---
 const SURVIVOR_OF: Record<string, string> = {

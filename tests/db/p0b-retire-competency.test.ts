@@ -2,11 +2,9 @@
 // retireCompetencyFromTarget (P0b Task 3). Needs the POST-0057 schema
 // (career_target_requirements carrying the merge survivors' multi-target
 // membership, sub_competencies with no deprecated mirror columns), so this
-// is gated on isP0bScratchDb() AND the exact database name
-// gc_curriculum_p0b_scratch — NOT gc_curriculum_p0b_pre, which stays
-// pre-0057 forever (controller ruling, Task 3). isP0bScratchDb() alone
-// accepts either clone; the extra pathname check narrows to the one that's
-// actually migrated.
+// is gated on isP0bMainDb() — NOT gc_curriculum_p0b_pre, which stays
+// pre-0057 forever (controller ruling, Task 3 fix round 1 — isP0bMainDb()
+// replaces the local exact-name check this file used to carry itself).
 import { describe, it, expect } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
@@ -16,17 +14,9 @@ import {
   insertCompetencyForTarget,
   retireCompetencyFromTarget,
 } from '@/lib/db/competency-catalog-queries';
-import { isP0bScratchDb, SCRATCH_DB } from './p0b/scratch-guard';
+import { isP0bMainDb } from './p0b/scratch-guard';
 
-function isMainP0bScratch(): boolean {
-  if (!isP0bScratchDb()) return false;
-  try {
-    return new URL(process.env.DATABASE_URL ?? '').pathname === `/${SCRATCH_DB}`;
-  } catch {
-    return false;
-  }
-}
-const RUN = isMainP0bScratch();
+const RUN = isP0bMainDb();
 
 class Rollback extends Error {}
 async function inRolledBackTx(fn: (tx: Tx) => Promise<void>): Promise<void> {
@@ -86,6 +76,30 @@ describe.skipIf(!RUN)('retireCompetencyFromTarget (P0b, post-0057)', () => {
 
       const reqs = await tx.select().from(careerTargetRequirements).where(eq(careerTargetRequirements.competencyId, created.id));
       expect(reqs).toEqual([]);
+    });
+  });
+
+  it('throws when careerTargetId is not a current member of the competency, and changes nothing', async () => {
+    const [t1, t2] = await db.select({ id: careerTargets.id }).from(careerTargets).limit(2);
+    await inRolledBackTx(async (tx) => {
+      const created = await insertCompetencyForTarget(tx, {
+        id: 'zz-p0b-retire-non-member',
+        careerTargetId: t1!.id,
+        name: 'ZZ P0b non-member fixture',
+        knowDescriptor: 'k',
+        understandDescriptor: 'u',
+        doDescriptor: 'd',
+        displayOrder: 999,
+      });
+
+      // t2 is a real career target, but never a member of this competency.
+      await expect(retireCompetencyFromTarget(tx, t2!.id, created.id)).rejects.toThrow(/not a member/);
+
+      const reqs = await tx.select().from(careerTargetRequirements).where(eq(careerTargetRequirements.competencyId, created.id));
+      expect(reqs.map(r => r.careerTargetId)).toEqual([t1!.id]);
+
+      const [sc] = await tx.select({ retired: subCompetencies.retired }).from(subCompetencies).where(eq(subCompetencies.id, created.id));
+      expect(sc!.retired).toBe(false);
     });
   });
 });
