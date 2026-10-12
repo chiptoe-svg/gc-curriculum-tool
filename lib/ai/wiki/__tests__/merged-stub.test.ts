@@ -30,18 +30,26 @@ const TS = '2026-10-12T00:00:00.000Z';
 
 describe('buildMergedStubPage (pure)', () => {
   it('uses the same path/slug convention as a live competency page, so the stub replaces it', () => {
-    const page = buildMergedStubPage('gc-production-literacy', 'domain-knowledge', 'Production domain knowledge', { timestamp: TS });
+    const page = buildMergedStubPage('gc-production-literacy', 'domain-knowledge', 'Production domain knowledge', 'GC production literacy', { timestamp: TS });
     expect(page.path).toBe('competencies/gc-production-literacy.md');
   });
 
   it('names and links the survivor in the body', () => {
-    const page = buildMergedStubPage('gc-production-literacy', 'domain-knowledge', 'Production domain knowledge', { timestamp: TS });
+    const page = buildMergedStubPage('gc-production-literacy', 'domain-knowledge', 'Production domain knowledge', 'GC production literacy', { timestamp: TS });
     expect(page.content).toContain('[[domain-knowledge|Production domain knowledge]]');
     expect(page.content).toContain('Production domain knowledge');
   });
 
+  it("titles the stub with the retired competency's real name, not a slug title-case (Task 6 controller ruling)", () => {
+    const page = buildMergedStubPage('gc-production-literacy', 'domain-knowledge', 'Production domain knowledge', 'GC production literacy', { timestamp: TS });
+    expect(page.content).toMatch(/^title: "GC production literacy"$/m);
+    expect(page.content).toContain('# GC production literacy');
+    // Never falls back to the slug-derived title ("Gc Production Literacy").
+    expect(page.content).not.toContain('Gc Production Literacy');
+  });
+
   it('carries complete OKF frontmatter (type, title, description, slug, tags, timestamp, resource)', () => {
-    const page = buildMergedStubPage('domain-grounding', 'domain-knowledge', 'Production domain knowledge', { timestamp: TS });
+    const page = buildMergedStubPage('domain-grounding', 'domain-knowledge', 'Production domain knowledge', 'Domain grounding', { timestamp: TS });
     for (const key of ['type', 'title', 'description', 'slug', 'tags', 'timestamp', 'resource']) {
       expect(page.content).toMatch(new RegExp(`^${key}:`, 'm'));
     }
@@ -50,8 +58,8 @@ describe('buildMergedStubPage (pure)', () => {
   });
 
   it('is deterministic given the same inputs', () => {
-    const a = buildMergedStubPage('timeline-management', 'project-management', 'Project management', { timestamp: TS });
-    const b = buildMergedStubPage('timeline-management', 'project-management', 'Project management', { timestamp: TS });
+    const a = buildMergedStubPage('timeline-management', 'project-management', 'Project management', 'Timeline management', { timestamp: TS });
+    const b = buildMergedStubPage('timeline-management', 'project-management', 'Project management', 'Timeline management', { timestamp: TS });
     expect(a).toEqual(b);
   });
 
@@ -59,7 +67,7 @@ describe('buildMergedStubPage (pure)', () => {
     const root = await mkdtemp(join(tmpdir(), 'wiki-merged-stub-'));
     try {
       await mkdir(join(root, 'competencies'), { recursive: true });
-      const stub = buildMergedStubPage('timeline-management', 'project-management', 'Project management', { timestamp: TS });
+      const stub = buildMergedStubPage('timeline-management', 'project-management', 'Project management', 'Timeline management', { timestamp: TS });
       await writeFile(join(root, 'competencies', 'timeline-management.md'), stub.content);
       // Dummy survivor page so the stub's [[project-management]] wikilink
       // resolves — without this, lintWiki would (correctly) report a
@@ -98,7 +106,7 @@ describe('writeMergedStub (thin writer)', () => {
   afterEach(() => vi.clearAllMocks());
 
   it('writes exactly one page through the existing write path (writeAndPush), no LLM call', async () => {
-    await writeMergedStub('gc-production-literacy', 'domain-knowledge', 'Production domain knowledge');
+    await writeMergedStub('gc-production-literacy', 'domain-knowledge', 'Production domain knowledge', 'GC production literacy');
 
     expect(writeAndPush).toHaveBeenCalledTimes(1);
     const commit = (writeAndPush as ReturnType<typeof vi.fn>).mock.calls[0]![0] as {
@@ -109,22 +117,23 @@ describe('writeMergedStub (thin writer)', () => {
     expect(commit.pages).toHaveLength(1);
     expect(commit.pages[0]!.path).toBe('competencies/gc-production-literacy.md');
     expect(commit.pages[0]!.content).toContain('[[domain-knowledge|Production domain knowledge]]');
+    expect(commit.pages[0]!.content).toMatch(/^title: "GC production literacy"$/m);
 
     // No LLM call: the provider factory was never invoked.
     expect(getProviderForFunction).not.toHaveBeenCalled();
   });
 
   it('returns the sha from the write path', async () => {
-    const result = await writeMergedStub('domain-grounding', 'domain-knowledge', 'Production domain knowledge');
+    const result = await writeMergedStub('domain-grounding', 'domain-knowledge', 'Production domain knowledge', 'Domain grounding');
     expect(result).toEqual({ sha: 'deadbeef' });
   });
 
   it('builds the page via buildMergedStubPage (same content shape)', async () => {
-    await writeMergedStub('timeline-management', 'project-management', 'Project management');
+    await writeMergedStub('timeline-management', 'project-management', 'Project management', 'Timeline management');
     const commit = (writeAndPush as ReturnType<typeof vi.fn>).mock.calls[0]![0] as {
       pages: Array<{ path: string; content: string }>;
     };
-    const expected = buildMergedStubPage('timeline-management', 'project-management', 'Project management', {
+    const expected = buildMergedStubPage('timeline-management', 'project-management', 'Project management', 'Timeline management', {
       timestamp: commit.pages[0]!.content.match(/^timestamp: (.+)$/m)![1],
     });
     expect(commit.pages[0]).toEqual(expected);

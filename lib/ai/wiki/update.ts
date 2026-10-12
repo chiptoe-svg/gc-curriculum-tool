@@ -1425,14 +1425,6 @@ export function regenerateWikiInBackground(snapshotId: string, reason: string): 
 // runs at import time.
 // ---------------------------------------------------------------------------
 
-/** Title-case a hyphenated slug, upper-casing short (≤2 char) segments as acronyms. */
-function titleFromSlug(slug: string): string {
-  return slug
-    .split('-')
-    .map(w => (w.length <= 2 ? w.toUpperCase() : w[0]!.toUpperCase() + w.slice(1)))
-    .join(' ');
-}
-
 /**
  * Pure: build the "merged into" stub page for a retired-and-merged
  * competency. Follows the same path/slug convention as a live competency
@@ -1441,14 +1433,21 @@ function titleFromSlug(slug: string): string {
  * `competencies` schema's required "Across the program" section so
  * `pnpm wiki:lint` accepts it. No I/O, no AI — `opts.timestamp` defaults to
  * "now" only for the convenience of a real caller; tests pass it explicitly.
+ *
+ * `oldName` (Task 6 controller ruling) is the retired competency's real
+ * `sub_competencies.name` — the stub's title, NOT the slug title-cased.
+ * The slug-derived title that this used to compute from `oldId` alone could
+ * disagree with the competency's actual name (e.g. an acronym or multi-word
+ * name a slug doesn't round-trip), so the caller must pass the real name.
  */
 export function buildMergedStubPage(
   oldId: string,
   survivorId: string,
   survivorName: string,
+  oldName: string,
   opts: { timestamp?: string } = {},
 ): WikiPageWrite {
-  const title = titleFromSlug(oldId);
+  const title = oldName;
   const timestamp = opts.timestamp ?? new Date().toISOString();
   const survivorLink = `[[${survivorId}|${survivorName}]]`;
   const lines = [
@@ -1487,8 +1486,9 @@ export async function writeMergedStub(
   oldId: string,
   survivorId: string,
   survivorName: string,
+  oldName: string,
 ): Promise<{ sha: string }> {
-  const page = buildMergedStubPage(oldId, survivorId, survivorName);
+  const page = buildMergedStubPage(oldId, survivorId, survivorName, oldName);
   const logEntry = `${new Date().toISOString()} — merged-stub: ${oldId} → ${survivorId}`;
   return writeAndPush({
     pages: [page],
