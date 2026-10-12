@@ -140,9 +140,9 @@ representative AS (
 )
 INSERT INTO faculty_flags (target_kind, course_code, career_target_id, sub_competency_id, note, flagged_by, flagged_context)
 SELECT 'coverage_cell'::flag_target_kind, r.course_code, 'production-operations', r.survivor,
-       'Before the P0b merge into ' || r.survivor || ', the merged competencies disagreed by 2+ levels for this course: '
-         || r.detail || '. Largest gap across ' || cs.n_captures || ' captures: ' || cs.max_gap
-         || '. Re-scored against the merged descriptor; please check the new reading.',
+       'Before the P0b merge into ' || r.survivor || ', the merged competencies differed by ' || cs.max_gap
+         || ' levels in at least one capture of this course (largest gap across ' || cs.n_captures || ' captures). Latest capture: '
+         || r.detail || '. Re-scored against the merged descriptor; please check the new reading.',
        'P0b merge (system)',
        jsonb_build_object('k', sc.k_depth, 'u', sc.u_depth, 'd', sc.d_depth,
                            'matchedCompetency', sc.matched_competency, 'rationale', sc.rationale)

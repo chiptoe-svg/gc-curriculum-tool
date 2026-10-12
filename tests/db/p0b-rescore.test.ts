@@ -18,6 +18,8 @@ import { courses, courseCaptureSnapshots, snapshotCompetencyCoverage } from '@/l
 import {
   main,
   runRescore,
+  shouldWriteWiki,
+  LIVE_DB_NAME,
   SURVIVOR_IDS,
   type RescoreDeps,
 } from '@/scripts/migrations/2026-10-12-p0b-rescore';
@@ -81,6 +83,26 @@ function mockDeps(overrides: Partial<RescoreDeps> = {}): RescoreDeps {
   };
 }
 
+// Pure decision-function tests — no DB connection of any kind, so these run
+// regardless of RUN/isP0bMainDb and never touch (or need to touch) a real
+// 'gc_curriculum' connection. This is the "unit-level test of the decision
+// function" for the live-named case the hard rules call for.
+describe('shouldWriteWiki (fix: wiki writes only against --expect-db gc_curriculum)', () => {
+  it('is true only for the live db name with --skip-wiki not passed', () => {
+    expect(shouldWriteWiki({ apply: true, expectDb: LIVE_DB_NAME, skipWiki: false })).toBe(true);
+  });
+
+  it('--skip-wiki remains an explicit opt-out even against the live db name', () => {
+    expect(shouldWriteWiki({ apply: true, expectDb: LIVE_DB_NAME, skipWiki: true })).toBe(false);
+  });
+
+  it('is false for any non-live --expect-db, regardless of --skip-wiki (the forgotten-flag case)', () => {
+    expect(shouldWriteWiki({ apply: true, expectDb: 'gc_curriculum_p0b_scratch', skipWiki: false })).toBe(false);
+    expect(shouldWriteWiki({ apply: true, expectDb: 'gc_curriculum_p0b_scratch', skipWiki: true })).toBe(false);
+    expect(shouldWriteWiki({ apply: true, expectDb: 'gc_curriculum_p0b_pre', skipWiki: false })).toBe(false);
+  });
+});
+
 describe.skipIf(!RUN)('p0b rescore script (P0b Task 7, post-0057)', () => {
   afterEach(cleanupFixture);
 
@@ -133,18 +155,19 @@ describe.skipIf(!RUN)('p0b rescore script (P0b Task 7, post-0057)', () => {
     expect(deps.regenerateWikiInBackground).not.toHaveBeenCalled();
   });
 
-  it('--apply without --skip-wiki writes the 3 merged-away stubs and fires one wiki regen per re-scored snapshot', async () => {
+  it('--apply against scratch WITHOUT --skip-wiki still makes 0 wiki calls — only --expect-db gc_curriculum writes wiki', async () => {
     const snapshotId = await newFixtureSnapshot();
     // Scoped to ONLY the fixture snapshot — see note above.
     const deps = mockDeps({ findInScopeSnapshots: vi.fn().mockResolvedValue([{ snapshotId, courseCode: TEST_CODE }]) });
 
-    await runRescore({ apply: true, expectDb: SCRATCH_DB, skipWiki: false }, deps);
+    // SCRATCH_DB !== LIVE_DB_NAME, so even with skipWiki left false (forgetting
+    // --skip-wiki, the exact scenario this guard exists for), no wiki write may happen.
+    expect(SCRATCH_DB).not.toBe(LIVE_DB_NAME);
+    const outcome = await runRescore({ apply: true, expectDb: SCRATCH_DB, skipWiki: false }, deps);
 
-    expect(deps.writeMergedStub).toHaveBeenCalledTimes(3);
-    const stubCalls = (deps.writeMergedStub as ReturnType<typeof vi.fn>).mock.calls.map((c: unknown[]) => c[0]);
-    expect(stubCalls.sort()).toEqual(['domain-grounding', 'gc-production-literacy', 'timeline-management']);
-
-    expect(deps.regenerateWikiInBackground).toHaveBeenCalledWith(snapshotId, expect.any(String));
+    expect(outcome.wikiWritesEnabled).toBe(false);
+    expect(deps.writeMergedStub).not.toHaveBeenCalled();
+    expect(deps.regenerateWikiInBackground).not.toHaveBeenCalled();
   });
 
   it('a wrong --expect-db exits non-zero before any read', async () => {

@@ -35,10 +35,13 @@
  *     one call per snapshot, two competencies each).
  *   - --apply checks checkDailyCap() before every scoring call and stops
  *     cleanly (reporting partial progress) if the cap trips.
- *   - --skip-wiki skips BOTH the merged-away "merged into" stub writes
- *     (Task 6: writeMergedStub) and every regenerateWikiInBackground call —
- *     the wiki repo is a real git repo that pushes, so scratch runs (this
- *     task) MUST pass --skip-wiki; only the live run (Task 11) omits it.
+ *   - Wiki writes (both the merged-away "merged into" stub writes — Task 6:
+ *     writeMergedStub — and every regenerateWikiInBackground call) happen
+ *     ONLY when --expect-db is exactly 'gc_curriculum' (the live database;
+ *     see shouldWriteWiki/LIVE_DB_NAME). The wiki repo is a real git repo
+ *     that pushes, so ANY other --expect-db skips wiki writes automatically
+ *     (a line is printed saying so) regardless of --skip-wiki. --skip-wiki
+ *     remains the explicit opt-out for the live run (Task 11).
  *   - Never creates or closes a faculty_flags row — the 0057 flags stay
  *     open for faculty; this script doesn't touch faculty_flags at all.
  *   - Never prints DATABASE_URL or any other credential.
@@ -62,6 +65,19 @@ export const MERGE_PLAN: Record<string, string> = {
 };
 export const MERGED_AWAY_IDS = Object.keys(MERGE_PLAN);
 export const SURVIVOR_IDS = [...new Set(Object.values(MERGE_PLAN))];
+
+/** The only database name wiki writes are ever allowed against. */
+export const LIVE_DB_NAME = 'gc_curriculum';
+
+/**
+ * Wiki writes (the merged-away stub writes and every wiki regen) happen
+ * only when --expect-db names the live database exactly, and --skip-wiki
+ * was not passed. Any non-live --expect-db skips wiki writes automatically
+ * — --skip-wiki is not required (and has no effect) off the live database.
+ */
+export function shouldWriteWiki(args: RescoreArgs): boolean {
+  return args.expectDb === LIVE_DB_NAME && !args.skipWiki;
+}
 
 type Executor = Tx | typeof db;
 
@@ -240,16 +256,22 @@ export interface RescoreOutcome {
   totalCostUsdCents: number;
   cappedEarly: boolean;
   snapshotsProcessed: number;
+  wikiWritesEnabled: boolean;
 }
 
 export async function runRescore(args: RescoreArgs, deps: RescoreDeps = {}): Promise<RescoreOutcome> {
   const executor = deps.executor ?? db;
   const findScope = deps.findInScopeSnapshots ?? findInScopeSnapshots;
   const scope = await findScope(executor);
+  const writeWiki = shouldWriteWiki(args);
 
   if (!args.apply) {
     // Dry run: report the scope only. No AI call, no DB write, no wiki write.
-    return { scope, rows: [], totalCostUsdCents: 0, cappedEarly: false, snapshotsProcessed: 0 };
+    return { scope, rows: [], totalCostUsdCents: 0, cappedEarly: false, snapshotsProcessed: 0, wikiWritesEnabled: writeWiki };
+  }
+
+  if (!writeWiki && !args.skipWiki) {
+    console.log(`wiki writes skipped automatically: --expect-db '${args.expectDb}' is not the live database ('${LIVE_DB_NAME}')`);
   }
 
   const getCompetencies = deps.getSurvivorCompetencies ?? getSurvivorCompetencies;
@@ -318,12 +340,12 @@ export async function runRescore(args: RescoreArgs, deps: RescoreDeps = {}): Pro
     }
 
     snapshotsProcessed++;
-    if (!args.skipWiki) {
+    if (writeWiki) {
       regenWiki(item.snapshotId, 'p0b-rescore: survivor re-score (domain-knowledge, project-management)');
     }
   }
 
-  if (!args.skipWiki) {
+  if (writeWiki) {
     const getNames = deps.getMergedAwayNames ?? getMergedAwayNames;
     const names = await getNames(executor);
     const survivorNameById = new Map(competencies.map(c => [c.id, c.name]));
@@ -334,7 +356,7 @@ export async function runRescore(args: RescoreArgs, deps: RescoreDeps = {}): Pro
     }
   }
 
-  return { scope, rows, totalCostUsdCents, cappedEarly, snapshotsProcessed };
+  return { scope, rows, totalCostUsdCents, cappedEarly, snapshotsProcessed, wikiWritesEnabled: writeWiki };
 }
 
 // ─── Report ─────────────────────────────────────────────────────────────────

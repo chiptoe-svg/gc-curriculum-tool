@@ -320,7 +320,7 @@ describe.skipIf(!RUN)('migration 0057 (P0b) on a P0b clone, each test self-conta
             .sort((a, b) => (a.competency_id < b.competency_id ? -1 : a.competency_id > b.competency_id ? 1 : 0))
             .map((r) => `${r.competency_id} K${r.k_depth ?? '-'}/U${r.u_depth ?? '-'}/D${r.d_depth}`)
             .join('; ');
-          const note = `Before the P0b merge into ${survivor}, the merged competencies disagreed by 2+ levels for this course: ${detail}. Largest gap across ${nCaptures} captures: ${maxGap}. Re-scored against the merged descriptor; please check the new reading.`;
+          const note = `Before the P0b merge into ${survivor}, the merged competencies differed by ${maxGap} levels in at least one capture of this course (largest gap across ${nCaptures} captures). Latest capture: ${detail}. Re-scored against the merged descriptor; please check the new reading.`;
           const winner = pickBest(
             survivor,
             (r: Cov4) => r.competency_id,
