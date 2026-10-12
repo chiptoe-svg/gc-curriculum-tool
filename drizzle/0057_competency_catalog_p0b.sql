@@ -70,32 +70,9 @@ UPDATE sub_competencies SET
   updated_at = now()
 WHERE id = 'project-management';
 
--- 3. Disagreement flags (Ruling 4), computed from the pre-merge cells.
-INSERT INTO faculty_flags (target_kind, course_code, career_target_id, sub_competency_id, note, flagged_by, flagged_context)
-SELECT 'coverage_cell'::flag_target_kind, d.course_code, 'production-operations', d.survivor,
-       'Before the P0b merge into ' || d.survivor || ', the merged competencies disagreed by 2+ levels for this course: '
-         || d.detail || '. Re-scored against the merged descriptor; please check the new reading.',
-       'P0b merge (system)', NULL
-FROM (
-  SELECT s.course_code, g.survivor,
-         string_agg(DISTINCT c.competency_id || ' K' || coalesce(c.k_depth::text,'-') || '/U' || coalesce(c.u_depth::text,'-') || '/D' || c.d_depth, '; ') AS detail,
-         max(gap) AS max_gap
-  FROM merge_group g
-  JOIN snapshot_competency_coverage c ON c.competency_id = g.member
-  JOIN course_capture_snapshots s ON s.id = c.snapshot_id AND s.retired_at IS NULL
-  JOIN (
-    SELECT g2.survivor, c2.snapshot_id,
-           greatest(max(coalesce(c2.k_depth,0)) - min(coalesce(c2.k_depth,0)),
-                    max(coalesce(c2.u_depth,0)) - min(coalesce(c2.u_depth,0)),
-                    max(c2.d_depth) - min(c2.d_depth)) AS gap
-    FROM merge_group g2 JOIN snapshot_competency_coverage c2 ON c2.competency_id = g2.member
-    GROUP BY 1, 2
-  ) x ON x.survivor = g.survivor AND x.snapshot_id = c.snapshot_id
-  GROUP BY 1, 2
-) d
-WHERE d.max_gap >= 2;
-
--- 4. Coverage carry (Ruling 3). Merged-away cells stay as history.
+-- 3. Coverage carry (Ruling 3). Merged-away cells stay as history. Runs
+-- BEFORE the disagreement flags below, because flagged_context (Ruling 4,
+-- amended 2026-10-12) needs the CARRIED survivor cell, not the pre-merge one.
 WITH ranked AS (
   SELECT g.survivor, c.*,
          row_number() OVER (PARTITION BY g.survivor, c.snapshot_id ORDER BY
@@ -116,6 +93,63 @@ ON CONFLICT (snapshot_id, competency_id) DO UPDATE SET
   matched_competency = EXCLUDED.matched_competency, evidence_excerpt = EXCLUDED.evidence_excerpt,
   confidence = EXCLUDED.confidence, rationale = EXCLUDED.rationale, model = EXCLUDED.model,
   generated_at = EXCLUDED.generated_at;
+
+-- 4. Disagreement flags (Ruling 4, amended 2026-10-12 — see plan amendment
+-- under Ruling 4). Flag condition unchanged: one open flag per (course,
+-- survivor) where some non-retired snapshot's group cells differ by 2+ on
+-- any axis. The note and flagged_context both come from ONE representative
+-- snapshot per (course, survivor) — the course's latest non-retired
+-- snapshot with group cells (created_at DESC, then id DESC) — and
+-- flagged_context is built from that snapshot's CARRIED survivor cell
+-- (hence this runs after step 3 above). The gap/detail condition itself
+-- must stay on the PRE-merge member cells (unchanged from before this
+-- amendment) — step 3 already overwrote the survivor's own row in
+-- snapshot_competency_coverage by this point, so the survivor's pre-merge
+-- cell comes from p0b_premerge_survivor_coverage (captured in step 1,
+-- before the overwrite) instead; the merged-away members' rows are never
+-- touched by the carry (Ruling 2), so they are read as-is.
+WITH group_cells AS (
+  SELECT g.survivor, g.member, c.snapshot_id, c.k_depth, c.u_depth, c.d_depth
+  FROM merge_group g
+  JOIN snapshot_competency_coverage c ON c.competency_id = g.member
+  WHERE g.member <> g.survivor
+  UNION ALL
+  SELECT p.competency_id AS survivor, p.competency_id AS member, p.snapshot_id, p.k_depth, p.u_depth, p.d_depth
+  FROM p0b_premerge_survivor_coverage p
+),
+snap_gap AS (
+  SELECT gc.survivor, s.course_code, gc.snapshot_id, s.created_at,
+         greatest(max(coalesce(gc.k_depth,0)) - min(coalesce(gc.k_depth,0)),
+                  max(coalesce(gc.u_depth,0)) - min(coalesce(gc.u_depth,0)),
+                  max(gc.d_depth) - min(gc.d_depth)) AS gap,
+         string_agg(gc.member || ' K' || coalesce(gc.k_depth::text,'-') || '/U' || coalesce(gc.u_depth::text,'-') || '/D' || gc.d_depth,
+                    '; ' ORDER BY gc.member) AS detail
+  FROM group_cells gc
+  JOIN course_capture_snapshots s ON s.id = gc.snapshot_id AND s.retired_at IS NULL
+  GROUP BY gc.survivor, s.course_code, gc.snapshot_id, s.created_at
+),
+course_summary AS (
+  SELECT survivor, course_code, count(*) AS n_captures, max(gap) AS max_gap
+  FROM snap_gap GROUP BY 1, 2
+),
+representative AS (
+  SELECT survivor, course_code,
+         (array_agg(snapshot_id ORDER BY created_at DESC, snapshot_id DESC))[1] AS snapshot_id,
+         (array_agg(detail ORDER BY created_at DESC, snapshot_id DESC))[1] AS detail
+  FROM snap_gap GROUP BY survivor, course_code
+)
+INSERT INTO faculty_flags (target_kind, course_code, career_target_id, sub_competency_id, note, flagged_by, flagged_context)
+SELECT 'coverage_cell'::flag_target_kind, r.course_code, 'production-operations', r.survivor,
+       'Before the P0b merge into ' || r.survivor || ', the merged competencies disagreed by 2+ levels for this course: '
+         || r.detail || '. Largest gap across ' || cs.n_captures || ' captures: ' || cs.max_gap
+         || '. Re-scored against the merged descriptor; please check the new reading.',
+       'P0b merge (system)',
+       jsonb_build_object('k', sc.k_depth, 'u', sc.u_depth, 'd', sc.d_depth,
+                           'matchedCompetency', sc.matched_competency, 'rationale', sc.rationale)
+FROM representative r
+JOIN course_summary cs ON cs.survivor = r.survivor AND cs.course_code = r.course_code
+JOIN snapshot_competency_coverage sc ON sc.snapshot_id = r.snapshot_id AND sc.competency_id = r.survivor
+WHERE cs.max_gap >= 2;
 
 -- 5. Intended coverage: carry the best group row to the survivor, remove merged-away rows.
 WITH ranked AS (

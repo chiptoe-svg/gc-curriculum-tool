@@ -5,6 +5,10 @@
 -- only printed "expect 0" rows and relied on a human reading them (P0a
 -- adversarial review finding M-a). This script fails closed: a bad migration
 -- makes the script itself error out, not just print a wrong number.
+-- (Minor 4, Task 2 fix round 1) ON_ERROR_STOP so psql itself exits non-zero
+-- on any statement error (e.g. a typo breaking a check) — belt-and-braces
+-- with the fail-closed DO block below, not a substitute for it.
+\set ON_ERROR_STOP on
 BEGIN READ ONLY;
 
 SELECT 'requirements (expect 35)'                                            AS item, count(*)::text AS value

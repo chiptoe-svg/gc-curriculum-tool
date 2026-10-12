@@ -260,56 +260,182 @@ describe.skipIf(!RUN)('migration 0057 (P0b) on a P0b clone, each test self-conta
     });
   });
 
-  it('4. one open disagreement flag per (course, survivor) with a 2+ gap on some non-retired snapshot, none otherwise', async () => {
+  it('4. one open disagreement flag per (course, survivor) with a 2+ gap on some non-retired snapshot, with the representative-snapshot note/flagged_context, none otherwise (Ruling 4, amended 2026-10-12)', async () => {
     await withTx(async (c) => {
-      const before = await q<CovRow & { course_code: string; retired_at: string | null }>(
+      type Cov4 = CovRow & { course_code: string; retired_at: string | null; created_epoch: number };
+      const before = await q<Cov4>(
         c,
         `SELECT c.snapshot_id::text, c.competency_id, c.k_depth, c.u_depth, c.d_depth, c.matched_competency,
                 c.evidence_excerpt, c.confidence, c.rationale, c.model, c.generated_at::text,
-                s.course_code, s.retired_at::text AS retired_at
+                s.course_code, s.retired_at::text AS retired_at, extract(epoch FROM s.created_at)::float8 AS created_epoch
          FROM snapshot_competency_coverage c
          JOIN course_capture_snapshots s ON s.id = c.snapshot_id
          WHERE c.competency_id IN ('domain-knowledge','gc-production-literacy','domain-grounding','project-management','timeline-management')`,
       );
 
-      // (course_code, survivor) -> max gap across its non-retired snapshots
-      const maxGap = new Map<string, number>();
+      type ExpectedFlag = { note: string; context: { k: number | null; u: number | null; d: number | null; matchedCompetency: string | null; rationale: string } };
+      const expected = new Map<string, ExpectedFlag>(); // key: `${course_code}|${survivor}`
+
       for (const survivor of SURVIVORS) {
         const members = new Set(groupMembersOf(survivor));
-        const bySnapshot = new Map<string, { course_code: string; retired: boolean; rows: typeof before }>();
+        const bySnapshot = new Map<string, { course_code: string; retired: boolean; created_epoch: number; rows: Cov4[] }>();
         for (const row of before) {
           if (!members.has(row.competency_id)) continue;
-          const entry = bySnapshot.get(row.snapshot_id) ?? { course_code: row.course_code, retired: row.retired_at !== null, rows: [] };
+          const entry = bySnapshot.get(row.snapshot_id) ?? {
+            course_code: row.course_code,
+            retired: row.retired_at !== null,
+            created_epoch: row.created_epoch,
+            rows: [],
+          };
           entry.rows.push(row);
           bySnapshot.set(row.snapshot_id, entry);
         }
-        for (const { course_code, retired, rows } of bySnapshot.values()) {
-          if (retired) continue;
-          const ks = rows.map((r) => r.k_depth ?? 0);
-          const us = rows.map((r) => r.u_depth ?? 0);
-          const ds = rows.map((r) => r.d_depth);
+
+        const byCourse = new Map<string, Array<{ snapshotId: string; created_epoch: number; rows: Cov4[]; gap: number }>>();
+        for (const [snapshotId, entry] of bySnapshot) {
+          if (entry.retired) continue; // Minor 1: retired snapshots never feed the flag, the note, or the context
+          const ks = entry.rows.map((r) => r.k_depth ?? 0);
+          const us = entry.rows.map((r) => r.u_depth ?? 0);
+          const ds = entry.rows.map((r) => r.d_depth);
           const gap = Math.max(Math.max(...ks) - Math.min(...ks), Math.max(...us) - Math.min(...us), Math.max(...ds) - Math.min(...ds));
-          const key = `${course_code}|${survivor}`;
-          maxGap.set(key, Math.max(maxGap.get(key) ?? -Infinity, gap));
+          const arr = byCourse.get(entry.course_code) ?? [];
+          arr.push({ snapshotId, created_epoch: entry.created_epoch, rows: entry.rows, gap });
+          byCourse.set(entry.course_code, arr);
+        }
+
+        for (const [courseCode, snaps] of byCourse) {
+          const maxGap = Math.max(...snaps.map((s) => s.gap));
+          if (maxGap < 2) continue;
+          const nCaptures = snaps.length;
+          // Representative: latest non-retired snapshot with group cells for
+          // this (course, survivor) — created_at DESC, then id DESC.
+          const representative = [...snaps].sort((a, b) => {
+            if (a.created_epoch !== b.created_epoch) return b.created_epoch - a.created_epoch;
+            return a.snapshotId < b.snapshotId ? 1 : a.snapshotId > b.snapshotId ? -1 : 0;
+          })[0]!;
+          const detail = [...representative.rows]
+            .sort((a, b) => (a.competency_id < b.competency_id ? -1 : a.competency_id > b.competency_id ? 1 : 0))
+            .map((r) => `${r.competency_id} K${r.k_depth ?? '-'}/U${r.u_depth ?? '-'}/D${r.d_depth}`)
+            .join('; ');
+          const note = `Before the P0b merge into ${survivor}, the merged competencies disagreed by 2+ levels for this course: ${detail}. Largest gap across ${nCaptures} captures: ${maxGap}. Re-scored against the merged descriptor; please check the new reading.`;
+          const winner = pickBest(
+            survivor,
+            (r: Cov4) => r.competency_id,
+            (r: Cov4) => r.confidence,
+            (r: Cov4) => [r.d_depth, r.u_depth ?? -1, r.k_depth ?? -1],
+            representative.rows,
+          );
+          const rationale = winner.competency_id === survivor ? winner.rationale : `[P0b merge: carried from ${winner.competency_id}] ${winner.rationale}`;
+          expected.set(`${courseCode}|${survivor}`, {
+            note,
+            context: { k: winner.k_depth, u: winner.u_depth, d: winner.d_depth, matchedCompetency: winner.matched_competency, rationale },
+          });
         }
       }
-      const expectedFlaggedPairs = new Set([...maxGap.entries()].filter(([, g]) => g >= 2).map(([k]) => k));
 
       await c.query(MIGRATION_BODY);
 
-      const flags = await q<{ course_code: string; sub_competency_id: string; status: string }>(
+      const flags = await q<{ course_code: string; sub_competency_id: string; career_target_id: string; flagged_by: string; status: string; note: string; flagged_context: ExpectedFlag['context'] }>(
         c,
-        `SELECT course_code, sub_competency_id, status FROM faculty_flags WHERE flagged_by = 'P0b merge (system)'`,
+        `SELECT course_code, sub_competency_id, career_target_id, flagged_by, status, note, flagged_context
+         FROM faculty_flags WHERE flagged_by = 'P0b merge (system)'`,
       );
       const actualPairs = new Set(flags.map((f) => `${f.course_code}|${f.sub_competency_id}`));
-      expect(actualPairs).toEqual(expectedFlaggedPairs);
-      // one flag per pair, all open
+      expect(actualPairs).toEqual(new Set(expected.keys()));
+
       const counts = new Map<string, number>();
       for (const f of flags) {
+        const key = `${f.course_code}|${f.sub_competency_id}`;
+        counts.set(key, (counts.get(key) ?? 0) + 1);
         expect(f.status).toBe('open');
-        counts.set(`${f.course_code}|${f.sub_competency_id}`, (counts.get(`${f.course_code}|${f.sub_competency_id}`) ?? 0) + 1);
+        expect(f.career_target_id).toBe('production-operations');
+        expect(f.flagged_by).toBe('P0b merge (system)');
+        const exp = expected.get(key)!;
+        expect(f.note).toBe(exp.note);
+        expect(f.flagged_context).toEqual(exp.context);
       }
       for (const n of counts.values()) expect(n).toBe(1);
+    });
+  });
+
+  const RETIRED_FIXTURE_COURSE = 'ECON 2000';
+
+  /** Inserts a retired snapshot with group cells on RETIRED_FIXTURE_COURSE
+   * that disagree by far more than 2 — if retired_at were not honored,
+   * this alone would create a domain-knowledge flag for that course. */
+  async function insertRetiredFixtureSnapshot(c: PoolClient): Promise<void> {
+    // Confirmed clean rather than assumed: this course must start with zero
+    // merge-group cells on any snapshot, so the retired snapshot inserted
+    // below is the ONLY possible source of a flag on it.
+    const existing = await q(
+      c,
+      `SELECT 1 FROM course_capture_snapshots s JOIN snapshot_competency_coverage cc ON cc.snapshot_id = s.id
+       WHERE s.course_code = $1
+         AND cc.competency_id IN ('domain-knowledge','gc-production-literacy','domain-grounding','project-management','timeline-management')`,
+      [RETIRED_FIXTURE_COURSE],
+    );
+    expect(existing, `fixture course ${RETIRED_FIXTURE_COURSE} must start with zero merge-group cells`).toEqual([]);
+
+    const { id: retiredSnapshotId } = (
+      await q<{ id: string }>(
+        c,
+        `INSERT INTO course_capture_snapshots (course_code, profile, inputs_meta, scale_version, model, retired_at)
+         VALUES ($1, '{}'::jsonb, '{}'::jsonb, 'test', 'test', now())
+         RETURNING id::text`,
+        [RETIRED_FIXTURE_COURSE],
+      )
+    )[0]!;
+    await q(
+      c,
+      `INSERT INTO snapshot_competency_coverage (snapshot_id, competency_id, k_depth, u_depth, d_depth, confidence, rationale, model)
+       VALUES ($1::uuid, 'domain-knowledge', 0, 0, 0, 'high', 'retired-fixture domain-knowledge', 'test'),
+              ($1::uuid, 'gc-production-literacy', 5, 5, 5, 'high', 'retired-fixture gc-production-literacy', 'test')`,
+      [retiredSnapshotId],
+    );
+  }
+
+  it('4b (Minor 1). a retired snapshot with a 2+ gap creates no flag and does not feed the note or context', async () => {
+    await withTx(async (c) => {
+      await insertRetiredFixtureSnapshot(c);
+
+      const before = await q<{ n: string }>(
+        c,
+        `SELECT count(*)::text AS n FROM faculty_flags WHERE flagged_by = 'P0b merge (system)' AND course_code = $1`,
+        [RETIRED_FIXTURE_COURSE],
+      );
+      expect(before[0]!.n).toBe('0');
+
+      await c.query(MIGRATION_BODY);
+
+      const after = await q<{ note: string; flagged_context: unknown }>(
+        c,
+        `SELECT note, flagged_context FROM faculty_flags
+         WHERE flagged_by = 'P0b merge (system)' AND course_code = $1 AND sub_competency_id = 'domain-knowledge'`,
+        [RETIRED_FIXTURE_COURSE],
+      );
+      // The fixture course has no other (non-retired) group cells, so this
+      // must stay empty; if it didn't, the retired snapshot's K5/U5/D5
+      // would be the obvious signature in the note/context.
+      expect(after).toEqual([]);
+    });
+  });
+
+  it('4c (Minor 1, red-proof). removing the retired_at filter lets a retired snapshot create a flag — confirms the test above actually exercises the guard', async () => {
+    const marker = 'JOIN course_capture_snapshots s ON s.id = gc.snapshot_id AND s.retired_at IS NULL';
+    expect(MIGRATION_BODY.includes(marker), 'expected marker not found — migration SQL shape changed').toBe(true);
+    const brokenMigration = MIGRATION_BODY.replace(marker, 'JOIN course_capture_snapshots s ON s.id = gc.snapshot_id');
+
+    await withTx(async (c) => {
+      await insertRetiredFixtureSnapshot(c);
+      await c.query(brokenMigration);
+
+      const after = await q<{ note: string }>(
+        c,
+        `SELECT note FROM faculty_flags
+         WHERE flagged_by = 'P0b merge (system)' AND course_code = $1 AND sub_competency_id = 'domain-knowledge'`,
+        [RETIRED_FIXTURE_COURSE],
+      );
+      expect(after.length, 'red-proof: with the retired_at filter removed, the retired snapshot should produce a flag').toBe(1);
     });
   });
 
