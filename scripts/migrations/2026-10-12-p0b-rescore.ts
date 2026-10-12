@@ -39,11 +39,19 @@
  *     count, one call per snapshot, two competencies each) PLUS an estimated
  *     wiki-call count (m2: one call per distinct in-scope course, plus the
  *     program-wide batches — see estimateWikiCalls).
- *   - --apply checks checkDailyCap() before every scoring call and stops
- *     cleanly (reporting partial progress) if the cap trips. It also
- *     refuses to START scoring at all if the planned call count exceeds
- *     --max-calls (default 40, hostile-review hard stop) — --wiki-only
- *     skips this check entirely, since it does no scoring.
+ *   - --apply checks checkDailyCap() before every scoring call, and again
+ *     once before the wiki phase starts, and stops cleanly (reporting
+ *     partial progress) if the cap trips at either point — main() then
+ *     exits non-zero (3, n1 final review) naming exactly which phase
+ *     stopped (scoring or wiki) and what's incomplete, in every mode
+ *     including --wiki-only. A cap trip at the wiki-phase check skips
+ *     every wiki write for that invocation, including the merged-away
+ *     stub writes — a stub is never written when the wiki phase itself
+ *     was skipped by the cap. It also refuses to START scoring at all if
+ *     the planned call count exceeds --max-calls (default 40,
+ *     hostile-review hard stop, exit 4) — --wiki-only skips the scoring
+ *     cap check and the --max-calls check entirely, since it does no
+ *     scoring, but still checks the cap once before its own wiki writes.
  *   - Each scoring step (getSnapshotById, scoreSnapshotCompetencies,
  *     upsertCoverageCell) is wrapped in one try/record (m5): a failure on
  *     one snapshot is caught, reported, and does not stop the rest of the
@@ -77,8 +85,12 @@
  *     anyway), BEFORE this script exits. A per-item failure is caught and
  *     reported — it does NOT undo any DB cell writes and does NOT stop
  *     the rest of the wiki phase — but main() exits non-zero (3) if
- *     anything failed, naming each failure and recommending --wiki-only
- *     to retry just the wiki side without re-paying scoring (m6).
+ *     anything failed, naming each failure and recommending
+ *     --apply --expect-db gc_curriculum --wiki-only to retry just the
+ *     wiki side without re-paying scoring (m6) — n2 (final review): that
+ *     retry still re-pays roughly the FULL wiki-call count again (~25 on
+ *     live), since it reruns the whole wiki phase, not only the items
+ *     that failed; it is not free.
  *   - Never creates or closes a faculty_flags row — the 0057 flags stay
  *     open for faculty; this script doesn't touch faculty_flags at all.
  *   - Never prints DATABASE_URL or any other credential.
@@ -437,6 +449,15 @@ export interface RescoreOutcome {
   rows: RescoreRow[];
   totalCostUsdCents: number;
   cappedEarly: boolean;
+  /**
+   * n1 (final review): WHICH phase the daily cap actually stopped —
+   * 'scoring' if it tripped mid-scoring-loop (some snapshots never
+   * attempted, wiki phase never ran at all for this invocation), 'wiki' if
+   * scoring fully finished but the cap tripped at the single check before
+   * the wiki phase starts (no course regen, no program pass, no stubs).
+   * Unset when `cappedEarly` is false.
+   */
+  cappedAt?: 'scoring' | 'wiki';
   snapshotsProcessed: number;
   wikiWritesEnabled: boolean;
   scoreResults: ScoreOutcome[];
@@ -496,6 +517,7 @@ export async function runRescore(args: RescoreArgs, deps: RescoreDeps = {}): Pro
   const scoreResults: ScoreOutcome[] = [];
   let totalCostUsdCents = 0;
   let cappedEarly = false;
+  let cappedAt: 'scoring' | 'wiki' | undefined;
 
   // --- scoring phase (m5: every per-item step wrapped in one try/record;
   // a failure on one snapshot is caught and reported, never stops the rest
@@ -509,6 +531,7 @@ export async function runRescore(args: RescoreArgs, deps: RescoreDeps = {}): Pro
       const cap = await checkCap();
       if (!cap.ok) {
         cappedEarly = true;
+        cappedAt = 'scoring';
         break;
       }
 
@@ -574,10 +597,20 @@ export async function runRescore(args: RescoreArgs, deps: RescoreDeps = {}): Pro
   // otherwise it is every COURSE that scored successfully this run.
   const courseWikiResults: CourseRegenOutcome[] = [];
   const programWikiResults: ProgramBatchOutcome[] = [];
+  const stubResults: StubWriteOutcome[] = [];
   if (writeWiki) {
-    const cap = await checkCap(); // m2: checked once, before the wiki phase starts
+    // n1 (final review): if the cap already tripped during scoring, the
+    // wiki phase never even checks the cap again — it's already capped,
+    // and nothing below (course regen, program pass, merged-stub writes)
+    // runs for this invocation. If scoring finished clean (or this is
+    // --wiki-only), check the cap once here, before any wiki write; a trip
+    // at THIS check also skips every wiki write below, including the
+    // merged-stub writes — a stub must never be written when the wiki
+    // phase itself was skipped by the cap.
+    const cap = cappedEarly ? { ok: false } : await checkCap();
     if (!cap.ok) {
       cappedEarly = true;
+      if (!cappedAt) cappedAt = 'wiki';
     } else {
       const findLatest = deps.findLatestNonRetiredSnapshot ?? findLatestNonRetiredSnapshot;
       const regenCourse = deps.regenerateCoursePage ?? defaultRegenerateCoursePage;
@@ -599,30 +632,27 @@ export async function runRescore(args: RescoreArgs, deps: RescoreDeps = {}): Pro
 
       const runProgram = deps.runProgramWikiPass ?? defaultRunProgramWikiPass;
       programWikiResults.push(...await runProgram());
-    }
-  }
 
-  const stubResults: StubWriteOutcome[] = [];
-  if (writeWiki) {
-    const getCompetenciesForStub = deps.getSurvivorCompetencies ?? getSurvivorCompetencies;
-    const competencies = await getCompetenciesForStub(executor);
-    const getNames = deps.getMergedAwayNames ?? getMergedAwayNames;
-    const names = await getNames(executor);
-    const survivorNameById = new Map(competencies.map(c => [c.id, c.name]));
-    const writeStub = deps.writeMergedStub ?? writeMergedStub;
-    for (const oldId of MERGED_AWAY_IDS) {
-      const survivorId = MERGE_PLAN[oldId]!;
-      try {
-        await writeStub(oldId, survivorId, survivorNameById.get(survivorId) ?? survivorId, names[oldId] ?? oldId);
-        stubResults.push({ oldId, survivorId, ok: true });
-      } catch (err) {
-        stubResults.push({ oldId, survivorId, ok: false, error: err instanceof Error ? err.message : String(err) });
+      const getCompetenciesForStub = deps.getSurvivorCompetencies ?? getSurvivorCompetencies;
+      const competencies = await getCompetenciesForStub(executor);
+      const getNames = deps.getMergedAwayNames ?? getMergedAwayNames;
+      const names = await getNames(executor);
+      const survivorNameById = new Map(competencies.map(c => [c.id, c.name]));
+      const writeStub = deps.writeMergedStub ?? writeMergedStub;
+      for (const oldId of MERGED_AWAY_IDS) {
+        const survivorId = MERGE_PLAN[oldId]!;
+        try {
+          await writeStub(oldId, survivorId, survivorNameById.get(survivorId) ?? survivorId, names[oldId] ?? oldId);
+          stubResults.push({ oldId, survivorId, ok: true });
+        } catch (err) {
+          stubResults.push({ oldId, survivorId, ok: false, error: err instanceof Error ? err.message : String(err) });
+        }
       }
     }
   }
 
   return {
-    scope, rows, totalCostUsdCents, cappedEarly, snapshotsProcessed, wikiWritesEnabled: writeWiki,
+    scope, rows, totalCostUsdCents, cappedEarly, cappedAt, snapshotsProcessed, wikiWritesEnabled: writeWiki,
     scoreResults, courseWikiResults, programWikiResults, stubResults, refused: false,
   };
 }
@@ -663,8 +693,16 @@ export function printReport(args: RescoreArgs, outcome: RescoreOutcome): void {
     console.log(`\nsnapshots processed: ${outcome.snapshotsProcessed} / ${outcome.scope.length}`);
     console.log(`cells upserted: ${outcome.rows.length}`);
     console.log(`total cost: $${(outcome.totalCostUsdCents / 10_000).toFixed(4)} (${outcome.totalCostUsdCents} 1/100-cent units)`);
-    if (outcome.cappedEarly) {
-      console.log('STOPPED EARLY: daily cost cap reached before all in-scope snapshots were processed.');
+  }
+
+  // n1 (final review): printed in EVERY mode, including --wiki-only — the
+  // old code hid this inside the `!args.wikiOnly` block above, so a cap
+  // trip in --wiki-only mode exited silently with no signal at all.
+  if (outcome.cappedEarly) {
+    if (outcome.cappedAt === 'wiki') {
+      console.log('STOPPED EARLY at the wiki phase: the daily cost cap was reached before any wiki write (course regen, program pass, or merged-stub write) ran.');
+    } else {
+      console.log('STOPPED EARLY at the scoring phase: the daily cost cap was reached before all in-scope snapshots were scored; the wiki phase did not run at all for this invocation.');
     }
   }
 
@@ -748,15 +786,40 @@ export async function main(argv: string[], deps: RescoreDeps = {}): Promise<numb
     console.error(`\n${failures.length} item(s) failed; DB cell writes above are NOT affected and were NOT rolled back:`);
     for (const f of failures) console.error(`  - ${f.label}: ${f.error}`);
     // m6: a full re-run re-pays every scoring call AND every wiki write —
-    // if only wiki items failed, --wiki-only retries just those for free.
+    // if only wiki items failed, --wiki-only retries just those.
     const onlyWikiFailed = outcome.scoreResults.every(r => r.ok);
     if (onlyWikiFailed) {
-      console.error('Re-run with --wiki-only (same --expect-db) to retry just the wiki writes — this costs nothing extra, since no scoring call is repeated.');
+      // n2 (final review): a --wiki-only retry is NOT free — it re-runs the
+      // ENTIRE wiki phase (every course regen, the program pass, every
+      // merged-stub write), not only the items that failed, so it re-pays
+      // roughly the full wiki-call count (~25 on live) again. It also still
+      // needs --apply --expect-db gc_curriculum explicitly; --wiki-only
+      // alone (e.g. under --dry-run, or against a scratch DB) writes
+      // nothing.
+      console.error('Re-run with --apply --expect-db gc_curriculum --wiki-only to retry the wiki side. This re-pays roughly the FULL wiki-call count again (~25 on live) — it reruns every course regen, the program pass, and every merged-stub write, not only the ones that failed — but no scoring call is repeated.');
     } else {
-      console.error('Re-run this same script (same args) to retry. WARNING: a full re-run re-pays every scoring call, including ones that already succeeded (M-7, deferred) — if scoring itself is fine and only a wiki write failed, use --wiki-only instead to avoid repaying scoring.');
+      console.error('Re-run this same script (same args) to retry. WARNING: a full re-run re-pays every scoring call, including ones that already succeeded (M-7, deferred) — if scoring itself is fine and only a wiki write failed, use --apply --expect-db gc_curriculum --wiki-only instead to avoid repaying scoring (note: that still re-pays the full wiki-call count, ~25 on live — see above).');
     }
     return 3;
   }
+
+  if (outcome.cappedEarly) {
+    // n1 (final review): a cap trip during scoring, or at the wiki-phase
+    // check, previously fell through to `return 0` here with no signal at
+    // all once allFailures() was empty (the loop simply `break`s rather
+    // than recording a failure) — the printReport message above was the
+    // only hint, and it was silently absent in --wiki-only mode. Now it's
+    // always a non-zero exit with a phase-specific message naming exactly
+    // what's incomplete.
+    const phase = outcome.cappedAt ?? 'scoring';
+    const message = phase === 'wiki'
+      ? `STOPPED EARLY at the wiki phase: the daily cost cap was reached after scoring finished (${outcome.snapshotsProcessed}/${outcome.scope.length} in-scope snapshots scored), but no wiki course regeneration, program pass, or merged-stub write ran for this invocation.`
+      : `STOPPED EARLY at the scoring phase: the daily cost cap was reached. ${outcome.snapshotsProcessed}/${outcome.scope.length} in-scope snapshots were scored; the rest were never attempted, and no wiki regeneration or merged-stub write ran for this invocation at all.`;
+    console.error(`\n${message}`);
+    console.error('Re-run this same script once the cap resets (or raise it with --max-calls) to finish the remaining work.');
+    return 3;
+  }
+
   return 0;
 }
 

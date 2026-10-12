@@ -519,6 +519,183 @@ describe.skipIf(!RUN)('p0b rescore script (P0b Task 7, post-0057)', () => {
     expect(outcome.refused).toBe(false);
   });
 
+  // --- n1 (final review): a daily-cap trip during scoring, or at the
+  // wiki-phase check, must exit non-zero with an accurate phase-specific
+  // message, in every mode including --wiki-only — and merged-away stubs
+  // must never be written when the wiki phase itself was skipped by the cap.
+  describe('n1: daily-cap trip exits non-zero and names the stopped phase', () => {
+    it('a cap trip during the SCORING phase: no scoring happens, no wiki write happens, cappedAt is "scoring"', async () => {
+      const snapshotId = await newFixtureSnapshot();
+      const capped = vi.fn().mockResolvedValue({ ok: false, spentCents: 999, overCap: true });
+      const deps = mockDeps({
+        findInScopeSnapshots: vi.fn().mockResolvedValue([{ snapshotId, courseCode: TEST_CODE }]),
+        checkDailyCap: capped,
+      });
+
+      const outcome = await runRescore(args({ expectDb: LIVE_DB_NAME, skipWiki: false }), deps);
+
+      expect(outcome.cappedEarly).toBe(true);
+      expect(outcome.cappedAt).toBe('scoring');
+      expect(outcome.snapshotsProcessed).toBe(0);
+      expect(outcome.scoreResults).toEqual([]);
+      expect(deps.scoreSnapshotCompetencies).not.toHaveBeenCalled();
+      // Nothing in the wiki phase ran either — the cap was already tripped.
+      expect(outcome.courseWikiResults).toEqual([]);
+      expect(outcome.programWikiResults).toEqual([]);
+      expect(outcome.stubResults).toEqual([]);
+      expect(deps.regenerateCoursePage).not.toHaveBeenCalled();
+      expect(deps.runProgramWikiPass).not.toHaveBeenCalled();
+      expect(deps.writeMergedStub).not.toHaveBeenCalled();
+
+      // No cells were upserted — scoring never ran.
+      const dbRows = await db.select().from(snapshotCompetencyCoverage).where(eq(snapshotCompetencyCoverage.snapshotId, snapshotId));
+      expect(dbRows.filter(r => SURVIVOR_IDS.includes(r.competencyId))).toHaveLength(0);
+
+      // main() surfaces this as a non-zero exit naming the scoring phase.
+      // getSurvivorCompetencies(executor) is called unconditionally before
+      // the scoring loop (even though the loop's first iteration trips the
+      // cap) — the fakeExecutor below only answers assertExpectedDb's one
+      // query, so this must be mocked too, same as the existing "failed
+      // course wiki regeneration" test above.
+      const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      try {
+        const fakeExecutor = { execute: vi.fn().mockResolvedValue({ rows: [{ name: LIVE_DB_NAME }] }) } as unknown as RescoreDeps['executor'];
+        const code = await main(['--apply', '--expect-db', LIVE_DB_NAME], {
+          ...deps,
+          executor: fakeExecutor,
+          getSurvivorCompetencies: vi.fn().mockResolvedValue([
+            { id: 'domain-knowledge', name: 'Domain knowledge', knowDescriptor: 'k', understandDescriptor: 'u', doDescriptor: 'd' },
+            { id: 'project-management', name: 'Project management', knowDescriptor: 'k', understandDescriptor: 'u', doDescriptor: 'd' },
+          ]),
+          getCarriedCells: vi.fn().mockResolvedValue({}),
+        });
+        expect(code).toBe(3);
+        expect(errSpy.mock.calls.flat().join('\n')).toMatch(/STOPPED EARLY at the scoring phase/);
+      } finally {
+        errSpy.mockRestore();
+      }
+    });
+
+    it('a cap trip at the WIKI-phase check (scoring already finished): no wiki write happens, no stub is written, cappedAt is "wiki"', async () => {
+      const snapshotId = await newFixtureSnapshot();
+      const makeCheckCap = () => {
+        let calls = 0;
+        return vi.fn().mockImplementation(async () => {
+          calls += 1;
+          // 1st call: the scoring loop's single item — let it through.
+          // 2nd call: the wiki-phase check — trip the cap.
+          return calls === 1 ? { ok: true, spentCents: 0, overCap: false } : { ok: false, spentCents: 999, overCap: true };
+        });
+      };
+      const deps = mockDeps({
+        findInScopeSnapshots: vi.fn().mockResolvedValue([{ snapshotId, courseCode: TEST_CODE }]),
+        checkDailyCap: makeCheckCap(),
+      });
+
+      const outcome = await runRescore(args({ expectDb: LIVE_DB_NAME, skipWiki: false }), deps);
+
+      // Scoring itself completed fully and its cells stand.
+      expect(outcome.snapshotsProcessed).toBe(1);
+      expect(outcome.scoreResults).toEqual([{ snapshotId, courseCode: TEST_CODE, ok: true }]);
+      const dbRows = await db.select().from(snapshotCompetencyCoverage).where(eq(snapshotCompetencyCoverage.snapshotId, snapshotId));
+      expect(dbRows.filter(r => SURVIVOR_IDS.includes(r.competencyId))).toHaveLength(2);
+
+      // But the wiki phase never ran — including the merged-stub writes.
+      expect(outcome.cappedEarly).toBe(true);
+      expect(outcome.cappedAt).toBe('wiki');
+      expect(outcome.courseWikiResults).toEqual([]);
+      expect(outcome.programWikiResults).toEqual([]);
+      expect(outcome.stubResults).toEqual([]);
+      expect(deps.regenerateCoursePage).not.toHaveBeenCalled();
+      expect(deps.runProgramWikiPass).not.toHaveBeenCalled();
+      expect(deps.writeMergedStub).not.toHaveBeenCalled();
+
+      // main() surfaces this as a non-zero exit naming the wiki phase. Uses
+      // a FRESH checkCap counter (and fresh mock-call counts) — not the one
+      // from the runRescore call above, which already spent its two calls.
+      const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      try {
+        const fakeExecutor = { execute: vi.fn().mockResolvedValue({ rows: [{ name: LIVE_DB_NAME }] }) } as unknown as RescoreDeps['executor'];
+        const code = await main(['--apply', '--expect-db', LIVE_DB_NAME], {
+          ...deps,
+          executor: fakeExecutor,
+          checkDailyCap: makeCheckCap(),
+          getSurvivorCompetencies: vi.fn().mockResolvedValue([
+            { id: 'domain-knowledge', name: 'Domain knowledge', knowDescriptor: 'k', understandDescriptor: 'u', doDescriptor: 'd' },
+            { id: 'project-management', name: 'Project management', knowDescriptor: 'k', understandDescriptor: 'u', doDescriptor: 'd' },
+          ]),
+          getCarriedCells: vi.fn().mockResolvedValue({}),
+        });
+        expect(code).toBe(3);
+        expect(errSpy.mock.calls.flat().join('\n')).toMatch(/STOPPED EARLY at the wiki phase/);
+      } finally {
+        errSpy.mockRestore();
+      }
+    });
+
+    it('a cap trip at the WIKI-phase check in --wiki-only mode: still exits non-zero, no stub is written', async () => {
+      const snapshotId = await newFixtureSnapshot();
+      const capped = vi.fn().mockResolvedValue({ ok: false, spentCents: 999, overCap: true });
+      const deps = mockDeps({
+        findInScopeSnapshots: vi.fn().mockResolvedValue([{ snapshotId, courseCode: TEST_CODE }]),
+        checkDailyCap: capped,
+      });
+
+      const outcome = await runRescore(args({ expectDb: LIVE_DB_NAME, skipWiki: false, wikiOnly: true }), deps);
+
+      expect(outcome.cappedEarly).toBe(true);
+      expect(outcome.cappedAt).toBe('wiki');
+      expect(outcome.courseWikiResults).toEqual([]);
+      expect(outcome.programWikiResults).toEqual([]);
+      expect(outcome.stubResults).toEqual([]);
+      expect(deps.regenerateCoursePage).not.toHaveBeenCalled();
+      expect(deps.writeMergedStub).not.toHaveBeenCalled();
+
+      const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      try {
+        const fakeExecutor = { execute: vi.fn().mockResolvedValue({ rows: [{ name: LIVE_DB_NAME }] }) } as unknown as RescoreDeps['executor'];
+        const code = await main(['--apply', '--expect-db', LIVE_DB_NAME, '--wiki-only'], { ...deps, executor: fakeExecutor });
+        expect(code).toBe(3);
+        expect(errSpy.mock.calls.flat().join('\n')).toMatch(/STOPPED EARLY at the wiki phase/);
+      } finally {
+        errSpy.mockRestore();
+      }
+    });
+  });
+
+  // --- n2 (final review): the exit-3 advice for a wiki-only failure must
+  // not claim the --wiki-only retry is "for free"/"costs nothing extra" —
+  // it re-runs the whole wiki phase and re-pays roughly the full wiki-call
+  // count — and must spell out the exact flags the retry needs.
+  it('n2: a wiki-only-failed exit-3 message says the --wiki-only retry re-pays the wiki calls and names the required flags, not "for free"', async () => {
+    const snapshotId = await newFixtureSnapshot();
+    const deps = mockDeps({
+      findInScopeSnapshots: vi.fn().mockResolvedValue([{ snapshotId, courseCode: TEST_CODE }]),
+      writeMergedStub: vi.fn().mockRejectedValue(new Error('simulated stub push failure')),
+      getSurvivorCompetencies: vi.fn().mockResolvedValue([
+        { id: 'domain-knowledge', name: 'Domain knowledge', knowDescriptor: 'k', understandDescriptor: 'u', doDescriptor: 'd' },
+        { id: 'project-management', name: 'Project management', knowDescriptor: 'k', understandDescriptor: 'u', doDescriptor: 'd' },
+      ]),
+      getCarriedCells: vi.fn().mockResolvedValue({}),
+      getMergedAwayNames: vi.fn().mockResolvedValue({}),
+      findLatestNonRetiredSnapshot: vi.fn().mockResolvedValue({ snapshotId }),
+    });
+    const fakeExecutor = { execute: vi.fn().mockResolvedValue({ rows: [{ name: LIVE_DB_NAME }] }) } as unknown as RescoreDeps['executor'];
+
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const code = await main(['--apply', '--expect-db', LIVE_DB_NAME], { ...deps, executor: fakeExecutor });
+      expect(code).toBe(3);
+      const out = errSpy.mock.calls.flat().join('\n');
+      expect(out).not.toMatch(/for free/i);
+      expect(out).not.toMatch(/costs nothing extra/i);
+      expect(out).toMatch(/--apply --expect-db gc_curriculum --wiki-only/);
+      expect(out).toMatch(/re-pays roughly the FULL wiki-call count/);
+    } finally {
+      errSpy.mockRestore();
+    }
+  });
+
   it('a wrong --expect-db exits non-zero before any read', async () => {
     const findInScopeSnapshots = vi.fn();
     const deps: RescoreDeps = { ...mockDeps(), findInScopeSnapshots };

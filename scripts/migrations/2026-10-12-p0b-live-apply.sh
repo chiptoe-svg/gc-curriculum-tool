@@ -407,6 +407,17 @@ DB rollback applied. App and watchdog restarted on the pre-P0b build. Smoke test
 Then update docs/STATE.md: P0b rolled back (date, owner go-ahead, reason).
 SMOKE
 else
+  # Fix 1 (final review, 2026-10-12): this used to end with "Then update
+  # docs/STATE.md: P0b applied to production" and a flags-reading line —
+  # as if the DB apply alone were the finished work. It isn't: the two
+  # merge survivors (domain-knowledge, project-management) carry only the
+  # Task 7 CARRIED stopgap cell until the owner-gated re-score
+  # (scripts/migrations/2026-10-12-p0b-rescore.ts, Task 11) actually runs
+  # — so a merged competency's flags/descriptors read as "Re-scored" from
+  # the moment this apply completes, and must not be judged until that
+  # re-score has actually happened. Dropped the flags-reading smoke-test
+  # line entirely (it was premature either way) and pointed STATE.md at
+  # the re-score step instead of declaring the work complete.
   cat <<SMOKE
 
 DB apply succeeded. App and watchdog restarted. Smoke test at
@@ -415,11 +426,12 @@ https://gcworkflow.clemson.edu:8443:
   - a course page's prerequisite panel
   - /wiki — a target page and a competency page
   - /explore — one course
-  - a merged competency (domain-knowledge, project-management): confirm the
-    merged descriptors and any new faculty_flags from the P0b merge read
-    sensibly
+  (the merged competencies' cells read as pre-rescore stopgap values right
+  now — do not judge domain-knowledge/project-management yet)
 
-Then update docs/STATE.md: P0b applied to production (date, owner go-ahead).
+Next: run the survivor re-score (dry run, then --apply, see the Task 11
+runbook in docs/STATE.md). Update docs/STATE.md only after the re-score —
+not now; the DB apply by itself is not "P0b applied."
 SMOKE
 fi
 exit 0

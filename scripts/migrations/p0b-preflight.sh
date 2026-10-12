@@ -13,7 +13,7 @@
 # eventual refusal depends on the app being stopped first.
 #
 # The precondition logic and the pre_counts formula below are a
-# byte-for-byte PARALLEL of 0057's own (drizzle/0057_competency_catalog_p0b.sql:
+# hand-maintained PARALLEL of 0057's own (drizzle/0057_competency_catalog_p0b.sql:
 # the `DO $$` precondition block, and the `pre_counts` comment/formula just
 # after it) — NOT an extraction of that file's literal text, because 0057's
 # own version uses `CREATE TEMP TABLE merge_plan/merge_group/pre_counts`,
@@ -22,7 +22,11 @@
 # CREATE TABLE in a read-only transaction", confirmed by running it). This
 # version uses a `WITH merge_plan (...) AS (VALUES ...)` CTE instead, which
 # is pure read. If 0057's merge_plan, precondition checks, or
-# new_insert_count formula ever change, update BOTH copies.
+# new_insert_count formula ever change, update BOTH copies —
+# tests/db/p0b-preflight-pins-0057.test.ts (n3, final review) pins the two
+# copies' precondition-block body and count formula together (textually
+# identical after whitespace/comment normalization) and fails loudly the
+# moment they drift.
 #
 # DATABASE_URL is read from the ENVIRONMENT, not argv — same discipline as
 # p0b-apply-db.sh/p0a-lib.sh: parsed once into libpq's PG* environment

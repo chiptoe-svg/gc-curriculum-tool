@@ -24,10 +24,21 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync, chmodSync, readdirSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { Pool } from 'pg';
 import { isP0bMainDb, isP0bRollbackTestDb, ROLLBACK_TEST_DB, SCRATCH_DB_PRE } from './p0b/scratch-guard';
+
+// n6 (final review, 2026-10-12): this file's cleanup sweep used to drop
+// EVERY gc_curriculum_p0b_rbtest* database on the server, not just the ones
+// THIS run created — which deleted a concurrent reviewer's own in-flight
+// rbtest clones mid-review (observed in adversarial-review-3.md). Every
+// database this file creates now carries a per-process-run unique suffix
+// (lowercase hex, matches the allowlist's `[a-z0-9_]*` tail), and the sweep
+// is scoped to names containing that suffix — never a bare
+// 'gc_curriculum_p0b_rbtest%' LIKE.
+const RUN_SUFFIX = `_r${randomBytes(3).toString('hex')}`;
 
 const ROOT = resolve(__dirname, '../..');
 const APPLY_DB_SH = resolve(ROOT, 'scripts/migrations/p0b-apply-db.sh');
@@ -121,24 +132,31 @@ function cloneDatabase(sourceUrl: string, targetName: string) {
   waitForNoOtherSessions(targetUrl);
 }
 
-/** Every gc_curriculum_p0b_rbtest* database currently on the server (one per line from a plain `datname` query). */
-function listRollbackTestDatabases(anyUrl: string): string[] {
-  const out = queryOne(anyUrl, "SELECT datname FROM pg_database WHERE datname LIKE 'gc_curriculum_p0b_rbtest%' ORDER BY datname");
+/** Every gc_curriculum_p0b_rbtest* database currently on the server whose
+ * name contains `suffix` (one per line from a plain `datname` query). */
+function listRollbackTestDatabases(anyUrl: string, suffix: string): string[] {
+  const out = queryOne(anyUrl, `SELECT datname FROM pg_database WHERE datname LIKE 'gc_curriculum_p0b_rbtest%${suffix}%' ORDER BY datname`);
   return out.split('\n').map((s) => s.trim()).filter(Boolean);
 }
 
 /**
- * Fix round 2 (Minor 4, reviewer-reproduced): drops EVERY
- * gc_curriculum_p0b_rbtest* database currently on the server, not just
- * ones a test run happened to track by name — a failing path (a thrown
- * assertion between CREATE and recording the name) could otherwise leak
- * one past a plain "drop what I tracked" loop forever. Each name is
- * still filtered through isP0bRollbackTestDb() (belt-and-braces; the
- * LIKE pattern above already narrows to this family) before being
- * dropped.
+ * Fix round 2 (Minor 4, reviewer-reproduced): drops every
+ * gc_curriculum_p0b_rbtest* database currently on the server carrying
+ * THIS RUN's own unique suffix, not just ones a test run happened to
+ * track by name — a failing path (a thrown assertion between CREATE and
+ * recording the name) could otherwise leak one past a plain "drop what I
+ * tracked" loop forever. Each name is still filtered through
+ * isP0bRollbackTestDb() (belt-and-braces; the LIKE pattern above already
+ * narrows to this family) before being dropped.
+ *
+ * n6 (final review): scoped to `suffix` (always this run's RUN_SUFFIX in
+ * production use below) — NOT every gc_curriculum_p0b_rbtest* database on
+ * the server. An unscoped sweep here once dropped a concurrent reviewer's
+ * own in-flight rbtest clones mid-review; scoping to a per-run unique
+ * suffix makes that impossible, since two runs never share one.
  */
-function sweepLeakedRollbackTestDatabases(anyUrl: string): void {
-  for (const name of listRollbackTestDatabases(anyUrl)) {
+function sweepLeakedRollbackTestDatabases(anyUrl: string, suffix: string): void {
+  for (const name of listRollbackTestDatabases(anyUrl, suffix)) {
     if (!isP0bRollbackTestDb(name)) continue;
     try {
       dropDatabaseForce(anyUrl, name);
@@ -147,6 +165,12 @@ function sweepLeakedRollbackTestDatabases(anyUrl: string): void {
     }
   }
 }
+
+// n6: every database this file creates is named off BASE, not the bare
+// ROLLBACK_TEST_DB constant — so every created name carries this run's own
+// unique RUN_SUFFIX and the scoped sweep above can find (and only find)
+// this run's own leaked names.
+const BASE = `${ROLLBACK_TEST_DB}${RUN_SUFFIX}`;
 
 describe.skipIf(!RUN)('p0b-apply-db.sh rollback (fix round 1): restore-into-new-db-then-swap, real DB', () => {
   let preUrl: string;
@@ -169,10 +193,11 @@ describe.skipIf(!RUN)('p0b-apply-db.sh rollback (fix round 1): restore-into-new-
       }
     }
     // Belt-and-braces beyond the tracked-name loop above: sweep the
-    // server for anything matching the family that createdDbs might have
-    // missed (see sweepLeakedRollbackTestDatabases).
+    // server for anything matching THIS RUN's own suffix that createdDbs
+    // might have missed (see sweepLeakedRollbackTestDatabases) — never
+    // every gc_curriculum_p0b_rbtest* database on the server (n6).
     try {
-      sweepLeakedRollbackTestDatabases(SCRATCH_URL);
+      sweepLeakedRollbackTestDatabases(SCRATCH_URL, RUN_SUFFIX);
     } catch {
       // best-effort; if even the LIST query itself fails, there's nothing more to do here.
     }
@@ -180,7 +205,7 @@ describe.skipIf(!RUN)('p0b-apply-db.sh rollback (fix round 1): restore-into-new-
   });
 
   it('end-to-end: rollback swaps a post-0057 target back to pre-0057, keeps the migrated copy as a reversible fallback, and the undo renames restore it', () => {
-    const target = ROLLBACK_TEST_DB;
+    const target = BASE;
     expect(isP0bRollbackTestDb(target)).toBe(true);
     createdDbs.add(target);
     cloneDatabase(SCRATCH_URL, target);
@@ -228,7 +253,7 @@ describe.skipIf(!RUN)('p0b-apply-db.sh rollback (fix round 1): restore-into-new-
   });
 
   it('regression guard (fix round 1, reviewer-reproduced): a --clean restore of a pre-0057 dump onto a post-0057 target fails', () => {
-    const target = `${ROLLBACK_TEST_DB}_cleantest`;
+    const target = `${BASE}_cleantest`;
     expect(isP0bRollbackTestDb(target)).toBe(true);
     createdDbs.add(target);
     cloneDatabase(SCRATCH_URL, target);
@@ -260,16 +285,16 @@ describe.skipIf(!RUN)('p0b-apply-db.sh rollback (fix round 1): restore-into-new-
   // it) — and confirms the afterAll-style sweep finds and drops it by
   // querying pg_database directly, not by relying on the tracked set.
   it('the leaked-database sweep drops a gc_curriculum_p0b_rbtest* database that was never tracked by name', () => {
-    const leaked = `${ROLLBACK_TEST_DB}_rollback_${Date.now()}`; // same shape the swap itself generates
+    const leaked = `${BASE}_rollback_${Date.now()}`; // same shape the swap itself generates
     expect(isP0bRollbackTestDb(leaked)).toBe(true);
     dropDatabaseForce(SCRATCH_URL, leaked); // idempotent pre-clean, in case a prior run of this exact test left one
     runMaint(SCRATCH_URL, `CREATE DATABASE "${leaked}"`);
     // Deliberately NOT added to createdDbs — that's the point of this test.
-    expect(listRollbackTestDatabases(SCRATCH_URL)).toContain(leaked);
+    expect(listRollbackTestDatabases(SCRATCH_URL, RUN_SUFFIX)).toContain(leaked);
 
-    sweepLeakedRollbackTestDatabases(SCRATCH_URL);
+    sweepLeakedRollbackTestDatabases(SCRATCH_URL, RUN_SUFFIX);
 
-    expect(listRollbackTestDatabases(SCRATCH_URL)).not.toContain(leaked);
+    expect(listRollbackTestDatabases(SCRATCH_URL, RUN_SUFFIX)).not.toContain(leaked);
   });
 
   // Fix round 3 (Minor 2): restores, against a disposable
@@ -278,7 +303,7 @@ describe.skipIf(!RUN)('p0b-apply-db.sh rollback (fix round 1): restore-into-new-
   // the real-DB coverage that round 2 had to remove when the allowlist
   // made gc_curriculum_p0b_pre permanently unusable as a script target.
   it('p0b-db-migrated.sh prints "f" against a real pre-0057 gc_curriculum_p0b_rbtest clone', () => {
-    const name = `${ROLLBACK_TEST_DB}_premigr`;
+    const name = `${BASE}_premigr`;
     expect(isP0bRollbackTestDb(name)).toBe(true);
     createdDbs.add(name);
     cloneDatabase(preUrl, name); // clone FROM gc_curriculum_p0b_pre: pre-0057 shape
@@ -289,7 +314,7 @@ describe.skipIf(!RUN)('p0b-apply-db.sh rollback (fix round 1): restore-into-new-
   });
 
   it('p0b-db-migrated.sh prints "t" against a real post-0057 gc_curriculum_p0b_rbtest clone', () => {
-    const name = `${ROLLBACK_TEST_DB}_postmigr`;
+    const name = `${BASE}_postmigr`;
     expect(isP0bRollbackTestDb(name)).toBe(true);
     createdDbs.add(name);
     cloneDatabase(SCRATCH_URL, name); // clone FROM gc_curriculum_p0b_scratch: post-0057 shape
@@ -300,7 +325,7 @@ describe.skipIf(!RUN)('p0b-apply-db.sh rollback (fix round 1): restore-into-new-
   });
 
   it('p0b-apply-db.sh refuses when another session is open on the rbtest target — nothing changed', async () => {
-    const name = `${ROLLBACK_TEST_DB}_sessions`;
+    const name = `${BASE}_sessions`;
     expect(isP0bRollbackTestDb(name)).toBe(true);
     createdDbs.add(name);
     cloneDatabase(SCRATCH_URL, name);
@@ -330,7 +355,7 @@ describe.skipIf(!RUN)('p0b-apply-db.sh rollback (fix round 1): restore-into-new-
   // against a real rbtest clone — the apply never reaches the migration
   // SQL itself, so which shape the clone is in doesn't matter here.
   it('p0b-apply-db.sh renames a backup that fails verification to *.rejected, which can never be mistaken for pre-apply-*.dump', () => {
-    const name = `${ROLLBACK_TEST_DB}_backupfail`;
+    const name = `${BASE}_backupfail`;
     expect(isP0bRollbackTestDb(name)).toBe(true);
     createdDbs.add(name);
     cloneDatabase(SCRATCH_URL, name);
@@ -368,7 +393,7 @@ describe.skipIf(!RUN)('p0b-apply-db.sh rollback (fix round 1): restore-into-new-
   // disposable rbtest clones — never gc_curriculum_p0b_pre/_scratch
   // themselves (not on the scripts' own allowlist anyway).
   it('p0b-preflight.sh passes against a genuine pre-0057 clone and prints the count breakdown, touching nothing', () => {
-    const name = `${ROLLBACK_TEST_DB}_preflightok`;
+    const name = `${BASE}_preflightok`;
     expect(isP0bRollbackTestDb(name)).toBe(true);
     createdDbs.add(name);
     cloneDatabase(preUrl, name);
@@ -386,7 +411,7 @@ describe.skipIf(!RUN)('p0b-apply-db.sh rollback (fix round 1): restore-into-new-
   });
 
   it('p0b-preflight.sh refuses on a career_target_demand row on a merge id (M-6), touching nothing', () => {
-    const name = `${ROLLBACK_TEST_DB}_preflightm6`;
+    const name = `${BASE}_preflightm6`;
     expect(isP0bRollbackTestDb(name)).toBe(true);
     createdDbs.add(name);
     cloneDatabase(preUrl, name);
@@ -406,7 +431,7 @@ describe.skipIf(!RUN)('p0b-apply-db.sh rollback (fix round 1): restore-into-new-
   });
 
   it('p0b-preflight.sh refuses when 0057 is already applied, touching nothing', () => {
-    const name = `${ROLLBACK_TEST_DB}_preflightapplied`;
+    const name = `${BASE}_preflightapplied`;
     expect(isP0bRollbackTestDb(name)).toBe(true);
     createdDbs.add(name);
     cloneDatabase(SCRATCH_URL, name); // clone FROM the main scratch: already post-0057

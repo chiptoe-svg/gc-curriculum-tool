@@ -349,13 +349,15 @@ export interface MatrixData {
 /**
  * Invalidate (delete) all Phase-1A coverage cells for one sub-competency under
  * one target. Called when the sub-competency's descriptor/name changes — the
- * cells were scored against the OLD prose and must be recomputed. listStalePairs()
- * then sees the pair as needing re-score; the matrix view recomputes on next load.
+ * cells were scored against the OLD prose and must be recomputed.
+ * listStaleSnapshots() then reports the snapshot as missing this competency;
+ * the matrix view recomputes on next load.
  *
- * P0a: cells are per (snapshot, competency) and shared by every target that
- * uses the competency, so all of them go; with one target per competency
- * (P0a) these are exactly the rows the old per-target delete removed.
- * Returns the count of deleted cells.
+ * Cells are per (snapshot, competency) and shared by every target that uses
+ * the competency (P0b: a competency can now belong to more than one
+ * target — e.g. domain-knowledge, project-management — so this is NOT "one
+ * target per competency" any longer), so all of them go regardless of which
+ * target this was called for. Returns the count of deleted cells.
  */
 export async function invalidateCoverageForSubCompetency(
   careerTargetId: string,

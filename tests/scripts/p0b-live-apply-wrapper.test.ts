@@ -491,7 +491,16 @@ exit 0
     });
     expect(res.status).toBe(0);
     expect(res.stdout).toMatch(/Smoke test/);
-    expect(res.stdout).toMatch(/update docs\/STATE\.md: P0b applied to production/);
+    // Fix 1 (final review, 2026-10-12): the apply success text must point
+    // to the owner-gated re-score as the next step, never declare "P0b
+    // applied to production" as if the DB apply alone finished the work —
+    // the merge survivors only carry the Task 7 carried stopgap cell until
+    // the re-score actually runs. The flags-reading smoke-test line is
+    // gone too (premature either way, before the re-score).
+    expect(res.stdout).not.toMatch(/update docs\/STATE\.md: P0b applied to production/);
+    expect(res.stdout).not.toMatch(/confirm the merged descriptors and any new faculty_flags/);
+    expect(res.stdout).toMatch(/Next: run the survivor re-score/);
+    expect(res.stdout).toMatch(/Update docs\/STATE\.md only after the re-score/);
     // m7 (hostile review round 2, cosmetic): "DB apply applied." read oddly.
     expect(res.stdout).toMatch(/DB apply succeeded/);
     expect(res.stdout).not.toMatch(/DB apply applied/);
