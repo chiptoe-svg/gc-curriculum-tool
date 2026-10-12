@@ -105,12 +105,27 @@ export async function setCompetencyOrderInTarget(
  * still had its one real target intact, because a no-op delete for a bogus
  * target id still satisfied "<= 1 target before"). The post-delete
  * membership is re-read rather than inferred from the pre-delete count.
+ *
+ * Concurrency-safe (fix round 2, 2026-10-12): without a lock, two
+ * concurrent retires of the SAME shared competency from two DIFFERENT
+ * targets can each read the pre-delete membership before either commits,
+ * each delete their own row, each re-read and still see the other's
+ * (uncommitted) row, and both return 'removed-from-target' — leaving the
+ * competency with zero requirement rows and retired=false, orphaned. The
+ * `SELECT ... FOR UPDATE` on the catalog row below serializes concurrent
+ * retires of the same competencyId: the second caller blocks until the
+ * first's transaction commits (or rolls back), then sees the first's
+ * committed delete when it re-reads membership.
  */
 export async function retireCompetencyFromTarget(
   tx: Tx,
   careerTargetId: string,
   competencyId: string,
 ): Promise<'retired' | 'removed-from-target'> {
+  const [locked] = await tx.select({ id: subCompetencies.id }).from(subCompetencies).where(eq(subCompetencies.id, competencyId)).for('update');
+  if (!locked) {
+    throw new Error(`retireCompetencyFromTarget: ${competencyId} does not exist`);
+  }
   const targetsBefore = await targetIdsForCompetency(tx, competencyId);
   if (!targetsBefore.includes(careerTargetId)) {
     throw new Error(`retireCompetencyFromTarget: ${careerTargetId} is not a member of ${competencyId}`);

@@ -7,7 +7,10 @@
 // replaces the local exact-name check this file used to carry itself).
 import { describe, it, expect } from 'vitest';
 import { eq } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { Client } from 'pg';
 import { db } from '@/lib/db/client';
+import * as schema from '@/lib/db/schema';
 import { careerTargetRequirements, careerTargets, subCompetencies } from '@/lib/db/schema';
 import {
   type Tx,
@@ -102,4 +105,96 @@ describe.skipIf(!RUN)('retireCompetencyFromTarget (P0b, post-0057)', () => {
       expect(sc!.retired).toBe(false);
     });
   });
+
+  // Fix round 2 (2026-10-12): without a lock, two concurrent retires of the
+  // SAME shared competency from two DIFFERENT targets can each read the
+  // pre-delete membership before either commits, each delete their own row,
+  // each re-read and still see the other's (uncommitted) row, and both
+  // return 'removed-from-target' — orphaning the competency (0 requirement
+  // rows, retired stays false). Reproduced directly (lock disabled, two real
+  // connections, deterministic — no timing needed since neither side
+  // commits until both have run): tx1(target A) -> 'removed-from-target',
+  // tx2(target B) -> 'removed-from-target', both commit, final state 0 rows
+  // / retired=false. See task-3-report.md "Fix round 2" for that transcript.
+  // This test uses two REAL pg connections (not inRolledBackTx — a single
+  // transaction can't observe its own row lock blocking a second session)
+  // to prove the fix: tx2's lock attempt genuinely blocks on tx1's hold, and
+  // only resolves correctly once tx1 commits.
+  it(
+    "two concurrent retires of a shared competency from different targets serialize via the catalog row's FOR UPDATE lock, ending retired with zero requirement rows (not orphaned)",
+    async () => {
+      const [tA, tB] = await db.select({ id: careerTargets.id }).from(careerTargets).limit(2);
+      const competencyId = 'zz-p0b-retire-race';
+
+      // Fixture: one catalog competency shared by two real targets, committed
+      // so both raw connections below see it.
+      await db.transaction(async (tx) => {
+        await insertCompetencyForTarget(tx, {
+          id: competencyId,
+          careerTargetId: tA!.id,
+          name: 'ZZ P0b race fixture',
+          knowDescriptor: 'k',
+          understandDescriptor: 'u',
+          doDescriptor: 'd',
+          displayOrder: 999,
+        });
+        await tx.insert(careerTargetRequirements).values({
+          careerTargetId: tB!.id,
+          competencyId,
+          horizon: 'entry',
+          weight: null,
+          weightSource: 'faculty',
+          status: 'draft',
+          displayOrder: 999,
+        });
+      });
+
+      const url = process.env.DATABASE_URL!;
+      const client1 = new Client({ connectionString: url });
+      const client2 = new Client({ connectionString: url });
+      await client1.connect();
+      await client2.connect();
+
+      try {
+        const tx1 = drizzle(client1, { schema }) as unknown as Tx;
+        const tx2 = drizzle(client2, { schema }) as unknown as Tx;
+
+        await client1.query('BEGIN');
+        await client2.query('BEGIN');
+
+        // tx1 retires target A's claim and holds — not committed yet.
+        const result1 = await retireCompetencyFromTarget(tx1, tA!.id, competencyId);
+        expect(result1).toBe('removed-from-target'); // B's claim still stands from tx1's own view
+
+        // tx2 retires target B's claim concurrently. With the lock in place
+        // this blocks on tx1's FOR UPDATE hold instead of racing ahead.
+        let tx2Done = false;
+        const result2Promise = retireCompetencyFromTarget(tx2, tB!.id, competencyId).then((r) => {
+          tx2Done = true;
+          return r;
+        });
+
+        // Give tx2 a real window to have raced ahead if it weren't blocked.
+        await new Promise((r) => setTimeout(r, 300));
+        expect(tx2Done).toBe(false);
+
+        await client1.query('COMMIT'); // releases the lock
+        const result2 = await result2Promise;
+        await client2.query('COMMIT');
+
+        expect(result2).toBe('retired');
+
+        const reqs = await db.select().from(careerTargetRequirements).where(eq(careerTargetRequirements.competencyId, competencyId));
+        expect(reqs).toEqual([]);
+        const [sc] = await db.select({ retired: subCompetencies.retired }).from(subCompetencies).where(eq(subCompetencies.id, competencyId));
+        expect(sc!.retired).toBe(true);
+      } finally {
+        await client1.end();
+        await client2.end();
+        // Cascades career_target_requirements (already empty by this point).
+        await db.delete(subCompetencies).where(eq(subCompetencies.id, competencyId));
+      }
+    },
+    10_000,
+  );
 });
