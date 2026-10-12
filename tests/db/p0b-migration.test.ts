@@ -178,6 +178,75 @@ describe.skipIf(!RUN)('migration 0057 (P0b) on a P0b clone, each test self-conta
     });
   });
 
+  it('1b (M-1, hostile review). the requirement-count post-check is relative to the pre-migration count, not hard-coded 35 — an extra legitimate requirement added beforehand does not block the apply', async () => {
+    await withTx(async (c) => {
+      // One extra, unrelated requirement row (new fixture competency, no
+      // connection to any merge id) — simulates a real requirement added on
+      // live between the scratch clone and the apply window, which the OLD
+      // hard-coded "expected 35" check would have refused outright.
+      await q(
+        c,
+        `INSERT INTO sub_competencies (id, name, know_descriptor, understand_descriptor, do_descriptor, retired, display_order)
+         VALUES ('zz-p0b-migration-extra', 'ZZ P0b migration extra fixture', 'k', 'u', 'd', false, 999)`,
+      );
+      await q(
+        c,
+        `INSERT INTO career_target_requirements (career_target_id, competency_id, horizon, weight_source, status, display_order)
+         VALUES ('account-management', 'zz-p0b-migration-extra', 'entry', 'faculty', 'draft', 999)`,
+      );
+      const before = (await q<{ n: string }>(c, `SELECT count(*)::text AS n FROM career_target_requirements`))[0]!.n;
+      // Pre-migration count is normally 36 (test 1's post-migration 35 is
+      // AFTER the 3 merged-away rows are deleted and 2 survivor pairs are
+      // inserted: 36 - 3 + 2 = 35) — plus this one extra row = 37.
+      expect(before).toBe('37');
+
+      // Must NOT throw — the old hard-coded "expected 35" check would have
+      // raised '0057: expected 35 requirement rows, found 36' here.
+      await c.query(MIGRATION_BODY);
+
+      const after = (await q<{ n: string }>(c, `SELECT count(*)::text AS n FROM career_target_requirements`))[0]!.n;
+      expect(after).toBe('36'); // pre-count 37 - 3 merged-away + 2 newly inserted survivor pairs = 36
+      const extra = await q(c, `SELECT 1 FROM career_target_requirements WHERE competency_id = 'zz-p0b-migration-extra'`);
+      expect(extra).toHaveLength(1); // the unrelated extra row survives untouched
+    });
+  });
+
+  it('1c (M-1, red-proof). reverting to the hard-coded 35 check raises on the extra-requirement fixture above', async () => {
+    const relativeCheck = [
+      '  SELECT pre_count - merged_away_count + new_insert_count INTO expected_req_count FROM pre_counts;',
+      '  SELECT count(*) INTO actual_req_count FROM career_target_requirements;',
+      '  IF actual_req_count <> expected_req_count THEN',
+      "    RAISE EXCEPTION '0057: expected % requirement rows (pre-migration % minus % merged-away plus % newly inserted), found %',",
+      '      expected_req_count, (SELECT pre_count FROM pre_counts), (SELECT merged_away_count FROM pre_counts),',
+      '      (SELECT new_insert_count FROM pre_counts), actual_req_count;',
+      '  END IF;',
+    ].join('\n');
+    expect(MIGRATION_BODY.includes(relativeCheck), 'expected marker not found — migration SQL shape changed').toBe(true);
+    const hardCoded35Check = [
+      '  IF (SELECT count(*) FROM career_target_requirements) <> 35 THEN',
+      "    RAISE EXCEPTION '0057: expected 35 requirement rows, found %', (SELECT count(*) FROM career_target_requirements);",
+      '  END IF;',
+    ].join('\n');
+    const brokenMigration = MIGRATION_BODY.replace(relativeCheck, hardCoded35Check);
+    expect(brokenMigration, 'the replace must actually change the SQL for this red-proof to mean anything').not.toBe(MIGRATION_BODY);
+
+    await withTx(async (c) => {
+      await q(
+        c,
+        `INSERT INTO sub_competencies (id, name, know_descriptor, understand_descriptor, do_descriptor, retired, display_order)
+         VALUES ('zz-p0b-migration-extra', 'ZZ P0b migration extra fixture', 'k', 'u', 'd', false, 999)`,
+      );
+      await q(
+        c,
+        `INSERT INTO career_target_requirements (career_target_id, competency_id, horizon, weight_source, status, display_order)
+         VALUES ('account-management', 'zz-p0b-migration-extra', 'entry', 'faculty', 'draft', 999)`,
+      );
+
+      // Red-proof: the UN-fixed (hard-coded 35) check raises on this fixture.
+      await expect(c.query(brokenMigration)).rejects.toThrow(/expected 35 requirement rows, found 36/);
+    });
+  });
+
   it('2. coverage carry equals the highest-evidence group member per snapshot (Ruling 3)', async () => {
     await withTx(async (c) => {
       const before = await q<CovRow>(
@@ -555,6 +624,107 @@ describe.skipIf(!RUN)('migration 0057 (P0b) on a P0b clone, each test self-conta
     });
   });
 
+  it('7b (M-5, hostile review). a re-pointed flag\'s flagged_context is refreshed to the survivor\'s own carried cell for the course\'s representative snapshot, not left as the merged-away cell', async () => {
+    await withTx(async (c) => {
+      const FLAG_COURSE = 'GC 1010'; // real fixture course with real group cells on both merge groups
+      const FLAG_SURVIVOR = 'domain-knowledge';
+      const members = new Set(groupMembersOf(FLAG_SURVIVOR));
+
+      // Independently compute (in TS, from pre-migration rows) what step 7
+      // SHOULD write: the representative snapshot (latest non-retired
+      // snapshot of FLAG_COURSE with ANY group-member cell, created_at DESC
+      // then id DESC) and that snapshot's carried winner cell — same
+      // ranking rule test 2 uses, applied to ONLY that one snapshot's rows.
+      type Row2 = CovRow & { course_code: string; retired_at: string | null; created_epoch: number };
+      const before = await q<Row2>(
+        c,
+        `SELECT c.snapshot_id::text, c.competency_id, c.k_depth, c.u_depth, c.d_depth, c.matched_competency,
+                c.evidence_excerpt, c.confidence, c.rationale, c.model, c.generated_at::text,
+                s.course_code, s.retired_at::text AS retired_at, extract(epoch FROM s.created_at)::float8 AS created_epoch
+         FROM snapshot_competency_coverage c
+         JOIN course_capture_snapshots s ON s.id = c.snapshot_id
+         WHERE s.course_code = $1 AND s.retired_at IS NULL
+           AND c.competency_id IN ('domain-knowledge','gc-production-literacy','domain-grounding')`,
+        [FLAG_COURSE],
+      );
+      const bySnapshot = new Map<string, { created_epoch: number; rows: Row2[] }>();
+      for (const row of before) {
+        if (!members.has(row.competency_id)) continue;
+        const entry = bySnapshot.get(row.snapshot_id) ?? { created_epoch: row.created_epoch, rows: [] };
+        entry.rows.push(row);
+        bySnapshot.set(row.snapshot_id, entry);
+      }
+      expect(bySnapshot.size, `fixture precondition: ${FLAG_COURSE} must have at least one non-retired snapshot with a domain-knowledge-group cell`).toBeGreaterThan(0);
+      const representative = [...bySnapshot.entries()].sort((a, b) => {
+        if (a[1].created_epoch !== b[1].created_epoch) return b[1].created_epoch - a[1].created_epoch;
+        return a[0] < b[0] ? 1 : a[0] > b[0] ? -1 : 0;
+      })[0]!;
+      const winner = pickBest(
+        FLAG_SURVIVOR,
+        (r: Row2) => r.competency_id,
+        (r: Row2) => r.confidence,
+        (r: Row2) => [r.d_depth, r.u_depth ?? -1, r.k_depth ?? -1],
+        representative[1].rows,
+      );
+      const expectedRationale = winner.competency_id === FLAG_SURVIVOR ? winner.rationale : `[P0b merge: carried from ${winner.competency_id}] ${winner.rationale}`;
+      const expectedContext = { k: winner.k_depth, u: winner.u_depth, d: winner.d_depth, matchedCompetency: winner.matched_competency, rationale: expectedRationale };
+
+      const { id } = (
+        await q<{ id: string }>(
+          c,
+          `INSERT INTO faculty_flags (target_kind, course_code, sub_competency_id, note, flagged_by, flagged_context)
+           VALUES ('coverage_cell'::flag_target_kind, $1, 'gc-production-literacy', 'pre-existing M-5 fixture flag', 'test',
+                   jsonb_build_object('k', 9, 'u', 9, 'd', 9, 'matchedCompetency', 'WRONG — the stale merged-away reading', 'rationale', 'WRONG'))
+           RETURNING id::text`,
+          [FLAG_COURSE],
+        )
+      )[0]!;
+
+      await c.query(MIGRATION_BODY);
+
+      const [row] = await q<{ sub_competency_id: string; flagged_context: typeof expectedContext }>(
+        c,
+        `SELECT sub_competency_id, flagged_context FROM faculty_flags WHERE id = $1::uuid`,
+        [id],
+      );
+      expect(row!.sub_competency_id).toBe(FLAG_SURVIVOR);
+      expect(row!.flagged_context).toEqual(expectedContext);
+    });
+  });
+
+  it('7c (M-5, red-proof). without the fix, the re-pointed flag keeps its stale merged-away flagged_context', async () => {
+    const marker = `UPDATE faculty_flags f SET\n  sub_competency_id = m.survivor,`;
+    expect(MIGRATION_BODY.includes(marker), 'expected marker not found — migration SQL shape changed').toBe(true);
+    const brokenMigration = MIGRATION_BODY.replace(
+      /WITH representative AS \(\s*SELECT sc\.competency_id AS survivor[\s\S]*?WHERE f\.sub_competency_id = m\.old_id;/,
+      `UPDATE faculty_flags f SET sub_competency_id = m.survivor\nFROM merge_plan m WHERE f.sub_competency_id = m.old_id;`,
+    );
+    expect(brokenMigration, 'the regex replace must actually change the SQL for this red-proof to mean anything').not.toBe(MIGRATION_BODY);
+
+    await withTx(async (c) => {
+      const { id } = (
+        await q<{ id: string }>(
+          c,
+          `INSERT INTO faculty_flags (target_kind, course_code, sub_competency_id, note, flagged_by, flagged_context)
+           VALUES ('coverage_cell'::flag_target_kind, 'GC 1010', 'gc-production-literacy', 'red-proof fixture flag', 'test',
+                   jsonb_build_object('k', 9, 'u', 9, 'd', 9, 'matchedCompetency', 'WRONG — the stale merged-away reading', 'rationale', 'WRONG'))
+           RETURNING id::text`,
+        )
+      )[0]!;
+
+      await c.query(brokenMigration);
+
+      const [row] = await q<{ sub_competency_id: string; flagged_context: { k: number } }>(
+        c,
+        `SELECT sub_competency_id, flagged_context FROM faculty_flags WHERE id = $1::uuid`,
+        [id],
+      );
+      expect(row!.sub_competency_id).toBe('domain-knowledge');
+      // Red-proof: WITHOUT the fix, the stale k=9 placeholder survives the re-point.
+      expect(row!.flagged_context.k, 'red-proof: without the fix, flagged_context should still be the stale placeholder').toBe(9);
+    });
+  });
+
   it('8. sub_competency_map has 36 rows: the 3 merges map to their survivor, the other 33 are identity', async () => {
     await withTx(async (c) => {
       await c.query(MIGRATION_BODY);
@@ -626,6 +796,50 @@ describe.skipIf(!RUN)('migration 0057 (P0b) on a P0b clone, each test self-conta
     await withTx(async (c) => {
       await c.query(`DELETE FROM sub_competencies WHERE id = 'timeline-management'`);
       await expect(c.query(MIGRATION_BODY)).rejects.toThrow(/0057: precondition/);
+    });
+  });
+
+  it('12 (M-6, hostile review). a career_target_demand row on a merge competency raises "precondition" and changes nothing', async () => {
+    await withTx(async (c) => {
+      await q(
+        c,
+        `INSERT INTO career_target_demand (career_target_id, sub_competency_id, contributing_position_ids)
+         VALUES ('account-management', 'domain-knowledge', '[]'::jsonb)`,
+      );
+      // A failed statement aborts the rest of this transaction, so query
+      // through the abort (same technique test 10 uses) rather than issuing
+      // another statement straight after the expected rejection.
+      await c.query('SAVEPOINT before_migration_attempt');
+      await expect(c.query(MIGRATION_BODY)).rejects.toThrow(/0057: precondition/);
+      await c.query('ROLLBACK TO SAVEPOINT before_migration_attempt');
+
+      // Nothing else was touched — still pre-0057.
+      const migrated = await q<{ exists: boolean }>(c, `SELECT to_regclass('public.sub_competency_map') IS NOT NULL AS exists`);
+      expect(migrated[0]!.exists).toBe(false);
+    });
+  });
+
+  it('12b (M-6, red-proof). without the precondition, that same career_target_demand row lets the migration apply', async () => {
+    const marker = [
+      "  IF EXISTS (SELECT 1 FROM career_target_demand",
+      "             WHERE sub_competency_id IN ('domain-knowledge','project-management','gc-production-literacy','domain-grounding','timeline-management')) THEN",
+      "    RAISE EXCEPTION '0057: precondition — career_target_demand has a row on a merge competency (table drops in P1; re-point or clear it first)';",
+      '  END IF;',
+    ].join('\n');
+    expect(MIGRATION_BODY.includes(marker), 'expected marker not found — migration SQL shape changed').toBe(true);
+    const brokenMigration = MIGRATION_BODY.replace(marker, '');
+    expect(brokenMigration, 'the replace must actually change the SQL for this red-proof to mean anything').not.toBe(MIGRATION_BODY);
+
+    await withTx(async (c) => {
+      await q(
+        c,
+        `INSERT INTO career_target_demand (career_target_id, sub_competency_id, contributing_position_ids)
+         VALUES ('account-management', 'domain-knowledge', '[]'::jsonb)`,
+      );
+      // Red-proof: without the precondition, the migration no longer refuses.
+      await c.query(brokenMigration);
+      const migrated = await q<{ exists: boolean }>(c, `SELECT to_regclass('public.sub_competency_map') IS NOT NULL AS exists`);
+      expect(migrated[0]!.exists).toBe(true);
     });
   });
 });

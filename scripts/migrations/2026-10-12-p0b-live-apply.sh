@@ -368,10 +368,28 @@ PHASE="done"
 if [ "$MODE" = rollback ]; then
   echo
   echo "'$EXPECTED_DB' is now the restored pre-0057 database (swap completed by p0b-apply-db.sh above). The previously-migrated database was kept, not dropped — see p0b-apply-db.sh's own output above for its exact name and the two 'ALTER DATABASE ... RENAME TO ...;' commands that would undo this rollback."
-fi
-cat <<SMOKE
+  # M-3 (hostile review 2026-10-12): this used to always print the APPLY
+  # smoke test (merged competencies, new P0b faculty_flags) and "P0b
+  # applied to production" even in rollback mode, where $DEPLOY_DIR is the
+  # PRE-P0b build and none of that exists any more — wrong smoke test,
+  # wrong STATE.md instruction.
+  cat <<SMOKE
 
-DB $MODE applied. App and watchdog restarted. Smoke test at
+DB rollback applied. App and watchdog restarted on the pre-P0b build. Smoke test
+(pre-P0b behavior) at https://gcworkflow.clemson.edu:8443:
+  - /program — each target tab (domain-knowledge/project-management should
+    NOT show the merged descriptors; gc-production-literacy, domain-grounding
+    and timeline-management should be back as their own live competencies)
+  - a course page's prerequisite panel
+  - /wiki — a target page and a competency page
+  - /explore — one course
+
+Then update docs/STATE.md: P0b rolled back (date, owner go-ahead, reason).
+SMOKE
+else
+  cat <<SMOKE
+
+DB apply applied. App and watchdog restarted. Smoke test at
 https://gcworkflow.clemson.edu:8443:
   - /program — each target tab
   - a course page's prerequisite panel
@@ -383,4 +401,5 @@ https://gcworkflow.clemson.edu:8443:
 
 Then update docs/STATE.md: P0b applied to production (date, owner go-ahead).
 SMOKE
+fi
 exit 0

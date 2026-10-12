@@ -174,7 +174,17 @@ if [ "$MODE" = apply ]; then
   # exact shape p0a-verify-backup.sh's "apply" check expects, and the dump
   # a later rollback would restore FROM (hence pre-apply-*.dump).
   if ! "$VERIFY_BACKUP_SH" "$DUMP_FILE" apply; then
-    echo "refusing: backup verification failed; nothing applied" >&2
+    # M-2 (hostile review 2026-10-12): a failed dump still sits in
+    # $BACKUP_DIR as the newest pre-apply-*.dump — p0b-apply-db.sh's own
+    # rollback-mode basename check (and the --verify-backup check behind
+    # it) would correctly refuse it if someone handed it straight back as
+    # a rollback source, but renaming it out of the pre-apply-*.dump shape
+    # entirely means it can never even be MISTAKEN for a usable backup by
+    # anyone glancing at the directory. ".rejected" never matches
+    # pre-apply-*.dump (that pattern requires the name to END in ".dump").
+    REJECTED_FILE="${DUMP_FILE}.rejected"
+    mv "$DUMP_FILE" "$REJECTED_FILE"
+    echo "refusing: backup verification failed; nothing applied. The bad dump was renamed to $REJECTED_FILE so it can never be picked up as a pre-apply-*.dump rollback source." >&2
     exit 1
   fi
   echo "pre-apply backup of current state verified: $DUMP_FILE"

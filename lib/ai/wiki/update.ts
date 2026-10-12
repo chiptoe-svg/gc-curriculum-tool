@@ -1427,6 +1427,26 @@ export async function generateProgramWikiBatch(
 // ---------------------------------------------------------------------------
 
 /**
+ * Regenerate + push the wiki for ONE snapshot. Awaitable — unlike
+ * `regenerateWikiInBackground` below, this throws on failure instead of
+ * swallowing it, so a caller that needs to know whether the regeneration
+ * (and its paid LLM call) actually completed can await it and handle the
+ * error (I-2 hostile-review fix, 2026-10-12: the re-score script used to
+ * have no awaitable form to call and fired `regenerateWikiInBackground`
+ * instead, so `process.exit` killed every regeneration still in flight —
+ * 0 of 11 completed in the reviewer's reproduction).
+ */
+export async function regenerateWikiForSnapshot(snapshotId: string, reason: string): Promise<{ sha: string }> {
+  const snap = await getSnapshotById(snapshotId);
+  const { raw, wiki, logEntry } = await updateWikiForSnapshot(snapshotId);
+  const allPages = [...raw, ...wiki];
+  const codeSlug = (snap?.courseCode ?? 'wiki').toLowerCase().replace(/\s+/g, '-');
+  const date = new Date().toISOString().slice(0, 10);
+  const commitMessage = `feat(${codeSlug}): ${reason} ${date}${snap?.caption ? ` — ${snap.caption}` : ''}`;
+  return writeAndPush({ pages: allPages, logEntry, commitMessage });
+}
+
+/**
  * Regenerate + push the wiki for a snapshot, fire-and-forget. Two call sites:
  *   1. snapshot creation (course + concept pages + index), and
  *   2. AFTER coverage scoring (`program-score-coverage` writes
@@ -1435,25 +1455,17 @@ export async function generateProgramWikiBatch(
  *      from coverage rows that don't exist yet at snapshot-creation time.
  *
  * Non-blocking and never throws to the caller: a wiki-gen failure must not
- * break capture or coverage scoring. Errors are logged.
+ * break capture or coverage scoring. Errors are logged. A caller that DOES
+ * need to know when the regeneration finishes (e.g. a script about to exit)
+ * must call `regenerateWikiForSnapshot` directly and await it instead.
  */
 export function regenerateWikiInBackground(snapshotId: string, reason: string): void {
-  void (async () => {
-    try {
-      const snap = await getSnapshotById(snapshotId);
-      const { raw, wiki, logEntry } = await updateWikiForSnapshot(snapshotId);
-      const allPages = [...raw, ...wiki];
-      const codeSlug = (snap?.courseCode ?? 'wiki').toLowerCase().replace(/\s+/g, '-');
-      const date = new Date().toISOString().slice(0, 10);
-      const commitMessage = `feat(${codeSlug}): ${reason} ${date}${snap?.caption ? ` — ${snap.caption}` : ''}`;
-      await writeAndPush({ pages: allPages, logEntry, commitMessage });
-    } catch (err) {
-      console.error(
-        '[wiki regen] failed for snapshot', snapshotId, 'reason:', reason,
-        err instanceof Error ? err.message : err,
-      );
-    }
-  })();
+  void regenerateWikiForSnapshot(snapshotId, reason).catch((err) => {
+    console.error(
+      '[wiki regen] failed for snapshot', snapshotId, 'reason:', reason,
+      err instanceof Error ? err.message : err,
+    );
+  });
 }
 
 // ---------------------------------------------------------------------------

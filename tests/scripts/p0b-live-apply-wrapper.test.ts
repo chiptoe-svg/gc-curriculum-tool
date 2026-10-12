@@ -471,6 +471,27 @@ exit 0
     expect(log).toMatch(/stub-apply-db-called mode=rollback/);
   });
 
+  // --- M-3 (hostile review 2026-10-12): rollback mode's smoke test and
+  // STATE.md instruction must describe ROLLBACK, not reuse apply's text —
+  // the DB is restored to pre-P0b, not migrated, so "a merged competency:
+  // confirm the merged descriptors" and "P0b applied to production" are
+  // both false statements about what just happened.
+  it("rollback mode's smoke test describes PRE-P0b behavior and tells the owner to record a rollback, never apply's text", () => {
+    checkoutForTest(shaPre);
+    const res = run([shaPre, 'rollback', dumpPath], {
+      P0B_LIVE_APPLY_READ_ENV_MJS: writeReadEnvStub(tmp, {}),
+      P0B_LIVE_APPLY_APPLY_DB_SH: writeApplyDbStub(tmp, { exitCode: 0 }),
+      P0B_LIVE_APPLY_DB_MIGRATED_SH: writeDbMigratedStub(tmp, { output: 'f' }),
+    });
+    expect(res.status).toBe(0);
+    expect(res.stdout).toMatch(/DB rollback applied/);
+    expect(res.stdout).toMatch(/pre-P0b build/);
+    expect(res.stdout).toMatch(/update docs\/STATE\.md: P0b rolled back/);
+    // Never the apply-mode text.
+    expect(res.stdout).not.toMatch(/P0b applied to production/);
+    expect(res.stdout).not.toMatch(/confirm the merged descriptors/);
+  });
+
   // --- NEW (task-8 brief): kickstart is called after bootstrap, for both jobs
   it('kickstart runs AFTER bootstrap, for both the app job and the watchdog job', () => {
     checkoutForTest(shaPostMatch);

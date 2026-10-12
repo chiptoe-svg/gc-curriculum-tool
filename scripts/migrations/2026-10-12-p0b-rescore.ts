@@ -7,9 +7,11 @@
  * cell onto the survivor as a stopgap. This script replaces that carried
  * cell with a REAL re-score, using the new per-competency scorer
  * (scoreSnapshotCompetencies, P0b Task 5) against the merged descriptors —
- * for every latest, non-retired snapshot that had a cell on any member of
- * either merge group (read from the merged-away ids' still-present history
- * rows in snapshot_competency_coverage, union the premerge survivor table
+ * for EVERY non-retired snapshot of a program-visible course (not only the
+ * latest per course/instructor, and not restricted to builds_to_career —
+ * I-1 hostile-review fix) that had a cell on any member of either merge
+ * group (read from the merged-away ids' still-present history rows in
+ * snapshot_competency_coverage, union the premerge survivor table
  * p0b_premerge_survivor_coverage captured by 0057 before the carry
  * overwrote the survivor's own row).
  *
@@ -36,12 +38,22 @@
  *   - --apply checks checkDailyCap() before every scoring call and stops
  *     cleanly (reporting partial progress) if the cap trips.
  *   - Wiki writes (both the merged-away "merged into" stub writes — Task 6:
- *     writeMergedStub — and every regenerateWikiInBackground call) happen
- *     ONLY when --expect-db is exactly 'gc_curriculum' (the live database;
- *     see shouldWriteWiki/LIVE_DB_NAME). The wiki repo is a real git repo
- *     that pushes, so ANY other --expect-db skips wiki writes automatically
- *     (a line is printed saying so) regardless of --skip-wiki. --skip-wiki
+ *     writeMergedStub — and every wiki regeneration) happen ONLY when
+ *     --expect-db is exactly 'gc_curriculum' (the live database; see
+ *     shouldWriteWiki/LIVE_DB_NAME). The wiki repo is a real git repo that
+ *     pushes, so ANY other --expect-db skips wiki writes automatically (a
+ *     line is printed saying so) regardless of --skip-wiki. --skip-wiki
  *     remains the explicit opt-out for the live run (Task 11).
+ *   - Every wiki regeneration is AWAITED, sequentially (git writes to the
+ *     wiki repo serialize anyway), BEFORE this script exits — fixed from an
+ *     earlier version that fired `regenerateWikiInBackground` and let
+ *     `process.exit` kill every regeneration still in flight (I-2,
+ *     hostile review 2026-10-12: reproduced as 0 of 11 completing). A
+ *     per-snapshot wiki failure is caught, reported, and does NOT undo that
+ *     snapshot's DB cell writes or stop later snapshots from being scored —
+ *     but main() still exits non-zero if any wiki write (regeneration or
+ *     merged-stub) failed, with a line naming which one and telling the
+ *     caller to re-run.
  *   - Never creates or closes a faculty_flags row — the 0057 flags stay
  *     open for faculty; this script doesn't touch faculty_flags at all.
  *   - Never prints DATABASE_URL or any other credential.
@@ -49,12 +61,13 @@
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { subCompetencies, snapshotCompetencyCoverage, p0bPremergeSurvivorCoverage, courseCaptureSnapshots } from '@/lib/db/schema';
+import { PROGRAM_VISIBLE_SQL } from '@/lib/courses/program-visibility';
 import type { Tx } from '@/lib/db/competency-catalog-queries';
 import { getSnapshotById } from '@/lib/db/capture-snapshots-queries';
 import { scoreSnapshotCompetencies } from '@/lib/ai/analyze/program-score-coverage';
 import { upsertCoverageCell } from '@/lib/db/program-coverage-queries';
 import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
-import { writeMergedStub, regenerateWikiInBackground } from '@/lib/ai/wiki/update';
+import { writeMergedStub, regenerateWikiForSnapshot } from '@/lib/ai/wiki/update';
 import { loadAppEnv, isMainModule } from '@/scripts/catalog/catalog-source';
 
 // ─── The merge plan (mirrors drizzle/0057_competency_catalog_p0b.sql's merge_plan) ──
@@ -126,28 +139,39 @@ export interface InScopeSnapshot {
 }
 
 /**
- * Every non-retired LATEST snapshot (the listStaleSnapshots latest-snapshot
- * rule: one row per (course_code, instructor_name), non-retired, builds to
- * career, scope 'gc', status 'offered') that has a cell on any member of
- * either merge group. "Has a cell on any group member" is read from TWO
- * sources, never from the survivor's current (already-carried)
- * snapshot_competency_coverage row:
+ * EVERY non-retired snapshot of a PROGRAM-VISIBLE course (PROGRAM_VISIBLE_SQL
+ * — `scope = 'gc' AND status = 'offered'`) that has a cell on any member of
+ * either merge group — not only the latest snapshot per (course,
+ * instructor), and not restricted to `builds_to_career`.
+ *
+ * Fix (I-1, hostile review 2026-10-12): the owner's Task 8b decision widened
+ * career rollups AND scoring scope from `builds_to_career = true` to every
+ * program-visible course (see listStaleSnapshots's own PROGRAM_VISIBLE_SQL
+ * use) — this script predated that decision and still filtered on
+ * `builds_to_career`, so 8 off-path program-visible snapshots were silently
+ * skipped forever (carried/pre-merge cells that would never be re-scored,
+ * and merge-disagreement flags whose "Re-scored against the merged
+ * descriptor" note would never become true). Scoring EVERY non-retired
+ * snapshot (not just the latest per course/instructor) also fixes M-8: a
+ * course's flag-representative snapshot is not always its instructor's
+ * latest capture, and the latest capture can have no group cell at all (so
+ * it was never in scope either way) while an older snapshot does.
+ *
+ * "Has a cell on any group member" is read from TWO sources, never from the
+ * survivor's current (already-carried) snapshot_competency_coverage row:
  *   - the merged-away ids' rows in snapshot_competency_coverage, which 0057
  *     never touched (still keyed by the old id), and
  *   - p0b_premerge_survivor_coverage, the survivor's own pre-merge cell,
  *     captured by 0057 before the carry overwrote it.
  */
 export async function findInScopeSnapshots(executor: Executor = db): Promise<InScopeSnapshot[]> {
-  const latestResult = await executor.execute(sql`
-    SELECT DISTINCT ON (s.course_code, s.instructor_name)
-      s.id, s.course_code
+  const visibleResult = await executor.execute(sql`
+    SELECT s.id, s.course_code
     FROM ${courseCaptureSnapshots} s
     JOIN courses c ON c.code = s.course_code
-    WHERE s.retired_at IS NULL AND c.builds_to_career = true
-      AND c.scope = 'gc' AND c.status = 'offered'
-    ORDER BY s.course_code, s.instructor_name, s.created_at DESC
+    WHERE s.retired_at IS NULL AND ${PROGRAM_VISIBLE_SQL}
   `);
-  const latestSnaps = latestResult.rows as Array<{ id: string; course_code: string }>;
+  const visibleSnaps = visibleResult.rows as Array<{ id: string; course_code: string }>;
 
   const mergedAwayHits = await executor
     .select({ snapshotId: snapshotCompetencyCoverage.snapshotId })
@@ -161,7 +185,7 @@ export async function findInScopeSnapshots(executor: Executor = db): Promise<InS
   for (const r of mergedAwayHits) hitIds.add(r.snapshotId);
   for (const r of premergeHits) if (r.snapshotId) hitIds.add(r.snapshotId);
 
-  return latestSnaps
+  return visibleSnaps
     .filter(s => hitIds.has(s.id))
     .map(s => ({ snapshotId: s.id, courseCode: s.course_code }));
 }
@@ -239,7 +263,7 @@ export interface RescoreDeps {
   checkDailyCap?: typeof checkDailyCap;
   recordSpend?: typeof recordSpend;
   writeMergedStub?: typeof writeMergedStub;
-  regenerateWikiInBackground?: typeof regenerateWikiInBackground;
+  regenerateWikiForSnapshot?: typeof regenerateWikiForSnapshot;
 }
 
 export interface RescoreRow {
@@ -250,6 +274,22 @@ export interface RescoreRow {
   new: CarriedCell;
 }
 
+/** One wiki regeneration's outcome — I-2: reported, never silently dropped. */
+export interface WikiRegenOutcome {
+  snapshotId: string;
+  courseCode: string;
+  ok: boolean;
+  error?: string;
+}
+
+/** One merged-away stub write's outcome — same discipline as WikiRegenOutcome. */
+export interface StubWriteOutcome {
+  oldId: string;
+  survivorId: string;
+  ok: boolean;
+  error?: string;
+}
+
 export interface RescoreOutcome {
   scope: InScopeSnapshot[];
   rows: RescoreRow[];
@@ -257,6 +297,8 @@ export interface RescoreOutcome {
   cappedEarly: boolean;
   snapshotsProcessed: number;
   wikiWritesEnabled: boolean;
+  wikiResults: WikiRegenOutcome[];
+  stubResults: StubWriteOutcome[];
 }
 
 export async function runRescore(args: RescoreArgs, deps: RescoreDeps = {}): Promise<RescoreOutcome> {
@@ -267,7 +309,7 @@ export async function runRescore(args: RescoreArgs, deps: RescoreDeps = {}): Pro
 
   if (!args.apply) {
     // Dry run: report the scope only. No AI call, no DB write, no wiki write.
-    return { scope, rows: [], totalCostUsdCents: 0, cappedEarly: false, snapshotsProcessed: 0, wikiWritesEnabled: writeWiki };
+    return { scope, rows: [], totalCostUsdCents: 0, cappedEarly: false, snapshotsProcessed: 0, wikiWritesEnabled: writeWiki, wikiResults: [], stubResults: [] };
   }
 
   if (!writeWiki && !args.skipWiki) {
@@ -282,9 +324,10 @@ export async function runRescore(args: RescoreArgs, deps: RescoreDeps = {}): Pro
   const score = deps.scoreSnapshotCompetencies ?? scoreSnapshotCompetencies;
   const upsert = deps.upsertCoverageCell ?? upsertCoverageCell;
   const getCarried = deps.getCarriedCells ?? getCarriedCells;
-  const regenWiki = deps.regenerateWikiInBackground ?? regenerateWikiInBackground;
+  const regenWiki = deps.regenerateWikiForSnapshot ?? regenerateWikiForSnapshot;
 
   const rows: RescoreRow[] = [];
+  const wikiResults: WikiRegenOutcome[] = [];
   let totalCostUsdCents = 0;
   let cappedEarly = false;
   let snapshotsProcessed = 0;
@@ -340,11 +383,26 @@ export async function runRescore(args: RescoreArgs, deps: RescoreDeps = {}): Pro
     }
 
     snapshotsProcessed++;
+
+    // I-2: AWAITED, sequentially (wiki git writes serialize anyway). A
+    // failure is caught and reported — it must NOT undo the DB cell writes
+    // just made above, and must NOT stop later snapshots from being scored.
     if (writeWiki) {
-      regenWiki(item.snapshotId, 'p0b-rescore: survivor re-score (domain-knowledge, project-management)');
+      try {
+        await regenWiki(item.snapshotId, 'p0b-rescore: survivor re-score (domain-knowledge, project-management)');
+        wikiResults.push({ snapshotId: item.snapshotId, courseCode: item.courseCode, ok: true });
+      } catch (err) {
+        wikiResults.push({
+          snapshotId: item.snapshotId,
+          courseCode: item.courseCode,
+          ok: false,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      }
     }
   }
 
+  const stubResults: StubWriteOutcome[] = [];
   if (writeWiki) {
     const getNames = deps.getMergedAwayNames ?? getMergedAwayNames;
     const names = await getNames(executor);
@@ -352,11 +410,16 @@ export async function runRescore(args: RescoreArgs, deps: RescoreDeps = {}): Pro
     const writeStub = deps.writeMergedStub ?? writeMergedStub;
     for (const oldId of MERGED_AWAY_IDS) {
       const survivorId = MERGE_PLAN[oldId]!;
-      await writeStub(oldId, survivorId, survivorNameById.get(survivorId) ?? survivorId, names[oldId] ?? oldId);
+      try {
+        await writeStub(oldId, survivorId, survivorNameById.get(survivorId) ?? survivorId, names[oldId] ?? oldId);
+        stubResults.push({ oldId, survivorId, ok: true });
+      } catch (err) {
+        stubResults.push({ oldId, survivorId, ok: false, error: err instanceof Error ? err.message : String(err) });
+      }
     }
   }
 
-  return { scope, rows, totalCostUsdCents, cappedEarly, snapshotsProcessed, wikiWritesEnabled: writeWiki };
+  return { scope, rows, totalCostUsdCents, cappedEarly, snapshotsProcessed, wikiWritesEnabled: writeWiki, wikiResults, stubResults };
 }
 
 // ─── Report ─────────────────────────────────────────────────────────────────
@@ -387,6 +450,31 @@ export function printReport(args: RescoreArgs, outcome: RescoreOutcome): void {
   if (outcome.cappedEarly) {
     console.log('STOPPED EARLY: daily cost cap reached before all in-scope snapshots were processed.');
   }
+
+  if (outcome.wikiWritesEnabled) {
+    console.log('\nwiki regeneration, one line per snapshot:');
+    for (const r of outcome.wikiResults) {
+      console.log(r.ok
+        ? `  OK   ${r.courseCode} (${r.snapshotId})`
+        : `  FAIL ${r.courseCode} (${r.snapshotId}): ${r.error}`);
+    }
+    console.log('\nmerged-away stub writes, one line per competency:');
+    for (const r of outcome.stubResults) {
+      console.log(r.ok ? `  OK   ${r.oldId} -> ${r.survivorId}` : `  FAIL ${r.oldId} -> ${r.survivorId}: ${r.error}`);
+    }
+  }
+}
+
+/** Every wiki write (regeneration or merged-stub) that failed, in report order. */
+export function wikiFailures(outcome: RescoreOutcome): Array<{ label: string; error: string }> {
+  const failures: Array<{ label: string; error: string }> = [];
+  for (const r of outcome.wikiResults) {
+    if (!r.ok) failures.push({ label: `wiki regeneration for ${r.courseCode} (${r.snapshotId})`, error: r.error ?? 'unknown error' });
+  }
+  for (const r of outcome.stubResults) {
+    if (!r.ok) failures.push({ label: `merged-stub write ${r.oldId} -> ${r.survivorId}`, error: r.error ?? 'unknown error' });
+  }
+  return failures;
 }
 
 // ─── Entry point ────────────────────────────────────────────────────────────
@@ -395,6 +483,13 @@ export function printReport(args: RescoreArgs, outcome: RescoreOutcome): void {
  * Returns an exit code rather than calling process.exit itself, so tests can
  * call this directly. Order matters: parse args -> assertExpectedDb (the
  * ONLY db-identity check, before any other read) -> runRescore -> report.
+ *
+ * All DB writes (cell upserts) from runRescore stand regardless of exit
+ * code — a wiki failure (I-2) never undoes them. A non-zero exit here means
+ * ONLY that at least one wiki write failed; the caller should re-run this
+ * same script with the same args (cells already scored are re-scored
+ * again, which is harmless — see M-7, deferred) or investigate the wiki
+ * repo directly before re-running just the wiki side.
  */
 export async function main(argv: string[], deps: RescoreDeps = {}): Promise<number> {
   let args: RescoreArgs;
@@ -415,6 +510,14 @@ export async function main(argv: string[], deps: RescoreDeps = {}): Promise<numb
 
   const outcome = await runRescore(args, deps);
   printReport(args, outcome);
+
+  const failures = wikiFailures(outcome);
+  if (failures.length > 0) {
+    console.error(`\n${failures.length} wiki write(s) failed; DB cell writes above are NOT affected and were NOT rolled back:`);
+    for (const f of failures) console.error(`  - ${f.label}: ${f.error}`);
+    console.error('Re-run this same script (same args) to retry — a cell that already scored correctly will just be re-scored, which is harmless.');
+    return 3;
+  }
   return 0;
 }
 

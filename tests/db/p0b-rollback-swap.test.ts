@@ -23,7 +23,7 @@
 // something this file creates, renames, or drops.
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync, chmodSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { Pool } from 'pg';
@@ -314,5 +314,48 @@ describe.skipIf(!RUN)('p0b-apply-db.sh rollback (fix round 1): restore-into-new-
       await holder.end();
     }
     expect(queryOne(url, 'SELECT count(*) FROM career_target_requirements')).toBe(before);
+  });
+
+  // M-2 (hostile review 2026-10-12): a failed pre-apply backup verification
+  // used to leave the bad dump sitting in $BACKUP_DIR as the newest
+  // pre-apply-*.dump — safe (the rollback-side basename/verify checks would
+  // still refuse it), but misleading to a human glancing at the directory.
+  // Forces a real apply-mode backup-verification failure via the
+  // P0B_APPLY_DB_VERIFY_BACKUP_SH override (a stub that always fails),
+  // against a real rbtest clone — the apply never reaches the migration
+  // SQL itself, so which shape the clone is in doesn't matter here.
+  it('p0b-apply-db.sh renames a backup that fails verification to *.rejected, which can never be mistaken for pre-apply-*.dump', () => {
+    const name = `${ROLLBACK_TEST_DB}_backupfail`;
+    expect(isP0bRollbackTestDb(name)).toBe(true);
+    createdDbs.add(name);
+    cloneDatabase(SCRATCH_URL, name);
+    const url = withDbName(SCRATCH_URL, name);
+
+    const failingVerifyBackup = join(tmp, 'always-fail-verify-backup.sh');
+    writeFileSync(failingVerifyBackup, '#!/usr/bin/env bash\necho "stub: simulated backup verification failure" >&2\nexit 1\n');
+    chmodSync(failingVerifyBackup, 0o755);
+
+    const before = readdirSync(tmp).filter(f => f.startsWith('pre-apply-'));
+
+    const res = runScript(APPLY_DB_SH, [name, tmp, 'apply'], {
+      DATABASE_URL: url,
+      P0B_APPLY_DB_VERIFY_BACKUP_SH: failingVerifyBackup,
+    });
+
+    expect(res.status).not.toBe(0);
+    expect(res.stderr).toMatch(/backup verification failed; nothing applied\. The bad dump was renamed to .*\.rejected/);
+
+    const after = readdirSync(tmp);
+    const rejected = after.filter(f => f.startsWith('pre-apply-') && f.endsWith('.rejected'));
+    const stillAPreApplyDump = after.filter(f => f.startsWith('pre-apply-') && f.endsWith('.dump'));
+    expect(rejected.length).toBe(1);
+    // The renamed file is no longer shaped like pre-apply-*.dump at all —
+    // none of the *.dump files left behind are new (only the ones from the
+    // tests above this one, none of which this test's clone could have
+    // produced since it never got past backup verification).
+    expect(stillAPreApplyDump.length).toBe(before.length);
+
+    // The migration never ran — still post-0057, completely untouched.
+    expect(queryOne(url, "SELECT to_regclass('public.sub_competency_map') IS NOT NULL")).toBe('t');
   });
 });

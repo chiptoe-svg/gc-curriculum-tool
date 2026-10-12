@@ -29,6 +29,16 @@ BEGIN
           IS DISTINCT FROM ARRAY[e.tid]) THEN
     RAISE EXCEPTION '0057: precondition — a merge competency is not in exactly its expected target';
   END IF;
+  -- M-6 (hostile review 2026-10-12): career_target_demand carries its own FK
+  -- to sub_competencies and is neither re-pointed nor checked below (it is
+  -- slated to drop entirely in P1 — see STATE.md Deferred/debt — so no
+  -- carry/re-point logic was written for it). A live row on any of the 5
+  -- merge ids would silently keep pointing at a retired competency forever
+  -- if this migration let it through; refuse instead.
+  IF EXISTS (SELECT 1 FROM career_target_demand
+             WHERE sub_competency_id IN ('domain-knowledge','project-management','gc-production-literacy','domain-grounding','timeline-management')) THEN
+    RAISE EXCEPTION '0057: precondition — career_target_demand has a row on a merge competency (table drops in P1; re-point or clear it first)';
+  END IF;
 END $$;
 
 CREATE TEMP TABLE merge_plan (old_id text PRIMARY KEY, survivor text NOT NULL, note text NOT NULL) ON COMMIT DROP;
@@ -40,6 +50,30 @@ INSERT INTO merge_plan VALUES
 CREATE TEMP TABLE merge_group ON COMMIT DROP AS
   SELECT survivor, old_id AS member FROM merge_plan
   UNION SELECT DISTINCT survivor, survivor FROM merge_plan;
+
+-- M-1 (hostile review 2026-10-12): the post-check used to hard-code
+-- "expected 35 requirement rows" — correct only for the exact scratch
+-- fixture this was developed against, and guaranteed to block a real live
+-- apply the moment a legitimate requirement is added on live between the
+-- scratch clone and the apply window. Captured here, BEFORE any mutation,
+-- so the post-check (step 11) can compare against a count that is
+-- RELATIVE to whatever career_target_requirements actually held going in:
+-- pre_count (every row, as-is) minus merged_away_count (the rows step 8
+-- deletes) plus new_insert_count (the (target, survivor) pairs step 8's
+-- INSERT ... ON CONFLICT DO NOTHING will actually add — a pair already
+-- satisfied by the survivor's own pre-existing row is NOT a new insert).
+CREATE TEMP TABLE pre_counts ON COMMIT DROP AS
+SELECT
+  (SELECT count(*) FROM career_target_requirements) AS pre_count,
+  (SELECT count(*) FROM career_target_requirements WHERE competency_id IN (SELECT old_id FROM merge_plan)) AS merged_away_count,
+  (SELECT count(*) FROM (
+     SELECT DISTINCT r.career_target_id, m.survivor
+     FROM career_target_requirements r JOIN merge_plan m ON m.old_id = r.competency_id
+     WHERE NOT EXISTS (
+       SELECT 1 FROM career_target_requirements r2
+       WHERE r2.career_target_id = r.career_target_id AND r2.competency_id = m.survivor
+     )
+   ) new_pairs) AS new_insert_count;
 
 -- 1. New catalog columns and tables.
 ALTER TABLE sub_competencies ADD COLUMN merged_into text REFERENCES sub_competencies(id) ON DELETE RESTRICT;
@@ -183,9 +217,38 @@ DELETE FROM prerequisite_edges WHERE id IN (SELECT id FROM ranked WHERE rn > 1);
 UPDATE prerequisite_edges e SET sub_competency_id = m.survivor, updated_at = now()
 FROM merge_plan m WHERE e.sub_competency_id = m.old_id;
 
--- 7. Faculty flags: re-point.
-UPDATE faculty_flags f SET sub_competency_id = m.survivor
-FROM merge_plan m WHERE f.sub_competency_id = m.old_id;
+-- 7. Faculty flags: re-point AND refresh flagged_context (M-5, hostile
+-- review 2026-10-12). A flag re-pointed from a merged-away id but left with
+-- the merged-away cell's K/U/D would have drift logic reading
+-- flagged_context against the SURVIVOR's current cell — a different
+-- competency's reading compared to a different competency's baseline,
+-- showing apparent drift that was never real. flagged_context is reset to
+-- the survivor's own carried cell (step 3 already ran, so
+-- snapshot_competency_coverage's survivor row IS the carried value) for
+-- that course's representative snapshot — the latest non-retired snapshot
+-- of the flag's course that has a survivor cell, same "latest, created_at
+-- DESC then id DESC" rule step 4 uses. NULL when no such cell exists (a
+-- flag on a course whose representative snapshot was never carried a
+-- survivor cell) rather than comparing across competencies.
+WITH representative AS (
+  SELECT sc.competency_id AS survivor, s.course_code,
+         (array_agg(sc.snapshot_id ORDER BY s.created_at DESC, sc.snapshot_id DESC))[1] AS snapshot_id
+  FROM snapshot_competency_coverage sc
+  JOIN course_capture_snapshots s ON s.id = sc.snapshot_id AND s.retired_at IS NULL
+  WHERE sc.competency_id IN (SELECT DISTINCT survivor FROM merge_plan)
+  GROUP BY sc.competency_id, s.course_code
+)
+UPDATE faculty_flags f SET
+  sub_competency_id = m.survivor,
+  flagged_context = (
+    SELECT jsonb_build_object('k', sc2.k_depth, 'u', sc2.u_depth, 'd', sc2.d_depth,
+                               'matchedCompetency', sc2.matched_competency, 'rationale', sc2.rationale)
+    FROM representative r
+    JOIN snapshot_competency_coverage sc2 ON sc2.snapshot_id = r.snapshot_id AND sc2.competency_id = m.survivor
+    WHERE r.survivor = m.survivor AND r.course_code = f.course_code
+  )
+FROM merge_plan m
+WHERE f.sub_competency_id = m.old_id;
 
 -- 8. Requirements (Ruling 6).
 INSERT INTO career_target_requirements (career_target_id, competency_id, horizon, weight, weight_source,
@@ -211,13 +274,24 @@ ALTER TABLE sub_competencies DROP COLUMN display_order;
 
 -- 11. Post-checks.
 DO $$
+DECLARE
+  expected_req_count int;
+  actual_req_count int;
 BEGIN
   IF EXISTS (SELECT 1 FROM career_target_requirements r JOIN sub_competencies s ON s.id = r.competency_id
              WHERE s.merged_into IS NOT NULL) THEN
     RAISE EXCEPTION '0057: a merged-away competency still has requirements';
   END IF;
-  IF (SELECT count(*) FROM career_target_requirements) <> 35 THEN
-    RAISE EXCEPTION '0057: expected 35 requirement rows, found %', (SELECT count(*) FROM career_target_requirements);
+  -- M-1: relative to what career_target_requirements held BEFORE this
+  -- migration touched anything (pre_counts, captured above) — not a
+  -- hard-coded 35, which would block a real live apply the moment a
+  -- legitimate requirement is added on live after the scratch clone.
+  SELECT pre_count - merged_away_count + new_insert_count INTO expected_req_count FROM pre_counts;
+  SELECT count(*) INTO actual_req_count FROM career_target_requirements;
+  IF actual_req_count <> expected_req_count THEN
+    RAISE EXCEPTION '0057: expected % requirement rows (pre-migration % minus % merged-away plus % newly inserted), found %',
+      expected_req_count, (SELECT pre_count FROM pre_counts), (SELECT merged_away_count FROM pre_counts),
+      (SELECT new_insert_count FROM pre_counts), actual_req_count;
   END IF;
   IF (SELECT count(*) FROM sub_competency_map) <> (SELECT count(*) FROM sub_competencies) THEN
     RAISE EXCEPTION '0057: sub_competency_map does not cover every competency';

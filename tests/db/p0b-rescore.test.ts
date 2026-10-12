@@ -6,7 +6,7 @@
 // gated on isP0bMainDb(), same as the other post-0057 DB tests.
 //
 // The scorer (scoreSnapshotCompetencies) and the wiki writer (writeMergedStub,
-// regenerateWikiInBackground) are ALWAYS mocked here — this suite makes no
+// regenerateWikiForSnapshot) are ALWAYS mocked here — this suite makes no
 // paid AI calls and never touches the wiki repo. Everything else (the scope
 // query, the catalog reads, upsertCoverageCell) runs for real against the
 // scratch database, with a fixture course+snapshot created in each test and
@@ -18,6 +18,7 @@ import { courses, courseCaptureSnapshots, snapshotCompetencyCoverage } from '@/l
 import {
   main,
   runRescore,
+  findInScopeSnapshots,
   shouldWriteWiki,
   LIVE_DB_NAME,
   SURVIVOR_IDS,
@@ -28,6 +29,15 @@ import { SCRATCH_DB, isP0bMainDb } from './p0b/scratch-guard';
 const RUN = isP0bMainDb();
 
 const TEST_CODE = 'ZZ 9992'; // never a real course — distinct from the other DB tests' fixture codes
+// I-1 fix (hostile review): off-path (builds_to_career=false) program-visible
+// course — must now be IN scope (the owner's 8b decision: career views and
+// scoring count every program-visible course, not just builds_to_career).
+const OFFPATH_CODE = 'ZZ 9991';
+// I-1/M-8 fix: a course with TWO non-retired snapshots for the SAME
+// instructor — an older one with a group-member cell, and a newer (so
+// "latest") one with no coverage at all. Scope must include the OLDER
+// snapshot even though it isn't the latest capture for that instructor.
+const MULTI_CODE = 'ZZ 9990';
 const PROFILE = { course_code: TEST_CODE, scale_version: 'v1' } as never;
 const INPUTS_META = { catalog: {}, builderProfilePresent: false, materials: [], prereqSnapshotsUsed: [], scanPasses: {} } as never;
 
@@ -55,8 +65,49 @@ async function newFixtureSnapshot(): Promise<string> {
 }
 
 async function cleanupFixture(): Promise<void> {
-  await db.delete(courseCaptureSnapshots).where(eq(courseCaptureSnapshots.courseCode, TEST_CODE));
-  await db.delete(courses).where(eq(courses.code, TEST_CODE));
+  for (const code of [TEST_CODE, OFFPATH_CODE, MULTI_CODE]) {
+    await db.delete(courseCaptureSnapshots).where(eq(courseCaptureSnapshots.courseCode, code));
+    await db.delete(courses).where(eq(courses.code, code));
+  }
+}
+
+/** Off-path (builds_to_career=false) program-visible course, one non-retired
+ * snapshot with a group-member cell (domain-grounding). */
+async function newOffPathFixtureSnapshot(): Promise<string> {
+  await db.insert(courses).values({
+    code: OFFPATH_CODE, title: 'P0b rescore off-path test course', level: 9000, track: 'test', buildsToCareer: false,
+  } as never).onConflictDoNothing();
+  const [snap] = await db.insert(courseCaptureSnapshots).values({
+    courseCode: OFFPATH_CODE, profile: { course_code: OFFPATH_CODE, scale_version: 'v1' } as never, inputsMeta: INPUTS_META,
+    scaleVersion: 'v1', model: 'test', instructorName: 'P0b Rescore Off-Path Test', createdAt: new Date('2026-10-12T00:00:00Z'),
+  } as never).returning({ id: courseCaptureSnapshots.id });
+  const snapshotId = snap!.id;
+  await db.insert(snapshotCompetencyCoverage).values({
+    snapshotId, competencyId: 'domain-grounding', kDepth: 1, uDepth: 1, dDepth: 1,
+    matchedCompetency: null, evidenceExcerpt: null, confidence: 'high' as const, rationale: 'fixture off-path member', model: 'test',
+  } as never);
+  return snapshotId;
+}
+
+/** Same (course, instructor), two non-retired snapshots: an OLDER one with a
+ * group-member cell, and a NEWER ("latest") one with no coverage at all. */
+async function newMultiSnapshotFixture(): Promise<{ older: string; newer: string }> {
+  await db.insert(courses).values({
+    code: MULTI_CODE, title: 'P0b rescore multi-snapshot test course', level: 9000, track: 'test', buildsToCareer: true,
+  } as never).onConflictDoNothing();
+  const [older] = await db.insert(courseCaptureSnapshots).values({
+    courseCode: MULTI_CODE, profile: { course_code: MULTI_CODE, scale_version: 'v1' } as never, inputsMeta: INPUTS_META,
+    scaleVersion: 'v1', model: 'test', instructorName: 'Same Instructor', createdAt: new Date('2026-01-01T00:00:00Z'),
+  } as never).returning({ id: courseCaptureSnapshots.id });
+  await db.insert(snapshotCompetencyCoverage).values({
+    snapshotId: older!.id, competencyId: 'timeline-management', kDepth: 1, uDepth: 1, dDepth: 1,
+    matchedCompetency: null, evidenceExcerpt: null, confidence: 'high' as const, rationale: 'fixture older-snapshot member', model: 'test',
+  } as never);
+  const [newer] = await db.insert(courseCaptureSnapshots).values({
+    courseCode: MULTI_CODE, profile: { course_code: MULTI_CODE, scale_version: 'v1' } as never, inputsMeta: INPUTS_META,
+    scaleVersion: 'v1', model: 'test', instructorName: 'Same Instructor', createdAt: new Date('2026-06-01T00:00:00Z'),
+  } as never).returning({ id: courseCaptureSnapshots.id });
+  return { older: older!.id, newer: newer!.id };
 }
 
 const FIXED_SCORE_RESULT = {
@@ -78,7 +129,7 @@ function mockDeps(overrides: Partial<RescoreDeps> = {}): RescoreDeps {
     checkDailyCap: vi.fn().mockResolvedValue({ ok: true, spentCents: 0, overCap: false }),
     recordSpend: vi.fn().mockResolvedValue(undefined),
     writeMergedStub: vi.fn().mockResolvedValue({ sha: 'deadbeef' }),
-    regenerateWikiInBackground: vi.fn(),
+    regenerateWikiForSnapshot: vi.fn().mockResolvedValue({ sha: 'deadbeef' }),
     ...overrides,
   };
 }
@@ -103,6 +154,32 @@ describe('shouldWriteWiki (fix: wiki writes only against --expect-db gc_curricul
   });
 });
 
+describe.skipIf(!RUN)('findInScopeSnapshots scope (I-1 hostile-review fix: program-visible, not builds_to_career; every non-retired snapshot, not just the latest)', () => {
+  afterEach(cleanupFixture);
+
+  it('includes an off-path (builds_to_career=false) program-visible snapshot with a group-member cell', async () => {
+    const snapshotId = await newOffPathFixtureSnapshot();
+
+    const scope = await findInScopeSnapshots();
+
+    expect(scope.map(s => s.snapshotId)).toContain(snapshotId);
+    const row = scope.find(s => s.snapshotId === snapshotId);
+    expect(row!.courseCode).toBe(OFFPATH_CODE);
+  });
+
+  it('includes an OLDER non-retired snapshot with a group-member cell even when a NEWER snapshot for the same instructor has no cell at all (M-8)', async () => {
+    const { older, newer } = await newMultiSnapshotFixture();
+
+    const scope = await findInScopeSnapshots();
+
+    expect(scope.map(s => s.snapshotId)).toContain(older);
+    // The newer snapshot has no group-member cell of its own, so it has no
+    // business in THIS script's scope (listStaleSnapshots's "missing cell"
+    // bulk refresh is a separate, later concern) — it simply never appears.
+    expect(scope.map(s => s.snapshotId)).not.toContain(newer);
+  });
+});
+
 describe.skipIf(!RUN)('p0b rescore script (P0b Task 7, post-0057)', () => {
   afterEach(cleanupFixture);
 
@@ -117,7 +194,7 @@ describe.skipIf(!RUN)('p0b rescore script (P0b Task 7, post-0057)', () => {
     expect(deps.checkDailyCap).not.toHaveBeenCalled();
     expect(deps.recordSpend).not.toHaveBeenCalled();
     expect(deps.writeMergedStub).not.toHaveBeenCalled();
-    expect(deps.regenerateWikiInBackground).not.toHaveBeenCalled();
+    expect(deps.regenerateWikiForSnapshot).not.toHaveBeenCalled();
 
     const fixtureRows = await db.select({ competencyId: snapshotCompetencyCoverage.competencyId })
       .from(snapshotCompetencyCoverage)
@@ -152,7 +229,7 @@ describe.skipIf(!RUN)('p0b rescore script (P0b Task 7, post-0057)', () => {
 
     // skipWiki: true — no wiki writes at all, even though apply ran for real.
     expect(deps.writeMergedStub).not.toHaveBeenCalled();
-    expect(deps.regenerateWikiInBackground).not.toHaveBeenCalled();
+    expect(deps.regenerateWikiForSnapshot).not.toHaveBeenCalled();
   });
 
   it('--apply against scratch WITHOUT --skip-wiki still makes 0 wiki calls — only --expect-db gc_curriculum writes wiki', async () => {
@@ -167,7 +244,96 @@ describe.skipIf(!RUN)('p0b rescore script (P0b Task 7, post-0057)', () => {
 
     expect(outcome.wikiWritesEnabled).toBe(false);
     expect(deps.writeMergedStub).not.toHaveBeenCalled();
-    expect(deps.regenerateWikiInBackground).not.toHaveBeenCalled();
+    expect(deps.regenerateWikiForSnapshot).not.toHaveBeenCalled();
+  });
+
+  // --- I-2 (hostile review): wiki regenerations must be AWAITED, not fired
+  // and dropped by process.exit. These call runRescore directly with
+  // expectDb: LIVE_DB_NAME (shouldWriteWiki is a pure function of args —
+  // no real 'gc_curriculum' connection is involved; the executor/db
+  // connection underneath is still the real scratch database throughout).
+  it('awaits a slow wiki regeneration before returning — it is not dropped (I-2)', async () => {
+    const snapshotId = await newFixtureSnapshot();
+    let resolved = false;
+    const regen = vi.fn().mockImplementation(() => new Promise(resolve => {
+      setTimeout(() => { resolved = true; resolve({ sha: 'deadbeef' }); }, 50);
+    }));
+    const deps = mockDeps({
+      findInScopeSnapshots: vi.fn().mockResolvedValue([{ snapshotId, courseCode: TEST_CODE }]),
+      regenerateWikiForSnapshot: regen,
+    });
+
+    const outcome = await runRescore({ apply: true, expectDb: LIVE_DB_NAME, skipWiki: false }, deps);
+
+    // By the time runRescore's promise resolves, the slow regen must
+    // already have resolved too — proves it was awaited, not fired and
+    // forgotten the way a bare call to regenerateWikiInBackground would be.
+    expect(resolved).toBe(true);
+    expect(regen).toHaveBeenCalledWith(snapshotId, expect.any(String));
+    expect(outcome.wikiResults).toEqual([{ snapshotId, courseCode: TEST_CODE, ok: true }]);
+  });
+
+  it('a failed wiki regeneration does not undo the DB cell writes, is reported per snapshot, and main() exits non-zero', async () => {
+    const snapshotId = await newFixtureSnapshot();
+    const regen = vi.fn().mockRejectedValue(new Error('simulated git push failure'));
+    // assertExpectedDb (main()'s own db-identity check) needs a connected
+    // database literally named 'gc_curriculum' to exercise the live wiki
+    // path through main() — this suite only ever runs against the real
+    // scratch database, so its `executor` is stubbed to answer that ONE
+    // query. Every OTHER executor-consuming read is overridden below too
+    // (getSurvivorCompetencies/getCarriedCells/getMergedAwayNames), so the
+    // stub's `.execute()` is genuinely the only method ever called on it.
+    // upsertCoverageCell is NOT parameterized by executor — it always
+    // writes through the real db singleton — so the cell writes this test
+    // checks for below are real, not stubbed.
+    const fakeExecutor = { execute: vi.fn().mockResolvedValue({ rows: [{ name: LIVE_DB_NAME }] }) } as unknown as RescoreDeps['executor'];
+    const deps = mockDeps({
+      executor: fakeExecutor,
+      findInScopeSnapshots: vi.fn().mockResolvedValue([{ snapshotId, courseCode: TEST_CODE }]),
+      getSurvivorCompetencies: vi.fn().mockResolvedValue([
+        { id: 'domain-knowledge', name: 'Domain knowledge', knowDescriptor: 'k', understandDescriptor: 'u', doDescriptor: 'd' },
+        { id: 'project-management', name: 'Project management', knowDescriptor: 'k', understandDescriptor: 'u', doDescriptor: 'd' },
+      ]),
+      getCarriedCells: vi.fn().mockResolvedValue({}),
+      getMergedAwayNames: vi.fn().mockResolvedValue({}),
+      regenerateWikiForSnapshot: regen,
+    });
+
+    const code = await main(['--apply', '--expect-db', LIVE_DB_NAME], deps);
+
+    expect(code).not.toBe(0);
+    // The DB cell writes from scoring are NOT undone by the wiki failure.
+    const dbRows = await db.select().from(snapshotCompetencyCoverage).where(eq(snapshotCompetencyCoverage.snapshotId, snapshotId));
+    const survivorRows = dbRows.filter(r => SURVIVOR_IDS.includes(r.competencyId));
+    expect(survivorRows).toHaveLength(2);
+  });
+
+  it('runRescore itself reports the failed wiki regeneration per snapshot without throwing', async () => {
+    const snapshotId = await newFixtureSnapshot();
+    const regen = vi.fn().mockRejectedValue(new Error('simulated git push failure'));
+    const deps = mockDeps({
+      findInScopeSnapshots: vi.fn().mockResolvedValue([{ snapshotId, courseCode: TEST_CODE }]),
+      regenerateWikiForSnapshot: regen,
+    });
+
+    const outcome = await runRescore({ apply: true, expectDb: LIVE_DB_NAME, skipWiki: false }, deps);
+
+    expect(outcome.wikiResults).toEqual([{ snapshotId, courseCode: TEST_CODE, ok: false, error: 'simulated git push failure' }]);
+    // Scoring itself still fully succeeded despite the wiki failure.
+    expect(outcome.rows).toHaveLength(2);
+  });
+
+  it('a failed merged-stub write is also reported and does not throw out of runRescore', async () => {
+    const snapshotId = await newFixtureSnapshot();
+    const deps = mockDeps({
+      findInScopeSnapshots: vi.fn().mockResolvedValue([{ snapshotId, courseCode: TEST_CODE }]),
+      writeMergedStub: vi.fn().mockRejectedValue(new Error('simulated stub push failure')),
+    });
+
+    const outcome = await runRescore({ apply: true, expectDb: LIVE_DB_NAME, skipWiki: false }, deps);
+
+    expect(outcome.stubResults.every(r => r.ok === false)).toBe(true);
+    expect(outcome.stubResults).toHaveLength(3);
   });
 
   it('a wrong --expect-db exits non-zero before any read', async () => {
