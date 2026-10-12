@@ -2,11 +2,18 @@
 /**
  * Standing reliability tripwire for the coverage scorer.
  *
- * Re-runs scoreSnapshotAgainstTarget on a FIXED small pair set
+ * Re-runs scoreSnapshotCompetencies on a FIXED small pair set
  * (GC 3800's latest non-retired snapshot × the first 2 career targets by
  * displayOrder — the same pairs used in A6 Part 2 / Part 2b), measures
  * per-dimension band-agreement, and exits non-zero if any dimension's
  * agreement falls below RELIABILITY_THRESHOLDS.
+ *
+ * P0b Task 5: scoring moved from per-target (target context in the prompt)
+ * to per-competency (no target context). This script still measures
+ * per-target reliability ON PURPOSE (it's deliberately checking the same
+ * "2 targets' worth of competencies" slice it always has), so it now calls
+ * scoreSnapshotCompetencies with that target's ACTIVE member competencies
+ * instead of scoreSnapshotAgainstTarget with target context.
  *
  * Run:
  *   pnpm reliability:check
@@ -28,7 +35,7 @@ import { careerTargets, targetSubCompetencies } from '@/lib/db/schema';
 import { eq, asc } from 'drizzle-orm';
 
 import { getLatestSnapshotByCourse } from '@/lib/db/capture-snapshots-queries';
-import { scoreSnapshotAgainstTarget } from '@/lib/ai/analyze/program-score-coverage';
+import { scoreSnapshotCompetencies } from '@/lib/ai/analyze/program-score-coverage';
 import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
 import { depthBand } from '@/lib/program/depth-band';
 import { resolveModelForFunction } from '@/lib/ai/function-settings';
@@ -179,25 +186,16 @@ async function main() {
       const t0 = Date.now();
 
       try {
-        const { result, model, costUsdCents } = await scoreSnapshotAgainstTarget({
+        const { result, model, costUsdCents } = await scoreSnapshotCompetencies({
           snapshotId: snap.id,
           courseCode: STUDY_COURSE_CODE,
           snapshotProfile: snap.profile,
-          careerTarget: {
-            id: target.id,
-            name: target.name,
-            shortDefinition: target.shortDefinition,
-            knowDescriptors: target.knowDescriptors as string[],
-            understandDescriptors: target.understandDescriptors as string[],
-            doDescriptors: target.doDescriptors as string[],
-          },
-          subCompetencies: activeSubs.map(s => ({
+          competencies: activeSubs.map(s => ({
             id: s.id,
             name: s.name,
             knowDescriptor: s.knowDescriptor,
             understandDescriptor: s.understandDescriptor,
             doDescriptor: s.doDescriptor,
-            displayOrder: s.displayOrder,
           })),
         });
 
@@ -218,7 +216,7 @@ async function main() {
 
         const cellMap: CoverageRunCells = {};
         for (const cell of result.cells) {
-          cellMap[cell.sub_competency_id] = {
+          cellMap[cell.competency_id] = {
             k_depth: cell.k_depth,
             u_depth: cell.u_depth,
             d_depth: cell.d_depth,

@@ -6,6 +6,13 @@
  * gpt-6.1-sol at low / medium / high reasoning effort on 5 course × target pairs,
  * 5 independent runs each, interleaved (every pass runs all setups on all pairs).
  *
+ * P0b Task 5: scoring moved from per-target (target context in the prompt)
+ * to per-competency (no target context). This script still measures
+ * per-target reliability ON PURPOSE (the 5 fixed pairs are deliberately
+ * one target's worth of competencies each), so it now calls
+ * scoreSnapshotCompetencies with that target's ACTIVE member competencies
+ * instead of scoreSnapshotAgainstTarget with target context.
+ *
  * Metric (unchanged from the 2026-06-12 study, scripts/reliability/check.ts):
  * per sub-competency, "full band agreement" = all runs land in the same depth
  * band (none 0 / low 1–2 / working 3 / high 4–5); reported per dimension.
@@ -25,7 +32,7 @@ import { asc, eq } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { careerTargets, targetSubCompetencies } from '@/lib/db/schema';
 import { getLatestSnapshotByCourse } from '@/lib/db/capture-snapshots-queries';
-import { scoreSnapshotAgainstTarget } from '@/lib/ai/analyze/program-score-coverage';
+import { scoreSnapshotCompetencies } from '@/lib/ai/analyze/program-score-coverage';
 import { recordSpend } from '@/lib/rate-limit/daily-cap';
 import { depthBand } from '@/lib/program/depth-band';
 import { grounded, normText as norm } from './grounding';
@@ -81,16 +88,15 @@ async function main() {
       await Promise.all(SETUPS.map(async s => {
         const t0 = Date.now();
         try {
-          const result = await scoreSnapshotAgainstTarget({
+          const result = await scoreSnapshotCompetencies({
             snapshotId: p.snap.id, courseCode: p.snap.courseCode, snapshotProfile: p.snap.profile,
-            careerTarget: { id: p.t.id, name: p.t.name, shortDefinition: p.t.shortDefinition, knowDescriptors: p.t.knowDescriptors, understandDescriptors: p.t.understandDescriptors, doDescriptors: p.t.doDescriptors },
-            subCompetencies: p.subs.map(x => ({ id: x.id, name: x.name, knowDescriptor: x.knowDescriptor, understandDescriptor: x.understandDescriptor, doDescriptor: x.doDescriptor, displayOrder: x.displayOrder })),
+            competencies: p.subs.map(x => ({ id: x.id, name: x.name, knowDescriptor: x.knowDescriptor, understandDescriptor: x.understandDescriptor, doDescriptor: x.doDescriptor })),
             modelOverride: s.model,
             reasoningEffortOverride: s.effort,
           });
           await recordSpend(result.costUsdCents);
           calls.push({ setup: s.label, pair: p.key, run, ok: true, ms: Date.now() - t0, costCents: result.costUsdCents,
-            cells: result.result.cells.map(c => ({ sub: c.sub_competency_id, k: c.k_depth ?? null, u: c.u_depth ?? null, d: c.d_depth, excerpt: c.evidence_excerpt ?? '' })) });
+            cells: result.result.cells.map(c => ({ sub: c.competency_id, k: c.k_depth ?? null, u: c.u_depth ?? null, d: c.d_depth, excerpt: c.evidence_excerpt ?? '' })) });
           process.stdout.write('.');
         } catch (e) {
           calls.push({ setup: s.label, pair: p.key, run, ok: false, ms: Date.now() - t0, costCents: 0, error: (e as Error).message.slice(0, 300), cells: [] });

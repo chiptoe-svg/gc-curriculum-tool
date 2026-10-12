@@ -77,17 +77,27 @@ describe('career-coverage queries gate on builds_to_career', () => {
     expect(texts.some((t) => t.includes('builds_to_career'))).toBe(true);
   });
 
-  it('listStalePairs filters its latest-snapshot query on builds_to_career', async () => {
+  it('listStaleSnapshots filters its latest-snapshot query on builds_to_career', async () => {
     const executed: unknown[] = [];
     const mod = await import('@/lib/db/client');
     (mod.db.execute as unknown as ReturnType<typeof vi.fn>) = vi.fn((q: unknown) => {
       executed.push(q);
       return Promise.resolve({ rows: [] });
     });
-    (mod.db.select as unknown as ReturnType<typeof vi.fn>) = vi.fn(() => ({ from: () => [] }));
+    // Two different select shapes: subCompetencies (chained .where()) and
+    // snapshotCompetencyCoverage (awaited directly, no .where()). The chain
+    // below supports both.
+    (mod.db.select as unknown as ReturnType<typeof vi.fn>) = vi.fn(() => ({
+      from: () => {
+        const c: Record<string, unknown> = {};
+        c.where = () => Promise.resolve([]);
+        c.then = (res: (v: unknown[]) => unknown) => Promise.resolve([]).then(res);
+        return c;
+      },
+    }));
 
-    const { listStalePairs } = await import('@/lib/db/program-coverage-queries');
-    await listStalePairs();
+    const { listStaleSnapshots } = await import('@/lib/db/program-coverage-queries');
+    await listStaleSnapshots();
 
     const dialect = new PgDialect();
     const texts = executed.map((q) => dialect.sqlToQuery(q as never).sql);

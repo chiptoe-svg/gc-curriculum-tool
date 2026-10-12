@@ -32,7 +32,13 @@ import { getLatestSessionId, getSessionMessages } from '@/lib/db/capture-message
 import { getSnapshotById } from '@/lib/db/capture-snapshots-queries';
 
 import { generateCaptureProfileV2 } from '@/lib/ai/analyze/capture-scores';
-import { scoreSnapshotAgainstTarget } from '@/lib/ai/analyze/program-score-coverage';
+// P0b Task 5: scoring moved per-competency (no target context). This
+// historical one-off study (2026-06-12, output already committed) measured
+// per-target reliability on purpose, so it's re-pointed to the new
+// function with that target's active member competencies rather than left
+// broken (it's imported by scripts/reliability/profile-eval.ts, which is
+// not tsconfig-excluded, so tsc catches breaks here).
+import { scoreSnapshotCompetencies } from '@/lib/ai/analyze/program-score-coverage';
 import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
 import { depthBand } from '@/lib/program/depth-band';
 
@@ -942,25 +948,16 @@ async function main() {
         console.log(`    Coverage run ${i + 1}/${N_RUNS}...`);
         const t0 = Date.now();
         try {
-          const { result, model, costUsdCents } = await scoreSnapshotAgainstTarget({
+          const { result, model, costUsdCents } = await scoreSnapshotCompetencies({
             snapshotId: studySnapshot!.id,
             courseCode: studyCourseCode,
             snapshotProfile: studySnapshot!.profile,
-            careerTarget: {
-              id: target.id,
-              name: target.name,
-              shortDefinition: target.shortDefinition,
-              knowDescriptors: target.knowDescriptors as string[],
-              understandDescriptors: target.understandDescriptors as string[],
-              doDescriptors: target.doDescriptors as string[],
-            },
-            subCompetencies: activeSubs.map(s => ({
+            competencies: activeSubs.map(s => ({
               id: s.id,
               name: s.name,
               knowDescriptor: s.knowDescriptor,
               understandDescriptor: s.understandDescriptor,
               doDescriptor: s.doDescriptor,
-              displayOrder: s.displayOrder,
             })),
           });
 
@@ -970,7 +967,7 @@ async function main() {
           // Convert to keyed map
           const cellMap: CoverageRunCells = {};
           for (const cell of result.cells) {
-            cellMap[cell.sub_competency_id] = {
+            cellMap[cell.competency_id] = {
               k_depth: cell.k_depth,
               u_depth: cell.u_depth,
               d_depth: cell.d_depth,

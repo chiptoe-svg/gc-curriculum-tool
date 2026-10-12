@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
 import { isValidSlug } from '@/lib/slug';
 import { db } from '@/lib/db/client';
-import { asc, eq } from 'drizzle-orm';
-import { careerTargets, targetSubCompetencies } from '@/lib/db/schema';
+import { subCompetencies } from '@/lib/db/schema';
 import { getSnapshotById } from '@/lib/db/capture-snapshots-queries';
-import { listStalePairs, upsertCoverageCell } from '@/lib/db/program-coverage-queries';
-import { scoreSnapshotAgainstTarget } from '@/lib/ai/analyze/program-score-coverage';
+import { listStaleSnapshots, upsertCoverageCell } from '@/lib/db/program-coverage-queries';
+import { scoreSnapshotCompetencies } from '@/lib/ai/analyze/program-score-coverage';
 import { regenerateWikiInBackground } from '@/lib/ai/wiki/update';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
@@ -14,9 +13,9 @@ import { hashIp } from '@/lib/ip-hash';
 export const maxDuration = 300;
 
 // POST /api/program/coverage/refresh?slug=...
-// Body: { force?: boolean }
-// Scores every stale (latest-snapshot, target) pair. With force=true,
-// re-scores every pair regardless of existing rows.
+// Scores every stale snapshot — one scoring call per snapshot, carrying
+// only that snapshot's missing competency ids (P0b Task 5: scoring moved
+// per-competency, no career-target context).
 export async function POST(req: Request): Promise<Response> {
   const url = new URL(req.url);
   const slug = url.searchParams.get('slug') ?? '';
@@ -26,93 +25,65 @@ export async function POST(req: Request): Promise<Response> {
   const { allowed } = await checkIpRateLimit(ipHash);
   if (!allowed) return NextResponse.json({ error: 'rate limit exceeded' }, { status: 429 });
 
-  const stale = await listStalePairs();
-  // When force=true, we'd re-score everything — for v1, "force" is a future
-  // enhancement; default behavior is "only fill in the missing cells."
-  // To re-score a specific pair, the per-pair endpoint at
-  // /api/program/coverage/refresh/[snapshotId]/[targetId] is the way.
+  const stale = await listStaleSnapshots();
 
-  // Pre-fetch target context + sub-competencies for each unique target
-  // ID — the scoring helper needs them per call.
-  const uniqueTargetIds = Array.from(new Set(stale.map(p => p.careerTargetId)));
-  const targetCache = new Map<string, { target: typeof careerTargets.$inferSelect; subs: Array<typeof targetSubCompetencies.$inferSelect> }>();
-  for (const tid of uniqueTargetIds) {
-    const [t] = await db.select().from(careerTargets).where(eq(careerTargets.id, tid)).limit(1);
-    const subs = await db.select().from(targetSubCompetencies).where(eq(targetSubCompetencies.careerTargetId, tid))
-      .orderBy(asc(targetSubCompetencies.displayOrder), asc(targetSubCompetencies.id));
-    if (t) targetCache.set(tid, { target: t, subs });
-  }
+  // Order the calls by courseCode (deterministic).
+  stale.sort((a, b) => a.courseCode.localeCompare(b.courseCode));
+
+  // Pre-fetch the full catalog once — every stale snapshot's missing ids
+  // are a subset of it.
+  const catalog = await db.select().from(subCompetencies);
+  const catalogById = new Map(catalog.map(c => [c.id, c]));
 
   const results: Array<{
     snapshotId: string;
     courseCode: string;
-    careerTargetId: string;
     status: 'ok' | 'failed';
     cellCount?: number;
     errorReason?: string;
   }> = [];
 
-  // Order calls by target so that the per-target context can be prompt-cached
-  // by OpenAI (see spec for cost rationale). Same target's calls are
-  // contiguous, which keeps the cache window aligned.
-  stale.sort((a, b) =>
-    a.careerTargetId === b.careerTargetId
-      ? a.courseCode.localeCompare(b.courseCode)
-      : a.careerTargetId.localeCompare(b.careerTargetId)
-  );
-
-  // This is the app's largest fan-out of paid AI calls (one provider.complete
-  // per stale pair). Re-check the daily cost cap before each call and stop early
-  // when it trips, so a large catalog can't run an unbounded paid batch.
+  // One scoring call per stale snapshot. Re-check the daily cost cap before
+  // each call and stop early when it trips, so a large catalog can't run an
+  // unbounded paid batch.
   let stoppedAtCap = false;
-  for (const pair of stale) {
+  for (const snapToScore of stale) {
     const cap = await checkDailyCap();
     if (!cap.ok) { stoppedAtCap = true; break; }
 
-    const snap = await getSnapshotById(pair.snapshotId);
+    const snap = await getSnapshotById(snapToScore.snapshotId);
     if (!snap) {
-      results.push({ ...pair, status: 'failed', errorReason: 'snapshot not found' });
+      results.push({ snapshotId: snapToScore.snapshotId, courseCode: snapToScore.courseCode, status: 'failed', errorReason: 'snapshot not found' });
       continue;
     }
-    const targetCtx = targetCache.get(pair.careerTargetId);
-    if (!targetCtx) {
-      results.push({ ...pair, status: 'failed', errorReason: 'target context not loaded' });
+
+    const competencies = snapToScore.missingCompetencyIds
+      .map(id => catalogById.get(id))
+      .filter((c): c is typeof catalog[number] => !!c)
+      .map(c => ({
+        id: c.id,
+        name: c.name,
+        knowDescriptor: c.knowDescriptor,
+        understandDescriptor: c.understandDescriptor,
+        doDescriptor: c.doDescriptor,
+      }));
+    if (competencies.length === 0) {
+      results.push({ snapshotId: snapToScore.snapshotId, courseCode: snapToScore.courseCode, status: 'failed', errorReason: 'no competencies to score' });
       continue;
     }
+
     try {
-      const { result, model, costUsdCents } = await scoreSnapshotAgainstTarget({
-        snapshotId: pair.snapshotId,
-        courseCode: pair.courseCode,
+      const { result, model, costUsdCents } = await scoreSnapshotCompetencies({
+        snapshotId: snapToScore.snapshotId,
+        courseCode: snapToScore.courseCode,
         snapshotProfile: snap.profile,
-        careerTarget: {
-          id: targetCtx.target.id,
-          name: targetCtx.target.name,
-          shortDefinition: targetCtx.target.shortDefinition,
-          knowDescriptors: targetCtx.target.knowDescriptors as string[],
-          understandDescriptors: targetCtx.target.understandDescriptors as string[],
-          doDescriptors: targetCtx.target.doDescriptors as string[],
-        },
-        subCompetencies: targetCtx.subs
-          .filter(s => !s.retired)
-          .map(s => ({
-            id: s.id,
-            name: s.name,
-            knowDescriptor: s.knowDescriptor,
-            understandDescriptor: s.understandDescriptor,
-            doDescriptor: s.doDescriptor,
-            displayOrder: s.displayOrder,
-          })),
+        competencies,
       });
 
-      // Upsert every cell from the response.
-      // Only competencies that belong to this target (cells are per competency since P0a).
-      const memberIds = new Set(targetCtx.subs.map(s => s.id));
       for (const cell of result.cells) {
-        if (!memberIds.has(cell.sub_competency_id)) continue;
         await upsertCoverageCell({
-          snapshotId: pair.snapshotId,
-          careerTargetId: pair.careerTargetId,
-          subCompetencyId: cell.sub_competency_id,
+          snapshotId: snapToScore.snapshotId,
+          subCompetencyId: cell.competency_id,
           kDepth: cell.k_depth,
           uDepth: cell.u_depth,
           dDepth: cell.d_depth,
@@ -124,10 +95,11 @@ export async function POST(req: Request): Promise<Response> {
         });
       }
       await recordSpend(costUsdCents);
-      results.push({ ...pair, status: 'ok', cellCount: result.cells.length });
+      results.push({ snapshotId: snapToScore.snapshotId, courseCode: snapToScore.courseCode, status: 'ok', cellCount: result.cells.length });
     } catch (e) {
       results.push({
-        ...pair,
+        snapshotId: snapToScore.snapshotId,
+        courseCode: snapToScore.courseCode,
         status: 'failed',
         errorReason: e instanceof Error ? e.message : String(e),
       });
@@ -153,6 +125,6 @@ export async function POST(req: Request): Promise<Response> {
     scored: okCount,
     failed: failedCount,
     stoppedAtCap,
-    pairs: results,
+    snapshots: results,
   });
 }

@@ -1,7 +1,8 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
-import { snapshotCompetencyCoverage, targetCoverage, courseCaptureSnapshots, careerTargets, targetSubCompetencies } from '@/lib/db/schema';
+import { snapshotCompetencyCoverage, targetCoverage, courseCaptureSnapshots, careerTargets, targetSubCompetencies, subCompetencies } from '@/lib/db/schema';
 import { listPairedCodesForCourses } from '@/lib/db/course-codes-queries';
+import type { Tx } from '@/lib/db/competency-catalog-queries';
 
 export interface CoverageCellRow {
   snapshotId: string;
@@ -20,7 +21,15 @@ export interface CoverageCellRow {
 
 export interface UpsertCoverageCellInput {
   snapshotId: string;
-  careerTargetId: string;
+  /**
+   * P0b Task 5: scoring carries no career-target context any more, so a
+   * caller scoring a stale snapshot across many targets' competencies at
+   * once has no single target id to pass. Kept optional for the per-pair
+   * route (which still has one) and old callers — the write itself never
+   * reads this field (cells are keyed (snapshot, competency) only; which
+   * targets see the cell comes from career_target_requirements).
+   */
+  careerTargetId?: string;
   subCompetencyId: string;
   kDepth: number | null;
   uDepth: number | null;
@@ -94,25 +103,36 @@ export async function getAllCells(): Promise<CoverageCellRow[]> {
 }
 
 /**
- * Resolves which (snapshot, target) pairs need scoring: the cross-product of
- * (latest non-retired snapshot per course that has one) × (all non-retired
- * career targets). Returns pairs with no cell in target_coverage.
+ * Resolves which latest snapshots are missing coverage cells against the
+ * active catalog (P0b Task 5 — replaces listStalePairs's per-target
+ * cross-product now that scoring carries no target context). "Active
+ * catalog" = non-retired `sub_competencies` rows; a competency with zero
+ * career_target_requirements rows is retired by the same transaction that
+ * removes its last target (see retireCompetencyFromTarget), so non-retired
+ * is equivalent to "used by at least one target" without a join.
  */
-export interface PairToScore {
+export interface SnapshotToScore {
   snapshotId: string;
   courseCode: string;
-  careerTargetId: string;
-  careerTargetName: string;
+  /** Active catalog competency ids this snapshot has no cell for yet. */
+  missingCompetencyIds: string[];
 }
 
-export async function listStalePairs(): Promise<PairToScore[]> {
+/**
+ * `executor` defaults to the module-level `db` but accepts a transaction
+ * client (`Tx`, same type `competency-catalog-queries.ts` uses) so tests can
+ * run a setup mutation and this read on the SAME connection inside one
+ * `BEGIN … ROLLBACK` — reads via the bare `db` singleton run on a different
+ * pooled connection and would never see an uncommitted change made on `tx`.
+ */
+export async function listStaleSnapshots(executor: Tx | typeof db = db): Promise<SnapshotToScore[]> {
   // Pick the latest non-retired snapshot per (course, instructor) — only
   // courses flagged builds_to_career. Per-instructor rows (A8 decision,
   // 2026-06-12): the same code taught by different faculty is scored as
   // separate matrix rows rather than newest-capture-wins, so variance stays
   // visible. NULL instructor_name groups as its own row (pre-0027 snapshots
   // were backfilled to 'Department canonical').
-  const latestSnapshots = await db.execute(sql`
+  const latestSnapshots = await executor.execute(sql`
     SELECT DISTINCT ON (s.course_code, s.instructor_name)
       s.id, s.course_code, s.created_at
     FROM ${courseCaptureSnapshots} s
@@ -123,34 +143,33 @@ export async function listStalePairs(): Promise<PairToScore[]> {
   `);
   const latestSnaps = (latestSnapshots.rows as Array<{ id: string; course_code: string }>);
 
-  // Get the active targets.
-  const targets = await db
-    .select({ id: careerTargets.id, name: careerTargets.name })
-    .from(careerTargets);
+  const activeCompetencyIds = (await executor
+    .select({ id: subCompetencies.id })
+    .from(subCompetencies)
+    .where(eq(subCompetencies.retired, false)))
+    .map(r => r.id)
+    .sort();
 
-  // Get the (snapshot, target) pairs that already have at least one cell.
-  // A pair is "scored" when any sub-competency row exists for it; we treat
-  // partial scoring as not-yet-scored and re-run the whole pair.
-  const existing = await db
+  // Get every (snapshot, competency) pair that already has a cell.
+  const existing = await executor
     .select({
-      snapshotId: targetCoverage.snapshotId,
-      careerTargetId: targetCoverage.careerTargetId,
+      snapshotId: snapshotCompetencyCoverage.snapshotId,
+      competencyId: snapshotCompetencyCoverage.competencyId,
     })
-    .from(targetCoverage);
-  const scored = new Set(existing.map(e => `${e.snapshotId}:${e.careerTargetId}`));
+    .from(snapshotCompetencyCoverage);
+  const scoredBySnapshot = new Map<string, Set<string>>();
+  for (const row of existing) {
+    const set = scoredBySnapshot.get(row.snapshotId) ?? new Set<string>();
+    set.add(row.competencyId);
+    scoredBySnapshot.set(row.snapshotId, set);
+  }
 
-  const stale: PairToScore[] = [];
+  const stale: SnapshotToScore[] = [];
   for (const snap of latestSnaps) {
-    for (const t of targets) {
-      const key = `${snap.id}:${t.id}`;
-      if (!scored.has(key)) {
-        stale.push({
-          snapshotId: snap.id,
-          courseCode: snap.course_code,
-          careerTargetId: t.id,
-          careerTargetName: t.name,
-        });
-      }
+    const scored = scoredBySnapshot.get(snap.id) ?? new Set<string>();
+    const missingCompetencyIds = activeCompetencyIds.filter(id => !scored.has(id));
+    if (missingCompetencyIds.length > 0) {
+      stale.push({ snapshotId: snap.id, courseCode: snap.course_code, missingCompetencyIds });
     }
   }
   return stale;

@@ -1,8 +1,9 @@
-// Ruling 10 (P0a plan): cells are stored per (snapshot, competency) since
-// migration 0056, so a cell the scorer returns for a sub-competency outside
-// the scored target would overwrite another target's cell if written. This
-// route must drop any cell whose sub_competency_id is not a member of the
-// target (per target_sub_competencies), writing only member cells.
+// P0b Task 5: the scoring call now carries no career-target context — the
+// route reads this target's ACTIVE (non-retired) members from
+// target_sub_competencies and scores exactly those, via
+// scoreSnapshotCompetencies. Dropping off-target cells is now the scorer's
+// own job (unknown ids are dropped before it returns), so this route no
+// longer needs its own member-id filter.
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 vi.mock('@/lib/slug', () => ({ isValidSlug: vi.fn().mockReturnValue(true) }));
@@ -22,13 +23,13 @@ vi.mock('@/lib/ai/wiki/update', () => ({ regenerateWikiInBackground: vi.fn() }))
 const upsertCoverageCell = vi.fn().mockResolvedValue(undefined);
 vi.mock('@/lib/db/program-coverage-queries', () => ({ upsertCoverageCell }));
 
-const scoreSnapshotAgainstTarget = vi.fn();
-vi.mock('@/lib/ai/analyze/program-score-coverage', () => ({ scoreSnapshotAgainstTarget }));
+const scoreSnapshotCompetencies = vi.fn();
+vi.mock('@/lib/ai/analyze/program-score-coverage', () => ({ scoreSnapshotCompetencies }));
 
 function chain(rows: unknown[]) {
   const c: Record<string, unknown> = {};
   c.where = () => c;
-  c.orderBy = () => c; // M-3: route now orders the subs read
+  c.orderBy = () => c;
   c.limit = (n: number) => Promise.resolve(rows.slice(0, n));
   c.then = (res: (v: unknown[]) => unknown, rej?: (e: unknown) => unknown) => Promise.resolve(rows).then(res, rej);
   return c;
@@ -43,6 +44,7 @@ const TARGET_ROW = {
 };
 const MEMBER_SUBS = [
   { id: 'member-1', name: 'M1', knowDescriptor: 'k', understandDescriptor: 'u', doDescriptor: 'd', displayOrder: 0, retired: false },
+  { id: 'retired-1', name: 'R1', knowDescriptor: 'k', understandDescriptor: 'u', doDescriptor: 'd', displayOrder: 1, retired: true },
 ];
 
 function makeReq() {
@@ -59,15 +61,30 @@ beforeEach(() => {
     const callIndex = dbSelect.mock.calls.length;
     return { from: () => (callIndex === 1 ? chain([TARGET_ROW]) : chain(MEMBER_SUBS)) };
   });
+  scoreSnapshotCompetencies.mockResolvedValue({
+    result: { cells: [] },
+    model: 'test-model',
+    costUsdCents: 1,
+  });
 });
 
-describe('POST /api/program/coverage/refresh/[snapshotId]/[targetId] — Ruling 10 off-target filter', () => {
-  it('drops a scored cell whose sub_competency_id is not a member of the target', async () => {
-    scoreSnapshotAgainstTarget.mockResolvedValue({
+describe('POST /api/program/coverage/refresh/[snapshotId]/[targetId]', () => {
+  it('scores exactly the target\'s ACTIVE (non-retired) members, with no career-target context', async () => {
+    const { POST } = await import('@/app/api/program/coverage/refresh/[snapshotId]/[targetId]/route');
+    const [req, ctx] = makeReq();
+    await POST(req, ctx);
+
+    expect(scoreSnapshotCompetencies).toHaveBeenCalledTimes(1);
+    const call = scoreSnapshotCompetencies.mock.calls[0]![0];
+    expect(call.competencies.map((c: { id: string }) => c.id)).toEqual(['member-1']);
+    expect(call).not.toHaveProperty('careerTarget');
+  });
+
+  it('upserts every cell the scorer returns, keyed by competency_id', async () => {
+    scoreSnapshotCompetencies.mockResolvedValue({
       result: {
         cells: [
-          { sub_competency_id: 'member-1', k_depth: 2, u_depth: 2, d_depth: 2, matched_competency: null, evidence_excerpt: null, confidence: 'high', rationale: 'r' },
-          { sub_competency_id: 'off-target', k_depth: 1, u_depth: 1, d_depth: 1, matched_competency: null, evidence_excerpt: null, confidence: 'high', rationale: 'r' },
+          { competency_id: 'member-1', k_depth: 2, u_depth: 2, d_depth: 2, matched_competency: null, evidence_excerpt: null, confidence: 'high', rationale: 'r' },
         ],
       },
       model: 'test-model',
@@ -81,27 +98,6 @@ describe('POST /api/program/coverage/refresh/[snapshotId]/[targetId] — Ruling 
 
     expect(upsertCoverageCell).toHaveBeenCalledTimes(1);
     expect(upsertCoverageCell).toHaveBeenCalledWith(expect.objectContaining({ subCompetencyId: 'member-1' }));
-    // The response's cellCount reports the scorer's raw cell count, not the
-    // filtered write count — this asserts the filter acts on WRITES only.
-    expect(body.cellCount).toBe(2);
-  });
-
-  it('writes every cell when all are members (no false drops)', async () => {
-    scoreSnapshotAgainstTarget.mockResolvedValue({
-      result: {
-        cells: [
-          { sub_competency_id: 'member-1', k_depth: 2, u_depth: 2, d_depth: 2, matched_competency: null, evidence_excerpt: null, confidence: 'high', rationale: 'r' },
-        ],
-      },
-      model: 'test-model',
-      costUsdCents: 1,
-    });
-
-    const { POST } = await import('@/app/api/program/coverage/refresh/[snapshotId]/[targetId]/route');
-    const [req, ctx] = makeReq();
-    await POST(req, ctx);
-
-    expect(upsertCoverageCell).toHaveBeenCalledTimes(1);
-    expect(upsertCoverageCell).toHaveBeenCalledWith(expect.objectContaining({ subCompetencyId: 'member-1' }));
+    expect(body.cellCount).toBe(1);
   });
 });
