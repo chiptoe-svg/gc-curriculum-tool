@@ -72,4 +72,63 @@ describe.skipIf(!RUN)('listStaleSnapshots (P0b, post-0057)', () => {
       expect(staleRow!.courseCode).toBe(TEST_CODE);
     });
   });
+
+  // P0b Amendment 1 (A2, brief Step 1.4) — scoring scope is every
+  // program-visible course, regardless of builds_to_career; a course that
+  // ISN'T program-visible (external/sandbox, or GC but not offered) is never
+  // scored, builds_to_career or not.
+  it('reports a program-visible course with builds_to_career=false and a missing cell as stale', async () => {
+    await inRolledBackTx(async (tx) => {
+      const CODE = 'ZZ 9983'; // never a real course — distinct from the other DB tests' fixture codes
+      await tx.insert(courses).values({
+        code: CODE, title: 'P0b off-path scoring-scope fixture', level: 9000, track: 'test', buildsToCareer: false,
+        // scope/status default to 'gc' / 'offered' — program-visible.
+      } as never);
+      const [snap] = await tx.insert(courseCaptureSnapshots).values({
+        courseCode: CODE, profile: { course_code: CODE, scale_version: 'v1' } as never, inputsMeta: INPUTS_META, scaleVersion: 'v1', model: 'test',
+        instructorName: 'P0b Test', createdAt: new Date('2026-10-12T00:00:00Z'),
+      } as never).returning({ id: courseCaptureSnapshots.id });
+      const snapshotId = snap!.id;
+      // No coverage cells at all — missing every active competency.
+
+      const stale = await listStaleSnapshots(tx);
+      const row = stale.find(s => s.snapshotId === snapshotId);
+      expect(row).toBeDefined();
+      expect(row!.missingCompetencyIds.length).toBeGreaterThan(0);
+    });
+  });
+
+  it('does NOT report an external/sandbox course, even with a missing cell', async () => {
+    await inRolledBackTx(async (tx) => {
+      const CODE = 'ZZ 9984'; // never a real course — distinct from the other DB tests' fixture codes
+      await tx.insert(courses).values({
+        code: CODE, title: 'P0b sandbox scoring-scope fixture', level: 9000, track: 'test', buildsToCareer: false,
+        scope: 'external', status: 'sandbox',
+      } as never);
+      const [snap] = await tx.insert(courseCaptureSnapshots).values({
+        courseCode: CODE, profile: { course_code: CODE, scale_version: 'v1' } as never, inputsMeta: INPUTS_META, scaleVersion: 'v1', model: 'test',
+        instructorName: 'P0b Test', createdAt: new Date('2026-10-12T00:00:00Z'),
+      } as never).returning({ id: courseCaptureSnapshots.id });
+
+      const stale = await listStaleSnapshots(tx);
+      expect(stale.find(s => s.snapshotId === snap!.id)).toBeUndefined();
+    });
+  });
+
+  it('does NOT report a GC-scope course whose status is not offered, even with a missing cell', async () => {
+    await inRolledBackTx(async (tx) => {
+      const CODE = 'ZZ 9985'; // never a real course — distinct from the other DB tests' fixture codes
+      await tx.insert(courses).values({
+        code: CODE, title: 'P0b proposed-status scoring-scope fixture', level: 9000, track: 'test', buildsToCareer: false,
+        scope: 'gc', status: 'proposed',
+      } as never);
+      const [snap] = await tx.insert(courseCaptureSnapshots).values({
+        courseCode: CODE, profile: { course_code: CODE, scale_version: 'v1' } as never, inputsMeta: INPUTS_META, scaleVersion: 'v1', model: 'test',
+        instructorName: 'P0b Test', createdAt: new Date('2026-10-12T00:00:00Z'),
+      } as never).returning({ id: courseCaptureSnapshots.id });
+
+      const stale = await listStaleSnapshots(tx);
+      expect(stale.find(s => s.snapshotId === snap!.id)).toBeUndefined();
+    });
+  });
 });

@@ -353,6 +353,13 @@ export async function loadCompetencySubstrate(subCompetencyId: string): Promise<
   // Get all non-retired snapshots' cells for this sub-competency. Join to get
   // the course code + profile from the snapshot (the profile carries the
   // per-competency provenance the evidence band derives from).
+  //
+  // Program-visible scope (fix round 1, 2026-10-12): joins `courses` and
+  // filters scope/status so a sandbox or external course's snapshot can
+  // never appear on a competency page — A2's "every program-visible course"
+  // was previously unenforced here (this join had none at all). NOT a
+  // builds_to_career filter: per A2, competency pages intentionally include
+  // every program-visible course regardless of builds_to_career.
   const rows = await db
     .select({
       courseCode: courseCaptureSnapshots.courseCode,
@@ -370,6 +377,14 @@ export async function loadCompetencySubstrate(subCompetencyId: string): Promise<
       and(
         eq(snapshotCompetencyCoverage.snapshotId, courseCaptureSnapshots.id),
         isNull(courseCaptureSnapshots.retiredAt),
+      ),
+    )
+    .innerJoin(
+      courses,
+      and(
+        eq(courses.code, courseCaptureSnapshots.courseCode),
+        eq(courses.scope, 'gc'),
+        eq(courses.status, 'offered'),
       ),
     )
     .where(eq(snapshotCompetencyCoverage.competencyId, subCompetencyId));
@@ -471,12 +486,16 @@ export async function loadTargetSubstrate(targetId: string, executor: Tx | typeo
   // broke when P0a re-pointed this read to the target_coverage view (different query plan, different
   // row order for ties). The ORDER BY makes the pick deterministic regardless of read path; the
   // "highest dDepth wins" criterion itself (the reduction below) is unchanged.
-  // Career-rollup scope (P0b Amendment 1, A2): the target wiki page rolls up
-  // to a career target, so — like the program matrix and scaffolding — it
-  // stays restricted to builds_to_career courses even though scoring itself
-  // (listStaleSnapshots) now covers every program-visible course. Previously
-  // this joined only courseCaptureSnapshots (retiredAt IS NULL) with no
-  // course filter at all, so an off-path course's cell would have rolled up
+  // Career-rollup scope (owner decision, 2026-10-12, superseding Amendment 1
+  // ruling A2): the target wiki page rolls up to a career target, so — like
+  // the program matrix's cells and scaffolding — it counts every
+  // PROGRAM-VISIBLE course (scope='gc' AND status='offered'), same as
+  // scoring (listStaleSnapshots); NOT restricted to builds_to_career (a
+  // builds_to_career condition added here in fix round 1 is removed by this
+  // decision — off-path GC/offered courses are included, external/sandbox/
+  // non-offered are excluded). Previously (pre-Task 8b) this joined only
+  // courseCaptureSnapshots (retiredAt IS NULL) with no course filter at
+  // all, so even an external/sandbox course's cell would have rolled up
   // into every target that uses its competency.
   const cellRows = await executor
     .select({
@@ -502,7 +521,6 @@ export async function loadTargetSubstrate(targetId: string, executor: Tx | typeo
         eq(courses.code, courseCaptureSnapshots.courseCode),
         eq(courses.scope, 'gc'),
         eq(courses.status, 'offered'),
-        eq(courses.buildsToCareer, true),
       ),
     )
     .where(

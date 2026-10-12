@@ -105,15 +105,15 @@ export async function loadScaffoldingTarget(targetId: string, executor: Tx | typ
     .from(courseCaptureSnapshots)
     .leftJoin(courses, eq(courses.code, courseCaptureSnapshots.courseCode))
     // scope/status: exclude non-GC / non-offered courses — see lib/courses/program-visibility.ts.
-    // builds_to_career: career-rollup scope (P0b Amendment 1, A2) — scaffolding
-    // rolls up to a career target, so it stays restricted to career-path
-    // courses even though scoring itself (listStaleSnapshots) now covers
-    // every program-visible course.
+    // Career-rollup scope (owner decision, 2026-10-12, superseding Amendment
+    // 1 ruling A2): career views count every PROGRAM-VISIBLE course, same as
+    // scoring (listStaleSnapshots) — not restricted to builds_to_career. This
+    // was already the scope here before Task 8b; a builds_to_career filter
+    // added in fix round 1 is reverted by this decision.
     .where(and(
       isNull(courseCaptureSnapshots.retiredAt),
       eq(courses.scope, 'gc'),
       eq(courses.status, 'offered'),
-      eq(courses.buildsToCareer, true),
     ))
     .orderBy(asc(courses.level), asc(courseCaptureSnapshots.courseCode));
 

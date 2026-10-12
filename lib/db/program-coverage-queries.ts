@@ -115,28 +115,48 @@ export async function getAllCells(): Promise<CoverageCellRow[]> {
  *
  * Scoring scope (A2): every program-visible course (PROGRAM_VISIBLE_SQL —
  * `scope = 'gc' AND status = 'offered'`), regardless of `builds_to_career`.
- * This is the one deliberately UNRESTRICTED reader in the audit below —
- * every other coverage reader that rolls up to a career target stays
- * restricted to `builds_to_career = true` courses.
  *
- * ---- Audit (Task 8b, 2026-10-12): every reader of target_coverage /
+ * Career-rollup scope (owner decision, 2026-10-12, SUPERSEDING Amendment 1
+ * ruling A2's "career rollups stay builds_to_career-only"): career views
+ * also count every PROGRAM-VISIBLE course — same scope as scoring. Only
+ * external, sandbox and non-offered courses are excluded from a career
+ * rollup; an off-path (builds_to_career=false) GC/offered course counts the
+ * same as an on-path one. Later, the career-view course set becomes
+ * selectable per pathway (core + minor + electives taken) — that's P3 work,
+ * deferred (see STATE.md Deferred/debt). The matrix's own ROW list
+ * (`getMatrixData`'s `courses`, i.e. which courses get a row in the UI)
+ * keeps `builds_to_career = true` unchanged — that's a display choice, not
+ * the rollup-scope question this comment is about.
+ *
+ * ---- Audit (Task 8b, 2026-10-12; scope corrected 2026-10-12 fix round 1,
+ * owner decision): every reader of target_coverage /
  * snapshot_competency_coverage in app/ and lib/, classified career-rollup
- * (must filter builds_to_career = true) vs. per-competency/per-course
- * (program-visible scope, no builds_to_career filter) vs. scoring/other. ----
+ * (program-visible scope, external/sandbox/non-offered excluded) vs.
+ * per-competency/per-course (also program-visible scope — the two camps
+ * read identically now, except the matrix's own display row list) vs.
+ * scoring/other. ----
  *
- *   SCORING SCOPE (this function) — program-visible, not builds_to_career-restricted:
+ *   SCORING SCOPE (this function) — program-visible:
  *     - listStaleSnapshots (here)                     — drives the bulk refresh route.
  *
- *   CAREER ROLLUPS — must and do filter builds_to_career = true:
- *     - getMatrixData (here)                           — courses query already did;
- *       FIXED here to also drop cells for snapshots outside that course set
- *       (getAllCells() reads the whole target_coverage view with no course
- *       filter at all, so a cell on an off-path snapshot would otherwise
- *       leak into every target's rollup through matrix.cells).
+ *   CAREER ROLLUPS — must and do filter to program-visible (not builds_to_career):
+ *     - getMatrixData (here)                           — its `courses` (matrix ROWS)
+ *       query keeps `builds_to_career = true` unchanged (a display choice, item 2
+ *       of the owner decision); its `cells` are now restricted by a SEPARATE,
+ *       unrestricted-by-snapshot-window query over every program-visible
+ *       course's snapshots (getAllCells() reads the whole target_coverage view
+ *       with no course filter at all, so without this an external/sandbox/
+ *       non-offered course's cell would otherwise leak into every target's
+ *       rollup through matrix.cells — fixed in Task 8b, course exclusion
+ *       corrected from builds_to_career to program-visible in fix round 1).
  *     - app/api/program/coverage/route.ts              — reads getMatrixData; inherits the fix.
  *     - app/api/flags/route.ts                          — reads getMatrixData; inherits the fix.
  *     - app/program/ProgramCoverageClient.tsx           — reads data.cells from the
- *       route above with no further course cross-reference; inherits the fix.
+ *       route above; its stale-pair COUNT was separately fixed (fix round 1) to
+ *       count only pairs for the matrix's own row snapshots (`data.courses`),
+ *       since `data.cells` is now broader (program-visible) than `data.courses`
+ *       (builds_to_career-only matrix rows) — without that, the count could go
+ *       negative ("Score -50 stale pairs").
  *     - lib/ai/wiki/graph-tools.ts (coverageForTargetTool) — reads getMatrixData; inherits.
  *     - lib/program/sufficiency-read.ts (getTargetSufficiency) — reads getMatrixData's
  *       cells directly (`matrix.cells.filter(c => c.careerTargetId === targetId)`,
@@ -145,15 +165,17 @@ export async function getAllCells(): Promise<CoverageCellRow[]> {
  *       getMatrixData; inherits the fix.
  *     - lib/ai/explore/career-fit.ts (computeCareerFit)  — pure, reads matrix.cells
  *       passed in by run-impact; inherits the fix transitively.
- *     - lib/db/scaffolding-queries.ts (loadScaffoldingTarget) — queried target_coverage
- *       directly with NO builds_to_career filter on its course/snapshot query
- *       (only scope='gc' AND status='offered'). FIXED: added
- *       `courses.buildsToCareer = true` to that query.
+ *     - lib/db/scaffolding-queries.ts (loadScaffoldingTarget) — already filtered
+ *       scope='gc' AND status='offered' (program-visible) before Task 8b; a
+ *       builds_to_career condition added in Task 8b fix round 1 is reverted by
+ *       this decision, restoring its original (already-correct) scope.
  *     - lib/ai/wiki/update.ts (loadTargetSubstrate — the TARGET wiki page's
- *       coverageRollup/contributingCourses) — queried target_coverage joined
- *       only to courseCaptureSnapshots (retiredAt IS NULL), with NO courses
- *       join and NO builds_to_career filter at all. FIXED: joined `courses`
- *       and added `courses.buildsToCareer = true`.
+ *       coverageRollup/contributingCourses) — previously (pre-Task 8b) joined
+ *       only courseCaptureSnapshots (retiredAt IS NULL), with NO courses join
+ *       at all — even an external/sandbox cell would have rolled up. FIXED
+ *       (Task 8b): joined `courses`, filtered scope/status (program-visible);
+ *       a builds_to_career condition added in fix round 1 is removed by this
+ *       decision.
  *
  *   PER-COMPETENCY / PER-COURSE VIEWS — correctly include every
  *   program-visible course; no builds_to_career filter, by design (A2):
@@ -405,14 +427,30 @@ export async function getMatrixData(): Promise<MatrixData> {
     }));
 
   const activeSubIds = new Set(subCompetenciesOut.map(s => s.id));
-  // Career-rollup scope (A2): getAllCells() reads the WHOLE target_coverage
-  // view with no course filter of its own, so without this a cell scored
-  // for an off-path course's snapshot (now in scope for scoring — A2) would
-  // leak into this target rollup. `courses` above is already
-  // builds_to_career-filtered, so restricting to its snapshot ids is
-  // sufficient — no separate course join needed here.
-  const visibleSnapshotIds = new Set(courses.map(c => c.snapshotId));
-  const cells = (await getAllCells()).filter(c => activeSubIds.has(c.subCompetencyId) && visibleSnapshotIds.has(c.snapshotId));
+  // Career-rollup scope (owner decision, 2026-10-12, superseding Amendment 1
+  // ruling A2): getAllCells() reads the WHOLE target_coverage view with no
+  // course filter of its own, so without this a cell scored for an
+  // external/sandbox/non-offered course's snapshot would leak into this
+  // target rollup. Career views count every PROGRAM-VISIBLE course (same
+  // scope as scoring, PROGRAM_VISIBLE_SQL) — NOT restricted to
+  // builds_to_career, so this can't reuse `courses` above (which stays
+  // builds_to_career-restricted on purpose: it's the matrix's own ROW list,
+  // unchanged). This also must NOT narrow to the latest-snapshot-per-
+  // (course,instructor) window `courses` carries: getAllCells() had no
+  // snapshot-window restriction at all before Task 8b, so a separate,
+  // unrestricted query is used here (a first fix-round-1 draft wrongly
+  // reused `courses`'s snapshot ids, which would have narrowed that window —
+  // caught before merge, not shipped).
+  const programVisibleSnapshotsRaw = await db.execute(sql`
+    SELECT s.id
+    FROM ${courseCaptureSnapshots} s
+    JOIN courses c ON c.code = s.course_code
+    WHERE ${PROGRAM_VISIBLE_SQL}
+  `);
+  const programVisibleSnapshotIds = new Set(
+    (programVisibleSnapshotsRaw.rows as Array<{ id: string }>).map(r => r.id),
+  );
+  const cells = (await getAllCells()).filter(c => activeSubIds.has(c.subCompetencyId) && programVisibleSnapshotIds.has(c.snapshotId));
 
   return {
     courses: courses.sort((a, b) =>

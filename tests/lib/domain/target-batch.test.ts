@@ -303,6 +303,22 @@ describe('planTargetBatch — A3: unlinked catalog rows (P0b Amendment 1)', () =
     expect(plan.competencyUnlinked).toEqual([]);
     expect(plan.targets[0]!.membershipRemovals).toEqual(['kept']);
   });
+
+  it('does not report an orphaned competency as unlinked when it is also on the retired list (fix round 1)', () => {
+    // 'orphan' has no current membership and no definition anywhere in this
+    // batch — on its own that's exactly the unlinked case above — but it is
+    // ALSO listed in `retired`, so this plan retires it instead. It must show
+    // up in competencyRetires only, never in both lists at once.
+    const retiredList: RetiredSubCompetency[] = [{ id: 'orphan', careerTargetId: 't1', retiredOn: '2026-10-12', reason: 'test' }];
+    const plan = planTargetBatch(
+      [desiredTarget({ subCompetencies: [def('kept')] })], retiredList,
+      [dbTarget()], [dbSub('kept'), dbSub('orphan')],
+      [member('t1', 'kept', 0)],
+    );
+    expect(plan.competencyRetires).toEqual([{ id: 'orphan', name: 'orphan', mergedInto: null }]);
+    expect(plan.competencyUnlinked).toEqual([]);
+    expect(plan.errors).toEqual([]);
+  });
 });
 
 // ---- Rule 5: the P0a M-5 hazard can't recur --------------------------------

@@ -115,12 +115,13 @@ describe('getMatrixData — retired sub-competencies (2026-10-06 target batch)',
   it('drops cells scored against retired sub-competencies, so no consumer reads them as current', async () => {
     const schema = await import('@/lib/db/schema');
     const mod = await import('@/lib/db/client');
-    // One course row matching snapshot 's1', so the cells' career-rollup
-    // scope filter (snapshot must belong to a builds_to_career course in
-    // the matrix's own course list — Task 8b) doesn't strip them out before
-    // the retired-competency filter under test gets to run.
+    // One row serving BOTH db.execute() calls getMatrixData makes: the
+    // matrix-rows query (keys snapshot_id/course_code/...) and the
+    // career-rollup program-visible-snapshot-ids query (fix round 1 —
+    // key `id`), so the cells' career-rollup scope filter doesn't strip
+    // them out before the retired-competency filter under test gets to run.
     (mod.db.execute as unknown as ReturnType<typeof vi.fn>) = vi.fn(() => Promise.resolve({
-      rows: [{ snapshot_id: 's1', course_code: 'ZZ 9999', caption: null, created_at: new Date(0), instructor_name: null, title: 'ZZ', level: 9000 }],
+      rows: [{ id: 's1', snapshot_id: 's1', course_code: 'ZZ 9999', caption: null, created_at: new Date(0), instructor_name: null, title: 'ZZ', level: 9000 }],
     }));
     const cell = (subCompetencyId: string) => ({
       snapshotId: 's1', careerTargetId: 't5', subCompetencyId, kDepth: 1, uDepth: 1, dDepth: 1,

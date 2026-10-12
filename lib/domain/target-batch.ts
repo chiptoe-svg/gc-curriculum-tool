@@ -250,10 +250,15 @@ export function planTargetBatch(
   // referenced anywhere in the definitions (no definition, no ref), is
   // reported here — never retired automatically, never an error. A ref
   // without a definition is already caught by Rule 1 above, so it never
-  // reaches this check.
+  // reaches this check. Excludes ids already queued in `competencyRetires`
+  // (fix round 1, 2026-10-12): an id with no current membership and no
+  // definition that is ALSO on the `retired` list is being retired by this
+  // same plan, not left unlinked — without this exclusion it would show up
+  // in both lists at once.
+  const retiringIds = new Set(competencyRetires.map(r => r.id));
   const idsWithCurrentMembership = new Set(dbMemberships.map(m => m.competencyId));
   const competencyUnlinked = dbSubs
-    .filter(s => !s.retired && !definitionOwner.has(s.id) && !idsWithCurrentMembership.has(s.id))
+    .filter(s => !s.retired && !definitionOwner.has(s.id) && !idsWithCurrentMembership.has(s.id) && !retiringIds.has(s.id))
     .map(s => s.id)
     .sort();
 

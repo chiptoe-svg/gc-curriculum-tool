@@ -22,8 +22,9 @@ export async function POST(
       return NextResponse.json({ error: 'sub-competency is already retired' }, { status: 409 });
     }
 
-    // P0b: shared-aware retire — removes only this target's claim; the
-    // catalog row is retired only when no other target still uses it.
+    // P0b Amendment 1 (A1): shared-aware retire — removes only this target's
+    // claim; the catalog row is left ACTIVE and UNLINKED (never auto-retired)
+    // when no other target still uses it.
     const result = await db.transaction((tx) => retireCompetencyFromTarget(tx, id, scId));
 
     // Audit log
