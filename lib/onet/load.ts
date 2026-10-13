@@ -136,6 +136,8 @@ const TASK_STATEMENTS_HEADER = [
 
 const OCCUPATION_HEADER = ['O*NET-SOC Code', 'Title', 'Description'] as const;
 
+const CONTENT_MODEL_HEADER = ['Element ID', 'Element Name', 'Description'] as const;
+
 function parseRecords(content: string, fileLabel: string, expectedHeader: readonly string[]): Record<string, string>[] {
   const clean = content.replace(/^﻿/, '');
   const parsed = Papa.parse<Record<string, string>>(clean, { header: true, skipEmptyLines: true });
@@ -195,6 +197,12 @@ export interface RawTaskRating {
   recommendSuppress: boolean;
   dateText: string;
   domainSource: string;
+}
+
+export interface RawElementDefinition {
+  elementId: string;
+  elementName: string;
+  description: string;
 }
 
 export interface ScaleFilteredResult<T> {
@@ -297,4 +305,16 @@ export function parseTaskRatingsCsv(content: string, fileLabel: string): ScaleFi
     });
   }
   return { rows, skippedScaleCount };
+}
+
+/** O*NET Content Model Reference (content_model_reference.csv): one row per content-model element. */
+export function parseContentModelReferenceCsv(content: string, fileLabel: string): { rows: RawElementDefinition[] } {
+  const records = parseRecords(content, fileLabel, CONTENT_MODEL_HEADER);
+  return {
+    rows: records.map(r => ({
+      elementId: (r['Element ID'] ?? '').trim(),
+      elementName: (r['Element Name'] ?? '').trim(),
+      description: (r['Description'] ?? '').trim(),
+    })),
+  };
 }

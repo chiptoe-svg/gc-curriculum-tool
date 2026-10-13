@@ -257,7 +257,7 @@ describe.skipIf(!RUN)('P1 Task 4 — main() default dry-run / --apply (m3 flip, 
     return {
       executor: tx,
       readRatedOnetCodes: async () => new Set(['99-0001.00', '99-0002.00']),
-      readAndFilter: () => ({ occupations: [], elementRatings: [], taskStatements: [], taskRatings: [], skippedElementScaleCount: 0, skippedTaskRatingScaleCount: 0 }),
+      readAndFilter: () => ({ occupations: [], elementRatings: [], elementDefinitions: [], taskStatements: [], taskRatings: [], skippedElementScaleCount: 0, skippedTaskRatingScaleCount: 0 }),
       ...overrides,
     };
   }

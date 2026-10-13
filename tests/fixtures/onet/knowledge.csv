@@ -1,6 +1,7 @@
 O*NET-SOC Code,Title,Element ID,Element Name,Scale ID,Scale Name,Data Value,N,Standard Error,Lower CI Bound,Upper CI Bound,Recommend Suppress,Not Relevant,Date,Domain Source
 99-0001.00,Synthetic Test Occupation One,2.C.1.a,Administration and Management,IM,Importance,4.5,10,0.1,4.0,5.0,N,,08/2023,Incumbent
 99-0001.00,Synthetic Test Occupation One,2.C.1.a,Administration and Management,LV,Level,5.0,10,0.1,4.5,5.5,,,08/2023,Incumbent
+99-0001.00,Synthetic Test Occupation One,2.C.3.a,Sales and Marketing,IM,Importance,3.5,8,0.2,3.0,4.0,N,,08/2023,Incumbent
 99-0001.00,Synthetic Test Occupation One,2.C.3.a,Sales and Marketing,OJ,On The Job (unused test scale),99.0,5,0.0,0,0,N,N,08/2023,Incumbent
 99-0002.00,Synthetic Test Occupation Two,2.C.2.a,Economics and Accounting,IM,Importance,3.2,8,0.2,2.8,3.6,Y,Y,08/2023,Analyst
 99-0002.00,Synthetic Test Occupation Two,2.C.2.a,Economics and Accounting,LV,Level,4.0,8,0.2,3.6,4.4,N,N,08/2023,Analyst
