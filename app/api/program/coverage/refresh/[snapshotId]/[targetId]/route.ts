@@ -5,7 +5,7 @@ import { asc, eq } from 'drizzle-orm';
 import { careerTargets, targetSubCompetencies } from '@/lib/db/schema';
 import { getSnapshotById } from '@/lib/db/capture-snapshots-queries';
 import { upsertCoverageCell } from '@/lib/db/program-coverage-queries';
-import { scoreSnapshotAgainstTarget } from '@/lib/ai/analyze/program-score-coverage';
+import { scoreSnapshotCompetencies } from '@/lib/ai/analyze/program-score-coverage';
 import { regenerateWikiInBackground } from '@/lib/ai/wiki/update';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
@@ -16,9 +16,10 @@ export const maxDuration = 60;
 interface RouteContext { params: Promise<{ snapshotId: string; targetId: string }> }
 
 // POST /api/program/coverage/refresh/[snapshotId]/[targetId]?slug=...
-// Score a single (snapshot, target) pair on demand. Used by the matrix UI
-// to fill in missing cells, or to re-score a specific pair when descriptors
-// change.
+// Score one snapshot against one target's ACTIVE (non-retired) competency
+// members — URL unchanged, but the scoring call itself carries no
+// career-target context (P0b Task 5). Used by the matrix UI to fill in
+// missing cells, or to re-score a pair when descriptors change.
 export async function POST(req: Request, { params }: RouteContext): Promise<Response> {
   const url = new URL(req.url);
   const slug = url.searchParams.get('slug') ?? '';
@@ -38,46 +39,34 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
 
   const subs = await db.select().from(targetSubCompetencies).where(eq(targetSubCompetencies.careerTargetId, targetId))
     .orderBy(asc(targetSubCompetencies.displayOrder), asc(targetSubCompetencies.id));
-  // Cells are stored per (snapshot, competency) since P0a; a cell the scorer
-  // returns for a competency outside this target would overwrite another
-  // target's cell, so only members of this target are written.
-  const memberIds = new Set(subs.map(s => s.id));
+  const activeSubs = subs.filter(s => !s.retired);
 
   // Gate the paid scoring call on the daily cost cap.
   const cap = await checkDailyCap();
   if (!cap.ok) return NextResponse.json({ error: 'daily cost cap reached' }, { status: 429 });
 
   try {
-    const { result, model, costUsdCents } = await scoreSnapshotAgainstTarget({
+    const { result, model, costUsdCents } = await scoreSnapshotCompetencies({
       snapshotId,
       courseCode: snapshot.courseCode,
       snapshotProfile: snapshot.profile,
-      careerTarget: {
-        id: target.id,
-        name: target.name,
-        shortDefinition: target.shortDefinition,
-        knowDescriptors: target.knowDescriptors as string[],
-        understandDescriptors: target.understandDescriptors as string[],
-        doDescriptors: target.doDescriptors as string[],
-      },
-      subCompetencies: subs
-        .filter(s => !s.retired)
-        .map(s => ({
-          id: s.id,
-          name: s.name,
-          knowDescriptor: s.knowDescriptor,
-          understandDescriptor: s.understandDescriptor,
-          doDescriptor: s.doDescriptor,
-          displayOrder: s.displayOrder,
-        })),
+      competencies: activeSubs.map(s => ({
+        id: s.id,
+        name: s.name,
+        knowDescriptor: s.knowDescriptor,
+        understandDescriptor: s.understandDescriptor,
+        doDescriptor: s.doDescriptor,
+      })),
     });
 
+    // Cells are already scoped to the input competencies (unknown ids are
+    // dropped by the scorer), so every returned cell is a member of this
+    // target's active set.
     for (const cell of result.cells) {
-      if (!memberIds.has(cell.sub_competency_id)) continue;
       await upsertCoverageCell({
         snapshotId,
         careerTargetId: targetId,
-        subCompetencyId: cell.sub_competency_id,
+        subCompetencyId: cell.competency_id,
         kDepth: cell.k_depth,
         uDepth: cell.u_depth,
         dDepth: cell.d_depth,

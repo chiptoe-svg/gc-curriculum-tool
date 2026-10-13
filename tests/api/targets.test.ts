@@ -27,6 +27,8 @@ vi.mock('@/lib/db/competency-catalog-queries', () => ({
     retired: false,
     updatedAt: new Date(),
   })),
+  getTargetCompetency: vi.fn(async () => null),
+  retireCompetencyFromTarget: vi.fn(async () => 'unlinked' as const),
 }));
 
 // Mock the drizzle db client so PATCH/POST routes don't hit a real DB
@@ -72,6 +74,7 @@ vi.mock('@/lib/db/client', () => ({
 import { GET as getTargets } from '@/app/api/targets/route';
 import { GET as getTarget, PATCH as patchTarget } from '@/app/api/targets/[id]/route';
 import { POST as postSubComp } from '@/app/api/targets/[id]/sub-competencies/route';
+import { POST as postRetireSubComp } from '@/app/api/targets/[id]/sub-competencies/[scId]/retire/route';
 import * as queriesModule from '@/lib/db/career-targets-queries';
 import * as catalogModule from '@/lib/db/competency-catalog-queries';
 
@@ -230,5 +233,75 @@ describe('POST /api/targets/[id]/sub-competencies', () => {
     });
     const res = await postSubComp(req, { params: makeParams({ id: 'does-not-exist' }) });
     expect(res.status).toBe(404);
+  });
+});
+
+describe('POST /api/targets/[id]/sub-competencies/[scId]/retire', () => {
+  const MEMBER_ROW = {
+    careerTargetId: 'production-operations',
+    id: 'domain-knowledge',
+    name: 'Production domain knowledge',
+    knowDescriptor: 'k',
+    understandDescriptor: 'u',
+    doDescriptor: 'd',
+    displayOrder: 0,
+    retired: false,
+    updatedAt: new Date(),
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(queriesModule.clearTargetCache).mockImplementation(() => undefined);
+    vi.mocked(catalogModule.getTargetCompetency).mockResolvedValue(MEMBER_ROW as never);
+    vi.mocked(catalogModule.retireCompetencyFromTarget).mockResolvedValue('unlinked');
+  });
+
+  it('returns 404 when the sub-competency is not a member of the target', async () => {
+    vi.mocked(catalogModule.getTargetCompetency).mockResolvedValue(null);
+    const req = makeRequest('POST');
+    const res = await postRetireSubComp(req, { params: makeParams({ id: 'production-operations', scId: 'does-not-exist' }) });
+    expect(res.status).toBe(404);
+    const body = await res.json();
+    expect(body.error).toMatch(/not found/);
+    expect(catalogModule.retireCompetencyFromTarget).not.toHaveBeenCalled();
+  });
+
+  it("returns {ok, result, competencyId} with result 'unlinked' when the competency had no other target left", async () => {
+    vi.mocked(catalogModule.retireCompetencyFromTarget).mockResolvedValue('unlinked');
+    const req = makeRequest('POST');
+    const res = await postRetireSubComp(req, { params: makeParams({ id: 'production-operations', scId: 'domain-knowledge' }) });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body).toEqual({ ok: true, result: 'unlinked', competencyId: 'domain-knowledge' });
+  });
+
+  it("returns {ok, result, competencyId} with result 'removed-from-target' when another target still uses the competency", async () => {
+    vi.mocked(catalogModule.retireCompetencyFromTarget).mockResolvedValue('removed-from-target');
+    const req = makeRequest('POST');
+    const res = await postRetireSubComp(req, { params: makeParams({ id: 'production-operations', scId: 'domain-knowledge' }) });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body).toEqual({ ok: true, result: 'removed-from-target', competencyId: 'domain-knowledge' });
+  });
+
+  it('calls retireCompetencyFromTarget inside db.transaction', async () => {
+    const { db } = await import('@/lib/db/client');
+    const req = makeRequest('POST');
+    await postRetireSubComp(req, { params: makeParams({ id: 'production-operations', scId: 'domain-knowledge' }) });
+
+    expect(db.transaction).toHaveBeenCalledTimes(1);
+    // db.transaction's mock invokes its callback with a fixed tx stub ({});
+    // asserting retireCompetencyFromTarget received that exact object as its
+    // first argument proves it ran inside the transaction's callback, not
+    // called separately with some other value.
+    expect(catalogModule.retireCompetencyFromTarget).toHaveBeenCalledWith({}, 'production-operations', 'domain-knowledge');
+  });
+
+  it('returns 409 when the sub-competency is already retired', async () => {
+    vi.mocked(catalogModule.getTargetCompetency).mockResolvedValue({ ...MEMBER_ROW, retired: true } as never);
+    const req = makeRequest('POST');
+    const res = await postRetireSubComp(req, { params: makeParams({ id: 'production-operations', scId: 'domain-knowledge' }) });
+    expect(res.status).toBe(409);
+    expect(catalogModule.retireCompetencyFromTarget).not.toHaveBeenCalled();
   });
 });

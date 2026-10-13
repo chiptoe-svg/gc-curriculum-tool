@@ -38,6 +38,7 @@ vi.mock('@/lib/db/schema', () => ({
     displayOrder: 'display_order',
     retired: 'retired',
   },
+  courseCodes: { courseCode: 'course_code' },
 }));
 
 import { invalidateCoverageForSubCompetency } from '@/lib/db/program-coverage-queries';
@@ -60,7 +61,7 @@ describe('invalidateCoverageForSubCompetency', () => {
 });
 
 describe('career-coverage queries gate on builds_to_career', () => {
-  it('getMatrixData filters its snapshot query on builds_to_career', async () => {
+  it('getMatrixData filters its snapshot query on builds_to_career (career-rollup scope, A2)', async () => {
     const executed: unknown[] = [];
     const mod = await import('@/lib/db/client');
     (mod.db.execute as unknown as ReturnType<typeof vi.fn>) = vi.fn((q: unknown) => {
@@ -77,21 +78,36 @@ describe('career-coverage queries gate on builds_to_career', () => {
     expect(texts.some((t) => t.includes('builds_to_career'))).toBe(true);
   });
 
-  it('listStalePairs filters its latest-snapshot query on builds_to_career', async () => {
+  // P0b Amendment 1 (A2): scoring scope is every program-visible course,
+  // regardless of builds_to_career — listStaleSnapshots must NOT restrict on
+  // it any more (inverted from the pre-amendment assertion this replaces).
+  it('listStaleSnapshots does NOT filter its latest-snapshot query on builds_to_career (scoring scope, A2)', async () => {
     const executed: unknown[] = [];
     const mod = await import('@/lib/db/client');
     (mod.db.execute as unknown as ReturnType<typeof vi.fn>) = vi.fn((q: unknown) => {
       executed.push(q);
       return Promise.resolve({ rows: [] });
     });
-    (mod.db.select as unknown as ReturnType<typeof vi.fn>) = vi.fn(() => ({ from: () => [] }));
+    // Two different select shapes: subCompetencies (chained .where()) and
+    // snapshotCompetencyCoverage (awaited directly, no .where()). The chain
+    // below supports both.
+    (mod.db.select as unknown as ReturnType<typeof vi.fn>) = vi.fn(() => ({
+      from: () => {
+        const c: Record<string, unknown> = {};
+        c.where = () => Promise.resolve([]);
+        c.then = (res: (v: unknown[]) => unknown) => Promise.resolve([]).then(res);
+        return c;
+      },
+    }));
 
-    const { listStalePairs } = await import('@/lib/db/program-coverage-queries');
-    await listStalePairs();
+    const { listStaleSnapshots } = await import('@/lib/db/program-coverage-queries');
+    await listStaleSnapshots();
 
     const dialect = new PgDialect();
     const texts = executed.map((q) => dialect.sqlToQuery(q as never).sql);
-    expect(texts.some((t) => t.includes('builds_to_career'))).toBe(true);
+    expect(texts.some((t) => t.includes('builds_to_career'))).toBe(false);
+    // Still program-visible scoped.
+    expect(texts.some((t) => t.includes("scope") && t.includes("status"))).toBe(true);
   });
 });
 
@@ -99,7 +115,14 @@ describe('getMatrixData — retired sub-competencies (2026-10-06 target batch)',
   it('drops cells scored against retired sub-competencies, so no consumer reads them as current', async () => {
     const schema = await import('@/lib/db/schema');
     const mod = await import('@/lib/db/client');
-    (mod.db.execute as unknown as ReturnType<typeof vi.fn>) = vi.fn(() => Promise.resolve({ rows: [] }));
+    // One row serving BOTH db.execute() calls getMatrixData makes: the
+    // matrix-rows query (keys snapshot_id/course_code/...) and the
+    // career-rollup program-visible-snapshot-ids query (fix round 1 —
+    // key `id`), so the cells' career-rollup scope filter doesn't strip
+    // them out before the retired-competency filter under test gets to run.
+    (mod.db.execute as unknown as ReturnType<typeof vi.fn>) = vi.fn(() => Promise.resolve({
+      rows: [{ id: 's1', snapshot_id: 's1', course_code: 'ZZ 9999', caption: null, created_at: new Date(0), instructor_name: null, title: 'ZZ', level: 9000 }],
+    }));
     const cell = (subCompetencyId: string) => ({
       snapshotId: 's1', careerTargetId: 't5', subCompetencyId, kDepth: 1, uDepth: 1, dDepth: 1,
       matchedCompetency: null, evidenceExcerpt: null, confidence: 'high', rationale: '', model: 'm', generatedAt: new Date(0),
@@ -112,7 +135,17 @@ describe('getMatrixData — retired sub-competencies (2026-10-06 target batch)',
       ]],
       [schema.targetCoverage, [cell('kept'), cell('old')]],
     ]);
-    (mod.db.select as unknown as ReturnType<typeof vi.fn>) = vi.fn(() => ({ from: (t: unknown) => byTable.get(t) ?? [] }));
+    // Chainable + awaitable: careerTargets/targetSubCompetencies/targetCoverage
+    // are awaited directly (no .where()); listPairedCodesForCourses (now hit,
+    // since uniqueCodes is non-empty with the course row above) calls
+    // .from(courseCodes).where(...), which needs a .where() that resolves to
+    // the same (empty, unmapped) rows.
+    const chain = (rows: unknown[]) => {
+      const c: Record<string, unknown> = { where: () => c };
+      c.then = (res: (v: unknown[]) => unknown, rej?: (e: unknown) => unknown) => Promise.resolve(rows).then(res, rej);
+      return c;
+    };
+    (mod.db.select as unknown as ReturnType<typeof vi.fn>) = vi.fn(() => ({ from: (t: unknown) => chain(byTable.get(t) ?? []) }));
 
     const { getMatrixData } = await import('@/lib/db/program-coverage-queries');
     const data = await getMatrixData();

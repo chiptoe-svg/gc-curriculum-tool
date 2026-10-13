@@ -14,7 +14,6 @@ import {
   getAllCells,
   getCellsForSnapshotTarget,
   getMatrixData,
-  listStalePairs,
 } from '@/lib/db/program-coverage-queries';
 import { loadScaffoldingTarget } from '@/lib/db/scaffolding-queries';
 import { computePrereqGaps } from '@/lib/program/prereq-gaps';
@@ -79,7 +78,11 @@ export async function collectProbes(): Promise<Record<string, unknown>> {
   const matrix = await getMatrixData();
   out.getMatrixData = { ...matrix, cells: sortJson(matrix.cells) };
 
-  out.listStalePairs = sortJson(await listStalePairs());
+  // listStalePairs was renamed/replaced by listStaleSnapshots in P0b Task 5
+  // (per-competency scoring, no target context) — dropped from this P0a
+  // characterization probe set rather than reconciled, since the golden
+  // this compares against predates P0b and the probe is gated off outside
+  // isCharacterizationDb()+P0A_GOLDEN (not exercised by normal test runs).
 
   const allCells = sortJson(await getAllCells());
   out.getAllCells = allCells;

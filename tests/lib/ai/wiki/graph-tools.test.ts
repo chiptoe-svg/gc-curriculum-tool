@@ -47,6 +47,15 @@ function fixture(): MatrixData {
       { snapshotId: 'snap-a', careerTargetId: 't1', subCompetencyId: 's1', kDepth: 0, uDepth: 0, dDepth: 0, matchedCompetency: null, evidenceExcerpt: null, confidence: 'low', rationale: 'r', model: 'test-model' },
       // a cell for the OTHER target — must not leak in
       { snapshotId: 'snap-a', careerTargetId: 't2', subCompetencyId: 's2', kDepth: 1, uDepth: 1, dDepth: 2, matchedCompetency: null, evidenceExcerpt: 'emails', confidence: 'medium', rationale: 'r', model: 'test-model' },
+      // an off-path (or superseded on-path) course's cell: its snapshot is
+      // in `snapshotCourses` (program-visible scope) but NOT in `courses`
+      // (matrix rows, builds_to_career-only / latest-only) — fix round 2.
+      { snapshotId: 'snap-c', careerTargetId: 't1', subCompetencyId: 's1', kDepth: 3, uDepth: 2, dDepth: 2, matchedCompetency: null, evidenceExcerpt: 'off-path evidence', confidence: 'medium', rationale: 'r', model: 'test-model' },
+    ],
+    snapshotCourses: [
+      { snapshotId: 'snap-a', courseCode: 'GC 1040', courseTitle: 'Intro' },
+      { snapshotId: 'snap-b', courseCode: 'GC 4400', courseTitle: 'Capstone' },
+      { snapshotId: 'snap-c', courseCode: 'GC 3700', courseTitle: 'Off-Path Course' },
     ],
   };
 }
@@ -68,8 +77,20 @@ describe('shapeCoverageForTarget', () => {
     expect(shaped.subCompetencies).toHaveLength(1);
     const sc = shaped.subCompetencies[0]!;
     expect(sc.subCompetency).toBe('Press Operation');
-    expect(sc.courses.map(c => c.course)).toEqual(['GC 4400', 'GC 1040']); // d=4 before d=1
+    expect(sc.courses.map(c => c.course)).toEqual(['GC 4400', 'GC 3700', 'GC 1040']); // d=4, d=2, d=1
     expect(sc.courses[0]).toMatchObject({ course: 'GC 4400', d: 4, confidence: 'high' });
+  });
+
+  it('resolves an off-path (or superseded) course\'s cell to its real course code, not "?" (fix round 2)', () => {
+    // snap-c is in `snapshotCourses` (program-visible scope) but NOT in
+    // `courses` (matrix rows) — exactly the shape of an off-path course's
+    // cell, or a superseded snapshot of an on-path course, now that career
+    // rollups count every program-visible course.
+    const shaped = shapeCoverageForTarget(fixture(), 'Production Operations')!;
+    const sc = shaped.subCompetencies[0]!;
+    const offPath = sc.courses.find(c => c.d === 2);
+    expect(offPath).toMatchObject({ course: 'GC 3700', title: 'Off-Path Course', d: 2 });
+    expect(sc.courses.some(c => c.course === '?')).toBe(false);
   });
 
   it('drops cells where K, U, and D are all zero/absent', () => {

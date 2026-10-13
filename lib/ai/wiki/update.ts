@@ -16,6 +16,7 @@ import path from 'node:path';
 import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 
 import { db } from '@/lib/db/client';
+import type { Tx } from '@/lib/db/competency-catalog-queries';
 import {
   courseCaptureSnapshots,
   captureMessages,
@@ -23,6 +24,7 @@ import {
   targetCoverage,
   careerTargets,
   targetSubCompetencies,
+  subCompetencies,
   courses,
 } from '@/lib/db/schema';
 import {
@@ -39,7 +41,7 @@ import { writeAndPush, readWikiPage, wikiRepoPath } from '@/lib/wiki/git-ops';
 import { deriveEvidenceBand, type EvidenceBand } from '@/lib/program/evidence-ladder';
 import { dedupeBands, stampEvidenceBands } from '@/lib/ai/wiki/evidence-band-markers';
 export { dedupeBands, stampEvidenceBands } from '@/lib/ai/wiki/evidence-band-markers';
-import { stampOkfFrontmatter, normalizeResourceOrigin } from '@/lib/ai/wiki/okf-frontmatter';
+import { stampOkfFrontmatter, normalizeResourceOrigin, okfResource } from '@/lib/ai/wiki/okf-frontmatter';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -125,6 +127,24 @@ function shortId(id: string): string {
   return id.replace(/-/g, '').slice(0, 7);
 }
 
+/**
+ * Given a set of sub-competency ids, return the subset that are NOT retired
+ * in the catalog (shared by the per-snapshot path and refresh-all). P0b
+ * (migration 0057) retires merged-away competencies but their history
+ * coverage cells persist, carried forward to the survivor — so any code
+ * deriving "which competency pages need regeneration" from coverage cells
+ * must intersect with this before treating an id as current. No DB call for
+ * an empty input.
+ */
+export async function activeCompetencyIds(ids: ReadonlyArray<string>): Promise<Set<string>> {
+  if (ids.length === 0) return new Set();
+  const rows = await db
+    .select({ id: subCompetencies.id })
+    .from(subCompetencies)
+    .where(and(inArray(subCompetencies.id, ids), eq(subCompetencies.retired, false)));
+  return new Set(rows.map(r => r.id));
+}
+
 // ---------------------------------------------------------------------------
 // Step 1 — computeAffectedPages
 // ---------------------------------------------------------------------------
@@ -179,7 +199,16 @@ export async function computeAffectedPages(
   const uniqueSubCompetencyIds = [...new Set(coverageCells.map(c => c.subCompetencyId))];
   const uniqueTargetIds = [...new Set(coverageCells.map(c => c.careerTargetId))];
 
+  // P0b (migration 0057): a merged-away competency's history coverage cells
+  // persist (carried forward to the survivor), so `coverageCells` can still
+  // list a retired id even though its catalog row is gone from current
+  // membership. Exclude it here so the wiki never regenerates a page for a
+  // retired competency on an ordinary snapshot regen — its page becomes a
+  // one-time "merged into" stub (writeMergedStub), not a live LLM target.
+  const activeSubIds = await activeCompetencyIds(uniqueSubCompetencyIds);
+
   for (const subId of uniqueSubCompetencyIds) {
+    if (!activeSubIds.has(subId)) continue;
     wikiPages.push({
       type: 'competency',
       slug: subId,
@@ -324,6 +353,13 @@ export async function loadCompetencySubstrate(subCompetencyId: string): Promise<
   // Get all non-retired snapshots' cells for this sub-competency. Join to get
   // the course code + profile from the snapshot (the profile carries the
   // per-competency provenance the evidence band derives from).
+  //
+  // Program-visible scope (fix round 1, 2026-10-12): joins `courses` and
+  // filters scope/status so a sandbox or external course's snapshot can
+  // never appear on a competency page — A2's "every program-visible course"
+  // was previously unenforced here (this join had none at all). NOT a
+  // builds_to_career filter: per A2, competency pages intentionally include
+  // every program-visible course regardless of builds_to_career.
   const rows = await db
     .select({
       courseCode: courseCaptureSnapshots.courseCode,
@@ -341,6 +377,14 @@ export async function loadCompetencySubstrate(subCompetencyId: string): Promise<
       and(
         eq(snapshotCompetencyCoverage.snapshotId, courseCaptureSnapshots.id),
         isNull(courseCaptureSnapshots.retiredAt),
+      ),
+    )
+    .innerJoin(
+      courses,
+      and(
+        eq(courses.code, courseCaptureSnapshots.courseCode),
+        eq(courses.scope, 'gc'),
+        eq(courses.status, 'offered'),
       ),
     )
     .where(eq(snapshotCompetencyCoverage.competencyId, subCompetencyId));
@@ -384,14 +428,20 @@ interface CoverageRollupEntry {
   evidenceExcerpt: string | null;
 }
 
-export async function loadTargetSubstrate(targetId: string): Promise<{
+/**
+ * `executor` defaults to the module-level `db` but accepts a transaction
+ * client (`Tx`) so a test can run a setup mutation and this read on the SAME
+ * connection inside one `BEGIN … ROLLBACK` (same pattern as
+ * program-coverage-queries.ts:listStaleSnapshots).
+ */
+export async function loadTargetSubstrate(targetId: string, executor: Tx | typeof db = db): Promise<{
   targetName: string;
   shortDefinition: string;
   industryContexts: string[];
   coverageRollup: CoverageRollupEntry[];
   contributingCourses: string[];
 }> {
-  const targetRows = await db
+  const targetRows = await executor
     .select()
     .from(careerTargets)
     .where(eq(careerTargets.id, targetId))
@@ -411,7 +461,7 @@ export async function loadTargetSubstrate(targetId: string): Promise<{
   // M-3 (adversarial review): ordered — the view's GROUP BY gives no defined
   // row order otherwise, which fed the scorer/wiki prompts a different
   // competency order than before (characterization's sortJson masked it).
-  const subs = await db
+  const subs = await executor
     .select()
     .from(targetSubCompetencies)
     .where(and(eq(targetSubCompetencies.careerTargetId, targetId), eq(targetSubCompetencies.retired, false)))
@@ -436,7 +486,18 @@ export async function loadTargetSubstrate(targetId: string): Promise<{
   // broke when P0a re-pointed this read to the target_coverage view (different query plan, different
   // row order for ties). The ORDER BY makes the pick deterministic regardless of read path; the
   // "highest dDepth wins" criterion itself (the reduction below) is unchanged.
-  const cellRows = await db
+  // Career-rollup scope (owner decision, 2026-10-12, superseding Amendment 1
+  // ruling A2): the target wiki page rolls up to a career target, so — like
+  // the program matrix's cells and scaffolding — it counts every
+  // PROGRAM-VISIBLE course (scope='gc' AND status='offered'), same as
+  // scoring (listStaleSnapshots); NOT restricted to builds_to_career (a
+  // builds_to_career condition added here in Task 8b, commit fd0daf0, is
+  // removed by this fix round 1 decision — off-path GC/offered courses are
+  // included, external/sandbox/non-offered are excluded). Previously (pre-Task 8b) this joined only
+  // courseCaptureSnapshots (retiredAt IS NULL) with no course filter at
+  // all, so even an external/sandbox course's cell would have rolled up
+  // into every target that uses its competency.
+  const cellRows = await executor
     .select({
       subCompetencyId: targetCoverage.subCompetencyId,
       courseCode: courseCaptureSnapshots.courseCode,
@@ -452,6 +513,14 @@ export async function loadTargetSubstrate(targetId: string): Promise<{
       and(
         eq(targetCoverage.snapshotId, courseCaptureSnapshots.id),
         isNull(courseCaptureSnapshots.retiredAt),
+      ),
+    )
+    .innerJoin(
+      courses,
+      and(
+        eq(courses.code, courseCaptureSnapshots.courseCode),
+        eq(courses.scope, 'gc'),
+        eq(courses.status, 'offered'),
       ),
     )
     .where(
@@ -1358,6 +1427,34 @@ export async function generateProgramWikiBatch(
 // ---------------------------------------------------------------------------
 
 /**
+ * Regenerate + push the wiki for ONE snapshot. Awaitable — unlike
+ * `regenerateWikiInBackground` below, this throws on failure instead of
+ * swallowing it, so a caller that needs to know whether the regeneration
+ * (and its paid LLM call) actually completed can await it and handle the
+ * error (I-2 hostile-review fix, 2026-10-12: the re-score script used to
+ * have no awaitable form to call and fired `regenerateWikiInBackground`
+ * instead, so `process.exit` killed every regeneration still in flight —
+ * 0 of 11 completed in the reviewer's reproduction). `opts.pageTypes`
+ * forwards straight to `updateWikiForSnapshot` — the re-score script (I-3,
+ * hostile review round 2) passes `{ pageTypes: ['course'] }` so it never
+ * regenerates the program-wide pages from a snapshot that happens not to
+ * be the course's actual latest.
+ */
+export async function regenerateWikiForSnapshot(
+  snapshotId: string,
+  reason: string,
+  opts: UpdateWikiOptions = {},
+): Promise<{ sha: string }> {
+  const snap = await getSnapshotById(snapshotId);
+  const { raw, wiki, logEntry } = await updateWikiForSnapshot(snapshotId, opts);
+  const allPages = [...raw, ...wiki];
+  const codeSlug = (snap?.courseCode ?? 'wiki').toLowerCase().replace(/\s+/g, '-');
+  const date = new Date().toISOString().slice(0, 10);
+  const commitMessage = `feat(${codeSlug}): ${reason} ${date}${snap?.caption ? ` — ${snap.caption}` : ''}`;
+  return writeAndPush({ pages: allPages, logEntry, commitMessage });
+}
+
+/**
  * Regenerate + push the wiki for a snapshot, fire-and-forget. Two call sites:
  *   1. snapshot creation (course + concept pages + index), and
  *   2. AFTER coverage scoring (`program-score-coverage` writes
@@ -1366,23 +1463,97 @@ export async function generateProgramWikiBatch(
  *      from coverage rows that don't exist yet at snapshot-creation time.
  *
  * Non-blocking and never throws to the caller: a wiki-gen failure must not
- * break capture or coverage scoring. Errors are logged.
+ * break capture or coverage scoring. Errors are logged. A caller that DOES
+ * need to know when the regeneration finishes (e.g. a script about to exit)
+ * must call `regenerateWikiForSnapshot` directly and await it instead.
  */
 export function regenerateWikiInBackground(snapshotId: string, reason: string): void {
-  void (async () => {
-    try {
-      const snap = await getSnapshotById(snapshotId);
-      const { raw, wiki, logEntry } = await updateWikiForSnapshot(snapshotId);
-      const allPages = [...raw, ...wiki];
-      const codeSlug = (snap?.courseCode ?? 'wiki').toLowerCase().replace(/\s+/g, '-');
-      const date = new Date().toISOString().slice(0, 10);
-      const commitMessage = `feat(${codeSlug}): ${reason} ${date}${snap?.caption ? ` — ${snap.caption}` : ''}`;
-      await writeAndPush({ pages: allPages, logEntry, commitMessage });
-    } catch (err) {
-      console.error(
-        '[wiki regen] failed for snapshot', snapshotId, 'reason:', reason,
-        err instanceof Error ? err.message : err,
-      );
-    }
-  })();
+  void regenerateWikiForSnapshot(snapshotId, reason).catch((err) => {
+    console.error(
+      '[wiki regen] failed for snapshot', snapshotId, 'reason:', reason,
+      err instanceof Error ? err.message : err,
+    );
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Step 6 — merged-into stub for a retired-and-merged competency (P0b, Task 6)
+//
+// A merged-away competency (sub_competencies.merged_into set, migration 0057)
+// keeps its OLD page slug in the wiki, but that page must stop being an LLM
+// target: its content is replaced ONCE with a deterministic stub that names
+// and links the survivor. Task 7's script is the only caller — nothing here
+// runs at import time.
+// ---------------------------------------------------------------------------
+
+/**
+ * Pure: build the "merged into" stub page for a retired-and-merged
+ * competency. Follows the same path/slug convention as a live competency
+ * page (`competencies/<oldId>.md`) so it REPLACES the old page in place, and
+ * carries the same OKF frontmatter contract (`OKF_REQUIRED_KEYS`) plus the
+ * `competencies` schema's required "Across the program" section so
+ * `pnpm wiki:lint` accepts it. No I/O, no AI — `opts.timestamp` defaults to
+ * "now" only for the convenience of a real caller; tests pass it explicitly.
+ *
+ * `oldName` (Task 6 controller ruling) is the retired competency's real
+ * `sub_competencies.name` — the stub's title, NOT the slug title-cased.
+ * The slug-derived title that this used to compute from `oldId` alone could
+ * disagree with the competency's actual name (e.g. an acronym or multi-word
+ * name a slug doesn't round-trip), so the caller must pass the real name.
+ */
+export function buildMergedStubPage(
+  oldId: string,
+  survivorId: string,
+  survivorName: string,
+  oldName: string,
+  opts: { timestamp?: string } = {},
+): WikiPageWrite {
+  const title = oldName;
+  const timestamp = opts.timestamp ?? new Date().toISOString();
+  const survivorLink = `[[${survivorId}|${survivorName}]]`;
+  const lines = [
+    '---',
+    'type: competency',
+    `title: "${title}"`,
+    `description: "Retired — merged into ${survivorName}."`,
+    `merged_into: ${survivorId}`,
+    'slug: ' + oldId,
+    'tags: [competency, merged]',
+    `timestamp: ${timestamp}`,
+    `resource: ${okfResource('competency', oldId)}`,
+    '---',
+    '',
+    `# ${title}`,
+    '',
+    '## Merged',
+    '',
+    `This competency was retired and merged into ${survivorLink}. Its history (contributing courses, snapshots) is preserved; current program-wide coverage for this area is tracked on that page.`,
+    '',
+    '## Across the program',
+    '',
+    `See ${survivorLink} for current coverage.`,
+    '',
+  ];
+  return { path: `competencies/${oldId}.md`, content: lines.join('\n') };
+}
+
+/**
+ * Thin writer: build the stub (buildMergedStubPage) and write it through the
+ * existing wiki write path (writeAndPush). Makes no LLM call. Called once per
+ * merged-away id by Task 7's apply script — never from the per-snapshot or
+ * refresh-all regeneration paths.
+ */
+export async function writeMergedStub(
+  oldId: string,
+  survivorId: string,
+  survivorName: string,
+  oldName: string,
+): Promise<{ sha: string }> {
+  const page = buildMergedStubPage(oldId, survivorId, survivorName, oldName);
+  const logEntry = `${new Date().toISOString()} — merged-stub: ${oldId} → ${survivorId}`;
+  return writeAndPush({
+    pages: [page],
+    logEntry,
+    commitMessage: `docs(wiki): stub ${oldId} — merged into ${survivorId}`,
+  });
 }

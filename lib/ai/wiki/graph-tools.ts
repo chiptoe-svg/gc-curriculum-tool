@@ -39,14 +39,26 @@ export interface TargetCoverage {
 }
 
 /** Pure: shape the coverage matrix into per-sub-competency course coverage for a
- *  fuzzily-matched target. Returns null if no target matches. */
+ *  fuzzily-matched target. Returns null if no target matches.
+ *
+ *  Course resolution (fix round 2, 2026-10-12): a cell's snapshot is often
+ *  NOT one of `m.courses` (matrix ROWS — builds_to_career-only,
+ *  latest-per-instructor) — it may be an off-path course, or a superseded
+ *  (non-latest) snapshot of an on-path course. Both are legitimately in
+ *  `m.cells` now that career rollups count every program-visible course
+ *  (owner decision). Resolving from `m.snapshotCourses` (every
+ *  program-visible snapshot's course, the same scope `m.cells` is filtered
+ *  to) instead of `m.courses` fixes "course: '?'" for those entries without
+ *  changing which entries appear — measured on scratch: 88 of 188
+ *  coverage_for_target entries (64 off-path + 24 superseded on-path) printed
+ *  '?' before this fix. */
 export function shapeCoverageForTarget(m: MatrixData, targetQuery: string): TargetCoverage | null {
   const q = targetQuery.trim().toLowerCase();
   const t =
     m.targets.find(x => x.name.toLowerCase() === q) ??
     m.targets.find(x => x.name.toLowerCase().includes(q));
   if (!t) return null;
-  const courseBySnap = new Map(m.courses.map(c => [c.snapshotId, c]));
+  const courseBySnap = new Map(m.snapshotCourses.map(c => [c.snapshotId, c]));
   const subs = m.subCompetencies.filter(s => s.careerTargetId === t.id);
   return {
     target: t.name,

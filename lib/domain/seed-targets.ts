@@ -2,13 +2,24 @@ import type { CareerTarget } from './types';
 
 // Definitions as of the 2026-10-06 target batch (owner-approved; spec
 // docs/superpowers/specs/2026-10-05-target-5-creative-ops-tech-draft.md §4, §8,
-// §9, §12). The live DB is brought to this state by
-// scripts/targets/apply-target-batch.ts; scripts/seed-career-targets.ts only
-// inserts into an empty DB. Retired sub-competencies are NOT listed under their
-// target (they are not current); they live in RETIRED_SUB_COMPETENCIES so the
-// apply script can set sub_competencies.retired = true. Rows are never deleted:
-// snapshot_competency_coverage cells, the frozen snapshot_target_coverage
-// backup, and career_target_requirements rows all keep their FK target.
+// §9, §12), updated 2026-10-12 for the P0b competency-catalog merges
+// (migration 0057; owner decisions: domain-knowledge <- gc-production-literacy
+// + domain-grounding; project-management <- timeline-management). The live DB
+// is brought to this state by scripts/targets/apply-target-batch.ts;
+// scripts/seed-career-targets.ts only inserts into an empty DB. Retired
+// sub-competencies are NOT listed under their target (they are not current);
+// they live in RETIRED_SUB_COMPETENCIES so the apply script can set
+// sub_competencies.retired = true (and merged_into, for a merge). Rows are
+// never deleted: snapshot_competency_coverage cells, the frozen
+// snapshot_target_coverage backup, and career_target_requirements rows all
+// keep their FK target.
+//
+// A competency can now be required by more than one target (P0b). Exactly
+// one target carries the full definition (a plain SubCompetency entry);
+// every other target that needs the same competency lists `{ ref: id }`
+// instead of repeating the definition — see lib/domain/types.ts
+// TargetCompetencyEntry. lib/domain/target-batch.ts enforces "one definition
+// per id" and errors on a ref with no definition.
 
 export const CAREER_TARGETS: CareerTarget[] = [
   {
@@ -69,13 +80,7 @@ export const CAREER_TARGETS: CareerTarget[] = [
         understandDescriptor: 'Understands why client reporting frames results in business outcomes, not deliverable counts.',
         doDescriptor: 'Produces a post-project report a client uses to justify continued investment.',
       },
-      {
-        id: 'gc-production-literacy',
-        name: 'Domain literacy in production technology, equipment, and process',
-        knowDescriptor: 'Knows what print, packaging, and brand production processes can and cannot accommodate, and what the equipment or technology being sold can and cannot do, well enough to speak to it credibly on the vendor side.',
-        understandDescriptor: 'Understands why this knowledge is what differentiates a credible account manager or technical sales rep from an order-taker.',
-        doDescriptor: 'Holds a substantive conversation with a brand director or a prospective buyer and turns to brief a production team or a sales engineer accurately.',
-      },
+      { ref: 'domain-knowledge' },
     ],
   },
   {
@@ -204,13 +209,6 @@ export const CAREER_TARGETS: CareerTarget[] = [
         doDescriptor: 'Selects, briefs, and manages a vendor through a complex project including specification, delivery, and post-project review.',
       },
       {
-        id: 'timeline-management',
-        name: 'Timeline management under constraint and pressure',
-        knowDescriptor: 'Knows the typical lead-time structure for print and packaging production at varying complexity.',
-        understandDescriptor: 'Understands why timeline slippage compounds and why early signals matter more than aggressive deadlines.',
-        doDescriptor: 'Manages a production schedule across multiple vendors and surfaces timeline risk early enough to act.',
-      },
-      {
         id: 'cost-management',
         name: 'Cost estimation, budget management, and equipment justification',
         knowDescriptor: 'Knows the cost structures of major print and packaging processes, and how to build a capital-equipment business case — purchase cost, throughput or quality gain, and payback period — distinct from a per-job estimate.',
@@ -225,18 +223,27 @@ export const CAREER_TARGETS: CareerTarget[] = [
         doDescriptor: 'Coordinates a production team through a high-pressure project and addresses performance gaps in real time, and carries out at least one people-management task end-to-end (a hire, an onboarding plan, or a documented performance review) for a real or simulated team.',
       },
       {
+        // P0b merge survivor (migration 0057): absorbed gc-production-literacy
+        // (account-management) and domain-grounding (ai-workflow). Text below
+        // is the owner-approved merged descriptor, copied verbatim from
+        // drizzle/0057_competency_catalog_p0b.sql "Survivor descriptors" so the
+        // dry run against the post-0057 DB reports zero changes.
         id: 'domain-knowledge',
-        name: 'Domain knowledge: substrates, color, materials',
-        knowDescriptor: 'Knows the major substrate categories, color management systems, and materials used in print and packaging production.',
-        understandDescriptor: 'Understands why substrate and ink interactions constrain creative possibility and how to advise designers accordingly.',
-        doDescriptor: 'Makes substantive specification decisions on substrate, color, and finishing for a real production project.',
+        name: 'Production domain knowledge: processes, substrates, materials and equipment',
+        knowDescriptor: 'Knows what print, packaging and brand production processes can and cannot do — substrates, inks, finishing, and the equipment and technology involved — well enough to judge whether a design, specification, workflow or AI output is producible and fit for purpose.',
+        understandDescriptor: 'Understands why material, process and equipment constraints shape what is creatively and commercially possible, and why advice or systems built without this knowledge look right but fail at the point of production.',
+        doDescriptor: 'Uses this knowledge on real production decisions: specifies substrate and finishing for a job, briefs a production team or a sales engineer accurately, or shows with specific production reasons where a workflow, template or AI step would succeed or fail. (Color management — profiles, calibration, process control — is scored under Color management, not here.)',
       },
       {
+        // P0b merge survivor (migration 0057): absorbed timeline-management.
+        // Keeps its existing name; descriptor text is the owner-approved
+        // merged text, copied verbatim from
+        // drizzle/0057_competency_catalog_p0b.sql "Survivor descriptors".
         id: 'project-management',
         name: 'Project management across creative and production work',
-        knowDescriptor: 'Knows the project life cycle (scope, plan, schedule, budget, risk, change control, close-out) and the standard tools for each: work breakdown, dependencies, critical path, status reporting.',
-        understandDescriptor: 'Understands why projects fail at scope and handoff rather than at execution, and why a plan has to be re-baselined when scope, budget or dates change rather than quietly absorbed.',
-        doDescriptor: 'Plans and runs a real creative or production project from brief to delivery: defines scope, builds the schedule and budget, tracks risks and changes, reports status, and closes it out with a lessons-learned record.',
+        knowDescriptor: 'Knows the project life cycle (scope, plan, schedule, budget, risk, change control, close-out) and its tools — work breakdown, dependencies, critical path, status reporting — and the lead-time structure of print and packaging production at varying complexity.',
+        understandDescriptor: 'Understands why projects fail at scope and handoff rather than at execution, why schedule slippage compounds and early warning signals matter more than aggressive deadlines, and why a plan has to be re-baselined when scope, budget or dates change.',
+        doDescriptor: 'Plans and runs a real creative or production project from brief to delivery: defines scope, builds the schedule and budget across vendors or teams, surfaces timeline risk early enough to act, tracks changes, reports status, and closes out with a lessons-learned record.',
       },
     ],
   },
@@ -404,13 +411,7 @@ export const CAREER_TARGETS: CareerTarget[] = [
         understandDescriptor: 'Understands why an AI tool must be benchmarked on the organization\'s own work, not vendor demos; why results drift as models change; and how to weigh quality, cost, risk and staff workload in an adopt-or-drop decision.',
         doDescriptor: 'Implements an AI step in a real workflow, builds a small benchmark (a test set and scoring rule) comparing it with the current process, runs it, and writes a recommendation to adopt, adjust or drop, with the evidence.',
       },
-      {
-        id: 'domain-grounding',
-        name: 'Domain grounding: creative, brand and production knowledge',
-        knowDescriptor: 'Knows enough of the creative, brand and print/production domain (substrates, color, finishing, brand standards, how creative work is made and approved) to judge whether a workflow, template, automation or AI output is fit for purpose.',
-        understandDescriptor: 'Understands why systems built without domain knowledge look correct but fail at the point of use, and why that knowledge is what separates this role from a general IT or automation role.',
-        doDescriptor: 'Designs or evaluates a workflow, template system, automation or AI step and shows, with specific domain reasons, where it would succeed or fail in a real creative or production setting.',
-      },
+      { ref: 'domain-knowledge' },
     ],
   },
 ];
@@ -424,9 +425,11 @@ export const CAREER_TARGETS: CareerTarget[] = [
  */
 export interface RetiredSubCompetency {
   id: string;
-  careerTargetId: string;
+  careerTargetId: string;  // where it was defined before retirement (historical; not used for membership — P0b membership is explicit per career_target_requirements)
   retiredOn: string; // ISO date of the decision
   reason: string;
+  /** P0b: the surviving catalog id this competency was merged into, if any. */
+  mergedInto?: string;
 }
 
 export const RETIRED_SUB_COMPETENCIES: RetiredSubCompetency[] = [
@@ -441,5 +444,26 @@ export const RETIRED_SUB_COMPETENCIES: RetiredSubCompetency[] = [
     careerTargetId: 'ai-workflow',
     retiredOn: '2026-10-06',
     reason: 'Not one of the evidenced strands; training and rollout are covered by ai-tool-evaluation (implementation) (spec §5, §12).',
+  },
+  {
+    id: 'gc-production-literacy',
+    careerTargetId: 'account-management',
+    retiredOn: '2026-10-12',
+    mergedInto: 'domain-knowledge',
+    reason: 'Owner merge #1 (2026-10-12): production domain knowledge — folded into domain-knowledge alongside domain-grounding (migration 0057).',
+  },
+  {
+    id: 'domain-grounding',
+    careerTargetId: 'ai-workflow',
+    retiredOn: '2026-10-12',
+    mergedInto: 'domain-knowledge',
+    reason: 'Owner merge #1 (2026-10-12): production domain knowledge — folded into domain-knowledge alongside gc-production-literacy (migration 0057).',
+  },
+  {
+    id: 'timeline-management',
+    careerTargetId: 'production-operations',
+    retiredOn: '2026-10-12',
+    mergedInto: 'project-management',
+    reason: 'Owner merge #2 (2026-10-12): scheduling folded into project management (migration 0057).',
   },
 ];

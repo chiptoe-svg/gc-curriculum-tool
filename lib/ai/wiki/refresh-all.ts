@@ -34,6 +34,7 @@ import { courseCaptureSnapshots, courses, targetCoverage } from '@/lib/db/schema
 import type { CaptureProfile } from '@/lib/ai/capture/schema';
 import {
   WIKI_PAGES_PER_CALL,
+  activeCompetencyIds,
   courseCodeToSlug,
   type ProgramCourseSummary,
   type ProgramPageRef,
@@ -316,7 +317,7 @@ export async function loadRefreshInputs(): Promise<RefreshInputs & {
     .from(courseCaptureSnapshots)
     .where(isNull(courseCaptureSnapshots.retiredAt));
 
-  const cells = await db
+  const rawCells = await db
     .select({
       snapshotId: targetCoverage.snapshotId,
       subCompetencyId: targetCoverage.subCompetencyId,
@@ -330,6 +331,14 @@ export async function loadRefreshInputs(): Promise<RefreshInputs & {
         isNull(courseCaptureSnapshots.retiredAt),
       ),
     );
+
+  // P0b (migration 0057): a merged-away competency's history coverage cells
+  // persist under its old id (carried forward to the survivor), so `rawCells`
+  // can still list a retired id. Exclude it — the one-pass refresh must not
+  // regenerate a page, or spend an LLM call, on a retired competency, same as
+  // the per-snapshot path (lib/ai/wiki/update.ts computeAffectedPages).
+  const activeIds = await activeCompetencyIds([...new Set(rawCells.map(c => c.subCompetencyId))]);
+  const cells = rawCells.filter(c => activeIds.has(c.subCompetencyId));
 
   const snapshots: SnapshotStub[] = snaps.map(s => ({
     id: s.id,

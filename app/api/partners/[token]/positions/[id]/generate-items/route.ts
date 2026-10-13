@@ -3,6 +3,7 @@ import { findPartnerByToken } from '@/lib/partners/queries';
 import { getPositionCaptureById } from '@/lib/db/position-capture-queries';
 import { generateRatedItems } from '@/lib/ai/position-capture/rated-items';
 import { getTargetById } from '@/lib/db/career-targets-queries';
+import { isSubCompetencyDefinition } from '@/lib/domain/types';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
 import { hashIp } from '@/lib/ip-hash';
@@ -39,7 +40,9 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
       targetContext: {
         name: target.name,
         description: target.shortDefinition ?? '',
-        subCompetencies: target.subCompetencies.map(s => ({
+        // target is always DB-resolved (getTargetById), which never
+        // produces `{ ref }` entries — the filter is just the type guard.
+        subCompetencies: target.subCompetencies.filter(isSubCompetencyDefinition).map(s => ({
           id: s.id,                       // A2 — the join key (REQUIRED by the Task 6 type)
           name: s.name,
           description: s.doDescriptor ?? '',

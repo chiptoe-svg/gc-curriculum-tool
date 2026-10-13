@@ -4,13 +4,16 @@ import { getProviderForFunction } from '@/lib/ai/provider';
 import type { CaptureProfile } from '@/lib/ai/capture/schema';
 
 /**
- * Score a snapshot against one career target's sub-competencies.
- * Produces one row per sub-competency, each carrying K/U/D depths +
- * evidence + confidence + rationale.
+ * Score a snapshot against a list of catalog competencies — no career-target
+ * context (P0b Task 5: coverage scoring moved from per-target to per
+ * competency; a competency can now be shared by several targets, so scoring
+ * it once, against only its own K/U/D descriptors, replaces scoring it once
+ * per target it happens to belong to). Produces one row per competency in
+ * the input, each carrying K/U/D depths + evidence + confidence + rationale.
  */
 
 const coverageCellSchema = z.object({
-  sub_competency_id: z.string().min(1),
+  competency_id: z.string().min(1),
   matched_competency: z.string().nullable(),
   k_depth: z.number().int().min(0).max(5).nullable(),
   u_depth: z.number().int().min(0).max(5).nullable(),
@@ -22,20 +25,18 @@ const coverageCellSchema = z.object({
 
 const coverageResultSchema = z.object({
   snapshot_id: z.string(),
-  career_target_id: z.string(),
   generated_at: z.string(),
   cells: z.array(coverageCellSchema).min(1),
 });
 export type ProgramCoverageResult = z.infer<typeof coverageResultSchema>;
-export type ProgramCoverageCell = z.infer<typeof coverageCellSchema>;
+export type CompetencyCoverageCell = z.infer<typeof coverageCellSchema>;
 
 const coverageJsonSchema = {
   type: 'object',
   additionalProperties: false,
-  required: ['snapshot_id', 'career_target_id', 'generated_at', 'cells'],
+  required: ['snapshot_id', 'generated_at', 'cells'],
   properties: {
     snapshot_id: { type: 'string', minLength: 1 },
-    career_target_id: { type: 'string', minLength: 1 },
     generated_at: { type: 'string', minLength: 1 },
     cells: {
       type: 'array',
@@ -44,7 +45,7 @@ const coverageJsonSchema = {
         type: 'object',
         additionalProperties: false,
         required: [
-          'sub_competency_id',
+          'competency_id',
           'matched_competency',
           'k_depth',
           'u_depth',
@@ -54,7 +55,7 @@ const coverageJsonSchema = {
           'rationale',
         ],
         properties: {
-          sub_competency_id: { type: 'string', minLength: 1 },
+          competency_id: { type: 'string', minLength: 1 },
           matched_competency: { type: ['string', 'null'] },
           k_depth: { type: ['integer', 'null'], minimum: 0, maximum: 5 },
           u_depth: { type: ['integer', 'null'], minimum: 0, maximum: 5 },
@@ -68,61 +69,44 @@ const coverageJsonSchema = {
   },
 } as const;
 
-export interface ScoreCoverageInput {
+export interface ScoreCompetenciesInput {
   snapshotId: string;
   courseCode: string;
-  /** Optional model override (e.g. for A/B'ing the producing model); default = the function's configured tier. */
-  modelOverride?: string;
-  /** Evaluation use only: reasoning effort for the override model (low | medium | high | xhigh). */
-  reasoningEffortOverride?: string;
   snapshotProfile: CaptureProfile;
-  careerTarget: {
-    id: string;
-    name: string;
-    shortDefinition: string;
-    knowDescriptors: string[];
-    understandDescriptors: string[];
-    doDescriptors: string[];
-  };
-  subCompetencies: Array<{
+  competencies: Array<{
     id: string;
     name: string;
     knowDescriptor: string;
     understandDescriptor: string;
     doDescriptor: string;
-    displayOrder: number;
   }>;
+  /** Optional model override (e.g. for A/B'ing the producing model); default = the function's configured tier. */
+  modelOverride?: string;
+  /** Evaluation use only: reasoning effort for the override model (low | medium | high | xhigh). */
+  reasoningEffortOverride?: string;
 }
 
-export interface ScoreCoverageResult {
+export interface ScoreCompetenciesResult {
   result: ProgramCoverageResult;
   model: string;
   /** Paid-provider cost for this scoring call, in 1/100-of-a-cent units (0 on campus/local). */
   costUsdCents: number;
 }
 
-export async function scoreSnapshotAgainstTarget(input: ScoreCoverageInput): Promise<ScoreCoverageResult> {
+export async function scoreSnapshotCompetencies(input: ScoreCompetenciesInput): Promise<ScoreCompetenciesResult> {
   const provider = await getProviderForFunction(
     'program-score-coverage',
     input.modelOverride ? { model: input.modelOverride, reasoningEffort: input.reasoningEffortOverride } : undefined,
   );
   const systemPrompt = await loadPrompt('program-score-coverage');
 
-  const targetContext = {
-    id: input.careerTarget.id,
-    name: input.careerTarget.name,
-    short_definition: input.careerTarget.shortDefinition,
-    know_descriptors: input.careerTarget.knowDescriptors,
-    understand_descriptors: input.careerTarget.understandDescriptors,
-    do_descriptors: input.careerTarget.doDescriptors,
-    sub_competencies: input.subCompetencies.map(s => ({
-      id: s.id,
-      name: s.name,
-      know_descriptor: s.knowDescriptor,
-      understand_descriptor: s.understandDescriptor,
-      do_descriptor: s.doDescriptor,
-    })),
-  };
+  const competencyContext = input.competencies.map(c => ({
+    id: c.id,
+    name: c.name,
+    know_descriptor: c.knowDescriptor,
+    understand_descriptor: c.understandDescriptor,
+    do_descriptor: c.doDescriptor,
+  }));
 
   const userMessage = [
     `**Snapshot ID:** ${input.snapshotId}`,
@@ -133,25 +117,34 @@ export async function scoreSnapshotAgainstTarget(input: ScoreCoverageInput): Pro
     '',
     '---',
     '',
-    '**Career target:**',
-    JSON.stringify(targetContext, null, 2),
+    '**Competencies to score:**',
+    JSON.stringify(competencyContext, null, 2),
     '',
     '---',
     '',
-    'Score every sub-competency in the target against this snapshot per',
-    'the system instructions. Produce one cell entry per sub-competency,',
-    'using the sub-competency.id verbatim. Set snapshot_id and',
-    'career_target_id to the values above and generated_at to the current',
-    'ISO timestamp.',
+    'Score every competency above against this snapshot per the system',
+    'instructions. Produce one cell entry per competency, using the',
+    'competency.id verbatim. Set snapshot_id to the value above and',
+    'generated_at to the current ISO timestamp.',
   ].join('\n');
 
   const result = await provider.complete<ProgramCoverageResult>({
     systemPrompt,
     userMessage,
-    schemaName: 'program_coverage_v1',
+    schemaName: 'program_coverage_v2',
     jsonSchema: coverageJsonSchema as unknown as object,
     validate: (raw: unknown) => coverageResultSchema.parse(raw),
   });
 
-  return { result: result.data, model: provider.model, costUsdCents: result.costUsdCents };
+  // Unknown ids dropped: a cell for a competency id that wasn't in the
+  // input is never returned (replaces P0a Ruling 10's per-target member
+  // filter, which no longer applies now that scoring carries no target).
+  const knownIds = new Set(input.competencies.map(c => c.id));
+  const cells = result.data.cells.filter(cell => knownIds.has(cell.competency_id));
+
+  return {
+    result: { ...result.data, cells },
+    model: provider.model,
+    costUsdCents: result.costUsdCents,
+  };
 }

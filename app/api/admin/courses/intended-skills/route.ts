@@ -19,6 +19,7 @@ import { checkAdminAuth } from '@/lib/auth/admin-auth';
 import { getCourseByCode, listUncapturedCourseCodes, replaceIntendedCoverage } from '@/lib/db/courses-queries';
 import type { NewIntendedRow } from '@/lib/db/courses-queries';
 import { listTargets } from '@/lib/db/career-targets-queries';
+import { isSubCompetencyDefinition } from '@/lib/domain/types';
 import { extractIntendedSkills } from '@/lib/ai/analyze/intended-skills-extract';
 import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
 
@@ -68,7 +69,9 @@ export async function POST(req: Request): Promise<Response> {
 
   // Load the sub-competency catalog ONCE before the loop.
   const targets = await listTargets();
-  const subCompetencies = targets.flatMap((t) => t.subCompetencies);
+  // targets is always DB-resolved, which never produces `{ ref }` entries —
+  // the filter is just the type guard.
+  const subCompetencies = targets.flatMap((t) => t.subCompetencies.filter(isSubCompetencyDefinition));
   const validIdSet = new Set(subCompetencies.map((sc) => sc.id));
 
   // Accumulators.

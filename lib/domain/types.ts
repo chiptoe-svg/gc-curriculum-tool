@@ -23,6 +23,25 @@ export interface SubCompetency {
   doDescriptor: string;
 }
 
+/**
+ * P0b (competency catalog): one competency can now be required by several
+ * career targets (e.g. domain-knowledge after the gc-production-literacy /
+ * domain-grounding merges, migration 0057). Exactly one target carries the
+ * full definition; every other target that needs the same competency lists
+ * a `{ ref }` pointing at that id instead of repeating the definition.
+ */
+export type TargetCompetencyEntry = SubCompetency | { ref: string };
+
+/** True for a full definition entry (not a `{ ref }` pointer). */
+export function isSubCompetencyDefinition(entry: TargetCompetencyEntry): entry is SubCompetency {
+  return !('ref' in entry);
+}
+
+/** The catalog competency id this entry resolves to, whether definition or ref. */
+export function competencyEntryId(entry: TargetCompetencyEntry): string {
+  return isSubCompetencyDefinition(entry) ? entry.id : entry.ref;
+}
+
 export interface CareerTarget {
   id: string;                  // "account-management" | "brand-strategy" | ...
   name: string;
@@ -33,7 +52,7 @@ export interface CareerTarget {
   doDescriptors: string[];
   defensibilityNote: string;
   socCode: string | null;      // SOC code if anchored to O*NET
-  subCompetencies: SubCompetency[];
+  subCompetencies: TargetCompetencyEntry[];
 }
 
 // AI output shapes

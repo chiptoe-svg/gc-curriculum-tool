@@ -13,6 +13,7 @@ import { FlagsPanel, type AnnotatedFlag } from './FlagsPanel';
 import { openFlagsForCell } from '@/lib/program/flags';
 import { depthBand, isMentionOnly } from '@/lib/program/depth-band';
 import { reliabilityForModel } from '@/lib/program/reliability-summary';
+import { countScoredPairsForRows } from '@/lib/program/stale-pairs';
 
 interface MatrixData {
   courses: MatrixCourse[];
@@ -277,9 +278,11 @@ export function ProgramCoverageClient({ slug, initialData, initialFlags, isAdmin
   }
 
   const activeTarget = data.targets.find(t => t.id === activeTargetId);
-  const scoredPairs = new Set(data.cells.map(c => `${c.snapshotId}:${c.careerTargetId}`));
+  // Stale-pair count (fix round 1, 2026-10-12): count only pairs for the
+  // matrix's OWN row snapshots (`data.courses`, builds_to_career-only) — see
+  // lib/program/stale-pairs.ts for why.
+  const scoredCount = countScoredPairsForRows(data.courses, data.cells);
   const totalPairs = data.courses.length * data.targets.length;
-  const scoredCount = scoredPairs.size;
 
   return (
     <div className="space-y-5">

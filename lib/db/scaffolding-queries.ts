@@ -19,6 +19,7 @@ import {
   targetSubCompetencies,
 } from '@/lib/db/schema';
 import type { SnapshotCellInput, ProductiveFailureConditions } from '@/lib/program/scaffolding';
+import type { Tx } from '@/lib/db/competency-catalog-queries';
 
 /**
  * Deploy moment of the problem-solving capture fix. Snapshots created BEFORE
@@ -68,15 +69,21 @@ export interface ScaffoldingTargetInput {
   cellsBySubCompetency: Map<string, SnapshotCellInput[]>;
 }
 
-export async function loadScaffoldingTarget(targetId: string): Promise<ScaffoldingTargetInput | null> {
-  const target = await db.select().from(careerTargets).where(eq(careerTargets.id, targetId)).limit(1);
+/**
+ * `executor` defaults to the module-level `db` but accepts a transaction
+ * client (`Tx`) so a test can run a setup mutation and this read on the SAME
+ * connection inside one `BEGIN … ROLLBACK` (same pattern as
+ * program-coverage-queries.ts:listStaleSnapshots).
+ */
+export async function loadScaffoldingTarget(targetId: string, executor: Tx | typeof db = db): Promise<ScaffoldingTargetInput | null> {
+  const target = await executor.select().from(careerTargets).where(eq(careerTargets.id, targetId)).limit(1);
   if (!target[0]) return null;
 
   // Schema uses displayOrder (not orderIndex) and singular descriptor field names:
   //   knowDescriptor / understandDescriptor / doDescriptor (not descriptorK/U/D)
   // Retired sub-competencies are history, not part of the target: skip them
   // (same rule as the coverage-refresh routes).
-  const subs = (await db
+  const subs = (await executor
     .select()
     .from(targetSubCompetencies)
     .where(eq(targetSubCompetencies.careerTargetId, targetId))
@@ -85,7 +92,7 @@ export async function loadScaffoldingTarget(targetId: string): Promise<Scaffoldi
 
   // All latest (non-retired) snapshots, joined with their course for level
   // ordering. We use the cross-product of (snapshot × subCompetency) below.
-  const snapshotRows = await db
+  const snapshotRows = await executor
     .select({
       snapshotId: courseCaptureSnapshots.id,
       courseCode: courseCaptureSnapshots.courseCode,
@@ -97,7 +104,13 @@ export async function loadScaffoldingTarget(targetId: string): Promise<Scaffoldi
     })
     .from(courseCaptureSnapshots)
     .leftJoin(courses, eq(courses.code, courseCaptureSnapshots.courseCode))
-    // scope/status: exclude non-GC / non-offered courses — see lib/courses/program-visibility.ts
+    // scope/status: exclude non-GC / non-offered courses — see lib/courses/program-visibility.ts.
+    // Career-rollup scope (owner decision, 2026-10-12, superseding Amendment
+    // 1 ruling A2): career views count every PROGRAM-VISIBLE course, same as
+    // scoring (listStaleSnapshots) — not restricted to builds_to_career. This
+    // was already the scope here before Task 8b; a builds_to_career filter
+    // added in Task 8b (commit fd0daf0) is reverted (removed) by this fix
+    // round 1 decision.
     .where(and(
       isNull(courseCaptureSnapshots.retiredAt),
       eq(courses.scope, 'gc'),
@@ -134,7 +147,7 @@ export async function loadScaffoldingTarget(targetId: string): Promise<Scaffoldi
 
   // Pull coverage cells for these snapshots × this target.
   // Filter by target and then filter in TS to the relevant snapshot IDs.
-  const cells = await db
+  const cells = await executor
     .select()
     .from(targetCoverage)
     .where(eq(targetCoverage.careerTargetId, targetId));
