@@ -50,13 +50,12 @@ export function getOnetReleaseMetadata(release: string): OnetReleaseMetadata {
   }
   return meta;
 }
-
-// Back-compat constants (the 31.0 entry above, unpacked) — kept for callers
-// that only ever print the fixed CC BY 4.0 footer, not a release-specific one.
-export const ONET_PUBLISHED = ONET_RELEASE_METADATA['31.0']!.published;
-export const ONET_LICENSE = ONET_RELEASE_METADATA['31.0']!.license;
-export const ONET_ATTRIBUTION = ONET_RELEASE_METADATA['31.0']!.attribution;
-export const ONET_SOURCE_URL = ONET_RELEASE_METADATA['31.0']!.sourceUrl;
+// Final whole-branch review, m-E: the standalone ONET_PUBLISHED/ONET_LICENSE/
+// ONET_SOURCE_URL/ONET_ATTRIBUTION "back-compat" constants that used to live
+// here had no real callers left — writeOnetStore and occupation-report both
+// read per-release metadata via getOnetReleaseMetadata/ONET_RELEASE_METADATA
+// now, and the one remaining caller was a test (inlined, see
+// tests/lib/onet/load.test.ts). Deleted rather than kept as unused exports.
 
 // ─── Domain mapping (Ruling 5) ─────────────────────────────────────────────
 

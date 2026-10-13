@@ -314,7 +314,13 @@ export function ProgramCoverageClient({ slug, initialData, initialStaleSnapshotC
             {' '}
             <span className="font-medium text-foreground">{data.targets.length} career target{data.targets.length === 1 ? '' : 's'}</span> ·
             {' '}
-            <span className="font-medium text-foreground">{scoredCount}/{totalPairs}</span> pairs scored
+            {/* m-G (final whole-branch review): "matrix pairs" here, "stale
+                snapshots" in the button/progress text below — two
+                genuinely different counts (a pair can span several
+                missing competencies scored in one call; an unlinked
+                competency has no pair at all) that must never share a
+                bare word like "pairs" or "scored" alone. */}
+            <span className="font-medium text-foreground">{scoredCount}/{totalPairs}</span> matrix pairs scored
           </p>
           {refreshing ? (
             <p className="mt-1 flex items-center gap-2 text-muted-foreground">

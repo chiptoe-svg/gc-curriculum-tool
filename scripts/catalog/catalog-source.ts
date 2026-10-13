@@ -10,6 +10,8 @@ import { readdirSync, existsSync, realpathSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { sql } from 'drizzle-orm';
+import { db } from '@/lib/db/client';
 import type { CatalogCourseRow, FullCatalogCourseRow } from '@/lib/catalog/catalog-sync';
 
 export const DEFAULT_CATALOG_DB = path.join(homedir(), 'projects/clemson-advising-mcp/core/db/catalog.db');
@@ -116,4 +118,23 @@ export function formatDbError(err: unknown): string {
   const ownDetail = (err as { detail?: unknown }).detail;
   if (typeof ownDetail === 'string' && ownDetail.length > 0) return `${err.message} — ${ownDetail}`;
   return err.message;
+}
+
+export type P1Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export type P1Executor = P1Tx | typeof db;
+
+/**
+ * Final whole-branch review, m-E: the ONLY database-identity check every
+ * P1 write-path CLI makes, run before any other read. Was defined
+ * verbatim in both scripts/careers/ingest-alumni-mix.ts and
+ * scripts/onet/load-onet.ts (and scripts/catalog/insert-business-acumen.ts
+ * imported the ingest-alumni-mix copy) — one real definition now, each CLI
+ * re-exports it so no caller's import path changes.
+ */
+export async function assertExpectedDb(expectDb: string, executor: P1Executor = db): Promise<void> {
+  const result = await executor.execute(sql`SELECT current_database() AS name`);
+  const actual = (result.rows[0] as { name: string }).name;
+  if (actual !== expectDb) {
+    throw new Error(`refusing: connected to database '${actual}', expected '${expectDb}' (--expect-db) — no read performed`);
+  }
 }

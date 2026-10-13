@@ -152,6 +152,35 @@ describe.skipIf(!RUN)('P1 Task 4 — readRatedOnetCodes + readAndFilter + writeO
     });
   });
 
+  // m-F (final whole-branch review): a reload of an EXISTING release used
+  // to leave onet_release.loaded_at untouched (the insert path's
+  // defaultNow() only fires on a fresh row; onConflictDoUpdate's old `set`
+  // never named loaded_at), so occupation-report's "most recently loaded
+  // release" ordering (loaded_at DESC) could never see that a reload had
+  // happened at all.
+  it('a reload of the same release bumps onet_release.loaded_at', async () => {
+    const [target] = await db.select({ id: careerTargets.id }).from(careerTargets).orderBy(asc(careerTargets.id)).limit(1);
+    await inRolledBackTx(async (tx) => {
+      await seedMix(tx, target!.id);
+      const codes = await readRatedOnetCodes(tx);
+      const data = readAndFilter(FIXTURES_DIR, codes);
+
+      await writeOnetStore(tx, RELEASE, data, TEST_RELEASE_METADATA);
+      const [first] = await tx.select({ loadedAt: onetRelease.loadedAt }).from(onetRelease).where(eq(onetRelease.release, RELEASE));
+
+      // A measurable real-time gap, so clock_timestamp() can't tie even on
+      // a very fast test run.
+      await new Promise((r) => setTimeout(r, 20));
+
+      await writeOnetStore(tx, RELEASE, data, TEST_RELEASE_METADATA);
+      const [second] = await tx.select({ loadedAt: onetRelease.loadedAt }).from(onetRelease).where(eq(onetRelease.release, RELEASE));
+
+      expect(first?.loadedAt).toBeDefined();
+      expect(second?.loadedAt).toBeDefined();
+      expect(second!.loadedAt.getTime()).toBeGreaterThan(first!.loadedAt.getTime());
+    });
+  });
+
   it('an unrated/no_fit-only mix for these codes loads nothing (no rated row ever seeded for 99-0001.00/99-0002.00/99-0003.00)', async () => {
     const [target] = await db.select({ id: careerTargets.id }).from(careerTargets).orderBy(asc(careerTargets.id)).limit(1);
     await inRolledBackTx(async (tx) => {

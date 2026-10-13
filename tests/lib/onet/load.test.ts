@@ -13,16 +13,21 @@ import {
   parseElementRatingsCsv,
   parseTaskStatementsCsv,
   parseTaskRatingsCsv,
-  ONET_ATTRIBUTION,
+  getOnetReleaseMetadata,
   DOMAIN_BY_FILENAME,
 } from '@/lib/onet/load';
 
 const FIXTURES = path.join(process.cwd(), 'tests/fixtures/onet');
 const read = (name: string) => readFileSync(path.join(FIXTURES, name), 'utf8');
 
-describe('ONET_ATTRIBUTION', () => {
-  it('matches the exact global-constraints CC BY 4.0 text', () => {
-    expect(ONET_ATTRIBUTION).toBe(
+// Final whole-branch review, m-E: the standalone ONET_PUBLISHED/ONET_LICENSE/
+// ONET_SOURCE_URL/ONET_ATTRIBUTION constants were "back-compat" for callers
+// that no longer exist (writeOnetStore and occupation-report both read
+// per-release metadata now) — deleted. This asserts against the real
+// source of truth, ONET_RELEASE_METADATA['31.0'] via getOnetReleaseMetadata.
+describe("31.0's release metadata", () => {
+  it('attribution matches the exact global-constraints CC BY 4.0 text', () => {
+    expect(getOnetReleaseMetadata('31.0').attribution).toBe(
       'This product includes information from O*NET 31.0 Database by the U.S. Department of Labor, ' +
       'Employment and Training Administration (USDOL/ETA). Used under the CC BY 4.0 license.',
     );

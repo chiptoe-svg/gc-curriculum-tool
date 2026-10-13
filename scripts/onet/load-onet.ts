@@ -67,10 +67,15 @@ import {
   type RawTaskStatement,
   type RawTaskRating,
 } from '@/lib/onet/load';
-import { loadAppEnv, isMainModule, formatDbError } from '@/scripts/catalog/catalog-source';
+import { loadAppEnv, isMainModule, formatDbError, assertExpectedDb, type P1Tx, type P1Executor } from '@/scripts/catalog/catalog-source';
 
-export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
-type Executor = Tx | typeof db;
+export type Tx = P1Tx;
+type Executor = P1Executor;
+// Re-exported: final whole-branch review, m-E — assertExpectedDb's real
+// definition moved to catalog-source.ts (deduped from here and
+// ingest-alumni-mix.ts); kept exported from this path too in case a
+// caller imports it from here.
+export { assertExpectedDb };
 
 // ─── CLI args ───────────────────────────────────────────────────────────────
 
@@ -95,19 +100,6 @@ export function parseArgs(argv: string[]): LoadArgs {
     throw new Error('usage: --dir <path to O*NET csvs> --release <e.g. 31.0> --expect-db <name> [--apply]');
   }
   return { dir, release, expectDb, apply: argv.includes('--apply') };
-}
-
-/**
- * The ONLY database-identity check this script makes. Must run (and must
- * reject on a mismatch) before any other read — the rated-code query, the
- * CSV reads, everything.
- */
-export async function assertExpectedDb(expectDb: string, executor: Executor = db): Promise<void> {
-  const result = await executor.execute(sql`SELECT current_database() AS name`);
-  const actual = (result.rows[0] as { name: string }).name;
-  if (actual !== expectDb) {
-    throw new Error(`refusing: connected to database '${actual}', expected '${expectDb}' (--expect-db) — no read performed`);
-  }
 }
 
 // ─── Rated-code lookup (Ruling 5: "rated" = career_target_occupations.onet_status = 'rated') ──
@@ -201,7 +193,16 @@ export async function writeOnetStore(executor: Executor, release: string, data: 
     .values({ release, published: metadata.published, license: metadata.license, attribution: metadata.attribution, sourceUrl: metadata.sourceUrl })
     .onConflictDoUpdate({
       target: onetRelease.release,
-      set: { published: metadata.published, license: metadata.license, attribution: metadata.attribution, sourceUrl: metadata.sourceUrl },
+      // m-F (final whole-branch review): the insert path's column default
+      // (defaultNow()) only fires on a fresh row — a re-load of an
+      // EXISTING release hit the UPDATE branch, which never touched
+      // loaded_at, so occupation-report's "most recently loaded" ordering
+      // (loaded_at DESC) could never see that a re-load had happened.
+      // clock_timestamp(), not now(): now()/CURRENT_TIMESTAMP is frozen to
+      // this transaction's start, so two writes inside one transaction
+      // (as a test rehearsing "reload bumps loaded_at" would do) would
+      // both get the identical value and the fix would look like a no-op.
+      set: { published: metadata.published, license: metadata.license, attribution: metadata.attribution, sourceUrl: metadata.sourceUrl, loadedAt: sql`clock_timestamp()` },
     });
 
   await executor.delete(onetOccupations).where(eq(onetOccupations.release, release));

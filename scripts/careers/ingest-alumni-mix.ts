@@ -34,14 +34,19 @@
  */
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { careerTargetOccupations } from '@/lib/db/schema';
 import { buildOccupationMix, type OccupationMixRow, type Horizon } from '@/lib/careers/alumni-mix';
-import { loadAppEnv, isMainModule, formatDbError } from '@/scripts/catalog/catalog-source';
+import { loadAppEnv, isMainModule, formatDbError, assertExpectedDb, type P1Tx, type P1Executor } from '@/scripts/catalog/catalog-source';
 
-export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
-type Executor = Tx | typeof db;
+export type Tx = P1Tx;
+type Executor = P1Executor;
+// Re-exported: scripts/catalog/insert-business-acumen.ts and several tests
+// import assertExpectedDb from this file (its original home before the
+// final whole-branch review's m-E dedup moved the real definition to
+// catalog-source.ts). Kept so no caller's import path changes.
+export { assertExpectedDb };
 
 // ─── CLI args ───────────────────────────────────────────────────────────────
 
@@ -66,19 +71,6 @@ export function parseArgs(argv: string[]): IngestArgs {
     throw new Error('usage: --file <career_demand.json> --onet-dir <dir containing knowledge.csv> --expect-db <name> [--apply]');
   }
   return { file, onetDir, expectDb, apply: argv.includes('--apply') };
-}
-
-/**
- * The ONLY database-identity check this script makes. Must run (and must
- * reject on a mismatch) before any other read — the export file, the
- * knowledge.csv scan, everything.
- */
-export async function assertExpectedDb(expectDb: string, executor: Executor = db): Promise<void> {
-  const result = await executor.execute(sql`SELECT current_database() AS name`);
-  const actual = (result.rows[0] as { name: string }).name;
-  if (actual !== expectDb) {
-    throw new Error(`refusing: connected to database '${actual}', expected '${expectDb}' (--expect-db) — no read performed`);
-  }
 }
 
 // ─── I/O: export file + O*NET rated-code set ───────────────────────────────

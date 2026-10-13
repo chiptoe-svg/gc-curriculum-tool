@@ -18,6 +18,11 @@
 
 BEGIN;
 
+-- Final whole-branch review, I-3: same reasoning as 0058's own m5 fix —
+-- DROP COLUMN takes AccessExclusiveLock until COMMIT. Fail fast rather
+-- than stall readers; retry if this times out.
+SET LOCAL lock_timeout = '5s';
+
 DO $$
 BEGIN
   IF to_regclass('public.career_target_occupations') IS NULL THEN
