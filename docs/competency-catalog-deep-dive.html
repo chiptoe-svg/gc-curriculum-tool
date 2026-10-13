@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How the Competency Catalog Works — A Mechanics Deep Dive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Mono:wght@300;400;500&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,600;1,8..60,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --rail: #141412;
+    --rail-text: #8a8780;
+    --rail-active: #E8A44A;
+    --rail-hover: #2a2925;
+    --bg: #F7F5F0;
+    --bg-card: #FFFFFF;
+    --bg-alt: #F0EDE6;
+    --text: #1C1C18;
+    --text-muted: #6B6860;
+    --text-faint: #9E9B94;
+    --accent: #C8682A;
+    --accent-light: #F5E6D8;
+    --border: #E2DDD4;
+    --border-strong: #C8C4BA;
+    --mono: 'DM Mono', monospace;
+    --serif: 'Source Serif 4', Georgia, serif;
+    --display: 'Playfair Display', Georgia, serif;
+    --t1: #2A5C8C;
+    --t1-light: #E3ECF5;
+    --live: #3D7A4A;
+    --live-light: #E4F0E6;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body { font-family: var(--serif); background: var(--bg); color: var(--text); display: flex; min-height: 100vh; font-size: 16px; line-height: 1.7; }
+
+  #rail { position: fixed; top: 0; left: 0; bottom: 0; width: 240px; background: var(--rail); display: flex; flex-direction: column; overflow-y: auto; z-index: 100; }
+  .rail-header { padding: 28px 20px 20px; border-bottom: 1px solid #252420; }
+  .rail-dept { font-family: var(--mono); font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: #5a5750; margin-bottom: 6px; }
+  .rail-title { font-family: var(--display); font-size: 14px; color: #d4d0c8; line-height: 1.4; }
+  .rail-doc-type { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--rail-active); margin-top: 10px; }
+  .rail-nav { padding: 20px 0; flex: 1; }
+  .nav-group-label { font-family: var(--mono); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: #4d4a44; padding: 14px 20px 8px; }
+  .nav-link { display: block; padding: 7px 20px 7px 22px; color: var(--rail-text); text-decoration: none; font-family: var(--serif); font-size: 13.5px; border-left: 2px solid transparent; transition: all 120ms; }
+  .nav-link:hover { color: #c8c4ba; background: var(--rail-hover); }
+  .rail-footer { padding: 16px 20px; font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.08em; color: #5a5750; border-top: 1px solid #252420; line-height: 1.7; }
+  .rail-footer a { color: var(--rail-text); text-decoration: none; }
+  .rail-footer a:hover { color: var(--rail-active); }
+
+  main { margin-left: 240px; flex: 1; padding: 64px 80px 96px; max-width: 1080px; min-width: 0; }
+
+  .doc-head { margin-bottom: 56px; padding-bottom: 32px; border-bottom: 1px solid var(--border-strong); }
+  .doc-eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; }
+  .doc-title { font-family: var(--display); font-size: 44px; font-weight: 700; line-height: 1.1; color: var(--text); margin-bottom: 20px; letter-spacing: -0.005em; }
+  .doc-subtitle { font-family: var(--serif); font-size: 18px; color: var(--text-muted); line-height: 1.55; max-width: 740px; font-style: italic; font-weight: 300; }
+  .doc-meta { margin-top: 22px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; color: var(--text-faint); display: flex; gap: 20px; flex-wrap: wrap; }
+  .doc-meta strong { color: var(--text-muted); font-weight: 500; margin-right: 6px; }
+
+  section { margin-bottom: 56px; scroll-margin-top: 32px; }
+
+  h2 { font-family: var(--display); font-size: 30px; font-weight: 600; line-height: 1.2; margin-bottom: 22px; padding-bottom: 12px; border-bottom: 1px solid var(--border); display: flex; align-items: baseline; gap: 14px; }
+  h2 .num { font-family: var(--mono); font-size: 13px; font-weight: 500; letter-spacing: 0.1em; color: var(--accent); background: var(--accent-light); padding: 3px 10px; border-radius: 3px; flex-shrink: 0; }
+  h3 { font-family: var(--display); font-size: 21px; font-weight: 600; line-height: 1.3; margin: 32px 0 14px; color: var(--text); }
+
+  p { margin-bottom: 14px; max-width: 760px; }
+  strong { color: var(--text); font-weight: 600; }
+  em { color: var(--text); font-style: italic; }
+  a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:hover { color: #a85020; }
+
+  ul, ol { margin: 14px 0 22px 22px; max-width: 760px; }
+  li { margin-bottom: 8px; }
+
+  code { font-family: var(--mono); font-size: 0.86em; background: var(--bg-alt); padding: 1px 6px; border-radius: 3px; color: var(--text); overflow-wrap: anywhere; }
+
+  .callout { background: var(--bg-card); border-left: 3px solid var(--accent); padding: 18px 22px; margin: 22px 0; border-radius: 0 4px 4px 0; max-width: 820px; }
+  .callout-title { font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+  .callout p:last-child, .callout ul:last-child { margin-bottom: 0; }
+  .callout.note { border-left-color: var(--t1); }
+  .callout.note .callout-title { color: var(--t1); }
+  .callout.planned { border-left-style: dashed; border-left-color: var(--t1); background: var(--t1-light); }
+  .callout.planned .callout-title { color: var(--t1); }
+
+  .status { display: inline-block; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; padding: 2px 8px; border-radius: 3px; vertical-align: middle; margin-left: 6px; }
+  .status.live { background: var(--live-light); color: var(--live); }
+  .status.planned { background: var(--t1-light); color: var(--t1); border: 1px dashed var(--t1); }
+
+  /* Tables */
+  .table-wrap { overflow-x: auto; margin: 18px 0 26px; max-width: 860px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; background: var(--bg-card); }
+  th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  th { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); font-weight: 500; background: var(--bg-alt); }
+  td code { white-space: nowrap; }
+
+  /* Flow diagram */
+  .flow { display: grid; grid-template-columns: 1fr 0.9fr 1fr; gap: 18px; margin: 28px 0 10px; max-width: 900px; }
+  .lane { display: flex; flex-direction: column; align-items: stretch; }
+  .lane-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-muted); text-align: center; margin-bottom: 10px; }
+  .box { background: var(--bg-card); border: 1px solid var(--border-strong); border-radius: 4px; padding: 10px 12px; font-size: 13.5px; line-height: 1.45; }
+  .box b { display: block; font-family: var(--serif); font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+  .box small { display: block; font-family: var(--mono); font-size: 10.5px; color: var(--text-faint); letter-spacing: 0.02em; }
+  .box.hub { border: 2px solid var(--accent); background: var(--accent-light); }
+  .box.planned { border: 1.5px dashed var(--t1); background: var(--t1-light); }
+  .arrow { text-align: center; color: var(--text-faint); font-size: 16px; line-height: 1; padding: 5px 0; }
+  .arrow.planned { color: var(--t1); }
+  .lane.mid { justify-content: center; }
+  .side-arrow { font-family: var(--mono); font-size: 11px; color: var(--text-muted); text-align: center; padding: 8px 0; }
+  .flow-legend { font-family: var(--mono); font-size: 11px; color: var(--text-muted); margin-bottom: 26px; display: flex; gap: 20px; flex-wrap: wrap; max-width: 900px; }
+  .swatch { display: inline-block; width: 14px; height: 10px; vertical-align: middle; margin-right: 6px; border-radius: 2px; }
+  .swatch.solid { border: 1px solid var(--border-strong); background: var(--bg-card); }
+  .swatch.hub { border: 2px solid var(--accent); background: var(--accent-light); }
+  .swatch.dash { border: 1.5px dashed var(--t1); background: var(--t1-light); }
+
+  /* Two-stage scoring strip */
+  .stages { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 22px 0 26px; max-width: 900px; counter-reset: stage; }
+  .stage { background: var(--bg-card); border: 1px solid var(--border); border-top: 3px solid var(--accent); padding: 12px 14px; font-size: 14px; line-height: 1.5; }
+  .stage::before { counter-increment: stage; content: "Step " counter(stage); display: block; font-family: var(--mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin-bottom: 4px; }
+  .stage b { display: block; margin-bottom: 4px; }
+
+  .attribution { font-size: 14px; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 12px; margin-top: 18px; max-width: 760px; }
+
+  .doc-foot { margin-top: 96px; padding-top: 24px; border-top: 1px solid var(--border-strong); font-family: var(--mono); font-size: 11px; color: var(--text-faint); letter-spacing: 0.05em; line-height: 1.8; }
+  .doc-foot p { max-width: 820px; }
+
+  a:focus-visible, .nav-link:focus-visible { outline: 2px solid var(--rail-active); outline-offset: 2px; }
+
+  @media (max-width: 900px) {
+    body { display: block; }
+    #rail { position: static; width: 100%; height: auto; }
+    .rail-nav { display: none; }
+    main { margin-left: 0; padding: 32px 16px 64px; }
+    .doc-title { font-size: 32px; }
+    h2 { font-size: 24px; }
+    .flow { grid-template-columns: 1fr; }
+    .stages { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 520px) {
+    .stages { grid-template-columns: 1fr; }
+    td code { white-space: normal; }
+  }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+
+<aside id="rail">
+  <div class="rail-header">
+    <div class="rail-dept">Clemson · Graphic Communications</div>
+    <div class="rail-title">GC Curriculum Tool</div>
+    <div class="rail-doc-type">Mechanics Deep Dive</div>
+  </div>
+  <nav class="rail-nav">
+    <div class="nav-group-label">Overview</div>
+    <a class="nav-link" href="#short">The short version</a>
+    <div class="nav-group-label">Part I — The catalog</div>
+    <a class="nav-link" href="#catalog">One shared list</a>
+    <a class="nav-link" href="#targets">How careers claim competencies</a>
+    <a class="nav-link" href="#merges">Merges</a>
+    <div class="nav-group-label">Part II — What courses build</div>
+    <a class="nav-link" href="#scoring">How a course is scored</a>
+    <a class="nav-link" href="#rollups">From scores to career views</a>
+    <div class="nav-group-label">Part III — What careers ask</div>
+    <a class="nav-link" href="#mixes">Occupation mixes</a>
+    <a class="nav-link" href="#onet">The O*NET store</a>
+    <a class="nav-link" href="#business">Business-acumen competencies</a>
+    <div class="nav-group-label">Part IV — Ahead &amp; limits</div>
+    <a class="nav-link" href="#next">What comes next</a>
+    <a class="nav-link" href="#limits">Honest limits</a>
+    <a class="nav-link" href="#hood">Under the hood</a>
+    <div class="nav-group-label" style="margin-top: 18px;">See also</div>
+    <a class="nav-link" href="./background.html">KUD+ Background</a>
+    <a class="nav-link" href="./graduate-outcome-validation.html">Graduate outcome study</a>
+    <a class="nav-link" href="./architecture.html">Architecture overview</a>
+  </nav>
+  <div class="rail-footer">
+    <a href="./index.html">← All documents</a>
+  </div>
+</aside>
+
+<main>
+
+<header class="doc-head">
+  <div class="doc-eyebrow">Mechanics deep dive</div>
+  <h1 class="doc-title">How the Competency Catalog Works</h1>
+  <p class="doc-subtitle">One shared list of competencies sits between two kinds of evidence: what GC courses demonstrably build, and what the occupations GC graduates enter actually ask for. This page explains how each side is gathered, how they meet, what is live today, and what is still to come.</p>
+  <div class="doc-meta">
+    <span><strong>Scope</strong>Live system after catalog phases P0a, P0b and P1</span>
+    <span><strong>Audience</strong>Faculty and department; engineering detail at the end</span>
+    <span><strong>As of</strong>October 2026</span>
+  </div>
+</header>
+
+<!-- ============================================================ -->
+<section id="short">
+  <h2><span class="num">01</span>The short version</h2>
+
+  <p>The tool answers one question above all others: <em>how well does the GC curriculum build students toward the careers we say we prepare them for?</em> Answering it needs three things kept apart and then joined carefully:</p>
+  <ul>
+    <li><strong>A catalog of competencies</strong>: named skills, each described at three levels (Know, Understand, Do). It belongs to no single career.</li>
+    <li><strong>Supply</strong>: for each course, how deeply it builds each catalog competency, scored from evidence of what students actually produce.</li>
+    <li><strong>Demand</strong>: for each career target, which occupations graduates enter, and what those occupations require.</li>
+  </ul>
+  <p>Today, the catalog and the supply side are live and in use on <code>/program</code>. The demand side has its raw material in place: the occupation mixes from alumni data and the O*NET reference ratings. The step that connects demand to the catalog (links, then weights and required depths) is the next phase and is not live yet.</p>
+
+  <div class="flow" role="img" aria-label="Diagram: courses feed scored coverage into the shared catalog; career targets claim catalog competencies; alumni occupation mixes and the O*NET store sit on the demand side, with links, weights and the readiness view still planned.">
+    <div class="lane">
+      <div class="lane-label">Supply · what courses build</div>
+      <div class="box"><b>Course capture</b>Faculty interview + course materials<small>CourseCapture</small></div>
+      <div class="arrow">↓</div>
+      <div class="box"><b>Snapshot profile</b>The course's own competencies, each with K/U/D depth and evidence<small>one per course and instructor</small></div>
+      <div class="arrow">↓</div>
+      <div class="box"><b>Program scoring</b>Each snapshot scored against every catalog competency<small>no career context</small></div>
+      <div class="arrow">↓</div>
+      <div class="box"><b>Coverage cells</b>One K/U/D reading per (snapshot, competency)<small>snapshot_competency_coverage</small></div>
+    </div>
+    <div class="lane mid">
+      <div class="side-arrow">scored against →</div>
+      <div class="box hub"><b>The competency catalog</b>Name + Know / Understand / Do descriptors. Active, unlinked, retired or merged.<small>sub_competencies</small></div>
+      <div class="arrow">↕</div>
+      <div class="box hub"><b>Career target requirements</b>Which targets claim which competencies, per horizon<small>career_target_requirements</small></div>
+      <div class="arrow">↓</div>
+      <div class="box"><b>Career views</b><code>/program</code> matrix, Explore, wiki<small>view target_coverage</small></div>
+      <div class="arrow planned">↓</div>
+      <div class="box planned"><b>Readiness view</b>Shortfalls by weight, entry and growth side by side<small>planned (P3)</small></div>
+    </div>
+    <div class="lane">
+      <div class="lane-label">Demand · what careers ask</div>
+      <div class="box"><b>Alumni destinations</b>First jobs, and jobs 5–10 years out<small>gc_alumni export</small></div>
+      <div class="arrow">↓</div>
+      <div class="box"><b>Occupation mixes</b>Share of each occupation, per target and horizon<small>career_target_occupations</small></div>
+      <div class="arrow">↓</div>
+      <div class="box"><b>O*NET 31.0 store</b>Importance and level ratings, task statements<small>onet_* tables</small></div>
+      <div class="arrow planned">↓</div>
+      <div class="box planned"><b>Links → weights + required depths</b>O*NET / ESCO items linked to catalog competencies, faculty-confirmed<small>planned (P2)</small></div>
+    </div>
+  </div>
+  <div class="flow-legend">
+    <span><span class="swatch solid"></span>Live</span>
+    <span><span class="swatch hub"></span>The shared hub</span>
+    <span><span class="swatch dash"></span>Planned, not live</span>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="catalog">
+  <h2><span class="num">02</span>One shared list of competencies</h2>
+
+  <p>A <strong>competency</strong> in this tool is a named skill with three descriptors: what a student <em>knows</em> about it, what they <em>understand</em> (why it works, when to use it), and what they can <em>do</em>. Each course's depth on a competency is read on a 0–5 scale per dimension, anchored to student-side evidence. The scale and its evidence rule are set out in the <a href="./background.html#depth">KUD+ Background, depth scale</a> and <a href="./background.html#anchors">anchors</a>; this page does not restate them.</p>
+
+  <p>Until October 2026 each competency belonged to exactly one career target. That forced duplicates: the same knowledge of color, substrates and production process was written three times, once for each career that needed it, and each copy was scored separately. The catalog phases changed this. Competencies now form <strong>one list that belongs to no career</strong>; careers point at the competencies they need.</p>
+
+  <h3>The states a competency can be in</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>State</th><th>What it means</th><th>Scored?</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Active, linked</strong></td><td>In the catalog and claimed by at least one career target.</td><td>Yes</td></tr>
+      <tr><td><strong>Active, unlinked</strong></td><td>In the catalog, but no career target claims it yet. This is a normal state, not an error: a competency can exist before anyone decides which careers need it. Removing a career's claim on a competency leaves it active and unlinked; it is never retired automatically.</td><td>Yes</td></tr>
+      <tr><td><strong>Retired</strong></td><td>Withdrawn from the catalog. Its past scores remain as history.</td><td>No</td></tr>
+      <tr><td><strong>Merged</strong></td><td>A retired competency whose meaning now lives in another one (the "survivor"). It records which survivor it went into.</td><td>No</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Where each competency came from</h3>
+  <p>Every catalog entry records its <strong>origin</strong>:</p>
+  <ul>
+    <li><strong>Migrated</strong>: carried over from the original per-career lists.</li>
+    <li><strong>GC-authored</strong>: drafted for the catalog and approved by the department (the four business-acumen competencies, <a href="#business">§09</a>).</li>
+    <li><strong>O*NET-seeded</strong>: reserved for competencies proposed from O*NET in the next phase. None exist yet.</li>
+  </ul>
+</section>
+
+<!-- ============================================================ -->
+<section id="targets">
+  <h2><span class="num">03</span>How careers claim competencies</h2>
+
+  <p>There are five career targets: Production &amp; Operations; Sales Solutions &amp; Account Management; Brand Strategy &amp; Experience; Purposeful Design &amp; Creative Generalist; and Creative Technology &amp; Systems. A target claims a competency by having a <strong>requirement</strong> row for it. One competency can be claimed by several targets, so a single scored reading of a course serves every career that needs that skill.</p>
+
+  <p>Each requirement row has room for more than membership:</p>
+  <ul>
+    <li><strong>Horizon</strong>: <em>entry</em> (what a first job asks) or <em>growth</em> (what the jobs held 5–10 years out ask). The two are kept as separate rows and are meant to be reported side by side, never blended.</li>
+    <li><strong>Weight</strong> (0–1): how much the competency matters to the career.</li>
+    <li><strong>Required depth</strong>: how much of it is needed, on the same K/U/D 0–5 scales courses are scored on.</li>
+    <li><strong>Source</strong> of the weight and of the depth (O*NET, employer or faculty), and a <strong>status</strong> of <em>draft</em> or <em>confirmed</em>.</li>
+  </ul>
+
+  <div class="callout note">
+    <div class="callout-title">Today</div>
+    <p>Every live requirement row is an <em>entry</em>-horizon membership row with status <em>draft</em> and <strong>no weight and no required depth</strong>. That is deliberate. Weights and depths will be drafted only after the competencies are linked to O*NET and ESCO and those links are confirmed ("links before weights"). So that no requirement silently gains a weight, none has one yet.</p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="merges">
+  <h2><span class="num">04</span>Merges: when two entries are one competency</h2>
+
+  <p>With one shared list, near-duplicates become visible. In October 2026 the department approved two merges and kept the other candidates separate:</p>
+  <ul>
+    <li><strong>Production domain knowledge</strong> (<code>domain-knowledge</code>) absorbed <code>gc-production-literacy</code> and <code>domain-grounding</code>.</li>
+    <li><strong>Project management</strong> (<code>project-management</code>) absorbed <code>timeline-management</code>.</li>
+  </ul>
+  <p>The survivors got new, department-approved descriptors written to cover what the merged entries had meant.</p>
+
+  <h3>What a merge does to existing scores</h3>
+  <p>For every course snapshot, the survivor takes the <strong>strongest evidenced reading</strong> among the merged entries. "Strongest" is ranked by Do depth first, then Understand, then Know, then the scorer's confidence. Readings are never averaged, because an average of "built this to depth 4" and "barely touched it" describes no real course. The merged-away entries' own readings are kept unchanged as history, and a carried reading is marked in its rationale with the entry it came from.</p>
+
+  <p>Where the merged entries disagreed by <strong>two or more points on any dimension</strong> for a course, the merge raised a <strong>faculty flag</strong> for that course and competency: 12 such flags were created. Every affected course was then <strong>re-scored against the new merged descriptor</strong> (23 snapshots), so the survivor's readings now come from a real scoring pass, not just the carry. Flags faculty had raised earlier on a merged-away entry moved to its survivor. The faculty member's original disputed reading is kept exactly as recorded, with a note saying the item has moved.</p>
+
+  <p>A permanent <strong>merge map</strong> records where every catalog entry ended up: the merged-away ones point to their survivor, and every other entry points to itself. Any old reference can therefore always be resolved.</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="scoring">
+  <h2><span class="num">05</span>How a course gets scored</h2>
+
+  <p>Scoring happens in two separate stages, and the separation matters.</p>
+
+  <div class="stages">
+    <div class="stage"><b>Capture</b>A faculty interview plus the course's materials produce a <em>snapshot</em>, the course's profile in its own words.</div>
+    <div class="stage"><b>Profile</b>The snapshot lists the competencies the course builds, each with K/U/D depths and quoted evidence.</div>
+    <div class="stage"><b>Program scoring</b>An AI pass reads the whole snapshot and scores it against every catalog competency's own descriptors.</div>
+    <div class="stage"><b>Coverage cell</b>One stored reading per (snapshot, competency): K/U/D, evidence quote, confidence and rationale.</div>
+  </div>
+
+  <h3>Stage one: the course in its own terms</h3>
+  <p>CourseCapture does not know about the catalog. It asks what the course builds and how students show it, and records the course's own competency statements with evidence. The <a href="./using-coursecapture-and-explore.html">CourseCapture guide</a> covers this stage.</p>
+
+  <h3>Stage two: mapping the course onto the catalog</h3>
+  <p>Program scoring takes one snapshot and a list of catalog competencies and returns a reading for each. Rules that hold for every reading:</p>
+  <ul>
+    <li><strong>No career context.</strong> The scorer sees only the competency's name and its Know / Understand / Do descriptors, never which careers claim it. How deeply a course builds a skill does not depend on who is asking, so each (snapshot, competency) pair is scored <strong>once</strong>, and the one reading serves every career that claims the competency.</li>
+    <li><strong>Evidence above zero.</strong> Any score above zero cites a short quote from the snapshot. A topic that is mentioned is not a topic built to depth; when nothing in the snapshot addresses a competency, Do is 0.</li>
+    <li><strong>Foundational competencies</strong> (Agency, Attention to Detail, Resilience, Curiosity, Communication and similar) are scored on Do only; Know and Understand stay empty rather than zero (<a href="./background.html#foundational">Background, foundational competencies</a>).</li>
+    <li><strong>Confidence is stated.</strong> Each reading is marked high, medium or low; medium and low readings must say what is uncertain.</li>
+  </ul>
+
+  <h3>Which courses are scored</h3>
+  <p>Scoring covers every <strong>program-visible</strong> course, meaning a GC course that is currently offered. External, sandbox, proposed and retired courses are left out. A program-visible course is scored whether or not it sits on a career path. For each course, the latest current snapshot <em>per instructor</em> is scored, so the same course taught by different faculty appears as separate readings and the variation stays visible.</p>
+  <p>Unlinked competencies are scored like any other. A competency can be built, measured and reported before any career claims it. Linking it later needs no re-scoring.</p>
+
+  <div class="callout note">
+    <div class="callout-title">Refreshing</div>
+    <p>When a competency has no reading yet for a course's current snapshot, that snapshot counts as needing scoring. The refresh button on <code>/program</code> scores each such snapshot in one paid AI call. The four business-acumen competencies added in P1 have not been scored yet; a refresh will score them for every program-visible course.</p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="rollups">
+  <h2><span class="num">06</span>From scores to career views</h2>
+
+  <p>Career views do not store scores of their own. They read the per-competency coverage readings through the requirement rows: <em>for this career, take the competencies it claims, and show each course's reading on them.</em> Because careers share competencies, a change to one reading appears in every career that claims that competency.</p>
+
+  <h3>Two different "which courses" questions</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Question</th><th>Answer today</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Which courses count toward a career's totals?</strong></td><td>Every program-visible course, on a career path or not (department decision, October 2026). A GC elective that builds a competency counts toward each career claiming it.</td></tr>
+      <tr><td><strong>Which courses get their own row in the <code>/program</code> matrix?</strong></td><td>Only courses flagged as building toward a career. This is a display choice to keep the matrix readable; it does not change the totals.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>When the program's reach on a competency is summarized, the reading is the <strong>deepest any course reached</strong>, never an average: one course building a skill to depth 4 is not cancelled out by five that mention it.</p>
+
+  <div class="callout planned">
+    <div class="callout-title">Planned: a selectable course set</div>
+    <p>Counting every program-visible course suits the department-level view, but an individual pathway differs: a student takes a minor and some electives, not all of them. A later phase will make the course set for a career view <strong>selectable</strong> (core plus a chosen minor and electives). This is planned, not live.</p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="mixes">
+  <h2><span class="num">07</span>What careers ask: occupation mixes</h2>
+
+  <p>A career target is not a single job title. Graduates who fit "Production &amp; Operations" become prepress technicians, project management specialists, production managers and more. So the demand side starts with <strong>where GC graduates actually go</strong>.</p>
+
+  <h3>Where the mixes come from</h3>
+  <p>The separate GC alumni project classifies validated graduates' positions to standard occupation codes (SOC 2018) and publishes aggregate counts per career target. The tool reads that export and never edits it. It takes two horizons:</p>
+  <ul>
+    <li><strong>Entry</strong>: graduates' first jobs, for cohorts from 2016 onward.</li>
+    <li><strong>Growth</strong>: positions held 5–10 years after graduation, attributed to the career target of the graduate's first job, from the same registrar-era cohorts.</li>
+  </ul>
+  <p>For each target and horizon, each occupation's <strong>share</strong> is its count divided by the target's total for that horizon. Every row records which version of the alumni export it came from. Re-reading a newer export replaces the alumni-derived rows in one step, and rows the department adds by hand are never touched. The live mix has <strong>266 rows across 101 occupation codes</strong>.</p>
+
+  <h3>From SOC codes to O*NET occupations</h3>
+  <p>The alumni data uses SOC codes; O*NET rates its own, slightly finer occupation codes. Each mix row is matched to O*NET in one of three ways:</p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Status</th><th>When</th><th>Effect</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Rated</strong></td><td>O*NET has ratings for the occupation (the SOC's own <code>.00</code> code, or a more specific code the alumni project supplied for that position).</td><td>Linked to O*NET's ratings.</td></tr>
+      <tr><td><strong>Unrated</strong></td><td>O*NET has no ratings for the code, typically an "All Other" catch-all such as "Managers, All Other".</td><td>Kept with its share but carries no O*NET ratings. It is <strong>never averaged</strong> over the catch-all's sub-occupations, which are often unrelated specialties.</td></tr>
+      <tr><td><strong>No fit</strong></td><td>The alumni project judged that no O*NET occupation fits the position.</td><td>Kept with its share; no ratings.</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>Unrated and no-fit rows keep their share rather than being quietly dropped and the rest scaled up. Any later readiness figure can then say plainly how much of a career's mix O*NET does not describe.</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="onet">
+  <h2><span class="num">08</span>The O*NET reference store</h2>
+
+  <p>O*NET is the U.S. Department of Labor's occupational database. For each occupation it rates knowledge areas, abilities, work activities and skills on <strong>Importance</strong> (1–5: how much it matters) and <strong>Level</strong> (0–7: how much of it is needed), and lists the occupation's tasks with their own importance, relevance and frequency ratings.</p>
+
+  <p>The tool holds a read-only copy of <strong>release 31.0</strong>, limited to the occupations that actually appear as rated in the GC mixes:</p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Loaded</th><th>Rows</th></tr></thead>
+    <tbody>
+      <tr><td>Occupations</td><td>91</td></tr>
+      <tr><td>Element ratings (knowledge, abilities, work activities, essential and transferable skills; Importance and Level)</td><td>29,302</td></tr>
+      <tr><td>Task statements</td><td>1,961</td></tr>
+      <tr><td>Task ratings (importance, relevance, frequency)</td><td>17,334</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>Ratings that O*NET itself marks as low-reliability ("recommend suppress") or "not relevant" are stored with those flags intact, not filtered out, so whoever uses them decides. The store is versioned by release, so a future O*NET release can sit beside 31.0 rather than overwrite it.</p>
+
+  <p>Today the store is reference material: nothing in the live scoring or career views reads it yet. It is what the next phase links the catalog to.</p>
+
+  <p class="attribution">This product includes information from O*NET 31.0 Database by the U.S. Department of Labor, Employment and Training Administration (USDOL/ETA). Used under the CC BY 4.0 license.</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="business">
+  <h2><span class="num">09</span>The business-acumen competencies</h2>
+
+  <p>Looking at the occupations graduates enter showed a gap in the catalog. Customer service, sales and management knowledge rank highly in O*NET for the destination occupations, yet no catalog competency covered how a business itself makes money, how deals are negotiated, or who carries contract and licensing risk. Four competencies were drafted from the career-target descriptions, the share-weighted O*NET ratings and the existing catalog (to avoid overlap), then approved by the department:</p>
+  <ul>
+    <li><strong>Customer relationship and service</strong>: managing a client through a problem to a recorded resolution.</li>
+    <li><strong>Negotiation and persuasion</strong>: preparing and conducting a negotiation over price, scope or terms against a walk-away point.</li>
+    <li><strong>Business and financial literacy</strong>: reading a profit-and-loss or job-costing report and explaining with numbers whether a job or account is worth keeping.</li>
+    <li><strong>Contracts, IP and licensing</strong>: finding and resolving licensing and contract risks in a job's assets and agreement, including fonts, images and AI-generated content.</li>
+  </ul>
+  <p>They entered the catalog as <strong>GC-authored</strong> and <strong>unlinked</strong>. Deciding which careers need them, and how much, is a requirement decision, and requirement decisions wait for the links and weights of the next phase.</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="next">
+  <h2><span class="num">10</span>What comes next <span class="status planned">Planned, not live</span></h2>
+
+  <div class="callout planned">
+    <div class="callout-title">Everything in this section is planned</div>
+    <p>The steps below are the agreed direction from the catalog design. None of them is live, and details may change during design.</p>
+  </div>
+
+  <h3>P2: links between the catalog and O*NET / ESCO</h3>
+  <p>Each catalog competency gets proposed <strong>links</strong> to O*NET elements and tasks and to ESCO skills (ESCO is the European skills classification, useful mainly for its skill names). The planned pipeline:</p>
+  <ol>
+    <li><strong>Shortlist</strong>: text embeddings find the closest candidate O*NET and ESCO items for each competency.</li>
+    <li><strong>Reasoning</strong>: an AI step judges each candidate, rates the match strong, partial or weak, and records "no clean match" where none fits.</li>
+    <li><strong>Faculty review</strong>: a review queue where faculty confirm or reject each proposed link, with the AI's rationale shown.</li>
+    <li><strong>Golden set</strong>: a body of confirmed links that later checks are measured against, before any automatic threshold is trusted.</li>
+  </ol>
+  <p>Nothing will be weighted from an unconfirmed link.</p>
+
+  <h3>Then: weights and required depths</h3>
+  <p>Once links are confirmed, each requirement can get a draft <strong>weight</strong>, seeded from O*NET. The design's rule rescales O*NET Importance to 0–1 and, for each occupation in the career's mix, takes the competency's strongest confirmed link, then weights by the occupation's share. Using the strongest link rather than the sum stops a competency with many weak links outweighing one with a single strong link. Competencies O*NET does not cover (much of the workflow-technology and AI work, for instance) get an AI-drafted weight with a written rationale for faculty to confirm. <strong>Required depths</strong> are drafted per K/U/D dimension, using O*NET's level descriptions as wording aids, and set by faculty. For growth-horizon requirements the default asks for a foundation (Know and Understand) rather than on-the-job mastery (Do).</p>
+
+  <h3>The payoff: readiness</h3>
+  <p>With weights and depths in place, the tool can make the statement it was built for: <em>career X needs competency Y at depth Z; the program reaches depth W.</em> The planned readiness view (P3) shows two readings side by side, <strong>ready to enter</strong> and <strong>foundation for growth</strong>, and leads with <strong>shortfalls ranked by weight</strong>. A high-weight shortfall is always listed on its own and never averaged into a total. It also names competencies reached in only one course and never reinforced later.</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="limits">
+  <h2><span class="num">11</span>Honest limits</h2>
+  <ul>
+    <li><strong>Scores are judgments, anchored to evidence.</strong> Every coverage reading is an AI model's judgment of a snapshot, constrained by the evidence rule and the descriptors, with its confidence and rationale on record. It measures what the captured evidence shows, which depends on how complete the capture is. Faculty can flag any reading they dispute.</li>
+    <li><strong>The alumni occupation coding has one coder.</strong> A blind second-coder sample has been drawn but not yet coded, so there is no agreement statistic yet. A batch of systematic SOC-coding corrections (for example, producer and video roles that had been coded as actors or athletes) was applied in October 2026 as an AI-assisted review, not independent human double-coding. The mixes should be read with that caveat.</li>
+    <li><strong>Small targets are unstable.</strong> Creative Technology &amp; Systems has only about two dozen graduates per horizon, so its occupation shares can move a lot with a few people.</li>
+    <li><strong>"All Other" occupations carry no O*NET ratings.</strong> Their demand will have to come from faculty and employers.</li>
+    <li><strong>O*NET's Importance and Level ratings move together</strong> for these occupations, so O*NET cannot settle required depth on its own; depth rests on faculty and employer judgment.</li>
+    <li><strong>The wiki lags the merges.</strong> The curriculum wiki was not rebuilt after the October merges: the three merged-away competency pages still read as current, and the two survivors' pages show pre-merge text until the planned refresh. The database-backed views (<code>/program</code>, Explore, Ask) are already correct.</li>
+    <li><strong>The four business-acumen competencies are not yet scored or linked</strong> (<a href="#scoring">§05</a>, <a href="#business">§09</a>).</li>
+    <li><strong>Career totals count every program-visible course</strong> until the selectable course set exists (<a href="#rollups">§06</a>).</li>
+  </ul>
+</section>
+
+<!-- ============================================================ -->
+<section id="hood">
+  <h2><span class="num">12</span>Under the hood</h2>
+  <p>For maintainers. Schema lives in Postgres; the catalog migrations are hand-written SQL applied with a verified backup and a fail-closed verify.</p>
+
+  <h3>Tables and views</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Object</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr><td><code>sub_competencies</code></td><td>The catalog. Stable slug <code>id</code>, <code>name</code>, three descriptors, <code>retired</code>, <code>merged_into</code> (requires <code>retired</code>), <code>origin</code> (<code>migrated</code> | <code>gc_authored</code> | <code>onet_seeded</code>). Kept its historical name; it no longer belongs to a target.</td></tr>
+      <tr><td><code>sub_competency_map</code></td><td>Merge history: one row per catalog entry ever; identity rows for unmerged entries, survivor pointer for merged ones.</td></tr>
+      <tr><td><code>career_target_requirements</code></td><td>Target ↔ competency membership plus <code>horizon</code>, <code>weight</code> (0–1), <code>weight_source</code>, <code>required_k/u/d</code> (0–5), <code>depth_source</code>, <code>status</code> (<code>draft</code> | <code>confirmed</code>). Unique per (target, competency, horizon, weight source), so sources can disagree visibly.</td></tr>
+      <tr><td><code>snapshot_competency_coverage</code></td><td>One reading per (snapshot, competency): <code>k_depth</code>, <code>u_depth</code>, <code>d_depth</code>, matched statement, evidence excerpt, confidence, rationale, model, timestamp. Re-scoring overwrites.</td></tr>
+      <tr><td><code>target_sub_competencies</code> (view)</td><td>The per-target competency list, rebuilt through requirements.</td></tr>
+      <tr><td><code>target_coverage</code> (view)</td><td>Coverage readings joined to every target that claims the competency.</td></tr>
+      <tr><td><code>career_target_occupations</code></td><td>Occupation mix rows: target, horizon, <code>soc_code</code>, <code>onet_soc_code</code>, <code>onet_status</code> (<code>rated</code> | <code>unrated</code> | <code>no_fit</code>), count, share, <code>source</code> (<code>alumni_rule</code> | <code>faculty</code>), <code>source_version</code>, <code>as_of</code>.</td></tr>
+      <tr><td><code>onet_release</code>, <code>onet_occupations</code>, <code>onet_element_ratings</code>, <code>onet_task_statements</code>, <code>onet_task_ratings</code></td><td>The versioned O*NET store; every row keyed by release. Element scales IM and LV; task scales IM, RT and FT.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Code paths</h3>
+  <ul>
+    <li><strong>Scoring:</strong> <code>scoreSnapshotCompetencies</code> in <code>lib/ai/analyze/program-score-coverage.ts</code> (prompt <code>program-score-coverage</code>, strict schema <code>program_coverage_v2</code>). It drops any returned cell whose id was not in the input.</li>
+    <li><strong>What needs scoring:</strong> <code>listStaleSnapshots</code> in <code>lib/db/program-coverage-queries.ts</code>, which takes the latest non-retired snapshot per (course, instructor) for program-visible courses and the non-retired competencies each one lacks a reading for.</li>
+    <li><strong>Program visibility:</strong> <code>isProgramVisible</code> / <code>PROGRAM_VISIBLE_SQL</code> in <code>lib/courses/program-visibility.ts</code> (<code>scope = 'gc' AND status = 'offered'</code>).</li>
+    <li><strong>Attainment as ordinal maximum:</strong> <code>lib/program/sufficiency.ts</code>.</li>
+    <li><strong>Occupation mixes:</strong> <code>lib/careers/alumni-mix.ts</code> (pure transform) and <code>scripts/careers/ingest-alumni-mix.ts</code>.</li>
+    <li><strong>O*NET load:</strong> <code>lib/onet/load.ts</code> and <code>scripts/onet/load-onet.ts</code> (writes only with <code>--apply</code>); reporting via <code>scripts/careers/occupation-report.ts</code>.</li>
+    <li><strong>Business-acumen insert:</strong> <code>scripts/catalog/insert-business-acumen.ts</code>, from the approved set in <code>docs/superpowers/specs/2026-10-12-business-acumen-competencies.json</code>.</li>
+  </ul>
+
+  <h3>Migrations</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Migration</th><th>Phase</th><th>What it did</th></tr></thead>
+    <tbody>
+      <tr><td><code>0056</code></td><td>P0a</td><td>Made <code>sub_competencies</code> the shared catalog; created requirements (seeded one draft, unweighted row per existing target/competency pair) and per-competency coverage (every old row carried over unchanged); added the two compatibility views. No behavior change.</td></tr>
+      <tr><td><code>0057</code></td><td>P0b</td><td>The two merges: survivor descriptors, highest-evidence coverage carry, disagreement flags, re-pointed intended coverage, prerequisite edges and faculty flags, merge map; dropped the P0a scaffolding.</td></tr>
+      <tr><td><code>0058</code></td><td>P1</td><td>Additive: <code>origin</code> column, occupation mixes, O*NET store.</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>Design: <code>docs/superpowers/specs/2026-10-11-competency-catalog-and-career-demand-design.md</code>. Plans: <code>docs/superpowers/plans/2026-10-11-competency-catalog-p0a.md</code>, <code>2026-10-12-competency-catalog-p0b.md</code> (with Amendment 1) and <code>2026-10-12-competency-catalog-p1.md</code>.</p>
+</section>
+
+<footer class="doc-foot">
+  <p>GC Curriculum Tool · Clemson University Department of Graphic Communications.</p>
+  <p>This product includes information from O*NET 31.0 Database by the U.S. Department of Labor, Employment and Training Administration (USDOL/ETA). Used under the CC BY 4.0 license.</p>
+</footer>
+
+</main>
+</body>
+</html>
