@@ -35,3 +35,21 @@ export function countScoredPairsForRows(rows: readonly StalePairsRow[], cells: r
   );
   return scoredPairs.size;
 }
+
+/**
+ * I-2 (hostile-review fix wave, 2026-10-12): the "Score N stale pairs"
+ * button used `totalPairs - scoredCount` (a matrix-PAIR count) as its
+ * label, but `POST /api/program/coverage/refresh` runs one scoring call
+ * per stale SNAPSHOT (`listStaleSnapshots`, program-coverage-queries.ts),
+ * not per pair — a snapshot missing N competencies across M targets is
+ * still ONE AI call, not N*M. After inserting unlinked competencies (the
+ * business-acumen rows), every program-visible snapshot can go stale for
+ * those ids at once: the button read "Score 10 stale pairs" while the
+ * click actually ran 21 AI calls. The label must state the real unit of
+ * work — the number of snapshots that will actually be scored, which is
+ * the number of AI calls — not a derived pair count.
+ */
+export function staleSnapshotButtonLabel(staleSnapshotCount: number): string {
+  if (staleSnapshotCount === 0) return 'Up to date';
+  return `Score ${staleSnapshotCount} stale snapshot${staleSnapshotCount === 1 ? '' : 's'}`;
+}

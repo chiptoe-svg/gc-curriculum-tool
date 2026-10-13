@@ -10,6 +10,8 @@ import { readdirSync, existsSync, realpathSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { sql } from 'drizzle-orm';
+import { db } from '@/lib/db/client';
 import type { CatalogCourseRow, FullCatalogCourseRow } from '@/lib/catalog/catalog-sync';
 
 export const DEFAULT_CATALOG_DB = path.join(homedir(), 'projects/clemson-advising-mcp/core/db/catalog.db');
@@ -91,4 +93,48 @@ export function readCatalogYears(db: SqliteDb): Map<number, string> {
 export function argValue(flag: string): string | undefined {
   const i = process.argv.indexOf(flag);
   return i >= 0 ? process.argv[i + 1] : undefined;
+}
+
+/**
+ * P1 hostile-review fix wave, m7: drizzle-orm wraps a failed query in a
+ * DrizzleQueryError whose own `.message` is "Failed query: <the full SQL>"
+ * with every bound param listed below it (confirmed: a real duplicate-key
+ * collision during the ingest CLI's --apply printed thousands of lines of
+ * the export's data this way, via an uncaught rejection). The actual
+ * driver error — the short, useful one ("column \"origin\" does not
+ * exist", "duplicate key value violates unique constraint ...", with an
+ * optional `.detail`) — is on `.cause`. Used by every P1 write-path CLI
+ * catch block so a write failure prints one short line instead of a query
+ * dump; never used to change behavior, only what gets printed. No
+ * credentials pass through this (SQL/params, not connection strings).
+ */
+export function formatDbError(err: unknown): string {
+  if (!(err instanceof Error)) return String(err);
+  const cause = (err as { cause?: unknown }).cause;
+  if (cause instanceof Error) {
+    const detail = (cause as { detail?: unknown }).detail;
+    return typeof detail === 'string' && detail.length > 0 ? `${cause.message} — ${detail}` : cause.message;
+  }
+  const ownDetail = (err as { detail?: unknown }).detail;
+  if (typeof ownDetail === 'string' && ownDetail.length > 0) return `${err.message} — ${ownDetail}`;
+  return err.message;
+}
+
+export type P1Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export type P1Executor = P1Tx | typeof db;
+
+/**
+ * Final whole-branch review, m-E: the ONLY database-identity check every
+ * P1 write-path CLI makes, run before any other read. Was defined
+ * verbatim in both scripts/careers/ingest-alumni-mix.ts and
+ * scripts/onet/load-onet.ts (and scripts/catalog/insert-business-acumen.ts
+ * imported the ingest-alumni-mix copy) — one real definition now, each CLI
+ * re-exports it so no caller's import path changes.
+ */
+export async function assertExpectedDb(expectDb: string, executor: P1Executor = db): Promise<void> {
+  const result = await executor.execute(sql`SELECT current_database() AS name`);
+  const actual = (result.rows[0] as { name: string }).name;
+  if (actual !== expectDb) {
+    throw new Error(`refusing: connected to database '${actual}', expected '${expectDb}' (--expect-db) — no read performed`);
+  }
 }

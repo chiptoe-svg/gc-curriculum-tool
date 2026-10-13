@@ -1,0 +1,2 @@
+O*NET-SOC Code,Title,Element ID,Element Name,Scale ID,Scale Name,Data Value,N,Standard Error,Lower CI Bound,Upper CI Bound,Recommend Suppress,Date,Domain Source
+99-0001.00,Synthetic Test Occupation One,2.C.1.a,Administration and Management,IM,Importance,4.5,10,0.1,4.0,5.0,N,08/2023,Incumbent

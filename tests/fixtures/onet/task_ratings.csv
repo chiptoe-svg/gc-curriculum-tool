@@ -1,0 +1,7 @@
+O*NET-SOC Code,Title,Task ID,Task,Scale ID,Scale Name,Category,Data Value,N,Standard Error,Lower CI Bound,Upper CI Bound,Recommend Suppress,Date,Domain Source
+99-0001.00,Synthetic Test Occupation One,90001,"Review synthetic widgets for test coverage.",IM,Importance,,4.1,12,0.1,3.9,4.3,N,08/2023,Incumbent
+99-0001.00,Synthetic Test Occupation One,90001,"Review synthetic widgets for test coverage.",RT,Relevance (test scale),,3.9,12,0.1,3.7,4.1,N,08/2023,Incumbent
+99-0001.00,Synthetic Test Occupation One,90001,"Review synthetic widgets for test coverage.",FT,Frequency of Task (Categories 1-7),1,2.5,12,0.2,2.1,2.9,N,08/2023,Incumbent
+99-0001.00,Synthetic Test Occupation One,90001,"Review synthetic widgets for test coverage.",FT,Frequency of Task (Categories 1-7),2,1.5,12,0.2,1.1,1.9,N,08/2023,Incumbent
+99-0002.00,Synthetic Test Occupation Two,90003,"Coordinate fictional meetings about nothing in particular.",IM,Importance,,2.2,6,0.1,2.0,2.4,Y,08/2023,Incumbent
+99-0001.00,Synthetic Test Occupation One,90002,"File synthetic paperwork for the automated suite.",XX,Unused Test Scale,,1.0,4,0.0,0,0,N,08/2023,Incumbent

@@ -13,7 +13,7 @@ import { FlagsPanel, type AnnotatedFlag } from './FlagsPanel';
 import { openFlagsForCell } from '@/lib/program/flags';
 import { depthBand, isMentionOnly } from '@/lib/program/depth-band';
 import { reliabilityForModel } from '@/lib/program/reliability-summary';
-import { countScoredPairsForRows } from '@/lib/program/stale-pairs';
+import { countScoredPairsForRows, staleSnapshotButtonLabel } from '@/lib/program/stale-pairs';
 
 interface MatrixData {
   courses: MatrixCourse[];
@@ -25,6 +25,13 @@ interface MatrixData {
 interface Props {
   slug: string;
   initialData: MatrixData;
+  /** I-2 (hostile-review fix wave, 2026-10-12): the number of snapshots
+   *  POST /api/program/coverage/refresh would actually score right now —
+   *  one AI call per snapshot. Drives the bulk-refresh button's label
+   *  (lib/program/stale-pairs.ts's staleSnapshotButtonLabel), which used
+   *  to read a matrix-PAIR count instead and could understate the real
+   *  cost by a wide margin once unlinked competencies exist. */
+  initialStaleSnapshotCount: number;
   initialFlags: AnnotatedFlag[];
   /** F1 (owner decision, 2026-10-07): coverage refresh (bulk + per-pair) and
    *  flag resolution are admin-only — the server already enforces this
@@ -123,8 +130,12 @@ type Lens = 'coverage' | 'problem-solving';
 // (or one cell-click) away; nothing stored changes.
 type DepthDisplay = 'bands' | 'exact';
 
-export function ProgramCoverageClient({ slug, initialData, initialFlags, isAdmin }: Props) {
+export function ProgramCoverageClient({ slug, initialData, initialStaleSnapshotCount, initialFlags, isAdmin }: Props) {
   const [data, setData] = useState<MatrixData>(initialData);
+  // I-2 (hostile-review fix wave): the real unit of bulk-refresh work —
+  // snapshots, not matrix pairs. Updated whenever matrix data is re-fetched
+  // (GET /api/program/coverage now returns it alongside the matrix).
+  const [staleSnapshotCount, setStaleSnapshotCount] = useState<number>(initialStaleSnapshotCount);
   const [activeTargetId, setActiveTargetId] = useState<string>(
     initialData.targets[0]?.id ?? '',
   );
@@ -170,6 +181,17 @@ export function ProgramCoverageClient({ slug, initialData, initialFlags, isAdmin
     [data.subCompetencies, activeTargetId],
   );
 
+  // I-2 (hostile-review fix wave): both refresh paths re-fetch the matrix
+  // afterward — pull staleSnapshotCount out of that same response so the
+  // button's label is never left stale (pun unintended) after a refresh.
+  const refetchMatrixData = useCallback(async () => {
+    const dataRes = await fetch(`/api/program/coverage?slug=${encodeURIComponent(slug)}`);
+    if (!dataRes.ok) return;
+    const json = await dataRes.json() as MatrixData & { staleSnapshotCount: number };
+    setData(json);
+    setStaleSnapshotCount(json.staleSnapshotCount);
+  }, [slug]);
+
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     setRefreshStatus(null);
@@ -184,17 +206,17 @@ export function ProgramCoverageClient({ slug, initialData, initialFlags, isAdmin
         setRefreshStatus(`Refresh failed: ${(json as { error?: string }).error ?? res.status}`);
         return;
       }
+      // scored/failed are already snapshot counts (one scoring call per
+      // stale snapshot) — the word was wrong ("pair"), not the number.
       const { scored, failed } = json as { scored: number; failed: number };
-      setRefreshStatus(`Scored ${scored} pair${scored === 1 ? '' : 's'}${failed > 0 ? `, ${failed} failed` : ''}.`);
-      // Re-fetch matrix data to pick up new cells.
-      const dataRes = await fetch(`/api/program/coverage?slug=${encodeURIComponent(slug)}`);
-      if (dataRes.ok) setData(await dataRes.json());
+      setRefreshStatus(`Scored ${scored} snapshot${scored === 1 ? '' : 's'}${failed > 0 ? `, ${failed} failed` : ''}.`);
+      await refetchMatrixData();
     } catch (e) {
       setRefreshStatus(e instanceof Error ? e.message : 'Refresh failed');
     } finally {
       setRefreshing(false);
     }
-  }, [slug]);
+  }, [slug, refetchMatrixData]);
 
   const handleScoreCell = useCallback(async (snapshotId: string, targetId: string) => {
     const key = `${snapshotId}:${targetId}`;
@@ -210,15 +232,13 @@ export function ProgramCoverageClient({ slug, initialData, initialFlags, isAdmin
         setScoringError((json as { error?: string; detail?: string }).error ?? 'scoring failed');
         return;
       }
-      // Re-fetch matrix to pick up the new cells.
-      const dataRes = await fetch(`/api/program/coverage?slug=${encodeURIComponent(slug)}`);
-      if (dataRes.ok) setData(await dataRes.json());
+      await refetchMatrixData();
     } catch (e) {
       setScoringError(e instanceof Error ? e.message : 'scoring failed');
     } finally {
       setScoringCell(null);
     }
-  }, [slug]);
+  }, [slug, refetchMatrixData]);
 
   // Problem-solving lens rollup: for the active target, aggregate across all
   // snapshots to find the program's cumulative reach per sub-competency on
@@ -294,12 +314,18 @@ export function ProgramCoverageClient({ slug, initialData, initialFlags, isAdmin
             {' '}
             <span className="font-medium text-foreground">{data.targets.length} career target{data.targets.length === 1 ? '' : 's'}</span> ·
             {' '}
-            <span className="font-medium text-foreground">{scoredCount}/{totalPairs}</span> pairs scored
+            {/* m-G (final whole-branch review): "matrix pairs" here, "stale
+                snapshots" in the button/progress text below — two
+                genuinely different counts (a pair can span several
+                missing competencies scored in one call; an unlinked
+                competency has no pair at all) that must never share a
+                bare word like "pairs" or "scored" alone. */}
+            <span className="font-medium text-foreground">{scoredCount}/{totalPairs}</span> matrix pairs scored
           </p>
           {refreshing ? (
             <p className="mt-1 flex items-center gap-2 text-muted-foreground">
               <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground/40 border-t-transparent" aria-hidden />
-              Scoring {totalPairs - scoredCount} pair{totalPairs - scoredCount === 1 ? '' : 's'}… {scoreElapsed}s · heavy model, ~3–8s each (usually under 2 min).
+              Scoring {staleSnapshotCount} snapshot{staleSnapshotCount === 1 ? '' : 's'}… {scoreElapsed}s · heavy model, ~3–8s each (usually under 2 min).
             </p>
           ) : refreshStatus ? (
             <p className="mt-1 text-muted-foreground">{refreshStatus}</p>
@@ -310,10 +336,10 @@ export function ProgramCoverageClient({ slug, initialData, initialFlags, isAdmin
             <button
               type="button"
               onClick={handleRefresh}
-              disabled={refreshing || scoredCount === totalPairs}
+              disabled={refreshing || staleSnapshotCount === 0}
               className="rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50"
             >
-              {refreshing ? 'Scoring…' : scoredCount === totalPairs ? 'Up to date' : `Score ${totalPairs - scoredCount} stale pair${totalPairs - scoredCount === 1 ? '' : 's'}`}
+              {refreshing ? 'Scoring…' : staleSnapshotButtonLabel(staleSnapshotCount)}
             </button>
           )}
           <button

@@ -56,6 +56,11 @@ export async function insertCompetencyForTarget(tx: Tx, row: NewTargetCompetency
     understandDescriptor: row.understandDescriptor,
     doDescriptor: row.doDescriptor,
     retired: row.retired ?? false,
+    // P1 hostile-review fix wave, m2: this is the faculty "add competency"
+    // path (POST /api/targets/[id]/sub-competencies) — a human-authored
+    // row, not a migrated one. Without this, the DB default ('migrated')
+    // applied, giving these rows a wrong provenance record.
+    origin: 'gc_authored',
     updatedAt: new Date(),
   });
   await tx.insert(careerTargetRequirements).values({
@@ -234,6 +239,12 @@ export function catalogBatchWriter(tx: Tx): BatchWriter {
         doDescriptor: row.doDescriptor,
         retired: row.retired,
         mergedInto: row.mergedInto,
+        // Final whole-branch review, n2: this is scripts/targets/apply-target-batch.ts's
+        // insert path — a batch definitions file the faculty/owner authored,
+        // same provenance class as m2's insertCompetencyForTarget. Without
+        // this, the DB default ('migrated') applied, same wrong-provenance
+        // bug on a second path the m2 fix didn't cover.
+        origin: 'gc_authored',
         updatedAt: new Date(),
       });
     },
