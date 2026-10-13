@@ -1,0 +1,37 @@
+{
+  "_approval": "Owner approved 2026-10-12 (\"Approved\"), P1 Ruling 6. Drafted from career-target descriptions, share-weighted O*NET 31.0 Importance for the alumni entry mixes (Customer and Personal Service, Sales and Marketing, Administration and Management, Persuasion/Negotiation), and the existing catalog to avoid overlap. Enter the catalog unlinked with origin = gc_authored; linking to targets comes with weights after P2.",
+  "competencies": [
+    {
+      "id": "customer-relationship-management",
+      "name": "Customer relationship and service",
+      "knowDescriptor": "Knows service standards, how client problems are escalated, and what keeps accounts over the long term.",
+      "understandDescriptor": "Understands why handling a mistake well often builds more trust than never making one, and why keeping a client costs less than winning a new one.",
+      "doDescriptor": "Manages a client through a problem (a missed date, a quality issue) to a recorded resolution, and keeps a relationship record others can pick up.",
+      "rationale": "Customer and Personal Service is a top-three O*NET knowledge area by share-weighted Importance for all five targets' entry occupations. Boundary: first discovery of what the client needs stays in client-needs-diagnosis."
+    },
+    {
+      "id": "negotiation-persuasion",
+      "name": "Negotiation and persuasion",
+      "knowDescriptor": "Knows the basics of negotiation: interests versus positions, walk-away points, and the levers of price, terms and scope.",
+      "understandDescriptor": "Understands why the best deal protects both the margin and the relationship.",
+      "doDescriptor": "Prepares and conducts a negotiation, real or simulated, over price, scope or terms, and documents the outcome against the walk-away point.",
+      "rationale": "Persuasion and Negotiation rank highly for the Sales Solutions & Account Management and Brand Strategy & Experience entry occupations. Boundary: writing the proposal stays in proposal-development."
+    },
+    {
+      "id": "business-financial-literacy",
+      "name": "Business and financial literacy",
+      "knowDescriptor": "Knows how a print, packaging or marketing business makes money: revenue, cost of goods, gross margin, overhead and pricing models.",
+      "understandDescriptor": "Understands how a decision on a job (a discount, a rush, a reprint) moves the profit and loss, and why volume is not profit.",
+      "doDescriptor": "Reads a simple profit-and-loss or job-costing report and explains, with numbers, whether a job or an account is worth keeping.",
+      "rationale": "Administration and Management and Mathematics carry high Importance across the mixes; no current competency covers how the firm itself makes money. Boundary: estimating a single job stays in cost-management; the buyer's ROI case stays in proposal-development."
+    },
+    {
+      "id": "contracts-ip-licensing",
+      "name": "Contracts, IP and licensing",
+      "knowDescriptor": "Knows basic contract terms (scope, payment, liability, change orders) and the rules for copyright, trademarks, font and image licensing, and rights in AI-generated content.",
+      "understandDescriptor": "Understands why rights problems surface late, when they cost the most, and who carries the risk in a client–vendor chain.",
+      "doDescriptor": "Reviews a job's assets and agreement, and identifies and resolves the licensing and contract risks before release.",
+      "rationale": "GC work routinely handles licensed fonts, images and, increasingly, AI-generated content for clients; no current competency covers rights and contract risk."
+    }
+  ]
+}
