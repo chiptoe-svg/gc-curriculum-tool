@@ -1,8 +1,10 @@
-import { asc, eq, sql } from 'drizzle-orm';
+import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
-import { subCompetencies, bundleCards } from '@/lib/db/schema';
+import { subCompetencies, bundleCards, itemEmbeddings, onetTaskStatements } from '@/lib/db/schema';
 import type { Tx } from '@/lib/db/competency-catalog-queries';
 import type { BundleSummary, CardFields, ReviewCard } from '@/lib/catalog/bundles';
+import { textHash } from '@/lib/catalog/bundles';
+import type { TaskRow } from '@/lib/catalog/shortlist';
 
 export type Executor = Tx | typeof db;
 
@@ -37,4 +39,41 @@ export async function upsertConfirmedCards(ex: Executor, cards: ReviewCard[], co
     else { await ex.update(bundleCards).set(values).where(eq(bundleCards.competencyId, c.competencyId)); updated++; }
   }
   return { inserted, updated };
+}
+
+// ─── Task 6: embedding cache ────────────────────────────────────────────────
+
+export async function readTaskStatements(release: string, ex: Executor = db): Promise<TaskRow[]> {
+  return ex.select({ taskId: onetTaskStatements.taskId, onetSocCode: onetTaskStatements.onetSocCode, task: onetTaskStatements.task })
+    .from(onetTaskStatements).where(eq(onetTaskStatements.release, release));
+}
+
+export interface EmbedItem { kind: 'bundle_card' | 'onet_task'; ref: string; text: string }
+
+/** Embeds only items whose (kind, ref, model, sha256(text)) row is absent. Batches through `embed`. */
+export async function embedMissing(ex: Executor, items: EmbedItem[], model: string, embed: (texts: string[]) => Promise<number[][]>): Promise<{ cached: number; embedded: number }> {
+  const existing = await ex.select({ kind: itemEmbeddings.kind, ref: itemEmbeddings.ref, textHash: itemEmbeddings.textHash })
+    .from(itemEmbeddings).where(eq(itemEmbeddings.model, model));
+  const have = new Set(existing.map(r => `${r.kind}|${r.ref}|${r.textHash}`));
+  const missing = items.filter(i => !have.has(`${i.kind}|${i.ref}|${textHash(i.text)}`));
+  if (missing.length === 0) return { cached: items.length, embedded: 0 };
+  const vectors = await embed(missing.map(m => m.text));
+  if (vectors.length !== missing.length) throw new Error(`embedMissing: got ${vectors.length} vectors for ${missing.length} texts`);
+  for (let i = 0; i < missing.length; i += 200) {
+    await ex.insert(itemEmbeddings).values(missing.slice(i, i + 200).map((m, j) => ({
+      kind: m.kind, ref: m.ref, model, textHash: textHash(m.text), vector: vectors[i + j]!,
+    }))).onConflictDoNothing();
+  }
+  return { cached: items.length - missing.length, embedded: missing.length };
+}
+
+export async function readVectors(ex: Executor, kind: EmbedItem['kind'], wanted: Array<{ ref: string; text: string }>, model: string): Promise<Map<string, number[]>> {
+  if (wanted.length === 0) return new Map();
+  const hashByRef = new Map(wanted.map(w => [w.ref, textHash(w.text)]));
+  const rows = await ex.select({ ref: itemEmbeddings.ref, textHash: itemEmbeddings.textHash, vector: itemEmbeddings.vector })
+    .from(itemEmbeddings)
+    .where(and(eq(itemEmbeddings.kind, kind), eq(itemEmbeddings.model, model), inArray(itemEmbeddings.ref, [...hashByRef.keys()])));
+  const out = new Map<string, number[]>();
+  for (const r of rows) if (hashByRef.get(r.ref) === r.textHash) out.set(r.ref, r.vector);
+  return out;
 }
