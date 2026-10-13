@@ -24,6 +24,16 @@
  *       # the run's actual spend past --max-cost, or when checkDailyCap()
  *       # refuses; rerun with --missing to continue.
  *
+ * Bundles whose blind golden sample is already SUBMITTED are skipped by
+ * default (also under --missing / --bundles): re-mapping them would mix two
+ * AI runs in their agreement figures. --include-submitted-samples maps them
+ * anyway, with a warning.
+ *
+ * Plan Ruling 4 guard: for every in-scope bundle with a golden sample, the
+ * placement shortlist must equal the first TASK_SHORTLIST_K stored
+ * candidates (same keys, same order); any mismatch refuses the whole run
+ * (exit 3) before any paid call.
+ *
  * Exit codes: 0 ok · 1 wrong database, or any bundle failed · 2 bad args
  * (incl. --apply without --max-cost, unknown --bundles id) · 3 refusal before
  * any write (missing card, element definitions, task statements or vectors)
@@ -32,6 +42,7 @@
  * Never prints DATABASE_URL, prompts or rationale text — summary lines only.
  */
 import { db } from '@/lib/db/client';
+import { bundleGoldenSamples } from '@/lib/db/schema';
 import { loadAppEnv, isMainModule, formatDbError, assertExpectedDb, type P1Executor } from '@/scripts/catalog/catalog-source';
 import { cardEmbedText } from '@/lib/catalog/bundles';
 import { groupTasks, shortlistTasks } from '@/lib/catalog/shortlist';
@@ -64,6 +75,7 @@ export interface MapArgs {
   maxCostCents: number | null;
   missing: boolean;
   bundles: string[] | null;
+  includeSubmittedSamples: boolean;
 }
 
 function argValueFrom(argv: string[], flag: string): string | undefined {
@@ -73,7 +85,7 @@ function argValueFrom(argv: string[], flag: string): string | undefined {
 
 /** Throws on bad args (caller maps to exit 2). `--max-cost` is dollars, converted once to 1/100-cent units. */
 export function parseArgs(argv: string[]): MapArgs {
-  const usage = 'usage: --expect-db <name> [--release 31.0] [--apply --max-cost <usd>] [--missing] [--bundles a,b]';
+  const usage = 'usage: --expect-db <name> [--release 31.0] [--apply --max-cost <usd>] [--missing] [--bundles a,b] [--include-submitted-samples]';
   const expectDb = argValueFrom(argv, '--expect-db');
   if (!expectDb) throw new Error(usage);
   const apply = argv.includes('--apply');
@@ -92,12 +104,19 @@ export function parseArgs(argv: string[]): MapArgs {
     bundles = (argValueFrom(argv, '--bundles') ?? '').split(',').map(s => s.trim()).filter(Boolean);
     if (bundles.length === 0) throw new Error('--bundles needs a comma-separated list of bundle ids');
   }
-  return { expectDb, release: argValueFrom(argv, '--release') ?? DEFAULT_RELEASE, apply, maxCostCents, missing: argv.includes('--missing'), bundles };
+  return { expectDb, release: argValueFrom(argv, '--release') ?? DEFAULT_RELEASE, apply, maxCostCents, missing: argv.includes('--missing'), bundles,
+    includeSubmittedSamples: argv.includes('--include-submitted-samples') };
+}
+
+/** Token figures behind the estimate: input ≈ user message chars/4 + the system-prompt allowance; output is an allowance. */
+export function estimatePlacementTokens(input: PlacementInput): { inputTokens: number; outputTokens: number } {
+  return { inputTokens: Math.ceil(buildPlacementUserMessage(input).length / 4) + SYSTEM_PROMPT_TOKENS, outputTokens: OUTPUT_TOKENS };
 }
 
 /** Dry-run / guard estimate for one placement call, via the one shared price table (lib/ai/openai.ts). */
 export function estimatePlacementCents(model: string, input: PlacementInput): number {
-  return estimateCostCents(model, Math.ceil(buildPlacementUserMessage(input).length / 4) + SYSTEM_PROMPT_TOKENS, OUTPUT_TOKENS);
+  const t = estimatePlacementTokens(input);
+  return estimateCostCents(model, t.inputTokens, t.outputTokens);
 }
 
 const dollars = (units: number) => `$${(units / 10000).toFixed(4)}`;
@@ -152,6 +171,7 @@ export async function main(argv: string[], deps: CliDeps = {}): Promise<number> 
   // ── Setup: every input must be present before any call or write (exit 3). ──
   let model: string;
   let inputs: PlacementInput[];
+  let submittedInScope: string[] = [];
   try {
     const bundles = await (deps.listActiveBundles ?? listActiveBundles)(executor);
     const cards = await (deps.readConfirmedCards ?? readConfirmedCards)(executor);
@@ -190,11 +210,29 @@ export async function main(argv: string[], deps: CliDeps = {}): Promise<number> 
       const done = await bundlesWithOkOutcome(executor);
       scope = scope.filter(b => !done.has(b.id));
     }
+    const samples = new Map((await executor.select({
+      bundleId: bundleGoldenSamples.bundleId, submittedAt: bundleGoldenSamples.submittedAt, candidates: bundleGoldenSamples.candidates,
+    }).from(bundleGoldenSamples)).map(r => [r.bundleId, r]));
+    submittedInScope = scope.filter(b => samples.get(b.id)?.submittedAt != null).map(b => b.id);
+    if (!args.includeSubmittedSamples) scope = scope.filter(b => !submittedInScope.includes(b.id));
 
     inputs = scope.map(b => ({
       bundle: b, card: cards.get(b.id)!, elements, release: args.release,
       tasks: shortlistTasks(cardVectors.get(b.id)!, taskVectors, TASK_SHORTLIST_K).map(e => ({ ...groupByKey.get(e.key)!, rank: e.rank })),
     }));
+    // Plan Ruling 4: a sampled bundle's placement shortlist must be the first
+    // K of its stored blind candidates, or the agreement metrics compare
+    // different universes. Checked for every sampled bundle before any call.
+    const mismatched = inputs.filter(i => {
+      const sample = samples.get(i.bundle.id);
+      if (!sample) return false;
+      const want = sample.candidates.slice(0, TASK_SHORTLIST_K).map(c => c.key);
+      const got = i.tasks.map(t => t.key);
+      return want.length !== got.length || want.some((k, j) => k !== got[j]);
+    }).map(i => i.bundle.id);
+    if (mismatched.length > 0) {
+      throw new Refusal(`shortlist differs from the stored golden-sample candidates (plan Ruling 4) for: ${mismatched.join(', ')} — embeddings or task statements changed since the draw; nothing was called or written`);
+    }
     model = deps.resolveModel ? await deps.resolveModel() : (await getProviderForFunction('bundle-map-onet')).model;
   } catch (err) {
     console.error(formatDbError(err));
@@ -203,14 +241,24 @@ export async function main(argv: string[], deps: CliDeps = {}): Promise<number> 
 
   const estimates = inputs.map(i => estimate(model, i));
   console.log(`mode: ${args.apply ? 'APPLY' : 'DRY RUN'}  expect-db: ${args.expectDb}  release: ${args.release}  model: ${model}  bundles in scope: ${inputs.length}`);
+  if (submittedInScope.length > 0) {
+    if (args.includeSubmittedSamples) {
+      console.log(`WARNING: --include-submitted-samples maps ${submittedInScope.join(', ')} again — their blind sample is already submitted, so their agreement figures will mix AI runs.`);
+    } else {
+      console.log(`skipped (blind sample submitted): ${submittedInScope.join(', ')} — pass --include-submitted-samples to map them anyway`);
+    }
+  }
 
   // ── Dry run: no calls, no writes. ──
   if (!args.apply) {
+    let totalIn = 0, totalOut = 0;
     inputs.forEach((input, i) => {
-      console.log(`  - ${input.bundle.id}  elements ${input.elements.length}  est ${dollars(estimates[i]!)}`);
-      for (const t of input.tasks.slice(0, PREVIEW_SIZE)) console.log(`      T${t.rank}. ${t.label}`);
+      const t = estimatePlacementTokens(input);
+      totalIn += t.inputTokens; totalOut += t.outputTokens;
+      console.log(`  - ${input.bundle.id}  elements ${input.elements.length}  tokens in ~${t.inputTokens} / out ≤${t.outputTokens}  est ${dollars(estimates[i]!)}`);
+      for (const t2 of input.tasks.slice(0, PREVIEW_SIZE)) console.log(`      T${t2.rank}. ${t2.label}`);
     });
-    console.log(`\nestimated total: ${dollars(estimates.reduce((a, b) => a + b, 0))} (${model}, ${inputs.length} bundle(s))`);
+    console.log(`\nestimated total: tokens in ~${totalIn} / out ≤${totalOut}  ${dollars(estimates.reduce((a, b) => a + b, 0))} (${model}, ${inputs.length} bundle(s))`);
     console.log('DRY RUN — no AI calls, nothing written.');
     return 0;
   }
@@ -236,10 +284,14 @@ export async function main(argv: string[], deps: CliDeps = {}): Promise<number> 
     }
     if (stopped) { skipped = inputs.length - i; break; }
 
+    let callCost = 0;
     try {
       const res = await place(input);
-      await recordSp(res.costUsdCents);
-      spent += res.costUsdCents;
+      callCost = res.costUsdCents;
+      // Count the money before anything else can throw: a recordSpend failure
+      // must never make --max-cost undercount a call already paid for.
+      spent += callCost;
+      await recordSp(callCost);
       const w = await writeBundleProposals(executor, {
         runId, bundleId: input.bundle.id, rows: res.rows, model: res.model, noCleanMatch: res.noCleanMatch, note: res.note, costUsdCents: res.costUsdCents,
       });
@@ -250,7 +302,7 @@ export async function main(argv: string[], deps: CliDeps = {}): Promise<number> 
       failed++;
       const message = formatDbError(err);
       try {
-        await recordFailedOutcome(executor, { runId, bundleId: input.bundle.id, note: message, costUsdCents: 0 });
+        await recordFailedOutcome(executor, { runId, bundleId: input.bundle.id, note: message, costUsdCents: callCost });
       } catch (recErr) {
         console.error(`  (could not record the failure for ${input.bundle.id}: ${formatDbError(recErr)})`);
       }
