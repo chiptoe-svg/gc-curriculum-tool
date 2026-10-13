@@ -1,28 +1,24 @@
 // @vitest-environment node
 // Migration 0058 (P1) rehearsal: occupation-mix tables, O*NET reference store,
 // catalog `origin` column. Purely additive — no data migration like 0057's
-// merges. Gated on isP1ScratchDb(): every case runs 0058's body (stripped of
+// merges. Gated on isP1PreDb(): every case runs 0058's body (stripped of
 // its own BEGIN;/COMMIT;) inside its own BEGIN … ROLLBACK on a dedicated
-// connection, so nothing ever persists. Safe to run repeatedly — UNTIL 0058
-// is applied for real to the target database.
+// connection, so nothing ever persists. Safe to run repeatedly against
+// gc_curriculum_p1_pre, which stays pre-0058 forever.
 //
-// Task 2, Step 7 real-applies 0058 to the ONE P1 scratch clone
-// (gc_curriculum_p1_scratch) once this suite passes, same as the migration
-// file itself requires (there is no separate "_pre" clone for P1, unlike
-// P0b's gc_curriculum_p0b_pre). From that point on, every case here that
-// calls MIGRATION_BODY first hits 0058's own already-applied guard and
-// fails — EXPECTED, NOT A REGRESSION, same precedent as P0b Task 3
-// documented for tests/db/p0b-migration.test.ts in STATE.md. This file's job
-// (proving 0058 and its rollback behave correctly) is done at the moment
-// Step 7 captures a green run, before the real apply; it is not meant to
-// keep passing against the now-permanently-migrated scratch afterward.
-// `RUN` only engages when DATABASE_URL explicitly names the P1 scratch, so
-// the normal (DATABASE_URL-unset) full-suite run is unaffected either way.
+// Fix round 1 (controller ruling, 2026-10-12): originally gated on
+// isP1ScratchDb(), the ONE P1 scratch clone — but Task 2 Step 7 real-applied
+// 0058 to that same clone, so every case here that calls MIGRATION_BODY hit
+// 0058's own already-applied guard and FAILED (not skipped) from then on.
+// Same shape as P0b's problem, same fix: p1-scratch-db.sh gained
+// create-pre/url-pre/drop-pre for a second clone, gc_curriculum_p1_pre, kept
+// pre-0058 forever; this file now gates on isP1PreDb() instead, so pointing
+// DATABASE_URL at the main scratch SKIPS this suite rather than failing it.
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Pool, type PoolClient } from 'pg';
-import { isP1ScratchDb } from './p1/scratch-guard';
+import { isP1PreDb } from './p1/scratch-guard';
 
 const ROOT = resolve(__dirname, '../..');
 const MIGRATION_PATH = resolve(ROOT, 'drizzle/0058_competency_catalog_p1.sql');
@@ -39,7 +35,7 @@ function stripTxWrapper(raw: string): string {
 const MIGRATION_BODY = existsSync(MIGRATION_PATH) ? stripTxWrapper(readFileSync(MIGRATION_PATH, 'utf8')) : null;
 const ROLLBACK_BODY = existsSync(ROLLBACK_PATH) ? stripTxWrapper(readFileSync(ROLLBACK_PATH, 'utf8')) : null;
 
-const RUN = isP1ScratchDb();
+const RUN = isP1PreDb();
 
 const NEW_TABLES = [
   'career_target_occupations',
@@ -321,6 +317,23 @@ describe.skipIf(!RUN)('migration 0058 (P1) on the P1 scratch clone, each case se
     });
   });
 
+  /** pg_constraint rows for sub_competencies: name, type, and the full
+   * definition text (pg_get_constraintdef) — catches a constraint whose
+   * SHAPE changed (a different CHECK expression, a different FK target)
+   * even when its name and the table's column list are unchanged, which
+   * the table/column-only comparison below it can't see. */
+  async function subCompetenciesConstraints(c: PoolClient) {
+    return q<{ conname: string; contype: string; definition: string }>(
+      c,
+      `SELECT con.conname, con.contype::text, pg_get_constraintdef(con.oid) AS definition
+       FROM pg_constraint con
+       JOIN pg_class rel ON rel.oid = con.conrelid
+       JOIN pg_namespace nsp ON nsp.oid = rel.relnamespace
+       WHERE nsp.nspname = 'public' AND rel.relname = 'sub_competencies'
+       ORDER BY con.conname`,
+    );
+  }
+
   it('running the rollback body after the migration body returns the schema to the exact pre-0058 shape', async () => {
     await withTx(async (c) => {
       const tablesBefore = (
@@ -333,6 +346,8 @@ describe.skipIf(!RUN)('migration 0058 (P1) on the P1 scratch clone, each case se
         c,
         `SELECT column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_name = 'sub_competencies' ORDER BY column_name`,
       );
+      const constraintsBefore = await subCompetenciesConstraints(c);
+      expect(constraintsBefore.length).toBeGreaterThan(0); // sanity: sub_competencies already has constraints pre-0058 (merged_into_fkey etc.) — the comparison isn't vacuous
 
       await c.query(MIGRATION_BODY!);
       await c.query(ROLLBACK_BODY!);
@@ -348,6 +363,41 @@ describe.skipIf(!RUN)('migration 0058 (P1) on the P1 scratch clone, each case se
         `SELECT column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_name = 'sub_competencies' ORDER BY column_name`,
       );
       expect(columnsAfter).toEqual(columnsBefore);
+      const constraintsAfter = await subCompetenciesConstraints(c);
+      expect(constraintsAfter).toEqual(constraintsBefore);
+    });
+  });
+
+  // Red-proof (fix round 1, Important #2): proves the constraints comparison
+  // above actually discriminates — a real constraint-shape change (here, a
+  // CHECK whose definition differs) is caught even though the column list
+  // (what the OLD version of this test compared alone) is completely
+  // unaffected by it, which is exactly the gap the hostile review found.
+  it('red-proof: the constraints comparison fails when a definition differs, even though the column list does not', async () => {
+    await withTx(async (c) => {
+      const columnsBefore = await q(
+        c,
+        `SELECT column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_name = 'sub_competencies' ORDER BY column_name`,
+      );
+
+      await c.query(MIGRATION_BODY!);
+      await c.query(ROLLBACK_BODY!);
+
+      const columnsAfter = await q(
+        c,
+        `SELECT column_name, data_type, is_nullable, column_default FROM information_schema.columns WHERE table_name = 'sub_competencies' ORDER BY column_name`,
+      );
+      const constraintsAfter = await subCompetenciesConstraints(c);
+
+      const corrupted = constraintsAfter.map((row) =>
+        row.conname === 'sub_competencies_merged_into_retired_check' ? { ...row, definition: 'CHECK (false)' } : row,
+      );
+      expect(corrupted, 'the corruption must actually change something for this red-proof to mean anything').not.toEqual(constraintsAfter);
+      // The column list is completely unaffected by the corruption — proving
+      // the OLD (columns-only) comparison would have passed right through
+      // this exact defect, while the new constraints comparison below does not.
+      expect(columnsAfter).toEqual(columnsBefore);
+      expect(() => expect(corrupted).toEqual(constraintsAfter)).toThrow();
     });
   });
 

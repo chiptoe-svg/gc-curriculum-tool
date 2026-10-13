@@ -1,21 +1,31 @@
 #!/usr/bin/env bash
-# P1 scratch database: one throwaway clone of the live DB on the same
+# P1 scratch databases: two throwaway clones of the live DB on the same
 # Postgres server, for competency-catalog P1 development. The live DB is
-# only READ (pg_dump). The URL is printed only by `url`, for use inside
-# $(...); never run that bare.
+# only READ (pg_dump). The URL is printed only by `url`/`url-pre`, for use
+# inside $(...); never run those bare.
 #
 #   create      drop-refusing: create gc_curriculum_p1_scratch from a
-#               pg_dump of live (fails if it already exists).
+#               pg_dump of live (fails if it already exists). This is the
+#               DB that Task 2 real-applies 0058 to and later tasks keep
+#               developing against.
 #   url         print the gc_curriculum_p1_scratch DATABASE_URL
 #   drop        drop gc_curriculum_p1_scratch
 #
-# Modeled on p0b-scratch-db.sh: `create` REFUSES if the target database
-# already exists, rather than silently dropping and recreating it —
-# callers that want a fresh clone must `drop` first.
+#   create-pre  same, for gc_curriculum_p1_pre — a second clone kept
+#               pre-0058 forever (fix round 1, controller ruling — same
+#               reasoning as P0b's gc_curriculum_p0b_pre), used only by the
+#               migration rehearsal test (tests/db/p1-migration.test.ts).
+#   url-pre     print the gc_curriculum_p1_pre DATABASE_URL
+#   drop-pre    drop gc_curriculum_p1_pre
+#
+# Modeled on p0b-scratch-db.sh: both `create` and `create-pre` REFUSE if the
+# target database already exists, rather than silently dropping and
+# recreating it — callers that want a fresh clone must `drop`/`drop-pre` first.
 set -euo pipefail
 APP=/Users/admin/projects/curriculum_developer
 PGBIN=/Applications/Postgres.app/Contents/Versions/17/bin
 SCRATCH=gc_curriculum_p1_scratch
+SCRATCH_PRE=gc_curriculum_p1_pre
 
 live_url() { node "$HOME/.claude/dashboard/read-env.mjs" "$APP" DATABASE_URL; }
 with_db() {
@@ -63,8 +73,17 @@ case "${1:-}" in
   drop)
     drop_db "$SCRATCH"
     ;;
+  create-pre)
+    create_db "$SCRATCH_PRE"
+    ;;
+  url-pre)
+    with_db "$(live_url)" "$SCRATCH_PRE"
+    ;;
+  drop-pre)
+    drop_db "$SCRATCH_PRE"
+    ;;
   *)
-    echo "usage: $0 create|url|drop" >&2
+    echo "usage: $0 create|url|drop|create-pre|url-pre|drop-pre" >&2
     exit 2
     ;;
 esac

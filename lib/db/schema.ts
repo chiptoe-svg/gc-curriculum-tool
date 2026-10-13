@@ -71,7 +71,7 @@ export const subCompetencyMap = pgTable('sub_competency_map', {
  */
 export const careerTargetOccupations = pgTable('career_target_occupations', {
   id: uuid('id').primaryKey().defaultRandom(),
-  careerTargetId: text('career_target_id').notNull().references(() => careerTargets.id, { onDelete: 'cascade' }),
+  careerTargetId: text('career_target_id').notNull(),
   horizon: text('horizon').notNull(),                 // 'entry' | 'growth'
   socCode: text('soc_code').notNull(),                // 'XX-XXXX'
   onetSocCode: text('onet_soc_code'),                 // 'XX-XXXX.XX', null unless onet_status = 'rated'
@@ -84,9 +84,13 @@ export const careerTargetOccupations = pgTable('career_target_occupations', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [
   index('idx_career_target_occupations_target').on(t.careerTargetId, t.horizon),
-  // Name matches what Postgres actually assigned the unnamed `UNIQUE NULLS
-  // NOT DISTINCT (...)` constraint in 0058's hand-written SQL (confirmed via
-  // `\d career_target_occupations` on the applied scratch clone).
+  // Every name below matches what Postgres actually assigned the unnamed
+  // constraint in 0058's hand-written SQL (confirmed via `pg_constraint` on
+  // the applied scratch clone — fix round 1, hostile review) rather than a
+  // guessed or Drizzle-default name. A drift test
+  // (tests/db/p1-constraint-names.test.ts) pins every one of these against
+  // pg_constraint going forward.
+  foreignKey({ name: 'career_target_occupations_career_target_id_fkey', columns: [t.careerTargetId], foreignColumns: [careerTargets.id] }).onDelete('cascade'),
   unique('career_target_occupations_career_target_id_horizon_soc_code_key')
     .on(t.careerTargetId, t.horizon, t.socCode, t.onetSocCode, t.source)
     .nullsNotDistinct(),
@@ -97,7 +101,12 @@ export const careerTargetOccupations = pgTable('career_target_occupations', {
   check('career_target_occupations_count_check', sql`${t.count} > 0`),
   check('career_target_occupations_share_check', sql`${t.share} > 0 AND ${t.share} <= 1`),
   check('career_target_occupations_source_check', sql`${t.source} IN ('alumni_rule', 'faculty')`),
-  check('career_target_occupations_rated_consistency_check', sql`(${t.onetStatus} = 'rated') = (${t.onetSocCode} IS NOT NULL)`),
+  // Fix round 1 (Important #1): was 'career_target_occupations_rated_consistency_check' —
+  // Postgres names an unnamed CHECK with no column suffix it can infer
+  // `<table>_check` when it can't derive a single-column name from the
+  // expression; it does NOT echo a chosen name back even when the SQL gives
+  // the constraint no explicit name of its own (0058's CHECK is unnamed).
+  check('career_target_occupations_check', sql`(${t.onetStatus} = 'rated') = (${t.onetSocCode} IS NOT NULL)`),
 ]);
 
 /**
@@ -115,12 +124,20 @@ export const onetRelease = pgTable('onet_release', {
 });
 
 export const onetOccupations = pgTable('onet_occupations', {
-  release: text('release').notNull().references(() => onetRelease.release, { onDelete: 'cascade' }),
+  release: text('release').notNull(),
   onetSocCode: text('onet_soc_code').notNull(),
   title: text('title').notNull(),
   description: text('description').notNull(),
 }, (t) => [
-  primaryKey({ columns: [t.release, t.onetSocCode] }),
+  // Explicit names matching pg_constraint on the applied scratch (fix round 1):
+  // an unnamed composite PRIMARY KEY/FOREIGN KEY built via Drizzle's
+  // primaryKey()/foreignKey() helpers (no inline `.references()` — that
+  // builder takes no `name` option) computes ITS OWN default suffix
+  // (`_pk`/`_fk`) when left unnamed, which is NOT what Postgres assigns to
+  // the equivalent unnamed SQL (`_pkey`/`_fkey`) — so leaving these unnamed
+  // would itself be drift.
+  primaryKey({ name: 'onet_occupations_pkey', columns: [t.release, t.onetSocCode] }),
+  foreignKey({ name: 'onet_occupations_release_fkey', columns: [t.release], foreignColumns: [onetRelease.release] }).onDelete('cascade'),
 ]);
 
 export const onetElementRatings = pgTable('onet_element_ratings', {
@@ -138,8 +155,9 @@ export const onetElementRatings = pgTable('onet_element_ratings', {
   dateText: text('date_text').notNull(),
   domainSource: text('domain_source').notNull(),
 }, (t) => [
-  primaryKey({ columns: [t.release, t.onetSocCode, t.domain, t.elementId, t.scaleId] }),
-  foreignKey({ name: 'onet_element_ratings_occupation_fk', columns: [t.release, t.onetSocCode], foreignColumns: [onetOccupations.release, onetOccupations.onetSocCode] }).onDelete('cascade'),
+  primaryKey({ name: 'onet_element_ratings_pkey', columns: [t.release, t.onetSocCode, t.domain, t.elementId, t.scaleId] }),
+  // Fix round 1 (Important #1): was 'onet_element_ratings_occupation_fk'.
+  foreignKey({ name: 'onet_element_ratings_release_onet_soc_code_fkey', columns: [t.release, t.onetSocCode], foreignColumns: [onetOccupations.release, onetOccupations.onetSocCode] }).onDelete('cascade'),
   check('onet_element_ratings_domain_check', sql`${t.domain} IN ('knowledge', 'abilities', 'work_activities', 'essential_skills', 'transferable_skills')`),
   check('onet_element_ratings_scale_id_check', sql`${t.scaleId} IN ('IM', 'LV')`),
 ]);
@@ -151,8 +169,9 @@ export const onetTaskStatements = pgTable('onet_task_statements', {
   task: text('task').notNull(),
   taskType: text('task_type'),
 }, (t) => [
-  primaryKey({ columns: [t.release, t.onetSocCode, t.taskId] }),
-  foreignKey({ name: 'onet_task_statements_occupation_fk', columns: [t.release, t.onetSocCode], foreignColumns: [onetOccupations.release, onetOccupations.onetSocCode] }).onDelete('cascade'),
+  primaryKey({ name: 'onet_task_statements_pkey', columns: [t.release, t.onetSocCode, t.taskId] }),
+  // Fix round 1 (Important #1): was 'onet_task_statements_occupation_fk'.
+  foreignKey({ name: 'onet_task_statements_release_onet_soc_code_fkey', columns: [t.release, t.onetSocCode], foreignColumns: [onetOccupations.release, onetOccupations.onetSocCode] }).onDelete('cascade'),
 ]);
 
 export const onetTaskRatings = pgTable('onet_task_ratings', {
@@ -168,8 +187,9 @@ export const onetTaskRatings = pgTable('onet_task_ratings', {
   dateText: text('date_text').notNull(),
   domainSource: text('domain_source').notNull(),
 }, (t) => [
-  primaryKey({ columns: [t.release, t.onetSocCode, t.taskId, t.scaleId, t.category] }),
-  foreignKey({ name: 'onet_task_ratings_task_fk', columns: [t.release, t.onetSocCode, t.taskId], foreignColumns: [onetTaskStatements.release, onetTaskStatements.onetSocCode, onetTaskStatements.taskId] }).onDelete('cascade'),
+  primaryKey({ name: 'onet_task_ratings_pkey', columns: [t.release, t.onetSocCode, t.taskId, t.scaleId, t.category] }),
+  // Fix round 1 (Important #1): was 'onet_task_ratings_task_fk'.
+  foreignKey({ name: 'onet_task_ratings_release_onet_soc_code_task_id_fkey', columns: [t.release, t.onetSocCode, t.taskId], foreignColumns: [onetTaskStatements.release, onetTaskStatements.onetSocCode, onetTaskStatements.taskId] }).onDelete('cascade'),
   check('onet_task_ratings_scale_id_check', sql`${t.scaleId} IN ('IM', 'RT', 'FT')`),
 ]);
 
