@@ -1,4 +1,4 @@
-import { pgTable, pgEnum, pgView, check, uuid, text, jsonb, timestamp, integer, smallint, bigint, real, boolean, primaryKey, index, unique, foreignKey } from 'drizzle-orm/pg-core';
+import { pgTable, pgEnum, pgView, check, uuid, text, jsonb, timestamp, date, integer, smallint, bigint, real, boolean, primaryKey, index, unique, foreignKey } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import type { CaptureProfile, CaptureReadiness, CaptureReviewerStatus } from '@/lib/ai/capture/schema';
 import type { ReconciliationLogEntry } from '@/lib/ai/schemas';
@@ -32,10 +32,18 @@ export const subCompetencies = pgTable('sub_competencies', {
    * for every unmerged competency) lives in sub_competency_map.
    */
   mergedInto: text('merged_into'),
+  /**
+   * P1 (migration 0058): where this catalog row came from. Defaults and
+   * backfills to 'migrated' for every pre-P1 row. 'gc_authored' = drafted by
+   * the controller and owner-approved (e.g. the business-acumen set, Task 5
+   * — enters unlinked). 'onet_seeded' is unused until P2.
+   */
+  origin: text('origin').notNull().default('migrated'),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [
   foreignKey({ name: 'sub_competencies_merged_into_fk', columns: [t.mergedInto], foreignColumns: [t.id] }).onDelete('restrict'),
   check('sub_competencies_merged_into_retired_check', sql`${t.mergedInto} IS NULL OR ${t.retired}`),
+  check('sub_competencies_origin_check', sql`${t.origin} IN ('migrated', 'gc_authored', 'onet_seeded')`),
 ]);
 
 /**
@@ -50,6 +58,120 @@ export const subCompetencyMap = pgTable('sub_competency_map', {
   mergeNote: text('merge_note'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
+
+/**
+ * P1 (migration 0058): one row per (career target, horizon, SOC, O*NET code,
+ * source) occupation-mix entry — see docs/superpowers/plans/2026-10-12-competency-catalog-p1.md
+ * Rulings 1-4. `source = 'alumni_rule'` rows are replaced wholesale by the
+ * ingest on every run; `source = 'faculty'` rows are never touched by it.
+ * Hand-written migration: `UNIQUE NULLS NOT DISTINCT` and the two
+ * cross-column CHECKs below are expressed directly, matching 0058's SQL
+ * exactly (Drizzle 0.45.2 DOES support `.nullsNotDistinct()`, confirmed
+ * against the pg-core type defs — no SQL/schema mismatch here).
+ */
+export const careerTargetOccupations = pgTable('career_target_occupations', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  careerTargetId: text('career_target_id').notNull().references(() => careerTargets.id, { onDelete: 'cascade' }),
+  horizon: text('horizon').notNull(),                 // 'entry' | 'growth'
+  socCode: text('soc_code').notNull(),                // 'XX-XXXX'
+  onetSocCode: text('onet_soc_code'),                 // 'XX-XXXX.XX', null unless onet_status = 'rated'
+  onetStatus: text('onet_status').notNull(),           // 'rated' | 'unrated' | 'no_fit'
+  count: integer('count').notNull(),
+  share: real('share').notNull(),
+  source: text('source').notNull(),                   // 'alumni_rule' | 'faculty'
+  sourceVersion: text('source_version').notNull(),
+  asOf: date('as_of').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  index('idx_career_target_occupations_target').on(t.careerTargetId, t.horizon),
+  // Name matches what Postgres actually assigned the unnamed `UNIQUE NULLS
+  // NOT DISTINCT (...)` constraint in 0058's hand-written SQL (confirmed via
+  // `\d career_target_occupations` on the applied scratch clone).
+  unique('career_target_occupations_career_target_id_horizon_soc_code_key')
+    .on(t.careerTargetId, t.horizon, t.socCode, t.onetSocCode, t.source)
+    .nullsNotDistinct(),
+  check('career_target_occupations_horizon_check', sql`${t.horizon} IN ('entry', 'growth')`),
+  check('career_target_occupations_soc_code_check', sql`${t.socCode} ~ '^[0-9]{2}-[0-9]{4}$'`),
+  check('career_target_occupations_onet_soc_code_check', sql`${t.onetSocCode} IS NULL OR ${t.onetSocCode} ~ '^[0-9]{2}-[0-9]{4}\.[0-9]{2}$'`),
+  check('career_target_occupations_onet_status_check', sql`${t.onetStatus} IN ('rated', 'unrated', 'no_fit')`),
+  check('career_target_occupations_count_check', sql`${t.count} > 0`),
+  check('career_target_occupations_share_check', sql`${t.share} > 0 AND ${t.share} <= 1`),
+  check('career_target_occupations_source_check', sql`${t.source} IN ('alumni_rule', 'faculty')`),
+  check('career_target_occupations_rated_consistency_check', sql`(${t.onetStatus} = 'rated') = (${t.onetSocCode} IS NOT NULL)`),
+]);
+
+/**
+ * P1 (migration 0058): O*NET reference store, one release at a time (31.0).
+ * Scoped to only the O*NET codes that appear `rated` in
+ * career_target_occupations (Ruling 5) — not the full O*NET database.
+ */
+export const onetRelease = pgTable('onet_release', {
+  release: text('release').primaryKey(),               // e.g. '31.0'
+  published: text('published').notNull(),               // e.g. 'August 2026'
+  license: text('license').notNull(),                   // 'CC BY 4.0'
+  attribution: text('attribution').notNull(),
+  sourceUrl: text('source_url').notNull(),
+  loadedAt: timestamp('loaded_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const onetOccupations = pgTable('onet_occupations', {
+  release: text('release').notNull().references(() => onetRelease.release, { onDelete: 'cascade' }),
+  onetSocCode: text('onet_soc_code').notNull(),
+  title: text('title').notNull(),
+  description: text('description').notNull(),
+}, (t) => [
+  primaryKey({ columns: [t.release, t.onetSocCode] }),
+]);
+
+export const onetElementRatings = pgTable('onet_element_ratings', {
+  release: text('release').notNull(),
+  onetSocCode: text('onet_soc_code').notNull(),
+  domain: text('domain').notNull(),                     // 'knowledge' | 'abilities' | 'work_activities' | 'essential_skills' | 'transferable_skills'
+  elementId: text('element_id').notNull(),
+  elementName: text('element_name').notNull(),
+  scaleId: text('scale_id').notNull(),                   // 'IM' | 'LV'
+  dataValue: real('data_value').notNull(),
+  n: integer('n'),
+  standardError: real('standard_error'),
+  recommendSuppress: boolean('recommend_suppress').notNull(),
+  notRelevant: boolean('not_relevant').notNull(),
+  dateText: text('date_text').notNull(),
+  domainSource: text('domain_source').notNull(),
+}, (t) => [
+  primaryKey({ columns: [t.release, t.onetSocCode, t.domain, t.elementId, t.scaleId] }),
+  foreignKey({ name: 'onet_element_ratings_occupation_fk', columns: [t.release, t.onetSocCode], foreignColumns: [onetOccupations.release, onetOccupations.onetSocCode] }).onDelete('cascade'),
+  check('onet_element_ratings_domain_check', sql`${t.domain} IN ('knowledge', 'abilities', 'work_activities', 'essential_skills', 'transferable_skills')`),
+  check('onet_element_ratings_scale_id_check', sql`${t.scaleId} IN ('IM', 'LV')`),
+]);
+
+export const onetTaskStatements = pgTable('onet_task_statements', {
+  release: text('release').notNull(),
+  onetSocCode: text('onet_soc_code').notNull(),
+  taskId: text('task_id').notNull(),
+  task: text('task').notNull(),
+  taskType: text('task_type'),
+}, (t) => [
+  primaryKey({ columns: [t.release, t.onetSocCode, t.taskId] }),
+  foreignKey({ name: 'onet_task_statements_occupation_fk', columns: [t.release, t.onetSocCode], foreignColumns: [onetOccupations.release, onetOccupations.onetSocCode] }).onDelete('cascade'),
+]);
+
+export const onetTaskRatings = pgTable('onet_task_ratings', {
+  release: text('release').notNull(),
+  onetSocCode: text('onet_soc_code').notNull(),
+  taskId: text('task_id').notNull(),
+  scaleId: text('scale_id').notNull(),                   // 'IM' | 'RT' | 'FT'
+  category: text('category').notNull().default(''),      // FT stores a category; other scales use ''
+  dataValue: real('data_value').notNull(),
+  n: integer('n'),
+  standardError: real('standard_error'),
+  recommendSuppress: boolean('recommend_suppress').notNull(),
+  dateText: text('date_text').notNull(),
+  domainSource: text('domain_source').notNull(),
+}, (t) => [
+  primaryKey({ columns: [t.release, t.onetSocCode, t.taskId, t.scaleId, t.category] }),
+  foreignKey({ name: 'onet_task_ratings_task_fk', columns: [t.release, t.onetSocCode, t.taskId], foreignColumns: [onetTaskStatements.release, onetTaskStatements.onetSocCode, onetTaskStatements.taskId] }).onDelete('cascade'),
+  check('onet_task_ratings_scale_id_check', sql`${t.scaleId} IN ('IM', 'RT', 'FT')`),
+]);
 
 export const prototypeTargetEdits = pgTable('prototype_target_edits', {
   id: uuid('id').primaryKey().defaultRandom(),
