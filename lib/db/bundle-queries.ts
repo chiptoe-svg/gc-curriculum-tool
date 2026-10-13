@@ -2,7 +2,7 @@ import { and, asc, desc, eq, inArray, ne, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import {
   subCompetencies, bundleCards, itemEmbeddings, onetTaskStatements, bundleGoldenSamples,
-  bundleGoldenPicks, bundleMembers, bundleMappingOutcomes, onetElementDefinitions,
+  bundleGoldenPicks, bundleMembers, bundleMappingOutcomes, bundleMappingRuns, onetElementDefinitions,
 } from '@/lib/db/schema';
 import type { BundleStratum, GoldenCandidate } from '@/lib/db/schema';
 import type { Tx } from '@/lib/db/competency-catalog-queries';
@@ -11,6 +11,7 @@ import { textHash } from '@/lib/catalog/bundles';
 import type { TaskRow } from '@/lib/catalog/shortlist';
 import { itemKey, type AgreementInput, type Pos } from '@/lib/catalog/agreement';
 import { TASK_SHORTLIST_K } from '@/lib/ai/catalog/map-bundle-onet';
+import type { ElementDef, MemberRow } from '@/lib/ai/catalog/map-bundle-onet';
 
 export type Executor = Tx | typeof db;
 
@@ -269,4 +270,92 @@ export async function readAgreementInputs(ex: Executor = db): Promise<{
     .map(([bundleId, o]) => ({ bundleId, note: o.note }));
 
   return { inputs, noMatch, notYetMapped, secondReviewerPairs };
+}
+
+// ─── Task 10: mapping writer ───────────────────────────────────────────────
+
+export async function readElementDefinitions(release: string, ex: Executor = db): Promise<ElementDef[]> {
+  return ex.select({
+    elementId: onetElementDefinitions.elementId, elementName: onetElementDefinitions.elementName,
+    domain: onetElementDefinitions.domain, description: onetElementDefinitions.description,
+  }).from(onetElementDefinitions).where(eq(onetElementDefinitions.release, release))
+    .orderBy(asc(onetElementDefinitions.elementId));
+}
+
+/** Inserts a mapping run row (dry_run false: dry runs write nothing — plan Ruling 10). Returns its id. */
+export async function createRun(ex: Executor, r: { model: string; promptVersion: string; taskShortlistK: number; bundleCount: number }): Promise<string> {
+  const [row] = await ex.insert(bundleMappingRuns).values({
+    model: r.model, promptVersion: r.promptVersion, taskShortlistK: r.taskShortlistK, bundleCount: r.bundleCount, dryRun: false,
+  }).returning({ id: bundleMappingRuns.id });
+  return row!.id;
+}
+
+export async function finishRun(ex: Executor, runId: string, costUsdCents: number): Promise<void> {
+  await ex.update(bundleMappingRuns)
+    .set({ finishedAt: sql`now()` as unknown as Date, costUsdCents })
+    .where(eq(bundleMappingRuns.id, runId));
+}
+
+/**
+ * Writes one bundle's placement (spec §4 D). Invariant: a bundle's rows are
+ * the complete old set or the complete new set — never partial — and a
+ * confirmed or rejected row (a human decision) is never deleted or changed.
+ *
+ * In one transaction: delete the bundle's still-`proposed` rows, insert the
+ * new rows as `proposed` (a conflict means a decided row already holds that
+ * item — it is kept, counted in `keptDecided`), record the `ok` outcome,
+ * then reconcile against a submitted blind sample (plan Ruling 8).
+ *
+ * Always opens its own transaction: a real one on `db`, a savepoint inside a
+ * caller-owned transaction, so a failure rolls back exactly this bundle's
+ * write and leaves the caller's transaction usable.
+ */
+export async function writeBundleProposals(
+  ex: Executor,
+  args: { runId: string; bundleId: string; rows: MemberRow[]; model: string; noCleanMatch: boolean; note: string | null; costUsdCents: number },
+): Promise<{ deleted: number; inserted: number; keptDecided: number; reconcile: ReconcileResult }> {
+  return ex.transaction(async (tx) => {
+    // Reruns replace ONLY proposed rows; confirmed/rejected are never touched.
+    const deleted = await tx.delete(bundleMembers)
+      .where(and(eq(bundleMembers.bundleId, args.bundleId), eq(bundleMembers.status, 'proposed')))
+      .returning({ id: bundleMembers.id });
+    let inserted = 0;
+    if (args.rows.length > 0) {
+      const res = await tx.insert(bundleMembers).values(args.rows.map(r => ({
+        bundleId: args.bundleId, source: r.source, externalId: r.externalId, externalLabel: r.externalLabel,
+        onetSocCode: r.onetSocCode, release: r.release, position: r.position, aiPosition: r.position,
+        status: 'proposed' as const, proposedBy: args.model, rationale: r.rationale, runId: args.runId,
+      }))).onConflictDoNothing({
+        target: [bundleMembers.bundleId, bundleMembers.source, bundleMembers.release, bundleMembers.externalId, bundleMembers.onetSocCode],
+      }).returning({ id: bundleMembers.id });
+      inserted = res.length;
+    }
+    await tx.insert(bundleMappingOutcomes).values({
+      runId: args.runId, bundleId: args.bundleId, status: 'ok', noCleanMatch: args.noCleanMatch, note: args.note, costUsdCents: args.costUsdCents,
+    });
+    const reconcile = await reconcileBundle(tx, args.bundleId);
+    // After the delete only decided rows survive, so every conflict is a decided row.
+    return { deleted: deleted.length, inserted, keptDecided: args.rows.length - inserted, reconcile };
+  });
+}
+
+/**
+ * Records a failed outcome for one bundle; touches no members. A retry inside
+ * the same run overwrites its own failure, but never an `ok` outcome.
+ */
+export async function recordFailedOutcome(ex: Executor, args: { runId: string; bundleId: string; note: string; costUsdCents: number }): Promise<void> {
+  await ex.insert(bundleMappingOutcomes).values({
+    runId: args.runId, bundleId: args.bundleId, status: 'failed', noCleanMatch: false, note: args.note, costUsdCents: args.costUsdCents,
+  }).onConflictDoUpdate({
+    target: [bundleMappingOutcomes.runId, bundleMappingOutcomes.bundleId],
+    set: { note: args.note, costUsdCents: args.costUsdCents, createdAt: sql`now()` as unknown as Date },
+    setWhere: eq(bundleMappingOutcomes.status, 'failed'),
+  });
+}
+
+/** Bundles with at least one `ok` mapping outcome in any run (drives `--missing`). */
+export async function bundlesWithOkOutcome(ex: Executor = db): Promise<Set<string>> {
+  const rows = await ex.selectDistinct({ id: bundleMappingOutcomes.bundleId }).from(bundleMappingOutcomes)
+    .where(eq(bundleMappingOutcomes.status, 'ok'));
+  return new Set(rows.map(r => r.id));
 }
