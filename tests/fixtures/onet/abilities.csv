@@ -1,0 +1,5 @@
+O*NET-SOC Code,Title,Element ID,Element Name,Scale ID,Scale Name,Data Value,N,Standard Error,Lower CI Bound,Upper CI Bound,Recommend Suppress,Not Relevant,Date,Domain Source
+99-0001.00,Synthetic Test Occupation One,1.A.1.a.1,Oral Comprehension,IM,Importance,4.1,8,0.2,3.7,4.5,N,,08/2023,Analyst
+99-0001.00,Synthetic Test Occupation One,1.A.1.a.1,Oral Comprehension,LV,Level,4.6,8,0.2,4.2,5.0,N,N,08/2023,Analyst
+99-0002.00,Synthetic Test Occupation Two,1.A.1.b.2,Written Expression,IM,Importance,3.0,6,0.2,2.6,3.4,N,N,08/2023,Analyst
+99-0003.00,Synthetic Test Occupation Three,1.A.1.a.1,Oral Comprehension,IM,Importance,2.2,5,0.3,1.6,2.8,N,N,08/2023,Analyst
