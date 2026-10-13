@@ -104,7 +104,8 @@ describe('formatReport', () => {
   });
 
   it('prints the header, counts line, ratios, ALL row, κ fallback, no-match list, caveat and attribution', () => {
-    const out = formatReport({ rows: [row], kappas: [], noMatch: [{ bundleId: 'b9', note: 'nothing fits' }] });
+    const out = formatReport({ rows: [row], kappas: [], noMatch: [{ bundleId: 'b9', note: 'nothing fits' }], notYetMapped: [] });
+    expect(out).not.toContain('not yet mapped');
     expect(out).toContain('Bundle agreement report — blind sample (n = 1 bundles; percentages are rough at this size)');
     expect(out).toContain('AI placed 3, reviewer placed 3, both 2, exact 1, within one 2, reviewer tasks outside top-25 1');
     expect(out).toContain('precision 66.7%, recall 66.7%');
@@ -118,7 +119,9 @@ describe('formatReport', () => {
 
   it('prints n/a for null ratios and κ per bundle when given', () => {
     const empty = computeAgreement({ bundleId: 'b2', ai: new Map(), blind: new Map(), blindTaskRanks: new Map(), shortlistK: 25 });
-    const out = formatReport({ rows: [empty], kappas: [{ bundleId: 'b2', kappa: 0.4 }], noMatch: [] });
+    const out = formatReport({ rows: [empty], kappas: [{ bundleId: 'b2', kappa: 0.4 }], noMatch: [], notYetMapped: ['b7', 'b8'] });
+    expect(out).toContain('not yet mapped: b7, b8');
+    expect(out).toContain('n = 1 bundles');
     expect(out).toContain('precision n/a, recall n/a');
     expect(out).toContain("Cohen's κ b2: 0.40");
     expect(out).not.toContain('needs a second blind reviewer');

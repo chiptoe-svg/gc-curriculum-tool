@@ -24,6 +24,8 @@ export interface ReportData {
   rows: AgreementRow[];
   kappas: Array<{ bundleId: string; kappa: number | null }>;
   noMatch: Array<{ bundleId: string; note: string | null }>;
+  /** Submitted samples with no ok mapping outcome yet — left out of every figure above. */
+  notYetMapped: string[];
 }
 
 const pct = (x: number | null): string => (x === null ? 'n/a' : `${(x * 100).toFixed(1)}%`);
@@ -42,6 +44,7 @@ export function formatReport(data: ReportData): string {
   out.push(`Bundle agreement report — blind sample (n = ${data.rows.length} bundles; percentages are rough at this size)`);
   out.push('');
   for (const r of data.rows) out.push(...rowLines(r));
+  if (data.notYetMapped.length > 0) out.push(`not yet mapped: ${data.notYetMapped.join(', ')}`);
   out.push('');
   out.push(...rowLines(sumAgreement(data.rows)));
   out.push('');
@@ -75,11 +78,12 @@ export async function main(argv: string[], deps: { executor?: P1Executor } = {})
     return 1;
   }
   try {
-    const { inputs, noMatch, secondReviewerPairs } = await readAgreementInputs(executor);
+    const { inputs, noMatch, notYetMapped, secondReviewerPairs } = await readAgreementInputs(executor);
     console.log(formatReport({
       rows: inputs.map(computeAgreement),
       kappas: secondReviewerPairs.map(p => ({ bundleId: p.bundleId, kappa: cohenKappa(p.a, p.b) })),
       noMatch,
+      notYetMapped,
     }));
   } catch (err) {
     console.error(formatDbError(err));

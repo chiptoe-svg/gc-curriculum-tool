@@ -138,18 +138,39 @@ export async function reconcileBundle(ex: Executor, bundleId: string): Promise<R
       added += inserted.length;
     } else if (m.status === 'proposed') {
       if (m.position === p.position) {
-        await ex.update(bundleMembers).set({ status: 'confirmed', confirmedBy: reviewer, confirmedAt: sql`now()` as unknown as Date, reviewNote: 'blind pick agreed (reconcile)', updatedAt: sql`now()` as unknown as Date }).where(eq(bundleMembers.id, m.id));
-        confirmed++;
+        confirmed += await confirmProposedMember(ex, m.id, p.position!, reviewer);
       } else {
-        disagreements++;
         const note = `blind pick: ${p.position}`;
-        if (m.reviewNote !== note) {
-          await ex.update(bundleMembers).set({ reviewNote: note, updatedAt: sql`now()` as unknown as Date }).where(eq(bundleMembers.id, m.id));
-        }
+        // Already noted: count it, write nothing (idempotence). Otherwise the
+        // guarded write decides — a row decided meanwhile is not counted.
+        if (m.reviewNote === note) disagreements++;
+        else disagreements += await noteProposedDisagreement(ex, m.id, note);
       }
     }
   }
   return { skipped: false, confirmed, added, disagreements };
+}
+
+/**
+ * Guarded writes (review fix 1): the `status = 'proposed'` check in
+ * reconcileBundle reads a snapshot, so each UPDATE re-checks it in SQL. A
+ * reviewer's reject or position change that commits between the read and
+ * the write therefore wins — the UPDATE matches 0 rows. Return the row count.
+ */
+export async function confirmProposedMember(ex: Executor, id: string, position: Pos, reviewer: string): Promise<number> {
+  const rows = await ex.update(bundleMembers)
+    .set({ status: 'confirmed', confirmedBy: reviewer, confirmedAt: sql`now()` as unknown as Date, reviewNote: 'blind pick agreed (reconcile)', updatedAt: sql`now()` as unknown as Date })
+    .where(and(eq(bundleMembers.id, id), eq(bundleMembers.status, 'proposed'), eq(bundleMembers.position, position)))
+    .returning({ id: bundleMembers.id });
+  return rows.length;
+}
+
+export async function noteProposedDisagreement(ex: Executor, id: string, note: string): Promise<number> {
+  const rows = await ex.update(bundleMembers)
+    .set({ reviewNote: note, updatedAt: sql`now()` as unknown as Date })
+    .where(and(eq(bundleMembers.id, id), eq(bundleMembers.status, 'proposed')))
+    .returning({ id: bundleMembers.id });
+  return rows.length;
 }
 
 async function elementName(ex: Executor, release: string, elementId: string): Promise<string> {
@@ -186,17 +207,30 @@ function blindKeys(picks: PickRow[], candidates: GoldenCandidate[], bundleId: st
  * `inputs` and `secondReviewerPairs`; `noMatch` lists active bundles whose
  * latest ok mapping outcome had no clean match, excluding bundles whose
  * blind sample is still unsubmitted (the reviewer must not see AI output).
+ * A submitted sample feeds `inputs` only once its bundle has at least one
+ * `ok` mapping outcome; until then it is listed in `notYetMapped` instead, so
+ * an unmapped bundle (aiCount 0) never drags the pooled figures toward 0
+ * (review fix 2). Second-reviewer κ is human-vs-human and needs no mapping.
  */
 export async function readAgreementInputs(ex: Executor = db): Promise<{
   inputs: AgreementInput[];
   noMatch: Array<{ bundleId: string; note: string | null }>;
+  notYetMapped: string[];
   secondReviewerPairs: Array<{ bundleId: string; a: Array<Pos | 'none'>; b: Array<Pos | 'none'> }>;
 }> {
   const allSamples = await ex.select().from(bundleGoldenSamples).orderBy(asc(bundleGoldenSamples.bundleId));
   const samples = allSamples.filter(s => s.submittedAt !== null && s.reviewer !== null);
   const unsubmitted = new Set(allSamples.filter(s => s.submittedAt === null).map(s => s.bundleId));
 
+  const outcomes = await ex.select({
+    bundleId: bundleMappingOutcomes.bundleId, noCleanMatch: bundleMappingOutcomes.noCleanMatch, note: bundleMappingOutcomes.note,
+  }).from(bundleMappingOutcomes).where(eq(bundleMappingOutcomes.status, 'ok'))
+    .orderBy(asc(bundleMappingOutcomes.bundleId), desc(bundleMappingOutcomes.createdAt));
+  const latest = new Map<string, { noCleanMatch: boolean; note: string | null }>();
+  for (const o of outcomes) if (!latest.has(o.bundleId)) latest.set(o.bundleId, o);
+
   const inputs: AgreementInput[] = [];
+  const notYetMapped: string[] = [];
   const secondReviewerPairs: Array<{ bundleId: string; a: Array<Pos | 'none'>; b: Array<Pos | 'none'> }> = [];
   let elementKeys: string[] | null = null;
 
@@ -209,7 +243,8 @@ export async function readAgreementInputs(ex: Executor = db): Promise<{
     }
     const picks = await ex.select().from(bundleGoldenPicks).where(eq(bundleGoldenPicks.bundleId, s.bundleId));
     const own = blindKeys(picks.filter(p => p.reviewer === s.reviewer), s.candidates, s.bundleId);
-    inputs.push({ bundleId: s.bundleId, ai, blind: own.blind, blindTaskRanks: own.ranks, shortlistK: TASK_SHORTLIST_K });
+    if (!latest.has(s.bundleId)) notYetMapped.push(s.bundleId);
+    else inputs.push({ bundleId: s.bundleId, ai, blind: own.blind, blindTaskRanks: own.ranks, shortlistK: TASK_SHORTLIST_K });
 
     const reviewers = [...new Set(picks.map(p => p.reviewer))].sort((x, y) => (x < y ? -1 : x > y ? 1 : 0));
     if (reviewers.length >= 2) {
@@ -229,15 +264,9 @@ export async function readAgreementInputs(ex: Executor = db): Promise<{
   }
 
   const active = new Set((await listActiveBundles(ex)).map(b => b.id));
-  const outcomes = await ex.select({
-    bundleId: bundleMappingOutcomes.bundleId, noCleanMatch: bundleMappingOutcomes.noCleanMatch, note: bundleMappingOutcomes.note,
-  }).from(bundleMappingOutcomes).where(eq(bundleMappingOutcomes.status, 'ok'))
-    .orderBy(asc(bundleMappingOutcomes.bundleId), desc(bundleMappingOutcomes.createdAt));
-  const latest = new Map<string, { noCleanMatch: boolean; note: string | null }>();
-  for (const o of outcomes) if (!latest.has(o.bundleId)) latest.set(o.bundleId, o);
   const noMatch = [...latest.entries()]
     .filter(([id, o]) => o.noCleanMatch && active.has(id) && !unsubmitted.has(id))
     .map(([bundleId, o]) => ({ bundleId, note: o.note }));
 
-  return { inputs, noMatch, secondReviewerPairs };
+  return { inputs, noMatch, notYetMapped, secondReviewerPairs };
 }

@@ -4,14 +4,15 @@
 // rolled back, so the scratch clone's rows are never changed. Gated
 // isP2ScratchDb(): needs 0059 applied for real. Seeds its own synthetic
 // bundles (ids p2r-*).
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { asc, eq, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { subCompetencies, subCompetencyMap, bundleMembers, bundleGoldenSamples, bundleGoldenPicks, bundleMappingRuns, bundleMappingOutcomes, type GoldenCandidate } from '@/lib/db/schema';
-import { reconcileBundle, readAgreementInputs, type Executor } from '@/lib/db/bundle-queries';
+import { reconcileBundle, readAgreementInputs, confirmProposedMember, noteProposedDisagreement, type Executor } from '@/lib/db/bundle-queries';
+import { main as reportMain } from '@/scripts/catalog/bundle-agreement-report';
 import { itemKey } from '@/lib/catalog/agreement';
 import { taskGroupKey } from '@/lib/catalog/shortlist';
-import { isP2ScratchDb } from './p2/scratch-guard';
+import { isP2ScratchDb, SCRATCH_DB } from './p2/scratch-guard';
 
 const RUN = isP2ScratchDb();
 const REL = '31.0';
@@ -81,6 +82,12 @@ async function seedSubmitted(tx: Executor): Promise<void> {
 // Includes the tuple's ctid: inside one transaction now() is constant, so a
 // spurious UPDATE would leave updated_at unchanged — but it always moves the
 // row to a new ctid. This is what makes "changes no row" observable here.
+/** One ok mapping outcome (a fresh run) for `bundleId` — makes it count as mapped. */
+async function seedOutcome(tx: Executor, bundleId: string, status: 'ok' | 'failed' = 'ok'): Promise<void> {
+  const [run] = await tx.insert(bundleMappingRuns).values({ model: MODEL, promptVersion: 'v', taskShortlistK: 25, bundleCount: 1 }).returning({ id: bundleMappingRuns.id });
+  await tx.insert(bundleMappingOutcomes).values({ runId: run!.id, bundleId, status, noCleanMatch: false, note: null });
+}
+
 async function snapshot(tx: Executor, bundleId: string) {
   return tx.select({ row: bundleMembers, ctid: sql<string>`${bundleMembers}.ctid::text` }).from(bundleMembers).where(eq(bundleMembers.bundleId, bundleId))
     .orderBy(asc(bundleMembers.source), asc(bundleMembers.externalId), asc(bundleMembers.onetSocCode));
@@ -160,6 +167,39 @@ describe.skipIf(!RUN)('P2 Task 9 — reconcileBundle (scratch DB only)', () => {
   });
 });
 
+describe.skipIf(!RUN)('P2 Task 9 fix 1 — guarded writes never override a decision made after reconcile read', () => {
+  // Simulates the race: reconcile read e4 while it was 'proposed', then a
+  // reviewer rejected it before reconcile's UPDATE. The UPDATE helpers are
+  // called with that stale view (id + agreed position) against the now-
+  // rejected row; the SQL predicate must make them match nothing.
+  it('confirmProposedMember and noteProposedDisagreement leave a rejected row untouched', async () => {
+    await inRolledBackTx(async (tx) => {
+      await seedSubmitted(tx);
+      const before = (await snapshot(tx, B)).find(r => r.row.externalId === 'e4')!;
+      expect(before.row.status).toBe('rejected');
+
+      expect(await confirmProposedMember(tx, before.row.id, 'core', 'R')).toBe(0);
+      expect(await noteProposedDisagreement(tx, before.row.id, 'blind pick: related')).toBe(0);
+
+      const after = (await snapshot(tx, B)).find(r => r.row.externalId === 'e4')!;
+      expect(after.row.status).toBe('rejected');
+      expect(after).toEqual(before);
+    });
+  });
+
+  it('confirmProposedMember does not confirm a proposed row whose position changed since the read', async () => {
+    await inRolledBackTx(async (tx) => {
+      await seedSubmitted(tx);
+      const e1 = (await snapshot(tx, B)).find(r => r.row.externalId === 'e1')!;
+      // A reviewer moved e1 to 'related' after reconcile read it as 'core'.
+      await tx.update(bundleMembers).set({ position: 'related' }).where(eq(bundleMembers.id, e1.row.id));
+      expect(await confirmProposedMember(tx, e1.row.id, 'core', 'R')).toBe(0);
+      const after = (await snapshot(tx, B)).find(r => r.row.externalId === 'e1')!;
+      expect(after.row).toMatchObject({ status: 'proposed', position: 'related', confirmedBy: null });
+    });
+  });
+});
+
 describe.skipIf(!RUN)('P2 Task 9 — readAgreementInputs (scratch DB only)', () => {
   it('keys AI and blind items by element id / task group; a two-row task group counts once', async () => {
     await inRolledBackTx(async (tx) => {
@@ -169,6 +209,7 @@ describe.skipIf(!RUN)('P2 Task 9 — readAgreementInputs (scratch DB only)', () 
         bundleId: B, source: 'onet_task' as const, externalId: m.taskId, externalLabel: G1_LABEL, onetSocCode: m.onetSocCode, release: REL,
         position: 'fringe' as const, aiPosition: 'fringe' as const, status: 'proposed' as const, proposedBy: MODEL, rationale: 'r',
       })));
+      await seedOutcome(tx, B);
       // An unsubmitted sample must not be read.
       await tx.insert(bundleGoldenSamples).values({ bundleId: B_UNSUBMITTED, stratum: 'business', sampleSeed: 's', candidates: CANDIDATES });
 
@@ -227,6 +268,35 @@ describe.skipIf(!RUN)('P2 Task 9 — readAgreementInputs (scratch DB only)', () 
       const { noMatch } = await readAgreementInputs(tx);
       const mine = noMatch.filter(n => n.bundleId.startsWith('p2r-'));
       expect(mine).toEqual([{ bundleId: B_NO_SAMPLE, note: 'nothing fits' }]);
+    });
+  });
+
+  it('fix 2: a submitted sample with no ok outcome is left out of inputs/ALL and listed as not yet mapped', async () => {
+    await inRolledBackTx(async (tx) => {
+      await seedSubmitted(tx);
+      await seedOutcome(tx, B);
+      // B_UNSUBMITTED is now SUBMITTED, but its only outcome failed — not mapped.
+      await tx.insert(bundleGoldenSamples).values({ bundleId: B_UNSUBMITTED, stratum: 'business', sampleSeed: 's', candidates: CANDIDATES, reviewer: 'R', submittedAt: new Date() });
+      await tx.insert(bundleGoldenPicks).values([elementPick(B_UNSUBMITTED, 'R', 'e7', 'core'), elementPick(B_UNSUBMITTED, 'R', 'e8', 'core')]);
+      await seedOutcome(tx, B_UNSUBMITTED, 'failed');
+
+      const { inputs, notYetMapped } = await readAgreementInputs(tx);
+      expect(inputs.map(i => i.bundleId)).toContain(B);
+      expect(inputs.map(i => i.bundleId)).not.toContain(B_UNSUBMITTED);
+      expect(notYetMapped).toContain(B_UNSUBMITTED);
+      expect(notYetMapped).not.toContain(B);
+
+      const logs: string[] = [];
+      const spy = vi.spyOn(console, 'log').mockImplementation((...a: unknown[]) => { logs.push(a.join(' ')); });
+      const code = await reportMain(['--expect-db', SCRATCH_DB], { executor: tx });
+      spy.mockRestore();
+      expect(code).toBe(0);
+      const out = logs.join('\n');
+      expect(out).toMatch(/not yet mapped: .*p2r-2/);
+      // ALL counts only mapped bundles: B's blind picks are e1, e2, e4 + g1 = 4; p2r-2's 2 picks are excluded.
+      const sumBlind = inputs.reduce((a, i) => a + i.blind.size, 0);
+      expect(out).toContain(`ALL\n  AI placed ${inputs.reduce((a, i) => a + i.ai.size, 0)}, reviewer placed ${sumBlind},`);
+      expect(inputs.find(i => i.bundleId === B)!.blind.size).toBe(4);
     });
   });
 });
