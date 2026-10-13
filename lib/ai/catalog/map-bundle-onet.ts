@@ -19,7 +19,8 @@ import type { TaskGroup } from '@/lib/catalog/shortlist';
  */
 
 export const BUNDLE_MAP_PROMPT_VERSION = 'bundle-map-onet@1';
-export const TASK_SHORTLIST_K = 25;
+// Lives in lib/catalog/shortlist (no provider SDK) so the DB layer and admin routes can import it.
+export { TASK_SHORTLIST_K } from '@/lib/catalog/shortlist';
 const POSITIONS = ['core', 'related', 'fringe'] as const;
 
 export interface ElementDef { elementId: string; elementName: string; domain: string; description: string }

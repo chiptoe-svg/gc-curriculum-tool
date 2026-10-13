@@ -17,7 +17,7 @@ import { db } from '@/lib/db/client';
 import { loadAppEnv, isMainModule, formatDbError, assertExpectedDb, type P1Executor } from '@/scripts/catalog/catalog-source';
 import { computeAgreement, sumAgreement, cohenKappa, type AgreementRow } from '@/lib/catalog/agreement';
 import { readAgreementInputs } from '@/lib/db/bundle-queries';
-import { TASK_SHORTLIST_K } from '@/lib/ai/catalog/map-bundle-onet';
+import { TASK_SHORTLIST_K } from '@/lib/catalog/shortlist';
 import { getOnetReleaseMetadata } from '@/lib/onet/load';
 
 export interface ReportData {

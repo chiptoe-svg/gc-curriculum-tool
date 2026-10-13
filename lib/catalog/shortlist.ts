@@ -8,6 +8,9 @@ import { cosineSimilarity } from '@/lib/ai/embeddings';
  * docs/superpowers/sdd/2026-10-13-competency-catalog-p2/task-6-brief.md.
  */
 
+/** Placement shortlist size (top-K task groups by cosine). Re-exported by lib/ai/catalog/map-bundle-onet. */
+export const TASK_SHORTLIST_K = 25;
+
 export interface TaskRow { taskId: string; onetSocCode: string; task: string }
 export interface TaskGroup { key: string; label: string; members: Array<{ taskId: string; onetSocCode: string }> }
 
