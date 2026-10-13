@@ -1,11 +1,16 @@
-import { and, asc, eq, inArray, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, ne, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
-import { subCompetencies, bundleCards, itemEmbeddings, onetTaskStatements, bundleGoldenSamples } from '@/lib/db/schema';
+import {
+  subCompetencies, bundleCards, itemEmbeddings, onetTaskStatements, bundleGoldenSamples,
+  bundleGoldenPicks, bundleMembers, bundleMappingOutcomes, onetElementDefinitions,
+} from '@/lib/db/schema';
 import type { BundleStratum, GoldenCandidate } from '@/lib/db/schema';
 import type { Tx } from '@/lib/db/competency-catalog-queries';
 import type { BundleSummary, CardFields, ReviewCard } from '@/lib/catalog/bundles';
 import { textHash } from '@/lib/catalog/bundles';
 import type { TaskRow } from '@/lib/catalog/shortlist';
+import { itemKey, type AgreementInput, type Pos } from '@/lib/catalog/agreement';
+import { TASK_SHORTLIST_K } from '@/lib/ai/catalog/map-bundle-onet';
 
 export type Executor = Tx | typeof db;
 
@@ -90,4 +95,149 @@ export async function insertGoldenSamples(
   await ex.insert(bundleGoldenSamples).values(rows.map(r => ({
     bundleId: r.bundleId, stratum: r.stratum, sampleSeed: r.seed, candidates: r.candidates,
   })));
+}
+
+// ─── Task 9: reconcile + agreement inputs ──────────────────────────────────
+
+export interface ReconcileResult { skipped: boolean; confirmed: number; added: number; disagreements: number }
+
+/**
+ * Spec §5 reconcile, plan Ruling 8. For a SUBMITTED sample, compares the
+ * sample reviewer's blind picks with the bundle's members:
+ *   - agreement on a proposed row → confirmed by the reviewer;
+ *   - reviewer-only item → added (proposed_by 'reviewer', confirmed);
+ *   - position disagreement on a proposed row → stays proposed, note records the pick;
+ *   - AI-only rows are never touched.
+ * Idempotent; never changes a confirmed or rejected row (a human decision).
+ * Callers run it in the same transaction as the write that triggers it.
+ */
+export async function reconcileBundle(ex: Executor, bundleId: string): Promise<ReconcileResult> {
+  const [sample] = await ex.select().from(bundleGoldenSamples).where(eq(bundleGoldenSamples.bundleId, bundleId));
+  if (!sample || !sample.submittedAt || !sample.reviewer) return { skipped: true, confirmed: 0, added: 0, disagreements: 0 };
+  const reviewer = sample.reviewer;
+  const picks = await ex.select().from(bundleGoldenPicks).where(and(
+    eq(bundleGoldenPicks.bundleId, bundleId), eq(bundleGoldenPicks.reviewer, reviewer), eq(bundleGoldenPicks.noCleanMatch, false),
+  ));
+  const members = await ex.select().from(bundleMembers).where(eq(bundleMembers.bundleId, bundleId));
+  const k = (s: string, rel: string | null, ext: string, soc: string | null) => `${s}|${rel ?? ''}|${ext}|${soc ?? ''}`;
+  const byKey = new Map(members.map(m => [k(m.source, m.release, m.externalId, m.onetSocCode), m]));
+  const labelByTask = new Map<string, string>();
+  for (const c of sample.candidates) for (const m of c.members) labelByTask.set(`${m.taskId}|${m.onetSocCode}`, c.label);
+  let confirmed = 0, added = 0, disagreements = 0;
+  for (const p of picks) {
+    const m = byKey.get(k(p.source!, p.release, p.externalId!, p.onetSocCode));
+    if (!m) {
+      const label = p.source === 'onet_task'
+        ? (labelByTask.get(`${p.externalId}|${p.onetSocCode}`) ?? p.externalId!)
+        : await elementName(ex, p.release!, p.externalId!);
+      const inserted = await ex.insert(bundleMembers).values({
+        bundleId, source: p.source!, externalId: p.externalId!, externalLabel: label, onetSocCode: p.onetSocCode, release: p.release,
+        position: p.position!, aiPosition: null, status: 'confirmed', proposedBy: 'reviewer', rationale: null,
+        confirmedBy: reviewer, confirmedAt: sql`now()` as unknown as Date, reviewNote: 'blind pick (reconcile)',
+      }).onConflictDoNothing().returning({ id: bundleMembers.id });
+      added += inserted.length;
+    } else if (m.status === 'proposed') {
+      if (m.position === p.position) {
+        await ex.update(bundleMembers).set({ status: 'confirmed', confirmedBy: reviewer, confirmedAt: sql`now()` as unknown as Date, reviewNote: 'blind pick agreed (reconcile)', updatedAt: sql`now()` as unknown as Date }).where(eq(bundleMembers.id, m.id));
+        confirmed++;
+      } else {
+        disagreements++;
+        const note = `blind pick: ${p.position}`;
+        if (m.reviewNote !== note) {
+          await ex.update(bundleMembers).set({ reviewNote: note, updatedAt: sql`now()` as unknown as Date }).where(eq(bundleMembers.id, m.id));
+        }
+      }
+    }
+  }
+  return { skipped: false, confirmed, added, disagreements };
+}
+
+async function elementName(ex: Executor, release: string, elementId: string): Promise<string> {
+  const [d] = await ex.select({ n: onetElementDefinitions.elementName }).from(onetElementDefinitions)
+    .where(and(eq(onetElementDefinitions.release, release), eq(onetElementDefinitions.elementId, elementId)));
+  return d?.n ?? elementId;
+}
+
+type PickRow = typeof bundleGoldenPicks.$inferSelect;
+
+/** Maps one reviewer's picks to agreement keys. Task picks key by the candidate group that holds (taskId, soc). */
+function blindKeys(picks: PickRow[], candidates: GoldenCandidate[], bundleId: string): { blind: Map<string, Pos>; ranks: Map<string, number> } {
+  const candByTask = new Map<string, GoldenCandidate>();
+  for (const c of candidates) for (const m of c.members) candByTask.set(`${m.taskId}|${m.onetSocCode}`, c);
+  const blind = new Map<string, Pos>();
+  const ranks = new Map<string, number>();
+  for (const p of picks) {
+    if (p.noCleanMatch) continue;
+    if (p.source === 'onet_element') {
+      blind.set(itemKey('onet_element', p.externalId!), p.position!);
+    } else {
+      const c = candByTask.get(`${p.externalId}|${p.onetSocCode}`);
+      if (!c) throw new Error(`readAgreementInputs: ${bundleId} pick for task ${p.externalId} (${p.onetSocCode}) is not in the sample's candidates`);
+      const key = itemKey('onet_task', c.label);
+      blind.set(key, p.position!);
+      ranks.set(key, c.rank);
+    }
+  }
+  return { blind, ranks };
+}
+
+/**
+ * Read-only inputs for the agreement report. Only SUBMITTED samples feed
+ * `inputs` and `secondReviewerPairs`; `noMatch` lists active bundles whose
+ * latest ok mapping outcome had no clean match, excluding bundles whose
+ * blind sample is still unsubmitted (the reviewer must not see AI output).
+ */
+export async function readAgreementInputs(ex: Executor = db): Promise<{
+  inputs: AgreementInput[];
+  noMatch: Array<{ bundleId: string; note: string | null }>;
+  secondReviewerPairs: Array<{ bundleId: string; a: Array<Pos | 'none'>; b: Array<Pos | 'none'> }>;
+}> {
+  const allSamples = await ex.select().from(bundleGoldenSamples).orderBy(asc(bundleGoldenSamples.bundleId));
+  const samples = allSamples.filter(s => s.submittedAt !== null && s.reviewer !== null);
+  const unsubmitted = new Set(allSamples.filter(s => s.submittedAt === null).map(s => s.bundleId));
+
+  const inputs: AgreementInput[] = [];
+  const secondReviewerPairs: Array<{ bundleId: string; a: Array<Pos | 'none'>; b: Array<Pos | 'none'> }> = [];
+  let elementKeys: string[] | null = null;
+
+  for (const s of samples) {
+    const members = await ex.select().from(bundleMembers).where(and(eq(bundleMembers.bundleId, s.bundleId), ne(bundleMembers.proposedBy, 'reviewer')));
+    const ai = new Map<string, Pos>();
+    for (const m of members) {
+      if (m.source !== 'onet_element' && m.source !== 'onet_task') continue;
+      ai.set(itemKey(m.source, m.source === 'onet_element' ? m.externalId : m.externalLabel), m.aiPosition ?? m.position);
+    }
+    const picks = await ex.select().from(bundleGoldenPicks).where(eq(bundleGoldenPicks.bundleId, s.bundleId));
+    const own = blindKeys(picks.filter(p => p.reviewer === s.reviewer), s.candidates, s.bundleId);
+    inputs.push({ bundleId: s.bundleId, ai, blind: own.blind, blindTaskRanks: own.ranks, shortlistK: TASK_SHORTLIST_K });
+
+    const reviewers = [...new Set(picks.map(p => p.reviewer))].sort((x, y) => (x < y ? -1 : x > y ? 1 : 0));
+    if (reviewers.length >= 2) {
+      if (elementKeys === null) {
+        const defs = await ex.selectDistinct({ id: onetElementDefinitions.elementId }).from(onetElementDefinitions);
+        elementKeys = defs.map(d => itemKey('onet_element', d.id));
+      }
+      const [ra, rb] = [blindKeys(picks.filter(p => p.reviewer === reviewers[0]), s.candidates, s.bundleId).blind,
+        blindKeys(picks.filter(p => p.reviewer === reviewers[1]), s.candidates, s.bundleId).blind];
+      const universe = [...new Set([...elementKeys, ...s.candidates.map(c => itemKey('onet_task', c.label)), ...ra.keys(), ...rb.keys()])].sort();
+      secondReviewerPairs.push({
+        bundleId: s.bundleId,
+        a: universe.map(key => ra.get(key) ?? 'none'),
+        b: universe.map(key => rb.get(key) ?? 'none'),
+      });
+    }
+  }
+
+  const active = new Set((await listActiveBundles(ex)).map(b => b.id));
+  const outcomes = await ex.select({
+    bundleId: bundleMappingOutcomes.bundleId, noCleanMatch: bundleMappingOutcomes.noCleanMatch, note: bundleMappingOutcomes.note,
+  }).from(bundleMappingOutcomes).where(eq(bundleMappingOutcomes.status, 'ok'))
+    .orderBy(asc(bundleMappingOutcomes.bundleId), desc(bundleMappingOutcomes.createdAt));
+  const latest = new Map<string, { noCleanMatch: boolean; note: string | null }>();
+  for (const o of outcomes) if (!latest.has(o.bundleId)) latest.set(o.bundleId, o);
+  const noMatch = [...latest.entries()]
+    .filter(([id, o]) => o.noCleanMatch && active.has(id) && !unsubmitted.has(id))
+    .map(([bundleId, o]) => ({ bundleId, note: o.note }));
+
+  return { inputs, noMatch, secondReviewerPairs };
 }
