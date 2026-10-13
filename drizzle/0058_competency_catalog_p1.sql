@@ -1,6 +1,21 @@
 -- 0058_competency_catalog_p1.sql — P1: occupation mixes + O*NET reference store + catalog origin.
 -- Additive only. Plan: docs/superpowers/plans/2026-10-12-competency-catalog-p1.md
+--
+-- Deploy order (hostile-review fix wave, I-1, controller ruling — supersedes
+-- the plan's Ruling 8, recorded in STATE.md, not here, since the plan file
+-- is append-only): the running code's Drizzle schema names
+-- sub_competencies.origin in every unprojected select/insert, so this
+-- migration must be applied BEFORE the new build is deployed, not after —
+-- "merge and deploy, then apply 0058" 500s on two live routes in between.
+-- Live order: backup -> apply (this file) -> verify -> THEN build/deploy.
 BEGIN;
+
+-- m5 (hostile-review fix wave): ADD COLUMN takes AccessExclusiveLock on
+-- sub_competencies until COMMIT (confirmed metadata-only on PG 17.10 — the
+-- CHECK scan is instant at this table's size, the lock itself is the risk).
+-- Fail fast rather than stall every reader behind a blocked apply; retry
+-- the apply if it times out (a transient lock, not a genuine conflict).
+SET LOCAL lock_timeout = '5s';
 
 DO $$ BEGIN
   IF to_regclass('public.career_target_occupations') IS NOT NULL THEN

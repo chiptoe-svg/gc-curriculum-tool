@@ -1,10 +1,20 @@
 -- Rollback of migration 0058 (competency catalog P1: occupation mixes,
 -- O*NET reference store, catalog origin). Purely additive migration, so the
 -- rollback is purely subtractive: drop the six new tables (dependency order)
--- and the origin column. Nothing outside P1 ever reads these objects, so no
--- app stop or data carry is needed, unlike 0056/0057's rollbacks.
--- One transaction; a failed check changes nothing. Not re-runnable: a
--- second run stops at "rollback: 0058 is not applied".
+-- and the origin column. One transaction; a failed check changes nothing.
+-- Not re-runnable: a second run stops at "rollback: 0058 is not applied".
+--
+-- App-code order (hostile-review fix wave, I-1, controller ruling —
+-- corrects the claim this file used to make; recorded in STATE.md, not the
+-- append-only plan): the DEPLOYED app's Drizzle schema names
+-- sub_competencies.origin in every unprojected select/insert, so dropping
+-- that column while the P1-era app is still running 500s the same two live
+-- routes I-1 found for the forward migration. "Nothing outside P1 ever
+-- reads these objects" is still true for the SIX NEW TABLES this file
+-- drops — nothing but P1 reads career_target_occupations/onet_* — but it
+-- was never true for the origin COLUMN once the app's schema named it.
+-- Before running this rollback live: revert the app to its pre-P1 build
+-- (or stop it) FIRST, then run this file, then redeploy.
 
 BEGIN;
 

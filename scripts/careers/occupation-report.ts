@@ -5,21 +5,29 @@
  * O*NET code, title, status, share) plus the combined unrated + no-fit
  * share, then the top 15 O*NET elements by share-weighted Importance
  * across that mix's `rated` rows (recommend_suppress ratings are skipped
- * and counted, never scored). Ends with the O*NET CC BY 4.0 attribution.
- * See docs/superpowers/plans/2026-10-12-competency-catalog-p1.md Ruling 5
- * §5.4 and .superpowers/sdd/2026-10-12-competency-catalog-p1/task-4-brief.md.
+ * and counted, never scored). Ends with that release's own CC BY 4.0
+ * attribution (read back from onet_release, not a hard-coded constant —
+ * see m4 below). See docs/superpowers/plans/2026-10-12-competency-catalog-p1.md
+ * Ruling 5 §5.4 and .superpowers/sdd/2026-10-12-competency-catalog-p1/task-4-brief.md.
  *
  * This script never writes to the database — it is read-only by
  * construction (no insert/update/delete anywhere in this file).
  *
  * Usage (DATABASE_URL set explicitly to the scratch clone):
  *   node node_modules/.pnpm/tsx@4.22.0/node_modules/tsx/dist/cli.mjs \
- *     scripts/careers/occupation-report.ts
+ *     scripts/careers/occupation-report.ts [--release 31.0]
+ *
+ * m4 (hostile-review fix wave): the release used to be read with no WHERE
+ * and no ORDER BY — with exactly one row loaded that happened to work, but
+ * it "picks one arbitrarily" the moment a second release exists. --release
+ * now picks a specific one (refuses if it doesn't exist); omitting it picks
+ * the most recently loaded release explicitly (onet_release.loaded_at
+ * DESC), never an unordered first-row. The report always states, by name,
+ * which release it used.
  */
 import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { careerTargets, careerTargetOccupations, onetOccupations, onetElementRatings, onetRelease } from '@/lib/db/schema';
-import { ONET_ATTRIBUTION } from '@/lib/onet/load';
 import { loadAppEnv, isMainModule } from '@/scripts/catalog/catalog-source';
 
 type Executor = typeof db;
@@ -96,11 +104,33 @@ export function topElementsByShareWeightedImportance(
 
 // ─── Read-only report ───────────────────────────────────────────────────────
 
-export async function runReport(executor: Executor = db): Promise<string[]> {
+export async function runReport(executor: Executor = db, requestedRelease?: string): Promise<string[]> {
   const lines: string[] = [];
 
-  const [releaseRow] = await executor.select({ release: onetRelease.release, attribution: onetRelease.attribution }).from(onetRelease);
+  // m4 (hostile-review fix wave): explicit release selection, never an
+  // unordered first row. --release picks a specific one (refuses if it has
+  // no onet_release row); omitting it picks the most recently loaded
+  // release (loaded_at DESC) — with today's single release this is the
+  // same value either way, but it's now EXPLICIT rather than "whichever
+  // row Postgres happened to return first."
+  let releaseRow: { release: string; attribution: string } | undefined;
+  if (requestedRelease) {
+    [releaseRow] = await executor
+      .select({ release: onetRelease.release, attribution: onetRelease.attribution })
+      .from(onetRelease)
+      .where(eq(onetRelease.release, requestedRelease));
+    if (!releaseRow) {
+      throw new Error(`occupation-report: release "${requestedRelease}" has no onet_release row — load it with scripts/onet/load-onet.ts first`);
+    }
+  } else {
+    [releaseRow] = await executor
+      .select({ release: onetRelease.release, attribution: onetRelease.attribution })
+      .from(onetRelease)
+      .orderBy(desc(onetRelease.loadedAt))
+      .limit(1);
+  }
   const release = releaseRow?.release ?? null;
+  lines.push(release ? `release: ${release}` : '(no O*NET release loaded)');
 
   const targets = await executor
     .select({ id: careerTargets.id, name: careerTargets.name })
@@ -178,19 +208,37 @@ export async function runReport(executor: Executor = db): Promise<string[]> {
     }
   }
 
-  lines.push('\n' + ONET_ATTRIBUTION);
+  // THIS release's own attribution text, read back from onet_release — not
+  // a hard-coded constant (m4). Nothing to attribute if no release was
+  // ever loaded (the mix-only report above still ran; it just had no
+  // titles/top-elements).
+  if (releaseRow) {
+    lines.push('\n' + releaseRow.attribution);
+  }
   return lines;
 }
 
 // ─── Entry point ────────────────────────────────────────────────────────────
 
-export async function main(): Promise<number> {
-  const lines = await runReport();
-  for (const line of lines) console.log(line);
-  return 0;
+function argValueFrom(argv: string[], flag: string): string | undefined {
+  const i = argv.indexOf(flag);
+  return i >= 0 ? argv[i + 1] : undefined;
+}
+
+/** --release is optional: omitting it reports against the most recently loaded release. */
+export async function main(argv: string[] = []): Promise<number> {
+  const release = argValueFrom(argv, '--release');
+  try {
+    const lines = await runReport(db, release);
+    for (const line of lines) console.log(line);
+    return 0;
+  } catch (err) {
+    console.error(err instanceof Error ? err.message : String(err));
+    return 1;
+  }
 }
 
 if (isMainModule(import.meta.url, process.argv[1])) {
   loadAppEnv();
-  void main().then(code => process.exit(code));
+  void main(process.argv.slice(2)).then(code => process.exit(code));
 }

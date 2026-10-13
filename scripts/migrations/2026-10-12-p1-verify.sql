@@ -23,12 +23,63 @@ UNION ALL SELECT 'sub_competencies rows with NULL origin (expect 0)', count(*)::
 UNION ALL SELECT 'career_target_occupations rows (0 right after apply, before any ingest)', count(*)::text
   FROM career_target_occupations
 UNION ALL SELECT 'onet_release rows (0 right after apply, before any load)', count(*)::text
-  FROM onet_release;
+  FROM onet_release
+UNION ALL SELECT 'expected 0058 constraints present (expect 0 missing)', count(*)::text
+  FROM unnest(ARRAY[
+    'sub_competencies_origin_check',
+    'career_target_occupations_career_target_id_fkey',
+    'career_target_occupations_career_target_id_horizon_soc_code_key',
+    'career_target_occupations_horizon_check',
+    'career_target_occupations_soc_code_check',
+    'career_target_occupations_onet_soc_code_check',
+    'career_target_occupations_onet_status_check',
+    'career_target_occupations_count_check',
+    'career_target_occupations_share_check',
+    'career_target_occupations_source_check',
+    'career_target_occupations_check',
+    'onet_occupations_pkey',
+    'onet_occupations_release_fkey',
+    'onet_element_ratings_pkey',
+    'onet_element_ratings_release_onet_soc_code_fkey',
+    'onet_element_ratings_domain_check',
+    'onet_element_ratings_scale_id_check',
+    'onet_task_statements_pkey',
+    'onet_task_statements_release_onet_soc_code_fkey',
+    'onet_task_ratings_pkey',
+    'onet_task_ratings_release_onet_soc_code_task_id_fkey',
+    'onet_task_ratings_scale_id_check'
+  ]) AS expected(conname)
+  WHERE NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = expected.conname);
 
 DO $$
 DECLARE
   n_bad_origin int;
   n_null_origin int;
+  expected_constraints text[] := ARRAY[
+    'sub_competencies_origin_check',
+    'career_target_occupations_career_target_id_fkey',
+    'career_target_occupations_career_target_id_horizon_soc_code_key',
+    'career_target_occupations_horizon_check',
+    'career_target_occupations_soc_code_check',
+    'career_target_occupations_onet_soc_code_check',
+    'career_target_occupations_onet_status_check',
+    'career_target_occupations_count_check',
+    'career_target_occupations_share_check',
+    'career_target_occupations_source_check',
+    'career_target_occupations_check',
+    'onet_occupations_pkey',
+    'onet_occupations_release_fkey',
+    'onet_element_ratings_pkey',
+    'onet_element_ratings_release_onet_soc_code_fkey',
+    'onet_element_ratings_domain_check',
+    'onet_element_ratings_scale_id_check',
+    'onet_task_statements_pkey',
+    'onet_task_statements_release_onet_soc_code_fkey',
+    'onet_task_ratings_pkey',
+    'onet_task_ratings_release_onet_soc_code_task_id_fkey',
+    'onet_task_ratings_scale_id_check'
+  ];
+  missing_constraint text;
 BEGIN
   IF to_regclass('public.career_target_occupations') IS NULL THEN
     RAISE EXCEPTION '0058 verify: career_target_occupations is missing';
@@ -61,6 +112,17 @@ BEGIN
   SELECT count(*) INTO n_null_origin FROM sub_competencies WHERE origin IS NULL;
   IF n_null_origin <> 0 THEN
     RAISE EXCEPTION '0058 verify: % sub_competencies row(s) have a NULL origin', n_null_origin;
+  END IF;
+
+  -- m6 (hostile-review fix wave): the checks above only prove the TABLES
+  -- and COLUMN exist — a migration that silently lost a CHECK/UNIQUE/FK
+  -- would still pass them. Walk every constraint 0058 is supposed to have
+  -- created and refuse on the first one missing.
+  SELECT c INTO missing_constraint FROM unnest(expected_constraints) AS c
+    WHERE NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = c)
+    LIMIT 1;
+  IF missing_constraint IS NOT NULL THEN
+    RAISE EXCEPTION '0058 verify: expected constraint "%" is missing', missing_constraint;
   END IF;
 
   RAISE NOTICE '0058 verify: all checks passed';

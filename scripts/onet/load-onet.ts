@@ -14,19 +14,30 @@
  * scripts/migrations/p1-scratch-db.sh url):
  *   node node_modules/.pnpm/tsx@4.22.0/node_modules/tsx/dist/cli.mjs \
  *     scripts/onet/load-onet.ts \
- *     --dir scratch/onet/31.0 --release 31.0 --expect-db gc_curriculum_p1_scratch [--dry-run]
+ *     --dir scratch/onet/31.0 --release 31.0 --expect-db gc_curriculum_p1_scratch
+ *     # default: dry run, writes nothing
+ *   ... --apply --dir scratch/onet/31.0 --release 31.0 --expect-db gc_curriculum_p1_scratch
+ *     # loads for real
  *
  * Safety discipline:
  *   - --expect-db is REQUIRED; assertExpectedDb runs before any other read
  *     (the rated-code query, the CSV reads, everything) and refuses on a
  *     mismatch against current_database().
- *   - --dry-run reads everything and prints row counts; writes nothing.
- *   - Default (no --dry-run) loads: one transaction deletes every existing
- *     onet_occupations row for this release (cascading to its element
- *     ratings / task statements / task ratings via the 0058 FKs) and
- *     reinserts the freshly-read data for the current rated-code set — so
- *     a re-run with an unchanged mix is a no-op content-wise, and a re-run
- *     after a mix change (Ruling 5) picks up added/dropped codes cleanly.
+ *   - --release must have a known metadata row in lib/onet/load.ts's
+ *     ONET_RELEASE_METADATA (today, only '31.0') — refuses before any read
+ *     otherwise (m4, hostile-review fix wave: free-text --release used to
+ *     write 31.0's hard-coded attribution/publish-date under whatever
+ *     release string was passed).
+ *   - --dry-run is the default (no --apply flag needed, SAME convention as
+ *     the other two P1 CLIs now — this script used to default to apply,
+ *     which the hostile review flagged as an easy live footgun): it reads
+ *     everything and prints row counts, writing nothing.
+ *   - --apply loads: one transaction deletes every existing onet_occupations
+ *     row for this release (cascading to its element ratings / task
+ *     statements / task ratings via the 0058 FKs) and reinserts the
+ *     freshly-read data for the current rated-code set — so a re-run with
+ *     an unchanged mix is a no-op content-wise, and a re-run after a mix
+ *     change (Ruling 5) picks up added/dropped codes cleanly.
  *   - Never prints DATABASE_URL or any other credential.
  */
 import { readFileSync } from 'node:fs';
@@ -49,16 +60,14 @@ import {
   parseTaskStatementsCsv,
   parseTaskRatingsCsv,
   ELEMENT_FILENAMES,
-  ONET_PUBLISHED,
-  ONET_LICENSE,
-  ONET_ATTRIBUTION,
-  ONET_SOURCE_URL,
+  getOnetReleaseMetadata,
+  type OnetReleaseMetadata,
   type RawOccupation,
   type RawElementRating,
   type RawTaskStatement,
   type RawTaskRating,
 } from '@/lib/onet/load';
-import { loadAppEnv, isMainModule } from '@/scripts/catalog/catalog-source';
+import { loadAppEnv, isMainModule, formatDbError } from '@/scripts/catalog/catalog-source';
 
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type Executor = Tx | typeof db;
@@ -69,7 +78,7 @@ export interface LoadArgs {
   dir: string;
   release: string;
   expectDb: string;
-  dryRun: boolean;
+  apply: boolean;
 }
 
 function argValueFrom(argv: string[], flag: string): string | undefined {
@@ -83,9 +92,9 @@ export function parseArgs(argv: string[]): LoadArgs {
   const release = argValueFrom(argv, '--release');
   const expectDb = argValueFrom(argv, '--expect-db');
   if (!dir || !release || !expectDb) {
-    throw new Error('usage: --dir <path to O*NET csvs> --release <e.g. 31.0> --expect-db <name> [--dry-run]');
+    throw new Error('usage: --dir <path to O*NET csvs> --release <e.g. 31.0> --expect-db <name> [--apply]');
   }
-  return { dir, release, expectDb, dryRun: argv.includes('--dry-run') };
+  return { dir, release, expectDb, apply: argv.includes('--apply') };
 }
 
 /**
@@ -176,14 +185,23 @@ function chunk<T>(items: readonly T[], size: number): T[][] {
  * byte-identical row content; a re-run after the mix changes picks up
  * added/dropped codes cleanly, since the whole release's occupation set is
  * replaced rather than patched per-code.
+ *
+ * `metadata` (m4, hostile-review fix wave) is THIS release's own
+ * published/license/attribution/source-url — never a fixed constant. This
+ * function stays a pure write (no release-name validation of its own); the
+ * caller (main(), below) is the one place that validates --release against
+ * lib/onet/load.ts's ONET_RELEASE_METADATA and looks the metadata up,
+ * before any read. Taking it as a parameter rather than looking it up
+ * in here also keeps this function testable against a synthetic release
+ * name that has no real metadata row.
  */
-export async function writeOnetStore(executor: Executor, release: string, data: LoadedData): Promise<void> {
+export async function writeOnetStore(executor: Executor, release: string, data: LoadedData, metadata: OnetReleaseMetadata): Promise<void> {
   await executor
     .insert(onetRelease)
-    .values({ release, published: ONET_PUBLISHED, license: ONET_LICENSE, attribution: ONET_ATTRIBUTION, sourceUrl: ONET_SOURCE_URL })
+    .values({ release, published: metadata.published, license: metadata.license, attribution: metadata.attribution, sourceUrl: metadata.sourceUrl })
     .onConflictDoUpdate({
       target: onetRelease.release,
-      set: { published: ONET_PUBLISHED, license: ONET_LICENSE, attribution: ONET_ATTRIBUTION, sourceUrl: ONET_SOURCE_URL },
+      set: { published: metadata.published, license: metadata.license, attribution: metadata.attribution, sourceUrl: metadata.sourceUrl },
     });
 
   await executor.delete(onetOccupations).where(eq(onetOccupations.release, release));
@@ -226,13 +244,13 @@ export async function writeOnetStore(executor: Executor, release: string, data: 
 // ─── Report ─────────────────────────────────────────────────────────────────
 
 export function printReport(args: LoadArgs, codes: ReadonlySet<string>, data: LoadedData): void {
-  console.log(`mode: ${args.dryRun ? 'DRY RUN' : 'LOAD'}  expect-db: ${args.expectDb}  dir: ${args.dir}  release: ${args.release}`);
+  console.log(`mode: ${args.apply ? 'LOAD' : 'DRY RUN'}  expect-db: ${args.expectDb}  dir: ${args.dir}  release: ${args.release}`);
   console.log(`rated O*NET codes (from career_target_occupations): ${codes.size}`);
   console.log(`occupations: ${data.occupations.length}`);
   console.log(`element ratings: ${data.elementRatings.length}  (skipped ${data.skippedElementScaleCount} rows on a non-IM/LV scale)`);
   console.log(`task statements: ${data.taskStatements.length}`);
   console.log(`task ratings: ${data.taskRatings.length}  (skipped ${data.skippedTaskRatingScaleCount} rows on a non-IM/RT/FT scale)`);
-  console.log(args.dryRun ? '\nDRY RUN — nothing written.' : `\nLOAD — onet_occupations (release ${args.release}) replaced; children cascade.`);
+  console.log(args.apply ? `\nLOAD — onet_occupations (release ${args.release}) replaced; children cascade.` : '\nDRY RUN — nothing written.');
 }
 
 // ─── Entry point ────────────────────────────────────────────────────────────
@@ -248,14 +266,26 @@ export interface LoadDeps {
  * Returns an exit code rather than calling process.exit itself, so tests can
  * call this directly. Order: parse args -> assertExpectedDb (the ONLY
  * db-identity check, before any other read) -> read rated codes -> read +
- * filter CSVs -> report -> (unless --dry-run) write in one transaction.
+ * filter CSVs -> report -> (if --apply) write in one transaction.
  */
 export async function main(argv: string[], deps: LoadDeps = {}): Promise<number> {
   let args: LoadArgs;
   try {
     args = parseArgs(argv);
   } catch (err) {
-    console.error(err instanceof Error ? err.message : String(err));
+    console.error(formatDbError(err));
+    return 2;
+  }
+
+  // m4 (hostile-review fix wave): --release is free text; refuse before any
+  // read unless it has a known metadata row (lib/onet/load.ts). Looked up
+  // once here and threaded through to writeOnetStore below, which trusts
+  // it rather than re-deriving it.
+  let releaseMetadata: OnetReleaseMetadata;
+  try {
+    releaseMetadata = getOnetReleaseMetadata(args.release);
+  } catch (err) {
+    console.error(formatDbError(err));
     return 2;
   }
 
@@ -263,7 +293,7 @@ export async function main(argv: string[], deps: LoadDeps = {}): Promise<number>
   try {
     await assertExpectedDb(args.expectDb, executor);
   } catch (err) {
-    console.error(err instanceof Error ? err.message : String(err));
+    console.error(formatDbError(err));
     return 1;
   }
 
@@ -276,24 +306,31 @@ export async function main(argv: string[], deps: LoadDeps = {}): Promise<number>
     codes = await readCodes(executor);
     data = readFilter(args.dir, codes);
   } catch (err) {
-    console.error(err instanceof Error ? err.message : String(err));
+    console.error(formatDbError(err));
     return 3;
   }
 
   printReport(args, codes, data);
 
-  if (args.dryRun) {
+  if (!args.apply) {
     return 0;
   }
 
   const write = deps.writeOnetStore ?? writeOnetStore;
-  if (executor === db) {
-    await db.transaction(async (tx) => {
-      await write(tx, args.release, data);
-    });
-  } else {
-    // Already inside a transaction the caller controls (tests).
-    await write(executor, args.release, data);
+  try {
+    if (executor === db) {
+      await db.transaction(async (tx) => {
+        await write(tx, args.release, data, releaseMetadata);
+      });
+    } else {
+      // Already inside a transaction the caller controls (tests).
+      await write(executor, args.release, data, releaseMetadata);
+    }
+  } catch (err) {
+    // m7 (hostile-review fix wave): short driver message, not a full
+    // query/param dump (e.g. a header-drift or FK-violation failure).
+    console.error(formatDbError(err));
+    return 1;
   }
 
   return 0;

@@ -56,6 +56,11 @@ export async function insertCompetencyForTarget(tx: Tx, row: NewTargetCompetency
     understandDescriptor: row.understandDescriptor,
     doDescriptor: row.doDescriptor,
     retired: row.retired ?? false,
+    // P1 hostile-review fix wave, m2: this is the faculty "add competency"
+    // path (POST /api/targets/[id]/sub-competencies) — a human-authored
+    // row, not a migrated one. Without this, the DB default ('migrated')
+    // applied, giving these rows a wrong provenance record.
+    origin: 'gc_authored',
     updatedAt: new Date(),
   });
   await tx.insert(careerTargetRequirements).values({

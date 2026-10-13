@@ -15,12 +15,48 @@ import Papa from 'papaparse';
 
 // ─── Fixed O*NET attribution block (CC BY 4.0 — global-constraints.md) ────
 
-export const ONET_PUBLISHED = 'August 2026';
-export const ONET_LICENSE = 'CC BY 4.0';
-export const ONET_ATTRIBUTION =
-  'This product includes information from O*NET 31.0 Database by the U.S. Department of Labor, ' +
-  'Employment and Training Administration (USDOL/ETA). Used under the CC BY 4.0 license.';
-export const ONET_SOURCE_URL = 'https://www.onetcenter.org/database.html';
+export interface OnetReleaseMetadata {
+  published: string;
+  license: string;
+  attribution: string;
+  sourceUrl: string;
+}
+
+/**
+ * Known O*NET release metadata (P1 hostile-review fix wave, m4). The
+ * loader's `--release` flag used to be free text, with the published date
+ * and attribution hard-coded to 31.0's values regardless — `--release
+ * 32.0` would have written a 31.0 attribution and an "August 2026" publish
+ * date under a release named 32.0. Add a new release's row here, with its
+ * OWN published date/attribution/source URL, before ever loading it;
+ * `getOnetReleaseMetadata` refuses any release not listed here.
+ */
+export const ONET_RELEASE_METADATA: Readonly<Record<string, OnetReleaseMetadata>> = {
+  '31.0': {
+    published: 'August 2026',
+    license: 'CC BY 4.0',
+    attribution:
+      'This product includes information from O*NET 31.0 Database by the U.S. Department of Labor, ' +
+      'Employment and Training Administration (USDOL/ETA). Used under the CC BY 4.0 license.',
+    sourceUrl: 'https://www.onetcenter.org/database.html',
+  },
+};
+
+/** Throws naming the release if it has no metadata row above. */
+export function getOnetReleaseMetadata(release: string): OnetReleaseMetadata {
+  const meta = ONET_RELEASE_METADATA[release];
+  if (!meta) {
+    throw new Error(`onet: no known metadata for release "${release}" — add it to ONET_RELEASE_METADATA in lib/onet/load.ts before loading it`);
+  }
+  return meta;
+}
+
+// Back-compat constants (the 31.0 entry above, unpacked) — kept for callers
+// that only ever print the fixed CC BY 4.0 footer, not a release-specific one.
+export const ONET_PUBLISHED = ONET_RELEASE_METADATA['31.0']!.published;
+export const ONET_LICENSE = ONET_RELEASE_METADATA['31.0']!.license;
+export const ONET_ATTRIBUTION = ONET_RELEASE_METADATA['31.0']!.attribution;
+export const ONET_SOURCE_URL = ONET_RELEASE_METADATA['31.0']!.sourceUrl;
 
 // ─── Domain mapping (Ruling 5) ─────────────────────────────────────────────
 

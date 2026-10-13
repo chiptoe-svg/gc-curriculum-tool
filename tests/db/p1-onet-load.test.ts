@@ -8,7 +8,7 @@
 // 99-0002.00 — both put in the mix below — and 99-0003.00, which is
 // deliberately left OUT of the mix to prove an occupation not in the mix
 // is not loaded even though its rows exist in the CSVs).
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import path from 'node:path';
 import { asc, eq } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
@@ -26,14 +26,31 @@ import {
   readAndFilter,
   writeOnetStore,
   assertExpectedDb,
+  parseArgs,
+  main,
   type Tx,
+  type LoadDeps,
 } from '@/scripts/onet/load-onet';
-import { ONET_ATTRIBUTION } from '@/lib/onet/load';
+import { getOnetReleaseMetadata, type OnetReleaseMetadata } from '@/lib/onet/load';
 import { isP1MainDb, SCRATCH_DB } from './p1/scratch-guard';
 
 const RUN = isP1MainDb();
 const FIXTURES_DIR = path.join(process.cwd(), 'tests/fixtures/onet');
+// A synthetic release name, deliberately NOT '31.0' — this suite's writes
+// must never touch the scratch DB's REAL '31.0' row/occupations (Task 4's
+// real load). m4 (hostile-review fix wave): writeOnetStore no longer looks
+// up metadata itself (that would refuse this synthetic name, since only
+// '31.0' has a row in ONET_RELEASE_METADATA) — the caller supplies it, so
+// this suite supplies its own synthetic metadata too, and asserts THAT
+// round-trips, proving the write is release-specific rather than always
+// stamping 31.0's text.
 const RELEASE = 'test-31.0';
+const TEST_RELEASE_METADATA: OnetReleaseMetadata = {
+  published: 'Test Published Date',
+  license: 'Test License',
+  attribution: 'Test attribution text for test-31.0',
+  sourceUrl: 'https://example.test/test-31.0',
+};
 
 class Rollback extends Error {}
 async function inRolledBackTx(fn: (tx: Tx) => Promise<void>): Promise<void> {
@@ -85,7 +102,7 @@ describe.skipIf(!RUN)('P1 Task 4 — readRatedOnetCodes + readAndFilter + writeO
       expect(data.skippedElementScaleCount).toBe(1); // the single 'OJ' row in knowledge.csv
       expect(data.skippedTaskRatingScaleCount).toBe(1); // the single 'XX' row in task_ratings.csv
 
-      await writeOnetStore(tx, RELEASE, data);
+      await writeOnetStore(tx, RELEASE, data, TEST_RELEASE_METADATA);
 
       const occRows = await tx.select().from(onetOccupations).where(eq(onetOccupations.release, RELEASE));
       expect(occRows.map(r => r.onetSocCode).sort()).toEqual(['99-0001.00', '99-0002.00']);
@@ -101,7 +118,11 @@ describe.skipIf(!RUN)('P1 Task 4 — readRatedOnetCodes + readAndFilter + writeO
 
       const releaseRow = await tx.select().from(onetRelease).where(eq(onetRelease.release, RELEASE));
       expect(releaseRow).toHaveLength(1);
-      expect(releaseRow[0]).toMatchObject({ published: 'August 2026', license: 'CC BY 4.0', attribution: ONET_ATTRIBUTION, sourceUrl: 'https://www.onetcenter.org/database.html' });
+      // m4 (hostile-review fix wave): the written metadata is THIS release's
+      // own (the caller-supplied TEST_RELEASE_METADATA), not a fixed
+      // constant — the old assertion here expected the real 31.0 text
+      // under a release named "test-31.0", which was exactly the bug.
+      expect(releaseRow[0]).toMatchObject(TEST_RELEASE_METADATA);
     });
   });
 
@@ -112,13 +133,13 @@ describe.skipIf(!RUN)('P1 Task 4 — readRatedOnetCodes + readAndFilter + writeO
       const codes = await readRatedOnetCodes(tx);
       const data = readAndFilter(FIXTURES_DIR, codes);
 
-      await writeOnetStore(tx, RELEASE, data);
+      await writeOnetStore(tx, RELEASE, data, TEST_RELEASE_METADATA);
       const firstOcc = await tx.select({ onetSocCode: onetOccupations.onetSocCode }).from(onetOccupations).where(eq(onetOccupations.release, RELEASE)).orderBy(asc(onetOccupations.onetSocCode));
       const firstElementCount = (await tx.select().from(onetElementRatings).where(eq(onetElementRatings.release, RELEASE))).length;
       const firstTaskStatementCount = (await tx.select().from(onetTaskStatements).where(eq(onetTaskStatements.release, RELEASE))).length;
       const firstTaskRatingCount = (await tx.select().from(onetTaskRatings).where(eq(onetTaskRatings.release, RELEASE))).length;
 
-      await writeOnetStore(tx, RELEASE, data);
+      await writeOnetStore(tx, RELEASE, data, TEST_RELEASE_METADATA);
       const secondOcc = await tx.select({ onetSocCode: onetOccupations.onetSocCode }).from(onetOccupations).where(eq(onetOccupations.release, RELEASE)).orderBy(asc(onetOccupations.onetSocCode));
       const secondElementCount = (await tx.select().from(onetElementRatings).where(eq(onetElementRatings.release, RELEASE))).length;
       const secondTaskStatementCount = (await tx.select().from(onetTaskStatements).where(eq(onetTaskStatements.release, RELEASE))).length;
@@ -154,7 +175,7 @@ describe.skipIf(!RUN)('P1 Task 4 — readRatedOnetCodes + readAndFilter + writeO
       expect(data.taskStatements).toHaveLength(0);
       expect(data.taskRatings).toHaveLength(0);
 
-      await writeOnetStore(tx, RELEASE, data);
+      await writeOnetStore(tx, RELEASE, data, TEST_RELEASE_METADATA);
       const occRows = await tx.select().from(onetOccupations).where(eq(onetOccupations.release, RELEASE));
       expect(occRows).toHaveLength(0);
     });
@@ -168,5 +189,108 @@ describe.skipIf(!RUN)('P1 Task 4 — assertExpectedDb', () => {
 
   it('refuses when --expect-db does not match current_database()', async () => {
     await expect(assertExpectedDb('not_the_real_database')).rejects.toThrow(/refusing: connected to database/);
+  });
+});
+
+// ─── P1 hostile-review fix wave: load-onet.ts default flipped to dry-run,
+// m4's --release validation, m7's concise write-failure message. Pure
+// (no DB) — runs unconditionally. ───────────────────────────────────────
+
+describe('parseArgs', () => {
+  it('defaults apply to false — --apply is required to write for real (flip, hostile-review fix wave)', () => {
+    const args = parseArgs(['--dir', 'd', '--release', '31.0', '--expect-db', 'x']);
+    expect(args.apply).toBe(false);
+  });
+
+  it('--apply sets apply to true', () => {
+    const args = parseArgs(['--dir', 'd', '--release', '31.0', '--expect-db', 'x', '--apply']);
+    expect(args.apply).toBe(true);
+  });
+
+  it('throws on a missing required flag', () => {
+    expect(() => parseArgs(['--dir', 'd', '--expect-db', 'x'])).toThrow(/usage:/);
+  });
+});
+
+describe('release metadata validation (m4)', () => {
+  it('31.0 has a known metadata row', () => {
+    expect(getOnetReleaseMetadata('31.0')).toMatchObject({ license: 'CC BY 4.0' });
+  });
+
+  it('an unlisted release throws, naming the release', () => {
+    expect(() => getOnetReleaseMetadata('32.0')).toThrow(/no known metadata for release "32\.0"/);
+  });
+});
+
+describe.skipIf(!RUN)('P1 Task 4 — main() default dry-run / --apply (m3 flip, m7 concise errors; scratch DB only)', () => {
+  /** Runs main() with executor pinned to `tx` so nothing it does escapes this rolled-back transaction, same technique the other P1 CLI test files use. */
+  function depsOn(tx: Tx, overrides: Partial<LoadDeps> = {}): LoadDeps {
+    return {
+      executor: tx,
+      readRatedOnetCodes: async () => new Set(['99-0001.00', '99-0002.00']),
+      readAndFilter: () => ({ occupations: [], elementRatings: [], taskStatements: [], taskRatings: [], skippedElementScaleCount: 0, skippedTaskRatingScaleCount: 0 }),
+      ...overrides,
+    };
+  }
+
+  // '31.0' here, not the suite's synthetic RELEASE — main() validates
+  // --release against the real ONET_RELEASE_METADATA unconditionally (m4,
+  // not mockable via deps, on purpose), so these main()-level tests must
+  // pass a release that actually has a metadata row. They never assert on
+  // onet_release table state (which would collide with the scratch DB's
+  // real '31.0' row from Task 4's real load) — only on whether the
+  // injected writeOnetStore mock ran.
+  const KNOWN_RELEASE = '31.0';
+
+  it('without --apply (the default), the write function is never called', async () => {
+    await inRolledBackTx(async (tx) => {
+      const argv = ['--dir', FIXTURES_DIR, '--release', KNOWN_RELEASE, '--expect-db', SCRATCH_DB];
+      let writeCalled = false;
+      const code = await main(argv, depsOn(tx, { writeOnetStore: async () => { writeCalled = true; } }));
+      expect(code).toBe(0);
+      expect(writeCalled).toBe(false);
+    });
+  });
+
+  it('with --apply, the write runs', async () => {
+    await inRolledBackTx(async (tx) => {
+      const argv = ['--dir', FIXTURES_DIR, '--release', KNOWN_RELEASE, '--expect-db', SCRATCH_DB, '--apply'];
+      let writeCalled = false;
+      const code = await main(argv, depsOn(tx, { writeOnetStore: async () => { writeCalled = true; } }));
+      expect(code).toBe(0);
+      expect(writeCalled).toBe(true);
+    });
+  });
+
+  it('an unknown --release refuses before any read (m4) — exit 2, no DB call attempted', async () => {
+    await inRolledBackTx(async (tx) => {
+      let readCalled = false;
+      const argv = ['--dir', FIXTURES_DIR, '--release', '32.0', '--expect-db', SCRATCH_DB, '--apply'];
+      const code = await main(argv, depsOn(tx, { readRatedOnetCodes: async () => { readCalled = true; return new Set<string>(); } }));
+      expect(code).toBe(2);
+      expect(readCalled).toBe(false);
+    });
+  });
+
+  // Red-proof / m7: a write failure must print the short driver message
+  // (via formatDbError), not crash with an unhandled rejection. Simulates
+  // drizzle-orm's real shape — a wrapper error whose OWN .message is a
+  // full query dump, with the short, useful message on .cause.
+  it('a write failure returns exit 1 and prints the short driver message, not the query dump (m7)', async () => {
+    await inRolledBackTx(async (tx) => {
+      const argv = ['--dir', FIXTURES_DIR, '--release', KNOWN_RELEASE, '--expect-db', SCRATCH_DB, '--apply'];
+      const queryDump = 'Failed query: insert into "onet_occupations" (...) values ($1, $2, $3, /* …thousands of characters of bound params… */)';
+      const driverMessage = 'duplicate key value violates unique constraint "onet_occupations_pkey"';
+      const wrapped = new Error(queryDump, { cause: new Error(driverMessage) });
+      const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      try {
+        const code = await main(argv, depsOn(tx, { writeOnetStore: async () => { throw wrapped; } }));
+        expect(code).toBe(1);
+        expect(errSpy).toHaveBeenCalledWith(driverMessage);
+        expect(errSpy).not.toHaveBeenCalledWith(expect.stringContaining('Failed query'));
+      } finally {
+        errSpy.mockRestore();
+      }
+    });
   });
 });

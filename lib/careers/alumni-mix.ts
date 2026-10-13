@@ -194,6 +194,37 @@ function processSection(
  * filesystem. Throws (refuses) on any Ruling 1-3 violation; `warnings` is
  * for non-fatal data-shape notes only.
  */
+/**
+ * m1 (hostile-review fix wave). The DB's UNIQUE NULLS NOT DISTINCT key is
+ * (career_target_id, horizon, soc_code, onet_soc_code, source) — source is
+ * always 'alumni_rule' here, and Postgres treats NULL onet_soc_code values
+ * as EQUAL under NULLS NOT DISTINCT. Two parts of the same occ.soc's
+ * onet_detail that both resolve to a NULL onet_soc_code — an explicit
+ * 'none' alongside an unrated child code, or two unrated child codes —
+ * collide at INSERT time, but buildOccupationMix used to have no way to
+ * know that: the dry run printed clean and exited 0, and only --apply's
+ * actual INSERT failed. Validating here, in the ONE pure function both the
+ * dry run and --apply call, makes the dry run catch it too. Also refuses a
+ * non-positive count (the DB's own CHECK) for the same reason.
+ */
+function validateRows(rows: readonly OccupationMixRow[]): void {
+  const seen = new Map<string, OccupationMixRow>();
+  for (const r of rows) {
+    if (!(r.count > 0)) {
+      throw new Error(`alumni-mix: ${r.horizon}/"${r.careerTargetId}"/${r.socCode}: row has count = ${r.count}, expected > 0`);
+    }
+    const key = `${r.careerTargetId}\u0000${r.horizon}\u0000${r.socCode}\u0000${r.onetSocCode ?? '\u0000NULL'}`;
+    const dup = seen.get(key);
+    if (dup) {
+      throw new Error(
+        `alumni-mix: ${r.horizon}/"${r.careerTargetId}"/${r.socCode}: two rows both resolve to onet_soc_code ${r.onetSocCode ?? 'NULL'} — ` +
+        `UNIQUE NULLS NOT DISTINCT makes this a duplicate key (likely an explicit 'none' alongside an unrated child code, or two unrated child codes)`,
+      );
+    }
+    seen.set(key, r);
+  }
+}
+
 export function buildOccupationMix(
   exportJson: unknown,
   ratedOnetCodes: ReadonlySet<string>,
@@ -215,6 +246,8 @@ export function buildOccupationMix(
 
   processSection(entry, 'entry', sourceVersion, asOf, ratedOnetCodes, rows, warnings);
   processSection(growth, 'growth', sourceVersion, asOf, ratedOnetCodes, rows, warnings);
+
+  validateRows(rows);
 
   return { rows, warnings };
 }

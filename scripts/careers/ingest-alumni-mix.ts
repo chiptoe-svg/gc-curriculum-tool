@@ -38,7 +38,7 @@ import { eq, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { careerTargetOccupations } from '@/lib/db/schema';
 import { buildOccupationMix, type OccupationMixRow, type Horizon } from '@/lib/careers/alumni-mix';
-import { loadAppEnv, isMainModule } from '@/scripts/catalog/catalog-source';
+import { loadAppEnv, isMainModule, formatDbError } from '@/scripts/catalog/catalog-source';
 
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type Executor = Tx | typeof db;
@@ -213,7 +213,7 @@ export async function main(argv: string[], deps: IngestDeps = {}): Promise<numbe
   try {
     args = parseArgs(argv);
   } catch (err) {
-    console.error(err instanceof Error ? err.message : String(err));
+    console.error(formatDbError(err));
     return 2;
   }
 
@@ -221,7 +221,7 @@ export async function main(argv: string[], deps: IngestDeps = {}): Promise<numbe
   try {
     await assertExpectedDb(args.expectDb, executor);
   } catch (err) {
-    console.error(err instanceof Error ? err.message : String(err));
+    console.error(formatDbError(err));
     return 1;
   }
 
@@ -238,7 +238,7 @@ export async function main(argv: string[], deps: IngestDeps = {}): Promise<numbe
     rows = built.rows;
     warnings = built.warnings;
   } catch (err) {
-    console.error(err instanceof Error ? err.message : String(err));
+    console.error(formatDbError(err));
     return 3;
   }
 
@@ -249,13 +249,24 @@ export async function main(argv: string[], deps: IngestDeps = {}): Promise<numbe
   }
 
   const write = deps.writeOccupationMix ?? writeOccupationMix;
-  if (executor === db) {
-    await db.transaction(async (tx) => {
-      await write(tx, rows);
-    });
-  } else {
-    // Already inside a transaction the caller controls (tests).
-    await write(executor, rows);
+  try {
+    if (executor === db) {
+      await db.transaction(async (tx) => {
+        await write(tx, rows);
+      });
+    } else {
+      // Already inside a transaction the caller controls (tests).
+      await write(executor, rows);
+    }
+  } catch (err) {
+    // m7 (hostile-review fix wave): without this, a write failure (e.g. a
+    // duplicate-key collision) is an unhandled rejection that dumps the
+    // full query and every bound param — confirmed thousands of lines on
+    // a real collision. formatDbError prints the short driver message
+    // instead. Exit code unchanged (1 — same class as "write failed,
+    // nothing persisted" as assertExpectedDb's refusal above).
+    console.error(formatDbError(err));
+    return 1;
   }
 
   return 0;

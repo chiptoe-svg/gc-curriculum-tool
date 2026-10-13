@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { headers } from 'next/headers';
 import { isValidSlug } from '@/lib/slug';
-import { getMatrixData } from '@/lib/db/program-coverage-queries';
+import { getMatrixData, listStaleSnapshots } from '@/lib/db/program-coverage-queries';
 import { ProgramCoverageClient } from './ProgramCoverageClient';
 import { FeedbackLink } from '@/app/FeedbackLink';
 import { listFlags } from '@/lib/db/flag-queries';
@@ -27,6 +27,10 @@ export default async function ProgramPage({ searchParams }: Props) {
 
   const { isAdmin } = await getViewerAccess(await headers());
   const data = await getMatrixData();
+  // I-2 (hostile-review fix wave): the bulk-refresh button's label must
+  // state the real work — one AI call per stale SNAPSHOT, not a matrix
+  // pair count (see lib/program/stale-pairs.ts's staleSnapshotButtonLabel).
+  const staleSnapshotCount = (await listStaleSnapshots()).length;
   const flagRows = await listFlags({});
   // Server-side: no drift annotation needed for first paint (the client
   // refetches via /api/flags after any mutation, which annotates).
@@ -64,7 +68,7 @@ export default async function ProgramPage({ searchParams }: Props) {
       </header>
 
       <main className="mx-auto max-w-6xl px-6 py-6">
-        <ProgramCoverageClient slug={slug} initialData={data} initialFlags={initialFlags} isAdmin={isAdmin} />
+        <ProgramCoverageClient slug={slug} initialData={data} initialStaleSnapshotCount={staleSnapshotCount} initialFlags={initialFlags} isAdmin={isAdmin} />
       </main>
     </div>
   );

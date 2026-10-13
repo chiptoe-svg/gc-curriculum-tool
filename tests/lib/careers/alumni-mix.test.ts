@@ -240,3 +240,102 @@ describe('buildOccupationMix — source_version / as_of / refusals / growth_all_
     expect(rows).toHaveLength(1);
   });
 });
+
+// ─── P1 hostile-review fix wave, m1 ────────────────────────────────────────
+// UNIQUE NULLS NOT DISTINCT on (career_target_id, horizon, soc_code,
+// onet_soc_code, source) treats two NULL onet_soc_code rows as a collision.
+// Before this fix, buildOccupationMix had no way to catch that — only the
+// DB's own CHECK/UNIQUE did, at --apply time, so a dry run could print
+// clean and exit 0 on data that --apply would then refuse.
+describe('buildOccupationMix — m1 (dry run must catch what --apply would refuse)', () => {
+  it('refuses when an explicit "none" and an unrated child code both resolve to a NULL onet_soc_code for the same SOC', () => {
+    const exportJson = baseExport({
+      entry: {
+        by_target: {
+          '1 Production & Operations': {
+            n: 3,
+            occupations: [{
+              soc: '13-1199',
+              count: 3,
+              share: 1,
+              // 'none' -> no_fit (NULL code); '13-1199.01' is not in the
+              // rated set -> unrated (also NULL code). Both rows end up
+              // with the identical (target, horizon, soc, NULL) key.
+              onet_detail: [{ onet_code: 'none', count: 1 }, { onet_code: '13-1199.01', count: 2 }],
+            }],
+          },
+        },
+      },
+    });
+    // '13-1199.01' deliberately absent from the rated set below.
+    expect(() => buildOccupationMix(exportJson, new Set(['11-1011.00']))).toThrow(
+      /two rows both resolve to onet_soc_code NULL/,
+    );
+  });
+
+  it('refuses when two unrated child codes under the same SOC both resolve to a NULL onet_soc_code', () => {
+    const exportJson = baseExport({
+      entry: {
+        by_target: {
+          '1 Production & Operations': {
+            n: 3,
+            occupations: [{
+              soc: '13-1199',
+              count: 3,
+              share: 1,
+              onet_detail: [{ onet_code: '13-1199.01', count: 1 }, { onet_code: '13-1199.02', count: 2 }],
+            }],
+          },
+        },
+      },
+    });
+    expect(() => buildOccupationMix(exportJson, new Set(['11-1011.00']))).toThrow(
+      /two rows both resolve to onet_soc_code NULL/,
+    );
+  });
+
+  it('refuses a row with count = 0', () => {
+    // A second, separately-counted occupation fills the target's share sum
+    // to 1 on its own, so the pre-existing share-sum-to-1 check (which
+    // runs first, inside processSection) doesn't mask the count=0 check
+    // this test is actually for.
+    const exportJson = baseExport({
+      entry: {
+        by_target: {
+          '1 Production & Operations': {
+            n: 3,
+            occupations: [
+              { soc: '11-1011', count: 3, share: 1 },
+              { soc: '13-1199', count: 0, share: 0 },
+            ],
+          },
+        },
+      },
+    });
+    expect(() => buildOccupationMix(exportJson, new Set(['11-1011.00']))).toThrow(/count = 0, expected > 0/);
+  });
+
+  // Positive control (green): the validator must NOT misfire on the
+  // ordinary, non-colliding shape every other test in this file relies on
+  // — two DIFFERENT rated children under one SOC, each with its own
+  // distinct, non-NULL onet_soc_code.
+  it('does not refuse two distinct rated onet_detail children under the same SOC', () => {
+    const exportJson = baseExport({
+      entry: {
+        by_target: {
+          '1 Production & Operations': {
+            n: 10,
+            occupations: [{
+              soc: '13-1161',
+              count: 10,
+              share: 1,
+              onet_detail: [{ onet_code: '13-1161.00', count: 7 }, { onet_code: '13-1161.01', count: 3 }],
+            }],
+          },
+        },
+      },
+    });
+    const { rows } = buildOccupationMix(exportJson, new Set(['13-1161.00', '13-1161.01']));
+    expect(rows).toHaveLength(2);
+  });
+});

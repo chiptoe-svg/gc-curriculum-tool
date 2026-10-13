@@ -23,6 +23,7 @@ import { isP1PreDb } from './p1/scratch-guard';
 const ROOT = resolve(__dirname, '../..');
 const MIGRATION_PATH = resolve(ROOT, 'drizzle/0058_competency_catalog_p1.sql');
 const ROLLBACK_PATH = resolve(ROOT, 'scripts/migrations/2026-10-12-p1-rollback.sql');
+const VERIFY_PATH = resolve(ROOT, 'scripts/migrations/2026-10-12-p1-verify.sql');
 
 /** Strip the file's own BEGIN;/COMMIT; so the body can run inside a caller-owned transaction. */
 function stripTxWrapper(raw: string): string {
@@ -32,8 +33,20 @@ function stripTxWrapper(raw: string): string {
     .join('\n');
 }
 
+/** verify.sql's own wrapper is \set ON_ERROR_STOP on / BEGIN READ ONLY; / ... / ROLLBACK; — strip all three so the SELECT + DO $$ body can run inside a caller-owned transaction (the \set meta-command isn't valid SQL at all over a plain pg client). */
+function stripVerifyWrapper(raw: string): string {
+  return raw
+    .split('\n')
+    .filter((line) => {
+      const t = line.trim();
+      return t !== '\\set ON_ERROR_STOP on' && t !== 'BEGIN READ ONLY;' && t !== 'ROLLBACK;';
+    })
+    .join('\n');
+}
+
 const MIGRATION_BODY = existsSync(MIGRATION_PATH) ? stripTxWrapper(readFileSync(MIGRATION_PATH, 'utf8')) : null;
 const ROLLBACK_BODY = existsSync(ROLLBACK_PATH) ? stripTxWrapper(readFileSync(ROLLBACK_PATH, 'utf8')) : null;
+const VERIFY_BODY = existsSync(VERIFY_PATH) ? stripVerifyWrapper(readFileSync(VERIFY_PATH, 'utf8')) : null;
 
 const RUN = isP1PreDb();
 
@@ -46,12 +59,15 @@ const NEW_TABLES = [
   'onet_task_ratings',
 ] as const;
 
-describe('0058 and its rollback files exist and parse (static, runs always)', () => {
+describe('0058 and its rollback/verify files exist and parse (static, runs always)', () => {
   it('the migration file exists', () => {
     expect(existsSync(MIGRATION_PATH), `expected ${MIGRATION_PATH} to exist`).toBe(true);
   });
   it('the rollback file exists', () => {
     expect(existsSync(ROLLBACK_PATH), `expected ${ROLLBACK_PATH} to exist`).toBe(true);
+  });
+  it('the verify file exists', () => {
+    expect(existsSync(VERIFY_PATH), `expected ${VERIFY_PATH} to exist`).toBe(true);
   });
 });
 
@@ -59,8 +75,8 @@ describe.skipIf(!RUN)('migration 0058 (P1) on the P1 scratch clone, each case se
   let pool: Pool;
 
   beforeAll(() => {
-    if (MIGRATION_BODY === null || ROLLBACK_BODY === null) {
-      throw new Error('0058 migration/rollback files must exist before this suite can run');
+    if (MIGRATION_BODY === null || ROLLBACK_BODY === null || VERIFY_BODY === null) {
+      throw new Error('0058 migration/rollback/verify files must exist before this suite can run');
     }
     pool = new Pool({ connectionString: process.env.DATABASE_URL });
   });
@@ -415,6 +431,38 @@ describe.skipIf(!RUN)('migration 0058 (P1) on the P1 scratch clone, each case se
       await c.query(MIGRATION_BODY!);
       await expect(c.query(ROLLBACK_BODY!)).resolves.toBeDefined();
       expect(await tableExists(c, 'career_target_occupations')).toBe(false);
+    });
+  });
+
+  // ─── m6 (hostile-review fix wave): verify.sql content checks ───────────
+  // The pre-existing checks only proved the TABLES/COLUMN exist. The new
+  // one walks every 0058 constraint by name via pg_constraint, so a
+  // migration that silently lost a CHECK/UNIQUE/FK still fails verify even
+  // though every table and column is present.
+
+  it('verify.sql passes cleanly immediately after a fresh apply', async () => {
+    await withTx(async (c) => {
+      await c.query(MIGRATION_BODY!);
+      await expect(c.query(VERIFY_BODY!)).resolves.toBeDefined();
+    });
+  });
+
+  it('red-proof: verify.sql fails when an expected CHECK constraint is dropped, even though every table/column is still present', async () => {
+    await withTx(async (c) => {
+      await c.query(MIGRATION_BODY!);
+      await q(c, `ALTER TABLE sub_competencies DROP CONSTRAINT sub_competencies_origin_check`);
+      // The table and the origin column are both still there — only the
+      // pg_constraint-backed check added for m6 can catch this.
+      expect(await tableExists(c, 'sub_competencies')).toBe(true);
+      await expect(c.query(VERIFY_BODY!)).rejects.toThrow(/expected constraint "sub_competencies_origin_check" is missing/);
+    });
+  });
+
+  it('red-proof: verify.sql also catches a dropped FK (not just a dropped CHECK)', async () => {
+    await withTx(async (c) => {
+      await c.query(MIGRATION_BODY!);
+      await q(c, `ALTER TABLE career_target_occupations DROP CONSTRAINT career_target_occupations_career_target_id_fkey`);
+      await expect(c.query(VERIFY_BODY!)).rejects.toThrow(/expected constraint "career_target_occupations_career_target_id_fkey" is missing/);
     });
   });
 });

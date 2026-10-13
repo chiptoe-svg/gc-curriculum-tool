@@ -43,7 +43,7 @@ import { readFileSync } from 'node:fs';
 import { inArray } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { subCompetencies, subCompetencyMap } from '@/lib/db/schema';
-import { loadAppEnv, isMainModule } from '@/scripts/catalog/catalog-source';
+import { loadAppEnv, isMainModule, formatDbError } from '@/scripts/catalog/catalog-source';
 import { assertExpectedDb } from '@/scripts/careers/ingest-alumni-mix';
 
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -216,7 +216,7 @@ export async function main(argv: string[], deps: InsertDeps = {}): Promise<numbe
   try {
     args = parseArgs(argv);
   } catch (err) {
-    console.error(err instanceof Error ? err.message : String(err));
+    console.error(formatDbError(err));
     return 2;
   }
 
@@ -224,7 +224,7 @@ export async function main(argv: string[], deps: InsertDeps = {}): Promise<numbe
   try {
     await assertExpectedDb(args.expectDb, executor);
   } catch (err) {
-    console.error(err instanceof Error ? err.message : String(err));
+    console.error(formatDbError(err));
     return 1;
   }
 
@@ -234,7 +234,7 @@ export async function main(argv: string[], deps: InsertDeps = {}): Promise<numbe
     const json = loadJson(args.file);
     spec = parseSpec(json);
   } catch (err) {
-    console.error(err instanceof Error ? err.message : String(err));
+    console.error(formatDbError(err));
     return 3;
   }
 
@@ -255,7 +255,9 @@ export async function main(argv: string[], deps: InsertDeps = {}): Promise<numbe
       await write(executor, spec.competencies);
     }
   } catch (err) {
-    console.error(err instanceof Error ? err.message : String(err));
+    // m7 (hostile-review fix wave): print the short driver message, not a
+    // full query/param dump.
+    console.error(formatDbError(err));
     return 4;
   }
 
