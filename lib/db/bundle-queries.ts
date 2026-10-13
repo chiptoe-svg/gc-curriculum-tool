@@ -1,6 +1,7 @@
 import { and, asc, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
-import { subCompetencies, bundleCards, itemEmbeddings, onetTaskStatements } from '@/lib/db/schema';
+import { subCompetencies, bundleCards, itemEmbeddings, onetTaskStatements, bundleGoldenSamples } from '@/lib/db/schema';
+import type { BundleStratum, GoldenCandidate } from '@/lib/db/schema';
 import type { Tx } from '@/lib/db/competency-catalog-queries';
 import type { BundleSummary, CardFields, ReviewCard } from '@/lib/catalog/bundles';
 import { textHash } from '@/lib/catalog/bundles';
@@ -76,4 +77,17 @@ export async function readVectors(ex: Executor, kind: EmbedItem['kind'], wanted:
   const out = new Map<string, number[]>();
   for (const r of rows) if (hashByRef.get(r.ref) === r.textHash) out.set(r.ref, r.vector);
   return out;
+}
+
+// ─── Task 7: golden-sample draw ────────────────────────────────────────────
+
+/** Plain insert of each sampled bundle's seed + top-50 candidates (Ruling 4) into bundle_golden_samples. */
+export async function insertGoldenSamples(
+  ex: Executor,
+  rows: Array<{ bundleId: string; stratum: BundleStratum; seed: string; candidates: GoldenCandidate[] }>,
+): Promise<void> {
+  if (rows.length === 0) return;
+  await ex.insert(bundleGoldenSamples).values(rows.map(r => ({
+    bundleId: r.bundleId, stratum: r.stratum, sampleSeed: r.seed, candidates: r.candidates,
+  })));
 }

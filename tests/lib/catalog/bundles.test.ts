@@ -9,9 +9,14 @@ import {
   textHash,
   cardEmbedText,
   parseCardsReviewFile,
+  GOLDEN_QUOTAS,
+  GOLDEN_SIZE,
+  seededShuffle,
+  drawGoldenSample,
   type BundleSummary,
   type CardFields,
 } from '@/lib/catalog/bundles';
+import type { BundleStratum } from '@/lib/db/schema';
 
 describe('textHash', () => {
   it("hashes 'a' to its known sha256 hex digest", () => {
@@ -145,5 +150,92 @@ describe('parseCardsReviewFile', () => {
 
   it('STRATA matches the schema BundleStratum union', () => {
     expect(STRATA).toEqual(['foundational', 'technical', 'business', 'workflow_ai']);
+  });
+});
+
+describe('seededShuffle — Task 7', () => {
+  const items = Array.from({ length: 20 }, (_, i) => i);
+
+  it('gives the same order for the same seed', () => {
+    const a = seededShuffle(items, 'seed-one');
+    const b = seededShuffle(items, 'seed-one');
+    expect(a).toEqual(b);
+  });
+
+  it('gives a different order for a different seed on a 20-item list', () => {
+    const a = seededShuffle(items, 'seed-one');
+    const b = seededShuffle(items, 'seed-two');
+    expect(a).not.toEqual(b);
+  });
+
+  it('does not mutate the input', () => {
+    const original = [...items];
+    seededShuffle(items, 'seed-one');
+    expect(items).toEqual(original);
+  });
+
+  it('returns a permutation (same multiset of items)', () => {
+    const shuffled = seededShuffle(items, 'seed-one');
+    expect([...shuffled].sort((a, b) => a - b)).toEqual(items);
+  });
+});
+
+describe('drawGoldenSample — Task 7', () => {
+  function bundle(id: string, stratum: BundleStratum) {
+    return { id, stratum };
+  }
+
+  function manyPerStratum(countsByStratum: Record<BundleStratum, number>) {
+    const bundles: Array<{ id: string; stratum: BundleStratum }> = [];
+    for (const stratum of STRATA) {
+      const n = countsByStratum[stratum];
+      for (let i = 0; i < n; i++) bundles.push(bundle(`${stratum}-${i}`, stratum));
+    }
+    return bundles;
+  }
+
+  it('takes the quota from each stratum (2/3/2/1) when enough are available', () => {
+    const bundles = manyPerStratum({ foundational: 5, technical: 5, business: 5, workflow_ai: 5 });
+    const picked = drawGoldenSample(bundles, 'seed-a');
+    expect(picked).toHaveLength(GOLDEN_SIZE);
+    const countByStratum: Record<string, number> = {};
+    for (const p of picked) countByStratum[p.stratum] = (countByStratum[p.stratum] ?? 0) + 1;
+    expect(countByStratum).toEqual(GOLDEN_QUOTAS);
+  });
+
+  it('still includes the single workflow_ai bundle when only 1 exists', () => {
+    const bundles = manyPerStratum({ foundational: 5, technical: 5, business: 5, workflow_ai: 1 });
+    const picked = drawGoldenSample(bundles, 'seed-a');
+    expect(picked.some(p => p.id === 'workflow_ai-0')).toBe(true);
+    expect(picked.filter(p => p.stratum === 'workflow_ai')).toHaveLength(1);
+  });
+
+  it('fills missing slots from the remaining pool when a stratum has 0 bundles, keeping size 8', () => {
+    const bundles = manyPerStratum({ foundational: 5, technical: 5, business: 0, workflow_ai: 1 });
+    const picked = drawGoldenSample(bundles, 'seed-a');
+    expect(picked).toHaveLength(GOLDEN_SIZE);
+    expect(picked.filter(p => p.stratum === 'business')).toHaveLength(0);
+    // No duplicate ids.
+    expect(new Set(picked.map(p => p.id)).size).toBe(GOLDEN_SIZE);
+  });
+
+  it('returns them all when fewer than 8 bundles exist in total', () => {
+    const bundles = manyPerStratum({ foundational: 2, technical: 1, business: 1, workflow_ai: 1 });
+    const picked = drawGoldenSample(bundles, 'seed-a');
+    expect(picked).toHaveLength(bundles.length);
+    expect(new Set(picked.map(p => p.id))).toEqual(new Set(bundles.map(b => b.id)));
+  });
+
+  it('is deterministic for a given seed', () => {
+    const bundles = manyPerStratum({ foundational: 5, technical: 5, business: 5, workflow_ai: 5 });
+    const a = drawGoldenSample(bundles, 'seed-a');
+    const b = drawGoldenSample(bundles, 'seed-a');
+    expect(a).toEqual(b);
+  });
+
+  it('never picks the same id twice', () => {
+    const bundles = manyPerStratum({ foundational: 5, technical: 5, business: 5, workflow_ai: 5 });
+    const picked = drawGoldenSample(bundles, 'seed-a');
+    expect(new Set(picked.map(p => p.id)).size).toBe(picked.length);
   });
 });

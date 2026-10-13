@@ -66,3 +66,44 @@ export function parseCardsReviewFile(json: unknown, activeBundleIds: ReadonlySet
   cards.sort((a, b) => a.competencyId.localeCompare(b.competencyId));
   return { _approval: approval, drafted, cards };
 }
+
+// ─── Task 7: seeded stratified golden-sample draw ──────────────────────────
+
+/** Ruling 3: quotas across the 4 strata, summing to GOLDEN_SIZE. */
+export const GOLDEN_QUOTAS: Readonly<Record<BundleStratum, number>> = { foundational: 2, technical: 3, business: 2, workflow_ai: 1 };
+export const GOLDEN_SIZE = 8;
+
+function mulberry32(a: number): () => number {
+  return () => {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** Deterministic Fisher-Yates shuffle, seeded by `seed`. Does not mutate `items`. */
+export function seededShuffle<T>(items: readonly T[], seed: string): T[] {
+  const rand = mulberry32(parseInt(textHash(seed).slice(0, 8), 16));
+  const out = [...items];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [out[i], out[j]] = [out[j]!, out[i]!];
+  }
+  return out;
+}
+
+/** Spec §4: 8 bundles, seeded, spread across strata (Ruling 3 quotas), shortfalls filled from the rest. */
+export function drawGoldenSample(bundles: Array<{ id: string; stratum: BundleStratum }>, seed: string): Array<{ id: string; stratum: BundleStratum }> {
+  const pool = seededShuffle([...bundles].sort((a, b) => a.id.localeCompare(b.id)), seed);
+  const picked: Array<{ id: string; stratum: BundleStratum }> = [];
+  for (const stratum of STRATA) {
+    picked.push(...pool.filter(b => b.stratum === stratum).slice(0, GOLDEN_QUOTAS[stratum]));
+  }
+  const pickedIds = new Set(picked.map(p => p.id));
+  for (const b of pool) {
+    if (picked.length >= Math.min(GOLDEN_SIZE, bundles.length)) break;
+    if (!pickedIds.has(b.id)) { picked.push(b); pickedIds.add(b.id); }
+  }
+  return picked;
+}
