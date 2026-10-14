@@ -224,6 +224,22 @@ describe.skipIf(!RUN)('P2 Task 10 — writeBundleProposals / recordFailedOutcome
     });
   });
 
+  it('M-3: takes the sample-row lock (FOR UPDATE) that submit/reset take, held until the write\'s transaction ends', async () => {
+    // The lock must be visible to a second connection, so this uses a
+    // committed sample row of the clone; the write itself is rolled back.
+    const [sample] = await db.select({ bundleId: bundleGoldenSamples.bundleId }).from(bundleGoldenSamples).limit(1);
+    expect(sample, 'the scratch clone needs at least one golden sample row (Task 13 rehearsal)').toBeDefined();
+    const tryLock = () => db.transaction(t2 => t2.execute(sql`select bundle_id from bundle_golden_samples where bundle_id = ${sample!.bundleId} for update nowait`));
+    await tryLock(); // free before the write
+    await inRolledBackTx(async (tx) => {
+      const runId = await seedRun(tx);
+      await writeBundleProposals(tx, { runId, bundleId: sample!.bundleId, model: MODEL, noCleanMatch: false, note: null, costUsdCents: 0, rows: [] });
+      const err = await tryLock().then(() => null, (e: unknown) => e as { code?: string; cause?: { code?: string } });
+      expect(err, 'a concurrent FOR UPDATE NOWAIT must fail while the write holds the sample lock').not.toBeNull();
+      expect(err!.code ?? err!.cause?.code).toBe('55P03'); // lock_not_available
+    });
+  });
+
   it('createRun / finishRun record the run row (dry_run false; finished_at and cost set on finish)', async () => {
     await inRolledBackTx(async (tx) => {
       const runId = await createRun(tx, { model: MODEL, promptVersion: 'pv', taskShortlistK: 25, bundleCount: 3 });
@@ -466,6 +482,91 @@ describe.skipIf(!RUN)('P2 Task 10 — map-bundles-onet CLI (scratch DB only)', (
       } finally { err.mockRestore(); }
       expect(place).not.toHaveBeenCalled();
       expect(await cliOutcomes(tx)).toEqual([]);
+    });
+  });
+
+  // ─── Adversarial round 1 ───
+
+  it('I-1: a call that fails with its cost unknown is charged its estimate — --max-cost stops repeated failures, recordSpend and the failed outcome carry it', async () => {
+    await inRolledBackTx(async (tx) => {
+      await seedBundles(tx, CLI_IDS);
+      const place = vi.fn(async (): Promise<PlacementResult> => { throw new Error('OpenAI returned non-JSON content: '); });
+      const deps = cliDeps(tx, place);
+      const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+      try {
+        expect(await main(['--expect-db', SCRATCH_DB, '--apply', '--max-cost', '0.025'], deps)).toBe(1);
+      } finally { log.mockRestore(); }
+      expect(place).toHaveBeenCalledTimes(2); // 100 + 100 charged; the third (est 100) would pass 250
+      expect(deps.recordSpend.mock.calls).toEqual([[100], [100]]);
+      const out = await cliOutcomes(tx);
+      expect(out).toHaveLength(2);
+      for (const o of out) expect(o).toMatchObject({ status: 'failed', costUsdCents: 100 });
+      const [run] = await tx.select().from(bundleMappingRuns).where(eq(bundleMappingRuns.id, out[0]!.runId));
+      expect(run!.costUsdCents).toBe(200);
+    });
+  });
+
+  it('I-1: repeated failing runs (--missing) stop at the daily cap, because each failure is recorded as spend', async () => {
+    await inRolledBackTx(async (tx) => {
+      await seedBundles(tx, CLI_IDS);
+      let daily = 0;
+      const capDeps = {
+        checkDailyCap: async () => ({ ok: daily < 250, spentCents: daily, overCap: daily >= 250 }),
+        recordSpend: vi.fn(async (c: number) => { daily += c; }),
+      };
+      const place = vi.fn(async (): Promise<PlacementResult> => { throw new Error('schema validation failed: rationale too short'); });
+      const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+      try {
+        expect(await main(['--expect-db', SCRATCH_DB, '--apply', '--max-cost', '10', '--missing'], { ...cliDeps(tx, place), ...capDeps })).toBe(1);
+        expect(place).toHaveBeenCalledTimes(3);
+        expect(daily).toBe(300);
+        expect(await main(['--expect-db', SCRATCH_DB, '--apply', '--max-cost', '10', '--missing'], { ...cliDeps(tx, place), ...capDeps })).toBe(4);
+        expect(place).toHaveBeenCalledTimes(3); // the second run made no paid call
+      } finally { log.mockRestore(); }
+    });
+  });
+
+  it('I-1: a provider error that carries its actual cost is charged that, not the estimate', async () => {
+    await inRolledBackTx(async (tx) => {
+      await seedBundles(tx, CLI_IDS);
+      const place = vi.fn(async (): Promise<PlacementResult> => { throw Object.assign(new Error('refused'), { costUsdCents: 37 }); });
+      const deps = cliDeps(tx, place);
+      const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+      try {
+        expect(await main(['--expect-db', SCRATCH_DB, '--apply', '--max-cost', '10', '--bundles', 'p2p-c1'], deps)).toBe(1);
+      } finally { log.mockRestore(); }
+      expect(deps.recordSpend.mock.calls).toEqual([[37]]);
+      expect(await cliOutcomes(tx)).toEqual([expect.objectContaining({ bundleId: 'p2p-c1', status: 'failed', costUsdCents: 37 })]);
+    });
+  });
+
+  it('M-2: a sampled, unsubmitted bundle prints only "<id>: sampled — hidden until blind pick" (plus cost/tokens) in dry run and --apply, ok or failed', async () => {
+    await inRolledBackTx(async (tx) => {
+      await seedBundles(tx, CLI_IDS);
+      await tx.insert(bundleGoldenSamples).values({ bundleId: 'p2p-c1', stratum: 'technical', sampleSeed: 's', candidates: expectedCandidates(0) });
+      const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+      const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const lines = () => [...log.mock.calls, ...err.mock.calls].map(c => String(c[0]));
+      try {
+        expect(await main(['--expect-db', SCRATCH_DB], cliDeps(tx, vi.fn()))).toBe(0);
+        let ls = lines();
+        expect(ls.filter(l => l.includes('p2p-c1'))).toEqual([expect.stringMatching(/^ {2}- p2p-c1: sampled — hidden until blind pick {2}tokens in ~\d+ \/ out ≤2500 {2}est \$0\.0100$/)]);
+        expect(ls.filter(l => /^ {6}T\d+\. /.test(l))).toHaveLength(2 * TASKS.length); // previews for c2 and c3 only
+
+        log.mockClear(); err.mockClear();
+        const place = vi.fn(async (i: PlacementInput) => ({ ...fakePlacement(i), noCleanMatch: true }));
+        expect(await main(['--expect-db', SCRATCH_DB, '--apply', '--max-cost', '10'], cliDeps(tx, place))).toBe(0);
+        ls = lines();
+        expect(ls.filter(l => l.includes('p2p-c1'))).toEqual(['OK p2p-c1: sampled — hidden until blind pick  cost $0.0100']);
+        expect(ls.some(l => l.startsWith('OK p2p-c2  placed 1 rows'))).toBe(true);
+
+        log.mockClear(); err.mockClear();
+        const placeF = vi.fn(async (): Promise<PlacementResult> => { throw new Error('OpenAI returned non-JSON content: MODEL-REPLY-TEXT'); });
+        expect(await main(['--expect-db', SCRATCH_DB, '--apply', '--max-cost', '10', '--bundles', 'p2p-c1'], cliDeps(tx, placeF))).toBe(1);
+        ls = lines();
+        expect(ls.some(l => l.includes('MODEL-REPLY-TEXT'))).toBe(false);
+        expect(ls.filter(l => l.includes('p2p-c1'))).toEqual([expect.stringMatching(/^FAILED p2p-c1: sampled — hidden until blind pick /)]);
+      } finally { log.mockRestore(); err.mockRestore(); }
     });
   });
 

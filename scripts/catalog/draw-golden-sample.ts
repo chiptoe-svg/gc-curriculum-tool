@@ -34,11 +34,15 @@
  *     --replace was not given.
  *   - --replace refuses (exit 5) if any existing sample has submitted_at
  *     set: a submitted blind pick is never redrawn.
+ *   - --replace also refuses (exit 5) once ANY bundle has an `ok` mapping
+ *     outcome — the reviewer may already have seen placements, so a redrawn
+ *     bundle would not be blind — and if any sample carries a reset_note
+ *     (that audit trail is never deleted).
  *   - Never prints DATABASE_URL or any other credential.
  */
-import { isNull } from 'drizzle-orm';
+import { eq, isNull } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
-import { bundleGoldenSamples, type BundleStratum, type GoldenCandidate } from '@/lib/db/schema';
+import { bundleGoldenSamples, bundleMappingOutcomes, type BundleStratum, type GoldenCandidate } from '@/lib/db/schema';
 import { loadAppEnv, isMainModule, formatDbError, assertExpectedDb, type P1Executor } from '@/scripts/catalog/catalog-source';
 import { cardEmbedText, drawGoldenSample, type BundleSummary, type CardFields } from '@/lib/catalog/bundles';
 import { groupTasks, shortlistTasks } from '@/lib/catalog/shortlist';
@@ -199,9 +203,12 @@ export async function main(argv: string[], deps: CliDeps = {}): Promise<number> 
     return 1;
   }
 
-  let existing: Array<{ bundleId: string; submittedAt: Date | null }>;
+  let existing: Array<{ bundleId: string; submittedAt: Date | null; resetNote: string | null }>;
+  let mappedCount: number;
   try {
-    existing = await executor.select({ bundleId: bundleGoldenSamples.bundleId, submittedAt: bundleGoldenSamples.submittedAt }).from(bundleGoldenSamples);
+    existing = await executor.select({ bundleId: bundleGoldenSamples.bundleId, submittedAt: bundleGoldenSamples.submittedAt, resetNote: bundleGoldenSamples.resetNote }).from(bundleGoldenSamples);
+    mappedCount = (await executor.selectDistinct({ id: bundleMappingOutcomes.bundleId }).from(bundleMappingOutcomes)
+      .where(eq(bundleMappingOutcomes.status, 'ok'))).length;
   } catch (err) {
     console.error(formatDbError(err));
     return 3;
@@ -216,6 +223,15 @@ export async function main(argv: string[], deps: CliDeps = {}): Promise<number> 
     const submitted = existing.filter(r => r.submittedAt !== null);
     if (submitted.length > 0) {
       console.error(`refusing --replace: sample(s) already submitted for ${submitted.map(r => r.bundleId).join(', ')} — a submitted blind pick is never redrawn`);
+      return 5;
+    }
+    if (mappedCount > 0) {
+      console.error(`refusing --replace: ${mappedCount} bundle(s) already have an ok mapping outcome — the reviewer may have seen their placements, so a redraw would not be blind`);
+      return 5;
+    }
+    const withNote = existing.filter(r => r.resetNote !== null);
+    if (withNote.length > 0) {
+      console.error(`refusing --replace: sample(s) for ${withNote.map(r => r.bundleId).join(', ')} carry reset_note history, which a redraw would delete`);
       return 5;
     }
   }

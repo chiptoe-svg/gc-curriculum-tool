@@ -56,9 +56,9 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockAuth.mockReturnValue(true);
   q.listBundlesForReview.mockResolvedValue([
-    { id: 'a', name: 'A', stratum: 'technical', sampled: false, submitted: false, counts: { proposed: 0, confirmed: 2, rejected: 0 }, noCleanMatch: false },
-    { id: 'b', name: 'B', stratum: null, sampled: true, submitted: false, counts: null, noCleanMatch: null },
-    { id: 'c', name: 'C', stratum: null, sampled: false, submitted: false, counts: { proposed: 3, confirmed: 0, rejected: 0 }, noCleanMatch: false },
+    { id: 'a', name: 'A', stratum: 'technical', sampled: false, submitted: false, counts: { proposed: 0, confirmed: 2, rejected: 0 }, noCleanMatch: false, mapped: true },
+    { id: 'b', name: 'B', stratum: null, sampled: true, submitted: false, counts: null, noCleanMatch: null, mapped: true },
+    { id: 'c', name: 'C', stratum: null, sampled: false, submitted: false, counts: { proposed: 3, confirmed: 0, rejected: 0 }, noCleanMatch: false, mapped: true },
   ]);
   q.readBundleDetail.mockResolvedValue({ bundle: { id: 'a' }, members: null });
   q.searchItems.mockResolvedValue({ elements: [], tasks: [] });

@@ -5,9 +5,9 @@ import { BundlesPanel, type BundleListItem, type BundleDetail } from '../Bundles
 const ATTRIBUTION = 'This product includes information from O*NET 31.0 Database by the U.S. Department of Labor, Employment and Training Administration (USDOL/ETA). Used under the CC BY 4.0 license.';
 
 const bundlesFixture: BundleListItem[] = [
-  { id: 'comm-writing', name: 'Written communication', stratum: 'foundational', sampled: false, submitted: false, counts: { proposed: 2, confirmed: 1, rejected: 0 }, noCleanMatch: false },
-  { id: 'locked-one', name: 'Locked bundle', stratum: null, sampled: true, submitted: false, counts: null, noCleanMatch: null },
-  { id: 'blind-ready', name: 'Blind ready bundle', stratum: 'technical', sampled: true, submitted: false, counts: null, noCleanMatch: null },
+  { id: 'comm-writing', name: 'Written communication', stratum: 'foundational', sampled: false, submitted: false, counts: { proposed: 2, confirmed: 1, rejected: 0 }, noCleanMatch: false, mapped: true },
+  { id: 'locked-one', name: 'Locked bundle', stratum: null, sampled: true, submitted: false, counts: null, noCleanMatch: null, mapped: true },
+  { id: 'blind-ready', name: 'Blind ready bundle', stratum: 'technical', sampled: true, submitted: false, counts: null, noCleanMatch: null, mapped: true },
 ];
 
 const blindReadyDetail: BundleDetail = {
@@ -23,7 +23,7 @@ const blindReadyDetail: BundleDetail = {
   attribution: ATTRIBUTION,
 };
 
-const queueBundle: BundleListItem = { id: 'queue-bundle', name: 'Queue bundle', stratum: 'technical', sampled: false, submitted: false, counts: { proposed: 2, confirmed: 0, rejected: 0 }, noCleanMatch: false };
+const queueBundle: BundleListItem = { id: 'queue-bundle', name: 'Queue bundle', stratum: 'technical', sampled: false, submitted: false, counts: { proposed: 2, confirmed: 0, rejected: 0 }, noCleanMatch: false, mapped: true };
 
 const queueDetail: BundleDetail = {
   bundle: { id: 'queue-bundle', name: 'Queue bundle', knowDescriptor: 'k', understandDescriptor: 'u', doDescriptor: 'd', origin: 'o' },
@@ -38,7 +38,7 @@ const queueDetail: BundleDetail = {
   attribution: ATTRIBUTION,
 };
 
-const divergedQueueBundle: BundleListItem = { id: 'diverged-bundle', name: 'Diverged bundle', stratum: 'technical', sampled: false, submitted: false, counts: { proposed: 1, confirmed: 1, rejected: 0 }, noCleanMatch: false };
+const divergedQueueBundle: BundleListItem = { id: 'diverged-bundle', name: 'Diverged bundle', stratum: 'technical', sampled: false, submitted: false, counts: { proposed: 1, confirmed: 1, rejected: 0 }, noCleanMatch: false, mapped: true };
 
 const divergedQueueDetail: BundleDetail = {
   bundle: { id: 'diverged-bundle', name: 'Diverged bundle', knowDescriptor: 'k', understandDescriptor: 'u', doDescriptor: 'd', origin: 'o' },
@@ -93,6 +93,29 @@ describe('BundlesPanel', () => {
     fireEvent.change(screen.getByLabelText(/reviewer name/i), { target: { value: 'Chip' } });
     expect(screen.queryByText(/enter your name to review/i)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /submit blind pick/i })).not.toBeDisabled();
+  });
+
+  it('an unmapped sampled bundle shows "Waiting for mapping" and its blind submit is disabled with the reason (adversarial I-2)', async () => {
+    const unmapped = bundlesFixture.map(b => (b.id === 'blind-ready' ? { ...b, mapped: false } : b));
+    const fetchMock = vi.fn(async (url: string) => {
+      const p = pathOf(url);
+      if (p === '/api/admin/bundles') return listResponse(unmapped);
+      if (p === '/api/admin/bundles/blind-ready') return detailResponse(blindReadyDetail);
+      if (p === '/api/admin/bundles/agreement') return { ok: true, json: async () => agreementEmpty };
+      return { ok: true, json: async () => ({}) };
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<BundlesPanel slug="s" />);
+    await waitFor(() => expect(screen.getByText('Blind ready bundle')).toBeInTheDocument());
+    const row = within(screen.getByText('Blind ready bundle').closest('div') as HTMLElement);
+    expect(row.getByText('Waiting for mapping')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText(/reviewer name/i), { target: { value: 'Chip' } });
+    fireEvent.click(screen.getByText('Blind ready bundle'));
+    await waitFor(() => expect(screen.getByRole('button', { name: /submit blind pick/i })).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: /submit blind pick/i })).toBeDisabled();
+    expect(screen.getByText(/hasn.t been mapped yet — run the mapping before its blind pick/i)).toBeInTheDocument();
   });
 
   it('the reviewer name persists to localStorage and survives a remount', async () => {

@@ -11,7 +11,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
-import { subCompetencies, subCompetencyMap, bundleCards, itemEmbeddings, bundleGoldenSamples, type BundleStratum } from '@/lib/db/schema';
+import {
+  subCompetencies, subCompetencyMap, bundleCards, itemEmbeddings, bundleGoldenSamples, bundleMappingOutcomes, bundleMappingRuns, type BundleStratum,
+} from '@/lib/db/schema';
 import { cardEmbedText, textHash, GOLDEN_SIZE, type BundleSummary, type CardFields } from '@/lib/catalog/bundles';
 import { taskGroupKey, type TaskRow } from '@/lib/catalog/shortlist';
 import { DEFAULT_EMBEDDING_MODEL } from '@/lib/ai/embeddings';
@@ -21,8 +23,16 @@ import { isP2ScratchDb, SCRATCH_DB } from './p2/scratch-guard';
 const RUN = isP2ScratchDb();
 
 class Rollback extends Error {}
+/**
+ * The scratch clone may already hold a real draw and mapping outcomes (the
+ * Task 13 rehearsal). Each test starts from an empty sample + outcome state
+ * by deleting them INSIDE its rolled-back transaction, so the clone's rows
+ * come back untouched.
+ */
 async function inRolledBackTx(fn: (tx: Executor) => Promise<void>): Promise<void> {
   await expect(db.transaction(async (tx) => {
+    await tx.delete(bundleGoldenSamples); // picks cascade
+    await tx.delete(bundleMappingOutcomes);
     await fn(tx);
     throw new Rollback('rollback');
   })).rejects.toBeInstanceOf(Rollback);
@@ -207,6 +217,52 @@ describe.skipIf(!RUN)('P2 Task 7 — draw-golden-sample.ts main() (scratch DB on
       const rows = await tx.select().from(bundleGoldenSamples);
       expect(rows).toHaveLength(GOLDEN_SIZE);
       expect(rows.every(r => r.sampleSeed === 's2')).toBe(true);
+    });
+  });
+
+  // ─── Adversarial round 1, M-1 ───
+
+  async function seedOkOutcome(tx: Executor, bundleId: string): Promise<void> {
+    const [run] = await tx.insert(bundleMappingRuns).values({ model: 'm', promptVersion: 'p', taskShortlistK: 25, bundleCount: 1, dryRun: false }).returning({ id: bundleMappingRuns.id });
+    await tx.insert(bundleMappingOutcomes).values({ runId: run!.id, bundleId, status: 'ok', noCleanMatch: false, note: null });
+  }
+
+  it('--replace refuses with exit 5 once any bundle has an ok mapping outcome (placements may have been seen), and redraws nothing', async () => {
+    await inRolledBackTx(async (tx) => {
+      await seedFixtures(tx);
+      const deps = { executor: tx, ...DEPS };
+      expect(await main(['--apply', '--seed', 's1', '--expect-db', SCRATCH_DB], deps)).toBe(0);
+      await seedOkOutcome(tx, BUNDLES[0]!.id);
+
+      const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+      try {
+        expect(await main(['--apply', '--replace', '--seed', 's2', '--expect-db', SCRATCH_DB], deps)).toBe(5);
+        expect(err.mock.calls.some(c => /refusing --replace: 1 bundle\(s\) already have an ok mapping outcome/.test(String(c[0])))).toBe(true);
+      } finally { err.mockRestore(); }
+
+      const rows = await tx.select().from(bundleGoldenSamples);
+      expect(rows).toHaveLength(GOLDEN_SIZE);
+      expect(rows.every(r => r.sampleSeed === 's1')).toBe(true);
+    });
+  });
+
+  it('--replace refuses with exit 5 when a sample carries reset_note history, and keeps the note', async () => {
+    await inRolledBackTx(async (tx) => {
+      await seedFixtures(tx);
+      const deps = { executor: tx, ...DEPS };
+      expect(await main(['--apply', '--seed', 's1', '--expect-db', SCRATCH_DB], deps)).toBe(0);
+      const [sample] = await tx.select({ bundleId: bundleGoldenSamples.bundleId }).from(bundleGoldenSamples).limit(1);
+      await tx.update(bundleGoldenSamples).set({ resetNote: '2026-10-14T00:00:00.000Z Admin: wrong group' })
+        .where(eq(bundleGoldenSamples.bundleId, sample!.bundleId));
+
+      const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+      try {
+        expect(await main(['--apply', '--replace', '--seed', 's2', '--expect-db', SCRATCH_DB], deps)).toBe(5);
+      } finally { err.mockRestore(); }
+
+      const [kept] = await tx.select().from(bundleGoldenSamples).where(eq(bundleGoldenSamples.bundleId, sample!.bundleId));
+      expect(kept!.resetNote).toBe('2026-10-14T00:00:00.000Z Admin: wrong group');
+      expect((await tx.select().from(bundleGoldenSamples)).every(r => r.sampleSeed === 's1')).toBe(true);
     });
   });
 

@@ -22,6 +22,8 @@ export interface BundleListItem {
   submitted: boolean;
   counts: { proposed: number; confirmed: number; rejected: number } | null;
   noCleanMatch: boolean | null;
+  /** Has an ok mapping outcome — the blind pick can only be submitted once it does. */
+  mapped: boolean;
 }
 
 export interface ElementDef { elementId: string; elementName: string; domain: string; description: string }
@@ -234,9 +236,9 @@ function PositionRadios({
 }
 
 function BlindPickForm({
-  slug, reviewer, reviewerReady, bundleId, detail, onSubmitted,
+  slug, reviewer, reviewerReady, bundleId, detail, mapped, onSubmitted,
 }: {
-  slug: string; reviewer: string; reviewerReady: boolean; bundleId: string; detail: BundleDetail; onSubmitted: () => Promise<void>;
+  slug: string; reviewer: string; reviewerReady: boolean; bundleId: string; detail: BundleDetail; mapped: boolean; onSubmitted: () => Promise<void>;
 }) {
   const [picks, setPicks] = useState<Record<string, PickValue>>({});
   const [noCleanMatch, setNoCleanMatch] = useState(false);
@@ -342,12 +344,13 @@ function BlindPickForm({
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
-          disabled={!reviewerReady || submitting}
+          disabled={!reviewerReady || submitting || !mapped}
           onClick={() => void submit()}
           className="rounded bg-slate-800 px-4 py-1.5 text-sm text-white disabled:opacity-50"
         >
           Submit blind pick
         </button>
+        {!mapped && <p className="text-sm text-amber-800">This bundle hasn&apos;t been mapped yet — run the mapping before its blind pick.</p>}
         {error && <p className="text-sm text-red-800">Couldn&apos;t submit: {error}</p>}
       </div>
       {result && <p className="rounded border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-800">{result}</p>}
@@ -437,7 +440,7 @@ function BlindTab({
         <div key={b.id} className="rounded border border-slate-200">
           <div className="flex items-center justify-between px-3 py-2">
             <button type="button" className="text-left text-sm font-medium" onClick={() => void open(b.id)}>{b.name}</button>
-            <span className="text-xs text-slate-500">{b.submitted ? 'Submitted' : 'Not started'}</span>
+            <span className="text-xs text-slate-500">{b.submitted ? 'Submitted' : b.mapped ? 'Not started' : 'Waiting for mapping'}</span>
           </div>
           {openId === b.id && (
             <div className="border-t border-slate-200 px-3 py-3">
@@ -446,7 +449,7 @@ function BlindTab({
               {details[b.id] && (
                 b.submitted
                   ? <SubmittedBlindPick slug={slug} reviewer={reviewer} reviewerReady={reviewerReady} bundleId={b.id} detail={details[b.id] as BundleDetail} onChanged={onChanged} />
-                  : <BlindPickForm slug={slug} reviewer={reviewer} reviewerReady={reviewerReady} bundleId={b.id} detail={details[b.id] as BundleDetail} onSubmitted={() => onChanged(b.id)} />
+                  : <BlindPickForm slug={slug} reviewer={reviewer} reviewerReady={reviewerReady} bundleId={b.id} detail={details[b.id] as BundleDetail} mapped={b.mapped} onSubmitted={() => onChanged(b.id)} />
               )}
             </div>
           )}

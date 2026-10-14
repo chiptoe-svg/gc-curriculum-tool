@@ -329,6 +329,11 @@ export async function writeBundleProposals(
   args: { runId: string; bundleId: string; rows: MemberRow[]; model: string; noCleanMatch: boolean; note: string | null; costUsdCents: number },
 ): Promise<{ deleted: number; inserted: number; keptDecided: number; reconcile: ReconcileResult }> {
   return ex.transaction(async (tx) => {
+    // Take the sample-row lock submit/reset take (a no-op without a sample)
+    // BEFORE touching members: a concurrent blind submit then either commits
+    // first — so the reconcile below sees it submitted — or waits for this
+    // write and reconciles against the new rows. Never neither.
+    await lockSample(tx, args.bundleId);
     // Reruns replace ONLY proposed rows; confirmed/rejected are never touched.
     const deleted = await tx.delete(bundleMembers)
       .where(and(eq(bundleMembers.bundleId, args.bundleId), eq(bundleMembers.status, 'proposed')))
@@ -365,6 +370,13 @@ export async function recordFailedOutcome(ex: Executor, args: { runId: string; b
     set: { note: args.note, costUsdCents: args.costUsdCents, createdAt: sql`now()` as unknown as Date },
     setWhere: eq(bundleMappingOutcomes.status, 'failed'),
   });
+}
+
+/** True when the bundle has at least one `ok` mapping outcome in any run. */
+async function hasOkOutcome(ex: Executor, bundleId: string): Promise<boolean> {
+  const rows = await ex.select({ id: bundleMappingOutcomes.bundleId }).from(bundleMappingOutcomes)
+    .where(and(eq(bundleMappingOutcomes.bundleId, bundleId), eq(bundleMappingOutcomes.status, 'ok'))).limit(1);
+  return rows.length > 0;
 }
 
 /** Bundles with at least one `ok` mapping outcome in any run (drives `--missing`). */
@@ -427,9 +439,9 @@ async function latestOkOutcomes(ex: Executor, bundleIds?: string[]): Promise<Map
   return out;
 }
 
-export interface BundleListItem { id: string; name: string; stratum: string | null; sampled: boolean; submitted: boolean; counts: { proposed: number; confirmed: number; rejected: number } | null; noCleanMatch: boolean | null }
+export interface BundleListItem { id: string; name: string; stratum: string | null; sampled: boolean; submitted: boolean; counts: { proposed: number; confirmed: number; rejected: number } | null; noCleanMatch: boolean | null; mapped: boolean }
 
-/** Every active bundle. `counts` and `noCleanMatch` are null while blind-locked (they would reveal the AI's placements). */
+/** Every active bundle. `mapped`: has an `ok` mapping outcome (the blind pick needs one — it reveals nothing about the placements). `counts` and `noCleanMatch` are null while blind-locked (they would reveal the AI's placements). */
 export async function listBundlesForReview(ex: Executor = db): Promise<BundleListItem[]> {
   const bundles = await listActiveBundles(ex);
   const cards = await ex.select({ id: bundleCards.competencyId, stratum: bundleCards.stratum }).from(bundleCards);
@@ -453,6 +465,7 @@ export async function listBundlesForReview(ex: Executor = db): Promise<BundleLis
       sampled: s !== undefined, submitted: s !== undefined && s.submittedAt !== null,
       counts: locked ? null : (counts.get(b.id) ?? { proposed: 0, confirmed: 0, rejected: 0 }),
       noCleanMatch: locked ? null : (outcomes.get(b.id)?.noCleanMatch ?? null),
+      mapped: outcomes.has(b.id),
     };
   });
 }
@@ -503,10 +516,13 @@ export async function readBundleDetail(bundleId: string, ex: Executor = db): Pro
   return { bundle, card, elements, sample, members, latestOutcome };
 }
 
+export const BLIND_NOT_MAPPED = "This bundle hasn't been mapped yet — run the mapping before its blind pick";
+
 export type BlindPickInput = { kind: 'element'; elementId: string; position: Pos } | { kind: 'task'; groupKey: string; position: Pos };
 
 /**
- * Submits the blind pick (spec §5). Requires a sampled, unsubmitted bundle.
+ * Submits the blind pick (spec §5). Requires a sampled, unsubmitted bundle
+ * that has been mapped (an `ok` outcome) — else 409 BLIND_NOT_MAPPED.
  * In the caller's ONE transaction (plan Ruling 8): replaces this reviewer's
  * picks, sets reviewer + submitted_at, then reconciles — so the unlock and
  * the reconcile commit together or not at all.
@@ -517,6 +533,9 @@ export async function submitBlindPicks(
   const sample = await lockSample(ex, bundleId);
   if (!sample) return { ok: false, status: 404, error: 'bundle is not in the blind sample' };
   if (sample.submittedAt !== null) return { ok: false, status: 409, error: 'blind sample already submitted' };
+  // A pick submitted before the AI has mapped the bundle would be reconciled
+  // against nothing and then collide with the AI's rows (adversarial I-2).
+  if (!(await hasOkOutcome(ex, bundleId))) return { ok: false, status: 409, error: BLIND_NOT_MAPPED };
   if (noCleanMatch && picks.length > 0) return { ok: false, status: 400, error: 'no clean match cannot be combined with picks' };
   if (!noCleanMatch && picks.length === 0) return { ok: false, status: 400, error: 'pick at least one item, or choose no clean match' };
 

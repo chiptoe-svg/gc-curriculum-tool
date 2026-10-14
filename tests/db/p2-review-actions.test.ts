@@ -8,11 +8,11 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { and, asc, eq } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import {
-  subCompetencies, subCompetencyMap, bundleMembers, bundleGoldenSamples, bundleGoldenPicks,
+  subCompetencies, subCompetencyMap, bundleMembers, bundleGoldenSamples, bundleGoldenPicks, bundleMappingRuns, bundleMappingOutcomes,
   onetElementDefinitions, onetTaskStatements, type GoldenCandidate,
 } from '@/lib/db/schema';
 import {
-  applyMemberAction, bulkConfirm, submitBlindPicks, resetBlind, isBlindLocked, reconcileBundle, type Executor,
+  applyMemberAction, bulkConfirm, submitBlindPicks, resetBlind, isBlindLocked, reconcileBundle, BLIND_NOT_MAPPED, type Executor,
 } from '@/lib/db/bundle-queries';
 import { taskGroupKey } from '@/lib/catalog/shortlist';
 import { isP2ScratchDb } from './p2/scratch-guard';
@@ -57,6 +57,12 @@ async function seedBundles(tx: Executor): Promise<void> {
     retired: false, mergedInto: null, origin: 'gc_authored' as const, updatedAt: new Date(),
   })));
   await tx.insert(subCompetencyMap).values(ids.map(id => ({ oldSubCompetencyId: id, competencyId: id, mergeNote: null })));
+}
+
+/** An ok mapping outcome for the bundle: the blind pick needs one (adversarial I-2). */
+async function markMapped(tx: Executor, bundleId: string, status: 'ok' | 'failed' = 'ok'): Promise<void> {
+  const [run] = await tx.insert(bundleMappingRuns).values({ model: MODEL, promptVersion: 'p', taskShortlistK: 25, bundleCount: 1, dryRun: false }).returning({ id: bundleMappingRuns.id });
+  await tx.insert(bundleMappingOutcomes).values({ runId: run!.id, bundleId, status, noCleanMatch: false, note: null });
 }
 
 function ai(bundleId: string, i: number, position: 'core' | 'related' | 'fringe', extra: Partial<typeof bundleMembers.$inferInsert> = {}) {
@@ -159,6 +165,7 @@ describe.skipIf(!RUN)('P2 Task 11 — review actions (scratch DB only)', () => {
       await seedBundles(tx);
       await tx.insert(bundleGoldenSamples).values({ bundleId: S, stratum: 'technical', sampleSeed: 's', candidates: [G1, G2] });
       const [p] = await tx.insert(bundleMembers).values([ai(S, 0, 'core')]).returning({ id: bundleMembers.id });
+      await markMapped(tx, S);
       expect(await isBlindLocked(S, tx)).toBe(true);
       expect(await isBlindLocked(Q, tx)).toBe(false);
       expect(await applyMemberAction(tx, S, 'Pat', { action: 'confirm', memberIds: [p!.id] }, REL)).toEqual({ ok: false, status: 409, error: 'blind sample not submitted' });
@@ -174,7 +181,28 @@ describe.skipIf(!RUN)('P2 Task 11 — review actions (scratch DB only)', () => {
     async function seedSample(tx: Executor) {
       await seedBundles(tx);
       await tx.insert(bundleGoldenSamples).values({ bundleId: S, stratum: 'technical', sampleSeed: 's', candidates: [G1, G2] });
+      await markMapped(tx, S);
     }
+
+    it('409 "not mapped yet" until the bundle has an ok mapping outcome (a failed one does not count); nothing written (adversarial I-2)', async () => {
+      await inRolledBackTx(async (tx) => {
+        await seedBundles(tx);
+        await tx.insert(bundleGoldenSamples).values({ bundleId: S, stratum: 'technical', sampleSeed: 's', candidates: [G1, G2] });
+        const pick = { kind: 'element' as const, elementId: E[0]!.id, position: 'core' as const };
+        expect(BLIND_NOT_MAPPED).toBe("This bundle hasn't been mapped yet — run the mapping before its blind pick");
+        expect(await submitBlindPicks(tx, S, 'Pat', [pick], false, REL)).toEqual({ ok: false, status: 409, error: BLIND_NOT_MAPPED });
+        expect(await submitBlindPicks(tx, S, 'Pat', [], true, REL)).toEqual({ ok: false, status: 409, error: BLIND_NOT_MAPPED });
+        await markMapped(tx, S, 'failed');
+        expect(await submitBlindPicks(tx, S, 'Pat', [pick], false, REL)).toEqual({ ok: false, status: 409, error: BLIND_NOT_MAPPED });
+        expect(await picks(tx, S)).toHaveLength(0);
+        expect((await sampleRow(tx, S)).submittedAt).toBeNull();
+        expect(await isBlindLocked(S, tx)).toBe(true);
+        expect(await members(tx, S)).toEqual(new Map());
+
+        await markMapped(tx, S);
+        expect(await submitBlindPicks(tx, S, 'Pat', [pick], false, REL)).toMatchObject({ ok: true });
+      });
+    });
 
     it('404 when not sampled; 400 for no-clean-match plus picks, an outside task group, an unknown element, a duplicate, or nothing', async () => {
       await inRolledBackTx(async (tx) => {
@@ -234,6 +262,7 @@ describe.skipIf(!RUN)('P2 Task 11 — review actions (scratch DB only)', () => {
     async function seedReconciled(tx: Executor) {
       await seedBundles(tx);
       await tx.insert(bundleGoldenSamples).values({ bundleId: S, stratum: 'technical', sampleSeed: 's', candidates: [G1, G2] });
+      await markMapped(tx, S);
       const ids = await tx.insert(bundleMembers).values([
         ai(S, 0, 'core'), ai(S, 1, 'fringe'), ai(S, 3, 'core'), ai(S, 4, 'core'), ai(S, 5, 'related'),
       ]).returning({ id: bundleMembers.id, externalId: bundleMembers.externalId });

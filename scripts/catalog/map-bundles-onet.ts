@@ -22,7 +22,14 @@
  *   ... --apply --max-cost <usd>
  *       # paid run. Stops (exit 4) before a bundle whose estimate would take
  *       # the run's actual spend past --max-cost, or when checkDailyCap()
- *       # refuses; rerun with --missing to continue.
+ *       # refuses; rerun with --missing to continue. A call that fails with
+ *       # its cost unknown (non-JSON reply, refusal, schema-validation
+ *       # failure) is charged at its estimate — to the run, to recordSpend and
+ *       # to the failed outcome — so repeated failures still hit both caps.
+ *
+ * A sampled bundle whose blind pick is not yet submitted prints only
+ * "<id>: sampled — hidden until blind pick" plus its cost/token figures (the
+ * operator is also the blind reviewer).
  *
  * Bundles whose blind golden sample is already SUBMITTED are skipped by
  * default (also under --missing / --bundles): re-mapping them would mix two
@@ -119,6 +126,13 @@ export function estimatePlacementCents(model: string, input: PlacementInput): nu
   return estimateCostCents(model, t.inputTokens, t.outputTokens);
 }
 
+/** The actual cost a provider error reports (a numeric `costUsdCents` on the error), if any. */
+export function failedCallCost(err: unknown): number | null {
+  const c = (err as { costUsdCents?: unknown } | null)?.costUsdCents;
+  return typeof c === 'number' && Number.isFinite(c) && c >= 0 ? c : null;
+}
+
+const HIDDEN = (id: string) => `${id}: sampled — hidden until blind pick`;
 const dollars = (units: number) => `$${(units / 10000).toFixed(4)}`;
 
 // ─── Entry point ────────────────────────────────────────────────────────────
@@ -172,6 +186,9 @@ export async function main(argv: string[], deps: CliDeps = {}): Promise<number> 
   let model: string;
   let inputs: PlacementInput[];
   let submittedInScope: string[] = [];
+  // Sampled bundles whose blind pick is not yet submitted: the operator is
+  // also the blind reviewer, so their placement results stay off the console.
+  let hidden = new Set<string>();
   try {
     const bundles = await (deps.listActiveBundles ?? listActiveBundles)(executor);
     const cards = await (deps.readConfirmedCards ?? readConfirmedCards)(executor);
@@ -214,6 +231,7 @@ export async function main(argv: string[], deps: CliDeps = {}): Promise<number> 
       bundleId: bundleGoldenSamples.bundleId, submittedAt: bundleGoldenSamples.submittedAt, candidates: bundleGoldenSamples.candidates,
     }).from(bundleGoldenSamples)).map(r => [r.bundleId, r]));
     submittedInScope = scope.filter(b => samples.get(b.id)?.submittedAt != null).map(b => b.id);
+    hidden = new Set([...samples.values()].filter(r => r.submittedAt == null).map(r => r.bundleId));
     if (!args.includeSubmittedSamples) scope = scope.filter(b => !submittedInScope.includes(b.id));
 
     inputs = scope.map(b => ({
@@ -255,6 +273,10 @@ export async function main(argv: string[], deps: CliDeps = {}): Promise<number> 
     inputs.forEach((input, i) => {
       const t = estimatePlacementTokens(input);
       totalIn += t.inputTokens; totalOut += t.outputTokens;
+      if (hidden.has(input.bundle.id)) {
+        console.log(`  - ${HIDDEN(input.bundle.id)}  tokens in ~${t.inputTokens} / out ≤${t.outputTokens}  est ${dollars(estimates[i]!)}`);
+        return;
+      }
       console.log(`  - ${input.bundle.id}  elements ${input.elements.length}  tokens in ~${t.inputTokens} / out ≤${t.outputTokens}  est ${dollars(estimates[i]!)}`);
       for (const t2 of input.tasks.slice(0, PREVIEW_SIZE)) console.log(`      T${t2.rank}. ${t2.label}`);
     });
@@ -284,29 +306,51 @@ export async function main(argv: string[], deps: CliDeps = {}): Promise<number> 
     }
     if (stopped) { skipped = inputs.length - i; break; }
 
-    let callCost = 0;
+    // Cost of this bundle's call once it has been counted toward `spent`;
+    // null while unknown (the call threw before returning its cost).
+    let charged: number | null = null;
     try {
       const res = await place(input);
-      callCost = res.costUsdCents;
+      charged = res.costUsdCents;
       // Count the money before anything else can throw: a recordSpend failure
       // must never make --max-cost undercount a call already paid for.
-      spent += callCost;
-      await recordSp(callCost);
+      spent += charged;
+      await recordSp(charged);
       const w = await writeBundleProposals(executor, {
         runId, bundleId: input.bundle.id, rows: res.rows, model: res.model, noCleanMatch: res.noCleanMatch, note: res.note, costUsdCents: res.costUsdCents,
       });
       ok++;
       const r = w.reconcile;
+      if (hidden.has(input.bundle.id)) {
+        console.log(`OK ${HIDDEN(input.bundle.id)}  cost ${dollars(charged)}`);
+        continue;
+      }
       console.log(`OK ${input.bundle.id}  placed ${res.rows.length} rows  dropped ids ${res.droppedIds.length}  no-clean-match ${res.noCleanMatch}  reconcile ${r.skipped ? '-' : `${r.confirmed}/${r.added}/${r.disagreements}`}`);
     } catch (err) {
       failed++;
       const message = formatDbError(err);
+      if (charged === null) {
+        // The call failed with its cost unknown — a non-JSON reply, a refusal
+        // or a schema-validation failure is billed before the provider throws.
+        // Charge the error's own cost when it carries one, else this bundle's
+        // estimate, so repeated failures still hit --max-cost and the daily cap.
+        charged = failedCallCost(err) ?? estimates[i]!;
+        spent += charged;
+        try {
+          await recordSp(charged);
+        } catch (spErr) {
+          console.error(`  (could not record spend for ${input.bundle.id}: ${formatDbError(spErr)})`);
+        }
+      }
       try {
-        await recordFailedOutcome(executor, { runId, bundleId: input.bundle.id, note: message, costUsdCents: callCost });
+        await recordFailedOutcome(executor, { runId, bundleId: input.bundle.id, note: message, costUsdCents: charged });
       } catch (recErr) {
         console.error(`  (could not record the failure for ${input.bundle.id}: ${formatDbError(recErr)})`);
       }
-      console.log(`FAILED ${input.bundle.id}: ${message}`);
+      // A provider error can quote the model's reply, so a hidden bundle's stays in the outcome note.
+      console.log(hidden.has(input.bundle.id)
+        ? `FAILED ${HIDDEN(input.bundle.id)} (error in bundle_mapping_outcomes.note)  cost ${dollars(charged)}`
+        : `FAILED ${input.bundle.id}: ${message}`);
     }
   }
   await finishRun(executor, runId, spent);
