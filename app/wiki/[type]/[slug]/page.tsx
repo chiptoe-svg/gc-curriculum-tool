@@ -12,21 +12,18 @@ import { TermsHint, CAREER_TARGETS_BETA } from '../../HowToRead';
 import { loadCourseViews, loadTargetMap, loadRetiredCompetencyIds, type CourseViews } from '@/lib/wiki/course-views';
 import { ObjectiveGuidePanel } from '../../ObjectiveGuidePanel';
 import { loadObjectiveGuideSection, type ObjectiveGuideSection } from '@/lib/wiki/objective-guide-section';
+import { isWikiServedType, type WikiServedType } from '@/lib/ai/wiki/schema';
 
 export const dynamic = 'force-dynamic';
 
-const ALLOWED_TYPES = ['courses', 'competencies', 'targets', 'concepts'] as const;
-type WikiType = (typeof ALLOWED_TYPES)[number];
+type WikiType = WikiServedType;
 const TYPE_LABEL: Record<WikiType, string> = {
-  courses: 'Course', competencies: 'Competency', targets: 'Career target', concepts: 'Concept',
+  courses: 'Course', competencies: 'Competency', targets: 'Career target', concepts: 'Concept', research: 'Research',
 };
 const TYPE_PLURAL: Record<WikiType, string> = {
-  courses: 'Courses', competencies: 'Competencies', targets: 'Career targets', concepts: 'Concepts',
+  courses: 'Courses', competencies: 'Competencies', targets: 'Career targets', concepts: 'Concepts', research: 'AI and GC careers',
 };
-
-function isAllowedType(t: string): t is WikiType {
-  return (ALLOWED_TYPES as readonly string[]).includes(t);
-}
+const isAllowedType = isWikiServedType;
 /** Defensive slug check — alphanumeric + hyphen only, no slashes or dots. */
 function isValidWikiSlug(s: string): boolean {
   return /^[a-z0-9-]+$/.test(s);
@@ -72,6 +69,7 @@ export default async function WikiPage({ params, searchParams }: Props) {
   for (const t of index.targets) titleOf.set(t.slug, t.title);
   for (const c of index.competencies) titleOf.set(c.slug, c.title);
   for (const c of index.concepts) titleOf.set(c.slug, c.title);
+  for (const r of index.research) titleOf.set(r.slug, r.title);
   const processedBody = resolveWikilinks(stripLeadingH1(body), faculty ? slug : '', titleOf);
   const list = (k: string) => listFromFrontmatter(fm[k]).filter(s => titleOf.has(s));
   const fmOf = makeFmReader(); // per-request: the wiki regenerates, so never cache across requests
@@ -84,7 +82,7 @@ export default async function WikiPage({ params, searchParams }: Props) {
   const targetMap = type === 'competencies' || type === 'targets' ? await loadTargetMap().catch(() => null) : null;
   // Retired competencies keep their wiki page as history: label the page, and
   // never list them as something a course develops or a target is made of.
-  const retiredComps = type === 'concepts' ? new Set<string>() : await loadRetiredCompetencyIds().catch(() => new Set<string>());
+  const retiredComps = type === 'concepts' || type === 'research' ? new Set<string>() : await loadRetiredCompetencyIds().catch(() => new Set<string>());
   const isRetiredCompetency = type === 'competencies' && retiredComps.has(pageSlug);
   if (type === 'courses') {
     const course = index.courses.find(c => c.slug === pageSlug);
@@ -115,7 +113,7 @@ export default async function WikiPage({ params, searchParams }: Props) {
     related.push({ heading: isRetiredCompetency ? 'Formerly part of' : 'Part of', type: 'targets', slugs: owner && titleOf.has(owner) ? [owner] : list('career_target') });
     related.push({ heading: 'Contributing courses', type: 'courses', slugs: list('contributing_courses') });
     if (fm.evidence_bands) facts = [listFromFrontmatter(fm.evidence_bands).includes('materials_supported') ? 'Evidence supported by course materials' : 'Evidence from interviews only'];
-  } else {
+  } else if (type === 'concepts') {
     related.push({ heading: 'Courses where it shows up', type: 'courses', slugs: list('related_courses') });
     related.push({ heading: 'Related competencies', type: 'competencies', slugs: list('related_competencies') });
   }

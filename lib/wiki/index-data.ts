@@ -41,6 +41,7 @@ export interface WikiIndexData {
   targets: WikiEntry[];
   competencies: WikiEntry[];
   concepts: WikiEntry[];
+  research: WikiEntry[];
   recent: WikiLogEntry[];
 }
 
@@ -101,6 +102,17 @@ function toEntry({ slug, fm }: { slug: string; fm: Record<string, unknown> }): W
   return { slug, title: str(fm.title) || slug, description: str(fm.description) };
 }
 
+/** Research pages: by numeric `order` ascending, then title; unordered last. */
+function orderedEntries(pages: Array<{ slug: string; fm: Record<string, unknown> }>): WikiEntry[] {
+  const ord = (fm: Record<string, unknown>) => {
+    const n = Number(fm.order);
+    return Number.isFinite(n) && fm.order !== undefined && fm.order !== '' ? n : Number.POSITIVE_INFINITY;
+  };
+  return [...pages]
+    .sort((a, b) => (ord(a.fm) - ord(b.fm)) || (str(a.fm.title) || a.slug).localeCompare(str(b.fm.title) || b.slug))
+    .map(toEntry);
+}
+
 export async function loadRecent(root: string, limit = 5): Promise<WikiLogEntry[]> {
   let raw = '';
   try {
@@ -122,11 +134,12 @@ export async function loadRecent(root: string, limit = 5): Promise<WikiLogEntry[
 }
 
 export async function loadWikiIndex(root: string = wikiRepoPath()): Promise<WikiIndexData> {
-  const [courses, targets, competencies, concepts, recent] = await Promise.all([
+  const [courses, targets, competencies, concepts, research, recent] = await Promise.all([
     readPages(root, 'courses'),
     readPages(root, 'targets'),
     readPages(root, 'competencies'),
     readPages(root, 'concepts'),
+    readPages(root, 'research'),
     loadRecent(root),
   ]);
   return {
@@ -144,6 +157,7 @@ export async function loadWikiIndex(root: string = wikiRepoPath()): Promise<Wiki
     targets: targets.map(toEntry),
     competencies: competencies.map(toEntry),
     concepts: concepts.map(toEntry),
+    research: orderedEntries(research),
     recent,
   };
 }
