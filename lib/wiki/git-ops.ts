@@ -244,9 +244,10 @@ async function writeAndPushSerial(commit: WikiCommit): Promise<{ sha: string }> 
 
 /**
  * Read a wiki page from the local clone. Returns null when the file does not
- * exist instead of throwing. Any other fs error propagates normally.
+ * exist, or when its real path (symlinks resolved) is outside the repo or,
+ * unless `allowRaw`, under raw/. Any other fs error propagates normally.
  */
-export async function readWikiPage(relPath: string): Promise<string | null> {
+export async function readWikiPage(relPath: string, opts: { allowRaw?: boolean } = {}): Promise<string | null> {
   const fs = fsPromises();
   // Apply the same traversal guard as the write path — absolute paths and
   // '..' segments are rejected before fs.readFile is invoked. Defense in
@@ -259,10 +260,28 @@ export async function readWikiPage(relPath: string): Promise<string | null> {
   } catch {
     return null;
   }
+  // Symlinks (adversarial round 2, P2): resolvePagePath is lexical, so a link
+  // such as courses/x.json -> ../raw/snap.json would be followed. Resolve the
+  // real target and require it inside the real repo root and, unless the
+  // caller opts in (the privacy backfill republishes raw/ snapshots), outside
+  // raw/. ENOTDIR (e.g. "courses/x.md/") is "not found", like ENOENT.
+  let real: string;
   try {
-    return await fs.readFile(abs, 'utf8');
+    const realRepo = await fs.realpath(path.resolve(WIKI_REPO_PATH));
+    real = await fs.realpath(abs);
+    if (!real.startsWith(realRepo + path.sep)) return null;
+    const first = path.relative(realRepo, real).split(path.sep)[0]!.toLowerCase();
+    if (first === 'raw' && !opts.allowRaw) return null;
   } catch (err) {
-    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return null;
+    const code = (err as NodeJS.ErrnoException).code;
+    if (code === 'ENOENT' || code === 'ENOTDIR') return null;
+    throw err;
+  }
+  try {
+    return await fs.readFile(real, 'utf8');
+  } catch (err) {
+    const code = (err as NodeJS.ErrnoException).code;
+    if (code === 'ENOENT' || code === 'ENOTDIR') return null;
     throw err;
   }
 }

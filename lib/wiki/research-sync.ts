@@ -12,6 +12,9 @@
  * Guards that keep writes inside research/:
  *   - <wiki> must be the top level of a git repo (else `git -C` would walk up
  *     to a parent repo and pathspecs would resolve elsewhere);
+ *   - <wiki>/research must be named exactly `research` (no case-variant
+ *     top-level entry, tracked or on disk: on case-insensitive APFS a write
+ *     would land in `Research/`, which git's case-sensitive pathspec misses);
  *   - <wiki>/research must be a real directory holding only regular *.md
  *     files: no symlinks or hard links (a write through either would land
  *     outside the folder), no subdirectories or other entries (refused, never
@@ -19,8 +22,12 @@
  *   - the clone must have <branch> checked out (no detached HEAD), so the
  *     commit lands on and `push HEAD:<branch>` publishes exactly that branch;
  *   - the source dir must be outside the wiki repo.
- * The dry run runs the same read-only checks (it fetches, which only updates
- * FETCH_HEAD), so a clean dry run predicts --apply.
+ * The dry run runs the same read-only checks, so a clean dry run predicts
+ * --apply except for lint, which runs only after writing. Its one side effect
+ * is the fetch, which updates FETCH_HEAD and the remote-tracking ref
+ * (refs/remotes/<remote>/<branch>); the work tree and local branches never move.
+ * After a commit (or a failed apply) research/ must show no changes in
+ * `git status`; anything left over is a loud error, never pushed.
  *
  * Cross-process note: writeAndPush's serialization is in-process only, so this
  * runs in a quiet window (like scripts/wiki/refresh-all.ts). It refuses when
@@ -120,6 +127,15 @@ export async function readResearchSource(
  */
 async function researchDir(wikiRoot: string): Promise<string> {
   const dir = path.join(wikiRoot, SECTION);
+  // A case variant (Research/, RESEARCH) on disk or in the index: on a
+  // case-insensitive file system lstat('research') would resolve into it while
+  // the `-- research` pathspec matches nothing, leaving the clone dirty.
+  const tracked = (await gitRaw(wikiRoot, ['ls-files', '-z'])).split('\0').filter(Boolean).map(p => p.split('/')[0]!);
+  const variants = [...new Set([...(await fs.readdir(wikiRoot)), ...tracked])]
+    .filter(n => n.toLowerCase() === SECTION && n !== SECTION).sort();
+  if (variants.length > 0) {
+    throw new ResearchSyncRefusal(`wiki has a case variant of research/ (${variants.join(', ')}); rename or remove it by hand — the sync only manages a folder named exactly "research"`);
+  }
   let st;
   try { st = await fs.lstat(dir); } catch { return dir; } // absent → created on apply
   if (st.isSymbolicLink()) throw new ResearchSyncRefusal(`${dir} is a symlink; the sync only writes a real research/ folder`);
@@ -152,7 +168,22 @@ export async function planResearchSync(pages: ResearchSourcePage[], wikiRoot: st
   return { write: write.sort(), remove, unchanged: unchanged.sort() };
 }
 
-/** Put research/ back to HEAD; returns the failures (empty when it is clean again). */
+/**
+ * Changes (staged, unstaged or untracked) under research/ or a case variant of
+ * it, as `XY path` lines; empty when research/ matches HEAD.
+ */
+async function researchStatus(wikiRoot: string): Promise<string[]> {
+  const out = await gitRaw(wikiRoot, ['status', '--porcelain=v1', '-z', '--untracked-files=all', '--no-renames']);
+  return out.split('\0').filter(Boolean)
+    .filter(e => e.slice(3).split('/')[0]!.toLowerCase() === SECTION);
+}
+
+/**
+ * Put research/ back to HEAD; returns the failures (empty when it is clean
+ * again). Clean-or-not is decided from `git status`, not the exit codes: on a
+ * first sync research/ is absent from HEAD, so `restore` fails on its
+ * pathspec although `clean` leaves research/ clean.
+ */
 async function restoreResearch(wikiRoot: string): Promise<string[]> {
   const failures: string[] = [];
   const attempt = async (args: string[]) => {
@@ -160,7 +191,11 @@ async function restoreResearch(wikiRoot: string): Promise<string[]> {
   };
   await attempt(['restore', '--source=HEAD', '--staged', '--worktree', '--', SECTION]);
   await attempt(['clean', '-fdq', '--', SECTION]);
-  return failures;
+  let left: string[];
+  try { left = await researchStatus(wikiRoot); } catch (e) {
+    return [...failures, `git status: ${e instanceof Error ? e.message.trim() : String(e)}`];
+  }
+  return left.length === 0 ? [] : [...failures, `still changed: ${left.join(', ')}`];
 }
 
 /** Refuse unless `wikiRoot` is itself the top level of a git work tree. */
@@ -176,11 +211,15 @@ async function assertRepoTopLevel(wikiRoot: string): Promise<void> {
 
 /** Refuse unless `branch` is checked out (a detached HEAD is refused too). */
 async function assertOnBranch(wikiRoot: string, branch: string): Promise<void> {
+  // Full ref, not --short: with a tag also named <branch>, --short prints
+  // "heads/<branch>" and a legitimate run would be refused.
   let current: string;
-  try { current = await git(wikiRoot, ['symbolic-ref', '--quiet', '--short', 'HEAD']); } catch {
+  try { current = await git(wikiRoot, ['symbolic-ref', '--quiet', 'HEAD']); } catch {
     throw new ResearchSyncRefusal(`wiki clone has a detached HEAD; check out ${branch} first`);
   }
-  if (current !== branch) throw new ResearchSyncRefusal(`wiki clone is on branch "${current}", not "${branch}"; check out ${branch} first`);
+  if (current !== `refs/heads/${branch}`) {
+    throw new ResearchSyncRefusal(`wiki clone is on branch "${current.replace(/^refs\/heads\//, '')}", not "${branch}"; check out ${branch} first`);
+  }
 }
 
 /** Paths outside research/ that local commits not on the fetched remote change. */
@@ -278,6 +317,16 @@ export async function syncResearch(opts: {
       );
     }
     throw err;
+  }
+  // Postcondition: the commit left nothing under research/ changed. Anything
+  // left (a hook, a concurrent writer) would ride into the next writer's
+  // `git add -A`, so stop before pushing and say so.
+  const left = await researchStatus(wikiRoot);
+  if (left.length > 0) {
+    throw new Error(
+      `research/ left dirty after the commit (${left.join(', ')}); nothing was pushed. ` +
+      `Inspect ${wikiRoot}, clean research/ by hand, then rerun (a rerun pushes ${committed ? 'this run\'s' : 'any earlier'} unpushed sync commit).`,
+    );
   }
   // Nothing new and nothing unpushed (e.g. from an earlier failed push) → done.
   if ((await git(wikiRoot, ['rev-list', '--count', 'FETCH_HEAD..HEAD'])) === '0') {

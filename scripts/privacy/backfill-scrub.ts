@@ -246,7 +246,7 @@ async function main(): Promise<void> {
   if (mode === 'apply' && wiki && hits.length > 0) {
     const pages: Array<{ path: string; content: string }> = [];
     for (const h of hits) {
-      const content = await readWikiPage(h.path);
+      const content = await readWikiPage(h.path, { allowRaw: true }); // hits include raw/ snapshots
       if (content !== null) pages.push({ path: h.path, content });
     }
     const commit = {

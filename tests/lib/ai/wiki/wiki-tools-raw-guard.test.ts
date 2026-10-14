@@ -4,7 +4,7 @@
  * Every bypass must be refused, and the snapshot content never returned.
  */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -84,5 +84,46 @@ describe('read_wiki keeps the repo traversal guard', () => {
     const r = await read('./courses/gc-1010.md');
     expect(r.path).toBe('courses/gc-1010.md');
     expect(r.content).toContain('# GC 1010');
+  });
+});
+
+// Adversarial round 2, P2: a symlink inside the wiki must not lead read_wiki
+// (or any readWikiPage caller) into raw/ or outside the repo.
+describe('readWikiPage follows no symlink into raw/ or out of the repo', () => {
+  beforeAll(() => {
+    symlinkSync('../raw/snap.json', join(ROOT, 'wiki', 'courses', 'link.json'));
+    symlinkSync('../raw/snap.json', join(ROOT, 'wiki', 'courses', 'link.md'));
+    symlinkSync('raw', join(ROOT, 'wiki', 'rawlink'));
+    symlinkSync('../raw', join(ROOT, 'wiki', 'research', 'r'));
+    symlinkSync('../../outside.md', join(ROOT, 'wiki', 'courses', 'out.md'));
+    symlinkSync('gc-1010.md', join(ROOT, 'wiki', 'courses', 'alias.md'));
+  });
+
+  it.each(['courses/link.json', 'courses/link.md', 'courses/link', 'rawlink/snap.json', 'research/r/snap.json', 'research/r/snap', 'courses/out.md'])('%s → refused', async (p) => {
+    const res = await read(p);
+    expect(res.content).toBeUndefined();
+    expect(res.error).toBeTruthy();
+  });
+
+  it('readWikiPage returns null for those targets and for raw/ itself; allowRaw opts in', async () => {
+    const { readWikiPage } = await import('@/lib/wiki/git-ops');
+    expect(await readWikiPage('courses/link.json')).toBeNull();
+    expect(await readWikiPage('courses/out.md')).toBeNull();
+    expect(await readWikiPage('raw/snap.json')).toBeNull();
+    expect(await readWikiPage('raw/snap.json', { allowRaw: true })).toBe(SECRET);
+    expect(await readWikiPage('courses/out.md', { allowRaw: true })).toBeNull();
+  });
+
+  it('a symlink that stays inside the served sections is still served', async () => {
+    const res = await read('courses/alias.md');
+    expect(res.content).toContain('# GC 1010');
+  });
+});
+
+describe('read_wiki with a trailing slash (round 2, N2)', () => {
+  it.each(['courses/gc-1010.md/', 'courses/gc-1010/'])('%s → an error result, not a thrown ENOTDIR', async (p) => {
+    const res = await read(p);
+    expect(res.content).toBeUndefined();
+    expect(res.error).toBeTruthy();
   });
 });

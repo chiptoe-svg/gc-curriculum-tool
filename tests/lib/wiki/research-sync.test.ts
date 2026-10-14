@@ -391,3 +391,62 @@ describe('M6: defaultTimestamp', () => {
   });
 });
 
+
+// --- adversarial round 2 fixes ---
+
+describe('m-A: a first sync that fails lint', () => {
+  it('refuses with the lint findings (exit 3), no "may be dirty" message, and the clone is clean', async () => {
+    await w(src, 'career-paths.md', page('career-paths', '', '# Career paths\n\n[[no-such-page]]\n'));
+    const before = git(wiki, 'rev-parse', 'HEAD');
+    await expect(run(true)).rejects.toBeInstanceOf(ResearchSyncRefusal);
+    expect(git(wiki, 'status', '--porcelain', '--untracked-files=all')).toBe('');
+    const r = await cli('--apply');
+    expect(r.code).toBe(3);
+    expect(r.out).toContain('REFUSED: lint errors in research/');
+    expect(r.out).toContain('no-such-page');
+    expect(r.out).not.toContain('may be dirty');
+    expect(git(wiki, 'status', '--porcelain', '--untracked-files=all')).toBe('');
+    expect(git(wiki, 'rev-parse', 'HEAD')).toBe(before);
+    expect(remoteMain()).toBe(before);
+  });
+});
+
+describe('m-B: case-variant research/ and the post-commit check', () => {
+  it('refuses a tracked top-level Research/ (dry run and apply), writing nothing', async () => {
+    await w(wiki, 'Research/old.md', page('old'));
+    git(wiki, 'add', '-A'); git(wiki, 'commit', '-qm', 'case variant'); git(wiki, 'push', '-q', 'origin', 'main');
+    const head = git(wiki, 'rev-parse', 'HEAD');
+    await expect(run(false)).rejects.toThrow(/case variant.*Research/);
+    await expect(run(true)).rejects.toThrow(/case variant.*Research/);
+    expect(git(wiki, 'status', '--porcelain', '--untracked-files=all')).toBe('');
+    expect(git(wiki, 'rev-parse', 'HEAD')).toBe(head);
+  });
+
+  it('refuses an untracked top-level RESEARCH/ directory', async () => {
+    await fs.mkdir(path.join(wiki, 'RESEARCH'));
+    await expect(run(true)).rejects.toThrow(/case variant.*RESEARCH/);
+    expect(await fs.readdir(path.join(wiki, 'RESEARCH'))).toEqual([]);
+  });
+
+  it('fails loudly (not a refusal) and pushes nothing when research/ is left dirty after the commit', async () => {
+    const hook = path.join(wiki, '.git', 'hooks', 'post-commit');
+    await fs.writeFile(hook, '#!/bin/sh\necho stray > research/leftover.md\n', { mode: 0o755 });
+    const before = remoteMain();
+    let caught: unknown;
+    try { await run(true); } catch (e) { caught = e; }
+    expect(caught).toBeInstanceOf(Error);
+    expect(caught).not.toBeInstanceOf(ResearchSyncRefusal);
+    expect((caught as Error).message).toMatch(/left dirty after the commit.*research\/leftover\.md/s);
+    expect(remoteMain()).toBe(before);
+  });
+});
+
+describe('m-C: the branch check compares the full ref', () => {
+  it('a tag named main does not break a legitimate sync', async () => {
+    git(wiki, 'tag', 'main');
+    await expect(run(false)).resolves.toMatchObject({ applied: false });
+    const r = await run(true);
+    expect(r.committed).toBe(true);
+    expect(r.sha).toBe(remoteMain());
+  });
+});
