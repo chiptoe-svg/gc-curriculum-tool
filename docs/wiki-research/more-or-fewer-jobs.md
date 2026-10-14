@@ -21,10 +21,10 @@ The economist James Bessen writes an industry's employment as its output divided
 
 ### What history shows
 
-- **Industries rise, then level off or shrink.** US textiles and steel employment rose for a century or more, then fell; autos rose to the 1950s, then leveled off. Early elasticities were above 1 (textiles 1.3 in 1820, steel 2.2 in 1870, autos 2.0 in 1910); around 1950 they were below 1 (0.2, −1.3 and 0.4; Bessen suggests the steel figure may reflect a poor fit). His explanation is satiation: once large unmet needs were met, cheaper output did little to spur demand. Elasticities change slowly (Demand elasticity, §2).
+- **Industries rise, then level off or shrink.** US textiles and steel employment rose for a century or more, then fell; autos rose to the 1950s, then leveled off. Early elasticities of demand with respect to productivity were above 1 (textiles 1.3 in 1820, steel 2.2 in 1870, autos 2.0 in 1910); around 1950 they were below 1 (0.2, −1.3 and 0.4; Bessen suggests the steel figure may reflect a poor fit). His explanation is satiation: once large unmet needs were met, cheaper output did little to spur demand. Elasticities change slowly (Demand elasticity, §2).
 - **Displacement and new tasks.** Acemoglu and Restrepo split automation's effect into displacement, productivity and reinstatement through new tasks. After 1987, displacement grew and new-task creation weakened, cutting labor demand by about 10% cumulatively. Their data are for industries, not occupations (Demand elasticity, §1).
-- **Gains elsewhere, a smaller labor share.** Autor and Salomons, across 28 industries in 19 countries from 1970 to 2007, find own-industry job losses from productivity growth were more than offset by gains in customer industries and wider demand, while labor's share of value added fell by about 6 percentage points (Demand elasticity, §3).
-- **The bank teller and the composing room.** ATMs roughly quadrupled between 1995 and 2010, yet US teller employment rose modestly (about 500,000 to 550,000, 1980–2010) as tellers became relationship sellers; Autor warns the case "should not be taken as paradigmatic." Closest to GC, a 1999 BLS history traces typesetting moving to customers' computers and a new desktop-publishing occupation appearing, with no employment counts (Demand elasticity, §2).
+- **Gains elsewhere, a smaller labor share.** Autor and Salomons, across 28 industries in 19 countries from 1970 to 2007, find own-industry job losses from productivity growth were more than offset by gains in customer industries and wider demand, while the same model predicts a fall in labor's share of value added of about 6 percentage points (Demand elasticity, §3).
+- **The bank teller and the composing room.** ATMs roughly quadrupled between 1995 and 2010, yet US teller employment rose modestly (about 500,000 to 550,000, 1980–2010) as tellers became relationship sellers; Autor warns the case "should not be taken as paradigmatic." Closest to GC, in the paper's reading, a 1999 BLS history traces typesetting moving to customers' computers and a new desktop-publishing occupation appearing, with no employment counts (Demand elasticity, §2).
 
 ### How the AI-era models use elasticity
 
@@ -46,7 +46,7 @@ Values for GC-relevant occupations in the public data file, which the paper call
 | Desktop publishers | Higher automation risk | 0.61 |
 | Prepress technicians and workers | Higher automation risk | 0.56 |
 
-The size of the productivity shock is just as uncertain: Acemoglu puts AI's total productivity gain over ten years at no more than about 0.66%, while an Anthropic exercise (vendor research, "not a prediction") finds 1.8% a year under universal adoption (Demand elasticity, §3).
+The size of the productivity shock is just as uncertain: Acemoglu puts AI's total factor productivity gain over ten years at about 0.66%, which he calls likely an upper bound, while an Anthropic exercise (vendor research, "not a prediction") finds 1.8% a year under universal adoption (Demand elasticity, §3).
 
 ### What no one has measured
 

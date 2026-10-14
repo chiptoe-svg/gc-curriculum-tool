@@ -36,9 +36,9 @@ The thread GC adds across all five is an understanding of downstream consequence
 | 5. Creative Technology & Systems | 3.9% |
 | Outside the five targets | 9.1% |
 
-GC Alumni study, data stamp 77cb46d1d20a5dd1: 661 validated GC graduates, 2016–26, first career job, classified by title and occupation code. Summary figures only, descriptive until the independent second-coder check, and may be refreshed when the alumni roster matching settles (AI and GC careers, §3).
+GC Alumni study (gc_alumni commit f545652, 6 October 2026): 661 validated GC graduates, 2016–26, first career job, classified by title and occupation code. Summary figures only, descriptive until the independent second-coder check, and may be refreshed when the alumni roster matching settles (AI and GC careers, §3).
 
-Joined to OpenAI's framework categories, recent GC first jobs differ sharply from US employment: 64.0% are in occupations labeled "grows with AI" (US 11.9%), 17.1% "higher automation risk" (US 17.7%), 15.6% "will reorganize" (US 23.2%) and 3.3% "less immediate change" (US 47.3%). These are shares of the 642 first jobs (97.0% of 662) whose occupation code OpenAI's file scores, same data stamp. The categories are a map built on model judgments in vendor research, not forecasts; the file labels graphic designers "grows with AI" while BLS projects decline (AI and GC careers, §2).
+Joined to OpenAI's framework categories, recent GC first jobs differ sharply from US employment: 64.0% are in occupations labeled "grows with AI" (US 11.9%), 17.1% "higher automation risk" (US 17.7%), 15.6% "will reorganize" (US 23.2%) and 3.3% "less immediate change" (US 47.3%). These are shares of the 642 first jobs (97.0% of 662) whose occupation code OpenAI's file scores, gc_alumni commit cb39913, data stamp 77cb46d1d20a5dd1, 7 October 2026. The categories are a map built on model judgments in vendor research, not forecasts; the file labels graphic designers "grows with AI" while BLS projects decline (AI and GC careers, §2).
 
 ### Each path and AI
 
@@ -59,7 +59,7 @@ No federal occupation code exists for workflow and creative-technologist roles. 
 - **Careers move along the chain,** from design, customer service and line prepress toward strategy, accounts and systems. Strategy and the workflow side of target 5 are mostly reached later, not as first jobs.
 - **Exposure differs by path, and so does the evidence.** In every link, executing variants is squeezed while specifying, governing and integrating grows (AI and GC careers, §2). The squeeze is best evidenced for graphic design and routine prepress, least for sales.
 - **Target 5 is the priority and the least certain.** It is the highest priority and the least covered; growth of the category is unproven, and with about two dozen graduates per horizon its shares are unstable (Competency catalog, §11).
-- **Hold the alumni figures lightly.** One coder, pending a second-coder check; the framework categories are model labels, not forecasts.
+- **Hold the alumni figures lightly.** The job coding has not yet had its independent second-coder check; the framework categories are model labels, not forecasts.
 
 See [[more-or-fewer-jobs]] and [[areas-of-focus]].
 
