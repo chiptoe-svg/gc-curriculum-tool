@@ -1153,6 +1153,14 @@
       "held_file": "pdfs:duguid-2005-art-of-knowing-manuscript.pdf",
       "quote": "was introduced as a theory of learning, drawing much of its evidence from studies of … apprenticeship (Lave & Wenger, 1991)",
       "page": "manuscript pp. 9-10 (footer page numbers; PDF pp. 9-10)"
+    },
+    {
+      "id": "bg-brynjolfsson-2",
+      "location": "§16",
+      "claim_text": "by mid-2026, workers aged 22–25 in the most-exposed quintile had fallen about 18 percentage points behind the least-exposed",
+      "held_file": "pdfs:brynjolfsson-2026-canaries.pdf",
+      "quote": "For workers aged 22–25, employment in the most exposed quintile declined by about 18 percentage points relative to the least exposed quintile (Panel A; −0.179).",
+      "page": "PDF p.12"
     }
   ]
 }
