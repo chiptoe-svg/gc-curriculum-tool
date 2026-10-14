@@ -1,9 +1,10 @@
 /**
  * Wiki git-ops helper.
  *
- * The ONLY module that writes to the gc-curriculum-wiki repo on disk.
- * All writes go through writeAndPush(); nothing else should call fs.writeFile
- * directly against the wiki clone.
+ * The main wiki writer. All generated-page writes go through writeAndPush();
+ * the hand-authored research/ section is written only by
+ * lib/wiki/research-sync.ts (scoped to research/). Nothing else should call
+ * fs.writeFile directly against the wiki clone.
  *
  * Safety guarantees:
  *   - Uses execFile (not exec) so paths with spaces / shell metacharacters
