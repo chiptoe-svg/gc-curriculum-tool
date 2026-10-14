@@ -229,8 +229,9 @@ async function aheadOutsideResearch(wikiRoot: string): Promise<string[]> {
 }
 
 /**
- * The read-only checks, shared by the dry run and --apply. The fetch only
- * updates FETCH_HEAD; nothing in the work tree or on any branch moves.
+ * The read-only checks, shared by the dry run and --apply. The fetch updates
+ * FETCH_HEAD and the remote-tracking ref; the work tree and local branches
+ * never move.
  */
 async function preflight(wikiRoot: string, remote: string, branch: string): Promise<void> {
   await assertRepoTopLevel(wikiRoot);
