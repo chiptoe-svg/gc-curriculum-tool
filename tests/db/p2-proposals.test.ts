@@ -481,7 +481,7 @@ describe.skipIf(!RUN)('P2 Task 10 — map-bundles-onet CLI (scratch DB only)', (
         const placeI = vi.fn(async (i: PlacementInput) => fakePlacement(i));
         expect(await main(['--expect-db', SCRATCH_DB, '--apply', '--max-cost', '10', '--missing', '--include-submitted-samples'], cliDeps(tx, placeI))).toBe(0);
         expect(placeI.mock.calls.map(c => c[0].bundle.id)).toEqual(['p2p-c2']);
-        expect(log.mock.calls.some(c => /^WARNING: --include-submitted-samples .*p2p-c2.*mix AI runs/.test(String(c[0])))).toBe(true);
+        expect(log.mock.calls.some(c => /^WARNING: --include-submitted-samples .*p2p-c2.*agreement figures will understate the AI/.test(String(c[0])))).toBe(true);
       } finally { log.mockRestore(); }
     });
   });
@@ -674,6 +674,46 @@ describe.skipIf(!RUN)('P2 Task 10 — map-bundles-onet CLI (scratch DB only)', (
         // The submit's reconcile against run 1's rows stands: the picked task is a reviewer row.
         expect(members.filter(m => m.source === 'onet_task').map(m => m.proposedBy)).toEqual(group.members.map(() => 'reviewer'));
         expect(members.find(m => m.externalId === 'p2p-c1-e1')).toMatchObject({ status: 'proposed', runId: out[0]!.runId });
+      } finally { log.mockRestore(); }
+    });
+  });
+
+  it('I-2 (final-review.md) / adversarial round-3 m-1: --include-submitted-samples does NOT cover a bundle submitted DURING the run — only the ones named in the start-of-run WARNING', async () => {
+    await inRolledBackTx(async (tx) => {
+      await seedCli(tx);
+      const cands = expectedCandidates(0);
+      await tx.insert(bundleGoldenSamples).values({ bundleId: 'p2p-c1', stratum: 'technical', sampleSeed: 's', candidates: cands });
+      const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+      try {
+        // Run 1 maps c1 (an ok outcome is required before a blind pick — I-2 from round 1).
+        expect(await main(['--expect-db', SCRATCH_DB, '--apply', '--max-cost', '10', '--bundles', 'p2p-c1'], cliDeps(tx, vi.fn(async (i: PlacementInput) => fakePlacement(i))))).toBe(0);
+
+        // Run 2 starts with c1 UNSUBMITTED (so it is NOT in submittedInScope,
+        // and the start-of-run WARNING names no bundle). The submit lands
+        // during this run's paid call. Even WITH --include-submitted-samples,
+        // the fixed predicate (submittedInScope.includes(...)) must still
+        // skip it: the flag only ever covers what its own warning listed.
+        const group = cands[0]!;
+        const place = vi.fn(async (i: PlacementInput): Promise<PlacementResult> => {
+          expect(await submitBlindPicks(tx, 'p2p-c1', 'Pat', [{ kind: 'task', groupKey: group.key, position: 'core' }], false, REL)).toMatchObject({ ok: true });
+          return { ...fakePlacement(i), rows: [el('p2p-c1-e1', 'core'), el('p2p-c1-NEW', 'related'),
+            ...group.members.map(m => task(m.taskId, m.onetSocCode, 'core'))] };
+        });
+        log.mockClear();
+        expect(await main(['--expect-db', SCRATCH_DB, '--apply', '--max-cost', '10', '--bundles', 'p2p-c1', '--include-submitted-samples'], cliDeps(tx, place))).toBe(0);
+        expect(place).toHaveBeenCalledTimes(1);
+        const ls = log.mock.calls.map(c => String(c[0]));
+        // No start-of-run WARNING: nothing was submitted when the run began.
+        expect(ls.some(l => l.startsWith('WARNING: --include-submitted-samples'))).toBe(false);
+        expect(ls.some(l => l.startsWith('skipped (blind sample submitted during this run): p2p-c1'))).toBe(true);
+        expect(ls.some(l => l.startsWith('OK p2p-c1'))).toBe(false);
+
+        // Exactly one ok outcome (run 1's); run 2 wrote no members despite the flag.
+        const out = (await cliOutcomes(tx)).filter(o => o.bundleId === 'p2p-c1');
+        expect(out).toHaveLength(1);
+        const members = await tx.select().from(bundleMembers).where(eq(bundleMembers.bundleId, 'p2p-c1'));
+        expect(members.every(m => m.runId === null || m.runId === out[0]!.runId)).toBe(true);
+        expect(members.some(m => m.externalId === 'p2p-c1-NEW')).toBe(false);
       } finally { log.mockRestore(); }
     });
   });

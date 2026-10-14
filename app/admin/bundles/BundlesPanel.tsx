@@ -167,15 +167,32 @@ export function BundlesPanel({ slug }: { slug: string }) {
 
 // ─── Cards (read-only) ──────────────────────────────────────────────────────
 
-function CardReadout({ card }: { card: CardFields | null }) {
-  if (!card) return <p className="text-sm text-slate-500">No confirmed cards yet.</p>;
+// Fix I-1 (final-review.md): the mapping prompt (buildPlacementUserMessage in
+// lib/ai/catalog/map-bundle-onet.ts) gives the AI the bundle's name, its K/U/D
+// descriptors, and the card's includes/excludes/distinctions plus BOTH the
+// positive and negative examples. This readout must show the reviewer the
+// same set field-for-field, or a blind reviewer places items on less
+// information than the AI did, biasing the agreement measure. None of this
+// is an AI placement, so showing it does not affect blindness — the bundle
+// and card are already returned unconditionally by readBundleDetail.
+function CardReadout({ bundle, card }: { bundle: BundleSummary; card: CardFields | null }) {
   return (
     <dl className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
-      <div><dt className="text-xs uppercase text-slate-500">Stratum</dt><dd>{card.stratum}</dd></div>
-      <div><dt className="text-xs uppercase text-slate-500">Includes</dt><dd>{card.includes}</dd></div>
-      <div><dt className="text-xs uppercase text-slate-500">Excludes</dt><dd>{card.excludes}</dd></div>
-      <div><dt className="text-xs uppercase text-slate-500">Distinctions</dt><dd>{card.distinctions}</dd></div>
-      <div><dt className="text-xs uppercase text-slate-500">Examples</dt><dd>{card.positiveExamples.join('; ')}</dd></div>
+      <div><dt className="text-xs uppercase text-slate-500">Name</dt><dd>{bundle.name}</dd></div>
+      <div><dt className="text-xs uppercase text-slate-500">Know</dt><dd>{bundle.knowDescriptor}</dd></div>
+      <div><dt className="text-xs uppercase text-slate-500">Understand</dt><dd>{bundle.understandDescriptor}</dd></div>
+      <div><dt className="text-xs uppercase text-slate-500">Do</dt><dd>{bundle.doDescriptor}</dd></div>
+      {!card && <p className="text-sm text-slate-500 sm:col-span-2">No confirmed cards yet.</p>}
+      {card && (
+        <>
+          <div><dt className="text-xs uppercase text-slate-500">Stratum</dt><dd>{card.stratum}</dd></div>
+          <div><dt className="text-xs uppercase text-slate-500">Includes</dt><dd>{card.includes}</dd></div>
+          <div><dt className="text-xs uppercase text-slate-500">Excludes</dt><dd>{card.excludes}</dd></div>
+          <div><dt className="text-xs uppercase text-slate-500">Distinctions</dt><dd>{card.distinctions}</dd></div>
+          <div><dt className="text-xs uppercase text-slate-500">Belongs here (examples)</dt><dd>{card.positiveExamples.join('; ')}</dd></div>
+          <div><dt className="text-xs uppercase text-slate-500">Does not belong here (examples)</dt><dd>{card.negativeExamples.join('; ')}</dd></div>
+        </>
+      )}
     </dl>
   );
 }
@@ -208,7 +225,7 @@ function CardsTab({
             <div className="border-t border-slate-200 px-3 py-2">
               {detailErrors[b.id] && <p className="text-sm text-red-800">{detailErrors[b.id]}</p>}
               {!detailErrors[b.id] && !details[b.id] && <p className="text-sm text-slate-500">Loading…</p>}
-              {details[b.id] && <CardReadout card={(details[b.id] as BundleDetail).card} />}
+              {details[b.id] && <CardReadout bundle={(details[b.id] as BundleDetail).bundle} card={(details[b.id] as BundleDetail).card} />}
             </div>
           )}
         </div>
@@ -291,7 +308,7 @@ function BlindPickForm({
 
   return (
     <div className="space-y-4">
-      <CardReadout card={detail.card} />
+      <CardReadout bundle={detail.bundle} card={detail.card} />
 
       <div className="space-y-2">
         <h4 className="text-sm font-medium text-slate-700">Elements by domain</h4>
@@ -385,7 +402,7 @@ function SubmittedBlindPick({
 
   return (
     <div className="space-y-3">
-      <CardReadout card={detail.card} />
+      <CardReadout bundle={detail.bundle} card={detail.card} />
       <ul className="space-y-1 text-sm">
         {picks.length === 0 && <li className="text-slate-500">No picks recorded.</li>}
         {picks.map((p, i) => (
@@ -771,7 +788,7 @@ function AgreementPanel({ agreement, error }: { agreement: AgreementResponse | n
             <thead className="text-left uppercase text-slate-500">
               <tr>
                 <th className="py-1">Bundle</th><th>AI</th><th>Blind</th><th>Both</th><th>Precision</th>
-                <th>Recall</th><th>Exact</th><th>±1</th><th>Outside top-25</th>
+                <th>Recall</th><th>Exact</th><th>±1 (incl. exact)</th><th>Outside top-25</th>
               </tr>
             </thead>
             <tbody>

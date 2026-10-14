@@ -37,13 +37,17 @@
  * figures, which track the placement count (the operator is also the blind
  * reviewer). Run totals are still printed.
  *
- * Bundles whose blind golden sample is already SUBMITTED are skipped by
- * default (also under --missing / --bundles): re-mapping them would mix two
- * AI runs in their agreement figures. --include-submitted-samples maps them
- * anyway, with a warning. A blind pick submitted WHILE the run is in flight
- * is caught at write time (writeBundleProposals re-checks under the sample
- * lock): nothing is written for that bundle, no outcome is recorded, and the
- * run summary lists it as "skipped (blind sample submitted during this run)".
+ * Bundles whose blind golden sample is already SUBMITTED at the start of the
+ * run are skipped by default (also under --missing / --bundles): re-mapping
+ * them drops any new AI placement that collides with a row the reviewer
+ * added, understating the AI's agreement figures. --include-submitted-samples
+ * maps exactly that start-of-run list anyway, with a warning naming them. It
+ * does NOT cover a bundle whose blind pick lands WHILE the run is in flight
+ * (final-review.md I-2 / adversarial round 3 m-1) — that bundle is still
+ * caught at write time (writeBundleProposals re-checks under the sample
+ * lock): nothing is written for it, no outcome is recorded, and the run
+ * summary lists it as "skipped (blind sample submitted during this run)",
+ * whether or not --include-submitted-samples was passed.
  *
  * Plan Ruling 4 guard: for every in-scope bundle with a golden sample, the
  * placement shortlist must equal the first TASK_SHORTLIST_K stored
@@ -282,7 +286,7 @@ export async function main(argv: string[], deps: CliDeps = {}): Promise<number> 
   console.log(`mode: ${args.apply ? 'APPLY' : 'DRY RUN'}  expect-db: ${args.expectDb}  release: ${args.release}  model: ${model}  bundles in scope: ${inputs.length}`);
   if (submittedInScope.length > 0) {
     if (args.includeSubmittedSamples) {
-      console.log(`WARNING: --include-submitted-samples maps ${submittedInScope.join(', ')} again — their blind sample is already submitted, so their agreement figures will mix AI runs.`);
+      console.log(`WARNING: --include-submitted-samples maps ${submittedInScope.join(', ')} again — their blind sample is already submitted, so new AI placements that collide with rows the reviewer added are dropped: their agreement figures will understate the AI.`);
     } else {
       console.log(`skipped (blind sample submitted): ${submittedInScope.join(', ')} — pass --include-submitted-samples to map them anyway`);
     }
@@ -340,7 +344,13 @@ export async function main(argv: string[], deps: CliDeps = {}): Promise<number> 
       await recordSp(charged);
       const w = await writeBundleProposals(executor, {
         runId, bundleId: input.bundle.id, rows: res.rows, model: res.model, noCleanMatch: res.noCleanMatch, note: res.note, costUsdCents: res.costUsdCents,
-        includeSubmittedSamples: args.includeSubmittedSamples,
+        // I-2 (final-review.md) / adversarial m-1: the opt-in must cover ONLY
+        // the bundles named in the start-of-run WARNING line
+        // (submittedInScope, i.e. submitted BEFORE this run started). A
+        // bundle submitted mid-run is not in that list and must still be
+        // skipped even with the flag, or its agreement figures are silently
+        // corrupted with no line naming it (round 3, m-1).
+        includeSubmittedSamples: args.includeSubmittedSamples && submittedInScope.includes(input.bundle.id),
       });
       if (w.skipped === 'submitted') {
         // The blind pick landed while this run was in flight: its reconcile

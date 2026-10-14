@@ -95,6 +95,31 @@ describe('BundlesPanel', () => {
     expect(screen.getByRole('button', { name: /submit blind pick/i })).not.toBeDisabled();
   });
 
+  it('the blind panel shows the same bundle definition the AI mapping prompt sees: K/U/D descriptors plus negative examples (final-review.md I-1)', async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      const p = pathOf(url);
+      if (p === '/api/admin/bundles') return listResponse(bundlesFixture);
+      if (p === '/api/admin/bundles/blind-ready') return detailResponse(blindReadyDetail);
+      if (p === '/api/admin/bundles/agreement') return { ok: true, json: async () => agreementEmpty };
+      return { ok: true, json: async () => ({}) };
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<BundlesPanel slug="s" />);
+    await waitFor(() => expect(screen.getByText('Blind ready bundle')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Blind ready bundle'));
+    await waitFor(() => expect(screen.getByText('Element Name')).toBeInTheDocument());
+
+    // buildPlacementUserMessage (lib/ai/catalog/map-bundle-onet.ts) gives the
+    // AI the Know/Understand/Do descriptors and both example lists; the
+    // blind reviewer must see the same fields, not a subset.
+    expect(screen.getByText('k')).toBeInTheDocument();
+    expect(screen.getByText('u')).toBeInTheDocument();
+    expect(screen.getByText('d')).toBeInTheDocument();
+    expect(screen.getByText('n1; n2')).toBeInTheDocument();
+    expect(screen.getByText('e1; e2')).toBeInTheDocument();
+  });
+
   it('an unmapped sampled bundle shows "Waiting for mapping" and its blind submit is disabled with the reason (adversarial I-2)', async () => {
     const unmapped = bundlesFixture.map(b => (b.id === 'blind-ready' ? { ...b, mapped: false } : b));
     const fetchMock = vi.fn(async (url: string) => {

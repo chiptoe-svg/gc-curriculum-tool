@@ -107,7 +107,7 @@ describe('formatReport', () => {
     const out = formatReport({ rows: [row], kappas: [], noMatch: [{ bundleId: 'b9', note: 'nothing fits' }], notYetMapped: [] });
     expect(out).not.toContain('not yet mapped');
     expect(out).toContain('Bundle agreement report — blind sample (n = 1 bundles; percentages are rough at this size)');
-    expect(out).toContain('AI placed 3, reviewer placed 3, both 2, exact 1, within one 2, reviewer tasks outside top-25 1');
+    expect(out).toContain('AI placed 3, reviewer placed 3, both 2, exact 1, within one (incl. exact) 2, reviewer tasks outside top-25 1');
     expect(out).toContain('precision 66.7%, recall 66.7%');
     expect(out).toContain('ALL');
     expect(out).toContain("Cohen's κ: needs a second blind reviewer");

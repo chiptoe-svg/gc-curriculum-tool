@@ -33,7 +33,7 @@ const pct = (x: number | null): string => (x === null ? 'n/a' : `${(x * 100).toF
 function rowLines(r: AgreementRow): string[] {
   return [
     `${r.bundleId}`,
-    `  AI placed ${r.aiCount}, reviewer placed ${r.blindCount}, both ${r.both}, exact ${r.exact}, within one ${r.withinOne}, reviewer tasks outside top-${TASK_SHORTLIST_K} ${r.blindTasksOutsideShortlist}`,
+    `  AI placed ${r.aiCount}, reviewer placed ${r.blindCount}, both ${r.both}, exact ${r.exact}, within one (incl. exact) ${r.withinOne}, reviewer tasks outside top-${TASK_SHORTLIST_K} ${r.blindTasksOutsideShortlist}`,
     `  precision ${pct(r.precision)}, recall ${pct(r.recall)}`,
   ];
 }
