@@ -38,6 +38,23 @@ const queueDetail: BundleDetail = {
   attribution: ATTRIBUTION,
 };
 
+const divergedQueueBundle: BundleListItem = { id: 'diverged-bundle', name: 'Diverged bundle', stratum: 'technical', sampled: false, submitted: false, counts: { proposed: 1, confirmed: 1, rejected: 0 }, noCleanMatch: false };
+
+const divergedQueueDetail: BundleDetail = {
+  bundle: { id: 'diverged-bundle', name: 'Diverged bundle', knowDescriptor: 'k', understandDescriptor: 'u', doDescriptor: 'd', origin: 'o' },
+  card: null,
+  elements: [],
+  sample: null,
+  members: [
+    { id: 'd1', source: 'onet_task', externalId: 't1', externalLabel: 'Diverged task', onetSocCode: '11-1111.11', position: 'core', aiPosition: 'core', status: 'proposed', proposedBy: 'model-x', rationale: 'still proposed', reviewNote: null, bulkConfirmed: false },
+    { id: 'd2', source: 'onet_task', externalId: 't1', externalLabel: 'Diverged task', onetSocCode: '22-2222.22', position: 'core', aiPosition: 'core', status: 'confirmed', proposedBy: 'model-x', rationale: 'already confirmed', reviewNote: null, bulkConfirmed: false },
+  ],
+  latestOutcome: { noCleanMatch: false, note: null },
+  attribution: ATTRIBUTION,
+};
+
+const agreementEmpty = { rows: [], total: { bundleId: 'ALL', aiCount: 0, blindCount: 0, both: 0, precision: null, recall: null, exact: 0, withinOne: 0, blindTasksOutsideShortlist: 0 }, kappas: [], noMatch: [], notYetMapped: [], attribution: ATTRIBUTION };
+
 function pathOf(url: string): string {
   return new URL(url, 'http://h').pathname;
 }
@@ -206,5 +223,71 @@ describe('BundlesPanel', () => {
     membersResult = { ok: true, body: { ok: true, changed: 2 } };
     fireEvent.click(screen.getByRole('button', { name: /^confirm$/i }));
     await waitFor(() => expect(screen.queryByText(/blind sample not submitted/i)).not.toBeInTheDocument());
+  });
+
+  it('"Add an item" Add buttons are disabled when the reviewer name is cleared after opening the box', async () => {
+    const fetchMock = vi.fn(async (url: string) => {
+      const p = pathOf(url);
+      if (p === '/api/admin/bundles') return listResponse([queueBundle]);
+      if (p === '/api/admin/bundles/queue-bundle') return detailResponse(queueDetail);
+      if (p === '/api/admin/bundles/agreement') return { ok: true, json: async () => agreementEmpty };
+      if (p === '/api/admin/bundles/search') {
+        return { ok: true, json: async () => ({ elements: [{ elementId: '2.B.5.a', elementName: 'Searched Element', domain: 'abilities', description: 'd' }], tasks: [], attribution: ATTRIBUTION }) };
+      }
+      return { ok: true, json: async () => ({}) };
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<BundlesPanel slug="s" />);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    fireEvent.change(screen.getByLabelText(/reviewer name/i), { target: { value: 'Chip' } });
+    fireEvent.click(screen.getByRole('button', { name: /review queue/i }));
+    fireEvent.click(screen.getByText('Queue bundle'));
+    await waitFor(() => expect(screen.getByText(/shared task/i)).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole('button', { name: /add an item/i }));
+    fireEvent.change(screen.getByPlaceholderText(/search elements and tasks/i), { target: { value: 'judg' } });
+    await waitFor(() => expect(screen.getByText('Searched Element')).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: /^add$/i })).not.toBeDisabled();
+
+    fireEvent.change(screen.getByLabelText(/reviewer name/i), { target: { value: '' } });
+    expect(screen.getByRole('button', { name: /^add$/i })).toBeDisabled();
+  });
+
+  it('a diverged task group (different status) renders as separate per-member rows and acts only on the clicked member', async () => {
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      const p = pathOf(url);
+      if (p === '/api/admin/bundles') return listResponse([divergedQueueBundle]);
+      if (p === '/api/admin/bundles/diverged-bundle') return detailResponse(divergedQueueDetail);
+      if (p === '/api/admin/bundles/agreement') return { ok: true, json: async () => agreementEmpty };
+      if (p === '/api/admin/bundles/diverged-bundle/members' && init?.method === 'POST') {
+        return { ok: true, json: async () => ({ ok: true, changed: 1 }) };
+      }
+      return { ok: true, json: async () => ({}) };
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<BundlesPanel slug="s" />);
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    fireEvent.change(screen.getByLabelText(/reviewer name/i), { target: { value: 'Chip' } });
+    fireEvent.click(screen.getByRole('button', { name: /review queue/i }));
+    fireEvent.click(screen.getByText('Diverged bundle'));
+
+    await waitFor(() => expect(screen.getByText('Diverged task (11-1111.11)')).toBeInTheDocument());
+    expect(screen.getByText('Diverged task (22-2222.22)')).toBeInTheDocument();
+    expect(screen.getByText('still proposed')).toBeInTheDocument();
+    expect(screen.getByText('already confirmed')).toBeInTheDocument();
+
+    const proposedRow = within(screen.getByText('Diverged task (11-1111.11)').closest('div')!.parentElement as HTMLElement);
+    const confirmedRow = within(screen.getByText('Diverged task (22-2222.22)').closest('div')!.parentElement as HTMLElement);
+    expect(proposedRow.getByRole('button', { name: /^confirm$/i })).not.toBeDisabled();
+    expect(confirmedRow.getByRole('button', { name: /^confirm$/i })).toBeDisabled();
+
+    fireEvent.click(proposedRow.getByRole('button', { name: /^confirm$/i }));
+
+    await waitFor(() => expect(fetchMock.mock.calls.some((c) => pathOf(c[0] as string) === '/api/admin/bundles/diverged-bundle/members')).toBe(true));
+    const call = fetchMock.mock.calls.find((c) => pathOf(c[0] as string) === '/api/admin/bundles/diverged-bundle/members')!;
+    const body = JSON.parse((call[1] as RequestInit).body as string) as Record<string, unknown>;
+    expect(body).toEqual({ slug: 's', reviewer: 'Chip', action: 'confirm', memberIds: ['d1'] });
   });
 });

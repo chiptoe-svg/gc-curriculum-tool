@@ -460,14 +460,26 @@ function BlindTab({
 
 interface GroupedMemberRow { key: string; label: string; ids: string[]; socCodes: string[]; position: string; aiPosition: string | null; status: string; proposedBy: string; rationale: string | null; reviewNote: string | null }
 
+/**
+ * Groups same-text task rows under one line listing every SOC code — but
+ * only while every member of the group agrees on status, position and
+ * review note (the properties the row's own display + action-enablement
+ * depend on). A group that has diverged (e.g. "Add an item" inserted one
+ * row under a label that already has a sibling under a different SOC, now
+ * at a different status or position) is rendered as separate per-member
+ * rows instead, so no member's state is hidden and Confirm/Reject/Change
+ * position never act on an id whose own state doesn't match what's shown
+ * (fix round 1, Important #2). Every row this function returns is thereby
+ * homogeneous in status, so `row.status !== 'proposed'` always correctly
+ * gates its actions, and `row.ids` always correctly scopes them.
+ */
 function groupMembers(members: MemberView[]): GroupedMemberRow[] {
-  const taskGroups = new Map<string, { ids: string[]; socCodes: string[]; m: MemberView }>();
+  const taskGroups = new Map<string, MemberView[]>();
   const rows: GroupedMemberRow[] = [];
   for (const m of members) {
     if (m.source === 'onet_task') {
       const g = taskGroups.get(m.externalLabel);
-      if (g) { g.ids.push(m.id); if (m.onetSocCode) g.socCodes.push(m.onetSocCode); }
-      else taskGroups.set(m.externalLabel, { ids: [m.id], socCodes: m.onetSocCode ? [m.onetSocCode] : [], m });
+      if (g) g.push(m); else taskGroups.set(m.externalLabel, [m]);
     } else {
       rows.push({
         key: m.id, label: m.externalLabel, ids: [m.id], socCodes: [], position: m.position, aiPosition: m.aiPosition,
@@ -475,19 +487,35 @@ function groupMembers(members: MemberView[]): GroupedMemberRow[] {
       });
     }
   }
-  for (const [label, g] of taskGroups) {
-    rows.push({
-      key: `task:${label}`, label: `${label} (${g.socCodes.join(', ')})`, ids: g.ids, socCodes: g.socCodes,
-      position: g.m.position, aiPosition: g.m.aiPosition, status: g.m.status, proposedBy: g.m.proposedBy,
-      rationale: g.m.rationale, reviewNote: g.m.reviewNote,
-    });
+  for (const [label, ms] of taskGroups) {
+    // ms is never empty (every entry starts from at least one push), so
+    // ms[0] is always present — noUncheckedIndexedAccess still types the
+    // destructure as possibly undefined, hence the assertion.
+    const first = ms[0]!;
+    const agrees = ms.slice(1).every((m) => m.status === first.status && m.position === first.position && m.reviewNote === first.reviewNote);
+    if (agrees) {
+      const socCodes = ms.flatMap((m) => (m.onetSocCode ? [m.onetSocCode] : []));
+      rows.push({
+        key: `task:${label}`, label: `${label} (${socCodes.join(', ')})`, ids: ms.map((m) => m.id), socCodes,
+        position: first.position, aiPosition: first.aiPosition, status: first.status, proposedBy: first.proposedBy,
+        rationale: first.rationale, reviewNote: first.reviewNote,
+      });
+    } else {
+      for (const m of ms) {
+        rows.push({
+          key: m.id, label: `${label}${m.onetSocCode ? ` (${m.onetSocCode})` : ''}`,
+          ids: [m.id], socCodes: m.onetSocCode ? [m.onetSocCode] : [], position: m.position, aiPosition: m.aiPosition,
+          status: m.status, proposedBy: m.proposedBy, rationale: m.rationale, reviewNote: m.reviewNote,
+        });
+      }
+    }
   }
   return rows;
 }
 
 function AddItemBox({
-  slug, reviewer, bundleId, onAdded,
-}: { slug: string; reviewer: string; bundleId: string; onAdded: () => Promise<void> }) {
+  slug, reviewer, reviewerReady, bundleId, onAdded,
+}: { slug: string; reviewer: string; reviewerReady: boolean; bundleId: string; onAdded: () => Promise<void> }) {
   const [q, setQ] = useState('');
   const [results, setResults] = useState<{ elements: ElementDef[]; tasks: Array<{ taskId: string; onetSocCode: string; task: string }> }>({ elements: [], tasks: [] });
   const [error, setError] = useState<string | null>(null);
@@ -539,7 +567,8 @@ function AddItemBox({
           </select>
           <button
             type="button"
-            className="rounded border border-blue-300 bg-blue-50 px-2 py-0.5 text-xs text-blue-800"
+            disabled={!reviewerReady}
+            className="rounded border border-blue-300 bg-blue-50 px-2 py-0.5 text-xs text-blue-800 disabled:opacity-40"
             onClick={() => void add({ kind: 'element', elementId: el.elementId }, `e:${el.elementId}`)}
           >
             Add
@@ -558,7 +587,8 @@ function AddItemBox({
           </select>
           <button
             type="button"
-            className="rounded border border-blue-300 bg-blue-50 px-2 py-0.5 text-xs text-blue-800"
+            disabled={!reviewerReady}
+            className="rounded border border-blue-300 bg-blue-50 px-2 py-0.5 text-xs text-blue-800 disabled:opacity-40"
             onClick={() => void add({ kind: 'task', taskId: t.taskId, onetSocCode: t.onetSocCode }, `t:${t.taskId}:${t.onetSocCode}`)}
           >
             Add
@@ -692,7 +722,7 @@ function QueueBundleDetail({
           Confirm the rest as proposed
         </button>
       </div>
-      {showAdd && <AddItemBox slug={slug} reviewer={reviewer} bundleId={bundleId} onAdded={onChanged} />}
+      {showAdd && <AddItemBox slug={slug} reviewer={reviewer} reviewerReady={reviewerReady} bundleId={bundleId} onAdded={onChanged} />}
       {error && <p className="text-sm text-red-800">{error}</p>}
     </div>
   );
