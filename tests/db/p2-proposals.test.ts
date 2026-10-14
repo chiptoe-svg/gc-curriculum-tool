@@ -17,13 +17,13 @@ import {
   bundleGoldenSamples, bundleGoldenPicks,
 } from '@/lib/db/schema';
 import {
-  createRun, finishRun, writeBundleProposals, recordFailedOutcome, bundlesWithOkOutcome, type Executor,
+  createRun, finishRun, writeBundleProposals, recordFailedOutcome, bundlesWithOkOutcome, submitBlindPicks, type Executor,
 } from '@/lib/db/bundle-queries';
 import type { MemberRow, PlacementInput, PlacementResult } from '@/lib/ai/catalog/map-bundle-onet';
 import type { BundleSummary, CardFields } from '@/lib/catalog/bundles';
 import { groupTasks, shortlistTasks, type TaskRow } from '@/lib/catalog/shortlist';
 import type { GoldenCandidate } from '@/lib/db/schema';
-import { main, type CliDeps } from '@/scripts/catalog/map-bundles-onet';
+import { main, NO_DRAW_MESSAGE, type CliDeps } from '@/scripts/catalog/map-bundles-onet';
 import { isP2ScratchDb, SCRATCH_DB } from './p2/scratch-guard';
 
 const RUN = isP2ScratchDb();
@@ -95,8 +95,7 @@ describe.skipIf(!RUN)('P2 Task 10 — writeBundleProposals / recordFailedOutcome
         runId, bundleId: B, model: MODEL, noCleanMatch: false, note: 'n', costUsdCents: 123,
         rows: [el('e1', 'core'), el('e2', 'fringe'), task('t1', '99-0001.00', 'related')],
       });
-      expect(res).toMatchObject({ deleted: 0, inserted: 3, keptDecided: 0 });
-      expect(res.reconcile.skipped).toBe(true);
+      expect(res).toMatchObject({ skipped: null, deleted: 0, inserted: 3, keptDecided: 0, reconcile: { skipped: true } });
       const rows = (await snapshot(tx, B)).map(r => r.row);
       expect(rows).toHaveLength(3);
       for (const r of rows) {
@@ -186,12 +185,29 @@ describe.skipIf(!RUN)('P2 Task 10 — writeBundleProposals / recordFailedOutcome
 
       const res = await writeBundleProposals(tx, {
         runId, bundleId: B, model: MODEL, noCleanMatch: false, note: null, costUsdCents: 0,
-        rows: [el('e1', 'core'), el('e2', 'related')],
+        rows: [el('e1', 'core'), el('e2', 'related')], includeSubmittedSamples: true,
       });
-      expect(res.reconcile).toEqual({ skipped: false, confirmed: 1, added: 0, disagreements: 0 });
+      expect(res).toMatchObject({ skipped: null, reconcile: { skipped: false, confirmed: 1, added: 0, disagreements: 0 } });
       const rows = new Map((await snapshot(tx, B)).map(r => [r.row.externalId, r.row]));
       expect(rows.get('e1')).toMatchObject({ status: 'confirmed', confirmedBy: 'R', aiPosition: 'core' });
       expect(rows.get('e2')).toMatchObject({ status: 'proposed' });
+    });
+  });
+
+  it('N-2: a sample submitted by the time the write takes its lock is skipped (nothing deleted, inserted or recorded) unless includeSubmittedSamples', async () => {
+    await inRolledBackTx(async (tx) => {
+      await seedBundles(tx, [B]);
+      await seedDecided(tx);
+      await tx.insert(bundleGoldenSamples).values({ bundleId: B, stratum: 'technical', sampleSeed: 's', candidates: [], reviewer: 'R', submittedAt: new Date() });
+      const beforeMembers = await snapshot(tx, B);
+      const runId = await seedRun(tx);
+
+      const res = await writeBundleProposals(tx, {
+        runId, bundleId: B, model: MODEL, noCleanMatch: false, note: null, costUsdCents: 0, rows: [el('W', 'core')],
+      });
+      expect(res).toEqual({ skipped: 'submitted' });
+      expect(await snapshot(tx, B)).toEqual(beforeMembers); // Z (proposed) not deleted, W not inserted
+      expect(await outcomes(tx, B)).toEqual([]);
     });
   });
 
@@ -295,6 +311,18 @@ function expectedCandidates(index: number): GoldenCandidate[] {
   });
 }
 
+/**
+ * map-bundles-onet --apply refuses until a draw exists (adversarial round 2,
+ * N-1). Seeds the CLI bundles plus one drawn, unsubmitted sample on an
+ * off-scope bundle, so the CLI tests hold whether or not the clone carries
+ * the Task 13 rehearsal draw.
+ */
+const DRAWN = 'p2p-drawn';
+async function seedCli(tx: Executor): Promise<void> {
+  await seedBundles(tx, [...CLI_IDS, DRAWN]);
+  await tx.insert(bundleGoldenSamples).values({ bundleId: DRAWN, stratum: 'technical', sampleSeed: 's', candidates: [] });
+}
+
 async function cliOutcomes(tx: Executor) {
   const rows = await tx.select().from(bundleMappingOutcomes);
   return rows.filter(r => CLI_IDS.includes(r.bundleId));
@@ -303,7 +331,7 @@ async function cliOutcomes(tx: Executor) {
 describe.skipIf(!RUN)('P2 Task 10 — map-bundles-onet CLI (scratch DB only)', () => {
   it('--apply without --max-cost exits 2 and writes nothing', async () => {
     await inRolledBackTx(async (tx) => {
-      await seedBundles(tx, CLI_IDS);
+      await seedCli(tx);
       const place = vi.fn(async (i: PlacementInput) => fakePlacement(i));
       const runsBefore = (await tx.select().from(bundleMappingRuns)).length;
       expect(await main(['--expect-db', SCRATCH_DB, '--apply'], cliDeps(tx, place))).toBe(2);
@@ -315,7 +343,7 @@ describe.skipIf(!RUN)('P2 Task 10 — map-bundles-onet CLI (scratch DB only)', (
 
   it('dry run makes no placeBundle calls and no writes', async () => {
     await inRolledBackTx(async (tx) => {
-      await seedBundles(tx, CLI_IDS);
+      await seedCli(tx);
       const place = vi.fn(async (i: PlacementInput) => fakePlacement(i));
       const runsBefore = (await tx.select().from(bundleMappingRuns)).length;
       const deps = cliDeps(tx, place);
@@ -339,7 +367,7 @@ describe.skipIf(!RUN)('P2 Task 10 — map-bundles-onet CLI (scratch DB only)', (
 
   it('--bundles with an unknown id exits 2', async () => {
     await inRolledBackTx(async (tx) => {
-      await seedBundles(tx, CLI_IDS);
+      await seedCli(tx);
       const place = vi.fn(async (i: PlacementInput) => fakePlacement(i));
       expect(await main(['--expect-db', SCRATCH_DB, '--bundles', 'p2p-c1,nope'], cliDeps(tx, place))).toBe(2);
       expect(place).not.toHaveBeenCalled();
@@ -348,7 +376,7 @@ describe.skipIf(!RUN)('P2 Task 10 — map-bundles-onet CLI (scratch DB only)', (
 
   it('--max-cost 0.025 (250 units) with 3 bundles at 100 each places 2, stops with exit 4, writes outcomes for exactly 2', async () => {
     await inRolledBackTx(async (tx) => {
-      await seedBundles(tx, CLI_IDS);
+      await seedCli(tx);
       const place = vi.fn(async (i: PlacementInput) => fakePlacement(i));
       const deps = cliDeps(tx, place);
       expect(await main(['--expect-db', SCRATCH_DB, '--apply', '--max-cost', '0.025'], deps)).toBe(4);
@@ -366,7 +394,7 @@ describe.skipIf(!RUN)('P2 Task 10 — map-bundles-onet CLI (scratch DB only)', (
 
   it('a daily-cap refusal stops the run with exit 4 before any paid call', async () => {
     await inRolledBackTx(async (tx) => {
-      await seedBundles(tx, CLI_IDS);
+      await seedCli(tx);
       const place = vi.fn(async (i: PlacementInput) => fakePlacement(i));
       const deps = { ...cliDeps(tx, place), checkDailyCap: async () => ({ ok: false, spentCents: 999, overCap: true }) };
       expect(await main(['--expect-db', SCRATCH_DB, '--apply', '--max-cost', '10'], deps)).toBe(4);
@@ -376,7 +404,7 @@ describe.skipIf(!RUN)('P2 Task 10 — map-bundles-onet CLI (scratch DB only)', (
 
   it('a throw on bundle 2 records failed for it, places 1 and 3, exits 1; --missing then selects only bundle 2', async () => {
     await inRolledBackTx(async (tx) => {
-      await seedBundles(tx, CLI_IDS);
+      await seedCli(tx);
       const place = vi.fn(async (i: PlacementInput) => {
         if (i.bundle.id === 'p2p-c2') throw new Error('model said no');
         return fakePlacement(i);
@@ -400,7 +428,7 @@ describe.skipIf(!RUN)('P2 Task 10 — map-bundles-onet CLI (scratch DB only)', (
 
   it('a write failure (DB error) records failed for that bundle and the run continues', async () => {
     await inRolledBackTx(async (tx) => {
-      await seedBundles(tx, CLI_IDS);
+      await seedCli(tx);
       const place = vi.fn(async (i: PlacementInput) => {
         const r = fakePlacement(i);
         if (i.bundle.id === 'p2p-c1') r.rows.push(task('t-bad', null, 'core')); // violates bundle_members_soc_check
@@ -419,7 +447,7 @@ describe.skipIf(!RUN)('P2 Task 10 — map-bundles-onet CLI (scratch DB only)', (
 
   it('dry run prints per-bundle token figures and a token total (spec §4 D)', async () => {
     await inRolledBackTx(async (tx) => {
-      await seedBundles(tx, CLI_IDS);
+      await seedCli(tx);
       const log = vi.spyOn(console, 'log').mockImplementation(() => {});
       try {
         expect(await main(['--expect-db', SCRATCH_DB], cliDeps(tx, vi.fn()))).toBe(0);
@@ -432,7 +460,7 @@ describe.skipIf(!RUN)('P2 Task 10 — map-bundles-onet CLI (scratch DB only)', (
 
   it('skips bundles whose blind sample is submitted by default (also with --bundles / --missing); --include-submitted-samples maps them with a warning', async () => {
     await inRolledBackTx(async (tx) => {
-      await seedBundles(tx, CLI_IDS);
+      await seedCli(tx);
       await tx.insert(bundleGoldenSamples).values({ bundleId: 'p2p-c2', stratum: 'technical', sampleSeed: 's', candidates: expectedCandidates(1), reviewer: 'R', submittedAt: new Date() });
       const log = vi.spyOn(console, 'log').mockImplementation(() => {});
       try {
@@ -460,7 +488,7 @@ describe.skipIf(!RUN)('P2 Task 10 — map-bundles-onet CLI (scratch DB only)', (
 
   it('a sampled-but-unsubmitted bundle with matching candidates is mapped normally', async () => {
     await inRolledBackTx(async (tx) => {
-      await seedBundles(tx, CLI_IDS);
+      await seedCli(tx);
       await tx.insert(bundleGoldenSamples).values({ bundleId: 'p2p-c1', stratum: 'technical', sampleSeed: 's', candidates: expectedCandidates(0) });
       const place = vi.fn(async (i: PlacementInput) => fakePlacement(i));
       expect(await main(['--expect-db', SCRATCH_DB, '--apply', '--max-cost', '10'], cliDeps(tx, place))).toBe(0);
@@ -470,7 +498,7 @@ describe.skipIf(!RUN)('P2 Task 10 — map-bundles-onet CLI (scratch DB only)', (
 
   it('Ruling 4 guard: a shortlist that differs from the stored sample candidates refuses (exit 3) in dry run and in --apply before any paid call', async () => {
     await inRolledBackTx(async (tx) => {
-      await seedBundles(tx, CLI_IDS);
+      await seedCli(tx);
       const reordered = [...expectedCandidates(2)].reverse().map((c, i) => ({ ...c, rank: i + 1 }));
       await tx.insert(bundleGoldenSamples).values({ bundleId: 'p2p-c3', stratum: 'technical', sampleSeed: 's', candidates: reordered });
       const place = vi.fn(async (i: PlacementInput) => fakePlacement(i));
@@ -489,7 +517,7 @@ describe.skipIf(!RUN)('P2 Task 10 — map-bundles-onet CLI (scratch DB only)', (
 
   it('I-1: a call that fails with its cost unknown is charged its estimate — --max-cost stops repeated failures, recordSpend and the failed outcome carry it', async () => {
     await inRolledBackTx(async (tx) => {
-      await seedBundles(tx, CLI_IDS);
+      await seedCli(tx);
       const place = vi.fn(async (): Promise<PlacementResult> => { throw new Error('OpenAI returned non-JSON content: '); });
       const deps = cliDeps(tx, place);
       const log = vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -508,7 +536,7 @@ describe.skipIf(!RUN)('P2 Task 10 — map-bundles-onet CLI (scratch DB only)', (
 
   it('I-1: repeated failing runs (--missing) stop at the daily cap, because each failure is recorded as spend', async () => {
     await inRolledBackTx(async (tx) => {
-      await seedBundles(tx, CLI_IDS);
+      await seedCli(tx);
       let daily = 0;
       const capDeps = {
         checkDailyCap: async () => ({ ok: daily < 250, spentCents: daily, overCap: daily >= 250 }),
@@ -528,7 +556,7 @@ describe.skipIf(!RUN)('P2 Task 10 — map-bundles-onet CLI (scratch DB only)', (
 
   it('I-1: a provider error that carries its actual cost is charged that, not the estimate', async () => {
     await inRolledBackTx(async (tx) => {
-      await seedBundles(tx, CLI_IDS);
+      await seedCli(tx);
       const place = vi.fn(async (): Promise<PlacementResult> => { throw Object.assign(new Error('refused'), { costUsdCents: 37 }); });
       const deps = cliDeps(tx, place);
       const log = vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -540,9 +568,9 @@ describe.skipIf(!RUN)('P2 Task 10 — map-bundles-onet CLI (scratch DB only)', (
     });
   });
 
-  it('M-2: a sampled, unsubmitted bundle prints only "<id>: sampled — hidden until blind pick" (plus cost/tokens) in dry run and --apply, ok or failed', async () => {
+  it('M-2 / N-3: a sampled, unsubmitted bundle prints only "<id>: sampled — hidden until blind pick" (no per-bundle cost or tokens) in dry run and --apply, ok or failed; run totals stay', async () => {
     await inRolledBackTx(async (tx) => {
-      await seedBundles(tx, CLI_IDS);
+      await seedCli(tx);
       await tx.insert(bundleGoldenSamples).values({ bundleId: 'p2p-c1', stratum: 'technical', sampleSeed: 's', candidates: expectedCandidates(0) });
       const log = vi.spyOn(console, 'log').mockImplementation(() => {});
       const err = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -550,14 +578,17 @@ describe.skipIf(!RUN)('P2 Task 10 — map-bundles-onet CLI (scratch DB only)', (
       try {
         expect(await main(['--expect-db', SCRATCH_DB], cliDeps(tx, vi.fn()))).toBe(0);
         let ls = lines();
-        expect(ls.filter(l => l.includes('p2p-c1'))).toEqual([expect.stringMatching(/^ {2}- p2p-c1: sampled — hidden until blind pick {2}tokens in ~\d+ \/ out ≤2500 {2}est \$0\.0100$/)]);
+        expect(ls.filter(l => l.includes('p2p-c1'))).toEqual(['  - p2p-c1: sampled — hidden until blind pick']);
+        expect(ls.filter(l => /^ {2}- p2p-c[23] .*tokens in ~\d+ \/ out ≤2500 {2}est \$0\.0100$/.test(l))).toHaveLength(2);
+        expect(ls.some(l => /^\nestimated total: tokens in ~\d+ \/ out ≤7500 {2}\$0\.0300 /.test(l))).toBe(true);
         expect(ls.filter(l => /^ {6}T\d+\. /.test(l))).toHaveLength(2 * TASKS.length); // previews for c2 and c3 only
 
         log.mockClear(); err.mockClear();
         const place = vi.fn(async (i: PlacementInput) => ({ ...fakePlacement(i), noCleanMatch: true }));
         expect(await main(['--expect-db', SCRATCH_DB, '--apply', '--max-cost', '10'], cliDeps(tx, place))).toBe(0);
         ls = lines();
-        expect(ls.filter(l => l.includes('p2p-c1'))).toEqual(['OK p2p-c1: sampled — hidden until blind pick  cost $0.0100']);
+        expect(ls.filter(l => l.includes('p2p-c1'))).toEqual(['OK p2p-c1: sampled — hidden until blind pick']);
+        expect(ls.some(l => /total cost \$0\.0300$/.test(l))).toBe(true);
         expect(ls.some(l => l.startsWith('OK p2p-c2  placed 1 rows'))).toBe(true);
 
         log.mockClear(); err.mockClear();
@@ -565,14 +596,14 @@ describe.skipIf(!RUN)('P2 Task 10 — map-bundles-onet CLI (scratch DB only)', (
         expect(await main(['--expect-db', SCRATCH_DB, '--apply', '--max-cost', '10', '--bundles', 'p2p-c1'], cliDeps(tx, placeF))).toBe(1);
         ls = lines();
         expect(ls.some(l => l.includes('MODEL-REPLY-TEXT'))).toBe(false);
-        expect(ls.filter(l => l.includes('p2p-c1'))).toEqual([expect.stringMatching(/^FAILED p2p-c1: sampled — hidden until blind pick /)]);
+        expect(ls.filter(l => l.includes('p2p-c1'))).toEqual(['FAILED p2p-c1: sampled — hidden until blind pick (error in bundle_mapping_outcomes.note)']);
       } finally { log.mockRestore(); err.mockRestore(); }
     });
   });
 
   it('a recordSpend failure still counts the paid call toward --max-cost and the failed outcome carries its cost', async () => {
     await inRolledBackTx(async (tx) => {
-      await seedBundles(tx, CLI_IDS);
+      await seedCli(tx);
       const place = vi.fn(async (i: PlacementInput) => fakePlacement(i));
       const deps = { ...cliDeps(tx, place), recordSpend: vi.fn(async () => { throw new Error('daily_cost write failed'); }) };
       expect(await main(['--expect-db', SCRATCH_DB, '--apply', '--max-cost', '0.025'], deps)).toBe(1);
@@ -584,5 +615,66 @@ describe.skipIf(!RUN)('P2 Task 10 — map-bundles-onet CLI (scratch DB only)', (
       expect(run!.costUsdCents).toBe(200);
     });
   });
-});
 
+  // ─── Adversarial round 2 ───
+
+  it('N-1: --apply refuses (exit 3) while no golden sample has been drawn, before any call or run row; a dry run prints the same message as a warning', async () => {
+    await inRolledBackTx(async (tx) => {
+      await seedBundles(tx, CLI_IDS);
+      await tx.delete(bundleGoldenSamples); // the clone's rehearsal draw too — rolled back
+      const runsBefore = (await tx.select().from(bundleMappingRuns)).length;
+      const place = vi.fn(async (i: PlacementInput) => fakePlacement(i));
+      const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+      const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+      try {
+        expect(await main(['--expect-db', SCRATCH_DB, '--apply', '--max-cost', '10'], cliDeps(tx, place))).toBe(3);
+        expect(err.mock.calls.map(c => String(c[0]))).toContain(`refusing --apply: ${NO_DRAW_MESSAGE}`);
+        expect(NO_DRAW_MESSAGE).toContain('Draw the blind sample first (draw-golden-sample --apply) so sampled bundles stay hidden');
+        expect(place).not.toHaveBeenCalled();
+        expect((await tx.select().from(bundleMappingRuns)).length).toBe(runsBefore);
+        expect(await cliOutcomes(tx)).toEqual([]);
+
+        log.mockClear();
+        expect(await main(['--expect-db', SCRATCH_DB], cliDeps(tx, place))).toBe(0);
+        expect(log.mock.calls.map(c => String(c[0]))).toContain(`WARNING: ${NO_DRAW_MESSAGE}`);
+      } finally { log.mockRestore(); err.mockRestore(); }
+    });
+  });
+
+  it('N-2: a blind pick submitted while a re-map is in flight is not overwritten — nothing written for that bundle, no outcome, listed in the run summary', async () => {
+    await inRolledBackTx(async (tx) => {
+      await seedCli(tx);
+      const cands = expectedCandidates(0);
+      await tx.insert(bundleGoldenSamples).values({ bundleId: 'p2p-c1', stratum: 'technical', sampleSeed: 's', candidates: cands });
+      const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+      try {
+        // Run 1 maps c1 (a blind pick needs an ok outcome first — I-2).
+        expect(await main(['--expect-db', SCRATCH_DB, '--apply', '--max-cost', '10', '--bundles', 'p2p-c1'], cliDeps(tx, vi.fn(async (i: PlacementInput) => fakePlacement(i))))).toBe(0);
+
+        // Run 2 starts with c1 unsubmitted (in scope); the submit lands during its paid call.
+        const group = cands[0]!;
+        const place = vi.fn(async (i: PlacementInput): Promise<PlacementResult> => {
+          expect(await submitBlindPicks(tx, 'p2p-c1', 'Pat', [{ kind: 'task', groupKey: group.key, position: 'core' }], false, REL)).toMatchObject({ ok: true });
+          return { ...fakePlacement(i), rows: [el('p2p-c1-e1', 'core'), el('p2p-c1-NEW', 'related'),
+            ...group.members.map(m => task(m.taskId, m.onetSocCode, 'core'))] };
+        });
+        log.mockClear();
+        expect(await main(['--expect-db', SCRATCH_DB, '--apply', '--max-cost', '10', '--bundles', 'p2p-c1'], cliDeps(tx, place))).toBe(0);
+        expect(place).toHaveBeenCalledTimes(1);
+        const ls = log.mock.calls.map(c => String(c[0]));
+        expect(ls.some(l => l.startsWith('skipped (blind sample submitted during this run): p2p-c1'))).toBe(true);
+        expect(ls.some(l => l.startsWith('OK p2p-c1'))).toBe(false);
+
+        // Exactly one ok outcome (run 1's); run 2 wrote no members.
+        const out = (await cliOutcomes(tx)).filter(o => o.bundleId === 'p2p-c1');
+        expect(out).toHaveLength(1);
+        const members = await tx.select().from(bundleMembers).where(eq(bundleMembers.bundleId, 'p2p-c1'));
+        expect(members.every(m => m.runId === null || m.runId === out[0]!.runId)).toBe(true);
+        expect(members.some(m => m.externalId === 'p2p-c1-NEW')).toBe(false);
+        // The submit's reconcile against run 1's rows stands: the picked task is a reviewer row.
+        expect(members.filter(m => m.source === 'onet_task').map(m => m.proposedBy)).toEqual(group.members.map(() => 'reviewer'));
+        expect(members.find(m => m.externalId === 'p2p-c1-e1')).toMatchObject({ status: 'proposed', runId: out[0]!.runId });
+      } finally { log.mockRestore(); }
+    });
+  });
+});

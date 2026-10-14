@@ -323,17 +323,30 @@ export async function finishRun(ex: Executor, runId: string, costUsdCents: numbe
  * Always opens its own transaction: a real one on `db`, a savepoint inside a
  * caller-owned transaction, so a failure rolls back exactly this bundle's
  * write and leaves the caller's transaction usable.
+ *
+ * A bundle whose blind sample is SUBMITTED when the write takes the sample
+ * lock is skipped — nothing deleted, inserted or recorded, result
+ * `{ skipped: 'submitted' }` — unless `includeSubmittedSamples` is set (the
+ * run's --include-submitted-samples). The run filters submitted samples out
+ * of scope at its start; this re-check catches a blind submit that landed
+ * while the run was in flight, whose reconcile ran against the OLD AI rows
+ * (adversarial round 2, N-2).
  */
+export type WriteProposalsResult =
+  | { skipped: 'submitted' }
+  | { skipped: null; deleted: number; inserted: number; keptDecided: number; reconcile: ReconcileResult };
+
 export async function writeBundleProposals(
   ex: Executor,
-  args: { runId: string; bundleId: string; rows: MemberRow[]; model: string; noCleanMatch: boolean; note: string | null; costUsdCents: number },
-): Promise<{ deleted: number; inserted: number; keptDecided: number; reconcile: ReconcileResult }> {
-  return ex.transaction(async (tx) => {
+  args: { runId: string; bundleId: string; rows: MemberRow[]; model: string; noCleanMatch: boolean; note: string | null; costUsdCents: number; includeSubmittedSamples?: boolean },
+): Promise<WriteProposalsResult> {
+  return ex.transaction(async (tx): Promise<WriteProposalsResult> => {
     // Take the sample-row lock submit/reset take (a no-op without a sample)
     // BEFORE touching members: a concurrent blind submit then either commits
-    // first — so the reconcile below sees it submitted — or waits for this
+    // first — so the re-check below sees it submitted — or waits for this
     // write and reconciles against the new rows. Never neither.
-    await lockSample(tx, args.bundleId);
+    const sample = await lockSample(tx, args.bundleId);
+    if (sample?.submittedAt != null && !args.includeSubmittedSamples) return { skipped: 'submitted' };
     // Reruns replace ONLY proposed rows; confirmed/rejected are never touched.
     const deleted = await tx.delete(bundleMembers)
       .where(and(eq(bundleMembers.bundleId, args.bundleId), eq(bundleMembers.status, 'proposed')))
@@ -354,7 +367,7 @@ export async function writeBundleProposals(
     });
     const reconcile = await reconcileBundle(tx, args.bundleId);
     // After the delete only decided rows survive, so every conflict is a decided row.
-    return { deleted: deleted.length, inserted, keptDecided: args.rows.length - inserted, reconcile };
+    return { skipped: null, deleted: deleted.length, inserted, keptDecided: args.rows.length - inserted, reconcile };
   });
 }
 

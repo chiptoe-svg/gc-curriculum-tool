@@ -77,6 +77,9 @@ describe.skipIf(!RUN)('P2 Task 5 — upsertConfirmedCards (scratch DB only)', ()
   it('inserts a new card, then updates it on a second call, with status=confirmed and confirmed_by set', async () => {
     await inRolledBackTx(async (tx) => {
       const id = BUSINESS_ACUMEN_IDS[0] as string;
+      // The clone may already hold this card (Task 13 rehearsal): start from
+      // no card, inside the rolled-back transaction.
+      await tx.delete(bundleCards).where(eq(bundleCards.competencyId, id));
 
       const firstResult = await upsertConfirmedCards(tx, [card(id)], 'first-reviewer');
       expect(firstResult).toEqual({ inserted: 1, updated: 0 });
@@ -104,6 +107,9 @@ describe.skipIf(!RUN)('P2 Task 5 — draft-bundle-cards.ts main() --apply (scrat
       // this file is the empty _approval — isolates the approval gate from
       // the file's completeness check.
       const activeIds = (await listActiveBundles(tx)).map(b => b.id);
+      // The clone may already hold confirmed cards (Task 13 rehearsal), so
+      // "writes nothing" is checked against the rows present before the call.
+      const before = await tx.select().from(bundleCards).orderBy(bundleCards.competencyId);
       const file = writeTmpReviewFile({
         _approval: '',
         drafted: { model: 'test-model', promptVersion: 'bundle-card-draft@1', at: new Date().toISOString(), costUsdCents: 0 },
@@ -116,8 +122,8 @@ describe.skipIf(!RUN)('P2 Task 5 — draft-bundle-cards.ts main() --apply (scrat
       );
       expect(code).not.toBe(0);
 
-      const rows = await tx.select().from(bundleCards);
-      expect(rows).toHaveLength(0);
+      const rows = await tx.select().from(bundleCards).orderBy(bundleCards.competencyId);
+      expect(rows).toEqual(before);
     });
   });
 

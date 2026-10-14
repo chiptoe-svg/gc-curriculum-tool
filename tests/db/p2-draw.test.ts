@@ -246,6 +246,28 @@ describe.skipIf(!RUN)('P2 Task 7 — draw-golden-sample.ts main() (scratch DB on
     });
   });
 
+  // ─── Adversarial round 2, N-1 ───
+
+  it('a FIRST --apply (no samples yet) refuses with exit 5 once any bundle has an ok mapping outcome, and inserts nothing; a dry run warns and writes nothing', async () => {
+    await inRolledBackTx(async (tx) => {
+      await seedFixtures(tx);
+      await seedOkOutcome(tx, BUNDLES[0]!.id);
+      const deps = { executor: tx, ...DEPS };
+
+      const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+      try {
+        expect(await main(['--apply', '--seed', 's1', '--expect-db', SCRATCH_DB], deps)).toBe(5);
+        expect(err.mock.calls.some(c => /^refusing: 1 bundle\(s\) already have an ok mapping outcome — .*would not be blind \(order: draw → map → blind pick\)$/.test(String(c[0])))).toBe(true);
+        expect(await tx.select().from(bundleGoldenSamples)).toHaveLength(0);
+
+        expect(await main(['--seed', 's1', '--expect-db', SCRATCH_DB], deps)).toBe(0);
+        expect(log.mock.calls.some(c => /^WARNING: 1 bundle\(s\) already have an ok mapping outcome — /.test(String(c[0])))).toBe(true);
+        expect(await tx.select().from(bundleGoldenSamples)).toHaveLength(0);
+      } finally { err.mockRestore(); log.mockRestore(); }
+    });
+  });
+
   it('--replace refuses with exit 5 when a sample carries reset_note history, and keeps the note', async () => {
     await inRolledBackTx(async (tx) => {
       await seedFixtures(tx);

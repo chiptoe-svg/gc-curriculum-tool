@@ -27,14 +27,23 @@
  *       # failure) is charged at its estimate — to the run, to recordSpend and
  *       # to the failed outcome — so repeated failures still hit both caps.
  *
+ * Order: draw → map → blind pick. --apply refuses (exit 3) while no golden
+ * sample has been drawn (bundle_golden_samples empty): mapping first would
+ * print and serve every bundle's placements before the blind sample exists.
+ * A dry run prints the same message as a warning.
+ *
  * A sampled bundle whose blind pick is not yet submitted prints only
- * "<id>: sampled — hidden until blind pick" plus its cost/token figures (the
- * operator is also the blind reviewer).
+ * "<id>: sampled — hidden until blind pick" — no per-bundle cost or token
+ * figures, which track the placement count (the operator is also the blind
+ * reviewer). Run totals are still printed.
  *
  * Bundles whose blind golden sample is already SUBMITTED are skipped by
  * default (also under --missing / --bundles): re-mapping them would mix two
  * AI runs in their agreement figures. --include-submitted-samples maps them
- * anyway, with a warning.
+ * anyway, with a warning. A blind pick submitted WHILE the run is in flight
+ * is caught at write time (writeBundleProposals re-checks under the sample
+ * lock): nothing is written for that bundle, no outcome is recorded, and the
+ * run summary lists it as "skipped (blind sample submitted during this run)".
  *
  * Plan Ruling 4 guard: for every in-scope bundle with a golden sample, the
  * placement shortlist must equal the first TASK_SHORTLIST_K stored
@@ -43,7 +52,8 @@
  *
  * Exit codes: 0 ok · 1 wrong database, or any bundle failed · 2 bad args
  * (incl. --apply without --max-cost, unknown --bundles id) · 3 refusal before
- * any write (missing card, element definitions, task statements or vectors)
+ * any write (missing card, element definitions, task statements or vectors;
+ * --apply with no golden sample drawn)
  * · 4 stopped by --max-cost or the daily cap (a failure takes precedence: 1).
  *
  * Never prints DATABASE_URL, prompts or rationale text — summary lines only.
@@ -133,6 +143,7 @@ export function failedCallCost(err: unknown): number | null {
 }
 
 const HIDDEN = (id: string) => `${id}: sampled — hidden until blind pick`;
+export const NO_DRAW_MESSAGE = 'no golden sample has been drawn. Draw the blind sample first (draw-golden-sample --apply) so sampled bundles stay hidden';
 const dollars = (units: number) => `$${(units / 10000).toFixed(4)}`;
 
 // ─── Entry point ────────────────────────────────────────────────────────────
@@ -186,6 +197,7 @@ export async function main(argv: string[], deps: CliDeps = {}): Promise<number> 
   let model: string;
   let inputs: PlacementInput[];
   let submittedInScope: string[] = [];
+  let noDraw = false;
   // Sampled bundles whose blind pick is not yet submitted: the operator is
   // also the blind reviewer, so their placement results stay off the console.
   let hidden = new Set<string>();
@@ -230,6 +242,7 @@ export async function main(argv: string[], deps: CliDeps = {}): Promise<number> 
     const samples = new Map((await executor.select({
       bundleId: bundleGoldenSamples.bundleId, submittedAt: bundleGoldenSamples.submittedAt, candidates: bundleGoldenSamples.candidates,
     }).from(bundleGoldenSamples)).map(r => [r.bundleId, r]));
+    noDraw = samples.size === 0;
     submittedInScope = scope.filter(b => samples.get(b.id)?.submittedAt != null).map(b => b.id);
     hidden = new Set([...samples.values()].filter(r => r.submittedAt == null).map(r => r.bundleId));
     if (!args.includeSubmittedSamples) scope = scope.filter(b => !submittedInScope.includes(b.id));
@@ -257,6 +270,14 @@ export async function main(argv: string[], deps: CliDeps = {}): Promise<number> 
     return 3;
   }
 
+  if (noDraw) {
+    if (args.apply) {
+      console.error(`refusing --apply: ${NO_DRAW_MESSAGE}`);
+      return 3;
+    }
+    console.log(`WARNING: ${NO_DRAW_MESSAGE}`);
+  }
+
   const estimates = inputs.map(i => estimate(model, i));
   console.log(`mode: ${args.apply ? 'APPLY' : 'DRY RUN'}  expect-db: ${args.expectDb}  release: ${args.release}  model: ${model}  bundles in scope: ${inputs.length}`);
   if (submittedInScope.length > 0) {
@@ -274,7 +295,7 @@ export async function main(argv: string[], deps: CliDeps = {}): Promise<number> 
       const t = estimatePlacementTokens(input);
       totalIn += t.inputTokens; totalOut += t.outputTokens;
       if (hidden.has(input.bundle.id)) {
-        console.log(`  - ${HIDDEN(input.bundle.id)}  tokens in ~${t.inputTokens} / out ≤${t.outputTokens}  est ${dollars(estimates[i]!)}`);
+        console.log(`  - ${HIDDEN(input.bundle.id)}`);
         return;
       }
       console.log(`  - ${input.bundle.id}  elements ${input.elements.length}  tokens in ~${t.inputTokens} / out ≤${t.outputTokens}  est ${dollars(estimates[i]!)}`);
@@ -294,6 +315,7 @@ export async function main(argv: string[], deps: CliDeps = {}): Promise<number> 
   const maxCostCents = args.maxCostCents!;
   const runId = await createRun(executor, { model, promptVersion: BUNDLE_MAP_PROMPT_VERSION, taskShortlistK: TASK_SHORTLIST_K, bundleCount: inputs.length });
   let spent = 0, ok = 0, failed = 0, skipped = 0;
+  const submittedDuringRun: string[] = [];
   let stopped = false;
   for (let i = 0; i < inputs.length; i++) {
     const input = inputs[i]!;
@@ -318,11 +340,18 @@ export async function main(argv: string[], deps: CliDeps = {}): Promise<number> 
       await recordSp(charged);
       const w = await writeBundleProposals(executor, {
         runId, bundleId: input.bundle.id, rows: res.rows, model: res.model, noCleanMatch: res.noCleanMatch, note: res.note, costUsdCents: res.costUsdCents,
+        includeSubmittedSamples: args.includeSubmittedSamples,
       });
+      if (w.skipped === 'submitted') {
+        // The blind pick landed while this run was in flight: its reconcile
+        // ran against the old AI rows, so writing now would corrupt agreement.
+        submittedDuringRun.push(input.bundle.id);
+        continue;
+      }
       ok++;
       const r = w.reconcile;
       if (hidden.has(input.bundle.id)) {
-        console.log(`OK ${HIDDEN(input.bundle.id)}  cost ${dollars(charged)}`);
+        console.log(`OK ${HIDDEN(input.bundle.id)}`);
         continue;
       }
       console.log(`OK ${input.bundle.id}  placed ${res.rows.length} rows  dropped ids ${res.droppedIds.length}  no-clean-match ${res.noCleanMatch}  reconcile ${r.skipped ? '-' : `${r.confirmed}/${r.added}/${r.disagreements}`}`);
@@ -349,13 +378,16 @@ export async function main(argv: string[], deps: CliDeps = {}): Promise<number> 
       }
       // A provider error can quote the model's reply, so a hidden bundle's stays in the outcome note.
       console.log(hidden.has(input.bundle.id)
-        ? `FAILED ${HIDDEN(input.bundle.id)} (error in bundle_mapping_outcomes.note)  cost ${dollars(charged)}`
+        ? `FAILED ${HIDDEN(input.bundle.id)} (error in bundle_mapping_outcomes.note)`
         : `FAILED ${input.bundle.id}: ${message}`);
     }
   }
   await finishRun(executor, runId, spent);
 
   console.log(`\nbundles ok ${ok}  failed ${failed}  skipped by cap ${skipped}  total cost ${dollars(spent)}`);
+  if (submittedDuringRun.length > 0) {
+    console.log(`skipped (blind sample submitted during this run): ${submittedDuringRun.join(', ')} — nothing written; rerun with --bundles <id> --include-submitted-samples to map them anyway (mixes AI runs)`);
+  }
   if (failed > 0) return 1;
   if (stopped) return 4;
   return 0;

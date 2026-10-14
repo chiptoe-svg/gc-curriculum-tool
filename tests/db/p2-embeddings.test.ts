@@ -12,6 +12,11 @@ import { isP2ScratchDb } from './p2/scratch-guard';
 
 const RUN = isP2ScratchDb();
 const MODEL = 'test-model';
+/** This file's own synthetic refs. The clone also holds the Task 13 rehearsal's real embeddings, so row assertions are scoped to these. */
+const TEST_REFS = new Set(['test-bundle-a', 'test-task-group-1']);
+async function ownRows(tx: Executor) {
+  return (await tx.select().from(itemEmbeddings)).filter(r => TEST_REFS.has(r.ref));
+}
 
 class Rollback extends Error {}
 async function inRolledBackTx(fn: (tx: Executor) => Promise<void>): Promise<void> {
@@ -47,7 +52,7 @@ describe.skipIf(!RUN)('P2 Task 6 — embedMissing / readVectors (scratch DB only
       expect(calls).toHaveLength(1);
       expect(calls[0]).toEqual(items.map(i => i.text));
 
-      const rows = await tx.select().from(itemEmbeddings);
+      const rows = await ownRows(tx);
       expect(rows).toHaveLength(2);
     });
   });
@@ -88,7 +93,7 @@ describe.skipIf(!RUN)('P2 Task 6 — embedMissing / readVectors (scratch DB only
 
       // Both the stale and the new row exist (text_hash is part of the pkey) —
       // readVectors must pick the one matching the CURRENT text.
-      const rows = await tx.select().from(itemEmbeddings);
+      const rows = await ownRows(tx);
       expect(rows.filter(r => r.ref === 'test-bundle-a')).toHaveLength(2);
 
       const vectors = await readVectors(tx, 'bundle_card', [{ ref: 'test-bundle-a', text: changed[0]!.text }], MODEL);
@@ -106,7 +111,7 @@ describe.skipIf(!RUN)('P2 Task 6 — embedMissing / readVectors (scratch DB only
 
       await expect(embedMissing(tx, items, MODEL, badEmbed)).rejects.toThrow(/got \d+ vectors for \d+ texts/);
 
-      const rows = await tx.select().from(itemEmbeddings);
+      const rows = await ownRows(tx);
       expect(rows).toHaveLength(0);
     });
   });

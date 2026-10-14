@@ -34,9 +34,12 @@
  *     --replace was not given.
  *   - --replace refuses (exit 5) if any existing sample has submitted_at
  *     set: a submitted blind pick is never redrawn.
- *   - --replace also refuses (exit 5) once ANY bundle has an `ok` mapping
- *     outcome — the reviewer may already have seen placements, so a redrawn
- *     bundle would not be blind — and if any sample carries a reset_note
+ *   - --apply (first draw or --replace) refuses (exit 5) once ANY bundle has
+ *     an `ok` mapping outcome — the reviewer may already have seen those
+ *     placements, so a bundle sampled now would not be blind. The order is
+ *     draw → map → blind pick (map-bundles-onet --apply refuses until a draw
+ *     exists). A dry run prints the same message as a warning.
+ *   - --replace also refuses (exit 5) if any sample carries a reset_note
  *     (that audit trail is never deleted).
  *   - Never prints DATABASE_URL or any other credential.
  */
@@ -183,8 +186,9 @@ export interface CliDeps {
  * confirmed card or vector) -> report -> (if --apply) write in one
  * transaction. Exit codes follow scripts/catalog/draft-bundle-cards.ts's
  * convention: 2 = bad args, 1 = wrong database, 3 = a refusal before any
- * write, 4 = a write-phase failure, 5 = --replace blocked by an already-
- * submitted sample (brief-specified, distinct from the generic 3).
+ * write, 4 = a write-phase failure, 5 = blindness refusal: --replace over a
+ * submitted sample or reset_note history, or --apply after any bundle has an
+ * ok mapping outcome (distinct from the generic 3).
  */
 export async function main(argv: string[], deps: CliDeps = {}): Promise<number> {
   let args: DrawArgs;
@@ -225,15 +229,20 @@ export async function main(argv: string[], deps: CliDeps = {}): Promise<number> 
       console.error(`refusing --replace: sample(s) already submitted for ${submitted.map(r => r.bundleId).join(', ')} — a submitted blind pick is never redrawn`);
       return 5;
     }
-    if (mappedCount > 0) {
-      console.error(`refusing --replace: ${mappedCount} bundle(s) already have an ok mapping outcome — the reviewer may have seen their placements, so a redraw would not be blind`);
-      return 5;
-    }
     const withNote = existing.filter(r => r.resetNote !== null);
     if (withNote.length > 0) {
       console.error(`refusing --replace: sample(s) for ${withNote.map(r => r.bundleId).join(', ')} carry reset_note history, which a redraw would delete`);
       return 5;
     }
+  }
+
+  if (mappedCount > 0) {
+    const msg = `${mappedCount} bundle(s) already have an ok mapping outcome — the reviewer may have seen their placements, so a sample drawn now would not be blind (order: draw → map → blind pick)`;
+    if (args.apply) {
+      console.error(`refusing${args.replace ? ' --replace' : ''}: ${msg}`);
+      return 5;
+    }
+    console.log(`WARNING: ${msg}`);
   }
 
   let rows: SampleRow[];
