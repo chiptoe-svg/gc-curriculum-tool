@@ -7,6 +7,7 @@
 
 import path from 'node:path';
 import * as nodeFs from 'node:fs';
+import { WIKI_SERVED_TYPES, type WikiServedType } from '@/lib/ai/wiki/schema';
 
 const WIKI_REPO_PATH =
   process.env.WIKI_REPO_PATH ?? '/Users/admin/projects/gc-curriculum-wiki';
@@ -59,17 +60,17 @@ export function parseFrontmatter(raw: string): {
 // Wikilink resolution
 // ---------------------------------------------------------------------------
 
-const ALLOWED_TYPES = ['courses', 'competencies', 'targets', 'concepts'] as const;
-type WikiType = (typeof ALLOWED_TYPES)[number];
+type WikiType = WikiServedType;
 
 /**
- * Given a slug (e.g. "gc-4800", "brand-strategy"), find which of the four
- * type directories contains a matching .md file.
+ * Given a slug (e.g. "gc-4800", "brand-strategy"), find which of the served
+ * section directories contains a matching .md file.
  * Returns null when no match is found (broken link).
  */
 function resolveWikiSlug(slug: string): { type: WikiType; slug: string } | null {
+  if (!/^[a-z0-9-]+$/.test(slug)) return null; // flat slugs only — never resolve "a/b" or traversal
   const fs = nodeFs;
-  for (const type of ALLOWED_TYPES) {
+  for (const type of WIKI_SERVED_TYPES) {
     const candidate = path.join(WIKI_REPO_PATH, type, `${slug}.md`);
     try {
       fs.accessSync(candidate, fs.constants.F_OK);
@@ -88,6 +89,7 @@ function resolveWikiSlug(slug: string): { type: WikiType; slug: string } | null 
  * Patterns handled:
  *   [[gc-4800]]             → link using slug as label
  *   [[gc-4800|Custom Text]] → link using "Custom Text" as label
+ *   [[gc-4800\|Custom Text]] → same as the plain pipe form (table-escaped)
  */
 export function resolveWikilinks(
   markdown: string,
@@ -96,7 +98,10 @@ export function resolveWikilinks(
   titles?: ReadonlyMap<string, string>,
 ): string {
   return markdown.replace(
-    /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g,
+    // `[^\]|\\]+` keeps a table-escaped `\|` out of the slug; `\\?` swallows that
+    // backslash so [[slug\|Label]] (pipe escaped inside a markdown table cell)
+    // resolves like [[slug|Label]].
+    /\[\[([^\]|\\]+)\\?(?:\|([^\]]+))?\]\]/g,
     (_match, rawSlug: string, label?: string) => {
       const slug = rawSlug.trim();
       const displayText = label?.trim() ?? titles?.get(slug) ?? slug;
