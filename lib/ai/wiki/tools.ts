@@ -27,13 +27,11 @@ const ALLOWED_TYPES = WIKI_SERVED_TYPES;
 function rejectRaw(p: string): { ok: true; path: string } | { ok: false; error: string } {
   // Normalize before the raw/ test: a literal-prefix check alone is bypassed
   // by research/../raw/x, ./raw/x and RAW/x (case-insensitive APFS). So:
-  // reject absolute paths and any '..' segment outright, posix-normalize
-  // (drops './' and duplicate slashes), then compare the first segment
+  // strip leading slashes (callers send "/courses/x.md"; kept for backward
+  // compatibility), reject any '..' segment outright, posix-normalize (drops
+  // './' and duplicate slashes), then compare the first segment
   // case-insensitively. readWikiPage's own traversal guard still applies.
-  const slashed = p.replace(/\\/g, '/');
-  if (path.posix.isAbsolute(slashed) || /^[a-zA-Z]:/.test(slashed)) {
-    return { ok: false, error: 'page path must be relative to the wiki repo (no leading "/")' };
-  }
+  const slashed = p.replace(/\\/g, '/').replace(/^\/+/, '');
   if (slashed.split('/').includes('..')) {
     return { ok: false, error: 'page path must not contain ".." segments' };
   }

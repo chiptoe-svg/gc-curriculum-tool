@@ -43,6 +43,19 @@ describe('read_wiki refuses raw/ however it is spelled', () => {
     expect(res.content).toBeUndefined();
     expect(res.error).toBeTruthy();
   });
+
+  // Slash-prefixed variants must hit the raw/ refusal itself, not merely fail
+  // later as "page not found" (round 1b: leading slashes are stripped again).
+  it.each(['/raw/snap.json', '/RAW/snap.json', '//raw/snap.json', '/./raw/snap.json'])('%s → raw/ refusal', async (p) => {
+    const res = await read(p);
+    expect(res.content).toBeUndefined();
+    expect(res.error).toMatch(/cannot read raw\//);
+  });
+  it('/research/../raw/snap.json → refused', async () => {
+    const res = await read('/research/../raw/snap.json');
+    expect(res.content).toBeUndefined();
+    expect(res.error).toBeTruthy();
+  });
 });
 
 describe('read_wiki keeps the repo traversal guard', () => {
@@ -58,6 +71,12 @@ describe('read_wiki keeps the repo traversal guard', () => {
     expect(await readWikiPage('courses/../../outside.md')).toBeNull();
     expect(await readWikiPage(join(ROOT, 'outside.md'))).toBeNull();
     expect(await readWikiPage('courses/gc-1010.md')).toContain('# GC 1010');
+  });
+
+  it('a leading slash is stripped: /courses/x.md is served as courses/x.md (backward compatible)', async () => {
+    const r = await read('/courses/gc-1010.md');
+    expect(r.path).toBe('courses/gc-1010.md');
+    expect(r.content).toContain('# GC 1010');
   });
 
   it('still reads a normal page, and ./courses/x normalizes to courses/x', async () => {
