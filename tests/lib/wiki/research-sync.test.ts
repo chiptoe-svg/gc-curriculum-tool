@@ -18,6 +18,7 @@ vi.mock('node:child_process', async (importOriginal) => {
 });
 
 import { syncResearch, readResearchSource, ResearchSyncRefusal } from '@/lib/wiki/research-sync';
+import { main as cliMain } from '@/scripts/wiki/sync-research';
 
 let tmp: string; let wiki: string; let src: string;
 const git = (cwd: string, ...args: string[]) => execFileSync('git', ['-C', cwd, ...args], { encoding: 'utf8' }).trim();
@@ -205,3 +206,188 @@ describe('syncResearch', () => {
     expect(git(wiki, 'status', '--porcelain')).toBe('');
   });
 });
+
+// --- adversarial round 1 fixes ---
+
+const remoteMain = () => git(path.join(tmp, 'remote.git'), 'rev-parse', 'main');
+
+/** Run the CLI against the temp wiki/src; returns exit code and captured output. */
+async function cli(...args: string[]) {
+  const out: string[] = [];
+  const log = vi.spyOn(console, 'log').mockImplementation((...a: unknown[]) => { out.push(a.join(' ')); });
+  const err = vi.spyOn(console, 'error').mockImplementation((...a: unknown[]) => { out.push(a.join(' ')); });
+  try {
+    const code = await cliMain(['--source', src, '--wiki', wiki, ...args]);
+    return { code, out: out.join('\n') };
+  } finally { log.mockRestore(); err.mockRestore(); }
+}
+
+describe('I1: the sync only runs with <branch> checked out', () => {
+  it('another branch checked out (local main has an unpushed outside commit): dry run and apply refuse, remote unchanged, exit 3', async () => {
+    await w(wiki, 'targets/brand-strategy.md', OKF_T('brand-strategy') + 'hacked\n');
+    git(wiki, 'commit', '-qam', 'outside change on main');
+    git(wiki, 'checkout', '-q', '-b', 'side', 'HEAD~1');
+    const before = remoteMain();
+    await expect(run(false)).rejects.toThrow(/on branch "side"/);
+    await expect(run(true)).rejects.toThrow(/on branch "side"/);
+    expect(remoteMain()).toBe(before);
+    await expect(fs.stat(path.join(wiki, 'research'))).rejects.toThrow();
+    const r = await cli('--apply');
+    expect(r.code).toBe(3);
+    expect(r.out).toContain('REFUSED');
+    expect(remoteMain()).toBe(before);
+  });
+
+  it('detached HEAD: dry run and apply refuse, remote unchanged', async () => {
+    git(wiki, 'checkout', '-q', '--detach');
+    const before = remoteMain();
+    await expect(run(false)).rejects.toThrow(/detached HEAD/);
+    await expect(run(true)).rejects.toThrow(/detached HEAD/);
+    expect(remoteMain()).toBe(before);
+    expect(git(wiki, 'status', '--porcelain')).toBe('');
+  });
+
+  it('reports the sha the remote now holds', async () => {
+    const r = await run(true);
+    expect(r.committed).toBe(true);
+    expect(r.sha).toBe(remoteMain());
+    expect(r.sha).toBe(git(wiki, 'rev-parse', 'HEAD'));
+  });
+});
+
+describe('research/ folder hygiene (refuse, never remove)', () => {
+  it('m1: refuses a hard-linked file in research/ and writes nothing outside', async () => {
+    await run(true);
+    const target = path.join(wiki, 'targets', 'brand-strategy.md');
+    await fs.rm(path.join(wiki, 'research', 'career-paths.md'));
+    await fs.link(target, path.join(wiki, 'research', 'career-paths.md'));
+    await w(src, 'career-paths.md', page('career-paths', '', '# OVERWRITTEN\n\n[[ai-careers-brief]]\n'));
+    await expect(run(true)).rejects.toThrow(/hard-linked/);
+    expect(await fs.readFile(target, 'utf8')).toBe(OKF_T('brand-strategy'));
+  });
+
+  it.each([
+    ['.DS_Store', 'file'],
+    ['notes.txt', 'file'],
+    ['drafts', 'dir'],
+  ])('M1: refuses %s in research/ (dry run and apply) and leaves it in place', async (name, kind) => {
+    await run(true);
+    const p = path.join(wiki, 'research', name);
+    if (kind === 'dir') await fs.mkdir(p); else await fs.writeFile(p, 'x');
+    const head = git(wiki, 'rev-parse', 'HEAD');
+    await expect(run(false)).rejects.toThrow(new RegExp(`non-\\.md entries.*${name.replace('.', '\\.')}`));
+    await expect(run(true)).rejects.toThrow(new RegExp(name.replace('.', '\\.')));
+    expect((await fs.lstat(p)).isDirectory()).toBe(kind === 'dir');
+    expect(git(wiki, 'rev-parse', 'HEAD')).toBe(head);
+  });
+});
+
+describe('m2: a failed restore after a failed apply is reported', () => {
+  it('a held index.lock during restore → plain Error naming the reset command (not swallowed)', async () => {
+    await run(true);
+    const actual = await vi.importActual<typeof import('node:child_process')>('node:child_process');
+    const lock = path.join(wiki, '.git', 'index.lock');
+    vi.mocked(childProcess.execFile).mockImplementation(((file: string, args: string[], cb: (...a: unknown[]) => void) => {
+      if (args.includes('restore')) execFileSync('touch', [lock]); // a concurrent git holds the index
+      return actual.execFile(file, args, cb as never);
+    }) as unknown as typeof childProcess.execFile);
+    await w(src, 'career-paths.md', page('career-paths', '', '# Career paths\n\n[[no-such-page]]\n'));
+    let caught: unknown;
+    try { await run(true); } catch (e) { caught = e; } finally {
+      vi.mocked(childProcess.execFile).mockImplementation(actual.execFile as unknown as typeof childProcess.execFile);
+      await fs.rm(lock, { force: true });
+    }
+    expect(caught).toBeInstanceOf(Error);
+    expect(caught).not.toBeInstanceOf(ResearchSyncRefusal);
+    const msg = (caught as Error).message;
+    expect(msg).toContain('lint errors in research/');
+    expect(msg).toContain('research/ may be dirty');
+    expect(msg).toContain(`git -C ${wiki} restore --source=HEAD --staged --worktree -- research && git -C ${wiki} clean -fd -- research`);
+    expect(git(wiki, 'status', '--porcelain')).toBe('M research/career-paths.md'); // really left dirty
+  });
+});
+
+describe('source file names', () => {
+  it.each(['Gamma.MD', 'gamma.markdown', 'gamma.Md', 'gamma.mdown'])('m4: refuses %s instead of skipping it', async (name) => {
+    await w(src, name, page('gamma'));
+    await expect(readResearchSource(src, { base: BASE, timestampOf: TS })).rejects.toThrow(/lowercase \.md extension/);
+  });
+
+  it('m5: refuses a source named index.md', async () => {
+    await w(src, 'index.md', page('index'));
+    await expect(readResearchSource(src, { base: BASE, timestampOf: TS })).rejects.toThrow(/reserved name/);
+  });
+
+  it('non-markdown files in the source are still ignored', async () => {
+    await w(src, 'figure.png', 'x'); await w(src, '.DS_Store', 'x');
+    const pages = await readResearchSource(src, { base: BASE, timestampOf: TS });
+    expect(pages.map(p => p.file)).toEqual(['ai-careers-brief.md', 'career-paths.md']);
+  });
+});
+
+describe('M8: the dry run runs the read-only checks', () => {
+  it('refuses tracked changes outside research/', async () => {
+    await fs.appendFile(path.join(wiki, 'targets', 'brand-strategy.md'), 'edit\n');
+    await expect(run(false)).rejects.toThrow(/tracked changes outside research/);
+  });
+  it('refuses unpushed commits touching paths outside research/', async () => {
+    await w(wiki, 'targets/brand-strategy.md', OKF_T('brand-strategy') + 'local only\n');
+    git(wiki, 'commit', '-qam', 'unpushed outside change');
+    await expect(run(false)).rejects.toThrow(/unpushed commits touching paths outside research/);
+  });
+  it('refuses a wiki path that is not the repo top level', async () => {
+    await expect(syncResearch({ sourceDir: src, wikiRoot: path.join(wiki, 'targets'), apply: false, base: BASE, timestampOf: TS }))
+      .rejects.toThrow(/not the top level/);
+  });
+  it('refuses a clone that has diverged from the remote', async () => {
+    const other = path.join(tmp, 'other');
+    execFileSync('git', ['clone', '-q', path.join(tmp, 'remote.git'), other], { stdio: 'ignore' });
+    git(other, 'config', 'user.email', 't@example.test'); git(other, 'config', 'user.name', 'test');
+    await w(other, 'research/x.md', 'x\n'); git(other, 'add', '-A'); git(other, 'commit', '-qm', 'remote side'); git(other, 'push', '-q', 'origin', 'main');
+    await w(wiki, 'research/y.md', 'y\n'); git(wiki, 'add', '-A'); git(wiki, 'commit', '-qm', 'local side');
+    await expect(run(false)).rejects.toThrow(/diverged/);
+  });
+  it('a clean dry run leaves the work tree and branches untouched', async () => {
+    const head = git(wiki, 'rev-parse', 'HEAD');
+    await run(false);
+    expect(git(wiki, 'rev-parse', 'HEAD')).toBe(head);
+    expect(git(wiki, 'status', '--porcelain', '--untracked-files=all')).toBe('');
+  });
+});
+
+describe('M7: CLI wording', () => {
+  it('says "pushed earlier sync commit" when only an earlier unpushed commit was pushed', async () => {
+    // Same defaults the CLI uses (no base, default timestamp), so the plan is empty.
+    const pages = await readResearchSource(src);
+    for (const p of pages) await w(wiki, `research/${p.file}`, p.content);
+    git(wiki, 'add', '-A', '--', 'research'); git(wiki, 'commit', '-qm', 'research: sync (push failed)');
+    const local = git(wiki, 'rev-parse', 'HEAD');
+    const r = await cli('--apply');
+    expect(r.code).toBe(0);
+    expect(r.out).toContain(`pushed earlier sync commit ${local}; no new changes`);
+    expect(r.out).not.toContain('committed + pushed');
+    expect(remoteMain()).toBe(local);
+  });
+  it('says "committed + pushed" for a new commit', async () => {
+    const r = await cli('--apply');
+    expect(r.code).toBe(0);
+    expect(r.out).toContain(`committed + pushed ${remoteMain()}`);
+  });
+});
+
+describe('M6: defaultTimestamp', () => {
+  it('a committed source file stamps its commit time; two reads are byte-identical', async () => {
+    git(src, 'init', '-q');
+    git(src, 'config', 'user.email', 't@example.test'); git(src, 'config', 'user.name', 'test');
+    git(src, 'add', '-A');
+    execFileSync('git', ['-C', src, 'commit', '-qm', 'src'], { env: { ...process.env, GIT_COMMITTER_DATE: '2026-09-01T08:30:00Z', GIT_AUTHOR_DATE: '2026-09-01T08:30:00Z' } });
+    const a = await readResearchSource(src, { base: BASE });
+    // Bump mtime: the stamp must come from git, not the file system.
+    const later = new Date('2030-01-01T00:00:00Z');
+    await fs.utimes(path.join(src, 'career-paths.md'), later, later);
+    const b = await readResearchSource(src, { base: BASE });
+    expect(b.map(p => p.content)).toEqual(a.map(p => p.content));
+    expect(a.find(p => p.slug === 'career-paths')!.content).toContain('timestamp: 2026-09-01T08:30:00Z');
+  });
+});
+

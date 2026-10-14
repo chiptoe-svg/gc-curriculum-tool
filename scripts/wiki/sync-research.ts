@@ -29,7 +29,10 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<numb
     console.log(`write: ${r.plan.write.join(', ') || '—'}`);
     console.log(`remove: ${r.plan.remove.join(', ') || '—'}`);
     console.log(`unchanged: ${r.plan.unchanged.length}`);
-    console.log(apply ? (r.sha ? `committed + pushed ${r.sha}` : 'nothing to commit (research/ already matches)') : 'dry run — nothing written');
+    console.log(!apply ? 'dry run — nothing written'
+      : !r.sha ? 'nothing to commit (research/ already matches)'
+      : r.committed ? `committed + pushed ${r.sha}`
+      : `pushed earlier sync commit ${r.sha}; no new changes`);
     return 0;
   } catch (err) {
     if (err instanceof ResearchSyncRefusal) { console.error(`REFUSED: ${err.message}`); return 3; }

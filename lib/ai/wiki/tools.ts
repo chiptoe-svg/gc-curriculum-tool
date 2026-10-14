@@ -25,11 +25,20 @@ type WikiType = WikiServedType;
 const ALLOWED_TYPES = WIKI_SERVED_TYPES;
 
 function rejectRaw(p: string): { ok: true; path: string } | { ok: false; error: string } {
-  // Normalize separators and strip leading slash; this is purely for the
-  // raw/ guard. The traversal guard inside readWikiPage handles ".."
-  // / absolute-path attacks.
-  const normalized = p.replace(/\\/g, '/').replace(/^\/+/, '');
-  if (normalized.startsWith('raw/')) {
+  // Normalize before the raw/ test: a literal-prefix check alone is bypassed
+  // by research/../raw/x, ./raw/x and RAW/x (case-insensitive APFS). So:
+  // reject absolute paths and any '..' segment outright, posix-normalize
+  // (drops './' and duplicate slashes), then compare the first segment
+  // case-insensitively. readWikiPage's own traversal guard still applies.
+  const slashed = p.replace(/\\/g, '/');
+  if (path.posix.isAbsolute(slashed) || /^[a-zA-Z]:/.test(slashed)) {
+    return { ok: false, error: 'page path must be relative to the wiki repo (no leading "/")' };
+  }
+  if (slashed.split('/').includes('..')) {
+    return { ok: false, error: 'page path must not contain ".." segments' };
+  }
+  const normalized = path.posix.normalize(slashed);
+  if (normalized.split('/')[0]!.toLowerCase() === 'raw') {
     return { ok: false, error: 'cannot read raw/ — that layer is immutable snapshot JSON, not narrative wiki content' };
   }
   return { ok: true, path: normalized };

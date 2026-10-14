@@ -12,9 +12,15 @@
  * Guards that keep writes inside research/:
  *   - <wiki> must be the top level of a git repo (else `git -C` would walk up
  *     to a parent repo and pathspecs would resolve elsewhere);
- *   - <wiki>/research must be a real directory and contain no symlinks (a write
- *     through either would land outside the folder);
+ *   - <wiki>/research must be a real directory holding only regular *.md
+ *     files: no symlinks or hard links (a write through either would land
+ *     outside the folder), no subdirectories or other entries (refused, never
+ *     removed, so a hand-placed file is never committed or deleted);
+ *   - the clone must have <branch> checked out (no detached HEAD), so the
+ *     commit lands on and `push HEAD:<branch>` publishes exactly that branch;
  *   - the source dir must be outside the wiki repo.
+ * The dry run runs the same read-only checks (it fetches, which only updates
+ * FETCH_HEAD), so a clean dry run predicts --apply.
  *
  * Cross-process note: writeAndPush's serialization is in-process only, so this
  * runs in a quiet window (like scripts/wiki/refresh-all.ts). It refuses when
@@ -35,11 +41,20 @@ export class ResearchSyncRefusal extends Error {
 
 export interface ResearchSourcePage { file: string; slug: string; content: string }
 export interface ResearchSyncPlan { write: string[]; remove: string[]; unchanged: string[] }
-export interface ResearchSyncResult { plan: ResearchSyncPlan; applied: boolean; sha: string | null }
+/**
+ * `sha` is the commit this run pushed (its own, or an earlier sync's unpushed
+ * research/ commit), as read back from the remote; null when nothing was pushed.
+ * `committed` is true only when this run made a new commit.
+ */
+export interface ResearchSyncResult { plan: ResearchSyncPlan; applied: boolean; sha: string | null; committed: boolean }
 
 const SECTION = 'research';
 const SKIP = new Set(['SOURCES.md']);
 const FILE_RE = /^[a-z0-9-]+\.md$/;
+/** Markdown-looking names; anything matching must be exactly `<slug>.md`. */
+const MD_LIKE_RE = /\.(md|markdown|mdown|mkdn?|mdwn|mdtxt|mdtext)$/i;
+/** index.md would be read as a section index; the hub page is ai-careers-brief. */
+const RESERVED = new Set(['index.md']);
 
 function gitRaw(cwd: string, args: string[]): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -67,9 +82,15 @@ export async function readResearchSource(
   const timestampOf = opts.timestampOf ?? defaultTimestamp;
   let files: string[];
   try {
-    files = (await fs.readdir(sourceDir)).filter(f => f.endsWith('.md') && !SKIP.has(f)).sort();
+    files = (await fs.readdir(sourceDir)).filter(f => MD_LIKE_RE.test(f) && !SKIP.has(f)).sort();
   } catch {
     throw new ResearchSyncRefusal(`source dir not readable: ${sourceDir}`);
+  }
+  // Refuse (never skip) a markdown file with another extension: skipping it
+  // would silently delete its wiki page.
+  for (const f of files) {
+    if (!f.endsWith('.md')) throw new ResearchSyncRefusal(`${f}: research pages must use the lowercase .md extension`);
+    if (RESERVED.has(f)) throw new ResearchSyncRefusal(`${f}: reserved name (the research hub page is ai-careers-brief.md)`);
   }
   if (files.length === 0) throw new ResearchSyncRefusal(`no research pages in ${sourceDir}`);
   const out: ResearchSourcePage[] = [];
@@ -91,15 +112,28 @@ export async function readResearchSource(
   return out;
 }
 
-/** <wiki>/research, refusing a symlinked folder, a non-directory, or any symlink inside it. */
+/**
+ * <wiki>/research, refusing a symlinked folder, a non-directory, or any entry
+ * inside it that is not a single-link regular *.md file (symlink, hard link,
+ * subdirectory, .DS_Store, ...). Refused, never removed: the folder is
+ * sync-owned, so anything else in it needs a human look.
+ */
 async function researchDir(wikiRoot: string): Promise<string> {
   const dir = path.join(wikiRoot, SECTION);
   let st;
   try { st = await fs.lstat(dir); } catch { return dir; } // absent → created on apply
   if (st.isSymbolicLink()) throw new ResearchSyncRefusal(`${dir} is a symlink; the sync only writes a real research/ folder`);
   if (!st.isDirectory()) throw new ResearchSyncRefusal(`${dir} exists and is not a directory`);
-  const links = (await fs.readdir(dir, { withFileTypes: true })).filter(e => e.isSymbolicLink()).map(e => e.name);
+  const entries = await fs.readdir(dir, { withFileTypes: true });
+  const links = entries.filter(e => e.isSymbolicLink()).map(e => e.name);
   if (links.length > 0) throw new ResearchSyncRefusal(`${dir} contains symlink(s) (${links.join(', ')}); the sync never writes through a link`);
+  const other = entries.filter(e => !e.isFile() || !e.name.endsWith('.md')).map(e => e.name);
+  if (other.length > 0) {
+    throw new ResearchSyncRefusal(`${dir} contains non-.md entries or subdirectories (${other.join(', ')}); remove them by hand — the sync manages only *.md files`);
+  }
+  const hard: string[] = [];
+  for (const e of entries) if ((await fs.lstat(path.join(dir, e.name))).nlink > 1) hard.push(e.name);
+  if (hard.length > 0) throw new ResearchSyncRefusal(`${dir} contains hard-linked file(s) (${hard.join(', ')}); a write would change a file outside research/`);
   return dir;
 }
 
@@ -118,9 +152,15 @@ export async function planResearchSync(pages: ResearchSourcePage[], wikiRoot: st
   return { write: write.sort(), remove, unchanged: unchanged.sort() };
 }
 
-async function restoreResearch(wikiRoot: string): Promise<void> {
-  await git(wikiRoot, ['restore', '--source=HEAD', '--staged', '--worktree', '--', SECTION]).catch(() => undefined);
-  await git(wikiRoot, ['clean', '-fdq', '--', SECTION]).catch(() => undefined);
+/** Put research/ back to HEAD; returns the failures (empty when it is clean again). */
+async function restoreResearch(wikiRoot: string): Promise<string[]> {
+  const failures: string[] = [];
+  const attempt = async (args: string[]) => {
+    try { await git(wikiRoot, args); } catch (e) { failures.push(`git ${args.join(' ')}: ${e instanceof Error ? e.message.trim() : String(e)}`); }
+  };
+  await attempt(['restore', '--source=HEAD', '--staged', '--worktree', '--', SECTION]);
+  await attempt(['clean', '-fdq', '--', SECTION]);
+  return failures;
 }
 
 /** Refuse unless `wikiRoot` is itself the top level of a git work tree. */
@@ -131,6 +171,47 @@ async function assertRepoTopLevel(wikiRoot: string): Promise<void> {
   }
   if ((await realOrResolved(top)) !== (await realOrResolved(wikiRoot))) {
     throw new ResearchSyncRefusal(`${wikiRoot} is not the top level of its git repo (${top})`);
+  }
+}
+
+/** Refuse unless `branch` is checked out (a detached HEAD is refused too). */
+async function assertOnBranch(wikiRoot: string, branch: string): Promise<void> {
+  let current: string;
+  try { current = await git(wikiRoot, ['symbolic-ref', '--quiet', '--short', 'HEAD']); } catch {
+    throw new ResearchSyncRefusal(`wiki clone has a detached HEAD; check out ${branch} first`);
+  }
+  if (current !== branch) throw new ResearchSyncRefusal(`wiki clone is on branch "${current}", not "${branch}"; check out ${branch} first`);
+}
+
+/** Paths outside research/ that local commits not on the fetched remote change. */
+async function aheadOutsideResearch(wikiRoot: string): Promise<string[]> {
+  return (await git(wikiRoot, ['diff', '--name-only', '--no-renames', 'FETCH_HEAD...HEAD']))
+    .split('\n').filter(Boolean).filter(p => p !== SECTION && !p.startsWith(`${SECTION}/`));
+}
+
+/**
+ * The read-only checks, shared by the dry run and --apply. The fetch only
+ * updates FETCH_HEAD; nothing in the work tree or on any branch moves.
+ */
+async function preflight(wikiRoot: string, remote: string, branch: string): Promise<void> {
+  await assertRepoTopLevel(wikiRoot);
+  await assertOnBranch(wikiRoot, branch);
+  await researchDir(wikiRoot); // symlink / hard-link / stray-entry refusal before any git or fs write
+  const dirty = await dirtyOutsideResearch(wikiRoot);
+  if (dirty.length > 0) {
+    throw new ResearchSyncRefusal(`wiki clone has tracked changes outside research/ (another writer mid-flight?): ${dirty.join('; ')}`);
+  }
+  await git(wikiRoot, ['fetch', '-q', remote, branch]);
+  const ancestor = (a: string, b: string) => git(wikiRoot, ['merge-base', '--is-ancestor', a, b]).then(() => true, () => false);
+  if (!(await ancestor('HEAD', 'FETCH_HEAD')) && !(await ancestor('FETCH_HEAD', 'HEAD'))) {
+    throw new ResearchSyncRefusal(`wiki clone's ${branch} has diverged from ${remote}/${branch}; reconcile it by hand first`);
+  }
+  // The push sends every local commit the remote lacks, so refuse if any of
+  // them touch paths outside research/ (only an earlier sync's unpushed
+  // research/ commit may ride along; it gets pushed by --apply).
+  const ahead = await aheadOutsideResearch(wikiRoot);
+  if (ahead.length > 0) {
+    throw new ResearchSyncRefusal(`wiki clone has unpushed commits touching paths outside research/: ${ahead.join('; ')}`);
   }
 }
 
@@ -156,26 +237,20 @@ export async function syncResearch(opts: {
   const remote = opts.remote ?? 'origin';
   const branch = opts.branch ?? 'main';
   const pages = await readResearchSource(sourceDir, { base: opts.base, timestampOf: opts.timestampOf });
-  if (!opts.apply) return { plan: await planResearchSync(pages, wikiRoot), applied: false, sha: null };
+  await preflight(wikiRoot, remote, branch);
+  if (!opts.apply) return { plan: await planResearchSync(pages, wikiRoot), applied: false, sha: null, committed: false };
 
-  await assertRepoTopLevel(wikiRoot);
-  await researchDir(wikiRoot); // symlink refusal before any git/fs write
-  const dirty = await dirtyOutsideResearch(wikiRoot);
-  if (dirty.length > 0) {
-    throw new ResearchSyncRefusal(`wiki clone has tracked changes outside research/ (another writer mid-flight?): ${dirty.join('; ')}`);
-  }
   await git(wikiRoot, ['pull', '-q', '--ff-only', remote, branch]);
-  // The push sends every local commit the remote lacks, so refuse if any of
-  // them touch paths outside research/ (only an earlier sync's unpushed
-  // research/ commit may ride along; it gets pushed below).
-  const aheadOutside = (await git(wikiRoot, ['diff', '--name-only', '--no-renames', 'FETCH_HEAD', 'HEAD']))
-    .split('\n').filter(Boolean).filter(p => p !== SECTION && !p.startsWith(`${SECTION}/`));
+  // Re-check after the pull (the remote may have moved since the preflight fetch).
+  await assertOnBranch(wikiRoot, branch);
+  const aheadOutside = await aheadOutsideResearch(wikiRoot);
   if (aheadOutside.length > 0) {
     throw new ResearchSyncRefusal(`wiki clone has unpushed commits touching paths outside research/: ${aheadOutside.join('; ')}`);
   }
 
   const plan = await planResearchSync(pages, wikiRoot); // re-checks symlinks after the pull
   const dir = path.join(wikiRoot, SECTION);
+  let committed = false;
   try {
     await fs.mkdir(dir, { recursive: true });
     const byFile = new Map(pages.map(p => [p.file, p.content]));
@@ -187,17 +262,31 @@ export async function syncResearch(opts: {
     }
     await git(wikiRoot, ['add', '-A', '--', SECTION]);
     const staged = await git(wikiRoot, ['diff', '--cached', '--name-only', '--', SECTION]);
-    if (staged) await git(wikiRoot, ['commit', '-q', '-m', `research: sync ${plan.write.length} written, ${plan.remove.length} removed`, '--', SECTION]);
+    if (staged) {
+      await git(wikiRoot, ['commit', '-q', '-m', `research: sync ${plan.write.length} written, ${plan.remove.length} removed`, '--', SECTION]);
+      committed = true;
+    }
   } catch (err) {
-    await restoreResearch(wikiRoot);
+    const failures = await restoreResearch(wikiRoot);
+    if (failures.length > 0) {
+      // Not a refusal: the clone may now be dirty, and the next writer's
+      // `git add -A` would commit it. Say so, with the reset command.
+      throw new Error(
+        `${err instanceof Error ? err.message : String(err)}\n` +
+        `research/ may be dirty: restoring it to HEAD failed (${failures.join('; ')}). Reset it with:\n` +
+        `  git -C ${wikiRoot} restore --source=HEAD --staged --worktree -- research && git -C ${wikiRoot} clean -fd -- research`,
+      );
+    }
     throw err;
   }
   // Nothing new and nothing unpushed (e.g. from an earlier failed push) → done.
   if ((await git(wikiRoot, ['rev-list', '--count', 'FETCH_HEAD..HEAD'])) === '0') {
-    return { plan, applied: true, sha: null };
+    return { plan, applied: true, sha: null, committed };
   }
+  // Push exactly HEAD (the checked-out <branch>, asserted above) to <branch>.
+  const refspec = `HEAD:refs/heads/${branch}`;
   try {
-    await git(wikiRoot, ['push', '-q', remote, branch]);
+    await git(wikiRoot, ['push', '-q', remote, refspec]);
   } catch {
     try {
       await git(wikiRoot, ['pull', '--rebase', '-q', remote, branch]);
@@ -205,7 +294,11 @@ export async function syncResearch(opts: {
       await git(wikiRoot, ['rebase', '--abort']).catch(() => undefined);
       throw err;
     }
-    await git(wikiRoot, ['push', '-q', remote, branch]);
+    await git(wikiRoot, ['push', '-q', remote, refspec]);
   }
-  return { plan, applied: true, sha: await git(wikiRoot, ['rev-parse', 'HEAD']) };
+  // Report what the remote now holds, and fail loudly if it is not our HEAD.
+  const head = await git(wikiRoot, ['rev-parse', 'HEAD']);
+  const remoteSha = (await git(wikiRoot, ['ls-remote', remote, `refs/heads/${branch}`])).split(/\s+/)[0] ?? '';
+  if (remoteSha !== head) throw new Error(`push reported success but ${remote}/${branch} is ${remoteSha || '(missing)'}, not ${head}`);
+  return { plan, applied: true, sha: remoteSha, committed };
 }
