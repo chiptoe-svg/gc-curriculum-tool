@@ -541,7 +541,7 @@
     {
       "id": "bg-gonczi-3",
       "location": "§3 table",
-      "claim_text": "Atomizing competence into an external checklist optimizes for adequacy over integration (Gonczi; Winch)",
+      "claim_text": "Atomizing competence into an external checklist optimizes for adequacy over integration (Gonczi, 1994; Brockmann, Clarke, & Winch, 2008)",
       "held_file": "ai_career:future_of_gc/load_bearing/Gonczi_1994_Competency_Based_Assessment_Professions_Australia.pdf",
       "quote": "Its aim is transparent specification of competencies such that there can be no disagreement about what constitutes satisfactory performance... This approach is not concerned with the connections between the tasks and ignores the possibility that the coming together of tasks could lead to their transformation. (The whole is not greater than the sum of the parts.)",
       "page": "28"
@@ -1168,7 +1168,7 @@
       "claim_text": "Procedural Knowledge (\"how to do something\") is a Knowledge Dimension category",
       "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
       "quote": "Procedural Knowledge – How to do something",
-      "page": "printed p. 214 (Table 1)"
+      "page": "printed p. 214 (Table 2)"
     },
     {
       "id": "bg-krathwohl2002-2",
@@ -1176,7 +1176,7 @@
       "claim_text": "Apply is \"carrying out or using a procedure in a given situation\"",
       "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
       "quote": "Apply – Carrying out or using a procedure in a given situation.",
-      "page": "printed p. 215 (Table 2)"
+      "page": "printed p. 215 (Table 3)"
     },
     {
       "id": "bg-doignon2015-4",
@@ -1201,6 +1201,22 @@
       "held_file": "pdfs:brynjolfsson-2026-canaries.pdf",
       "quote": "the kept-pace shortfall was 15% at the July 2025 data vintage and has since widened to 19% as of June 2026",
       "page": "PDF p.3"
+    },
+    {
+      "id": "bg-brockmann-1",
+      "location": "§3 table",
+      "claim_text": "An atomized competence model lacks the integration that constitutes occupational competence (Brockmann, Clarke, & Winch, 2008)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Brockmann_Clarke_Winch_2008_Knowledge_Skills_Competence_VET.pdf",
+      "quote": "There is no notion of an integration of different forms of knowledge, and thus of experiential learning and knowledge creation.",
+      "page": "printed p. 555"
+    },
+    {
+      "id": "bg-brockmann-2",
+      "location": "§3 table",
+      "claim_text": "Competence as integrative rather than cumulative (Brockmann, Clarke, & Winch, 2008)",
+      "held_file": "ai_career:future_of_gc/load_bearing/Brockmann_Clarke_Winch_2008_Knowledge_Skills_Competence_VET.pdf",
+      "quote": "integrative rather than cumulative, relying on the different components of occupational, social and individual competence to come together in a given work situation",
+      "page": "printed p. 557"
     }
   ]
 }
