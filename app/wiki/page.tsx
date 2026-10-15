@@ -141,9 +141,7 @@ export default async function WikiIndexPage({ searchParams }: Props) {
           <section className="wiki-cols">
             <div className="wiki-col">
               <h2 className="wiki-index__h2">Career targets</h2>
-              <p className="wiki-col__intro">The five destinations the program prepares students for. Each is a family of the jobs graduates actually take, not a single job title.</p>
-              <p className="wiki-col__intro">For now, each <a href="#competency">competency</a> is listed under the one target it serves most. That is a simplification: most competencies matter to several targets, at different depths. The catalog work described under Competencies will record, for each target, which competencies it needs, how much each one matters and the depth required. These will be drafted from O*NET and from where alumni actually work, then confirmed by faculty and employers.</p>
-              <p className="wiki-beta"><strong>Beta.</strong> {CAREER_TARGETS_BETA}</p>
+              <p className="wiki-col__intro">The five destinations the program prepares students for. Each is a family of the jobs graduates actually take, not a single job title.</p>              <p className="wiki-beta"><strong>Beta.</strong> {CAREER_TARGETS_BETA}</p>
               <ul className="wiki-col__list">
                 {data.targets.map(t => (
                   <li key={t.slug}>
@@ -156,6 +154,7 @@ export default async function WikiIndexPage({ searchParams }: Props) {
             <div className="wiki-col">
               <h2 className="wiki-index__h2">Competencies</h2>
               <p className="wiki-col__intro">{currentCompetencies.length} competencies, grouped by the career target each belongs to. Each is scored on <a href="#kud">know, understand and do</a>.</p>
+              <p className="wiki-col__intro">For now, each competency is listed under the one target it serves most. That is a simplification: most competencies matter to several targets, at different depths. The catalog work described below will record, for each target, which competencies it needs, how much each one matters and the depth required. These will be drafted from O*NET and from where alumni actually work, then confirmed by faculty and employers.</p>
               <details className="wiki-col__more">
                 <summary>Where these come from</summary>
                 <p><strong>Where they came from.</strong> Starting from the five career targets, the program looked up our alumni&rsquo;s actual jobs in O*NET, the U.S. Department of Labor&rsquo;s occupation database, and drew an initial set of competencies for each target from what those jobs require. Target 5, Creative Technology &amp; Systems, was rewritten in October 2026 from research on AI and GC careers and from employer job descriptions.</p>
