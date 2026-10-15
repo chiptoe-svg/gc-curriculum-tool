@@ -41,6 +41,7 @@ understand / do; the wiki and the program views make the result readable to anyo
 - **Phase 1B Scaffolding stage 2 / Phase 1D advising view** — program analytics beyond the matrix. Why not yet: Arc A first.
 - **Spoken-interview capture (voicelab findings)** — direct-audio works only on Gemma 4 E2B/E4B/12B. Why not yet: depends on whether Position Capture page 6 wants it.
 - **Diagnostic constraint modeling** (GC-specific troubleshooting condition, JSON on `productive_failure_conditions`). Small; waits for a capture that needs it.
+- **Code follow-ups from the Background external review (owner, 2026-10-15: the page now describes what is built; these would close the gap).** (a) Prerequisite-gap engine follows prerequisite chains back more than one step (`lib/program/prereq-gaps.ts` reads direct edges only). (b) Flag an uncaptured prerequisite as no-data when another prerequisite on the same competency is captured (today it is silently dropped). (c) A pedagogical-regime tag (diagnostic / procedural / design judgment) so Area 7 and the scaffolding analysis stop expecting generate-then-consolidate in procedural modules (Background Figure 4). Also open from the same review: record assessment modality (observed vs take-home) for AI-resistant evidence; aggregate the abstraction-and-bridging condition in the scaffolding analysis; interval-valued derived scores and the "tie" rule. Triage: Background revision log, 2026-10-15.
 
 ## Outstanding issues (known, not scheduled)
 
