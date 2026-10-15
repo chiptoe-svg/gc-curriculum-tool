@@ -1161,6 +1161,46 @@
       "held_file": "pdfs:brynjolfsson-2026-canaries.pdf",
       "quote": "For workers aged 22–25, employment in the most exposed quintile declined by about 18 percentage points relative to the least exposed quintile (Panel A; −0.179).",
       "page": "PDF p.12"
+    },
+    {
+      "id": "bg-krathwohl2002-1",
+      "location": "§2 Bloom paragraph",
+      "claim_text": "Procedural Knowledge (\"how to do something\") is a Knowledge Dimension category",
+      "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
+      "quote": "Procedural Knowledge – How to do something",
+      "page": "printed p. 214 (Table 1)"
+    },
+    {
+      "id": "bg-krathwohl2002-2",
+      "location": "§2 Bloom paragraph",
+      "claim_text": "Apply is \"carrying out or using a procedure in a given situation\"",
+      "held_file": "pdfs:krathwohl-2002-revised-bloom-overview.pdf",
+      "quote": "Apply – Carrying out or using a procedure in a given situation.",
+      "page": "printed p. 215 (Table 2)"
+    },
+    {
+      "id": "bg-doignon2015-4",
+      "location": "§2 skill-tree paragraph",
+      "claim_text": "KST's assessment procedure rests on a probabilistic knowledge structure",
+      "held_file": "pdfs:doignon-falmagne-2015-knowledge-spaces-learning-spaces.pdf",
+      "quote": "It relies on the notion of a probabilistic knowledge structure",
+      "page": "printed p. 3"
+    },
+    {
+      "id": "bg-doignon2015-5",
+      "location": "§2 skill-tree paragraph",
+      "claim_text": "the probabilistic structure allows a careless error on a mastered item or a lucky guess on an unmastered one",
+      "held_file": "pdfs:doignon-falmagne-2015-knowledge-spaces-learning-spaces.pdf",
+      "quote": "represents the careless error probability to item q, and the number",
+      "page": "printed p. 28 (Definition 34)"
+    },
+    {
+      "id": "bg-brynjolfsson-3",
+      "location": "§17 (Brynjolfsson entry)",
+      "claim_text": "the kept-pace shortfall for 22–25-year-olds was 15% at the July 2025 vintage and 19% as of June 2026",
+      "held_file": "pdfs:brynjolfsson-2026-canaries.pdf",
+      "quote": "the kept-pace shortfall was 15% at the July 2025 data vintage and has since widened to 19% as of June 2026",
+      "page": "PDF p.3"
     }
   ]
 }
