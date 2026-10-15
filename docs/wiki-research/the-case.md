@@ -13,10 +13,10 @@ tags: [research, ai, careers, curriculum, direction]
 
 1. In every market GC graduates enter, AI is splitting the work. Producing variants is getting cheap. Designing, governing and running the systems that produce them is gaining value.
 2. The shrinking half is where new graduates have always started and learned, so the entry rung is where the pressure lands.
-3. Cheaper output will not bring those jobs back. Budgets are flat and package demand follows the goods being sold, so savings show up as fewer hours, not more work.
+3. Cheaper output will not bring those jobs back. Marketing budgets are flat and package demand follows the goods being sold, so savings show up as fewer hours, not more work.
 4. GC graduates start on the shrinking side: the largest target, design, is led by graphic design, the most exposed occupation, and very few start in the systems roles that are gaining value. They reach the growing side later, on their own.
 5. Design's answer is the creative generalist: a designer with depth in one specialty who works across media and understands what each design decision costs downstream. That is where the evidence says design is heading.
-6. The curriculum covers four targets broadly but the systems target barely at all. It teaches workflow more as concept than practice, and it assesses finished artifacts of the kind AI now produces on demand.
+6. The curriculum covers four of the five targets well but barely touches Creative Technology & Systems. Students learn about workflow more than they practice it, and they are graded on finished work, which AI can now produce on demand.
 7. So the direction is to keep what GC teaches well and shift the weight toward systems and judgment: build the proposed Creative Technology & Systems target, teach every target's systems side, business acumen and judgment over AI output, grow problem-solvers across the program, teach design as the creative generalist, require evidence AI cannot fake, and give students the experience entry-level jobs used to provide.
 
 Each step below gives its evidence; the caveats are collected at the end.
@@ -33,7 +33,7 @@ This page proposes five career targets as a working frame for faculty discussion
 
 Four reasons support the proposal:
 
-- **The targets are where graduates actually go.** Of 661 graduates' first jobs, 90.9% fall into one of the five, and the four established targets each take a fifth to over a quarter.
+- **The targets come from where graduates actually go.** They are drawn from ten years of the program's own data on graduates' first and later jobs, and nine in ten first jobs fall into one of the five. As careers progress, graduates move along the chain toward strategy, accounts and systems roles.
 - **Each target covers a role in the chain, not a single occupation.** Federal codes scatter GC work, and step 5 shows AI moving tasks across occupational lines. Roles in the chain stay stable while job titles change around them.
 - **The chain is what makes GC distinctive.** GC's thread across all five targets is understanding downstream consequences: what happens to the work after it leaves each person's hands. That knowledge only exists across the whole chain. A designer who knows what the decision costs on press, or a seller who understands the brand's versioning problem, is the GC graduate.
 - **Careers move along the chain.** The five are connected stages of a career, not separate tracks; the movement figures are in step 4.
@@ -49,15 +49,15 @@ The same pattern appears in each of the four markets GC graduates enter: design 
 | Design and visual content | Resizes, ad variants, production art | Brand systems and templates that AI varies; art direction; quality control of AI output |
 | Marketing | Routine reporting, first-draft copy | Experiment design, measurement, running marketing technology |
 | Print and packaging: prepress | Routine preflight, trapping, standard edits | Artwork-management systems, regulatory sign-off, versioning strategy |
-| Print and packaging: plant and estimating | Estimating, order handling, file fixing | Workflow automation, lean plant management |
+| Print and packaging: plant and estimating | Estimating, order handling, file fixing | Workflow automation, lean plant management, equipment and systems ROI, technology evaluation |
 | Sales and client roles | Quotes, reorders, inside sales | Technical solution selling, key accounts |
 
 The evidence shows up in projections, pay, tools and roles:
 
-- **Projections.** BLS's 2025–35 projections turned graphic designers negative (−1.7%) and named AI tools as a reason. Prepress jobs are projected to fall 15.3% and desktop publishers 14.5%. Web and digital interface designers are projected to grow 6.0%, and market research analysts and marketing specialists 7%. So do systems analysts (+7.9%), management analysts (+10.1%) and software developers (+10.2%), the occupations behind Creative Technology & Systems.
+- **Projections.** BLS's 2025–35 projections turned graphic designers negative (−1.7%) and named AI tools as a reason. Prepress jobs are projected to fall 15.3% and desktop publishers 14.5%. Web and digital interface designers are projected to grow 6.0%, and market research analysts, marketing specialists and marketing managers about 7%. So do systems analysts (+7.9%), management analysts (+10.1%) and software developers (+10.2%), the occupations behind Creative Technology & Systems.
 - **Pay.** Real wages for web and digital interface designers rose 17.8% over 2015–25. Graphic designers' fell 1.2% (a vendor tabulation of BLS data).
 - **Tools.** Ad platforms now generate commodity variants directly, so much of that work never becomes paid design.
-- **Roles.** A 2026 trade-association report puts marketing jobs 27% below pre-pandemic levels. Senior and strategic roles are holding steady, while execution roles decline.
+- **Roles.** A 2026 trade-association report puts marketing job postings 27% below pre-pandemic levels, with senior and strategic roles holding steady while execution roles decline. That fits the projections above: overall marketing hiring is down, but the strategy and measurement side is not.
 
 ## 2. The split removes the first rung
 
@@ -174,7 +174,7 @@ They are starting points for faculty discussion, not decisions.
 - **The creative generalist.** The case is reasoned from several lines of evidence, not measured directly.
 - **Creative Technology & Systems.** No federal code tracks it, and most of today's 3.9% start in IT support, which BLS projects to shrink.
 - **Sales.** No independent study of AI and print or packaging sales exists.
-- **The five targets.** They are an unadopted proposal, and the 90.9% fit is partly by construction.
+- **The five targets.** They are an unadopted proposal, and the nine-in-ten fit is partly by construction.
 - **The alumni figures.** They are descriptive until the job coding's second-coder check.
 - **The coverage figures.** The record is partial and will change when scoring is rerun.
 - **The three-act timing.** Finishing the mini-capstones by mid-junior year is a working hypothesis.
