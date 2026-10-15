@@ -141,7 +141,8 @@ export default async function WikiIndexPage({ searchParams }: Props) {
           <section className="wiki-cols">
             <div className="wiki-col">
               <h2 className="wiki-index__h2">Career targets</h2>
-              <p className="wiki-col__intro">The five destinations the program prepares students for. Each is made of the <a href="#competency">competencies</a> listed beside it.</p>
+              <p className="wiki-col__intro">The five destinations the program prepares students for. Each is a family of the jobs graduates actually take, not a single job title.</p>
+              <p className="wiki-col__intro">For now, each <a href="#competency">competency</a> is listed under the one target it serves most. That is a simplification: most competencies matter to several targets, at different depths. The catalog work described under Competencies will record, for each target, which competencies it needs, how much each one matters and the depth required. These will be drafted from O*NET and from where alumni actually work, then confirmed by faculty and employers.</p>
               <p className="wiki-beta"><strong>Beta.</strong> {CAREER_TARGETS_BETA}</p>
               <ul className="wiki-col__list">
                 {data.targets.map(t => (
@@ -155,6 +156,17 @@ export default async function WikiIndexPage({ searchParams }: Props) {
             <div className="wiki-col">
               <h2 className="wiki-index__h2">Competencies</h2>
               <p className="wiki-col__intro">{currentCompetencies.length} competencies, grouped by the career target each belongs to. Each is scored on <a href="#kud">know, understand and do</a>.</p>
+              <details className="wiki-col__more">
+                <summary>Where these come from</summary>
+                <p><strong>Where they came from.</strong> Starting from the five career targets, the program looked up our alumni&rsquo;s actual jobs in O*NET, the U.S. Department of Labor&rsquo;s occupation database, and drew an initial set of competencies for each target from what those jobs require. Target 5, Creative Technology &amp; Systems, was rewritten in October 2026 from research on AI and GC careers and from employer job descriptions.</p>
+                <p><strong>What is changing.</strong> The list is becoming one shared catalog that any career target can draw on. Overlapping competencies have been merged: GC production literacy into domain knowledge, and timeline management into project management. Four business-acumen competencies have been proposed but not yet adopted. Each competency is now being matched to O*NET&rsquo;s descriptions of real work, so a target&rsquo;s needs can be compared with what graduates&rsquo; occupations actually ask for. No matches have been approved yet.</p>
+                <p><strong>What comes next: real positions.</strong> The list will be refined as employer position capture gathers more detail: employers and alumni describing actual positions. That raises a chicken-and-egg problem: a position described in terms of competencies we have already named can only confirm the list, never reveal what it is missing. Three safeguards are planned:</p>
+                <ul>
+                  <li>The starting picture of demand comes from outside data (O*NET, and where alumni actually work), not from the program&rsquo;s own judgment.</li>
+                  <li>Employers also say in their own words what matters, and skills that fit no listed competency are kept as gaps instead of being dropped.</li>
+                  <li>Employer, O*NET and faculty views sit side by side, with disagreements shown rather than averaged.</li>
+                </ul>
+              </details>
               {targetMap ? (
                 <div className="wiki-comp-groups">
                   {targetMap.map(t => (

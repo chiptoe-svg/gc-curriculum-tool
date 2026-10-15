@@ -41,7 +41,7 @@ export function HowToRead({ q }: { q: string }) {
         </li>
         <li id="competency">
           <span className="wiki-howto__term">Competencies</span>
-          <p>The specific capabilities a course develops, such as Quality Control or Brand Positioning. There are 30, and each belongs to one career target.</p>
+          <p>The specific capabilities a course develops, such as Quality Control or Brand Positioning. Each is listed under the career target it serves most, though many serve several.</p>
         </li>
         <li id="kud">
           <span className="wiki-howto__term">Know, understand, do</span>
@@ -49,7 +49,7 @@ export function HowToRead({ q }: { q: string }) {
         </li>
         <li id="career-target">
           <span className="wiki-howto__term">Career targets</span>
-          <p>The five destinations the program prepares students for. Each is made of five to seven competencies, so a target is well served when courses across the sequence build its competencies to depth.</p>
+          <p>The five destinations the program prepares students for. A target is well served when courses across the sequence build the competencies it needs to the depth it needs.</p>
           <p className="wiki-beta"><strong>Beta.</strong> {CAREER_TARGETS_BETA}</p>
         </li>
       </ol>
