@@ -14,10 +14,10 @@ tags: [research, ai, careers, curriculum, direction]
 1. In every market GC graduates enter, AI is splitting the work. Producing variants is getting cheap. Designing, governing and running the systems that produce them is gaining value.
 2. The shrinking half is where new graduates have always started and learned, so the entry rung is where the pressure lands.
 3. Cheaper output will not bring those jobs back. Budgets are flat and package demand follows the goods being sold, so savings show up as fewer hours, not more work.
-4. GC graduates work where AI is most active. But the largest target, design, is led by graphic design, the most exposed occupation, and very few graduates start in the systems roles that are gaining value.
+4. GC graduates start on the shrinking side: the largest target, design, is led by graphic design, the most exposed occupation, and very few start in the systems roles that are gaining value. They reach the growing side later, on their own.
 5. Design's answer is the creative generalist: a designer with depth in one specialty who works across media and understands what each design decision costs downstream. That is where the evidence says design is heading.
 6. The curriculum covers four targets broadly but the systems target barely at all. It teaches workflow more as concept than practice, and it assesses finished artifacts of the kind AI now produces on demand.
-7. So the direction is to keep what GC teaches well and shift the weight toward systems and judgment: build the proposed Creative Technology & Systems target, teach every target's systems side and judgment over AI output, teach design as the creative generalist, require evidence AI cannot fake, and build the missing first rung into the program.
+7. So the direction is to keep what GC teaches well and shift the weight toward systems and judgment: build the proposed Creative Technology & Systems target, teach every target's systems side and judgment over AI output, grow problem-solvers across the program, teach design as the creative generalist, require evidence AI cannot fake, and give students the experience entry-level jobs used to provide.
 
 Each step below gives its evidence; the caveats are collected at the end.
 
@@ -65,7 +65,7 @@ The shrinking column is where juniors have always learned the trade. When AI abs
 
 Early data fit this. In US payroll data, employment of 22–25-year-olds in the most AI-exposed occupations stands 19% below where it would be had it kept pace with less-exposed peers (late 2022 to June 2026). At firms that adopted generative AI, junior employment was about 9% lower within six quarters, through slower hiring. Graduates of the most AI-exposed tenth of majors started on 13% lower pay after ChatGPT, narrowing to 3–5% by year two. In Texas, more automatable majors saw fewer graduates find work in the state and lower first-year pay, which that study's authors attribute to generative AI.
 
-The mechanism comes from earlier automation. When automation removes an occupation's less-expert tasks, the job that remains demands more expertise. Wages rise, employment falls and fewer people qualify to enter. The payroll study adds suggestive evidence that AI substitutes for codified knowledge, the kind learned from textbooks and procedures. It complements tacit knowledge built through practice.
+The mechanism comes from earlier automation. When automation removes an occupation's less-expert tasks, the job that remains demands more expertise. Wages rise, employment falls and fewer people qualify to enter. The payroll study adds suggestive evidence that AI substitutes for codified knowledge, the kind learned from textbooks and procedures. It complements tacit knowledge built through practice. AI handles the well-specified problem; what is left for people is the ill-defined one, where they must work out what the problem is, in context, with no procedure to follow.
 
 How much of today's weak entry market AI has caused is disputed. Several studies point to remote work and the general hiring slowdown. **The case does not depend on settling that.** The split in step 1 is visible in projections, wages and tools whatever is driving this year's hiring. A program that trains graduates only for the shrinking column is exposed either way.
 
@@ -81,9 +81,9 @@ GC's markets look more like the satisfied case:
 
 History shows where the work goes instead. When typesetting got cheap, the work moved to customers' computers and a new occupation, desktop publishing, appeared. When ATMs spread, tellers became relationship sellers. In both cases the work moved to a new role rather than growing in place. **With budgets capping headcount, the new role in GC's markets is the one step 1 shows growing: building and running the systems that produce the output.**
 
-## 4. GC graduates are in the right place, on the vulnerable side
+## 4. GC graduates start on the shrinking side and reach the growing side late
 
-Matching graduates' first jobs to OpenAI's occupation categories, 64.0% of recent GC first jobs are in occupations labeled "grows with AI," against 11.9% of US employment. That is a label, not a forecast: the same file labels graphic designers "grows with AI" while BLS projects their decline. GC graduates work where AI is reshaping the work, which is a position to build on. The problem is where in that work they start.
+Most GC graduates' first jobs sit where step 1 shows the work shrinking, and almost none sit where it is growing.
 
 | Target | Role | Share of first jobs |
 | --- | --- | --- |
@@ -94,19 +94,23 @@ Matching graduates' first jobs to OpenAI's occupation categories, 64.0% of recen
 | Creative Technology & Systems | Enables | 3.9% |
 | Outside the five | | 9.1% |
 
-Figures: GC Alumni outcome study, first jobs of 661 validated graduates, 2016–26; career-movement figures come from their later positions.
+*GC Alumni outcome study: first jobs of 661 validated graduates, 2016–26. Career-movement figures below come from their later positions.*
 
-Three things stand out:
+- **The largest target is built on the most exposed occupation.** Design takes 27.5% of first jobs, and about half of that is graphic design, the occupation BLS now projects to decline. UX, UI and web roles, the growing side of design, are under 3% of all first jobs.
+- **The growing systems roles are nearly empty at entry.** Only 3.9% start in Creative Technology & Systems, mostly in IT support, analyst and platform roles.
 
-- **The largest target leans on the most exposed occupation.** Graphic designers are about half of the design target, the profession with the most sobering evidence in step 1. UX, UI and web roles, the growing side of design, are under 3% of all first jobs.
-- **The enabling target is nearly empty at entry.** Only 3.9% start in Creative Technology & Systems, mostly in IT support, analyst and platform roles. Yet 34 graduates have held 42 positions with workflow, automation or technologist in the title, so GC graduates already reach this work later in their careers. Federal occupation codes scatter those jobs across seven unrelated groups, which is why the role is easy to miss.
-- **Careers already move toward the growing side.** About a fifth of line-prepress starters move into systems or sales. About a quarter of customer-service starters move into account roles. About a quarter of designers broaden into art direction, UX or video. Of 98 graduates who reached senior brand or marketing titles, 55 started outside that target.
+Yet graduates do reach the growing side, later in their careers:
 
-Graduates find their way to the growing side, but later and by accident. The program can shorten that path and make it deliberate.
+- 34 graduates have held 42 positions with workflow, automation or technologist in the title.
+- About a fifth of line-prepress starters move into systems or sales, and about a quarter of customer-service starters move into account roles.
+- About a quarter of designers broaden into art direction, UX or video.
+- Of 98 graduates who reached senior brand or marketing titles, 55 started outside that target.
+
+GC graduates can do the growing work; they get there years later and by their own route. The program can put them on that path from the start.
 
 ## 5. Design's answer is the creative generalist
 
-Step 4 shows that GC's largest target leans on its most exposed occupation. The answer is not less design. It is a different designer: depth in one specialty (graphic, UX/UI or package design), fluent across media, and aware of the business and production consequences of each decision. The proposed target also expects these designers to be AI-native, working fluidly with AI tools and shaping them to their own work. Four lines of evidence point there.
+Step 4 shows that GC's largest target is built on its most exposed occupation. The answer is not less design. It is a different designer: depth in one specialty (graphic, UX/UI or package design), fluent across media, and aware of the business and production consequences of each decision. The proposed target also expects these designers to be AI-native, working fluidly with AI tools and shaping them to their own work. Four lines of evidence point there.
 
 - **Design work is moving outward.** In OpenAI's data on US business users of ChatGPT, about 35% of designers' messages involve work usually done by another occupation, chiefly marketing and engineering. Design tasks make up only 1.7% of other workers' messages. The authors read this as the division of work shifting, not as a forecast of which jobs grow.
 - **AI lets one person cover several functions.** In a field experiment with 791 Procter & Gamble professionals, people without AI proposed ideas that matched their own function: R&D staff proposed technical solutions, commercial staff commercial ones. With AI, individuals working alone produced a balanced mix of both, and matched the quality of two-person teams without AI. The authors conclude there "may also be value in training workers to think more broadly across functional boundaries."
@@ -129,7 +133,7 @@ The gap at Creative Technology & Systems shows in every source.
 
 ## 7. The direction
 
-Six moves follow from the steps above. They keep what GC already teaches well and shift where the weight falls: toward systems, judgment and the growing side of each target.
+Seven moves follow from the steps above. They keep what GC already teaches well and shift where the weight falls: toward systems, judgment and the growing side of each target.
 
 1. **Build the Creative Technology & Systems target.** On this evidence it should be the highest priority, and it is the least covered today. Entry postings are still few, but pay rises steeply with experience: senior creative-technologist roles pay well into six figures. An industry panel can set the role's tasks, entry path and what counts as evidence of readiness. *Answers steps 3 and 4.*
 2. **Teach every target's systems side, not just its execution.** *Answers step 1.*
@@ -138,17 +142,18 @@ Six moves follow from the steps above. They keep what GC already teaches well an
    - Marketing: testing, attribution and running marketing technology.
    - Sales: the technical and fiscal core, meaning the process, the ROI case and the numbers.
 3. **Teach judgment over AI output as a core skill.** Students should practice evaluating, selecting and directing work, including what AI produces. In the P&G experiment (step 5), AI raised the quality of what people produced, but those working alone with it were less confident it would rank highly: what they made and what they judged it to be came apart. *Answers steps 2 and 5.*
-4. **Teach design as the creative generalist.** Each designer should build depth in one specialty and practice it across print, packaging, screen and campaign, informed by production knowledge, the brand's strategy and the customer's view. The work should carry its cost, production and compliance consequences, and students should work as AI natives, using and shaping AI tools as a normal part of their practice. *Answers steps 4 and 5.*
-5. **Require evidence that AI cannot fake.** Assessment should lean on reasoning through new cases, adapting to changed conditions, and critiquing and extending work, not on a single finished artifact. *Answers step 6.*
-6. **Build the missing first rung into the program.** Internships, co-ops and capstones should leave students with evidence of systems and judgment work, the work firms used to teach on the job. Examples are a template system, an automated versioning workflow, or a compliance-checked line extension. *Answers step 2.*
+4. **Grow problem-solvers across the program.** Problem-solving is not a generic skill one course can teach. It develops when students repeatedly apply domain knowledge to new, ill-defined problems, fail in ways they learn from, and reflect and revise with feedback. That makes it a property of the whole program, not of a single course. The curriculum tool records these conditions course by course, so gaps across the sequence can be seen. *Answers step 2.*
+5. **Teach design as the creative generalist.** Each designer should build depth in one specialty and practice it across print, packaging, screen and campaign, informed by production knowledge, the brand's strategy and the customer's view. The work should carry its cost, production and compliance consequences, and students should work as AI natives, using and shaping AI tools as a normal part of their practice. *Answers steps 4 and 5.*
+6. **Require evidence that AI cannot fake.** Assessment should lean on reasoning through new cases, adapting to changed conditions, and critiquing and extending work, not on a single finished artifact. *Answers step 6.*
+7. **Give students the experience entry-level jobs used to provide.** Junior roles once taught the trade through the routine work AI now absorbs, so employers increasingly expect graduates to arrive able to do the growing work. Internships, co-ops and capstones should have students do real work on that side, such as setting up a design system that others use, automating a production or marketing workflow, or running and measuring a campaign test, so they graduate with proof they can do it. *Answers step 2.*
 
 To carry these moves, here are a few thought starters for possible curriculum changes:
 
 - **A staged AI sequence.** Every student would meet AI at the same three points in the core, not course by course. It serves three moves: building Creative Technology & Systems, teaching judgment over AI output, and teaching design as the creative generalist.
     - *Foundation, first year (GC 1020 and GC 1050).* Two ways to produce work at scale, and when each fits. The first is generative AI, understood from behind the scenes: machine learning and training data, embeddings, inference, context and prompts, agents, and the tools and skills agents use. That understanding shows students where the tools fall short: output that is fluent but wrong, bias carried over from training data, unsettled rights, and failures specific to GC work, such as output that breaks once printed. The second is the alternative: a correctly built design system whose rules for color, type, layout and assets let templates and automation produce accurate, on-brand variants without generating anything new. Students explain and revise their choices in critique. Everything about how GC 1020 and GC 1050 are structured is on the table: they could be combined, rebalanced or redesigned to make room for this.
     - *Implementation (GC 2400).* An arc in three steps. Students first hand-code HTML and CSS, so they know what good output looks like. Next they direct an AI assistant to write the code from very specific instructions, then check and revise what it produces. Finally they build a design system (perhaps something like a design.md file) that allows the automated creation of a wide variety of outputs that follow the rules they set up, in the way a creative director sets the brand guidelines that designers follow. GC 2400 already covers the first two steps; the design system is the new part.
-    - *Design and evaluation (course TBD).* Students use design thinking to understand the people who will use a tool, define the problem and set goals. They then build a design system or tool that someone else has to use, test it with those users, and measure whether an AI-assisted workflow beats the current one. That evaluation is the defining skill of Creative Technology & Systems.
-- **Utilize the 3-act program as the model for program structure.** It serves building the first rung into the program, requiring evidence AI cannot fake, and leaving time to develop each student toward a career target.
+    - *Design and evaluation (course TBD).* Students learn design thinking, a human-centered, iterative approach to solving complex problems that puts the end user's needs first. They use it to understand the people who will use a tool, define the problem and set goals. They then build a design system or tool that someone else has to use, test it with those users, and revise it through repeated rounds. Finally they measure whether the AI-assisted workflow beats the current one. That evaluation is the defining skill of Creative Technology & Systems.
+- **Utilize the 3-act program as the model for program structure.** It serves growing problem-solvers across the program, giving students the experience entry-level jobs used to provide, requiring evidence AI cannot fake, and leaving time to develop each student toward a career target.
     - *Act 1, Foundations & Agency: learn the field.* Heavily scaffolded foundations, plus the habits of self-direction and reflection.
     - *Act 2, Integration & Mastery: integrate the field.* Its anchors are GC 4400 and GC 4060, the mini-capstones that faculty and graduating students consistently name as where "it all came together". Removing barriers in the sequence would let students complete them by mid-junior year, not in their final year.
     - *Act 3, Specialty & Application: apply a focus.* The 1.5 or more years left after that point go to development toward one of the career targets.
@@ -162,6 +167,7 @@ They are starting points for faculty discussion, not decisions.
 - **Demand elasticity.** No one has measured it for any GC occupation, and no source yet shows cheaper artwork producing more package versions.
 - **Flat budgets.** If marketing budgets grow as assets get cheaper, the design reading in step 3 changes.
 - **Judgment as the scarce skill.** The P&G experiment is suggestive, not a test of what employers value.
+- **Problem-solving.** That it is domain-bound and that debriefs improve performance are well supported; that four years of these cycles produce better problem-solvers is a design hypothesis the tool's data will test.
 - **The creative generalist.** The case is reasoned from several lines of evidence, not measured directly.
 - **Creative Technology & Systems.** No federal code tracks it, and most of today's 3.9% start in IT support, which BLS projects to shrink.
 - **Sales.** No independent study of AI and print or packaging sales exists.
