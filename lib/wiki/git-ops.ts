@@ -26,6 +26,7 @@ import * as childProcess from 'node:child_process';
 import * as nodeFs from 'node:fs';
 import path from 'node:path';
 import { rebuildSectionIndexes } from '@/lib/ai/wiki/section-index';
+import { requestPublicCopyRefresh } from '@/lib/wiki/public-copy';
 import { scrubForRecord } from '@/lib/privacy/scrub';
 import { findResidualIdentifiers, scrubIdentifiers } from '@/lib/privacy/deterministic';
 
@@ -217,6 +218,9 @@ async function writeAndPushSerial(commit: WikiCommit): Promise<{ sha: string }> 
 
   // 5. Commit.
   await exec('git', ['-C', WIKI_REPO_PATH, 'commit', '-m', commitMessage]);
+
+  // 5b. The pages are on disk: ask for the public Clemson copy to be rebuilt.
+  await requestPublicCopyRefresh();
 
   // 6. Capture HEAD sha before push attempt.
   const { stdout: shaRaw } = await exec('git', ['-C', WIKI_REPO_PATH, 'rev-parse', 'HEAD']);

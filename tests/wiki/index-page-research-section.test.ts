@@ -28,6 +28,8 @@ vi.mock('@/lib/wiki/course-views', async () => {
 });
 vi.mock('@/app/FeedbackLink', () => ({ FeedbackLink: () => null }));
 vi.mock('@/components/AskTab', () => ({ AskTab: () => null }));
+// Public /wiki now redirects to the Clemson copy; render as its snapshot crawler does.
+vi.mock('next/headers', () => ({ headers: async () => new Headers({ 'x-gc-wiki-snapshot': '1' }) }));
 
 import WikiIndexPage from '@/app/wiki/page';
 

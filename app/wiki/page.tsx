@@ -1,4 +1,7 @@
 import Link from 'next/link';
+import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { publicCopyUrl, sendToPublicCopy } from '@/lib/wiki/public-copy';
 import { isValidSlug } from '@/lib/slug';
 import { loadWikiIndex, levelGroup, codeFromSlug, type WikiCourse } from '@/lib/wiki/index-data';
 import { FeedbackLink } from '@/app/FeedbackLink';
@@ -37,6 +40,7 @@ export default async function WikiIndexPage({ searchParams }: Props) {
   // unlocks the faculty nav + embedded Ask chat; without it the page is
   // read-only with public links only.
   const faculty = isValidSlug(slug);
+  if (sendToPublicCopy(faculty, await headers())) redirect(publicCopyUrl('/wiki'));
   const q = faculty ? `?slug=${encodeURIComponent(slug)}` : '';
 
   const data = await loadWikiIndex();

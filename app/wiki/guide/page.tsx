@@ -1,4 +1,7 @@
 import Link from 'next/link';
+import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { publicCopyUrl, sendToPublicCopy } from '@/lib/wiki/public-copy';
 import { isValidSlug } from '@/lib/slug';
 import { loadTargetMap, type TargetWithCompetencies } from '@/lib/wiki/course-views';
 import { DEPTH_SCALE, EVIDENCE_LABELS, CAREER_TARGETS_BETA, TOOL_OVERVIEW_URL } from '../HowToRead';
@@ -16,6 +19,7 @@ interface Props { searchParams: Promise<{ slug?: string }> }
  */
 export default async function WikiGuidePage({ searchParams }: Props) {
   const { slug = '' } = await searchParams;
+  if (sendToPublicCopy(isValidSlug(slug), await headers())) redirect(publicCopyUrl('/wiki/guide'));
   const q = isValidSlug(slug) ? `?slug=${encodeURIComponent(slug)}` : '';
   const targets: TargetWithCompetencies[] | null = await loadTargetMap().catch(() => null);
 

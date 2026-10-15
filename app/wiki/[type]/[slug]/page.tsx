@@ -1,4 +1,6 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
+import { headers } from 'next/headers';
+import { publicCopyUrl, sendToPublicCopy } from '@/lib/wiki/public-copy';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -54,6 +56,7 @@ export default async function WikiPage({ params, searchParams }: Props) {
 
   if (!isAllowedType(type)) notFound();
   if (!isValidWikiSlug(pageSlug)) notFound();
+  if (sendToPublicCopy(faculty, await headers())) redirect(publicCopyUrl(`/wiki/${type}/${pageSlug}`));
   const raw = await readWikiPage(`${type}/${pageSlug}.md`);
   if (raw === null) notFound();
 

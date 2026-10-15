@@ -13,7 +13,7 @@
 // mounted share.
 //
 //   node scripts/wiki/snapshot-public.mjs [--apply] [--origin http://127.0.0.1:3000] [--out <dir>]
-import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, posix } from 'node:path';
 
@@ -41,7 +41,8 @@ const assetFile = route => route.replace(/^\/_next\/static\//, '_assets/');
 const rel = (fromFile, toFile) => posix.relative(posix.dirname(fromFile) || '.', toFile) || posix.basename(toFile);
 
 async function get(route) {
-  const res = await fetch(origin + route, { redirect: 'manual' });
+  // The app sends public /wiki visitors to this copy; the header exempts the crawler.
+  const res = await fetch(origin + route, { redirect: 'manual', headers: { 'x-gc-wiki-snapshot': '1' } });
   if (res.status !== 200) throw new Error(`${route}: HTTP ${res.status}`);
   return res;
 }
@@ -53,13 +54,25 @@ function write(file, data) {
 
 const pages = new Set();
 const queue = ['/wiki'];
+// Seed every page in the wiki repo too, so pages nothing links to (e.g. retired
+// competencies) still exist in the copy that public /wiki URLs redirect to.
+const wikiRepo = process.env.WIKI_REPO_PATH ?? '/Users/admin/projects/gc-curriculum-wiki';
+for (const type of ['courses', 'competencies', 'targets', 'concepts', 'research']) {
+  const dir = join(wikiRepo, type);
+  if (!existsSync(dir)) continue;
+  for (const f of readdirSync(dir)) {
+    if (f.endsWith('.md') && f !== 'index.md') queue.push(`/wiki/${type}/${f.slice(0, -3)}`);
+  }
+}
 const assets = new Set();
 
 while (queue.length) {
   const route = queue.shift();
   if (pages.has(route)) continue;
   pages.add(route);
-  let html = await (await get(route)).text();
+  let html;
+  try { html = await (await get(route)).text(); }
+  catch (err) { console.log(`skip ${err.message}`); pages.delete(route); continue; }
   const file = pageFile(route);
 
   // Drop the app's scripts, preloads and the Next.js data payload: the copy is static.
