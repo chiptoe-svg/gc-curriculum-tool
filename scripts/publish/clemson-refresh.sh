@@ -82,6 +82,16 @@ curl -s -o /dev/null -f --max-time 20 http://127.0.0.1:3000/wiki || fail "app no
 mkdir -p "$SHARE/tonkin/pages" || fail "cannot create $SHARE/tonkin/pages"
 /usr/bin/rsync -rt "$STAGE/gc-curriculum/" "$SHARE/tonkin/pages/gc-curriculum/" || fail "copy of docs to the share failed"
 /usr/bin/rsync -rt "$STAGE/gc-wiki/" "$SHARE/tonkin/pages/gc-wiki/" || fail "copy of the wiki to the share failed"
+# rsync's explicit chmod leaves new files unreadable to the web server over SMB
+# (every page 302'd to clemson.edu/unauthorized, 2026-10-15); open them up again.
+/bin/chmod -R a+rX "$SHARE/tonkin/pages/gc-curriculum" "$SHARE/tonkin/pages/gc-wiki" || fail "chmod on the share failed"
+
+# Check the RESULT, not just the copy: the public pages must actually load.
+for u in https://tonkin.people.clemson.edu/pages/gc-curriculum/ https://tonkin.people.clemson.edu/pages/gc-wiki/ \
+         https://tonkin.people.clemson.edu/pages/gc-wiki/research/the-case/; do
+  code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$u")
+  [ "$code" = 200 ] || fail "$u returned $code after publishing"
+done
 
 dashboard ok
 log "ok"
