@@ -8,11 +8,11 @@ Two questions drive everything:
 >
 > **Q2.** For any individual course, do the prerequisites students walk in with actually support what the course expects?
 
-> 📰 **[Executive brief →](https://chiptoe-svg.github.io/gc-curriculum-tool/docs/executive-brief.html)** — three-minute orientation: what the tool does, why, and how it functions. Start here.
+> 📰 **[Executive brief →](https://tonkin.people.clemson.edu/pages/gc-curriculum/executive-brief.html)** — three-minute orientation: what the tool does, why, and how it functions. Start here.
 >
-> 📖 **[Full vision →](https://chiptoe-svg.github.io/gc-curriculum-tool/docs/superpowers/vision/gc-curriculum-tool-vision.html)** — the two questions in full, the 3-Act program structure, the Problem-Solver pyramid, and illustrative end-state visualizations.
+> 📖 **[Full vision →](https://tonkin.people.clemson.edu/pages/gc-curriculum/superpowers/vision/gc-curriculum-tool-vision.html)** — the two questions in full, the 3-Act program structure, the Problem-Solver pyramid, and illustrative end-state visualizations.
 >
-> 🧪 **Open the live tool** — CourseCapture · Explore · Program runs locally on a Clemson LAN host. Access is by personal link from Chip; the host is reachable only from inside the Clemson network. For a quick orientation without LAN access, the [executive brief](https://chiptoe-svg.github.io/gc-curriculum-tool/docs/executive-brief.html) is the right starting point.
+> 🧪 **Open the live tool** — CourseCapture · Explore · Program runs locally on a Clemson LAN host. Access is by personal link from Chip; the host is reachable only from inside the Clemson network. For a quick orientation without LAN access, the [executive brief](https://tonkin.people.clemson.edu/pages/gc-curriculum/executive-brief.html) is the right starting point.
 
 ## Status
 
@@ -24,7 +24,7 @@ Two questions drive everything:
 
 **Program analysis live.** `/program` renders snapshots × career-target sub-competencies as a depth-aware coverage heat map with on-demand AI scoring; `/program/scaffolding` adds the Phase 1B depth-sequence + productive-failure scaffolding diagnostics. The coverage matrix is scoped to **27 courses** (16 GC Core + 11 high-enrollment Major Requirements) via a `builds_to_career` flag — electives and optional courses are excluded from "what builds toward the career."
 
-**Position Capture v1 + Industry Partner Input live.** The employer-demand side of Q1: a 6-page partner flow under `/partners/*` ingests a real job posting → an immutable Position Profile of demand per career target. Alongside it, the magic-link partner survey + AI synthesis at `/admin/synthesis` (per-target themes, salary distributions, quotes, proposed KUD edits). The **demand→coverage sufficiency seam** (employer demand vs. measured course attainment) is built end-to-end but flag-gated/dormant pending activation. **[Partner pilot writeup →](https://chiptoe-svg.github.io/gc-curriculum-tool/docs/superpowers/pilot/2026-05-19-industry-partner-input-pilot.html)** Industry Partner Plan 2 (project-rating views) still ahead.
+**Position Capture v1 + Industry Partner Input live.** The employer-demand side of Q1: a 6-page partner flow under `/partners/*` ingests a real job posting → an immutable Position Profile of demand per career target. Alongside it, the magic-link partner survey + AI synthesis at `/admin/synthesis` (per-target themes, salary distributions, quotes, proposed KUD edits). The **demand→coverage sufficiency seam** (employer demand vs. measured course attainment) is built end-to-end but flag-gated/dormant pending activation. **[Partner pilot writeup →](https://tonkin.people.clemson.edu/pages/gc-curriculum/superpowers/pilot/2026-05-19-industry-partner-input-pilot.html)** Industry Partner Plan 2 (project-rating views) still ahead.
 
 **Course categories + career-mapping live.** The public landing (`/`) now groups every course into four display categories — GC Core, Specialty Area / GC Tech, Major Requirements + GenEds, and Other courses — rather than by course level. Courses that count toward career-coverage analysis carry a career-path icon; the mapping is managed via a `builds_to_career` flag (new `PATCH /api/admin/courses/[code]`). Faculty can also set a course's category and optional Clemson catalog URL from the landing. Schema: `courses` gained `category`, `builds_to_career`, and `catalog_url` (migration `0033`).
 
@@ -36,13 +36,13 @@ For the current snapshot — what's live, what's blocked, what's next — see [`
 
 **📄 Live HTML previews** (rendered via GitHub Pages):
 
-- **[Executive brief](https://chiptoe-svg.github.io/gc-curriculum-tool/docs/executive-brief.html)** — three-minute orientation for stakeholders.
-- **[Vision](https://chiptoe-svg.github.io/gc-curriculum-tool/docs/superpowers/vision/gc-curriculum-tool-vision.html)** — the high-level picture; what the tool is and isn't, the 3-Act program structure, the Problem-Solver pyramid, and the end-state visualizations.
-- **[KUD+ background](https://chiptoe-svg.github.io/gc-curriculum-tool/docs/background.html)** — academic companion to the framework; why we don't use Bloom for curriculum mapping.
-- **[Faculty walkthrough — using CourseCapture & Explore](https://chiptoe-svg.github.io/gc-curriculum-tool/docs/using-coursecapture-and-explore.html)** — linked from the in-app headers.
-- **[Graduate-outcome validation proposal](https://chiptoe-svg.github.io/gc-curriculum-tool/docs/graduate-outcome-validation.html)** — plan to validate the analysis against 268 GC graduates' destinations.
-- **[v1 implementation design](https://chiptoe-svg.github.io/gc-curriculum-tool/docs/superpowers/specs/2026-05-17-gc-curriculum-tool-v1-design.html)** — technical design for the original Builds 1–3.
-- **[Source specification](https://chiptoe-svg.github.io/gc-curriculum-tool/gc-curriculum-tool-spec.html)** — full original requirements.
+- **[Executive brief](https://tonkin.people.clemson.edu/pages/gc-curriculum/executive-brief.html)** — three-minute orientation for stakeholders.
+- **[Vision](https://tonkin.people.clemson.edu/pages/gc-curriculum/superpowers/vision/gc-curriculum-tool-vision.html)** — the high-level picture; what the tool is and isn't, the 3-Act program structure, the Problem-Solver pyramid, and the end-state visualizations.
+- **[KUD+ background](https://tonkin.people.clemson.edu/pages/gc-curriculum/background.html)** — academic companion to the framework; why we don't use Bloom for curriculum mapping.
+- **[Faculty walkthrough — using CourseCapture & Explore](https://tonkin.people.clemson.edu/pages/gc-curriculum/using-coursecapture-and-explore.html)** — linked from the in-app headers.
+- **[Graduate-outcome validation proposal](https://tonkin.people.clemson.edu/pages/gc-curriculum/graduate-outcome-validation.html)** — plan to validate the analysis against 268 GC graduates' destinations.
+- **[v1 implementation design](https://tonkin.people.clemson.edu/pages/gc-curriculum/superpowers/specs/2026-05-17-gc-curriculum-tool-v1-design.html)** — technical design for the original Builds 1–3.
+- **[Source specification](https://tonkin.people.clemson.edu/pages/gc-curriculum/gc-curriculum-tool-spec.html)** — full original requirements.
 
 **Doc map (source files):**
 

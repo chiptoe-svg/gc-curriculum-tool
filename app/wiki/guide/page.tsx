@@ -5,7 +5,7 @@ import { DEPTH_SCALE, EVIDENCE_LABELS, CAREER_TARGETS_BETA, TOOL_OVERVIEW_URL } 
 
 export const dynamic = 'force-dynamic';
 
-const BACKGROUND = 'https://chiptoe-svg.github.io/gc-curriculum-tool/docs/background.html';
+const BACKGROUND = 'https://tonkin.people.clemson.edu/pages/gc-curriculum/background.html';
 
 interface Props { searchParams: Promise<{ slug?: string }> }
 

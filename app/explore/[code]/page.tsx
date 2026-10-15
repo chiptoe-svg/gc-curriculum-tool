@@ -43,7 +43,7 @@ export default async function ExplorePage({ params, searchParams }: Props) {
           </div>
           <div className="flex items-center gap-4">
             <a
-              href="https://chiptoe-svg.github.io/gc-curriculum-tool/docs/using-coursecapture-and-explore.html#explore"
+              href="https://tonkin.people.clemson.edu/pages/gc-curriculum/using-coursecapture-and-explore.html#explore"
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-muted-foreground hover:text-foreground"

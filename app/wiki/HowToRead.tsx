@@ -27,8 +27,8 @@ export const CAREER_TARGETS_BETA =
   'Drafted ahead of full employer input, so expect them to change.';
 
 /** Public overview of the curriculum tool (GitHub Pages). */
-export const TOOL_OVERVIEW_URL = 'https://chiptoe-svg.github.io/gc-curriculum-tool/docs/executive-brief.html';
-export const TOOL_DOCS_URL = 'https://chiptoe-svg.github.io/gc-curriculum-tool/docs/index.html';
+export const TOOL_OVERVIEW_URL = 'https://tonkin.people.clemson.edu/pages/gc-curriculum/executive-brief.html';
+export const TOOL_DOCS_URL = 'https://tonkin.people.clemson.edu/pages/gc-curriculum/index.html';
 
 export function HowToRead({ q }: { q: string }) {
   return (

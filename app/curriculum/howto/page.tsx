@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: 'How to capture a course — GC Curri
 // Step-by-step how-to for CourseCapture (owner, 2026-10-07). Screenshots are of
 // GC 1010 and live in public/howto/; retake them with scripts/howto/screenshots.cjs
 // whenever these screens change. The long explainer stays on GitHub Pages.
-const GUIDE_URL = 'https://chiptoe-svg.github.io/gc-curriculum-tool/docs/using-coursecapture-and-explore.html';
+const GUIDE_URL = 'https://tonkin.people.clemson.edu/pages/gc-curriculum/using-coursecapture-and-explore.html';
 
 interface Step {
   title: string;

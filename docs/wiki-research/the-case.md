@@ -184,16 +184,16 @@ They are starting points for faculty discussion, not decisions.
 
 Every figure on this page comes from two program papers, which cite and link each study, with two exceptions taken directly from sources the main paper already cites. The design task-flow finding (step 5) is from Chin and Richmond, *Work at the Frontier* (OpenAI, July 2026), pp. 9–10. The P&G silo finding (step 5) is from Dell'Acqua et al., *The Cybernetic Teammate* (Organization Science, 2026), Figure 5 and the discussion section. Both papers were citation-checked against the full texts of their sources:
 
-- [AI and GC Careers](https://chiptoe-svg.github.io/gc-curriculum-tool/docs/ai-careers/ai-and-gc-careers.html) covers steps 1, 2, 4 and 6 and the direction.
-- [Demand Elasticity and AI Jobs](https://chiptoe-svg.github.io/gc-curriculum-tool/docs/ai-careers/demand-elasticity-and-ai-jobs.html) covers step 3 and part of step 5.
+- [AI and GC Careers](https://tonkin.people.clemson.edu/pages/gc-curriculum/ai-careers/ai-and-gc-careers.html) covers steps 1, 2, 4 and 6 and the direction.
+- [Demand Elasticity and AI Jobs](https://tonkin.people.clemson.edu/pages/gc-curriculum/ai-careers/demand-elasticity-and-ai-jobs.html) covers step 3 and part of step 5.
 
 The alumni figures come from the GC Alumni outcome study, which records each graduate's first job, later positions and current job (summary figures only). The coverage figures come from the GC Curriculum Tool record read on 5 October 2026. The program's curriculum research behind the direction:
 
-- [The 3-Act Program Structure](https://chiptoe-svg.github.io/gc-curriculum-tool/docs/three-act-deep-dive.html): the research synthesis for the three-act model, the mini-capstones and the mid-junior timing.
-- [Problem-Solving as a Program-Level Emergent Property](https://chiptoe-svg.github.io/gc-curriculum-tool/docs/problem-solving-deep-dive.html): why problem-solving grows from domain depth, productive failure and reflection across the program, not in one course.
-- [The KUD+ Framework](https://chiptoe-svg.github.io/gc-curriculum-tool/docs/background.html): the Know, Understand and Do framework. Its section 16 reads the AI evidence for judgment and for evidence AI cannot fake.
-- [How the Competency Catalog Works](https://chiptoe-svg.github.io/gc-curriculum-tool/docs/competency-catalog-deep-dive.html): the shared competency catalog, including the four proposed business-acumen competencies (section 9).
-- [Executive Brief](https://chiptoe-svg.github.io/gc-curriculum-tool/docs/executive-brief.html): what the GC Curriculum Tool is, how it records coverage, and its limits.
+- [The 3-Act Program Structure](https://tonkin.people.clemson.edu/pages/gc-curriculum/three-act-deep-dive.html): the research synthesis for the three-act model, the mini-capstones and the mid-junior timing.
+- [Problem-Solving as a Program-Level Emergent Property](https://tonkin.people.clemson.edu/pages/gc-curriculum/problem-solving-deep-dive.html): why problem-solving grows from domain depth, productive failure and reflection across the program, not in one course.
+- [The KUD+ Framework](https://tonkin.people.clemson.edu/pages/gc-curriculum/background.html): the Know, Understand and Do framework. Its section 16 reads the AI evidence for judgment and for evidence AI cannot fake.
+- [How the Competency Catalog Works](https://tonkin.people.clemson.edu/pages/gc-curriculum/competency-catalog-deep-dive.html): the shared competency catalog, including the four proposed business-acumen competencies (section 9).
+- [Executive Brief](https://tonkin.people.clemson.edu/pages/gc-curriculum/executive-brief.html): what the GC Curriculum Tool is, how it records coverage, and its limits.
 
 This product includes information from O*NET 31.0 Database by the U.S. Department of Labor, Employment and Training Administration (USDOL/ETA). Used under the CC BY 4.0 license.
 

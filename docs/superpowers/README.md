@@ -4,7 +4,7 @@ All design / plan / vision artifacts for the GC Curriculum Tool.
 
 ## Top-level documents
 
-These four are linked from the GH Pages root at [chiptoe-svg.github.io/gc-curriculum-tool/docs/](https://chiptoe-svg.github.io/gc-curriculum-tool/docs/):
+These four are linked from the published docs index at [tonkin.people.clemson.edu/pages/gc-curriculum/](https://tonkin.people.clemson.edu/pages/gc-curriculum/):
 
 - **Documents hub** — [`../index.html`](../index.html). Reading-order index for everything below.
 - **Vision** — the high-level picture: the two questions, what it produces, the 3-Act program structure, end state, illustrative visualizations.
@@ -124,4 +124,4 @@ This README is the stable doc index above; STATE.md is the live picture. Session
 - Specs and plans are created via the `superpowers:brainstorming` and `superpowers:writing-plans` skills.
 - Plans get executed via `superpowers:subagent-driven-development` (fresh subagent per task + spec/quality review).
 - Each increment lives in its own dated file. Don't edit historical plans/specs; write new ones.
-- The `docs/` folder is published to GitHub Pages via the `gh-pages` branch (the `docs/` folder root is served at `chiptoe-svg.github.io/gc-curriculum-tool/docs/`).
+- The public docs are published to the owner's Clemson web space at `tonkin.people.clemson.edu/pages/gc-curriculum/` by `node scripts/docs/publish-clemson.mjs --apply` (needs the `people.zfs.clemson.edu` share mounted). GitHub Pages now only redirects there.
