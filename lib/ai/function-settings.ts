@@ -42,6 +42,8 @@ export const AI_FUNCTION_IDS = [
   'material-classify',
   'explore-agent',
   'objective-evidence-guide',
+  'bundle-card-draft',
+  'bundle-map-onet',
 ] as const;
 export type AIFunctionId = (typeof AI_FUNCTION_IDS)[number];
 
@@ -190,6 +192,15 @@ export const DEFAULT_TIERS: Record<AIFunctionId, Exclude<ModelTier, 'custom'>> =
   // snapshot findings, and writes the objective assessment guide. A deterministic
   // check (lib/objective-guide/check.ts) drops any name not in Canvas.
   'objective-evidence-guide': 'default',
+  // P2: one call per catalog bundle, drafting its card (includes/excludes,
+  // distinctions, examples, stratum) for owner approval. Default tier:
+  // bounded writing against the full catalog for contrast.
+  'bundle-card-draft': 'default',
+  // P2: one call per bundle placing every O*NET element (with definitions)
+  // and a 25-task embedding shortlist at core/related/fringe. Heavy tier:
+  // the placements feed P3 weights once confirmed, and the blind golden
+  // sample measures exactly this judgment.
+  'bundle-map-onet': 'heavy',
 };
 
 export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
@@ -219,6 +230,8 @@ export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
   'material-classify': 'Material tier classifier (deck vs reading)',
   'explore-agent': 'Explore agent (course-change thinking partner)',
   'objective-evidence-guide': 'Objective assessment guide (wiki course page)',
+  'bundle-card-draft': 'Bundle card drafting',
+  'bundle-map-onet': 'Bundle placement (O*NET)',
 };
 
 export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
@@ -248,6 +261,8 @@ export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
   'material-classify': 'Classifies a file-bucket material as a lecture deck/slides (→ middle tier) or a reading/reference (→ background tier) from filename, MIME type, size, page count, and optional peek text.',
   'explore-agent': 'Tool-using course-change thinking partner anchored to one focal course. Per-turn agent loop: reads neighbor context + wiki via tools, optionally runs estimate_impact for concrete KUD sizing, emits a cited markdown response. Supports PREDICT ("what happens if I change X?") and SUGGEST ("how do I achieve goal Y?") postures with scenario save/compare tools for multi-option exploration.',
   'objective-evidence-guide': 'Writes the per-course guide on the public wiki page: each syllabus objective quoted verbatim, which Canvas assignments and rubric rows measure it, and what class-level numbers to gather at the end of the semester. Runs after each snapshot; names not found in Canvas are dropped by a deterministic check.',
+  'bundle-card-draft': "Drafting each catalog bundle's card (what it includes and excludes, how it differs from neighbors, examples) for owner approval.",
+  'bundle-map-onet': 'Placing O*NET elements and task statements into catalog bundles as core, related or fringe members, for review on /admin/bundles.',
 };
 
 interface CachedSetting {

@@ -193,6 +193,176 @@ export const onetTaskRatings = pgTable('onet_task_ratings', {
   check('onet_task_ratings_scale_id_check', sql`${t.scaleId} IN ('IM', 'RT', 'FT')`),
 ]);
 
+// ─── P2 (migration 0059): bundle membership ────────────────────────────────
+// Every constraint name below matches 0059's hand-written SQL exactly
+// (pinned by tests/db/p2-constraint-names.test.ts). bundle_members has NO
+// FK to onet_* on purpose: load-onet.ts reloads a release by deleting
+// onet_occupations (children cascade), which would wipe reviewed members.
+
+export type BundleStratum = 'foundational' | 'technical' | 'business' | 'workflow_ai';
+export type BundlePosition = 'core' | 'related' | 'fringe';
+export type BundleMemberStatus = 'proposed' | 'confirmed' | 'rejected';
+export type BundleMemberSource = 'onet_element' | 'onet_task' | 'course_skill' | 'esco_skill';
+
+export interface GoldenCandidate {
+  key: string;            // taskGroupKey (Ruling 5)
+  label: string;          // task text
+  rank: number;           // 1-based cosine rank
+  score: number;          // cosine similarity
+  members: Array<{ taskId: string; onetSocCode: string }>;
+}
+
+export const bundleCards = pgTable('bundle_cards', {
+  competencyId: text('competency_id').notNull(),
+  stratum: text('stratum').$type<BundleStratum>().notNull(),
+  includes: text('includes').notNull(),
+  excludes: text('excludes').notNull(),
+  distinctions: text('distinctions').notNull(),
+  positiveExamples: text('positive_examples').array().notNull(),
+  negativeExamples: text('negative_examples').array().notNull(),
+  status: text('status').$type<'draft' | 'confirmed'>().notNull(),
+  confirmedBy: text('confirmed_by'),
+  confirmedAt: timestamp('confirmed_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  primaryKey({ name: 'bundle_cards_pkey', columns: [t.competencyId] }),
+  foreignKey({ name: 'bundle_cards_competency_id_fkey', columns: [t.competencyId], foreignColumns: [subCompetencies.id] }).onDelete('restrict'),
+  check('bundle_cards_stratum_check', sql`${t.stratum} IN ('foundational', 'technical', 'business', 'workflow_ai')`),
+  check('bundle_cards_status_check', sql`${t.status} IN ('draft', 'confirmed')`),
+  check('bundle_cards_confirmed_check', sql`(${t.status} = 'confirmed') = (${t.confirmedBy} IS NOT NULL AND ${t.confirmedAt} IS NOT NULL)`),
+]);
+
+export const itemEmbeddings = pgTable('item_embeddings', {
+  kind: text('kind').$type<'bundle_card' | 'onet_task' | 'course_skill' | 'esco_skill'>().notNull(),
+  ref: text('ref').notNull(),
+  model: text('model').notNull(),
+  textHash: text('text_hash').notNull(),
+  vector: real('vector').array().notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  primaryKey({ name: 'item_embeddings_pkey', columns: [t.kind, t.ref, t.model, t.textHash] }),
+  check('item_embeddings_kind_check', sql`${t.kind} IN ('bundle_card', 'onet_task', 'course_skill', 'esco_skill')`),
+  check('item_embeddings_vector_check', sql`cardinality(${t.vector}) > 0`),
+]);
+
+export const onetElementDefinitions = pgTable('onet_element_definitions', {
+  release: text('release').notNull(),
+  domain: text('domain').notNull(),
+  elementId: text('element_id').notNull(),
+  elementName: text('element_name').notNull(),
+  description: text('description').notNull(),
+}, (t) => [
+  primaryKey({ name: 'onet_element_definitions_pkey', columns: [t.release, t.elementId] }),
+  foreignKey({ name: 'onet_element_definitions_release_fkey', columns: [t.release], foreignColumns: [onetRelease.release] }).onDelete('cascade'),
+  check('onet_element_definitions_domain_check', sql`${t.domain} IN ('knowledge', 'abilities', 'work_activities', 'essential_skills', 'transferable_skills')`),
+]);
+
+export const bundleMappingRuns = pgTable('bundle_mapping_runs', {
+  id: uuid('id').defaultRandom().notNull(),
+  model: text('model').notNull(),
+  promptVersion: text('prompt_version').notNull(),
+  taskShortlistK: integer('task_shortlist_k').notNull(),
+  bundleCount: integer('bundle_count').notNull(),
+  costUsdCents: integer('cost_usd_cents').notNull().default(0),
+  dryRun: boolean('dry_run').notNull().default(false),
+  startedAt: timestamp('started_at', { withTimezone: true }).defaultNow().notNull(),
+  finishedAt: timestamp('finished_at', { withTimezone: true }),
+}, (t) => [
+  primaryKey({ name: 'bundle_mapping_runs_pkey', columns: [t.id] }),
+  check('bundle_mapping_runs_k_check', sql`${t.taskShortlistK} > 0`),
+  check('bundle_mapping_runs_cost_check', sql`${t.costUsdCents} >= 0`),
+]);
+
+export const bundleMembers = pgTable('bundle_members', {
+  id: uuid('id').defaultRandom().notNull(),
+  bundleId: text('bundle_id').notNull(),
+  source: text('source').$type<BundleMemberSource>().notNull(),
+  externalId: text('external_id').notNull(),
+  externalLabel: text('external_label').notNull(),
+  onetSocCode: text('onet_soc_code'),
+  release: text('release'),
+  position: text('position').$type<BundlePosition>().notNull(),
+  aiPosition: text('ai_position').$type<BundlePosition>(),
+  status: text('status').$type<BundleMemberStatus>().notNull(),
+  proposedBy: text('proposed_by').notNull(),
+  rationale: text('rationale'),
+  runId: uuid('run_id'),
+  confirmedBy: text('confirmed_by'),
+  confirmedAt: timestamp('confirmed_at', { withTimezone: true }),
+  bulkConfirmed: boolean('bulk_confirmed').notNull().default(false),
+  reviewNote: text('review_note'),
+  centroidDistance: real('centroid_distance'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  primaryKey({ name: 'bundle_members_pkey', columns: [t.id] }),
+  foreignKey({ name: 'bundle_members_bundle_id_fkey', columns: [t.bundleId], foreignColumns: [subCompetencies.id] }).onDelete('restrict'),
+  foreignKey({ name: 'bundle_members_run_id_fkey', columns: [t.runId], foreignColumns: [bundleMappingRuns.id] }).onDelete('set null'),
+  check('bundle_members_source_check', sql`${t.source} IN ('onet_element', 'onet_task', 'course_skill', 'esco_skill')`),
+  check('bundle_members_position_check', sql`${t.position} IN ('core', 'related', 'fringe')`),
+  check('bundle_members_ai_position_check', sql`${t.aiPosition} IS NULL OR ${t.aiPosition} IN ('core', 'related', 'fringe')`),
+  check('bundle_members_status_check', sql`${t.status} IN ('proposed', 'confirmed', 'rejected')`),
+  check('bundle_members_soc_check', sql`(${t.source} = 'onet_task') = (${t.onetSocCode} IS NOT NULL)`),
+  check('bundle_members_release_check', sql`(${t.source} IN ('onet_element', 'onet_task')) = (${t.release} IS NOT NULL)`),
+  check('bundle_members_decision_check', sql`(${t.status} = 'proposed') = (${t.confirmedBy} IS NULL AND ${t.confirmedAt} IS NULL)`),
+  check('bundle_members_reviewer_added_check', sql`${t.proposedBy} <> 'reviewer' OR (${t.aiPosition} IS NULL AND ${t.status} <> 'proposed')`),
+  unique('bundle_members_item_key').on(t.bundleId, t.source, t.release, t.externalId, t.onetSocCode).nullsNotDistinct(),
+  index('idx_bundle_members_bundle_status').on(t.bundleId, t.status),
+]);
+
+export const bundleMappingOutcomes = pgTable('bundle_mapping_outcomes', {
+  runId: uuid('run_id').notNull(),
+  bundleId: text('bundle_id').notNull(),
+  status: text('status').$type<'ok' | 'failed'>().notNull(),
+  noCleanMatch: boolean('no_clean_match').notNull(),
+  note: text('note'),
+  costUsdCents: integer('cost_usd_cents').notNull().default(0),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  primaryKey({ name: 'bundle_mapping_outcomes_pkey', columns: [t.runId, t.bundleId] }),
+  foreignKey({ name: 'bundle_mapping_outcomes_run_id_fkey', columns: [t.runId], foreignColumns: [bundleMappingRuns.id] }).onDelete('cascade'),
+  foreignKey({ name: 'bundle_mapping_outcomes_bundle_id_fkey', columns: [t.bundleId], foreignColumns: [subCompetencies.id] }).onDelete('restrict'),
+  check('bundle_mapping_outcomes_status_check', sql`${t.status} IN ('ok', 'failed')`),
+  check('bundle_mapping_outcomes_failed_check', sql`${t.status} = 'ok' OR ${t.noCleanMatch} = false`),
+]);
+
+export const bundleGoldenSamples = pgTable('bundle_golden_samples', {
+  bundleId: text('bundle_id').notNull(),
+  stratum: text('stratum').$type<BundleStratum>().notNull(),
+  sampleSeed: text('sample_seed').notNull(),
+  candidates: jsonb('candidates').$type<GoldenCandidate[]>().notNull(),
+  reviewer: text('reviewer'),
+  submittedAt: timestamp('submitted_at', { withTimezone: true }),
+  resetNote: text('reset_note'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  primaryKey({ name: 'bundle_golden_samples_pkey', columns: [t.bundleId] }),
+  foreignKey({ name: 'bundle_golden_samples_bundle_id_fkey', columns: [t.bundleId], foreignColumns: [subCompetencies.id] }).onDelete('restrict'),
+  check('bundle_golden_samples_stratum_check', sql`${t.stratum} IN ('foundational', 'technical', 'business', 'workflow_ai')`),
+  check('bundle_golden_samples_submitted_check', sql`${t.submittedAt} IS NULL OR ${t.reviewer} IS NOT NULL`),
+]);
+
+export const bundleGoldenPicks = pgTable('bundle_golden_picks', {
+  id: uuid('id').defaultRandom().notNull(),
+  bundleId: text('bundle_id').notNull(),
+  reviewer: text('reviewer').notNull(),
+  source: text('source').$type<'onet_element' | 'onet_task'>(),
+  externalId: text('external_id'),
+  onetSocCode: text('onet_soc_code'),
+  release: text('release'),
+  position: text('position').$type<BundlePosition>(),
+  noCleanMatch: boolean('no_clean_match').notNull().default(false),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  primaryKey({ name: 'bundle_golden_picks_pkey', columns: [t.id] }),
+  foreignKey({ name: 'bundle_golden_picks_bundle_id_fkey', columns: [t.bundleId], foreignColumns: [bundleGoldenSamples.bundleId] }).onDelete('cascade'),
+  check('bundle_golden_picks_source_check', sql`${t.source} IS NULL OR ${t.source} IN ('onet_element', 'onet_task')`),
+  check('bundle_golden_picks_position_check', sql`${t.position} IS NULL OR ${t.position} IN ('core', 'related', 'fringe')`),
+  check('bundle_golden_picks_shape_check', sql`(${t.noCleanMatch} AND ${t.source} IS NULL AND ${t.externalId} IS NULL AND ${t.position} IS NULL AND ${t.onetSocCode} IS NULL AND ${t.release} IS NULL) OR (NOT ${t.noCleanMatch} AND ${t.source} IS NOT NULL AND ${t.externalId} IS NOT NULL AND ${t.position} IS NOT NULL AND ${t.release} IS NOT NULL AND (${t.source} = 'onet_task') = (${t.onetSocCode} IS NOT NULL))`),
+  unique('bundle_golden_picks_item_key').on(t.bundleId, t.reviewer, t.source, t.externalId, t.onetSocCode).nullsNotDistinct(),
+]);
+
 export const prototypeTargetEdits = pgTable('prototype_target_edits', {
   id: uuid('id').primaryKey().defaultRandom(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),

@@ -93,10 +93,14 @@ describe.skipIf(!RUN)('P1 Task 4 — readRatedOnetCodes + readAndFilter + writeO
       expect(data.taskStatements.some(t => t.onetSocCode === '99-0003.00')).toBe(false);
       expect(data.taskRatings.some(r => r.onetSocCode === '99-0003.00')).toBe(false);
 
-      // Expected counts, hand-computed from tests/fixtures/onet (see test
-      // comments in tests/lib/onet/load.test.ts for the per-file breakdown):
-      // knowledge 4 + abilities 3 + work_activities 2 + essential_skills 2 + transferable_skills 2 = 13.
-      expect(data.elementRatings).toHaveLength(13);
+      // Expected counts, hand-computed from tests/fixtures/onet for codes 99-0001.00 and 99-0002.00:
+      // knowledge (2.C.1.a IM+LV, 2.C.3.a IM, 2.C.2.a IM+LV) = 5
+      // + abilities (1.A.1.a.1 IM+LV, 1.A.1.b.2 IM) = 3
+      // + work_activities (4.A.1.a.1 IM×2) = 2
+      // + essential_skills (2.A.1.a IM×2) = 2
+      // + transferable_skills (2.B.1.a IM×2) = 2
+      // Total = 14 (P2 Task 3 added 2.C.3.a IM row, raising from 13 to 14)
+      expect(data.elementRatings).toHaveLength(14);
       expect(data.taskStatements).toHaveLength(3); // 90001, 90002 (code 1) + 90003 (code 2); 90004 (code 3) excluded
       expect(data.taskRatings).toHaveLength(5); // code1: IM+RT+FT(1)+FT(2) = 4; code2: IM = 1
       expect(data.skippedElementScaleCount).toBe(1); // the single 'OJ' row in knowledge.csv
@@ -108,7 +112,7 @@ describe.skipIf(!RUN)('P1 Task 4 — readRatedOnetCodes + readAndFilter + writeO
       expect(occRows.map(r => r.onetSocCode).sort()).toEqual(['99-0001.00', '99-0002.00']);
 
       const elementRows = await tx.select().from(onetElementRatings).where(eq(onetElementRatings.release, RELEASE));
-      expect(elementRows).toHaveLength(13);
+      expect(elementRows).toHaveLength(14);
 
       const taskStatementRows = await tx.select().from(onetTaskStatements).where(eq(onetTaskStatements.release, RELEASE));
       expect(taskStatementRows).toHaveLength(3);
@@ -257,7 +261,7 @@ describe.skipIf(!RUN)('P1 Task 4 — main() default dry-run / --apply (m3 flip, 
     return {
       executor: tx,
       readRatedOnetCodes: async () => new Set(['99-0001.00', '99-0002.00']),
-      readAndFilter: () => ({ occupations: [], elementRatings: [], taskStatements: [], taskRatings: [], skippedElementScaleCount: 0, skippedTaskRatingScaleCount: 0 }),
+      readAndFilter: () => ({ occupations: [], elementRatings: [], elementDefinitions: [], taskStatements: [], taskRatings: [], skippedElementScaleCount: 0, skippedTaskRatingScaleCount: 0 }),
       ...overrides,
     };
   }

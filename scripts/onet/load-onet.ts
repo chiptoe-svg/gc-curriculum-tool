@@ -1,13 +1,14 @@
 /**
- * P1 Task 4 — O*NET 31.0 reference-store loader CLI.
+ * P1 Task 4 + P2 Task 3 — O*NET 31.0 reference-store loader CLI.
  *
  * Reads the O*NET 31.0 CSV export from --dir (git-ignored, never committed —
  * see global-constraints.md), reads the "rated" O*NET-SOC codes straight
  * from career_target_occupations (Task 3's ingest), loads occupations +
- * element ratings + task statements + task ratings for exactly those codes
- * into the 0058 onet_* tables, and upserts the onet_release attribution row.
- * See lib/onet/load.ts (the pure parser) and
- * docs/superpowers/plans/2026-10-12-competency-catalog-p1.md Ruling 5.
+ * element definitions + element ratings + task statements + task ratings
+ * for exactly those codes into the 0058/0059 onet_* tables, and upserts
+ * the onet_release attribution row. See lib/onet/load.ts (the pure parser),
+ * docs/superpowers/plans/2026-10-12-competency-catalog-p1.md Ruling 5,
+ * and the P2 task-3 brief.
  *
  * Usage (from the repo root, with DATABASE_URL set explicitly — never read
  * from .env.local by hand; get a scratch URL via
@@ -49,6 +50,7 @@ import {
   onetRelease,
   onetOccupations,
   onetElementRatings,
+  onetElementDefinitions,
   onetTaskStatements,
   onetTaskRatings,
 } from '@/lib/db/schema';
@@ -59,6 +61,7 @@ import {
   parseElementRatingsCsv,
   parseTaskStatementsCsv,
   parseTaskRatingsCsv,
+  parseContentModelReferenceCsv,
   ELEMENT_FILENAMES,
   getOnetReleaseMetadata,
   type OnetReleaseMetadata,
@@ -66,6 +69,7 @@ import {
   type RawElementRating,
   type RawTaskStatement,
   type RawTaskRating,
+  type Domain,
 } from '@/lib/onet/load';
 import { loadAppEnv, isMainModule, formatDbError, assertExpectedDb, type P1Tx, type P1Executor } from '@/scripts/catalog/catalog-source';
 
@@ -121,6 +125,7 @@ export async function readRatedOnetCodes(executor: Executor = db): Promise<Set<s
 export interface LoadedData {
   occupations: RawOccupation[];
   elementRatings: RawElementRating[];
+  elementDefinitions: Array<{ domain: Domain; elementId: string; elementName: string; description: string }>;
   taskStatements: RawTaskStatement[];
   taskRatings: RawTaskRating[];
   skippedElementScaleCount: number;
@@ -142,6 +147,19 @@ export function readAndFilter(dir: string, codes: ReadonlySet<string>): LoadedDa
     skippedElementScaleCount += skippedScaleCount;
   }
 
+  // P2: one definition per element that appears in the filtered ratings,
+  // domain taken from those ratings. A rated element with no definition row
+  // is a hard error (the 31.0 release has all 161; a gap means drift).
+  const domainByElement = new Map<string, Domain>();
+  for (const r of elementRatings) domainByElement.set(r.elementId, r.domain);
+  const cmr = parseContentModelReferenceCsv(readFileSync(path.join(dir, 'content_model_reference.csv'), 'utf8'), 'content_model_reference.csv').rows;
+  const defById = new Map(cmr.map(d => [d.elementId, d]));
+  const elementDefinitions = [...domainByElement.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([elementId, domain]) => {
+    const d = defById.get(elementId);
+    if (!d) throw new Error(`onet/load: content_model_reference.csv: no definition for rated element ${elementId}`);
+    return { domain, elementId, elementName: d.elementName, description: d.description };
+  });
+
   const statementsAll = parseTaskStatementsCsv(readFileSync(path.join(dir, 'task_statements.csv'), 'utf8'), 'task_statements.csv').rows;
   const taskStatements = filterToCodes(statementsAll, codes);
 
@@ -149,7 +167,7 @@ export function readAndFilter(dir: string, codes: ReadonlySet<string>): LoadedDa
     parseTaskRatingsCsv(readFileSync(path.join(dir, 'task_ratings.csv'), 'utf8'), 'task_ratings.csv');
   const taskRatings = filterToCodes(ratingsAll, codes);
 
-  return { occupations, elementRatings, taskStatements, taskRatings, skippedElementScaleCount, skippedTaskRatingScaleCount };
+  return { occupations, elementRatings, elementDefinitions, taskStatements, taskRatings, skippedElementScaleCount, skippedTaskRatingScaleCount };
 }
 
 // ─── Write (Ruling 5: idempotent per release, re-runnable after a mix change) ──
@@ -205,6 +223,13 @@ export async function writeOnetStore(executor: Executor, release: string, data: 
       set: { published: metadata.published, license: metadata.license, attribution: metadata.attribution, sourceUrl: metadata.sourceUrl, loadedAt: sql`clock_timestamp()` },
     });
 
+  await executor.delete(onetElementDefinitions).where(eq(onetElementDefinitions.release, release));
+  for (const batch of chunk(data.elementDefinitions, INSERT_CHUNK_SIZE)) {
+    await executor.insert(onetElementDefinitions).values(
+      batch.map(d => ({ release, domain: d.domain, elementId: d.elementId, elementName: d.elementName, description: d.description })),
+    );
+  }
+
   await executor.delete(onetOccupations).where(eq(onetOccupations.release, release));
 
   if (data.occupations.length === 0) return;
@@ -248,6 +273,7 @@ export function printReport(args: LoadArgs, codes: ReadonlySet<string>, data: Lo
   console.log(`mode: ${args.apply ? 'LOAD' : 'DRY RUN'}  expect-db: ${args.expectDb}  dir: ${args.dir}  release: ${args.release}`);
   console.log(`rated O*NET codes (from career_target_occupations): ${codes.size}`);
   console.log(`occupations: ${data.occupations.length}`);
+  console.log(`element definitions: ${data.elementDefinitions.length}`);
   console.log(`element ratings: ${data.elementRatings.length}  (skipped ${data.skippedElementScaleCount} rows on a non-IM/LV scale)`);
   console.log(`task statements: ${data.taskStatements.length}`);
   console.log(`task ratings: ${data.taskRatings.length}  (skipped ${data.skippedTaskRatingScaleCount} rows on a non-IM/RT/FT scale)`);

@@ -43,7 +43,9 @@ type PromptName =
   | 'reconcile-feedback'
   | 'material-classify'
   | 'explore-agent'
-  | 'objective-evidence-guide';
+  | 'objective-evidence-guide'
+  | 'bundle-card-draft'
+  | 'bundle-map-onet';
 
 interface ParsedPrompt {
   frontmatter: Record<string, unknown>;

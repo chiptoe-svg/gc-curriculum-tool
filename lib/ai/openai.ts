@@ -37,6 +37,13 @@ function toCents(usd: number): number {
   return Math.ceil(usd * 100 * 100); // 1/100 of a cent
 }
 
+/** Pre-call cost estimate (dry runs, --max-cost guards). Same table and
+ * rounding as complete(); no prefix-cache discount, so it errs high. */
+export function estimateCostCents(model: string, promptTokens: number, completionTokens: number): number {
+  const pricing = MODEL_PRICING[model] ?? FALLBACK_PRICING;
+  return toCents((promptTokens / 1_000_000) * pricing.input) + toCents((completionTokens / 1_000_000) * pricing.output);
+}
+
 /**
  * Per-call limits for the OpenAI gateway. The SDK defaults (10 min per attempt,
  * 2 retries) let one hung call stall for ~30 min before failing; the longest
