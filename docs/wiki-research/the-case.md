@@ -12,7 +12,7 @@ tags: [research, ai, careers, curriculum, direction]
 ## The argument in brief
 
 1. In every market GC graduates enter, AI is splitting the work. Producing variants is getting cheap. Designing, governing and running the systems that produce them is gaining value.
-2. The shrinking half is where new graduates have always started and learned, so the entry rung is where the pressure lands.
+2. The shrinking half is where new graduates have always started and learned, so entry-level jobs are where the pressure lands.
 3. Cheaper output will not bring those jobs back. Marketing budgets are flat and package demand follows the goods being sold, so savings show up as fewer hours, not more work.
 4. GC graduates start on the shrinking side: the largest target, design, is led by graphic design, the most exposed occupation, and very few start in the systems roles that are gaining value. They reach the growing side later, on their own.
 5. Design's answer is the creative generalist: a designer with depth in one specialty who works across media and understands what each design decision costs downstream. That is where the evidence says design is heading.
@@ -59,7 +59,7 @@ The evidence shows up in projections, pay, tools and roles:
 - **Tools.** Ad platforms now generate commodity variants directly, so much of that work never becomes paid design.
 - **Roles.** A 2026 trade-association report puts marketing job postings 27% below pre-pandemic levels, with senior and strategic roles holding steady while execution roles decline. That fits the projections above: overall marketing hiring is down, but the strategy and measurement side is not.
 
-## 2. The split removes the first rung
+## 2. The split removes entry-level jobs
 
 The shrinking column is where juniors have always learned the trade. When AI absorbs it, firms hire fewer juniors and expect the ones they hire to start partly in the growing column.
 
@@ -167,7 +167,7 @@ They are starting points for faculty discussion, not decisions.
 
 ## What would weaken this case
 
-- **The entry-rung cause.** The 2026 studies are mostly working papers and disagree; if AI plays little role, step 2 weakens but steps 1 and 3 hold.
+- **Why entry-level jobs are shrinking.** The 2026 studies are mostly working papers and disagree; if AI plays little role, step 2 weakens but steps 1 and 3 hold.
 - **Demand elasticity.** No one has measured it for any GC occupation, and no source yet shows cheaper artwork producing more package versions.
 - **Flat budgets.** If marketing budgets grow as assets get cheaper, the design reading in step 3 changes.
 - **Judgment as the scarce skill.** The P&G experiment is suggestive, not a test of what employers value.
