@@ -19,16 +19,24 @@ import path from 'node:path';
 import type { ToolDefinition } from '@/lib/ai/tool-use-types';
 import { readWikiPage, wikiRepoPath } from '@/lib/wiki/git-ops';
 import { resolvePageBands, pagePassesBandFloor, BAND_ORDER } from '@/lib/ai/wiki/evidence-band-markers';
+import { WIKI_SERVED_TYPES, type WikiServedType } from '@/lib/ai/wiki/schema';
 
-const ALLOWED_TYPES = ['courses', 'competencies', 'targets', 'concepts'] as const;
-type WikiType = (typeof ALLOWED_TYPES)[number];
+type WikiType = WikiServedType;
+const ALLOWED_TYPES = WIKI_SERVED_TYPES;
 
 function rejectRaw(p: string): { ok: true; path: string } | { ok: false; error: string } {
-  // Normalize separators and strip leading slash; this is purely for the
-  // raw/ guard. The traversal guard inside readWikiPage handles ".."
-  // / absolute-path attacks.
-  const normalized = p.replace(/\\/g, '/').replace(/^\/+/, '');
-  if (normalized.startsWith('raw/')) {
+  // Normalize before the raw/ test: a literal-prefix check alone is bypassed
+  // by research/../raw/x, ./raw/x and RAW/x (case-insensitive APFS). So:
+  // strip leading slashes (callers send "/courses/x.md"; kept for backward
+  // compatibility), reject any '..' segment outright, posix-normalize (drops
+  // './' and duplicate slashes), then compare the first segment
+  // case-insensitively. readWikiPage's own traversal guard still applies.
+  const slashed = p.replace(/\\/g, '/').replace(/^\/+/, '');
+  if (slashed.split('/').includes('..')) {
+    return { ok: false, error: 'page path must not contain ".." segments' };
+  }
+  const normalized = path.posix.normalize(slashed);
+  if (normalized.split('/')[0]!.toLowerCase() === 'raw') {
     return { ok: false, error: 'cannot read raw/ — that layer is immutable snapshot JSON, not narrative wiki content' };
   }
   return { ok: true, path: normalized };
@@ -36,7 +44,7 @@ function rejectRaw(p: string): { ok: true; path: string } | { ok: false; error: 
 
 /**
  * Walk the wiki repo for narrative pages. Returns the relative paths of
- * every `.md` under `courses/`, `competencies/`, `targets/`, `concepts/`
+ * every `.md` under the served sections (courses/, competencies/, targets/, concepts/, research/)
  * plus the top-level `index.md` if present. Cached for the lifetime of
  * the process (the wiki repo doesn't change inside one Next.js request,
  * and a fresh `list_wiki` call cost ~5ms uncached on a ~50-page repo).
@@ -100,7 +108,7 @@ function extractTitle(markdown: string, fallback: string): string {
 export const wikiReadTool: ToolDefinition = {
   name: 'read_wiki',
   description:
-    'Read one wiki page. The argument is named `path` and takes the repo-relative page path, e.g. {"path": "courses/gc-4800.md"} — also "competencies/brand-strategy.md", "targets/production-operations.md", "concepts/productive-failure.md", "index.md". A missing .md extension is tolerated ("courses/gc-4800" works). Returns the page\'s full markdown. Reject paths under "raw/" — those are immutable snapshot JSON, not narrative.',
+    'Read one wiki page. The argument is named `path` and takes the repo-relative page path, e.g. {"path": "courses/gc-4800.md"} — also "competencies/brand-strategy.md", "targets/production-operations.md", "concepts/productive-failure.md", "research/ai-careers-brief.md", "index.md". A missing .md extension is tolerated ("courses/gc-4800" works). Returns the page\'s full markdown. Reject paths under "raw/" — those are immutable snapshot JSON, not narrative.',
   usagePolicy:
     'Use when you know the exact path you want (typically from a prior list_wiki / search_wiki call, or an obvious slug from the user\'s question like "GC 4800" → "courses/gc-4800.md"). Cite the path in your response.',
   inputSchema: z.object({ path: z.string() }),
@@ -122,7 +130,7 @@ export const wikiReadTool: ToolDefinition = {
 export const wikiListTool: ToolDefinition = {
   name: 'list_wiki',
   description:
-    'List every narrative wiki page (courses, competencies, targets, concepts) with its title. Optionally filter by type. Use this to orient when you don\'t know which page to read.',
+    'List every narrative wiki page (courses, competencies, targets, concepts, research) with its title. Optionally filter by type. Use this to orient when you don\'t know which page to read. The research section holds the program\'s brief on AI and GC careers.',
   usagePolicy:
     'Call once at the start of a session if the user\'s question is broad ("what does the program cover?", "are there gaps in Act 2?"). Don\'t call it repeatedly — the result is stable across a single session.',
   inputSchema: z.object({

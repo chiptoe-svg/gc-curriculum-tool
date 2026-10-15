@@ -42,6 +42,7 @@ import { deriveEvidenceBand, type EvidenceBand } from '@/lib/program/evidence-la
 import { dedupeBands, stampEvidenceBands } from '@/lib/ai/wiki/evidence-band-markers';
 export { dedupeBands, stampEvidenceBands } from '@/lib/ai/wiki/evidence-band-markers';
 import { stampOkfFrontmatter, normalizeResourceOrigin, okfResource } from '@/lib/ai/wiki/okf-frontmatter';
+import { WIKI_PAGE_TYPES } from '@/lib/ai/wiki/schema';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -95,7 +96,7 @@ async function listWikiPagesForHeal(): Promise<string[]> {
   const { readdir } = await import('node:fs/promises');
   const root = wikiRepoPath();
   const out: string[] = ['index.md'];
-  for (const dir of ['courses', 'competencies', 'targets', 'concepts']) {
+  for (const dir of WIKI_PAGE_TYPES) {
     try {
       for (const e of await readdir(path.join(root, dir))) {
         if (e.endsWith('.md')) out.push(`${dir}/${e}`);

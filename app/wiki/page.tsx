@@ -203,6 +203,23 @@ export default async function WikiIndexPage({ searchParams }: Props) {
         </>
       )}
 
+      {data.research.length > 0 && (
+        <section className="wiki-cols" aria-labelledby="research-heading">
+          <div className="wiki-col">
+            <h2 id="research-heading" className="wiki-index__h2">AI and GC careers</h2>
+            <p className="wiki-col__intro">What the program sees changing in graduates&rsquo; careers, which skills matter more, and what the curriculum could do. Start with the brief.</p>
+            <ul className="wiki-col__list">
+              {data.research.map(r => (
+                <li key={r.slug}>
+                  <Link href={`/wiki/research/${r.slug}${q}`}>{r.title}</Link>
+                  {r.description && <p>{r.description}</p>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
+
       {faculty && (
         <section className="wiki-index__ask">
           <p>Or just ask; the curriculum chat reads these pages and cites them back.</p>

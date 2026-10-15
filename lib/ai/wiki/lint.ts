@@ -9,12 +9,14 @@
  *  - orphan           : a narrative page nothing links to (warning; index excluded)
  *  - missing-section  : a page lacking a required section for its type (schema.ts)
  *  - ungated-concept  : a concept promoted from < 2 source courses (the ≥2-source gate)
+ *
+ * Scans the generated sections and the hand-authored research/ section.
  */
 
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { wikiRepoPath } from '@/lib/wiki/git-ops';
-import { WIKI_PAGE_TYPES, WIKI_SCHEMA, type WikiPageType } from './schema';
+import { WIKI_SERVED_TYPES, WIKI_SERVED_SCHEMA, type WikiServedType } from './schema';
 import { detectBands, readEvidenceBandsFrontmatter } from '@/lib/ai/wiki/evidence-band-markers';
 import { OKF_REQUIRED_KEYS } from '@/lib/ai/wiki/okf-frontmatter';
 
@@ -29,7 +31,7 @@ export interface LintIssue {
 
 interface ParsedPage {
   relPath: string;
-  type: WikiPageType;
+  type: WikiServedType;
   slug: string;
   headings: string[];
   links: string[]; // wikilink target slugs (lowercased)
@@ -40,7 +42,8 @@ interface ParsedPage {
   missingOkfKeys: string[];
 }
 
-const WIKILINK_RE = /\[\[([a-z0-9-]+)(?:\|[^\]]*)?\]\]/gi;
+// \\? accepts the table-escaped [[slug\|Label]] form.
+const WIKILINK_RE = /\[\[([a-z0-9-]+)\\?(?:\|[^\]]*)?\]\]/gi;
 
 /** True when `field:` appears in the page's frontmatter block. */
 function hasFrontmatterKey(text: string, field: string): boolean {
@@ -63,7 +66,7 @@ function frontmatterList(text: string, field: string): string[] {
   return v ? [v] : [];
 }
 
-function parsePage(type: WikiPageType, file: string, text: string): ParsedPage {
+function parsePage(type: WikiServedType, file: string, text: string): ParsedPage {
   const isIndex = file === 'index.md';
   return {
     relPath: `${type}/${file}`,
@@ -85,7 +88,7 @@ function parsePage(type: WikiPageType, file: string, text: string): ParsedPage {
  */
 export async function lintWiki(root: string = wikiRepoPath()): Promise<LintIssue[]> {
   const pages: ParsedPage[] = [];
-  for (const type of WIKI_PAGE_TYPES) {
+  for (const type of WIKI_SERVED_TYPES) {
     let files: string[] = [];
     try {
       files = (await fs.readdir(path.join(root, type))).filter(f => f.endsWith('.md'));
@@ -134,7 +137,7 @@ export async function lintWiki(root: string = wikiRepoPath()): Promise<LintIssue
         });
       }
 
-      for (const sec of WIKI_SCHEMA[p.type].requiredSections) {
+      for (const sec of WIKI_SERVED_SCHEMA[p.type].requiredSections) {
         if (!p.headings.some(h => h.toLowerCase() === sec.toLowerCase())) {
           issues.push({
             kind: 'missing-section',
@@ -145,7 +148,7 @@ export async function lintWiki(root: string = wikiRepoPath()): Promise<LintIssue
         }
       }
 
-      const minRel = WIKI_SCHEMA[p.type].minRelatedForPromotion;
+      const minRel = WIKI_SERVED_SCHEMA[p.type].minRelatedForPromotion;
       if (minRel !== undefined && p.relatedCourses.length < minRel) {
         issues.push({
           kind: 'ungated-concept',

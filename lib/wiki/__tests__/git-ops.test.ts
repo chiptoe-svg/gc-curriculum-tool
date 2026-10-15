@@ -45,6 +45,8 @@ vi.mock('node:fs', async (importOriginal) => {
       writeFile: vi.fn().mockResolvedValue(undefined),
       appendFile: vi.fn().mockResolvedValue(undefined),
       readFile: vi.fn().mockResolvedValue(''),
+      // readWikiPage resolves symlinks; identity here so no real path is touched.
+      realpath: vi.fn(async (p: string) => p),
     },
   };
 });
