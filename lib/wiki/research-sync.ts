@@ -60,7 +60,7 @@ const SKIP = new Set(['SOURCES.md']);
 const FILE_RE = /^[a-z0-9-]+\.md$/;
 /** Markdown-looking names; anything matching must be exactly `<slug>.md`. */
 const MD_LIKE_RE = /\.(md|markdown|mdown|mkdn?|mdwn|mdtxt|mdtext)$/i;
-/** index.md would be read as a section index; the hub page is ai-careers-brief. */
+/** index.md would be read as a section index; the lead page is the-case. */
 const RESERVED = new Set(['index.md']);
 
 function gitRaw(cwd: string, args: string[]): Promise<string> {
@@ -97,7 +97,7 @@ export async function readResearchSource(
   // would silently delete its wiki page.
   for (const f of files) {
     if (!f.endsWith('.md')) throw new ResearchSyncRefusal(`${f}: research pages must use the lowercase .md extension`);
-    if (RESERVED.has(f)) throw new ResearchSyncRefusal(`${f}: reserved name (the research hub page is ai-careers-brief.md)`);
+    if (RESERVED.has(f)) throw new ResearchSyncRefusal(`${f}: reserved name (the lead research page is the-case.md)`);
   }
   if (files.length === 0) throw new ResearchSyncRefusal(`no research pages in ${sourceDir}`);
   const out: ResearchSourcePage[] = [];

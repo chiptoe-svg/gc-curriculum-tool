@@ -108,7 +108,7 @@ function extractTitle(markdown: string, fallback: string): string {
 export const wikiReadTool: ToolDefinition = {
   name: 'read_wiki',
   description:
-    'Read one wiki page. The argument is named `path` and takes the repo-relative page path, e.g. {"path": "courses/gc-4800.md"} — also "competencies/brand-strategy.md", "targets/production-operations.md", "concepts/productive-failure.md", "research/ai-careers-brief.md", "index.md". A missing .md extension is tolerated ("courses/gc-4800" works). Returns the page\'s full markdown. Reject paths under "raw/" — those are immutable snapshot JSON, not narrative.',
+    'Read one wiki page. The argument is named `path` and takes the repo-relative page path, e.g. {"path": "courses/gc-4800.md"} — also "competencies/brand-strategy.md", "targets/production-operations.md", "concepts/productive-failure.md", "research/the-case.md", "index.md". A missing .md extension is tolerated ("courses/gc-4800" works). Returns the page\'s full markdown. Reject paths under "raw/" — those are immutable snapshot JSON, not narrative.',
   usagePolicy:
     'Use when you know the exact path you want (typically from a prior list_wiki / search_wiki call, or an obvious slug from the user\'s question like "GC 4800" → "courses/gc-4800.md"). Cite the path in your response.',
   inputSchema: z.object({ path: z.string() }),
