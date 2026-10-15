@@ -81,6 +81,10 @@ export default async function WikiIndexPage({ searchParams }: Props) {
         </p>
         <p className="wiki-index__about">
           New here? Read the <a href={TOOL_OVERVIEW_URL}>overview of the curriculum tool</a>, or browse <a href={TOOL_DOCS_URL}>all of its documents</a>.
+          {data.research[0] && (
+            <> For where the program could go next, read{' '}
+              <Link href={`/wiki/research/${data.research[0].slug}${q}`}>{data.research[0].title}</Link>.</>
+          )}
         </p>
         {!isEmpty && (
           <p className="wiki-index__status">
