@@ -49,7 +49,7 @@ export function HowToRead({ q }: { q: string }) {
         </li>
         <li id="career-target">
           <span className="wiki-howto__term">Career targets</span>
-          <p>The five destinations the program prepares students for. A target is well served when courses across the sequence build the competencies it needs to the depth it needs.</p>
+          <p>The proposed five destinations the program prepares students for. A target is well served when courses across the sequence build the competencies it needs to the depth it needs.</p>
           <p className="wiki-beta"><strong>Beta.</strong> {CAREER_TARGETS_BETA}</p>
         </li>
       </ol>

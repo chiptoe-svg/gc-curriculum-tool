@@ -141,7 +141,7 @@ export default async function WikiIndexPage({ searchParams }: Props) {
           <section className="wiki-cols">
             <div className="wiki-col">
               <h2 className="wiki-index__h2">Career targets</h2>
-              <p className="wiki-col__intro">The five destinations the program prepares students for. Each is a family of the jobs graduates actually take, not a single job title.</p>              <p className="wiki-beta"><strong>Beta.</strong> {CAREER_TARGETS_BETA}</p>
+              <p className="wiki-col__intro">The proposed five destinations the program prepares students for. Each is a family of the jobs graduates actually take, not a single job title.</p>              <p className="wiki-beta"><strong>Beta.</strong> {CAREER_TARGETS_BETA}</p>
               <ul className="wiki-col__list">
                 {data.targets.map(t => (
                   <li key={t.slug}>
