@@ -121,6 +121,8 @@ GC graduates already make this move, but later and on their own (step 4). The cr
 
 ## 6. The curriculum under-serves the growing side
 
+This step draws on the GC Curriculum Tool, the program's record of what each course teaches. For each course it reviews the syllabus and course materials, then interviews the instructor, and scores how deeply students know, understand and can do each competency, on a 0–5 scale. It then maps courses and gained competencies against what each career target needs, so gaps and sequencing problems across the program show up. So far 19 of the 59 catalog courses have been captured.
+
 On paper the curriculum covers four of the five targets broadly: 12 to 17 courses each claim hands-on depth. Creative Technology & Systems is the exception: almost no course teaches it hands-on.
 
 The finer evidence points the same way:
