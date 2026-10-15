@@ -127,4 +127,4 @@ if (favicon) write('favicon.ico', Buffer.from(await (await get(favicon.split('?'
 
 console.log(`mode: ${apply ? 'APPLY' : 'DRY RUN'}  out: ${out}`);
 console.log(`${pages.size} pages, ${assets.size} assets`);
-if (!apply) console.log('(dry run: nothing written to the share)');
+if (!apply) console.log('(not --apply: written to the --out folder only)');

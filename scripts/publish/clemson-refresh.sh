@@ -79,16 +79,18 @@ rm -rf "$STAGE"; mkdir -p "$STAGE/gc-curriculum" "$STAGE/gc-wiki"
 # --- wiki snapshot from the running app ---
 curl -s -o /dev/null -f --max-time 20 http://127.0.0.1:3000/wiki || fail "app not answering on :3000 (wiki snapshot skipped)"
 (cd "$PUB" && node scripts/wiki/snapshot-public.mjs --out "$STAGE/gc-wiki" | tail -1) || fail "wiki snapshot failed"
-mkdir -p "$SHARE/tonkin/pages" || fail "cannot create $SHARE/tonkin/pages"
-/usr/bin/rsync -rt "$STAGE/gc-curriculum/" "$SHARE/tonkin/pages/gc-curriculum/" || fail "copy of docs to the share failed"
-/usr/bin/rsync -rt "$STAGE/gc-wiki/" "$SHARE/tonkin/pages/gc-wiki/" || fail "copy of the wiki to the share failed"
-# rsync's explicit chmod leaves new files unreadable to the web server over SMB
-# (every page 302'd to clemson.edu/unauthorized, 2026-10-15); open them up again.
-/bin/chmod -R a+rX "$SHARE/tonkin/pages/gc-curriculum" "$SHARE/tonkin/pages/gc-wiki" || fail "chmod on the share failed"
+# Copy with Apple's cp, never rsync: rsync writes a temp file, chmods and renames
+# it, and over SMB that leaves files the web server cannot read (every page
+# 302'd to clemson.edu/unauthorized, 2026-10-15). cp writes existing files in
+# place and creates new ones under the folder's inherited permissions.
+PAGES="${CLEMSON_PAGES:-$SHARE/tonkin/pages}"          # override only to test
+URL_BASE="${CLEMSON_URL_BASE:-https://tonkin.people.clemson.edu/pages}"
+mkdir -p "$PAGES/gc-curriculum" "$PAGES/gc-wiki" || fail "cannot create folders under $PAGES"
+/bin/cp -R "$STAGE/gc-curriculum/." "$PAGES/gc-curriculum/" || fail "copy of docs to the share failed"
+/bin/cp -R "$STAGE/gc-wiki/." "$PAGES/gc-wiki/" || fail "copy of the wiki to the share failed"
 
 # Check the RESULT, not just the copy: the public pages must actually load.
-for u in https://tonkin.people.clemson.edu/pages/gc-curriculum/ https://tonkin.people.clemson.edu/pages/gc-wiki/ \
-         https://tonkin.people.clemson.edu/pages/gc-wiki/research/the-case/; do
+for u in "$URL_BASE/gc-curriculum/" "$URL_BASE/gc-wiki/" "$URL_BASE/gc-wiki/research/the-case/"; do
   code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$u")
   [ "$code" = 200 ] || fail "$u returned $code after publishing"
 done
