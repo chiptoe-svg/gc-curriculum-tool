@@ -269,7 +269,7 @@
   <p>Every catalog entry records its <strong>origin</strong>:</p>
   <ul>
     <li><strong>Migrated</strong>: carried over from the original per-career lists.</li>
-    <li><strong>GC-authored</strong>: drafted for the catalog and approved by the department (the four business-acumen competencies, <a href="#business">§09</a>).</li>
+    <li><strong>GC-authored</strong>: drafted for the catalog and proposed by the program chair; not yet adopted (the four business-acumen competencies, <a href="#business">§09</a>).</li>
     <li><strong>O*NET-seeded</strong>: reserved for competencies proposed from O*NET in the next phase. None exist yet.</li>
   </ul>
 </section>
@@ -298,12 +298,12 @@
 <section id="merges">
   <h2><span class="num">04</span>Merges: when two entries are one competency</h2>
 
-  <p>With one shared list, near-duplicates become visible. In October 2026 the department approved two merges and kept the other candidates separate:</p>
+  <p>With one shared list, near-duplicates become visible. In October 2026 the program chair approved two merges and kept the other candidates separate:</p>
   <ul>
     <li><strong>Production domain knowledge</strong> (<code>domain-knowledge</code>) absorbed <code>gc-production-literacy</code> and <code>domain-grounding</code>.</li>
     <li><strong>Project management</strong> (<code>project-management</code>) absorbed <code>timeline-management</code>.</li>
   </ul>
-  <p>The survivors got new, department-approved descriptors written to cover what the merged entries had meant.</p>
+  <p>The survivors got new descriptors, approved by the program chair, written to cover what the merged entries had meant.</p>
 
   <h3>What a merge does to existing scores</h3>
   <p>For every course snapshot, the survivor takes the <strong>strongest evidenced reading</strong> among the merged entries. "Strongest" is ranked by Do depth first, then Understand, then Know, then the scorer's confidence. Readings are never averaged, because an average of "built this to depth 4" and "barely touched it" describes no real course. The merged-away entries' own readings are kept unchanged as history, and a carried reading is marked in its rationale with the entry it came from.</p>
@@ -359,7 +359,7 @@
   <table>
     <thead><tr><th>Question</th><th>Answer today</th></tr></thead>
     <tbody>
-      <tr><td><strong>Which courses count toward a career's totals?</strong></td><td>Every program-visible course, on a career path or not (department decision, October 2026). A GC elective that builds a competency counts toward each career claiming it.</td></tr>
+      <tr><td><strong>Which courses count toward a career's totals?</strong></td><td>Every program-visible course, on a career path or not (program chair's decision, October 2026). A GC elective that builds a competency counts toward each career claiming it.</td></tr>
       <tr><td><strong>Which courses get their own row in the <code>/program</code> matrix?</strong></td><td>Only courses flagged as building toward a career. This is a display choice to keep the matrix readable; it does not change the totals.</td></tr>
     </tbody>
   </table>
@@ -431,7 +431,7 @@
 <section id="business">
   <h2><span class="num">09</span>The business-acumen competencies</h2>
 
-  <p>Looking at the occupations graduates enter showed a gap in the catalog. Customer service, sales and management knowledge rank highly in O*NET for the destination occupations, yet no catalog competency covered how a business itself makes money, how deals are negotiated, or who carries contract and licensing risk. Four competencies were drafted from the career-target descriptions, the share-weighted O*NET ratings and the existing catalog (to avoid overlap), then approved by the department:</p>
+  <p>Looking at the occupations graduates enter showed a gap in the catalog. Customer service, sales and management knowledge rank highly in O*NET for the destination occupations, yet no catalog competency covered how a business itself makes money, how deals are negotiated, or who carries contract and licensing risk. Four competencies were drafted from the career-target descriptions, the share-weighted O*NET ratings and the existing catalog (to avoid overlap), then proposed by the program chair. They are proposals for faculty discussion and have not been adopted by the department:</p>
   <ul>
     <li><strong>Customer relationship and service</strong>: managing a client through a problem to a recorded resolution.</li>
     <li><strong>Negotiation and persuasion</strong>: preparing and conducting a negotiation over price, scope or terms against a walk-away point.</li>
@@ -447,12 +447,12 @@
 
   <div class="callout planned">
     <div class="callout-title">Everything in this section is planned</div>
-    <p>The steps below are the agreed direction from the catalog design. None of them is live, and details may change during design.</p>
+    <p>The steps below are the agreed direction from the catalog design. Only the first (P2) has started going live, and details may change during design.</p>
   </div>
 
-  <h3>P2: bundle membership <span class="status planned">Built, not yet live</span></h3>
-  <p>The first piece of linking the catalog to O*NET is built. Each catalog competency ("bundle") now has a <strong>card</strong> — what it includes and excludes, how it differs from its nearest neighbors, worked examples — AI-drafted, for the department to review and approve. Every bundle's card is placed, by AI, against the O*NET elements and task statements that describe real occupations, each candidate judged <strong>core</strong>, <strong>related</strong>, or <strong>fringe</strong> to the bundle, or marked "no clean match" where none fits. A faculty review queue on <code>/admin/bundles</code> lets a reviewer confirm or reject every proposed placement, one at a time or in bulk, with the AI's placement shown. A <strong>blind golden sample</strong> — a subset of bundles a human reviewer scores without seeing the AI's placements first — measures how often the AI and the reviewer agree, before any of it is trusted. <strong>Nothing from this pipeline is auto-confirmed</strong>: every card and every placement sits in a review queue until a person acts on it. ESCO links (the European skills classification) are not yet attempted.</p>
-  <p>This is built and has been rehearsed end to end against a scratch copy of the database, but it has not been applied to the live system and no card or placement has been faculty-reviewed yet. It goes live only once the department has approved the cards and reviewed the placements.</p>
+  <h3>P2: bundle membership <span class="status planned">Rolling out</span></h3>
+  <p>The first piece of linking the catalog to O*NET is built. Each catalog competency ("bundle") now has a <strong>card</strong> — what it includes and excludes, how it differs from its nearest neighbors, worked examples — AI-drafted, for the program chair to review and approve. Every bundle's card is placed, by AI, against the O*NET elements and task statements that describe real occupations, each candidate judged <strong>core</strong>, <strong>related</strong>, or <strong>fringe</strong> to the bundle, or marked "no clean match" where none fits. A faculty review queue on <code>/admin/bundles</code> lets a reviewer confirm or reject every proposed placement, one at a time or in bulk, with the AI's placement shown. A <strong>blind golden sample</strong> — a subset of bundles a human reviewer scores without seeing the AI's placements first — measures how often the AI and the reviewer agree, before any of it is trusted. <strong>Nothing from this pipeline is auto-confirmed</strong>: every card and every placement sits in a review queue until a person acts on it. ESCO links (the European skills classification) are not yet attempted.</p>
+  <p>This is built and was rehearsed end to end against a scratch copy of the database. Its tables and review page went live in October 2026, but no card has been approved and no placement made or reviewed yet. Placements are used only after the cards are approved and the placements reviewed.</p>
 
   <h3>Then: weights and required depths</h3>
   <p>Once links are confirmed, each requirement can get a draft <strong>weight</strong>, seeded from O*NET. The design's rule rescales O*NET Importance to 0–1 and, for each occupation in the career's mix, takes the competency's strongest confirmed link, then weights by the occupation's share. Using the strongest link rather than the sum stops a competency with many weak links outweighing one with a single strong link. Competencies O*NET does not cover (much of the workflow-technology and AI work, for instance) get an AI-drafted weight with a written rationale for faculty to confirm. <strong>Required depths</strong> are drafted per K/U/D dimension, using O*NET's level descriptions as wording aids, and set by faculty. For growth-horizon requirements the default asks for a foundation (Know and Understand) rather than on-the-job mastery (Do).</p>
