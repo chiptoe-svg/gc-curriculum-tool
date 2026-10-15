@@ -1,0 +1,641 @@
+{
+  "_approval": "",
+  "drafted": {
+    "model": "gpt-6.1-sol",
+    "promptVersion": "bundle-card-draft@1",
+    "at": "2026-10-15T04:12:34.621Z",
+    "costUsdCents": 4809
+  },
+  "cards": [
+    {
+      "competencyId": "aesthetic-judgment",
+      "name": "Aesthetic judgment and brand visual literacy",
+      "stratum": "technical",
+      "includes": "This bundle covers evaluating a body of creative work, such as print pieces or packaging graphics, against a brand standard and explaining what works, what does not, and why. It draws on major design principles and an understanding of how brand standards encode aesthetic decisions. Judgment is informed by accumulated visual references, not reduced to checklist compliance.",
+      "excludes": "Applying brand standards while creating or revising a deliverable belongs in brand-standards-application; developing a creative concept responsive to a brief belongs in conceptual-development. Building or operating a workflow review step for brand, legal, or print-quality checks belongs in quality-frameworks.",
+      "distinctions": "Unlike brand-standards-application, which applies standards to a deliverable, aesthetic-judgment evaluates a body of work and explains its visual strengths and weaknesses. Unlike conceptual-development, it judges creative work rather than generating a concept from a brief. Unlike quality-frameworks, it supplies aesthetic judgment rather than building or operating a repeatable quality and compliance review step.",
+      "positiveExamples": [
+        "Critique a set of packaging designs against a brand standard, explaining which visual choices work and which do not.",
+        "Use design principles and accumulated visual references to explain why a group of print pieces feels consistent or inconsistent with a brand.",
+        "Identify aesthetic weaknesses in a body of creative work that passes explicit brand-rule checks, and explain the judgment."
+      ],
+      "negativeExamples": [
+        "Revise a packaging layout to apply brand standards in an edge case (belongs in brand-standards-application)",
+        "Develop a campaign concept from a brief for execution across three media (belongs in conceptual-development)",
+        "Set up a recurring brand compliance review step for AI-assisted artwork (belongs in quality-frameworks)"
+      ]
+    },
+    {
+      "competencyId": "ai-tool-direction",
+      "name": "AI tool direction and personal tool-building: prompt design, iteration, quality evaluation",
+      "stratum": "workflow_ai",
+      "includes": "This bundle covers directing generative AI tools for image, copy, and video work, from prompt design through iteration to a final output that meets brand quality standards. It includes recognizing tool capabilities and failure modes and using human judgment to evaluate and improve results. It also covers scripting, assembling, or configuring a lightweight personal AI tool, prompt chain, or automation to speed one's own work, with documentation sufficient for reuse.",
+      "excludes": "Organizational AI benchmarking and adoption recommendations belong in ai-tool-evaluation. Brand template or preset systems that produce compliant variations at scale for others to run belong in brand-system-templating. Engineering automated handoffs between creative, workflow, and AI systems belongs in systems-automation-integration.",
+      "distinctions": "Unlike ai-tool-evaluation, this bundle evaluates and improves outputs for the user's own work rather than benchmarking an organizational AI implementation for an adopt-or-drop decision. Unlike brand-system-templating, it builds reusable personal tools rather than maintained brand template systems documented for others to run. Unlike systems-automation-integration, its focus is directing AI and building lightweight personal aids, not engineering a handoff between two systems.",
+      "positiveExamples": [
+        "Write and refine image-generation prompts, evaluating successive outputs until the selected image meets brand quality standards.",
+        "Identify failures in AI-generated brand copy and iteratively direct revisions through final output.",
+        "Assemble a lightweight personal AI prompt chain for recurring creative work and document how to reuse it."
+      ],
+      "negativeExamples": [
+        "Benchmark an AI copy tool against the current process and recommend whether the organization should adopt it (belongs in ai-tool-evaluation)",
+        "Build and maintain generative-AI presets that let a team produce on-brand campaign variations at scale (belongs in brand-system-templating)",
+        "Configure an API automation that handles a handoff between a creative system and an AI system (belongs in systems-automation-integration)"
+      ]
+    },
+    {
+      "competencyId": "ai-tool-evaluation",
+      "name": "AI implementation, benchmarking and evaluation",
+      "stratum": "workflow_ai",
+      "includes": "This bundle covers choosing and implementing an AI step in creative or production work, then benchmarking it on the organization's own work against the current process. It includes building a small test set and scoring rule, measuring output quality against references, error and failure-mode rates, cost per item, turnaround, and consistency across runs. It also covers recognizing drift as models change and writing an evidence-based recommendation to adopt, adjust, or drop the step that weighs quality, cost, risk, and staff workload.",
+      "excludes": "Prompt iteration and lightweight personal AI tool-building belong in ai-tool-direction; scripting or configuring handoffs between systems belongs in systems-automation-integration. Building or operating ongoing brand, legal/regulatory, or print-quality review steps belongs in quality-frameworks.",
+      "distinctions": "Unlike ai-tool-direction, which focuses on directing and refining AI output for personal work, this bundle tests whether an implemented AI step warrants adoption in an organization's workflow. Unlike systems-automation-integration, it centers on benchmark evidence and the adoption decision rather than connecting systems and handling handoff failures. Unlike quality-frameworks, it evaluates the tool against the current process rather than establishing ongoing output review and accountability.",
+      "positiveExamples": [
+        "Implement an AI-assisted artwork review step and compare its errors, turnaround, and cost per item with the current review process on a small set of actual jobs.",
+        "Build a reference set and scoring rule for AI-generated brand copy, then measure quality and consistency across repeated runs.",
+        "Rerun a workflow benchmark after a model change and recommend adopting, adjusting, or dropping the AI step based on quality, cost, risk, and staff workload."
+      ],
+      "negativeExamples": [
+        "Iterate image-generation prompts until a brand deliverable meets the intended visual standard (belongs in ai-tool-direction)",
+        "Configure an API handoff that transfers artwork to an AI tool and handles failed transfers (belongs in systems-automation-integration)",
+        "Operate a recurring compliance review that catches errors in AI-assisted packaging artwork before release (belongs in quality-frameworks)"
+      ]
+    },
+    {
+      "competencyId": "brand-positioning",
+      "name": "Brand positioning and messaging strategy",
+      "stratum": "business",
+      "includes": "This bundle covers using brand architecture frameworks and positioning models to recommend what a brand should stand for, grounded in evidence about consumers and the market. In brand and packaging work, it includes weighing positioning alternatives and explaining the trade-offs that make a recommendation focused rather than trying to stand for everything. It addresses the strategic basis for brand messaging, not the production of finished copy or artwork.",
+      "excludes": "Designing and conducting consumer studies belongs in consumer-research, while producing a competitor analysis belongs in competitive-analysis. Translating an established positioning into coherent print, packaging, and digital executions belongs in cross-channel-translation.",
+      "distinctions": "consumer-research produces consumer insights, and competitive-analysis establishes the market context; brand-positioning uses that evidence to recommend what a brand should stand for and what it should leave out. cross-channel-translation carries an established positioning into print, packaging, and digital executions rather than choosing the positioning itself.",
+      "positiveExamples": [
+        "Develop a packaging brand's positioning recommendation using consumer insights and market evidence.",
+        "Compare positioning alternatives and explain what the recommended position includes and deliberately leaves out.",
+        "Use a brand architecture framework and positioning model to support a brand positioning recommendation."
+      ],
+      "negativeExamples": [
+        "Design and execute a consumer study, then synthesize its findings into an insight (belongs in consumer-research)",
+        "Produce a competitor analysis to inform a brand positioning recommendation (belongs in competitive-analysis)",
+        "Translate an approved brand positioning into coherent print, packaging, and digital executions (belongs in cross-channel-translation)"
+      ]
+    },
+    {
+      "competencyId": "brand-standards-application",
+      "name": "Brand standards interpretation and application",
+      "stratum": "technical",
+      "includes": "This bundle covers reading a brand standards document, understanding its structure and scope, and applying its guidance to a creative deliverable such as a printed piece or package graphic. It includes interpreting guidance when the document does not directly address the situation and making choices consistent with its intent. The emphasis is on appropriate judgment in edge cases, not mechanically treating every guideline as a rule.",
+      "excludes": "Developing brand positioning belongs in brand-positioning, and building reusable templates or settings that generate compliant variations belongs in brand-system-templating. Managing packaging artwork versioning and checklist-based compliance belongs in packaging-artwork-compliance; building or operating a repeatable quality/compliance review step belongs in quality-frameworks.",
+      "distinctions": "Unlike aesthetic-judgment, which evaluates a body of work and explains its strengths and weaknesses, this bundle applies brand guidance while making a deliverable. Unlike brand-system-templating, it centers on judgment in a particular execution rather than encoding rules for automated variation. Unlike cross-channel-translation, it does not require coherent execution across print, packaging, and digital.",
+      "positiveExamples": [
+        "Locate the relevant sections of a brand standards document and apply them to a print layout.",
+        "Interpret brand guidance for a package layout that is not illustrated in the standards document.",
+        "Resolve an ambiguous brand-guideline application in a creative deliverable using judgment consistent with the guidance's intent."
+      ],
+      "negativeExamples": [
+        "Evaluate a collection of brand layouts and explain what works visually and what does not (belongs in aesthetic-judgment)",
+        "Build reusable layout templates that automatically produce on-brand variations (belongs in brand-system-templating)",
+        "Manage a packaging artwork version through a defined brand and regulatory compliance checklist (belongs in packaging-artwork-compliance)"
+      ]
+    },
+    {
+      "competencyId": "brand-system-templating",
+      "name": "Brand system templating",
+      "stratum": "workflow_ai",
+      "includes": "This bundle covers translating brand and campaign rules into reusable templates, components, and platform settings that produce on-brand variations at scale for print, packaging, and other brand work. It includes building these systems in design tools, workflow platforms, or generative-AI platforms, with rules encoded precisely enough to guide automatic output. It also covers monitoring and maintaining the templates or settings as brand rules change and documenting how others can run the system.",
+      "excludes": "Interpreting brand standards for a single creative deliverable belongs in brand-standards-application. Configuring project intake, approval, and reporting steps belongs in workflow-architecture; connecting systems through scripts or APIs belongs in systems-automation-integration. Building a separate quality or compliance review step belongs in quality-frameworks.",
+      "distinctions": "Unlike brand-standards-application, which applies standards to an individual deliverable using judgment, this bundle encodes those standards into reusable systems that generate compliant variations. Unlike ai-tool-direction, which focuses on directing AI and building tools for personal use, it builds and documents brand-controlled templates or settings for others to run. Unlike workflow-architecture, which sequences intake, approvals, and reporting, it governs the brand rules built into output-generating templates and settings.",
+      "positiveExamples": [
+        "Build reusable campaign layout templates with components and settings that encode brand rules for automatic variations.",
+        "Configure generative-AI presets to produce on-brand variations and document their use for other operators.",
+        "Monitor template-generated output and update the template system when brand rules change."
+      ],
+      "negativeExamples": [
+        "Apply brand guidelines to a single campaign layout and resolve an unusual logo-placement case (belongs in brand-standards-application)",
+        "Iterate AI prompts to finish an image for one's own design project (belongs in ai-tool-direction)",
+        "Configure intake forms, proofing stages, and approval routing for campaign production (belongs in workflow-architecture)"
+      ]
+    },
+    {
+      "competencyId": "brief-translation",
+      "name": "Client brief translation into creative direction",
+      "stratum": "technical",
+      "includes": "This bundle covers knowing the standard structure and expected contents of a creative brief and using that knowledge to interpret a real brand brief for print, packaging, or other brand work. It includes questioning ambiguities and assumptions rather than simply executing the brief's instructions. The resulting creative direction must respond substantively to the brief in a way its author recognizes.",
+      "excludes": "Discovery that produces a distinct client needs assessment belongs in client-needs-diagnosis; developing brand positioning from consumer and market evidence belongs in brand-positioning. Developing a creative concept and translating it across at least three executional media belongs in conceptual-development.",
+      "distinctions": "Unlike client-needs-diagnosis, which produces a needs assessment of the underlying business problem, brief-translation interrogates the brief to establish responsive creative direction. Unlike conceptual-development, it does not require developing a concept across at least three executional media. Unlike brand-positioning, it translates a supplied brand brief rather than developing a positioning recommendation from consumer and market evidence.",
+      "positiveExamples": [
+        "Review a brand brief against the standard creative brief structure and identify missing or unclear information.",
+        "Question ambiguous instructions in a packaging brief to clarify their implications for creative direction.",
+        "Translate a real brand brief into creative direction that its author recognizes as substantively responsive."
+      ],
+      "negativeExamples": [
+        "Conduct a discovery conversation and write an assessment of the client's underlying business needs (belongs in client-needs-diagnosis)",
+        "Develop a brief-responsive creative concept across print, packaging, and digital media (belongs in conceptual-development)",
+        "Recommend brand positioning based on consumer and market evidence (belongs in brand-positioning)"
+      ]
+    },
+    {
+      "competencyId": "business-financial-literacy",
+      "name": "Business and financial literacy",
+      "stratum": "business",
+      "includes": "This bundle covers how a print, packaging, or marketing business makes money through revenue, cost of goods, gross margin, overhead, and pricing models. It includes explaining how a discount, rush job, or reprint changes profit and loss, and why higher volume does not necessarily mean higher profit. It covers reading a simple profit-and-loss or job-costing report and using numbers to explain whether a job or account is worth keeping.",
+      "excludes": "Preparing complex production estimates, managing delivery spend, and calculating equipment payback belong in cost-management. Negotiating price, scope, or terms belongs in negotiation-persuasion; writing and presenting a client proposal with a quantified ROI or total-cost-of-ownership case belongs in proposal-development.",
+      "distinctions": "Unlike cost-management, which develops production estimates, manages spend, and justifies equipment purchases, this bundle interprets revenue, costs, and profit to judge a job or account's financial value. Unlike negotiation-persuasion, it explains the financial effect of price or terms rather than conducting the negotiation. Unlike proposal-development, it evaluates profitability for the print, packaging, or marketing business rather than building a client-facing ROI case for a purchase.",
+      "positiveExamples": [
+        "Read a print shop's simple profit-and-loss report and explain revenue, cost of goods, gross margin, and overhead.",
+        "Use job-costing figures to show how a discount or reprint changes a packaging job's profit.",
+        "Compare an account's revenue and costs to explain numerically why its high order volume does or does not make it worth keeping."
+      ],
+      "negativeExamples": [
+        "Build a production cost estimate from packaging specifications, vendor capabilities, and run length (belongs in cost-management)",
+        "Negotiate a client's requested discount against a documented walk-away point (belongs in negotiation-persuasion)",
+        "Present a quantified ROI case showing why a proposed print solution pays for itself for the client (belongs in proposal-development)"
+      ]
+    },
+    {
+      "competencyId": "campaign-measurement",
+      "name": "Campaign planning and effectiveness measurement",
+      "stratum": "business",
+      "includes": "This bundle covers designing a measurement framework for a brand campaign involving print, packaging, or digital communications. It connects measures of success to business objectives rather than simply counting deliverables produced or distributed. It includes evaluating campaign results against those objectives to determine effectiveness.",
+      "excludes": "Client-facing post-project reporting to justify continued investment belongs in results-interpretation; general statistical interpretation belongs in quantitative-literacy. Planning and managing campaign production scope, schedules, budgets, and handoffs belongs in project-management.",
+      "distinctions": "Unlike results-interpretation, which centers on a client-facing post-project report, campaign-measurement defines how campaign success will be measured and evaluates results against objectives. Unlike quantitative-literacy, it applies data interpretation within a campaign-specific measurement framework rather than covering general statistical reasoning. Unlike project-management, it plans the measurement of campaign effectiveness, not the execution of creative and production work.",
+      "positiveExamples": [
+        "Design a campaign measurement framework that links selected metrics to stated business objectives.",
+        "Distinguish measures of campaign effectiveness from counts of printed or digital deliverables.",
+        "Evaluate campaign results against the objectives specified in its measurement framework."
+      ],
+      "negativeExamples": [
+        "Produce a post-project report that a client uses to justify continued investment (belongs in results-interpretation)",
+        "Interpret statistical significance and distinguish signal from noise in research data (belongs in quantitative-literacy)",
+        "Build and manage the schedule for producing and delivering campaign materials (belongs in project-management)"
+      ]
+    },
+    {
+      "competencyId": "client-needs-diagnosis",
+      "name": "Client needs diagnosis",
+      "stratum": "business",
+      "includes": "This bundle covers critically reading print, packaging, or brand project briefs and asking discovery questions that surface needs the client has not stated. It addresses the gap between the requested deliverable and the underlying business problem. The work culminates in a written needs assessment that captures what discovery revealed, distinct from the original brief.",
+      "excludes": "Developing creative direction from a client brief belongs in brief-translation, and writing or presenting a solution proposal with an ROI case belongs in proposal-development. Managing client approvals, changes, and expectations through production belongs in project-oversight.",
+      "distinctions": "client-needs-diagnosis establishes what problem the client needs addressed; brief-translation turns a brief into responsive creative direction. proposal-development makes the business case for a proposed solution, while this bundle produces a written needs assessment rather than a proposal. project-oversight maintains client and team alignment during delivery, rather than diagnosing needs through discovery.",
+      "positiveExamples": [
+        "Read a print project brief critically and identify assumptions to explore with the client.",
+        "Conduct a discovery conversation about a requested packaging redesign to uncover the underlying business problem.",
+        "Write a needs assessment that distinguishes the client's original request from needs surfaced during discovery."
+      ],
+      "negativeExamples": [
+        "Translate a packaging brief into creative direction the client recognizes as responsive (belongs in brief-translation)",
+        "Write a print solution proposal with a quantified cost/benefit case (belongs in proposal-development)",
+        "Coordinate client proof approvals and communicate production schedule changes (belongs in project-oversight)"
+      ]
+    },
+    {
+      "competencyId": "color-management",
+      "name": "Color management",
+      "stratum": "technical",
+      "includes": "This bundle covers color-management fundamentals and their application across print processes and devices, including calibration, profiling, and active process control. It addresses why color drifts across devices and substrates and treats color accuracy as a measurable, auditable standard rather than a visual preference. It includes setting up or auditing color management for a real print or packaging job and demonstrating that the output meets a defined color standard.",
+      "excludes": "General production quality-control systems belong in quality-control, and selecting substrates or finishing based on production suitability belongs in domain-knowledge. Interpreting brand guidelines for a creative deliverable belongs in brand-standards-application rather than here.",
+      "distinctions": "Unlike quality-control, which establishes a broader system for preventing production failures, color-management focuses on calibration, profiles, and process control that establish measurable color conformance. Unlike domain-knowledge, it actively controls color reproduction rather than judging general process, material, and equipment suitability. Unlike brand-standards-application, it verifies reproduced color against a defined standard rather than interpreting brand rules for a creative deliverable.",
+      "positiveExamples": [
+        "Calibrate a print device for a job and measure output against the defined color standard.",
+        "Set up profiles for a packaging job's devices and substrate, then verify color conformance.",
+        "Audit a print job's color process control to identify drift and document whether output meets the required color standard."
+      ],
+      "negativeExamples": [
+        "Set up a production quality-control system to catch failures at handoff points (belongs in quality-control)",
+        "Choose a packaging substrate and finishing process based on production constraints (belongs in domain-knowledge)",
+        "Interpret brand guidelines when applying a color palette to a creative deliverable (belongs in brand-standards-application)"
+      ]
+    },
+    {
+      "competencyId": "competitive-analysis",
+      "name": "Competitive and market analysis",
+      "stratum": "business",
+      "includes": "This bundle covers using competitive analysis frameworks and sourcing competitor data to examine the market context for a brand. In graphic communications work, that can include comparing competitors' messaging and brand presentation in print, packaging, and digital materials. It covers producing an analysis that explains how competitive context limits or opens positioning options and informs a positioning recommendation.",
+      "excludes": "Developing the overall brand positioning and messaging recommendation belongs in brand-positioning; designing and executing consumer research belongs in consumer-research. Evaluating creative work against a brand standard belongs in aesthetic-judgment.",
+      "distinctions": "Unlike brand-positioning, this bundle produces the competitive evidence that informs a positioning recommendation rather than developing the overall positioning strategy. Unlike consumer-research, it examines competitors and competitive context rather than designing a consumer study. Unlike aesthetic-judgment, it compares brand expressions for their competitive implications rather than judging creative work against a brand standard.",
+      "positiveExamples": [
+        "Identify sources of competitor data for a packaging brand's competitive analysis.",
+        "Use a competitive analysis framework to compare competing brands' messaging and packaging presentation.",
+        "Produce a competitive analysis explaining which positioning options the competitor landscape supports or constrains."
+      ],
+      "negativeExamples": [
+        "Develop a brand positioning recommendation using consumer and market evidence (belongs in brand-positioning)",
+        "Design and conduct a consumer study, then synthesize a strategic insight (belongs in consumer-research)",
+        "Evaluate packaging designs against the client's brand standard (belongs in aesthetic-judgment)"
+      ]
+    },
+    {
+      "competencyId": "conceptual-development",
+      "name": "Conceptual development and creative ideation across disciplines",
+      "stratum": "technical",
+      "includes": "This bundle covers using ideation methods to develop a creative concept that responds to a graphic communications brief. It treats the brief's constraints as the discipline that guides creative choices, rather than treating ideation as unrestricted idea generation. It includes translating the concept across at least three executional media, such as print, image, and video, while retaining the central idea.",
+      "excludes": "Producing finished creative deliverables across media belongs in cross-medium-production; translating brand positioning coherently across print, packaging, and digital belongs in cross-channel-translation. Evaluating creative work against brand standards belongs in aesthetic-judgment.",
+      "distinctions": "Unlike brief-translation, which emphasizes interrogating a brief and establishing responsive creative direction, conceptual-development emphasizes generating a creative concept under the brief's constraints and translating it across at least three executional media. Unlike cross-channel-translation, its starting point is a brief-driven creative concept rather than a single brand positioning. Unlike cross-medium-production, it focuses on developing and translating the idea, not producing finished work across media.",
+      "positiveExamples": [
+        "Use ideation methods to generate creative concepts guided by a packaging campaign brief's constraints.",
+        "Develop one brief-responsive concept and show how it translates into print, image, and video.",
+        "Refine a concept's expressions across three media so each remains responsive to the brief."
+      ],
+      "negativeExamples": [
+        "Produce finished copy, images, and video for a single brand project (belongs in cross-medium-production)",
+        "Translate a brand positioning into coherent print, packaging, and digital executions (belongs in cross-channel-translation)",
+        "Evaluate campaign designs against a brand standard and explain what works and why (belongs in aesthetic-judgment)"
+      ]
+    },
+    {
+      "competencyId": "consumer-research",
+      "name": "Consumer research and insight synthesis",
+      "stratum": "business",
+      "includes": "This bundle covers selecting appropriate qualitative or quantitative methods and designing and carrying out consumer research for brand, print, or packaging questions. It includes interpreting findings together to develop a strategic insight about consumers, rather than merely listing responses or reporting results.",
+      "excludes": "Competitor research and analysis belong in competitive-analysis, and developing a brand positioning recommendation belongs in brand-positioning. General statistical interpretation without designing and executing a consumer study belongs in quantitative-literacy.",
+      "distinctions": "Unlike quantitative-literacy, which emphasizes critically interpreting research data, consumer-research covers choosing methods, designing and executing a consumer study, and synthesizing its findings. Unlike competitive-analysis, it investigates consumers rather than competitor context. Unlike brand-positioning, it produces a strategic consumer insight rather than a recommendation about what the brand should stand for.",
+      "positiveExamples": [
+        "Choose a qualitative or quantitative research method suited to a question about consumers' responses to packaging.",
+        "Design and conduct a consumer study exploring how people interpret a brand's printed messaging.",
+        "Synthesize consumer study findings into a strategic insight that explains the meaning behind observed responses."
+      ],
+      "negativeExamples": [
+        "Compare competing brands' packaging and messaging to inform positioning (belongs in competitive-analysis)",
+        "Develop a brand positioning recommendation from consumer and market evidence (belongs in brand-positioning)",
+        "Assess whether a reported statistical difference is practically meaningful (belongs in quantitative-literacy)"
+      ]
+    },
+    {
+      "competencyId": "contracts-ip-licensing",
+      "name": "Contracts, IP and licensing",
+      "stratum": "business",
+      "includes": "This bundle covers basic contract terms for print, packaging, and brand jobs, including scope, payment, liability, and change orders. It covers copyright, trademarks, font and image licensing, and rights in AI-generated content as they apply to a job's assets and intended use. It includes reviewing assets and agreements, identifying who carries risk in the client–vendor chain, and resolving licensing and contract risks before release, when late discoveries would be most costly.",
+      "excludes": "Asset-library metadata, taxonomy, and rights-tracking structures belong in digital-asset-management, not here. Conducting negotiations over price, scope, or terms belongs in negotiation-persuasion. Building a workflow-wide quality or compliance review step belongs in quality-frameworks.",
+      "distinctions": "Unlike digital-asset-management, which organizes assets and tracks rights for reuse, this bundle evaluates whether a job's intended use is permitted and resolves rights risks. Unlike negotiation-persuasion, which focuses on reaching agreement over price, scope, or terms, it focuses on understanding contract terms and addressing their risks. Unlike quality-frameworks, which builds or operates repeatable compliance review steps, it supplies the contract and IP judgment needed to review a specific job.",
+      "positiveExamples": [
+        "Review font and image licenses against a packaging job's intended use and resolve permission gaps before release.",
+        "Review scope, payment, liability, and change-order terms in a client–vendor agreement and resolve identified risks.",
+        "Check copyright, trademark, and AI-generated-content rights in brand artwork before release."
+      ],
+      "negativeExamples": [
+        "Configure rights metadata and search categories in an asset library (belongs in digital-asset-management)",
+        "Negotiate a client's price and scope against a defined walk-away point (belongs in negotiation-persuasion)",
+        "Build a repeatable compliance review step for AI-assisted production output (belongs in quality-frameworks)"
+      ]
+    },
+    {
+      "competencyId": "cost-management",
+      "name": "Cost estimation, budget management, and equipment justification",
+      "stratum": "business",
+      "includes": "This bundle covers the cost structures of major print and packaging processes and the preparation of defensible estimates for complex production projects, reconciling specifications, vendor capabilities, and run-length economics. It includes managing project spend through delivery. It also covers capital-equipment justification based on purchase cost, throughput or quality gain, and payback over multiple years, distinct from estimating a single job or judging its margin.",
+      "excludes": "Full-project scheduling, scope control, and close-out belong in project-management; selecting, briefing, and managing vendor relationships belong in vendor-management. Reading profit-and-loss reports to assess job or account profitability belongs in business-financial-literacy, while writing and presenting a client proposal with an ROI case belongs in proposal-development.",
+      "distinctions": "Unlike business-financial-literacy, which interprets profitability and financial reports, cost-management builds production estimates and controls project spend. Unlike project-management, which runs the full project life cycle, it focuses on the cost basis and spending through delivery. Unlike proposal-development, which presents a solution's business case to win client commitment, it justifies production equipment using purchase cost, throughput or quality gain, and multi-year payback.",
+      "positiveExamples": [
+        "Estimate a complex packaging project's cost by reconciling specifications, vendor capabilities, and run-length economics.",
+        "Track production spending against the estimate and manage the budget through delivery.",
+        "Build an equipment-purchase case showing purchase cost, expected throughput or quality gain, and multi-year payback."
+      ],
+      "negativeExamples": [
+        "Build a production schedule with dependencies and track scope changes through close-out (belongs in project-management)",
+        "Read a job-costing report to explain whether an account is worth keeping (belongs in business-financial-literacy)",
+        "Write and present a client proposal with a quantified ROI case to secure commitment (belongs in proposal-development)"
+      ]
+    },
+    {
+      "competencyId": "cross-channel-translation",
+      "name": "Cross-channel brand translation (print, packaging, digital)",
+      "stratum": "technical",
+      "includes": "This bundle covers translating a single brand positioning into coherent print, packaging, and digital executions. It includes recognizing how brand standards manifest differently in physical and digital channels and adapting their expression to each. The focus is deliberate translation that preserves a consistent brand identity without simply duplicating the same execution everywhere.",
+      "excludes": "Developing the brand positioning itself belongs in brand-positioning; building reusable templates or settings that generate on-brand variations at scale belongs in brand-system-templating. Calibrating devices, profiling, and controlling measurable color accuracy belong in color-management.",
+      "distinctions": "Unlike brand-standards-application, which focuses on interpreting standards for a creative deliverable, this bundle focuses on coherent brand execution across physical and digital channels. Unlike conceptual-development, it translates an established brand positioning rather than developing a creative concept from a brief. Unlike cross-medium-production, its defining concern is cross-channel brand coherence, not the breadth of finished media produced.",
+      "positiveExamples": [
+        "Translate one brand positioning into coordinated brochure, package, and website executions.",
+        "Adapt the expression of brand typography and imagery across print, packaging, and digital while preserving a coherent identity.",
+        "Revise channel-specific executions that duplicate one layout so each expresses the same brand appropriately for its channel."
+      ],
+      "negativeExamples": [
+        "Develop a brand positioning recommendation based on consumer and market evidence (belongs in brand-positioning)",
+        "Build reusable brand templates that produce compliant variations at scale (belongs in brand-system-templating)",
+        "Calibrate and profile print devices to meet a defined brand color standard (belongs in color-management)"
+      ]
+    },
+    {
+      "competencyId": "cross-medium-production",
+      "name": "Cross-medium creative production (copy, design, image, video, print)",
+      "stratum": "technical",
+      "includes": "This bundle covers producing finished work across at least three creative media for a single brand project, drawing on copy, design, image, video, and print production. It includes knowing and working within the production constraints and standards of the media used. The emphasis is on generalist fluency across disciplines, not specialization in any one medium.",
+      "excludes": "Developing the underlying creative concept belongs in conceptual-development; translating brand positioning coherently across print, packaging, and digital belongs in cross-channel-translation. Interpreting brand guidelines and resolving their edge cases belongs in brand-standards-application.",
+      "distinctions": "Unlike conceptual-development, which develops a concept that translates across media, this bundle carries execution through to finished work in at least three creative media. Unlike cross-channel-translation, which emphasizes coherent brand expression across print, packaging, and digital channels, this bundle emphasizes production fluency across creative disciplines such as copy, design, image, and video. Brand-standards-application focuses on interpreting brand rules for a deliverable rather than producing a multi-media body of finished work.",
+      "positiveExamples": [
+        "Produce finished copy, images, and video for a single brand project.",
+        "Complete print, image, and video deliverables while meeting each medium's production constraints and standards.",
+        "Explain how production requirements differ across copy, image, video, and print work."
+      ],
+      "negativeExamples": [
+        "Develop a creative concept and show how it could extend into three media (belongs in conceptual-development)",
+        "Translate brand positioning into coherent print, packaging, and digital expressions (belongs in cross-channel-translation)",
+        "Resolve an ambiguous brand-guideline rule for a layout (belongs in brand-standards-application)"
+      ]
+    },
+    {
+      "competencyId": "customer-relationship-management",
+      "name": "Customer relationship and service",
+      "stratum": "business",
+      "includes": "This bundle covers customer service standards, problem escalation, and long-term account retention in print, packaging, and brand work. It includes managing a client through a missed delivery date or quality complaint to a recorded resolution, and maintaining a relationship record another staff member can pick up. It addresses how handling a mistake well can build trust and why retaining a client costs less than acquiring a new one.",
+      "excludes": "Routine project approvals, handoffs, and expectation management belong in project-oversight. Negotiating price, scope, or terms belongs in negotiation-persuasion, and setting up production checks to prevent quality failures belongs in quality-control.",
+      "distinctions": "Unlike project-oversight, which keeps clients and production teams aligned through approvals and changes, this bundle centers on service recovery and continuity of the client relationship. Unlike negotiation-persuasion, it focuses on handling client problems rather than bargaining over price, scope, or terms. Unlike vendor-management, it maintains the customer relationship rather than the relationship with a production supplier.",
+      "positiveExamples": [
+        "Manage a client's missed-delivery complaint through escalation and document the resolution.",
+        "Handle a packaging quality complaint according to service standards while maintaining client trust.",
+        "Update the client relationship record with the problem, response, and resolution so another staff member can continue service."
+      ],
+      "negativeExamples": [
+        "Coordinate client sign-offs on proofs and production changes (belongs in project-oversight)",
+        "Negotiate a revised job price against a defined walk-away point (belongs in negotiation-persuasion)",
+        "Set up inspection checks to prevent recurring print defects (belongs in quality-control)"
+      ]
+    },
+    {
+      "competencyId": "digital-asset-management",
+      "name": "Digital asset management",
+      "stratum": "workflow_ai",
+      "includes": "This bundle covers organizing a real library of brand, print, or packaging assets in a DAM or DAM-like system using metadata, taxonomy, and rights information. It includes setting up or maintaining that structure and demonstrating that users can find assets and reuse them correctly. It addresses how weak metadata and taxonomy compound as a library grows, and treats rights tracking as a compliance requirement.",
+      "excludes": "Reviewing agreements and resolving licensing risks belongs in contracts-ip-licensing; recording rights so library assets can be reused correctly belongs here. Managing packaging artwork versions and checking labeling or print compliance belongs in packaging-artwork-compliance. Configuring project intake and approval steps belongs in workflow-architecture.",
+      "distinctions": "Unlike contracts-ip-licensing, this bundle tracks rights within an asset library rather than resolving a job's licensing or contract risks. Unlike packaging-artwork-compliance, it organizes assets for discovery and correct reuse rather than managing packaging artwork through versioning and compliance checks. Unlike workflow-architecture, it configures the library's metadata and taxonomy rather than sequencing intake, approvals, proofing, and reporting.",
+      "positiveExamples": [
+        "Set up metadata fields and taxonomy terms for a real library of brand images and packaging graphics.",
+        "Maintain asset rights metadata so users can identify which images are permitted for a proposed reuse.",
+        "Test searches in a DAM to demonstrate that assets can be found and reused correctly, and correct metadata gaps exposed by the test."
+      ],
+      "negativeExamples": [
+        "Review an image license and resolve a usage restriction before a print job is released (belongs in contracts-ip-licensing)",
+        "Manage packaging artwork revisions and check required label text before approval (belongs in packaging-artwork-compliance)",
+        "Configure a platform's creative intake, proofing, and approval sequence (belongs in workflow-architecture)"
+      ]
+    },
+    {
+      "competencyId": "domain-knowledge",
+      "name": "Production domain knowledge: processes, substrates, materials and equipment",
+      "stratum": "technical",
+      "includes": "This bundle covers knowledge of print, packaging, and brand production processes, substrates, inks, finishing, equipment, and technology, including their capabilities and limitations. It applies that knowledge to selecting substrates and finishing, accurately briefing a production team or sales engineer, and judging whether a design or specification is producible and fit for purpose. It also covers explaining, with specific production reasons, why a workflow, template, or AI output would succeed or fail and how production constraints shape creative and commercial possibilities.",
+      "excludes": "Color profiling, calibration, and color process control belong in color-management. Designing or re-engineering production workflows belongs in workflow-design, and setting up and operating quality standards enforcement belongs in quality-control. Building or configuring an automation between systems belongs in systems-automation-integration, rather than here.",
+      "distinctions": "Unlike workflow-design, this bundle supplies the production knowledge used to judge whether a workflow will work rather than designing or re-engineering the production process. Unlike quality-control, it judges feasibility and fitness for purpose from material, process, and equipment constraints rather than setting up a conformance system. Unlike cost-management, it explains what production choices make possible rather than calculating job costs or equipment payback.",
+      "positiveExamples": [
+        "Specify a substrate and finishing combination that suits a packaging job and the available equipment.",
+        "Brief a production team on the material and process limitations affecting a proposed print design.",
+        "Explain why an AI-generated packaging concept cannot be produced as shown, citing specific substrate and finishing constraints."
+      ],
+      "negativeExamples": [
+        "Calibrate a print device and verify that a job meets a defined color standard (belongs in color-management)",
+        "Re-engineer a production step and validate its throughput and quality gains (belongs in workflow-design)",
+        "Build a purchase-cost and payback case for finishing equipment (belongs in cost-management)"
+      ]
+    },
+    {
+      "competencyId": "negotiation-persuasion",
+      "name": "Negotiation and persuasion",
+      "stratum": "business",
+      "includes": "This bundle covers preparing and conducting real or simulated negotiations over price, scope, or terms for print, packaging, or brand work. It includes distinguishing underlying interests from stated positions, establishing walk-away points, and using price, terms, and scope as negotiating levers. It emphasizes protecting both margin and the relationship, and documenting the outcome against the walk-away point.",
+      "excludes": "Writing and presenting a proposal with a quantified ROI case belongs in proposal-development. Reviewing agreements and assets for contract or licensing risks belongs in contracts-ip-licensing. Managing client service problems and maintaining relationship records belongs in customer-relationship-management.",
+      "distinctions": "Unlike proposal-development, which builds and presents the business case for a solution, this bundle handles bargaining over price, scope, or terms against a walk-away point. Unlike contracts-ip-licensing, it focuses on reaching an acceptable deal rather than identifying and resolving contract or rights risks. Unlike customer-relationship-management, it protects the relationship during negotiation rather than managing service problems and ongoing account records.",
+      "positiveExamples": [
+        "Prepare for a print-price negotiation by identifying interests, stated positions, and a walk-away point.",
+        "Conduct a simulated packaging negotiation using trade-offs among price, scope, and payment terms to protect margin and the relationship.",
+        "Document agreed brand-project scope and terms and compare the outcome with the established walk-away point."
+      ],
+      "negativeExamples": [
+        "Write and present a packaging proposal with a quantified cost-benefit case (belongs in proposal-development)",
+        "Review a print job agreement for liability and image licensing risks (belongs in contracts-ip-licensing)",
+        "Resolve a client's quality complaint and update the account's relationship record (belongs in customer-relationship-management)"
+      ]
+    },
+    {
+      "competencyId": "packaging-artwork-compliance",
+      "name": "Packaging artwork workflow and compliance",
+      "stratum": "technical",
+      "includes": "This bundle covers the packaging artwork production pipeline, including artwork management, version control, and the regulatory and print-quality requirements governing packaging graphics. It includes managing a packaging artwork file through revisions and a regulatory, brand, or print-quality compliance check using a defined checklist or an AI-assisted review tool. It also covers recognizing why labeling errors and missed requirements are costly and how versioning discipline prevents those failures.",
+      "excludes": "Asset-library taxonomy and metadata management belong in digital-asset-management; workflow platform configuration and approval sequencing belong in workflow-architecture. Setting up a production quality control system belongs in quality-control, rather than checking a packaging artwork file against defined requirements.",
+      "distinctions": "Unlike digital-asset-management, this bundle centers on version control and compliance of a packaging artwork file, not metadata and reuse across an asset library. Unlike quality-frameworks, it specifically ties review to the packaging artwork pipeline and versioning discipline. Unlike workflow-architecture, it manages artwork within a defined workflow rather than designing or configuring the workflow itself.",
+      "positiveExamples": [
+        "Track revisions to a packaging artwork file and check the current version against a labeling compliance checklist.",
+        "Manage a packaging artwork revision through a defined brand or print-quality check.",
+        "Use an AI-assisted review tool to check the current packaging artwork version for missed regulatory requirements."
+      ],
+      "negativeExamples": [
+        "Build a metadata taxonomy so packaging assets can be found and reused across a library (belongs in digital-asset-management)",
+        "Configure a platform's intake, approval, proofing, and reporting sequence (belongs in workflow-architecture)",
+        "Set up a production quality control system using industry standards and conformance measurements (belongs in quality-control)"
+      ]
+    },
+    {
+      "competencyId": "project-management",
+      "name": "Project management across creative and production work",
+      "stratum": "business",
+      "includes": "This bundle covers planning and running creative, print, or packaging projects from brief through delivery and close-out, including scope, schedule, budget, risk, and change control across teams or vendors. It includes work breakdown, dependencies, critical path, and production lead times at different levels of complexity, with attention to scope and handoffs where projects often fail. It covers identifying early warnings of compounding schedule delays, reporting status, tracking changes, re-baselining when scope, budget, or dates change, and recording lessons learned.",
+      "excludes": "Client approval and expectation management without responsibility for running the project plan belongs in project-oversight. Detailed production cost estimation and equipment payback analysis belong in cost-management. Designing or re-engineering production processes belongs in workflow-design.",
+      "distinctions": "Unlike project-oversight, which keeps clients and teams aligned while production runs the plan, this bundle owns the project plan and its execution from brief to delivery. Unlike cost-management, it integrates the budget with scope, dependencies, schedule, risk, and changes rather than centering on detailed production estimates or equipment justification. Unlike workflow-design, it manages a specific project's life cycle rather than designing or re-engineering the production process.",
+      "positiveExamples": [
+        "Build a packaging project scope, work breakdown, schedule, and budget across teams and vendors, accounting for dependencies and production lead times.",
+        "Flag a delayed handoff's effect on the critical path, report the risk, and re-baseline the plan after a scope or date change.",
+        "Run a creative production project through delivery and document lessons learned at close-out."
+      ],
+      "negativeExamples": [
+        "Manage client sign-offs and explain delivery trade-offs while the production team runs the plan (belongs in project-oversight)",
+        "Build a production estimate based on specifications, vendor capability, and run-length economics (belongs in cost-management)",
+        "Re-engineer a finishing sequence and validate its effect on throughput and quality (belongs in workflow-design)"
+      ]
+    },
+    {
+      "competencyId": "project-oversight",
+      "name": "Client-facing project coordination",
+      "stratum": "business",
+      "includes": "This bundle covers keeping the client and internal creative and production teams aligned from the brief through creative, prepress, production, and delivery on print, packaging, or brand projects. It includes recognizing handoff points that need client sign-off and coordinating approvals and changes through those points. It covers continuously managing client expectations about timeline, quality, and cost, communicating trade-offs before they become surprises while the production side runs the plan.",
+      "excludes": "Building and running the project schedule, budget, and risk plan belongs in project-management; estimating costs and managing spend belongs in cost-management. Configuring an approval or proofing workflow belongs in workflow-architecture, not here.",
+      "distinctions": "Unlike project-management, which plans and runs the project, project-oversight keeps the client aligned with creative and production teams while production runs the plan. Unlike customer-relationship-management, its focus is ongoing project approvals and expectations rather than resolving service problems and maintaining the account relationship. Unlike team-coordination, it coordinates client-facing decisions and handoffs rather than managing staff performance or HR responsibilities.",
+      "positiveExamples": [
+        "Coordinate client sign-off on a packaging proof before the handoff to production.",
+        "Explain the timeline, quality, and cost trade-offs of a requested change before the client decides.",
+        "Communicate an approved client revision to creative and prepress teams so everyone works toward the same expectations."
+      ],
+      "negativeExamples": [
+        "Build a dependency-based production schedule and re-baseline it after a scope change (belongs in project-management)",
+        "Configure proof routing and approval steps in a workflow platform (belongs in workflow-architecture)",
+        "Resolve a client quality complaint and maintain a relationship record for future account service (belongs in customer-relationship-management)"
+      ]
+    },
+    {
+      "competencyId": "proposal-development",
+      "name": "Proposal development, consultative communication, and the ROI case",
+      "stratum": "business",
+      "includes": "This bundle covers structuring, writing, and presenting client proposals for print, packaging, brand, or production solutions, using consultative communication to secure commitment and set accurate delivery expectations. It includes justifying scope, sequence, and cost in business terms and building a quantified cost/benefit, ROI, or total cost of ownership case using measures such as payback and cost per unit. The proposal explains why the purchase pays for itself rather than relying on creative appeal or the client relationship alone.",
+      "excludes": "Discovery conversations that produce a needs assessment belong in client-needs-diagnosis; production cost estimating, spend management, and capital-equipment justification belong in cost-management. Bargaining over price, scope, or terms belongs in negotiation-persuasion, while ongoing client approvals and expectation management during delivery belong in project-oversight.",
+      "distinctions": "Unlike client-needs-diagnosis, which surfaces the underlying business problem, proposal-development turns a proposed solution into a client-facing case for commitment. Unlike cost-management, which develops production estimates, manages spend, or justifies equipment, this bundle uses costs and benefits to justify the client's purchase in a proposal. Unlike negotiation-persuasion, it centers on explaining and presenting the proposed scope, sequence, cost, and business return rather than bargaining over price, scope, or terms.",
+      "positiveExamples": [
+        "Write a packaging proposal that explains scope, delivery sequence, cost, and quantified client benefits.",
+        "Calculate payback and total cost of ownership for a proposed client solution and incorporate them into the purchase case.",
+        "Present a print solution proposal, explain its cost-per-unit benefits, and secure client commitment with accurate delivery expectations."
+      ],
+      "negativeExamples": [
+        "Conduct a discovery conversation and write an assessment of unstated packaging client needs (belongs in client-needs-diagnosis)",
+        "Build a multi-year payback case for a production company's equipment purchase (belongs in cost-management)",
+        "Negotiate a print project's price and scope against a defined walk-away point (belongs in negotiation-persuasion)"
+      ]
+    },
+    {
+      "competencyId": "quality-control",
+      "name": "Quality control systems and standards enforcement",
+      "stratum": "technical",
+      "includes": "This bundle covers setting up and operating a quality control system for a specific print or packaging production context. It includes knowing industry standards such as G7, ISO 12647, and FTA FIRST and using measurement instruments to assess conformance. It addresses predictable failure modes, especially at production handoffs, by placing checks early enough to catch problems before final inspection.",
+      "excludes": "Calibration and profiling to achieve color accuracy belong in color-management; interpreting brand rules for a creative deliverable belongs in brand-standards-application. Managing packaging artwork versions and regulatory compliance checks belongs in packaging-artwork-compliance, while configuring workflow platforms for intake, approvals, and reporting belongs in workflow-architecture.",
+      "distinctions": "Unlike color-management, which establishes and audits color accuracy through calibration, profiling, and process control, quality-control uses standards-based measurements within a production quality control system. Unlike quality-frameworks, which covers quality and compliance review steps across brand, legal/regulatory, print, and AI-assisted output, this bundle centers on industry production standards and preventing predictable production failures. Unlike workflow-design, which designs or re-engineers production processes to balance quality, throughput, and cost, this bundle establishes and operates the checks that enforce quality within those processes.",
+      "positiveExamples": [
+        "Set up standards-based quality checkpoints at production handoffs to catch recurring defects before final inspection.",
+        "Use measurement instruments to assess production conformance to applicable ISO 12647 or FTA FIRST requirements.",
+        "Operate a print quality control system that detects predictable failures before they reach subsequent production stages."
+      ],
+      "negativeExamples": [
+        "Calibrate and profile a print device to meet a defined color standard (belongs in color-management)",
+        "Manage packaging artwork versions and check required labeling before release (belongs in packaging-artwork-compliance)",
+        "Re-engineer a production step to improve throughput and validate the change (belongs in workflow-design)"
+      ]
+    },
+    {
+      "competencyId": "quality-frameworks",
+      "name": "AI and quality governance",
+      "stratum": "workflow_ai",
+      "includes": "This bundle covers building or operating a brand, legal/regulatory, or print-quality review step in a creative or production workflow that consistently catches failure modes, including those in AI-assisted output. It includes knowing the relevant evaluation standards and where each check belongs in print, packaging, or brand work. It also covers recognizing which checks require domain expertise rather than full automation and keeping a person accountable for AI-assisted output.",
+      "excludes": "Instrument-based production standards enforcement belongs in quality-control, and packaging artwork management and versioning belong in packaging-artwork-compliance. Benchmarking AI tools for deployment decisions belongs in ai-tool-evaluation, while resolving asset licensing and contract risks belongs in contracts-ip-licensing.",
+      "distinctions": "Unlike quality-control, which emphasizes production quality systems and measured conformance, this bundle emphasizes where quality and compliance reviews belong and the domain judgment and accountability needed to operate them. Unlike packaging-artwork-compliance, it is not centered on managing and versioning packaging artwork files. Unlike ai-tool-evaluation, it checks deliverables within a workflow rather than benchmarking an AI tool to support an adopt, adjust, or drop decision.",
+      "positiveExamples": [
+        "Build a brand review step that consistently catches off-brand elements in creative deliverables, including AI-generated images or copy.",
+        "Operate a legal/regulatory review step for print materials, using domain expertise to check issues automated review may miss.",
+        "Place a print-quality check at the appropriate workflow stage and identify who remains accountable for reviewing AI-assisted output."
+      ],
+      "negativeExamples": [
+        "Measure production conformance to ISO 12647 using quality-control instruments (belongs in quality-control)",
+        "Manage packaging artwork versions through a defined regulatory review checklist (belongs in packaging-artwork-compliance)",
+        "Benchmark an AI tool against the current process and recommend whether to adopt it (belongs in ai-tool-evaluation)"
+      ]
+    },
+    {
+      "competencyId": "quantitative-literacy",
+      "name": "Quantitative literacy",
+      "stratum": "foundational",
+      "includes": "This bundle covers using basic statistical concepts to read research outputs critically in print, packaging, brand, and production work. It includes interpreting data, distinguishing meaningful patterns from noise, and recognizing that a statistically significant difference may not matter in practice. It translates those judgments into recommendations supported by the findings.",
+      "excludes": "Designing and executing consumer studies belongs in consumer-research; designing measurement frameworks tied to campaign objectives belongs in campaign-measurement. Producing client-facing post-project reports that justify continued investment belongs in results-interpretation.",
+      "distinctions": "Unlike consumer-research, this bundle focuses on critically interpreting research outputs rather than designing and executing a study. Unlike campaign-measurement, it judges the statistical evidence in results rather than designing a campaign measurement framework. Unlike results-interpretation, it focuses on signal, noise, and practical significance rather than framing a post-project report for client investment decisions.",
+      "positiveExamples": [
+        "Interpret packaging preference research to distinguish a supported pattern from noise.",
+        "Explain why a statistically significant difference between print test results may have little practical importance.",
+        "Critically read a brand research report and recommend an action supported by its quantitative findings."
+      ],
+      "negativeExamples": [
+        "Design and conduct a consumer study comparing packaging concepts (belongs in consumer-research)",
+        "Choose campaign measures and connect them to business objectives (belongs in campaign-measurement)",
+        "Produce a post-project client report that supports continued investment (belongs in results-interpretation)"
+      ]
+    },
+    {
+      "competencyId": "results-interpretation",
+      "name": "Results interpretation and client reporting",
+      "stratum": "business",
+      "includes": "This bundle covers interpreting completed brand, print, packaging, or production project results using metrics that matter to the client. It frames those results in terms of business outcomes rather than counts of assets produced or deliverables completed. It includes producing a post-project report the client can use to justify continued investment.",
+      "excludes": "Designing a campaign measurement framework belongs in campaign-measurement; building a prospective ROI or cost/benefit case for a client proposal belongs in proposal-development. Reading job-costing or profit-and-loss reports to decide whether an account is worth keeping belongs in business-financial-literacy.",
+      "distinctions": "Unlike campaign-measurement, which designs measurement frameworks and evaluates campaign effectiveness, results-interpretation focuses on explaining completed-project results in a client-facing report. Unlike proposal-development, it uses results already achieved rather than a proposed solution's projected benefits to support investment. Unlike business-financial-literacy, it explains value to the client rather than judging whether a job or account is profitable for the provider.",
+      "positiveExamples": [
+        "Identify which completed-project metrics matter to a brand or production client's investment decision.",
+        "Explain what reported project results mean for the client's business outcomes rather than listing deliverable counts.",
+        "Produce a post-project report that supports the client's justification for continued investment."
+      ],
+      "negativeExamples": [
+        "Design a campaign measurement framework tied to business objectives (belongs in campaign-measurement)",
+        "Build a quantified ROI case for a proposed print solution (belongs in proposal-development)",
+        "Use a job-costing report to determine whether an account is profitable to retain (belongs in business-financial-literacy)"
+      ]
+    },
+    {
+      "competencyId": "systems-automation-integration",
+      "name": "Systems automation and integration",
+      "stratum": "workflow_ai",
+      "includes": "This bundle covers using scripts, APIs, or low-code automation tools to connect creative, production workflow, and AI systems in print, packaging, or brand work. It includes understanding the data each system sends and expects, where the connection can break, and how to handle those failures rather than only a successful transfer. The practical work is building or configuring an automation for a real handoff between two systems that includes a generative-AI step.",
+      "excludes": "Designing intake, approval, proofing, and reporting sequences belongs in workflow-architecture; directing prompts and iterating AI output for brand quality belongs in ai-tool-direction. Benchmarking an AI tool's quality, cost, and consistency to recommend adoption belongs in ai-tool-evaluation.",
+      "distinctions": "Unlike workflow-architecture, which defines and sequences workflow steps, this bundle implements the automated connection between systems. Unlike ai-tool-direction, which centers on directing AI output and building personal tools, it centers on a real cross-system handoff and both systems' data and failure modes. Unlike ai-tool-evaluation, it focuses on making the integration work rather than benchmarking an AI step to support an adoption decision.",
+      "positiveExamples": [
+        "Configure a low-code handoff from a creative intake system to a generative-AI service, mapping input fields and handling missing data.",
+        "Write an API integration that transfers AI-generated copy into a packaging artwork workflow and handles failed responses.",
+        "Test a scripted handoff between a creative system and an AI system with incompatible data and unavailable-service cases."
+      ],
+      "negativeExamples": [
+        "Configure the sequence of intake, human approval, and AI work in a creative workflow platform (belongs in workflow-architecture)",
+        "Build a reusable personal prompt chain to iterate brand copy (belongs in ai-tool-direction)",
+        "Compare an AI production step with the current process using a test set and scoring rule (belongs in ai-tool-evaluation)"
+      ]
+    },
+    {
+      "competencyId": "team-coordination",
+      "name": "Team coordination, performance management, and people management (incl. HR)",
+      "stratum": "business",
+      "includes": "This bundle covers coordinating print, packaging, or creative production teams with a clear understanding of roles and responsibilities, especially when project pressure threatens communication. It includes addressing performance gaps in real time and understanding the basics of hiring, onboarding, and performance/HR policy. It also covers carrying out a hire, an onboarding plan, or a documented performance review end-to-end for a real or simulated team, recognizing that people-management decisions have consequences beyond one project.",
+      "excludes": "Planning and controlling the full project life cycle belongs in project-management; managing client sign-offs and expectations belongs in project-oversight. Selecting, briefing, and reviewing outside production vendors belongs in vendor-management.",
+      "distinctions": "Unlike project-management, which owns scope, schedules, budgets, and project control, team-coordination focuses on production-team roles, communication under pressure, and individual performance. Unlike project-oversight, it centers internal team coordination and people management rather than client approvals and expectations. Unlike vendor-management, it addresses team members and hiring, onboarding, or performance review rather than selecting and managing outside suppliers.",
+      "positiveExamples": [
+        "Coordinate production-team roles and preserve communication during a high-pressure print job.",
+        "Address a team member's performance gap in real time during a packaging project.",
+        "Carry out and document a performance review end-to-end for a real or simulated production-team member."
+      ],
+      "negativeExamples": [
+        "Build and re-baseline a packaging project's schedule as scope and delivery dates change (belongs in project-management)",
+        "Manage client approvals and explain delivery trade-offs during a print project (belongs in project-oversight)",
+        "Select and review a finishing vendor for a complex production job (belongs in vendor-management)"
+      ]
+    },
+    {
+      "competencyId": "vendor-management",
+      "name": "Vendor selection, management, and relationship maintenance",
+      "stratum": "business",
+      "includes": "This bundle covers understanding the capabilities and limitations of major print and packaging vendor categories and selecting a vendor suited to a complex project's requirements. It includes briefing the vendor on specifications, managing its work through delivery, and conducting a post-project review. It also covers maintaining vendor relationships as long-term investments, including understanding how trust affects what vendors can and will do under pressure.",
+      "excludes": "Overall project planning and change control belong in project-management, while cost estimation and budget management belong in cost-management. Conducting price or terms negotiations belongs in negotiation-persuasion, and resolving contract or licensing risks belongs in contracts-ip-licensing. Managing the client's service relationship belongs in customer-relationship-management.",
+      "distinctions": "Unlike project-management, which runs the overall project plan across teams and vendors, this bundle focuses on selecting and managing the external vendor. Unlike cost-management, it centers on vendor capability, delivery, and relationship continuity rather than estimating costs and controlling spend. Unlike negotiation-persuasion, it covers the ongoing vendor relationship rather than a negotiation over price, scope, or terms.",
+      "positiveExamples": [
+        "Compare print and packaging vendors' capabilities and limitations to select one for a complex job.",
+        "Brief a selected vendor on job specifications and manage its work through delivery.",
+        "Review vendor performance after a project and use the findings to maintain the relationship and set realistic expectations for future rush work."
+      ],
+      "negativeExamples": [
+        "Build and update the overall schedule, dependencies, and change-control record for a packaging project (belongs in project-management)",
+        "Prepare a production cost estimate and track spending through delivery (belongs in cost-management)",
+        "Negotiate a vendor's price and payment terms against a defined walk-away point (belongs in negotiation-persuasion)"
+      ]
+    },
+    {
+      "competencyId": "workflow-architecture",
+      "name": "Workflow platform configuration and operation",
+      "stratum": "workflow_ai",
+      "includes": "This bundle covers designing or configuring workflows for creative, print, packaging, and brand production work, on a platform such as Workfront or Monday or on paper. It includes structuring intake, proofing, approvals, and reporting, and sequencing human and AI work so handoffs maintain quality and efficiency. The focus is on workflow patterns, configuration, and sequencing rather than the choice of any single tool.",
+      "excludes": "Building scripts, API integrations, or low-code automations that transfer work between systems belongs in systems-automation-integration. Re-engineering print or packaging production processes belongs in workflow-design, while building or operating the substantive quality and compliance review checks belongs in quality-frameworks.",
+      "distinctions": "Unlike workflow-design, which designs or re-engineers the production process itself, workflow-architecture structures intake, proofing, approvals, reporting, and handoffs in a workflow platform or paper design. Unlike systems-automation-integration, it sequences work rather than building connections between systems. Unlike project-management, it defines how work moves through the workflow rather than managing a project's scope, schedule, budget, and delivery.",
+      "positiveExamples": [
+        "Configure a workflow platform's intake, proofing, approval, and reporting steps for a print campaign.",
+        "Map a packaging creative workflow on paper, sequencing AI-assisted work and human approvals at handoff points.",
+        "Revise workflow sequencing to prevent artwork from reaching production before required approval."
+      ],
+      "negativeExamples": [
+        "Build an API integration that sends artwork between a creative system and an AI review system (belongs in systems-automation-integration)",
+        "Re-engineer a packaging production step and validate its effect on throughput and quality (belongs in workflow-design)",
+        "Build and operate a review checklist that catches regulatory errors in AI-assisted artwork (belongs in quality-frameworks)"
+      ]
+    },
+    {
+      "competencyId": "workflow-design",
+      "name": "Production workflow design, process engineering, and optimization",
+      "stratum": "workflow_ai",
+      "includes": "This bundle covers designing production workflows for multi-component print and packaging projects using standard offset, digital, flexo, and packaging workflow patterns. It also covers re-sequencing, automating, or re-tooling an existing production process to change its throughput, quality, or cost. Work here balances quality, timeline, and budget constraints with trade-offs among throughput, quality, and adaptability, and validates process changes before they replace a working process.",
+      "excludes": "Running project schedules, tracking changes, and reporting status belong in project-management; configuring intake, approval, proofing, and reporting workflows belongs in workflow-architecture. Building scripts, API integrations, or low-code connections between systems belongs in systems-automation-integration, rather than here.",
+      "distinctions": "Unlike project-management, which plans and runs a project through delivery, workflow-design determines how production steps are arranged to meet the project's constraints or improve the production process itself. Unlike workflow-architecture, which sequences intake, approvals, proofing, and reporting, this bundle focuses on the production process and its throughput, quality, cost, and adaptability. Unlike systems-automation-integration, it addresses whether and how automation changes production performance, rather than building the connection between systems.",
+      "positiveExamples": [
+        "Design a production sequence for a multi-component print and packaging project that meets quality, deadline, and budget constraints.",
+        "Re-sequence a production step to improve throughput and validate its quality and cost effects before replacing the existing process.",
+        "Compare production workflow alternatives for their trade-offs in throughput, quality, and adaptability."
+      ],
+      "negativeExamples": [
+        "Track schedule slippage and report project status across production teams (belongs in project-management)",
+        "Configure a platform's intake forms, proof approvals, and reporting steps (belongs in workflow-architecture)",
+        "Build an API integration that transfers job data between two systems (belongs in systems-automation-integration)"
+      ]
+    }
+  ]
+}
