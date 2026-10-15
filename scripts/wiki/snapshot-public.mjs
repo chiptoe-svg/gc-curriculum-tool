@@ -22,6 +22,8 @@ const opt = (name, def) => (args.includes(name) ? args[args.indexOf(name) + 1] :
 const apply = args.includes('--apply');
 const origin = opt('--origin', 'http://127.0.0.1:3000');
 const campus = 'https://gcworkflow.clemson.edu:8443';
+const docsIndex = 'https://tonkin.people.clemson.edu/pages/gc-curriculum/';
+let favicon = null;
 const shareRoot = '/Volumes/people';
 const out = apply
   ? opt('--out', '/Volumes/people/tonkin/pages/gc-wiki')
@@ -76,7 +78,9 @@ while (queue.length) {
       if (!/^\/wiki\/api\b/.test(path)) queue.push(path.replace(/\/$/, ''));
       return `${attr}="${rel(file, pageFile(path.replace(/\/$/, '')))}${hash ? '#' + hash : ''}"`;
     }
-    if (path.startsWith('/')) return `${attr}="${campus}${url}"`; // other app pages: live campus app
+    if (path === '/') return `${attr}="${docsIndex}"`; // "Hub": the public documents index
+    if (path.startsWith('/favicon.ico')) { favicon = path; return `${attr}="${rel(file, 'favicon.ico')}"`; }
+    if (path.startsWith('/')) return `${attr}="${campus}${url}"`; // faculty-only app pages: live campus app
     return m;
   });
   write(file, html);
@@ -105,6 +109,8 @@ for (const route of [...assets]) {
   if (route.endsWith('.css') || existsSync(join(out, assetFile(route)))) continue;
   write(assetFile(route), Buffer.from(await (await get(route)).arrayBuffer()));
 }
+
+if (favicon) write('favicon.ico', Buffer.from(await (await get(favicon.split('?')[0])).arrayBuffer()));
 
 console.log(`mode: ${apply ? 'APPLY' : 'DRY RUN'}  out: ${out}`);
 console.log(`${pages.size} pages, ${assets.size} assets`);

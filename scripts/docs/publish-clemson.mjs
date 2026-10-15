@@ -29,6 +29,21 @@ const entries = [...tracked].filter(f => f.endsWith('.html') && !f.startsWith('d
 const ROOT_EXTRAS = ['gc-curriculum-tool-spec.html'];
 const outPath = f => (f.startsWith('docs/') ? relative('docs', f) : f);
 
+// Published pages link to the Clemson copies, not GitHub or the campus app (owner,
+// 2026-10-15). Rewritten at copy time so sources (including ai_career's generated
+// papers) need no change. Faculty-only app pages and the code repository stay as is.
+const BASE = 'https://tonkin.people.clemson.edu/pages/gc-curriculum/';
+const WIKI_BASE = 'https://tonkin.people.clemson.edu/pages/gc-wiki/';
+const BLOB = /https:\/\/github\.com\/chiptoe-svg\/gc-curriculum-tool\/blob\/main\/docs\/([^"#?\s)]+)/g;
+function rewriteLinks(html) {
+  return html
+    .replaceAll('https://chiptoe-svg.github.io/gc-curriculum-tool/docs/', BASE)
+    .replaceAll('https://chiptoe-svg.github.io/gc-curriculum-tool/', BASE)
+    .replace(BLOB, (m, p) => (tracked.has('docs/' + p) ? BASE + p : m))
+    .replace(/https:\/\/gcworkflow\.clemson\.edu:8443\/wiki(\/[a-z]+\/[a-z0-9-]+|\/guide)?\/?(?=["#])/g,
+      (m, p) => WIKI_BASE + (p ? p.slice(1) + '/' : ''));
+}
+
 const files = new Set();
 const missing = [];
 const queue = [...entries];
@@ -40,7 +55,11 @@ while (queue.length) {
   const html = readFileSync(f, 'utf8');
   for (const m of html.matchAll(/(?:href|src)="([^"]+)"/g)) {
     const ref = m[1].split('#')[0].split('?')[0];
-    if (!ref || /^(?:[a-z]+:|\/\/|\/)/i.test(ref)) continue;
+    if (!ref || /^(?:[a-z]+:|\/\/|\/)/i.test(ref)) {
+      const blob = /^https:\/\/github\.com\/chiptoe-svg\/gc-curriculum-tool\/blob\/main\/(docs\/.+)$/.exec(ref);
+      if (blob && tracked.has(blob[1])) queue.push(blob[1]); // published so the rewritten link resolves
+      continue;
+    }
     const target = normalize(join(dirname(f), decodeURI(ref)));
     if (!target.startsWith('docs/')) { missing.push(`${f} -> ${ref} (outside docs/)`); continue; }
     if (!tracked.has(target)) { missing.push(`${f} -> ${ref} (not tracked)`); continue; }
@@ -65,7 +84,8 @@ if (apply) {
   for (const f of list) {
     const out = join(dest, outPath(f));
     mkdirSync(dirname(out), { recursive: true });
-    copyFileSync(f, out);
+    if (f.endsWith('.html')) writeFileSync(out, rewriteLinks(readFileSync(f, 'utf8')));
+    else copyFileSync(f, out);
   }
   // Apache serves .md as text/markdown, which browsers download; show it as text.
   writeFileSync(join(dest, '.htaccess'), 'AddType "text/plain; charset=UTF-8" .md\n');
