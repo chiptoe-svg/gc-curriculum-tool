@@ -22,6 +22,8 @@
     "check:citations": "node scripts/docs/check-citations.mjs",
     "wiki:lint": "tsx scripts/wiki-lint.ts",
     "wiki:sync-research": "tsx scripts/wiki/sync-research.ts",
+    "wiki:publish": "tsx scripts/wiki/sync-research.ts --apply && bash scripts/publish/clemson-refresh.sh",
+    "publish:clemson": "bash scripts/publish/clemson-refresh.sh",
     "wiki:backfill-bands": "tsx scripts/wiki-backfill-bands.ts",
     "wiki:backfill-okf": "tsx scripts/wiki-backfill-okf.ts",
     "reliability:check": "tsx --env-file=.env.local scripts/reliability/check.ts",
