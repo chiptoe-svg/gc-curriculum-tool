@@ -68,11 +68,20 @@ fi
 git -C "$PUB" fetch -q origin main || fail "git fetch failed"
 git -C "$PUB" checkout -q --detach origin/main || fail "git checkout of origin/main failed"
 log "docs at $(git -C "$PUB" rev-parse --short HEAD)"
-(cd "$PUB" && node scripts/docs/publish-clemson.mjs --apply | tail -1) || fail "docs publish failed"
+# Node builds both copies in a local staging dir; only /usr/bin/rsync writes the
+# share. Under launchd, Apple's own tools inherit bash's network-volume permission,
+# but Homebrew node gets its own permission prompt that nobody can answer on this
+# headless Mac and hangs (seen 2026-10-15).
+STAGE="$HOME/.local/share/gc-curriculum-tool/clemson-stage"
+rm -rf "$STAGE"; mkdir -p "$STAGE/gc-curriculum" "$STAGE/gc-wiki"
+(cd "$PUB" && node scripts/docs/publish-clemson.mjs --apply --dest "$STAGE/gc-curriculum" | tail -1) || fail "docs publish failed"
 
 # --- wiki snapshot from the running app ---
 curl -s -o /dev/null -f --max-time 20 http://127.0.0.1:3000/wiki || fail "app not answering on :3000 (wiki snapshot skipped)"
-(cd "$PUB" && node scripts/wiki/snapshot-public.mjs --apply | tail -1) || fail "wiki snapshot failed"
+(cd "$PUB" && node scripts/wiki/snapshot-public.mjs --out "$STAGE/gc-wiki" | tail -1) || fail "wiki snapshot failed"
+mkdir -p "$SHARE/tonkin/pages" || fail "cannot create $SHARE/tonkin/pages"
+/usr/bin/rsync -rt "$STAGE/gc-curriculum/" "$SHARE/tonkin/pages/gc-curriculum/" || fail "copy of docs to the share failed"
+/usr/bin/rsync -rt "$STAGE/gc-wiki/" "$SHARE/tonkin/pages/gc-wiki/" || fail "copy of the wiki to the share failed"
 
 dashboard ok
 log "ok"

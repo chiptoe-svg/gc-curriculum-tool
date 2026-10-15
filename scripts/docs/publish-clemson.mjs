@@ -77,7 +77,8 @@ if (missing.length) {
 }
 
 if (apply) {
-  if (!existsSync(shareRoot) || !statSync(shareRoot).isDirectory()) {
+  // Only touch the share when writing to it (a local --dest never needs it).
+  if (dest.startsWith(shareRoot) && (!existsSync(shareRoot) || !statSync(shareRoot).isDirectory())) {
     console.error(`${shareRoot} is not mounted; connect to smb://people.zfs.clemson.edu/people first.`);
     process.exit(1);
   }
