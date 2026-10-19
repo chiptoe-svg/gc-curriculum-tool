@@ -21,8 +21,8 @@ export const careerTargets = pgTable('career_targets', {
 export const subCompetencies = pgTable('sub_competencies', {
   id: text('id').primaryKey(),               // stable slug; never changes once created
   name: text('name').notNull(),
-  knowDescriptor: text('know_descriptor').notNull(),
-  understandDescriptor: text('understand_descriptor').notNull(),
+  knowDescriptor: text('know_descriptor'),            // null for foundational (D-only) rows — 0060
+  understandDescriptor: text('understand_descriptor'), // null for foundational (D-only) rows — 0060
   doDescriptor: text('do_descriptor').notNull(),
   retired: boolean('retired').default(false).notNull(),  // catalog attribute; soft delete so old coverage doesn't orphan
   /**
@@ -39,11 +39,17 @@ export const subCompetencies = pgTable('sub_competencies', {
    * — enters unlinked). 'onet_seeded' is unused until P2.
    */
   origin: text('origin').notNull().default('migrated'),
+  /** 0060: D-only foundational competency (K/U descriptors null). Independent of stratum. */
+  foundational: boolean('foundational').notNull().default(false),
+  /** 0060: 'derived' competencies are never scored per course. */
+  scoring: text('scoring', { enum: ['direct', 'derived'] }).notNull().default('direct'),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [
   foreignKey({ name: 'sub_competencies_merged_into_fk', columns: [t.mergedInto], foreignColumns: [t.id] }).onDelete('restrict'),
   check('sub_competencies_merged_into_retired_check', sql`${t.mergedInto} IS NULL OR ${t.retired}`),
   check('sub_competencies_origin_check', sql`${t.origin} IN ('migrated', 'gc_authored', 'onet_seeded')`),
+  check('sub_competencies_scoring_check', sql`${t.scoring} IN ('direct', 'derived')`),
+  check('sub_competencies_foundational_ku_check', sql`${t.foundational} = (${t.knowDescriptor} IS NULL AND ${t.understandDescriptor} IS NULL)`),
 ]);
 
 /**
