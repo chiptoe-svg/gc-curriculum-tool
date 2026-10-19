@@ -191,16 +191,16 @@
       "competencyId": "color-management",
       "name": "Color management",
       "stratum": "technical",
-      "includes": "This bundle covers color-management fundamentals and their application across print processes and devices, including calibration, profiling, and active process control. It addresses why color drifts across devices and substrates and treats color accuracy as a measurable, auditable standard rather than a visual preference. It includes setting up or auditing color management for a real print or packaging job and demonstrating that the output meets a defined color standard.",
-      "excludes": "General production quality-control systems belong in quality-control, and selecting substrates or finishing based on production suitability belongs in domain-knowledge. Interpreting brand guidelines for a creative deliverable belongs in brand-standards-application rather than here.",
-      "distinctions": "Unlike quality-control, which establishes a broader system for preventing production failures, color-management focuses on calibration, profiles, and process control that establish measurable color conformance. Unlike domain-knowledge, it actively controls color reproduction rather than judging general process, material, and equipment suitability. Unlike brand-standards-application, it verifies reproduced color against a defined standard rather than interpreting brand rules for a creative deliverable.",
+      "includes": "This bundle covers setting up a print or packaging process to reproduce color to a defined target: device calibration (including G7 gray-balance calibration), ICC profiling for a device and substrate, and the color targets set by standards such as ISO 12647. It addresses why color drifts across devices and substrates and treats color accuracy as measurable rather than a visual preference. It includes setting up or auditing the color setup for a real job and proving with measurements, such as Delta E against a reference, that the setup reproduces the target.",
+      "excludes": "Monitoring a running job against tolerances, statistical process control, and accept/reject decisions belong in quality-control, which watches color alongside every other defect. Selecting substrates or finishing based on production suitability belongs in domain-knowledge, and interpreting brand guidelines for a creative deliverable belongs in brand-standards-application.",
+      "distinctions": "Unlike quality-control, which runs the system that catches any defect while a job is produced and decides whether it ships, color-management sets up color reproduction before the run: calibration, profiles, and color targets. Unlike domain-knowledge, it actively sets up color reproduction rather than judging general process, material, and equipment suitability. Unlike brand-standards-application, it proves reproduced color against a measured target rather than interpreting brand rules for a creative deliverable.",
       "positiveExamples": [
-        "Calibrate a print device for a job and measure output against the defined color standard.",
-        "Set up profiles for a packaging job's devices and substrate, then verify color conformance.",
-        "Audit a print job's color process control to identify drift and document whether output meets the required color standard."
+        "Calibrate a press to G7 gray balance and verify the result with measurements.",
+        "Build ICC profiles for a packaging job's devices and substrate, then measure a proof against the reference to confirm the color target is met.",
+        "Audit a print job's color setup to find why output drifts from its target and correct the calibration or profile."
       ],
       "negativeExamples": [
-        "Set up a production quality-control system to catch failures at handoff points (belongs in quality-control)",
+        "Monitor a running job's color and registration against tolerances and decide whether it ships (belongs in quality-control)",
         "Choose a packaging substrate and finishing process based on production constraints (belongs in domain-knowledge)",
         "Interpret brand guidelines when applying a color palette to a creative deliverable (belongs in brand-standards-application)"
       ]
@@ -300,7 +300,7 @@
       "name": "Cross-channel brand translation (print, packaging, digital)",
       "stratum": "technical",
       "includes": "This bundle covers translating a single brand positioning into coherent print, packaging, and digital executions. It includes recognizing how brand standards manifest differently in physical and digital channels and adapting their expression to each. The focus is deliberate translation that preserves a consistent brand identity without simply duplicating the same execution everywhere.",
-      "excludes": "Developing the brand positioning itself belongs in brand-positioning; building reusable templates or settings that generate on-brand variations at scale belongs in brand-system-templating. Calibrating devices, profiling, and controlling measurable color accuracy belong in color-management.",
+      "excludes": "Developing the brand positioning itself belongs in brand-positioning; building reusable templates or settings that generate on-brand variations at scale belongs in brand-system-templating. Calibrating devices, profiling, and setting up measurable color reproduction belong in color-management.",
       "distinctions": "Unlike brand-standards-application, which focuses on interpreting standards for a creative deliverable, this bundle focuses on coherent brand execution across physical and digital channels. Unlike conceptual-development, it translates an established brand positioning rather than developing a creative concept from a brief. Unlike cross-medium-production, its defining concern is cross-channel brand coherence, not the breadth of finished media produced.",
       "positiveExamples": [
         "Translate one brand positioning into coordinated brochure, package, and website executions.",
@@ -372,7 +372,7 @@
       "name": "Production domain knowledge: processes, substrates, materials and equipment",
       "stratum": "technical",
       "includes": "This bundle covers knowledge of print, packaging, and brand production processes, substrates, inks, finishing, equipment, and technology, including their capabilities and limitations. It applies that knowledge to selecting substrates and finishing, accurately briefing a production team or sales engineer, and judging whether a design or specification is producible and fit for purpose. It also covers explaining, with specific production reasons, why a workflow, template, or AI output would succeed or fail and how production constraints shape creative and commercial possibilities.",
-      "excludes": "Color profiling, calibration, and color process control belong in color-management. Designing or re-engineering production workflows belongs in workflow-design, and setting up and operating quality standards enforcement belongs in quality-control. Building or configuring an automation between systems belongs in systems-automation-integration, rather than here.",
+      "excludes": "Color profiling and calibration belong in color-management. Designing or re-engineering production workflows belongs in workflow-design, and setting up and operating production defect checks and process control belongs in quality-control. Building or configuring an automation between systems belongs in systems-automation-integration, rather than here.",
       "distinctions": "Unlike workflow-design, this bundle supplies the production knowledge used to judge whether a workflow will work rather than designing or re-engineering the production process. Unlike quality-control, it judges feasibility and fitness for purpose from material, process, and equipment constraints rather than setting up a conformance system. Unlike cost-management, it explains what production choices make possible rather than calculating job costs or equipment payback.",
       "positiveExamples": [
         "Specify a substrate and finishing combination that suits a packaging job and the available equipment.",
@@ -479,16 +479,16 @@
       "competencyId": "quality-control",
       "name": "Quality control systems and standards enforcement",
       "stratum": "technical",
-      "includes": "This bundle covers setting up and operating a quality control system for a specific print or packaging production context. It includes knowing industry standards such as G7, ISO 12647, and FTA FIRST and using measurement instruments to assess conformance. It addresses predictable failure modes, especially at production handoffs, by placing checks early enough to catch problems before final inspection.",
-      "excludes": "Calibration and profiling to achieve color accuracy belong in color-management; interpreting brand rules for a creative deliverable belongs in brand-standards-application. Managing packaging artwork versions and regulatory compliance checks belongs in packaging-artwork-compliance, while configuring workflow platforms for intake, approvals, and reporting belongs in workflow-architecture.",
-      "distinctions": "Unlike color-management, which establishes and audits color accuracy through calibration, profiling, and process control, quality-control uses standards-based measurements within a production quality control system. Unlike quality-frameworks, which covers quality and compliance review steps across brand, legal/regulatory, print, and AI-assisted output, this bundle centers on industry production standards and preventing predictable production failures. Unlike workflow-design, which designs or re-engineers production processes to balance quality, throughput, and cost, this bundle establishes and operates the checks that enforce quality within those processes.",
+      "includes": "This bundle covers setting up and operating the system that catches defects while a print or packaging job is produced and decides whether it ships. It includes setting tolerances, placing inspection points at production handoffs so problems are caught before final inspection, statistical process control of a running process, and accept/reject decisions. Color is one of many things it watches, alongside registration, trapping, dimensions, die lines, barcode grades, and substrate defects. It includes working to production practice standards such as FTA FIRST and using measurement instruments to check conformance.",
+      "excludes": "Calibration, ICC profiling, and setting up a process to reproduce a color target (G7, ISO 12647) belong in color-management. Interpreting brand rules for a creative deliverable belongs in brand-standards-application. Managing packaging artwork versions and regulatory compliance checks belongs in packaging-artwork-compliance, while configuring workflow platforms for intake, approvals, and reporting belongs in workflow-architecture.",
+      "distinctions": "Unlike color-management, which sets up color reproduction before the run, quality-control monitors the running job for every kind of defect, color included, and decides whether output is accepted. Unlike quality-frameworks, which covers brand, legal/regulatory, and AI-assisted review steps in a workflow, this bundle centers on production defects and measured conformance. Unlike workflow-design, which designs or re-engineers production processes to balance quality, throughput, and cost, this bundle establishes and operates the checks that enforce quality within those processes.",
       "positiveExamples": [
-        "Set up standards-based quality checkpoints at production handoffs to catch recurring defects before final inspection.",
-        "Use measurement instruments to assess production conformance to applicable ISO 12647 or FTA FIRST requirements.",
-        "Operate a print quality control system that detects predictable failures before they reach subsequent production stages."
+        "Set tolerances and inspection points at production handoffs to catch recurring defects before final inspection.",
+        "Use control charts on a running press to spot a drifting process and act before output goes out of tolerance.",
+        "Inspect a packaging run for registration, die-line, and barcode-grade defects and decide whether it ships."
       ],
       "negativeExamples": [
-        "Calibrate and profile a print device to meet a defined color standard (belongs in color-management)",
+        "Calibrate and profile a print device to meet a defined color target (belongs in color-management)",
         "Manage packaging artwork versions and check required labeling before release (belongs in packaging-artwork-compliance)",
         "Re-engineer a production step to improve throughput and validate the change (belongs in workflow-design)"
       ]
@@ -498,7 +498,7 @@
       "name": "AI and quality governance",
       "stratum": "workflow_ai",
       "includes": "This bundle covers building or operating a brand, legal/regulatory, or print-quality review step in a creative or production workflow that consistently catches failure modes, including those in AI-assisted output. It includes knowing the relevant evaluation standards and where each check belongs in print, packaging, or brand work. It also covers recognizing which checks require domain expertise rather than full automation and keeping a person accountable for AI-assisted output.",
-      "excludes": "Instrument-based production standards enforcement belongs in quality-control, and packaging artwork management and versioning belong in packaging-artwork-compliance. Benchmarking AI tools for deployment decisions belongs in ai-tool-evaluation, while resolving asset licensing and contract risks belongs in contracts-ip-licensing.",
+      "excludes": "Instrument-based production defect checks belong in quality-control, and color calibration and profiling belong in color-management, and packaging artwork management and versioning belong in packaging-artwork-compliance. Benchmarking AI tools for deployment decisions belongs in ai-tool-evaluation, while resolving asset licensing and contract risks belongs in contracts-ip-licensing.",
       "distinctions": "Unlike quality-control, which emphasizes production quality systems and measured conformance, this bundle emphasizes where quality and compliance reviews belong and the domain judgment and accountability needed to operate them. Unlike packaging-artwork-compliance, it is not centered on managing and versioning packaging artwork files. Unlike ai-tool-evaluation, it checks deliverables within a workflow rather than benchmarking an AI tool to support an adopt, adjust, or drop decision.",
       "positiveExamples": [
         "Build a brand review step that consistently catches off-brand elements in creative deliverables, including AI-generated images or copy.",
@@ -506,7 +506,7 @@
         "Place a print-quality check at the appropriate workflow stage and identify who remains accountable for reviewing AI-assisted output."
       ],
       "negativeExamples": [
-        "Measure production conformance to ISO 12647 using quality-control instruments (belongs in quality-control)",
+        "Inspect a press run against production tolerances and decide whether it ships (belongs in quality-control)",
         "Manage packaging artwork versions through a defined regulatory review checklist (belongs in packaging-artwork-compliance)",
         "Benchmark an AI tool against the current process and recommend whether to adopt it (belongs in ai-tool-evaluation)"
       ]
