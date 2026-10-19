@@ -49,7 +49,7 @@ export const subCompetencies = pgTable('sub_competencies', {
   check('sub_competencies_merged_into_retired_check', sql`${t.mergedInto} IS NULL OR ${t.retired}`),
   check('sub_competencies_origin_check', sql`${t.origin} IN ('migrated', 'gc_authored', 'onet_seeded')`),
   check('sub_competencies_scoring_check', sql`${t.scoring} IN ('direct', 'derived')`),
-  check('sub_competencies_foundational_ku_check', sql`${t.foundational} = (${t.knowDescriptor} IS NULL AND ${t.understandDescriptor} IS NULL)`),
+  check('sub_competencies_foundational_ku_check', sql`(${t.foundational} AND ${t.knowDescriptor} IS NULL AND ${t.understandDescriptor} IS NULL) OR (NOT ${t.foundational} AND ${t.knowDescriptor} IS NOT NULL AND ${t.understandDescriptor} IS NOT NULL)`),
 ]);
 
 /**

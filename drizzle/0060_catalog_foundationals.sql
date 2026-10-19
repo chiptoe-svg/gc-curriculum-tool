@@ -17,5 +17,6 @@ ALTER TABLE sub_competencies ADD CONSTRAINT sub_competencies_scoring_check CHECK
 ALTER TABLE sub_competencies ALTER COLUMN know_descriptor DROP NOT NULL;
 ALTER TABLE sub_competencies ALTER COLUMN understand_descriptor DROP NOT NULL;
 ALTER TABLE sub_competencies ADD CONSTRAINT sub_competencies_foundational_ku_check
-  CHECK (foundational = (know_descriptor IS NULL AND understand_descriptor IS NULL));
+  CHECK ((foundational AND know_descriptor IS NULL AND understand_descriptor IS NULL)
+      OR (NOT foundational AND know_descriptor IS NOT NULL AND understand_descriptor IS NOT NULL));
 COMMIT;

@@ -15,8 +15,9 @@ UNION ALL SELECT 'rows with foundational = true (0 right after apply)', count(*)
   FROM sub_competencies WHERE foundational
 UNION ALL SELECT 'rows with scoring = derived (0 right after apply)', count(*)::text
   FROM sub_competencies WHERE scoring = 'derived'
-UNION ALL SELECT 'rows violating foundational = (know IS NULL AND understand IS NULL) (expect 0)', count(*)::text
-  FROM sub_competencies WHERE foundational IS DISTINCT FROM (know_descriptor IS NULL AND understand_descriptor IS NULL)
+UNION ALL SELECT 'rows violating the foundational K/U rule (expect 0)', count(*)::text
+  FROM sub_competencies WHERE NOT ((foundational AND know_descriptor IS NULL AND understand_descriptor IS NULL)
+       OR (NOT foundational AND know_descriptor IS NOT NULL AND understand_descriptor IS NOT NULL))
 UNION ALL SELECT 'expected 0060 constraints present (expect 0 missing)', count(*)::text
   FROM unnest(ARRAY['sub_competencies_foundational_ku_check', 'sub_competencies_scoring_check']) AS expected(conname)
   WHERE NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = expected.conname);
@@ -43,9 +44,10 @@ BEGIN
   END IF;
 
   SELECT count(*) INTO n_bad FROM sub_competencies
-    WHERE foundational IS DISTINCT FROM (know_descriptor IS NULL AND understand_descriptor IS NULL);
+    WHERE NOT ((foundational AND know_descriptor IS NULL AND understand_descriptor IS NULL)
+       OR (NOT foundational AND know_descriptor IS NOT NULL AND understand_descriptor IS NOT NULL));
   IF n_bad <> 0 THEN
-    RAISE EXCEPTION '0060 verify: % row(s) violate foundational = (know IS NULL AND understand IS NULL)', n_bad;
+    RAISE EXCEPTION '0060 verify: % row(s) violate the foundational K/U rule', n_bad;
   END IF;
 
   RAISE NOTICE '0060 verify: all checks passed';

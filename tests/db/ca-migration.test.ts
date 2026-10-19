@@ -147,16 +147,25 @@ describe.skipIf(!RUN)('migration 0060 on the CA pre clone, each case self-contai
     });
   });
 
-  // NOTE: the brief's CHECK (foundational = (know IS NULL AND understand IS NULL))
-  // only fires when BOTH are null; a half-null row (know NULL, understand set)
-  // with foundational=false is permitted by it. Flagged to the controller.
-  it('foundational=false with null know AND understand descriptors violates the K/U check', async () => {
+  it('foundational=false with a null know_descriptor (understand set) violates the K/U check', async () => {
     await withTx(async (c) => {
       await c.query(MIGRATION_BODY!);
       const err = await expectFailure(
         c,
         `INSERT INTO sub_competencies (id, name, know_descriptor, understand_descriptor, do_descriptor, foundational)
-         VALUES ('ca-y','n',NULL,NULL,'d',false)`,
+         VALUES ('ca-y','n',NULL,'u','d',false)`,
+      );
+      expect(err.message).toMatch(/sub_competencies_foundational_ku_check/);
+    });
+  });
+
+  it('foundational=true with only know null (understand set) violates the K/U check', async () => {
+    await withTx(async (c) => {
+      await c.query(MIGRATION_BODY!);
+      const err = await expectFailure(
+        c,
+        `INSERT INTO sub_competencies (id, name, know_descriptor, understand_descriptor, do_descriptor, foundational)
+         VALUES ('ca-h','n',NULL,'x','d',true)`,
       );
       expect(err.message).toMatch(/sub_competencies_foundational_ku_check/);
     });
