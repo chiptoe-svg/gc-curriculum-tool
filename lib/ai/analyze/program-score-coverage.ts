@@ -95,6 +95,8 @@ export interface ScoreCompetenciesResult {
   model: string;
   /** Paid-provider cost for this scoring call, in 1/100-of-a-cent units (0 on campus/local). */
   costUsdCents: number;
+  /** Foundational competencies the model scored with numeric K/U: cell dropped, never stored; stays missing so it is re-scored. */
+  rejectedCompetencyIds: string[];
 }
 
 export async function scoreSnapshotCompetencies(input: ScoreCompetenciesInput): Promise<ScoreCompetenciesResult> {
@@ -110,6 +112,7 @@ export async function scoreSnapshotCompetencies(input: ScoreCompetenciesInput): 
       result: { snapshot_id: input.snapshotId, generated_at: new Date().toISOString(), cells: [] },
       model: provider.model,
       costUsdCents: 0,
+      rejectedCompetencyIds: [],
     };
   }
   const systemPrompt = await loadPrompt('program-score-coverage');
@@ -149,26 +152,26 @@ export async function scoreSnapshotCompetencies(input: ScoreCompetenciesInput): 
     userMessage,
     schemaName: 'program_coverage_v2',
     jsonSchema: coverageJsonSchema as unknown as object,
-    validate: (raw: unknown) => {
-      const parsed = coverageResultSchema.parse(raw);
-      for (const cell of parsed.cells) {
-        if (foundationalIds.has(cell.competency_id) && (cell.k_depth !== null || cell.u_depth !== null)) {
-          throw new Error(`coverage: foundational competency ${cell.competency_id} must have null k_depth and u_depth`);
-        }
-      }
-      return parsed;
-    },
+    validate: (raw: unknown) => coverageResultSchema.parse(raw),
   });
 
   // Unknown ids dropped: a cell for a competency id that wasn't in the
   // input is never returned (replaces P0a Ruling 10's per-target member
   // filter, which no longer applies now that scoring carries no target).
   const knownIds = new Set(direct.map(c => c.id));
-  const cells = result.data.cells.filter(cell => knownIds.has(cell.competency_id));
+  const inInput = result.data.cells.filter(cell => knownIds.has(cell.competency_id));
+  // Foundational = D only. A cell with numeric K/U is dropped (not stored) and
+  // reported, rather than failing the whole already-paid call.
+  const rejectedCompetencyIds = inInput
+    .filter(c => foundationalIds.has(c.competency_id) && (c.k_depth !== null || c.u_depth !== null))
+    .map(c => c.competency_id);
+  const rejected = new Set(rejectedCompetencyIds);
+  const cells = inInput.filter(c => !rejected.has(c.competency_id));
 
   return {
     result: { ...result.data, cells },
     model: provider.model,
     costUsdCents: result.costUsdCents,
+    rejectedCompetencyIds,
   };
 }

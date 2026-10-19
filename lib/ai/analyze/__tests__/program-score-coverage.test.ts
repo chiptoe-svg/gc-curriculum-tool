@@ -210,17 +210,24 @@ describe('scoreSnapshotCompetencies — derived and foundational', () => {
     expect(arr.find(c => c.id === 'comp-found')!.foundational).toBe(true);
   });
 
-  it('validate rejects numeric k_depth/u_depth for a foundational competency, naming id and "foundational"', async () => {
-    const provider = makeValidatingProvider([{ ...validCell('comp-found'), k_depth: 2, u_depth: null }]);
+  it('drops a foundational cell with numeric K/U, reports its id, keeps others and returns cost', async () => {
+    const provider = makeValidatingProvider([
+      { ...validCell('comp-found'), k_depth: 2, u_depth: null },
+      validCell('comp-1'),
+    ]);
     (getProviderForFunction as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(provider);
-    await expect(scoreSnapshotCompetencies({ ...baseInput, competencies: [FOUND] }))
-      .rejects.toThrow(/comp-found.*foundational|foundational.*comp-found/);
+    const out = await scoreSnapshotCompetencies({ ...baseInput, competencies: [COMPETENCIES[0]!, FOUND] });
+    expect(out.result.cells.map(c => c.competency_id)).toEqual(['comp-1']);
+    expect(out.rejectedCompetencyIds).toEqual(['comp-found']);
+    expect(out.costUsdCents).toBe(5);
   });
 
-  it('validate also rejects numeric u_depth alone for a foundational competency', async () => {
+  it('also drops a foundational cell with numeric u_depth alone', async () => {
     const provider = makeValidatingProvider([{ ...validCell('comp-found'), k_depth: null, u_depth: 1 }]);
     (getProviderForFunction as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(provider);
-    await expect(scoreSnapshotCompetencies({ ...baseInput, competencies: [FOUND] })).rejects.toThrow(/foundational/);
+    const out = await scoreSnapshotCompetencies({ ...baseInput, competencies: [FOUND] });
+    expect(out.result.cells).toEqual([]);
+    expect(out.rejectedCompetencyIds).toEqual(['comp-found']);
   });
 
   it('the same numeric K/U validates for a non-foundational competency; null K/U validates for a foundational one', async () => {
@@ -228,6 +235,7 @@ describe('scoreSnapshotCompetencies — derived and foundational', () => {
     (getProviderForFunction as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(p1);
     const ok = await scoreSnapshotCompetencies({ ...baseInput, competencies: [COMPETENCIES[0]!] });
     expect(ok.result.cells[0]!.k_depth).toBe(2);
+    expect(ok.rejectedCompetencyIds).toEqual([]);
 
     const p2 = makeValidatingProvider([{ ...validCell('comp-found'), k_depth: null, u_depth: null }]);
     (getProviderForFunction as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(p2);

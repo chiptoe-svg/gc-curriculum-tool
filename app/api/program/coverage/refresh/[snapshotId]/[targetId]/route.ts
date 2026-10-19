@@ -48,7 +48,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   if (!cap.ok) return NextResponse.json({ error: 'daily cost cap reached' }, { status: 429 });
 
   try {
-    const { result, model, costUsdCents } = await scoreSnapshotCompetencies({
+    const { result, model, costUsdCents, rejectedCompetencyIds } = await scoreSnapshotCompetencies({
       snapshotId,
       courseCode: snapshot.courseCode,
       snapshotProfile: snapshot.profile,
@@ -82,6 +82,9 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     }
 
     await recordSpend(costUsdCents);
+    for (const id of rejectedCompetencyIds ?? []) {
+      console.warn(`[coverage] ${snapshotId} ${id}: foundational cell had K/U depths — dropped, will re-score`);
+    }
 
     // Re-fire wiki-update for this snapshot now that coverage exists — lets the
     // competency/target pages generate (they derive from snapshot_competency_coverage).

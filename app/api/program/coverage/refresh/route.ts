@@ -75,7 +75,7 @@ export async function POST(req: Request): Promise<Response> {
     }
 
     try {
-      const { result, model, costUsdCents } = await scoreSnapshotCompetencies({
+      const { result, model, costUsdCents, rejectedCompetencyIds } = await scoreSnapshotCompetencies({
         snapshotId: snapToScore.snapshotId,
         courseCode: snapToScore.courseCode,
         snapshotProfile: snap.profile,
@@ -97,6 +97,9 @@ export async function POST(req: Request): Promise<Response> {
         });
       }
       await recordSpend(costUsdCents);
+      for (const id of rejectedCompetencyIds ?? []) {
+        console.warn(`[coverage] ${snapToScore.snapshotId} ${id}: foundational cell had K/U depths — dropped, will re-score`);
+      }
       results.push({ snapshotId: snapToScore.snapshotId, courseCode: snapToScore.courseCode, status: 'ok', cellCount: result.cells.length });
     } catch (e) {
       results.push({
