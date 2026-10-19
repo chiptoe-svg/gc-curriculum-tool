@@ -364,7 +364,7 @@
 
   <div class="callout warn">
     <div class="callout-title">What is stipulated, not derived — read this before over-claiming</div>
-    <p>The framework is scrupulous in its own background documents about where it invents rather than inherits, and the architecture preserves that honesty:</p>
+    <p>The background documents state where the framework invents rather than inherits, and the architecture keeps that distinction:</p>
     <p><strong>The 0–5 depth grain is a framework invention</strong> — a "working-hypothesis instrument." The cited traditions (Tomlinson, Wiggins &amp; McTighe, AAC&amp;U, EU Tuning) are <em>consistent with</em> a compact-and-leveled approach; none prescribes this scale.</p>
     <p><strong>KUD+ scores are course-<em>opportunity</em> scores, not validated student-attainment claims.</strong> They record what a course is designed to and assesses, with evidence — not a measured outcome for any cohort. The planned <a href="./graduate-outcome-validation.html">Graduate Outcome Criterion-Relevance Study</a> checks a narrower question — whether what the tool measures is relevant to the first jobs GC graduates actually take — and does not turn these scores into attainment claims either.</p>
     <p><strong>The 3-Act program structure is explicitly a proposal, not institutional policy</strong>, and — importantly — the three named acts are <em>not</em> in the scoring engine. The scaffolding analysis implements generic introduction / practice / integration depth-phase sequencing by program order (the research-grounded part); the named acts live only as wiki/prose waypoints.</p>
@@ -377,7 +377,7 @@
 <section id="two-sides">
   <h2><span class="num">§ 4</span>Two Sides of One Ruler — Attainment &amp; Demand</h2>
 
-  <p>The single most clarifying idea in the whole tool: <strong>it is one ruler measuring two different things.</strong> We score every competency on one K/U/D depth scale (0–5). <strong>CourseCapture points that ruler at our courses</strong> and asks "how deeply can we <em>prove</em> students can actually do this?" <strong>Position Capture points the very same ruler at a job</strong> and asks "how deeply does a new hire need to do this on day one?" Because both sides speak the same units — and both are keyed to the same catalog <code>sub_competency_id</code> — the program's headline question becomes simple subtraction: <em>demand minus attainment</em>.</p>
+  <p>The tool uses <strong>one scale to measure two different things.</strong> We score every competency on one K/U/D depth scale (0–5). <strong>CourseCapture points that ruler at our courses</strong> and asks "how deeply can we <em>prove</em> students can actually do this?" <strong>Position Capture points the very same ruler at a job</strong> and asks "how deeply does a new hire need to do this on day one?" Because both sides speak the same units — and both are keyed to the same catalog <code>sub_competency_id</code> — the program's first question becomes simple subtraction: <em>demand minus attainment</em>.</p>
 
   <h3>The attainment side — CourseCapture (supply)</h3>
 
@@ -855,7 +855,7 @@
 <section id="aspiration-to-implementation">
   <h2><span class="num">§ 12</span>Aspiration → Implementation</h2>
 
-  <p>The companion documents — the <a href="./background.html">KUD+ Background</a>, the <a href="./problem-solving-deep-dive.html">problem-solving</a> and <a href="./three-act-deep-dive.html">3-Act</a> deep-dives, and the <a href="./superpowers/vision/gc-curriculum-tool-vision.html">vision</a> — describe what the framework <em>should</em> do. This section traces each load-bearing claim to the code that implements it, and is deliberately candid about the most important distinction in the whole system: the difference between a rule the code <strong>structurally enforces</strong> and one it merely <strong>guides a model toward</strong>. Every row below was verified against the actual schema, prompt, or scoring code.</p>
+  <p>The companion documents — the <a href="./background.html">KUD+ Background</a>, the <a href="./problem-solving-deep-dive.html">problem-solving</a> and <a href="./three-act-deep-dive.html">3-Act</a> deep-dives, and the <a href="./superpowers/vision/gc-curriculum-tool-vision.html">vision</a> — describe what the framework <em>should</em> do. This section maps each of their main claims to the code that implements it. The status column separates rules the code <strong>structurally enforces</strong> from rules it <strong>guides a model toward</strong> through prompts. Each row was checked against the schema, prompt or scoring code it names.</p>
 
   <h4>How to read the status</h4>
   <ul>
@@ -866,8 +866,8 @@
   </ul>
 
   <div class="callout warn">
-    <div class="callout-title">The honest headline</div>
-    <p>Roughly <strong>a third of the aspiration is genuinely enforced in code.</strong> The course-capture schema guards (foundational null-K/U, the asymmetric evidence thresholds, depth bounds, the structured-post-mortem evidence gate) and the prerequisite-gap engine (ordinal-MAX, basis stamp, direct-edges-only) are real structural guarantees, reached by <code>.parse()</code> on the production path and pinned by tests. The remaining two-thirds splits into <em>prompt-guided</em> rules that depend on model discretion, <em>stipulated</em> framework choices invented by design, and <em>unbuilt</em> end-state aspirations. For the tool's headline question — <em>does the curriculum build students toward the careers it claims?</em> — both halves are built (course-attainment scoring and employer-demand capture), and so is the join between them: the demand−attainment sufficiency layer (engine, <code>career_target_demand</code> table, rollup, per-target panel; unit-tested). It is switched off behind the <code>DEMAND_COVERAGE_SEAM</code> flag and has no employer data yet. So Q1 <em>sufficiency</em> is computable in code, a decision and some partner interviews away from being visible.</p>
+    <div class="callout-title">Summary</div>
+    <p>About a third of the claims are enforced in code. The course-capture schema guards (foundational null K/U, the asymmetric evidence thresholds, depth bounds, the structured post-mortem evidence gate) and the prerequisite-gap engine (ordinal MAX, basis stamp, direct edges only) run through <code>.parse()</code> on the production path and are covered by tests. The rest are <em>prompt-guided</em> rules that depend on the model, <em>stipulated</em> framework choices, or <em>unbuilt</em> parts of the planned end state. For the tool's first question — <em>does the curriculum build students toward the careers it claims?</em> — both halves are built (course-attainment scoring and employer-demand capture), and so is the join between them: the demand−attainment sufficiency layer (engine, <code>career_target_demand</code> table, rollup, per-target panel; unit-tested). It is switched off behind the <code>DEMAND_COVERAGE_SEAM</code> flag and has no employer data yet. Q1 <em>sufficiency</em> can be computed in code; showing it requires turning the flag on and collecting employer data.</p>
   </div>
 
   <h3>A. The KUD+ scoring contract (course capture)</h3>
@@ -900,7 +900,7 @@
         <td><span class="st st-enforced">enforced</span></td>
       </tr>
       <tr>
-        <td><strong>All five</strong> baseline foundationals must appear in every profile <span class="src">(background §8)</span></td>
+        <td><strong>All six</strong> baseline foundationals (written and spoken communication recorded separately since 2026-10-19) must appear in every profile <span class="src">(background §8)</span></td>
         <td>Prompt-only: <code>capture-scores.md</code> says they MUST appear, but the schema requires only <code>competencies.min(1)</code> — a profile missing Resilience parses cleanly.</td>
         <td><span class="st st-partial">partial</span></td>
       </tr>
@@ -1012,12 +1012,12 @@
       </tr>
       <tr>
         <td><strong>Q1 sufficiency = demand − attainment</strong>, differenced at program scale <span class="src">(vision)</span></td>
-        <td>The headline seam — <strong>built behind a flag</strong> (<code>DEMAND_COVERAGE_SEAM</code>, off): pure engine <code>computeSufficiency</code> (partner-weighted demand vs ordinal-MAX attainment, no-data discipline), <code>career_target_demand</code> table (present, empty), deterministic rollup, per-target panel. Unit-tested; nothing runs until the flag is turned on. Not visible by default, hence partial.</td>
+        <td>The demand–attainment layer is <strong>built behind a flag</strong> (<code>DEMAND_COVERAGE_SEAM</code>, off): pure engine <code>computeSufficiency</code> (partner-weighted demand vs ordinal-MAX attainment, no-data discipline), <code>career_target_demand</code> table (present, empty), deterministic rollup, per-target panel. Unit-tested; nothing runs until the flag is turned on. Not visible by default, hence partial.</td>
         <td><span class="st st-partial">partial</span></td>
       </tr>
       <tr>
         <td><strong>Q2 prerequisite support</strong>: do the prereqs students take support what a course expects? <span class="src">(vision)</span></td>
-        <td>A fully deterministic gap engine (<code>prereq-gaps.ts</code>: ordinal-MAX, measured/mixed/intended/none basis, direct edges only, no-data ≠ zero), wired into <code>/courses/[code]</code>. The most solidly enforced claim in the vision.</td>
+        <td>A fully deterministic gap engine (<code>prereq-gaps.ts</code>: ordinal-MAX, measured/mixed/intended/none basis, direct edges only, no-data ≠ zero), wired into <code>/courses/[code]</code>.</td>
         <td><span class="st st-enforced">enforced</span></td>
       </tr>
       <tr>
@@ -1055,7 +1055,7 @@
 
   <div class="callout note">
     <div class="callout-title">Reconciling docs and code</div>
-    <p>Two points worth keeping straight. (1) The prerequisite-gap and Stage 1 scaffolding views are live; "specified, not built" applies only to scaffolding's <em>Stage 2</em> diagnostics (AI narrative, cross-tabs, act-true ordering). (2) The partner survey feeds two pipelines with <em>different</em> jobs (see §11) — Position Capture does <strong>demand-measurement</strong> (how deep each sub-competency is required, keyed to <code>sub_competency_id</code>) and the synthesis pipeline does <strong>definition-refinement</strong> (proposed edits to the descriptors themselves). They are complementary, not redundant. The unified demand/coverage layer (§4) turns the demand-measurement output into numeric <code>career_target_demand</code> and differences it against attainment — built, behind the <code>DEMAND_COVERAGE_SEAM</code> flag, not yet switched on.</p>
+    <p>Two clarifications. (1) The prerequisite-gap and Stage 1 scaffolding views are live; "specified, not built" applies only to scaffolding's <em>Stage 2</em> diagnostics (AI narrative, cross-tabs, act-true ordering). (2) The partner survey feeds two pipelines with <em>different</em> jobs (see §11) — Position Capture does <strong>demand-measurement</strong> (how deep each sub-competency is required, keyed to <code>sub_competency_id</code>) and the synthesis pipeline does <strong>definition-refinement</strong> (proposed edits to the descriptors themselves). They are complementary, not redundant. The unified demand/coverage layer (§4) turns the demand-measurement output into numeric <code>career_target_demand</code> and differences it against attainment — built, behind the <code>DEMAND_COVERAGE_SEAM</code> flag, not yet switched on.</p>
   </div>
 </section>
 
@@ -1069,7 +1069,7 @@
     <li><a href="./using-coursecapture-and-explore.html">Faculty Guide</a> — practical walkthrough of CourseCapture and Explore: loading materials, conducting the interview chat, reading the readiness signal, authoring custom targets, running downstream analysis.</li>
     <li><a href="./background.html">KUD+ Background</a> — the academic companion: theoretical grounding, the relationship to Bloom and to Backward Design / Constructive Alignment, the evidence base for the depth-scale extension, and what counts as evidence at each level. The reference for any "why is the framework structured this way" question.</li>
     <li><a href="./problem-solving-deep-dive.html">Problem-Solving as a Program-Level Emergent Property</a> — research synthesis: why problem-solving is treated as domain-embedded rather than a transferable generic skill, what the Kapur PS-I research says, how the scaffolding analysis operationalizes productive-failure conditions at program scale.</li>
-    <li><a href="./three-act-deep-dive.html">The 3-Act Program Structure: A Research Synthesis</a> — an honest accounting of what the proposed 3-Act model is consistent with, what it is not grounded in, how it engages the strongest critiques, and which design choices are research-supported vs. stipulated.</li>
+    <li><a href="./three-act-deep-dive.html">The 3-Act Program Structure: A Research Synthesis</a> — what the proposed 3-Act model is consistent with, what it is not grounded in, how it engages the strongest critiques, and which design choices are research-supported vs. stipulated.</li>
     <li><a href="./competency-catalog-deep-dive.html">How the Competency Catalog Works</a> — the mechanics behind §4's catalog: per-competency scoring, how career targets claim competencies, the merges, alumni occupation mixes, the O*NET 31.0 store, bundle membership, and what is still planned.</li>
     <li><a href="./graduate-outcome-validation.html">Graduate Outcome Criterion-Relevance Study</a> — the proposal to check the framework's outputs against Clemson GC graduates' actual occupational destinations (1,337 validated; 672 coded first jobs, 2016–2026): whether what the tool measures is relevant to the jobs graduates take.</li>
     <li><a href="./superpowers/specs/2026-05-26-coursecapture-agentic-retrieval-design.md">CourseCapture Agentic Retrieval Spec</a> — the design document for the three-phase pipeline in §6: background, goals, non-goals, and component design.</li>
