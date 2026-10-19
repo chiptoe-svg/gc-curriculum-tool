@@ -2,6 +2,8 @@
 
 export const LABEL = 'ai-credits';
 export const ISSUE_TITLE = "Clemson shared OpenAI credits are used up";
+export const BLIND_TITLE = "AI credit monitor can't reach a verdict";
+export const BLIND_THRESHOLD = 3;
 export const DEFAULT_PROBE_MODEL = 'gpt-4.1-nano';
 
 const EXHAUSTED = /quota_denied|shared credits are exhausted/;
@@ -25,7 +27,21 @@ export function decideAlert({ state, hasOpenIssue }) {
 export function nextStatus(prev, result, detail, nowIso) {
   if (result === 'unknown' && prev && prev.status === 'exhausted') return null; // never mask a known outage
   const keepSince = prev && prev.status === result && prev.since;
-  return { status: result, since: keepSince || nowIso, checkedAt: nowIso, source: 'probe', detail };
+  const unknownStreak = result === 'unknown' ? (prev?.unknownStreak ?? 0) + 1 : 0;
+  return { status: result, since: keepSince || nowIso, checkedAt: nowIso, source: 'probe', detail, unknownStreak };
+}
+
+/** Issue for a monitor that keeps failing to get a verdict: 'open' | 'close' | 'none'. */
+export function decideBlind({ streak, state, hasOpenIssue }) {
+  if ((streak ?? 0) >= BLIND_THRESHOLD) return hasOpenIssue ? 'none' : 'open';
+  if (hasOpenIssue && (state === 'ok' || state === 'exhausted')) return 'close';
+  return 'none';
+}
+
+export function blindBody(s) {
+  return `The scheduled probe has not been able to tell whether Clemson's shared OpenAI credits are available for ${s.unknownStreak} checks in a row (network error, 5xx, auth or other non-quota failure).\n\n`
+    + `- Last checked: ${s.checkedAt}\n- Last detail: ${s.detail || '(none)'}\n\n`
+    + `Check OPENAI_API_KEY / OPENAI_BASE_URL and the RCD gateway. This issue closes automatically at the next check that reaches a verdict.`;
 }
 
 /** launchd WatchPaths run (trigger touched after the last run) vs a scheduled probe run. mtimes in ms or null. */

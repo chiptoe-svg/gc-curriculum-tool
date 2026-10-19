@@ -60,6 +60,28 @@ describe('status file', () => {
     expect(second!.checkedAt > first!.checkedAt).toBe(true);
     await stat(process.env.AI_CREDITS_TRIGGER_FILE!);
   });
+  it('trigger is touched only when the status changes to exhausted', async () => {
+    await markCreditsExhausted('request', 'a');
+    const t1 = (await stat(process.env.AI_CREDITS_TRIGGER_FILE!)).mtimeMs;
+    await new Promise(r => setTimeout(r, 25));
+    await markCreditsExhausted('request', 'b');
+    expect((await stat(process.env.AI_CREDITS_TRIGGER_FILE!)).mtimeMs).toBe(t1);
+  });
+  it('concurrent marks: the file always parses and since is preserved', async () => {
+    await markCreditsExhausted('request', 'seed');
+    const since = (await readCreditStatus())!.since;
+    for (let round = 0; round < 40; round++) {
+      let bad = 0;
+      const reader = (async () => {
+        for (let i = 0; i < 20; i++) {
+          try { JSON.parse(await readFile(process.env.AI_CREDITS_STATUS_FILE!, 'utf8')); } catch { bad++; }
+        }
+      })();
+      await Promise.all([reader, ...Array.from({ length: 8 }, (_, i) => markCreditsExhausted('request', `c${i}`))]);
+      expect(bad).toBe(0);
+      expect((await readCreditStatus())?.since).toBe(since);
+    }
+  });
   it('ok writes only on a change', async () => {
     await markCreditsOk('request');
     const first = await readFile(process.env.AI_CREDITS_STATUS_FILE!, 'utf8');

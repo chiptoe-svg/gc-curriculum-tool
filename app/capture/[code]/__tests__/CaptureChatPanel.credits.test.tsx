@@ -15,6 +15,12 @@ describe('apiErrorText', () => {
   });
 });
 
+describe('reconcile route 503 body', () => {
+  it('shows the friendly message, not the raw code (ReconciliationStepper uses apiErrorText)', () => {
+    expect(apiErrorText({ error: 'ai_credits_exhausted', message: MSG }, 'Failed to get suggestions')).toBe(MSG);
+  });
+});
+
 describe('CaptureChatPanel — credits exhausted', () => {
   it('shows the friendly message, not the raw code, on a 503', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ error: 'ai_credits_exhausted', message: MSG }), { status: 503, headers: { 'content-type': 'application/json' } })));

@@ -56,3 +56,28 @@ describe('issue text', () => {
     expect(lib.ISSUE_TITLE).toBe("Clemson shared OpenAI credits are used up");
   });
 });
+
+describe('blind monitor', () => {
+  const now = '2026-10-19T12:00:00.000Z';
+  it('streak counts consecutive unknowns and resets on a verdict', () => {
+    let st = lib.nextStatus(null, 'unknown', 'e', now);
+    expect(st.unknownStreak).toBe(1);
+    st = lib.nextStatus(st, 'unknown', 'e', now); st = lib.nextStatus(st, 'unknown', 'e', now);
+    expect(st.unknownStreak).toBe(3);
+    expect(lib.nextStatus(st, 'ok', '', now).unknownStreak).toBe(0);
+  });
+  it.each([
+    [2, 'unknown', false, 'none'],
+    [3, 'unknown', false, 'open'],
+    [5, 'unknown', true, 'none'],
+    [0, 'ok', true, 'close'],
+    [0, 'exhausted', true, 'close'],
+    [0, 'ok', false, 'none'],
+    [2, 'unknown', true, 'none'],
+  ])('streak %s, %s, open=%s -> %s', (streak, state, open, want) => {
+    expect(lib.decideBlind({ streak, state, hasOpenIssue: open })).toBe(want);
+  });
+  it('body names the last detail', () => {
+    expect(lib.blindBody({ unknownStreak: 3, checkedAt: 'C', detail: 'probe error: ETIMEDOUT' })).toContain('ETIMEDOUT');
+  });
+});

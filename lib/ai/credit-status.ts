@@ -11,7 +11,8 @@
  *
  * Never throws from the mark/read helpers: a status write must not break an AI call.
  */
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { randomBytes } from 'node:crypto';
 import os from 'node:os';
 import path from 'node:path';
 import { DEFAULT_SIGNIN_CONTACT } from '@/lib/auth/auth-env';
@@ -23,6 +24,8 @@ export interface CreditStatus {
   checkedAt: string;
   source: 'probe' | 'request';
   detail: string;
+  /** Consecutive probe results that could not tell (written by the probe script only). */
+  unknownStreak?: number;
 }
 
 export class AiCreditsExhaustedError extends Error {
@@ -102,7 +105,11 @@ export async function readCreditStatus(): Promise<CreditStatus | null> {
 
 async function writeStatus(file: string, s: CreditStatus): Promise<void> {
   await mkdir(path.dirname(file), { recursive: true });
-  await writeFile(file, JSON.stringify(s, null, 2) + '\n');
+  // Atomic: write a private temp file, then rename into place, so a concurrent
+  // reader never sees a half-written file.
+  const tmp = `${file}.${process.pid}.${randomBytes(4).toString('hex')}.tmp`;
+  await writeFile(tmp, JSON.stringify(s, null, 2) + '\n');
+  await rename(tmp, file);
 }
 
 export async function markCreditsExhausted(source: 'probe' | 'request', detail: string): Promise<void> {
@@ -118,8 +125,9 @@ export async function markCreditsExhausted(source: 'probe' | 'request', detail: 
       source,
       detail,
     });
+    // Touch the trigger only on the change to exhausted, not on every failed request.
     const trig = triggerPath();
-    if (trig) await writeFile(trig, `${now}\n`);
+    if (trig && prev?.status !== 'exhausted') await writeFile(trig, `${now}\n`);
   } catch (err) {
     console.error(`[ai credits] could not record exhausted status: ${err instanceof Error ? err.message : String(err)}`);
   }
