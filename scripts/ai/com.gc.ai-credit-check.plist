@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.gc.ai-credit-check</string>
+  <!-- Shared OpenAI credit probe + owner alert (`ai-credits` GitHub issue). Scheduled 7am/noon/4pm local (Eastern),
+       plus an immediate run when the app touches the trigger file (WatchPaths). The script tells the two apart
+       itself: trigger newer than ~/.local/state/gc-curriculum-tool/ai-credits.last-run => alert-only (no OpenAI call).
+       Calendar times, never StartInterval (those stopped firing machine-wide 2026-10-07). -->
+  <key>ProgramArguments</key>
+  <array><string>/opt/homebrew/bin/node</string><string>/Users/admin/projects/curriculum_developer/scripts/ai/credit-check.mjs</string></array>
+  <key>WorkingDirectory</key><string>/Users/admin/projects/curriculum_developer</string>
+  <key>EnvironmentVariables</key>
+  <dict><key>PATH</key><string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string><key>HOME</key><string>/Users/admin</string></dict>
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict><key>Hour</key><integer>7</integer><key>Minute</key><integer>0</integer></dict>
+    <dict><key>Hour</key><integer>12</integer><key>Minute</key><integer>0</integer></dict>
+    <dict><key>Hour</key><integer>16</integer><key>Minute</key><integer>0</integer></dict>
+  </array>
+  <key>WatchPaths</key>
+  <array><string>/Users/admin/.local/state/gc-curriculum-tool/ai-credits.trigger</string></array>
+  <key>StandardOutPath</key><string>/Users/admin/.local/state/gc-curriculum-tool/ai-credits.stdout.log</string>
+  <key>StandardErrorPath</key><string>/Users/admin/.local/state/gc-curriculum-tool/ai-credits.stderr.log</string>
+</dict>
+</plist>

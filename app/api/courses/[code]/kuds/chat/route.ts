@@ -1,3 +1,4 @@
+import { creditsExhaustedResponse } from '@/lib/ai/credit-response';
 import { NextResponse } from 'next/server';
 import { authorizeCourseWrite } from '@/lib/sandbox/access';
 import { getCourseByCode } from '@/lib/db/courses-queries';
@@ -54,6 +55,8 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     const reply = await kudChatTurn(profile, history);
     return NextResponse.json({ reply });
   } catch (err) {
+    const exhausted = creditsExhaustedResponse(err);
+    if (exhausted) return exhausted;
     console.error(`POST /api/courses/${courseCode}/kuds/chat failed`, err);
     return NextResponse.json({ error: 'internal server error' }, { status: 500 });
   }
