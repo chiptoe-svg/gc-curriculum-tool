@@ -5,8 +5,10 @@ import { z } from 'zod';
  *
  * The profile is self-contained: it describes what a course actually develops
  * in students, with K/U/D depth ratings (0–5) on discovered technical
- * competencies plus the five baseline foundational competencies scored on D
- * only (Agency, Attention to Detail, Resilience, Curiosity, Communication).
+ * competencies plus the six baseline foundational competencies scored on D
+ * only (Agency, Attention to Detail, Resilience, Curiosity, Written Communication, Spoken Communication).
+ * Snapshots frozen before 2026-10-19 carry a single "Communication" row
+ * instead; it stays valid (competency names are free text).
  *
  * Foundational competencies score on Do only — K and U are always null.
  * d_depth = 0 with a rationale is valid for foundationals the course does not
@@ -83,7 +85,8 @@ export const baselineFoundationalCompetencies = [
   'Attention to Detail',
   'Resilience',
   'Curiosity',
-  'Communication',
+  'Written Communication',
+  'Spoken Communication',
 ] as const;
 export type BaselineFoundationalCompetency = (typeof baselineFoundationalCompetencies)[number];
 

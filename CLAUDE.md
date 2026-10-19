@@ -40,7 +40,7 @@ Authoritative rubric: `lib/ai/prompts/shared/depth-scale.md` (every scoring prom
 **Three load-bearing rules:**
 
 1. **Evidence-above-zero.** Any K, U, or D score above 1 (above 0 for U and D) requires evidence of student attainment — assessment items for K, student-produced reasoning for U, graded artifacts for D. Aspirational syllabus verbs do not by themselves justify a score above U1 or D0.
-2. **Foundational competencies (Agency, Attention to Detail, Resilience, Curiosity, Communication) score on D only.** K and U are stored as `null` (not zero) and hidden in the UI — zero would imply "the course tried to develop this and failed."
+2. **Foundational competencies (Agency, Attention to Detail, Resilience, Curiosity, Written Communication, Spoken Communication) score on D only.** K and U are stored as `null` (not zero) and hidden in the UI — zero would imply "the course tried to develop this and failed."
 3. **Dissociation cases matter.** K-high/U-low = jargon without rationale. U-high/D-low = theory without craft. D-high/U-low = craft without articulation. K1-only with U0/D0 = mentioned in passing, never engaged. The depth scales make these visible; binary "covered/not covered" collapses them.
 
 Academic background, theoretical justification, and the relationship to Bloom + Wiggins/McTighe: [`docs/background.html`](./docs/background.html). Why we don't use Bloom for curriculum mapping (it's the right tool for assessment design, wrong granularity for cross-program mapping): same doc.

@@ -38,7 +38,7 @@ For each sub-competency that the catalog text plausibly implies this course deve
 4. **Anchor depths to the depth scale above**, but reason from catalog-declared intent, not from verified evidence. A learning objective that says "students will design X independently" maps to D3–D4, not D5 (fluent + creative). An objective that says "students will be introduced to X" maps to K1 or U1, not U3.
 5. **Lower confidence on thin or generic text.** A one-sentence description with no objectives should yield mostly `"low"` confidence items and conservative depth scores.
 6. **Do not claim attainment.** Avoid reasoning like "students will have achieved..." or "evidence shows...". Reason instead as: "the catalog states / implies / claims...".
-7. **Foundational competencies (Agency, Attention to Detail, Resilience, Curiosity, Communication)**: set `intended_k` and `intended_u` to `null` (not zero); only emit `intended_d` if the catalog text implies behavioral development. The consumer stores K/U as null for these by design.
+7. **Foundational competencies (Agency, Attention to Detail, Resilience, Curiosity, Written Communication, Spoken Communication)**: set `intended_k` and `intended_u` to `null` (not zero); only emit `intended_d` if the catalog text implies behavioral development. The consumer stores K/U as null for these by design.
 
 # Depth anchor reminder
 

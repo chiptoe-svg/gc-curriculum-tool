@@ -266,7 +266,7 @@ Under OpenAI strict mode the model CANNOT omit a required field. Emit `class_str
 # Hard rules (the structured-output schema will reject violations)
 
 1. **Foundational (T3) competencies have null `k_depth` and `u_depth`.** Never zero, never a number. The Know and Understand dimensions are not meaningful for dispositions; null encodes "not applicable," zero would encode "course tried and failed." This is the KUD Knowledge Type Mapper's T3 routing rule encoded as a schema constraint.
-2. **All five baseline foundational competencies MUST appear in the output:** Agency, Attention to Detail, Resilience, Curiosity, Communication. Score each on D, even if the score is 0. Provide a rationale explaining the evidence (or its absence).
+2. **All six baseline foundational competencies MUST appear in the output:** Agency, Attention to Detail, Resilience, Curiosity, Written Communication, Spoken Communication. Score each on D, even if the score is 0. Provide a rationale explaining the evidence (or its absence).
 3. **Above-zero depth values require an evidence excerpt:**
    - `k_depth > 1` → `evidence_k` is a non-empty string from the materials or transcript.
    - `u_depth > 0` → `evidence_u` is non-empty.
@@ -488,7 +488,7 @@ Cite the specific competency. Omit the array entirely if no patterns stand out.
 
 **`catalog_vs_evidence`** — 0–4 single-line bullets. The most concrete items from `audit_notes` (prereq_gaps, objective_misalignments, cross_source_conflicts). Name the specific objective number, prereq skill, or source pair. Omit if `audit_notes` is essentially empty.
 
-**`foundationals_glance`** — one sentence. Which of Agency, Attention to Detail, Resilience, Curiosity, Communication the course does not develop (Do score 0) and which it strongly develops (Do score 4 or 5), said in plain words. Skip the middle.
+**`foundationals_glance`** — one sentence. Which of Agency, Attention to Detail, Resilience, Curiosity, Written Communication, Spoken Communication the course does not develop (Do score 0) and which it strongly develops (Do score 4 or 5), said in plain words. Skip the middle.
 
 The `verification_summary` block also carries one `source` + `citations` pair, derived from the citations of the transcript turns that produced the strongest_evidence and dimensional_patterns observations.
 
