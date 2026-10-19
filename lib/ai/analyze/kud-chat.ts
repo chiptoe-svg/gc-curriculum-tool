@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { openAIBaseURL } from '../openai-base-url';
+import { AiCreditsExhaustedError, isCreditsExhaustedError, markCreditsExhausted } from '@/lib/ai/credit-status';
 import { loadPrompt } from '@/lib/ai/prompts/load';
 
 export interface KudChatProfile {
@@ -85,11 +86,20 @@ export async function kudChatTurn(
       : history.map(m => ({ role: m.role, content: m.content }))),
   ];
 
-  const response = await client.chat.completions.create({
-    model,
-    max_completion_tokens: 1024,
-    messages: openaiMessages,
-  });
+  let response;
+  try {
+    response = await client.chat.completions.create({
+      model,
+      max_completion_tokens: 1024,
+      messages: openaiMessages,
+    });
+  } catch (err) {
+    if (isCreditsExhaustedError(err)) {
+      await markCreditsExhausted('request', `${model} kud-chat`);
+      throw new AiCreditsExhaustedError(undefined, { cause: err });
+    }
+    throw err;
+  }
 
   const content = response.choices[0]?.message?.content;
   if (!content) throw new Error('No content in OpenAI chat response');

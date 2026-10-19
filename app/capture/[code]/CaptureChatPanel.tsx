@@ -1,5 +1,6 @@
 'use client';
 
+import { apiErrorText } from '@/lib/ai/credit-client';
 import { useEffect, useRef, useState } from 'react';
 import { VoiceRecorder } from '@/components/VoiceRecorder';
 import type { CaptureReadiness } from '@/lib/ai/capture/schema';
@@ -236,7 +237,7 @@ export function CaptureChatPanel({
       );
       if (!res.ok || !res.body) {
         const json = await res.json().catch(() => ({}));
-        setError((json as { error?: string }).error ?? `Chat failed (${res.status})`);
+        setError(apiErrorText(json, `Chat failed (${res.status})`));
         // Drop the optimistic empty assistant turn.
         onMessagesChange(next);
         return;
