@@ -72,7 +72,13 @@ with_pg_env() {
 run_ts() {
   (
     cd "$DEPLOY_DIR"
-    DATABASE_URL="$(node "$READ_ENV_MJS" "$DEPLOY_DIR" DATABASE_URL)" pnpm exec tsx "$@"
+    # Assign first (plain assignment, so set -e trips if read-env fails).
+    u="$(node "$READ_ENV_MJS" "$DEPLOY_DIR" DATABASE_URL)"
+    if [ -z "$u" ]; then
+      echo "refusing: DATABASE_URL came back empty" >&2
+      exit 1
+    fi
+    DATABASE_URL="$u" pnpm exec tsx "$@"
   )
 }
 
@@ -87,7 +93,8 @@ if [ ! -s "$DUMP_FILE" ]; then
   echo "refusing: backup is empty: $DUMP_FILE" >&2
   exit 1
 fi
-if ! "$PGBIN/pg_restore" --list "$DUMP_FILE" | grep -q "TABLE DATA public sub_competencies "; then
+RESTORE_LIST="$("$PGBIN/pg_restore" --list "$DUMP_FILE")"
+if ! grep -q "TABLE DATA public sub_competencies " <<<"$RESTORE_LIST"; then
   echo "refusing: backup does not list TABLE DATA for sub_competencies: $DUMP_FILE" >&2
   exit 1
 fi
@@ -105,12 +112,43 @@ with_pg_env "$PGBIN/psql" -X -v ON_ERROR_STOP=1 -f "$VERIFY_SQL"
 confirm "4. OWNER DECISION: reliability check" "The coverage and capture prompts changed. Run \`pnpm reliability:check\` (paid; it calls the real provider) before deploying, or record why it was skipped. This script does NOT run it. Run it yourself in another terminal now if you want it, or note the reason for skipping; then answer yes to continue."
 
 # --- 5. deploy --------------------------------------------------------------
-confirm "5. deploy the build" "Deploy the build now (deploy chain) so $DEPLOY_DIR holds this branch's code, then come back. Steps 6-8 run from $DEPLOY_DIR."
-confirm "5b. deploy finished?" "Answer yes only after the deploy chain has finished and the new build is serving."
-if [ ! -f "$DEPLOY_DIR/scripts/catalog/insert-catalog-additions.ts" ]; then
-  echo "refusing: $DEPLOY_DIR does not contain scripts/catalog/insert-catalog-additions.ts — the new build is not deployed" >&2
+confirm "5. deploy the build" "This script does NOT deploy. The owner (or the controller with the owner's yes) runs these commands, in order, in another terminal:
+  SHA=<the 40-character SHA of the commit to deploy>
+  [ \${#SHA} -eq 40 ] || { echo 'SHA must be 40 characters'; exit 1; }
+  git push origin \"\$SHA:main\"
+  cd $DEPLOY_DIR && git pull -q --ff-only origin main
+  [ \"\$(git rev-parse HEAD)\" = \"\$SHA\" ] || echo 'HEAD does not equal SHA - STOP'
+  pnpm -s build
+  launchctl kickstart -k gui/\$(id -u)/com.gc.curriculum-tool
+Answer yes when they have all run; step 5b verifies the result."
+read -r -p "Deployed SHA (40 characters): " EXPECTED_SHA
+if [ "${#EXPECTED_SHA}" -ne 40 ]; then
+  echo "refusing: SHA must be 40 characters" >&2
   exit 1
 fi
+ACTUAL_SHA="$(git -C "$DEPLOY_DIR" rev-parse HEAD)"
+if [ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]; then
+  echo "refusing: $DEPLOY_DIR HEAD is $ACTUAL_SHA, expected $EXPECTED_SHA" >&2
+  exit 1
+fi
+for f in drizzle/0060_catalog_foundationals.sql scripts/catalog/insert-catalog-additions.ts \
+  docs/superpowers/specs/2026-10-19-catalog-additions.json docs/superpowers/specs/2026-10-15-bundle-cards.json; do
+  if [ ! -f "$DEPLOY_DIR/$f" ]; then
+    echo "refusing: $DEPLOY_DIR/$f is missing - the new build is not deployed" >&2
+    exit 1
+  fi
+done
+CODE=""
+for _try in 1 2 3 4 5 6; do
+  CODE="$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/ || true)"
+  [ "$CODE" = "200" ] && break
+  sleep 5
+done
+if [ "$CODE" != "200" ]; then
+  echo "refusing: app did not answer 200 on :3000 within ~30 s (last: ${CODE:-none})" >&2
+  exit 1
+fi
+echo "deploy verified: HEAD=$ACTUAL_SHA, files present, app answers 200"
 
 # --- 6. insert catalog additions --------------------------------------------
 confirm "6a. insert additions - DRY RUN" "insert-catalog-additions.ts --file $ADDITIONS_FILE --expect-db $EXPECTED_DB (dry run, writes nothing). Read the output before approving the apply."
@@ -119,7 +157,7 @@ confirm "6b. insert additions - APPLY" "Same command with --apply (one transacti
 run_ts scripts/catalog/insert-catalog-additions.ts --file "$ADDITIONS_FILE" --expect-db "$EXPECTED_DB" --apply
 
 # --- 7. cards (only after the owner sets _approval) -------------------------
-confirm "7. apply the bundle cards" "Only after YOU have approved the drafted problem-solving card and set _approval in $CARDS_FILE. draft-bundle-cards.ts refuses an empty _approval."
+confirm "7. apply the bundle cards" "Only after YOU have approved the drafted problem-solving card. Set _approval in the DEPLOY checkout copy of the cards file: $CARDS_FILE (or merge a commit carrying it and redeploy). draft-bundle-cards.ts refuses an empty _approval."
 read -r -p "Your name for --confirmed-by: " CONFIRMED_BY
 if [ -z "$CONFIRMED_BY" ]; then
   echo "refusing: --confirmed-by name is empty" >&2
