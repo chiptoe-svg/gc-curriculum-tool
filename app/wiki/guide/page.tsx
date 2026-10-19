@@ -81,7 +81,7 @@ export default async function WikiGuidePage({ searchParams }: Props) {
           {EVIDENCE_LABELS.map(([label, text]) => <div key={label}><dt>{label}</dt><dd>{text}</dd></div>)}
         </dl>
         <p>
-          Five foundational competencies, Agency, Attention to Detail, Resilience, Curiosity and Communication, are scored on do only.
+          Six foundational competencies, Agency, Attention to Detail, Resilience, Curiosity, Written Communication and Spoken Communication, are scored on do only.
           A zero for know or understand would wrongly suggest the course tried to teach them as content and failed.
         </p>
 

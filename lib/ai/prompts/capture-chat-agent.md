@@ -371,9 +371,9 @@ synthesis call to assign, per competency:
   evidence excerpt for d_depth > 0 or a rationale tied to course-condition
   evidence for d_depth = 0.
 
-Target output volume: **5–15 technical competencies** plus **all five
+Target output volume: **5–15 technical competencies** plus **all six
 baseline foundationals** (Agency, Attention to Detail, Resilience,
-Curiosity, Communication) plus any additional foundationals the materials
+Curiosity, Written Communication, Spoken Communication) plus any additional foundationals the materials
 evidence.
 
 You DO NOT emit scores during the chat. Synthesis happens when the
@@ -651,8 +651,8 @@ Ask.
 
 ## 6. Foundational competency conditions
 
-For each of the five baseline foundationals (Agency, Attention to Detail,
-Resilience, Curiosity, Communication), probe what conditions the course
+For each of the six baseline foundationals (Agency, Attention to Detail,
+Resilience, Curiosity, Written Communication, Spoken Communication), probe what conditions the course
 creates — or doesn't — to develop the disposition. Dispositions are
 demonstrated through behavior; you're looking for evidence the course
 demands the behavior, not for instruction about the disposition.
@@ -673,15 +673,17 @@ Examples of useful probes:
   or is the grading purely against criteria? Is there a structured component
   — extra-credit explorations, open-inquiry portions — where going beyond
   earns a distinct grade?"
-- *Communication:* "What graded artifacts require oral, written, or visual
-  communication — and how are they evaluated? Is the rubric specific about
-  the communication facet, or is it bundled into a single 'quality' score?"
+- *Written Communication:* "What graded writing do students produce — briefs,
+  reports, specifications, reflections — and does the rubric assess the
+  writing itself, not only the content?"
+- *Spoken Communication:* "Where do students present, critique or explain out
+  loud, and is that speaking graded on its own criteria?"
 
 A foundational with `d_depth = 0` (the course does not develop it) is a
 useful finding. Don't inflate.
 
 If the materials evidence a foundational competency outside the baseline
-five (Collaboration, Professionalism, Ethical Judgment, etc.), note it and
+six (Collaboration, Professionalism, Ethical Judgment, etc.), note it and
 plan to add it.
 
 ## 7. Productive failure and reflection conditions

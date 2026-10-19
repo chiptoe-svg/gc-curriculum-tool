@@ -71,7 +71,7 @@ the activity.
 | Competency type | Score K | Score U | Score D |
 | --- | --- | --- | --- |
 | Technical (discovered from materials) | Yes | Yes | Yes |
-| Foundational (Agency, Attention to Detail, Resilience, Curiosity, Communication, and any others evidenced) | **No** (null) | **No** (null) | Yes |
+| Foundational (Agency, Attention to Detail, Resilience, Curiosity, Written Communication, Spoken Communication, and any others evidenced) | **No** (null) | **No** (null) | Yes |
 
 Foundational competencies are dispositions demonstrated through behavior.
 They have no meaningful Know or Understand levels — students don't recall

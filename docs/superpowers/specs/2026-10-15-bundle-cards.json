@@ -1,5 +1,5 @@
 {
-  "_approval": "Owner approved 2026-10-19 (\"1 - approved\"), in session. Covers all 45 cards, including the 2026-10-19 color/quality split, project-management/project-oversight sharpening, AI revisions and the 10 new cards.",
+  "_approval": "",
   "drafted": {
     "model": "gpt-6.1-sol",
     "promptVersion": "bundle-card-draft@1",
@@ -530,6 +530,24 @@
       ]
     },
     {
+      "competencyId": "problem-solving",
+      "name": "Problem solving in the discipline",
+      "stratum": "foundational",
+      "includes": "This bundle covers solving unfamiliar production, design and business problems in graphic communications by bringing organized domain knowledge to bear: diagnosing what is wrong, attempting a solution, learning from failed attempts and revising, across varied conditions. It is a program-level outcome, developed through repeated cycles of productive failure and structured reflection at increasing depth, and is not scored course by course.",
+      "excludes": "Following a known procedure correctly belongs in the technical bundle for that procedure. Persisting through setbacks as a personal habit belongs in resilience, and going beyond requirements to find out how things work belongs in curiosity.",
+      "distinctions": "Unlike the technical bundles, which each describe one area of skill, problem solving is what those skills become when students deploy them on unfamiliar problems. Unlike resilience and curiosity, which are habits, it is the capability those habits help build. Unlike a generic reasoning skill, it does not transfer apart from domain knowledge.",
+      "positiveExamples": [
+        "Diagnose why a packaging run shows an unfamiliar defect, test likely causes, and fix it.",
+        "Work out a production approach for a job no standard workflow fits, learning from a failed first attempt.",
+        "Reframe a client's problem after an initial solution fails and develop one that works."
+      ],
+      "negativeExamples": [
+        "Calibrate a press to a known color target by following the standard procedure (belongs in color-management)",
+        "Keep revising a design after several rounds of critique (belongs in resilience)",
+        "Research how a printing process works beyond what the lab required (belongs in curiosity)"
+      ]
+    },
+    {
       "competencyId": "professional-responsibility",
       "name": "Professional responsibility and ethics",
       "stratum": "foundational",
@@ -817,5 +835,6 @@
         "Design a layout that communicates a brand message visually (belongs in the technical bundles)"
       ]
     }
-  ]
+  ],
+  "_pendingOwnerApproval": "problem-solving card drafted 2026-10-19 after the 45-card approval; the other 45 cards were approved (\"1 - approved\")."
 }

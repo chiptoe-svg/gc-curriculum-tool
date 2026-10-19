@@ -293,9 +293,9 @@ export const CAREER_TARGETS: CareerTarget[] = [
       {
         id: 'ai-tool-direction',
         name: 'AI tool direction and personal tool-building: prompt design, iteration, quality evaluation',
-        knowDescriptor: 'Knows the capabilities and failure modes of major generative AI tools across image, copy, and video, and how to script or assemble a lightweight personal AI workflow or tool (a prompt chain, a small automation) to speed their own work.',
-        understandDescriptor: 'Understands why AI outputs require iteration grounded in human judgment about what good looks like, and why building a small tool for one\'s own workflow is now baseline fluency for this target — distinct from building a system other people run, which is target 5\'s job.',
-        doDescriptor: 'Directs an AI workflow from prompt through final output that meets brand quality standards, and, where useful, builds or configures a small AI tool or automation for their own workflow and documents it well enough to reuse.',
+        knowDescriptor: 'Knows the capabilities and failure modes of major generative AI tools across image, copy, and video, which kinds of tasks they handle well and which they do not, and how to script or assemble a lightweight personal AI workflow or tool (a prompt chain, a small automation) to speed their own work.',
+        understandDescriptor: 'Understands why AI outputs require iteration grounded in human judgment about what good looks like, why deciding which parts of a task to give AI and what a person must verify is part of the craft, and why building a small tool for one\'s own workflow is now baseline fluency for this target — distinct from building a system other people run, which is target 5\'s job.',
+        doDescriptor: 'Splits a task into parts for AI and parts for a person, recognizes when not to use AI, directs the AI parts from prompt through final output that meets brand quality standards while checking what a person must verify, and, where useful, builds or configures a small AI tool or automation for their own workflow and documents it well enough to reuse.',
       },
       {
         id: 'cross-medium-production',
@@ -400,9 +400,9 @@ export const CAREER_TARGETS: CareerTarget[] = [
       {
         id: 'quality-frameworks',
         name: 'AI and quality governance',
-        knowDescriptor: 'Knows the dimensions on which creative, production, and AI-assisted output is evaluated — brand, legal/regulatory, and print-quality standards — and where each kind of check belongs in a workflow.',
-        understandDescriptor: 'Understands why quality and compliance checking requires domain expertise and can\'t be fully automated, and why someone must stay accountable for AI-assisted output specifically.',
-        doDescriptor: 'Builds or operates a quality/compliance review step in a real workflow — a brand check, a legal/regulatory check, or a print-quality check — that catches failure modes consistently, including checks on AI-assisted output.',
+        knowDescriptor: 'Knows the dimensions on which creative, production, and AI-assisted output is evaluated — brand, legal/regulatory, and print-quality standards — where each kind of check belongs in a workflow, and what an AI-use policy covers: which data may enter which tools, how AI-generated content is disclosed or labeled (including content credentials), and who signs off.',
+        understandDescriptor: 'Understands why quality and compliance checking requires domain expertise and can\'t be fully automated, why someone must stay accountable for AI-assisted output specifically, and why an AI-use policy has to be specific enough to apply on a real job.',
+        doDescriptor: 'Builds or operates a quality/compliance review step in a real workflow — a brand check, a legal/regulatory check, or a print-quality check — that catches failure modes consistently, including checks on AI-assisted output, and writes or applies an AI-use policy for a team or job covering data, disclosure and sign-off.',
       },
       {
         id: 'ai-tool-evaluation',

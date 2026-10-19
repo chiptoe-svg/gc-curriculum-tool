@@ -286,9 +286,11 @@ export async function findLatestNonRetiredSnapshot(courseCode: string, executor:
 export interface SurvivorCompetency {
   id: string;
   name: string;
-  knowDescriptor: string;
-  understandDescriptor: string;
+  knowDescriptor: string | null;
+  understandDescriptor: string | null;
   doDescriptor: string;
+  foundational: boolean;
+  scoring: 'direct' | 'derived';
 }
 
 export async function getSurvivorCompetencies(executor: Executor = db): Promise<SurvivorCompetency[]> {
@@ -299,6 +301,8 @@ export async function getSurvivorCompetencies(executor: Executor = db): Promise<
       knowDescriptor: subCompetencies.knowDescriptor,
       understandDescriptor: subCompetencies.understandDescriptor,
       doDescriptor: subCompetencies.doDescriptor,
+      foundational: subCompetencies.foundational,
+      scoring: subCompetencies.scoring,
     })
     .from(subCompetencies)
     .where(inArray(subCompetencies.id, SURVIVOR_IDS));
@@ -554,6 +558,8 @@ export async function runRescore(args: RescoreArgs, deps: RescoreDeps = {}): Pro
             knowDescriptor: c.knowDescriptor,
             understandDescriptor: c.understandDescriptor,
             doDescriptor: c.doDescriptor,
+            foundational: c.foundational,
+            scoring: c.scoring,
           })),
         });
 

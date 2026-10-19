@@ -4,6 +4,7 @@ import { db } from '@/lib/db/client';
 import { asc, eq } from 'drizzle-orm';
 import { careerTargets, targetSubCompetencies } from '@/lib/db/schema';
 import { getSnapshotById } from '@/lib/db/capture-snapshots-queries';
+import { getScoringFlags, flagsFor } from '@/lib/db/scoring-flags';
 import { upsertCoverageCell } from '@/lib/db/program-coverage-queries';
 import { scoreSnapshotCompetencies } from '@/lib/ai/analyze/program-score-coverage';
 import { regenerateWikiInBackground } from '@/lib/ai/wiki/update';
@@ -40,13 +41,14 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   const subs = await db.select().from(targetSubCompetencies).where(eq(targetSubCompetencies.careerTargetId, targetId))
     .orderBy(asc(targetSubCompetencies.displayOrder), asc(targetSubCompetencies.id));
   const activeSubs = subs.filter(s => !s.retired);
+  const flags = await getScoringFlags(activeSubs.map(s => s.id));
 
   // Gate the paid scoring call on the daily cost cap.
   const cap = await checkDailyCap();
   if (!cap.ok) return NextResponse.json({ error: 'daily cost cap reached' }, { status: 429 });
 
   try {
-    const { result, model, costUsdCents } = await scoreSnapshotCompetencies({
+    const { result, model, costUsdCents, rejectedCompetencyIds } = await scoreSnapshotCompetencies({
       snapshotId,
       courseCode: snapshot.courseCode,
       snapshotProfile: snapshot.profile,
@@ -56,6 +58,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         knowDescriptor: s.knowDescriptor,
         understandDescriptor: s.understandDescriptor,
         doDescriptor: s.doDescriptor,
+        ...flagsFor(flags, s.id),
       })),
     });
 
@@ -79,6 +82,9 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     }
 
     await recordSpend(costUsdCents);
+    for (const id of rejectedCompetencyIds ?? []) {
+      console.warn(`[coverage] ${snapshotId} ${id}: foundational cell had K/U depths — dropped, will re-score`);
+    }
 
     // Re-fire wiki-update for this snapshot now that coverage exists — lets the
     // competency/target pages generate (they derive from snapshot_competency_coverage).

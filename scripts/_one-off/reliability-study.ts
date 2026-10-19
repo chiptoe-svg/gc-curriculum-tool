@@ -38,6 +38,7 @@ import { generateCaptureProfileV2 } from '@/lib/ai/analyze/capture-scores';
 // function with that target's active member competencies rather than left
 // broken (it's imported by scripts/reliability/profile-eval.ts, which is
 // not tsconfig-excluded, so tsc catches breaks here).
+import { getScoringFlags, flagsFor } from '@/lib/db/scoring-flags';
 import { scoreSnapshotCompetencies } from '@/lib/ai/analyze/program-score-coverage';
 import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
 import { depthBand } from '@/lib/program/depth-band';
@@ -929,6 +930,7 @@ async function main() {
       }).from(targetSubCompetencies).where(eq(targetSubCompetencies.careerTargetId, target.id)).orderBy(asc(targetSubCompetencies.displayOrder));
 
       const activeSubs = subs.filter(s => !s.retired);
+      const flags = await getScoringFlags(activeSubs.map(s => s.id));
       console.log(`\n  Target: "${target.name}" (${activeSubs.length} active sub-comps)`);
 
       const coverageRuns: CoverageRunCells[] = [];
@@ -958,6 +960,7 @@ async function main() {
               knowDescriptor: s.knowDescriptor,
               understandDescriptor: s.understandDescriptor,
               doDescriptor: s.doDescriptor,
+              ...flagsFor(flags, s.id),
             })),
           });
 

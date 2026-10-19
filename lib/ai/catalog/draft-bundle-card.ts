@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { loadPrompt } from '@/lib/ai/prompts/load';
 import { getProviderForFunction } from '@/lib/ai/provider';
 import { STRATA, type BundleSummary, type CardFields } from '@/lib/catalog/bundles';
+import { formatDescriptorLines } from '@/lib/catalog/descriptors';
 
 export const BUNDLE_CARD_PROMPT_VERSION = 'bundle-card-draft@1';
 
@@ -33,9 +34,7 @@ export function buildCardUserMessage(bundle: BundleSummary, catalog: BundleSumma
   return [
     `**Bundle id:** ${bundle.id}`,
     `**Name:** ${bundle.name}`,
-    `**Know:** ${bundle.knowDescriptor}`,
-    `**Understand:** ${bundle.understandDescriptor}`,
-    `**Do:** ${bundle.doDescriptor}`,
+    ...formatDescriptorLines(bundle).map(l => l.replace(/^([^:]+):/, '**$1:**')),
     '',
     '**The rest of the catalog (for excludes and distinctions):**',
     JSON.stringify(others, null, 2),

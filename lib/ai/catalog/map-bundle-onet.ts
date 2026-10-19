@@ -4,6 +4,7 @@ import { getProviderForFunction } from '@/lib/ai/provider';
 import type { BundlePosition } from '@/lib/db/schema';
 import type { BundleSummary, CardFields } from '@/lib/catalog/bundles';
 import type { TaskGroup } from '@/lib/catalog/shortlist';
+import { formatDescriptorLines } from '@/lib/catalog/descriptors';
 
 /**
  * Task 8 — the bundle-map-onet placement call: one bundle's card plus every
@@ -62,9 +63,7 @@ export function buildPlacementUserMessage(input: PlacementInput): string {
   const lines: string[] = [
     `**Bundle id:** ${bundle.id}`,
     `**Name:** ${bundle.name}`,
-    `**Know:** ${bundle.knowDescriptor}`,
-    `**Understand:** ${bundle.understandDescriptor}`,
-    `**Do:** ${bundle.doDescriptor}`,
+    ...formatDescriptorLines(bundle).map(l => l.replace(/^([^:]+):/, '**$1:**')),
     `**Includes:** ${card.includes}`,
     `**Excludes:** ${card.excludes}`,
     `**Distinctions:** ${card.distinctions}`,

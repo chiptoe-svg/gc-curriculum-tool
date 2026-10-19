@@ -71,7 +71,7 @@ export function HowToRead({ q }: { q: string }) {
             ))}
           </dl>
           <p className="wiki-howto__note">
-            Five foundational competencies (Agency, Attention to Detail, Resilience, Curiosity, Communication) are scored on Do only.
+            Six foundational competencies (Agency, Attention to Detail, Resilience, Curiosity, Written Communication, Spoken Communication) are scored on Do only.
           </p>
         </div>
       </div>

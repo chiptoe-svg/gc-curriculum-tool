@@ -66,6 +66,8 @@ export async function POST(req: Request): Promise<Response> {
         knowDescriptor: c.knowDescriptor,
         understandDescriptor: c.understandDescriptor,
         doDescriptor: c.doDescriptor,
+        foundational: c.foundational,
+        scoring: c.scoring,
       }));
     if (competencies.length === 0) {
       results.push({ snapshotId: snapToScore.snapshotId, courseCode: snapToScore.courseCode, status: 'failed', errorReason: 'no competencies to score' });
@@ -73,7 +75,7 @@ export async function POST(req: Request): Promise<Response> {
     }
 
     try {
-      const { result, model, costUsdCents } = await scoreSnapshotCompetencies({
+      const { result, model, costUsdCents, rejectedCompetencyIds } = await scoreSnapshotCompetencies({
         snapshotId: snapToScore.snapshotId,
         courseCode: snapToScore.courseCode,
         snapshotProfile: snap.profile,
@@ -95,6 +97,9 @@ export async function POST(req: Request): Promise<Response> {
         });
       }
       await recordSpend(costUsdCents);
+      for (const id of rejectedCompetencyIds ?? []) {
+        console.warn(`[coverage] ${snapToScore.snapshotId} ${id}: foundational cell had K/U depths — dropped, will re-score`);
+      }
       results.push({ snapshotId: snapToScore.snapshotId, courseCode: snapToScore.courseCode, status: 'ok', cellCount: result.cells.length });
     } catch (e) {
       results.push({

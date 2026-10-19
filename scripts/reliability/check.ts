@@ -35,6 +35,7 @@ import { careerTargets, targetSubCompetencies } from '@/lib/db/schema';
 import { eq, asc } from 'drizzle-orm';
 
 import { getLatestSnapshotByCourse } from '@/lib/db/capture-snapshots-queries';
+import { getScoringFlags, flagsFor } from '@/lib/db/scoring-flags';
 import { scoreSnapshotCompetencies } from '@/lib/ai/analyze/program-score-coverage';
 import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
 import { depthBand } from '@/lib/program/depth-band';
@@ -167,6 +168,7 @@ async function main() {
       .orderBy(asc(targetSubCompetencies.displayOrder));
 
     const activeSubs = subs.filter(s => !s.retired);
+    const flags = await getScoringFlags(activeSubs.map(s => s.id));
     console.log(`[pair] "${target.name}" (${activeSubs.length} active sub-comps, ${N_RUNS} runs)`);
 
     const coverageRuns: CoverageRunCells[] = [];
@@ -196,6 +198,7 @@ async function main() {
             knowDescriptor: s.knowDescriptor,
             understandDescriptor: s.understandDescriptor,
             doDescriptor: s.doDescriptor,
+            ...flagsFor(flags, s.id),
           })),
         });
 

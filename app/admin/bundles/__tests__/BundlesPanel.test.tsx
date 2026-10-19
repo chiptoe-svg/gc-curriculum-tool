@@ -120,6 +120,32 @@ describe('BundlesPanel', () => {
     expect(screen.getByText('e1; e2')).toBeInTheDocument();
   });
 
+  it('a foundational bundle with null K/U renders only its Do descriptor, never "null" or "undefined"', async () => {
+    const foundationalDetail: BundleDetail = {
+      ...blindReadyDetail,
+      bundle: { id: 'blind-ready', name: 'Blind ready bundle', knowDescriptor: null, understandDescriptor: null, doDescriptor: 'Does the thing independently', origin: 'o' },
+    };
+    const fetchMock = vi.fn(async (url: string) => {
+      const p = pathOf(url);
+      if (p === '/api/admin/bundles') return listResponse(bundlesFixture);
+      if (p === '/api/admin/bundles/blind-ready') return detailResponse(foundationalDetail);
+      if (p === '/api/admin/bundles/agreement') return { ok: true, json: async () => agreementEmpty };
+      return { ok: true, json: async () => ({}) };
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const { container } = render(<BundlesPanel slug="s" />);
+    await waitFor(() => expect(screen.getByText('Blind ready bundle')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('Blind ready bundle'));
+    await waitFor(() => expect(screen.getByText('Element Name')).toBeInTheDocument());
+
+    expect(screen.getByText('Does the thing independently')).toBeInTheDocument();
+    expect(screen.getByText('Do only (foundational)')).toBeInTheDocument();
+    expect(screen.queryByText('Know')).not.toBeInTheDocument();
+    expect(screen.queryByText('Understand')).not.toBeInTheDocument();
+    expect(container.textContent).not.toMatch(/null|undefined/);
+  });
+
   it('an unmapped sampled bundle shows "Waiting for mapping" and its blind submit is disabled with the reason (adversarial I-2)', async () => {
     const unmapped = bundlesFixture.map(b => (b.id === 'blind-ready' ? { ...b, mapped: false } : b));
     const fetchMock = vi.fn(async (url: string) => {

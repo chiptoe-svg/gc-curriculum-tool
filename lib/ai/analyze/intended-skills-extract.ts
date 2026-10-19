@@ -76,8 +76,8 @@ export interface CatalogInput {
 export interface SubCompetencyInput {
   id: string;
   name: string;
-  knowDescriptor: string;
-  understandDescriptor: string;
+  knowDescriptor: string | null;
+  understandDescriptor: string | null;
   doDescriptor: string;
 }
 
@@ -116,7 +116,7 @@ export async function extractIntendedSkills(input: ExtractIntendedSkillsInput): 
   // can emit the join key). Format: `- [<id>] <name>\n  K: …\n  U: …\n  D: …`
   const catalogSection = input.subCompetencies.length > 0
     ? input.subCompetencies.map(sc =>
-        `- [${sc.id}] ${sc.name}\n  K: ${sc.knowDescriptor}\n  U: ${sc.understandDescriptor}\n  D: ${sc.doDescriptor}`
+        `- [${sc.id}] ${sc.name}\n  ${sc.knowDescriptor == null && sc.understandDescriptor == null ? `D (do only, foundational): ${sc.doDescriptor}` : [`K: ${sc.knowDescriptor}`, `U: ${sc.understandDescriptor}`, `D: ${sc.doDescriptor}`].join('\n  ')}`
       ).join('\n')
     : '(none)';
 

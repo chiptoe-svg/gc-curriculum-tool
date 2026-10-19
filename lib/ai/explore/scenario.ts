@@ -4,7 +4,7 @@ import { z } from 'zod';
  * K/U/D depth triple for a single competency.
  *
  * `k` and `u` are nullable: foundational competencies (Agency, Attention to Detail,
- * Resilience, Curiosity, Communication) score on Do only — K/U are stored as null per the
+ * Resilience, Curiosity, Written Communication, Spoken Communication) score on Do only — K/U are stored as null per the
  * KUD+ framework rather than zero (zero would imply the course tried and failed to develop
  * those dimensions). `d` is always present (non-nullable) for every competency kind.
  *
