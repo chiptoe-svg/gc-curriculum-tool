@@ -64,7 +64,7 @@ describe('blind monitor', () => {
     expect(st.unknownStreak).toBe(1);
     st = lib.nextStatus(st, 'unknown', 'e', now); st = lib.nextStatus(st, 'unknown', 'e', now);
     expect(st.unknownStreak).toBe(3);
-    expect(lib.nextStatus(st, 'ok', '', now).unknownStreak).toBe(0);
+    expect(lib.nextStatus(st, 'ok', '', now)?.unknownStreak).toBe(0);
   });
   it.each([
     [2, 'unknown', false, 'none'],
