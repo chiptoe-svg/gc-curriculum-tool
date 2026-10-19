@@ -96,6 +96,12 @@ export interface RefreshDeps {
   ): Promise<{ pages: WikiPageWrite[]; logEntry: string }>;
   /** Commit + push (writeAndPush in production). */
   write(commit: WikiCommit): Promise<{ sha: string }>;
+  /**
+   * Program-level problem-solving evidence-profile page (no model call).
+   * Returns null when the catalog has no `problem-solving` row (skip).
+   * Optional so existing callers/tests are unaffected.
+   */
+  problemSolvingCommit?(): Promise<WikiCommit | null>;
   log(line: string): void;
 }
 
@@ -289,6 +295,19 @@ export async function runRefresh(
         commitMessage: `feat(program): one-pass refresh batch ${i + 1}/${nb} — ${batch.map(p => p.slug).join(', ')}`,
       });
       result.succeeded++;
+    } catch (err) {
+      deps.log(`${label} ⚠ failed: ${err instanceof Error ? err.message : String(err)}`);
+      result.failed++;
+    }
+  }
+
+  // Program-level page, once per full program refresh (not for --only courses / --course).
+  if (plan.programPages.length > 0 && deps.problemSolvingCommit) {
+    const label = '[problem-solving page]';
+    try {
+      const commit = await deps.problemSolvingCommit();
+      if (!commit) deps.log(`${label} skipped: catalog has no problem-solving competency`);
+      else { await commitUnit(deps, label, commit); result.succeeded++; }
     } catch (err) {
       deps.log(`${label} ⚠ failed: ${err instanceof Error ? err.message : String(err)}`);
       result.failed++;

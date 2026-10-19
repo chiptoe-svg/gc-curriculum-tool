@@ -41,6 +41,11 @@ import {
   runRefresh,
 } from '@/lib/ai/wiki/refresh-all';
 import { writeAndPush } from '@/lib/wiki/git-ops';
+import { and, eq } from 'drizzle-orm';
+import { db } from '@/lib/db/client';
+import { subCompetencies } from '@/lib/db/schema';
+import { loadProblemSolvingInputs } from '@/lib/db/problem-solving-queries';
+import { buildProblemSolvingCommit } from '@/lib/program/problem-solving-profile';
 
 async function main() {
   const args = parseRefreshArgs(process.argv.slice(2));
@@ -76,6 +81,12 @@ async function main() {
       return { pages: r.wiki, logEntry: r.logEntry };
     },
     write: writeAndPush,
+    problemSolvingCommit: async () => {
+      const has = await db.select({ id: subCompetencies.id }).from(subCompetencies)
+        .where(and(eq(subCompetencies.id, 'problem-solving'), eq(subCompetencies.retired, false)));
+      if (has.length === 0) return null;
+      return buildProblemSolvingCommit(await loadProblemSolvingInputs());
+    },
     log: line => console.log(line),
   }, { dryRun: args.dryRun });
 
