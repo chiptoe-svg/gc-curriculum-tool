@@ -1,5 +1,6 @@
 'use client';
 
+import { apiErrorText } from '@/lib/ai/credit-client';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CaptureProfile, CaptureReadiness, CaptureReviewerStatus } from '@/lib/ai/capture/schema';
 import type { ReconciliationLogEntry } from '@/lib/ai/schemas';
@@ -292,8 +293,7 @@ export function CaptureClient({
       const json = await res.json();
       if (!res.ok) {
         setStage('chat');
-        setGenerationError((json as { error?: string; detail?: string }).error
-          ?? 'Failed to generate Course Outcome Profile');
+        setGenerationError(apiErrorText(json, 'Failed to generate Course Outcome Profile'));
         return;
       }
       const { profile: newProfile, reviewerStatus: newStatus, telemetry: t } =

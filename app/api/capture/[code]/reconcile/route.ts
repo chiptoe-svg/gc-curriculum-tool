@@ -1,3 +1,4 @@
+import { creditsExhaustedResponse } from '@/lib/ai/credit-response';
 import { NextResponse } from 'next/server';
 import { authorizeCourseWrite } from '@/lib/sandbox/access';
 import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
@@ -32,6 +33,8 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     await recordSpend(out.costUsdCents);
     return NextResponse.json({ proposals: out.proposals, telemetry: { costUsdCents: out.costUsdCents, model: out.model } });
   } catch (err) {
+    const exhausted = creditsExhaustedResponse(err);
+    if (exhausted) return exhausted;
     const message = err instanceof Error ? err.message : 'reconcile failed';
     console.error(`POST /api/capture/${courseCode}/reconcile failed:`, message);
     return NextResponse.json({ error: message }, { status: 500 });

@@ -9,6 +9,7 @@ import { getLatestSessionId, getSessionMessages } from '@/lib/db/capture-message
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { checkDailyCap, recordSpend } from '@/lib/rate-limit/daily-cap';
 import { hashIp } from '@/lib/ip-hash';
+import { creditsExhaustedResponse } from '@/lib/ai/credit-response';
 import { runStressTest } from '@/lib/ai/stress-test/run';
 import { prereqCodesFor } from '@/lib/curriculum/prereq-map';
 import type { CaptureChatContext } from '@/lib/ai/analyze/capture-chat';
@@ -129,6 +130,8 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
       telemetry: { ...out.telemetry, model: out.model },
     });
   } catch (err) {
+    const exhausted = creditsExhaustedResponse(err);
+    if (exhausted) return exhausted;
     const message = err instanceof Error ? err.message : 'stress-test failed';
     console.error(`POST /api/capture/${courseCode}/stress-test failed:`, message);
     return NextResponse.json({ error: 'stress-test failed', detail: message.slice(0, 500) }, { status: 500 });
