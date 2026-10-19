@@ -26,19 +26,73 @@
       ]
     },
     {
+      "competencyId": "agency",
+      "name": "Agency",
+      "stratum": "foundational",
+      "includes": "This bundle covers the habit of making and owning choices in one's work: choosing direction, scope or tools, setting goals, and following through without step-by-step direction. It is shown through behavior across assignments, such as graded choices in topic or approach and self-directed projects, not through instruction about agency.",
+      "excludes": "Planning and running a project's schedule and budget belongs in project-management. Going beyond requirements to investigate how things work belongs in curiosity.",
+      "distinctions": "Unlike curiosity, which is the drive to find out more, agency is taking ownership of decisions and outcomes. Unlike project-management, it is a personal habit of initiative rather than the skill of running a project plan.",
+      "positiveExamples": [
+        "Choose and justify a project direction from an open brief, then carry it through without being told each step.",
+        "Set goals for a self-directed studio project and report progress against them.",
+        "Identify a better tool for a task and adopt it on one's own initiative."
+      ],
+      "negativeExamples": [
+        "Build a project schedule with dependencies and re-baseline it after a change (belongs in project-management)",
+        "Research how a printing process works beyond what the assignment required (belongs in curiosity)",
+        "Revise a design repeatedly after critique until it works (belongs in resilience)"
+      ]
+    },
+    {
+      "competencyId": "ai-literacy",
+      "name": "AI literacy and responsible use",
+      "stratum": "foundational",
+      "includes": "This bundle covers understanding in plain terms how generative AI produces output, why it can be fluent and wrong, and why the same request can give different results. It includes the rules for handling client and personal data in AI tools, why AI output must be checked before it is trusted, and why disclosure and content provenance matter for trust in brand and print work. In practice it shows up as explaining what a tool did and where it could be wrong, deciding what information may go into which tool, and disclosing AI-generated content as policy requires.",
+      "excludes": "Directing a tool through iterations to a finished output belongs in ai-tool-direction. Writing and operating a team's AI-use policy and review steps belongs in quality-frameworks. Rights and licensing in AI-generated assets belong in contracts-ip-licensing.",
+      "distinctions": "Unlike ai-tool-direction, which is skill in getting good output from a tool, ai-literacy is understanding what the tool is doing and following the rules for using it. Unlike quality-frameworks, which sets and runs the rules for a workflow, this bundle is the individual knowing and applying them. Unlike professional-responsibility, which is the habit of honest conduct, this bundle is the knowledge that conduct depends on.",
+      "positiveExamples": [
+        "Explain to a client why an AI-drafted product description needs a fact check before it goes on a package.",
+        "Decide that confidential client artwork may not be uploaded to a public AI tool and choose an approved alternative.",
+        "Label AI-generated images in a deliverable according to the agency's disclosure policy."
+      ],
+      "negativeExamples": [
+        "Iterate image prompts until the selected image meets the brand standard (belongs in ai-tool-direction)",
+        "Write a team's AI-use policy covering data, disclosure and sign-off (belongs in quality-frameworks)",
+        "Check whether a stock license permits use of an image in AI training (belongs in contracts-ip-licensing)"
+      ]
+    },
+    {
+      "competencyId": "ai-strategy-change-leadership",
+      "name": "AI strategy and change leadership",
+      "stratum": "business",
+      "includes": "This bundle covers deciding where AI changes a creative, print or packaging organization and leading people through that change. It includes how falling production cost per version shifts pricing, offerings and roles; why adoption fails more often on people and process than on tools; and the parts of a change plan: roles, training, communication and measures. The practical work is developing an AI direction for a team, business unit or the organization's own operations and presenting it to decision makers.",
+      "excludes": "Benchmarking one AI tool to adopt, adjust or drop it belongs in ai-tool-evaluation. Writing and operating the AI-use policy and review steps belongs in quality-frameworks. Making the ROI case for a solution to win a client belongs in proposal-development, and managing an individual's performance belongs in team-coordination.",
+      "distinctions": "Unlike ai-tool-evaluation, which decides about one AI step from benchmark evidence, this bundle decides what AI means for the organization's offerings, pricing and roles. Unlike quality-frameworks, which writes and operates the rules, it sets the direction those rules serve. Unlike proposal-development, it plans the organization's own change rather than selling a solution to a client.",
+      "positiveExamples": [
+        "Recommend how a print shop's service mix and pricing should respond as AI makes versioning cheap, with the roles that change.",
+        "Build a change plan for bringing AI into a creative team's work, with training, communication and measures of success.",
+        "Present an AI direction for an in-house brand studio to its leadership, including what changes for staff and clients."
+      ],
+      "negativeExamples": [
+        "Benchmark an AI copy tool on the team's own work and recommend adopting or dropping it (belongs in ai-tool-evaluation)",
+        "Write the studio's AI-use policy on client data and disclosure (belongs in quality-frameworks)",
+        "Present a quantified ROI case for a client to buy an automated versioning service (belongs in proposal-development)"
+      ]
+    },
+    {
       "competencyId": "ai-tool-direction",
       "name": "AI tool direction and personal tool-building: prompt design, iteration, quality evaluation",
       "stratum": "workflow_ai",
-      "includes": "This bundle covers directing generative AI tools for image, copy, and video work, from prompt design through iteration to a final output that meets brand quality standards. It includes recognizing tool capabilities and failure modes and using human judgment to evaluate and improve results. It also covers scripting, assembling, or configuring a lightweight personal AI tool, prompt chain, or automation to speed one's own work, with documentation sufficient for reuse.",
-      "excludes": "Organizational AI benchmarking and adoption recommendations belong in ai-tool-evaluation. Brand template or preset systems that produce compliant variations at scale for others to run belong in brand-system-templating. Engineering automated handoffs between creative, workflow, and AI systems belongs in systems-automation-integration.",
+      "includes": "This bundle covers directing generative AI tools for image, copy, and video work, from deciding which parts of a task to give AI and what a person must verify, through prompt design and iteration, to a final output that meets brand quality standards. It includes recognizing tool capabilities and failure modes, recognizing when not to use AI, and using human judgment to evaluate and improve results. It also covers scripting, assembling, or configuring a lightweight personal AI tool, prompt chain, or automation to speed one's own work, with documentation sufficient for reuse.",
+      "excludes": "Understanding how generative AI works and the rules for data and disclosure belong in ai-literacy. Organizational AI benchmarking and adoption recommendations belong in ai-tool-evaluation. Brand template or preset systems that produce compliant variations at scale for others to run belong in brand-system-templating. Engineering automated handoffs between creative, workflow, and AI systems belongs in systems-automation-integration.",
       "distinctions": "Unlike ai-tool-evaluation, this bundle evaluates and improves outputs for the user's own work rather than benchmarking an organizational AI implementation for an adopt-or-drop decision. Unlike brand-system-templating, it builds reusable personal tools rather than maintained brand template systems documented for others to run. Unlike systems-automation-integration, its focus is directing AI and building lightweight personal aids, not engineering a handoff between two systems.",
       "positiveExamples": [
         "Write and refine image-generation prompts, evaluating successive outputs until the selected image meets brand quality standards.",
-        "Identify failures in AI-generated brand copy and iteratively direct revisions through final output.",
+        "Split a brand copy task into parts for AI and parts for a person, direct the AI parts, and verify the facts a person must check.",
         "Assemble a lightweight personal AI prompt chain for recurring creative work and document how to reuse it."
       ],
       "negativeExamples": [
-        "Benchmark an AI copy tool against the current process and recommend whether the organization should adopt it (belongs in ai-tool-evaluation)",
+        "Explain to a client how an AI tool can produce fluent but wrong copy (belongs in ai-literacy)",
         "Build and maintain generative-AI presets that let a team produce on-brand campaign variations at scale (belongs in brand-system-templating)",
         "Configure an API automation that handles a handoff between a creative system and an AI system (belongs in systems-automation-integration)"
       ]
@@ -48,7 +102,7 @@
       "name": "AI implementation, benchmarking and evaluation",
       "stratum": "workflow_ai",
       "includes": "This bundle covers choosing and implementing an AI step in creative or production work, then benchmarking it on the organization's own work against the current process. It includes building a small test set and scoring rule, measuring output quality against references, error and failure-mode rates, cost per item, turnaround, and consistency across runs. It also covers recognizing drift as models change and writing an evidence-based recommendation to adopt, adjust, or drop the step that weighs quality, cost, risk, and staff workload.",
-      "excludes": "Prompt iteration and lightweight personal AI tool-building belong in ai-tool-direction; scripting or configuring handoffs between systems belongs in systems-automation-integration. Building or operating ongoing brand, legal/regulatory, or print-quality review steps belongs in quality-frameworks.",
+      "excludes": "Prompt iteration and lightweight personal AI tool-building belong in ai-tool-direction; scripting or configuring handoffs between systems belongs in systems-automation-integration. Building or operating ongoing brand, legal/regulatory, or print-quality review steps belongs in quality-frameworks. Setting the organization's overall AI direction, roles and change plan belongs in ai-strategy-change-leadership.",
       "distinctions": "Unlike ai-tool-direction, which focuses on directing and refining AI output for personal work, this bundle tests whether an implemented AI step warrants adoption in an organization's workflow. Unlike systems-automation-integration, it centers on benchmark evidence and the adoption decision rather than connecting systems and handling handoff failures. Unlike quality-frameworks, it evaluates the tool against the current process rather than establishing ongoing output review and accountability.",
       "positiveExamples": [
         "Implement an AI-assisted artwork review step and compare its errors, turnaround, and cost per item with the current review process on a small set of actual jobs.",
@@ -59,6 +113,24 @@
         "Iterate image-generation prompts until a brand deliverable meets the intended visual standard (belongs in ai-tool-direction)",
         "Configure an API handoff that transfers artwork to an AI tool and handles failed transfers (belongs in systems-automation-integration)",
         "Operate a recurring compliance review that catches errors in AI-assisted packaging artwork before release (belongs in quality-frameworks)"
+      ]
+    },
+    {
+      "competencyId": "attention-to-detail",
+      "name": "Attention to detail",
+      "stratum": "foundational",
+      "includes": "This bundle covers the habit of getting execution right as well as concept: correct file specifications, type, alignment, labels and spelling, and catching one's own errors before handoff. It is shown through work that is consistently clean across assignments and through rubrics that grade quality of execution, not only correctness.",
+      "excludes": "Operating a production inspection system with tolerances and accept/reject decisions belongs in quality-control. Checking packaging artwork against regulatory requirements belongs in packaging-artwork-compliance.",
+      "distinctions": "Unlike quality-control, which is a system for catching defects in production, attention to detail is a personal habit of careful execution. Unlike packaging-artwork-compliance, it is not tied to a defined checklist or regulatory requirement.",
+      "positiveExamples": [
+        "Deliver print-ready files that meet every stated specification without correction.",
+        "Proof one's own layout and fix typographic and alignment errors before submitting.",
+        "Catch a mislabeled dimension in one's own dieline before it goes to a teammate."
+      ],
+      "negativeExamples": [
+        "Set inspection points and tolerances for a production run (belongs in quality-control)",
+        "Check a package's required label text against regulations (belongs in packaging-artwork-compliance)",
+        "Calibrate a proofer to a color target (belongs in color-management)"
       ]
     },
     {
@@ -185,6 +257,24 @@
         "Translate a packaging brief into creative direction the client recognizes as responsive (belongs in brief-translation)",
         "Write a print solution proposal with a quantified cost/benefit case (belongs in proposal-development)",
         "Coordinate client proof approvals and communicate production schedule changes (belongs in project-oversight)"
+      ]
+    },
+    {
+      "competencyId": "collaboration",
+      "name": "Collaboration and teamwork",
+      "stratum": "foundational",
+      "includes": "This bundle covers working well with others on shared work: dividing tasks, keeping commitments, integrating others' contributions and working through disagreement so the group's result is better than any one member's. It is shown through team projects where individual contribution and the group's working process are assessed.",
+      "excludes": "Managing staff roles, performance and hiring belongs in team-coordination. Running the project plan belongs in project-management.",
+      "distinctions": "Unlike team-coordination, which is the manager's responsibility for a team, collaboration is being a good member of one. Unlike project-management, it is how a person works with others, not how the project's schedule and budget are run.",
+      "positiveExamples": [
+        "Divide a team packaging project fairly and deliver one's part on time.",
+        "Integrate a teammate's work into a shared design so the result is consistent.",
+        "Work through a disagreement about direction and reach a decision the team carries out."
+      ],
+      "negativeExamples": [
+        "Conduct a performance review for a production team member (belongs in team-coordination)",
+        "Build and re-baseline the team project's schedule (belongs in project-management)",
+        "Present the team's project to the class (belongs in spoken-communication)"
       ]
     },
     {
@@ -332,6 +422,24 @@
       ]
     },
     {
+      "competencyId": "curiosity",
+      "name": "Curiosity",
+      "stratum": "foundational",
+      "includes": "This bundle covers the habit of going beyond stated requirements to find out how and why things work: seeking sources, techniques or questions an assignment did not require. It is shown where courses reward going beyond the criteria, such as open-inquiry components or graded exploration.",
+      "excludes": "Taking ownership of choices and follow-through belongs in agency. Designing and running consumer studies belongs in consumer-research.",
+      "distinctions": "Unlike agency, which is ownership of decisions, curiosity is the drive to understand more. Unlike consumer-research, it is a personal habit of inquiry, not a research method applied for a client.",
+      "positiveExamples": [
+        "Investigate why an ink behaves differently on two substrates beyond what the lab asked.",
+        "Try a technique not taught in class and report what it shows.",
+        "Bring an outside source into a project that changes the team's approach."
+      ],
+      "negativeExamples": [
+        "Choose and own a project direction from an open brief (belongs in agency)",
+        "Design a survey to understand target consumers' packaging preferences (belongs in consumer-research)",
+        "Revise work repeatedly after critique (belongs in resilience)"
+      ]
+    },
+    {
       "competencyId": "customer-relationship-management",
       "name": "Customer relationship and service",
       "stratum": "business",
@@ -422,6 +530,24 @@
       ]
     },
     {
+      "competencyId": "professional-responsibility",
+      "name": "Professional responsibility and ethics",
+      "stratum": "foundational",
+      "includes": "This bundle covers acting with professional integrity: representing one's own and others' work honestly (including AI's part), respecting intellectual property and confidentiality, meeting commitments, and owning mistakes. It is shown through conduct across courses and projects, such as attribution, handling of client materials and honesty about errors.",
+      "excludes": "Knowing contract terms and licensing rules belongs in contracts-ip-licensing. Knowing AI data-handling and disclosure rules belongs in ai-literacy. Writing a team's AI-use policy belongs in quality-frameworks.",
+      "distinctions": "Unlike contracts-ip-licensing and ai-literacy, which are knowledge of rules, this bundle is the habit of acting on them with integrity. Unlike quality-frameworks, it is personal conduct, not a review system.",
+      "positiveExamples": [
+        "Credit collaborators and disclose AI's part in a portfolio piece.",
+        "Report one's own mistake on a job promptly and propose a fix.",
+        "Keep a sponsor's confidential materials out of public work."
+      ],
+      "negativeExamples": [
+        "Review a font license before a job's release (belongs in contracts-ip-licensing)",
+        "Explain how a generative AI tool can produce wrong output (belongs in ai-literacy)",
+        "Write the studio's policy on disclosing AI-generated content (belongs in quality-frameworks)"
+      ]
+    },
+    {
       "competencyId": "project-management",
       "name": "Project management across creative and production work",
       "stratum": "business",
@@ -462,7 +588,7 @@
       "name": "Proposal development, consultative communication, and the ROI case",
       "stratum": "business",
       "includes": "This bundle covers structuring, writing, and presenting client proposals for print, packaging, brand, or production solutions, using consultative communication to secure commitment and set accurate delivery expectations. It includes justifying scope, sequence, and cost in business terms and building a quantified cost/benefit, ROI, or total cost of ownership case using measures such as payback and cost per unit. The proposal explains why the purchase pays for itself rather than relying on creative appeal or the client relationship alone.",
-      "excludes": "Discovery conversations that produce a needs assessment belong in client-needs-diagnosis; production cost estimating, spend management, and capital-equipment justification belong in cost-management. Bargaining over price, scope, or terms belongs in negotiation-persuasion, while ongoing client approvals and expectation management during delivery belong in project-oversight.",
+      "excludes": "Discovery conversations that produce a needs assessment belong in client-needs-diagnosis; production cost estimating, spend management, and capital-equipment justification belong in cost-management. Bargaining over price, scope, or terms belongs in negotiation-persuasion, while ongoing client approvals and expectation management during delivery belong in project-oversight. General presentation and speaking skill belongs in spoken-communication.",
       "distinctions": "Unlike client-needs-diagnosis, which surfaces the underlying business problem, proposal-development turns a proposed solution into a client-facing case for commitment. Unlike cost-management, which develops production estimates, manages spend, or justifies equipment, this bundle uses costs and benefits to justify the client's purchase in a proposal. Unlike negotiation-persuasion, it centers on explaining and presenting the proposed scope, sequence, cost, and business return rather than bargaining over price, scope, or terms.",
       "positiveExamples": [
         "Write a packaging proposal that explains scope, delivery sequence, cost, and quantified client benefits.",
@@ -497,13 +623,13 @@
       "competencyId": "quality-frameworks",
       "name": "AI and quality governance",
       "stratum": "workflow_ai",
-      "includes": "This bundle covers building or operating a brand, legal/regulatory, or print-quality review step in a creative or production workflow that consistently catches failure modes, including those in AI-assisted output. It includes knowing the relevant evaluation standards and where each check belongs in print, packaging, or brand work. It also covers recognizing which checks require domain expertise rather than full automation and keeping a person accountable for AI-assisted output.",
-      "excludes": "Instrument-based production defect checks belong in quality-control, and color calibration and profiling belong in color-management, and packaging artwork management and versioning belong in packaging-artwork-compliance. Benchmarking AI tools for deployment decisions belongs in ai-tool-evaluation, while resolving asset licensing and contract risks belongs in contracts-ip-licensing.",
+      "includes": "This bundle covers building or operating a brand, legal/regulatory, or print-quality review step in a creative or production workflow that consistently catches failure modes, including those in AI-assisted output. It includes knowing the relevant evaluation standards and where each check belongs in print, packaging, or brand work, and writing or applying an AI-use policy for a team or job: which data may enter which tools, how AI-generated content is disclosed or labeled (including content credentials), and who signs off. It also covers recognizing which checks require domain expertise rather than full automation and keeping a person accountable for AI-assisted output.",
+      "excludes": "Instrument-based production defect checks belong in quality-control, and color calibration and profiling belong in color-management, and packaging artwork management and versioning belong in packaging-artwork-compliance. Benchmarking AI tools for deployment decisions belongs in ai-tool-evaluation, an individual's knowledge of AI data and disclosure rules belongs in ai-literacy, and setting the organization's AI direction belongs in ai-strategy-change-leadership, while resolving asset licensing and contract risks belongs in contracts-ip-licensing.",
       "distinctions": "Unlike quality-control, which emphasizes production quality systems and measured conformance, this bundle emphasizes where quality and compliance reviews belong and the domain judgment and accountability needed to operate them. Unlike packaging-artwork-compliance, it is not centered on managing and versioning packaging artwork files. Unlike ai-tool-evaluation, it checks deliverables within a workflow rather than benchmarking an AI tool to support an adopt, adjust, or drop decision.",
       "positiveExamples": [
         "Build a brand review step that consistently catches off-brand elements in creative deliverables, including AI-generated images or copy.",
         "Operate a legal/regulatory review step for print materials, using domain expertise to check issues automated review may miss.",
-        "Place a print-quality check at the appropriate workflow stage and identify who remains accountable for reviewing AI-assisted output."
+        "Write a studio's AI-use policy covering what client data may enter which tools, how AI-generated images are disclosed, and who signs off."
       ],
       "negativeExamples": [
         "Inspect a press run against production tolerances and decide whether it ships (belongs in quality-control)",
@@ -530,6 +656,24 @@
       ]
     },
     {
+      "competencyId": "resilience",
+      "name": "Resilience",
+      "stratum": "foundational",
+      "includes": "This bundle covers the habit of working through setbacks: failed attempts, critique and open-ended constraints. It is shown by revising after failure and persisting through real difficulty rather than abandoning the work or settling for less, in courses that create genuine setbacks to work through.",
+      "excludes": "Recovering a client relationship after a service failure belongs in customer-relationship-management. Choosing one's own direction belongs in agency.",
+      "distinctions": "Unlike agency, which is initiative in making choices, resilience is persistence after things go wrong. Unlike customer-relationship-management, it concerns one's own response to setbacks, not repairing a client's trust.",
+      "positiveExamples": [
+        "Rework a press setup after a failed run and reach an acceptable result.",
+        "Revise a design through several rounds of critique without abandoning the concept's strengths.",
+        "Keep a project moving after a key approach fails, finding another way to meet the brief."
+      ],
+      "negativeExamples": [
+        "Manage a client's complaint about a missed delivery to resolution (belongs in customer-relationship-management)",
+        "Choose a project direction from an open brief (belongs in agency)",
+        "Investigate why a printing defect occurs beyond what the lab required (belongs in curiosity)"
+      ]
+    },
+    {
       "competencyId": "results-interpretation",
       "name": "Results interpretation and client reporting",
       "stratum": "business",
@@ -545,6 +689,24 @@
         "Design a campaign measurement framework tied to business objectives (belongs in campaign-measurement)",
         "Build a quantified ROI case for a proposed print solution (belongs in proposal-development)",
         "Use a job-costing report to determine whether an account is profitable to retain (belongs in business-financial-literacy)"
+      ]
+    },
+    {
+      "competencyId": "spoken-communication",
+      "name": "Spoken communication",
+      "stratum": "foundational",
+      "includes": "This bundle covers presenting, explaining and listening well in speech: presentations, critiques, and client and team conversations, adjusted to the audience, with questions handled well. It is shown through graded presentations, critiques and spoken exchanges whose rubric assesses the communication itself.",
+      "excludes": "Writing belongs in written-communication. Persuading in a negotiation belongs in negotiation-persuasion, and consultative selling of a solution belongs in proposal-development. Getting a client's decision on a live project belongs in project-oversight.",
+      "distinctions": "Unlike written-communication, it is communication in speech. Unlike negotiation-persuasion and proposal-development, which are business skills that use speaking, this bundle is the general ability to speak and listen well.",
+      "positiveExamples": [
+        "Present a design solution to a class critique and respond to questions clearly.",
+        "Explain a technical production issue to a non-technical audience.",
+        "Listen to a client's concerns in a meeting and restate them accurately before responding."
+      ],
+      "negativeExamples": [
+        "Write a specification a printer can quote from (belongs in written-communication)",
+        "Negotiate a job price against a walk-away point (belongs in negotiation-persuasion)",
+        "Get a client's sign-off on a proof before production (belongs in project-oversight)"
       ]
     },
     {
@@ -570,7 +732,7 @@
       "name": "Team coordination, performance management, and people management (incl. HR)",
       "stratum": "business",
       "includes": "This bundle covers coordinating print, packaging, or creative production teams with a clear understanding of roles and responsibilities, especially when project pressure threatens communication. It includes addressing performance gaps in real time and understanding the basics of hiring, onboarding, and performance/HR policy. It also covers carrying out a hire, an onboarding plan, or a documented performance review end-to-end for a real or simulated team, recognizing that people-management decisions have consequences beyond one project.",
-      "excludes": "Planning and controlling the full project life cycle belongs in project-management; managing client sign-offs and expectations belongs in project-oversight. Selecting, briefing, and reviewing outside production vendors belongs in vendor-management.",
+      "excludes": "Planning and controlling the full project life cycle belongs in project-management; managing client sign-offs and expectations belongs in project-oversight. Selecting, briefing, and reviewing outside production vendors belongs in vendor-management. Being a good member of a team on shared work belongs in collaboration, and leading an organization's AI adoption belongs in ai-strategy-change-leadership.",
       "distinctions": "Unlike project-management, which owns scope, schedules, budgets, and project control, team-coordination focuses on production-team roles, communication under pressure, and individual performance. Unlike project-oversight, it centers internal team coordination and people management rather than client approvals and expectations. Unlike vendor-management, it addresses team members and hiring, onboarding, or performance review rather than selecting and managing outside suppliers.",
       "positiveExamples": [
         "Coordinate production-team roles and preserve communication during a high-pressure print job.",
@@ -635,6 +797,24 @@
         "Track schedule slippage and report project status across production teams (belongs in project-management)",
         "Configure a platform's intake forms, proof approvals, and reporting steps (belongs in workflow-architecture)",
         "Build an API integration that transfers job data between two systems (belongs in systems-automation-integration)"
+      ]
+    },
+    {
+      "competencyId": "written-communication",
+      "name": "Written communication",
+      "stratum": "foundational",
+      "includes": "This bundle covers writing clear, organized documents suited to their reader: briefs, reports, specifications and messages that the reader can act on without follow-up. It is shown through graded writing whose rubric assesses the writing itself, not only the content.",
+      "excludes": "Speaking, presenting and listening belong in spoken-communication. A proposal's business case and ROI argument belong in proposal-development, and client reports interpreting results belong in results-interpretation. Visual communication belongs in the technical bundles.",
+      "distinctions": "Unlike spoken-communication, it is communication in writing. Unlike proposal-development and results-interpretation, which are business skills that use writing, this bundle is the general ability to write clearly for a reader.",
+      "positiveExamples": [
+        "Write a production specification a printer can quote from without follow-up questions.",
+        "Write a project report organized so a manager can find the decision needed.",
+        "Write a client email that explains a change and what is needed from them."
+      ],
+      "negativeExamples": [
+        "Present a project to a client and answer their questions (belongs in spoken-communication)",
+        "Build the ROI case in a proposal to win a client (belongs in proposal-development)",
+        "Design a layout that communicates a brand message visually (belongs in the technical bundles)"
       ]
     }
   ]
