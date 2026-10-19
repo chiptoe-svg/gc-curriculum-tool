@@ -79,6 +79,10 @@ export interface ScoreCompetenciesInput {
     knowDescriptor: string | null;
     understandDescriptor: string | null;
     doDescriptor: string;
+    /** D-only competency: K and U must come back null. */
+    foundational: boolean;
+    /** 'derived' competencies are never scored per course; filtered out here. */
+    scoring: 'direct' | 'derived';
   }>;
   /** Optional model override (e.g. for A/B'ing the producing model); default = the function's configured tier. */
   modelOverride?: string;
@@ -94,15 +98,26 @@ export interface ScoreCompetenciesResult {
 }
 
 export async function scoreSnapshotCompetencies(input: ScoreCompetenciesInput): Promise<ScoreCompetenciesResult> {
+  // Derived competencies (e.g. problem-solving) are computed at program level,
+  // never scored per course: not sent to the model, no cell.
+  const direct = input.competencies.filter(c => c.scoring !== 'derived');
   const provider = await getProviderForFunction(
     'program-score-coverage',
     input.modelOverride ? { model: input.modelOverride, reasoningEffort: input.reasoningEffortOverride } : undefined,
   );
+  if (direct.length === 0) {
+    return {
+      result: { snapshot_id: input.snapshotId, generated_at: new Date().toISOString(), cells: [] },
+      model: provider.model,
+      costUsdCents: 0,
+    };
+  }
   const systemPrompt = await loadPrompt('program-score-coverage');
 
-  const competencyContext = input.competencies.map(c => ({
+  const competencyContext = direct.map(c => ({
     id: c.id,
     name: c.name,
+    foundational: c.foundational,
     know_descriptor: c.knowDescriptor,
     understand_descriptor: c.understandDescriptor,
     do_descriptor: c.doDescriptor,
@@ -128,18 +143,27 @@ export async function scoreSnapshotCompetencies(input: ScoreCompetenciesInput): 
     'generated_at to the current ISO timestamp.',
   ].join('\n');
 
+  const foundationalIds = new Set(direct.filter(c => c.foundational).map(c => c.id));
   const result = await provider.complete<ProgramCoverageResult>({
     systemPrompt,
     userMessage,
     schemaName: 'program_coverage_v2',
     jsonSchema: coverageJsonSchema as unknown as object,
-    validate: (raw: unknown) => coverageResultSchema.parse(raw),
+    validate: (raw: unknown) => {
+      const parsed = coverageResultSchema.parse(raw);
+      for (const cell of parsed.cells) {
+        if (foundationalIds.has(cell.competency_id) && (cell.k_depth !== null || cell.u_depth !== null)) {
+          throw new Error(`coverage: foundational competency ${cell.competency_id} must have null k_depth and u_depth`);
+        }
+      }
+      return parsed;
+    },
   });
 
   // Unknown ids dropped: a cell for a competency id that wasn't in the
   // input is never returned (replaces P0a Ruling 10's per-target member
   // filter, which no longer applies now that scoring carries no target).
-  const knownIds = new Set(input.competencies.map(c => c.id));
+  const knownIds = new Set(direct.map(c => c.id));
   const cells = result.data.cells.filter(cell => knownIds.has(cell.competency_id));
 
   return {

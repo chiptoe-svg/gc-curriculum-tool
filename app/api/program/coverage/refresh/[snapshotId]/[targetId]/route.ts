@@ -4,6 +4,7 @@ import { db } from '@/lib/db/client';
 import { asc, eq } from 'drizzle-orm';
 import { careerTargets, targetSubCompetencies } from '@/lib/db/schema';
 import { getSnapshotById } from '@/lib/db/capture-snapshots-queries';
+import { getScoringFlags, flagsFor } from '@/lib/db/scoring-flags';
 import { upsertCoverageCell } from '@/lib/db/program-coverage-queries';
 import { scoreSnapshotCompetencies } from '@/lib/ai/analyze/program-score-coverage';
 import { regenerateWikiInBackground } from '@/lib/ai/wiki/update';
@@ -40,6 +41,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   const subs = await db.select().from(targetSubCompetencies).where(eq(targetSubCompetencies.careerTargetId, targetId))
     .orderBy(asc(targetSubCompetencies.displayOrder), asc(targetSubCompetencies.id));
   const activeSubs = subs.filter(s => !s.retired);
+  const flags = await getScoringFlags(activeSubs.map(s => s.id));
 
   // Gate the paid scoring call on the daily cost cap.
   const cap = await checkDailyCap();
@@ -56,6 +58,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
         knowDescriptor: s.knowDescriptor,
         understandDescriptor: s.understandDescriptor,
         doDescriptor: s.doDescriptor,
+        ...flagsFor(flags, s.id),
       })),
     });
 

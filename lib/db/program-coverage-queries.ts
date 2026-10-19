@@ -256,7 +256,7 @@ export async function listStaleSnapshots(executor: Tx | typeof db = db): Promise
   const activeCompetencyIds = (await executor
     .select({ id: subCompetencies.id })
     .from(subCompetencies)
-    .where(eq(subCompetencies.retired, false)))
+    .where(and(eq(subCompetencies.retired, false), eq(subCompetencies.scoring, 'direct'))))
     .map(r => r.id)
     .sort();
 

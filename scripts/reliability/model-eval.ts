@@ -32,6 +32,7 @@ import { asc, eq } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { careerTargets, targetSubCompetencies } from '@/lib/db/schema';
 import { getLatestSnapshotByCourse } from '@/lib/db/capture-snapshots-queries';
+import { getScoringFlags, flagsFor } from '@/lib/db/scoring-flags';
 import { scoreSnapshotCompetencies } from '@/lib/ai/analyze/program-score-coverage';
 import { recordSpend } from '@/lib/rate-limit/daily-cap';
 import { depthBand } from '@/lib/program/depth-band';
@@ -77,7 +78,7 @@ async function main() {
     const t = targets.find(x => x.id === p.target);
     if (!t) throw new Error(`no target ${p.target}`);
     const subs = (await db.select().from(targetSubCompetencies).where(eq(targetSubCompetencies.careerTargetId, t.id)).orderBy(asc(targetSubCompetencies.displayOrder))).filter(s => !s.retired);
-    pairs.push({ key: `${p.course} × ${t.name}`, snap, t, subs, haystack: norm(JSON.stringify(snap.profile)) });
+    pairs.push({ key: `${p.course} × ${t.name}`, snap, t, subs, flags: await getScoringFlags(subs.map(x => x.id)), haystack: norm(JSON.stringify(snap.profile)) });
   }
   console.log(`pairs: ${pairs.map(p => p.key).join(' | ')}\nsetups: ${SETUPS.map(s => s.label).join(' | ')}\nruns: ${N_RUNS}`);
 
@@ -90,7 +91,7 @@ async function main() {
         try {
           const result = await scoreSnapshotCompetencies({
             snapshotId: p.snap.id, courseCode: p.snap.courseCode, snapshotProfile: p.snap.profile,
-            competencies: p.subs.map(x => ({ id: x.id, name: x.name, knowDescriptor: x.knowDescriptor, understandDescriptor: x.understandDescriptor, doDescriptor: x.doDescriptor })),
+            competencies: p.subs.map(x => ({ id: x.id, name: x.name, knowDescriptor: x.knowDescriptor, understandDescriptor: x.understandDescriptor, doDescriptor: x.doDescriptor, ...flagsFor(p.flags, x.id) })),
             modelOverride: s.model,
             reasoningEffortOverride: s.effort,
           });

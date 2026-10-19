@@ -66,6 +66,8 @@ export async function POST(req: Request): Promise<Response> {
         knowDescriptor: c.knowDescriptor,
         understandDescriptor: c.understandDescriptor,
         doDescriptor: c.doDescriptor,
+        foundational: c.foundational,
+        scoring: c.scoring,
       }));
     if (competencies.length === 0) {
       results.push({ snapshotId: snapToScore.snapshotId, courseCode: snapToScore.courseCode, status: 'failed', errorReason: 'no competencies to score' });
