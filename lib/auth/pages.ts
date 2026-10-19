@@ -22,3 +22,19 @@ export function forbiddenPage(label: string, code?: string): string {
     `<p>The access link <strong>${esc(label)}</strong> ${code ? `is not allowed to edit <strong>${esc(code)}</strong>` : 'is not allowed to make this change'}; it ${what} only.</p>` +
     `<p>Ask the department for a wider link if you need it. <a href="/">Back to the course list</a>.</p>`);
 }
+export type DeadLinkReason = 'revoked' | 'expired' | 'unknown';
+const DEAD_LINK_WHY: Record<DeadLinkReason, string> = {
+  revoked: 'This sign-in link has been turned off. Usually that means a newer link was sent to you — check your email for the most recent one.',
+  expired: 'This sign-in link has expired.',
+  unknown: 'This sign-in link wasn’t recognized. It may have been copied incompletely — try opening it straight from the email.',
+};
+/** Shown instead of the browser's password box when a personal ?key= link no
+ * longer authorizes (revoked / expired / unrecognized). Deliberately shows
+ * nothing about the grant itself. `continueUrl` (relative, `key` removed) is
+ * given only when the department login is on; null omits the link. */
+export function deadLinkPage(reason: DeadLinkReason, contact: string, continueUrl: string | null): string {
+  return page('This link is no longer active',
+    `<p>${esc(DEAD_LINK_WHY[reason])}</p>` +
+    `<p>For a new link, contact ${esc(contact)}.</p>` +
+    (continueUrl ? `<p>Have the department login? <a href="${esc(continueUrl)}">Sign in</a></p>` : ''));
+}
