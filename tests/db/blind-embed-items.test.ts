@@ -37,6 +37,18 @@ describe.skipIf(!RUN)('embed-items embeds O*NET elements (scratch DB only)', () 
     });
   });
 
+  it('an embed/insert failure on --apply exits 3 with a message naming migration 0061', async () => {
+    await inRolledBackTx(async (tx) => {
+      const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+      const code = await main(['--apply', '--expect-db', SCRATCH_DB], { executor: tx, embed: async () => { throw new Error('boom'); } });
+      const msg = err.mock.calls.map(c => c.join(' ')).join('\n');
+      err.mockRestore(); log.mockRestore();
+      expect(code).toBe(3);
+      expect(msg).toMatch(/is migration 0061 applied\?/);
+    });
+  });
+
   it('apply embeds the missing elements with "name: description", then a rerun embeds nothing new', async () => {
     await inRolledBackTx(async (tx) => {
       const defs = await tx.select().from(onetElementDefinitions).where(eq(onetElementDefinitions.release, '31.0'));

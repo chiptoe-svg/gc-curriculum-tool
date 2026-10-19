@@ -2,6 +2,7 @@
 -- One transaction. Not re-runnable: a second run stops at "rollback: 0061 is not applied".
 -- onet_element rows are a free cache (re-created by scripts/catalog/embed-items.ts),
 -- so this file DELETES them before restoring the old check.
+-- It also drops bundle_golden_samples.shown_items (what each blind reviewer was shown); that record is lost.
 -- App-code order: revert the app to its pre-0061 build FIRST (the new embed-items
 -- and blind list read/write kind 'onet_element'), then run this file.
 BEGIN;
@@ -20,5 +21,7 @@ DELETE FROM item_embeddings WHERE kind = 'onet_element';
 ALTER TABLE item_embeddings DROP CONSTRAINT item_embeddings_kind_check;
 ALTER TABLE item_embeddings ADD CONSTRAINT item_embeddings_kind_check
   CHECK (kind IN ('bundle_card', 'onet_task', 'course_skill', 'esco_skill'));
+
+ALTER TABLE bundle_golden_samples DROP COLUMN shown_items;
 
 COMMIT;

@@ -79,6 +79,27 @@ describe.skipIf(!isCaScratchDb())('migration 0061 on the CA scratch clone, each 
     });
   });
 
+  it('adds a nullable jsonb shown_items column to bundle_golden_samples; rollback drops it', async () => {
+    const col = `SELECT data_type, is_nullable FROM information_schema.columns WHERE table_name = 'bundle_golden_samples' AND column_name = 'shown_items'`;
+    await withTx(async (c) => {
+      expect((await c.query(col)).rows).toEqual([]);
+      await c.query(MIGRATION_BODY!);
+      expect((await c.query(col)).rows).toEqual([{ data_type: 'jsonb', is_nullable: 'YES' }]);
+      await c.query(ROLLBACK_BODY!);
+      expect((await c.query(col)).rows).toEqual([]);
+    });
+  });
+
+  it('verify fails if the shown_items column is missing', async () => {
+    await withTx(async (c) => {
+      await c.query(MIGRATION_BODY!);
+      await c.query('ALTER TABLE bundle_golden_samples DROP COLUMN shown_items');
+      await c.query('SAVEPOINT v');
+      await expect(c.query(VERIFY_BODY!)).rejects.toThrow(/shown_items/);
+      await c.query('ROLLBACK TO SAVEPOINT v');
+    });
+  });
+
   it('migration body then verify body completes without error', async () => {
     await withTx(async (c) => {
       await c.query(MIGRATION_BODY!);

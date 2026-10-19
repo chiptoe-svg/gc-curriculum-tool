@@ -8,6 +8,9 @@ SELECT 'item_embeddings_kind_check allows onet_element (expect t)' AS item, (EXI
   SELECT 1 FROM pg_constraint WHERE conname = 'item_embeddings_kind_check'
     AND conrelid = 'public.item_embeddings'::regclass
     AND pg_get_constraintdef(oid) LIKE '%onet_element%'))::text AS value
+UNION ALL SELECT 'bundle_golden_samples.shown_items is nullable jsonb (expect t)', (EXISTS (
+  SELECT 1 FROM information_schema.columns WHERE table_name = 'bundle_golden_samples'
+    AND column_name = 'shown_items' AND data_type = 'jsonb' AND is_nullable = 'YES'))::text
 UNION ALL SELECT 'item_embeddings rows by kind: onet_element (0 right after apply, 161 after embed-items --apply)', count(*)::text
   FROM item_embeddings WHERE kind = 'onet_element'
 UNION ALL SELECT 'item_embeddings rows of every other kind (unchanged by 0061)', count(*)::text
@@ -26,6 +29,10 @@ BEGIN
       RAISE EXCEPTION '0061 verify: item_embeddings_kind_check does not allow %', k;
     END IF;
   END LOOP;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'bundle_golden_samples'
+                 AND column_name = 'shown_items' AND data_type = 'jsonb' AND is_nullable = 'YES') THEN
+    RAISE EXCEPTION '0061 verify: bundle_golden_samples.shown_items (nullable jsonb) is missing';
+  END IF;
   RAISE NOTICE '0061 verify: all checks passed';
 END $$;
 

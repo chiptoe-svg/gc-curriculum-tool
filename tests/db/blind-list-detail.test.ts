@@ -9,13 +9,15 @@ import { sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import {
   subCompetencies, subCompetencyMap, bundleCards, bundleMembers, bundleGoldenSamples, bundleMappingRuns,
-  itemEmbeddings, type GoldenCandidate,
+  itemEmbeddings, bundleMappingOutcomes, bundleGoldenSamples as samples, type GoldenCandidate,
 } from '@/lib/db/schema';
-import { readBundleDetail, readElementDefinitions, ELEMENT_SHORTLIST_UNAVAILABLE, type Executor } from '@/lib/db/bundle-queries';
+import { readBundleDetail, readElementDefinitions, submitBlindPicks, readAgreementInputs, ELEMENT_SHORTLIST_UNAVAILABLE, type Executor } from '@/lib/db/bundle-queries';
 import { cardEmbedText } from '@/lib/catalog/bundles';
 import { elementEmbedText } from '@/lib/catalog/blind-list';
 import { DEFAULT_EMBEDDING_MODEL } from '@/lib/ai/embeddings';
 import { textHash } from '@/lib/catalog/bundles';
+import { computeAgreement, itemKey } from '@/lib/catalog/agreement';
+import { eq } from 'drizzle-orm';
 import { isP2ScratchDb } from './p2/scratch-guard';
 
 const RUN = isP2ScratchDb();
@@ -150,6 +152,40 @@ describe.skipIf(!RUN)('readBundleDetail blind list (scratch DB only)', () => {
       expect(after.members).toBeNull();
       expect(after.blind).toEqual(before.blind);
       expect(JSON.stringify(after.blind)).not.toContain('SECRET-BLIND-LIST');
+    });
+  });
+
+  it('submit records what was shown; agreement leaves an AI element outside the shown 20 out of precision and counts it', async () => {
+    await inRolledBackTx(async (tx) => {
+      const c = cands(30);
+      await seed(tx, c);
+      const ids = await seedElements(tx, 25);
+      await seedTaskVectors(tx, c, i => (i === 0 ? vecAt(0) : i === 3 ? vecAt(10) : axis(i)));
+      const [run] = await tx.insert(bundleMappingRuns).values({ model: 'm', promptVersion: 'v', taskShortlistK: 25, bundleCount: 1 }).returning({ id: bundleMappingRuns.id });
+      await tx.insert(bundleMappingOutcomes).values({ runId: run!.id, bundleId: B, status: 'ok', noCleanMatch: false, note: null });
+      const inList = ids[0]!; const outside = ids[100]!;
+      await tx.insert(bundleMembers).values([inList, outside].map(id => ({
+        bundleId: B, source: 'onet_element' as const, externalId: id, externalLabel: id, onetSocCode: null, release: REL,
+        position: 'core' as const, aiPosition: 'core' as const, status: 'proposed' as const, proposedBy: 'm', rationale: 'r', runId: run!.id,
+      })));
+      // Pick element 0 and the merged row 0 (keys 0 and 3).
+      const res = await submitBlindPicks(tx, B, 'R', [
+        { kind: 'element', elementId: inList, position: 'core' },
+        { kind: 'task', groupKey: c[0]!.key, position: 'core' },
+        { kind: 'task', groupKey: c[3]!.key, position: 'core' },
+      ], false, REL);
+      expect(res.ok).toBe(true);
+      const [s] = await tx.select().from(samples).where(eq(samples.bundleId, B));
+      expect(s!.shownItems!.elementIds).toEqual(ids.slice(0, 20));
+      expect(s!.shownItems!.taskRows[c[0]!.key]).toEqual([c[0]!.key, c[3]!.key]);
+      expect(Object.keys(s!.shownItems!.taskRows)).toHaveLength(24);
+
+      const { inputs } = await readAgreementInputs(tx);
+      const input = inputs.find(i => i.bundleId === B)!;
+      expect(input.mergedItems).toBe(1);
+      const row = computeAgreement(input);
+      expect(row).toMatchObject({ aiCount: 1, aiOutsideList: 1, both: 1, precision: 1, noShownRecord: false });
+      expect(input.ai.has(itemKey('onet_element', outside))).toBe(true);
     });
   });
 });

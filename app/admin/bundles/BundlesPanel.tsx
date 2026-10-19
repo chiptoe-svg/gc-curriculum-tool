@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { rowGroupKeys } from '@/lib/catalog/blind-list';
 
 // P2 bundle review (spec 2026-10-13-bundle-membership-p2-design.md §5, task-12).
 // Admin /api second factor goes in the body/query, NOT an Authorization
@@ -48,7 +49,7 @@ export interface BundleDetail {
   attribution?: string;
 }
 
-interface AgreementRow { bundleId: string; aiCount: number; blindCount: number; both: number; precision: number | null; recall: number | null; exact: number }
+interface AgreementRow { bundleId: string; aiCount: number; blindCount: number; both: number; precision: number | null; recall: number | null; exact: number; aiOutsideList: number; mergedItems: number; noShownRecord: boolean }
 interface AgreementResponse {
   rows: AgreementRow[];
   total: AgreementRow;
@@ -306,7 +307,7 @@ function BlindPickForm({
       for (const row of taskRows) {
         const v = picks[`task:${row.key}`];
         // A pick on a merged row is recorded for every task in it.
-        if (v && v !== 'none') for (const groupKey of [row.key, ...row.similar.map((x) => x.key)]) body.picks.push({ kind: 'task', groupKey, position: v });
+        if (v && v !== 'none') for (const groupKey of rowGroupKeys(row)) body.picks.push({ kind: 'task', groupKey, position: v });
       }
     }
     setSubmitting(true);
@@ -818,7 +819,7 @@ function AgreementPanel({ agreement, error }: { agreement: AgreementResponse | n
     <div className="space-y-2 rounded border border-slate-200 p-3">
       <h4 className="text-sm font-medium text-slate-700">Agreement (blind sample)</h4>
       <p className="text-xs text-slate-500">Eight bundles makes percentages rough — read the counts first.</p>
-      <p className="text-xs text-slate-500">Core + related only: the AI&apos;s fringe placements are left out, and the reviewer was not offered fringe. Shortlist recall is not measured — the blind list is the AI&apos;s own shortlist.</p>
+      <p className="text-xs text-slate-500">Core + related only: the AI&apos;s fringe placements are left out, and the reviewer was not offered fringe. AI elements outside the 20 the reviewer was shown are left out of precision and counted separately. Shortlist recall is not measured — the blind list is the AI&apos;s own shortlist.</p>
       <p className="text-xs text-slate-500">Nothing is auto-confirmed in P2 regardless of these figures.</p>
       {error && <p className="text-sm text-red-800">{error}</p>}
       {agreement && (
@@ -827,7 +828,7 @@ function AgreementPanel({ agreement, error }: { agreement: AgreementResponse | n
             <thead className="text-left uppercase text-slate-500">
               <tr>
                 <th className="py-1">Bundle</th><th>AI</th><th>Blind</th><th>Both</th><th>Precision</th>
-                <th>Recall</th><th>Same position</th>
+                <th>Recall</th><th>Same position</th><th>Same pos. of both</th><th>AI outside list</th><th>Merged-row items</th>
               </tr>
             </thead>
             <tbody>
@@ -837,6 +838,8 @@ function AgreementPanel({ agreement, error }: { agreement: AgreementResponse | n
                   <td>{r.precision === null ? '—' : r.precision.toFixed(2)}</td>
                   <td>{r.recall === null ? '—' : r.recall.toFixed(2)}</td>
                   <td>{r.exact}</td>
+                  <td>{r.both === 0 ? '—' : `${((r.exact / r.both) * 100).toFixed(1)}%`}</td>
+                  <td>{r.aiOutsideList}</td><td>{r.mergedItems}</td>
                 </tr>
               ))}
             </tbody>

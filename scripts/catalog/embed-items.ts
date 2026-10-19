@@ -164,7 +164,13 @@ export async function main(argv: string[], deps: CliDeps = {}): Promise<number> 
     const embed = deps.embedMissing ?? embedMissing;
     console.log(`mode: APPLY  expect-db: ${args.expectDb}  release: ${args.release}`);
     console.log(`items: ${byKind.bundle_card} bundle_card, ${byKind.onet_task} onet_task, ${byKind.onet_element} onet_element`);
-    const result = await embed(executor, items, DEFAULT_EMBEDDING_MODEL, embedFn);
+    let result: { cached: number; embedded: number };
+    try {
+      result = await embed(executor, items, DEFAULT_EMBEDDING_MODEL, embedFn);
+    } catch (err) {
+      console.error(`embed step failed — is migration 0061 applied? (item_embeddings.kind must allow onet_element): ${formatDbError(err)}`);
+      return 3;
+    }
     console.log(`cached: ${result.cached}  embedded: ${result.embedded}`);
     return 0;
   }

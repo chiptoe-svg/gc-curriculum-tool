@@ -15,8 +15,22 @@ export type Pos = 'core' | 'related' | 'fringe';
  * excluded (precision denominator included); position agreement is an exact
  * core-vs-related match on items both sides placed.
  */
-export interface AgreementInput { bundleId: string; ai: Map<string, Pos>; blind: Map<string, Pos> }
-export interface AgreementRow { bundleId: string; aiCount: number; blindCount: number; both: number; precision: number | null; recall: number | null; exact: number }
+export interface AgreementInput {
+  bundleId: string; ai: Map<string, Pos>; blind: Map<string, Pos>;
+  /** Element item keys the reviewer was shown; null = no record (older submission), nothing is excluded. */
+  shownElements?: Set<string> | null;
+  /** Reviewer task picks that came from the non-first tasks of merged rows. */
+  mergedItems?: number;
+}
+export interface AgreementRow {
+  bundleId: string; aiCount: number; blindCount: number; both: number; precision: number | null; recall: number | null; exact: number;
+  /** AI core/related elements outside the reviewer's shown list: left out of precision, counted here. */
+  aiOutsideList: number;
+  /** Reviewer items from merged rows (the extra tasks a single pick stood for). */
+  mergedItems: number;
+  /** True when there was no shown-items record, so AI elements were not excluded. */
+  noShownRecord: boolean;
+}
 
 export function itemKey(source: 'onet_element' | 'onet_task', externalIdOrLabel: string): string {
   return source === 'onet_element' ? `element:${externalIdOrLabel}` : `task:${taskGroupKey(externalIdOrLabel)}`;
@@ -29,7 +43,14 @@ function coreRelated(m: Map<string, Pos>): Map<string, 'core' | 'related'> {
 }
 
 export function computeAgreement(input: AgreementInput): AgreementRow {
+  const shown = input.shownElements ?? null;
   const ai = coreRelated(input.ai);
+  let aiOutsideList = 0;
+  if (shown !== null) {
+    for (const k of [...ai.keys()]) {
+      if (k.startsWith('element:') && !shown.has(k)) { ai.delete(k); aiOutsideList++; }
+    }
+  }
   const blind = coreRelated(input.blind);
   let both = 0, exact = 0;
   for (const [key, bp] of blind) {
@@ -42,7 +63,7 @@ export function computeAgreement(input: AgreementInput): AgreementRow {
     bundleId: input.bundleId, aiCount: ai.size, blindCount: blind.size, both,
     precision: ai.size === 0 ? null : both / ai.size,
     recall: blind.size === 0 ? null : both / blind.size,
-    exact,
+    exact, aiOutsideList, mergedItems: input.mergedItems ?? 0, noShownRecord: shown === null,
   };
 }
 
@@ -50,11 +71,12 @@ export function computeAgreement(input: AgreementInput): AgreementRow {
 export function sumAgreement(rows: AgreementRow[]): AgreementRow {
   const s = rows.reduce((a, r) => ({
     aiCount: a.aiCount + r.aiCount, blindCount: a.blindCount + r.blindCount, both: a.both + r.both, exact: a.exact + r.exact,
-  }), { aiCount: 0, blindCount: 0, both: 0, exact: 0 });
+    out: a.out + r.aiOutsideList, merged: a.merged + r.mergedItems, noRec: a.noRec || r.noShownRecord,
+  }), { aiCount: 0, blindCount: 0, both: 0, exact: 0, out: 0, merged: 0, noRec: false });
   return {
     bundleId: 'ALL', aiCount: s.aiCount, blindCount: s.blindCount, both: s.both,
     precision: s.aiCount === 0 ? null : s.both / s.aiCount, recall: s.blindCount === 0 ? null : s.both / s.blindCount,
-    exact: s.exact,
+    exact: s.exact, aiOutsideList: s.out, mergedItems: s.merged, noShownRecord: s.noRec,
   };
 }
 

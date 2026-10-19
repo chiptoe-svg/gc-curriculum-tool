@@ -3,7 +3,7 @@ import { hasJsonContentType } from '@/lib/http/require-json';
 import { db } from '@/lib/db/client';
 import { submitBlindPicks, validateReviewer, type BlindPickInput } from '@/lib/db/bundle-queries';
 import type { Pos } from '@/lib/catalog/agreement';
-import { ID_RE, ONET_RELEASE, POSITIONS, jsonError, jsonOk, readBody, bodySlug } from '../../_shared';
+import { ID_RE, ONET_RELEASE, jsonError, jsonOk, readBody, bodySlug } from '../../_shared';
 
 // P2 bundle review (spec 2026-10-13-bundle-membership-p2-design.md §5).
 // Auth: the middleware grant gate (admin kind for /api/admin/**) is primary;
@@ -16,6 +16,8 @@ import { ID_RE, ONET_RELEASE, POSITIONS, jsonError, jsonOk, readBody, bodySlug }
 // the AI's placements.
 export const dynamic = 'force-dynamic';
 const ELEMENT_ID_RE = /^[0-9A-Za-z.-]{1,40}$/;
+// The blind check offers core / related / unmarked only (decision 2026-10-19); fringe is a queue-only position.
+const BLIND_POSITIONS = new Set(['core', 'related']);
 const GROUP_KEY_RE = /^[0-9a-f]{16}$/;
 
 function parsePicks(v: unknown): BlindPickInput[] | null {
@@ -24,7 +26,7 @@ function parsePicks(v: unknown): BlindPickInput[] | null {
   for (const raw of v) {
     if (raw === null || typeof raw !== 'object') return null;
     const p = raw as Record<string, unknown>;
-    if (!POSITIONS.has(String(p.position))) return null;
+    if (!BLIND_POSITIONS.has(String(p.position))) return null;
     const position = p.position as Pos;
     if (p.kind === 'element' && typeof p.elementId === 'string' && ELEMENT_ID_RE.test(p.elementId)) out.push({ kind: 'element', elementId: p.elementId, position });
     else if (p.kind === 'task' && typeof p.groupKey === 'string' && GROUP_KEY_RE.test(p.groupKey)) out.push({ kind: 'task', groupKey: p.groupKey, position });

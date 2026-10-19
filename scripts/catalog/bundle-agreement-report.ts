@@ -32,7 +32,10 @@ const pct = (x: number | null): string => (x === null ? 'n/a' : `${(x * 100).toF
 function rowLines(r: AgreementRow): string[] {
   return [
     `${r.bundleId}`,
-    `  AI placed ${r.aiCount} (core + related; fringe excluded), reviewer placed ${r.blindCount}, both ${r.both}, same position ${r.exact}`,
+    `  AI placed ${r.aiCount} (core + related; fringe excluded), reviewer placed ${r.blindCount}, both ${r.both}, same position ${r.exact} (${pct(r.both === 0 ? null : r.exact / r.both)} of both)`,
+    `  AI elements outside the blind list: ${r.aiOutsideList}`,
+    `  reviewer items from merged rows: ${r.mergedItems}`,
+    ...(r.noShownRecord ? ['  note: no shown-items record (older submission) — AI elements were not excluded from precision'] : []),
     `  precision ${pct(r.precision)}, recall ${pct(r.recall)}`,
   ];
 }

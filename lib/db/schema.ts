@@ -210,6 +210,9 @@ export type BundlePosition = 'core' | 'related' | 'fringe';
 export type BundleMemberStatus = 'proposed' | 'confirmed' | 'rejected';
 export type BundleMemberSource = 'onet_element' | 'onet_task' | 'course_skill' | 'esco_skill';
 
+/** What the blind reviewer was shown, saved at submit (migration 0061): element ids and the task-row map (row key -> that row's group keys). */
+export interface ShownItems { elementIds: string[]; taskRows: Record<string, string[]> }
+
 export interface GoldenCandidate {
   key: string;            // taskGroupKey (Ruling 5)
   label: string;          // task text
@@ -341,6 +344,7 @@ export const bundleGoldenSamples = pgTable('bundle_golden_samples', {
   reviewer: text('reviewer'),
   submittedAt: timestamp('submitted_at', { withTimezone: true }),
   resetNote: text('reset_note'),
+  shownItems: jsonb('shown_items').$type<ShownItems>(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [
   primaryKey({ name: 'bundle_golden_samples_pkey', columns: [t.bundleId] }),

@@ -216,6 +216,9 @@ describe('POST action shapes', () => {
       { picks: [{ kind: 'task', groupKey: 'nothex', position: 'core' }], noCleanMatch: false },
       { picks: [{ kind: 'other', position: 'core' }], noCleanMatch: false },
       { picks: [null], noCleanMatch: false },
+      // The blind check offers core / related / unmarked only (decision 2026-10-19).
+      { picks: [{ kind: 'element', elementId: '2.B.5.a', position: 'fringe' }], noCleanMatch: false },
+      { picks: [{ kind: 'task', groupKey: KEY, position: 'fringe' }], noCleanMatch: false },
     ]) expect(await bad(blindPOST, 'blind', body)).toBe(400);
     expect(q.submitBlindPicks).not.toHaveBeenCalled();
     expect(await bad(blindPOST, 'blind', { picks: [{ kind: 'task', groupKey: KEY, position: 'core' }], noCleanMatch: false })).toBe(200);

@@ -4,7 +4,7 @@ import {
   subCompetencies, bundleCards, itemEmbeddings, onetTaskStatements, bundleGoldenSamples,
   bundleGoldenPicks, bundleMembers, bundleMappingOutcomes, bundleMappingRuns, onetElementDefinitions,
 } from '@/lib/db/schema';
-import type { BundleStratum, GoldenCandidate } from '@/lib/db/schema';
+import type { BundleStratum, GoldenCandidate, ShownItems } from '@/lib/db/schema';
 import type { Tx } from '@/lib/db/competency-catalog-queries';
 import type { BundleSummary, CardFields, ReviewCard } from '@/lib/catalog/bundles';
 import { textHash } from '@/lib/catalog/bundles';
@@ -13,7 +13,7 @@ import { itemKey, type AgreementInput, type Pos } from '@/lib/catalog/agreement'
 import type { ElementDef, MemberRow } from '@/lib/ai/catalog/map-bundle-onet';
 import { DEFAULT_EMBEDDING_MODEL } from '@/lib/ai/embeddings';
 import { cardEmbedText } from '@/lib/catalog/bundles';
-import { BLIND_ELEMENT_K, BLIND_TASK_K, elementEmbedText, mergeNearDuplicates, rankElements, type BlindTaskRow } from '@/lib/catalog/blind-list';
+import { BLIND_ELEMENT_K, BLIND_TASK_K, elementEmbedText, mergeNearDuplicates, rankElements, rowGroupKeys, type BlindTaskRow } from '@/lib/catalog/blind-list';
 
 export type Executor = Tx | typeof db;
 
@@ -259,7 +259,23 @@ export async function readAgreementInputs(ex: Executor = db): Promise<{
     const picks = await ex.select().from(bundleGoldenPicks).where(eq(bundleGoldenPicks.bundleId, s.bundleId));
     const own = blindKeys(picks.filter(p => p.reviewer === s.reviewer), s.candidates, s.bundleId);
     if (!latest.has(s.bundleId)) notYetMapped.push(s.bundleId);
-    else inputs.push({ bundleId: s.bundleId, ai, blind: own });
+    else {
+      const shown = s.shownItems;
+      // Reviewer task picks standing for the NON-first tasks of merged rows (the weight a single pick carried).
+      const extraKeys = new Set<string>();
+      if (shown) {
+        const label = new Map(s.candidates.map(c => [c.key, c.label]));
+        for (const keys of Object.values(shown.taskRows)) for (const k of keys.slice(1)) {
+          const l = label.get(k);
+          if (l !== undefined) extraKeys.add(itemKey('onet_task', l));
+        }
+      }
+      inputs.push({
+        bundleId: s.bundleId, ai, blind: own,
+        shownElements: shown ? new Set(shown.elementIds.map(id => itemKey('onet_element', id))) : null,
+        mergedItems: [...own.keys()].filter(k => extraKeys.has(k)).length,
+      });
+    }
 
     const reviewers = [...new Set(picks.map(p => p.reviewer))].sort((x, y) => (x < y ? -1 : x > y ? 1 : 0));
     if (reviewers.length >= 2) {
@@ -615,9 +631,26 @@ export async function submitBlindPicks(
   }
   if (noCleanMatch) rows.push({ bundleId, reviewer, noCleanMatch: true });
 
+  // Record what the reviewer was shown (server-derived, same function the detail route uses), so agreement can leave
+  // AI elements outside the shown list out of precision. Elements without a card vector fall back to "all shown".
+  const [bundleRow] = await ex.select({
+    id: subCompetencies.id, name: subCompetencies.name, knowDescriptor: subCompetencies.knowDescriptor,
+    understandDescriptor: subCompetencies.understandDescriptor, doDescriptor: subCompetencies.doDescriptor, origin: subCompetencies.origin,
+  }).from(subCompetencies).where(eq(subCompetencies.id, bundleId));
+  const [cardRow] = await ex.select().from(bundleCards).where(and(eq(bundleCards.competencyId, bundleId), eq(bundleCards.status, 'confirmed')));
+  const cardFields: CardFields | null = cardRow ? {
+    stratum: cardRow.stratum, includes: cardRow.includes, excludes: cardRow.excludes, distinctions: cardRow.distinctions,
+    positiveExamples: cardRow.positiveExamples, negativeExamples: cardRow.negativeExamples,
+  } : null;
+  const blind = bundleRow ? await buildBlindList(ex, bundleRow, cardFields, await readElementDefinitions(release, ex), sample.candidates) : null;
+  const shownItems: ShownItems | null = blind ? {
+    elementIds: blind.elements.map(e => e.elementId),
+    taskRows: Object.fromEntries(blind.taskRows.map(r => [r.key, rowGroupKeys(r)])),
+  } : null;
+
   await ex.delete(bundleGoldenPicks).where(and(eq(bundleGoldenPicks.bundleId, bundleId), eq(bundleGoldenPicks.reviewer, reviewer)));
   await ex.insert(bundleGoldenPicks).values(rows);
-  await ex.update(bundleGoldenSamples).set({ reviewer, submittedAt: sql`now()` as unknown as Date }).where(eq(bundleGoldenSamples.bundleId, bundleId));
+  await ex.update(bundleGoldenSamples).set({ reviewer, submittedAt: sql`now()` as unknown as Date, shownItems }).where(eq(bundleGoldenSamples.bundleId, bundleId));
   const reconcile = await reconcileBundle(ex, bundleId);
   return { ok: true, reconcile };
 }
@@ -737,7 +770,7 @@ export async function resetBlind(ex: Executor, bundleId: string, reviewer: strin
   await ex.delete(bundleGoldenPicks).where(eq(bundleGoldenPicks.bundleId, bundleId));
   const entry = `${new Date().toISOString()} ${reviewer}: ${n}`;
   await ex.update(bundleGoldenSamples)
-    .set({ submittedAt: null, resetNote: sql`coalesce(${bundleGoldenSamples.resetNote} || E'\n', '') || ${entry}` })
+    .set({ submittedAt: null, shownItems: null, resetNote: sql`coalesce(${bundleGoldenSamples.resetNote} || E'\n', '') || ${entry}` })
     .where(eq(bundleGoldenSamples.bundleId, bundleId));
   return { ok: true };
 }

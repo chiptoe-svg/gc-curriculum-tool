@@ -27,6 +27,7 @@ describe('computeAgreement — core + related only (decision 2026-10-19), hand-w
   it('excludes AI fringe from precision; position agreement is exact core-vs-related on shared items', () => {
     expect(computeAgreement(input)).toEqual({
       bundleId: 'b1', aiCount: 3, blindCount: 4, both: 2, precision: 2 / 3, recall: 2 / 4, exact: 1,
+      aiOutsideList: 0, mergedItems: 0, noShownRecord: true,
     });
   });
 
@@ -50,12 +51,42 @@ describe('computeAgreement — core + related only (decision 2026-10-19), hand-w
   });
 });
 
+describe('computeAgreement — AI elements outside the blind list (fix round 1)', () => {
+  // The reviewer saw elements {e1, e2} only. AI core/related: e1 core, e2 related, e9 core (never shown), t1 core.
+  // e9 is excluded from precision and counted separately: aiCount 3, outside 1.
+  const input = {
+    bundleId: 'b1',
+    ai: m([['element:e1', 'core'], ['element:e2', 'related'], ['element:e9', 'core'], ['task:t1', 'core'], ['element:e8', 'fringe']]),
+    blind: m([['element:e1', 'core'], ['element:e2', 'core'], ['task:t1', 'core']]),
+    shownElements: new Set(['element:e1', 'element:e2']),
+    mergedItems: 2,
+  };
+  it('excludes them from precision and counts them separately', () => {
+    expect(computeAgreement(input)).toEqual({
+      bundleId: 'b1', aiCount: 3, blindCount: 3, both: 3, precision: 1, recall: 1, exact: 2,
+      aiOutsideList: 1, mergedItems: 2, noShownRecord: false,
+    });
+  });
+  it('an AI fringe element outside the list is not counted at all', () => {
+    expect(computeAgreement(input).aiOutsideList).toBe(1);
+  });
+  it('without a shown-items record (older submission) nothing is excluded and the row says so', () => {
+    const r = computeAgreement({ ...input, shownElements: null });
+    expect(r).toMatchObject({ aiCount: 4, aiOutsideList: 0, noShownRecord: true, precision: 3 / 4 });
+  });
+  it('sumAgreement sums the new counts and ORs the missing-record flag', () => {
+    const a = computeAgreement(input);
+    const b = computeAgreement({ ...input, shownElements: null });
+    expect(sumAgreement([a, b])).toMatchObject({ aiOutsideList: 1, mergedItems: 4, noShownRecord: true });
+  });
+});
+
 describe('sumAgreement', () => {
   it('recomputes ratios from summed counts, never averages ratios', () => {
-    const a: AgreementRow = { bundleId: 'a', aiCount: 1, blindCount: 1, both: 1, precision: 1, recall: 1, exact: 1 };
-    const b: AgreementRow = { bundleId: 'b', aiCount: 9, blindCount: 3, both: 0, precision: 0, recall: 0, exact: 0 };
+    const a: AgreementRow = { bundleId: 'a', aiCount: 1, blindCount: 1, both: 1, precision: 1, recall: 1, exact: 1, aiOutsideList: 0, mergedItems: 0, noShownRecord: false };
+    const b: AgreementRow = { bundleId: 'b', aiCount: 9, blindCount: 3, both: 0, precision: 0, recall: 0, exact: 0, aiOutsideList: 0, mergedItems: 0, noShownRecord: false };
     const s = sumAgreement([a, b]);
-    expect(s).toEqual({ bundleId: 'ALL', aiCount: 10, blindCount: 4, both: 1, precision: 0.1, recall: 0.25, exact: 1 });
+    expect(s).toEqual({ bundleId: 'ALL', aiCount: 10, blindCount: 4, both: 1, precision: 0.1, recall: 0.25, exact: 1, aiOutsideList: 0, mergedItems: 0, noShownRecord: false });
     expect(s.precision).not.toBe(0.5);
   });
 
@@ -99,7 +130,10 @@ describe('formatReport', () => {
     const out = formatReport({ rows: [row], kappas: [], noMatch: [{ bundleId: 'b9', note: 'nothing fits' }], notYetMapped: [] });
     expect(out).not.toContain('not yet mapped');
     expect(out).toContain('Bundle agreement report — blind sample (n = 1 bundles; percentages are rough at this size)');
-    expect(out).toContain('AI placed 3 (core + related; fringe excluded), reviewer placed 4, both 2, same position 1');
+    expect(out).toContain('AI placed 3 (core + related; fringe excluded), reviewer placed 4, both 2, same position 1 (50.0% of both)');
+    expect(out).toContain('AI elements outside the blind list: 0');
+    expect(out).toContain('reviewer items from merged rows: 0');
+    expect(out).toContain('no shown-items record');
     expect(out).toContain('precision 66.7%, recall 50.0%');
     expect(out).toContain('ALL');
     expect(out).toContain("Cohen's κ: needs a second blind reviewer");
