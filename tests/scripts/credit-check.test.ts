@@ -60,7 +60,7 @@ describe('issue text', () => {
 describe('blind monitor', () => {
   const now = '2026-10-19T12:00:00.000Z';
   it('streak counts consecutive unknowns and resets on a verdict', () => {
-    let st = lib.nextStatus(null, 'unknown', 'e', now);
+    let st = lib.nextStatus(null, 'unknown', 'e', now) as any;
     expect(st.unknownStreak).toBe(1);
     st = lib.nextStatus(st, 'unknown', 'e', now); st = lib.nextStatus(st, 'unknown', 'e', now);
     expect(st.unknownStreak).toBe(3);
