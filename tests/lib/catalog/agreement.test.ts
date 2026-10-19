@@ -15,53 +15,78 @@ describe('itemKey', () => {
   });
 });
 
-describe('computeAgreement — hand-worked fixture', () => {
+describe('computeAgreement — core + related only (decision 2026-10-19), hand-worked fixture', () => {
+  // AI core+related = {e1 core, e2 related, e3 related}; AI fringe {t1, t2} is excluded.
+  // Reviewer = {e1 core, e2 core, t1 related, t3 related}; t1 is an AI-fringe item, so it is reviewer-only here.
   const input = {
     bundleId: 'b1',
-    ai: m([['e1', 'core'], ['e2', 'related'], ['t1', 'fringe']]),
-    blind: m([['e1', 'core'], ['e2', 'fringe'], ['t2', 'related']]),
-    blindTaskRanks: new Map([['t2', 31]]),
-    shortlistK: 25,
+    ai: m([['e1', 'core'], ['e2', 'related'], ['e3', 'related'], ['t1', 'fringe'], ['t2', 'fringe']]),
+    blind: m([['e1', 'core'], ['e2', 'core'], ['t1', 'related'], ['t3', 'related']]),
   };
 
-  it('counts both/exact/withinOne/outside and computes the ratios', () => {
-    const r = computeAgreement(input);
-    expect(r).toEqual({
-      bundleId: 'b1', aiCount: 3, blindCount: 3, both: 2,
-      precision: 2 / 3, recall: 2 / 3, exact: 1, withinOne: 2, blindTasksOutsideShortlist: 1,
+  it('excludes AI fringe from precision; position agreement is exact core-vs-related on shared items', () => {
+    expect(computeAgreement(input)).toEqual({
+      bundleId: 'b1', aiCount: 3, blindCount: 4, both: 2, precision: 2 / 3, recall: 2 / 4, exact: 1,
+      aiOutsideList: 0, mergedItems: 0, noShownRecord: true,
     });
   });
 
-  it('a blind task ranked inside the shortlist is not counted outside', () => {
-    const r = computeAgreement({ ...input, blindTaskRanks: new Map([['t2', 25]]) });
-    expect(r.blindTasksOutsideShortlist).toBe(0);
+  it('AI fringe placements do not change the figures at all', () => {
+    const noFringe = computeAgreement({ ...input, ai: m([['e1', 'core'], ['e2', 'related'], ['e3', 'related']]) });
+    expect(computeAgreement(input)).toEqual(noFringe);
   });
 
-  it('empty AI gives precision null; empty blind gives recall null', () => {
-    const noAi = computeAgreement({ ...input, ai: new Map() });
+  it('a reviewer fringe pick (not offered by the blind UI) is ignored, not counted', () => {
+    const r = computeAgreement({ bundleId: 'b', ai: m([['x', 'core']]), blind: m([['x', 'fringe']]) });
+    expect(r).toMatchObject({ blindCount: 0, both: 0, exact: 0, precision: 0, recall: null });
+  });
+
+  it('empty AI core/related gives precision null; empty blind gives recall null', () => {
+    const noAi = computeAgreement({ ...input, ai: m([['t1', 'fringe']]) });
     expect(noAi.precision).toBeNull();
     expect(noAi.recall).toBe(0);
-    const noBlind = computeAgreement({ ...input, blind: new Map(), blindTaskRanks: new Map() });
+    const noBlind = computeAgreement({ ...input, blind: new Map() });
     expect(noBlind.recall).toBeNull();
     expect(noBlind.precision).toBe(0);
   });
+});
 
-  it('core vs fringe is two steps — not within one', () => {
-    const r = computeAgreement({ bundleId: 'b', ai: m([['x', 'core']]), blind: m([['x', 'fringe']]), blindTaskRanks: new Map(), shortlistK: 25 });
-    expect(r).toMatchObject({ both: 1, exact: 0, withinOne: 0 });
+describe('computeAgreement — AI elements outside the blind list (fix round 1)', () => {
+  // The reviewer saw elements {e1, e2} only. AI core/related: e1 core, e2 related, e9 core (never shown), t1 core.
+  // e9 is excluded from precision and counted separately: aiCount 3, outside 1.
+  const input = {
+    bundleId: 'b1',
+    ai: m([['element:e1', 'core'], ['element:e2', 'related'], ['element:e9', 'core'], ['task:t1', 'core'], ['element:e8', 'fringe']]),
+    blind: m([['element:e1', 'core'], ['element:e2', 'core'], ['task:t1', 'core']]),
+    shownElements: new Set(['element:e1', 'element:e2']),
+    mergedItems: 2,
+  };
+  it('excludes them from precision and counts them separately', () => {
+    expect(computeAgreement(input)).toEqual({
+      bundleId: 'b1', aiCount: 3, blindCount: 3, both: 3, precision: 1, recall: 1, exact: 2,
+      aiOutsideList: 1, mergedItems: 2, noShownRecord: false,
+    });
+  });
+  it('an AI fringe element outside the list is not counted at all', () => {
+    expect(computeAgreement(input).aiOutsideList).toBe(1);
+  });
+  it('without a shown-items record (older submission) nothing is excluded and the row says so', () => {
+    const r = computeAgreement({ ...input, shownElements: null });
+    expect(r).toMatchObject({ aiCount: 4, aiOutsideList: 0, noShownRecord: true, precision: 3 / 4 });
+  });
+  it('sumAgreement sums the new counts and ORs the missing-record flag', () => {
+    const a = computeAgreement(input);
+    const b = computeAgreement({ ...input, shownElements: null });
+    expect(sumAgreement([a, b])).toMatchObject({ aiOutsideList: 1, mergedItems: 4, noShownRecord: true });
   });
 });
 
 describe('sumAgreement', () => {
   it('recomputes ratios from summed counts, never averages ratios', () => {
-    const a: AgreementRow = { bundleId: 'a', aiCount: 1, blindCount: 1, both: 1, precision: 1, recall: 1, exact: 1, withinOne: 1, blindTasksOutsideShortlist: 0 };
-    const b: AgreementRow = { bundleId: 'b', aiCount: 9, blindCount: 3, both: 0, precision: 0, recall: 0, exact: 0, withinOne: 0, blindTasksOutsideShortlist: 2 };
+    const a: AgreementRow = { bundleId: 'a', aiCount: 1, blindCount: 1, both: 1, precision: 1, recall: 1, exact: 1, aiOutsideList: 0, mergedItems: 0, noShownRecord: false };
+    const b: AgreementRow = { bundleId: 'b', aiCount: 9, blindCount: 3, both: 0, precision: 0, recall: 0, exact: 0, aiOutsideList: 0, mergedItems: 0, noShownRecord: false };
     const s = sumAgreement([a, b]);
-    expect(s).toEqual({
-      bundleId: 'ALL', aiCount: 10, blindCount: 4, both: 1,
-      precision: 0.1, recall: 0.25, exact: 1, withinOne: 1, blindTasksOutsideShortlist: 2,
-    });
-    // The average of the ratios would be 0.5 for both — prove we did not do that.
+    expect(s).toEqual({ bundleId: 'ALL', aiCount: 10, blindCount: 4, both: 1, precision: 0.1, recall: 0.25, exact: 1, aiOutsideList: 0, mergedItems: 0, noShownRecord: false });
     expect(s.precision).not.toBe(0.5);
   });
 
@@ -97,28 +122,32 @@ describe('cohenKappa', () => {
 describe('formatReport', () => {
   const row = computeAgreement({
     bundleId: 'b1',
-    ai: m([['e1', 'core'], ['e2', 'related'], ['t1', 'fringe']]),
-    blind: m([['e1', 'core'], ['e2', 'fringe'], ['t2', 'related']]),
-    blindTaskRanks: new Map([['t2', 31]]),
-    shortlistK: 25,
+    ai: m([['e1', 'core'], ['e2', 'related'], ['e3', 'related'], ['t1', 'fringe'], ['t2', 'fringe']]),
+    blind: m([['e1', 'core'], ['e2', 'core'], ['t1', 'related'], ['t3', 'related']]),
   });
 
-  it('prints the header, counts line, ratios, ALL row, κ fallback, no-match list, caveat and attribution', () => {
+  it('prints the header, counts line, ratios, ALL row, κ fallback, no-match list, caveats and attribution', () => {
     const out = formatReport({ rows: [row], kappas: [], noMatch: [{ bundleId: 'b9', note: 'nothing fits' }], notYetMapped: [] });
     expect(out).not.toContain('not yet mapped');
     expect(out).toContain('Bundle agreement report — blind sample (n = 1 bundles; percentages are rough at this size)');
-    expect(out).toContain('AI placed 3, reviewer placed 3, both 2, exact 1, within one (incl. exact) 2, reviewer tasks outside top-25 1');
-    expect(out).toContain('precision 66.7%, recall 66.7%');
+    expect(out).toContain('AI placed 3 (core + related; fringe excluded), reviewer placed 4, both 2, same position 1 (50.0% of both)');
+    expect(out).toContain('AI elements outside the blind list: 0');
+    expect(out).toContain('reviewer items from merged rows: 0');
+    expect(out).toContain('no shown-items record');
+    expect(out).toContain('precision 66.7%, recall 50.0%');
     expect(out).toContain('ALL');
     expect(out).toContain("Cohen's κ: needs a second blind reviewer");
     expect(out).toContain('b9');
     expect(out).toContain('nothing fits');
+    expect(out).toContain('shortlist recall: not measured — the blind list is the AI\'s own shortlist (decision 2026-10-19)');
+    expect(out).not.toContain('within one');
+    expect(out).not.toContain('outside top-');
     expect(out).toContain('Nothing is auto-confirmed in P2, whatever these figures say.');
     expect(out).toContain(ATTRIBUTION);
   });
 
   it('prints n/a for null ratios and κ per bundle when given', () => {
-    const empty = computeAgreement({ bundleId: 'b2', ai: new Map(), blind: new Map(), blindTaskRanks: new Map(), shortlistK: 25 });
+    const empty = computeAgreement({ bundleId: 'b2', ai: new Map(), blind: new Map() });
     const out = formatReport({ rows: [empty], kappas: [{ bundleId: 'b2', kappa: 0.4 }], noMatch: [], notYetMapped: ['b7', 'b8'] });
     expect(out).toContain('not yet mapped: b7, b8');
     expect(out).toContain('n = 1 bundles');

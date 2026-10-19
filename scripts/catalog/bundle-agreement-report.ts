@@ -2,7 +2,7 @@
 /**
  * P2 Task 9 — read-only agreement report: the AI's placements vs the blind
  * reviewer's picks for every SUBMITTED golden sample (spec §5). Counts come
- * first; precision/recall are rough at n = 8. Nothing is auto-confirmed in
+ * first; precision/recall are rough at n = 8; core + related only (decision 2026-10-19). Nothing is auto-confirmed in
  * P2, whatever these figures say. Writes nothing.
  *
  * Usage (from the repo root, with DATABASE_URL set explicitly — get a
@@ -17,7 +17,6 @@ import { db } from '@/lib/db/client';
 import { loadAppEnv, isMainModule, formatDbError, assertExpectedDb, type P1Executor } from '@/scripts/catalog/catalog-source';
 import { computeAgreement, sumAgreement, cohenKappa, type AgreementRow } from '@/lib/catalog/agreement';
 import { readAgreementInputs } from '@/lib/db/bundle-queries';
-import { TASK_SHORTLIST_K } from '@/lib/catalog/shortlist';
 import { getOnetReleaseMetadata } from '@/lib/onet/load';
 
 export interface ReportData {
@@ -33,7 +32,10 @@ const pct = (x: number | null): string => (x === null ? 'n/a' : `${(x * 100).toF
 function rowLines(r: AgreementRow): string[] {
   return [
     `${r.bundleId}`,
-    `  AI placed ${r.aiCount}, reviewer placed ${r.blindCount}, both ${r.both}, exact ${r.exact}, within one (incl. exact) ${r.withinOne}, reviewer tasks outside top-${TASK_SHORTLIST_K} ${r.blindTasksOutsideShortlist}`,
+    `  AI placed ${r.aiCount} (core + related; fringe excluded), reviewer placed ${r.blindCount}, both ${r.both}, same position ${r.exact} (${pct(r.both === 0 ? null : r.exact / r.both)} of both)`,
+    `  AI elements outside the blind list: ${r.aiOutsideList}`,
+    `  reviewer items from merged rows: ${r.mergedItems}`,
+    ...(r.noShownRecord ? ['  note: no shown-items record (older submission) — AI elements were not excluded from precision'] : []),
     `  precision ${pct(r.precision)}, recall ${pct(r.recall)}`,
   ];
 }
@@ -53,6 +55,8 @@ export function formatReport(data: ReportData): string {
   } else {
     for (const k of data.kappas) out.push(`Cohen's κ ${k.bundleId}: ${k.kappa === null ? 'n/a' : k.kappa.toFixed(2)}`);
   }
+  out.push('');
+  out.push("shortlist recall: not measured — the blind list is the AI's own shortlist (decision 2026-10-19)");
   out.push('');
   out.push(`No clean match (ESCO to-do): ${data.noMatch.length === 0 ? 'none' : ''}`.trimEnd());
   for (const n of data.noMatch) out.push(`  - ${n.bundleId}${n.note ? ` — ${n.note}` : ''}`);

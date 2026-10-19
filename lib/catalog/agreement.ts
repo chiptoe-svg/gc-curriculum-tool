@@ -8,45 +8,75 @@ import { taskGroupKey } from '@/lib/catalog/shortlist';
  */
 
 export type Pos = 'core' | 'related' | 'fringe';
-const RANK: Record<Pos, number> = { core: 0, related: 1, fringe: 2 };
 
-export interface AgreementInput { bundleId: string; ai: Map<string, Pos>; blind: Map<string, Pos>; blindTaskRanks: Map<string, number>; shortlistK: number }
-export interface AgreementRow { bundleId: string; aiCount: number; blindCount: number; both: number; precision: number | null; recall: number | null; exact: number; withinOne: number; blindTasksOutsideShortlist: number }
+/**
+ * Decision 2026-10-19: the blind check offers core / related / unmarked only,
+ * so agreement is measured on core + related. The AI's fringe placements are
+ * excluded (precision denominator included); position agreement is an exact
+ * core-vs-related match on items both sides placed.
+ */
+export interface AgreementInput {
+  bundleId: string; ai: Map<string, Pos>; blind: Map<string, Pos>;
+  /** Element item keys the reviewer was shown; null = no record (older submission), nothing is excluded. */
+  shownElements?: Set<string> | null;
+  /** Reviewer task picks that came from the non-first tasks of merged rows. */
+  mergedItems?: number;
+}
+export interface AgreementRow {
+  bundleId: string; aiCount: number; blindCount: number; both: number; precision: number | null; recall: number | null; exact: number;
+  /** AI core/related elements outside the reviewer's shown list: left out of precision, counted here. */
+  aiOutsideList: number;
+  /** Reviewer items from merged rows (the extra tasks a single pick stood for). */
+  mergedItems: number;
+  /** True when there was no shown-items record, so AI elements were not excluded. */
+  noShownRecord: boolean;
+}
 
 export function itemKey(source: 'onet_element' | 'onet_task', externalIdOrLabel: string): string {
   return source === 'onet_element' ? `element:${externalIdOrLabel}` : `task:${taskGroupKey(externalIdOrLabel)}`;
 }
 
+function coreRelated(m: Map<string, Pos>): Map<string, 'core' | 'related'> {
+  const out = new Map<string, 'core' | 'related'>();
+  for (const [k, p] of m) if (p === 'core' || p === 'related') out.set(k, p);
+  return out;
+}
+
 export function computeAgreement(input: AgreementInput): AgreementRow {
-  let both = 0, exact = 0, withinOne = 0, outside = 0;
-  for (const [key, bp] of input.blind) {
-    const ap = input.ai.get(key);
-    if (ap !== undefined) {
-      both++;
-      if (ap === bp) exact++;
-      if (Math.abs(RANK[ap] - RANK[bp]) <= 1) withinOne++;
+  const shown = input.shownElements ?? null;
+  const ai = coreRelated(input.ai);
+  let aiOutsideList = 0;
+  if (shown !== null) {
+    for (const k of [...ai.keys()]) {
+      if (k.startsWith('element:') && !shown.has(k)) { ai.delete(k); aiOutsideList++; }
     }
-    const rank = input.blindTaskRanks.get(key);
-    if (rank !== undefined && rank > input.shortlistK) outside++;
+  }
+  const blind = coreRelated(input.blind);
+  let both = 0, exact = 0;
+  for (const [key, bp] of blind) {
+    const ap = ai.get(key);
+    if (ap === undefined) continue;
+    both++;
+    if (ap === bp) exact++;
   }
   return {
-    bundleId: input.bundleId, aiCount: input.ai.size, blindCount: input.blind.size, both,
-    precision: input.ai.size === 0 ? null : both / input.ai.size,
-    recall: input.blind.size === 0 ? null : both / input.blind.size,
-    exact, withinOne, blindTasksOutsideShortlist: outside,
+    bundleId: input.bundleId, aiCount: ai.size, blindCount: blind.size, both,
+    precision: ai.size === 0 ? null : both / ai.size,
+    recall: blind.size === 0 ? null : both / blind.size,
+    exact, aiOutsideList, mergedItems: input.mergedItems ?? 0, noShownRecord: shown === null,
   };
 }
 
 /** Pooled row ('ALL'): ratios recomputed from summed counts, never averaged. */
 export function sumAgreement(rows: AgreementRow[]): AgreementRow {
   const s = rows.reduce((a, r) => ({
-    aiCount: a.aiCount + r.aiCount, blindCount: a.blindCount + r.blindCount, both: a.both + r.both,
-    exact: a.exact + r.exact, withinOne: a.withinOne + r.withinOne, out: a.out + r.blindTasksOutsideShortlist,
-  }), { aiCount: 0, blindCount: 0, both: 0, exact: 0, withinOne: 0, out: 0 });
+    aiCount: a.aiCount + r.aiCount, blindCount: a.blindCount + r.blindCount, both: a.both + r.both, exact: a.exact + r.exact,
+    out: a.out + r.aiOutsideList, merged: a.merged + r.mergedItems, noRec: a.noRec || r.noShownRecord,
+  }), { aiCount: 0, blindCount: 0, both: 0, exact: 0, out: 0, merged: 0, noRec: false });
   return {
     bundleId: 'ALL', aiCount: s.aiCount, blindCount: s.blindCount, both: s.both,
     precision: s.aiCount === 0 ? null : s.both / s.aiCount, recall: s.blindCount === 0 ? null : s.both / s.blindCount,
-    exact: s.exact, withinOne: s.withinOne, blindTasksOutsideShortlist: s.out,
+    exact: s.exact, aiOutsideList: s.out, mergedItems: s.merged, noShownRecord: s.noRec,
   };
 }
 

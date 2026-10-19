@@ -210,6 +210,9 @@ export type BundlePosition = 'core' | 'related' | 'fringe';
 export type BundleMemberStatus = 'proposed' | 'confirmed' | 'rejected';
 export type BundleMemberSource = 'onet_element' | 'onet_task' | 'course_skill' | 'esco_skill';
 
+/** What the blind reviewer was shown, saved at submit (migration 0061): element ids and the task-row map (row key -> that row's group keys). */
+export interface ShownItems { elementIds: string[]; taskRows: Record<string, string[]> }
+
 export interface GoldenCandidate {
   key: string;            // taskGroupKey (Ruling 5)
   label: string;          // task text
@@ -240,7 +243,7 @@ export const bundleCards = pgTable('bundle_cards', {
 ]);
 
 export const itemEmbeddings = pgTable('item_embeddings', {
-  kind: text('kind').$type<'bundle_card' | 'onet_task' | 'course_skill' | 'esco_skill'>().notNull(),
+  kind: text('kind').$type<'bundle_card' | 'onet_task' | 'onet_element' | 'course_skill' | 'esco_skill'>().notNull(),
   ref: text('ref').notNull(),
   model: text('model').notNull(),
   textHash: text('text_hash').notNull(),
@@ -248,7 +251,7 @@ export const itemEmbeddings = pgTable('item_embeddings', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [
   primaryKey({ name: 'item_embeddings_pkey', columns: [t.kind, t.ref, t.model, t.textHash] }),
-  check('item_embeddings_kind_check', sql`${t.kind} IN ('bundle_card', 'onet_task', 'course_skill', 'esco_skill')`),
+  check('item_embeddings_kind_check', sql`${t.kind} IN ('bundle_card', 'onet_task', 'onet_element', 'course_skill', 'esco_skill')`),
   check('item_embeddings_vector_check', sql`cardinality(${t.vector}) > 0`),
 ]);
 
@@ -341,6 +344,7 @@ export const bundleGoldenSamples = pgTable('bundle_golden_samples', {
   reviewer: text('reviewer'),
   submittedAt: timestamp('submitted_at', { withTimezone: true }),
   resetNote: text('reset_note'),
+  shownItems: jsonb('shown_items').$type<ShownItems>(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [
   primaryKey({ name: 'bundle_golden_samples_pkey', columns: [t.bundleId] }),

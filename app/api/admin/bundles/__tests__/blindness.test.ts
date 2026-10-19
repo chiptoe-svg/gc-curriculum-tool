@@ -125,6 +125,18 @@ describe.skipIf(!RUN)('P2 Task 11 — blindness enforced in the API (scratch DB 
     expect(json.sample.candidates).toHaveLength(1);
   });
 
+  it('GET detail: the new blind list is present and carries no AI data (decision 2026-10-19)', async () => {
+    const res = await detailGET(new Request(`http://h/api/admin/bundles/${B}`), params(B));
+    const text = await res.text();
+    expect(text).not.toContain(RATIONALE);
+    const json = JSON.parse(text) as { blind: { elements: Array<Record<string, unknown>>; elementNotice: string | null; taskRows: Array<Record<string, unknown>> } };
+    expect(json.blind.taskRows).toHaveLength(1);
+    // Exact key sets: nothing from bundle_members (position, rationale, status, ...) can ride along.
+    for (const r of json.blind.taskRows) expect(Object.keys(r).sort()).toEqual(['key', 'label', 'members', 'rank', 'similar']);
+    for (const e of json.blind.elements) expect(Object.keys(e).sort()).toEqual(['description', 'domain', 'elementId', 'elementName']);
+    expect(Object.keys(json.blind).sort()).toEqual(['elementNotice', 'elements', 'taskRows']);
+  });
+
   it('GET agreement: the unsubmitted sample is absent', async () => {
     const res = await agreementGET(new Request('http://h/api/admin/bundles/agreement'));
     expect(res.status).toBe(200);

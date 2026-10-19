@@ -10,7 +10,7 @@ import { db } from '@/lib/db/client';
 import { subCompetencies, subCompetencyMap, bundleMembers, bundleGoldenSamples, bundleGoldenPicks, bundleMappingRuns, bundleMappingOutcomes, type GoldenCandidate } from '@/lib/db/schema';
 import { reconcileBundle, readAgreementInputs, confirmProposedMember, noteProposedDisagreement, type Executor } from '@/lib/db/bundle-queries';
 import { main as reportMain } from '@/scripts/catalog/bundle-agreement-report';
-import { itemKey } from '@/lib/catalog/agreement';
+import { itemKey, computeAgreement, sumAgreement } from '@/lib/catalog/agreement';
 import { taskGroupKey } from '@/lib/catalog/shortlist';
 import { isP2ScratchDb, SCRATCH_DB } from './p2/scratch-guard';
 
@@ -135,6 +135,18 @@ describe.skipIf(!RUN)('P2 Task 9 — reconcileBundle (scratch DB only)', () => {
     });
   });
 
+  it('an AI fringe placement the reviewer did not mark stays proposed with NO note (decision 2026-10-19: fringe was not asked)', async () => {
+    await inRolledBackTx(async (tx) => {
+      await seedSubmitted(tx);
+      await tx.insert(bundleMembers).values(aiMember(B, 'e5', 'fringe'));
+      const before = (await snapshot(tx, B)).find(r => r.row.externalId === 'e5')!;
+      await reconcileBundle(tx, B);
+      const after = (await snapshot(tx, B)).find(r => r.row.externalId === 'e5')!;
+      expect(after.row).toMatchObject({ status: 'proposed', position: 'fringe', reviewNote: null, confirmedBy: null });
+      expect(after).toEqual(before);
+    });
+  });
+
   it('is idempotent: a second run confirms/adds nothing and changes no row (updated_at included)', async () => {
     await inRolledBackTx(async (tx) => {
       await seedSubmitted(tx);
@@ -223,8 +235,6 @@ describe.skipIf(!RUN)('P2 Task 9 — readAgreementInputs (scratch DB only)', () 
       expect(input.ai.get(itemKey('onet_element', 'e2'))).toBe('fringe');
       expect([...input.blind.keys()].sort()).toEqual([itemKey('onet_element', 'e1'), itemKey('onet_element', 'e2'), itemKey('onet_element', 'e4'), g1Key].sort());
       expect(input.blind.get(g1Key)).toBe('related');
-      expect([...input.blindTaskRanks.entries()]).toEqual([[g1Key, 3]]);
-      expect(input.shortlistK).toBe(25);
     });
   });
 
@@ -293,9 +303,9 @@ describe.skipIf(!RUN)('P2 Task 9 — readAgreementInputs (scratch DB only)', () 
       expect(code).toBe(0);
       const out = logs.join('\n');
       expect(out).toMatch(/not yet mapped: .*p2r-2/);
-      // ALL counts only mapped bundles: B's blind picks are e1, e2, e4 + g1 = 4; p2r-2's 2 picks are excluded.
-      const sumBlind = inputs.reduce((a, i) => a + i.blind.size, 0);
-      expect(out).toContain(`ALL\n  AI placed ${inputs.reduce((a, i) => a + i.ai.size, 0)}, reviewer placed ${sumBlind},`);
+      // ALL counts only mapped bundles (core + related, decision 2026-10-19): p2r-2's 2 picks are excluded.
+      const all = sumAgreement(inputs.map(computeAgreement));
+      expect(out).toContain(`ALL\n  AI placed ${all.aiCount} (core + related; fringe excluded), reviewer placed ${all.blindCount},`);
       expect(inputs.find(i => i.bundleId === B)!.blind.size).toBe(4);
     });
   });
