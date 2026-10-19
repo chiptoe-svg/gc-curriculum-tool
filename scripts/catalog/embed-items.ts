@@ -1,6 +1,7 @@
 #!/usr/bin/env tsx
 /**
- * P2 Task 6 — embedding cache CLI. Embeds every confirmed bundle card plus
+ * P2 Task 6 — embedding cache CLI. Embeds every confirmed bundle card, every
+ * O*NET element definition (kind onet_element; migration 0061), plus
  * every O*NET task-statement group (de-duplicated by normalized text, see
  * lib/catalog/shortlist.ts), skipping anything already cached in
  * item_embeddings at the current text hash. See
@@ -35,7 +36,8 @@ import { eq } from 'drizzle-orm';
 import { loadAppEnv, isMainModule, formatDbError, assertExpectedDb, type P1Executor } from '@/scripts/catalog/catalog-source';
 import { textHash, cardEmbedText } from '@/lib/catalog/bundles';
 import { groupTasks } from '@/lib/catalog/shortlist';
-import { listActiveBundles, readConfirmedCards, readTaskStatements, embedMissing, type EmbedItem } from '@/lib/db/bundle-queries';
+import { elementEmbedText } from '@/lib/catalog/blind-list';
+import { listActiveBundles, readConfirmedCards, readTaskStatements, readElementDefinitions, embedMissing, type EmbedItem } from '@/lib/db/bundle-queries';
 import { embedBatch, DEFAULT_EMBEDDING_MODEL } from '@/lib/ai/embeddings';
 
 export type Executor = P1Executor;
@@ -94,7 +96,15 @@ async function buildItems(executor: Executor, release: string): Promise<EmbedIte
     text: group.label,
   }));
 
-  return [...cardItems, ...taskItems];
+  // Blind list (decision 2026-10-19): O*NET element definitions, so the blind
+  // panel can shortlist the 20 elements nearest a bundle's card. ref = element_id.
+  const elementItems: EmbedItem[] = (await readElementDefinitions(release, executor)).map(def => ({
+    kind: 'onet_element' as const,
+    ref: def.elementId,
+    text: elementEmbedText(def),
+  }));
+
+  return [...cardItems, ...taskItems, ...elementItems];
 }
 
 /** How many of `items` already have a row in item_embeddings at their current text hash — a read-only count, used only for the dry-run report. */
@@ -146,14 +156,14 @@ export async function main(argv: string[], deps: CliDeps = {}): Promise<number> 
     return 3;
   }
 
-  const byKind = { bundle_card: 0, onet_task: 0 } as Record<EmbedItem['kind'], number>;
+  const byKind = { bundle_card: 0, onet_task: 0, onet_element: 0 } as Record<EmbedItem['kind'], number>;
   for (const item of items) byKind[item.kind]++;
 
   if (args.mode === 'apply') {
     const embedFn = deps.embed ?? ((texts: string[]) => embedBatch(texts));
     const embed = deps.embedMissing ?? embedMissing;
     console.log(`mode: APPLY  expect-db: ${args.expectDb}  release: ${args.release}`);
-    console.log(`items: ${byKind.bundle_card} bundle_card, ${byKind.onet_task} onet_task`);
+    console.log(`items: ${byKind.bundle_card} bundle_card, ${byKind.onet_task} onet_task, ${byKind.onet_element} onet_element`);
     const result = await embed(executor, items, DEFAULT_EMBEDDING_MODEL, embedFn);
     console.log(`cached: ${result.cached}  embedded: ${result.embedded}`);
     return 0;
@@ -161,7 +171,7 @@ export async function main(argv: string[], deps: CliDeps = {}): Promise<number> 
 
   const cached = await countCached(executor, items, DEFAULT_EMBEDDING_MODEL);
   console.log(`mode: DRY RUN  expect-db: ${args.expectDb}  release: ${args.release}`);
-  console.log(`items: ${byKind.bundle_card} bundle_card, ${byKind.onet_task} onet_task (${items.length} total)`);
+  console.log(`items: ${byKind.bundle_card} bundle_card, ${byKind.onet_task} onet_task, ${byKind.onet_element} onet_element (${items.length} total)`);
   console.log(`already cached at the current text hash: ${cached}`);
   console.log('\nDRY RUN — nothing written, no embedding calls made.');
   return 0;

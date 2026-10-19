@@ -114,7 +114,7 @@ describe('GET routes', () => {
 
   it('agreement: computes rows, total and kappas from the inputs', async () => {
     q.readAgreementInputs.mockResolvedValue({
-      inputs: [{ bundleId: 'a', ai: new Map([['element:1', 'core']]), blind: new Map([['element:1', 'core']]), blindTaskRanks: new Map(), shortlistK: 25 }],
+      inputs: [{ bundleId: 'a', ai: new Map([['element:1', 'core']]), blind: new Map([['element:1', 'core']]) }],
       noMatch: [], notYetMapped: ['b'], secondReviewerPairs: [{ bundleId: 'a', a: ['core', 'none'], b: ['core', 'related'] }],
     });
     const json = (await (await agreementGET(get('/api/admin/bundles/agreement'))).json()) as { rows: Array<{ exact: number }>; total: { bundleId: string }; kappas: unknown[]; notYetMapped: string[] };

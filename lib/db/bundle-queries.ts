@@ -10,8 +10,10 @@ import type { BundleSummary, CardFields, ReviewCard } from '@/lib/catalog/bundle
 import { textHash } from '@/lib/catalog/bundles';
 import type { TaskRow } from '@/lib/catalog/shortlist';
 import { itemKey, type AgreementInput, type Pos } from '@/lib/catalog/agreement';
-import { TASK_SHORTLIST_K } from '@/lib/catalog/shortlist';
 import type { ElementDef, MemberRow } from '@/lib/ai/catalog/map-bundle-onet';
+import { DEFAULT_EMBEDDING_MODEL } from '@/lib/ai/embeddings';
+import { cardEmbedText } from '@/lib/catalog/bundles';
+import { BLIND_ELEMENT_K, BLIND_TASK_K, elementEmbedText, mergeNearDuplicates, rankElements, type BlindTaskRow } from '@/lib/catalog/blind-list';
 
 export type Executor = Tx | typeof db;
 
@@ -55,7 +57,7 @@ export async function readTaskStatements(release: string, ex: Executor = db): Pr
     .from(onetTaskStatements).where(eq(onetTaskStatements.release, release));
 }
 
-export interface EmbedItem { kind: 'bundle_card' | 'onet_task'; ref: string; text: string }
+export interface EmbedItem { kind: 'bundle_card' | 'onet_task' | 'onet_element'; ref: string; text: string }
 
 /** Embeds only items whose (kind, ref, model, sha256(text)) row is absent. Batches through `embed`. */
 export async function embedMissing(ex: Executor, items: EmbedItem[], model: string, embed: (texts: string[]) => Promise<number[][]>): Promise<{ cached: number; embedded: number }> {
@@ -197,11 +199,10 @@ async function elementName(ex: Executor, release: string, elementId: string): Pr
 type PickRow = typeof bundleGoldenPicks.$inferSelect;
 
 /** Maps one reviewer's picks to agreement keys. Task picks key by the candidate group that holds (taskId, soc). */
-function blindKeys(picks: PickRow[], candidates: GoldenCandidate[], bundleId: string): { blind: Map<string, Pos>; ranks: Map<string, number> } {
+function blindKeys(picks: PickRow[], candidates: GoldenCandidate[], bundleId: string): Map<string, Pos> {
   const candByTask = new Map<string, GoldenCandidate>();
   for (const c of candidates) for (const m of c.members) candByTask.set(`${m.taskId}|${m.onetSocCode}`, c);
   const blind = new Map<string, Pos>();
-  const ranks = new Map<string, number>();
   for (const p of picks) {
     if (p.noCleanMatch) continue;
     if (p.source === 'onet_element') {
@@ -211,10 +212,9 @@ function blindKeys(picks: PickRow[], candidates: GoldenCandidate[], bundleId: st
       if (!c) throw new Error(`readAgreementInputs: ${bundleId} pick for task ${p.externalId} (${p.onetSocCode}) is not in the sample's candidates`);
       const key = itemKey('onet_task', c.label);
       blind.set(key, p.position!);
-      ranks.set(key, c.rank);
     }
   }
-  return { blind, ranks };
+  return blind;
 }
 
 /**
@@ -259,7 +259,7 @@ export async function readAgreementInputs(ex: Executor = db): Promise<{
     const picks = await ex.select().from(bundleGoldenPicks).where(eq(bundleGoldenPicks.bundleId, s.bundleId));
     const own = blindKeys(picks.filter(p => p.reviewer === s.reviewer), s.candidates, s.bundleId);
     if (!latest.has(s.bundleId)) notYetMapped.push(s.bundleId);
-    else inputs.push({ bundleId: s.bundleId, ai, blind: own.blind, blindTaskRanks: own.ranks, shortlistK: TASK_SHORTLIST_K });
+    else inputs.push({ bundleId: s.bundleId, ai, blind: own });
 
     const reviewers = [...new Set(picks.map(p => p.reviewer))].sort((x, y) => (x < y ? -1 : x > y ? 1 : 0));
     if (reviewers.length >= 2) {
@@ -267,8 +267,8 @@ export async function readAgreementInputs(ex: Executor = db): Promise<{
         const defs = await ex.selectDistinct({ id: onetElementDefinitions.elementId }).from(onetElementDefinitions);
         elementKeys = defs.map(d => itemKey('onet_element', d.id));
       }
-      const [ra, rb] = [blindKeys(picks.filter(p => p.reviewer === reviewers[0]), s.candidates, s.bundleId).blind,
-        blindKeys(picks.filter(p => p.reviewer === reviewers[1]), s.candidates, s.bundleId).blind];
+      const [ra, rb] = [blindKeys(picks.filter(p => p.reviewer === reviewers[0]), s.candidates, s.bundleId),
+        blindKeys(picks.filter(p => p.reviewer === reviewers[1]), s.candidates, s.bundleId)];
       const universe = [...new Set([...elementKeys, ...s.candidates.map(c => itemKey('onet_task', c.label)), ...ra.keys(), ...rb.keys()])].sort();
       secondReviewerPairs.push({
         bundleId: s.bundleId,
@@ -483,11 +483,46 @@ export async function listBundlesForReview(ex: Executor = db): Promise<BundleLis
   });
 }
 
+export const ELEMENT_SHORTLIST_UNAVAILABLE = 'element shortlist unavailable — showing all';
+
+/** What the blind panel shows (decision 2026-10-19). Derived from the card, the stored candidates and cached embeddings only — never from AI placements. */
+export interface BlindList { elements: ElementDef[]; elementNotice: string | null; taskRows: BlindTaskRow[] }
+
+/**
+ * The blind panel's shortened list. Elements: the BLIND_ELEMENT_K nearest the
+ * bundle's card embedding; if the card or ANY element embedding is missing,
+ * all elements plus a one-line notice (a partial ranking would be silently
+ * biased). Tasks: the first BLIND_TASK_K stored candidates (the stored order
+ * is the AI's shortlist order — map-bundles-onet refuses a run otherwise,
+ * plan Ruling 4) with near-duplicates folded together.
+ */
+export async function buildBlindList(
+  ex: Executor, bundle: BundleSummary, card: CardFields | null, elements: ElementDef[], candidates: GoldenCandidate[],
+): Promise<BlindList> {
+  const model = DEFAULT_EMBEDDING_MODEL;
+  let shown = elements;
+  let elementNotice: string | null = ELEMENT_SHORTLIST_UNAVAILABLE;
+  if (card) {
+    const cardVec = (await readVectors(ex, 'bundle_card', [{ ref: bundle.id, text: cardEmbedText(bundle, card) }], model)).get(bundle.id);
+    const elementVecs = await readVectors(ex, 'onet_element', elements.map(e => ({ ref: e.elementId, text: elementEmbedText(e) })), model);
+    if (cardVec && elements.length > 0 && elementVecs.size === elements.length) {
+      const top = new Set(rankElements(cardVec, elementVecs, BLIND_ELEMENT_K));
+      shown = elements.filter(e => top.has(e.elementId));
+      elementNotice = null;
+    }
+  }
+  const kept = candidates.slice(0, BLIND_TASK_K);
+  const taskVecs = await readVectors(ex, 'onet_task', kept.map(c => ({ ref: c.key, text: c.label })), model);
+  return { elements: shown, elementNotice, taskRows: mergeNearDuplicates(kept, taskVecs) };
+}
+
 export interface MemberView { id: string; source: string; externalId: string; externalLabel: string; onetSocCode: string | null; position: string; aiPosition: string | null; status: string; proposedBy: string; rationale: string | null; reviewNote: string | null; bulkConfirmed: boolean }
 export interface BundleDetail {
   bundle: BundleSummary;
   card: CardFields | null;
   elements: ElementDef[];
+  /** The blind panel's shortened list; null when the bundle has no blind sample. */
+  blind: BlindList | null;
   sample: { candidates: GoldenCandidate[]; submitted: boolean; reviewer: string | null; picks: Array<{ source: string | null; externalId: string | null; onetSocCode: string | null; position: string | null; noCleanMatch: boolean }> } | null;
   members: MemberView[] | null;
   latestOutcome: { noCleanMatch: boolean; note: string | null } | null;
@@ -517,7 +552,8 @@ export async function readBundleDetail(bundleId: string, ex: Executor = db): Pro
       .orderBy(asc(bundleGoldenPicks.source), asc(bundleGoldenPicks.externalId), asc(bundleGoldenPicks.onetSocCode));
     sample = { candidates: s.candidates, submitted: s.submittedAt !== null, reviewer: s.reviewer, picks };
   }
-  if (isLockedSample(s)) return { bundle, card, elements, sample, members: null, latestOutcome: null };
+  const blind = s ? await buildBlindList(ex, bundle, card, elements, s.candidates) : null;
+  if (isLockedSample(s)) return { bundle, card, elements, blind, sample, members: null, latestOutcome: null };
   const rows = await ex.select().from(bundleMembers).where(eq(bundleMembers.bundleId, bundleId))
     .orderBy(asc(bundleMembers.source), asc(bundleMembers.externalLabel), asc(bundleMembers.onetSocCode));
   const members: MemberView[] = rows.map(m => ({
@@ -526,7 +562,7 @@ export async function readBundleDetail(bundleId: string, ex: Executor = db): Pro
     reviewNote: m.reviewNote, bulkConfirmed: m.bulkConfirmed,
   }));
   const latestOutcome = (await latestOkOutcomes(ex, [bundleId])).get(bundleId) ?? null;
-  return { bundle, card, elements, sample, members, latestOutcome };
+  return { bundle, card, elements, blind, sample, members, latestOutcome };
 }
 
 export const BLIND_NOT_MAPPED = "This bundle hasn't been mapped yet — run the mapping before its blind pick";

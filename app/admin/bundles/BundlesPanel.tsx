@@ -31,19 +31,24 @@ export interface GoldenCandidate { key: string; label: string; rank: number; sco
 export interface CardFields { stratum: string; includes: string; excludes: string; distinctions: string; positiveExamples: string[]; negativeExamples: string[] }
 export interface BundleSummary { id: string; name: string; knowDescriptor: string | null; understandDescriptor: string | null; doDescriptor: string; origin: string }
 export interface PickView { source: string | null; externalId: string | null; onetSocCode: string | null; position: string | null; noCleanMatch: boolean }
+export interface SimilarTask { key: string; label: string; members: Array<{ taskId: string; onetSocCode: string }> }
+export interface BlindTaskRow { key: string; label: string; rank: number; members: Array<{ taskId: string; onetSocCode: string }>; similar: SimilarTask[] }
+export interface BlindList { elements: ElementDef[]; elementNotice: string | null; taskRows: BlindTaskRow[] }
 export interface SampleInfo { candidates: GoldenCandidate[]; submitted: boolean; reviewer: string | null; picks: PickView[] }
 export interface MemberView { id: string; source: string; externalId: string; externalLabel: string; onetSocCode: string | null; position: string; aiPosition: string | null; status: string; proposedBy: string; rationale: string | null; reviewNote: string | null; bulkConfirmed: boolean }
 export interface BundleDetail {
   bundle: BundleSummary;
   card: CardFields | null;
   elements: ElementDef[];
+  /** The blind panel's shortened list (decision 2026-10-19); null without a blind sample. */
+  blind: BlindList | null;
   sample: SampleInfo | null;
   members: MemberView[] | null;
   latestOutcome: { noCleanMatch: boolean; note: string | null } | null;
   attribution?: string;
 }
 
-interface AgreementRow { bundleId: string; aiCount: number; blindCount: number; both: number; precision: number | null; recall: number | null; exact: number; withinOne: number; blindTasksOutsideShortlist: number }
+interface AgreementRow { bundleId: string; aiCount: number; blindCount: number; both: number; precision: number | null; recall: number | null; exact: number }
 interface AgreementResponse {
   rows: AgreementRow[];
   total: AgreementRow;
@@ -236,16 +241,19 @@ function CardsTab({
 
 // ─── Blind sample ───────────────────────────────────────────────────────────
 
+/** Blind check choices (decision 2026-10-19): core / related / Unmarked — no fringe. */
+const BLIND_OPTIONS: PickValue[] = ['core', 'related', 'none'];
+
 function PositionRadios({
   name, value, onChange, disabled,
 }: { name: string; value: PickValue; onChange: (v: PickValue) => void; disabled: boolean }) {
-  const options: PickValue[] = ['core', 'related', 'fringe', 'none'];
+  const options = BLIND_OPTIONS;
   return (
     <div className="flex flex-wrap gap-3 text-xs">
       {options.map((opt) => (
         <label key={opt} className="flex items-center gap-1">
           <input type="radio" name={name} checked={value === opt} disabled={disabled} onChange={() => onChange(opt)} />
-          {opt === 'none' ? 'Not a member' : opt}
+          {opt === 'none' ? 'Unmarked' : opt}
         </label>
       ))}
     </div>
@@ -265,15 +273,23 @@ function BlindPickForm({
 
   function setPick(key: string, v: PickValue) { setPicks((p) => ({ ...p, [key]: v })); }
 
+  const blindElements = detail.blind?.elements ?? [];
+  const taskRows = detail.blind?.taskRows ?? [];
+  const marked = useMemo(() => {
+    let core = 0, related = 0;
+    for (const v of Object.values(picks)) { if (v === 'core') core++; else if (v === 'related') related++; }
+    return { core, related, total: core + related };
+  }, [picks]);
+
   const byDomain = useMemo(() => {
     const m = new Map<string, ElementDef[]>();
-    for (const el of detail.elements) {
+    for (const el of blindElements) {
       const arr = m.get(el.domain) ?? [];
       arr.push(el);
       m.set(el.domain, arr);
     }
     return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0]));
-  }, [detail.elements]);
+  }, [blindElements]);
 
   async function submit() {
     if (!window.confirm("Submit? You can't change it afterward without an admin reset.")) return;
@@ -283,13 +299,14 @@ function BlindPickForm({
       slug, reviewer, noCleanMatch, picks: [],
     };
     if (!noCleanMatch) {
-      for (const el of detail.elements) {
+      for (const el of blindElements) {
         const v = picks[`element:${el.elementId}`];
         if (v && v !== 'none') body.picks.push({ kind: 'element', elementId: el.elementId, position: v });
       }
-      for (const c of detail.sample?.candidates ?? []) {
-        const v = picks[`task:${c.key}`];
-        if (v && v !== 'none') body.picks.push({ kind: 'task', groupKey: c.key, position: v });
+      for (const row of taskRows) {
+        const v = picks[`task:${row.key}`];
+        // A pick on a merged row is recorded for every task in it.
+        if (v && v !== 'none') for (const groupKey of [row.key, ...row.similar.map((x) => x.key)]) body.picks.push({ kind: 'task', groupKey, position: v });
       }
     }
     setSubmitting(true);
@@ -310,8 +327,19 @@ function BlindPickForm({
     <div className="space-y-4">
       <CardReadout bundle={detail.bundle} card={detail.card} />
 
+      <p className="rounded border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900">
+        Mark only the items that clearly belong to this bundle — usually 10 to 20. Leave anything you&apos;re unsure about unmarked.
+      </p>
+      <div className="sticky top-0 z-10 space-y-1 bg-white py-1">
+        <p className="text-sm font-medium">Marked: {marked.total} (core {marked.core}, related {marked.related})</p>
+        {marked.total > 30 && (
+          <p className="text-sm text-amber-800">That&apos;s more than most bundles need — consider leaving borderline items unmarked.</p>
+        )}
+      </div>
+
       <div className="space-y-2">
         <h4 className="text-sm font-medium text-slate-700">Elements by domain</h4>
+        {detail.blind?.elementNotice && <p className="text-xs text-amber-800">{detail.blind.elementNotice}</p>}
         {byDomain.map(([domain, els]) => (
           <details key={domain} className="rounded border border-slate-200 p-2">
             <summary className="cursor-pointer text-sm font-medium">{domain}</summary>
@@ -339,16 +367,26 @@ function BlindPickForm({
       </div>
 
       <div className="space-y-2">
-        <h4 className="text-sm font-medium text-slate-700">Task candidates (top 50)</h4>
-        {(detail.sample?.candidates ?? []).map((c) => (
-          <div key={c.key} className="flex flex-wrap items-center gap-3 border-b border-slate-100 pb-2">
-            <span className="text-sm">{c.label}</span>
-            <PositionRadios
-              name={`task:${c.key}`}
-              value={picks[`task:${c.key}`] ?? 'none'}
-              onChange={(v) => setPick(`task:${c.key}`, v)}
-              disabled={noCleanMatch || !reviewerReady}
-            />
+        <h4 className="text-sm font-medium text-slate-700">Task candidates</h4>
+        {taskRows.map((row) => (
+          <div key={row.key} className="space-y-1 border-b border-slate-100 pb-2">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-sm">{row.label}</span>
+              <PositionRadios
+                name={`task:${row.key}`}
+                value={picks[`task:${row.key}`] ?? 'none'}
+                onChange={(v) => setPick(`task:${row.key}`, v)}
+                disabled={noCleanMatch || !reviewerReady}
+              />
+            </div>
+            {row.similar.length > 0 && (
+              <details>
+                <summary className="cursor-pointer text-xs text-slate-500">+{row.similar.length} similar</summary>
+                <ul className="list-disc pl-5 text-xs text-slate-600">
+                  {row.similar.map((x) => <li key={x.key}>{x.label}</li>)}
+                </ul>
+              </details>
+            )}
           </div>
         ))}
       </div>
@@ -780,6 +818,7 @@ function AgreementPanel({ agreement, error }: { agreement: AgreementResponse | n
     <div className="space-y-2 rounded border border-slate-200 p-3">
       <h4 className="text-sm font-medium text-slate-700">Agreement (blind sample)</h4>
       <p className="text-xs text-slate-500">Eight bundles makes percentages rough — read the counts first.</p>
+      <p className="text-xs text-slate-500">Core + related only: the AI&apos;s fringe placements are left out, and the reviewer was not offered fringe. Shortlist recall is not measured — the blind list is the AI&apos;s own shortlist.</p>
       <p className="text-xs text-slate-500">Nothing is auto-confirmed in P2 regardless of these figures.</p>
       {error && <p className="text-sm text-red-800">{error}</p>}
       {agreement && (
@@ -788,7 +827,7 @@ function AgreementPanel({ agreement, error }: { agreement: AgreementResponse | n
             <thead className="text-left uppercase text-slate-500">
               <tr>
                 <th className="py-1">Bundle</th><th>AI</th><th>Blind</th><th>Both</th><th>Precision</th>
-                <th>Recall</th><th>Exact</th><th>±1 (incl. exact)</th><th>Outside top-25</th>
+                <th>Recall</th><th>Same position</th>
               </tr>
             </thead>
             <tbody>
@@ -797,7 +836,7 @@ function AgreementPanel({ agreement, error }: { agreement: AgreementResponse | n
                   <td className="py-1">{r.bundleId}</td><td>{r.aiCount}</td><td>{r.blindCount}</td><td>{r.both}</td>
                   <td>{r.precision === null ? '—' : r.precision.toFixed(2)}</td>
                   <td>{r.recall === null ? '—' : r.recall.toFixed(2)}</td>
-                  <td>{r.exact}</td><td>{r.withinOne}</td><td>{r.blindTasksOutsideShortlist}</td>
+                  <td>{r.exact}</td>
                 </tr>
               ))}
             </tbody>

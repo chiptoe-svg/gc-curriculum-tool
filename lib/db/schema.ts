@@ -240,7 +240,7 @@ export const bundleCards = pgTable('bundle_cards', {
 ]);
 
 export const itemEmbeddings = pgTable('item_embeddings', {
-  kind: text('kind').$type<'bundle_card' | 'onet_task' | 'course_skill' | 'esco_skill'>().notNull(),
+  kind: text('kind').$type<'bundle_card' | 'onet_task' | 'onet_element' | 'course_skill' | 'esco_skill'>().notNull(),
   ref: text('ref').notNull(),
   model: text('model').notNull(),
   textHash: text('text_hash').notNull(),
@@ -248,7 +248,7 @@ export const itemEmbeddings = pgTable('item_embeddings', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 }, (t) => [
   primaryKey({ name: 'item_embeddings_pkey', columns: [t.kind, t.ref, t.model, t.textHash] }),
-  check('item_embeddings_kind_check', sql`${t.kind} IN ('bundle_card', 'onet_task', 'course_skill', 'esco_skill')`),
+  check('item_embeddings_kind_check', sql`${t.kind} IN ('bundle_card', 'onet_task', 'onet_element', 'course_skill', 'esco_skill')`),
   check('item_embeddings_vector_check', sql`cardinality(${t.vector}) > 0`),
 ]);
 

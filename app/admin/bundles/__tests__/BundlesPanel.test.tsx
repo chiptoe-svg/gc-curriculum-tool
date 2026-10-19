@@ -14,6 +14,11 @@ const blindReadyDetail: BundleDetail = {
   bundle: { id: 'blind-ready', name: 'Blind ready bundle', knowDescriptor: 'k', understandDescriptor: 'u', doDescriptor: 'd', origin: 'o' },
   card: { stratum: 'technical', includes: 'inc', excludes: 'exc', distinctions: 'dist', positiveExamples: ['e1', 'e2'], negativeExamples: ['n1', 'n2'] },
   elements: [{ elementId: '2.B.5.a', elementName: 'Element Name', domain: 'Basic Skills', description: 'Definition text' }],
+  blind: {
+    elements: [{ elementId: '2.B.5.a', elementName: 'Element Name', domain: 'Basic Skills', description: 'Definition text' }],
+    elementNotice: null,
+    taskRows: [{ key: '0123456789abcdef', label: 'Task label', rank: 1, members: [{ taskId: 't1', onetSocCode: '15-1254.00' }], similar: [] }],
+  },
   sample: {
     candidates: [{ key: '0123456789abcdef', label: 'Task label', rank: 1, score: 0.9, members: [{ taskId: 't1', onetSocCode: '15-1254.00' }] }],
     submitted: false, reviewer: null, picks: [],
@@ -23,12 +28,41 @@ const blindReadyDetail: BundleDetail = {
   attribution: ATTRIBUTION,
 };
 
+/** A blind list with `nEl` elements and `nTask` single task rows, for the counter tests. */
+function bigBlindDetail(nEl: number, nTask: number, extra: Partial<NonNullable<BundleDetail['blind']>> = {}): BundleDetail {
+  const elements = Array.from({ length: nEl }, (_, i) => ({ elementId: `9.A.${i}`, elementName: `Element ${i}`, domain: 'Basic Skills', description: `Def ${i}` }));
+  const taskRows = Array.from({ length: nTask }, (_, i) => ({
+    key: i.toString(16).padStart(16, '0'), label: `Task ${i}`, rank: i + 1, members: [{ taskId: `t${i}`, onetSocCode: '15-1254.00' }], similar: [],
+  }));
+  return { ...blindReadyDetail, elements, blind: { elements, elementNotice: null, taskRows, ...extra } };
+}
+
+async function openBlind(detail: BundleDetail) {
+  const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+    const p = pathOf(url);
+    if (p === '/api/admin/bundles') return listResponse(bundlesFixture);
+    if (p === '/api/admin/bundles/blind-ready') return detailResponse(detail);
+    if (p === '/api/admin/bundles/blind-ready/blind' && init?.method === 'POST') {
+      return { ok: true, json: async () => ({ ok: true, reconcile: { confirmed: 0, added: 0, disagreements: 0 } }) };
+    }
+    return { ok: true, json: async () => ({}) };
+  });
+  vi.stubGlobal('fetch', fetchMock);
+  render(<BundlesPanel slug="s" />);
+  await waitFor(() => expect(screen.getByText('Blind ready bundle')).toBeInTheDocument());
+  fireEvent.change(screen.getByLabelText(/reviewer name/i), { target: { value: 'Chip' } });
+  fireEvent.click(screen.getByText('Blind ready bundle'));
+  await waitFor(() => expect(screen.getByRole('button', { name: /submit blind pick/i })).toBeInTheDocument());
+  return fetchMock;
+}
+
 const queueBundle: BundleListItem = { id: 'queue-bundle', name: 'Queue bundle', stratum: 'technical', sampled: false, submitted: false, counts: { proposed: 2, confirmed: 0, rejected: 0 }, noCleanMatch: false, mapped: true };
 
 const queueDetail: BundleDetail = {
   bundle: { id: 'queue-bundle', name: 'Queue bundle', knowDescriptor: 'k', understandDescriptor: 'u', doDescriptor: 'd', origin: 'o' },
   card: null,
   elements: [],
+  blind: null,
   sample: null,
   members: [
     { id: 'm1', source: 'onet_task', externalId: 't1', externalLabel: 'Shared task', onetSocCode: '15-1254.00', position: 'core', aiPosition: 'core', status: 'proposed', proposedBy: 'model-x', rationale: 'r', reviewNote: null, bulkConfirmed: false },
@@ -44,6 +78,7 @@ const divergedQueueDetail: BundleDetail = {
   bundle: { id: 'diverged-bundle', name: 'Diverged bundle', knowDescriptor: 'k', understandDescriptor: 'u', doDescriptor: 'd', origin: 'o' },
   card: null,
   elements: [],
+  blind: null,
   sample: null,
   members: [
     { id: 'd1', source: 'onet_task', externalId: 't1', externalLabel: 'Diverged task', onetSocCode: '11-1111.11', position: 'core', aiPosition: 'core', status: 'proposed', proposedBy: 'model-x', rationale: 'still proposed', reviewNote: null, bulkConfirmed: false },
@@ -53,7 +88,7 @@ const divergedQueueDetail: BundleDetail = {
   attribution: ATTRIBUTION,
 };
 
-const agreementEmpty = { rows: [], total: { bundleId: 'ALL', aiCount: 0, blindCount: 0, both: 0, precision: null, recall: null, exact: 0, withinOne: 0, blindTasksOutsideShortlist: 0 }, kappas: [], noMatch: [], notYetMapped: [], attribution: ATTRIBUTION };
+const agreementEmpty = { rows: [], total: { bundleId: 'ALL', aiCount: 0, blindCount: 0, both: 0, precision: null, recall: null, exact: 0 }, kappas: [], noMatch: [], notYetMapped: [], attribution: ATTRIBUTION };
 
 function pathOf(url: string): string {
   return new URL(url, 'http://h').pathname;
@@ -75,7 +110,7 @@ describe('BundlesPanel', () => {
       const p = pathOf(url);
       if (p === '/api/admin/bundles') return listResponse(bundlesFixture);
       if (p === '/api/admin/bundles/blind-ready') return detailResponse(blindReadyDetail);
-      if (p === '/api/admin/bundles/agreement') return { ok: true, json: async () => ({ rows: [], total: { bundleId: 'ALL', aiCount: 0, blindCount: 0, both: 0, precision: null, recall: null, exact: 0, withinOne: 0, blindTasksOutsideShortlist: 0 }, kappas: [], noMatch: [], notYetMapped: [], attribution: ATTRIBUTION }) };
+      if (p === '/api/admin/bundles/agreement') return { ok: true, json: async () => ({ rows: [], total: { bundleId: 'ALL', aiCount: 0, blindCount: 0, both: 0, precision: null, recall: null, exact: 0 }, kappas: [], noMatch: [], notYetMapped: [], attribution: ATTRIBUTION }) };
       return { ok: true, json: async () => ({}) };
     });
     vi.stubGlobal('fetch', fetchMock);
@@ -186,7 +221,7 @@ describe('BundlesPanel', () => {
     const fetchMock = vi.fn(async (url: string) => {
       const p = pathOf(url);
       if (p === '/api/admin/bundles') return listResponse(bundlesFixture);
-      if (p === '/api/admin/bundles/agreement') return { ok: true, json: async () => ({ rows: [], total: { bundleId: 'ALL', aiCount: 0, blindCount: 0, both: 0, precision: null, recall: null, exact: 0, withinOne: 0, blindTasksOutsideShortlist: 0 }, kappas: [], noMatch: [], notYetMapped: [], attribution: ATTRIBUTION }) };
+      if (p === '/api/admin/bundles/agreement') return { ok: true, json: async () => ({ rows: [], total: { bundleId: 'ALL', aiCount: 0, blindCount: 0, both: 0, precision: null, recall: null, exact: 0 }, kappas: [], noMatch: [], notYetMapped: [], attribution: ATTRIBUTION }) };
       return { ok: true, json: async () => ({}) };
     });
     vi.stubGlobal('fetch', fetchMock);
@@ -271,7 +306,7 @@ describe('BundlesPanel', () => {
       const p = pathOf(url);
       if (p === '/api/admin/bundles') return listResponse([queueBundle]);
       if (p === '/api/admin/bundles/queue-bundle') return detailResponse(queueDetail);
-      if (p === '/api/admin/bundles/agreement') return { ok: true, json: async () => ({ rows: [], total: { bundleId: 'ALL', aiCount: 0, blindCount: 0, both: 0, precision: null, recall: null, exact: 0, withinOne: 0, blindTasksOutsideShortlist: 0 }, kappas: [], noMatch: [], notYetMapped: [], attribution: ATTRIBUTION }) };
+      if (p === '/api/admin/bundles/agreement') return { ok: true, json: async () => ({ rows: [], total: { bundleId: 'ALL', aiCount: 0, blindCount: 0, both: 0, precision: null, recall: null, exact: 0 }, kappas: [], noMatch: [], notYetMapped: [], attribution: ATTRIBUTION }) };
       if (p === '/api/admin/bundles/queue-bundle/members' && init?.method === 'POST') {
         return { ok: membersResult.ok, status: membersResult.status, json: async () => membersResult.body };
       }
@@ -363,5 +398,78 @@ describe('BundlesPanel', () => {
     const call = fetchMock.mock.calls.find((c) => pathOf(c[0] as string) === '/api/admin/bundles/diverged-bundle/members')!;
     const body = JSON.parse((call[1] as RequestInit).body as string) as Record<string, unknown>;
     expect(body).toEqual({ slug: 's', reviewer: 'Chip', action: 'confirm', memberIds: ['d1'] });
+  });
+
+  it('blind rows offer core / related / Unmarked only (no fringe, no "Not a member"), default Unmarked', async () => {
+    await openBlind(blindReadyDetail);
+    const row = within(screen.getByText('Element Name').closest('div') as HTMLElement);
+    expect(row.getByLabelText('core')).not.toBeChecked();
+    expect(row.getByLabelText('related')).not.toBeChecked();
+    expect(row.getByLabelText('Unmarked')).toBeChecked();
+    expect(row.queryByLabelText(/fringe/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/not a member/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/fringe/i)).not.toBeInTheDocument();
+  });
+
+  it('shows the instruction and a running count of marked items (core / related)', async () => {
+    await openBlind(bigBlindDetail(3, 2));
+    expect(screen.getByText("Mark only the items that clearly belong to this bundle — usually 10 to 20. Leave anything you're unsure about unmarked.")).toBeInTheDocument();
+    expect(screen.getByText('Marked: 0 (core 0, related 0)')).toBeInTheDocument();
+    const e0 = within(screen.getByText('Element 0').closest('div') as HTMLElement);
+    fireEvent.click(e0.getByLabelText('core'));
+    const t0 = within(screen.getByText('Task 0').closest('div') as HTMLElement);
+    fireEvent.click(t0.getByLabelText('related'));
+    expect(screen.getByText('Marked: 2 (core 1, related 1)')).toBeInTheDocument();
+    fireEvent.click(e0.getByLabelText('Unmarked'));
+    expect(screen.getByText('Marked: 1 (core 0, related 1)')).toBeInTheDocument();
+  });
+
+  it('warns softly above 30 marked items, not at 30, and never blocks submit', async () => {
+    await openBlind(bigBlindDetail(20, 15));
+    const warning = /more than most bundles need — consider leaving borderline items unmarked/i;
+    const all = screen.getAllByLabelText('related');
+    for (let i = 0; i < 30; i++) fireEvent.click(all[i]!);
+    expect(screen.getByText('Marked: 30 (core 0, related 30)')).toBeInTheDocument();
+    expect(screen.queryByText(warning)).not.toBeInTheDocument();
+    fireEvent.click(all[30]!);
+    expect(screen.getByText('Marked: 31 (core 0, related 31)')).toBeInTheDocument();
+    expect(screen.getByText(warning)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /submit blind pick/i })).not.toBeDisabled();
+  });
+
+  it('shows the one-line notice when the element shortlist is unavailable', async () => {
+    await openBlind(bigBlindDetail(2, 1, { elementNotice: 'element shortlist unavailable — showing all' }));
+    expect(screen.getByText('element shortlist unavailable — showing all')).toBeInTheDocument();
+  });
+
+  it('a merged row shows the first task, "+N similar" (expandable), and one pick sends every merged task group', async () => {
+    const detail = bigBlindDetail(1, 1);
+    detail.blind!.taskRows = [{
+      key: 'aaaaaaaaaaaaaaaa', label: 'First task text', rank: 1, members: [{ taskId: 't1', onetSocCode: '15-1254.00' }],
+      similar: [
+        { key: 'bbbbbbbbbbbbbbbb', label: 'Second similar text', members: [{ taskId: 't2', onetSocCode: '15-1254.00' }] },
+        { key: 'cccccccccccccccc', label: 'Third similar text', members: [{ taskId: 't3', onetSocCode: '15-1254.00' }] },
+      ],
+    }];
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const fetchMock = await openBlind(detail);
+    expect(screen.getByText('First task text')).toBeInTheDocument();
+    expect(screen.getByText('+2 similar')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('+2 similar'));
+    expect(screen.getByText('Second similar text')).toBeInTheDocument();
+    expect(screen.getByText('Third similar text')).toBeInTheDocument();
+
+    const row = within(screen.getByText('First task text').closest('div') as HTMLElement);
+    fireEvent.click(row.getByLabelText('core'));
+    expect(screen.getByText('Marked: 1 (core 1, related 0)')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /submit blind pick/i }));
+    await waitFor(() => expect(screen.getByText(/submitted\./i)).toBeInTheDocument());
+    const call = fetchMock.mock.calls.find((c) => pathOf(c[0] as string) === '/api/admin/bundles/blind-ready/blind')!;
+    const body = JSON.parse((call[1] as RequestInit).body as string) as { picks: unknown[] };
+    expect(body.picks).toEqual([
+      { kind: 'task', groupKey: 'aaaaaaaaaaaaaaaa', position: 'core' },
+      { kind: 'task', groupKey: 'bbbbbbbbbbbbbbbb', position: 'core' },
+      { kind: 'task', groupKey: 'cccccccccccccccc', position: 'core' },
+    ]);
   });
 });
