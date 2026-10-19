@@ -383,7 +383,7 @@
 
   <p>CourseCapture measures what students are evidenced to attain, course by course (the full pipeline is §6). An AI interview agent works over the syllabus, Canvas materials, and an instructor interview; a synthesis pass emits one structured Course Outcome Profile that scores each competency on independent K/U/D depth against the shared rubric. Its defining trait is <strong>evidence discipline</strong> — the schema-enforced rule that no depth rises above its evidence (§3). Each confirmed profile becomes an immutable, versioned snapshot. A separate scoring pass then reads each snapshot against every catalog competency's own K/U/D descriptors, with no career target in the prompt, and writes one row per snapshot and competency to <code>snapshot_competency_coverage</code> — the attainment depths behind the <code>/program</code> heat map.</p>
 
-  <h3>The demand side — Position Capture (formerly "CareerCapture")</h3>
+  <h3>The demand side — Position Capture</h3>
 
   <p>Position Capture measures what a <em>career</em> requires of an entry-level hire, using the same depth scale. It runs a six-page partner flow, reached by a personal magic link (JD ingest → what makes the role unique → interview questions → trajectory → AI-rated "experiences worth having" → an agent interview), then a synthesis pass emits one immutable Position Profile in which each qualifying competency is scored <code>required_for_success</code> in K/U/D. Three disciplines keep the demand honest, mirroring the supply side:</p>
 
@@ -606,7 +606,7 @@
 
   <h3>The web server and the one address</h3>
 
-  <p>The application is <strong>Next.js 15 (App Router)</strong>, run in production mode (<code>next start</code> off a prebuilt bundle) by launchd and bound to <code>127.0.0.1:3000</code>, so it is not reachable directly from the network. <strong>Caddy</strong> (launchd <code>com.gc.caddy-tls</code>) terminates HTTPS at <code>https://gcworkflow.clemson.edu:8443</code> with a Clemson InCommon certificate and proxies to the app. That is the only way in, and it is reachable only on the Clemson network. Caddy also holds the network-facing side of port 3000 and answers any plain-HTTP request with a pointer to the HTTPS address (a 426 error for <code>/api</code> paths), so nothing is served in cleartext. HTTPS matters for more than privacy: browsers allow microphone access only in a secure context, which is what lets voice input work on the interview page.</p>
+  <p>The application is <strong>Next.js 15 (App Router)</strong>, run in production mode (<code>next start</code> off a prebuilt bundle) by launchd and bound to <code>127.0.0.1:3000</code>, so it is not reachable directly from the network. <strong>Caddy</strong> (the system LaunchDaemon <code>edu.clemson.gc.caddy</code>, running as the unprivileged user <code>_gcproxy</code> from <code>/usr/local/gc-caddy</code>) terminates HTTPS at <code>https://gcworkflow.clemson.edu:8443</code> with a Clemson InCommon certificate and proxies to the app. That is the only way in, and it is reachable only on the Clemson network. Caddy also holds the network-facing side of port 3000 and answers any plain-HTTP request with a pointer to the HTTPS address (a 426 error for <code>/api</code> paths), so nothing is served in cleartext. HTTPS matters for more than privacy: browsers allow microphone access only in a secure context, which is what lets voice input work on the interview page.</p>
 
   <h3>Sign-in and authorization</h3>
 
@@ -747,7 +747,7 @@
 
   <div class="callout note">
     <div class="callout-title">Compile-loop safeguards</div>
-    <p>The compile loop carries the safeguards its trust-hardening design called for (spec: <code>2026-06-11-wiki-trust-hardening-design.md</code>): a deterministic <strong>lint</strong> (<code>gc-wiki-lint</code> / <code>pnpm wiki:lint</code>) flagging broken wikilinks, orphans, missing required sections, and under-sourced concept pages; a <strong>loud-not-silent reconcile</strong> that re-requests a <em>requested</em> page the model omitted from a batch (previously a silent drop) and hard-logs if it's still missing; an <strong><code>input_hash</code> watermark</strong> in page frontmatter for stale-detection; <strong>per-competency evidence-credibility markers</strong> (<code>·claimed</code> / <code>·materials</code> / <code>·artifact</code>, derived from each finding's source + citations) carried into the narrative on course and competency pages; <strong>prompt-injection fencing</strong> of snapshot-derived text; and a <strong>deterministic index</strong> (forced into the last batch with a manifest of every page in the run, so it can't lag pages produced earlier). Generated prose is also privacy-scrubbed for student identifiers on every write (§6). Still open: the <strong>≥2-source concept-promotion gate</strong> (concept pages still generate on first qualifying signal — the lint <em>flags</em> under-sourced ones, but the compile doesn't yet <em>withhold</em> them), and a <strong><code>/refresh-wiki</code> reconcile command</strong> (paralleling <code>/refresh-state</code>) that uses the watermark to detect and regenerate stale pages on demand. Tracked in STATE.md's Deferred/debt.</p>
+    <p>The compile loop carries the safeguards its trust-hardening design called for (spec: <code>2026-06-11-wiki-trust-hardening-design.md</code>): a deterministic <strong>lint</strong> (<code>gc-wiki-lint</code> / <code>pnpm wiki:lint</code>) flagging broken wikilinks, orphans, missing required sections, and under-sourced concept pages; a <strong>loud-not-silent reconcile</strong> that re-requests a <em>requested</em> page the model omitted from a batch and hard-logs if it's still missing; an <strong><code>input_hash</code> watermark</strong> in page frontmatter for stale-detection; <strong>per-competency evidence-credibility markers</strong> (<code>·claimed</code> / <code>·materials</code> / <code>·artifact</code>, derived from each finding's source + citations) carried into the narrative on course and competency pages; <strong>prompt-injection fencing</strong> of snapshot-derived text; and a <strong>deterministic index</strong> (forced into the last batch with a manifest of every page in the run, so it can't lag pages produced earlier). Generated prose is also privacy-scrubbed for student identifiers on every write (§6). Still open: the <strong>≥2-source concept-promotion gate</strong> (concept pages still generate on first qualifying signal — the lint <em>flags</em> under-sourced ones, but the compile doesn't yet <em>withhold</em> them), and a <strong><code>/refresh-wiki</code> reconcile command</strong> (paralleling <code>/refresh-state</code>) that uses the watermark to detect and regenerate stale pages on demand. Tracked in STATE.md's Deferred/debt.</p>
   </div>
 
   <h4>The curriculum as a queryable knowledge graph (wiki + typed-graph, over MCP)</h4>
@@ -758,7 +758,7 @@
 
   <h3>Process management</h3>
 
-  <p>macOS <strong>launchd</strong> supervises every persistent service — boot persistence (<code>RunAtLoad</code>), crash recovery (<code>KeepAlive</code> with a throttle to prevent crash loops), and scheduled jobs — with no external orchestrator. The one exception is Weaviate, which runs as a Docker container under OrbStack with its own restart policy. The project's launchd jobs:</p>
+  <p>macOS <strong>launchd</strong> supervises every persistent service — boot persistence (<code>RunAtLoad</code>), crash recovery (<code>KeepAlive</code> with a throttle to prevent crash loops), and scheduled jobs — with no external orchestrator. Two pieces sit outside the project's own user launchd agents: Caddy, which runs as the system LaunchDaemon <code>edu.clemson.gc.caddy</code> (user <code>_gcproxy</code>), and Weaviate, which runs as a Docker container under OrbStack with its own restart policy. The rest are user launchd agents:</p>
 
   <table class="ref">
     <thead>
@@ -766,7 +766,6 @@
     </thead>
     <tbody>
       <tr><td><code>com.gc.curriculum-tool</code></td><td>The Next.js app server (production <code>next start</code>, <code>127.0.0.1:3000</code>).</td></tr>
-      <tr><td><code>com.gc.caddy-tls</code></td><td>Caddy: HTTPS on <code>gcworkflow.clemson.edu:8443</code> in front of the app, and the plain-HTTP pointer on port 3000.</td></tr>
       <tr><td><code>com.gc.postgres</code></td><td>Postgres 17 (<code>127.0.0.1:5433</code>).</td></tr>
       <tr><td><code>com.gc.docling-serve</code></td><td>Local Docling extraction (<code>127.0.0.1:5001</code>) — the fallback behind the GPU-server instance.</td></tr>
       <tr><td><code>com.gc.dgx-forward</code></td><td>Local forwarder to the GPU server's model gateway, used for slide-deck vision notes.</td></tr>
@@ -799,7 +798,7 @@
 
   <ul>
     <li><strong>Light tier</strong> (<code>gpt-5.4-mini</code>) — per-material digest, per-chunk contextualization, material tier classification, ingestion check-in, materials analysis, prerequisite-gap decomposition, JD field extraction. These run often, so cost matters more than reasoning depth; digest and contextualization prefer the free campus model first (§9).</li>
-    <li><strong>Default tier</strong> (<code>gpt-6.1-sol</code>, low effort) — the interview agent, profile synthesis, reconciliation, Explore (the agent and its impact estimates), curriculum chat, the objective assessment guide, prerequisite-edge seeding, intended-skills extraction, target synthesis, bundle-card drafting, and the Position Capture functions (<code>position-rated-items</code>, <code>position-interview-agent</code>, <code>position-synthesis</code>).</li>
+    <li><strong>Default tier</strong> (<code>gpt-6.1-sol</code>, low effort) — the interview agent (<code>capture-chat-agent</code>) and the older single-context interview (<code>capture-chat</code>), profile synthesis (<code>capture-scores</code>), reconciliation, Explore (the agent and its impact estimates), curriculum chat, the objective assessment guide, prerequisite-edge seeding, intended-skills extraction, profile-field parsing (<code>parse-profile-fields</code>), course K/U/D extraction (<code>extract-course-kud</code>), target synthesis, bundle-card drafting, and the Position Capture functions (<code>position-rated-items</code>, <code>position-interview-agent</code>, <code>position-synthesis</code>).</li>
     <li><strong>Heavy tier</strong> (also <code>gpt-6.1-sol</code> today) — per-competency program coverage scoring, the adversarial stress-test reviewer, the <code>wiki-update</code> narrative generator, and the O*NET bundle placement (<code>bundle-map-onet</code>). Heavy-tier calls are rare, batched, or high-stakes enough to justify the cost.</li>
   </ul>
 
@@ -849,7 +848,7 @@
 
   <div class="callout note">
     <div class="callout-title">The accumulation pattern</div>
-    <p>Most of the system's value is cumulative. A single snapshot is useful for the course it describes. Ten make the coverage matrix informative. Twenty make Explore's downstream mode load-bearing. A full cohort makes the scaffolding analysis diagnostic. And the demand side compounds the same way — more captured positions sharpen the sufficiency picture. The trial period is about confirming the per-snapshot analysis is credible before investing in the program-scale infrastructure that depends on accumulation.</p>
+    <p>Most of the system's value is cumulative. A single snapshot is useful for the course it describes. Ten make the coverage matrix informative. Twenty give Explore's scenario estimates real neighbors to reason over upstream and downstream. A full cohort makes the scaffolding analysis diagnostic. And the demand side compounds the same way — more captured positions sharpen the sufficiency picture. The trial period is about confirming the per-snapshot analysis is credible before investing in the program-scale infrastructure that depends on accumulation.</p>
   </div>
 </section>
 
