@@ -1,7 +1,7 @@
 import type { NextRequest } from 'next/server';
 import { authorize, type Grant } from '@/lib/auth/authorize';
 import { SESSION_COOKIE, builtinGrant, cookieMaxAge, grantFromSessionCookie, isLive, pickActiveGrant, signSession, type StoredGrant } from '@/lib/auth/grants';
-import { forbiddenPage, signinPage, unauthorizedPage } from '@/lib/auth/pages';
+import { deadLinkPage, forbiddenPage, signinPage, unauthorizedPage, type DeadLinkReason } from '@/lib/auth/pages';
 import { DEFAULT_SIGNIN_CONTACT } from '@/lib/auth/auth-env';
 import { requiresBasicAuth, resolveRole } from '@/lib/auth/basic-auth';
 
@@ -46,17 +46,28 @@ function cookieFor(grant: Grant, live: { expiresAt: Date | null }, deps: GateDep
  * treated as absent, `next`); on a gated path it propagates so the
  * request fails closed (503).
  */
-async function fromKey(req: NextRequest, gated: boolean, deps: GateDeps): Promise<Resolved | null> {
+async function fromKey(req: NextRequest, gated: boolean, deps: GateDeps): Promise<Resolved | { dead: DeadLinkReason } | null> {
   const key = req.nextUrl.searchParams.get('key');
   if (!key) return null;
   try {
     const stored = await deps.findGrantByToken(key);
-    if (!stored || !isLive(stored, deps.now?.())) return null;
+    if (!stored) return { dead: 'unknown' };
+    if (!isLive(stored, deps.now?.())) return { dead: stored.revokedAt ? 'revoked' : 'expired' };
     return { grant: stored, setCookie: cookieFor(stored, stored, deps) };
   } catch (err) {
     if (gated) throw err;
     return null;
   }
+}
+
+/** Relative path + query with `key` removed, for the dead-link page's
+ * "department login" link. Leading slashes collapse to one so it can never
+ * be protocol-relative. */
+function continueUrl(req: NextRequest): string {
+  const q = new URLSearchParams(req.nextUrl.searchParams);
+  q.delete('key');
+  const qs = q.toString();
+  return '/' + req.nextUrl.pathname.replace(/^[/\\]+/, '') + (qs ? `?${qs}` : '');
 }
 
 async function fromCookie(req: NextRequest, deps: GateDeps): Promise<Resolved | null | 'dead'> {
@@ -125,9 +136,11 @@ export async function gate(req: NextRequest, deps: GateDeps): Promise<GateResult
     // live personal session cookie is already present. Runs on public paths
     // too (the link lands on the public /). A key that does not resolve
     // leaves an existing built-in session in place.
+    let deadKey: DeadLinkReason | null = null;
     if (keyEligible && !livePersonal) {
       const keyed = await fromKey(req, gated, deps);
-      if (keyed) {
+      if (keyed && 'dead' in keyed) deadKey = keyed.dead;
+      else if (keyed) {
         if (keyed.setCookie) return { kind: 'redirect', url: redirectUrl(req, deps), setCookie: keyed.setCookie };
         if (!gated) return { kind: 'next' };
         // No cookie possible (no SESSION_SECRET): authorize this request only.
@@ -144,6 +157,11 @@ export async function gate(req: NextRequest, deps: GateDeps): Promise<GateResult
     if (picked.source === 'cookie') return decide(req, picked.grant, undefined, deps, false);
     if (picked.source === 'basic') return decide(req, picked.grant, b!.setCookie, deps, c === 'dead');
     const clear = c === 'dead' ? { clearCookie: true as const } : {};
+    // A dead personal link: say so, instead of the browser's password box.
+    if (deadKey) {
+      const contact = deps.env.signinContact || DEFAULT_SIGNIN_CONTACT;
+      return { kind: 'response', status: 401, body: deadLinkPage(deadKey, contact, departmentOn(deps) ? continueUrl(req) : null), headers: HTML, ...clear };
+    }
     if (departmentOn(deps)) return { kind: 'response', status: 401, body: unauthorizedPage(), headers: CHALLENGE, ...clear };
     // DEPARTMENT_LOGIN=off: no WWW-Authenticate anywhere, so no browser
     // password box. Pages get the sign-in page; APIs get JSON.
