@@ -36,5 +36,6 @@ export function deadLinkPage(reason: DeadLinkReason, contact: string, continueUr
   return page('This link is no longer active',
     `<p>${esc(DEAD_LINK_WHY[reason])}</p>` +
     `<p>For a new link, contact ${esc(contact)}.</p>` +
-    (continueUrl ? `<p>Have the department login? <a href="${esc(continueUrl)}">Sign in</a></p>` : ''));
+    (continueUrl ? `<p>Have the department login? <a href="${esc(continueUrl)}">Sign in</a></p>` : '') +
+    `<p>Students and visitors: the <a href="/">course list</a>, course pages and the <a href="/wiki">curriculum wiki</a> need no sign-in.</p>`);
 }

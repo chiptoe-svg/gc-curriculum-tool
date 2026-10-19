@@ -37,6 +37,7 @@ async function deadPage(path: string, env: Partial<GateDeps['env']> = {}) {
   const r = await gate(req(path), deps(env));
   expect(r.kind).toBe('response');
   if (r.kind !== 'response') throw new Error('unreachable');
+  expect(r.body).toContain('This link is no longer active');
   return r;
 }
 
@@ -60,7 +61,8 @@ describe('dead ?key= on a gated page, no cookie, no Basic', () => {
   });
   it('invalid Basic credentials do not rescue it: still the dead-link page', async () => {
     const r = await gate(req('/capture?key=tok_revoked', { auth: basic('wrong:creds') }), deps());
-    expect(r.kind).toBe('response'); if (r.kind === 'response') expect(r.headers['WWW-Authenticate']).toBeUndefined();
+    expect(r.kind).toBe('response');
+    if (r.kind === 'response') { expect(r.headers['WWW-Authenticate']).toBeUndefined(); expect(r.body).toContain('This link is no longer active'); }
   });
   it('names the contact (SIGNIN_CONTACT) and never the grant label/id', async () => {
     const r = await deadPage('/capture?key=tok_revoked', { signinContact: 'help@example.edu' });
@@ -81,6 +83,47 @@ describe('dead ?key= where another credential authorizes', () => {
   it('live personal cookie → proceeds as today', async () => {
     const r = await gate(req('/capture?key=tok_revoked', { cookie: liveCookie }), deps());
     expect(['next', 'rewrite']).toContain(r.kind);
+  });
+});
+
+describe('dead ?key= and stale session cookies', () => {
+  async function builtinCookie() {
+    const login = await gate(req('/capture', { auth: basic('gcfaculty:pw') }), deps());
+    if (login.kind !== 'next' && login.kind !== 'rewrite') throw new Error('login failed');
+    return `gc_session=${login.setCookie!.value}`;
+  }
+  it('(a) real built-in cookie + dead key, department on → next', async () => {
+    const r = await gate(req('/capture?key=tok_revoked', { cookie: await builtinCookie() }), deps());
+    expect(r.kind).toBe('next');
+  });
+  it('(b) built-in cookie + dead key, DEPARTMENT_LOGIN=off → dead-link page, cookie cleared, no challenge', async () => {
+    const r = await gate(req('/capture?key=tok_revoked', { cookie: await builtinCookie() }), deps({ departmentLogin: false }));
+    expect(r.kind).toBe('response'); if (r.kind !== 'response') return;
+    expect(r.body).toContain('This link is no longer active');
+    expect(r.clearCookie).toBe(true);
+    expect(r.headers['WWW-Authenticate']).toBeUndefined();
+  });
+  it('(c) dead personal cookie + dead key → dead-link page with clearCookie', async () => {
+    const r = await gate(req('/capture?key=tok_revoked', { cookie: `gc_session=${signSession(revoked.id, SECRET)}` }), deps());
+    expect(r.kind).toBe('response'); if (r.kind !== 'response') return;
+    expect(r.body).toContain('This link is no longer active');
+    expect(r.clearCookie).toBe(true);
+    expect(r.headers['WWW-Authenticate']).toBeUndefined();
+  });
+  it('(c) forged cookie + dead key → dead-link page with clearCookie', async () => {
+    const r = await gate(req('/capture?key=tok_revoked', { cookie: 'gc_session=forged.value' }), deps());
+    expect(r.kind).toBe('response'); if (r.kind !== 'response') return;
+    expect(r.body).toContain('This link is no longer active');
+    expect(r.clearCookie).toBe(true);
+  });
+});
+
+describe('visitor line', () => {
+  it('links to the public course list and wiki, with or without department login', async () => {
+    for (const env of [{}, { departmentLogin: false }]) {
+      const b = (await deadPage('/capture?key=tok_revoked', env)).body;
+      expect(b).toContain('<a href="/">course list</a>'); expect(b).toContain('<a href="/wiki">curriculum wiki</a>');
+    }
   });
 });
 
