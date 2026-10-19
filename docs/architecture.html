@@ -330,7 +330,7 @@
 
   <h3>Foundational competencies</h3>
 
-  <p>Five program-wide competencies — Agency, Attention to Detail, Resilience, Curiosity and Communication — are scored on Do only. Their Know and Understand scores are stored as empty (null), not as zero, and the software rejects a profile that fills them in. The reason: these are dispositions, shown through behavior. Students do not recall facts about Resilience or reason their way into it; they show it or they don't. A zero for Know or Understand would wrongly suggest that the course tried to teach recall or reasoning about a disposition and failed. A Do score of 0 for a foundational competency is a meaningful finding: the course does not create the conditions in which the disposition develops.</p>
+  <p>Six program-wide competencies — Agency, Attention to Detail, Resilience, Curiosity, Written Communication and Spoken Communication — are scored on Do only. Written and spoken communication have been recorded separately since 2026-10-19; profiles captured before then have five, with a single Communication row, and remain valid. Their Know and Understand scores are stored as empty (null), not as zero, and the software refuses to save a profile that fills them in. The reason: these are dispositions, shown through behavior. Students do not recall facts about Resilience or reason their way into it; they show it or they don't. A zero for Know or Understand would wrongly suggest that the course tried to teach recall or reasoning about a disposition and failed. A Do score of 0 for a foundational competency is a meaningful finding: the course does not create the conditions in which the disposition develops.</p>
 
   <h3>Mismatches between K, U and D</h3>
 
@@ -348,7 +348,7 @@
 
   <h3>How closely the software follows the research</h3>
 
-  <p>A fair question about any framework is whether the software actually does what the research it cites describes, or only borrows the names. The table below takes five research-based elements. For each, it gives what the research says and how the software applies it. In these five cases the rule is applied by the software itself — either a check that refuses to save a record breaking the rule, or a fixed calculation with no AI involved — rather than by instructions the AI may or may not follow.</p>
+  <p>A fair question about any framework is whether the software actually does what the research it cites describes, or only borrows the names. The table below takes five research-based elements. For each, it gives what the research says and how the software applies it. In four of them the software itself applies the rule — either a check that refuses to save a record breaking the rule, or a fixed calculation with no AI involved. The second row is different: the mismatch check is an instruction to the AI, which it may or may not follow (§12 rates it partial).</p>
 
   <table class="ref">
     <thead>
@@ -368,7 +368,7 @@
       <tr>
         <td><strong>Foundational = Do only, K/U empty</strong></td>
         <td>Dispositions (NACE career-readiness, AAC&amp;U, CASEL, executive-function research) are exhibited, not recalled.</td>
-        <td>Foundational competencies are a separate type in the stored data, and a foundational row that has Know or Understand filled in is refused. Empty is kept distinct from zero.</td>
+        <td>When a profile is saved, the app refuses a foundational competency that has a Know or Understand score (an application check, not a database rule). Empty is kept distinct from zero. Separately, the competency catalog has a database rule that foundational competencies carry no Know or Understand descriptions. <span class="src">In the code: a <code>.refine()</code> in the profile schema; catalog constraint <code>sub_competencies_foundational_ku_check</code>.</span></td>
       </tr>
       <tr>
         <td><strong>Problem-solving as emergent</strong></td>
@@ -378,7 +378,7 @@
       <tr>
         <td><strong>Prerequisite gaps</strong></td>
         <td>Sato et al. (2017) "phantom prerequisite" — course completion ≠ concept transfer; depths are ordinal levels, not quantities.</td>
-        <td>When several prerequisites develop the same skill, the tool takes the deepest level any one of them reached; it never adds levels together, because a depth is a rank, not an amount (this is "ordinal MAX"). Each result is labeled with what it rests on — measured captures, syllabus claims ("intended"), or nothing. A prerequisite that has not been captured gives "no data," never a false zero. <span class="src">In the code: <code>prereq-gaps.ts</code>; the label is the <code>basis</code> field, values measured / intended / none.</span></td>
+        <td>When several prerequisites develop the same skill, the tool takes the deepest level any one of them reached; it never adds levels together, because a depth is a rank, not an amount (this is "ordinal MAX"). Each result is labeled with what it rests on: "measured" (captured courses only), "mixed" (captured courses, but a syllabus claim from a prerequisite with no capture raised the result above what the captured courses alone show), "intended" (syllabus claims only) or "none" (nothing). A prerequisite that has not been captured gives "no data," never a false zero. <span class="src">In the code: <code>prereq-gaps.ts</code>; the label is the <code>basis</code> field, values measured / mixed / intended / none.</span></td>
       </tr>
     </tbody>
   </table>
@@ -389,7 +389,7 @@
     <p><strong>The 0–5 scale is the framework's own invention</strong> — a "working-hypothesis instrument." The cited traditions (Tomlinson, Wiggins &amp; McTighe, AAC&amp;U, EU Tuning) are <em>consistent with</em> a short, leveled scale; none prescribes this one.</p>
     <p><strong>KUD+ scores describe what a course gives students the <em>opportunity</em> to develop, not measured student attainment.</strong> They record, with evidence, what a course is designed to develop and what it assesses — not a measured outcome for any group of students. The planned <a href="./graduate-outcome-validation.html">Graduate Outcome Criterion-Relevance Study</a> checks a narrower question — whether what the tool measures is relevant to the first jobs GC graduates actually take — and does not turn these scores into attainment claims either.</p>
     <p><strong>The 3-Act program structure is a proposal, not institutional policy</strong>, and the three named acts are <em>not</em> used in scoring. The scaffolding analysis checks a generic sequence — introduction, then practice, then integration — by course order (the research-based part); the named acts appear only in wiki pages and other prose.</p>
-    <p><strong>The five foundational competencies are a "defensible working set," not "the right set"</strong>, and can be revised as more courses are captured. And the highest evidence level, <code>artifact_verified</code> (verified against actual student work), is defined but cannot be reached yet, because the software has no way to cite a student artifact. So the strongest level any score can reach today is "materials-supported."</p>
+    <p><strong>The six foundational competencies are a "defensible working set," not "the right set"</strong>, and can be revised as more courses are captured. And the highest evidence level, <code>artifact_verified</code> (verified against actual student work), is defined but cannot be reached yet, because the software has no way to cite a student artifact. So the strongest level any score can reach today is "materials-supported."</p>
   </div>
 
   <p>The full academic case — the theory, the relationship to Constructive Alignment, the evidence for adding depth levels — is in the <a href="./background.html">Background document</a>. The problem-solving position is in the <a href="./problem-solving-deep-dive.html">problem-solving deep-dive</a>, and the 3-Act structure in the <a href="./three-act-deep-dive.html">3-Act deep-dive</a>. The table above samples five elements; <a href="#aspiration-to-implementation">§12</a> goes through every main claim and says, for each, whether the software enforces it, only instructs the AI to follow it, treats it as a design choice, or has not built it yet.</p>
@@ -577,7 +577,7 @@
 
   <h3>Phase C — Drafting the profile</h3>
 
-  <p>When the instructor asks for the profile, a separate AI call — not the interview AI — reads the full interview transcript and the materials and drafts the Course Outcome Profile in one pass. It contains: competencies (5–15 technical plus the 5 baseline foundational, each with K/U/D depths, evidence quotes and reasoning), what students are expected to bring in, a verification summary, and interview notes. Every finding is labeled with its source and carries citations (§7).</p>
+  <p>When the instructor asks for the profile, a separate AI call — not the interview AI — reads the full interview transcript and the materials and drafts the Course Outcome Profile in one pass. It contains: competencies (5–15 technical plus the 6 baseline foundational (§3), each with K/U/D depths, evidence quotes and reasoning), what students are expected to bring in, a verification summary, and interview notes. Every finding is labeled with its source and carries citations (§7).</p>
 
   <h3>Correcting and reviewing the draft</h3>
 
@@ -916,9 +916,9 @@
   <h3>Snapshots → prerequisite gap analysis</h3>
 
   <p>Which courses are prerequisites of which comes from the official Clemson catalog, synced into the database: prerequisites, "before or alongside" requirements and corequisites, including "any one of these" groups. This catalog-first prerequisite map feeds the interview's brief on related courses, the scoring context, and the prerequisite-chain tool. <span class="incode">In the code: <code>course_catalog_entries</code>, <code>course_catalog_prereqs</code>; tool <code>prereq_chain</code>.</span></p>
-  <p>The <em>skill-level</em> gap analysis is a separate layer. It stores <em>prerequisite links</em>: each says "this course relies on that immediate prerequisite for this specific competency, at this expected K/U/D depth," and carries a label of what it rests on (measured, intended or none). The AI proposes these links from the free-text prerequisites and the course's expectations of incoming students; faculty confirm them. The gap calculation then compares what the course needs with what its confirmed prerequisites are shown to deliver, taking the deepest level reached rather than adding levels (depths are ranks, not amounts). A prerequisite that has not been captured gives "no data," never an assumed gap.</p>
+  <p>The <em>skill-level</em> gap analysis is a separate layer. It stores <em>prerequisite links</em>: each says "this course relies on that immediate prerequisite for this specific competency, at this expected K/U/D depth." The AI proposes these links from the free-text prerequisites and the course's expectations of incoming students; faculty confirm them. The gap calculation then compares what the course needs with what its confirmed prerequisites are shown to deliver, taking the deepest level reached rather than adding levels (depths are ranks, not amounts). Each result is labeled with what it rests on, as in §3: measured, mixed, intended or none. A prerequisite that has not been captured gives "no data," never an assumed gap.</p>
   <p>To give the gap view something to show before real captures exist, a companion step reads K/U/D levels claimed in the syllabus from catalog information, labeled <code>claimed</code>. These intended values are <em>never</em> mixed into measured attainment. The gap view for each course is at <code>/courses/[code]</code>; a program-wide diagram is deferred. No links had been confirmed as of October 2026, so the gap view stays sparse until faculty propose and confirm them. In structure, this prerequisite network with a depth at each course is a <em>knowledge space</em> that only counts what is backed by evidence (the formal idea behind adaptive-learning systems such as ALEKS) &mdash; see <a href="./background.html#grounding">background §2</a> for the framing and where the comparison breaks down.</p>
-  <p><span class="incode">In the code: table <code>prerequisite_edges</code> (each row a direct foreign-key link from a course to one prerequisite, tagged with a sub-competency, expected K/U/D and a <code>basis</code> of <code>measured</code> | <code>intended</code> | <code>none</code>); calculation <code>computePrereqGaps</code> (ordinal MAX); <code>no_data</code>; function <code>intended-skills-extract</code> (migration 0031, table <code>course_intended_coverage</code>).</span></p>
+  <p><span class="incode">In the code: table <code>prerequisite_edges</code> (each row a direct foreign-key link from a course to one prerequisite, tagged with a sub-competency and expected K/U/D); calculation <code>computePrereqGaps</code> (ordinal MAX; each result's <code>basis</code> is <code>measured</code> | <code>mixed</code> | <code>intended</code> | <code>none</code>); <code>no_data</code>; function <code>intended-skills-extract</code> (migration 0031, table <code>course_intended_coverage</code>).</span></p>
 
   <h3>Position Capture → Q1 sufficiency</h3>
 
@@ -953,7 +953,7 @@
 
   <div class="callout warn">
     <div class="callout-title">Summary</div>
-    <p>About a third of the claims are enforced in code. The strongest are two groups. First, the checks on course profiles: foundational competencies have empty Know and Understand scores; the evidence thresholds; depths limited to whole numbers 0–5; and the rule that credited reflection must cite graded work. Second, the prerequisite-gap calculation: it takes the deepest level reached, labels what each result rests on, and looks only at a course's immediate prerequisites. Both run in the live system on every saved profile or gap calculation, and both are covered by automated tests. The rest are rules the AI is instructed to follow, design choices, or parts of the planned end state that are not built.</p>
+    <p>13 of the 31 claims below are enforced by the software; 13 are partial, 2 are design choices (stipulated) and 3 are not built. The enforced ones fall into two main groups. First, the checks on course profiles: foundational competencies have empty Know and Understand scores; the evidence thresholds; depths limited to whole numbers 0–5; and the rule that credited reflection must cite graded work. Second, the prerequisite-gap calculation: it takes the deepest level reached, labels what each result rests on, and looks only at a course's immediate prerequisites. Both run in the live system on every saved profile or gap calculation, and both are covered by automated tests. The partial ones are mostly rules the AI is instructed to follow, or features that are incomplete or switched off; the rest are design choices or parts of the planned end state that are not built.</p>
     <p>For the tool's first question — <em>does the curriculum build students toward the careers it claims?</em> — both halves are built (scoring what courses develop, and capturing what employers require), and so is the comparison between them: the demand-minus-attainment layer (calculation, <code>career_target_demand</code> table, the step that fills it, the per-target panel; covered by automated tests). It is switched off by the <code>DEMAND_COVERAGE_SEAM</code> setting and has no employer data yet. So Q1 <em>sufficiency</em> can be computed; showing it requires turning the setting on and collecting employer data.</p>
     <p><span class="incode">In the code: the profile checks run through the schema's <code>.parse()</code> on the production path.</span></p>
   </div>
@@ -984,7 +984,7 @@
       </tr>
       <tr>
         <td>Foundational competencies are scored on <strong>Do only; K and U stored empty, not zero</strong> <span class="src">(background §8)</span></td>
-        <td>A foundational competency with Know or Understand filled in is refused when saved. Foundational and technical competencies are different types in the stored data. <span class="src">In the code: a <code>.refine()</code> on rows with <code>type:'foundational'</code> and non-null <code>k_depth</code>/<code>u_depth</code>.</span></td>
+        <td>When a profile is saved, the app refuses a foundational competency that has a Know or Understand score. This is a check in the application, run at save time, not a database rule. Separately, the competency catalog has a database rule that foundational competencies carry no Know or Understand descriptions. <span class="src">In the code: a <code>.refine()</code> on rows with <code>type:'foundational'</code> and non-null <code>k_depth</code>/<code>u_depth</code>; catalog constraint <code>sub_competencies_foundational_ku_check</code>.</span></td>
         <td><span class="st st-enforced">enforced</span></td>
       </tr>
       <tr>
@@ -1026,7 +1026,7 @@
       </tr>
       <tr>
         <td>Interview Area 7 records productive-failure conditions: <strong>five qualitative</strong> (present/partial/absent) <strong>+ one numeric</strong> supporting depth — the fifth, <strong>abstraction-and-bridging</strong>, records whether the course makes students abstract a principle across surface-varied cases and apply it to a genuinely new context (Gick-Holyoak / Gentner — the active transfer mechanism) <span class="src">(deep-dive II)</span></td>
-        <td>The software checks the <em>form</em> of the answer (each condition is one of the allowed values, and the depth is 0–5). <em>Which</em> value each condition gets is left to the AI, following its instructions, so individual judgments should be checked. <span class="src">In the code: <code>productiveFailureConditionsSchema</code> (the four enums + the 0–5 depth).</span></td>
+        <td>The software checks the <em>form</em> of the answer (each condition is one of the allowed values, and the depth is 0–5). <em>Which</em> value each condition gets is left to the AI, following its instructions, so individual judgments should be checked. <span class="src">In the code: <code>productiveFailureConditionsSchema</code> (five condition fields + the 0–5 depth).</span></td>
         <td><span class="st st-partial">partial</span></td>
       </tr>
       <tr>
