@@ -535,7 +535,6 @@ Anything not listed here that a wiki would want — edits with rationale, concep
   - **Open decision:** whether/how to fold the spoken-interview, audio-understanding-perception, and fast/slow-analyst ideas into the real Position Capture page-6 interview. That experimentation now happens in the standalone `~/projects/voicelab` repo; nothing lands in this codebase until a concrete design is approved.
 
 ### Deferred / debt
-<<<<<<< HEAD
 - **Catalog foundationals / problem solving (owner + Claude, 2026-10-19) — deferrals; branch `feat/catalog-foundationals`.**
   - A numeric problem-solving score is deferred to P3: `problem-solving` is `scoring = derived` (no per-course score; a per-course number would credit any assignment called a problem). The wiki page shows an evidence profile instead.
   - `/program` matrices do not yet show unlinked catalog competencies, so the new competencies (and derived handling there) appear only when P3 target links land.
@@ -543,10 +542,8 @@ Anything not listed here that a wiki would want — edits with rationale, concep
   - Existing capture snapshots keep a single Communication row until recaptured; old and new snapshots both validate and render.
   - Coverage rescoring for the new competencies is a separate paid step; estimate first.
   - `pnpm reliability:check` against the changed coverage/capture prompts is an owner decision at the runbook's pre-deploy step; if skipped, record why.
-=======
 - **Shared OpenAI credit check — unmapped surfaces (2026-10-19; feature itself is in What's live).**
   - Left unmapped (no 503 mapping; the generic error path still runs): `POST /api/courses/[code]/analyze-materials` (synthesis catch is a bare `catch {}` returning 500), Explore and Ask streams (they relay `err.message`, which for `AiCreditsExhaustedError` is already the faculty text, but without the `ai_credits_exhausted` code), `lib/ai/transcribe.ts` Whisper client (a direct OpenAI client; not covered), the partner `/partners/*` routes, and capture-adjacent pages other than `/capture/[code]` (no banner).
->>>>>>> dev
 - **P2 Task 13 — deferrals and open review minors (owner, 2026-10-14).** Plan: `docs/superpowers/plans/2026-10-13-competency-catalog-p2.md`.
   - `centroid_distance` (`bundle_golden_samples`) is created and left NULL — computing it is deferred (Ruling 11): elements aren't embedded (spec §4 B) and P2 has no confirmed members yet.
   - A second blind reviewer's submission UI is deferred (Ruling 12) — the schema (`bundle_golden_picks.reviewer`) and `cohenKappa` support it, and the report prints κ once two reviewers' picks exist for a bundle, but there's no page to collect the second submission.
