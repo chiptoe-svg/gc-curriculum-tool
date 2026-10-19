@@ -18,8 +18,8 @@ export type ScaffoldingQuality = 'strong' | 'adequate' | 'brittle' | 'weak' | 'a
 export interface SubCompetency {
   id: string;                  // stable slug like "brand-positioning"
   name: string;
-  knowDescriptor: string;
-  understandDescriptor: string;
+  knowDescriptor: string | null;       // null for foundational (D-only) competencies
+  understandDescriptor: string | null; // null for foundational (D-only) competencies
   doDescriptor: string;
 }
 

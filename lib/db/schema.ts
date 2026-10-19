@@ -947,8 +947,8 @@ export const targetSubCompetencies = pgView('target_sub_competencies', {
   careerTargetId: text('career_target_id').notNull(),
   id: text('id').notNull(),
   name: text('name').notNull(),
-  knowDescriptor: text('know_descriptor').notNull(),
-  understandDescriptor: text('understand_descriptor').notNull(),
+  knowDescriptor: text('know_descriptor'),            // null for foundational (D-only) rows — 0060
+  understandDescriptor: text('understand_descriptor'), // null for foundational (D-only) rows — 0060
   doDescriptor: text('do_descriptor').notNull(),
   displayOrder: integer('display_order').notNull(),
   retired: boolean('retired').notNull(),

@@ -29,7 +29,7 @@ export interface BundleListItem {
 export interface ElementDef { elementId: string; elementName: string; domain: string; description: string }
 export interface GoldenCandidate { key: string; label: string; rank: number; score: number; members: Array<{ taskId: string; onetSocCode: string }> }
 export interface CardFields { stratum: string; includes: string; excludes: string; distinctions: string; positiveExamples: string[]; negativeExamples: string[] }
-export interface BundleSummary { id: string; name: string; knowDescriptor: string; understandDescriptor: string; doDescriptor: string; origin: string }
+export interface BundleSummary { id: string; name: string; knowDescriptor: string | null; understandDescriptor: string | null; doDescriptor: string; origin: string }
 export interface PickView { source: string | null; externalId: string | null; onetSocCode: string | null; position: string | null; noCleanMatch: boolean }
 export interface SampleInfo { candidates: GoldenCandidate[]; submitted: boolean; reviewer: string | null; picks: PickView[] }
 export interface MemberView { id: string; source: string; externalId: string; externalLabel: string; onetSocCode: string | null; position: string; aiPosition: string | null; status: string; proposedBy: string; rationale: string | null; reviewNote: string | null; bulkConfirmed: boolean }
@@ -179,9 +179,9 @@ function CardReadout({ bundle, card }: { bundle: BundleSummary; card: CardFields
   return (
     <dl className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
       <div><dt className="text-xs uppercase text-slate-500">Name</dt><dd>{bundle.name}</dd></div>
-      <div><dt className="text-xs uppercase text-slate-500">Know</dt><dd>{bundle.knowDescriptor}</dd></div>
-      <div><dt className="text-xs uppercase text-slate-500">Understand</dt><dd>{bundle.understandDescriptor}</dd></div>
-      <div><dt className="text-xs uppercase text-slate-500">Do</dt><dd>{bundle.doDescriptor}</dd></div>
+      {bundle.knowDescriptor != null && <div><dt className="text-xs uppercase text-slate-500">Know</dt><dd>{bundle.knowDescriptor}</dd></div>}
+      {bundle.understandDescriptor != null && <div><dt className="text-xs uppercase text-slate-500">Understand</dt><dd>{bundle.understandDescriptor}</dd></div>}
+      <div><dt className="text-xs uppercase text-slate-500">{bundle.knowDescriptor == null && bundle.understandDescriptor == null ? 'Do only (foundational)' : 'Do'}</dt><dd>{bundle.doDescriptor}</dd></div>
       {!card && <p className="text-sm text-slate-500 sm:col-span-2">No confirmed cards yet.</p>}
       {card && (
         <>

@@ -1,5 +1,6 @@
 import type { CareerTarget } from '@/lib/domain/types';
 import { isSubCompetencyDefinition } from '@/lib/domain/types';
+import { formatDescriptorLines } from '@/lib/catalog/descriptors';
 
 export function buildTargetContext(target: CareerTarget | null): string {
   if (!target) return '';
@@ -14,9 +15,7 @@ export function buildTargetContext(target: CareerTarget | null): string {
   // which never produces `{ ref }` entries — the filter is just the type guard.
   for (const sc of target.subCompetencies.filter(isSubCompetencyDefinition)) {
     lines.push(`- id=${sc.id} :: ${sc.name}`);
-    lines.push(`    Know: ${sc.knowDescriptor}`);
-    lines.push(`    Understand: ${sc.understandDescriptor}`);
-    lines.push(`    Do: ${sc.doDescriptor}`);
+    for (const l of formatDescriptorLines(sc)) lines.push(`    ${l}`);
   }
   return lines.join('\n');
 }

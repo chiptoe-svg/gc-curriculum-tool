@@ -286,8 +286,8 @@ export async function findLatestNonRetiredSnapshot(courseCode: string, executor:
 export interface SurvivorCompetency {
   id: string;
   name: string;
-  knowDescriptor: string;
-  understandDescriptor: string;
+  knowDescriptor: string | null;
+  understandDescriptor: string | null;
   doDescriptor: string;
 }
 

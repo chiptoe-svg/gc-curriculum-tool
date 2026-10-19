@@ -1,9 +1,10 @@
 import { createHash } from 'node:crypto';
 import type { BundleStratum } from '@/lib/db/schema';
+import { formatDescriptorLines } from '@/lib/catalog/descriptors';
 
 export const STRATA = ['foundational', 'technical', 'business', 'workflow_ai'] as const satisfies readonly BundleStratum[];
 
-export interface BundleSummary { id: string; name: string; knowDescriptor: string; understandDescriptor: string; doDescriptor: string; origin: string }
+export interface BundleSummary { id: string; name: string; knowDescriptor: string | null; understandDescriptor: string | null; doDescriptor: string; origin: string }
 export interface CardFields { stratum: BundleStratum; includes: string; excludes: string; distinctions: string; positiveExamples: string[]; negativeExamples: string[] }
 export interface ReviewCard extends CardFields { competencyId: string; name: string }
 export interface CardsReviewFile { _approval: string; drafted: { model: string; promptVersion: string; at: string; costUsdCents: number }; cards: ReviewCard[] }
@@ -16,9 +17,7 @@ export function textHash(text: string): string {
 export function cardEmbedText(bundle: BundleSummary, card: CardFields): string {
   return [
     bundle.name,
-    `Know: ${bundle.knowDescriptor}`,
-    `Understand: ${bundle.understandDescriptor}`,
-    `Do: ${bundle.doDescriptor}`,
+    ...formatDescriptorLines(bundle),
     `Includes: ${card.includes}`,
     `Examples: ${card.positiveExamples.join('; ')}`,
   ].join('\n');

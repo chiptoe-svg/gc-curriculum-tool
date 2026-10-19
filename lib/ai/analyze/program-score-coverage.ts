@@ -76,8 +76,8 @@ export interface ScoreCompetenciesInput {
   competencies: Array<{
     id: string;
     name: string;
-    knowDescriptor: string;
-    understandDescriptor: string;
+    knowDescriptor: string | null;
+    understandDescriptor: string | null;
     doDescriptor: string;
   }>;
   /** Optional model override (e.g. for A/B'ing the producing model); default = the function's configured tier. */

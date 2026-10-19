@@ -65,8 +65,8 @@ export interface DbTargetRow {
 export interface DbSubRow {
   id: string;
   name: string;
-  knowDescriptor: string;
-  understandDescriptor: string;
+  knowDescriptor: string | null;
+  understandDescriptor: string | null;
   doDescriptor: string;
   retired: boolean;
   mergedInto: string | null;
@@ -387,7 +387,7 @@ function formatChange(c: FieldChange, indent: string): string[] {
     return lines;
   }
   if (typeof before === 'string' || typeof after === 'string') {
-    return [`${indent}${field}:`, `${indent}  - ${String(before)}`, `${indent}  + ${String(after)}`];
+    return [`${indent}${field}:`, `${indent}  - ${before == null ? '(none)' : String(before)}`, `${indent}  + ${after == null ? '(none)' : String(after)}`];
   }
   return [`${indent}${field}: ${JSON.stringify(before)} -> ${JSON.stringify(after)}`];
 }
@@ -401,7 +401,9 @@ export function formatPlan(plan: BatchPlan): string {
   }
   for (const r of plan.competencyInserts) {
     out.push(`  INSERT ${r.id} "${r.name}"`);
-    out.push(`    K: ${r.knowDescriptor}`, `    U: ${r.understandDescriptor}`, `    D: ${r.doDescriptor}`);
+    if (r.knowDescriptor != null) out.push(`    K: ${r.knowDescriptor}`);
+    if (r.understandDescriptor != null) out.push(`    U: ${r.understandDescriptor}`);
+    out.push(`    D: ${r.doDescriptor}${r.knowDescriptor == null && r.understandDescriptor == null ? ' (do only, foundational)' : ''}`);
   }
   for (const u of plan.competencyUpdates) {
     out.push(`  UPDATE ${u.id} (${u.changes.map(c => c.field).join(', ')})`);
