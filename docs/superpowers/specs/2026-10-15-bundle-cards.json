@@ -425,16 +425,16 @@
       "competencyId": "project-management",
       "name": "Project management across creative and production work",
       "stratum": "business",
-      "includes": "This bundle covers planning and running creative, print, or packaging projects from brief through delivery and close-out, including scope, schedule, budget, risk, and change control across teams or vendors. It includes work breakdown, dependencies, critical path, and production lead times at different levels of complexity, with attention to scope and handoffs where projects often fail. It covers identifying early warnings of compounding schedule delays, reporting status, tracking changes, re-baselining when scope, budget, or dates change, and recording lessons learned.",
-      "excludes": "Client approval and expectation management without responsibility for running the project plan belongs in project-oversight. Detailed production cost estimation and equipment payback analysis belong in cost-management. Designing or re-engineering production processes belongs in workflow-design.",
-      "distinctions": "Unlike project-oversight, which keeps clients and teams aligned while production runs the plan, this bundle owns the project plan and its execution from brief to delivery. Unlike cost-management, it integrates the budget with scope, dependencies, schedule, risk, and changes rather than centering on detailed production estimates or equipment justification. Unlike workflow-design, it manages a specific project's life cycle rather than designing or re-engineering the production process.",
+      "includes": "This bundle covers managing the plan for a creative, print, or packaging project from brief through delivery and close-out: scope, work breakdown, dependencies, critical path, production lead times, schedule, budget, and risk, at different levels of complexity. When a change is requested, it works out the effect on dates and cost, re-baselines the plan, and records the change. It covers spotting early warnings of compounding delays, reporting status and risk to the internal team, and recording lessons learned. Its question is whether the team can deliver and what it will cost.",
+      "excludes": "Getting the client's sign-offs, explaining a change's trade-offs so the client can decide, and setting client expectations belong in project-oversight; a change request is brought in and decided there, and its impact is planned here. Detailed production cost estimation and equipment payback analysis belong in cost-management. Designing or re-engineering production processes belongs in workflow-design.",
+      "distinctions": "Unlike project-oversight, which manages the client's decisions, this bundle manages the plan: it owns scope, schedule, budget, dependencies, and risk, and turns an approved change into a re-baselined plan. Unlike cost-management, it integrates the budget with scope, dependencies, schedule, risk, and changes rather than centering on detailed production estimates or equipment justification. Unlike workflow-design, it manages a specific project's life cycle rather than designing or re-engineering the production process.",
       "positiveExamples": [
-        "Build a packaging project scope, work breakdown, schedule, and budget across teams and vendors, accounting for dependencies and production lead times.",
-        "Flag a delayed handoff's effect on the critical path, report the risk, and re-baseline the plan after a scope or date change.",
-        "Run a creative production project through delivery and document lessons learned at close-out."
+        "Build a packaging project's scope, work breakdown, schedule, and budget across teams and vendors, accounting for dependencies and production lead times.",
+        "Work out how a requested change affects the critical path and budget, re-baseline the plan, and record the change.",
+        "Report schedule and risk status to the internal team, and document lessons learned at close-out."
       ],
       "negativeExamples": [
-        "Manage client sign-offs and explain delivery trade-offs while the production team runs the plan (belongs in project-oversight)",
+        "Explain a requested change's timeline and cost trade-offs to the client and get their decision (belongs in project-oversight)",
         "Build a production estimate based on specifications, vendor capability, and run-length economics (belongs in cost-management)",
         "Re-engineer a finishing sequence and validate its effect on throughput and quality (belongs in workflow-design)"
       ]
@@ -443,16 +443,16 @@
       "competencyId": "project-oversight",
       "name": "Client-facing project coordination",
       "stratum": "business",
-      "includes": "This bundle covers keeping the client and internal creative and production teams aligned from the brief through creative, prepress, production, and delivery on print, packaging, or brand projects. It includes recognizing handoff points that need client sign-off and coordinating approvals and changes through those points. It covers continuously managing client expectations about timeline, quality, and cost, communicating trade-offs before they become surprises while the production side runs the plan.",
-      "excludes": "Building and running the project schedule, budget, and risk plan belongs in project-management; estimating costs and managing spend belongs in cost-management. Configuring an approval or proofing workflow belongs in workflow-architecture, not here.",
-      "distinctions": "Unlike project-management, which plans and runs the project, project-oversight keeps the client aligned with creative and production teams while production runs the plan. Unlike customer-relationship-management, its focus is ongoing project approvals and expectations rather than resolving service problems and maintaining the account relationship. Unlike team-coordination, it coordinates client-facing decisions and handoffs rather than managing staff performance or HR responsibilities.",
+      "includes": "This bundle covers managing the client's decisions on a print, packaging, or brand project from brief through delivery. It includes getting sign-off at the handoffs that need it, such as proofs before production; explaining a change's timeline, quality, and cost trade-offs so the client can decide; setting and keeping client expectations; and carrying the client's decision back to the creative and production teams. When a change is requested, it brings the request in and gets the client's decision; the effect on the plan is worked out in project-management. Its question is whether the client knows what they are getting and has agreed.",
+      "excludes": "Building the schedule and budget, working out a change's impact, and re-baselining the plan belong in project-management; estimating costs and managing spend belongs in cost-management. Configuring an approval or proofing workflow belongs in workflow-architecture, and resolving service problems and keeping the account belong in customer-relationship-management.",
+      "distinctions": "Unlike project-management, which manages the plan and the change's impact on it, project-oversight manages the client's decisions: sign-offs, expectations, and the client's choice on a change. Unlike customer-relationship-management, its focus is approvals and expectations on a live project rather than resolving service problems and maintaining the account relationship. Unlike team-coordination, it handles client-facing decisions rather than managing staff performance or HR responsibilities.",
       "positiveExamples": [
-        "Coordinate client sign-off on a packaging proof before the handoff to production.",
-        "Explain the timeline, quality, and cost trade-offs of a requested change before the client decides.",
-        "Communicate an approved client revision to creative and prepress teams so everyone works toward the same expectations."
+        "Get the client's sign-off on a packaging proof before the handoff to production.",
+        "Explain the timeline, quality, and cost trade-offs of a requested change so the client can decide.",
+        "Carry an approved client revision back to the creative and prepress teams so everyone works toward the same expectations."
       ],
       "negativeExamples": [
-        "Build a dependency-based production schedule and re-baseline it after a scope change (belongs in project-management)",
+        "Work out a change's effect on the critical path and re-baseline the schedule (belongs in project-management)",
         "Configure proof routing and approval steps in a workflow platform (belongs in workflow-architecture)",
         "Resolve a client quality complaint and maintain a relationship record for future account service (belongs in customer-relationship-management)"
       ]
