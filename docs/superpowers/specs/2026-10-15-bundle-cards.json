@@ -1,5 +1,5 @@
 {
-  "_approval": "",
+  "_approval": "Owner approved 2026-10-19 (\"1 - approved\" for the 45 cards; \"1-approve\" for the problem-solving card), in session. All 46 cards.",
   "drafted": {
     "model": "gpt-6.1-sol",
     "promptVersion": "bundle-card-draft@1",
@@ -835,6 +835,5 @@
         "Design a layout that communicates a brand message visually (belongs in the technical bundles)"
       ]
     }
-  ],
-  "_pendingOwnerApproval": "problem-solving card drafted 2026-10-19 after the 45-card approval; the other 45 cards were approved (\"1 - approved\")."
+  ]
 }
