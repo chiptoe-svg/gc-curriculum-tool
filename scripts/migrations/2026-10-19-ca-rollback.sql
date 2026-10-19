@@ -27,7 +27,7 @@ END $$;
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM sub_competencies WHERE foundational OR scoring = 'derived') THEN
-    RAISE EXCEPTION 'rollback: foundational or derived rows exist — delete the 2026-10-19 additions first';
+    RAISE EXCEPTION 'rollback: foundational or derived rows exist — run scripts/migrations/2026-10-19-ca-remove-additions.sql first (it removes the 2026-10-19 additions; it does not restore the two revised descriptors)';
   END IF;
 END $$;
 

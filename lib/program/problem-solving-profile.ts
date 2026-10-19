@@ -67,9 +67,18 @@ const link = (code: string) => `[[${slugOf(code)}]]`;
 const links = (codes: string[]) => codes.map(link).join(', ');
 
 const SCAFFOLDING_URL = 'https://gcworkflow.clemson.edu:8443/program/scaffolding';
-const PS = additions.newCompetencies.find(c => c.id === 'problem-solving');
-export const PS_DO_DESCRIPTOR: string = PS?.doDescriptor ?? '';
-export const PS_DERIVED_FROM: string = PS?.derivedFrom ?? '';
+/** Throws (never renders blank) if the problem-solving entry or its D descriptor / derivedFrom is missing. */
+export function readProblemSolvingEntry(a: { newCompetencies: Array<{ id: string; doDescriptor?: unknown; derivedFrom?: unknown }> }): { doDescriptor: string; derivedFrom: string } {
+  const ps = a.newCompetencies.find(c => c.id === 'problem-solving');
+  if (!ps) throw new Error("catalog additions: 'problem-solving' entry is missing");
+  const nonEmpty = (v: unknown): v is string => typeof v === 'string' && v.trim().length > 0;
+  if (!nonEmpty(ps.doDescriptor)) throw new Error("catalog additions: 'problem-solving' has no doDescriptor");
+  if (!nonEmpty(ps.derivedFrom)) throw new Error("catalog additions: 'problem-solving' has no derivedFrom");
+  return { doDescriptor: ps.doDescriptor, derivedFrom: ps.derivedFrom };
+}
+const PS = readProblemSolvingEntry(additions);
+export const PS_DO_DESCRIPTOR: string = PS.doDescriptor;
+export const PS_DERIVED_FROM: string = PS.derivedFrom;
 
 const CONDITION_LABELS: Record<Condition, string> = {
   generate_then_consolidate: 'Generate, then consolidate',

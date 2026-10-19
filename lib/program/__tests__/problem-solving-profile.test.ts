@@ -3,6 +3,9 @@ import {
   buildProblemSolvingProfile,
   renderProblemSolvingPage,
   writeProblemSolvingPage,
+  readProblemSolvingEntry,
+  PS_DO_DESCRIPTOR,
+  PS_DERIVED_FROM,
   type PsCourseInput,
   type PsDepthInput,
 } from '../problem-solving-profile';
@@ -90,5 +93,17 @@ describe('writeProblemSolvingPage', () => {
     expect(arg.pages).toHaveLength(1);
     expect(arg.pages[0]!.path).toBe('competencies/problem-solving.md');
     expect(arg.pages[0]!.content).toContain('[[gc-3460]]');
+  });
+});
+
+describe('readProblemSolvingEntry', () => {
+  it('returns the real entry (non-blank constants)', () => {
+    expect(PS_DO_DESCRIPTOR.length).toBeGreaterThan(0);
+    expect(PS_DERIVED_FROM.length).toBeGreaterThan(0);
+  });
+  it('throws on a missing entry, missing D descriptor, or missing derivedFrom', () => {
+    expect(() => readProblemSolvingEntry({ newCompetencies: [{ id: 'other' }] })).toThrow(/missing/);
+    expect(() => readProblemSolvingEntry({ newCompetencies: [{ id: 'problem-solving', derivedFrom: 'x' }] })).toThrow(/doDescriptor/);
+    expect(() => readProblemSolvingEntry({ newCompetencies: [{ id: 'problem-solving', doDescriptor: 'd', derivedFrom: '  ' }] })).toThrow(/derivedFrom/);
   });
 });

@@ -21,7 +21,15 @@
  *     scripts/catalog/insert-catalog-additions.ts --file <abs path> \
  *     --expect-db gc_curriculum_ca_scratch [--apply]   # default: dry run
  *
- * Exit codes: 0 ok, 1 wrong DB, 2 usage, 3 bad file, 4 write refused/failed.
+ * Dry run (the default) runs the SAME applyAdditions inside a transaction that
+ * always rolls back, so refusals (existing id, prior-text drift) are previewed
+ * with their full messages before anything is applied.
+ *
+ * --preflight runs only the read-only checks (no write attempt), using columns
+ * that exist before migration 0060, so the runbook can run it BEFORE 0060.
+ *
+ * Exit codes: 0 ok (dry run: would apply), 1 wrong DB, 2 usage, 3 bad file,
+ * 4 apply refused/failed, 5 dry run/preflight: WOULD REFUSE (nothing was written).
  * Never prints DATABASE_URL. One transaction.
  */
 import { readFileSync } from 'node:fs';
@@ -33,14 +41,17 @@ import { loadAppEnv, isMainModule, formatDbError, assertExpectedDb } from '@/scr
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 type Executor = Tx | typeof db;
 
-export interface Args { file: string; expectDb: string; apply: boolean }
+export interface Args { file: string; expectDb: string; apply: boolean; preflight: boolean }
 
 export function parseArgs(argv: string[]): Args {
   const val = (f: string) => { const i = argv.indexOf(f); return i >= 0 ? argv[i + 1] : undefined; };
   const file = val('--file');
   const expectDb = val('--expect-db');
-  if (!file || !expectDb) throw new Error('usage: --file <catalog-additions.json> --expect-db <name> [--apply]');
-  return { file, expectDb, apply: argv.includes('--apply') };
+  if (!file || !expectDb) throw new Error('usage: --file <catalog-additions.json> --expect-db <name> [--apply | --preflight]');
+  const apply = argv.includes('--apply');
+  const preflight = argv.includes('--preflight');
+  if (apply && preflight) throw new Error('--apply and --preflight are mutually exclusive');
+  return { file, expectDb, apply, preflight };
 }
 
 export interface NewCompetency {
@@ -124,11 +135,11 @@ export function parseAdditions(json: unknown): Additions {
 }
 
 /**
- * Inserts the new rows (+ identity map rows) and applies the revisions, all on
- * `tx`. Refuses (throws; caller's transaction rolls back) if any new id exists
- * or any revision's current DB text differs from its prior* text.
+ * Read-only precondition checks: throws if any new id exists or any revision's
+ * current DB text differs from its prior* text. Selects only columns that
+ * exist BEFORE migration 0060, so it can run as a pre-migration preflight.
  */
-export async function applyAdditions(tx: Executor, a: Additions): Promise<{ inserted: string[]; revised: string[] }> {
+export async function checkAdditions(tx: Executor, a: Additions): Promise<void> {
   const ids = a.newCompetencies.map(c => c.id);
   if (ids.length > 0) {
     const existing = await tx.select({ id: subCompetencies.id }).from(subCompetencies).where(inArray(subCompetencies.id, ids));
@@ -137,7 +148,7 @@ export async function applyAdditions(tx: Executor, a: Additions): Promise<{ inse
     }
   }
   for (const r of a.descriptorRevisions) {
-    const [cur] = await tx.select().from(subCompetencies).where(eq(subCompetencies.id, r.id));
+    const [cur] = await tx.select({ knowDescriptor: subCompetencies.knowDescriptor, understandDescriptor: subCompetencies.understandDescriptor, doDescriptor: subCompetencies.doDescriptor }).from(subCompetencies).where(eq(subCompetencies.id, r.id));
     if (!cur) throw new Error(`refusing: revision target '${r.id}' does not exist`);
     const diffs: string[] = [];
     const check = (label: string, db_: string | null, prior: string) => {
@@ -148,6 +159,16 @@ export async function applyAdditions(tx: Executor, a: Additions): Promise<{ inse
     check('doDescriptor', cur.doDescriptor, r.priorDoDescriptor);
     if (diffs.length > 0) throw new Error(`refusing: current text of '${r.id}' differs from the file's prior* text:\n${diffs.join('\n')}`);
   }
+}
+
+/**
+ * Inserts the new rows (+ identity map rows) and applies the revisions, all on
+ * `tx`, after checkAdditions (which throws, rolling back the caller's
+ * transaction).
+ */
+export async function applyAdditions(tx: Executor, a: Additions): Promise<{ inserted: string[]; revised: string[] }> {
+  await checkAdditions(tx, a);
+  const ids = a.newCompetencies.map(c => c.id);
 
   if (a.newCompetencies.length > 0) {
     await tx.insert(subCompetencies).values(a.newCompetencies.map(c => ({
@@ -167,13 +188,13 @@ export async function applyAdditions(tx: Executor, a: Additions): Promise<{ inse
 }
 
 export function printReport(args: Args, a: Additions): void {
-  console.log(`mode: ${args.apply ? 'APPLY' : 'DRY RUN'}  expect-db: ${args.expectDb}  file: ${args.file}`);
+  console.log(`mode: ${args.apply ? 'APPLY' : args.preflight ? 'PREFLIGHT' : 'DRY RUN'}  expect-db: ${args.expectDb}  file: ${args.file}`);
   console.log(`approval: ${a.approval}`);
   console.log(`${a.newCompetencies.length} competency(ies) to insert (unlinked, origin=gc_authored):`);
   for (const c of a.newCompetencies) console.log(`  - ${c.id} (${c.name}) foundational=${c.foundational} scoring=${c.scoring}`);
   console.log(`${a.descriptorRevisions.length} descriptor revision(s):`);
   for (const r of a.descriptorRevisions) console.log(`  - ${r.id}`);
-  console.log(args.apply ? '\nAPPLY — writing.' : '\nDRY RUN — nothing written.');
+  console.log(args.apply ? '\nAPPLY — writing.' : args.preflight ? '\nPREFLIGHT — read-only checks.' : '\nDRY RUN — checking inside a rolled-back transaction; nothing written.');
 }
 
 export interface Deps {
@@ -195,9 +216,34 @@ export async function main(argv: string[], deps: Deps = {}): Promise<number> {
   } catch (err) { console.error(formatDbError(err)); return 3; }
 
   printReport(args, additions);
-  if (!args.apply) return 0;
-
+  if (args.preflight) {
+    try { await checkAdditions(executor, additions); } catch (err) {
+      console.error(`PREFLIGHT: WOULD REFUSE — ${formatDbError(err)}`);
+      return 5;
+    }
+    console.log(`PREFLIGHT OK: ${additions.newCompetencies.length} id(s) free, ${additions.descriptorRevisions.length} revision prior-text(s) match (checks only; migration 0060 not required; nothing written).`);
+    return 0;
+  }
   const write = deps.applyAdditions ?? applyAdditions;
+
+  if (!args.apply) {
+    class DryRunRollback extends Error {}
+    let res: { inserted: string[]; revised: string[] } | undefined;
+    try {
+      await (executor as typeof db).transaction(async tx => {
+        res = await write(tx, additions);
+        throw new DryRunRollback('dry run');
+      });
+    } catch (err) {
+      if (!(err instanceof DryRunRollback)) {
+        console.error(`DRY RUN: WOULD REFUSE — ${formatDbError(err)}`);
+        return 5;
+      }
+    }
+    console.log(`DRY RUN: would insert ${res?.inserted.length ?? 0}, would revise ${res?.revised.length ?? 0} (rolled back; nothing written).`);
+    return 0;
+  }
+
   try {
     let res: { inserted: string[]; revised: string[] };
     if (executor === db) res = await db.transaction(tx => write(tx, additions));

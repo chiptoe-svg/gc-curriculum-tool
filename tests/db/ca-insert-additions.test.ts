@@ -2,16 +2,18 @@
 // Task 5 — tests for scripts/catalog/insert-catalog-additions.ts. Pure parse
 // tests always run; DB tests run only on the CA scratch (isCaScratchDb()), in
 // a rolled-back transaction.
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+import { sql } from 'drizzle-orm';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { inArray, eq } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
-import { subCompetencies, subCompetencyMap, careerTargetRequirements } from '@/lib/db/schema';
+import { subCompetencies, subCompetencyMap, careerTargetRequirements, bundleCards } from '@/lib/db/schema';
 import {
   parseAdditions,
   parseArgs,
   applyAdditions,
+  main,
   type Tx,
   type Additions,
 } from '@/scripts/catalog/insert-catalog-additions';
@@ -41,7 +43,7 @@ describe('parseArgs', () => {
   it('requires --file and --expect-db; apply defaults false', () => {
     expect(() => parseArgs(['--file', 'a'])).toThrow(/--expect-db/);
     expect(() => parseArgs(['--expect-db', 'x'])).toThrow(/--file/);
-    expect(parseArgs(['--file', 'a', '--expect-db', 'x'])).toEqual({ file: 'a', expectDb: 'x', apply: false });
+    expect(parseArgs(['--file', 'a', '--expect-db', 'x'])).toEqual({ file: 'a', expectDb: 'x', apply: false, preflight: false });
   });
 });
 
@@ -91,6 +93,7 @@ async function seedPriors(tx: Tx, a: Additions) {
 }
 async function clearNew(tx: Tx, a: Additions) {
   const ids = a.newCompetencies.map(c => c.id);
+  await tx.delete(bundleCards).where(inArray(bundleCards.competencyId, ids));
   await tx.delete(subCompetencyMap).where(inArray(subCompetencyMap.oldSubCompetencyId, ids));
   await tx.delete(subCompetencies).where(inArray(subCompetencies.id, ids));
 }
@@ -155,5 +158,84 @@ describe.skipIf(!RUN)('applyAdditions (CA scratch only)', () => {
       const [first] = await tx.select().from(subCompetencies).where(eq(subCompetencies.id, a.descriptorRevisions[0]!.id));
       expect(first!.doDescriptor).toBe(a.descriptorRevisions[0]!.priorDoDescriptor);
     });
+  });
+});
+
+describe.skipIf(!RUN)('dry run previews refusals (CA scratch only)', () => {
+  async function dbName(tx: Tx): Promise<string> {
+    const r = await tx.execute(sql`SELECT current_database() AS n`);
+    return (r.rows[0] as { n: string }).n;
+  }
+  async function dry(tx: Tx): Promise<{ code: number; out: string }> {
+    const lines: string[] = [];
+    const lg = vi.spyOn(console, 'log').mockImplementation((...a) => { lines.push(a.join(' ')); });
+    const er = vi.spyOn(console, 'error').mockImplementation((...a) => { lines.push(a.join(' ')); });
+    try {
+      const code = await main(['--file', FILE, '--expect-db', await dbName(tx)], { executor: tx });
+      return { code, out: lines.join('\n') };
+    } finally { lg.mockRestore(); er.mockRestore(); }
+  }
+
+  it('exit 0 "would insert" and writes nothing when the additions would apply', async () => {
+    const a = parseAdditions(realJson());
+    await inRolledBackTx(async (tx) => {
+      await clearNew(tx, a); await seedPriors(tx, a);
+      const { code, out } = await dry(tx);
+      expect(code).toBe(0);
+      expect(out).toMatch(/would insert 11, would revise 2/);
+      const ids = a.newCompetencies.map(c => c.id);
+      expect(await tx.select().from(subCompetencies).where(inArray(subCompetencies.id, ids))).toHaveLength(0);
+    });
+  });
+
+  it('exit 5 "WOULD REFUSE" naming an existing id', async () => {
+    const a = parseAdditions(realJson());
+    await inRolledBackTx(async (tx) => {
+      await clearNew(tx, a); await seedPriors(tx, a);
+      await tx.insert(subCompetencies).values({ id: a.newCompetencies[2]!.id, name: 'pre', knowDescriptor: 'k', understandDescriptor: 'u', doDescriptor: 'd', origin: 'migrated', updatedAt: new Date() });
+      const { code, out } = await dry(tx);
+      expect(code).toBe(5);
+      expect(out).toMatch(/WOULD REFUSE/);
+      expect(out).toContain(a.newCompetencies[2]!.id);
+    });
+  });
+
+  it('exit 5 on prior-text drift, printing both texts', async () => {
+    const a = parseAdditions(realJson());
+    await inRolledBackTx(async (tx) => {
+      await clearNew(tx, a); await seedPriors(tx, a);
+      await tx.update(subCompetencies).set({ doDescriptor: 'DRIFTED TEXT' }).where(eq(subCompetencies.id, a.descriptorRevisions[0]!.id));
+      const { code, out } = await dry(tx);
+      expect(code).toBe(5);
+      expect(out).toMatch(/WOULD REFUSE/);
+      expect(out).toContain('DRIFTED TEXT');
+      expect(out).toContain(a.descriptorRevisions[0]!.priorDoDescriptor);
+    });
+  });
+});
+
+describe.skipIf(!RUN)('preflight (checks only)', () => {
+  it('exit 0 when free; exit 5 on an existing id; exit 5 on drift', async () => {
+    const a = parseAdditions(realJson());
+    await inRolledBackTx(async (tx) => {
+      await clearNew(tx, a); await seedPriors(tx, a);
+      const name = (await tx.execute(sql`SELECT current_database() AS n`)).rows[0] as { n: string };
+      const run = async () => {
+        const lg = vi.spyOn(console, 'log').mockImplementation(() => {});
+        const er = vi.spyOn(console, 'error').mockImplementation(() => {});
+        try { return await main(['--file', FILE, '--expect-db', name.n, '--preflight'], { executor: tx }); }
+        finally { lg.mockRestore(); er.mockRestore(); }
+      };
+      expect(await run()).toBe(0);
+      expect(await tx.select().from(subCompetencies).where(inArray(subCompetencies.id, a.newCompetencies.map(c => c.id)))).toHaveLength(0);
+      await tx.update(subCompetencies).set({ doDescriptor: 'DRIFTED' }).where(eq(subCompetencies.id, a.descriptorRevisions[0]!.id));
+      expect(await run()).toBe(5);
+      await seedPriors(tx, a);
+      await tx.insert(subCompetencies).values({ id: a.newCompetencies[0]!.id, name: 'pre', knowDescriptor: 'k', understandDescriptor: 'u', doDescriptor: 'd', origin: 'migrated', updatedAt: new Date() });
+      expect(await run()).toBe(5);
+    });
+  });
+  it('--apply and --preflight are mutually exclusive', () => {
+    expect(() => parseArgs(['--file', 'a', '--expect-db', 'x', '--apply', '--preflight'])).toThrow(/mutually exclusive/);
   });
 });
