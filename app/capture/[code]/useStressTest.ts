@@ -1,5 +1,6 @@
 'use client';
 
+import { apiErrorText } from '@/lib/ai/credit-client';
 import { useCallback, useRef, useState } from 'react';
 import type { StressTestResultType } from '@/lib/ai/stress-test/schema';
 
@@ -50,7 +51,7 @@ export function useStressTest(courseCode: string, slug: string): StressTestState
         };
         if (!res.ok || !json.result) {
           setResult(null);
-          setError(json.error ?? `the check failed (${res.status})`);
+          setError(apiErrorText(json, `the check failed (${res.status})`));
           setStatus('error');
           return;
         }

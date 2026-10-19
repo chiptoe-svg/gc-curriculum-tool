@@ -14,6 +14,7 @@ import {
   AuditResponseJsonSchema,
   type AuditResponse,
 } from './audit-response-schema';
+import { AiCreditsExhaustedError } from '@/lib/ai/credit-status';
 import { buildAgentCall, persistAssistantTurn, type AuditAgentInput } from './audit-agent';
 
 export type AuditStreamEvent =
@@ -21,7 +22,7 @@ export type AuditStreamEvent =
   | { kind: 'tool-start'; toolName: string; args: Record<string, unknown> }
   | { kind: 'text-delta'; delta: string }
   | { kind: 'final'; response: AuditResponse; toolCallsUsed: number }
-  | { kind: 'error'; message: string };
+  | { kind: 'error'; message: string; code?: 'ai_credits_exhausted' };
 
 export async function* streamAuditAgent(
   input: AuditAgentInput,
@@ -68,7 +69,11 @@ export async function* streamAuditAgent(
       }
     }
   } catch (err) {
-    yield { kind: 'error', message: err instanceof Error ? err.message : String(err) };
+    yield {
+      kind: 'error',
+      message: err instanceof Error ? err.message : String(err),
+      ...(err instanceof AiCreditsExhaustedError ? { code: err.code } : {}),
+    };
     return;
   }
 

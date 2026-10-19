@@ -7,6 +7,8 @@ import { checkDailyCap } from '@/lib/rate-limit/daily-cap';
 import { hashIp } from '@/lib/ip-hash';
 import { runAuditAgent } from '@/lib/ai/agent/audit-agent';
 import { streamAuditAgent } from '@/lib/ai/agent/audit-agent-stream';
+import { creditsExhaustedResponse } from '@/lib/ai/credit-response';
+import { AiCreditsExhaustedError, CREDITS_EXHAUSTED_MESSAGE, creditsContact } from '@/lib/ai/credit-status';
 import { startNewSession } from '@/lib/db/capture-messages-queries';
 
 interface RouteContext { params: Promise<{ code: string }> }
@@ -98,7 +100,10 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
           }
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
-          controller.enqueue(encoder.encode(JSON.stringify({ kind: 'error', message }) + '\n'));
+          const ev = err instanceof AiCreditsExhaustedError
+            ? { kind: 'error', code: 'ai_credits_exhausted', message: CREDITS_EXHAUSTED_MESSAGE(creditsContact()) }
+            : { kind: 'error', message };
+          controller.enqueue(encoder.encode(JSON.stringify(ev) + '\n'));
         } finally {
           controller.close();
         }
@@ -132,6 +137,8 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
       toolCallsUsed,
     });
   } catch (err) {
+    const exhausted = creditsExhaustedResponse(err);
+    if (exhausted) return exhausted;
     console.error(`POST /api/capture/${courseCode}/chat failed`, err);
     return NextResponse.json({ error: 'agent loop failed' }, { status: 500 });
   }

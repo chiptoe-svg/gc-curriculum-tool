@@ -8,6 +8,7 @@ import { generateText, streamText, tool as aiTool, Output, stepCountIs, jsonSche
 import { openai as aiOpenai } from '@ai-sdk/openai';
 import type { ToolDefinition, Message, CompleteWithToolsResult, ToolCall, StreamEvent } from './tool-use-types';
 import { renderToolDescription } from './tool-use-types';
+import { AiCreditsExhaustedError, isCreditsExhaustedError, markCreditsExhausted, markCreditsOk } from './credit-status';
 
 // Per-model pricing in USD per 1M tokens. Update from
 // https://developers.openai.com/api/docs/pricing when adding models.
@@ -118,6 +119,31 @@ export class OpenAIProvider implements AIProvider {
     this.client = new OpenAI({ apiKey, baseURL: openAIBaseURL(), timeout: OPENAI_TIMEOUT_MS, maxRetries: OPENAI_MAX_RETRIES });
   }
 
+
+  /**
+   * Shared-credit detection (owner, 2026-10-19). Wraps each gateway call: a
+   * quota_denied failure is recorded (status file + owner alert trigger) and
+   * rethrown as AiCreditsExhaustedError; a success clears a stale "exhausted"
+   * status (markCreditsOk only writes on a change). Retries and every other
+   * error are untouched.
+   */
+  private async creditsMapped(err: unknown, op: string): Promise<unknown> {
+    if (err instanceof AiCreditsExhaustedError || !isCreditsExhaustedError(err)) return err;
+    await markCreditsExhausted('request', `${this.model} ${op}`);
+    return new AiCreditsExhaustedError(undefined, { cause: err });
+  }
+
+  private async withCredits<R>(op: string, call: () => Promise<R>): Promise<R> {
+    let result: R;
+    try {
+      result = await call();
+    } catch (err) {
+      throw await this.creditsMapped(err, op);
+    }
+    void markCreditsOk('request');
+    return result;
+  }
+
   async complete<T>(args: {
     systemPrompt: string;
     userMessage: string;
@@ -129,7 +155,7 @@ export class OpenAIProvider implements AIProvider {
     const started = Date.now();
     // Explicit effort, then the evaluation env knob, then the model's default.
     const effort = effectiveReasoningEffort(this.model, this.reasoningEffort);
-    const response = await this.client.chat.completions.create({
+    const response = await this.withCredits('complete', () => this.client.chat.completions.create({
       model: this.model,
       ...(effort ? { reasoning_effort: effort as 'low' | 'medium' | 'high' } : {}),
       messages: [
@@ -151,7 +177,7 @@ export class OpenAIProvider implements AIProvider {
       // the previous 0.2 override gave a marginal determinism boost that
       // no longer earns its keep. Default (1) works across all current
       // OpenAI models.
-    });
+    }));
     const durationMs = Date.now() - started;
 
     const content = response.choices[0]?.message?.content ?? '';
@@ -186,7 +212,7 @@ export class OpenAIProvider implements AIProvider {
     const base64 = fileBytes.toString('base64');
     const dataUrl = `data:${args.mimeType};base64,${base64}`;
 
-    const response = await this.client.chat.completions.create({
+    const response = await this.withCredits('transcribeDocument', () => this.client.chat.completions.create({
       model: this.model,
       messages: [
         {
@@ -208,7 +234,7 @@ export class OpenAIProvider implements AIProvider {
       ],
       max_completion_tokens: 4096,
       // No temperature override — gpt-5 family rejects non-default values.
-    });
+    }));
 
     const text = response.choices[0]?.message?.content ?? '';
     const promptTokens = response.usage?.prompt_tokens ?? 0;
@@ -298,7 +324,7 @@ export class OpenAIProvider implements AIProvider {
     // it already works and backs the live interview. (Investigated 2026-10-06.)
     const effort = effectiveReasoningEffort(this.model, this.reasoningEffort);
     const { model: toolUseModel, providerOptions } = toolUseModelConfig(this.model, effort);
-    const { output, totalUsage, steps } = await generateText({
+    const { output, totalUsage, steps } = await this.withCredits('completeWithTools', () => generateText({
       model: toolUseModel,
       ...(providerOptions ? { providerOptions } : {}),
       system: args.systemPrompt,
@@ -308,7 +334,7 @@ export class OpenAIProvider implements AIProvider {
       output: Output.object({ schema: aiJsonSchema(args.jsonSchema as never), name: args.schemaName }),
       // Add 1 to maxToolCalls to account for the structured output step itself (v6 requirement).
       stopWhen: stepCountIs((args.maxToolCalls ?? 4) + 1),
-    });
+    }));
 
     const value = args.validate(output);
 
@@ -435,6 +461,7 @@ export class OpenAIProvider implements AIProvider {
           const delta = (part as unknown as { text?: string }).text ?? '';
           if (delta) yield { kind: 'text-delta', delta };
         } else if (part.type === 'error') {
+          if (isCreditsExhaustedError(part.error)) throw part.error; // mapped in the catch below
           yield {
             kind: 'error',
             message: describeStreamError(part.error),
@@ -480,10 +507,14 @@ export class OpenAIProvider implements AIProvider {
         },
       };
     } catch (err) {
+      const mapped = await this.creditsMapped(err, 'streamWithTools');
+      if (mapped instanceof AiCreditsExhaustedError) throw mapped;
       yield {
         kind: 'error',
         message: err instanceof Error ? err.message : String(err),
       };
+      return;
     }
+    void markCreditsOk('request');
   }
 }

@@ -18,6 +18,7 @@ import { DraftStatusStrip } from './DraftStatusStrip';
 import { InputsDriftBanner } from './InputsDriftBanner';
 import { diffInputsVsSnapshot } from '@/lib/capture/inputs-drift';
 import { isTriageEnabled } from '@/lib/capture/triage-flag';
+import { CreditsBanner } from '@/app/CreditsBanner';
 import { FeedbackLink } from '@/app/FeedbackLink';
 
 export const dynamic = 'force-dynamic';
@@ -157,6 +158,7 @@ export default async function CapturePage({ params, searchParams }: Props) {
 
   return (
     <div className="min-h-screen bg-background">
+      <CreditsBanner />
       <header className="border-b">
         <div className="mx-auto flex max-w-5xl items-baseline justify-between gap-4 px-6 py-4">
           <div>

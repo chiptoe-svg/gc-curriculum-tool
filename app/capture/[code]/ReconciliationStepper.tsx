@@ -2,6 +2,7 @@
 
 import { plainDepth, plainScores, plainScoresShort, DIM_WORD } from '@/lib/capture/plain-depth';
 import { useState } from 'react';
+import { apiErrorText } from '@/lib/ai/credit-client';
 import type { CaptureProfile } from '@/lib/ai/capture/schema';
 import type { ReconcileProposal, ReconcileSection, ReconciliationLogEntry } from '@/lib/ai/schemas';
 import { applyReconciliation } from '@/lib/capture/apply-reconciliation';
@@ -279,7 +280,7 @@ export function ReconciliationStepper({ profile, slug, courseCode, onComplete, o
       );
       const json = await res.json() as { proposals?: ReconcileProposal[]; error?: string };
       if (!res.ok) {
-        setError((json as { error?: string }).error ?? 'Failed to get suggestions');
+        setError(apiErrorText(json, 'Failed to get suggestions'));
         return;
       }
       const fetched = json.proposals ?? [];

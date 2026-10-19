@@ -1,3 +1,4 @@
+import { creditsExhaustedResponse } from '@/lib/ai/credit-response';
 import { NextResponse } from 'next/server';
 import { authorizeCourseWrite } from '@/lib/sandbox/access';
 import { getCourseByCode } from '@/lib/db/courses-queries';
@@ -181,6 +182,8 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
       materialsHealth,
     });
   } catch (err) {
+    const exhausted = creditsExhaustedResponse(err);
+    if (exhausted) return exhausted;
     console.error(`POST /api/capture/${courseCode}/scores failed`, err);
     return NextResponse.json(
       { error: 'scoring failed', detail: err instanceof Error ? err.message : String(err) },
