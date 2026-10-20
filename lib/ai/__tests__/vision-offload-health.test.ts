@@ -70,6 +70,77 @@ describe('vision-offload canary', () => {
     expect(s.downForSeconds).toBeGreaterThanOrEqual(0);
   });
 
+  describe('RCD lifecycle (?full=true)', () => {
+    const MODEL = 'qwen3.6-35b-a3b-fp8';
+    /** Plain /models lists the model; /models?full=true carries `lifecycle` (or `lifecycles[i]` per call). */
+    function rcdFetch(lifecycles: Array<string | undefined | Error>) {
+      let fullCalls = 0;
+      return vi.fn(async (url: string) => {
+        if (!String(url).includes('full=true')) return modelsResponse([MODEL]);
+        const lc = lifecycles[Math.min(fullCalls++, lifecycles.length - 1)];
+        if (lc instanceof Error) throw lc;
+        return new Response(JSON.stringify({ data: [{ id: MODEL, ...(lc ? { lifecycle: lc } : {}) }] }), { status: 200 });
+      });
+    }
+    beforeEach(() => {
+      vi.stubEnv('VISION_OFFLOAD_BASE_URL', 'https://llm.rcd.clemson.edu/v1');
+      vi.stubEnv('VISION_OFFLOAD_MODEL', MODEL);
+    });
+
+    it('records the model lifecycle from the full listing', async () => {
+      vi.stubGlobal('fetch', rcdFetch(['experimental']));
+      const m = await freshModule();
+      await m.probeVisionOffload();
+      expect(m.getOffloadHealthSnapshot().lifecycle).toBe('experimental');
+    });
+
+    it('warns when the lifecycle changes between probes', async () => {
+      vi.stubGlobal('fetch', rcdFetch(['experimental', 'deprecated']));
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const m = await freshModule();
+      await m.probeVisionOffload();
+      expect(warn).not.toHaveBeenCalled();
+      await m.probeVisionOffload();
+      expect(warn).toHaveBeenCalledWith(expect.stringMatching(/lifecycle.*experimental.*deprecated/i));
+      expect(m.getOffloadHealthSnapshot().lifecycle).toBe('deprecated');
+    });
+
+    it('warns on first sight of a lifecycle other than active/experimental', async () => {
+      vi.stubGlobal('fetch', rcdFetch(['deprecated']));
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const m = await freshModule();
+      await m.probeVisionOffload();
+      expect(warn).toHaveBeenCalledWith(expect.stringMatching(/lifecycle.*deprecated/i));
+    });
+
+    it('does not warn again while the lifecycle is unchanged', async () => {
+      vi.stubGlobal('fetch', rcdFetch(['deprecated']));
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const m = await freshModule();
+      await m.probeVisionOffload();
+      await m.probeVisionOffload();
+      expect(warn).toHaveBeenCalledTimes(1);
+    });
+
+    it('leaves lifecycle null and stays quiet when the gateway sends none (Spark)', async () => {
+      vi.stubGlobal('fetch', rcdFetch([undefined]));
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const m = await freshModule();
+      await m.probeVisionOffload();
+      const s = m.getOffloadHealthSnapshot();
+      expect(s.status).toBe('ok');
+      expect(s.lifecycle).toBeNull();
+      expect(warn).not.toHaveBeenCalled();
+    });
+
+    it('a failing full listing does not change an ok status', async () => {
+      vi.stubGlobal('fetch', rcdFetch([new Error('fetch failed')]));
+      const m = await freshModule();
+      await m.probeVisionOffload();
+      expect(m.getOffloadHealthSnapshot().status).toBe('ok');
+    });
+  });
+
   it('recordRealFallback bumps the informational counter without needing a probe', async () => {
     vi.stubEnv('VISION_OFFLOAD_BASE_URL', 'http://127.0.0.1:38001/v1');
     vi.stubEnv('VISION_OFFLOAD_MODEL', 'nvidia/Gemma-4-26B-A4B-NVFP4');

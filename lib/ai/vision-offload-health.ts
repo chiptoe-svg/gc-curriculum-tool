@@ -42,6 +42,8 @@ interface HealthState {
   lastError: string | null;
   /** Model ids served at the last successful probe. */
   servedModels: string[] | null;
+  /** RCD `lifecycle` of the configured model from `/models?full=true` (null when the gateway doesn't send one, e.g. Spark). */
+  lifecycle: string | null;
   /** Real production requests that fell back (informational — does not set status). */
   realFallbacks: { count: number; lastAt: string | null; lastReason: string | null };
 }
@@ -68,6 +70,7 @@ const reg: Registry = (g.__gcVisionOffloadHealth ??= {
     lastOkAt: null,
     lastError: null,
     servedModels: null,
+    lifecycle: null,
     realFallbacks: { count: 0, lastAt: null, lastReason: null },
   },
   loopStarted: false,
@@ -127,10 +130,40 @@ export async function probeVisionOffload(): Promise<void> {
     state.servedModels = served;
     state.lastOkAt = nowIso();
     transition('ok', null);
+    await checkLifecycle(off.baseURL, off.apiKey, off.model);
   } catch (e) {
     const cause = (e as { cause?: { code?: string; message?: string } }).cause;
     const detail = cause?.code ?? cause?.message ?? (e as Error).message;
     transition('down', `${(e as Error).message}${cause ? ` (${detail})` : ''}`);
+  }
+}
+
+/** Lifecycles that need no warning on first sight; any change still warns. */
+const QUIET_LIFECYCLES = new Set(['active', 'experimental']);
+
+/**
+ * Best effort: read the configured model's `lifecycle` from RCD's extended listing
+ * (`/models?full=true`) and warn when it changes, or on first sight of anything other
+ * than active/experimental (e.g. deprecated) — so a model being retired shows up
+ * before it disappears and vision falls back. Never affects `status`.
+ */
+async function checkLifecycle(baseURL: string, apiKey: string, model: string): Promise<void> {
+  try {
+    const res = await fetch(`${baseURL.replace(/\/$/, '')}/models?full=true`, {
+      headers: { ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}), 'X-Client': 'curriculum-health' },
+      signal: AbortSignal.timeout(8_000),
+    });
+    if (!res.ok) return;
+    const body = (await res.json()) as { data?: Array<{ id?: string; lifecycle?: unknown }> };
+    const raw = body.data?.find((m) => m.id === model)?.lifecycle;
+    const next = typeof raw === 'string' && raw ? raw : null;
+    const prev = state.lifecycle;
+    if (next !== null && next !== prev && (prev !== null || !QUIET_LIFECYCLES.has(next))) {
+      console.warn(`[vision-offload-health] LIFECYCLE of "${model}" ${prev ? `changed from ${prev} to ${next}` : `is ${next}`} — check the provider before it is removed.`);
+    }
+    state.lifecycle = next;
+  } catch {
+    // informational only
   }
 }
 
