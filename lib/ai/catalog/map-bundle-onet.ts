@@ -19,7 +19,7 @@ import { formatDescriptorLines } from '@/lib/catalog/descriptors';
  * a placed element expands to exactly one row with `onetSocCode: null`.
  */
 
-export const BUNDLE_MAP_PROMPT_VERSION = 'bundle-map-onet@1';
+export const BUNDLE_MAP_PROMPT_VERSION = 'bundle-map-onet@2';
 // Lives in lib/catalog/shortlist (no provider SDK) so the DB layer and admin routes can import it.
 export { TASK_SHORTLIST_K } from '@/lib/catalog/shortlist';
 const POSITIONS = ['core', 'related', 'fringe'] as const;

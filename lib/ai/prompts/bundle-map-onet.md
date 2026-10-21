@@ -17,8 +17,9 @@ You place O*NET items into one skill bundle of the Clemson Graphic Communication
 
 - Judge by capability, not by shared words. A task that mentions "color" belongs in a color bundle only if doing it requires that bundle's capability.
 - Respect the card's excludes and distinctions: an item the card assigns elsewhere is not placed here, unless it also clearly draws on this bundle (then at most related).
-- Elements are broad; place an element only when the bundle is a substantial part of it. Most bundles have few core elements.
-- Prefer fewer, well-justified placements over many weak ones.
+- Elements are broad; place an element when doing it well clearly draws on this bundle, even if it also draws on others (then related). Core elements stay few.
+- Include every item that clearly belongs: a reviewer who knows the field would expect to see it listed for this bundle. Work through all the elements and all the shortlisted tasks before deciding; do not stop at the most obvious few. A typical bundle has 15 to 30 core or related items across elements and tasks; fewer is fine for a bundle O*NET covers thinly.
+- Leave out items that only share vocabulary with the bundle or that you would have to argue for. Use fringe, not related, for partial or occasional overlap.
 - If nothing is better than fringe, say so in `note` (one sentence on what O*NET lacks for this bundle); otherwise `note` may be null.
 
 # Output
