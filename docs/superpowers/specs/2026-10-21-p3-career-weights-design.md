@@ -1,6 +1,6 @@
 # P3 career weights: O*NET base, employer refinement — design
 
-Status: **draft for owner review (2026-10-21).** Supersedes step 4 ("O*NET weight seed") of [`2026-10-11-competency-catalog-and-career-demand-design.md`](./2026-10-11-competency-catalog-and-career-demand-design.md) §4; everything else in that spec stands.
+Status: **approved by the owner 2026-10-21 ("the spec is good"), with the §6 recommendations as the defaults: d = 0 (core only), k = 3, disagreement flag at 0.25 with n ≥ 2, draft target lists refreshed when requirements are seeded.** Any default can be changed before the build plan is executed. Supersedes step 4 ("O*NET weight seed") of [`2026-10-11-competency-catalog-and-career-demand-design.md`](./2026-10-11-competency-catalog-and-career-demand-design.md) §4; everything else in that spec stands.
 
 ## 1. Why this changes
 
