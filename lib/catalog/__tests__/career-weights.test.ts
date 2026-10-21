@@ -81,3 +81,43 @@ describe('effectiveWeight', () => {
     expect(effectiveWeight({ ...none, onet: 0.7, employer: null, n: 0 })).toEqual({ weight: 0.7, basis: 'onet', disagreement: false });
   });
 });
+
+import { employerWeight, captureInputFromRow } from '@/lib/catalog/career-weights';
+
+describe('employerWeight', () => {
+  const cap = (id: string, rated: Array<[string | null, unknown]>, named: string[] = []) =>
+    ({ id, ratedItems: rated.map(([competencyId, rating]) => ({ competencyId, rating })), namedCompetencyIds: named });
+
+  it('per capture takes the highest rating tagged with the competency, rescaled (r − 1)/6, then averages captures', () => {
+    const r = employerWeight([cap('p1', [['c', 4], ['c', 7], ['x', 1]]), cap('p2', [['c', 1]])], 'c');
+    expect(r.weight).toBeCloseTo((1 + 0) / 2);
+    expect(r.ratedBy).toEqual(['p1', 'p2']);
+    expect(r.namedOnlyBy).toEqual([]);
+  });
+
+  it('a capture that only names the competency is named-unrated and adds no number', () => {
+    const r = employerWeight([cap('p1', [['x', 7]], ['c'])], 'c');
+    expect(r).toEqual({ weight: null, ratedBy: [], namedOnlyBy: ['p1'] });
+  });
+
+  it('a competency nobody mentions is no data, never 0', () => {
+    expect(employerWeight([cap('p1', [['x', 7]])], 'c')).toEqual({ weight: null, ratedBy: [], namedOnlyBy: [] });
+  });
+
+  it('ignores ratings outside 1–7, non-integers outside range, and non-numbers', () => {
+    const r = employerWeight([cap('p1', [['c', 0], ['c', 8], ['c', '7'], ['c', null], ['c', Number.NaN]])], 'c');
+    expect(r).toEqual({ weight: null, ratedBy: [], namedOnlyBy: [] });
+  });
+});
+
+describe('captureInputFromRow', () => {
+  it('reads rated_skills items and qualifying competency ids, tolerating missing pieces', () => {
+    const c = captureInputFromRow({
+      id: 'p1',
+      ratedSkills: { items: [{ name: 'a', sub_competency_id: 'c', rating: 6 }, { name: 'b', rating: 3 }], generatedAt: 'x' },
+      profile: { qualifying_competencies: [{ name: 'n', sub_competency_id: 'd' }, { name: 'm', sub_competency_id: null }] },
+    });
+    expect(c).toEqual({ id: 'p1', ratedItems: [{ competencyId: 'c', rating: 6 }, { competencyId: null, rating: 3 }], namedCompetencyIds: ['d'] });
+    expect(captureInputFromRow({ id: 'p2', ratedSkills: null, profile: null })).toEqual({ id: 'p2', ratedItems: [], namedCompetencyIds: [] });
+  });
+});

@@ -55,3 +55,40 @@ export function effectiveWeight(s: WeightSources, k: number = EMPLOYER_PRIOR_K):
   if (s.facultyDraft !== null) return { weight: s.facultyDraft, basis: 'faculty_draft', disagreement };
   return { weight: null, basis: 'none', disagreement };
 }
+
+export interface CaptureInput { id: string; ratedItems: Array<{ competencyId: string | null; rating: unknown }>; namedCompetencyIds: string[] }
+
+function validRating(r: unknown): r is number {
+  return typeof r === 'number' && Number.isFinite(r) ;
+}
+
+/** Employer weight for one competency over a target's submitted captures. Silence is no data, never 0. */
+export function employerWeight(captures: CaptureInput[], competencyId: string): { weight: number | null; ratedBy: string[]; namedOnlyBy: string[] } {
+  const values: number[] = [];
+  const ratedBy: string[] = [];
+  const namedOnlyBy: string[] = [];
+  for (const c of captures) {
+    const ratings = c.ratedItems.filter(i => i.competencyId === competencyId && validRating(i.rating)).map(i => i.rating as number);
+    if (ratings.length > 0) {
+      values.push((Math.max(...ratings) - 1) / 6);
+      ratedBy.push(c.id);
+    } else if (c.namedCompetencyIds.includes(competencyId)) {
+      namedOnlyBy.push(c.id);
+    }
+  }
+  return { weight: values.length ? values.reduce((a, b) => a + b, 0) / values.length : null, ratedBy, namedOnlyBy };
+}
+
+/** Tolerant reader of position_captures.rated_skills / .profile (JSONB written by the partner flow). */
+export function captureInputFromRow(row: { id: string; ratedSkills: unknown; profile: unknown }): CaptureInput {
+  const items = (row.ratedSkills as { items?: unknown } | null)?.items;
+  const ratedItems = Array.isArray(items) ? items.map(it => {
+    const o = (it ?? {}) as { sub_competency_id?: unknown; rating?: unknown };
+    return { competencyId: typeof o.sub_competency_id === 'string' ? o.sub_competency_id : null, rating: o.rating };
+  }) : [];
+  const q = (row.profile as { qualifying_competencies?: unknown } | null)?.qualifying_competencies;
+  const namedCompetencyIds = Array.isArray(q)
+    ? q.map(x => (x as { sub_competency_id?: unknown } | null)?.sub_competency_id).filter((x): x is string => typeof x === 'string')
+    : [];
+  return { id: row.id, ratedItems, namedCompetencyIds };
+}
