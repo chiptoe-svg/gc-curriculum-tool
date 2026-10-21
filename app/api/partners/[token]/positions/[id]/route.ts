@@ -9,6 +9,7 @@ import {
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { hashIp } from '@/lib/ip-hash';
 import { PositionProfile } from '@/lib/ai/position-capture/schema';
+import { recomputeCareerWeightsSafely } from '@/lib/db/career-weight-queries';
 
 interface RouteContext { params: Promise<{ token: string; id: string }> }
 
@@ -89,5 +90,6 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
   } catch (e) {
     return NextResponse.json({ error: e instanceof Error ? e.message : 'finalize failed' }, { status: 400 });
   }
+  await recomputeCareerWeightsSafely('position capture submitted'); // P3 plan Ruling 5
   return NextResponse.json({ ok: true });
 }

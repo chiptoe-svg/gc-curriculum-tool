@@ -1,6 +1,7 @@
 import { checkAdminAuth } from '@/lib/auth/admin-auth';
 import { hasJsonContentType } from '@/lib/http/require-json';
 import { db } from '@/lib/db/client';
+import { recomputeCareerWeightsSafely } from '@/lib/db/career-weight-queries';
 import { applyMemberAction, validateReviewer, type MemberAction } from '@/lib/db/bundle-queries';
 import type { Pos } from '@/lib/catalog/agreement';
 import { ID_RE, UUID_RE, ONET_RELEASE, POSITIONS, jsonError, jsonOk, readBody, bodySlug } from '../../_shared';
@@ -50,5 +51,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!action) return jsonError('bad action', 400);
   const result = await db.transaction(tx => applyMemberAction(tx, id, r.reviewer, action, ONET_RELEASE));
   if (!result.ok) return jsonError(result.error, result.status);
+  await recomputeCareerWeightsSafely('bundle review'); // P3 plan Ruling 5: after commit, never fails the request
   return jsonOk(result);
 }

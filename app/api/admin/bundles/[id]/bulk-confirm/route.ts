@@ -1,6 +1,7 @@
 import { checkAdminAuth } from '@/lib/auth/admin-auth';
 import { hasJsonContentType } from '@/lib/http/require-json';
 import { db } from '@/lib/db/client';
+import { recomputeCareerWeightsSafely } from '@/lib/db/career-weight-queries';
 import { bulkConfirm, validateReviewer } from '@/lib/db/bundle-queries';
 import { ID_RE, jsonError, jsonOk, readBody, bodySlug } from '../../_shared';
 
@@ -23,5 +24,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if ('error' in r) return jsonError(r.error, 400);
   const result = await db.transaction(tx => bulkConfirm(tx, id, r.reviewer));
   if (!result.ok) return jsonError(result.error, result.status);
+  await recomputeCareerWeightsSafely('bundle review'); // P3 plan Ruling 5
   return jsonOk(result);
 }

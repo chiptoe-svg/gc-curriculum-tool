@@ -28,6 +28,9 @@ vi.mock('@/lib/db/bundle-queries', async () => {
   };
 });
 
+const mockRecompute = vi.fn(async (_reason: string) => {});
+vi.mock('@/lib/db/career-weight-queries', () => ({ recomputeCareerWeightsSafely: (r: string) => mockRecompute(r) }));
+
 import { GET as listGET } from '../route';
 import { GET as detailGET } from '../[id]/route';
 import { GET as agreementGET } from '../agreement/route';
@@ -228,5 +231,23 @@ describe('POST action shapes', () => {
   it('reset-blind: 400 for a missing, blank or oversized note', async () => {
     for (const note of [undefined, '  ', 'x'.repeat(501), 3]) expect(await bad(resetPOST, 'reset-blind', { note })).toBe(400);
     expect(q.resetBlind).not.toHaveBeenCalled();
+  });
+});
+
+describe('career-weight recompute after review writes', () => {
+  it('runs after a successful member action, not after a refused one', async () => {
+    const res = await membersPOST(post('/api/admin/bundles/a/members', { reviewer: 'R', action: 'confirm', memberIds: [UUID] }), params('a'));
+    expect(res.status).toBe(200);
+    expect(mockRecompute).toHaveBeenCalledWith('bundle review');
+    q.applyMemberAction.mockResolvedValueOnce({ ok: false, status: 409, error: 'blind sample not submitted' });
+    const refused = await membersPOST(post('/api/admin/bundles/a/members', { reviewer: 'R', action: 'confirm', memberIds: [UUID] }), params('a'));
+    expect(refused.status).toBe(409);
+    expect(mockRecompute).toHaveBeenCalledTimes(1);
+  });
+
+  it('runs after a successful bulk confirm', async () => {
+    const res = await bulkPOST(post('/api/admin/bundles/a/bulk-confirm', { reviewer: 'R' }), params('a'));
+    expect(res.status).toBe(200);
+    expect(mockRecompute).toHaveBeenCalledWith('bundle review');
   });
 });
