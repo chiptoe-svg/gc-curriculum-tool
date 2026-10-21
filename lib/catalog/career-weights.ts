@@ -59,7 +59,7 @@ export function effectiveWeight(s: WeightSources, k: number = EMPLOYER_PRIOR_K):
 export interface CaptureInput { id: string; ratedItems: Array<{ competencyId: string | null; rating: unknown }>; namedCompetencyIds: string[] }
 
 function validRating(r: unknown): r is number {
-  return typeof r === 'number' && Number.isFinite(r) ;
+  return typeof r === 'number' && Number.isFinite(r) && r >= 1 && r <= 7;
 }
 
 /** Employer weight for one competency over a target's submitted captures. Silence is no data, never 0. */
