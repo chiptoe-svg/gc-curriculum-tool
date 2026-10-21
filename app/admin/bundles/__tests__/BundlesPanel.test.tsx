@@ -65,8 +65,8 @@ const queueDetail: BundleDetail = {
   blind: null,
   sample: null,
   members: [
-    { id: 'm1', source: 'onet_task', externalId: 't1', externalLabel: 'Shared task', onetSocCode: '15-1254.00', position: 'core', aiPosition: 'core', status: 'proposed', proposedBy: 'model-x', rationale: 'r', reviewNote: null, bulkConfirmed: false },
-    { id: 'm2', source: 'onet_task', externalId: 't1', externalLabel: 'Shared task', onetSocCode: '15-1255.00', position: 'core', aiPosition: 'core', status: 'proposed', proposedBy: 'model-x', rationale: 'r', reviewNote: null, bulkConfirmed: false },
+    { id: 'm1', source: 'onet_task', externalId: 't1', externalLabel: 'Shared task', onetSocCode: '15-1254.00', position: 'core', aiPosition: 'core', status: 'proposed', proposedBy: 'model-x', rationale: 'r', reviewNote: null, bulkConfirmed: false, importance: null },
+    { id: 'm2', source: 'onet_task', externalId: 't1', externalLabel: 'Shared task', onetSocCode: '15-1255.00', position: 'core', aiPosition: 'core', status: 'proposed', proposedBy: 'model-x', rationale: 'r', reviewNote: null, bulkConfirmed: false, importance: null },
   ],
   latestOutcome: { noCleanMatch: false, note: null },
   attribution: ATTRIBUTION,
@@ -81,8 +81,8 @@ const divergedQueueDetail: BundleDetail = {
   blind: null,
   sample: null,
   members: [
-    { id: 'd1', source: 'onet_task', externalId: 't1', externalLabel: 'Diverged task', onetSocCode: '11-1111.11', position: 'core', aiPosition: 'core', status: 'proposed', proposedBy: 'model-x', rationale: 'still proposed', reviewNote: null, bulkConfirmed: false },
-    { id: 'd2', source: 'onet_task', externalId: 't1', externalLabel: 'Diverged task', onetSocCode: '22-2222.22', position: 'core', aiPosition: 'core', status: 'confirmed', proposedBy: 'model-x', rationale: 'already confirmed', reviewNote: null, bulkConfirmed: false },
+    { id: 'd1', source: 'onet_task', externalId: 't1', externalLabel: 'Diverged task', onetSocCode: '11-1111.11', position: 'core', aiPosition: 'core', status: 'proposed', proposedBy: 'model-x', rationale: 'still proposed', reviewNote: null, bulkConfirmed: false, importance: null },
+    { id: 'd2', source: 'onet_task', externalId: 't1', externalLabel: 'Diverged task', onetSocCode: '22-2222.22', position: 'core', aiPosition: 'core', status: 'confirmed', proposedBy: 'model-x', rationale: 'already confirmed', reviewNote: null, bulkConfirmed: false, importance: null },
   ],
   latestOutcome: { noCleanMatch: false, note: null },
   attribution: ATTRIBUTION,
@@ -105,6 +105,28 @@ function detailResponse(detail: BundleDetail) {
 beforeEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 describe('BundlesPanel', () => {
+  it('queue shows core items highest Importance first, shows the Importance, and says related/fringe do not change weights', async () => {
+    const m = (id: string, label: string, position: string, importance: number | null) =>
+      ({ id, source: 'onet_element', externalId: id, externalLabel: label, onetSocCode: null, position, aiPosition: position, status: 'proposed', proposedBy: 'model-x', rationale: null, reviewNote: null, bulkConfirmed: false, importance });
+    const detail = { ...queueDetail, members: [m('a', 'Low core', 'core', 2.1), m('b', 'High core', 'core', 4.6), m('c', 'Unrated core', 'core', null), m('d', 'Some related', 'related', 4.9)] };
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      const p = pathOf(url);
+      if (p === '/api/admin/bundles') return listResponse([queueBundle]);
+      if (p === '/api/admin/bundles/queue-bundle') return detailResponse(detail);
+      return { ok: true, json: async () => ({ rows: [], total: { bundleId: 'ALL', aiCount: 0, blindCount: 0, both: 0, precision: null, recall: null, exact: 0 }, kappas: [], noMatch: [], notYetMapped: [], attribution: ATTRIBUTION }) };
+    }));
+    render(<BundlesPanel slug="s" />);
+    await waitFor(() => expect(screen.getByRole('button', { name: /review queue/i })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /review queue/i }));
+    fireEvent.click(await screen.findByText('Queue bundle'));
+    await screen.findByText('High core');
+    const labels = screen.getAllByText(/core$/).map(e => e.textContent);
+    expect(labels.indexOf('High core')).toBeLessThan(labels.indexOf('Low core'));
+    expect(labels.indexOf('Low core')).toBeLessThan(labels.indexOf('Unrated core'));
+    expect(screen.getByText(/importance 4\.6/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/related and fringe items don't change career weights/i).length).toBeGreaterThan(0);
+  });
+
   it('disables action buttons until a reviewer name is entered, and shows the attribution text', async () => {
     const fetchMock = vi.fn(async (url: string) => {
       const p = pathOf(url);

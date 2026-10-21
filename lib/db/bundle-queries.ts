@@ -532,7 +532,8 @@ export async function buildBlindList(
   return { elements: shown, elementNotice, taskRows: mergeNearDuplicates(kept, taskVecs) };
 }
 
-export interface MemberView { id: string; source: string; externalId: string; externalLabel: string; onetSocCode: string | null; position: string; aiPosition: string | null; status: string; proposedBy: string; rationale: string | null; reviewNote: string | null; bulkConfirmed: boolean }
+/** importance: the item's highest O*NET Importance (1–5) across GC destination occupations (career_target_occupations); null when unrated there. P3 review order. */
+export interface MemberView { id: string; source: string; externalId: string; externalLabel: string; onetSocCode: string | null; position: string; aiPosition: string | null; status: string; proposedBy: string; rationale: string | null; reviewNote: string | null; bulkConfirmed: boolean; importance: number | null }
 export interface BundleDetail {
   bundle: BundleSummary;
   card: CardFields | null;
@@ -572,10 +573,20 @@ export async function readBundleDetail(bundleId: string, ex: Executor = db): Pro
   if (isLockedSample(s)) return { bundle, card, elements, blind, sample, members: null, latestOutcome: null };
   const rows = await ex.select().from(bundleMembers).where(eq(bundleMembers.bundleId, bundleId))
     .orderBy(asc(bundleMembers.source), asc(bundleMembers.externalLabel), asc(bundleMembers.onetSocCode));
+  const imp = (await ex.execute(sql`
+    SELECT m.id, MAX(r.data_value) AS v FROM bundle_members m
+    JOIN onet_element_ratings r ON m.source = 'onet_element' AND r.element_id = m.external_id AND r.scale_id = 'IM' AND NOT r.not_relevant
+      AND r.onet_soc_code IN (SELECT onet_soc_code FROM career_target_occupations WHERE onet_soc_code IS NOT NULL)
+    WHERE m.bundle_id = ${bundleId} GROUP BY m.id
+    UNION ALL
+    SELECT m.id, MAX(r.data_value) FROM bundle_members m
+    JOIN onet_task_ratings r ON m.source = 'onet_task' AND r.task_id = m.external_id AND r.onet_soc_code = m.onet_soc_code AND r.scale_id = 'IM'
+    WHERE m.bundle_id = ${bundleId} GROUP BY m.id`)).rows as Array<{ id: string; v: number | null }>;
+  const importance = new Map(imp.map(r => [r.id, r.v === null ? null : Number(r.v)]));
   const members: MemberView[] = rows.map(m => ({
     id: m.id, source: m.source, externalId: m.externalId, externalLabel: m.externalLabel, onetSocCode: m.onetSocCode,
     position: m.position, aiPosition: m.aiPosition, status: m.status, proposedBy: m.proposedBy, rationale: m.rationale,
-    reviewNote: m.reviewNote, bulkConfirmed: m.bulkConfirmed,
+    reviewNote: m.reviewNote, bulkConfirmed: m.bulkConfirmed, importance: importance.get(m.id) ?? null,
   }));
   const latestOutcome = (await latestOkOutcomes(ex, [bundleId])).get(bundleId) ?? null;
   return { bundle, card, elements, blind, sample, members, latestOutcome };

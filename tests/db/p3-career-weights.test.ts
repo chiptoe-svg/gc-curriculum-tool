@@ -128,4 +128,14 @@ describe.skipIf(!RUN)('P3 career weights (scratch DB only)', () => {
       expect(row!.onet).toBeCloseTo(0.875);
     });
   });
+
+  it('readBundleDetail reports each member’s highest Importance across GC destination occupations', async () => {
+    await inRolledBackTx(async (tx) => {
+      await seed(tx);
+      await addMember(tx, 'p3w-c1', '9.Z.1', 'core', 'confirmed');
+      const { readBundleDetail } = await import('@/lib/db/bundle-queries');
+      const d = await readBundleDetail('p3w-c1', tx);
+      expect(d?.members?.find(m => m.externalId === '9.Z.1')?.importance).toBe(5);
+    });
+  });
 });

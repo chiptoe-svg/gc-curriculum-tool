@@ -36,7 +36,7 @@ export interface SimilarTask { key: string; label: string; members: Array<{ task
 export interface BlindTaskRow { key: string; label: string; rank: number; members: Array<{ taskId: string; onetSocCode: string }>; similar: SimilarTask[] }
 export interface BlindList { elements: ElementDef[]; elementNotice: string | null; taskRows: BlindTaskRow[] }
 export interface SampleInfo { candidates: GoldenCandidate[]; submitted: boolean; reviewer: string | null; picks: PickView[] }
-export interface MemberView { id: string; source: string; externalId: string; externalLabel: string; onetSocCode: string | null; position: string; aiPosition: string | null; status: string; proposedBy: string; rationale: string | null; reviewNote: string | null; bulkConfirmed: boolean }
+export interface MemberView { id: string; source: string; externalId: string; externalLabel: string; onetSocCode: string | null; position: string; aiPosition: string | null; status: string; proposedBy: string; rationale: string | null; reviewNote: string | null; bulkConfirmed: boolean; importance: number | null }
 export interface BundleDetail {
   bundle: BundleSummary;
   card: CardFields | null;
@@ -517,7 +517,7 @@ function BlindTab({
 
 // ─── Review queue ───────────────────────────────────────────────────────────
 
-interface GroupedMemberRow { key: string; label: string; ids: string[]; socCodes: string[]; position: string; aiPosition: string | null; status: string; proposedBy: string; rationale: string | null; reviewNote: string | null }
+interface GroupedMemberRow { key: string; label: string; ids: string[]; socCodes: string[]; position: string; aiPosition: string | null; status: string; proposedBy: string; rationale: string | null; reviewNote: string | null; importance: number | null }
 
 /**
  * Groups same-text task rows under one line listing every SOC code — but
@@ -542,7 +542,7 @@ function groupMembers(members: MemberView[]): GroupedMemberRow[] {
     } else {
       rows.push({
         key: m.id, label: m.externalLabel, ids: [m.id], socCodes: [], position: m.position, aiPosition: m.aiPosition,
-        status: m.status, proposedBy: m.proposedBy, rationale: m.rationale, reviewNote: m.reviewNote,
+        status: m.status, proposedBy: m.proposedBy, rationale: m.rationale, reviewNote: m.reviewNote, importance: m.importance,
       });
     }
   }
@@ -558,17 +558,20 @@ function groupMembers(members: MemberView[]): GroupedMemberRow[] {
         key: `task:${label}`, label: `${label} (${socCodes.join(', ')})`, ids: ms.map((m) => m.id), socCodes,
         position: first.position, aiPosition: first.aiPosition, status: first.status, proposedBy: first.proposedBy,
         rationale: first.rationale, reviewNote: first.reviewNote,
+        importance: ms.some((m) => m.importance !== null) ? Math.max(...ms.map((m) => m.importance ?? -1)) : null,
       });
     } else {
       for (const m of ms) {
         rows.push({
           key: m.id, label: `${label}${m.onetSocCode ? ` (${m.onetSocCode})` : ''}`,
           ids: [m.id], socCodes: m.onetSocCode ? [m.onetSocCode] : [], position: m.position, aiPosition: m.aiPosition,
-          status: m.status, proposedBy: m.proposedBy, rationale: m.rationale, reviewNote: m.reviewNote,
+          status: m.status, proposedBy: m.proposedBy, rationale: m.rationale, reviewNote: m.reviewNote, importance: m.importance,
         });
       }
     }
   }
+  // P3: highest O*NET Importance first (it sets the career weight); unrated last. Stable sort keeps ties in order.
+  rows.sort((a, b) => (b.importance ?? -1) - (a.importance ?? -1));
   return rows;
 }
 
@@ -716,11 +719,15 @@ function QueueBundleDetail({
       {POSITIONS.map((pos) => (
         <div key={pos} className="space-y-2">
           <h5 className="text-xs font-medium uppercase text-slate-500">{pos}</h5>
+          {pos !== 'core' && <p className="text-xs text-slate-500">Related and fringe items don&apos;t change career weights; reviewing them is optional.</p>}
           {(byPosition.get(pos) ?? []).length === 0 && <p className="text-xs text-slate-400">None.</p>}
           {(byPosition.get(pos) ?? []).map((row) => (
             <div key={row.key} className="space-y-1 rounded border border-slate-100 p-2 text-sm">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="font-medium">{row.label}</span>
+                <span>
+                  <span className="font-medium">{row.label}</span>
+                  {row.importance !== null && <span className="ml-2 text-xs text-slate-500">Importance {row.importance.toFixed(1)}</span>}
+                </span>
                 <span className="text-xs text-slate-500">
                   {row.status}{row.aiPosition ? ` · AI: ${row.aiPosition}` : ''}
                 </span>
