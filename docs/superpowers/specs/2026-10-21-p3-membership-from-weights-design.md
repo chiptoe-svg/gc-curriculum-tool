@@ -1,6 +1,6 @@
 # P3 addendum: which competencies a career target shows, decided by weight — design
 
-Status: **draft for owner review (2026-10-21).** Extends [`2026-10-21-p3-career-weights-design.md`](./2026-10-21-p3-career-weights-design.md) and replaces its build plan's Ruling 1 ("weights only for existing member pairs").
+Status: **approved by the owner (2026-10-21) with the recommended answers to §6: τ = 0.5, today's 35 links become pins, manual targeted wiki refresh.** Extends [`2026-10-21-p3-career-weights-design.md`](./2026-10-21-p3-career-weights-design.md) and replaces its build plan's Ruling 1 ("weights only for existing member pairs").
 
 ## 1. The problem
 
