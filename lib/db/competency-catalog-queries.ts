@@ -4,13 +4,19 @@
  * is the catalog; career_target_requirements records which targets use a
  * competency and its position in each (display_order), and a competency can
  * now be shared by more than one target (P0b merges). Membership is READ
- * from the view target_sub_competencies. Spec §8 P0a; plan
+ * from the view target_sub_competencies, which since migration 0062 reads
+ * career_target_membership: pins and hides (faculty rows) plus importance
+ * weight (spec 2026-10-21-p3-membership-from-weights-design.md). Every write
+ * that can change membership takes lockMembership first and calls
+ * rebuildMembership before it commits. Spec §8 P0a; plan
  * docs/superpowers/plans/2026-10-11-competency-catalog-p0a.md;
  * docs/superpowers/plans/2026-10-12-competency-catalog-p0b.md.
  */
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, ne, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
-import { careerTargetRequirements, careerTargets, subCompetencies, targetSubCompetencies } from '@/lib/db/schema';
+import { careerTargetMembership, careerTargetRequirements, careerTargets, subCompetencies, targetSubCompetencies } from '@/lib/db/schema';
+import { lockMembership, rebuildMembership, setPin, setHide } from '@/lib/db/membership-queries';
+import type { Executor } from '@/lib/db/bundle-queries';
 import type { BatchWriter, DbMembershipRow, DbSubRow, DbTargetRow } from '@/lib/domain/target-batch';
 
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -37,14 +43,12 @@ export async function getTargetCompetency(careerTargetId: string, competencyId: 
   return row ?? null;
 }
 
-/** Next display_order for a new competency in the target: last current one + 1, or 0. */
-export async function nextDisplayOrderForTarget(careerTargetId: string): Promise<number> {
-  const rows = await db
-    .select({ displayOrder: targetSubCompetencies.displayOrder })
-    .from(targetSubCompetencies)
-    .where(and(eq(targetSubCompetencies.careerTargetId, careerTargetId), eq(targetSubCompetencies.retired, false)))
-    .orderBy(asc(targetSubCompetencies.displayOrder));
-  return rows.length > 0 ? rows[rows.length - 1]!.displayOrder + 1 : 0;
+/** Next display_order for a new pin in the target: last pin + 1, or 0 (weight-based members follow the pins). */
+export async function nextDisplayOrderForTarget(careerTargetId: string, ex: Executor = db): Promise<number> {
+  const [row] = (await ex.execute(sql`
+    SELECT coalesce(max(display_order) + 1, 0)::int AS next FROM career_target_requirements
+    WHERE career_target_id = ${careerTargetId} AND weight_source = 'faculty' AND status <> 'hidden'`)).rows as Array<{ next: number }>;
+  return row!.next;
 }
 
 /** Create a catalog competency used by one target: catalog row + one entry/faculty/draft requirement (weight NULL). */
@@ -63,15 +67,9 @@ export async function insertCompetencyForTarget(tx: Tx, row: NewTargetCompetency
     origin: 'gc_authored',
     updatedAt: new Date(),
   });
-  await tx.insert(careerTargetRequirements).values({
-    careerTargetId: row.careerTargetId,
-    competencyId: row.id,
-    horizon: 'entry',
-    weight: null,
-    weightSource: 'faculty',
-    status: 'draft',
-    displayOrder: row.displayOrder,
-  });
+  await lockMembership(tx);
+  await setPin(tx, row.careerTargetId, row.id, row.displayOrder);
+  await rebuildMembership(tx);
   const [created] = await tx
     .select()
     .from(targetSubCompetencies)
@@ -79,7 +77,7 @@ export async function insertCompetencyForTarget(tx: Tx, row: NewTargetCompetency
   return created!;
 }
 
-/** Set a competency's position within one target. Returns rows updated (0 = not a member). */
+/** Set a pinned competency's position within one target. Returns rows updated (0 = not pinned). The caller locks and rebuilds. */
 export async function setCompetencyOrderInTarget(
   tx: Tx,
   careerTargetId: string,
@@ -89,49 +87,32 @@ export async function setCompetencyOrderInTarget(
   const updated = await tx
     .update(careerTargetRequirements)
     .set({ displayOrder, updatedAt: new Date() })
-    .where(and(eq(careerTargetRequirements.careerTargetId, careerTargetId), eq(careerTargetRequirements.competencyId, competencyId)))
+    .where(and(
+      eq(careerTargetRequirements.careerTargetId, careerTargetId), eq(careerTargetRequirements.competencyId, competencyId),
+      eq(careerTargetRequirements.weightSource, 'faculty'), ne(careerTargetRequirements.status, 'hidden'),
+    ))
     .returning({ id: careerTargetRequirements.id });
   return updated.length;
 }
 
 /**
- * Remove one target's claim on a competency (P0b: a competency can be
- * shared by several targets after a merge). Deletes every
- * career_target_requirements row for (careerTargetId, competencyId) — all
- * horizons/weight sources for that pair, nothing belonging to any other
- * target. If no other target still uses the competency afterward, the
- * catalog row is left ACTIVE and unlinked (P0b Amendment 1, A1: unlinked is
- * a valid active state — the catalog is independent of career targets, so
- * removing the last target no longer retires the row). Otherwise it stays
- * active for the remaining targets.
+ * Remove a competency from one target (P0b: a competency can be shared by
+ * several targets). Since the membership addendum (spec
+ * 2026-10-21-p3-membership-from-weights-design.md §4) removal is a HIDE: the
+ * faculty pin becomes a `hidden` faculty row, and the onet/employer weight
+ * rows stay (they are data, not membership), so a later recompute cannot
+ * bring the competency back. Returns 'unlinked' when no target lists the
+ * competency afterward (P0b Amendment 1: unlinked is a valid active state;
+ * removing the last target never retires the catalog row).
  *
- * Self-correcting (fix round 1, 2026-10-12): refuses — and changes
- * nothing — if careerTargetId isn't currently a member of the competency,
- * instead of silently deleting zero rows and branching on a stale
- * pre-delete count (the old version could wrongly retire a competency that
- * still had its one real target intact, because a no-op delete for a bogus
- * target id still satisfied "<= 1 target before"). The post-delete
- * membership is re-read rather than inferred from the pre-delete count.
- *
- * Concurrency-safe (fix round 2, 2026-10-12): without a lock, two
- * concurrent retires of the SAME shared competency from two DIFFERENT
- * targets can each read the pre-delete membership before either commits,
- * each delete their own row, each re-read and still see the other's
- * (uncommitted) row, and both return 'removed-from-target' — leaving the
- * competency with zero requirement rows and retired=false, orphaned (which,
- * since Amendment 1, is simply 'unlinked' — a valid state, not a bug — but
- * the race would still make each caller under-report: both see
- * 'removed-from-target' when in fact the second delete left it with no
- * members at all). The `SELECT ... FOR UPDATE` on the catalog row below
- * serializes concurrent retires of the same competencyId: the second caller
- * blocks until the first's transaction commits (or rolls back), then sees
- * the first's committed delete when it re-reads membership, so the caller
- * that empties the last membership correctly observes 'unlinked'.
+ * Refuses, changing nothing, when the target does not currently list the
+ * competency. The FOR UPDATE on the catalog row serializes concurrent removals
+ * of the same competency; lockMembership serializes them against every other
+ * membership writer, including the recompute, and the post-write membership is
+ * re-read after rebuildMembership.
  *
  * Retiring (sub_competencies.retired = true) is a separate, explicit catalog
- * action — not a side effect of this function. P0b has no UI for it; the
- * target-batch definitions (RETIRED_SUB_COMPETENCIES in seed-targets.ts)
- * remain the only way to retire a competency.
+ * action — not a side effect of this function.
  */
 export async function retireCompetencyFromTarget(
   tx: Tx,
@@ -146,9 +127,9 @@ export async function retireCompetencyFromTarget(
   if (!targetsBefore.includes(careerTargetId)) {
     throw new Error(`retireCompetencyFromTarget: ${careerTargetId} is not a member of ${competencyId}`);
   }
-  await tx
-    .delete(careerTargetRequirements)
-    .where(and(eq(careerTargetRequirements.careerTargetId, careerTargetId), eq(careerTargetRequirements.competencyId, competencyId)));
+  await lockMembership(tx);
+  await setHide(tx, careerTargetId, competencyId);
+  await rebuildMembership(tx);
   const targetsAfter = await targetIdsForCompetency(tx, competencyId);
   if (targetsAfter.length === 0) {
     return 'unlinked';
@@ -156,37 +137,40 @@ export async function retireCompetencyFromTarget(
   return 'removed-from-target';
 }
 
+/** Targets that currently list the competency (career_target_membership). */
 export async function targetIdsForCompetency(tx: Tx, competencyId: string): Promise<string[]> {
   const rows = await tx
-    .selectDistinct({ id: careerTargetRequirements.careerTargetId })
-    .from(careerTargetRequirements)
-    .where(eq(careerTargetRequirements.competencyId, competencyId));
+    .select({ id: careerTargetMembership.careerTargetId })
+    .from(careerTargetMembership)
+    .where(eq(careerTargetMembership.competencyId, competencyId));
   return rows.map(r => r.id).sort();
 }
 
 /**
  * Target-batch state: the catalog (one DbSubRow per competency, no target
- * association) and membership (one DbMembershipRow per (target, competency)
- * pair, read from the target_sub_competencies view, which already groups
- * career_target_requirements by (career_target_id, competency_id) taking
- * MIN(display_order) across horizons/weight sources).
+ * association) and the faculty PINS (one DbMembershipRow per pinned (target,
+ * competency) pair). The batch planner manages pins only: weight-based members
+ * are not the batch file's to add or remove (membership addendum), and seeing
+ * them would report them as "not desired" removals on every run.
  */
 export async function readCatalogState(
   tx: Tx,
   lock: boolean,
 ): Promise<{ targets: DbTargetRow[]; subs: DbSubRow[]; memberships: DbMembershipRow[] }> {
   if (lock) {
-    // A GROUP BY view cannot be locked FOR UPDATE; lock the rows it is built from.
+    // Membership lock first: the same order as every other membership writer
+    // (final review Minor #3). Then lock the rows the batch reads.
+    await lockMembership(tx);
     await tx.select({ id: careerTargets.id }).from(careerTargets).for('update');
     await tx.select({ id: subCompetencies.id }).from(subCompetencies).for('update');
     await tx.select({ id: careerTargetRequirements.id }).from(careerTargetRequirements).for('update');
   }
   const targets = await tx.select().from(careerTargets).orderBy(asc(careerTargets.displayOrder));
   const subs = await tx.select().from(subCompetencies).orderBy(asc(subCompetencies.id));
-  const memberships = await tx
-    .select()
-    .from(targetSubCompetencies)
-    .orderBy(asc(targetSubCompetencies.careerTargetId), asc(targetSubCompetencies.displayOrder), asc(targetSubCompetencies.id));
+  const memberships = (await tx.execute(sql`
+    SELECT career_target_id AS "careerTargetId", competency_id AS "competencyId", min(display_order)::int AS "displayOrder"
+    FROM career_target_requirements WHERE weight_source = 'faculty' AND status <> 'hidden'
+    GROUP BY 1, 2 ORDER BY 1, 3, 2`)).rows as unknown as DbMembershipRow[];
   return {
     targets: targets.map(t => ({
       id: t.id,
@@ -208,16 +192,14 @@ export async function readCatalogState(
       retired: s.retired,
       mergedInto: s.mergedInto ?? null,
     })),
-    memberships: memberships.map(m => ({
-      careerTargetId: m.careerTargetId,
-      competencyId: m.id,
-      displayOrder: m.displayOrder,
-    })),
+    memberships,
   };
 }
 
 /**
- * BatchWriter for scripts/targets/apply-target-batch.ts. Resolution 1
+ * BatchWriter for scripts/targets/apply-target-batch.ts (the caller holds
+ * lockMembership via readCatalogState(tx, true) and calls rebuildMembership
+ * once after all writes). Resolution 1
  * (Task 4): memberships are inserted, reordered and removed only through
  * career_target_requirements; catalog field updates go only to
  * sub_competencies. `retireCompetency` removes every membership for the id
@@ -265,15 +247,8 @@ export function catalogBatchWriter(tx: Tx): BatchWriter {
       await tx.update(subCompetencies).set({ retired: true, mergedInto, updatedAt: new Date() }).where(eq(subCompetencies.id, id));
     },
     async insertMembership(careerTargetId, competencyId, displayOrder) {
-      await tx.insert(careerTargetRequirements).values({
-        careerTargetId,
-        competencyId,
-        horizon: 'entry',
-        weight: null,
-        weightSource: 'faculty',
-        status: 'draft',
-        displayOrder,
-      });
+      // A pin; turns an earlier hide back into a pin. The batch CLI rebuilds membership once after all writes.
+      await setPin(tx, careerTargetId, competencyId, displayOrder);
     },
     async updateMembershipOrder(careerTargetId, competencyId, displayOrder) {
       await setCompetencyOrderInTarget(tx, careerTargetId, competencyId, displayOrder);

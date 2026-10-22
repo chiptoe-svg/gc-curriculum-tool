@@ -24,6 +24,7 @@ import { db } from '@/lib/db/client';
 import { CAREER_TARGETS, RETIRED_SUB_COMPETENCIES } from '@/lib/domain/seed-targets';
 import { planTargetBatch, applyPlan, formatPlan } from '@/lib/domain/target-batch';
 import { catalogBatchWriter, readCatalogState } from '@/lib/db/competency-catalog-queries';
+import { rebuildMembership } from '@/lib/db/membership-queries';
 
 async function main() {
   const args = process.argv.slice(2);
@@ -43,6 +44,7 @@ async function main() {
     if (!apply) return;
 
     await applyPlan(plan, catalogBatchWriter(tx));
+    await rebuildMembership(tx); // membership addendum: pins changed; readCatalogState(tx, true) holds the lock
     const after = await readCatalogState(tx, false);
     const check = planTargetBatch(CAREER_TARGETS, RETIRED_SUB_COMPETENCIES, after.targets, after.subs, after.memberships);
     const c = check.counts;

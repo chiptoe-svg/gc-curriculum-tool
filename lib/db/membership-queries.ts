@@ -4,8 +4,8 @@
  * and entry effective weights. Every caller holds lockMembership(tx) first and
  * runs in the same transaction as its own write.
  */
-import { sql } from 'drizzle-orm';
-import { careerTargetMembership } from '@/lib/db/schema';
+import { and, eq, ne, sql } from 'drizzle-orm';
+import { careerTargetMembership, careerTargetRequirements } from '@/lib/db/schema';
 import type { Executor } from '@/lib/db/bundle-queries';
 import { effectiveWeight } from '@/lib/catalog/career-weights';
 import { decideMembership, bandOf, MEMBERSHIP_LOCK_KEY, type PairState } from '@/lib/catalog/membership';
@@ -102,4 +102,40 @@ export async function rebuildMembership(ex: Executor, opts: { apply?: boolean; s
 
 export function sortChanges(changes: MembershipChange[]): MembershipChange[] {
   return changes.sort((a, b) => a.careerTargetId.localeCompare(b.careerTargetId) || a.competencyId.localeCompare(b.competencyId));
+}
+
+/**
+ * Faculty pin: upsert the entry faculty row. A hidden row becomes a pin; an
+ * existing pin (draft, or a confirmed override) keeps its status and weight.
+ * Does not lock or rebuild; the caller does both.
+ */
+export async function setPin(tx: Executor, targetId: string, competencyId: string, displayOrder: number): Promise<void> {
+  await tx.insert(careerTargetRequirements).values({
+    careerTargetId: targetId, competencyId, horizon: 'entry', weight: null, weightSource: 'faculty', status: 'draft', displayOrder,
+  }).onConflictDoUpdate({
+    target: [careerTargetRequirements.careerTargetId, careerTargetRequirements.competencyId, careerTargetRequirements.horizon, careerTargetRequirements.weightSource],
+    set: { status: sql`CASE WHEN ${careerTargetRequirements.status} = 'hidden' THEN 'draft' ELSE ${careerTargetRequirements.status} END`, displayOrder, updatedAt: new Date() },
+  });
+}
+
+/** Faculty hide: the entry faculty row becomes hidden (weight cleared); other faculty horizons go. Weight rows stay. */
+export async function setHide(tx: Executor, targetId: string, competencyId: string): Promise<void> {
+  await tx.delete(careerTargetRequirements).where(and(
+    eq(careerTargetRequirements.careerTargetId, targetId), eq(careerTargetRequirements.competencyId, competencyId),
+    eq(careerTargetRequirements.weightSource, 'faculty'), ne(careerTargetRequirements.horizon, 'entry'),
+  ));
+  await tx.insert(careerTargetRequirements).values({
+    careerTargetId: targetId, competencyId, horizon: 'entry', weight: null, weightSource: 'faculty', status: 'hidden', displayOrder: 0,
+  }).onConflictDoUpdate({
+    target: [careerTargetRequirements.careerTargetId, careerTargetRequirements.competencyId, careerTargetRequirements.horizon, careerTargetRequirements.weightSource],
+    set: { status: 'hidden', weight: null, updatedAt: new Date() },
+  });
+}
+
+/** Back to importance only: delete every faculty row of the pair. */
+export async function clearFacultyRow(tx: Executor, targetId: string, competencyId: string): Promise<void> {
+  await tx.delete(careerTargetRequirements).where(and(
+    eq(careerTargetRequirements.careerTargetId, targetId), eq(careerTargetRequirements.competencyId, competencyId),
+    eq(careerTargetRequirements.weightSource, 'faculty'),
+  ));
 }

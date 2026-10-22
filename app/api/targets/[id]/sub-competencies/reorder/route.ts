@@ -4,6 +4,7 @@ import { db } from '@/lib/db/client';
 import { prototypeTargetEdits } from '@/lib/db/schema';
 import { getTargetById, clearTargetCache } from '@/lib/db/career-targets-queries';
 import { setCompetencyOrderInTarget } from '@/lib/db/competency-catalog-queries';
+import { lockMembership, rebuildMembership } from '@/lib/db/membership-queries';
 import { hashIp } from '@/lib/ip-hash';
 
 const reorderSchema = z.object({
@@ -36,12 +37,15 @@ export async function POST(
 
     const { order } = parsed.data;
 
-    // Update each competency's position in this target; ids that are not
-    // members of the target are ignored (as before).
+    // Update each pinned competency's position in this target; ids that are
+    // not pinned are ignored (weight-based members follow the pins, ordered by
+    // importance — membership addendum). Lock, then rebuild membership.
     await db.transaction(async (tx) => {
+      await lockMembership(tx);
       for (let i = 0; i < order.length; i++) {
         await setCompetencyOrderInTarget(tx, id, order[i]!, i);
       }
+      await rebuildMembership(tx);
     });
 
     // Single audit log entry for the reorder
