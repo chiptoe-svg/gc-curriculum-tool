@@ -106,10 +106,10 @@ export async function setCompetencyOrderInTarget(
  * removing the last target never retires the catalog row).
  *
  * Refuses, changing nothing, when the target does not currently list the
- * competency. The FOR UPDATE on the catalog row serializes concurrent removals
- * of the same competency; lockMembership serializes them against every other
- * membership writer, including the recompute, and the post-write membership is
- * re-read after rebuildMembership.
+ * competency. lockMembership is taken first (the same lock order as every
+ * other membership writer) and serializes removals against each other and the
+ * recompute; the FOR UPDATE on the catalog row then guards the row itself, and
+ * the post-write membership is re-read after rebuildMembership.
  *
  * Retiring (sub_competencies.retired = true) is a separate, explicit catalog
  * action — not a side effect of this function.
@@ -119,6 +119,10 @@ export async function retireCompetencyFromTarget(
   careerTargetId: string,
   competencyId: string,
 ): Promise<'unlinked' | 'removed-from-target'> {
+  // Advisory lock FIRST, as every membership writer does: a rebuild's FK check
+  // takes KEY SHARE on member competency rows, so holding this row FOR UPDATE
+  // while waiting for the advisory lock deadlocks (final review Important 1).
+  await lockMembership(tx);
   const [locked] = await tx.select({ id: subCompetencies.id }).from(subCompetencies).where(eq(subCompetencies.id, competencyId)).for('update');
   if (!locked) {
     throw new Error(`retireCompetencyFromTarget: ${competencyId} does not exist`);
@@ -127,7 +131,6 @@ export async function retireCompetencyFromTarget(
   if (!targetsBefore.includes(careerTargetId)) {
     throw new Error(`retireCompetencyFromTarget: ${careerTargetId} is not a member of ${competencyId}`);
   }
-  await lockMembership(tx);
   await setHide(tx, careerTargetId, competencyId);
   await rebuildMembership(tx);
   const targetsAfter = await targetIdsForCompetency(tx, competencyId);
