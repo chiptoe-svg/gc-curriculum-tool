@@ -250,4 +250,21 @@ describe('career-weight recompute after review writes', () => {
     expect(res.status).toBe(200);
     expect(mockRecompute).toHaveBeenCalledWith('bundle review');
   });
+
+  it('runs after a successful blind submit, not after a refused one', async () => {
+    q.submitBlindPicks.mockResolvedValueOnce({ ok: true });
+    const ok = await blindPOST(post('/api/admin/bundles/a/blind', { reviewer: 'R', picks: [], noCleanMatch: false }), params('a'));
+    expect(ok.status).toBe(200);
+    expect(mockRecompute).toHaveBeenCalledWith('blind submit');
+    q.submitBlindPicks.mockResolvedValueOnce({ ok: false, status: 409, error: 'already submitted' });
+    await blindPOST(post('/api/admin/bundles/a/blind', { reviewer: 'R', picks: [], noCleanMatch: false }), params('a'));
+    expect(mockRecompute).toHaveBeenCalledTimes(1);
+  });
+
+  it('runs after a successful blind reset', async () => {
+    q.resetBlind.mockResolvedValueOnce({ ok: true });
+    const ok = await resetPOST(post('/api/admin/bundles/a/reset-blind', { reviewer: 'R', note: 'redo' }), params('a'));
+    expect(ok.status).toBe(200);
+    expect(mockRecompute).toHaveBeenCalledWith('blind reset');
+  });
 });

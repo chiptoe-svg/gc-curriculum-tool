@@ -1,6 +1,7 @@
 import { checkAdminAuth } from '@/lib/auth/admin-auth';
 import { hasJsonContentType } from '@/lib/http/require-json';
 import { db } from '@/lib/db/client';
+import { recomputeCareerWeightsSafely } from '@/lib/db/career-weight-queries';
 import { resetBlind, validateReviewer } from '@/lib/db/bundle-queries';
 import { ID_RE, jsonError, jsonOk, readBody, bodySlug } from '../../_shared';
 
@@ -28,5 +29,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const note = body.note;
   const result = await db.transaction(tx => resetBlind(tx, id, r.reviewer, note));
   if (!result.ok) return jsonError(result.error, result.status);
+  await recomputeCareerWeightsSafely('blind reset'); // P3: confirmed core items changed; after commit, never fails the request
   return jsonOk(result);
 }

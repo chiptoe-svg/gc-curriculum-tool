@@ -1,6 +1,7 @@
 import { checkAdminAuth } from '@/lib/auth/admin-auth';
 import { hasJsonContentType } from '@/lib/http/require-json';
 import { db } from '@/lib/db/client';
+import { recomputeCareerWeightsSafely } from '@/lib/db/career-weight-queries';
 import { submitBlindPicks, validateReviewer, type BlindPickInput } from '@/lib/db/bundle-queries';
 import type { Pos } from '@/lib/catalog/agreement';
 import { ID_RE, ONET_RELEASE, jsonError, jsonOk, readBody, bodySlug } from '../../_shared';
@@ -48,5 +49,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const noCleanMatch = body.noCleanMatch;
   const result = await db.transaction(tx => submitBlindPicks(tx, id, r.reviewer, picks, noCleanMatch, ONET_RELEASE));
   if (!result.ok) return jsonError(result.error, result.status);
+  await recomputeCareerWeightsSafely('blind submit'); // P3: confirmed core items changed; after commit, never fails the request
   return jsonOk(result);
 }
