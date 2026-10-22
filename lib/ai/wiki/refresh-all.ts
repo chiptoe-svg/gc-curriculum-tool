@@ -64,7 +64,8 @@ export interface RefreshInputs {
 }
 
 export interface RefreshOptions {
-  only?: 'courses' | 'program';
+  /** 'targets': the career-target pages and the index only (after a membership change, P3). */
+  only?: 'courses' | 'program' | 'targets';
   /** Restrict to one course page (implies the course pass only). */
   course?: string;
 }
@@ -167,7 +168,7 @@ export function planRefresh(inputs: RefreshInputs, opts: RefreshOptions): Refres
 
   let courses = allCourses;
   let runProgram = opts.only !== 'courses';
-  if (opts.only === 'program') courses = [];
+  if (opts.only === 'program' || opts.only === 'targets') courses = [];
   if (opts.course) {
     const want = normCode(opts.course);
     courses = allCourses.filter(c => normCode(c.courseCode) === want);
@@ -177,7 +178,9 @@ export function planRefresh(inputs: RefreshInputs, opts: RefreshOptions): Refres
     runProgram = false;
   }
 
-  const programPages = runProgram ? [...nonIndexProgram, indexPage] : [];
+  const programPages = !runProgram ? []
+    : opts.only === 'targets' ? [...nonIndexProgram.filter(p => p.type === 'target'), indexPage]
+    : [...nonIndexProgram, indexPage];
   return {
     courses,
     programPages,
@@ -204,13 +207,13 @@ export function parseRefreshArgs(argv: ReadonlyArray<string>): RefreshOptions & 
     if (flag === '--dry-run') out.dryRun = true;
     else if (flag === '--only') {
       const v = value();
-      if (v !== 'courses' && v !== 'program') throw new Error(`refresh-all: --only must be courses|program, got "${v}"`);
+      if (v !== 'courses' && v !== 'program' && v !== 'targets') throw new Error(`refresh-all: --only must be courses|program|targets, got "${v}"`);
       out.only = v;
     } else if (flag === '--course') out.course = value();
     else throw new Error(`refresh-all: unknown argument "${arg}"`);
   }
-  if (out.course && out.only === 'program') {
-    throw new Error('refresh-all: --course selects one course page; it cannot be combined with --only program');
+  if (out.course && (out.only === 'program' || out.only === 'targets')) {
+    throw new Error(`refresh-all: --course selects one course page; it cannot be combined with --only ${out.only}`);
   }
   return out;
 }

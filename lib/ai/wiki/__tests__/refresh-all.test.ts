@@ -113,6 +113,13 @@ describe('planRefresh', () => {
     expect(last[last.length - 1]!.type).toBe('index');
   });
 
+  it('--only targets regenerates the target pages and the index only (membership changes, P3)', () => {
+    const plan = planRefresh(inputs, { only: 'targets' });
+    expect(plan.courses).toEqual([]);
+    expect(plan.programPages.map(p => p.type)).toEqual([...inputs.targetSlugs.map(() => 'target'), 'index']);
+    expect(parseRefreshArgs(['--only', 'targets']).only).toBe('targets');
+  });
+
   it('manifest lists every course and program page except the index', () => {
     const plan = planRefresh(inputs, { only: 'program' });
     const manifestPaths = plan.manifest.map(p => p.path);
