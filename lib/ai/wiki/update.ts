@@ -430,6 +430,8 @@ interface CoverageRollupEntry {
   evidenceExcerpt: string | null;
   /** Importance band label for this target, or 'Selected by faculty' (membership addendum). */
   importance: string;
+  /** False when no program-visible course has a coverage cell for it yet: say "not yet scored", never D0. */
+  scored: boolean;
 }
 
 /**
@@ -557,6 +559,7 @@ export async function loadTargetSubstrate(targetId: string, executor: Tx | typeo
       dDepth: best?.dDepth ?? 0,
       evidenceExcerpt: best?.evidenceExcerpt ?? null,
       importance: s.importance,
+      scored: best !== undefined,
     };
   });
   void subById; // used for name lookup above

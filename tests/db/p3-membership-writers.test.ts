@@ -121,6 +121,8 @@ describe.skipIf(!isP2ScratchDb())('membership writers (scratch)', () => {
         ['p3m-b', 'Very or extremely important'],
         ['p3m-c', 'Somewhat important'],
       ]);
+      // No coverage cells exist for any of them: the page must say "not yet scored", not D0 (final review Important 2).
+      expect(s.coverageRollup.map(e => e.scored)).toEqual([false, false, false]);
     });
   });
 });
