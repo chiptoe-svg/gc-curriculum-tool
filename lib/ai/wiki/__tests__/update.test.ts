@@ -23,6 +23,13 @@ vi.hoisted(() => {
 // ---------------------------------------------------------------------------
 
 // Mock drizzle DB client so no real Postgres connections are opened.
+const trailMocks = vi.hoisted(() => ({
+  ensureCourseSkillEmbeddings: vi.fn(async () => ({ ok: false, embedded: 0 })),
+  loadProjectTrail: vi.fn(async () => [{ title: 'Proof lab', skills: [{ statement: 'Color proofing', competencies: [] }] }]),
+  loadBuildingProjects: vi.fn(async () => []),
+}));
+vi.mock('@/lib/db/project-trail-queries', () => trailMocks);
+
 vi.mock('@/lib/db/client', () => ({
   db: {
     select: vi.fn(),
@@ -543,6 +550,19 @@ describe('updateWikiForSnapshot', () => {
     expect(Array.isArray(userMsg.competencyLinks)).toBe(true);
   });
 
+  it('passes the project trail to the provider even when embedding the course skills failed (project skill trail)', async () => {
+    const provider = {
+      model: 'gpt-5.5',
+      complete: vi.fn().mockResolvedValue({ data: mockLLMResponse, costUsdCents: 150, durationMs: 3000, cachedTokens: 0, uncachedPromptTokens: 5000, completionTokens: 1500 }),
+    };
+    (getProviderForFunction as ReturnType<typeof vi.fn>).mockResolvedValue(provider);
+    await updateWikiForSnapshot(SNAPSHOT_ID);
+    expect(trailMocks.ensureCourseSkillEmbeddings).toHaveBeenCalled();
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const userMsg = JSON.parse((provider.complete as ReturnType<typeof vi.fn>).mock.calls[0]![0]!.userMessage as string);
+    expect(userMsg.projectTrail).toEqual([{ title: 'Proof lab', skills: [{ statement: 'Color proofing', competencies: [] }] }]);
+  });
+
   it('passes rawPaths to the provider so LLM can link them', async () => {
     const provider = {
       model: 'gpt-5.5',
@@ -742,6 +762,8 @@ describe('per-capture path is pinned', () => {
       allSnapshotsForCourse: [],
       competencyBands: [{ statement: 'Manages client relationships', band: 'materials_supported' }],
       competencyLinks: [],
+      // Project skill trail (2026-10-22): the only intended addition to the message.
+      projectTrail: [{ title: 'Proof lab', skills: [{ statement: 'Color proofing', competencies: [] }] }],
       affectedWikiPages: [
         { type: 'course', slug: 'gc-4800', path: 'courses/gc-4800.md', existingContent: null },
         {

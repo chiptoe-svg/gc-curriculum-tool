@@ -74,6 +74,17 @@ The user message is a JSON object with these fields:
        run for this snapshot; then render competencies as plain text. */
     { "statement": "Color management across devices", "slug": "color-management" }
   ],
+  "projectTrail": [
+    /* Course page only (see §9b). Per signature project: the course skills it
+       develops; for each, the catalog competency the coverage scorer matched it
+       to (with depth) and the closest O*NET items in that competency's bundle. */
+    { "title": "Proofing lab", "skills": [
+      { "statement": "Color management across devices", "competencies": [
+        { "id": "color-management", "name": "Color management", "k": 3, "u": 2, "d": 3,
+          "onet": [ { "label": "Evaluate color reproduction…", "source": "onet_task", "provisional": true, "similarity": 0.71 } ] } ] },
+      { "statement": "Client presentation", "competencies": [] }
+    ] }
+  ],
   "affectedWikiPages": [
     /* array of objects describing each page to regenerate */
     {
@@ -99,6 +110,11 @@ The user message is a JSON object with these fields:
             "evidenceExcerpt": "...",
             "band": "materials_supported"  /* claimed | materials_supported | artifact_verified | null — render as ·claimed/·materials/·artifact */
           }
+        ],
+        /* course project skills that feed this competency (see §3b) */
+        "buildingProjects": [
+          { "courseCode": "GC 1010", "project": "Brand book", "statement": "Brand identity fundamentals",
+            "onet": [ { "label": "Develop brand identity…", "source": "onet_task", "provisional": false, "similarity": 0.66 } ] }
         ]
       }
     },
@@ -252,6 +268,9 @@ Body sections in order:
 7. **Audit notes** — surface the most reader-useful items from `audit_notes`: downstream connections, prereq gaps, productive-failure conditions if present, cross-source contradictions worth flagging. Do NOT dump the whole `audit_notes` object — pick what matters. Keep this section short (3–8 bullets or a short paragraph).
 8. **Class structure** (new — see §8a below)
 9. **Signature projects** (see §8b below)
+9b. **How the projects connect** — render from `projectTrail` when non-empty; omit the section otherwise. Heading `## How the projects connect`. One `### {project.title}` per project, then one bullet per skill and competency:
+   `{skill.statement} → [[{competency.id}|{competency.name}]] (K{k}/U{u}/D{d}) → closest O*NET: "{onet[0].label}", "{onet[1].label}"`
+   Link the competency only when its id is a `slug` in `competencyLinks`; otherwise write `{competency.name}` as plain text. Write a `null` K or U as a dash. Add ` (provisional)` after an O*NET item whose `provisional` is true. If a skill has several competencies, give one bullet per competency. If `onet` is empty, end the bullet after the depth. If `competencies` is empty, write `{skill.statement} — not yet linked to a catalog competency`. End the section with one plain sentence: the competency link is the coverage scorer's match, the O*NET items are the closest items in that competency's O*NET bundle by meaning, and provisional items have not been reviewed by faculty.
 10. **Syllabus** (new — see §8c below)
 11. **Source snapshots** — links to the JSON files in `raw/snapshots/<course-slug>/`. Most recent first. Use the provided `allSnapshotsForCourse` list. Rendered as: `- [2026-05-25 — Spring 2026](raw/snapshots/gc-4800/2026-05-25_def456.json)`.
 12. **Cross-references** — small "See also" section. Link outward to the targets this course contributes to, the concept pages that frame it, and any closely related courses.
@@ -366,6 +385,7 @@ Body sections in order:
 1. **H1** — competency name
 2. **Definition** — what this competency means in the context of the career target. Ground it in the sub-competency's `knowDescriptor` / `understandDescriptor` / `doDescriptor` from the substrate. Write 2–3 sentences; editorial not bureaucratic.
 3. **Across the program** — ranked list of contributing courses by dDepth (highest first). For each: `[[course-slug|Course Title]]` — K{k}/U{u}/D{d} {band marker} — one-line evidence excerpt from `evidenceExcerpt`. **Append the band marker** from each cell's `band` field, same vocabulary as the course page: ` ·claimed` / ` ·materials` / ` ·artifact` (omit it only when `band` is null). Courses with dDepth 0 may be mentioned briefly as "surveyed but not developed."
+3b. **Where students build this** — render from `substrate.buildingProjects` when non-empty; omit otherwise. Heading `## Where students build this`. Group by course (`[[course-slug|COURSE CODE]]`, slug from the course code as on the course page), then one bullet per project skill: `{project}: {statement}`, followed by ` — closest O*NET: "{label}", "{label}"` when `onet` is non-empty (` (provisional)` where flagged). Then one sentence naming which of this competency's O*NET items appear most often across those bullets.
 4. **Dissociation patterns** — if any contributing course shows K-high/U-low (jargon without rationale), U-high/D-low (theory without craft), or D-high/U-low (craft without articulation), call it out explicitly. This is where the depth matrix earns its keep. Omit this section if the pattern is clean.
 5. **Scaffolding** — if any contributing course has Phase 1B scaffolding data (evaluate-course-scaffolding result), surface the introduce/practice/integration sequence. If no scaffolding data exists yet, omit this section.
 6. **Concepts** — links to relevant `[[concept-pages]]`. Include `[[productive-failure]]` if any contributing course has `productive_failure_conditions` populated.

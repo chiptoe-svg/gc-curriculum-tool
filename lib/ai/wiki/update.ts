@@ -9,6 +9,8 @@
  * The orchestrator only READS from the wiki repo and Postgres. It never writes.
  */
 
+import { ensureCourseSkillEmbeddings, loadProjectTrail, loadBuildingProjects, type BuildingProject } from '@/lib/db/project-trail-queries';
+import type { TrailProject } from '@/lib/catalog/project-trail';
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
@@ -351,6 +353,8 @@ interface ContributingCell {
 
 export async function loadCompetencySubstrate(subCompetencyId: string): Promise<{
   contributingCells: ContributingCell[];
+  /** Course projects whose skills feed this competency, with the closest O*NET items (project skill trail). */
+  buildingProjects: BuildingProject[];
 }> {
   // Get all non-retired snapshots' cells for this sub-competency. Join to get
   // the course code + profile from the snapshot (the profile carries the
@@ -417,7 +421,11 @@ export async function loadCompetencySubstrate(subCompetencyId: string): Promise<
   // Sort highest dDepth first.
   contributingCells.sort((a, b) => b.dDepth - a.dDepth);
 
-  return { contributingCells };
+  const buildingProjects = await loadBuildingProjects(db, subCompetencyId).catch((err: unknown) => {
+    console.warn(`[project-trail] building projects for ${subCompetencyId} failed: ${err instanceof Error ? err.message : String(err)}`);
+    return [] as BuildingProject[];
+  });
+  return { contributingCells, buildingProjects };
 }
 
 interface CoverageRollupEntry {
@@ -1242,6 +1250,13 @@ export async function updateWikiForSnapshot(
   const courseInfo = await loadCourseInfo(snapshot.courseCode);
   const allSnapshots = await loadAllSnapshotsForCourse(snapshot.courseCode);
   const competencyLinks = await loadCompetencyLinksForSnapshot(snapshot.id);
+  // Project skill trail: embed any new course statements (best effort; never
+  // blocks), then project → skill → competency → closest O*NET items.
+  await ensureCourseSkillEmbeddings(db, snapshot.id);
+  const projectTrail = await loadProjectTrail(db, snapshot.id).catch((err: unknown) => {
+    console.warn(`[project-trail] trail for ${snapshot.id} failed: ${err instanceof Error ? err.message : String(err)}`);
+    return [] as TrailProject[];
+  });
 
   const rawPaths = {
     snapshotJson: raw.find(p => p.path.startsWith('raw/snapshots/'))?.path ?? null,
@@ -1293,6 +1308,7 @@ export async function updateWikiForSnapshot(
       allSnapshotsForCourse: allSnapshots,
       competencyBands,
       competencyLinks,
+      projectTrail,
       affectedWikiPages: batch,
     });
 

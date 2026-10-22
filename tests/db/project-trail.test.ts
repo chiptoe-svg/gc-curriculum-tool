@@ -105,4 +105,17 @@ describe.skipIf(!isP2ScratchDb())('project trail queries (scratch)', () => {
     expect(rows.length).toBeGreaterThan(0);
     for (const r of rows) expect(typeof r.project).toBe('string');
   });
+
+  it('the competency wiki substrate carries buildingProjects', async () => {
+    const snaps = (await db.execute(sql`SELECT id FROM course_capture_snapshots WHERE retired_at IS NULL AND jsonb_typeof(profile->'major_projects') = 'array'`)).rows as Array<{ id: string }>;
+    let comp: string | undefined;
+    for (const { id } of snaps) {
+      comp = (await loadProjectTrail(db, id)).flatMap(p => p.skills.flatMap(s => s.competencies.map(c => c.id)))[0];
+      if (comp) break;
+    }
+    expect(comp).toBeDefined();
+    const { loadCompetencySubstrate } = await import('@/lib/ai/wiki/update');
+    const sub = await loadCompetencySubstrate(comp!);
+    expect(sub.buildingProjects.length).toBeGreaterThan(0);
+  });
 });
