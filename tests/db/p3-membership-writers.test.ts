@@ -75,4 +75,20 @@ describe.skipIf(!isP2ScratchDb())('membership writers (scratch)', () => {
       expect(await nextDisplayOrderForTarget(T, tx)).toBe(1);
     });
   });
+
+  it('lists pins, hides and anything weighted at least 0.25, with bands', async () => {
+    await inRolledBackTx(async (tx) => {
+      await seed(tx);
+      await tx.execute(sql`INSERT INTO sub_competencies (id, name, know_descriptor, understand_descriptor, do_descriptor, origin) VALUES ('p3m-c', 'C', 'k', 'u', 'd', 'gc_authored'), ('p3m-d', 'D', 'k', 'u', 'd', 'gc_authored')`);
+      await tx.execute(sql`INSERT INTO career_target_requirements (career_target_id, competency_id, horizon, weight_source, weight, status, display_order) VALUES
+        (${T}, 'p3m-c', 'entry', 'onet', 0.3, 'draft', 0), (${T}, 'p3m-d', 'entry', 'onet', 0.2, 'draft', 0)`);
+      const { readTargetCompetencyList } = await import('@/lib/db/membership-queries');
+      const rows = (await readTargetCompetencyList(tx)).filter(r => r.careerTargetId === T);
+      expect(rows.map(r => [r.competencyId, r.band, r.pinned, r.member])).toEqual([
+        ['p3m-a', null, true, true],
+        ['p3m-b', 'very', false, true],
+        ['p3m-c', 'somewhat', false, false],
+      ]);
+    });
+  });
 });

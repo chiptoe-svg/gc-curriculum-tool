@@ -8,7 +8,7 @@ import { and, eq, ne, sql } from 'drizzle-orm';
 import { careerTargetMembership, careerTargetRequirements } from '@/lib/db/schema';
 import type { Executor } from '@/lib/db/bundle-queries';
 import { effectiveWeight } from '@/lib/catalog/career-weights';
-import { decideMembership, bandOf, MEMBERSHIP_LOCK_KEY, type PairState } from '@/lib/catalog/membership';
+import { decideMembership, bandOf, LIST_FLOOR, MEMBERSHIP_LOCK_KEY, type Band, type PairState } from '@/lib/catalog/membership';
 
 export type MembershipChange = { careerTargetId: string; competencyId: string; change: 'entered' | 'left' | 'band'; from: string | null; to: string | null };
 
@@ -138,4 +138,34 @@ export async function clearFacultyRow(tx: Executor, targetId: string, competency
     eq(careerTargetRequirements.careerTargetId, targetId), eq(careerTargetRequirements.competencyId, competencyId),
     eq(careerTargetRequirements.weightSource, 'faculty'),
   ));
+}
+
+export interface ListedCompetency { careerTargetId: string; competencyId: string; name: string; weight: number | null; band: Band | null; pinned: boolean; hidden: boolean; member: boolean; displayOrder: number | null }
+
+/**
+ * What a reader of weights sees for each target: pins, anything with an entry
+ * effective weight of at least LIST_FLOOR (0.25), and (includeHidden) hides.
+ * Members first in display order, then the rest by weight, then id.
+ */
+export async function readTargetCompetencyList(ex: Executor, opts: { includeHidden?: boolean } = {}): Promise<ListedCompetency[]> {
+  const states = await readPairStates(ex);
+  const mem = (await ex.execute(sql`SELECT career_target_id AS t, competency_id AS c, display_order AS o FROM career_target_membership`)).rows as Array<{ t: string; c: string; o: number }>;
+  const memBy = new Map(mem.map(r => [`${r.t}|${r.c}`, Number(r.o)]));
+  const names = new Map(((await ex.execute(sql`SELECT id, name FROM sub_competencies`)).rows as Array<{ id: string; name: string }>).map(r => [r.id, r.name]));
+  const out: ListedCompetency[] = [];
+  for (const s of states) {
+    if (s.hidden && !opts.includeHidden) continue;
+    if (!s.pinned && !s.hidden && (s.weight === null || s.weight < LIST_FLOOR)) continue;
+    const k = `${s.careerTargetId}|${s.competencyId}`;
+    out.push({
+      careerTargetId: s.careerTargetId, competencyId: s.competencyId, name: names.get(s.competencyId) ?? s.competencyId,
+      weight: s.weight, band: bandOf(s.weight), pinned: s.pinned, hidden: s.hidden,
+      member: memBy.has(k), displayOrder: memBy.get(k) ?? null,
+    });
+  }
+  return out.sort((a, b) => a.careerTargetId.localeCompare(b.careerTargetId)
+    || Number(b.member) - Number(a.member)
+    || (a.displayOrder ?? 0) - (b.displayOrder ?? 0)
+    || (b.weight ?? -1) - (a.weight ?? -1)
+    || a.competencyId.localeCompare(b.competencyId));
 }
