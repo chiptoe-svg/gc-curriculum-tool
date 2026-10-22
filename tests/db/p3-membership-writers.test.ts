@@ -107,4 +107,20 @@ describe.skipIf(!isP2ScratchDb())('membership writers (scratch)', () => {
       expect(d.belowCutoff.cells.filter(c => c.careerTargetId === T)).toEqual([]);
     });
   });
+
+  it('the wiki target substrate lists pins and every competency weighted at least 0.25, with its band; hidden left out', async () => {
+    await inRolledBackTx(async (tx) => {
+      await seed(tx);
+      await tx.execute(sql`INSERT INTO sub_competencies (id, name, know_descriptor, understand_descriptor, do_descriptor, origin) VALUES ('p3m-c', 'C', 'k', 'u', 'd', 'gc_authored'), ('p3m-h', 'H', 'k', 'u', 'd', 'gc_authored')`);
+      await tx.execute(sql`INSERT INTO career_target_requirements (career_target_id, competency_id, horizon, weight_source, weight, status, display_order) VALUES
+        (${T}, 'p3m-c', 'entry', 'onet', 0.3, 'draft', 0), (${T}, 'p3m-h', 'entry', 'onet', 0.95, 'draft', 0), (${T}, 'p3m-h', 'entry', 'faculty', NULL, 'hidden', 0)`);
+      const { loadTargetSubstrate } = await import('@/lib/ai/wiki/update');
+      const s = await loadTargetSubstrate(T, tx);
+      expect(s.coverageRollup.map(e => [e.subCompetencyId, e.importance])).toEqual([
+        ['p3m-a', 'Selected by faculty'],
+        ['p3m-b', 'Very or extremely important'],
+        ['p3m-c', 'Somewhat important'],
+      ]);
+    });
+  });
 });

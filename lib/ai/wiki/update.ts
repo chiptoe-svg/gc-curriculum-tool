@@ -17,13 +17,14 @@ import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 
 import { db } from '@/lib/db/client';
 import type { Tx } from '@/lib/db/competency-catalog-queries';
+import { readTargetCompetencyList } from '@/lib/db/membership-queries';
+import { BAND_LABELS, PINNED_LABEL } from '@/lib/catalog/membership';
 import {
   courseCaptureSnapshots,
   captureMessages,
   snapshotCompetencyCoverage,
   targetCoverage,
   careerTargets,
-  targetSubCompetencies,
   subCompetencies,
   courses,
 } from '@/lib/db/schema';
@@ -427,6 +428,8 @@ interface CoverageRollupEntry {
   uDepth: number | null;
   dDepth: number;
   evidenceExcerpt: string | null;
+  /** Importance band label for this target, or 'Selected by faculty' (membership addendum). */
+  importance: string;
 }
 
 /**
@@ -458,15 +461,14 @@ export async function loadTargetSubstrate(targetId: string, executor: Tx | typeo
     };
   }
 
-  // The target's current competencies (membership from career_target_requirements).
-  // M-3 (adversarial review): ordered — the view's GROUP BY gives no defined
-  // row order otherwise, which fed the scorer/wiki prompts a different
-  // competency order than before (characterization's sortJson masked it).
-  const subs = await executor
-    .select()
-    .from(targetSubCompetencies)
-    .where(and(eq(targetSubCompetencies.careerTargetId, targetId), eq(targetSubCompetencies.retired, false)))
-    .orderBy(asc(targetSubCompetencies.displayOrder), asc(targetSubCompetencies.id));
+  // The target page lists pins and every competency at least "Somewhat
+  // important" (entry weight >= 0.25), grouped by band in the prompt, hides left
+  // out — not the stored membership (spec 2026-10-21-p3-membership-from-weights
+  // §5). Order: members in display order, then the rest by weight (M-3: a
+  // defined order keeps the prompt input stable).
+  const subs = (await readTargetCompetencyList(executor))
+    .filter(r => r.careerTargetId === targetId)
+    .map(r => ({ id: r.competencyId, name: r.name, importance: r.band ? BAND_LABELS[r.band] : PINNED_LABEL }));
 
   if (subs.length === 0) {
     return {
@@ -500,19 +502,19 @@ export async function loadTargetSubstrate(targetId: string, executor: Tx | typeo
   // into every target that uses its competency.
   const cellRows = await executor
     .select({
-      subCompetencyId: targetCoverage.subCompetencyId,
+      subCompetencyId: snapshotCompetencyCoverage.competencyId,
       courseCode: courseCaptureSnapshots.courseCode,
-      snapshotId: targetCoverage.snapshotId,
-      kDepth: targetCoverage.kDepth,
-      uDepth: targetCoverage.uDepth,
-      dDepth: targetCoverage.dDepth,
-      evidenceExcerpt: targetCoverage.evidenceExcerpt,
+      snapshotId: snapshotCompetencyCoverage.snapshotId,
+      kDepth: snapshotCompetencyCoverage.kDepth,
+      uDepth: snapshotCompetencyCoverage.uDepth,
+      dDepth: snapshotCompetencyCoverage.dDepth,
+      evidenceExcerpt: snapshotCompetencyCoverage.evidenceExcerpt,
     })
-    .from(targetCoverage)
+    .from(snapshotCompetencyCoverage)
     .innerJoin(
       courseCaptureSnapshots,
       and(
-        eq(targetCoverage.snapshotId, courseCaptureSnapshots.id),
+        eq(snapshotCompetencyCoverage.snapshotId, courseCaptureSnapshots.id),
         isNull(courseCaptureSnapshots.retiredAt),
       ),
     )
@@ -525,12 +527,11 @@ export async function loadTargetSubstrate(targetId: string, executor: Tx | typeo
       ),
     )
     .where(
-      and(
-        eq(targetCoverage.careerTargetId, targetId),
-        inArray(targetCoverage.subCompetencyId, subIds),
-      ),
+      // Cells are per competency: below-cutoff competencies are not in
+      // target_coverage for this target, so read the base table.
+      inArray(snapshotCompetencyCoverage.competencyId, subIds),
     )
-    .orderBy(desc(targetCoverage.dDepth), desc(targetCoverage.generatedAt), asc(courseCaptureSnapshots.courseCode), asc(targetCoverage.snapshotId));
+    .orderBy(desc(snapshotCompetencyCoverage.dDepth), desc(snapshotCompetencyCoverage.generatedAt), asc(courseCaptureSnapshots.courseCode), asc(snapshotCompetencyCoverage.snapshotId));
 
   // Build rollup: best dDepth per sub-competency. With the ORDER BY above, the first row
   // encountered for a given sub-competency already carries its max dDepth and the deterministic
@@ -555,6 +556,7 @@ export async function loadTargetSubstrate(targetId: string, executor: Tx | typeo
       uDepth: best?.uDepth ?? null,
       dDepth: best?.dDepth ?? 0,
       evidenceExcerpt: best?.evidenceExcerpt ?? null,
+      importance: s.importance,
     };
   });
   void subById; // used for name lookup above
