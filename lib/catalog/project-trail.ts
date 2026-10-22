@@ -6,7 +6,7 @@
  */
 import { cosineSimilarity } from '@/lib/ai/embeddings';
 
-export const TRAIL_SIMILARITY_FLOOR = 0.5;
+export const TRAIL_SIMILARITY_FLOOR = 0.55; // fixed 2026-10-22 from live pairs: below 0.5 wrong, 0.50–0.55 mixed, 0.55+ mostly sensible
 export const TRAIL_TOP_N = 3;
 
 export function normalizeStatement(s: string): string {
