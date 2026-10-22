@@ -9,6 +9,7 @@
  * The orchestrator only READS from the wiki repo and Postgres. It never writes.
  */
 
+import { wikiProvider } from '@/lib/ai/wiki/handoff-provider';
 import { ensureCourseSkillEmbeddings, loadProjectTrail, loadBuildingProjects, type BuildingProject } from '@/lib/db/project-trail-queries';
 import type { TrailProject } from '@/lib/catalog/project-trail';
 import { readFile } from 'node:fs/promises';
@@ -863,7 +864,7 @@ type WikiUpdateOutput = {
   log_entry: string;
 };
 
-function validateWikiUpdateOutput(raw: unknown): WikiUpdateOutput {
+export function validateWikiUpdateOutput(raw: unknown): WikiUpdateOutput {
   if (typeof raw !== 'object' || raw === null) throw new Error('wiki-update: output is not an object');
   const r = raw as Record<string, unknown>;
   if (!Array.isArray(r.pages)) throw new Error('wiki-update: pages is not an array');
@@ -997,7 +998,8 @@ export function stampInputHash(content: string, inputHash: string): string {
 }
 
 type PageWithSubstrate = AffectedWikiPage & { substrate?: unknown };
-type WikiProvider = Awaited<ReturnType<typeof getProviderForFunction>>;
+/** Only `complete` is used; the handoff provider (Opus-written pages) implements just that. */
+type WikiProvider = Pick<Awaited<ReturnType<typeof getProviderForFunction>>, 'complete'>;
 
 /**
  * Pure: move the index page (if present) to the END of the list so it lands in
@@ -1271,7 +1273,7 @@ export async function updateWikiForSnapshot(
 
   // (d) Load the prompt + provider once.
   const [provider, systemPrompt] = await Promise.all([
-    getProviderForFunction('wiki-update'),
+    wikiProvider(() => getProviderForFunction('wiki-update')),
     loadPrompt('wiki-update'),
   ]);
 
@@ -1437,7 +1439,7 @@ export async function generateProgramWikiBatch(
   });
 
   const [provider, systemPrompt] = await Promise.all([
-    ctx.provider ?? getProviderForFunction('wiki-update'),
+    ctx.provider ?? wikiProvider(() => getProviderForFunction('wiki-update')),
     ctx.systemPrompt ?? loadPrompt('wiki-update'),
   ]);
   const result = await generateProgramPagesFromSubstrate(pages, {

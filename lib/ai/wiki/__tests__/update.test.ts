@@ -550,6 +550,22 @@ describe('updateWikiForSnapshot', () => {
     expect(Array.isArray(userMsg.competencyLinks)).toBe(true);
   });
 
+  it('with WIKI_HANDOFF_DIR set, writes a request for Opus and never calls the configured provider (handoff mode)', async () => {
+    const { mkdtempSync, readdirSync } = await vi.importActual<typeof import('node:fs')>('node:fs');
+    const { tmpdir } = await import('node:os');
+    const path = await import('node:path');
+    const dir = mkdtempSync(path.join(tmpdir(), 'wiki-handoff-'));
+    (getProviderForFunction as ReturnType<typeof vi.fn>).mockClear();
+    process.env.WIKI_HANDOFF_DIR = dir;
+    try {
+      await expect(updateWikiForSnapshot(SNAPSHOT_ID)).rejects.toThrow(/reply pending/);
+    } finally {
+      delete process.env.WIKI_HANDOFF_DIR;
+    }
+    expect(getProviderForFunction).not.toHaveBeenCalled();
+    expect(readdirSync(path.join(dir, 'requests'))).toHaveLength(1);
+  });
+
   it('passes the project trail to the provider even when embedding the course skills failed (project skill trail)', async () => {
     const provider = {
       model: 'gpt-5.5',
