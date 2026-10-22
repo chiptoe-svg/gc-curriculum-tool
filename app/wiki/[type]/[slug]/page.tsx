@@ -147,7 +147,7 @@ export default async function WikiPage({ params, searchParams }: Props) {
           <p className="wiki-beta"><strong>Retired.</strong> This competency is no longer part of any career target. The page is kept as history; its scores are not used in current coverage.</p>
         )}
         {type === 'competencies' && (
-          <TermsHint q={q}>A competency is one capability a graduate needs. It belongs to one career target and is scored on know, understand and do, each 0 to 5.</TermsHint>
+          <TermsHint q={q}>A competency is one capability a graduate needs. It can matter to several career targets, at a different importance for each. Each course is scored on it for know, understand and do, each 0 to 5; foundational competencies, such as Written Communication, are scored on do only.</TermsHint>
         )}
         {type === 'targets' && (
           <>

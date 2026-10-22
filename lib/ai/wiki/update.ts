@@ -17,7 +17,7 @@ import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 
-import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
 
 import { db } from '@/lib/db/client';
 import type { Tx } from '@/lib/db/competency-catalog-queries';
@@ -358,7 +358,7 @@ export async function loadCompetencySubstrate(subCompetencyId: string): Promise<
   /** Course projects whose skills feed this competency, with the closest O*NET items (project skill trail). */
   buildingProjects: BuildingProject[];
 }> {
-  // Get all non-retired snapshots' cells for this sub-competency. Join to get
+  // Get each course's latest snapshot's cell for this sub-competency. Join to get
   // the course code + profile from the snapshot (the profile carries the
   // per-competency provenance the evidence band derives from).
   //
@@ -395,7 +395,18 @@ export async function loadCompetencySubstrate(subCompetencyId: string): Promise<
         eq(courses.status, 'offered'),
       ),
     )
-    .where(eq(snapshotCompetencyCoverage.competencyId, subCompetencyId));
+    .where(and(
+      eq(snapshotCompetencyCoverage.competencyId, subCompetencyId),
+      // Only courses that build it: the scorer matched a course statement and
+      // some depth is above 0. Every course is scored on every competency, so
+      // the rest are K0/U0/D0 non-matches the page should not list.
+      isNotNull(snapshotCompetencyCoverage.matchedCompetency),
+      sql`(COALESCE(${snapshotCompetencyCoverage.kDepth}, 0) > 0 OR COALESCE(${snapshotCompetencyCoverage.uDepth}, 0) > 0 OR ${snapshotCompetencyCoverage.dDepth} > 0)`,
+      // One row per course: its latest non-retired snapshot.
+      sql`${courseCaptureSnapshots.id} = (SELECT s2.id FROM course_capture_snapshots s2
+            WHERE s2.course_code = ${courseCaptureSnapshots.courseCode} AND s2.retired_at IS NULL
+            ORDER BY s2.created_at DESC LIMIT 1)`,
+    ));
 
   const contributingCells: ContributingCell[] = rows.map(r => {
     // Resolve the band from the producing snapshot's competency that this cell
