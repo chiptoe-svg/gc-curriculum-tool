@@ -1,6 +1,6 @@
 # Project → skill → competency → O*NET trail — design
 
-Status: **draft for owner review (2026-10-22).** Purpose (owner): **explaining the model** — a readable trail on the public wiki showing how a concrete course project connects to careers through the catalog and O*NET. Read-only; no faculty editing in this version.
+Status: **approved by the owner (2026-10-22).** Purpose (owner): **explaining the model** — a readable trail on the public wiki showing how a concrete course project connects to careers through the catalog and O*NET. Read-only; no faculty editing in this version.
 
 ## 1. What already exists, and what is missing
 
