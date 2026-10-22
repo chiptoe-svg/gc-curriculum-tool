@@ -110,7 +110,8 @@ async function readCandidates(ex: Executor, competencyIds: string[]): Promise<Ma
   return out;
 }
 
-export async function loadProjectTrail(ex: Executor, snapshotId: string): Promise<TrailProject[]> {
+/** `opts` widens the O*NET search for the floor-check report (floor 0, more items); the wiki uses the defaults. */
+export async function loadProjectTrail(ex: Executor, snapshotId: string, opts: { floor?: number; n?: number } = {}): Promise<TrailProject[]> {
   const snap = await readSnapshot(ex, snapshotId);
   if (!snap) return [];
   const cells = ((await ex.execute(sql`
@@ -125,7 +126,7 @@ export async function loadProjectTrail(ex: Executor, snapshotId: string): Promis
     projects: snap.projects,
     statements: snap.statements,
     cells,
-    nearest: (statement, competencyId): TrailItem[] => nearestItems(stmtVecs.get(statementRef(statement)), candidates.get(competencyId) ?? []),
+    nearest: (statement, competencyId): TrailItem[] => nearestItems(stmtVecs.get(statementRef(statement)), candidates.get(competencyId) ?? [], opts.floor, opts.n),
   });
 }
 
