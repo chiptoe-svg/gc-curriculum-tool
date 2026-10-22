@@ -120,4 +120,18 @@ describe('captureInputFromRow', () => {
     expect(c).toEqual({ id: 'p1', ratedItems: [{ competencyId: 'c', rating: 6 }, { competencyId: null, rating: 3 }], namedCompetencyIds: ['d'] });
     expect(captureInputFromRow({ id: 'p2', ratedSkills: null, profile: null })).toEqual({ id: 'p2', ratedItems: [], namedCompetencyIds: [] });
   });
+
+describe('effectiveWeight with an AI draft (addendum 3)', () => {
+  const base = { onet: 0.9, employer: 0.2, n: 2, facultyOverride: null, facultyDraft: null };
+  it('a faculty override beats the AI draft', () => {
+    expect(effectiveWeight({ ...base, ai: 0.4, facultyOverride: 0.1 })).toMatchObject({ weight: 0.1, basis: 'faculty_override' });
+  });
+  it('the AI draft beats blend, O*NET and employer', () => {
+    expect(effectiveWeight({ ...base, ai: 0.4 })).toMatchObject({ weight: 0.4, basis: 'ai' });
+    expect(effectiveWeight({ onet: null, employer: 0.9, n: 1, facultyOverride: null, facultyDraft: null, ai: 0 })).toMatchObject({ weight: 0, basis: 'ai' });
+  });
+  it('without an AI draft nothing changes', () => {
+    expect(effectiveWeight(base).basis).toBe('blend');
+  });
+});
 });

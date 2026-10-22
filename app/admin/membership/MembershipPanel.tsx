@@ -81,7 +81,10 @@ export function MembershipPanel({ slug }: { slug: string }) {
           {mine.map(r => (
             <tr key={r.competencyId} className="border-b align-top">
               <td className="py-1">{r.name}</td>
-              <td>{importance(r)}</td>
+              <td>
+                {importance(r)}
+                {r.reason && <div className="text-xs text-slate-500">{r.reason}</div>}
+              </td>
               <td>{status(r)}</td>
               <td className="space-x-2 whitespace-nowrap text-right">
                 {!r.pinned && <button type="button" disabled={busy} onClick={() => act(r, 'pin')} className="text-blue-700 underline">Pin</button>}

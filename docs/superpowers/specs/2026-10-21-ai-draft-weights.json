@@ -1,0 +1,1386 @@
+{
+ "model": "claude-opus-5-5",
+ "scale": "O*NET importance rescaled 0-1",
+ "ratings": [
+  {
+   "target": "account-management",
+   "competency": "aesthetic-judgment",
+   "weight": 0.25,
+   "reason": "Sales reps need enough visual literacy to discuss samples with buyers, but do not judge design."
+  },
+  {
+   "target": "account-management",
+   "competency": "agency",
+   "weight": 0.75,
+   "reason": "Sales and account reps prospect, follow up and close largely on their own initiative."
+  },
+  {
+   "target": "account-management",
+   "competency": "ai-literacy",
+   "weight": 0.35,
+   "reason": "Sales reps increasingly use AI tools for outreach, but it is not a hiring criterion."
+  },
+  {
+   "target": "account-management",
+   "competency": "ai-strategy-change-leadership",
+   "weight": 0.15,
+   "reason": "Entry-level sales roles do not lead AI adoption strategy."
+  },
+  {
+   "target": "account-management",
+   "competency": "ai-tool-direction",
+   "weight": 0.3,
+   "reason": "Sales reps may prompt AI for emails and proposals; useful, not decisive."
+  },
+  {
+   "target": "account-management",
+   "competency": "ai-tool-evaluation",
+   "weight": 0.2,
+   "reason": "Sales reps rarely benchmark AI systems, though technical sellers may demo them."
+  },
+  {
+   "target": "account-management",
+   "competency": "attention-to-detail",
+   "weight": 0.6,
+   "reason": "Accurate quotes, orders and specs matter for sales and customer service reps."
+  },
+  {
+   "target": "account-management",
+   "competency": "brand-positioning",
+   "weight": 0.25,
+   "reason": "Sales reps convey their company's value proposition but do not set positioning."
+  },
+  {
+   "target": "account-management",
+   "competency": "brand-standards-application",
+   "weight": 0.15,
+   "reason": "Sales reps seldom apply brand standards beyond their own materials."
+  },
+  {
+   "target": "account-management",
+   "competency": "brand-system-templating",
+   "weight": 0.1,
+   "reason": "Sales roles do not build brand template systems."
+  },
+  {
+   "target": "account-management",
+   "competency": "brief-translation",
+   "weight": 0.3,
+   "reason": "Sales reps capture client needs but hand creative direction to others."
+  },
+  {
+   "target": "account-management",
+   "competency": "business-financial-literacy",
+   "weight": 0.65,
+   "reason": "Sales reps work with margins, pricing, quotas and the buyer's economics."
+  },
+  {
+   "target": "account-management",
+   "competency": "campaign-measurement",
+   "weight": 0.15,
+   "reason": "Sales reps track their pipeline, not campaign effectiveness."
+  },
+  {
+   "target": "account-management",
+   "competency": "client-needs-diagnosis",
+   "weight": 0.9,
+   "reason": "Solution sellers and customer service reps succeed or fail on uncovering the buyer's real problem."
+  },
+  {
+   "target": "account-management",
+   "competency": "collaboration",
+   "weight": 0.6,
+   "reason": "Sales reps coordinate with estimating, production and service teams to deliver."
+  },
+  {
+   "target": "account-management",
+   "competency": "color-management",
+   "weight": 0.25,
+   "reason": "Technical sales reps at printers and suppliers discuss color capability with buyers."
+  },
+  {
+   "target": "account-management",
+   "competency": "competitive-analysis",
+   "weight": 0.45,
+   "reason": "Sales reps must position against competing vendors in every deal."
+  },
+  {
+   "target": "account-management",
+   "competency": "conceptual-development",
+   "weight": 0.15,
+   "reason": "Sales roles rarely generate creative concepts."
+  },
+  {
+   "target": "account-management",
+   "competency": "consumer-research",
+   "weight": 0.2,
+   "reason": "Sales reps learn buyers individually but do not run consumer research."
+  },
+  {
+   "target": "account-management",
+   "competency": "contracts-ip-licensing",
+   "weight": 0.35,
+   "reason": "Sales reps handle terms, quotes and agreements, though legal finalizes contracts."
+  },
+  {
+   "target": "account-management",
+   "competency": "cost-management",
+   "weight": 0.6,
+   "reason": "Sales reps build quotes and pricing that must cover costs and justify purchases."
+  },
+  {
+   "target": "account-management",
+   "competency": "cross-channel-translation",
+   "weight": 0.15,
+   "reason": "Sales reps rarely adapt brand work across channels."
+  },
+  {
+   "target": "account-management",
+   "competency": "cross-medium-production",
+   "weight": 0.1,
+   "reason": "Sales roles do not produce creative content."
+  },
+  {
+   "target": "account-management",
+   "competency": "curiosity",
+   "weight": 0.5,
+   "reason": "Sales reps who learn customers' businesses and new products sell better."
+  },
+  {
+   "target": "account-management",
+   "competency": "customer-relationship-management",
+   "weight": 0.95,
+   "reason": "Account management and customer service reps exist to build and keep customer relationships."
+  },
+  {
+   "target": "account-management",
+   "competency": "digital-asset-management",
+   "weight": 0.1,
+   "reason": "Sales reps rarely manage digital asset libraries."
+  },
+  {
+   "target": "account-management",
+   "competency": "domain-knowledge",
+   "weight": 0.75,
+   "reason": "Technical sales reps for printers and suppliers must know processes, substrates and equipment."
+  },
+  {
+   "target": "account-management",
+   "competency": "negotiation-persuasion",
+   "weight": 0.9,
+   "reason": "Sales reps persuade buyers and negotiate pricing and terms as their core job."
+  },
+  {
+   "target": "account-management",
+   "competency": "packaging-artwork-compliance",
+   "weight": 0.15,
+   "reason": "Sales reps at packaging converters discuss compliance only at a high level."
+  },
+  {
+   "target": "account-management",
+   "competency": "problem-solving",
+   "weight": 0.7,
+   "reason": "Solution selling means working out a buyer's problem and fitting a solution."
+  },
+  {
+   "target": "account-management",
+   "competency": "professional-responsibility",
+   "weight": 0.55,
+   "reason": "Sales reps must represent products honestly and handle customer data properly."
+  },
+  {
+   "target": "account-management",
+   "competency": "project-management",
+   "weight": 0.35,
+   "reason": "Sales reps manage their accounts and pipeline, not projects in the formal sense."
+  },
+  {
+   "target": "account-management",
+   "competency": "project-oversight",
+   "weight": 0.75,
+   "reason": "Account managers coordinate client jobs through production and keep clients informed."
+  },
+  {
+   "target": "account-management",
+   "competency": "proposal-development",
+   "weight": 0.85,
+   "reason": "Solution sellers write proposals and build the ROI case that justifies purchases."
+  },
+  {
+   "target": "account-management",
+   "competency": "quality-control",
+   "weight": 0.2,
+   "reason": "Sales reps relay quality issues but do not run quality systems."
+  },
+  {
+   "target": "account-management",
+   "competency": "quality-frameworks",
+   "weight": 0.1,
+   "reason": "Sales roles do not govern AI or quality frameworks."
+  },
+  {
+   "target": "account-management",
+   "competency": "quantitative-literacy",
+   "weight": 0.45,
+   "reason": "Sales reps work with pricing, volumes and ROI figures."
+  },
+  {
+   "target": "account-management",
+   "competency": "resilience",
+   "weight": 0.8,
+   "reason": "Sales reps face constant rejection and quota pressure; giving up is a top failure mode."
+  },
+  {
+   "target": "account-management",
+   "competency": "results-interpretation",
+   "weight": 0.45,
+   "reason": "Sales reps report results to clients and explain performance of solutions."
+  },
+  {
+   "target": "account-management",
+   "competency": "spoken-communication",
+   "weight": 0.9,
+   "reason": "Sales calls, presentations and service conversations are the daily job."
+  },
+  {
+   "target": "account-management",
+   "competency": "systems-automation-integration",
+   "weight": 0.1,
+   "reason": "Sales roles do not build automation or integrations."
+  },
+  {
+   "target": "account-management",
+   "competency": "team-coordination",
+   "weight": 0.15,
+   "reason": "Entry sales roles rarely manage people."
+  },
+  {
+   "target": "account-management",
+   "competency": "vendor-management",
+   "weight": 0.25,
+   "reason": "Sales reps are the vendor, but sometimes coordinate subcontractors."
+  },
+  {
+   "target": "account-management",
+   "competency": "workflow-architecture",
+   "weight": 0.1,
+   "reason": "Sales roles do not configure workflow platforms."
+  },
+  {
+   "target": "account-management",
+   "competency": "workflow-design",
+   "weight": 0.15,
+   "reason": "Sales roles do not design production workflows."
+  },
+  {
+   "target": "account-management",
+   "competency": "written-communication",
+   "weight": 0.65,
+   "reason": "Sales reps write proposals, emails and follow-ups that win or lose deals."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "aesthetic-judgment",
+   "weight": 0.5,
+   "reason": "Marketing specialists and managers review creative work against brand intent regularly."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "agency",
+   "weight": 0.65,
+   "reason": "Marketing specialists are expected to drive projects forward without close direction."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "ai-literacy",
+   "weight": 0.45,
+   "reason": "Marketing specialists use AI for research and content, with disclosure and accuracy concerns."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "ai-strategy-change-leadership",
+   "weight": 0.25,
+   "reason": "Entry marketing specialists may contribute ideas but rarely lead AI change."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "ai-tool-direction",
+   "weight": 0.45,
+   "reason": "Marketing specialists use prompted AI for copy, research summaries and content drafts."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "ai-tool-evaluation",
+   "weight": 0.3,
+   "reason": "Marketing staff occasionally compare AI tools but do not formally evaluate them."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "attention-to-detail",
+   "weight": 0.6,
+   "reason": "Research analysts must get data and claims right, but tolerance is wider than production."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "brand-positioning",
+   "weight": 0.85,
+   "reason": "Marketing specialists and managers define and articulate brand positioning and messaging."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "brand-standards-application",
+   "weight": 0.5,
+   "reason": "Marketing specialists police brand consistency across materials and agencies."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "brand-system-templating",
+   "weight": 0.25,
+   "reason": "Marketing specialists use templates more than they build them."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "brief-translation",
+   "weight": 0.45,
+   "reason": "Marketing specialists write briefs and must judge whether creative answers them."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "business-financial-literacy",
+   "weight": 0.55,
+   "reason": "Marketing managers and specialists handle budgets and business cases for campaigns."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "campaign-measurement",
+   "weight": 0.8,
+   "reason": "Marketing specialists and managers plan campaigns and measure their effectiveness."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "client-needs-diagnosis",
+   "weight": 0.5,
+   "reason": "Marketing specialists diagnose internal stakeholder and customer needs."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "collaboration",
+   "weight": 0.7,
+   "reason": "Marketing specialists work across agencies, creatives, sales and leadership."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "color-management",
+   "weight": 0.05,
+   "reason": "Brand strategists set brand colors but do not manage color reproduction."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "competitive-analysis",
+   "weight": 0.8,
+   "reason": "Market research analysts and marketing managers analyze competitors and market conditions."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "conceptual-development",
+   "weight": 0.5,
+   "reason": "Marketing and PR specialists generate campaign and messaging ideas."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "consumer-research",
+   "weight": 0.9,
+   "reason": "Market research analysts, the majority of this mix, gather and synthesize consumer insight."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "contracts-ip-licensing",
+   "weight": 0.25,
+   "reason": "Marketing staff manage usage rights for assets and partners occasionally."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "cost-management",
+   "weight": 0.35,
+   "reason": "Marketing managers manage campaign budgets, a modest share of entry work."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "cross-channel-translation",
+   "weight": 0.65,
+   "reason": "Marketing specialists coordinate consistent brand messaging across print, digital and social."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "cross-medium-production",
+   "weight": 0.4,
+   "reason": "Marketing specialists often produce copy, social posts and simple graphics themselves."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "curiosity",
+   "weight": 0.6,
+   "reason": "Market research and marketing work rewards questioning data and markets."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "customer-relationship-management",
+   "weight": 0.4,
+   "reason": "Marketing specialists manage some stakeholder and audience relationships."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "digital-asset-management",
+   "weight": 0.2,
+   "reason": "Marketing specialists use asset libraries but rarely administer them."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "domain-knowledge",
+   "weight": 0.15,
+   "reason": "Strategists need only general awareness of production processes."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "negotiation-persuasion",
+   "weight": 0.5,
+   "reason": "Marketing and PR specialists persuade stakeholders and audiences."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "packaging-artwork-compliance",
+   "weight": 0.1,
+   "reason": "Brand strategists rarely handle artwork compliance."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "problem-solving",
+   "weight": 0.7,
+   "reason": "Marketing analysts solve open-ended market and messaging problems."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "professional-responsibility",
+   "weight": 0.55,
+   "reason": "Marketing and PR roles carry ethical duties in claims, privacy and disclosure."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "project-management",
+   "weight": 0.5,
+   "reason": "Marketing specialists manage campaign timelines and deliverables."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "project-oversight",
+   "weight": 0.45,
+   "reason": "Marketing specialists coordinate agency and vendor work for internal clients."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "proposal-development",
+   "weight": 0.4,
+   "reason": "Marketing managers pitch plans and budgets internally."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "quality-control",
+   "weight": 0.1,
+   "reason": "Brand strategists rarely enforce production quality standards."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "quality-frameworks",
+   "weight": 0.15,
+   "reason": "Marketing staff rarely set quality or AI governance."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "quantitative-literacy",
+   "weight": 0.75,
+   "reason": "Market research analysts analyze survey and performance data as core work."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "resilience",
+   "weight": 0.5,
+   "reason": "Marketing staff handle shifting priorities and campaign setbacks."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "results-interpretation",
+   "weight": 0.8,
+   "reason": "Market research analysts interpret data and report findings to clients and managers."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "spoken-communication",
+   "weight": 0.75,
+   "reason": "Marketing and PR specialists present findings and pitch ideas constantly."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "systems-automation-integration",
+   "weight": 0.1,
+   "reason": "Marketing staff use automation tools but rarely build integrations."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "team-coordination",
+   "weight": 0.25,
+   "reason": "Entry marketing roles coordinate others but rarely manage staff."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "vendor-management",
+   "weight": 0.3,
+   "reason": "Marketing staff manage agencies and print vendors occasionally."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "workflow-architecture",
+   "weight": 0.1,
+   "reason": "Marketing staff use but rarely configure workflow platforms."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "workflow-design",
+   "weight": 0.1,
+   "reason": "Strategists do not design production processes."
+  },
+  {
+   "target": "brand-strategy",
+   "competency": "written-communication",
+   "weight": 0.85,
+   "reason": "Marketing and PR specialists write reports, copy and releases as core work."
+  },
+  {
+   "target": "production-operations",
+   "competency": "aesthetic-judgment",
+   "weight": 0.4,
+   "reason": "Prepress technicians catch visual defects but rarely make aesthetic calls."
+  },
+  {
+   "target": "production-operations",
+   "competency": "agency",
+   "weight": 0.65,
+   "reason": "Project management specialists and prepress staff must push jobs forward and chase blockers."
+  },
+  {
+   "target": "production-operations",
+   "competency": "ai-literacy",
+   "weight": 0.35,
+   "reason": "Production staff meet AI in some tools, but it is not central to prepress or project work."
+  },
+  {
+   "target": "production-operations",
+   "competency": "ai-strategy-change-leadership",
+   "weight": 0.2,
+   "reason": "Entry production roles follow, rather than lead, AI adoption decisions."
+  },
+  {
+   "target": "production-operations",
+   "competency": "ai-tool-direction",
+   "weight": 0.3,
+   "reason": "Production roles use AI tools occasionally; prompting is not central to prepress or scheduling."
+  },
+  {
+   "target": "production-operations",
+   "competency": "ai-tool-evaluation",
+   "weight": 0.3,
+   "reason": "Production staff may trial AI features in prepress tools but seldom benchmark them."
+  },
+  {
+   "target": "production-operations",
+   "competency": "attention-to-detail",
+   "weight": 0.9,
+   "reason": "Prepress, press and project staff fail on missed specs; errors become costly reprints."
+  },
+  {
+   "target": "production-operations",
+   "competency": "brand-positioning",
+   "weight": 0.1,
+   "reason": "Production staff execute against positioning but do not develop it."
+  },
+  {
+   "target": "production-operations",
+   "competency": "brand-standards-application",
+   "weight": 0.4,
+   "reason": "Prepress technicians check files against brand color and specification standards."
+  },
+  {
+   "target": "production-operations",
+   "competency": "brand-system-templating",
+   "weight": 0.3,
+   "reason": "Prepress staff work with templated files but rarely design the systems."
+  },
+  {
+   "target": "production-operations",
+   "competency": "brief-translation",
+   "weight": 0.35,
+   "reason": "Production project managers translate briefs into specs, not creative direction."
+  },
+  {
+   "target": "production-operations",
+   "competency": "business-financial-literacy",
+   "weight": 0.5,
+   "reason": "Production managers and estimators need cost, throughput and margin understanding."
+  },
+  {
+   "target": "production-operations",
+   "competency": "campaign-measurement",
+   "weight": 0.05,
+   "reason": "Production roles do not plan or measure campaigns."
+  },
+  {
+   "target": "production-operations",
+   "competency": "client-needs-diagnosis",
+   "weight": 0.4,
+   "reason": "Project managers clarify client job requirements, though sales usually diagnoses first."
+  },
+  {
+   "target": "production-operations",
+   "competency": "collaboration",
+   "weight": 0.8,
+   "reason": "Production depends on smooth handoffs among prepress, press, scheduling and clients."
+  },
+  {
+   "target": "production-operations",
+   "competency": "color-management",
+   "weight": 0.65,
+   "reason": "Prepress technicians and press operators manage profiles, proofs and color matching daily."
+  },
+  {
+   "target": "production-operations",
+   "competency": "competitive-analysis",
+   "weight": 0.1,
+   "reason": "Production roles seldom perform competitive or market analysis."
+  },
+  {
+   "target": "production-operations",
+   "competency": "conceptual-development",
+   "weight": 0.15,
+   "reason": "Production roles execute concepts rather than originate them."
+  },
+  {
+   "target": "production-operations",
+   "competency": "consumer-research",
+   "weight": 0.05,
+   "reason": "Production roles do not conduct consumer research."
+  },
+  {
+   "target": "production-operations",
+   "competency": "contracts-ip-licensing",
+   "weight": 0.3,
+   "reason": "Production and purchasing staff deal with vendor terms and supply agreements."
+  },
+  {
+   "target": "production-operations",
+   "competency": "cost-management",
+   "weight": 0.75,
+   "reason": "Project managers, estimators and production staff estimate costs and hold jobs to budget."
+  },
+  {
+   "target": "production-operations",
+   "competency": "cross-channel-translation",
+   "weight": 0.3,
+   "reason": "Production managers coordinate multi-channel deliverables but not their brand translation."
+  },
+  {
+   "target": "production-operations",
+   "competency": "cross-medium-production",
+   "weight": 0.3,
+   "reason": "Production staff handle print and digital output but not creative making across media."
+  },
+  {
+   "target": "production-operations",
+   "competency": "curiosity",
+   "weight": 0.45,
+   "reason": "Production staff benefit from learning new equipment and processes."
+  },
+  {
+   "target": "production-operations",
+   "competency": "customer-relationship-management",
+   "weight": 0.45,
+   "reason": "Production project managers keep clients informed about job status."
+  },
+  {
+   "target": "production-operations",
+   "competency": "digital-asset-management",
+   "weight": 0.45,
+   "reason": "Prepress technicians organize, version and archive production files."
+  },
+  {
+   "target": "production-operations",
+   "competency": "domain-knowledge",
+   "weight": 0.9,
+   "reason": "Prepress, press and production project staff need deep process and material knowledge."
+  },
+  {
+   "target": "production-operations",
+   "competency": "negotiation-persuasion",
+   "weight": 0.4,
+   "reason": "Production managers negotiate schedules and vendor terms."
+  },
+  {
+   "target": "production-operations",
+   "competency": "packaging-artwork-compliance",
+   "weight": 0.55,
+   "reason": "Prepress technicians at packaging converters run artwork workflows and compliance checks."
+  },
+  {
+   "target": "production-operations",
+   "competency": "problem-solving",
+   "weight": 0.85,
+   "reason": "Production staff troubleshoot files, presses and schedules under deadline daily."
+  },
+  {
+   "target": "production-operations",
+   "competency": "professional-responsibility",
+   "weight": 0.55,
+   "reason": "Production staff carry safety, confidentiality and accuracy responsibilities."
+  },
+  {
+   "target": "production-operations",
+   "competency": "project-management",
+   "weight": 0.9,
+   "reason": "Project management specialists are a quarter of this mix and production is project-driven."
+  },
+  {
+   "target": "production-operations",
+   "competency": "project-oversight",
+   "weight": 0.6,
+   "reason": "Production project managers coordinate client-facing job status and changes."
+  },
+  {
+   "target": "production-operations",
+   "competency": "proposal-development",
+   "weight": 0.25,
+   "reason": "Production staff contribute estimates but seldom write proposals."
+  },
+  {
+   "target": "production-operations",
+   "competency": "quality-control",
+   "weight": 0.85,
+   "reason": "Prepress, press, inspection and production staff enforce quality standards on every job."
+  },
+  {
+   "target": "production-operations",
+   "competency": "quality-frameworks",
+   "weight": 0.35,
+   "reason": "Production staff follow quality frameworks; few entry roles design them."
+  },
+  {
+   "target": "production-operations",
+   "competency": "quantitative-literacy",
+   "weight": 0.55,
+   "reason": "Production staff calculate impositions, yields, schedules and costs."
+  },
+  {
+   "target": "production-operations",
+   "competency": "resilience",
+   "weight": 0.6,
+   "reason": "Production staff absorb deadline pressure, reruns and equipment failures."
+  },
+  {
+   "target": "production-operations",
+   "competency": "results-interpretation",
+   "weight": 0.3,
+   "reason": "Production staff report job metrics but interpretation is limited."
+  },
+  {
+   "target": "production-operations",
+   "competency": "spoken-communication",
+   "weight": 0.6,
+   "reason": "Production staff coordinate verbally across shifts, teams and clients."
+  },
+  {
+   "target": "production-operations",
+   "competency": "systems-automation-integration",
+   "weight": 0.35,
+   "reason": "Some production roles automate prepress and job tracking workflows."
+  },
+  {
+   "target": "production-operations",
+   "competency": "team-coordination",
+   "weight": 0.55,
+   "reason": "HR specialists, supervisors and production managers coordinate and manage people, a growing duty."
+  },
+  {
+   "target": "production-operations",
+   "competency": "vendor-management",
+   "weight": 0.6,
+   "reason": "Production, purchasing and logistics staff select and manage suppliers and subcontractors."
+  },
+  {
+   "target": "production-operations",
+   "competency": "workflow-architecture",
+   "weight": 0.5,
+   "reason": "Prepress staff and production project managers operate workflow and job-tracking platforms."
+  },
+  {
+   "target": "production-operations",
+   "competency": "workflow-design",
+   "weight": 0.75,
+   "reason": "Industrial engineers, production managers and project managers design and optimize workflows."
+  },
+  {
+   "target": "production-operations",
+   "competency": "written-communication",
+   "weight": 0.55,
+   "reason": "Production staff write job specs, instructions and status updates."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "aesthetic-judgment",
+   "weight": 0.95,
+   "reason": "Graphic designers and web designers are hired and judged on visual quality every day."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "agency",
+   "weight": 0.65,
+   "reason": "Designers must self-start, seek feedback and own deliverables to deadline."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "ai-literacy",
+   "weight": 0.6,
+   "reason": "Designers use generative AI daily and must understand its limits, rights and risks."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "ai-strategy-change-leadership",
+   "weight": 0.15,
+   "reason": "Entry designers adopt AI tools but do not set organizational strategy."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "ai-tool-direction",
+   "weight": 0.75,
+   "reason": "Generalist designers multiply output by directing and iterating on AI image, copy and video tools."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "ai-tool-evaluation",
+   "weight": 0.3,
+   "reason": "Designers judge AI outputs informally rather than benchmarking systems."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "attention-to-detail",
+   "weight": 0.75,
+   "reason": "Designers are judged on typos, alignment, specs and file correctness in every deliverable."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "brand-positioning",
+   "weight": 0.4,
+   "reason": "Designers must express positioning visually, though strategists usually define it."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "brand-standards-application",
+   "weight": 0.8,
+   "reason": "Graphic designers apply brand guidelines in nearly every piece they produce."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "brand-system-templating",
+   "weight": 0.5,
+   "reason": "Designers often build reusable templates for brand toolkits and social content."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "brief-translation",
+   "weight": 0.85,
+   "reason": "Graphic designers and art directors turn client briefs into creative concepts daily."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "business-financial-literacy",
+   "weight": 0.2,
+   "reason": "Entry designers rarely deal with financials beyond freelance rates."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "campaign-measurement",
+   "weight": 0.3,
+   "reason": "Designers may see campaign metrics but seldom plan or measure them."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "client-needs-diagnosis",
+   "weight": 0.5,
+   "reason": "Designers must probe what a client actually needs behind the stated request."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "collaboration",
+   "weight": 0.7,
+   "reason": "Designers work in creative teams with copywriters, art directors and developers."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "color-management",
+   "weight": 0.4,
+   "reason": "Designers must prepare color-correct files for print and screen."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "competitive-analysis",
+   "weight": 0.2,
+   "reason": "Designers may review competitors' visuals but do not analyze markets."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "conceptual-development",
+   "weight": 0.95,
+   "reason": "Graphic designers and art directors are hired for creative ideation."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "consumer-research",
+   "weight": 0.3,
+   "reason": "Designers use audience insight but rarely conduct the research themselves."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "contracts-ip-licensing",
+   "weight": 0.3,
+   "reason": "Designers must respect image, font and AI-output licensing in their work."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "cost-management",
+   "weight": 0.15,
+   "reason": "Entry designers rarely estimate or manage budgets."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "cross-channel-translation",
+   "weight": 0.7,
+   "reason": "Designers adapt brand work across print, packaging, web and social formats."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "cross-medium-production",
+   "weight": 0.85,
+   "reason": "Generalist designers produce copy, layout, image and video work across media."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "curiosity",
+   "weight": 0.6,
+   "reason": "Designers must keep learning new tools, styles and AI capabilities."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "customer-relationship-management",
+   "weight": 0.3,
+   "reason": "Designers handle client relations mainly in freelance or small-studio roles."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "digital-asset-management",
+   "weight": 0.45,
+   "reason": "Designers manage files, versions and libraries for their projects."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "domain-knowledge",
+   "weight": 0.4,
+   "reason": "Designers need enough production knowledge to make files that print correctly."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "negotiation-persuasion",
+   "weight": 0.2,
+   "reason": "Designers occasionally persuade clients to accept creative recommendations."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "packaging-artwork-compliance",
+   "weight": 0.25,
+   "reason": "Designers on packaging must meet regulatory artwork requirements occasionally."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "problem-solving",
+   "weight": 0.7,
+   "reason": "Designers solve communication problems within constraints in every project."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "professional-responsibility",
+   "weight": 0.5,
+   "reason": "Designers must respect IP, accessibility and honest representation."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "project-management",
+   "weight": 0.45,
+   "reason": "Designers juggle multiple projects and deadlines."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "project-oversight",
+   "weight": 0.45,
+   "reason": "Designers coordinate with clients through revisions and approvals."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "proposal-development",
+   "weight": 0.25,
+   "reason": "Designers present concepts but rarely build ROI proposals."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "quality-control",
+   "weight": 0.35,
+   "reason": "Designers proof their own work but do not run quality systems."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "quality-frameworks",
+   "weight": 0.2,
+   "reason": "Designers follow but do not set AI and quality governance."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "quantitative-literacy",
+   "weight": 0.15,
+   "reason": "Designers use little quantitative reasoning beyond measurements."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "resilience",
+   "weight": 0.55,
+   "reason": "Designers must take criticism and revise repeatedly."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "results-interpretation",
+   "weight": 0.2,
+   "reason": "Designers rarely interpret or report results."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "spoken-communication",
+   "weight": 0.5,
+   "reason": "Designers present and defend their work to clients and teams."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "systems-automation-integration",
+   "weight": 0.2,
+   "reason": "Designers occasionally script repetitive tasks."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "team-coordination",
+   "weight": 0.1,
+   "reason": "Entry designers seldom manage people."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "vendor-management",
+   "weight": 0.2,
+   "reason": "Designers occasionally deal with printers and freelancers."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "workflow-architecture",
+   "weight": 0.25,
+   "reason": "Designers work inside workflow tools but seldom configure them."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "workflow-design",
+   "weight": 0.15,
+   "reason": "Designers follow established production workflows."
+  },
+  {
+   "target": "creative-generalist",
+   "competency": "written-communication",
+   "weight": 0.6,
+   "reason": "Designers write copy and project communication."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "aesthetic-judgment",
+   "weight": 0.35,
+   "reason": "Template and workflow builders need some visual literacy to keep systems on-brand."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "agency",
+   "weight": 0.65,
+   "reason": "Analysts and support specialists are expected to find and fix problems unprompted."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "ai-literacy",
+   "weight": 0.8,
+   "reason": "Analysts and systems staff in this target implement and advise on AI, so understanding it is core."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "ai-strategy-change-leadership",
+   "weight": 0.5,
+   "reason": "Management analysts advise on adoption, though entry staff rarely lead change alone."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "ai-tool-direction",
+   "weight": 0.7,
+   "reason": "Systems and analyst roles build prompts and small tools as part of automating creative workflows."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "ai-tool-evaluation",
+   "weight": 0.8,
+   "reason": "Implementing, benchmarking and evaluating AI is a central duty for analysts and systems staff here."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "attention-to-detail",
+   "weight": 0.85,
+   "reason": "Systems analysts, QA testers and prepress staff live on catching small errors in rules and files."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "brand-positioning",
+   "weight": 0.1,
+   "reason": "Systems and workflow roles rarely touch brand positioning decisions."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "brand-standards-application",
+   "weight": 0.45,
+   "reason": "Template and compliance builders encode brand rules into systems and checks."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "brand-system-templating",
+   "weight": 0.65,
+   "reason": "Building templates that creative work flows through is a named duty of this target."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "brief-translation",
+   "weight": 0.3,
+   "reason": "Systems roles translate requirements into workflows rather than creative direction."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "business-financial-literacy",
+   "weight": 0.4,
+   "reason": "Management analysts need business literacy to frame process recommendations."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "campaign-measurement",
+   "weight": 0.2,
+   "reason": "Systems roles may supply analytics tooling but do not own campaign measurement."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "client-needs-diagnosis",
+   "weight": 0.6,
+   "reason": "Management analysts and support specialists diagnose user problems before proposing fixes."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "collaboration",
+   "weight": 0.65,
+   "reason": "Analysts and developers work in cross-functional teams to implement systems."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "color-management",
+   "weight": 0.35,
+   "reason": "Prepress staff and workflow builders configure color-managed workflows, a minority of this mix."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "competitive-analysis",
+   "weight": 0.3,
+   "reason": "Management analysts sometimes benchmark competitors' processes and tools."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "conceptual-development",
+   "weight": 0.25,
+   "reason": "Systems roles solve technical problems more than develop creative concepts."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "consumer-research",
+   "weight": 0.2,
+   "reason": "A small share of marketing specialists here touch consumer research."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "contracts-ip-licensing",
+   "weight": 0.2,
+   "reason": "Systems roles occasionally handle software and asset licensing questions."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "cost-management",
+   "weight": 0.35,
+   "reason": "Analysts build cost cases for systems and process changes."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "cross-channel-translation",
+   "weight": 0.3,
+   "reason": "Systems roles build templates and asset flows that support multi-channel output."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "cross-medium-production",
+   "weight": 0.25,
+   "reason": "Systems roles support production pipelines more than they create content."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "curiosity",
+   "weight": 0.7,
+   "reason": "Systems and analyst roles demand constant learning of new platforms and AI tools."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "customer-relationship-management",
+   "weight": 0.55,
+   "reason": "Computer user support specialists provide day-to-day service to internal customers."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "digital-asset-management",
+   "weight": 0.75,
+   "reason": "Building and running asset libraries is a named core duty of this target."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "domain-knowledge",
+   "weight": 0.6,
+   "reason": "Prepress staff and workflow builders need process knowledge to automate production correctly."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "negotiation-persuasion",
+   "weight": 0.25,
+   "reason": "Analysts must persuade stakeholders to adopt recommended changes."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "packaging-artwork-compliance",
+   "weight": 0.5,
+   "reason": "Compliance checks are part of this target's systems role, mainly via prepress staff."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "problem-solving",
+   "weight": 0.85,
+   "reason": "Analysts, support specialists and developers are hired to diagnose and solve technical problems."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "professional-responsibility",
+   "weight": 0.55,
+   "reason": "Systems roles handle data, access and AI responsibly."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "project-management",
+   "weight": 0.5,
+   "reason": "Analysts and developers manage implementation projects."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "project-oversight",
+   "weight": 0.35,
+   "reason": "Systems roles coordinate with internal users more than external clients."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "proposal-development",
+   "weight": 0.45,
+   "reason": "Management analysts write recommendations with cost-benefit justifications."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "quality-control",
+   "weight": 0.6,
+   "reason": "QA testers and prepress staff run checks; systems builders design automated quality gates."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "quality-frameworks",
+   "weight": 0.65,
+   "reason": "Systems roles design quality gates and AI governance for creative workflows."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "quantitative-literacy",
+   "weight": 0.6,
+   "reason": "Analysts and developers rely on data analysis and metrics."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "resilience",
+   "weight": 0.5,
+   "reason": "Support and analyst roles handle failed fixes and frustrated users."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "results-interpretation",
+   "weight": 0.6,
+   "reason": "Management analysts interpret findings and report recommendations to clients."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "spoken-communication",
+   "weight": 0.6,
+   "reason": "Support specialists and analysts explain technical issues to users and clients."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "systems-automation-integration",
+   "weight": 0.85,
+   "reason": "Developers, systems analysts and workflow builders automate and integrate systems as core work."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "team-coordination",
+   "weight": 0.2,
+   "reason": "Entry analysts and developers rarely manage people."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "vendor-management",
+   "weight": 0.3,
+   "reason": "Analysts sometimes evaluate software vendors."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "workflow-architecture",
+   "weight": 0.85,
+   "reason": "Configuring and operating workflow platforms is a named core duty of this target."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "workflow-design",
+   "weight": 0.75,
+   "reason": "Management and systems analysts redesign processes as their core work."
+  },
+  {
+   "target": "ai-workflow",
+   "competency": "written-communication",
+   "weight": 0.65,
+   "reason": "Analysts write reports and documentation."
+  }
+ ]
+}

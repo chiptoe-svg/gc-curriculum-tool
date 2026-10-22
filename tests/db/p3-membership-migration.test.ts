@@ -24,4 +24,9 @@ describe.skipIf(!isP2ScratchDb())('migration 0062 (scratch)', () => {
     expect(v.a).toContain('career_target_membership');
     expect(v.b).toContain('career_target_membership');
   });
+
+  it('0063: weight_source allows ai', async () => {
+    const def = (await db.execute(sql`SELECT pg_get_constraintdef(oid) AS d FROM pg_constraint WHERE conname = 'career_target_requirements_weight_source_check'`)).rows[0] as { d: string };
+    expect(def.d).toContain("'ai'");
+  });
 });

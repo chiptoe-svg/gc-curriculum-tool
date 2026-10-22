@@ -4,8 +4,8 @@
  *   O*NET: per occupation, the highest Importance among confirmed counting
  *   items (core fully, related × RELATED_DISCOUNT, fringe never), summed by
  *   occupation share. Employer (Position Capture): see employerWeight.
- *   Effective: faculty override > blend (k·onet + n·employer)/(k + n) >
- *   onet > employer > faculty draft > none.
+ *   Effective: faculty override > AI draft (addendum 3) > blend
+ *   (k·onet + n·employer)/(k + n) > onet > employer > faculty draft > none.
  */
 export const RELATED_DISCOUNT = 0;
 export const EMPLOYER_PRIOR_K = 3;
@@ -44,13 +44,15 @@ export function onetWeight(items: WeightItem[], occupations: Occupation[], relat
   return counted ? Math.min(1, total) : null;
 }
 
-export interface WeightSources { onet: number | null; employer: number | null; n: number; facultyOverride: number | null; facultyDraft: number | null }
-export type WeightBasis = 'faculty_override' | 'blend' | 'onet' | 'employer' | 'faculty_draft' | 'none';
+/** `ai`: an AI-drafted provisional weight (addendum 3, 2026-10-21-p3-ai-draft-weights-design.md); absent = none. */
+export interface WeightSources { onet: number | null; employer: number | null; n: number; facultyOverride: number | null; facultyDraft: number | null; ai?: number | null }
+export type WeightBasis = 'faculty_override' | 'ai' | 'blend' | 'onet' | 'employer' | 'faculty_draft' | 'none';
 
 export function effectiveWeight(s: WeightSources, k: number = EMPLOYER_PRIOR_K): { weight: number | null; basis: WeightBasis; disagreement: boolean } {
   const emp = s.n > 0 ? s.employer : null;
   const disagreement = s.onet !== null && emp !== null && s.n >= DISAGREEMENT_MIN_N && Math.abs(s.onet - emp) >= DISAGREEMENT_GAP;
   if (s.facultyOverride !== null) return { weight: s.facultyOverride, basis: 'faculty_override', disagreement };
+  if (s.ai !== undefined && s.ai !== null) return { weight: s.ai, basis: 'ai', disagreement };
   if (s.onet !== null && emp !== null) return { weight: (k * s.onet + s.n * emp) / (k + s.n), basis: 'blend', disagreement };
   if (s.onet !== null) return { weight: s.onet, basis: 'onet', disagreement };
   if (emp !== null) return { weight: emp, basis: 'employer', disagreement };

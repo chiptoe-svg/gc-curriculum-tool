@@ -8,6 +8,7 @@ import { and, eq, ne, sql } from 'drizzle-orm';
 import { careerTargetMembership, careerTargetRequirements } from '@/lib/db/schema';
 import type { Executor } from '@/lib/db/bundle-queries';
 import { effectiveWeight, PROVISIONAL_NOTE } from '@/lib/catalog/career-weights';
+import { aiReason } from '@/lib/db/ai-weight-queries';
 import { decideMembership, bandOf, LIST_FLOOR, MEMBERSHIP_LOCK_KEY, type Band, type PairState } from '@/lib/catalog/membership';
 
 export type MembershipChange = { careerTargetId: string; competencyId: string; change: 'entered' | 'left' | 'band'; from: string | null; to: string | null };
@@ -17,7 +18,7 @@ export async function lockMembership(ex: Executor): Promise<void> {
 }
 
 /** One entry-horizon career_target_requirements row of an active competency. */
-export type ReqRow = { t: string; c: string; source: 'onet' | 'employer' | 'faculty'; weight: number | null; status: 'draft' | 'confirmed' | 'hidden'; order: number; n: number; note?: string | null };
+export type ReqRow = { t: string; c: string; source: 'onet' | 'employer' | 'faculty' | 'ai'; weight: number | null; status: 'draft' | 'confirmed' | 'hidden'; order: number; n: number; note?: string | null };
 
 export async function readEntryRows(ex: Executor): Promise<ReqRow[]> {
   const rows = (await ex.execute(sql`
@@ -42,7 +43,9 @@ export function pairStatesFromRows(rows: ReqRow[]): PairState[] {
     const onet = rs.find(r => r.source === 'onet');
     const emp = rs.find(r => r.source === 'employer');
     const fac = rs.find(r => r.source === 'faculty');
+    const ai = rs.find(r => r.source === 'ai');
     const e = effectiveWeight({
+      ai: ai?.weight ?? null,
       onet: onet?.weight ?? null,
       employer: emp?.weight ?? null,
       n: emp?.n ?? 0,
@@ -143,8 +146,10 @@ export async function clearFacultyRow(tx: Executor, targetId: string, competency
 export interface ListedCompetency {
   careerTargetId: string; competencyId: string; name: string; weight: number | null; band: Band | null;
   pinned: boolean; hidden: boolean; member: boolean; displayOrder: number | null;
-  /** The weight rests on AI-proposed core items (no faculty override). */
+  /** The weight rests on an AI draft or AI-proposed core items (no faculty override). */
   provisional: boolean;
+  /** The AI draft's one-sentence reason, when there is one. */
+  reason: string | null;
 }
 
 /**
@@ -155,7 +160,8 @@ export interface ListedCompetency {
 export async function readTargetCompetencyList(ex: Executor, opts: { includeHidden?: boolean } = {}): Promise<ListedCompetency[]> {
   const rows = await readEntryRows(ex);
   const states = pairStatesFromRows(rows);
-  const provisionalPairs = new Set(rows.filter(r => r.source === 'onet' && r.note === PROVISIONAL_NOTE).map(r => `${r.t}|${r.c}`));
+  const provisionalPairs = new Set(rows.filter(r => r.source === 'ai' || (r.source === 'onet' && r.note === PROVISIONAL_NOTE)).map(r => `${r.t}|${r.c}`));
+  const reasons = new Map(rows.filter(r => r.source === 'ai').map(r => [`${r.t}|${r.c}`, aiReason(r.note)]));
   const overridden = new Set(rows.filter(r => r.source === 'faculty' && r.status === 'confirmed' && r.weight !== null).map(r => `${r.t}|${r.c}`));
   const mem = (await ex.execute(sql`SELECT career_target_id AS t, competency_id AS c, display_order AS o FROM career_target_membership`)).rows as Array<{ t: string; c: string; o: number }>;
   const memBy = new Map(mem.map(r => [`${r.t}|${r.c}`, Number(r.o)]));
@@ -170,6 +176,7 @@ export async function readTargetCompetencyList(ex: Executor, opts: { includeHidd
       weight: s.weight, band: bandOf(s.weight), pinned: s.pinned, hidden: s.hidden,
       member: memBy.has(k), displayOrder: memBy.get(k) ?? null,
       provisional: provisionalPairs.has(k) && !overridden.has(k),
+      reason: reasons.get(k) ?? null,
     });
   }
   return out.sort((a, b) => a.careerTargetId.localeCompare(b.careerTargetId)

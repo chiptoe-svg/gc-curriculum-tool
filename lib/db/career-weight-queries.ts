@@ -217,8 +217,10 @@ export async function readCareerWeights(ex: Executor, targetId: string, horizon:
     const onet = rs.find(r => r.weightSource === 'onet') ?? null;
     const emp = rs.find(r => r.weightSource === 'employer') ?? null;
     const fac = rs.find(r => r.weightSource === 'faculty') ?? null;
+    const ai = rs.find(r => r.weightSource === 'ai') ?? null;
     const n = emp?.contributingPositionIds.length ?? 0;
     const e = effectiveWeight({
+      ai: ai?.weight ?? null,
       onet: onet?.weight ?? null,
       employer: emp?.weight ?? null,
       n,
