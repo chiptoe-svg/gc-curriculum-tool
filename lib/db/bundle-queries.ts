@@ -57,7 +57,7 @@ export async function readTaskStatements(release: string, ex: Executor = db): Pr
     .from(onetTaskStatements).where(eq(onetTaskStatements.release, release));
 }
 
-export interface EmbedItem { kind: 'bundle_card' | 'onet_task' | 'onet_element'; ref: string; text: string }
+export interface EmbedItem { kind: 'bundle_card' | 'onet_task' | 'onet_element' | 'course_skill'; ref: string; text: string }
 
 /** Embeds only items whose (kind, ref, model, sha256(text)) row is absent. Batches through `embed`. */
 export async function embedMissing(ex: Executor, items: EmbedItem[], model: string, embed: (texts: string[]) => Promise<number[][]>): Promise<{ cached: number; embedded: number }> {
