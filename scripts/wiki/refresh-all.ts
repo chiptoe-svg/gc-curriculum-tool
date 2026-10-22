@@ -15,6 +15,7 @@
  *   pnpm exec tsx --env-file=.env.local scripts/wiki/refresh-all.ts --dry-run
  *   pnpm exec tsx --env-file=.env.local scripts/wiki/refresh-all.ts
  *   ... --only courses | --only program | --only targets (target pages + index)
+ *   ... --competency <slug>          (that competency page only)
  *   ... --course "GC 4800"          (that course page only)
  *
  * --dry-run reads Postgres only: it prints the pages and batches it would

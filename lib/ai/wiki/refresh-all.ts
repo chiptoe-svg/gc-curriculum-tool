@@ -27,6 +27,7 @@
  * doesn't lose earlier work. The per-capture path is unchanged.
  */
 
+import { readTargetCompetencyList } from '@/lib/db/membership-queries';
 import { and, eq, inArray, isNull } from 'drizzle-orm';
 
 import { db } from '@/lib/db/client';
@@ -68,6 +69,8 @@ export interface RefreshOptions {
   only?: 'courses' | 'program' | 'targets';
   /** Restrict to one course page (implies the course pass only). */
   course?: string;
+  /** Regenerate one competency page only (e.g. one a target page newly lists, P3). */
+  competency?: string;
 }
 
 export interface PlannedCourse {
@@ -178,6 +181,12 @@ export function planRefresh(inputs: RefreshInputs, opts: RefreshOptions): Refres
     runProgram = false;
   }
 
+  if (opts.competency) {
+    const page = nonIndexProgram.find(p => p.type === 'competency' && p.slug === opts.competency);
+    if (!page) throw new Error(`refresh-all: no competency page to generate for "${opts.competency}"`);
+    return { courses: [], programPages: [page], programBatches: [[page]], manifest };
+  }
+
   const programPages = !runProgram ? []
     : opts.only === 'targets' ? [...nonIndexProgram.filter(p => p.type === 'target'), indexPage]
     : [...nonIndexProgram, indexPage];
@@ -210,6 +219,7 @@ export function parseRefreshArgs(argv: ReadonlyArray<string>): RefreshOptions & 
       if (v !== 'courses' && v !== 'program' && v !== 'targets') throw new Error(`refresh-all: --only must be courses|program|targets, got "${v}"`);
       out.only = v;
     } else if (flag === '--course') out.course = value();
+    else if (flag === '--competency') out.competency = value();
     else throw new Error(`refresh-all: unknown argument "${arg}"`);
   }
   if (out.course && (out.only === 'program' || out.only === 'targets')) {
@@ -389,7 +399,9 @@ export async function loadRefreshInputs(): Promise<RefreshInputs & {
 
   return {
     snapshots,
-    competencySlugs: [...new Set(cells.map(c => c.subCompetencyId))].sort(),
+    // Plus every competency a target page lists (pinned or at least somewhat
+    // important), so each one the wiki links has a page (P3 membership addendum).
+    competencySlugs: [...new Set([...cells.map(c => c.subCompetencyId), ...(await readTargetCompetencyList(db)).map(r => r.competencyId)])].sort(),
     targetSlugs: [...new Set(cells.map(c => c.careerTargetId))].sort(),
     hasProductiveFailure: snaps.some(s => pfcOf(s.profile)),
     latestProfiles,

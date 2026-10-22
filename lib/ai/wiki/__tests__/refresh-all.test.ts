@@ -7,6 +7,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { WikiPagesWithheldError } from '@/lib/wiki/git-ops';
 
+// The listed-competency read (P3) is not under test here; no extra pages.
+vi.mock('@/lib/db/membership-queries', () => ({ readTargetCompetencyList: async () => [] }));
 vi.mock('@/lib/db/client', () => ({ db: { select: vi.fn() } }));
 
 import { db } from '@/lib/db/client';
@@ -111,6 +113,14 @@ describe('planRefresh', () => {
     expect(plan.programBatches.flat()).toEqual(plan.programPages);
     const last = plan.programBatches[plan.programBatches.length - 1]!;
     expect(last[last.length - 1]!.type).toBe('index');
+  });
+
+  it('--competency regenerates that one competency page only; an unknown slug is refused', () => {
+    const plan = planRefresh(inputs, { competency: inputs.competencySlugs[0] });
+    expect(plan.courses).toEqual([]);
+    expect(plan.programPages).toEqual([{ type: 'competency', slug: inputs.competencySlugs[0], path: `competencies/${inputs.competencySlugs[0]}.md` }]);
+    expect(() => planRefresh(inputs, { competency: 'no-such' })).toThrow(/no-such/);
+    expect(parseRefreshArgs(['--competency', 'x']).competency).toBe('x');
   });
 
   it('--only targets regenerates the target pages and the index only (membership changes, P3)', () => {
