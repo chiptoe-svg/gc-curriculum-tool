@@ -27,6 +27,9 @@ export function buildProjectTrail(input: {
   const canonical = new Map(input.statements.map(s => [normalizeStatement(s), s]));
   const cellsBy = new Map<string, TrailCell[]>();
   for (const c of input.cells) {
+    // A match at depth 0 means the scorer found the statement but no evidence the
+    // course develops the competency: not a link (owner, 2026-10-22).
+    if (!(c.d > 0)) continue;
     const k = normalizeStatement(c.matched);
     const a = cellsBy.get(k);
     if (a) a.push(c); else cellsBy.set(k, [c]);

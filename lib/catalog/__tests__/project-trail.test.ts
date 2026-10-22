@@ -37,6 +37,14 @@ describe('buildProjectTrail', () => {
     }
   });
 
+  it('a match at depth 0 is not a link (owner, 2026-10-22): the skill shows unlinked', () => {
+    const trail = buildProjectTrail({ projects: [{ title: 'P', competencies: ['Color proofing'] }], statements,
+      cells: [cell('color-management', 'Color proofing', 0), cell('quality-control', 'Color proofing', 1)], nearest: none });
+    expect(trail[0]!.skills[0]!.competencies.map(c => c.id)).toEqual(['quality-control']);
+    const only0 = buildProjectTrail({ projects: [{ title: 'P', competencies: ['Color proofing'] }], statements, cells: [cell('color-management', 'Color proofing', 0)], nearest: none });
+    expect(only0[0]!.skills[0]!.competencies).toEqual([]);
+  });
+
   it('asks nearest() for each (statement, competency) pair', () => {
     const asked: string[] = [];
     buildProjectTrail({ projects: [{ title: 'P', competencies: ['Color proofing'] }], statements, cells: [cell('color-management', 'Color proofing')],
