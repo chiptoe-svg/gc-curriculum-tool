@@ -116,7 +116,7 @@ export async function loadProjectTrail(ex: Executor, snapshotId: string, opts: {
   if (!snap) return [];
   const cells = ((await ex.execute(sql`
     SELECT c.competency_id AS "competencyId", s.name AS "competencyName", c.matched_competency AS matched,
-           c.k_depth AS k, c.u_depth AS u, c.d_depth AS d
+           c.k_depth AS k, c.u_depth AS u, c.d_depth AS d, c.confidence
     FROM snapshot_competency_coverage c JOIN sub_competencies s ON s.id = c.competency_id AND NOT s.retired
     WHERE c.snapshot_id = ${snapshotId} AND c.matched_competency IS NOT NULL`)).rows as unknown as TrailCell[])
     .map(c => ({ ...c, d: Number(c.d), k: c.k === null ? null : Number(c.k), u: c.u === null ? null : Number(c.u) }));

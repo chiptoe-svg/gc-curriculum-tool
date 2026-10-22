@@ -399,7 +399,7 @@ export const CAREER_TARGETS: CareerTarget[] = [
       },
       {
         id: 'quality-frameworks',
-        name: 'AI and quality governance',
+        name: 'Quality and output governance (including AI)',
         knowDescriptor: 'Knows the dimensions on which creative, production, and AI-assisted output is evaluated — brand, legal/regulatory, and print-quality standards — where each kind of check belongs in a workflow, and what an AI-use policy covers: which data may enter which tools, how AI-generated content is disclosed or labeled (including content credentials), and who signs off.',
         understandDescriptor: 'Understands why quality and compliance checking requires domain expertise and can\'t be fully automated, why someone must stay accountable for AI-assisted output specifically, and why an AI-use policy has to be specific enough to apply on a real job.',
         doDescriptor: 'Builds or operates a quality/compliance review step in a real workflow — a brand check, a legal/regulatory check, or a print-quality check — that catches failure modes consistently, including checks on AI-assisted output, and writes or applies an AI-use policy for a team or job covering data, disclosure and sign-off.',

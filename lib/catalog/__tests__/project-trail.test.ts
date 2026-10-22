@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { buildProjectTrail, nearestItems, normalizeStatement, type TrailCell } from '@/lib/catalog/project-trail';
 
-const cell = (competencyId: string, matched: string, d = 3): TrailCell => ({ competencyId, competencyName: competencyId.toUpperCase(), matched, k: 2, u: 2, d });
+const cell = (competencyId: string, matched: string, d = 3, confidence: TrailCell['confidence'] = 'high'): TrailCell => ({ competencyId, competencyName: competencyId.toUpperCase(), matched, k: 2, u: 2, d, confidence });
 const none = () => [];
 
 describe('normalizeStatement', () => {
@@ -43,6 +43,12 @@ describe('buildProjectTrail', () => {
     expect(trail[0]!.skills[0]!.competencies.map(c => c.id)).toEqual(['quality-control']);
     const only0 = buildProjectTrail({ projects: [{ title: 'P', competencies: ['Color proofing'] }], statements, cells: [cell('color-management', 'Color proofing', 0)], nearest: none });
     expect(only0[0]!.skills[0]!.competencies).toEqual([]);
+  });
+
+  it('a low-confidence match is not a link (owner, 2026-10-22); medium and high are', () => {
+    const trail = buildProjectTrail({ projects: [{ title: 'P', competencies: ['Color proofing'] }], statements,
+      cells: [cell('a-low', 'Color proofing', 2, 'low'), cell('b-med', 'Color proofing', 2, 'medium'), cell('c-high', 'Color proofing', 2, 'high')], nearest: none });
+    expect(trail[0]!.skills[0]!.competencies.map(c => c.id)).toEqual(['b-med', 'c-high']);
   });
 
   it('asks nearest() for each (statement, competency) pair', () => {

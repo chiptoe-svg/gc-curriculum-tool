@@ -13,7 +13,7 @@ export function normalizeStatement(s: string): string {
   return s.trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
-export interface TrailCell { competencyId: string; competencyName: string; matched: string; k: number | null; u: number | null; d: number }
+export interface TrailCell { competencyId: string; competencyName: string; matched: string; k: number | null; u: number | null; d: number; confidence?: 'high' | 'medium' | 'low' }
 export interface TrailItem { label: string; source: 'onet_element' | 'onet_task'; provisional: boolean; similarity: number }
 export interface TrailSkill { statement: string; competencies: Array<{ id: string; name: string; k: number | null; u: number | null; d: number; onet: TrailItem[] }> }
 export interface TrailProject { title: string; skills: TrailSkill[] }
@@ -30,6 +30,8 @@ export function buildProjectTrail(input: {
     // A match at depth 0 means the scorer found the statement but no evidence the
     // course develops the competency: not a link (owner, 2026-10-22).
     if (!(c.d > 0)) continue;
+    // Nor is a match the scorer itself rated low confidence ("indirect"; owner, 2026-10-22).
+    if (c.confidence === 'low') continue;
     const k = normalizeStatement(c.matched);
     const a = cellsBy.get(k);
     if (a) a.push(c); else cellsBy.set(k, [c]);
