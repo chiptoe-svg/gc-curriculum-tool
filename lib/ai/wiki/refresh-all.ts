@@ -31,7 +31,7 @@ import { readTargetCompetencyList } from '@/lib/db/membership-queries';
 import { and, eq, inArray, isNull } from 'drizzle-orm';
 
 import { db } from '@/lib/db/client';
-import { courseCaptureSnapshots, courses, targetCoverage } from '@/lib/db/schema';
+import { courseCaptureSnapshots, courses, subCompetencies, targetCoverage } from '@/lib/db/schema';
 import type { CaptureProfile } from '@/lib/ai/capture/schema';
 import {
   WIKI_PAGES_PER_CALL,
@@ -41,7 +41,7 @@ import {
   type ProgramPageRef,
   type WikiPageWrite,
 } from '@/lib/ai/wiki/update';
-import { WikiPagesWithheldError, type WikiCommit } from '@/lib/wiki/git-ops';
+import { WikiPagesWithheldError, readWikiPage, type WikiCommit } from '@/lib/wiki/git-ops';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -62,7 +62,15 @@ export interface RefreshInputs {
   targetSlugs: string[];
   /** Any non-retired snapshot carries audit_notes.productive_failure_conditions. */
   hasProductiveFailure: boolean;
+  /**
+   * Catalog competencies outside every target (retired or unlinked). Their
+   * pages exist as history: linkable, and regenerated only by --competency.
+   */
+  historyCompetencySlugs?: string[];
 }
+
+/** Concept page written outside refresh-all; listed so pages may link it. */
+const SCAFFOLDING_CONCEPT: ProgramPageRef = { type: 'concept', slug: 'scaffolding-analysis', path: 'concepts/scaffolding-analysis.md' };
 
 export interface RefreshOptions {
   /** 'targets': the career-target pages and the index only (after a membership change, P3). */
@@ -167,7 +175,11 @@ export function planRefresh(inputs: RefreshInputs, opts: RefreshOptions): Refres
   ];
   const indexPage: ProgramPageRef = { type: 'index', slug: 'index', path: 'index.md' };
 
-  const manifest = [...allCourses.map(c => c.page), ...nonIndexProgram];
+  const current = new Set(inputs.competencySlugs);
+  const historyPages: ProgramPageRef[] = [...new Set(inputs.historyCompetencySlugs ?? [])]
+    .filter(slug => !current.has(slug))
+    .map(slug => ({ type: 'competency' as const, slug, path: `competencies/${slug}.md` }));
+  const manifest = [...allCourses.map(c => c.page), ...nonIndexProgram, ...historyPages, SCAFFOLDING_CONCEPT];
 
   let courses = allCourses;
   let runProgram = opts.only !== 'courses';
@@ -182,7 +194,7 @@ export function planRefresh(inputs: RefreshInputs, opts: RefreshOptions): Refres
   }
 
   if (opts.competency) {
-    const page = nonIndexProgram.find(p => p.type === 'competency' && p.slug === opts.competency);
+    const page = [...nonIndexProgram, ...historyPages].find(p => p.type === 'competency' && p.slug === opts.competency);
     if (!page) throw new Error(`refresh-all: no competency page to generate for "${opts.competency}"`);
     return { courses: [], programPages: [page], programBatches: [[page]], manifest };
   }
@@ -397,11 +409,19 @@ export async function loadRefreshInputs(): Promise<RefreshInputs & {
   const latestProfiles = new Map<string, CaptureProfile>();
   for (const s of snaps) if (latestIds.has(s.id)) latestProfiles.set(s.id, s.profile as CaptureProfile);
 
+  // Plus every competency a target page lists (pinned or at least somewhat
+  // important), so each one the wiki links has a page (P3 membership addendum).
+  const competencySlugs = [...new Set([...cells.map(c => c.subCompetencyId), ...(await readTargetCompetencyList(db)).map(r => r.competencyId)])].sort();
+  const current = new Set(competencySlugs);
+  const historyCompetencySlugs: string[] = [];
+  for (const { id } of await db.select({ id: subCompetencies.id }).from(subCompetencies)) {
+    if (!current.has(id) && (await readWikiPage(`competencies/${id}.md`)) !== null) historyCompetencySlugs.push(id);
+  }
+
   return {
     snapshots,
-    // Plus every competency a target page lists (pinned or at least somewhat
-    // important), so each one the wiki links has a page (P3 membership addendum).
-    competencySlugs: [...new Set([...cells.map(c => c.subCompetencyId), ...(await readTargetCompetencyList(db)).map(r => r.competencyId)])].sort(),
+    competencySlugs,
+    historyCompetencySlugs: historyCompetencySlugs.sort(),
     targetSlugs: [...new Set(cells.map(c => c.careerTargetId))].sort(),
     hasProductiveFailure: snaps.some(s => pfcOf(s.profile)),
     latestProfiles,

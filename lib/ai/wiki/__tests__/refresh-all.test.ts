@@ -123,6 +123,22 @@ describe('planRefresh', () => {
     expect(parseRefreshArgs(['--competency', 'x']).competency).toBe('x');
   });
 
+  it('history competency pages (outside every target) are linkable and regenerable on request, never in a full pass', () => {
+    const withHistory = { ...inputs, historyCompetencySlugs: ['old-comp'] };
+    const ref = { type: 'competency', slug: 'old-comp', path: 'competencies/old-comp.md' };
+    const full = planRefresh(withHistory, {});
+    expect(full.manifest).toContainEqual(ref);
+    expect(full.programPages).not.toContainEqual(ref);
+    expect(planRefresh(withHistory, { competency: 'old-comp' }).programPages).toEqual([ref]);
+  });
+
+  it('the manifest always lists the scaffolding-analysis concept page so pages may link it', () => {
+    const scaf = { type: 'concept', slug: 'scaffolding-analysis', path: 'concepts/scaffolding-analysis.md' };
+    const plan = planRefresh(inputs, {});
+    expect(plan.manifest).toContainEqual(scaf);
+    expect(plan.programPages).not.toContainEqual(scaf);
+  });
+
   it('--only targets regenerates the target pages and the index only (membership changes, P3)', () => {
     const plan = planRefresh(inputs, { only: 'targets' });
     expect(plan.courses).toEqual([]);
