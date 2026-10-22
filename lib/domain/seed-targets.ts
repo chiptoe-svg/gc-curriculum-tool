@@ -161,7 +161,7 @@ export const CAREER_TARGETS: CareerTarget[] = [
     id: 'production-operations',
     name: 'Production & Operations',
     shortDefinition:
-      'The role that makes creative and brand work actually happen — on time, on spec, and within budget, at printers and packaging converters, brand-side production and procurement, and agency production departments. Production managers design and oversee the workflows, quality systems, vendor relationships, logistics, equipment and process decisions, and team and people-management responsibilities (including HR) that translate a creative brief into a finished physical or digital product, and get it delivered.',
+      'The role that makes creative and brand work actually happen — on time, on spec, and within budget, at printers and packaging converters, brand-side production and procurement, and agency production departments. Production managers design and oversee the workflows, quality systems, vendor relationships, logistics, equipment and process decisions, and team and people-management responsibilities (including HR) that turn approved designs and specifications into finished physical or digital products, and get them delivered. They are often consulted early, on cost and what can be produced.',
     industryContexts: [
       'Production manager at a printer overseeing offset and digital press workflows',
       'In-house operations lead at a brand managing vendor selection and quality',
