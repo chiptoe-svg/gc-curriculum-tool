@@ -19,7 +19,7 @@ Work in a new worktree: `git worktree add /Users/admin/projects/curriculum_devel
 - Nearest items: within the matched competency only; `bundle_members.status IN ('confirmed','proposed')` and `position IN ('core','related')`; top **3**; cosine ≥ `TRAIL_SIMILARITY_FLOOR` (start **0.5**; Task 5 fixes the final value from real pairs and ledgers it); `proposed` → `provisional: true`.
 - An unmatched course statement is listed as "not yet linked to a catalog competency".
 - Embedding failures never fail capture or wiki generation: the trail is built without O*NET items.
-- No migration (`item_embeddings.kind` already allows `course_skill`). No AI calls except campus embeddings and existing wiki writing.
+- No migration (`item_embeddings.kind` already allows `course_skill`). No paid AI calls: campus embeddings are free, and for this rollout the wiki pages are written by Opus in the Claude Code session through the handoff mode (Task 5b).
 - Tests: unit/route `env -u DATABASE_URL pnpm -s vitest run <file>`; DB `env DATABASE_URL=postgresql://admin@127.0.0.1:5433/gc_curriculum_p2_scratch pnpm -s vitest run <file>`. Never load `.env.local` against live in tests.
 - US spelling; plain-language wiki copy. Commit trailer: `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` and `Claude-Session: https://claude.ai/code/session_01YFqkp83wAJeqVK7QHjRrPm`.
 
@@ -42,6 +42,7 @@ Work in a new worktree: `git worktree add /Users/admin/projects/curriculum_devel
 - Modify `lib/ai/wiki/update.ts` — course message gets `projectTrail`; competency substrate gets `buildingProjects`.
 - Modify `lib/ai/prompts/wiki-update.md` — course §"How the projects connect"; competency §"Where students build this".
 - Create `scripts/catalog/project-trail-report.ts` — read-only report of similarity pairs, for the floor check.
+- Create `lib/ai/wiki/handoff-provider.ts`, `scripts/wiki/handoff-check.ts` — Opus-written wiki pages through the normal checks (Task 5b).
 - Modify `docs/STATE.md`, `docs/architecture.html`, `docs/superpowers/vision/gc-curriculum-tool-vision.html`.
 
 ---
@@ -422,6 +423,85 @@ The floor is fixed on live in Task 6, not here.
 
 ---
 
+### Task 5b: Wiki handoff mode (Opus writes the pages; owner decision 2026-10-22)
+
+For this rollout the wiki pages are written by Opus in the Claude Code session instead of the OpenAI API: no API spend. Every check the app applies to a model reply still applies.
+
+**Files:**
+- Create: `lib/ai/wiki/handoff-provider.ts`
+- Modify: `lib/ai/wiki/update.ts` — the two places that call `getProviderForFunction('wiki-update')` use `wikiProvider()` instead; export `validateWikiUpdateOutput`
+- Create: `scripts/wiki/handoff-check.ts` — validates a folder of replies without committing
+- Test: `lib/ai/wiki/__tests__/handoff-provider.test.ts`
+
+**Interfaces:**
+- Produces:
+  - `class WikiHandoffPending extends Error { requestPath: string }`
+  - `class HandoffProvider` implementing the provider interface `generateStampedPages` uses (`complete<T>({ systemPrompt, userMessage, schemaName, jsonSchema, validate })`):
+    - key = `sha256(systemPrompt + '\n' + userMessage)` first 16 hex characters;
+    - if `<dir>/responses/<key>.json` exists: parse it, run `validate`, return `{ data }` (and zero cost);
+    - otherwise write `<dir>/requests/<key>.json` = `{ key, schemaName, systemPrompt, userMessage, jsonSchema }` (pretty JSON) and throw `WikiHandoffPending`.
+  - `wikiProvider(): Promise<WikiProvider>` — `new HandoffProvider(process.env.WIKI_HANDOFF_DIR)` when that variable is set, else `getProviderForFunction('wiki-update')`.
+  - `scripts/wiki/handoff-check.ts --dir <dir>`: for every response, checks a matching request exists and `validateWikiUpdateOutput` passes, and every requested page path (from the request's `affectedWikiPages`) is present; prints per key OK / the error; exit 1 on any failure.
+
+Why it is safe: the message is deterministic for an unchanged database and wiki clone (substrate, existing page content, manifest), so round 2 reproduces round 1's keys; a unit whose reply is missing or invalid fails exactly as an API failure does (nothing committed for it); the path guard, reconcile retry (it writes a second request for missing pages), input hashes, evidence bands and `writeAndPush` are unchanged.
+
+- [ ] **Step 1: Write the failing tests**
+
+```ts
+// lib/ai/wiki/__tests__/handoff-provider.test.ts
+import { describe, it, expect, beforeEach } from 'vitest';
+import { mkdtempSync, readdirSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { HandoffProvider, WikiHandoffPending } from '@/lib/ai/wiki/handoff-provider';
+
+let dir: string;
+beforeEach(() => { dir = mkdtempSync(path.join(tmpdir(), 'handoff-')); });
+const req = (userMessage: string) => ({
+  systemPrompt: 'SYS', userMessage, schemaName: 'wiki_update', jsonSchema: {},
+  validate: (raw: unknown) => { const o = raw as { pages?: unknown }; if (!Array.isArray(o.pages)) throw new Error('pages missing'); return raw as { pages: unknown[] }; },
+});
+
+describe('HandoffProvider', () => {
+  it('writes a request and throws WikiHandoffPending when no reply exists', async () => {
+    const p = new HandoffProvider(dir);
+    await expect(p.complete(req('M1'))).rejects.toBeInstanceOf(WikiHandoffPending);
+    const files = readdirSync(path.join(dir, 'requests'));
+    expect(files).toHaveLength(1);
+    expect(JSON.parse(readFileSync(path.join(dir, 'requests', files[0]!), 'utf8'))).toMatchObject({ systemPrompt: 'SYS', userMessage: 'M1', schemaName: 'wiki_update' });
+  });
+
+  it('returns the validated reply for the same message on the next run', async () => {
+    const p = new HandoffProvider(dir);
+    await p.complete(req('M1')).catch(() => {});
+    const key = readdirSync(path.join(dir, 'requests'))[0]!.replace('.json', '');
+    mkdirSync(path.join(dir, 'responses'), { recursive: true });
+    writeFileSync(path.join(dir, 'responses', `${key}.json`), JSON.stringify({ pages: [{ path: 'a.md', content: 'x' }] }));
+    const r = await new HandoffProvider(dir).complete(req('M1'));
+    expect(r.data).toEqual({ pages: [{ path: 'a.md', content: 'x' }] });
+  });
+
+  it('a different message gets a different key; an invalid reply throws the validation error', async () => {
+    const p = new HandoffProvider(dir);
+    await p.complete(req('M1')).catch(() => {});
+    await p.complete(req('M2')).catch(() => {});
+    const keys = readdirSync(path.join(dir, 'requests'));
+    expect(keys).toHaveLength(2);
+    mkdirSync(path.join(dir, 'responses'), { recursive: true });
+    writeFileSync(path.join(dir, 'responses', keys[0]!), JSON.stringify({ nope: 1 }));
+    const msg = JSON.parse(readFileSync(path.join(dir, 'requests', keys[0]!), 'utf8')).userMessage as string;
+    await expect(p.complete(req(msg))).rejects.toThrow(/pages missing/);
+  });
+});
+```
+
+- [ ] **Step 2: Run, verify they fail** (`env -u DATABASE_URL pnpm -s vitest run lib/ai/wiki/__tests__/handoff-provider.test.ts`): cannot resolve the module.
+- [ ] **Step 3: Implement** the provider (match the existing provider interface's return shape — read `lib/ai/provider.ts` `AIProvider.complete` and return the same fields with zero usage/cost), `wikiProvider()`, the two call-site swaps, the `validateWikiUpdateOutput` export, and `handoff-check.ts`. A unit test for `wikiProvider()`: with `WIKI_HANDOFF_DIR` set it returns a `HandoffProvider`; unset, it calls `getProviderForFunction` (mocked).
+- [ ] **Step 4: Run, verify they pass**; `env -u DATABASE_URL pnpm -s vitest run lib/ai/wiki tests/lib/ai/wiki`; `pnpm -s tsc --noEmit`.
+- [ ] **Step 5: Commit**: `feat(wiki): handoff provider — wiki pages written outside the app, checked and committed by the normal pipeline`.
+
+---
+
 ### Task 6: Live run, floor check, docs
 
 This task's live steps need the owner's yes, as usual; the safety check may require the owner to run them (`!` commands, as with the P3 steps).
@@ -430,5 +510,9 @@ This task's live steps need the owner's yes, as usual; the safety check may requ
 - [ ] **Step 2:** Final whole-branch review (fresh reviewer, most capable model), fix pass as the executing skill describes.
 - [ ] **Step 3 (owner yes):** merge to dev, deploy with the SHA guard; `embed-items --expect-db gc_curriculum` dry run (shows the `course_skill` count), then `--apply` (campus embeddings, free).
 - [ ] **Step 4:** `project-trail-report --expect-db gc_curriculum` (read-only). Read the histogram and the sample: set `TRAIL_SIMILARITY_FLOOR` to the lowest value at which the listed items still plainly relate to the skill (round to 0.05). If it changes, change the constant, rerun Task 1's tests (adjust the floor test values only if they no longer straddle it), commit, redeploy. Ledger the chosen value with three example pairs above and below it.
-- [ ] **Step 5 (owner yes):** wiki refresh of all course and competency pages: `pnpm exec tsx --env-file=.env.local scripts/wiki/refresh-all.ts --dry-run` (prints the call count, about 30), then without `--dry-run`; then `pnpm publish:clemson`. Read three course pages and two competency pages; check `[[links]]` resolve (the link check used on 2026-10-21).
+- [ ] **Step 5 (owner yes): wiki refresh written by Opus (handoff mode, no API spend).**
+  1. Round 1: `WIKI_HANDOFF_DIR=~/.local/share/gc-curriculum-tool/wiki-handoff/<UTC stamp> pnpm exec tsx --env-file=.env.local scripts/wiki/refresh-all.ts` — writes about 30 requests, commits nothing (every unit reports pending).
+  2. Sample first: Opus writes the replies for one course page and the batch holding one competency page (follow each request's `systemPrompt` exactly; reply JSON must match `jsonSchema`); `handoff-check --dir …`; run round 2; the owner compares those two pages with the current OpenAI versions on the wiki before the rest go ahead.
+  3. On the owner's yes: Opus subagents (most capable model; about 6 requests each, run in parallel) write the remaining replies into `responses/`; `handoff-check`; round 2 again (already-committed units are unchanged pages and commit nothing new).
+  4. `pnpm publish:clemson`. Read three course pages and two competency pages; check `[[links]]` resolve (the link check used on 2026-10-21).
 - [ ] **Step 6:** STATE (what's live, the floor, the new CLI and substrate fields), `docs/architecture.html` (a paragraph in the competency section: the project trail and how each link is made) and the vision page (the wiki entry mentions the trail). Commit, push, `pnpm publish:clemson`.
