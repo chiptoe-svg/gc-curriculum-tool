@@ -43,6 +43,18 @@ describe('HandoffProvider', () => {
   });
 });
 
+describe('handoffKey (final review C1/I1)', () => {
+  it('ignores everything but the requested pages: a timestamp, sheet fields or page content changing between rounds keeps the key', async () => {
+    const { handoffKey } = await import('@/lib/ai/wiki/handoff-provider');
+    const msg = (extra: Record<string, unknown>, paths: string[]) => JSON.stringify({ ...extra, affectedWikiPages: paths.map(p => ({ path: p, existingContent: `content ${String(extra.n)}` })) });
+    const a = handoffKey('SYS', msg({ refreshedAt: '2026-10-22T01:00:00Z', n: 1 }, ['competencies/a.md', 'index.md']));
+    const b = handoffKey('SYS', msg({ refreshedAt: '2026-10-22T02:00:00Z', n: 2 }, ['index.md', 'competencies/a.md']));
+    expect(a).toBe(b);
+    expect(handoffKey('SYS', msg({ n: 1 }, ['competencies/a.md']))).not.toBe(a); // a retry for fewer pages is a different request
+    expect(handoffKey('SYS2', msg({ n: 1 }, ['competencies/a.md', 'index.md']))).not.toBe(a); // a changed prompt is a different request
+  });
+});
+
 describe('wikiProvider', () => {
   it('uses the handoff provider when WIKI_HANDOFF_DIR is set, else the configured provider', async () => {
     const { wikiProvider } = await import('@/lib/ai/wiki/handoff-provider');

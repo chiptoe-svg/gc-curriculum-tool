@@ -7,9 +7,10 @@
  * <dir>/requests/<key>.json and the call throws WikiHandoffPending, so the unit
  * fails exactly as an API failure would and nothing is committed for it.
  * Round 2: the same message finds <dir>/responses/<key>.json, which goes
- * through the caller's `validate` like any model reply. The key is a hash of
- * the prompt and message, which are deterministic for an unchanged database
- * and wiki clone. Zero cost is reported; no API is called.
+ * through the caller's `validate` like any model reply. The key is the prompt
+ * plus the requested page paths (see handoffKey). Use a fresh directory per
+ * rollout: a reply is reused for the same pages for as long as the directory
+ * exists. Zero cost is reported; no API is called.
  */
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -25,8 +26,21 @@ export class WikiHandoffPending extends Error {
 
 const ZERO: CompletionTelemetry = { costUsdCents: 0, durationMs: 0, cachedTokens: 0, uncachedPromptTokens: 0, completionTokens: 0 };
 
+/**
+ * Identity of a request: the system prompt plus the SET of requested page
+ * paths. The rest of the message (a refresh timestamp, live sheet fields, the
+ * pages' current wiki content) can change between round 1 and round 2, so it
+ * is left out (final review C1/I1); a reconcile retry asks for fewer pages and
+ * so gets its own key. A message that is not the wiki's JSON falls back to the
+ * whole text.
+ */
 export function handoffKey(systemPrompt: string, userMessage: string): string {
-  return createHash('sha256').update(`${systemPrompt}\n${userMessage}`).digest('hex').slice(0, 16);
+  let identity = userMessage;
+  try {
+    const pages = (JSON.parse(userMessage) as { affectedWikiPages?: Array<{ path?: unknown }> }).affectedWikiPages;
+    if (Array.isArray(pages)) identity = JSON.stringify(pages.map(p => String(p?.path)).sort());
+  } catch { /* not JSON: whole message */ }
+  return createHash('sha256').update(`${systemPrompt}\n${identity}`).digest('hex').slice(0, 16);
 }
 
 export class HandoffProvider implements Pick<AIProvider, 'complete'> {
