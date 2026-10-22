@@ -1,3 +1,4 @@
+-- Historical (P0a, 2026-10-11). After P3 (weight rows) and 0062 (hidden rows), its requirement counts no longer hold; do not re-run against a later database.
 -- Read-only verification for migration 0056 (P0a). Run right after applying.
 -- Every "expect 0" row must be 0; counts must match as noted.
 -- Reference values at plan time (2026-10-11): 36 sub-competencies (34 active +
