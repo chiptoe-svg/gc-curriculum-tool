@@ -2,7 +2,8 @@
 /**
  * P2 Task 6 — embedding cache CLI. Embeds every confirmed bundle card, every
  * O*NET element definition (kind onet_element; migration 0061), plus
- * every O*NET task-statement group (de-duplicated by normalized text, see
+ * every latest snapshot's course skill statements (kind course_skill, project
+ * skill trail 2026-10-22), every O*NET task-statement group (de-duplicated by normalized text, see
  * lib/catalog/shortlist.ts), skipping anything already cached in
  * item_embeddings at the current text hash. See
  * docs/superpowers/sdd/2026-10-13-competency-catalog-p2/task-6-brief.md and
@@ -32,13 +33,14 @@
  */
 import { db } from '@/lib/db/client';
 import { itemEmbeddings } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { loadAppEnv, isMainModule, formatDbError, assertExpectedDb, type P1Executor } from '@/scripts/catalog/catalog-source';
 import { textHash, cardEmbedText } from '@/lib/catalog/bundles';
 import { groupTasks } from '@/lib/catalog/shortlist';
 import { elementEmbedText } from '@/lib/catalog/blind-list';
 import { listActiveBundles, readConfirmedCards, readTaskStatements, readElementDefinitions, embedMissing, type EmbedItem } from '@/lib/db/bundle-queries';
 import { embedBatch, DEFAULT_EMBEDDING_MODEL } from '@/lib/ai/embeddings';
+import { courseSkillItems } from '@/lib/db/project-trail-queries';
 
 export type Executor = P1Executor;
 
@@ -104,7 +106,18 @@ async function buildItems(executor: Executor, release: string): Promise<EmbedIte
     text: elementEmbedText(def),
   }));
 
-  return [...cardItems, ...taskItems, ...elementItems];
+  // Project skill trail (spec 2026-10-22-project-skill-trail-design.md): every
+  // latest snapshot's course statements and project-named statements, so the
+  // wiki can place each course skill among its competency's O*NET items.
+  const stmtRows = (await executor.execute(sql`
+    WITH latest AS (SELECT DISTINCT ON (course_code) profile FROM course_capture_snapshots WHERE retired_at IS NULL ORDER BY course_code, created_at DESC)
+    SELECT c->>'statement' AS s FROM latest, jsonb_array_elements(CASE WHEN jsonb_typeof(profile->'competencies') = 'array' THEN profile->'competencies' ELSE '[]'::jsonb END) c
+    UNION ALL
+    SELECT x AS s FROM latest, jsonb_array_elements(CASE WHEN jsonb_typeof(profile->'major_projects') = 'array' THEN profile->'major_projects' ELSE '[]'::jsonb END) p,
+      jsonb_array_elements_text(CASE WHEN jsonb_typeof(p->'competencies') = 'array' THEN p->'competencies' ELSE '[]'::jsonb END) x`)).rows as Array<{ s: string | null }>;
+  const skillItems = courseSkillItems(stmtRows.map(r => r.s).filter((x): x is string => typeof x === 'string'));
+
+  return [...cardItems, ...taskItems, ...elementItems, ...skillItems];
 }
 
 /** How many of `items` already have a row in item_embeddings at their current text hash — a read-only count, used only for the dry-run report. */
@@ -156,14 +169,14 @@ export async function main(argv: string[], deps: CliDeps = {}): Promise<number> 
     return 3;
   }
 
-  const byKind = { bundle_card: 0, onet_task: 0, onet_element: 0 } as Record<EmbedItem['kind'], number>;
+  const byKind = { bundle_card: 0, onet_task: 0, onet_element: 0, course_skill: 0 } as Record<EmbedItem['kind'], number>;
   for (const item of items) byKind[item.kind]++;
 
   if (args.mode === 'apply') {
     const embedFn = deps.embed ?? ((texts: string[]) => embedBatch(texts));
     const embed = deps.embedMissing ?? embedMissing;
     console.log(`mode: APPLY  expect-db: ${args.expectDb}  release: ${args.release}`);
-    console.log(`items: ${byKind.bundle_card} bundle_card, ${byKind.onet_task} onet_task, ${byKind.onet_element} onet_element`);
+    console.log(`items: ${byKind.bundle_card} bundle_card, ${byKind.onet_task} onet_task, ${byKind.onet_element} onet_element, ${byKind.course_skill} course_skill`);
     let result: { cached: number; embedded: number };
     try {
       result = await embed(executor, items, DEFAULT_EMBEDDING_MODEL, embedFn);
@@ -177,7 +190,7 @@ export async function main(argv: string[], deps: CliDeps = {}): Promise<number> 
 
   const cached = await countCached(executor, items, DEFAULT_EMBEDDING_MODEL);
   console.log(`mode: DRY RUN  expect-db: ${args.expectDb}  release: ${args.release}`);
-  console.log(`items: ${byKind.bundle_card} bundle_card, ${byKind.onet_task} onet_task, ${byKind.onet_element} onet_element (${items.length} total)`);
+  console.log(`items: ${byKind.bundle_card} bundle_card, ${byKind.onet_task} onet_task, ${byKind.onet_element} onet_element, ${byKind.course_skill} course_skill (${items.length} total)`);
   console.log(`already cached at the current text hash: ${cached}`);
   console.log('\nDRY RUN — nothing written, no embedding calls made.');
   return 0;

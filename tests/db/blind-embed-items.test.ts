@@ -69,4 +69,25 @@ describe.skipIf(!RUN)('embed-items embeds O*NET elements (scratch DB only)', () 
       expect(calls.flat().filter(t => defs.some(d => elementEmbedText(d) === t))).toEqual([]);
     });
   });
+
+  it('also embeds course skill statements of every latest snapshot (kind course_skill)', async () => {
+    await inRolledBackTx(async (tx) => {
+      const { sql } = await import('drizzle-orm');
+      const { courseSkillItems } = await import('@/lib/db/project-trail-queries');
+      const rows = (await (tx as unknown as typeof db).execute(sql`
+        WITH latest AS (SELECT DISTINCT ON (course_code) profile FROM course_capture_snapshots WHERE retired_at IS NULL ORDER BY course_code, created_at DESC)
+        SELECT c->>'statement' AS s FROM latest, jsonb_array_elements(CASE WHEN jsonb_typeof(profile->'competencies') = 'array' THEN profile->'competencies' ELSE '[]'::jsonb END) c
+        UNION ALL
+        SELECT x AS s FROM latest, jsonb_array_elements(CASE WHEN jsonb_typeof(profile->'major_projects') = 'array' THEN profile->'major_projects' ELSE '[]'::jsonb END) p,
+          jsonb_array_elements_text(CASE WHEN jsonb_typeof(p->'competencies') = 'array' THEN p->'competencies' ELSE '[]'::jsonb END) x`)).rows as Array<{ s: string | null }>;
+      const expected = courseSkillItems(rows.map(r => r.s).filter((x): x is string => typeof x === 'string')).length;
+      expect(expected).toBeGreaterThan(0);
+      const logs: string[] = [];
+      const spy = vi.spyOn(console, 'log').mockImplementation((...a: unknown[]) => { logs.push(a.join(' ')); });
+      const code = await main(['--expect-db', SCRATCH_DB], { executor: tx });
+      spy.mockRestore();
+      expect(code).toBe(0);
+      expect(logs.join('\n')).toContain(`${expected} course_skill`);
+    });
+  });
 });
