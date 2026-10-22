@@ -9,6 +9,7 @@
  * The orchestrator only READS from the wiki repo and Postgres. It never writes.
  */
 
+import { loadPairedSlugMap, rewritePairedLinks } from '@/lib/ai/wiki/paired-links';
 import { wikiProvider } from '@/lib/ai/wiki/handoff-provider';
 import { ensureCourseSkillEmbeddings, loadProjectTrail, loadBuildingProjects, type BuildingProject } from '@/lib/db/project-trail-queries';
 import type { TrailProject } from '@/lib/catalog/project-trail';
@@ -1101,6 +1102,7 @@ async function generateStampedPages(args: {
   //   written. The raw/ layer is written by the caller, not the model, so it
   //   isn't in this set by design.
   const requestedPaths = new Set(pages.map(p => p.path));
+  const pairedSlugs = await loadPairedSlugMap();
   // Per-page input watermark: hash of the (hash seed + page substrate) that
   // produced each requested page. Stamped into frontmatter so a later
   // reconcile pass can detect stale/missing pages deterministically.
@@ -1131,7 +1133,8 @@ async function generateStampedPages(args: {
       console.error(`[wiki-update] dropping unrequested page path from model output: "${p.path}" (${tag})`);
       continue;
     }
-    let content = stampInputHash(p.content, inputHashByPath.get(p.path) ?? '');
+    // Paired lecture/lab codes share one page: point their links at the parent course.
+    let content = stampInputHash(rewritePairedLinks(p.content, pairedSlugs), inputHashByPath.get(p.path) ?? '');
     const bands = evidenceBandsByPath.get(p.path);
     if (bands) content = stampEvidenceBands(content, bands);
     // OKF machine-fields (title/timestamp/tags/resource/slug) for every

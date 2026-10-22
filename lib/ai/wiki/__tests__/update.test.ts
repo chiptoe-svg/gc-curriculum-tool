@@ -30,6 +30,11 @@ const trailMocks = vi.hoisted(() => ({
 }));
 vi.mock('@/lib/db/project-trail-queries', () => trailMocks);
 
+vi.mock('@/lib/ai/wiki/paired-links', async (orig) => ({
+  ...(await orig<typeof import('@/lib/ai/wiki/paired-links')>()),
+  loadPairedSlugMap: async () => new Map([['gc-2071', 'gc-2070']]),
+}));
+
 vi.mock('@/lib/db/client', () => ({
   db: {
     select: vi.fn(),
@@ -548,6 +553,17 @@ describe('updateWikiForSnapshot', () => {
     expect(userMsg.competencyBands[0]).toHaveProperty('statement');
     // Broken-wikilink fix: statement→sub-competency slug map for course-page links.
     expect(Array.isArray(userMsg.competencyLinks)).toBe(true);
+  });
+
+  it('a link to a paired lab code is committed pointing at its course page (GC 2071 → GC 2070)', async () => {
+    const reply = { ...mockLLMResponse, pages: mockLLMResponse.pages.map(pg => pg.path === 'courses/gc-4800.md'
+      ? { ...pg, content: pg.content + 'Builds on [[gc-2071|GC 2071 lab]].\n' } : pg) };
+    const provider = { model: 'gpt-5.5', complete: vi.fn().mockResolvedValue({ data: reply, costUsdCents: 0, durationMs: 0, cachedTokens: 0, uncachedPromptTokens: 0, completionTokens: 0 }) };
+    (getProviderForFunction as ReturnType<typeof vi.fn>).mockResolvedValue(provider);
+    const { wiki } = await updateWikiForSnapshot(SNAPSHOT_ID);
+    const course = wiki.find(w => w.path === 'courses/gc-4800.md')!;
+    expect(course.content).toContain('[[gc-2070|GC 2071 lab]]');
+    expect(course.content).not.toContain('[[gc-2071');
   });
 
   it('with WIKI_HANDOFF_DIR set, writes a request for Opus and never calls the configured provider (handoff mode)', async () => {
