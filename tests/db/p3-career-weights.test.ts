@@ -73,13 +73,14 @@ describe.skipIf(!RUN)('P3 career weights (scratch DB only)', () => {
     });
   });
 
-  it('ignores proposed members (blind-locked or unreviewed) and deletes a stale onet row when the last core item goes', async () => {
+  it('ignores proposed members of a blind-locked bundle and deletes a stale onet row when the last core item goes', async () => {
     await inRolledBackTx(async (tx) => {
       await seed(tx);
       await addMember(tx, 'p3w-c1', '9.Z.1', 'core', 'confirmed');
       await recomputeCareerWeights(tx, { apply: true });
       expect((await rowsFor(tx, 'p3w-c1')).some(r => r.weightSource === 'onet')).toBe(true);
       await tx.execute(sql`UPDATE bundle_members SET status = 'rejected' WHERE bundle_id = 'p3w-c1'`);
+      await tx.execute(sql`INSERT INTO bundle_golden_samples (bundle_id, stratum, sample_seed, candidates) VALUES ('p3w-c1', 'technical', 't', '[]'::jsonb)`); // blind lock: not submitted
       await addMember(tx, 'p3w-c1', '9.Z.2', 'core', 'proposed');
       await recomputeCareerWeights(tx, { apply: true });
       expect((await rowsFor(tx, 'p3w-c1')).some(r => r.weightSource === 'onet')).toBe(false);
@@ -183,6 +184,27 @@ describe.skipIf(!RUN)('P3 career weights (scratch DB only)', () => {
       const report = await recomputeCareerWeights(tx, { apply: false });
       expect(report.membershipChanges.some(c => c.competencyId === 'p3w-c2')).toBe(true);
       expect((await tx.execute(sql`SELECT count(*)::int AS n FROM career_target_membership`)).rows[0]).toEqual(before);
+    });
+  });
+
+  it('a bundle with only AI-proposed core items gets a provisional weight; one confirmed member switches it to confirmed items only', async () => {
+    await inRolledBackTx(async (tx) => {
+      await seed(tx);
+      await addMember(tx, 'p3w-c1', '9.Z.1', 'core', 'proposed');
+      await addMember(tx, 'p3w-c1', '9.Z.2', 'related', 'proposed'); // related never counts (d = 0)
+      await recomputeCareerWeights(tx, { apply: true });
+      let onet = (await rowsFor(tx, 'p3w-c1')).find(r => r.weightSource === 'onet' && r.horizon === 'entry')!;
+      expect(onet.weight).toBeCloseTo(0.875);
+      expect(onet.note).toBe('provisional: AI-proposed core items');
+      const { readTargetCompetencyList } = await import('@/lib/db/membership-queries');
+      expect((await readTargetCompetencyList(tx)).find(r => r.careerTargetId === T && r.competencyId === 'p3w-c1')?.provisional).toBe(true);
+      await tx.execute(sql`UPDATE bundle_members SET status = 'confirmed', confirmed_by = 'tester', confirmed_at = now() WHERE bundle_id = 'p3w-c1' AND external_id = '9.Z.2'`);
+      await tx.execute(sql`UPDATE bundle_members SET position = 'core' WHERE bundle_id = 'p3w-c1' AND external_id = '9.Z.2'`);
+      await recomputeCareerWeights(tx, { apply: true });
+      onet = (await rowsFor(tx, 'p3w-c1')).find(r => r.weightSource === 'onet' && r.horizon === 'entry')!;
+      expect(onet.weight).toBeCloseTo(0.75 * 0.25); // the confirmed 9.Z.2 only; the proposed 9.Z.1 no longer counts
+      expect(onet.note).toBeNull();
+      expect((await readTargetCompetencyList(tx)).find(r => r.careerTargetId === T && r.competencyId === 'p3w-c1')?.provisional).toBe(false);
     });
   });
 });

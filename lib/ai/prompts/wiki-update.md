@@ -123,7 +123,8 @@ The user message is a JSON object with these fields:
             "kDepth": 4, "uDepth": 3, "dDepth": 3,
             "evidenceExcerpt": "...",
             "importance": "Important",
-            "scored": true
+            "scored": true,
+            "provisional": false
           }
         ],
         "contributingCourses": ["gc-1010", "gc-3460", "gc-4800"]
@@ -386,7 +387,7 @@ Body sections in order:
 
 1. **H1** — target name
 2. **What this person does** — 2–3 sentences from `substrate.shortDefinition` + `substrate.industryContexts`. Ground the reader in the career reality before the curriculum analysis.
-3. **Competencies by importance** — group the competencies under these headings, in this order, using each entry's `importance` field: `Very or extremely important`, `Important`, `Somewhat important`, `Selected by faculty`. Skip a heading with no entries. List each as `[[competency-slug|Competency Name]]`, followed by one of: `well-developed (D{n})` / `developing (D{n})` / `thin (D{n})` / `not addressed (D0)`. Base the status label on the best dDepth in `coverageRollup`: ≥3 = well-developed, 2 = developing, 1 = thin, 0 = not addressed. If the entry's `scored` is `false`, write `not yet scored` instead of a depth label: no course has been scored on it, which is not the same as not addressed.
+3. **Competencies by importance** — group the competencies under these headings, in this order, using each entry's `importance` field: `Very or extremely important`, `Important`, `Somewhat important`, `Selected by faculty`. Skip a heading with no entries. List each as `[[competency-slug|Competency Name]]`, followed by one of: `well-developed (D{n})` / `developing (D{n})` / `thin (D{n})` / `not addressed (D0)`. Base the status label on the best dDepth in `coverageRollup`: ≥3 = well-developed, 2 = developing, 1 = thin, 0 = not addressed. If the entry's `scored` is `false`, write `not yet scored` instead of a depth label: no course has been scored on it, which is not the same as not addressed. If the entry's `provisional` is `true`, add ` (provisional)` after the name: its importance comes from AI-proposed O*NET items that faculty have not reviewed yet. When any entry is provisional, end the section with one plain sentence saying that importance rankings marked provisional come from AI-proposed O*NET items and are being confirmed by faculty review.
 4. **Program-level rollup** — 2–4 paragraphs. Narrate the strengths (which competencies the program develops well for this target), the gaps (thin or not-addressed sub-competencies), and the brittle scaffolds (competencies only one course deep). This is the synthesis value — the page reader can't get this from the matrix alone.
 5. **Recommended course sequence** — if Phase 1D advising data exists in the substrate, render it. Otherwise omit this section.
 6. **Cross-references** — link to the contributing courses and concept pages. Short.

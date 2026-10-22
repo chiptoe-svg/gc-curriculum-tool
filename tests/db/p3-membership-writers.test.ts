@@ -114,6 +114,7 @@ describe.skipIf(!isP2ScratchDb())('membership writers (scratch)', () => {
       await tx.execute(sql`INSERT INTO sub_competencies (id, name, know_descriptor, understand_descriptor, do_descriptor, origin) VALUES ('p3m-c', 'C', 'k', 'u', 'd', 'gc_authored'), ('p3m-h', 'H', 'k', 'u', 'd', 'gc_authored')`);
       await tx.execute(sql`INSERT INTO career_target_requirements (career_target_id, competency_id, horizon, weight_source, weight, status, display_order) VALUES
         (${T}, 'p3m-c', 'entry', 'onet', 0.3, 'draft', 0), (${T}, 'p3m-h', 'entry', 'onet', 0.95, 'draft', 0), (${T}, 'p3m-h', 'entry', 'faculty', NULL, 'hidden', 0)`);
+      await tx.execute(sql`UPDATE career_target_requirements SET note = 'provisional: AI-proposed core items' WHERE career_target_id = ${T} AND competency_id = 'p3m-c' AND weight_source = 'onet'`);
       const { loadTargetSubstrate } = await import('@/lib/ai/wiki/update');
       const s = await loadTargetSubstrate(T, tx);
       expect(s.coverageRollup.map(e => [e.subCompetencyId, e.importance])).toEqual([
@@ -123,6 +124,7 @@ describe.skipIf(!isP2ScratchDb())('membership writers (scratch)', () => {
       ]);
       // No coverage cells exist for any of them: the page must say "not yet scored", not D0 (final review Important 2).
       expect(s.coverageRollup.map(e => e.scored)).toEqual([false, false, false]);
+      expect(s.coverageRollup.map(e => e.provisional)).toEqual([false, false, true]);
     });
   });
 });

@@ -310,6 +310,8 @@ export interface MatrixSubCompetency {
   weight: number | null;
   /** Faculty pinned it to this target (always shown). */
   pinned: boolean;
+  /** The weight rests on AI-proposed core items (spec 2026-10-21-p3-provisional-weights-design.md). */
+  provisional: boolean;
 }
 
 export interface MatrixCoverageCell {
@@ -470,6 +472,7 @@ export async function getMatrixData(ex: Tx | typeof db = db): Promise<MatrixData
       displayOrder: s.displayOrder,
       weight: listedBy.get(`${s.careerTargetId}|${s.id}`)?.weight ?? null,
       pinned: listedBy.get(`${s.careerTargetId}|${s.id}`)?.pinned ?? false,
+      provisional: listedBy.get(`${s.careerTargetId}|${s.id}`)?.provisional ?? false,
     }));
 
   const activeSubIds = new Set(subCompetenciesOut.map(s => s.id));
@@ -549,7 +552,7 @@ async function readBelowCutoff(
   const below = listed.filter(r => !r.member && !r.hidden && !r.pinned && r.weight !== null && r.weight < MEMBERSHIP_CUTOFF);
   const subs: MatrixSubCompetency[] = below.map((r, i) => ({
     id: r.competencyId, name: r.name, careerTargetId: r.careerTargetId,
-    careerTargetName: targetById.get(r.careerTargetId)?.name ?? '', displayOrder: 100000 + i, weight: r.weight, pinned: false,
+    careerTargetName: targetById.get(r.careerTargetId)?.name ?? '', displayOrder: 100000 + i, weight: r.weight, pinned: false, provisional: r.provisional,
   }));
   const ids = [...new Set(below.map(r => r.competencyId))];
   if (ids.length === 0) return { subCompetencies: subs, cells: [] };

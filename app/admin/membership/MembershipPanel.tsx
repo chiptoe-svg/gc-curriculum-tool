@@ -12,7 +12,8 @@ type Action = 'pin' | 'hide' | 'clear';
 
 function importance(r: ListedCompetency): string {
   const label = r.band ? BAND_LABELS[r.band] : r.pinned ? PINNED_LABEL : 'Below somewhat important';
-  return r.weight === null ? label : `${label} (${r.weight.toFixed(2)})`;
+  const text = r.weight === null ? label : `${label} (${r.weight.toFixed(2)})`;
+  return r.provisional ? `${text} · provisional` : text;
 }
 
 function status(r: ListedCompetency): string {

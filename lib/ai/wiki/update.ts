@@ -432,6 +432,8 @@ interface CoverageRollupEntry {
   importance: string;
   /** False when no program-visible course has a coverage cell for it yet: say "not yet scored", never D0. */
   scored: boolean;
+  /** Its importance rests on AI-proposed core items not yet reviewed by faculty. */
+  provisional: boolean;
 }
 
 /**
@@ -470,7 +472,7 @@ export async function loadTargetSubstrate(targetId: string, executor: Tx | typeo
   // defined order keeps the prompt input stable).
   const subs = (await readTargetCompetencyList(executor))
     .filter(r => r.careerTargetId === targetId)
-    .map(r => ({ id: r.competencyId, name: r.name, importance: r.band ? BAND_LABELS[r.band] : PINNED_LABEL }));
+    .map(r => ({ id: r.competencyId, name: r.name, importance: r.band ? BAND_LABELS[r.band] : PINNED_LABEL, provisional: r.provisional }));
 
   if (subs.length === 0) {
     return {
@@ -560,6 +562,7 @@ export async function loadTargetSubstrate(targetId: string, executor: Tx | typeo
       evidenceExcerpt: best?.evidenceExcerpt ?? null,
       importance: s.importance,
       scored: best !== undefined,
+      provisional: s.provisional,
     };
   });
   void subById; // used for name lookup above

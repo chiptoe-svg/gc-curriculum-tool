@@ -4,11 +4,11 @@ import { MembershipPanel } from '../MembershipPanel';
 import type { ListedCompetency } from '@/lib/db/membership-queries';
 
 const row = (competencyId: string, o: Partial<ListedCompetency>): ListedCompetency => ({
-  careerTargetId: 't1', competencyId, name: competencyId.toUpperCase(), weight: null, band: null, pinned: false, hidden: false, member: false, displayOrder: null, ...o,
+  careerTargetId: 't1', competencyId, name: competencyId.toUpperCase(), weight: null, band: null, pinned: false, hidden: false, member: false, displayOrder: null, provisional: false, ...o,
 });
 const rows = [
   row('pinned-one', { pinned: true, member: true, displayOrder: 0 }),
-  row('weighted', { weight: 0.8, band: 'very', member: true, displayOrder: 1 }),
+  row('weighted', { weight: 0.8, band: 'very', member: true, displayOrder: 1, provisional: true }),
   row('hidden-one', { weight: 0.9, band: 'very', hidden: true }),
 ];
 
@@ -32,7 +32,8 @@ describe('MembershipPanel', () => {
     expect(within(pinned).getByText('Selected by faculty')).toBeTruthy();
     expect(within(pinned).getByText('Shown — pinned')).toBeTruthy();
     const weighted = screen.getByText('WEIGHTED').closest('tr')!;
-    expect(within(weighted).getByText(/Very or extremely important/)).toBeTruthy();
+    expect(within(weighted).getByText(/Very or extremely important \(0\.80\) · provisional/)).toBeTruthy();
+    expect(within(pinned).queryByText(/provisional/)).toBeNull();
     expect(within(weighted).getByText('Shown — by importance')).toBeTruthy();
     const hidden = screen.getByText('HIDDEN-ONE').closest('tr')!;
     expect(within(hidden).getByText('Hidden')).toBeTruthy();

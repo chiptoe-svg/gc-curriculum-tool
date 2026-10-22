@@ -8,14 +8,14 @@ import { ProgramCoverageClient } from '@/app/program/ProgramCoverageClient';
  * the filter must show its column with empty cells, not crash or hide it;
  * raising it hides non-pinned members below the floor; pins always show.
  */
-const sub = (id: string, weight: number | null, pinned: boolean) => ({ id, name: id.toUpperCase(), careerTargetId: 't1', careerTargetName: 'Target One', displayOrder: 0, weight, pinned });
+const sub = (id: string, weight: number | null, pinned: boolean, provisional = false) => ({ id, name: id.toUpperCase(), careerTargetId: 't1', careerTargetName: 'Target One', displayOrder: 0, weight, pinned, provisional });
 const data = {
   courses: [{
     courseCode: 'GC 1010', courseTitle: 'Intro', level: 1, snapshotId: 'snap-1',
     snapshotCaption: null, snapshotCreatedAt: new Date('2026-01-01'), instructorName: null, pairedCodes: [],
   }],
   targets: [{ id: 't1', name: 'Target One', displayOrder: 1 }],
-  subCompetencies: [sub('pin-a', null, true), sub('imp-b', 0.6, false)],
+  subCompetencies: [sub('pin-a', null, true), sub('imp-b', 0.6, false, true)],
   cells: [],
   belowCutoff: { subCompetencies: [sub('low-c', 0.3, false)], cells: [] },
 };
@@ -26,6 +26,7 @@ describe('ProgramCoverageClient — importance filter', () => {
     expect(screen.getByText('PIN-A')).toBeTruthy();
     expect(screen.getByText('IMP-B')).toBeTruthy();
     expect(screen.queryByText('LOW-C')).toBeNull();
+    expect(screen.getByText('Important · provisional')).toBeTruthy();
     const select = screen.getByRole('combobox');
     fireEvent.change(select, { target: { value: '0.25' } });
     expect(screen.getByText('LOW-C')).toBeTruthy();

@@ -11,6 +11,8 @@ export const RELATED_DISCOUNT = 0;
 export const EMPLOYER_PRIOR_K = 3;
 export const DISAGREEMENT_GAP = 0.25;
 export const DISAGREEMENT_MIN_N = 2;
+/** Note on an `onet` row whose weight rests on AI-proposed core items (spec 2026-10-21-p3-provisional-weights-design.md). */
+export const PROVISIONAL_NOTE = 'provisional: AI-proposed core items';
 
 export type Position = 'core' | 'related' | 'fringe';
 export interface WeightItem { position: Position; importanceBySoc: Record<string, number> }

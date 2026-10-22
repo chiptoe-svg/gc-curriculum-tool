@@ -12,7 +12,7 @@ import { db } from '@/lib/db/client';
 import { careerTargetRequirements, careerTargetMembership } from '@/lib/db/schema';
 import type { Executor } from '@/lib/db/bundle-queries';
 import {
-  onetWeight, employerWeight, captureInputFromRow, effectiveWeight,
+  onetWeight, employerWeight, captureInputFromRow, effectiveWeight, PROVISIONAL_NOTE,
   type WeightItem, type Occupation, type CaptureInput, type Position, type WeightBasis,
 } from '@/lib/catalog/career-weights';
 import { bandOf, decideMembership } from '@/lib/catalog/membership';
@@ -45,10 +45,18 @@ async function loadInputs(ex: Executor, release: string) {
   const occupations = new Map<string, Occupation[]>();
   for (const r of occRows) push(occupations, `${r.t}|${r.h}`, { soc: r.soc, share: Number(r.share) });
   const socs = [...new Set(occRows.map(r => r.soc))];
-  // Confirmed members only (proposed ones — incl. blind-locked bundles — never count).
-  const memberRows = (await ex.execute(sql`
-    SELECT bundle_id AS c, source, external_id AS id, onet_soc_code AS soc, position
-    FROM bundle_members WHERE status = 'confirmed' AND source IN ('onet_element', 'onet_task')`)).rows as Array<{ c: string; source: string; id: string; soc: string | null; position: Position }>;
+  // Per bundle: its confirmed members if it has any; otherwise its AI-proposed
+  // CORE members, as a provisional weight (spec 2026-10-21-p3-provisional-
+  // weights-design.md). A blind-locked bundle (sample not yet submitted) never counts.
+  const candidateRows = (await ex.execute(sql`
+    SELECT m.bundle_id AS c, m.source, m.external_id AS id, m.onet_soc_code AS soc, m.position, m.status
+    FROM bundle_members m
+    WHERE m.source IN ('onet_element', 'onet_task')
+      AND (m.status = 'confirmed' OR (m.status = 'proposed' AND m.position = 'core'))
+      AND NOT EXISTS (SELECT 1 FROM bundle_golden_samples g WHERE g.bundle_id = m.bundle_id AND g.submitted_at IS NULL)`)).rows as Array<{ c: string; source: string; id: string; soc: string | null; position: Position; status: 'confirmed' | 'proposed' }>;
+  const confirmedBundles = new Set(candidateRows.filter(m => m.status === 'confirmed').map(m => m.c));
+  const memberRows = candidateRows.filter(m => confirmedBundles.has(m.c) ? m.status === 'confirmed' : true);
+  const provisionalBundles = new Set(memberRows.filter(m => !confirmedBundles.has(m.c)).map(m => m.c));
   const elementIds = [...new Set(memberRows.filter(m => m.source === 'onet_element').map(m => m.id))];
   const el = new Map<string, Record<string, number>>();
   if (elementIds.length > 0 && socs.length > 0) {
@@ -65,7 +73,7 @@ async function loadInputs(ex: Executor, release: string) {
   }
   const taskRows = (await ex.execute(sql`
     SELECT r.task_id AS id, r.onet_soc_code AS soc, r.data_value AS v FROM onet_task_ratings r
-    JOIN bundle_members m ON m.source = 'onet_task' AND m.status = 'confirmed' AND m.external_id = r.task_id AND m.onet_soc_code = r.onet_soc_code
+    JOIN bundle_members m ON m.source = 'onet_task' AND m.status IN ('confirmed', 'proposed') AND m.external_id = r.task_id AND m.onet_soc_code = r.onet_soc_code
     WHERE r.release = ${release} AND r.scale_id = 'IM'`)).rows as Array<{ id: string; soc: string; v: number }>;
   const task = new Map(taskRows.map(r => [`${r.id}|${r.soc}`, Number(r.v)]));
   const items = new Map<string, WeightItem[]>();
@@ -81,7 +89,7 @@ async function loadInputs(ex: Executor, release: string) {
   const captures = new Map<string, CaptureInput[]>();
   for (const r of capRows) push(captures, r.t, captureInputFromRow(r));
   const allCompetencies = ((await ex.execute(sql`SELECT id FROM sub_competencies WHERE NOT retired ORDER BY id`)).rows as Array<{ id: string }>).map(r => r.id);
-  return { occupations, items, captures, allCompetencies };
+  return { occupations, items, captures, allCompetencies, provisionalBundles };
 }
 
 const median = (v: number[]) => { const s = [...v].sort((a, b) => a - b); return s.length ? s[Math.floor((s.length - 1) / 2)]! : null; };
@@ -120,7 +128,7 @@ export async function recomputeCareerWeights(ex: Executor, opts: { apply: boolea
   // Lock first, so inputs are read after any earlier membership writer commits
   // (final review Important #1, Minor #1).
   if (opts.apply) await lockMembership(ex);
-  const { occupations, items, captures, allCompetencies } = await loadInputs(ex, opts.release ?? DEFAULT_RELEASE);
+  const { occupations, items, captures, allCompetencies, provisionalBundles } = await loadInputs(ex, opts.release ?? DEFAULT_RELEASE);
   const beforeRows = await readEntryRows(ex);
   const report: RecomputeReport = { onetUpserted: 0, onetDeleted: 0, employerUpserted: 0, employerDeleted: 0, pairs: 0, byTarget: [], membershipChanges: [] };
   const targets = [...new Set([...occupations.keys()].map(k => k.split('|')[0]!))].sort();
@@ -134,7 +142,7 @@ export async function recomputeCareerWeights(ex: Executor, opts: { apply: boolea
         const w = onetWeight(items.get(c) ?? [], occ);
         if (w !== null) {
           values.push(w);
-          upserts.push({ t, c, h, source: 'onet', weight: w, contributing: [], note: null });
+          upserts.push({ t, c, h, source: 'onet', weight: w, contributing: [], note: provisionalBundles.has(c) ? PROVISIONAL_NOTE : null });
         }
         if (h === 'entry') {
           const e = employerWeight(captures.get(t) ?? [], c);

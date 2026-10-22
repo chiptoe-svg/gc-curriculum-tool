@@ -489,7 +489,11 @@ export function ProgramCoverageClient({ slug, initialData, initialStaleSnapshotC
                     >
                       <div className="text-xs leading-tight">{s.name}</div>
                       <div className="mt-0.5 text-[10px] font-normal leading-tight text-muted-foreground/80">
-                        {(() => { const b = bandOf(s.weight); return b ? BAND_LABELS[b] : s.pinned ? PINNED_LABEL : ''; })()}
+                        {(() => {
+                          const b = bandOf(s.weight);
+                          const label = b ? BAND_LABELS[b] : s.pinned ? PINNED_LABEL : '';
+                          return label && s.provisional ? `${label} · provisional` : label;
+                        })()}
                       </div>
                     </th>
                   ))}

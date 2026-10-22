@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { filterByImportance } from '../importance-filter';
 
-const s = (id: string, weight: number | null, pinned = false) => ({ id, name: id, careerTargetId: 't', careerTargetName: 'T', displayOrder: 0, weight, pinned });
+const s = (id: string, weight: number | null, pinned = false) => ({ id, name: id, careerTargetId: 't', careerTargetName: 'T', displayOrder: 0, weight, pinned, provisional: false });
 
 describe('filterByImportance', () => {
   const subs = [s('pin', null, true), s('v', 0.8), s('i', 0.5), s('w', 0.3)];

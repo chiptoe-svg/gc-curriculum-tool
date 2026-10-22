@@ -36,8 +36,8 @@ function fixture(): MatrixData {
       { id: 't2', name: 'Account Management', displayOrder: 1 },
     ],
     subCompetencies: [
-      { id: 's1', name: 'Press Operation', careerTargetId: 't1', careerTargetName: 'Production Operations', displayOrder: 0, weight: null, pinned: true },
-      { id: 's2', name: 'Client Comms', careerTargetId: 't2', careerTargetName: 'Account Management', displayOrder: 0, weight: null, pinned: true },
+      { id: 's1', name: 'Press Operation', careerTargetId: 't1', careerTargetName: 'Production Operations', displayOrder: 0, weight: null, pinned: true, provisional: false },
+      { id: 's2', name: 'Client Comms', careerTargetId: 't2', careerTargetName: 'Account Management', displayOrder: 0, weight: null, pinned: true, provisional: false },
     ],
     cells: [
       // two courses cover s1 under t1, at different depths
