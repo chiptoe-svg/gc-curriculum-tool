@@ -874,7 +874,7 @@ export const careerTargetRequirements = pgTable('career_target_requirements', {
   requiredU: integer('required_u'),
   requiredD: integer('required_d'),
   depthSource: text('depth_source').$type<'onet' | 'employer' | 'faculty'>(),
-  status: text('status').$type<'draft' | 'confirmed'>().notNull().default('draft'),
+  status: text('status').$type<'draft' | 'confirmed' | 'hidden'>().notNull().default('draft'),
   note: text('note'),
   contributingPositionIds: jsonb('contributing_position_ids').$type<string[]>().notNull().default([]),
   displayOrder: integer('display_order').notNull(),
@@ -890,7 +890,28 @@ export const careerTargetRequirements = pgTable('career_target_requirements', {
   check('career_target_requirements_weight_source_check', sql`${t.weightSource} IN ('onet', 'employer', 'faculty')`),
   check('career_target_requirements_depth_source_check', sql`${t.depthSource} IS NULL OR ${t.depthSource} IN ('onet', 'employer', 'faculty')`),
   check('career_target_requirements_depth_check', sql`(${t.requiredK} IS NULL OR ${t.requiredK} BETWEEN 0 AND 5) AND (${t.requiredU} IS NULL OR ${t.requiredU} BETWEEN 0 AND 5) AND (${t.requiredD} IS NULL OR ${t.requiredD} BETWEEN 0 AND 5)`),
-  check('career_target_requirements_status_check', sql`${t.status} IN ('draft', 'confirmed')`),
+  check('career_target_requirements_status_check', sql`${t.status} IN ('draft', 'confirmed', 'hidden')`),
+]);
+
+/**
+ * Which competencies a career target shows (migration 0062; spec
+ * 2026-10-21-p3-membership-from-weights-design.md). Derived: rewritten by
+ * rebuildMembership() from faculty pins/hides and entry effective weights.
+ * The views target_sub_competencies and target_coverage read it.
+ */
+export const careerTargetMembership = pgTable('career_target_membership', {
+  careerTargetId: text('career_target_id').notNull(),
+  competencyId: text('competency_id').notNull(),
+  basis: text('basis').$type<'pinned' | 'weight'>().notNull(),
+  effectiveWeight: real('effective_weight'),
+  displayOrder: integer('display_order').notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => [
+  primaryKey({ name: 'career_target_membership_pkey', columns: [t.careerTargetId, t.competencyId] }),
+  foreignKey({ name: 'career_target_membership_career_target_id_fkey', columns: [t.careerTargetId], foreignColumns: [careerTargets.id] }).onDelete('cascade'),
+  foreignKey({ name: 'career_target_membership_competency_id_fkey', columns: [t.competencyId], foreignColumns: [subCompetencies.id] }).onDelete('cascade'),
+  index('idx_career_target_membership_competency').on(t.competencyId),
+  check('career_target_membership_basis_check', sql`${t.basis} IN ('pinned', 'weight')`),
 ]);
 
 /**
