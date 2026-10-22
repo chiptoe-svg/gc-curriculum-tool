@@ -14,13 +14,19 @@ import { openFlagsForCell } from '@/lib/program/flags';
 import { depthBand, isMentionOnly } from '@/lib/program/depth-band';
 import { reliabilityForModel } from '@/lib/program/reliability-summary';
 import { countScoredPairsForRows, staleSnapshotButtonLabel } from '@/lib/program/stale-pairs';
+import { BAND_FLOORS, BAND_LABELS, MEMBERSHIP_CUTOFF, PINNED_LABEL, bandOf } from '@/lib/catalog/membership';
+import { filterByImportance } from './importance-filter';
 
 interface MatrixData {
   courses: MatrixCourse[];
   targets: Array<{ id: string; name: string; displayOrder: number }>;
   subCompetencies: MatrixSubCompetency[];
   cells: MatrixCoverageCell[];
+  /** Importance-filter rows weighted 0.25–0.49 (getMatrixData); optional so older payloads still render. */
+  belowCutoff?: { subCompetencies: MatrixSubCompetency[]; cells: MatrixCoverageCell[] };
 }
+
+const NO_BELOW_CUTOFF = { subCompetencies: [] as MatrixSubCompetency[], cells: [] as MatrixCoverageCell[] };
 
 interface Props {
   slug: string;
@@ -146,6 +152,8 @@ export function ProgramCoverageClient({ slug, initialData, initialStaleSnapshotC
   const [scoringError, setScoringError] = useState<string | null>(null);
   const [lens, setLens] = useState<Lens>('coverage');
   const [depthDisplay, setDepthDisplay] = useState<DepthDisplay>('bands');
+  // Importance filter (membership addendum): view-only, never writes; starts at the membership cutoff.
+  const [importanceFloor, setImportanceFloor] = useState<number>(MEMBERSHIP_CUTOFF);
   const [flags, setFlags] = useState<AnnotatedFlag[]>(initialFlags);
   const [flagsOpen, setFlagsOpen] = useState(false);
   const [flagDialogOpen, setFlagDialogOpen] = useState(false);
@@ -170,16 +178,17 @@ export function ProgramCoverageClient({ slug, initialData, initialStaleSnapshotC
   // sub-competency. The matrix view drives off this.
   const cellsByKey = useMemo(() => {
     const map = new Map<string, MatrixCoverageCell>();
-    for (const c of data.cells) {
+    for (const c of [...data.cells, ...(data.belowCutoff ?? NO_BELOW_CUTOFF).cells]) {
       map.set(`${c.snapshotId}:${c.careerTargetId}:${c.subCompetencyId}`, c);
     }
     return map;
-  }, [data.cells]);
+  }, [data.cells, data.belowCutoff]);
 
-  const visibleSubs = useMemo(
-    () => data.subCompetencies.filter(s => s.careerTargetId === activeTargetId),
-    [data.subCompetencies, activeTargetId],
-  );
+  const visibleSubs = useMemo(() => {
+    const all = [...data.subCompetencies, ...(importanceFloor < MEMBERSHIP_CUTOFF ? (data.belowCutoff ?? NO_BELOW_CUTOFF).subCompetencies : [])]
+      .filter(s => s.careerTargetId === activeTargetId);
+    return filterByImportance(all, importanceFloor);
+  }, [data.subCompetencies, data.belowCutoff, activeTargetId, importanceFloor]);
 
   // I-2 (hostile-review fix wave): both refresh paths re-fetch the matrix
   // afterward — pull staleSnapshotCount out of that same response so the
@@ -250,6 +259,7 @@ export function ProgramCoverageClient({ slug, initialData, initialStaleSnapshotC
   const psRollup = useMemo(() => {
     const activeTargetRow = data.targets.find(t => t.id === activeTargetId);
     if (!activeTargetRow) return null;
+    // The stored membership, not the importance filter: the rollup does not change with the view.
     const subs = data.subCompetencies.filter(s => s.careerTargetId === activeTargetId);
     let reachedDeep = 0;     // max(U,D) ≥ 4 across any snapshot
     let reachedPracticed = 0; // max(U,D) === 3
@@ -400,7 +410,22 @@ export function ProgramCoverageClient({ slug, initialData, initialStaleSnapshotC
               Exact
             </button>
           </div>
+          <label className="ml-3 flex items-center gap-2 text-xs text-muted-foreground">
+            <span>Show competencies at least</span>
+            <select
+              value={importanceFloor}
+              onChange={e => setImportanceFloor(Number(e.target.value))}
+              className="rounded-md border bg-card px-2 py-1 text-xs text-foreground"
+            >
+              <option value={BAND_FLOORS.somewhat}>{BAND_LABELS.somewhat}</option>
+              <option value={BAND_FLOORS.important}>{BAND_LABELS.important}</option>
+              <option value={BAND_FLOORS.very}>{BAND_LABELS.very}</option>
+            </select>
+          </label>
         </div>
+        <p className="w-full text-xs text-muted-foreground">
+          Pinned competencies always show. Competencies below Important are not scored yet, so their cells may be empty.
+        </p>
         {lens === 'problem-solving' && psRollup && (
           <div className="text-xs text-muted-foreground">
             <span className="font-medium text-foreground">{psRollup.reachedDeep}</span>
@@ -463,6 +488,9 @@ export function ProgramCoverageClient({ slug, initialData, initialStaleSnapshotC
                       title={s.name}
                     >
                       <div className="text-xs leading-tight">{s.name}</div>
+                      <div className="mt-0.5 text-[10px] font-normal leading-tight text-muted-foreground/80">
+                        {(() => { const b = bandOf(s.weight); return b ? BAND_LABELS[b] : s.pinned ? PINNED_LABEL : ''; })()}
+                      </div>
                     </th>
                   ))}
                 </tr>

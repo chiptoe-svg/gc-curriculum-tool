@@ -1,9 +1,11 @@
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { snapshotCompetencyCoverage, targetCoverage, courseCaptureSnapshots, careerTargets, targetSubCompetencies, subCompetencies } from '@/lib/db/schema';
 import { listPairedCodesForCourses } from '@/lib/db/course-codes-queries';
 import { PROGRAM_VISIBLE_SQL } from '@/lib/courses/program-visibility';
 import type { Tx } from '@/lib/db/competency-catalog-queries';
+import { readTargetCompetencyList } from '@/lib/db/membership-queries';
+import { MEMBERSHIP_CUTOFF } from '@/lib/catalog/membership';
 
 export interface CoverageCellRow {
   snapshotId: string;
@@ -98,8 +100,8 @@ export async function getCellsForSnapshotTarget(snapshotId: string, careerTarget
   return rows.map(rowToCell);
 }
 
-export async function getAllCells(): Promise<CoverageCellRow[]> {
-  const rows = await db.select().from(targetCoverage);
+export async function getAllCells(ex: Tx | typeof db = db): Promise<CoverageCellRow[]> {
+  const rows = await ex.select().from(targetCoverage);
   return rows.map(rowToCell);
 }
 
@@ -304,6 +306,10 @@ export interface MatrixSubCompetency {
   careerTargetId: string;
   careerTargetName: string;
   displayOrder: number;
+  /** Entry effective weight for this target (membership addendum), or null. */
+  weight: number | null;
+  /** Faculty pinned it to this target (always shown). */
+  pinned: boolean;
 }
 
 export interface MatrixCoverageCell {
@@ -344,6 +350,14 @@ export interface MatrixData {
   cells: MatrixCoverageCell[];
   /** Course code/title for every snapshot id that can appear in `cells` — see SnapshotCourseInfo. */
   snapshotCourses: SnapshotCourseInfo[];
+  /**
+   * The /program importance filter's extra rows (membership addendum): listed
+   * competencies weighted 0.25–0.49 (not members, not pinned, not hidden) and
+   * their cells, fanned out to that target. Not part of `subCompetencies` /
+   * `cells`, so sufficiency and graph-tools readers see only the membership.
+   * Scoring uses membership, so these cells are usually empty.
+   */
+  belowCutoff: { subCompetencies: MatrixSubCompetency[]; cells: MatrixCoverageCell[] };
 }
 
 /**
@@ -379,11 +393,11 @@ export async function invalidateCoverageForSubCompetency(
  * not returned: every consumer of this payload (matrix, sufficiency, Explore
  * career-fit, wiki graph tools, flags) reads it as the current state.
  */
-export async function getMatrixData(): Promise<MatrixData> {
+export async function getMatrixData(ex: Tx | typeof db = db): Promise<MatrixData> {
   // One row per (course, instructor): the latest non-retired snapshot for
   // each instructor who has captured the course (A8 decision, 2026-06-12 —
   // per-instructor rows surface variance instead of newest-capture-wins).
-  const latestSnapshotsRaw = await db.execute(sql`
+  const latestSnapshotsRaw = await ex.execute(sql`
     SELECT DISTINCT ON (s.course_code, s.instructor_name)
       s.id              AS snapshot_id,
       s.course_code     AS course_code,
@@ -429,11 +443,11 @@ export async function getMatrixData(): Promise<MatrixData> {
     pairedCodes: pairedByCode.get(r.course_code) ?? [],
   }));
 
-  const targets = await db
+  const targets = await ex
     .select({ id: careerTargets.id, name: careerTargets.name, displayOrder: careerTargets.displayOrder })
     .from(careerTargets);
 
-  const subs = await db
+  const subs = await ex
     .select({
       id: targetSubCompetencies.id,
       name: targetSubCompetencies.name,
@@ -444,6 +458,8 @@ export async function getMatrixData(): Promise<MatrixData> {
     .from(targetSubCompetencies);
 
   const targetById = new Map(targets.map(t => [t.id, t]));
+  const listed = await readTargetCompetencyList(ex);
+  const listedBy = new Map(listed.map(r => [`${r.careerTargetId}|${r.competencyId}`, r]));
   const subCompetenciesOut: MatrixSubCompetency[] = subs
     .filter(s => !s.retired)
     .map(s => ({
@@ -452,6 +468,8 @@ export async function getMatrixData(): Promise<MatrixData> {
       careerTargetId: s.careerTargetId,
       careerTargetName: targetById.get(s.careerTargetId)?.name ?? '',
       displayOrder: s.displayOrder,
+      weight: listedBy.get(`${s.careerTargetId}|${s.id}`)?.weight ?? null,
+      pinned: listedBy.get(`${s.careerTargetId}|${s.id}`)?.pinned ?? false,
     }));
 
   const activeSubIds = new Set(subCompetenciesOut.map(s => s.id));
@@ -477,7 +495,7 @@ export async function getMatrixData(): Promise<MatrixData> {
   // `snapshotCourses` below, not in `courses`, or it prints '?' for every
   // cell outside the matrix's own rows (measured on scratch: 88 of 188
   // coverage_for_target entries, 64 off-path + 24 superseded on-path).
-  const programVisibleSnapshotsRaw = await db.execute(sql`
+  const programVisibleSnapshotsRaw = await ex.execute(sql`
     SELECT s.id, s.course_code, c.title
     FROM ${courseCaptureSnapshots} s
     JOIN courses c ON c.code = s.course_code
@@ -490,7 +508,7 @@ export async function getMatrixData(): Promise<MatrixData> {
     courseCode: r.course_code,
     courseTitle: r.title,
   }));
-  const cells = (await getAllCells()).filter(c => activeSubIds.has(c.subCompetencyId) && programVisibleSnapshotIds.has(c.snapshotId));
+  const cells = (await getAllCells(ex)).filter(c => activeSubIds.has(c.subCompetencyId) && programVisibleSnapshotIds.has(c.snapshotId));
 
   return {
     courses: courses.sort((a, b) =>
@@ -517,5 +535,37 @@ export async function getMatrixData(): Promise<MatrixData> {
       model: c.model,
     })),
     snapshotCourses,
+    belowCutoff: await readBelowCutoff(ex, listed, targetById, programVisibleSnapshotIds),
   };
+}
+
+/** MatrixData.belowCutoff: weighted 0.25–0.49 rows per target and their cells (usually none: scoring uses membership). */
+async function readBelowCutoff(
+  ex: Tx | typeof db,
+  listed: Awaited<ReturnType<typeof readTargetCompetencyList>>,
+  targetById: Map<string, { id: string; name: string }>,
+  programVisibleSnapshotIds: Set<string>,
+): Promise<MatrixData['belowCutoff']> {
+  const below = listed.filter(r => !r.member && !r.hidden && !r.pinned && r.weight !== null && r.weight < MEMBERSHIP_CUTOFF);
+  const subs: MatrixSubCompetency[] = below.map((r, i) => ({
+    id: r.competencyId, name: r.name, careerTargetId: r.careerTargetId,
+    careerTargetName: targetById.get(r.careerTargetId)?.name ?? '', displayOrder: 100000 + i, weight: r.weight, pinned: false,
+  }));
+  const ids = [...new Set(below.map(r => r.competencyId))];
+  if (ids.length === 0) return { subCompetencies: subs, cells: [] };
+  const rows = (await ex.select().from(snapshotCompetencyCoverage).where(inArray(snapshotCompetencyCoverage.competencyId, ids)))
+    .filter(r => programVisibleSnapshotIds.has(r.snapshotId));
+  const cells: MatrixCoverageCell[] = [];
+  for (const s of subs) {
+    for (const r of rows) {
+      if (r.competencyId !== s.id) continue;
+      cells.push({
+        snapshotId: r.snapshotId, careerTargetId: s.careerTargetId, subCompetencyId: r.competencyId,
+        kDepth: r.kDepth, uDepth: r.uDepth, dDepth: r.dDepth, matchedCompetency: r.matchedCompetency,
+        evidenceExcerpt: r.evidenceExcerpt, confidence: r.confidence as MatrixCoverageCell['confidence'],
+        rationale: r.rationale, model: r.model,
+      });
+    }
+  }
+  return { subCompetencies: subs, cells };
 }

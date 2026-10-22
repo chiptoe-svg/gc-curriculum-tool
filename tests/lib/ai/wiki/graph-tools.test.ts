@@ -36,8 +36,8 @@ function fixture(): MatrixData {
       { id: 't2', name: 'Account Management', displayOrder: 1 },
     ],
     subCompetencies: [
-      { id: 's1', name: 'Press Operation', careerTargetId: 't1', careerTargetName: 'Production Operations', displayOrder: 0 },
-      { id: 's2', name: 'Client Comms', careerTargetId: 't2', careerTargetName: 'Account Management', displayOrder: 0 },
+      { id: 's1', name: 'Press Operation', careerTargetId: 't1', careerTargetName: 'Production Operations', displayOrder: 0, weight: null, pinned: true },
+      { id: 's2', name: 'Client Comms', careerTargetId: 't2', careerTargetName: 'Account Management', displayOrder: 0, weight: null, pinned: true },
     ],
     cells: [
       // two courses cover s1 under t1, at different depths
@@ -57,6 +57,7 @@ function fixture(): MatrixData {
       { snapshotId: 'snap-b', courseCode: 'GC 4400', courseTitle: 'Capstone' },
       { snapshotId: 'snap-c', courseCode: 'GC 3700', courseTitle: 'Off-Path Course' },
     ],
+    belowCutoff: { subCompetencies: [], cells: [] },
   };
 }
 

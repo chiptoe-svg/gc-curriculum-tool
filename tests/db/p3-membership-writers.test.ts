@@ -91,4 +91,20 @@ describe.skipIf(!isP2ScratchDb())('membership writers (scratch)', () => {
       ]);
     });
   });
+
+  it('getMatrixData marks weights and pins, and lists 0.25–0.49 competencies under belowCutoff with no cells', async () => {
+    await inRolledBackTx(async (tx) => {
+      await seed(tx);
+      await tx.execute(sql`INSERT INTO sub_competencies (id, name, know_descriptor, understand_descriptor, do_descriptor, origin) VALUES ('p3m-c', 'C', 'k', 'u', 'd', 'gc_authored')`);
+      await tx.execute(sql`INSERT INTO career_target_requirements (career_target_id, competency_id, horizon, weight_source, weight, status, display_order) VALUES (${T}, 'p3m-c', 'entry', 'onet', 0.3, 'draft', 0)`);
+      const { getMatrixData } = await import('@/lib/db/program-coverage-queries');
+      const d = await getMatrixData(tx);
+      const mine = d.subCompetencies.filter(x => x.careerTargetId === T).map(x => [x.id, x.pinned, x.weight]);
+      expect(mine.map(r => [r[0], r[1]])).toEqual([['p3m-a', true], ['p3m-b', false]]);
+      expect(mine[0]![2]).toBeNull();
+      expect(mine[1]![2]).toBeCloseTo(0.9);
+      expect(d.belowCutoff.subCompetencies.filter(x => x.careerTargetId === T).map(x => x.id)).toEqual(['p3m-c']);
+      expect(d.belowCutoff.cells.filter(c => c.careerTargetId === T)).toEqual([]);
+    });
+  });
 });
