@@ -236,7 +236,7 @@
   <p class="doc-subtitle">What the tool does, why it was designed the way it was, and what that means for how far its results can be trusted: the scoring framework, how courses and careers are measured on the same scale, how the AI builds each course record, the equipment that runs it, and which of the framework's rules the software actually checks.</p>
   <div class="doc-meta">
     <span><strong>Audience</strong> Faculty, department leadership, reviewers and accreditors; technical notes for future maintainers</span>
-    <span><strong>Last updated</strong> 2026-10-21</span>
+    <span><strong>Last updated</strong> 2026-10-22</span>
   </div>
 </header>
 
@@ -445,6 +445,16 @@
 
   <p>A target <strong>shows</strong> a competency when faculty pinned it there, or when its weight for that target is at least 0.5 (important), unless faculty hid it. That list drives the program views, the coverage totals and scoring. People reading weights see more: the <code>/program</code> page has a filter ("show competencies at least somewhat / important / very important"), and the wiki's career-target pages list every competency that is at least somewhat important, grouped by importance with the reason beside each. Faculty pin, hide or reset competencies per target on <code>/admin/membership</code>. Every change to these lists runs one at a time, so a removal can never be undone by an update running at the same moment.</p>
   <p><span class="incode">In the code: <code>lib/catalog/career-weights.ts</code> (weights, which source wins); <code>lib/catalog/membership.ts</code> (the rule and the bands); <code>lib/db/membership-queries.ts</code> (rebuilds <code>career_target_membership</code> under a database lock); <code>scripts/catalog/recompute-career-weights.ts</code> (O*NET and employer weights, rerun after bundle reviews, blind checks and employer submissions); <code>scripts/catalog/import-ai-weights.ts</code> (loads the AI draft); <code>/admin/membership</code>. Required K/U/D depths per target are not filled yet. Full mechanics: <a href="./competency-catalog-deep-dive.html">How the Competency Catalog Works</a>.</span></p>
+
+  <h3>From a course project to O*NET</h3>
+
+  <p>The wiki shows how a concrete course project connects to careers. Each course page has a section, "How the projects connect": for each signature project, the course's own skills it develops; for each skill, the catalog competency it feeds, with its K/U/D depth; and the O*NET items in that competency's bundle closest in meaning to the skill. Each competency page has the reverse view, "Where students build this". Three links make up the trail:</p>
+  <ul>
+    <li><strong>Project → course skill</strong> comes straight from CourseCapture, which records the skills each project develops.</li>
+    <li><strong>Course skill → catalog competency</strong> is the coverage scorer's existing match, used as it stands. A match at depth 0, or one the scorer itself rated low confidence, is not shown as a link; the skill reads "not yet linked to a catalog competency", which also points to skills the catalog may be missing.</li>
+    <li><strong>Course skill → O*NET items</strong> compares the meaning of the skill with each core or related item in that competency's bundle (text embeddings, no AI judgment) and shows the closest items above a similarity floor of 0.55, set from real pairs. Items faculty have not reviewed are labeled provisional.</li>
+  </ul>
+  <p><span class="incode">In the code: <code>lib/catalog/project-trail.ts</code> (the joins and the nearest items); <code>lib/db/project-trail-queries.ts</code>; course statements embedded as <code>item_embeddings</code> kind <code>course_skill</code> (<code>scripts/catalog/embed-items.ts</code>); <code>scripts/catalog/project-trail-report.ts</code> (similarity report). Wiki pages can be written outside the app and committed through the same checks (<code>WIKI_HANDOFF_DIR</code>, <code>scripts/wiki/handoff-check.ts</code>); the October 2026 refresh was written that way.</span></p>
 
   <h3>Where the two sides meet</h3>
 
