@@ -10,7 +10,7 @@ import type { RecomputeReport } from '@/lib/db/career-weight-queries';
 const report: RecomputeReport = {
   onetUpserted: 3, onetDeleted: 1, employerUpserted: 0, employerDeleted: 0, pairs: 3,
   byTarget: [{ targetId: 't1', horizon: 'entry', members: 3, withOnet: 2, onetMin: 0.4, onetMedian: 0.5, onetMax: 0.9 }],
-  nonMemberCandidates: [{ targetId: 't1', horizon: 'entry', competencyId: 'c9', onet: 0.8 }],
+  membershipChanges: [{ careerTargetId: 't1', competencyId: 'c1', change: 'entered', from: null, to: 'very' }],
 };
 
 describe('recompute-career-weights CLI', () => {
@@ -31,9 +31,9 @@ describe('recompute-career-weights CLI', () => {
     expect(recompute).toHaveBeenCalledWith('TX', { apply: true });
   });
 
-  it('the report lists per-target spread, members without an O*NET weight, and non-member candidates', () => {
+  it('the report lists per-target spread, and membership and band changes', () => {
     const text = formatReport(report);
     expect(text).toMatch(/t1 entry: 3 members, 2 with an O\*NET weight, min 0\.40 median 0\.50 max 0\.90/);
-    expect(text).toMatch(/not members.*c9 \(t1 entry, 0\.80\)/s);
+    expect(text).toContain('  t1: c1 entered (- -> very)');
   });
 });

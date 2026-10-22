@@ -38,6 +38,7 @@ async function seed(tx: Executor): Promise<void> {
     (${REL}, ${SOC_A}, 'work_activities', '9.Z.1', 'E1', 'IM', 5, false, false, '08/2026', 't'),
     (${REL}, ${SOC_B}, 'work_activities', '9.Z.1', 'E1', 'IM', 3, false, false, '08/2026', 't'),
     (${REL}, ${SOC_A}, 'work_activities', '9.Z.2', 'E2', 'IM', 2, false, false, '08/2026', 't')`);
+  await tx.execute(sql`INSERT INTO career_target_membership (career_target_id, competency_id, basis, effective_weight, display_order) VALUES (${T}, 'p3w-c1', 'pinned', NULL, 1)`);
 }
 
 async function addMember(tx: Executor, bundle: string, elementId: string, position: string, status: 'proposed' | 'confirmed'): Promise<void> {
@@ -55,7 +56,7 @@ async function rowsFor(tx: Executor, competencyId: string) {
 }
 
 describe.skipIf(!RUN)('P3 career weights (scratch DB only)', () => {
-  it('writes an onet row from confirmed core items only, for member pairs only', async () => {
+  it('writes an onet row from confirmed core items only', async () => {
     await inRolledBackTx(async (tx) => {
       await seed(tx);
       await addMember(tx, 'p3w-c1', '9.Z.1', 'core', 'confirmed');
@@ -65,10 +66,10 @@ describe.skipIf(!RUN)('P3 career weights (scratch DB only)', () => {
       const c1 = await rowsFor(tx, 'p3w-c1');
       const onetEntry = c1.find(r => r.weightSource === 'onet' && r.horizon === 'entry')!;
       expect(onetEntry.weight).toBeCloseTo(0.75 * 1 + 0.25 * 0.5);
-      expect(onetEntry.displayOrder).toBe(1);
+      expect(onetEntry.displayOrder).toBe(0); // derived rows carry no order; career_target_membership owns it
+      expect((await tx.execute(sql`SELECT display_order FROM career_target_membership WHERE career_target_id = ${T} AND competency_id = 'p3w-c1'`)).rows).toEqual([{ display_order: 1 }]);
       expect(c1.find(r => r.weightSource === 'onet' && r.horizon === 'growth')!.weight).toBeCloseTo(1);
-      expect(await rowsFor(tx, 'p3w-c2')).toHaveLength(0); // not a member: no rows, membership unchanged
-      expect(report.nonMemberCandidates.some(c => c.targetId === T && c.competencyId === 'p3w-c2')).toBe(true);
+      expect(report.onetUpserted).toBeGreaterThan(0);
     });
   });
 
@@ -136,6 +137,52 @@ describe.skipIf(!RUN)('P3 career weights (scratch DB only)', () => {
       const { readBundleDetail } = await import('@/lib/db/bundle-queries');
       const d = await readBundleDetail('p3w-c1', tx);
       expect(d?.members?.find(m => m.externalId === '9.Z.1')?.importance).toBe(5);
+    });
+  });
+
+  it('writes onet rows for non-member pairs too, without making them members below the cutoff', async () => {
+    await inRolledBackTx(async (tx) => {
+      await seed(tx);
+      // c2: core element 9.Z.2 (IM 2 in A, none in B) → onet = 0.75 × 0.25 = 0.1875, below the cutoff.
+      await addMember(tx, 'p3w-c2', '9.Z.2', 'core', 'confirmed');
+      await recomputeCareerWeights(tx, { apply: true });
+      const c2 = await rowsFor(tx, 'p3w-c2');
+      expect(c2.find(r => r.weightSource === 'onet' && r.horizon === 'entry')!.weight).toBeCloseTo(0.1875);
+      const m = (await tx.execute(sql`SELECT competency_id FROM career_target_membership WHERE career_target_id = ${T} ORDER BY 1`)).rows;
+      expect(m).toEqual([{ competency_id: 'p3w-c1' }]); // c1 is pinned (faculty row); c2 is below 0.5
+    });
+  });
+
+  it('a non-pinned competency at or above the cutoff becomes a weight-based member', async () => {
+    await inRolledBackTx(async (tx) => {
+      await seed(tx);
+      await addMember(tx, 'p3w-c2', '9.Z.1', 'core', 'confirmed'); // onet entry = 0.875
+      const report = await recomputeCareerWeights(tx, { apply: true });
+      const m = (await tx.execute(sql`SELECT competency_id, basis, display_order FROM career_target_membership WHERE career_target_id = ${T} ORDER BY display_order`)).rows;
+      expect(m).toEqual([{ competency_id: 'p3w-c1', basis: 'pinned', display_order: 1 }, { competency_id: 'p3w-c2', basis: 'weight', display_order: 2 }]);
+      expect(report.membershipChanges).toContainEqual({ careerTargetId: T, competencyId: 'p3w-c2', change: 'entered', from: null, to: 'very' });
+    });
+  });
+
+  it('a hidden faculty row keeps a high-weight competency out', async () => {
+    await inRolledBackTx(async (tx) => {
+      await seed(tx);
+      await addMember(tx, 'p3w-c2', '9.Z.1', 'core', 'confirmed');
+      await tx.execute(sql`INSERT INTO career_target_requirements (career_target_id, competency_id, horizon, weight_source, status, display_order) VALUES (${T}, 'p3w-c2', 'entry', 'faculty', 'hidden', 0)`);
+      await recomputeCareerWeights(tx, { apply: true });
+      const m = (await tx.execute(sql`SELECT competency_id FROM career_target_membership WHERE career_target_id = ${T} ORDER BY 1`)).rows;
+      expect(m).toEqual([{ competency_id: 'p3w-c1' }]);
+    });
+  });
+
+  it('a dry run writes neither weights nor membership', async () => {
+    await inRolledBackTx(async (tx) => {
+      await seed(tx);
+      await addMember(tx, 'p3w-c2', '9.Z.1', 'core', 'confirmed');
+      const before = (await tx.execute(sql`SELECT count(*)::int AS n FROM career_target_membership`)).rows[0];
+      const report = await recomputeCareerWeights(tx, { apply: false });
+      expect(report.membershipChanges.some(c => c.competencyId === 'p3w-c2')).toBe(true);
+      expect((await tx.execute(sql`SELECT count(*)::int AS n FROM career_target_membership`)).rows[0]).toEqual(before);
     });
   });
 });
