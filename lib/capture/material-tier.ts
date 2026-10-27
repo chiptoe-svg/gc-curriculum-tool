@@ -88,22 +88,23 @@ function isSlideFile(sig: FileSignals): boolean {
 const CLASSIFY_JSON_SCHEMA = {
   type: 'object',
   properties: {
-    tier: { type: 'string', enum: ['middle', 'background'] },
+    tier: { type: 'string', enum: ['high', 'middle', 'background'] },
   },
   required: ['tier'],
   additionalProperties: false,
 };
 
-function validateClassifyResult(raw: unknown): { tier: 'middle' | 'background' } {
+function validateClassifyResult(raw: unknown): { tier: Tier } {
   const r = raw as { tier?: unknown };
-  return { tier: r.tier === 'middle' ? 'middle' : 'background' };
+  return { tier: r.tier === 'high' || r.tier === 'middle' ? r.tier : 'background' };
 }
 
 /**
  * Classifies a file-bucket material into a tier.
  *
  * - Slide decks (PPTX/PPT/Keynote, or any file with slideCount) → middle, no LLM.
- * - All other files → 'material-classify' LLM call → 'middle' | 'background'.
+ * - All other files → 'material-classify' LLM call → 'high' (graded or assessed
+ *   material: briefs, rubrics, student work) | 'middle' | 'background'.
  * - Any error (LLM unavailable, unexpected output) → 'background' (bias cheap).
  */
 export async function classifyFile(sig: FileSignals): Promise<Tier> {
@@ -124,10 +125,10 @@ export async function classifyFile(sig: FileSignals): Promise<Tier> {
     if (sig.peekText) {
       userLines.push('', 'peek_text (first ~500 chars):', sig.peekText.slice(0, 500));
     }
-    userLines.push('', 'Return JSON: {"tier":"middle"|"background"}');
+    userLines.push('', 'Return JSON: {"tier":"high"|"middle"|"background"}');
 
     const provider = await getProviderForFunction('material-classify');
-    const { data } = await provider.complete<{ tier: 'middle' | 'background' }>({
+    const { data } = await provider.complete<{ tier: Tier }>({
       systemPrompt,
       userMessage: userLines.join('\n'),
       schemaName: 'material_classify',

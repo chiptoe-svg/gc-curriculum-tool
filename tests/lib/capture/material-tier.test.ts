@@ -56,6 +56,18 @@ describe('classifyFile', () => {
     ).toBe('middle');
   });
 
+  // 2026-10-27: rubrics and assignment briefs uploaded as files could only be
+  // middle or background, so they were never read in full (GC 3700, MKT 3310).
+  it('graded file (rubric, assignment brief) → high via LLM', async () => {
+    const p = stub('high');
+    vi.mocked(getProviderForFunction).mockResolvedValueOnce(p as never);
+    expect(
+      await classifyFile({ fileName: 'Final_Brand Playbook_Rubric_sp 26.pdf', mimeType: 'application/pdf', sizeBytes: 9 }),
+    ).toBe('high');
+    const schema = (p.complete.mock.calls[0]![0] as unknown as { jsonSchema: { properties: { tier: { enum: string[] } } } }).jsonSchema;
+    expect(schema.properties.tier.enum).toEqual(['high', 'middle', 'background']);
+  });
+
   it('LLM error → background (bias cheap)', async () => {
     vi.mocked(getProviderForFunction).mockResolvedValueOnce({
       name: 'f',
