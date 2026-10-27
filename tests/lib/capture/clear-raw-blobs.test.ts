@@ -38,6 +38,7 @@ function makeMaterial(overrides: Record<string, unknown>) {
     mimeType: 'application/pdf',
     sizeBytes: 102400,
     rawCleared: false,
+    indexingStatus: 'ready',
     extractedText: 'Some text content here',
     digest: 'abc123',
     ...overrides,
@@ -129,5 +130,39 @@ describe('clearRawBlobsForCourse', () => {
     expect(setMaterialRawCleared).toHaveBeenCalledWith('mat-x');
     // Verify we never called any other update function
     expect(setMaterialRawCleared).toHaveBeenCalledTimes(1);
+  });
+
+  // A file is deleted only once it has been read (2026-10-27: two GC 4400
+  // uploads still waiting for Ingest were deleted at approval and lost).
+  it.each(['pending', 'queued', 'indexing', 'failed'])('keeps the file of a material whose indexing is %s', async (indexingStatus) => {
+    listMaterialsByCourse.mockResolvedValue([makeMaterial({ id: 'mat-unread', indexingStatus })]);
+    keyFromLocalUrl.mockReturnValue('gc-4400/photo-book.docx');
+
+    const result = await clearRawBlobsForCourse('GC 4400');
+
+    expect(deleteLocal).not.toHaveBeenCalled();
+    expect(setMaterialRawCleared).not.toHaveBeenCalled();
+    expect(result).toEqual({ cleared: 0 });
+  });
+
+  it('deletes the file of a material that was read and set aside (skipped)', async () => {
+    listMaterialsByCourse.mockResolvedValue([makeMaterial({ id: 'mat-skipped', indexingStatus: 'skipped' })]);
+    keyFromLocalUrl.mockReturnValue('gc-4400/roster.pdf');
+    deleteLocal.mockResolvedValue(undefined);
+
+    const result = await clearRawBlobsForCourse('GC 4400');
+
+    expect(deleteLocal).toHaveBeenCalledWith('gc-4400/roster.pdf');
+    expect(result).toEqual({ cleared: 1 });
+  });
+
+  it('keeps the file of a skipped material that stored no text (nothing was read)', async () => {
+    listMaterialsByCourse.mockResolvedValue([makeMaterial({ id: 'mat-image', indexingStatus: 'skipped', extractedText: '  ' })]);
+    keyFromLocalUrl.mockReturnValue('gc-4400/scan.pdf');
+
+    const result = await clearRawBlobsForCourse('GC 4400');
+
+    expect(deleteLocal).not.toHaveBeenCalled();
+    expect(result).toEqual({ cleared: 0 });
   });
 });

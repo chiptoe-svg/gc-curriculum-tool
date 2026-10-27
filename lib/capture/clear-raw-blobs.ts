@@ -6,6 +6,9 @@
  * refs (Canvas HTML rows, YouTube, Google Docs, etc.) are skipped because
  * they have no local file to delete.
  *
+ * Only materials that have been read are cleared; a file still waiting or
+ * failed stays on disk and is cleared at a later approval once it is read.
+ *
  * Best-effort: a missing or unwritable file must not throw. The durable
  * record (extractedText, digest, Weaviate vectors) is never touched — only
  * raw_cleared is set to true.
@@ -14,6 +17,8 @@
 import { listMaterialsByCourse, setMaterialRawCleared } from '@/lib/db/course-materials-queries';
 import { keyFromLocalUrl, deleteLocal } from '@/lib/storage/local-storage';
 
+const READ_STATUSES = new Set(['ready', 'skipped']);
+
 export async function clearRawBlobsForCourse(courseCode: string): Promise<{ cleared: number }> {
   const materials = await listMaterialsByCourse(courseCode);
   let cleared = 0;
@@ -21,6 +26,14 @@ export async function clearRawBlobsForCourse(courseCode: string): Promise<{ clea
   for (const material of materials) {
     // Skip already-cleared materials
     if (material.rawCleared) continue;
+
+    // Keep the file until it has been read: 'ready' (indexed) or 'skipped'
+    // (read, then set aside or too little text) with some text stored.
+    // Pending, queued, in-progress and failed files, and files that yielded
+    // no text, are the only copy for a retry (2026-10-27: two GC 4400 uploads
+    // still waiting for Ingest were deleted at approval and lost).
+    if (!READ_STATUSES.has(material.indexingStatus)) continue;
+    if (!material.extractedText?.trim()) continue;
 
     // Skip remote refs — nothing to delete locally
     const key = keyFromLocalUrl(material.blobUrl);
