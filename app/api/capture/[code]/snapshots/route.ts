@@ -17,6 +17,7 @@ import { resolveScopedSession, authorizeCourseWrite } from '@/lib/sandbox/access
 import { isTriageEnabled } from '@/lib/capture/triage-flag';
 import { clearRawBlobsForCourse } from '@/lib/capture/clear-raw-blobs';
 import { prereqCodesFor } from '@/lib/curriculum/prereq-map';
+import { resolveModelForFunction } from '@/lib/ai/function-settings';
 
 interface RouteContext { params: Promise<{ code: string }> }
 
@@ -121,7 +122,8 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     // Freeze the current draft's reviewerNote into the snapshot. Wiki-readiness:
     // departmental-context narrative survives in the immutable record.
     reviewerNote: draft.reviewerNote ?? null,
-    model: process.env.OPENAI_MODEL?.trim() || 'gpt-4o',
+    // The model the profile function (capture-scores) runs on now.
+    model: await resolveModelForFunction('capture-scores'),
     instructorName: scopedForName?.instructorName ?? sessionInstructor,
     // Link the v2 audit session that produced this draft so the wiki raw layer
     // can render the transcript. Null when no v2 session exists (genuine v1).

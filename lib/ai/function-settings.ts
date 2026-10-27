@@ -14,6 +14,7 @@
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { aiFunctionSettings } from '@/lib/db/schema';
+import { TIER_TO_MODEL } from '@/lib/ai/models';
 
 export const AI_FUNCTION_IDS = [
   'capture-chat',
@@ -44,25 +45,19 @@ export const AI_FUNCTION_IDS = [
   'objective-evidence-guide',
   'bundle-card-draft',
   'bundle-map-onet',
+  'kud-chat',
 ] as const;
 export type AIFunctionId = (typeof AI_FUNCTION_IDS)[number];
 
 export type ModelTier = 'light' | 'default' | 'heavy' | 'custom';
 
 /**
- * Tier → model mapping. The single place to change when a new generation
- * model ships and you want everyone on the 'default' tier to move forward.
+ * Tier → model mapping lives in the model registry, lib/ai/models.ts — the
+ * single place to change when a new model ships.
  *
  * 'custom' tier ignores this map and uses the customModel column instead.
  */
-export const TIER_TO_MODEL: Record<Exclude<ModelTier, 'custom'>, string> = {
-  light: 'gpt-5.4-mini',
-  // Owner decision 2026-10-06: default and heavy move to gpt-6.1-sol (low
-  // reasoning effort, set in lib/ai/openai.ts). See
-  // docs/superpowers/audits/2026-10-05-model-evaluation.md.
-  default: 'gpt-6.1-sol',
-  heavy: 'gpt-6.1-sol',
-};
+export { TIER_TO_MODEL };
 
 /**
  * Default tier per function. The starting point a fresh deployment uses
@@ -201,6 +196,9 @@ export const DEFAULT_TIERS: Record<AIFunctionId, Exclude<ModelTier, 'custom'>> =
   // the placements feed P3 weights once confirmed, and the blind golden
   // sample measures exactly this judgment.
   'bundle-map-onet': 'heavy',
+  // Default tier (2026-10-27). Free-form chat about a course's KUDs; was the
+  // last call reading its model from the OPENAI_MODEL env var.
+  'kud-chat': 'default',
 };
 
 export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
@@ -232,6 +230,7 @@ export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
   'objective-evidence-guide': 'Objective assessment guide (wiki course page)',
   'bundle-card-draft': 'Bundle card drafting',
   'bundle-map-onet': 'Bundle placement (O*NET)',
+  'kud-chat': 'Course KUD chat',
 };
 
 export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
@@ -263,6 +262,7 @@ export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
   'objective-evidence-guide': 'Writes the per-course guide on the public wiki page: each syllabus objective quoted verbatim, which Canvas assignments and rubric rows measure it, and what class-level numbers to gather at the end of the semester. Runs after each snapshot; names not found in Canvas are dropped by a deterministic check.',
   'bundle-card-draft': "Drafting each catalog bundle's card (what it includes and excludes, how it differs from neighbors, examples) for owner approval.",
   'bundle-map-onet': 'Placing O*NET elements and task statements into catalog bundles as core, related or fringe members, for review on /admin/bundles.',
+  'kud-chat': "Replies in the chat about a course's KUDs (the kuds/chat route).",
 };
 
 interface CachedSetting {

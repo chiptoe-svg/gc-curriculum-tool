@@ -109,6 +109,7 @@ import { LocalProvider } from './local';
 import { CampusProvider } from './campus';
 import { resolveModelForFunction, type AIFunctionId } from './function-settings';
 import { visionModel, DEFAULT_LOCAL_VISION_MODEL } from './vision-models';
+import { TIER_TO_MODEL } from './models';
 
 export interface GetProviderOptions {
   /** When set, the provider uses the model assigned to this function via
@@ -160,7 +161,7 @@ function buildProvider(modelOverride: string | undefined, reasoningEffort?: stri
   if (which === 'openai') {
     const key = process.env.OPENAI_API_KEY?.trim();
     if (!key) throw new Error('OPENAI_API_KEY not set');
-    const model = modelOverride ?? process.env.OPENAI_MODEL?.trim() ?? 'gpt-5.4';
+    const model = modelOverride ?? TIER_TO_MODEL.default;
     return new OpenAIProvider(model, key, reasoningEffort);
   }
   if (which === 'anthropic') {

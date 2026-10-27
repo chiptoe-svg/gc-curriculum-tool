@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { openAIBaseURL } from './openai-base-url';
+import { MODEL_PRICING, FALLBACK_PRICING, DEFAULT_REASONING_EFFORT, usesResponsesApi } from './models';
 import type { AIProvider, CompletionTelemetry, TranscribeDocumentArgs, TranscribeDocumentResult } from './provider';
 // v6 Vercel AI SDK: structured output with tools uses generateText + Output.object, not generateObject.
 // tool() in v6 uses `inputSchema` (not `parameters`), matching our ToolDefinition shape directly.
@@ -9,30 +10,6 @@ import { openai as aiOpenai } from '@ai-sdk/openai';
 import type { ToolDefinition, Message, CompleteWithToolsResult, ToolCall, StreamEvent } from './tool-use-types';
 import { renderToolDescription } from './tool-use-types';
 import { AiCreditsExhaustedError, isCreditsExhaustedError, markCreditsExhausted, markCreditsOk } from './credit-status';
-
-// Per-model pricing in USD per 1M tokens. Update from
-// https://developers.openai.com/api/docs/pricing when adding models.
-const MODEL_PRICING: Record<string, { input: number; output: number }> = {
-  // GPT-6 / 5.6 families, published standard rates as of 2026-10-05 (gateway
-  // markup, if any, unverified). Without these, unpriced models fell back to
-  // gpt-5.4 rates and the daily-cost ledger under-counted (Astra ~4×).
-  'gpt-6-astra': { input: 10.0, output: 50.0 },
-  'gpt-6.1-sol': { input: 2.0, output: 10.0 },
-  'gpt-6-sol': { input: 2.0, output: 10.0 },
-  'gpt-6-luna': { input: 0.1, output: 0.5 },
-  'gpt-5.6-sol': { input: 4.0, output: 20.0 },
-  'gpt-5.6-terra': { input: 2.0, output: 12.0 },
-  'gpt-5.6-luna': { input: 0.2, output: 1.2 },
-  'gpt-5.5': { input: 5.0, output: 30.0 },
-  'gpt-5.4': { input: 2.5, output: 15.0 },
-  'gpt-5.4-mini': { input: 0.75, output: 4.5 },
-  'gpt-5.4-nano': { input: 0.2, output: 1.25 },
-  // Legacy fallbacks if these names still resolve on the API:
-  'gpt-4.1': { input: 2.5, output: 10.0 },
-  'gpt-4o': { input: 2.5, output: 10.0 },
-};
-
-const FALLBACK_PRICING = { input: 2.5, output: 15.0 };  // assume workhorse
 
 function toCents(usd: number): number {
   return Math.ceil(usd * 100 * 100); // 1/100 of a cent
@@ -54,14 +31,6 @@ export function estimateCostCents(model: string, promptTokens: number, completio
 export const OPENAI_TIMEOUT_MS = 5 * 60_000;
 export const OPENAI_MAX_RETRIES = 1;
 
-/**
- * Reasoning effort a model runs at when the caller sets none. Owner decision
- * 2026-10-06: gpt-6.1-sol runs at low (the 2026-10-05 evaluation and blind
- * evidence check: as consistent as medium/high, closest to the evidence,
- * cheapest). Models not listed get no reasoning_effort, so their requests
- * are unchanged.
- */
-const DEFAULT_REASONING_EFFORT: Record<string, string> = { 'gpt-6.1-sol': 'low' };
 
 export function effectiveReasoningEffort(model: string, explicit: string | undefined): string | undefined {
   return explicit ?? process.env.OPENAI_REASONING_EFFORT?.trim() ?? DEFAULT_REASONING_EFFORT[model];
@@ -75,7 +44,7 @@ export function effectiveReasoningEffort(model: string, explicit: string | undef
  * untouched.
  */
 function toolUseModelConfig(model: string, effort: string | undefined) {
-  if (/^gpt-6/.test(model)) {
+  if (usesResponsesApi(model)) {
     return {
       model: aiOpenai.responses(model),
       providerOptions: {

@@ -2,6 +2,8 @@ import OpenAI from 'openai';
 import { openAIBaseURL } from '../openai-base-url';
 import { AiCreditsExhaustedError, isCreditsExhaustedError, markCreditsExhausted } from '@/lib/ai/credit-status';
 import { loadPrompt } from '@/lib/ai/prompts/load';
+import { resolveModelForFunction } from '@/lib/ai/function-settings';
+import { effectiveReasoningEffort } from '@/lib/ai/openai';
 
 export interface KudChatProfile {
   title: string;
@@ -75,7 +77,8 @@ export async function kudChatTurn(
   if (!apiKey) throw new Error('OPENAI_API_KEY not set');
   const client = new OpenAI({ apiKey, baseURL: openAIBaseURL() });
 
-  const model = process.env.OPENAI_MODEL?.trim() || 'gpt-4o';
+  const model = await resolveModelForFunction('kud-chat');
+  const effort = effectiveReasoningEffort(model, undefined);
 
   const systemPrompt = await loadPrompt('kud-chat');
 
@@ -90,7 +93,9 @@ export async function kudChatTurn(
   try {
     response = await client.chat.completions.create({
       model,
-      max_completion_tokens: 1024,
+      ...(effort ? { reasoning_effort: effort as 'low' | 'medium' | 'high' } : {}),
+      // Room for reasoning tokens as well as the reply (gpt-6* models reason).
+      max_completion_tokens: 4096,
       messages: openaiMessages,
     });
   } catch (err) {
