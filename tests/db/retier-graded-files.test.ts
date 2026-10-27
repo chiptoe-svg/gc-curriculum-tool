@@ -28,9 +28,10 @@ describe.skipIf(!isP2ScratchDb())('retier-graded-files (scratch)', () => {
         { ...base, fileName: 'fx-ignored-brief.pdf', ignored: true },                // set aside
         { ...base, fileName: 'fx-retired-brief.pdf', retiredAt: new Date() },
         { ...base, fileName: 'fx-notext-brief.pdf', extractedText: null, indexingStatus: 'failed' },
+        { ...base, fileName: 'fx-student_late_123_brief.png' },                        // skipped by name
       ]).returning({ id: courseMaterials.id });
       ids = rows.map(r => r.id);
-      plan = (await planRetier(tx, classify)).filter(p => ids.includes(p.id));
+      plan = (await planRetier(tx, classify, ['_late_123_'])).filter(p => ids.includes(p.id));
       await applyRetier(tx, plan);
       after = await tx.select({ fileName: courseMaterials.fileName, tier: courseMaterials.tier, indexingStatus: courseMaterials.indexingStatus })
         .from(courseMaterials).where(inArray(courseMaterials.id, ids));

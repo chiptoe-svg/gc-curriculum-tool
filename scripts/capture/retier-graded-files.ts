@@ -14,7 +14,7 @@
  *
  * Usage (DATABASE_URL from .env.local; never printed):
  *   node node_modules/.pnpm/tsx@4.22.0/node_modules/tsx/dist/cli.mjs \
- *     scripts/capture/retier-graded-files.ts --expect-db gc_curriculum [--apply]   # default: dry run
+ *     scripts/capture/retier-graded-files.ts --expect-db gc_curriculum [--skip <name part>]... [--apply]   # default: dry run
  *
  * Exit codes: 0 ok, 1 wrong DB, 2 usage, 4 apply failed.
  */
@@ -30,7 +30,8 @@ type Classify = (sig: { fileName: string; mimeType: string; sizeBytes: number; p
 
 export interface RetierRow { id: string; courseCode: string; fileName: string }
 
-export async function planRetier(ex: Executor, classify: Classify = classifyFile): Promise<RetierRow[]> {
+/** `skip`: leave out files whose name contains any of these strings (e.g. a student's own submission). */
+export async function planRetier(ex: Executor, classify: Classify = classifyFile, skip: string[] = []): Promise<RetierRow[]> {
   const rows = await ex.select({
     id: courseMaterials.id, courseCode: courseMaterials.courseCode, fileName: courseMaterials.fileName,
     mimeType: courseMaterials.mimeType, sizeBytes: courseMaterials.sizeBytes, pageCount: courseMaterials.pageCount,
@@ -47,6 +48,7 @@ export async function planRetier(ex: Executor, classify: Classify = classifyFile
     .orderBy(courseMaterials.courseCode, courseMaterials.fileName);
   const plan: RetierRow[] = [];
   for (const r of rows) {
+    if (skip.some(s => r.fileName.includes(s))) continue;
     const tier = await classify({ fileName: r.fileName, mimeType: r.mimeType, sizeBytes: r.sizeBytes, pageCount: r.pageCount ?? undefined, peekText: r.peek });
     if (tier === 'high') plan.push({ id: r.id, courseCode: r.courseCode, fileName: r.fileName });
   }
@@ -66,7 +68,9 @@ export async function main(argv: string[]): Promise<number> {
   if (!expectDb) { console.error('usage: --expect-db <name> [--apply]'); return 2; }
   try { await assertExpectedDb(expectDb); } catch (err) { console.error(formatDbError(err)); return 1; }
 
-  const plan = await planRetier(db);
+  const skip = argv.flatMap((a, k) => (a === '--skip' && argv[k + 1] ? [argv[k + 1]!] : []));
+  for (const s of skip) console.log(`skip     files whose name contains "${s}"`);
+  const plan = await planRetier(db, classifyFile, skip);
   for (const p of plan) console.log(`re-read  ${p.courseCode}  ${p.fileName}  (background -> high)`);
   if (!argv.includes('--apply')) {
     console.log(`DRY RUN: would queue ${plan.length} files at high tier (nothing written).`);
