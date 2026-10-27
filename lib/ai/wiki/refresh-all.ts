@@ -114,6 +114,12 @@ export interface RefreshDeps {
    * Optional so existing callers/tests are unaffected.
    */
   problemSolvingCommit?(): Promise<WikiCommit | null>;
+  /**
+   * Current text of a wiki page (readWikiPage in production), or null when it
+   * does not exist. Lets the problem-solving step skip a commit whose only
+   * change would be the `timestamp:` line. Optional: without it, always commit.
+   */
+  readPage?(path: string): Promise<string | null>;
   log(line: string): void;
 }
 
@@ -245,6 +251,18 @@ export function parseRefreshArgs(argv: ReadonlyArray<string>): RefreshOptions & 
 // ---------------------------------------------------------------------------
 
 /** Commit one unit; a privacy-withheld page still means the rest committed. */
+const withoutTimestamp = (md: string) => md.replace(/^timestamp: .*$/m, '');
+
+/** True when every page in the commit equals the current page apart from its `timestamp:` line. */
+async function onlyTimestampChanged(deps: RefreshDeps, commit: WikiCommit): Promise<boolean> {
+  if (!deps.readPage) return false;
+  for (const page of commit.pages) {
+    const current = await deps.readPage(page.path);
+    if (current === null || withoutTimestamp(current) !== withoutTimestamp(page.content)) return false;
+  }
+  return true;
+}
+
 async function commitUnit(
   deps: RefreshDeps,
   label: string,
@@ -332,6 +350,10 @@ export async function runRefresh(
     try {
       const commit = await deps.problemSolvingCommit();
       if (!commit) deps.log(`${label} skipped: catalog has no problem-solving competency`);
+      else if (await onlyTimestampChanged(deps, commit)) {
+        deps.log(`${label} unchanged apart from its timestamp; not committed`);
+        result.succeeded++;
+      }
       else { await commitUnit(deps, label, commit); result.succeeded++; }
     } catch (err) {
       deps.log(`${label} ⚠ failed: ${err instanceof Error ? err.message : String(err)}`);

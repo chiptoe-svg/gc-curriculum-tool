@@ -41,7 +41,7 @@ import {
   planRefresh,
   runRefresh,
 } from '@/lib/ai/wiki/refresh-all';
-import { writeAndPush } from '@/lib/wiki/git-ops';
+import { readWikiPage, writeAndPush } from '@/lib/wiki/git-ops';
 import { and, eq } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { subCompetencies } from '@/lib/db/schema';
@@ -88,6 +88,7 @@ async function main() {
       if (has.length === 0) return null;
       return buildProblemSolvingCommit(await loadProblemSolvingInputs());
     },
+    readPage: path => readWikiPage(path),
     log: line => console.log(line),
   }, { dryRun: args.dryRun });
 
