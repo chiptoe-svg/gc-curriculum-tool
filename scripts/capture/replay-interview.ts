@@ -24,12 +24,12 @@
 import { randomUUID } from 'node:crypto';
 import { writeFileSync } from 'node:fs';
 import { and, asc, eq, inArray, lt } from 'drizzle-orm';
-import { db } from '@/lib/db/client';
-import { captureMessages } from '@/lib/db/schema';
-import { buildAgentCall } from '@/lib/ai/agent/audit-agent';
-import { AuditResponseJsonSchema, AuditResponseSchema, type AuditResponse } from '@/lib/ai/agent/audit-response-schema';
-import { getProviderForFunction } from '@/lib/ai/provider';
-import { loadAppEnv, isMainModule, formatDbError, assertExpectedDb } from '@/scripts/catalog/catalog-source';
+import type { buildAgentCall } from '@/lib/ai/agent/audit-agent';
+import type { AuditResponse } from '@/lib/ai/agent/audit-response-schema';
+import { loadAppEnv, isMainModule } from '@/scripts/catalog/catalog-source';
+// App modules are imported inside main(), AFTER loadAppEnv(): @ai-sdk/openai's
+// default provider reads OPENAI_BASE_URL when it is first imported, so a static
+// import sent every call to api.openai.com instead of the campus gateway.
 
 const RETRIEVE_SECTION_START = '## When to retrieve (and when not to)';
 const RETRIEVE_SECTION_END = '## Program memory (cross-instructor — REFERENCE, never evidence)';
@@ -99,6 +99,8 @@ export function evenlySpaced<T>(items: T[], n: number): T[] {
 }
 
 async function runArm(systemPrompt: string, built: Awaited<ReturnType<typeof buildAgentCall>>): Promise<ArmResult> {
+  const { getProviderForFunction } = await import('@/lib/ai/provider');
+  const { AuditResponseJsonSchema, AuditResponseSchema } = await import('@/lib/ai/agent/audit-response-schema');
   const provider = await getProviderForFunction('capture-chat-agent');
   try {
     const r = await provider.completeWithTools<AuditResponse>({
@@ -132,6 +134,10 @@ export async function main(argv: string[]): Promise<number> {
   const positions = Number(arg('--positions') ?? '12');
   const out = arg('--out');
   if (!expectDb || !course) { console.error('usage: --expect-db <scratch db> --course <code> [--positions n] [--out file]'); return 2; }
+  const { db } = await import('@/lib/db/client');
+  const { captureMessages } = await import('@/lib/db/schema');
+  const { buildAgentCall } = await import('@/lib/ai/agent/audit-agent');
+  const { formatDbError, assertExpectedDb } = await import('@/scripts/catalog/catalog-source');
   if (!expectDb.includes('scratch')) { console.error('refusing: replay writes temporary rows and runs only against a scratch database'); return 2; }
   try { await assertExpectedDb(expectDb); } catch (err) { console.error(formatDbError(err)); return 1; }
 
