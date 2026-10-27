@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
-import { AI_FUNCTION_IDS, DEFAULT_TIERS } from '@/lib/ai/function-settings';
+import { AI_FUNCTION_IDS, DEFAULT_ROLES } from '@/lib/ai/function-settings';
 
 const ROOT = join(__dirname, '../../..');
 const REGISTRY = 'lib/ai/models.ts';
@@ -33,8 +33,8 @@ describe('model registry', () => {
     expect(files.filter(f => f.text.includes('process.env.OPENAI_MODEL')).map(f => f.rel)).toEqual([]);
   });
 
-  it('KUD chat is a named function on the default tier', () => {
+  it('KUD chat is a named function in the Converse role', () => {
     expect(AI_FUNCTION_IDS).toContain('kud-chat');
-    expect(DEFAULT_TIERS['kud-chat' as never]).toBe('default');
+    expect(DEFAULT_ROLES['kud-chat']).toBe('converse');
   });
 });

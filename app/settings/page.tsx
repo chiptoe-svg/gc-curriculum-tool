@@ -3,12 +3,12 @@ import { headers } from 'next/headers';
 import { isValidSlug } from '@/lib/slug';
 import {
   AI_FUNCTION_IDS,
-  DEFAULT_TIERS,
+  DEFAULT_ROLES,
   FUNCTION_DESCRIPTIONS,
   FUNCTION_LABELS,
-  TIER_TO_MODEL,
   listAllFunctionSettings,
 } from '@/lib/ai/function-settings';
+import { ROLE_SETTINGS } from '@/lib/ai/models';
 import { getDailyCapCents, getDailyCostHistory } from '@/lib/rate-limit/daily-cap';
 import { getViewerAccess } from '@/lib/auth/viewer';
 import { SettingsClient } from './SettingsClient';
@@ -55,8 +55,8 @@ export default async function SettingsPage({ searchParams }: Props) {
         <SettingsClient
           slug={slug}
           initialSettings={settings}
-          tierToModel={TIER_TO_MODEL}
-          defaults={DEFAULT_TIERS}
+          roles={ROLE_SETTINGS}
+          defaults={DEFAULT_ROLES}
           labels={FUNCTION_LABELS}
           descriptions={FUNCTION_DESCRIPTIONS}
           functionIds={[...AI_FUNCTION_IDS]}

@@ -3,15 +3,16 @@
 import { useCallback, useEffect, useState } from 'react';
 import type {
   AIFunctionId,
-  ModelTier,
+  StoredTier,
   FunctionSettingRow,
 } from '@/lib/ai/function-settings';
+import { DEFAULT_REASONING_EFFORT, MODEL_ROLES, type ModelRole, type RoleSetting } from '@/lib/ai/models';
 
 interface Props {
   slug: string;
   initialSettings: FunctionSettingRow[];
-  tierToModel: Record<Exclude<ModelTier, 'custom'>, string>;
-  defaults: Record<AIFunctionId, Exclude<ModelTier, 'custom'>>;
+  roles: Record<ModelRole, RoleSetting>;
+  defaults: Record<AIFunctionId, ModelRole>;
   labels: Record<AIFunctionId, string>;
   descriptions: Record<AIFunctionId, string>;
   functionIds: AIFunctionId[];
@@ -115,7 +116,7 @@ function DailyCostPanel({
 export function SettingsClient({
   slug,
   initialSettings,
-  tierToModel,
+  roles,
   defaults,
   labels,
   descriptions,
@@ -149,17 +150,20 @@ export function SettingsClient({
 
   useEffect(() => { void loadAvailableModels(); }, [loadAvailableModels]);
 
-  function resolveModel(tier: ModelTier, customModel: string | null): string {
-    if (tier === 'custom' && customModel && customModel.trim()) return customModel.trim();
-    if (tier === 'light' || tier === 'default' || tier === 'heavy') return tierToModel[tier];
-    return tierToModel.default;
+  function resolve(functionId: AIFunctionId, tier: StoredTier, customModel: string | null): { model: string; effort: string | undefined } {
+    if (tier === 'custom' && customModel && customModel.trim()) {
+      const model = customModel.trim();
+      return { model, effort: DEFAULT_REASONING_EFFORT[model] };
+    }
+    const role = tier === 'custom' ? defaults[functionId] : tier;
+    return { model: roles[role].model, effort: roles[role].effort };
   }
 
   function findSetting(functionId: AIFunctionId): FunctionSettingRow {
     return settings.find(s => s.functionId === functionId)!;
   }
 
-  async function setTier(functionId: AIFunctionId, tier: ModelTier, customModel: string | null = null) {
+  async function setTier(functionId: AIFunctionId, tier: StoredTier, customModel: string | null = null) {
     setBusy(functionId);
     setMessage(null);
     try {
@@ -173,11 +177,12 @@ export function SettingsClient({
         setMessage({ kind: 'error', text: (json as { error?: string }).error ?? 'Save failed' });
         return;
       }
+      const r = resolve(functionId, tier, customModel);
       setSettings(prev => prev.map(s => s.functionId === functionId
-        ? { ...s, tier, customModel: tier === 'custom' ? customModel : null, resolvedModel: resolveModel(tier, customModel) }
+        ? { ...s, tier, customModel: tier === 'custom' ? customModel : null, resolvedModel: r.model, resolvedEffort: r.effort }
         : s
       ));
-      setMessage({ kind: 'ok', text: `${labels[functionId]} → ${resolveModel(tier, customModel)}` });
+      setMessage({ kind: 'ok', text: `${labels[functionId]} → ${describeModel(r)}` });
     } catch (e) {
       setMessage({ kind: 'error', text: e instanceof Error ? e.message : 'Save failed' });
     } finally {
@@ -197,12 +202,13 @@ export function SettingsClient({
         setMessage({ kind: 'error', text: (body as { error?: string }).error ?? 'Reset failed' });
         return;
       }
-      const defaultTier = defaults[functionId];
+      const defaultRole = defaults[functionId];
+      const r = resolve(functionId, defaultRole, null);
       setSettings(prev => prev.map(s => s.functionId === functionId
-        ? { ...s, tier: defaultTier, customModel: null, resolvedModel: tierToModel[defaultTier] }
+        ? { ...s, tier: defaultRole, customModel: null, resolvedModel: r.model, resolvedEffort: r.effort }
         : s
       ));
-      setMessage({ kind: 'ok', text: `${labels[functionId]} → default (${tierToModel[defaultTier]})` });
+      setMessage({ kind: 'ok', text: `${labels[functionId]} → ${roles[defaultRole].label} (${describeModel(r)})` });
     } finally {
       setBusy(null);
     }
@@ -221,23 +227,19 @@ export function SettingsClient({
       )}
 
       <section className="rounded-md border bg-card px-4 py-3 text-xs leading-snug text-muted-foreground">
-        <p className="font-medium text-foreground">How tiers work</p>
+        <p className="font-medium text-foreground">How roles work</p>
         <p className="mt-1">
-          Each AI function in the system can use a different model. Tiers are an indirection: when a new generation of models ships, swapping the tier-to-model map updates every function using that tier. You can also pick a specific model from the dropdown for a function that needs a different one.
+          Each AI function has a role that says what kind of work it does. A role sets the model and reasoning effort for every function in it; roles are changed in the code (<span className="font-mono">lib/ai/models.ts</span>), not here. Here you can move a function to another role or pin it to a specific model.
         </p>
-        <ul className="mt-2 space-y-0.5 font-mono text-xs">
-          <li>Light  → <span className="text-foreground">{tierToModel.light}</span>
-            {!modelAvailable(tierToModel.light) && <span className="ml-2 text-destructive">(not in available list)</span>}
-            <span className="ml-2 text-muted-foreground">(cheap, fast)</span>
-          </li>
-          <li>Default → <span className="text-foreground">{tierToModel.default}</span>
-            {!modelAvailable(tierToModel.default) && <span className="ml-2 text-destructive">(not in available list)</span>}
-            <span className="ml-2 text-muted-foreground">(balanced)</span>
-          </li>
-          <li>Heavy  → <span className="text-foreground">{tierToModel.heavy}</span>
-            {!modelAvailable(tierToModel.heavy) && <span className="ml-2 text-destructive">(not in available list)</span>}
-            <span className="ml-2 text-muted-foreground">(more reasoning, higher cost)</span>
-          </li>
+        <ul className="mt-2 space-y-0.5">
+          {MODEL_ROLES.map(role => (
+            <li key={role}>
+              <span className="font-medium text-foreground">{roles[role].label}</span>
+              <span className="ml-2">{roles[role].purpose}</span>
+              <span className="ml-2 font-mono text-foreground">→ {describeModel(roles[role])}</span>
+              {!modelAvailable(roles[role].model) && <span className="ml-2 text-destructive">(not in available list)</span>}
+            </li>
+          ))}
         </ul>
         {availableModels.length > 0 && (
           <p className="mt-2 text-xs">
@@ -255,65 +257,85 @@ export function SettingsClient({
         </p>
       )}
 
-      <section className="space-y-3">
-        {functionIds.map(functionId => {
-          const s = findSetting(functionId);
-          const isModified = s.tier !== defaults[functionId];
-          const isBusy = busy === functionId;
-          return (
-            <div key={functionId} className="rounded-md border bg-card px-4 py-3 space-y-2">
-              <header>
-                <div className="flex items-baseline justify-between gap-3">
-                  <h3 className="text-sm font-semibold">{labels[functionId]}</h3>
-                  <span className="font-mono text-xs text-muted-foreground">{s.resolvedModel}</span>
-                </div>
-                <p className="mt-0.5 text-xs text-muted-foreground">{descriptions[functionId]}</p>
-              </header>
-
-              <div className="flex items-center gap-2 flex-wrap">
-                <TierButton tier="light" current={s.tier} disabled={isBusy || !isAdmin} onClick={() => setTier(functionId, 'light')} />
-                <TierButton tier="default" current={s.tier} disabled={isBusy || !isAdmin} onClick={() => setTier(functionId, 'default')} />
-                <TierButton tier="heavy" current={s.tier} disabled={isBusy || !isAdmin} onClick={() => setTier(functionId, 'heavy')} />
-
-                <ModelDropdown
-                  isCustom={s.tier === 'custom'}
-                  currentValue={s.customModel ?? ''}
-                  availableModels={availableModels}
-                  disabled={isBusy || !isAdmin}
-                  onSet={(value) => setTier(functionId, 'custom', value)}
-                />
-
-                {isModified && isAdmin && (
-                  <button
-                    type="button"
-                    onClick={() => resetToDefault(functionId)}
-                    disabled={isBusy}
-                    className="ml-auto text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
-                  >
-                    reset to default ({defaults[functionId]})
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </section>
+      {[...MODEL_ROLES, 'custom' as const].map(group => {
+        const members = functionIds.filter(id => findSetting(id).tier === group);
+        if (group === 'custom' && members.length === 0) return null;
+        const headingId = `role-${group}`;
+        return (
+          <section key={group} aria-labelledby={headingId} className="space-y-3">
+            <header>
+              <h2 id={headingId} className="text-sm font-semibold">{group === 'custom' ? 'Custom model' : roles[group].label}</h2>
+              <p className="text-xs text-muted-foreground">
+                {group === 'custom' ? 'Functions pinned to a specific model.' : `${roles[group].purpose} · ${describeModel(roles[group])}`}
+              </p>
+            </header>
+            {members.length === 0 && <p className="text-xs italic text-muted-foreground">No functions.</p>}
+            {members.map(functionId => renderFunction(functionId))}
+          </section>
+        );
+      })}
     </div>
   );
+
+  function renderFunction(functionId: AIFunctionId) {
+    const s = findSetting(functionId);
+    const isModified = s.tier !== defaults[functionId];
+    const isBusy = busy === functionId;
+    return (
+      <div key={functionId} className="rounded-md border bg-card px-4 py-3 space-y-2">
+        <header>
+          <div className="flex items-baseline justify-between gap-3">
+            <h3 className="text-sm font-semibold">{labels[functionId]}</h3>
+            <span className="font-mono text-xs text-muted-foreground">{describeModel({ model: s.resolvedModel, effort: s.resolvedEffort })}</span>
+          </div>
+          <p className="mt-0.5 text-xs text-muted-foreground">{descriptions[functionId]}</p>
+        </header>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          {MODEL_ROLES.map(role => (
+            <RoleButton key={role} label={roles[role].label} active={s.tier === role} disabled={isBusy || !isAdmin} onClick={() => setTier(functionId, role)} />
+          ))}
+
+          <ModelDropdown
+            isCustom={s.tier === 'custom'}
+            currentValue={s.customModel ?? ''}
+            availableModels={availableModels}
+            disabled={isBusy || !isAdmin}
+            onSet={(value) => setTier(functionId, 'custom', value)}
+          />
+
+          {isModified && isAdmin && (
+            <button
+              type="button"
+              onClick={() => resetToDefault(functionId)}
+              disabled={isBusy}
+              className="ml-auto text-xs text-muted-foreground hover:text-foreground disabled:opacity-50"
+            >
+              reset to default ({roles[defaults[functionId]].label})
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
 }
 
-function TierButton({
-  tier,
-  current,
+/** "gpt-6.1-sol · low effort", or just the model when no effort is set. */
+function describeModel({ model, effort }: { model: string; effort: string | undefined }): string {
+  return effort ? `${model} · ${effort} effort` : model;
+}
+
+function RoleButton({
+  label,
+  active,
   disabled,
   onClick,
 }: {
-  tier: 'light' | 'default' | 'heavy';
-  current: ModelTier;
+  label: string;
+  active: boolean;
   disabled: boolean;
   onClick: () => void;
 }) {
-  const active = current === tier;
   return (
     <button
       type="button"
@@ -326,7 +348,7 @@ function TierButton({
           : 'border-input bg-background text-muted-foreground hover:bg-muted hover:text-foreground')
       }
     >
-      {tier}
+      {label}
     </button>
   );
 }

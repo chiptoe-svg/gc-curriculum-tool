@@ -2,21 +2,21 @@ import { NextResponse } from 'next/server';
 import { isValidSlug } from '@/lib/slug';
 import {
   AI_FUNCTION_IDS,
-  DEFAULT_TIERS,
+  DEFAULT_ROLES,
   FUNCTION_DESCRIPTIONS,
   FUNCTION_LABELS,
-  TIER_TO_MODEL,
   listAllFunctionSettings,
   upsertFunctionSetting,
   resetFunctionSetting,
   type AIFunctionId,
-  type ModelTier,
+  type StoredTier,
 } from '@/lib/ai/function-settings';
+import { MODEL_ROLES, ROLE_SETTINGS } from '@/lib/ai/models';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { hashIp } from '@/lib/ip-hash';
 
 // GET /api/settings/ai-models?slug=...
-// Returns all function settings + the tier→model map + the per-function
+// Returns all function settings + the role settings + the per-function
 // labels/descriptions. The UI uses this single payload to render the form.
 export async function GET(req: Request): Promise<Response> {
   const url = new URL(req.url);
@@ -30,8 +30,8 @@ export async function GET(req: Request): Promise<Response> {
   const settings = await listAllFunctionSettings();
   return NextResponse.json({
     settings,
-    tierToModel: TIER_TO_MODEL,
-    defaults: DEFAULT_TIERS,
+    roles: ROLE_SETTINGS,
+    defaults: DEFAULT_ROLES,
     labels: FUNCTION_LABELS,
     descriptions: FUNCTION_DESCRIPTIONS,
     functionIds: AI_FUNCTION_IDS,
@@ -39,7 +39,7 @@ export async function GET(req: Request): Promise<Response> {
 }
 
 // PUT /api/settings/ai-models?slug=...
-// Body: { functionId, tier, customModel? }
+// Body: { functionId, tier: judge|converse|write|extract|custom, customModel? }
 // Upserts a setting row. tier='custom' requires customModel.
 export async function PUT(req: Request): Promise<Response> {
   const url = new URL(req.url);
@@ -58,7 +58,8 @@ export async function PUT(req: Request): Promise<Response> {
   if (!AI_FUNCTION_IDS.includes(functionId as AIFunctionId)) {
     return NextResponse.json({ error: `unknown functionId: ${functionId}` }, { status: 400 });
   }
-  if (!['light', 'default', 'heavy', 'custom'].includes(tier)) {
+  // Old tier names (light/default/heavy) are read but no longer written.
+  if (![...MODEL_ROLES, 'custom'].includes(tier)) {
     return NextResponse.json({ error: `invalid tier: ${tier}` }, { status: 400 });
   }
   if (tier === 'custom' && (!customModel || !customModel.trim())) {
@@ -67,7 +68,7 @@ export async function PUT(req: Request): Promise<Response> {
 
   await upsertFunctionSetting({
     functionId: functionId as AIFunctionId,
-    tier: tier as ModelTier,
+    tier: tier as StoredTier,
     customModel,
   });
   return NextResponse.json({ ok: true });
@@ -75,7 +76,7 @@ export async function PUT(req: Request): Promise<Response> {
 
 // DELETE /api/settings/ai-models?slug=...&functionId=...
 // Removes a stored override so the function falls back to its compiled
-// default tier.
+// role.
 export async function DELETE(req: Request): Promise<Response> {
   const url = new URL(req.url);
   const slug = url.searchParams.get('slug') ?? '';
