@@ -85,7 +85,7 @@ if (!alertOnly) {
       const res = await fetch(`${base}/chat/completions`, {
         method: 'POST',
         headers: { 'content-type': 'application/json', authorization: `Bearer ${key}` },
-        body: JSON.stringify({ model, messages: [{ role: 'user', content: 'ok' }], max_tokens: 1 }),
+        body: JSON.stringify({ model, messages: [{ role: 'user', content: 'ok' }], max_completion_tokens: 16 }),
         signal: AbortSignal.timeout(30_000),
       });
       probe = { status: res.status, body: (await res.text()).slice(0, 2000) };

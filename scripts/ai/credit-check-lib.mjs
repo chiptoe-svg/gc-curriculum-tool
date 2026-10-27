@@ -4,7 +4,8 @@ export const LABEL = 'ai-credits';
 export const ISSUE_TITLE = "Clemson shared OpenAI credits are used up";
 export const BLIND_TITLE = "AI credit monitor can't reach a verdict";
 export const BLIND_THRESHOLD = 3;
-export const DEFAULT_PROBE_MODEL = 'gpt-4.1-nano';
+// Must be a current model listed in lib/ai/models.ts (gpt-4.1-nano was retired, 2026-10-23).
+export const DEFAULT_PROBE_MODEL = 'gpt-5.4-nano';
 
 const EXHAUSTED = /quota_denied|shared credits are exhausted/;
 
