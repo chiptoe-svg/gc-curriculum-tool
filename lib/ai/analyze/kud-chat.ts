@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 import { openAIBaseURL } from '../openai-base-url';
 import { AiCreditsExhaustedError, isCreditsExhaustedError, markCreditsExhausted } from '@/lib/ai/credit-status';
 import { loadPrompt } from '@/lib/ai/prompts/load';
-import { resolveModelForFunction } from '@/lib/ai/function-settings';
+import { resolveForFunction } from '@/lib/ai/function-settings';
 import { effectiveReasoningEffort } from '@/lib/ai/openai';
 
 export interface KudChatProfile {
@@ -77,8 +77,9 @@ export async function kudChatTurn(
   if (!apiKey) throw new Error('OPENAI_API_KEY not set');
   const client = new OpenAI({ apiKey, baseURL: openAIBaseURL() });
 
-  const model = await resolveModelForFunction('kud-chat');
-  const effort = effectiveReasoningEffort(model, undefined);
+  const resolved = await resolveForFunction('kud-chat');
+  const model = resolved.model;
+  const effort = effectiveReasoningEffort(model, resolved.effort);
 
   const systemPrompt = await loadPrompt('kud-chat');
 

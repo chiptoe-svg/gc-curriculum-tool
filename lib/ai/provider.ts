@@ -107,9 +107,9 @@ import { OpenAIProvider } from './openai';
 import { AnthropicProvider } from './anthropic';
 import { LocalProvider } from './local';
 import { CampusProvider } from './campus';
-import { resolveModelForFunction, type AIFunctionId } from './function-settings';
+import { resolveForFunction, type AIFunctionId } from './function-settings';
 import { visionModel, DEFAULT_LOCAL_VISION_MODEL } from './vision-models';
-import { TIER_TO_MODEL } from './models';
+import { ROLE_SETTINGS } from './models';
 
 export interface GetProviderOptions {
   /** When set, the provider uses the model assigned to this function via
@@ -139,8 +139,9 @@ export async function getProviderForFunction(
   override?: { model?: string; reasoningEffort?: string },
 ): Promise<AIProvider> {
   if (override?.model) return buildProvider(override.model, override.reasoningEffort);
-  const resolved = await resolveModelForFunction(functionId);
-  return buildProvider(resolved);
+  const resolved = await resolveForFunction(functionId);
+  // The evaluation knob OPENAI_REASONING_EFFORT stays above the role's effort.
+  return buildProvider(resolved.model, process.env.OPENAI_REASONING_EFFORT?.trim() || resolved.effort);
 }
 
 function buildProvider(modelOverride: string | undefined, reasoningEffort?: string): AIProvider {
@@ -161,7 +162,7 @@ function buildProvider(modelOverride: string | undefined, reasoningEffort?: stri
   if (which === 'openai') {
     const key = process.env.OPENAI_API_KEY?.trim();
     if (!key) throw new Error('OPENAI_API_KEY not set');
-    const model = modelOverride ?? TIER_TO_MODEL.default;
+    const model = modelOverride ?? ROLE_SETTINGS.write.model;
     return new OpenAIProvider(model, key, reasoningEffort);
   }
   if (which === 'anthropic') {
