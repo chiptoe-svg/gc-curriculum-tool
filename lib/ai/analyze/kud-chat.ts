@@ -3,7 +3,7 @@ import { openAIBaseURL } from '../openai-base-url';
 import { AiCreditsExhaustedError, isCreditsExhaustedError, markCreditsExhausted } from '@/lib/ai/credit-status';
 import { loadPrompt } from '@/lib/ai/prompts/load';
 import { resolveForFunction } from '@/lib/ai/function-settings';
-import { effectiveReasoningEffort } from '@/lib/ai/openai';
+import { effectiveReasoningEffort, functionEffort } from '@/lib/ai/openai';
 
 export interface KudChatProfile {
   title: string;
@@ -79,7 +79,7 @@ export async function kudChatTurn(
 
   const resolved = await resolveForFunction('kud-chat');
   const model = resolved.model;
-  const effort = effectiveReasoningEffort(model, resolved.effort);
+  const effort = effectiveReasoningEffort(model, functionEffort(resolved.effort));
 
   const systemPrompt = await loadPrompt('kud-chat');
 

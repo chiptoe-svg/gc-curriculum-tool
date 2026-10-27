@@ -1002,14 +1002,15 @@ export const targetCoverage = pgView('target_coverage', {
 }).existing();
 
 // Per-function AI model settings. One row per function ID. Each row carries
-// either a tier name ('light' | 'default' | 'heavy') that resolves to a
-// model via the tier-mapping in lib/ai/function-settings.ts, or a custom
-// model override that bypasses the tier mapping.
+// either a role ('judge' | 'converse' | 'write' | 'extract') that resolves to
+// a model and effort via ROLE_SETTINGS in lib/ai/models.ts, or a custom
+// model override that bypasses the roles. Rows written before 2026-10-27 may
+// hold old tier names (light / default / heavy); resolveSetting maps them.
 // When no row exists for a function ID, the system falls back to the
-// function's compiled-in default tier.
+// function's compiled-in role.
 export const aiFunctionSettings = pgTable('ai_function_settings', {
   functionId: text('function_id').primaryKey(),
-  tier: text('tier').notNull(),              // 'light' | 'default' | 'heavy' | 'custom'
+  tier: text('tier').notNull(),              // 'judge' | 'converse' | 'write' | 'extract' | 'custom' (or a legacy tier name)
   customModel: text('custom_model'),          // populated when tier === 'custom'
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });

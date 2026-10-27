@@ -16,7 +16,7 @@ You are reconciling `docs/STATE.md` with reality. The file is the project's vola
 
    - **Routes:** Survey `app/**/page.tsx` and `app/api/**/route.ts`. Use `codegraph_files path="app"` for the tree. Compare against STATE.md's "What's live" table.
    - **Schema:** `ls drizzle/` for the latest migration number. Read `lib/db/schema.ts` for the current table inventory.
-   - **AI functions:** Read `lib/ai/function-settings.ts` for `AI_FUNCTION_IDS` and `DEFAULT_TIERS`.
+   - **AI functions:** Read `lib/ai/function-settings.ts` for `AI_FUNCTION_IDS` and `DEFAULT_ROLES` (role → model and effort: `ROLE_SETTINGS` in `lib/ai/models.ts`).
    - **Env vars:** Read `.env.example`.
    - **Deployment surface:** Read `middleware.ts` and `lib/auth/basic-auth.ts` for the gate behavior; check launchd plist paths.
    - **Plans / specs:** `ls docs/superpowers/plans/ docs/superpowers/specs/`. For each, read the status header (✅ Done / In progress / Blocked / Superseded).

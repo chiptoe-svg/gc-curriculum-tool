@@ -31,6 +31,14 @@ export function estimateCostCents(model: string, promptTokens: number, completio
 export const OPENAI_TIMEOUT_MS = 5 * 60_000;
 export const OPENAI_MAX_RETRIES = 1;
 
+/**
+ * Effort for a function call: the evaluation knob OPENAI_REASONING_EFFORT
+ * (when set and non-empty) above the role's effort. Pass the result to the
+ * provider / effectiveReasoningEffort as the explicit effort.
+ */
+export function functionEffort(roleEffort: string | undefined): string | undefined {
+  return process.env.OPENAI_REASONING_EFFORT?.trim() || roleEffort;
+}
 
 export function effectiveReasoningEffort(model: string, explicit: string | undefined): string | undefined {
   return explicit ?? process.env.OPENAI_REASONING_EFFORT?.trim() ?? DEFAULT_REASONING_EFFORT[model];

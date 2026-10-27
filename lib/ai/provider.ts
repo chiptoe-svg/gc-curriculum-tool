@@ -103,7 +103,7 @@ export interface AIProvider {
   }): AsyncIterable<StreamEvent<T>>;
 }
 
-import { OpenAIProvider } from './openai';
+import { OpenAIProvider, functionEffort } from './openai';
 import { AnthropicProvider } from './anthropic';
 import { LocalProvider } from './local';
 import { CampusProvider } from './campus';
@@ -141,7 +141,7 @@ export async function getProviderForFunction(
   if (override?.model) return buildProvider(override.model, override.reasoningEffort);
   const resolved = await resolveForFunction(functionId);
   // The evaluation knob OPENAI_REASONING_EFFORT stays above the role's effort.
-  return buildProvider(resolved.model, process.env.OPENAI_REASONING_EFFORT?.trim() || resolved.effort);
+  return buildProvider(resolved.model, functionEffort(resolved.effort));
 }
 
 function buildProvider(modelOverride: string | undefined, reasoningEffort?: string): AIProvider {
