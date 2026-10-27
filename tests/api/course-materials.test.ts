@@ -292,6 +292,19 @@ describe('POST /api/courses/[code]/materials', () => {
     expect(updateMaterialTier).toHaveBeenCalledWith('mat-1', 'background');
   });
 
+  // 2026-10-27: eight uploaded syllabi were filed as background reading, so only
+  // a short digest was searchable and GC 4400's graded-project table was lost.
+  it('[triage ON] a Syllabus-box upload is classified as the syllabus (always read in full)', async () => {
+    isTriageEnabled.mockReturnValue(true);
+    probeSize.mockResolvedValue({ sizeBytes: 100_000, pageCount: 3 });
+
+    const [req, ctx] = makeUploadReq({ fileName: '4400_6400 Syllabus Fall 2026.pdf', role: 'syllabus' });
+    await POST(req, ctx);
+    await flushAfter();
+
+    expect(classifyManifestItem).toHaveBeenCalledWith(expect.objectContaining({ kind: 'syllabus' }));
+  });
+
   it('[triage ON] a background classifier error never fails the upload', async () => {
     isTriageEnabled.mockReturnValue(true);
     probeSize.mockRejectedValue(new Error('probe kaboom'));

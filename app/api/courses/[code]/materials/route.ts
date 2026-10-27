@@ -172,6 +172,8 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     return NextResponse.json({ error: 'failed to store uploaded file on disk' }, { status: 503 });
   }
 
+  // The Syllabus box sends role=syllabus; any other upload is not the syllabus.
+  const isSyllabus = form.get('role') === 'syllabus';
   const material = await insertMaterial({
     courseCode: code,
     fileName: file.name,
@@ -179,8 +181,7 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     mimeType: file.type,
     sizeBytes: file.size,
     ipHash,
-    // The Syllabus box sends role=syllabus; any other upload is not the syllabus.
-    isSyllabus: form.get('role') === 'syllabus',
+    isSyllabus,
   });
 
   if (isTriageEnabled()) {
@@ -199,8 +200,11 @@ export async function POST(req: Request, { params }: RouteContext): Promise<Resp
     after(async () => {
       try {
         const probe = await probeSize(fileBytes, file.type);
+        // A Syllabus-box upload is always read in full ('syllabus' → high):
+        // left to the file classifier, eight syllabi were filed as background
+        // and their graded-project tables never reached the profile (2026-10-27).
         const tier = await classifyManifestItem({
-          kind: 'file',
+          kind: isSyllabus ? 'syllabus' : 'file',
           fileName: file.name,
           mimeType: file.type,
           sizeBytes: probe.sizeBytes,
