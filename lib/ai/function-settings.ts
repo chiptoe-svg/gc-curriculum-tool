@@ -4,17 +4,16 @@
  * Each AI call site in the system declares a `functionId`. The provider
  * factory looks up that ID against the ai_function_settings table to
  * decide which model to use. When no setting exists for an ID, the
- * function's compiled-in default tier applies.
+ * function's compiled-in role applies.
  *
- * Tiers are an indirection layer so swapping the underlying model for a
- * tier (e.g., when a new "default" model ships) doesn't require updating
- * every call site or every settings row.
+ * Roles (lib/ai/models.ts) are an indirection layer so swapping the model
+ * for a role doesn't require updating every call site or every settings row.
  */
 
 import { eq } from 'drizzle-orm';
 import { db } from '@/lib/db/client';
 import { aiFunctionSettings } from '@/lib/db/schema';
-import { TIER_TO_MODEL } from '@/lib/ai/models';
+import { DEFAULT_REASONING_EFFORT, MODEL_ROLES, ROLE_SETTINGS, type ModelRole } from '@/lib/ai/models';
 
 export const AI_FUNCTION_IDS = [
   'capture-chat',
@@ -49,157 +48,82 @@ export const AI_FUNCTION_IDS = [
 ] as const;
 export type AIFunctionId = (typeof AI_FUNCTION_IDS)[number];
 
-export type ModelTier = 'light' | 'default' | 'heavy' | 'custom';
+/**
+ * What a settings row's `tier` column holds: a role, or 'custom' (use the
+ * row's customModel). Rows written before 2026-10-27 may still hold the old
+ * tier names light / default / heavy; resolveSetting maps them on read.
+ */
+export type StoredTier = ModelRole | 'custom';
 
 /**
- * Tier → model mapping lives in the model registry, lib/ai/models.ts — the
- * single place to change when a new model ships.
- *
- * 'custom' tier ignores this map and uses the customModel column instead.
+ * Compiled-in role per function, used when no settings row exists. Roles and
+ * the reasons for each assignment: docs/superpowers/specs/2026-10-27-model-roles-design.md.
+ * Earlier per-function tier history (e.g. why coverage scoring left the light
+ * tier in June): docs/superpowers/audits/2026-06-12-reliability-study.md and
+ * 2026-10-05-model-evaluation.md.
  */
-export { TIER_TO_MODEL };
-
-/**
- * Default tier per function. The starting point a fresh deployment uses
- * when no settings row exists. Faculty can override per-function from the
- * settings page.
- *
- * Rationale per function:
- *   - capture-chat: default. Started on light (gpt-5.4-mini), but real
- *     courses can dump 300k+ tokens of materials into the bundle and the
- *     mini's 272k input cap kept rejecting fresh sessions. Default tier
- *     (gpt-5.4) has the larger window and the audit's judgement quality
- *     benefits from it too.
- *   - capture-scores: default. Drives every downstream view; structured
- *     output but with rich reasoning across the whole audit transcript.
- *   - materials-analysis: light. Per-file extraction is bounded.
- *   - program-score-coverage: heavy. Was piloted at light ("promote if
- *     quality is insufficient") — the 2026-06-12 reliability study supplied
- *     the evidence: at light (gpt-5.4-mini), 5× re-runs on fixed pairs hit
- *     only 25% D band-agreement (scores wander across band boundaries
- *     between runs). All 120 then-existing matrix cells carried the mini
- *     model. Promoted to heavy per the pilot's own criterion; STATE.md and
- *     architecture.html had documented heavy all along (code drift).
- *     Study: docs/superpowers/audits/2026-06-12-reliability-study.md
- */
-export const DEFAULT_TIERS: Record<AIFunctionId, Exclude<ModelTier, 'custom'>> = {
-  'capture-chat': 'default',
-  'capture-scores': 'default',
-  'materials-analysis': 'light',
-  // Default tier. Translates a proposed course change into a structured ChangeObject
-  // + PredictedDelta[]. Reasoning load is moderate — grounded in focal competencies +
-  // neighbor context, but a single-call structured output.
-  // Promote to heavy if delta quality is poor on complex multi-competency changes.
-  'explore-local-delta': 'default',
-  'program-score-coverage': 'heavy',
-  // Small per-click transformation — one short gap → up to ~12 short
-  // competency rows. Light tier handles this well; promote to default
-  // if the decomposition quality is poor on long/aggregated gaps.
-  'decompose-prereq-gap': 'light',
-  // Light per-material digest generated at extraction time for every material.
-  // Loaded into the audit agent's at-rest context. Light tier is appropriate —
-  // one summarization pass per material; promote if output quality is poor.
-  'material-digest': 'light',
-  // Light per-chunk position blurb generated at extraction time for every
-  // detail chunk. Prepended before embedding so the vector encodes position +
-  // content (Anthropic contextual-retrieval pattern). Light tier is correct —
-  // one short summarization call per chunk; promote if output quality is poor.
-  'chunk-contextualize': 'light',
-  // Light pre-audit curation review. One call per page open; either silent or
-  // emits a short heads-up panel about missing core sources, stacked
-  // auto-set-asides, kept high-FERPA risk, or near-empty digest clusters.
-  'ingestion-checkin': 'light',
-  // Stage 3 tool-using auditor. Drives the per-turn agent loop in
-  // CourseCapture v2: reads at-rest digests, retrieves chunks on demand,
-  // emits a structured finding/question/citations response. Default tier —
-  // same reasoning load as 'capture-chat' but with tool routing on top.
-  'capture-chat-agent': 'default',
-  // Wiki-layer regeneration on snapshot creation. Synthesizes 5–15 affected
-  // markdown pages (course, competencies, targets, concepts) from the new
-  // snapshot + related Postgres substrate. Heavy tier — quality matters more
-  // than cost here; a well-written wiki page may be read dozens of times.
-  // Estimated ~$1–3 per snapshot at scale.
-  'wiki-update': 'heavy',
-  // Conversational layer over the wiki — tool-using agent that reads, lists,
-  // and searches the curated narrative corpus to answer faculty questions.
-  // Default tier: same reasoning load as capture-chat-agent (read context,
-  // route 1-3 tool calls, synthesize an evidence-cited response).
-  'curriculum-chat': 'default',
-  // Heavy tier. Adversarial review of a produced profile: read all
-  // competencies + audit_notes + verification_summary + the full
-  // transcript + materials and challenge per-finding confidence,
-  // surface internal contradictions, and flag catalog-vs-evidence
-  // claims that don't hold up. This is exactly the kind of cross-
-  // referenced critical-reasoning task where heavy-tier reasoning
-  // is the value. Runs automatically once after each profile generation
-  // (since 2026-10-06; ~$0.11 on gpt-6.1-sol), plus on a manual Re-check.
-  'capture-stress-test': 'heavy',
-  // Light tier. One-shot LLM call that reads an extracted JD (Docling
-  // markdown or pasted text) and emits structured fields with per-field
-  // confidence scores. Small input, structured output, cheap.
-  'jd-extract': 'light',
-  // Default tier. Reads pages 1-4 + career target sub-comps and emits
-  // 10 "experiences worth having" candidates. Single-call generator.
-  'position-rated-items': 'default',
-  // Default tier. Page 6 per-turn loop — anchor-probe-confirm posture.
-  // Reads pages 1-5 context; emits AuditResponse-shaped per-turn output.
-  'position-interview-agent': 'default',
-  // Default tier. Synthesis over a completed Page 6 interview transcript
-  // + the upstream page inputs. Emits a PositionProfile.
-  'position-synthesis': 'default',
-  // Default tier. Structured extraction over free-text prerequisites prose +
-  // the sub-competency catalog — proposes direct skill-tagged edges with
-  // expected K/U/D depths grounded in incoming-expectation statements.
-  // Default (not light) because it must reason across the full sub-comp
-  // catalog + match catalog ids precisely to avoid hallucinated join keys.
-  'prereq-edge-seed': 'default',
-  // Default tier. Reads a course's catalog text (description, learning
-  // objectives, major projects, skills required) + the sub-competency
-  // catalog and emits INTENDED (syllabus-asserted, NOT verified-attainment)
-  // K/U/D per sub-competency. Default because it must align catalog prose
-  // against the full sub-comp catalog and emit exact catalog ids —
-  // same reasoning load as prereq-edge-seed; light would risk id errors.
-  'intended-skills-extract': 'default',
-  // The following three were migrated off the legacy env-default `getProvider()`
-  // to honor the /settings per-function tiers (2026-06-11). Default tier
-  // preserves their prior effective model (env default = gpt-5.4 = 'default'),
-  // so the migration makes settings effective without silently changing models.
-  'parse-profile-fields': 'default',
-  'extract-course-kud': 'default',
-  'synthesize-target': 'default',
-  // Default tier. Structured reasoning over faculty prose feedback + the section's
-  // current items to produce edit proposals. Default (not light) because it must
-  // reason across item content + feedback nuance to propose calibrated K/U/D changes;
-  // promote to heavy if proposal quality is poor on longer feedback.
-  'reconcile-feedback': 'default',
-  // Light tier. Single-call binary classifier: is this file a lecture deck/slides
-  // (→ middle) or a reading/reference (→ background)? Short input, two-value enum
-  // output; light is correct. Bias cheap — defaults to background on any error.
-  'material-classify': 'light',
-  // Default tier. Tool-using course-change thinking partner anchored to one focal
-  // course. Per-turn agent loop: reads neighbor context + wiki, optionally calls
-  // estimate_impact, emits a cited markdown response. Default matches curriculum-chat
-  // (same reasoning pattern — read context, route 2–5 tool calls, synthesize response);
-  // promote to heavy if multi-competency change reasoning quality is insufficient.
-  'explore-agent': 'default',
-  // Default tier (owner decision 2026-10-05). One structured call per course
-  // after each snapshot: reads the syllabus, the Canvas assignments text and the
-  // snapshot findings, and writes the objective assessment guide. A deterministic
-  // check (lib/objective-guide/check.ts) drops any name not in Canvas.
-  'objective-evidence-guide': 'default',
-  // P2: one call per catalog bundle, drafting its card (includes/excludes,
-  // distinctions, examples, stratum) for owner approval. Default tier:
-  // bounded writing against the full catalog for contrast.
-  'bundle-card-draft': 'default',
-  // P2: one call per bundle placing every O*NET element (with definitions)
-  // and a 25-task embedding shortlist at core/related/fringe. Heavy tier:
-  // the placements feed P3 weights once confirmed, and the blind golden
-  // sample measures exactly this judgment.
-  'bundle-map-onet': 'heavy',
-  // Default tier (2026-10-27). Free-form chat about a course's KUDs; was the
-  // last call reading its model from the OPENAI_MODEL env var.
-  'kud-chat': 'default',
+export const DEFAULT_ROLES: Record<AIFunctionId, ModelRole> = {
+  // Judge: produces a score or claim that becomes the stored record.
+  'program-score-coverage': 'judge',
+  'capture-scores': 'judge',
+  'capture-stress-test': 'judge',
+  'intended-skills-extract': 'judge',
+  'prereq-edge-seed': 'judge',
+  'bundle-map-onet': 'judge',
+  'extract-course-kud': 'judge',
+  // Converse: faculty-facing chat, turn by turn, often with tools.
+  'capture-chat-agent': 'converse',
+  'capture-chat': 'converse',
+  'curriculum-chat': 'converse',
+  'explore-agent': 'converse',
+  'position-interview-agent': 'converse',
+  'kud-chat': 'converse',
+  // Write: prose or proposals a person reads or approves.
+  'wiki-update': 'write',
+  'objective-evidence-guide': 'write',
+  'bundle-card-draft': 'write',
+  'position-synthesis': 'write',
+  'synthesize-target': 'write',
+  'reconcile-feedback': 'write',
+  'explore-local-delta': 'write',
+  'position-rated-items': 'write',
+  // Extract: bounded extraction, classification or summary, often in bulk.
+  'material-digest': 'extract',
+  'chunk-contextualize': 'extract',
+  'material-classify': 'extract',
+  'materials-analysis': 'extract',
+  'ingestion-checkin': 'extract',
+  'jd-extract': 'extract',
+  'parse-profile-fields': 'extract', // was default tier (Sol); moved to mini by owner decision 2026-10-27
+  'decompose-prereq-gap': 'extract',
 };
+
+// The model the old 'default' and 'heavy' tiers meant (2026-10-06 to 2026-10-27).
+const LEGACY_DEFAULT_MODEL = ROLE_SETTINGS.write.model;
+
+export interface ResolvedSetting {
+  role: ModelRole | 'custom';
+  model: string;
+  effort: string | undefined;
+}
+
+const fromModel = (model: string): ResolvedSetting => ({ role: 'custom', model, effort: DEFAULT_REASONING_EFFORT[model] });
+const fromRole = (role: ModelRole): ResolvedSetting => ({ role, model: ROLE_SETTINGS[role].model, effort: ROLE_SETTINGS[role].effort });
+
+/**
+ * Resolve a settings row (or no row: tier null) to a role, model and effort.
+ * Old tier names: light → extract; default/heavy → the function's role,
+ * except on an Extract function, where they keep the model they meant.
+ * Unknown values fall back to the function's role.
+ */
+export function resolveSetting(functionId: AIFunctionId, tier: string | null, customModel: string | null): ResolvedSetting {
+  const role = DEFAULT_ROLES[functionId];
+  if (tier === 'custom' && customModel && customModel.trim().length > 0) return fromModel(customModel.trim());
+  if ((MODEL_ROLES as readonly string[]).includes(tier ?? '')) return fromRole(tier as ModelRole);
+  if (tier === 'light') return fromRole('extract');
+  if ((tier === 'default' || tier === 'heavy') && role === 'extract') return fromModel(LEGACY_DEFAULT_MODEL);
+  return fromRole(role);
+}
 
 export const FUNCTION_LABELS: Record<AIFunctionId, string> = {
   'capture-chat': 'Capture audit conversation',
@@ -246,7 +170,7 @@ export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
   'capture-chat-agent': 'Per-turn agent loop for CourseCapture v2 audit chat; reads at-rest digests, retrieves chunks on demand, emits a structured finding + question + citations.',
   'wiki-update': 'Regenerates the affected wiki-layer pages (course, competencies, targets, concepts) from a new snapshot + related substrate. Returns a page map; Task A3 git-ops writes + commits.',
   'curriculum-chat': 'Faculty-facing chat over the curriculum wiki. Tool-using agent reads / lists / searches wiki pages and emits a markdown response with structured page citations. Powers Explore\'s "Ask" tab and the future standalone /ask route.',
-  'capture-stress-test': 'Adversarial review of a produced Course Outcome Profile: challenges per-finding confidence, surfaces internal contradictions, flags catalog-vs-evidence claims that don\'t hold up. Heavy reasoning tier; runs automatically once after each profile is generated (its flags drive the "Worth a look" review cards), plus on a manual Re-check.',
+  'capture-stress-test': 'Adversarial review of a produced Course Outcome Profile: challenges per-finding confidence, surfaces internal contradictions, flags catalog-vs-evidence claims that don\'t hold up. Judge role; runs automatically once after each profile is generated (its flags drive the "Worth a look" review cards), plus on a manual Re-check.',
   'jd-extract': 'One-shot extraction of structured fields from a job description (Docling markdown or pasted text), with per-field confidence scores.',
   'position-rated-items': 'Generates 10 "experiences worth having" candidates from pages 1-4 inputs + career target sub-competencies. Single-call generator.',
   'position-interview-agent': 'Per-turn interview agent for page 6 of Position Capture; anchor-probe-confirm posture using pages 1-5 context. Emits AuditResponse-shaped output.',
@@ -266,7 +190,7 @@ export const FUNCTION_DESCRIPTIONS: Record<AIFunctionId, string> = {
 };
 
 interface CachedSetting {
-  tier: ModelTier;
+  tier: string | null;
   customModel: string | null;
   fetchedAt: number;
 }
@@ -277,54 +201,36 @@ const SETTING_TTL_MS = 60_000;
 const settingsCache = new Map<AIFunctionId, CachedSetting>();
 
 /**
- * Returns the resolved model name for a function — the row's customModel
- * (when tier === 'custom') or the tier's default model, or the function's
- * compiled-in default tier model when no row exists.
+ * The model and reasoning effort a function runs with: its settings row
+ * (a role, a custom model, or an old tier name), or its compiled-in role
+ * when no row exists.
  */
-export async function resolveModelForFunction(functionId: AIFunctionId): Promise<string> {
+export async function resolveForFunction(functionId: AIFunctionId): Promise<{ model: string; effort: string | undefined }> {
   const now = Date.now();
-  const cached = settingsCache.get(functionId);
-  if (cached && now - cached.fetchedAt < SETTING_TTL_MS) {
-    return resolveFromTier(functionId, cached.tier, cached.customModel);
+  let cached = settingsCache.get(functionId);
+  if (!cached || now - cached.fetchedAt >= SETTING_TTL_MS) {
+    let row: { tier: string; customModel: string | null } | null = null;
+    try {
+      const rows = await db
+        .select({ tier: aiFunctionSettings.tier, customModel: aiFunctionSettings.customModel })
+        .from(aiFunctionSettings)
+        .where(eq(aiFunctionSettings.functionId, functionId))
+        .limit(1);
+      row = rows[0] ?? null;
+    } catch {
+      // DB unreachable — fall back to defaults rather than erroring the call.
+      row = null;
+    }
+    cached = { tier: row?.tier ?? null, customModel: row?.customModel ?? null, fetchedAt: now };
+    settingsCache.set(functionId, cached);
   }
-
-  let row: { tier: string; customModel: string | null } | null = null;
-  try {
-    const rows = await db
-      .select({ tier: aiFunctionSettings.tier, customModel: aiFunctionSettings.customModel })
-      .from(aiFunctionSettings)
-      .where(eq(aiFunctionSettings.functionId, functionId))
-      .limit(1);
-    row = rows[0] ?? null;
-  } catch {
-    // DB unreachable — fall back to defaults rather than erroring the call.
-    row = null;
-  }
-
-  if (row) {
-    const tier = row.tier as ModelTier;
-    settingsCache.set(functionId, { tier, customModel: row.customModel, fetchedAt: now });
-    return resolveFromTier(functionId, tier, row.customModel);
-  }
-  // No row — use the function's default tier.
-  const defaultTier = DEFAULT_TIERS[functionId];
-  settingsCache.set(functionId, { tier: defaultTier, customModel: null, fetchedAt: now });
-  return TIER_TO_MODEL[defaultTier];
+  const { model, effort } = resolveSetting(functionId, cached.tier, cached.customModel);
+  return { model, effort };
 }
 
-function resolveFromTier(
-  functionId: AIFunctionId,
-  tier: ModelTier,
-  customModel: string | null,
-): string {
-  if (tier === 'custom' && customModel && customModel.trim().length > 0) {
-    return customModel.trim();
-  }
-  if (tier === 'light' || tier === 'default' || tier === 'heavy') {
-    return TIER_TO_MODEL[tier];
-  }
-  // Unknown tier value — fall back to the function's default.
-  return TIER_TO_MODEL[DEFAULT_TIERS[functionId]];
+/** The model a function runs on (scripts that only need the name). */
+export async function resolveModelForFunction(functionId: AIFunctionId): Promise<string> {
+  return (await resolveForFunction(functionId)).model;
 }
 
 /**
@@ -339,14 +245,16 @@ export function invalidateSettingsCache(functionId?: AIFunctionId): void {
 
 export interface FunctionSettingRow {
   functionId: AIFunctionId;
-  tier: ModelTier;
+  /** The stored value as resolved: a role, or 'custom'. */
+  tier: StoredTier;
   customModel: string | null;
   resolvedModel: string;
-  defaultTier: Exclude<ModelTier, 'custom'>;
+  resolvedEffort: string | undefined;
+  defaultRole: ModelRole;
 }
 
-/** Read all settings rows + each function's default tier + the model that
- * would be used right now. Used by the settings UI to populate the form. */
+/** Read all settings rows + each function's default role + the model and
+ * effort it would use right now. Used by the settings UI to populate the form. */
 export async function listAllFunctionSettings(): Promise<FunctionSettingRow[]> {
   let rows: { functionId: string; tier: string; customModel: string | null }[] = [];
   try {
@@ -364,23 +272,22 @@ export async function listAllFunctionSettings(): Promise<FunctionSettingRow[]> {
 
   return AI_FUNCTION_IDS.map(functionId => {
     const stored = byId.get(functionId);
-    const defaultTier = DEFAULT_TIERS[functionId];
-    const tier = (stored?.tier as ModelTier | undefined) ?? defaultTier;
     const customModel = stored?.customModel ?? null;
-    const resolvedModel = resolveFromTier(functionId, tier, customModel);
+    const resolved = resolveSetting(functionId, stored?.tier ?? null, customModel);
     return {
       functionId,
-      tier,
-      customModel,
-      resolvedModel,
-      defaultTier,
+      tier: resolved.role,
+      customModel: resolved.role === 'custom' ? customModel : null,
+      resolvedModel: resolved.model,
+      resolvedEffort: resolved.effort,
+      defaultRole: DEFAULT_ROLES[functionId],
     };
   });
 }
 
 export interface UpsertFunctionSettingInput {
   functionId: AIFunctionId;
-  tier: ModelTier;
+  tier: StoredTier;
   customModel: string | null;
 }
 
