@@ -62,6 +62,14 @@ export interface AuditAgentInput {
    * findings. Default true (current behavior).
    */
   includePriorSessions?: boolean;
+  /**
+   * How materials appear in the at-rest context. 'digests' (default,
+   * production): every included material's full digest. 'index': one line
+   * per material, so the agent must search to read or cite anything — under
+   * test by scripts/capture/replay-interview.ts (2026-10-27); digests were
+   * ~53k of GC 2070's ~70k tokens per turn and cannot be cited.
+   */
+  materialsView?: 'digests' | 'index';
 }
 
 export interface AuditAgentResult {
@@ -103,8 +111,20 @@ async function loadBriefBlock(courseCode: string): Promise<string> {
   }
 }
 
+const INDEX_LINE_MAX = 200;
+
+/** One line per material: the first sentence of its digest's "What this material is" paragraph. */
+export function renderMaterialIndex(materials: Array<{ id: string; fileName: string; digest: string | null }>): string {
+  return materials.map(m => {
+    const para = (m.digest ?? '').replace(/^##[^\n]*\n+/, '').split(/\n\n/)[0]?.trim() ?? '';
+    const sentence = (para.match(/^.*?[.!?](?=\s|$)/)?.[0] ?? para).trim();
+    const line = sentence ? (sentence.length > INDEX_LINE_MAX ? sentence.slice(0, INDEX_LINE_MAX - 1) + '…' : sentence) : '(no summary)';
+    return `- ${m.fileName} (id=${m.id}): ${line}`;
+  }).join('\n');
+}
+
 export async function buildAgentCall(input: AuditAgentInput): Promise<BuiltAgentCall> {
-  const { sessionId, courseCode, userMessage, auditMode, instructorName, includePriorSessions } = input;
+  const { sessionId, courseCode, userMessage, auditMode, instructorName, includePriorSessions, materialsView = 'digests' } = input;
 
   const existingBeforeUser = await getSessionMessages(courseCode, sessionId);
   const isOpeningTurn = existingBeforeUser.length === 0 && !userMessage;
@@ -157,18 +177,21 @@ export async function buildAgentCall(input: AuditAgentInput): Promise<BuiltAgent
     `Declared incoming skills: ${skillsRequired.join('; ') || '(none)'}`,
   ].join('\n');
 
-  const digestBlock = includedMaterials.length
-    ? includedMaterials
-        .map(m => `--- ${m.fileName} (id=${m.id}) ---\n${m.digest ?? '(no digest)'}`)
-        .join('\n\n')
-    : '(no included materials)';
+  const digestBlock = !includedMaterials.length
+    ? '(no included materials)'
+    : materialsView === 'index'
+      ? renderMaterialIndex(includedMaterials)
+      : includedMaterials
+          .map(m => `--- ${m.fileName} (id=${m.id}) ---\n${m.digest ?? '(no digest)'}`)
+          .join('\n\n');
+  const materialsHeading = materialsView === 'index' ? 'Material list' : 'Material digests';
 
   const priorSessionsBlock = renderBriefing(composeSessionBriefing(priorSessions));
 
   const messages: Message[] = [
     {
       role: 'user',
-      content: `# Course catalog\n\n${catalogBlock}\n\n# Material digests\n\n${digestBlock}\n\n# Prior audit sessions (most recent)\n\n${priorSessionsBlock}\n\n# Neighboring courses\n\n${briefBlock}`,
+      content: `# Course catalog\n\n${catalogBlock}\n\n# ${materialsHeading}\n\n${digestBlock}\n\n# Prior audit sessions (most recent)\n\n${priorSessionsBlock}\n\n# Neighboring courses\n\n${briefBlock}`,
     },
     ...history
       .filter(m => m.role === 'user' || m.role === 'assistant')

@@ -71,7 +71,7 @@ vi.mock('@/lib/ai/agent/audit-tools', () => ({
 }));
 
 // --- Import module under test AFTER mocks are registered ---
-import { runAuditAgent, buildAgentCall } from '@/lib/ai/agent/audit-agent';
+import { runAuditAgent, buildAgentCall, renderMaterialIndex } from '@/lib/ai/agent/audit-agent';
 
 // --- Helpers ---
 
@@ -408,3 +408,55 @@ describe('runAuditAgent', () => {
     expect(atRest).not.toContain('Recent turns (chronological');
   });
 });
+
+// Material list instead of digests (2026-10-27, replay test only; production
+// still sends digests). Digests were ~53k of GC 2070's ~70k tokens per turn and
+// cannot be cited, so the interviewer rarely searched.
+describe('material list view', () => {
+  const COURSE = 'GC 4800';
+  const SESSION = 'sess-1';
+  const DIGEST = '## What this material is\n\nA rubric for the B6 four-color halftone project, scoring registration and dot gain. It lists five criteria.\n\n## Key terms\n\nregistration, dot gain';
+
+  it('renders one line per material from the first sentence of its digest', () => {
+    const out = renderMaterialIndex([
+      { id: 'm1', fileName: 'B6 rubric.pdf', digest: DIGEST },
+      { id: 'm2', fileName: 'notes.pdf', digest: null },
+    ]);
+    expect(out).toBe(
+      '- B6 rubric.pdf (id=m1): A rubric for the B6 four-color halftone project, scoring registration and dot gain.\n'
+      + '- notes.pdf (id=m2): (no summary)',
+    );
+  });
+
+  it('caps a long description at 200 characters', () => {
+    const long = '## What this material is\n\n' + 'x'.repeat(500);
+    const line = renderMaterialIndex([{ id: 'm1', fileName: 'f.pdf', digest: long }]);
+    expect(line.length).toBeLessThanOrEqual('- f.pdf (id=m1): '.length + 200);
+  });
+
+  it("buildAgentCall with materialsView 'index' sends the list, not the digests", async () => {
+    mockGetSessionMessages.mockResolvedValue([]);
+    mockGetCourseByCode.mockResolvedValue(makeCourse());
+    mockListMaterialsByCourse.mockResolvedValue([makeMaterial({ digest: DIGEST })]);
+
+    const built = await buildAgentCall({ sessionId: SESSION, courseCode: COURSE, userMessage: 'hi', auditMode: 'full', materialsView: 'index' });
+    const first = built.messages[0]!;
+    if (first.role !== 'user') throw new Error('unreachable');
+    expect(first.content).toContain('# Material list');
+    expect(first.content).not.toContain('# Material digests');
+    expect(first.content).not.toContain('Key terms');
+  });
+
+  it('defaults to the digests (production unchanged)', async () => {
+    mockGetSessionMessages.mockResolvedValue([]);
+    mockGetCourseByCode.mockResolvedValue(makeCourse());
+    mockListMaterialsByCourse.mockResolvedValue([makeMaterial({ digest: DIGEST })]);
+
+    const built = await buildAgentCall({ sessionId: SESSION, courseCode: COURSE, userMessage: 'hi', auditMode: 'full' });
+    const first = built.messages[0]!;
+    if (first.role !== 'user') throw new Error('unreachable');
+    expect(first.content).toContain('# Material digests');
+    expect(first.content).toContain('Key terms');
+  });
+});
+
