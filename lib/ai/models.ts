@@ -1,28 +1,42 @@
 /**
  * Model registry: the one place that names OpenAI models.
  *
- * - TIER_TO_MODEL: which model each tier (light / default / heavy) runs.
- *   Per-function tiers and custom models live in `ai_function_settings`
+ * - ROLE_SETTINGS: which model and effort each role (judge / converse / write / extract) runs.
+ *   Per-function roles and custom models live in `ai_function_settings`
  *   (lib/ai/function-settings.ts, edited on /settings).
  * - MODEL_PRICING: per-model prices for the daily-cost ledger.
  * - DEFAULT_REASONING_EFFORT: effort a model runs at when the caller sets none.
  * - usesResponsesApi: which models take tool calls through the Responses API.
  *
- * To try a new model: add its price here, then point a tier (or one
+ * To try a new model: add its price here, then point a role (or one
  * function's settings row) at it. A guard test
  * (lib/ai/__tests__/model-registry.test.ts) fails if a model id is written
  * anywhere else in lib/ or app/.
  */
 
-export type Tier = 'light' | 'default' | 'heavy';
+/**
+ * Roles group functions by the kind of work they do (spec
+ * docs/superpowers/specs/2026-10-27-model-roles-design.md). Each role
+ * carries a model and a reasoning effort; change them only here.
+ * gpt-6.1-sol at low effort: owner decision 2026-10-06, see
+ * docs/superpowers/audits/2026-10-05-model-evaluation.md.
+ */
+export type ModelRole = 'judge' | 'converse' | 'write' | 'extract';
 
-export const TIER_TO_MODEL: Record<Tier, string> = {
-  light: 'gpt-5.4-mini',
-  // Owner decision 2026-10-06: default and heavy move to gpt-6.1-sol (low
-  // reasoning effort, below). See
-  // docs/superpowers/audits/2026-10-05-model-evaluation.md.
-  default: 'gpt-6.1-sol',
-  heavy: 'gpt-6.1-sol',
+export const MODEL_ROLES: readonly ModelRole[] = ['judge', 'converse', 'write', 'extract'];
+
+export interface RoleSetting {
+  model: string;
+  effort: string | undefined;
+  label: string;
+  purpose: string;
+}
+
+export const ROLE_SETTINGS: Record<ModelRole, RoleSetting> = {
+  judge: { model: 'gpt-6.1-sol', effort: 'low', label: 'Judge', purpose: 'Produces a score or claim that becomes the stored record' },
+  converse: { model: 'gpt-6.1-sol', effort: 'low', label: 'Converse', purpose: 'Faculty-facing chat, turn by turn, often with tools' },
+  write: { model: 'gpt-6.1-sol', effort: 'low', label: 'Write', purpose: 'Prose or proposals a person reads or approves' },
+  extract: { model: 'gpt-5.4-mini', effort: undefined, label: 'Extract', purpose: 'Bounded extraction, classification or summary, often in bulk' },
 };
 
 // Per-model pricing in USD per 1M tokens. Update from
