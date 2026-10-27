@@ -45,3 +45,48 @@ export function assessMaterialsHealth(materials: MaterialLike[]): MaterialsHealt
         : 'notice';
   return { total, failedExtraction, failedFiles: failed.map(m => m.fileName), severity };
 }
+
+// Thin-evidence check (owner, 2026-10-27: "push back when it has basically
+// nothing to go on"). GC 4400 was captured from a syllabus alone: two uploads
+// were never read and nothing came from Canvas, and the guard above saw none of
+// it (their extraction was still pending, not failed). The capture page warns
+// before the interview and again at approval; faculty may continue anyway.
+
+export interface EvidenceCheck {
+  /** Show the warning. */
+  warn: boolean;
+  /** Active files not read yet (waiting, in progress or failed). */
+  unreadFiles: string[];
+  /** Nothing has been read except the syllabus (or the generated catalog syllabus). */
+  onlySyllabus: boolean;
+  /** No Canvas content among the active materials. */
+  noCanvas: boolean;
+}
+
+interface EvidenceMaterial {
+  fileName: string;
+  indexingStatus: string;
+  extractionStatus: string;
+  ignored?: boolean;
+  retiredAt?: string | Date | null;
+  isSyllabus?: boolean;
+}
+
+const READ = new Set(['ready', 'skipped']);
+const CATALOG_SYLLABUS_PREFIX = 'Catalog syllabus';
+
+export function assessEvidence(materials: EvidenceMaterial[]): EvidenceCheck {
+  // Same exclusions as assessMaterialsHealth: unfetched linked references are
+  // breadcrumbs, not provided content.
+  const active = materials.filter(
+    m => !m.ignored && !m.retiredAt && !(m.extractionStatus === 'failed' && materialProvenance(m) === 'linked'),
+  );
+  const unreadFiles = active.filter(m => !READ.has(m.indexingStatus)).map(m => m.fileName);
+  // 'skipped' files were read but set aside, so they are not evidence.
+  const evidence = active.filter(
+    m => m.indexingStatus === 'ready' && !m.isSyllabus && !m.fileName.startsWith(CATALOG_SYLLABUS_PREFIX),
+  );
+  const onlySyllabus = evidence.length === 0;
+  const noCanvas = !active.some(m => materialProvenance(m) === 'canvas');
+  return { warn: unreadFiles.length > 0 || onlySyllabus, unreadFiles, onlySyllabus, noCanvas };
+}

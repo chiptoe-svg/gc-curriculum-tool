@@ -17,7 +17,9 @@ import { CaptureHero } from './CaptureHero';
 import { CaptureMaterialsStep } from './CaptureMaterialsStep';
 import { TriageStep } from './TriageStep';
 import { shouldShowMaterialsStep } from '@/lib/capture/material-display';
-import { assessMaterialsHealth } from '@/lib/capture/materials-health';
+import { assessMaterialsHealth, assessEvidence } from '@/lib/capture/materials-health';
+import { fetchCourseMaterials } from '@/lib/capture/fetch-course-materials';
+import { EvidenceWarning } from './EvidenceWarning';
 import { IngestProgress, type IngestStatus } from './IngestProgress';
 import { MaterialGate } from './MaterialGate';
 import { flagMaterials } from '@/lib/capture/flag-materials';
@@ -179,6 +181,29 @@ export function CaptureClient({
   const [landingStep, setLandingStep] = useState<'materials' | 'ingest' | 'interview'>(
     initialMessages.length > 0 ? 'interview' : 'materials',
   );
+  // Thin-evidence check (owner, 2026-10-27): warn before a new interview and at
+  // approval when there is almost nothing to work from; never block. The page's
+  // material list is loaded once, so refetch it on reaching the interview and
+  // the review — otherwise files read by Ingest would still count as unread.
+  const [materialsFresh, setMaterialsFresh] = useState(false);
+  const [evidenceAck, setEvidenceAck] = useState(false);
+  const evidenceStage = stage === 'review' ? 'review' : stage === 'chat' && landingStep === 'interview' ? 'chat' : null;
+  useEffect(() => {
+    if (evidenceStage !== 'chat' && evidenceStage !== 'review') return;
+    let cancelled = false;
+    setMaterialsFresh(false);
+    void fetchCourseMaterials(courseCode, slug).then(fresh => {
+      if (cancelled) return;
+      if (fresh) setMaterials(fresh);
+      setMaterialsFresh(true);
+    });
+    return () => { cancelled = true; };
+  }, [evidenceStage, courseCode, slug]);
+  const evidence = assessEvidence(materials);
+  // A new interview waits for the deliberate "Continue anyway"; a resumed one
+  // shows the warning without stopping the chat.
+  const interviewGated = evidence.warn && messages.length === 0 && !evidenceAck;
+
   // Collapsed "Setup & history" disclosure on the interview step.
   const [setupOpen, setSetupOpen] = useState(false);
 
@@ -498,6 +523,23 @@ export function CaptureClient({
               </button>
             </div>
           )}
+          {evidence.warn && materialsFresh && !interviewGated && <EvidenceWarning check={evidence} />}
+          {interviewGated ? (
+            materialsFresh ? (
+              <EvidenceWarning check={evidence}>
+                <button
+                  type="button"
+                  onClick={() => setEvidenceAck(true)}
+                  className="rounded-md border border-amber-400 bg-white px-3 py-1.5 text-sm font-medium text-amber-900 hover:bg-amber-100"
+                >
+                  Continue anyway
+                </button>
+              </EvidenceWarning>
+            ) : (
+              <p className="text-sm text-muted-foreground">Checking materials…</p>
+            )
+          ) : (
+          <>
           <IngestionCheckIn courseCode={courseCode} slug={slug} />
           <CaptureChatPanel
             key={chatPanelKey}
@@ -514,6 +556,8 @@ export function CaptureClient({
             onModeChange={setChooserMode}
             priorBriefings={priorBriefings}
           />
+          </>
+          )}
           <div className="flex items-center justify-end gap-3 text-xs text-muted-foreground">
             {resetState === 'error' && (
               <span className="text-destructive">Reset failed — check the server log.</span>
@@ -675,6 +719,7 @@ export function CaptureClient({
             reconciliationLog={reconciliationLog}
             hasSnapshot={hasSnapshot}
             stressTest={stressTest}
+            evidence={materialsFresh && evidence.warn ? evidence : null}
           />
         </div>
       )}

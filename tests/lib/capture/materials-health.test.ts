@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { assessMaterialsHealth } from '@/lib/capture/materials-health';
+import { assessMaterialsHealth, assessEvidence } from '@/lib/capture/materials-health';
 
 const m = (fileName: string, extractionStatus: string, ignored = false) => ({ fileName, extractionStatus, ignored });
 
@@ -68,5 +68,58 @@ describe('assessMaterialsHealth', () => {
     expect(h.failedExtraction).toBe(1);
     expect(h.failedFiles).toEqual(['Canvas File: real-deck.pdf']);
     expect(h.total).toBe(2);
+  });
+});
+
+// Thin-evidence check (owner, 2026-10-27): GC 4400 was captured from a syllabus
+// alone, with two uploads never read and nothing from Canvas — warn, don't block.
+describe('assessEvidence', () => {
+  const mat = (fileName: string, indexingStatus: string, extra: Record<string, unknown> = {}) =>
+    ({ fileName, indexingStatus, extractionStatus: indexingStatus === 'ready' ? 'ok' : 'pending', ignored: false, retiredAt: null, isSyllabus: false, ...extra });
+  const syllabus = mat('4400_6400 Syllabus Fall 2026.pdf', 'ready', { isSyllabus: true });
+
+  it('warns at the GC 4400 shape: syllabus only, two unread uploads, no Canvas', () => {
+    const e = assessEvidence([syllabus, mat('Photo Book Assignment.docx', 'pending'), mat('Photo Book Assignment.docx', 'pending')]);
+    expect(e).toEqual({ warn: true, unreadFiles: ['Photo Book Assignment.docx', 'Photo Book Assignment.docx'], onlySyllabus: true, noCanvas: true });
+  });
+
+  it('counts queued, in-progress and failed files as unread', () => {
+    const e = assessEvidence([syllabus, mat('a.pdf', 'queued'), mat('b.pdf', 'indexing'), mat('c.pdf', 'failed'), mat('Canvas: Assignments', 'ready')]);
+    expect(e.unreadFiles).toEqual(['a.pdf', 'b.pdf', 'c.pdf']);
+    expect(e.warn).toBe(true);
+    expect(e.onlySyllabus).toBe(false);
+  });
+
+  it('does not warn when Canvas content has been read and nothing is waiting', () => {
+    const e = assessEvidence([syllabus, mat('Canvas: Assignments', 'ready'), mat('Canvas File: rubric.pdf', 'skipped')]);
+    expect(e).toEqual({ warn: false, unreadFiles: [], onlySyllabus: false, noCanvas: false });
+  });
+
+  it('a read upload counts as evidence even without Canvas', () => {
+    const e = assessEvidence([syllabus, mat('Project brief.docx', 'ready')]);
+    expect(e).toEqual({ warn: false, unreadFiles: [], onlySyllabus: false, noCanvas: true });
+  });
+
+  it('the generated catalog syllabus is not evidence', () => {
+    expect(assessEvidence([mat('Catalog syllabus (generated from the GC course sheet)', 'ready')]).onlySyllabus).toBe(true);
+  });
+
+  it('a set-aside file is read but is not evidence', () => {
+    expect(assessEvidence([syllabus, mat('roster.pdf', 'skipped')]).onlySyllabus).toBe(true);
+  });
+
+  it('ignores ignored and retired files and unfetched linked references', () => {
+    const e = assessEvidence([
+      syllabus, mat('Canvas: Pages', 'ready'),
+      mat('old.pdf', 'pending', { ignored: true }),
+      mat('gone.pdf', 'failed', { retiredAt: '2026-10-01T00:00:00Z' }),
+      mat('YouTube: Some video', 'failed', { extractionStatus: 'failed' }),
+    ]);
+    expect(e.warn).toBe(false);
+    expect(e.unreadFiles).toEqual([]);
+  });
+
+  it('an empty course warns as syllabus-only', () => {
+    expect(assessEvidence([])).toEqual({ warn: true, unreadFiles: [], onlySyllabus: true, noCanvas: true });
   });
 });

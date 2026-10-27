@@ -1,5 +1,7 @@
 'use client';
 
+import { EvidenceWarning } from './EvidenceWarning';
+import type { EvidenceCheck } from '@/lib/capture/materials-health';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   captureProfileSchema,
@@ -227,6 +229,9 @@ interface Props {
   courseTitle: string;
   slug: string;
   onSnapshotCreated: () => void;
+  /** Thin-evidence warning (2026-10-27): when set, the approve dialog shows it
+   *  and its Approve button needs an "approve anyway" tick. Warns, never blocks. */
+  evidence?: EvidenceCheck | null;
   reconciliationLog?: ReconciliationLogEntry[];
   /**
    * True when a non-retired snapshot exists for this course (computed in
@@ -901,6 +906,7 @@ export function ProfileReviewPanel({
   courseTitle,
   slug,
   onSnapshotCreated,
+  evidence = null,
   reconciliationLog,
   hasSnapshot,
   stressTest,
@@ -968,6 +974,8 @@ export function ProfileReviewPanel({
       excerpt: c.excerpt,
     });
   }
+
+  const [approveAnyway, setApproveAnyway] = useState(false);
 
   async function handleConfirmAndSnapshot() {
     if (validationError) {
@@ -1707,11 +1715,19 @@ export function ProfileReviewPanel({
               className="w-full resize-y rounded border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
             />
           </div>
+          {evidence && (
+            <EvidenceWarning check={evidence}>
+              <label className="flex items-center gap-2 text-amber-900">
+                <input type="checkbox" checked={approveAnyway} onChange={e => setApproveAnyway(e.target.checked)} />
+                Approve anyway: I understand this profile rests on very little evidence
+              </label>
+            </EvidenceWarning>
+          )}
           <div className="flex items-center justify-end gap-2">
             <button
               type="button"
               onClick={handleConfirmAndSnapshot}
-              disabled={snapshotting || !approveUnlocked}
+              disabled={snapshotting || !approveUnlocked || (evidence !== null && !approveAnyway)}
               title={!approveUnlocked ? approveLockTitle : undefined}
               className="rounded-md bg-foreground px-4 py-1.5 text-sm font-semibold text-background shadow-sm hover:bg-foreground/85 disabled:opacity-50 disabled:cursor-not-allowed"
             >
