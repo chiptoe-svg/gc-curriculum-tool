@@ -73,7 +73,7 @@ Conform exactly to the JSON schema provided in the structured-output request. Th
       "u_says": "<same, for U — or null for foundational>",
       "d_says": "<same, for D — or null if D=0>",
       "rationale": "<short prose explaining the depth values>",
-      "source": "instructor" | "materials" | "inferred",
+      "source": "instructor" | "materials" | "both" | "inferred",
       "citations": [ { "type": "chunk" | "instructor", "chunkId"?: "...", "messageId"?: "...", "excerpt": "≤200 chars" }, ... ]
     },
     ...
@@ -84,7 +84,7 @@ Conform exactly to the JSON schema provided in the structured-output request. Th
       "expected_depth": { "k": 0-5 or null, "u": 0-5 or null, "d": 0-5 },
       "evidenced_by": [ "<assignment name + how it demands the skill>", ... ],
       "confidence": "high" | "medium" | "low",
-      "source": "instructor" | "materials" | "inferred",
+      "source": "instructor" | "materials" | "both" | "inferred",
       "citations": [ ... ]
     },
     ...
@@ -95,7 +95,7 @@ Conform exactly to the JSON schema provided in the structured-output request. Th
     "dimensional_patterns": [ "<one-line bullet>", ... ],
     "catalog_vs_evidence": [ "<one-line bullet>", ... ],
     "foundationals_glance": "<one sentence>",
-    "source": "instructor" | "materials" | "inferred",
+    "source": "instructor" | "materials" | "both" | "inferred",
     "citations": [ ... ]
   },
   "audit_notes": {
@@ -114,7 +114,7 @@ Conform exactly to the JSON schema provided in the structured-output request. Th
       "max_supporting_depth": 0-5,
       "notes": [ "<one-line finding tying a specific assignment to a condition>", ... ]
     },
-    "source": "instructor" | "materials" | "inferred",
+    "source": "instructor" | "materials" | "both" | "inferred",
     "citations": [ ... ]
   },
   "revised_objectives_draft": [ "<what the course appears to deliver>", ... ],   // apparent outcomes; 3–6 items, always produced (null only if no evidence)
@@ -126,7 +126,7 @@ Conform exactly to the JSON schema provided in the structured-output request. Th
     "topics": ["<ordered unit/lab titles>", ...],
     "cadence": "<weekly rhythm, e.g. two 75-min sessions per week>",
     "assessment": "<plain prose, e.g. Three tests, two major projects, and weekly labs.>",
-    "source": "materials" | "instructor" | "inferred" | null,
+    "source": "materials" | "instructor" | "both" | "inferred" | null,
     "citations": [ { "type": "chunk", "chunkId": "...", "messageId": null, "excerpt": "≤200 chars" }, ... ]
   } | null,
   "major_projects": [
@@ -138,7 +138,7 @@ Conform exactly to the JSON schema provided in the structured-output request. Th
       "what_it_develops": "<1-2 sentences: the capability or gap this project closes for students>",
       "weight_pct": <number 0-100 or null if not determinable>,
       "duration_weeks": <integer ≥1 or null if not determinable>,
-      "source": "materials" | "instructor" | "inferred" | null,
+      "source": "materials" | "instructor" | "both" | "inferred" | null,
       "citations": [ { "type": "chunk", "chunkId": "...", "messageId": null, "excerpt": "≤200 chars" }, ... ]
     }
   ] | null
@@ -187,7 +187,7 @@ this rule alone:
 
 - All citations have `type: 'instructor'` → `source: 'instructor'`
 - All citations have `type: 'chunk'` → `source: 'materials'`
-- Mixed (at least one citation of each type) → `source: 'inferred'`
+- Mixed (at least one citation of each type) → `source: 'both'`
 - No citations at all → `source: 'inferred'`
 
 You do NOT use judgment to set `source`. The flag is structural — it is
@@ -455,7 +455,7 @@ Produce:
 - **`at_a_glance`** — 3–7 single-line bullets capturing what makes the course distinctive (format, pedagogy, distinctive choices): *"One real client per semester, not case studies"*, *"Weekly critique format; minimal lecture"*, *"Heavy reliance on Adobe CC workflows"*. Avoid restating learning objectives — these are character notes.
 - **`who_for`** — one sentence on the target student. *"Designed for juniors who've completed GC 3460 and are heading into the brand-strategy track."*
 - **`arc`** — 1–2 sentence semester trajectory. *"Students begin with audience research and competitor analysis, build a strategic brief by midterm, then execute identity systems through final client critique."*
-- **`source`** — derived mechanically per the same rules as other sections (`instructor` when grounded in the transcript, `materials` when grounded in extracted text, `inferred` when synthesized).
+- **`source`** — derived mechanically per the same rules as other sections (`instructor` when grounded in the transcript, `materials` when grounded in extracted text, `both` when grounded in both, `inferred` when synthesized).
 - **`citations`** — link to the chunks or instructor turns that ground the descriptive claims, when they exist.
 
 **Voice discipline:** the overview is editorial, not audit-flavored. Avoid words like *"the course audits show…"*, *"evidence indicates…"*, K/U/D numbers, or matrix language. The faculty member is going to publish this — make it sound like something they'd be proud to have under their name. Make every sentence earn its place.

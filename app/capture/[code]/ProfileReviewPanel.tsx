@@ -51,10 +51,18 @@ export function isLegacyProfile(profile: CaptureProfile): boolean {
   return allFindings.every(f => f.source === undefined);
 }
 
+/** Plain words (owner, 2026-10-07), matching the review cards' status tags. */
+export function sourceLabel(source: CaptureProfileSourceType): string {
+  return source === 'instructor' ? 'From your interview'
+    : source === 'materials' ? 'From course materials'
+      : source === 'both' ? 'From your interview and course materials'
+        : "AI's inference";
+}
+
 /**
  * v2 provenance badge — renders nothing for pre-v2 findings (source absent).
  * Color encodes provenance (teal = instructor-only, amber = materials-only,
- * gray = inferred / mixed / no citations); `title` shows citation count on
+ * green = both, gray = inferred / no citations); `title` shows citation count on
  * hover. Click-through to the citation drawer is Stage 5 polish.
  */
 export function SourceBadge({
@@ -73,10 +81,10 @@ export function SourceBadge({
       ? 'bg-teal-100 text-teal-900 border-teal-300'
       : source === 'materials'
         ? 'bg-amber-100 text-amber-900 border-amber-300'
-        : 'bg-stone-100 text-stone-700 border-stone-300';
-  // Plain words (owner, 2026-10-07), matching the review cards' status tags.
-  const label =
-    source === 'instructor' ? 'From your interview' : source === 'materials' ? 'From course materials' : "AI's inference";
+        : source === 'both'
+          ? 'bg-green-100 text-green-900 border-green-300'
+          : 'bg-stone-100 text-stone-700 border-stone-300';
+  const label = sourceLabel(source);
 
   const interactive = onCitationClick && citations && citations.length > 0;
   const className =
@@ -200,7 +208,7 @@ export function triageCompetency(
 
 /** Plain-language source label for the collapsed quick-review rows. */
 export function humanizeSource(source: CaptureProfileSourceType | undefined): string {
-  return source === 'instructor' ? 'you said' : source === 'materials' ? 'found in materials' : 'AI inferred';
+  return source === 'instructor' ? 'you said' : source === 'materials' ? 'found in materials' : source === 'both' ? 'you said + materials' : 'AI inferred';
 }
 
 interface Telemetry {
@@ -492,6 +500,13 @@ export function statusTagFor(
   const band = deriveEvidenceBand({ source: c.source, citations: c.citations });
   if (band === 'artifact_verified') {
     return { label: 'From student work', title: 'Backed by student-produced work.', tone: 'border-teal-300 bg-teal-50 text-teal-900' };
+  }
+  if (band === 'materials_supported' && c.source === 'both') {
+    return {
+      label: 'From your interview and course materials',
+      title: 'Based on what you said in the interview and backed by a course document.',
+      tone: 'border-green-300 bg-green-50 text-green-900',
+    };
   }
   if (band === 'materials_supported') {
     return {

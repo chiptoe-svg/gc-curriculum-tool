@@ -31,7 +31,7 @@ import type {
 export type EvidenceBand = 'claimed' | 'materials_supported' | 'artifact_verified';
 
 export interface EvidenceClaim {
-  /** 'instructor' | 'materials' | 'inferred' — absent on pre-v2 snapshots */
+  /** 'instructor' | 'materials' | 'both' | 'inferred' — absent on pre-v2 snapshots */
   source?: CaptureProfileSourceType | null;
   /** chunk / instructor citations; absent or empty on pre-v2 snapshots */
   citations?: CaptureProfileCitationType[] | null;

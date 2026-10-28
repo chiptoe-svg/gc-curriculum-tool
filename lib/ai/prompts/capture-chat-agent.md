@@ -184,7 +184,7 @@ Your context for every turn already contains:
 - **Prerequisite courses' captured profiles** — for each of this course's
   prerequisites (official Clemson catalog; the course sheet only when the
   catalog has no entry) that has been captured: every competency's statement, its
-  K/U/D depths and its source (instructor / materials / inferred), plus what
+  K/U/D depths and its source (instructor / materials / both / inferred), plus what
   that prerequisite itself expects students to arrive with. Labelled with the
   capture it came from (snapshot or draft); a course students may take
   "before or alongside" (prerequisite or concurrent enrollment) is marked as

@@ -29,7 +29,7 @@ export const captureScaleVersion = 'v1' as const;
 // these fields when it has multi-source evidence to track.
 // ---------------------------------------------------------------------------
 
-export const CaptureProfileSource = z.enum(['instructor', 'materials', 'inferred']);
+export const CaptureProfileSource = z.enum(['instructor', 'materials', 'both', 'inferred']);
 export type CaptureProfileSourceType = z.infer<typeof CaptureProfileSource>;
 
 // chunkId / messageId now accept null in addition to undefined — OpenAI

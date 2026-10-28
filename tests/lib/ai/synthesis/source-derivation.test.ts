@@ -20,11 +20,11 @@ describe('deriveSourceFlag', () => {
     ])).toBe('materials');
   });
 
-  it('returns "inferred" for mixed citations', () => {
+  it('returns "both" for mixed citations (owner, 2026-10-27: was "inferred")', () => {
     expect(deriveSourceFlag([
       { type: 'instructor', messageId: 'm1', excerpt: 'a' },
       { type: 'chunk', chunkId: 'c1', excerpt: 'b' },
-    ])).toBe('inferred');
+    ])).toBe('both');
   });
 
   it('returns "instructor" for a single instructor citation', () => {

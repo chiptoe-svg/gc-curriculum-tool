@@ -17,7 +17,7 @@ import type { InferSelectModel } from 'drizzle-orm';
 // Inlined at each finding site rather than using $defs so the object remains
 // compatible with strict-mode structured-output providers that flatten refs.
 // ---------------------------------------------------------------------------
-const SOURCE_ENUM = { enum: ['instructor', 'materials', 'inferred'] } as const;
+const SOURCE_ENUM = { enum: ['instructor', 'materials', 'both', 'inferred'] } as const;
 // OpenAI strict structured-output requires every property in `properties`
 // to be listed in `required`. Optional fields (chunkId / messageId — one
 // is set depending on citation type) are encoded as nullable union types
@@ -73,7 +73,7 @@ export const captureProfileJsonSchema = {
         at_a_glance: { type: 'array', items: { type: 'string', minLength: 3 }, minItems: 3, maxItems: 7 },
         who_for: { type: 'string', minLength: 10 },
         arc: { type: 'string', minLength: 20 },
-        source: { type: ['string', 'null'], enum: ['instructor', 'materials', 'inferred', null] },
+        source: { type: ['string', 'null'], enum: ['instructor', 'materials', 'both', 'inferred', null] },
         citations: CITATIONS_ARRAY,
       },
     },
@@ -297,7 +297,7 @@ export const captureProfileJsonSchemaV2 = (() => {
       },
       cadence: { type: 'string', minLength: 5 },
       assessment: { type: 'string', minLength: 10 },
-      source: { type: ['string', 'null'], enum: ['instructor', 'materials', 'inferred', null] },
+      source: { type: ['string', 'null'], enum: ['instructor', 'materials', 'both', 'inferred', null] },
       citations: CITATIONS_ARRAY,
     },
   };
@@ -323,7 +323,7 @@ export const captureProfileJsonSchemaV2 = (() => {
         what_it_develops: { type: 'string', minLength: 1, maxLength: 500 },
         weight_pct: { type: ['number', 'null'], minimum: 0, maximum: 100 },
         duration_weeks: { type: ['integer', 'null'], minimum: 1 },
-        source: { type: ['string', 'null'], enum: ['instructor', 'materials', 'inferred', null] },
+        source: { type: ['string', 'null'], enum: ['instructor', 'materials', 'both', 'inferred', null] },
         citations: CITATIONS_ARRAY,
       },
     },
@@ -415,7 +415,7 @@ function buildV2SynthesisUserMessage(context: V2SynthesisContext): string {
     'excerpt; foundationals must have null k_depth and u_depth. Populate',
     'citations[] verbatim from the assistant turns that established each',
     "finding, then derive source per the mechanical rule (instructor-only →",
-    "'instructor', chunk-only → 'materials', mixed-or-empty → 'inferred').",
+    "'instructor', chunk-only → 'materials', mixed → 'both', empty → 'inferred').",
     'Emit productive_failure_conditions only if Audit Area 7 was probed.',
   ].join('\n');
 }

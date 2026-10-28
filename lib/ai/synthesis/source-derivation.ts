@@ -6,7 +6,8 @@ import type { CaptureProfile, CaptureProfileCitationType, CaptureProfileSourceTy
  *
  *   - All citations type=instructor → 'instructor'
  *   - All citations type=chunk → 'materials'
- *   - Mixed (at least one of each) → 'inferred'
+ *   - Mixed (at least one of each) → 'both' (owner, 2026-10-27; was
+ *     'inferred', which labeled the best-supported findings as guesses)
  *   - No citations → 'inferred' (the finding is speculative)
  *
  * The function is pure: no I/O, deterministic from inputs. Used by the
@@ -19,7 +20,7 @@ export function deriveSourceFlag(citations: CaptureProfileCitationType[]): Captu
   const hasChunk = citations.some(c => c.type === 'chunk');
   if (hasInstructor && !hasChunk) return 'instructor';
   if (hasChunk && !hasInstructor) return 'materials';
-  return 'inferred';
+  return 'both';
 }
 
 /**
