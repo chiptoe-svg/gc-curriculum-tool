@@ -84,3 +84,28 @@ our process, and matches CUassistant. Codex brings real hooks (Stop can force co
 
 Next: owner decision on Pi vs Codex (and whether to allow the hook-trust bypass to test Codex's
 controls); then a paid Sol run of the winner against the current loop (~0.8 credits, owner OK).
+
+## Paid run: Sol and Terra at medium effort (2026-10-28, owner OK)
+
+Quick set, scratch DB. Pi changes since the GLM run: the search trigger reads the previous question
+too (and assignment codes like "A2–A3"); a text reply can't skip a pending search; separate retry
+limits (search 1, citations 2); invalid citations dropped when retries run out; stable session id
+for the prompt cache. Cache writes are now reported on their own (owner: count them separately for
+the credit budget). The current loop's SDK path reports 0 writes: its "new input" includes them.
+
+| Run | Files searched | Files cited | Instructor searched | Bad cites | New input (excl. writes) | Cache writes | Cache reads | Out | Est. $ (reads at 10%) | s/turn |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Sol, current loop | 3/3 | 3/3 | 1/1 | 0 | 100,053 | 0 | 191,077 | 1,717 | 0.26 | 9.9 |
+| Sol, Pi + controls | 3/3 | 3/3 | 1/1 | 0 | 1,008 | 104,354 | 176,698 | 2,025 | 0.27 | 10.8 |
+| Terra, current loop | 2/3 | 2/3 | 1/1 | 0 | 108,693 | 0 | 155,974 | 1,999 | 0.13 | 8.4 |
+| Terra, Pi + controls | 3/3 | 3/3 | 1/1 | 0 | 1,134 | 127,293 | 206,659 | 2,916 | 0.16 | 11.4 |
+
+- **Sol medium:** both loops searched and cited everywhere; Pi's controls never had to act. Same
+  tokens, cost and speed. On Sol, Pi is a safety net, not an improvement on these cases.
+- **Terra medium:** the current loop missed 1020-016 (no search, no file citation). With Pi, the
+  control sent 2070-104 back to search once ("lab reports") and every files case searched and
+  cited, at about 60% of Sol's cost.
+- **Cache writes:** on the gateway almost all of Pi's new input is reported as cache writes. Whether
+  RCD bills writes differently from plain input is unknown; compare against the credits charged.
+- Four cases: directional. Before any switch, run the full 9-case set and have a person read the
+  questions (`--out` saves them).
