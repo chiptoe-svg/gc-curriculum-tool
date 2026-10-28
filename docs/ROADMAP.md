@@ -32,6 +32,8 @@ understand / do; the wiki and the program views make the result readable to anyo
 | Arc A step 4 — demand half of the unified demand/coverage layer (built-ahead, flag-gated, not activated) | Q1 spine: partner-weighted demand against coverage | M | activation decision; partner survey volume |
 | Evidence-ladder program rollup (claimed vs materials-supported counts in the matrix) | Makes the evidence floor visible at program scale | M | per-cell source/citations through the matrix API |
 | Restore test of the off-host backups (isolated) | The monitor proves freshness, not recoverability | S | a scratch Postgres + the share |
+| Interview: stop re-asking settled questions (owner, 2026-10-28) | PKSC 2200 got close rewordings of a just-answered question; the interviewer doesn't accept "not assessed / students don't do this" as settled. Options: a prompt rule to record it and move on, and/or a code check that sends back a question matching one of the last few | S–M | the 9-case benchmark run (credit reset) |
+| Interview: "Add a file" in the chat (owner, 2026-10-28) | The interviewer often needs a rubric or brief mid-interview; today the instructor must leave for Materials and come back. Upload + read + a note in the conversation so the interviewer searches it | M | a short design first |
 
 ## Possible (worth keeping; not scheduled)
 

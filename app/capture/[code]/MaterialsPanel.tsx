@@ -1,5 +1,6 @@
 'use client';
 
+import { MATERIAL_UPLOAD_ACCEPT, UPLOADABLE_KINDS, isUploadableMaterial } from '@/lib/courses/upload-types';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { CanvasImportZone } from '@/components/CanvasImportZone';
 import { parseCanvasBlob, isCanvasListMaterial } from '@/lib/canvas/parseCanvasBlob';
@@ -113,10 +114,6 @@ interface Props {
   hideRows?: boolean;
 }
 
-const ALLOWED_UPLOAD_TYPES = new Set([
-  'application/pdf',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-]);
 
 function isCanvasMaterial(m: CaptureMaterial): boolean {
   return m.fileName.startsWith('Canvas:');
@@ -996,10 +993,10 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
     setUploadError(null);
     if (!files || files.length === 0) return;
     const all = Array.from(files);
-    const accepted = all.filter(f => ALLOWED_UPLOAD_TYPES.has(f.type));
-    const skipped = all.filter(f => !ALLOWED_UPLOAD_TYPES.has(f.type)).map(f => f.name);
+    const accepted = all.filter(f => isUploadableMaterial(f));
+    const skipped = all.filter(f => !isUploadableMaterial(f)).map(f => f.name);
     if (accepted.length === 0) {
-      setUploadError('Only PDF or DOCX files are accepted.');
+      setUploadError(`Only ${UPLOADABLE_KINDS} files are accepted.`);
       if (inputRef.current) inputRef.current.value = '';
       return;
     }
@@ -1065,7 +1062,7 @@ export function MaterialsPanel({ course, initialMaterials, slug, onMaterialsChan
       if (failures.length > 0 || skipped.length > 0) {
         const parts: string[] = [];
         if (failures.length) parts.push(`${failures.length} failed — ${failures.join('; ')}`);
-        if (skipped.length) parts.push(`Skipped (only PDF/DOCX): ${skipped.join(', ')}`);
+        if (skipped.length) parts.push(`Skipped (not a ${UPLOADABLE_KINDS} file): ${skipped.join(', ')}`);
         setUploadError(parts.join(' · '));
       }
     } finally {
@@ -1362,7 +1359,7 @@ The materials themselves — and their per-item controls (ignore, preview, AI su
                 )}
                 {materials.length === 0 ? (
                   <p className="px-3 py-6 text-center text-xs italic text-muted-foreground">
-                    No materials yet. Upload a PDF or DOCX below.
+                    No materials yet. Upload files below.
                   </p>
                 ) : (
                   <ul id="materials-list" className="divide-y">
@@ -1398,7 +1395,7 @@ The materials themselves — and their per-item controls (ignore, preview, AI su
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-medium">Add a material</p>
-                  <p className="text-xs text-muted-foreground">PDF or DOCX, up to 15 MB.</p>
+                  <p className="text-xs text-muted-foreground">{UPLOADABLE_KINDS}, up to 15 MB.</p>
                 </div>
                 <button
                   type="button"
@@ -1411,7 +1408,7 @@ The materials themselves — and their per-item controls (ignore, preview, AI su
                 <input
                   ref={inputRef}
                   type="file"
-                  accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  accept={MATERIAL_UPLOAD_ACCEPT}
                   multiple
                   onChange={e => handleFiles(e.target.files)}
                   className="hidden"

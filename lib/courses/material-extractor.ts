@@ -34,17 +34,8 @@ import { detectScan } from '@/lib/courses/scan-detect';
 // Source-format MIME types the system can handle. Anything outside this
 // list is rejected at the upload-route allowlist level — by the time a
 // MaterialExtractor is invoked, we expect a known type.
-export const SUPPORTED_MIME_TYPES = [
-  'application/pdf',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',  // .docx
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',        // .xlsx
-  'text/csv',
-  'text/html',
-  'image/png',
-  'image/jpeg',
-] as const;
-export type SupportedMimeType = (typeof SUPPORTED_MIME_TYPES)[number];
+export { SUPPORTED_MIME_TYPES, type SupportedMimeType } from '@/lib/courses/upload-types';
+import { SUPPORTED_MIME_TYPES, type SupportedMimeType } from '@/lib/courses/upload-types';
 
 // Legacy Office formats — recognized so we can give a helpful error
 // instead of a generic "unsupported MIME type" rejection.

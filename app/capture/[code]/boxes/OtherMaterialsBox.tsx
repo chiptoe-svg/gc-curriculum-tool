@@ -1,5 +1,6 @@
 'use client';
 
+import { MATERIAL_UPLOAD_ACCEPT, UPLOADABLE_KINDS, isUploadableMaterial } from '@/lib/courses/upload-types';
 import { useMemo, useRef, useState } from 'react';
 import { IndexingStatusDot, type CaptureMaterial, type CourseCatalogView } from '../MaterialsPanel';
 import { fetchCourseMaterials } from '@/lib/capture/fetch-course-materials';
@@ -25,10 +26,6 @@ interface Props {
   triageEnabled?: boolean;
 }
 
-const ALLOWED_UPLOAD_TYPES = new Set([
-  'application/pdf',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-]);
 
 /** Collapsed summary of the Other box: counts by provenance kind. */
 function summarize(others: CaptureMaterial[]): string {
@@ -314,10 +311,10 @@ export function OtherMaterialsBox({ course, materials, slug, onMaterialsChange, 
     setError(null);
     if (!files || files.length === 0) return;
     const all = Array.from(files);
-    const accepted = all.filter((f) => ALLOWED_UPLOAD_TYPES.has(f.type));
-    const skipped = all.filter((f) => !ALLOWED_UPLOAD_TYPES.has(f.type)).map((f) => f.name);
+    const accepted = all.filter((f) => isUploadableMaterial(f));
+    const skipped = all.filter((f) => !isUploadableMaterial(f)).map((f) => f.name);
     if (accepted.length === 0) {
-      setError('Only PDF or DOCX files are accepted.');
+      setError(`Only ${UPLOADABLE_KINDS} files are accepted.`);
       if (inputRef.current) inputRef.current.value = '';
       return;
     }
@@ -354,7 +351,7 @@ export function OtherMaterialsBox({ course, materials, slug, onMaterialsChange, 
       if (failures.length > 0 || skipped.length > 0) {
         const parts: string[] = [];
         if (failures.length) parts.push(`${failures.length} failed — ${failures.join('; ')}`);
-        if (skipped.length) parts.push(`Skipped (only PDF/DOCX): ${skipped.join(', ')}`);
+        if (skipped.length) parts.push(`Skipped (not a ${UPLOADABLE_KINDS} file): ${skipped.join(', ')}`);
         setError(parts.join(' · '));
       }
       await refresh();
@@ -411,7 +408,7 @@ export function OtherMaterialsBox({ course, materials, slug, onMaterialsChange, 
         <input
           ref={inputRef}
           type="file"
-          accept=".pdf,.docx"
+          accept={MATERIAL_UPLOAD_ACCEPT}
           multiple
           className="hidden"
           onChange={(e) => void handleFiles(e.target.files)}
