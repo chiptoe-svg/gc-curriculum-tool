@@ -18,6 +18,7 @@
  *   DATABASE_URL=postgresql://admin@127.0.0.1:5433/gc_curriculum_p2_scratch \
  *   node node_modules/.pnpm/tsx@4.22.0/node_modules/tsx/dist/cli.mjs scripts/capture/replay-interview.ts \
  *     --expect-db gc_curriculum_p2_scratch --course "GC 2070" --positions 12 [--out file.json]
+ *     [--model <id> [--effort low|medium|high]]   # override the interviewer's model for every arm
  *
  * Costs real model calls (capture-chat-agent's model) — two per position plus tool loops.
  */
@@ -141,10 +142,10 @@ export function evenlySpaced<T>(items: T[], n: number): T[] {
   return Array.from({ length: n }, (_, i) => items[Math.round((i * (items.length - 1)) / (n - 1))]!);
 }
 
-async function runArm(systemPrompt: string, built: Awaited<ReturnType<typeof buildAgentCall>>): Promise<ArmResult> {
+async function runArm(systemPrompt: string, built: Awaited<ReturnType<typeof buildAgentCall>>, override?: { model?: string; reasoningEffort?: string }): Promise<ArmResult> {
   const { getProviderForFunction } = await import('@/lib/ai/provider');
   const { AuditResponseJsonSchema, AuditResponseSchema } = await import('@/lib/ai/agent/audit-response-schema');
-  const provider = await getProviderForFunction('capture-chat-agent');
+  const provider = await getProviderForFunction('capture-chat-agent', override);
   try {
     const r = await provider.completeWithTools<AuditResponse>({
       systemPrompt,
@@ -172,6 +173,7 @@ async function runArm(systemPrompt: string, built: Awaited<ReturnType<typeof bui
 
 export async function main(argv: string[]): Promise<number> {
   const arg = (name: string) => { const i = argv.indexOf(name); return i >= 0 ? argv[i + 1] : undefined; };
+  const modelOverride = arg('--model') ? { model: arg('--model'), reasoningEffort: arg('--effort') } : undefined;
   const expectDb = arg('--expect-db');
   const course = arg('--course');
   const positions = Number(arg('--positions') ?? '12');
@@ -225,7 +227,7 @@ export async function main(argv: string[]): Promise<number> {
         continue;
       }
       const arms: Partial<Record<ArmName, ArmResult>> = {};
-      for (const name of armNames) arms[name] = await runArm(prompts[name], name === 'list' ? builtList : builtDigests);
+      for (const name of armNames) arms[name] = await runArm(prompts[name], name === 'list' ? builtList : builtDigests, modelOverride);
       results.push({ turnIndex: pick.turnIndex + 1, arms });
       console.log(`interviewer turn ${String(pick.turnIndex + 1).padStart(3)}  ` + armNames.map(n => { const a = arms[n]!; return `${n}: ${a.materialToolCalls} searches, ${a.chunkCitations} doc / ${a.instructorCitations} instr cites, ${a.uncachedPromptTokens + a.cachedTokens} tokens in${a.error ? ' ERR ' + a.error.slice(0, 60) : ''}`; }).join('   '));
     } finally {
