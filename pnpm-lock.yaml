@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  next@15.5.18:
+    hash: a124c7ddd771d9cc153f14e503e99ed14721aa65ac51ecf585d523607c1fc60c
+    path: patches/next@15.5.18.patch
+
 importers:
 
   .:
@@ -52,7 +57,7 @@ importers:
         version: 1.12.0
       next:
         specifier: 15.5.18
-        version: 15.5.18(@babel/core@7.29.0)(@opentelemetry/api@1.9.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        version: 15.5.18(patch_hash=a124c7ddd771d9cc153f14e503e99ed14721aa65ac51ecf585d523607c1fc60c)(@babel/core@7.29.0)(@opentelemetry/api@1.9.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       openai:
         specifier: ^6.38.0
         version: 6.38.0(zod@4.4.3)
@@ -9276,7 +9281,7 @@ snapshots:
 
   negotiator@1.0.0: {}
 
-  next@15.5.18(@babel/core@7.29.0)(@opentelemetry/api@1.9.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
+  next@15.5.18(patch_hash=a124c7ddd771d9cc153f14e503e99ed14721aa65ac51ecf585d523607c1fc60c)(@babel/core@7.29.0)(@opentelemetry/api@1.9.1)(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
     dependencies:
       '@next/env': 15.5.18
       '@swc/helpers': 0.5.15

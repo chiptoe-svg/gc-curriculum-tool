@@ -1,0 +1,26 @@
+diff --git a/dist/esm/server/next-server.js b/dist/esm/server/next-server.js
+index 4765de5e9f2650e958b271296181a2f9fccc9e49..0a194c43760a77660fcde9cc350245f245762c7e 100644
+--- a/dist/esm/server/next-server.js
++++ b/dist/esm/server/next-server.js
+@@ -1185,7 +1185,7 @@ export default class NextNodeServer extends BaseServer {
+                 });
+             } finally{
+                 if (hasRequestBody) {
+-                    requestData.body.finalize();
++                    await requestData.body.finalize();
+                 }
+             }
+         } else {
+diff --git a/dist/server/next-server.js b/dist/server/next-server.js
+index d69d319a39ea2366b19d410249437f4c35a289f1..31d25324801130a61a38f0ac9c91fc7cf21bb455 100644
+--- a/dist/server/next-server.js
++++ b/dist/server/next-server.js
+@@ -1254,7 +1254,7 @@ class NextNodeServer extends _baseserver.default {
+                 });
+             } finally{
+                 if (hasRequestBody) {
+-                    requestData.body.finalize();
++                    await requestData.body.finalize();
+                 }
+             }
+         } else {
