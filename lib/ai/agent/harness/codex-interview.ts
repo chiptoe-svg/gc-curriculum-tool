@@ -97,7 +97,7 @@ export async function runCodexTurn(input: LoopTurnInput): Promise<LoopTurnResult
       p.stdin.end(renderPrompt(input));
     });
 
-    let uncached = 0, cached = 0, outTok = 0, turns = 0;
+    let uncached = 0, cached = 0, outTok = 0, turns = 0, writes = 0;
     const errors: string[] = [];
     for (const line of stdout.split('\n').filter(Boolean)) {
       let e: { type?: string; usage?: Record<string, number>; item?: { type?: string; message?: string }; message?: string; error?: { message?: string } };
@@ -107,6 +107,7 @@ export async function runCodexTurn(input: LoopTurnInput): Promise<LoopTurnResult
         cached += e.usage.cached_input_tokens ?? 0;
         uncached += (e.usage.input_tokens ?? 0) - (e.usage.cached_input_tokens ?? 0); // Codex input is cache-inclusive
         outTok += e.usage.output_tokens ?? 0;
+        writes += e.usage.cache_write_input_tokens ?? 0;
       }
       if (e.type === 'turn.failed') errors.push(e.error?.message ?? e.message ?? JSON.stringify(e));
       if (e.item?.type === 'error' && !/Model metadata/.test(e.item.message ?? '')) errors.push(e.item.message ?? '');
@@ -124,7 +125,7 @@ export async function runCodexTurn(input: LoopTurnInput): Promise<LoopTurnResult
     return {
       value, toolCallsUsed, controlEvents, requests: turns,
       retrievedChunkIds: calls.flatMap(c => c.chunkIds),
-      telemetry: { costUsdCents: 0, durationMs: Date.now() - started, cachedTokens: cached, uncachedPromptTokens: uncached, completionTokens: outTok },
+      telemetry: { costUsdCents: 0, durationMs: Date.now() - started, cachedTokens: cached, uncachedPromptTokens: uncached, completionTokens: outTok, cacheWriteTokens: writes },
     };
   } finally {
     if (!process.env.HARNESS_KEEP) rmSync(dir, { recursive: true, force: true });

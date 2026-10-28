@@ -68,6 +68,8 @@ export interface CaseResult {
   cachedTokens: number;
   completionTokens: number;
   durationMs: number;
+  /** Of uncachedPromptTokens, the part the provider wrote to its prompt cache (reported separately for credit budgeting). */
+  cacheWriteTokens?: number;
   /** Citations naming a passage not retrieved this turn or cited earlier, or a message id not in the conversation. */
   badCitations?: number;
   /** Harness spike: what the controls did (pi/codex loops only). */
@@ -228,7 +230,7 @@ export async function main(argv: string[]): Promise<number> {
         console.log(`  ${c.id}: ≈ ${Math.round(chars / 4).toLocaleString('en-US')} tokens per call (dry run, no model call)`);
         return empty;
       }
-      let r: { value: AuditResponse; toolCallsUsed: Array<{ toolName: string }>; telemetry: { costUsdCents: number; uncachedPromptTokens: number; cachedTokens: number; completionTokens: number; durationMs: number }; controlEvents?: string[]; requests?: number };
+      let r: { value: AuditResponse; toolCallsUsed: Array<{ toolName: string }>; telemetry: { costUsdCents: number; uncachedPromptTokens: number; cachedTokens: number; completionTokens: number; durationMs: number; cacheWriteTokens?: number }; controlEvents?: string[]; requests?: number };
       if (loop === 'vercel') {
         const provider = await getProviderForFunction('capture-chat-agent', cfg.model ? { model: cfg.model, reasoningEffort: cfg.effort } : undefined);
         const v = await provider.completeWithTools<AuditResponse>({
@@ -270,6 +272,7 @@ export async function main(argv: string[]): Promise<number> {
         uncachedPromptTokens: r.telemetry.uncachedPromptTokens,
         cachedTokens: r.telemetry.cachedTokens,
         completionTokens: r.telemetry.completionTokens,
+        cacheWriteTokens: r.telemetry.cacheWriteTokens ?? 0,
         durationMs: r.telemetry.durationMs,
       };
     } catch (err) {

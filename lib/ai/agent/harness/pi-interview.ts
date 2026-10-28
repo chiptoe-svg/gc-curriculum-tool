@@ -226,12 +226,12 @@ export async function runPiTurn(input: LoopTurnInput): Promise<LoopTurnResult> {
     if (m.role === 'toolResult' && m.isError) trace.push(`tool error ${m.toolName}: ${(m.content?.[0]?.text ?? '').replace(/\s+/g, ' ').slice(0, 400)}`);
   }
 
-  let uncached = 0, cached = 0, out = 0;
+  let uncached = 0, cached = 0, out = 0, writes = 0;
   for (const m of agent.state.messages.slice(prior.length)) {
     if ((m as { role: string }).role === 'assistant') {
       const u = (m as { usage?: typeof ZERO_USAGE }).usage ?? ZERO_USAGE;
       // The gateway reports cache writes separately; they are new (uncached) input, as in the other loops' counts.
-      uncached += u.input + u.cacheWrite; cached += u.cacheRead; out += u.output;
+      uncached += u.input + u.cacheWrite; cached += u.cacheRead; out += u.output; writes += u.cacheWrite;
       trace.push(`usage in=${u.input} cacheRead=${u.cacheRead} cacheWrite=${u.cacheWrite} out=${u.output} total=${u.totalTokens}`);
     }
   }
@@ -239,7 +239,7 @@ export async function runPiTurn(input: LoopTurnInput): Promise<LoopTurnResult> {
   return {
     value: final,
     toolCallsUsed,
-    telemetry: { costUsdCents: 0, durationMs: Date.now() - started, cachedTokens: cached, uncachedPromptTokens: uncached, completionTokens: out },
+    telemetry: { costUsdCents: 0, durationMs: Date.now() - started, cachedTokens: cached, uncachedPromptTokens: uncached, completionTokens: out, cacheWriteTokens: writes },
     controlEvents,
     requests,
   };

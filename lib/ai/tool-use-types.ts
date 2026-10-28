@@ -101,6 +101,7 @@ export type CompleteWithToolsResult<T> =
         cachedTokens: number;
         uncachedPromptTokens: number;
         completionTokens: number;
+        cacheWriteTokens?: number;
       };
     }
   | {
@@ -112,6 +113,7 @@ export type CompleteWithToolsResult<T> =
         cachedTokens: number;
         uncachedPromptTokens: number;
         completionTokens: number;
+        cacheWriteTokens?: number;
       };
     };
 
@@ -131,5 +133,6 @@ export type StreamEvent<T> =
       cachedTokens: number;
       uncachedPromptTokens: number;
       completionTokens: number;
+      cacheWriteTokens?: number;
     } }
   | { kind: 'error'; message: string };

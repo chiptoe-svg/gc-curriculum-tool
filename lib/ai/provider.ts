@@ -4,6 +4,8 @@ export interface CompletionTelemetry {
   cachedTokens: number;
   uncachedPromptTokens: number;
   completionTokens: number;
+  /** Of uncachedPromptTokens, how many the provider reported as written to its prompt cache (when it reports them). */
+  cacheWriteTokens?: number;
 }
 
 export interface TranscribeDocumentArgs {

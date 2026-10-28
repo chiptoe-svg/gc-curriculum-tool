@@ -353,6 +353,7 @@ export class OpenAIProvider implements AIProvider {
         cachedTokens,
         uncachedPromptTokens,
         completionTokens: outputTokens,
+        cacheWriteTokens: totalUsage?.inputTokenDetails?.cacheWriteTokens ?? 0,
       },
     };
   }
