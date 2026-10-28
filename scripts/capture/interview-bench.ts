@@ -250,7 +250,7 @@ export async function main(argv: string[]): Promise<number> {
           api: (usesResponsesApi(model) ? 'openai-responses' : 'openai-completions') as 'openai-responses' | 'openai-completions',
           reasoning: cfg.effort as 'low' | 'medium' | 'high' | undefined,
         };
-        const turn = { systemPrompt: built.systemPrompt, messages: built.messages, tools, userMessage, fileNames, endpoint, maxToolCalls: 4, controls };
+        const turn = { systemPrompt: built.systemPrompt, messages: built.messages, tools, userMessage, fileNames, courseCode: c.course, endpoint, maxToolCalls: 4, controls };
         r = loop === 'pi'
           ? await (await import('@/lib/ai/agent/harness/pi-interview')).runPiTurn(turn)
           : await (await import('@/lib/ai/agent/harness/codex-interview')).runCodexTurn(turn);
@@ -262,7 +262,7 @@ export async function main(argv: string[]): Promise<number> {
         otherToolCalls: r.toolCallsUsed.filter(t => !MATERIAL_TOOLS.has(t.toolName)).length,
         chunkCitations: cites.filter(x => x.type === 'chunk').length,
         instructorCitations: cites.filter(x => x.type === 'instructor').length,
-        badCitations: checkCitations(r.value, { retrievedThisTurn: retrieved, history }).length,
+        badCitations: (((r as { retrievedChunkIds?: string[] }).retrievedChunkIds ?? []).forEach(id => retrieved.add(id)), checkCitations(r.value, { retrievedThisTurn: retrieved, history }).length),
         controlEvents: r.controlEvents,
         requests: r.requests,
         question: String((r.value as { question?: unknown }).question ?? '').slice(0, 400),

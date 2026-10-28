@@ -39,6 +39,8 @@ export interface LoopTurnInput {
   tools: ToolDefinition[];
   /** The instructor's answer this turn (undefined on the opening turn). */
   userMessage?: string;
+  /** Course code (the Codex loop starts its MCP tool server for this course). */
+  courseCode?: string;
   /** Included course file names, for the search trigger. */
   fileNames: string[];
   endpoint: LoopEndpoint;
