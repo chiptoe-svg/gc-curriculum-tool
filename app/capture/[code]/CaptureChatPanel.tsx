@@ -9,6 +9,8 @@ import { turnParts } from '@/lib/capture/merge-turn-text';
 import { assistantTurnMessage } from '@/lib/capture/saved-turn';
 import { CitationDrawer, type CitationTarget } from './CitationDrawer';
 import { InstructorSelect } from './InstructorSelect';
+import { InterviewChecklist } from './InterviewChecklist';
+import { EMPTY_CHECKLIST, nextChecklist, type InterviewChecklist as InterviewChecklistData } from '@/lib/capture/interview-checklist';
 
 // Re-export so existing imports from this module keep working.
 export type { ChatMessage } from '@/lib/ai/analyze/capture-chat';
@@ -76,13 +78,10 @@ async function readNdjson(
 function ReadinessStrip({
   readiness,
   peakScore,
-  coveredEver,
 }: {
   readiness: CaptureReadiness;
   /** Highest score the agent has reported across this session. */
   peakScore: number;
-  /** Union of covered topics across every turn in this session. */
-  coveredEver: string[];
 }) {
   const tone =
     readiness.score >= 75 ? 'bg-green-500'
@@ -111,7 +110,7 @@ function ReadinessStrip({
           {regressed && (
             <span
               className="ml-1 text-amber-700"
-              title={`Earlier in this session the agent reported ${peakScore}%. The drop usually means the catalog (objectives, skills) changed and the agent is re-probing — not a state-loss bug. Coverage from earlier turns is preserved in the cumulative list below.`}
+              title={`Earlier in this session the agent reported ${peakScore}%. The drop usually means the catalog (objectives, skills) changed and the agent is re-probing — not a state-loss bug. Covered items stay in the checklist beside the chat.`}
             >
               (↓ from {peakScore}% — re-probing)
             </span>
@@ -126,18 +125,6 @@ function ReadinessStrip({
           </span>
         )}
       </div>
-      {coveredEver.length > 0 && (
-        <p className="text-xs leading-snug text-muted-foreground">
-          <span className="font-medium text-foreground">Covered so far:</span>{' '}
-          {coveredEver.join(' · ')}
-        </p>
-      )}
-      {readiness.remaining.length > 0 && (
-        <p className="text-xs leading-snug text-muted-foreground">
-          <span className="font-medium text-foreground">Still probing:</span>{' '}
-          {readiness.remaining.join(' · ')}
-        </p>
-      )}
     </div>
   );
 }
@@ -150,6 +137,9 @@ interface Props {
   onGenerate: () => void;
   /** When restoring a saved conversation, the last readiness captured. */
   initialReadiness?: CaptureReadiness | null;
+  /** The checklist rebuilt from the interview's stored replies (page.tsx), so
+   *  items checked off before a reload stay checked. */
+  initialChecklist?: InterviewChecklistData | null;
   /** The interview's server session, owned by CaptureClient so it survives
    *  this panel remounting (Generate → Back to chat) and a reload resumes it.
    *  Null until the first turn starts one. */
@@ -176,6 +166,7 @@ export function CaptureChatPanel({
   onMessagesChange,
   onGenerate,
   initialReadiness,
+  initialChecklist,
   sessionId,
   onSessionIdChange,
   chooserInstructor,
@@ -195,11 +186,14 @@ export function CaptureChatPanel({
   // Toggles the inline dropdown next to the always-visible badge — lets
   // faculty change identity mid-session without leaving the audit page.
   const [editingInstructor, setEditingInstructor] = useState(false);
-  // Session-cumulative counterparts to readiness. peakScore tracks the
-  // highest score the agent reported; coveredEver is the union of all
-  // covered-topic lists. Reset when the conversation resets.
+  // peakScore tracks the highest score the agent reported. The checklist keeps
+  // every item ever checked off (lib/capture/interview-checklist.ts); both reset
+  // when the conversation resets (the panel remounts).
   const [peakScore, setPeakScore] = useState<number>(initialReadiness?.score ?? 0);
-  const [coveredEver, setCoveredEver] = useState<string[]>(initialReadiness?.covered ?? []);
+  const [checklist, setChecklist] = useState<InterviewChecklistData>(
+    initialChecklist ?? (initialReadiness ? nextChecklist(EMPTY_CHECKLIST, initialReadiness).checklist : EMPTY_CHECKLIST),
+  );
+  const [justCovered, setJustCovered] = useState<string[]>([]);
   const [drawerTarget, setDrawerTarget] = useState<CitationTarget | null>(null);
   const transcriptRef = useRef<HTMLDivElement>(null);
 
@@ -295,7 +289,9 @@ export function CaptureChatPanel({
         // (typical after faculty edits the catalog mid-audit) doesn't
         // erase the coverage history the user can already see.
         setPeakScore(prev => Math.max(prev, fr.readiness!.score));
-        setCoveredEver(prev => Array.from(new Set([...prev, ...fr.readiness!.covered])));
+        const step = nextChecklist(checklist, fr.readiness);
+        setChecklist(step.checklist);
+        setJustCovered(step.justCovered);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Chat failed');
@@ -433,6 +429,9 @@ export function CaptureChatPanel({
         </details>
       )}
 
+      {/* Transcript, with the interview checklist beside it once the interview
+          has started (below it on narrow screens). */}
+      <div className={messages.length > 0 ? 'lg:grid lg:grid-cols-[minmax(0,1fr)_17rem]' : undefined}>
       <div
         ref={transcriptRef}
         className="max-h-[55vh] min-h-[280px] overflow-y-auto px-4 py-3 space-y-3"
@@ -534,6 +533,12 @@ export function CaptureChatPanel({
           <p className="text-xs italic text-muted-foreground">Interviewer is thinking…</p>
         )}
       </div>
+      {messages.length > 0 && (
+        <div className="border-t px-4 py-3 lg:max-h-[55vh] lg:overflow-y-auto lg:border-l lg:border-t-0">
+          <InterviewChecklist checklist={checklist} justCovered={justCovered} updating={busy} />
+        </div>
+      )}
+      </div>
 
       {/* Reading order: interviewer question (end of transcript) → reply box →
           Record/Send → readiness → finish actions. The readiness strip used to
@@ -580,7 +585,6 @@ export function CaptureChatPanel({
         <ReadinessStrip
           readiness={readiness}
           peakScore={peakScore}
-          coveredEver={coveredEver}
         />
       )}
 

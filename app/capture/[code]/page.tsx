@@ -10,7 +10,8 @@ import { listPairedCodes } from '@/lib/db/course-codes-queries';
 import { getCaptureProfileByCourse } from '@/lib/db/course-capture-profiles-queries';
 import { getCaptureConversation } from '@/lib/db/capture-conversations-queries';
 import { getLatestSnapshotByCourse, getSnapshotById } from '@/lib/db/capture-snapshots-queries';
-import { getLatestSessionId, getSessionInstructor, listPriorSessionSummaries } from '@/lib/db/capture-messages-queries';
+import { getLatestSessionId, getSessionInstructor, getSessionMessages, listPriorSessionSummaries } from '@/lib/db/capture-messages-queries';
+import { checklistFromReplies, readinessFromStoredReply } from '@/lib/capture/interview-checklist';
 import { composeSessionBriefing } from '@/lib/ai/agent/session-briefing';
 import { sessionToExcludeFromRecap } from '@/lib/capture/session-recap';
 import type { SessionBriefingView } from './CaptureChatPanel';
@@ -96,6 +97,15 @@ export default async function CapturePage({ params, searchParams }: Props) {
   const currentSessionId = await getLatestSessionId(code);
   const initialInstructor = currentSessionId
     ? await getSessionInstructor(code, currentSessionId)
+    : null;
+  // The interview checklist, rebuilt from the resumed session's stored replies
+  // so items checked off before a reload stay checked (owner, 2026-10-28).
+  const initialChecklist = savedConversation && currentSessionId
+    ? checklistFromReplies(
+        (await getSessionMessages(code, currentSessionId))
+          .filter(m => m.role === 'assistant')
+          .map(m => readinessFromStoredReply(m.content)),
+      )
     : null;
   // The name on the viewer's personal link defaults the instructor box (null for the department login).
   const viewerName = personalName(await getRequestGrant(await headers()));
@@ -218,6 +228,7 @@ export default async function CapturePage({ params, searchParams }: Props) {
           // Resume the in-flight server session only when a saved conversation is
           // being resumed; after Generate/reset clears it, the next turn starts fresh.
           initialSessionId={savedConversation ? currentSessionId : null}
+          initialChecklist={initialChecklist}
           savedConversationAt={savedConversation?.updatedAt ?? null}
           priorSnapshotInfo={priorSnapshotInfo}
           hasSnapshot={latestSnapshot != null}

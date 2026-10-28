@@ -1,5 +1,6 @@
 'use client';
 
+import type { InterviewChecklist } from '@/lib/capture/interview-checklist';
 import { apiErrorText } from '@/lib/ai/credit-client';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { CaptureProfile, CaptureReadiness, CaptureReviewerStatus } from '@/lib/ai/capture/schema';
@@ -38,6 +39,8 @@ interface Props {
   initialReadiness: CaptureReadiness | null;
   /** The server session the saved conversation belongs to; a reload resumes it. Null when there is no saved conversation. */
   initialSessionId?: string | null;
+  /** The interview checklist rebuilt from the resumed session (page.tsx). */
+  initialChecklist?: InterviewChecklist | null;
   savedConversationAt: Date | null;
   /** Latest non-retired snapshot's instructor + date, for the session-start chooser's "build on" option. */
   priorSnapshotInfo: { instructorName: string | null; createdAt: string } | null;
@@ -80,6 +83,7 @@ export function CaptureClient({
   initialMessages,
   initialReadiness,
   initialSessionId = null,
+  initialChecklist = null,
   savedConversationAt,
   priorSnapshotInfo,
   initialInstructor,
@@ -544,6 +548,7 @@ export function CaptureClient({
             onGenerate={handleGenerate}
             initialReadiness={initialReadiness}
             sessionId={sessionId}
+            initialChecklist={initialChecklist}
             onSessionIdChange={setSessionId}
             chooserInstructor={chooserInstructor}
             onInstructorChange={setChooserInstructor}

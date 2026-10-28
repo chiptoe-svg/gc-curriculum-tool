@@ -58,16 +58,3 @@ describe('CaptureChatPanel — resume + slim request', () => {
 
 });
 
-describe('CaptureChatPanel — readiness labels', () => {
-  it('says "Covered so far", not "this session" (a resumed interview spans visits)', () => {
-    render(
-      <CaptureChatPanel courseCode="PKSC 2200" slug="" messages={[{ role: 'assistant', content: 'Hi\n\nQ?' }]}
-        initialReadiness={{ score: 49, covered: ['Theme: branding'], remaining: ['Incoming skills'], good_enough_to_generate: false }}
-        sessionId="s1" onSessionIdChange={vi.fn()}
-        onMessagesChange={vi.fn()} onGenerate={vi.fn()} chooserInstructor="T" onInstructorChange={vi.fn()}
-        chooserMode="fresh" onModeChange={vi.fn()} />,
-    );
-    expect(screen.getByText('Covered so far:')).toBeInTheDocument();
-    expect(screen.queryByText(/this session/)).toBeNull();
-  });
-});
