@@ -26,7 +26,7 @@ describe('CaptureChatPanel — credits exhausted', () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ error: 'ai_credits_exhausted', message: MSG }), { status: 503, headers: { 'content-type': 'application/json' } })));
     render(
       <CaptureChatPanel courseCode="GC 4060" slug="" messages={[{ role: 'assistant', content: 'Hi\n\nQ?' }]}
-        onMessagesChange={vi.fn()} onGenerate={vi.fn()} chooserInstructor="T" onInstructorChange={vi.fn()}
+        onMessagesChange={vi.fn()} onGenerate={vi.fn()} sessionId={null} onSessionIdChange={vi.fn()} chooserInstructor="T" onInstructorChange={vi.fn()}
         chooserMode="fresh" onModeChange={vi.fn()} />,
     );
     fireEvent.change(screen.getByLabelText('Your reply'), { target: { value: 'my answer' } });

@@ -63,6 +63,8 @@ describe('CaptureChatPanel — one last question', () => {
         messages={messages}
         onMessagesChange={() => {}}
         onGenerate={onGenerate}
+        sessionId={null}
+        onSessionIdChange={() => {}}
         chooserInstructor="Instructor A"
         onInstructorChange={() => {}}
         chooserMode="fresh"

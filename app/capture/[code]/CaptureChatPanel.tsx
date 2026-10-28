@@ -5,7 +5,8 @@ import { useEffect, useRef, useState } from 'react';
 import { VoiceRecorder } from '@/components/VoiceRecorder';
 import type { CaptureReadiness } from '@/lib/ai/capture/schema';
 import type { ChatMessage } from '@/lib/ai/analyze/capture-chat';
-import { joinTurnParts, splitTurnText, turnParts } from '@/lib/capture/merge-turn-text';
+import { turnParts } from '@/lib/capture/merge-turn-text';
+import { assistantTurnMessage } from '@/lib/capture/saved-turn';
 import { CitationDrawer, type CitationTarget } from './CitationDrawer';
 import { InstructorSelect } from './InstructorSelect';
 
@@ -149,8 +150,11 @@ interface Props {
   onGenerate: () => void;
   /** When restoring a saved conversation, the last readiness captured. */
   initialReadiness?: CaptureReadiness | null;
-  /** Called after each successful turn so the parent can persist progress. */
-  onConversationChange?: (messages: ChatMessage[], readiness: CaptureReadiness | null) => void;
+  /** The interview's server session, owned by CaptureClient so it survives
+   *  this panel remounting (Generate → Back to chat) and a reload resumes it.
+   *  Null until the first turn starts one. */
+  sessionId: string | null;
+  onSessionIdChange: (sessionId: string) => void;
   /** Auditor identity — controlled by CaptureClient (single source; shared with the landing hero's chooser + the start request). */
   chooserInstructor: string;
   onInstructorChange: (v: string) => void;
@@ -172,7 +176,8 @@ export function CaptureChatPanel({
   onMessagesChange,
   onGenerate,
   initialReadiness,
-  onConversationChange,
+  sessionId,
+  onSessionIdChange,
   chooserInstructor,
   onInstructorChange,
   chooserMode,
@@ -195,10 +200,6 @@ export function CaptureChatPanel({
   // covered-topic lists. Reset when the conversation resets.
   const [peakScore, setPeakScore] = useState<number>(initialReadiness?.score ?? 0);
   const [coveredEver, setCoveredEver] = useState<string[]>(initialReadiness?.covered ?? []);
-  // Set on the first v2 turn that responds with a sessionId; threaded back on
-  // every subsequent request so the audit-agent loop can stitch the
-  // conversation together server-side. v1 responses leave this null.
-  const [sessionId, setSessionId] = useState<string | null>(null);
   const [drawerTarget, setDrawerTarget] = useState<CitationTarget | null>(null);
   const transcriptRef = useRef<HTMLDivElement>(null);
 
@@ -206,7 +207,9 @@ export function CaptureChatPanel({
     transcriptRef.current?.scrollTo({ top: transcriptRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages]);
 
-  async function postChat(next: ChatMessage[]) {
+  // `next` is the transcript to show; `message` is the instructor's new
+  // message (omitted on the opening turn). Only `message` is sent.
+  async function postChat(next: ChatMessage[], message?: string) {
     setBusy(true);
     setError(null);
 
@@ -224,7 +227,7 @@ export function CaptureChatPanel({
           method: 'POST',
           headers: { 'content-type': 'application/json', accept: 'text/event-stream' },
           body: JSON.stringify({
-            messages: next,
+            ...(message !== undefined ? { message } : {}),
             ...(sessionId ? { sessionId } : {}),
             instructorName: chooserInstructor,
             // Only "fresh" sessions skip the prior-sessions block. Once a
@@ -254,7 +257,7 @@ export function CaptureChatPanel({
       await readNdjson(res, (ev) => {
         const e = ev as { kind: string } & Record<string, unknown>;
         if (e.kind === 'session' && typeof e.sessionId === 'string') {
-          setSessionId(e.sessionId);
+          onSessionIdChange(e.sessionId);
         } else if (e.kind === 'tool-start' && typeof e.toolName === 'string') {
           toolBanner = `Searching materials via ${e.toolName}…`;
           onMessagesChange([
@@ -284,23 +287,7 @@ export function CaptureChatPanel({
       }
 
       const fr: FinalResponse = finalResponse;
-      // The prompt keeps the follow-up question in the `question` field only.
-      // splitTurnText is the defense-in-depth: if a turn still ends its
-      // `finding` with a (possibly reworded) question, that paragraph becomes
-      // the question and the field isn't added again, so faculty never see the
-      // question twice. The question is kept as its own field so the transcript
-      // can render it as a separate block; `content` stays the merged text the
-      // chat route and saved conversation expect.
-      const parts = splitTurnText(fr.finding ?? '', fr.question ?? '');
-      const assistantMessage: ChatMessage = {
-        role: 'assistant',
-        content: joinTurnParts(parts),
-        ...(parts.question ? { question: parts.question } : {}),
-        ...(Array.isArray(fr.citations) && fr.citations.length > 0
-          ? { citations: fr.citations }
-          : {}),
-      };
-      const newMessages = [...next, assistantMessage];
+      const newMessages = [...next, assistantTurnMessage(fr)];
       onMessagesChange(newMessages);
       if (fr.readiness) {
         setReadiness(fr.readiness);
@@ -310,7 +297,6 @@ export function CaptureChatPanel({
         setPeakScore(prev => Math.max(prev, fr.readiness!.score));
         setCoveredEver(prev => Array.from(new Set([...prev, ...fr.readiness!.covered])));
       }
-      onConversationChange?.(newMessages, fr.readiness ?? readiness ?? null);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Chat failed');
       onMessagesChange(next);
@@ -319,10 +305,9 @@ export function CaptureChatPanel({
     }
   }
 
-  // Empty messages array signals an "opening turn" to the chat route;
-  // the v2 audit agent self-introduces from at-rest context (no fake
-  // user message is written to the transcript). v1 path also handles
-  // empty messages by self-introducing.
+  // No message signals an "opening turn" to the chat route; the audit agent
+  // self-introduces from at-rest context (no fake user message is written to
+  // the transcript).
   async function handleStart() {
     await postChat([]);
   }
@@ -332,7 +317,7 @@ export function CaptureChatPanel({
     if (!t || busy) return;
     const next: ChatMessage[] = [...messages, { role: 'user', content: t }];
     onMessagesChange(next);
-    await postChat(next);
+    await postChat(next, t);
   }
   async function handleSend() {
     const text = input.trim();

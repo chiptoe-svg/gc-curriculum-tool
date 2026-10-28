@@ -215,6 +215,9 @@ export default async function CapturePage({ params, searchParams }: Props) {
           existingReviewerNote={priorCapture?.reviewerNote ?? null}
           initialMessages={savedConversation?.messages ?? []}
           initialReadiness={savedConversation?.readiness ?? null}
+          // Resume the in-flight server session only when a saved conversation is
+          // being resumed; after Generate/reset clears it, the next turn starts fresh.
+          initialSessionId={savedConversation ? currentSessionId : null}
           savedConversationAt={savedConversation?.updatedAt ?? null}
           priorSnapshotInfo={priorSnapshotInfo}
           hasSnapshot={latestSnapshot != null}

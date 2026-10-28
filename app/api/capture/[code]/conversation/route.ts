@@ -1,13 +1,7 @@
 import { NextResponse } from 'next/server';
 import { authorizeCourseWrite } from '@/lib/sandbox/access';
 import { getCourseByCode } from '@/lib/db/courses-queries';
-import {
-  getCaptureConversation,
-  upsertCaptureConversation,
-  deleteCaptureConversation,
-  type ChatMessage,
-} from '@/lib/db/capture-conversations-queries';
-import { captureReadinessSchema, type CaptureReadiness } from '@/lib/ai/capture/schema';
+import { getCaptureConversation, deleteCaptureConversation } from '@/lib/db/capture-conversations-queries';
 import { checkIpRateLimit } from '@/lib/rate-limit/ip-rate-limit';
 import { hashIp } from '@/lib/ip-hash';
 
@@ -42,38 +36,6 @@ export async function GET(req: Request, { params }: RouteContext): Promise<Respo
     readiness: conv.readiness,
     updatedAt: conv.updatedAt,
   });
-}
-
-// PUT /api/capture/[code]/conversation?slug=...
-// Body: { messages: ChatMessage[], readiness: CaptureReadiness | null }
-// Replaces the saved conversation in full.
-export async function PUT(req: Request, { params }: RouteContext): Promise<Response> {
-  const { code: rawCode } = await params;
-  const gate = await authAndCourse(req, rawCode);
-  if (!gate.ok) return gate.res;
-
-  const body = await req.json().catch(() => ({})) as Record<string, unknown>;
-  if (!Array.isArray(body.messages)) {
-    return NextResponse.json({ error: 'messages must be an array' }, { status: 400 });
-  }
-  const messages: ChatMessage[] = (body.messages as unknown[])
-    .filter(
-      (m): m is { role: 'user' | 'assistant'; content: string } =>
-        typeof m === 'object' &&
-        m !== null &&
-        ((m as { role?: unknown }).role === 'user' || (m as { role?: unknown }).role === 'assistant') &&
-        typeof (m as { content?: unknown }).content === 'string',
-    )
-    .map(m => ({ role: m.role, content: m.content }));
-
-  let readiness: CaptureReadiness | null = null;
-  if (body.readiness !== undefined && body.readiness !== null) {
-    const parsed = captureReadinessSchema.safeParse(body.readiness);
-    if (parsed.success) readiness = parsed.data;
-  }
-
-  await upsertCaptureConversation({ courseCode: gate.courseCode, messages, readiness });
-  return NextResponse.json({ ok: true });
 }
 
 // DELETE /api/capture/[code]/conversation?slug=...

@@ -36,6 +36,8 @@ interface Props {
   existingReviewerNote: string | null;
   initialMessages: ChatMessage[];
   initialReadiness: CaptureReadiness | null;
+  /** The server session the saved conversation belongs to; a reload resumes it. Null when there is no saved conversation. */
+  initialSessionId?: string | null;
   savedConversationAt: Date | null;
   /** Latest non-retired snapshot's instructor + date, for the session-start chooser's "build on" option. */
   priorSnapshotInfo: { instructorName: string | null; createdAt: string } | null;
@@ -77,6 +79,7 @@ export function CaptureClient({
   existingReviewerNote,
   initialMessages,
   initialReadiness,
+  initialSessionId = null,
   savedConversationAt,
   priorSnapshotInfo,
   initialInstructor,
@@ -90,6 +93,11 @@ export function CaptureClient({
   const [course, setCourse] = useState<CourseCatalogView>(initialCourse);
   const courseCode = course.code;
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+  // The interview's server session: resumed from the page load, kept across the
+  // chat panel remounting (Generate → Back to chat), and dropped on reset/clear
+  // so the next opening turn starts a new session. The server keeps the history,
+  // so each chat request carries only the new message and this id.
+  const [sessionId, setSessionId] = useState<string | null>(initialSessionId);
   // If a conversation is saved, the user is mid-audit — drop them straight
   // back into the chat even if a prior profile exists. They can navigate
   // to the review pane via the "View previously generated profile" link.
@@ -235,28 +243,6 @@ export function CaptureClient({
     window.location.reload();
   }, [courseCode, slug]);
 
-  // Autosave the running conversation server-side so a closed tab, refresh,
-  // or failed Generate doesn't lose progress. Called by the chat panel after
-  // every successful turn.
-  const handleConversationChange = useCallback(async (
-    nextMessages: ChatMessage[],
-    nextReadiness: CaptureReadiness | null,
-  ) => {
-    try {
-      await fetch(
-        `/api/capture/${encodeURIComponent(courseCode)}/conversation?slug=${encodeURIComponent(slug)}`,
-        {
-          method: 'PUT',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ messages: nextMessages, readiness: nextReadiness }),
-        },
-      );
-    } catch {
-      // Best-effort autosave; the running conversation still lives in client
-      // state so the active session isn't broken if the save fails.
-    }
-  }, [courseCode, slug]);
-
   const handleClearConversation = useCallback(async () => {
     try {
       await fetch(
@@ -267,6 +253,7 @@ export function CaptureClient({
       // ignore
     }
     setMessages([]);
+    setSessionId(null);
   }, [courseCode, slug]);
 
   const [resetState, setResetState] = useState<'idle' | 'resetting' | 'error'>('idle');
@@ -298,6 +285,7 @@ export function CaptureClient({
         { method: 'DELETE' },
       ).catch(() => {});
       setMessages([]);
+      setSessionId(null);
       setProfile(null);
       setReviewerStatus(null);
       setStage('chat');
@@ -555,7 +543,8 @@ export function CaptureClient({
             onMessagesChange={setMessages}
             onGenerate={handleGenerate}
             initialReadiness={initialReadiness}
-            onConversationChange={handleConversationChange}
+            sessionId={sessionId}
+            onSessionIdChange={setSessionId}
             chooserInstructor={chooserInstructor}
             onInstructorChange={setChooserInstructor}
             chooserMode={chooserMode}

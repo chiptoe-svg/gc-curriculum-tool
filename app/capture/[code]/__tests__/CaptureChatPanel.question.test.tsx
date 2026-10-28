@@ -13,6 +13,8 @@ function renderPanel(messages: ChatMessage[]) {
       messages={messages}
       onMessagesChange={vi.fn()}
       onGenerate={vi.fn()}
+      sessionId={null}
+      onSessionIdChange={vi.fn()}
       chooserInstructor="Test Instructor"
       onInstructorChange={vi.fn()}
       chooserMode="fresh"
