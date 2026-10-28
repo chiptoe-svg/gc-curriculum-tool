@@ -79,8 +79,8 @@ export async function runPiTurn(input: LoopTurnInput): Promise<LoopTurnResult> {
     cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
     contextWindow: 200000, maxTokens: 16000,
     compat: ep.api === 'openai-completions'
-      ? { supportsStore: false, supportsDeveloperRole: false, supportsReasoningEffort: Boolean(ep.reasoning) }
-      : { supportsDeveloperRole: true },
+      ? { supportsStore: false, supportsDeveloperRole: false, supportsReasoningEffort: Boolean(ep.reasoning), supportsStrictMode: process.env.HARNESS_STRICT !== '0' }
+      : { supportsDeveloperRole: true, supportsStrictMode: process.env.HARNESS_STRICT !== '0' },
   } as unknown as Model<'openai-completions'>;
   const models = createModels();
   models.setProvider(createProvider({
@@ -123,6 +123,7 @@ export async function runPiTurn(input: LoopTurnInput): Promise<LoopTurnResult> {
     parameters: Type.Unsafe(AuditResponseJsonSchema as unknown as Record<string, unknown>),
     executionMode: 'sequential',
     async execute(_id: string, params: unknown) {
+      trace.push(`submit_turn called (final already set: ${Boolean(final)})`);
       const parsed = AuditResponseSchema.safeParse(params);
       if (!parsed.success) {
         controlEvents.push('reply did not match the response schema; sent back');
@@ -145,6 +146,7 @@ export async function runPiTurn(input: LoopTurnInput): Promise<LoopTurnResult> {
         if (problems.length) controlEvents.push(`citation check failed: ${problems.join(' / ').slice(0, 300)}; accepted, no retries left`);
       }
       final = value;
+      trace.push('submit_turn accepted');
       return { content: [{ type: 'text' as const, text: 'Turn delivered.' }], details: {}, terminate: true };
     },
   });
@@ -174,6 +176,14 @@ export async function runPiTurn(input: LoopTurnInput): Promise<LoopTurnResult> {
       messages: prior,
     },
     toolExecution: 'sequential',
+    // Record tool calls Pi itself rejected (argument validation) — they cost a request but never reach our code.
+    afterToolCall: async ({ toolCall, isError, result }) => {
+      if (isError && toolCall.name === 'submit_turn' && !controlEvents.some(e => e.endsWith('sent back') && e.length && false)) {
+        const text = (result.content?.[0] as { text?: string } | undefined)?.text ?? '';
+        if (!/^Before answering|^Your answer has citation/.test(text) && !/submit_turn arguments are invalid/.test(text)) controlEvents.push(`submit_turn rejected by Pi: ${text.slice(0, 160)}`);
+      }
+      return undefined;
+    },
     streamFn: (m, ctx, opts) => {
       requests++;
       // Budget spent (tool calls so far ≥ max): the next request must deliver.
@@ -200,6 +210,9 @@ export async function runPiTurn(input: LoopTurnInput): Promise<LoopTurnResult> {
   await agent.prompt({ role: 'user', content: last.content, timestamp: Date.now() } as AgentMessage);
   if (agent.state.errorMessage) throw new Error(`pi: ${agent.state.errorMessage} | ${trace.join(' | ')}`);
   if (!final) throw new Error(`pi: no submit_turn after ${requests} request(s) | ${trace.join(' | ')}`);
+  for (const m of agent.state.messages.slice(prior.length) as Array<{ role: string; isError?: boolean; toolName?: string; content?: Array<{ text?: string }> }>) {
+    if (m.role === 'toolResult' && m.isError) trace.push(`tool error ${m.toolName}: ${(m.content?.[0]?.text ?? '').replace(/\s+/g, ' ').slice(0, 400)}`);
+  }
   if (process.env.HARNESS_TRACE) controlEvents.push(...trace);
 
   let uncached = 0, cached = 0, out = 0;
