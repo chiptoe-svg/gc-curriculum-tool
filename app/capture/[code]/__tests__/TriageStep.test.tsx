@@ -523,6 +523,35 @@ describe('TriageStep completion gate', () => {
     expect(onIngested).toHaveBeenCalledOnce();
   });
 
+  // Owner, 2026-10-28: "3 couldn't be read" without names left faculty unable
+  // to judge whether the files mattered. Name each one with its reason.
+  it('names each file that could not be read, with the reason', async () => {
+    vi.spyOn(global, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({ results: [{ id: 'm1', status: 'queued' }, { id: 'm2', status: 'queued' }, { id: 'm3', status: 'queued' }], queued: 3 }), { status: 200 }),
+    );
+    const fetchMaterials = await import('@/lib/capture/fetch-course-materials');
+    vi.spyOn(fetchMaterials, 'fetchCourseMaterials').mockImplementation(async () => [
+      { id: 'm1', fileName: 'Canvas File: Syllabus.pdf', mimeType: 'application/pdf', indexingStatus: 'ready', ignored: false },
+      { id: 'm2', fileName: 'Canvas File: Assembly Image 1.png', mimeType: 'image/png', indexingStatus: 'skipped', setAsideReason: 'Empty or malformed import', ignored: true },
+      { id: 'm3', fileName: 'Canvas File: Rubric scan.pdf', mimeType: 'application/pdf', indexingStatus: 'failed', ignored: false },
+    ] as never);
+
+    render(<TriageStep courseCode="GC 1010" slug="s" materials={[
+      { id: 'm1', fileName: 'Canvas File: Syllabus.pdf', mimeType: 'application/pdf', tier: 'high', indexingStatus: 'pending', ignored: false, pageCount: 2 },
+      { id: 'm2', fileName: 'Canvas File: Assembly Image 1.png', mimeType: 'image/png', tier: 'background', indexingStatus: 'pending', ignored: false, pageCount: 1 },
+      { id: 'm3', fileName: 'Canvas File: Rubric scan.pdf', mimeType: 'application/pdf', tier: 'high', indexingStatus: 'pending', ignored: false, pageCount: 1 },
+    ] as never} onIngested={vi.fn()} onBack={() => {}} />);
+
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /read files & continue/i })); });
+    await act(async () => { await vi.advanceTimersByTimeAsync(3000); });
+    const list = screen.getByTestId('unread-files');
+    expect(list.textContent).toContain('Assembly Image 1.png');
+    expect(list.textContent).toContain('Empty or malformed import');
+    expect(list.textContent).toContain('Rubric scan.pdf');
+    expect(list.textContent).toContain('extraction failed');
+    expect(list.textContent).not.toContain('Syllabus.pdf');
+  });
+
   // G4 (security re-review, 2026-10-07): a cooldown 429 means a
   // co-instructor's concurrent ingest call already started reading the
   // same materials — not a real failure. The UI should poll for

@@ -5,6 +5,7 @@ import type { CaptureMaterial } from './MaterialsPanel';
 import type { Tier } from '@/lib/capture/material-tier';
 import { estimateSeconds, estimateTotal, formatDuration } from '@/lib/capture/ingest-estimate';
 import { fetchCourseMaterials } from '@/lib/capture/fetch-course-materials';
+import { materialReadability } from '@/lib/capture/material-display';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -303,6 +304,9 @@ export function TriageStep({ courseCode, slug, materials, onIngested, onBack }: 
   const [progress, setProgress] = useState<{ total: number; terminal: number; ready: number; failed: number; skipped: number }>(
     { total: 0, terminal: 0, ready: 0, failed: 0, skipped: 0 },
   );
+  // Files from this run that couldn't be read, named with the reason, so the
+  // instructor can judge whether one is worth fixing (owner, 2026-10-28).
+  const [unread, setUnread] = useState<Array<{ id: string; fileName: string; reason: string }>>([]);
   const [useLocal, setUseLocal] = useState(false);
 
   // Tiers are classified in the background after upload (see the materials POST
@@ -420,15 +424,22 @@ export function TriageStep({ courseCode, slug, materials, onIngested, onBack }: 
     const deadline = opts.maxWaitMs !== undefined ? Date.now() + opts.maxWaitMs : null;
     const tick = async (): Promise<void> => {
       const fresh = await fetchCourseMaterials(courseCode, slug);
-      const byId = new Map((fresh ?? []).map(m => [m.id, m.indexingStatus]));
+      const byId = new Map((fresh ?? []).map(m => [m.id, m]));
       let ready = 0, failed = 0, skipped = 0, terminal = 0;
+      const notRead: Array<{ id: string; fileName: string; reason: string }> = [];
       for (const id of ids) {
-        const s = byId.get(id);
+        const m = byId.get(id);
+        const s = m?.indexingStatus;
         if (s === 'ready') { ready++; terminal++; }
         else if (s === 'failed') { failed++; terminal++; }
         else if (s === 'skipped') { skipped++; terminal++; }
+        if (m && (s === 'failed' || s === 'skipped')) {
+          const r = materialReadability(m);
+          notRead.push({ id, fileName: m.fileName, reason: r.reason ?? r.label });
+        }
       }
       setProgress({ total: ids.length, terminal, ready, failed, skipped });
+      setUnread(notRead);
       if (terminal >= ids.length) {
         // Clean run: carry on by itself. Stop only when a file needs attention.
         if (failed === 0 && skipped === 0) { onIngested(); return; }
@@ -606,6 +617,15 @@ export function TriageStep({ courseCode, slug, materials, onIngested, onBack }: 
               {progress.skipped ? `, ${progress.skipped} skipped` : ''}. You can go back to fix
               {progress.failed + progress.skipped === 1 ? ' it' : ' them'}, or continue without.
             </p>
+            {unread.length > 0 && (
+              <ul data-testid="unread-files" className="max-w-md text-right text-xs text-amber-800">
+                {unread.map(u => (
+                  <li key={u.id}>
+                    <span className="font-medium">{u.fileName.replace(/^Canvas File: /, '')}</span>: {u.reason}
+                  </li>
+                ))}
+              </ul>
+            )}
             <button
               type="button"
               onClick={() => onIngested()}
