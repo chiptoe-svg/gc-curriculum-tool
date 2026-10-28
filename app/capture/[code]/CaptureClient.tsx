@@ -30,6 +30,8 @@ interface Props {
   initialMaterials: CaptureMaterial[];
   slug: string;
   existingProfile: CaptureProfile | null;
+  /** The name on the viewer's personal access link (page.tsx, from the grant label). Null for the shared department login. */
+  defaultInstructor?: string | null;
   existingReviewerStatus: CaptureReviewerStatus | null;
   existingReviewerNote: string | null;
   initialMessages: ChatMessage[];
@@ -78,6 +80,7 @@ export function CaptureClient({
   savedConversationAt,
   priorSnapshotInfo,
   initialInstructor,
+  defaultInstructor = null,
   priorBriefings,
   catalogSyncedAt,
   hasSnapshot,
@@ -158,13 +161,16 @@ export function CaptureClient({
   // Session-start chooser state — single source of truth, shared by the landing
   // hero's chooser controls and the chat panel's mid-session auditor badge +
   // start request. Pre-fills from a resumed session's stamped instructor;
-  // otherwise starts EMPTY so the picker shows its "Instructor name" placeholder
-  // and the user must actively choose (no silent default to the first roster
-  // name — that mis-attributed captures to whoever sorted first).
+  // otherwise the name on the viewer's personal link (owner, 2026-10-28: a new
+  // instructor not on the roster was stuck until she found "Add a new name…").
+  // With neither (department login) it starts EMPTY so the picker shows its
+  // "Instructor name" placeholder and the user must actively choose (no silent
+  // default to the first roster name — that mis-attributed captures to whoever
+  // sorted first).
   const [chooserInstructor, setChooserInstructor] = useState<string>(
     initialInstructor && FACULTY_ROSTER.includes(initialInstructor)
       ? initialInstructor
-      : '',
+      : defaultInstructor?.trim() || '',
   );
   const [chooserMode, setChooserMode] = useState<'fresh' | 'continue'>(
     priorSnapshotInfo ? 'continue' : 'fresh',

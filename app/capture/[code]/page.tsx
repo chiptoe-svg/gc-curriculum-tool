@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import { headers } from 'next/headers';
 import { isValidSlug } from '@/lib/slug';
 import { resolveScopedSession } from '@/lib/sandbox/access';
+import { getRequestGrant, personalName } from '@/lib/auth/viewer';
 import { getCourseByCode } from '@/lib/db/courses-queries';
 import { formatCourseLabel } from '@/lib/courses/parse-course-code';
 import { listMaterialsByCourse } from '@/lib/db/course-materials-queries';
@@ -96,6 +97,8 @@ export default async function CapturePage({ params, searchParams }: Props) {
   const initialInstructor = currentSessionId
     ? await getSessionInstructor(code, currentSessionId)
     : null;
+  // The name on the viewer's personal link defaults the instructor box (null for the department login).
+  const viewerName = personalName(await getRequestGrant(await headers()));
 
   // Distilled recap of prior sessions (excludes the in-flight one — only when a
   // saved conversation is actually being resumed). Serializable
@@ -216,6 +219,7 @@ export default async function CapturePage({ params, searchParams }: Props) {
           priorSnapshotInfo={priorSnapshotInfo}
           hasSnapshot={latestSnapshot != null}
           initialInstructor={initialInstructor}
+          defaultInstructor={viewerName}
           priorBriefings={priorBriefings}
           triageEnabled={isTriageEnabled()}
           isExternalTester={isScopedForThis}

@@ -134,3 +134,11 @@ export async function getViewerAccess(
   const grant = await getRequestGrant(headersLike, deps);
   return grant ? toAccess(grant) : DENIED;
 }
+
+/** The person's name for a personal access link (its label), used to default
+ * the CourseCapture instructor. null for the built-in logins (`builtin:` ids —
+ * "Department login" names nobody) and for no grant. */
+export function personalName(grant: Grant | null): string | null {
+  if (!grant || grant.id.startsWith('builtin:')) return null;
+  return grant.label.trim() || null;
+}

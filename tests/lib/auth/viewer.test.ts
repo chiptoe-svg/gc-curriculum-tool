@@ -168,3 +168,15 @@ describe('getViewerAccess', () => {
     expect(builtinGrant('faculty', FACULTY, SECRET).can).not.toContain('admin');
   });
 });
+
+describe('personalName', () => {
+  it('is the label of a personal access link', async () => {
+    const { personalName } = await import('@/lib/auth/viewer');
+    expect(personalName({ id: '6800e4d4-0000-0000-0000-000000000000', label: ' Haley Appleby ', scope: ['PKSC 2200'], can: ['capture'] })).toBe('Haley Appleby');
+  });
+  it('is null for the shared department login and for no grant', async () => {
+    const { personalName } = await import('@/lib/auth/viewer');
+    expect(personalName(builtinGrant('faculty', FACULTY, SECRET))).toBeNull();
+    expect(personalName(null)).toBeNull();
+  });
+});
