@@ -1,0 +1,14 @@
+{
+  "about": "Interview moments for scripts/capture/interview-bench.ts. 'files' = the instructor's question was about a requirement the course files state (how something is graded, what students submit), so a good interviewer searches and cites a passage. 'instructor' = only the instructor can answer (what students actually do), so searching is optional. Session = the first 8 characters of the capture session id. Turn = the interviewer turn to regenerate; the turn before it must be the instructor's. Chosen 2026-10-27 from the original transcripts; 'files' is a judgment from the transcript (the instructor's reply pointed at a rubric, brief or assignment), not checked against every file.",
+  "cases": [
+    { "id": "2070-088", "course": "GC 2070", "session": "24cdfa56", "turn": 88,  "kind": "files", "quick": true,  "note": "file naming/organization; instructor: 'as outlined in the rubric from the assignment's direction'" },
+    { "id": "2070-104", "course": "GC 2070", "session": "24cdfa56", "turn": 104, "kind": "files", "quick": true,  "note": "B6 lab report; instructor quoted the rubric verbatim" },
+    { "id": "2070-106", "course": "GC 2070", "session": "24cdfa56", "turn": 106, "kind": "files", "quick": false, "note": "B6 grading; the original interviewer searched here" },
+    { "id": "2070-132", "course": "GC 2070", "session": "24cdfa56", "turn": 132, "kind": "files", "quick": false, "note": "hometown-company discussion deliverables" },
+    { "id": "2070-024", "course": "GC 2070", "session": "24cdfa56", "turn": 24,  "kind": "instructor", "quick": true, "note": "students' own image adjustments in B5-B6 (practice, not a requirement)" },
+    { "id": "1010-020", "course": "GC 1010", "session": "8a8c3b90", "turn": 20,  "kind": "files", "quick": false, "note": "Course Lineup resubmission policy" },
+    { "id": "1010-008", "course": "GC 1010", "session": "8a8c3b90", "turn": 8,   "kind": "instructor", "quick": false, "note": "what the instructor can verify students did themselves" },
+    { "id": "1020-012", "course": "GC 1020", "session": "b87d3b89", "turn": 12,  "kind": "files", "quick": false, "note": "project choice and parameters (project briefs)" },
+    { "id": "1020-016", "course": "GC 1020", "session": "b87d3b89", "turn": 16,  "kind": "files", "quick": true,  "note": "are written summaries graded for explanation quality (rubrics)" }
+  ]
+}

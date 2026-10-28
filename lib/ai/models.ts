@@ -19,7 +19,10 @@
  * docs/superpowers/specs/2026-10-27-model-roles-design.md). Each role
  * carries a model and a reasoning effort; change them only here.
  * gpt-6.1-sol at low effort: owner decision 2026-10-06, see
- * docs/superpowers/audits/2026-10-05-model-evaluation.md.
+ * docs/superpowers/audits/2026-10-05-model-evaluation.md. Converse moved to
+ * medium effort (owner, 2026-10-27): at low effort the interviewer almost never
+ * searched course materials, so it cited them about 10-20x less than the
+ * summer interviews; at medium it searched and cited at 3 of 3 replayed turns.
  */
 export type ModelRole = 'judge' | 'converse' | 'write' | 'extract';
 
@@ -34,7 +37,7 @@ export interface RoleSetting {
 
 export const ROLE_SETTINGS: Record<ModelRole, RoleSetting> = {
   judge: { model: 'gpt-6.1-sol', effort: 'low', label: 'Judge', purpose: 'Produces a score or claim that becomes the stored record' },
-  converse: { model: 'gpt-6.1-sol', effort: 'low', label: 'Converse', purpose: 'Faculty-facing chat, turn by turn, often with tools' },
+  converse: { model: 'gpt-6.1-sol', effort: 'medium', label: 'Converse', purpose: 'Faculty-facing chat, turn by turn, often with tools' },
   write: { model: 'gpt-6.1-sol', effort: 'low', label: 'Write', purpose: 'Prose or proposals a person reads or approves' },
   extract: { model: 'gpt-5.4-mini', effort: undefined, label: 'Extract', purpose: 'Bounded extraction, classification or summary, often in bulk' },
 };

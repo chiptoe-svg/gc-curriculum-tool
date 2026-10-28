@@ -29,9 +29,10 @@ describe('function roles', () => {
     expect(Object.keys(DEFAULT_ROLES).sort()).toEqual([...AI_FUNCTION_IDS].sort());
   });
 
-  it('compiled defaults keep today\'s model and effort, except parse-profile-fields', () => {
+  it('compiled defaults keep today\'s model and effort, except parse-profile-fields and Converse (medium, owner 2026-10-27)', () => {
     for (const id of AI_FUNCTION_IDS) {
-      const expected = OLD_LIGHT.includes(id) || id === 'parse-profile-fields' ? MINI : SOL;
+      const expected = OLD_LIGHT.includes(id) || id === 'parse-profile-fields' ? MINI
+        : SPEC_ROLES.converse.includes(id) ? { ...SOL, effort: 'medium' } : SOL;
       const { model, effort } = resolveSetting(id, null, null);
       expect({ id, model, effort }).toEqual({ id, ...expected });
     }

@@ -63,11 +63,12 @@ export interface AuditAgentInput {
    */
   includePriorSessions?: boolean;
   /**
-   * How materials appear in the at-rest context. 'digests' (default,
-   * production): every included material's full digest. 'index': one line
-   * per material, so the agent must search to read or cite anything — under
-   * test by scripts/capture/replay-interview.ts (2026-10-27); digests were
-   * ~53k of GC 2070's ~70k tokens per turn and cannot be cited.
+   * How materials appear in the at-rest context. 'digests': every included
+   * material's full digest. 'index': one line per material, so the agent must
+   * search to read or cite anything. Default (owner, 2026-10-27): digests on
+   * the opening turn and in simple mode, the index otherwise — digests were
+   * ~53k of GC 2070's ~70k tokens per turn and cannot be cited. Set it only to
+   * override (scripts/capture/replay-interview.ts compares the two).
    */
   materialsView?: 'digests' | 'index';
 }
@@ -124,10 +125,13 @@ export function renderMaterialIndex(materials: Array<{ id: string; fileName: str
 }
 
 export async function buildAgentCall(input: AuditAgentInput): Promise<BuiltAgentCall> {
-  const { sessionId, courseCode, userMessage, auditMode, instructorName, includePriorSessions, materialsView = 'digests' } = input;
+  const { sessionId, courseCode, userMessage, auditMode, instructorName, includePriorSessions } = input;
 
   const existingBeforeUser = await getSessionMessages(courseCode, sessionId);
   const isOpeningTurn = existingBeforeUser.length === 0 && !userMessage;
+  // Digests on the opening turn (it summarizes what the materials show) and in
+  // simple mode (no tools to read a material); the material list otherwise.
+  const materialsView = input.materialsView ?? (isOpeningTurn || auditMode !== 'full' ? 'digests' : 'index');
 
   const userTurnIndex = existingBeforeUser.length;
   if (!isOpeningTurn) {

@@ -345,7 +345,7 @@ describe('runAuditAgent', () => {
   // -----------------------------------------------------------------------
   // 7. At-rest context appears in messages[0]
   // -----------------------------------------------------------------------
-  it('places course catalog + material digests in the first user message', async () => {
+  it('places course catalog + material list in the first user message', async () => {
     mockGetSessionMessages.mockResolvedValueOnce([]);
     mockGetSessionMessages.mockResolvedValueOnce([
       { role: 'user', content: 'hello', turnIndex: 0 },
@@ -366,7 +366,7 @@ describe('runAuditAgent', () => {
     expect(first.role).toBe('user');
     if (first.role !== 'user') throw new Error('unreachable');
     expect(first.content).toContain('# Course catalog');
-    expect(first.content).toContain('# Material digests');
+    expect(first.content).toContain('# Material list');
     expect(first.content).toContain('GC 4800');
     expect(first.content).toContain('syllabus.pdf');
   });
@@ -409,9 +409,10 @@ describe('runAuditAgent', () => {
   });
 });
 
-// Material list instead of digests (2026-10-27, replay test only; production
-// still sends digests). Digests were ~53k of GC 2070's ~70k tokens per turn and
-// cannot be cited, so the interviewer rarely searched.
+// Material list instead of digests after the opening turn (owner, 2026-10-27).
+// Digests were ~53k of GC 2070's ~70k tokens per turn and cannot be cited; the
+// list halves the tokens, and at medium effort the interviewer still searched
+// and cited at 3 of 3 replayed turns.
 describe('material list view', () => {
   const COURSE = 'GC 4800';
   const SESSION = 'sess-1';
@@ -447,16 +448,36 @@ describe('material list view', () => {
     expect(first.content).not.toContain('Key terms');
   });
 
-  it('defaults to the digests (production unchanged)', async () => {
+  async function firstMessage(input: { userMessage?: string; auditMode: 'full' | 'simple'; materialsView?: 'digests' | 'index' }) {
     mockGetSessionMessages.mockResolvedValue([]);
     mockGetCourseByCode.mockResolvedValue(makeCourse());
     mockListMaterialsByCourse.mockResolvedValue([makeMaterial({ digest: DIGEST })]);
-
-    const built = await buildAgentCall({ sessionId: SESSION, courseCode: COURSE, userMessage: 'hi', auditMode: 'full' });
+    const built = await buildAgentCall({ sessionId: SESSION, courseCode: COURSE, ...input });
     const first = built.messages[0]!;
     if (first.role !== 'user') throw new Error('unreachable');
-    expect(first.content).toContain('# Material digests');
-    expect(first.content).toContain('Key terms');
+    return first.content as string;
+  }
+
+  it('sends the list on a continuing full-mode turn by default', async () => {
+    const content = await firstMessage({ userMessage: 'hi', auditMode: 'full' });
+    expect(content).toContain('# Material list');
+    expect(content).not.toContain('Key terms');
+  });
+
+  it('sends the digests on the opening turn', async () => {
+    const content = await firstMessage({ auditMode: 'full' });
+    expect(content).toContain('# Material digests');
+    expect(content).toContain('Key terms');
+  });
+
+  it('sends the digests in simple mode (no tools to read a material)', async () => {
+    const content = await firstMessage({ userMessage: 'hi', auditMode: 'simple' });
+    expect(content).toContain('# Material digests');
+  });
+
+  it('an explicit materialsView overrides the default', async () => {
+    const content = await firstMessage({ userMessage: 'hi', auditMode: 'full', materialsView: 'digests' });
+    expect(content).toContain('# Material digests');
   });
 });
 
